@@ -60,7 +60,7 @@ import { ButtonDirective } from './headless';
     FocusRingDirective,
     {
       directive: ProvideColorDirective,
-      inputs: ['etProvideColor:color', 'etProvideAltColor:altColor'],
+      inputs: ['etProvideColor:color'],
     },
   ],
   host: {
@@ -73,10 +73,10 @@ import { ButtonDirective } from './headless';
 export class TextButtonComponent {
   protected buttonDir = inject(ButtonDirective);
 
-  size = input<ButtonSize>(BUTTON_SIZES.MD);
-  iconAlignment = input<ButtonIconAlignment>(BUTTON_ICON_ALIGNMENTS.START);
+  public size = input<ButtonSize>(BUTTON_SIZES.MD);
+  public iconAlignment = input<ButtonIconAlignment>(BUTTON_ICON_ALIGNMENTS.START);
 
-  canAnimate = createCanAnimateSignal();
+  public canAnimate = createCanAnimateSignal();
 
-  spinnerConfig = computed(() => BUTTON_SPINNER_CONFIG[this.size()]);
+  public spinnerConfig = computed(() => BUTTON_SPINNER_CONFIG[this.size()]);
 }

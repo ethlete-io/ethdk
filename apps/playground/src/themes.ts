@@ -20,6 +20,7 @@ export const BRAND_THEME: ColorTheme = {
 
 export const DANGER_THEME: ColorTheme = {
   name: 'danger',
+  type: 'error',
   primary: {
     color: {
       default: '220 38 38',
@@ -37,6 +38,7 @@ export const DANGER_THEME: ColorTheme = {
 
 export const SUCCESS_THEME: ColorTheme = {
   name: 'success',
+  type: 'success',
   primary: {
     color: {
       default: '22 163 74',
@@ -54,6 +56,7 @@ export const SUCCESS_THEME: ColorTheme = {
 
 export const WARNING_THEME: ColorTheme = {
   name: 'warning',
+  type: 'warning',
   primary: {
     color: {
       default: '217 119 6',

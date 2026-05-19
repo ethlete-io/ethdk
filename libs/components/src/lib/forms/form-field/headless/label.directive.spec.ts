@@ -1,0 +1,59 @@
+import { Component } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import '../../../../test-helpers';
+import { FormFieldDirective } from './form-field.directive';
+import { LabelDirective } from './label.directive';
+
+@Component({
+  template: `
+    <div etFormField>
+      <et-label>Test</et-label>
+    </div>
+  `,
+  imports: [FormFieldDirective, LabelDirective],
+})
+class LabelTestHost {}
+
+@Component({
+  template: `<et-label>Standalone</et-label>`,
+  imports: [LabelDirective],
+})
+class StandaloneLabelTestHost {}
+
+describe('LabelDirective', () => {
+  describe('inside form field', () => {
+    let fixture: ComponentFixture<LabelTestHost>;
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({ imports: [LabelTestHost] });
+      fixture = TestBed.createComponent(LabelTestHost);
+      fixture.detectChanges();
+    });
+
+    it('should generate a unique id', () => {
+      const labelEl = fixture.nativeElement.querySelector('et-label');
+      expect(labelEl.id).toMatch(/^et-label-\d+$/);
+    });
+
+    it('should register with parent form field', () => {
+      const formFieldDir = fixture.debugElement.children[0].injector.get(FormFieldDirective);
+      expect(formFieldDir.registeredLabel()).toBeTruthy();
+    });
+  });
+
+  describe('standalone', () => {
+    let fixture: ComponentFixture<StandaloneLabelTestHost>;
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({ imports: [StandaloneLabelTestHost] });
+      fixture = TestBed.createComponent(StandaloneLabelTestHost);
+      fixture.detectChanges();
+    });
+
+    it('should create without a parent form field', () => {
+      const labelEl = fixture.nativeElement.querySelector('et-label');
+      expect(labelEl).toBeTruthy();
+      expect(labelEl.id).toMatch(/^et-label-\d+$/);
+    });
+  });
+});

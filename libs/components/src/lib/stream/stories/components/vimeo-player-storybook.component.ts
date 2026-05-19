@@ -20,6 +20,6 @@ import { StreamImports } from '../../stream.imports';
   imports: [StreamImports, JsonPipe],
 })
 export class VimeoPlayerStorybookComponent {
-  videoId = input<string | number>(148751763);
+  public videoId = input<string | number>(148751763);
   protected player = viewChild.required(VimeoPlayerSlotComponent);
 }

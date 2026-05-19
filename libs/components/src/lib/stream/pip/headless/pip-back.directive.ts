@@ -17,10 +17,10 @@ export class PipBackDirective {
   private chrome = inject(PIP_CHROME_REF_TOKEN, { optional: true });
   private tokenEntry = inject(PIP_ENTRY_TOKEN, { optional: true });
 
-  entry = input<StreamPipEntry>();
+  public entry = input<StreamPipEntry>();
   private pipManager = injectPipManager();
 
-  back(event: Event) {
+  public back(event: Event) {
     event.stopPropagation();
     const entry = this.resolveEntry();
     if (!entry) return;

@@ -17,24 +17,24 @@ import { NotificationDismissDirective } from './notification-dismiss.directive';
 })
 export class NotificationDirective {
   private animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN, { optional: true });
-  ref = input.required<NotificationRef>();
+  public ref = input.required<NotificationRef>();
 
-  entry = computed(() => this.ref().entry());
-  status = computed(() => this.entry().config.status);
-  isLoading = computed(() => this.status() === 'loading');
-  isSuccess = computed(() => this.status() === 'success');
-  isError = computed(() => this.status() === 'error');
-  isInfo = computed(() => this.status() === 'info');
-  title = computed(() => this.entry().config.title);
-  message = computed(() => this.entry().config.message);
-  action = computed(() => this.entry().config.action);
-  progress = computed(() => this.entry().config.progress);
-  ariaRole = computed(() => (this.status() === 'error' ? 'alert' : 'status'));
+  public entry = computed(() => this.ref().entry());
+  public status = computed(() => this.entry().config.status);
+  public isLoading = computed(() => this.status() === 'loading');
+  public isSuccess = computed(() => this.status() === 'success');
+  public isError = computed(() => this.status() === 'error');
+  public isInfo = computed(() => this.status() === 'info');
+  public title = computed(() => this.entry().config.title);
+  public message = computed(() => this.entry().config.message);
+  public action = computed(() => this.entry().config.action);
+  public progress = computed(() => this.entry().config.progress);
+  public ariaRole = computed(() => (this.status() === 'error' ? 'alert' : 'status'));
 
   /** @internal */
-  registeredAction = signal<NotificationActionDirective | null>(null);
+  public registeredAction = signal<NotificationActionDirective | null>(null);
   /** @internal */
-  registeredDismiss = signal<NotificationDismissDirective | null>(null);
+  public registeredDismiss = signal<NotificationDismissDirective | null>(null);
 
   constructor() {
     toObservable(computed(() => this.entry().isDismissing))

@@ -57,7 +57,7 @@ const WINDOW_CONTROL_BUTTON_SPINNER_CONFIG = {
     FocusRingDirective,
     {
       directive: ProvideColorDirective,
-      inputs: ['etProvideColor:color', 'etProvideAltColor:altColor'],
+      inputs: ['etProvideColor:color'],
     },
   ],
   host: {
@@ -70,10 +70,10 @@ const WINDOW_CONTROL_BUTTON_SPINNER_CONFIG = {
 export class WindowControlButtonComponent {
   protected buttonDir = inject(ButtonDirective);
 
-  size = input<WindowControlButtonSize>(WINDOW_CONTROL_BUTTON_SIZES.MD);
-  kind = input<WindowControlButtonKind>(WINDOW_CONTROL_BUTTON_KINDS.DEFAULT);
+  public size = input<WindowControlButtonSize>(WINDOW_CONTROL_BUTTON_SIZES.MD);
+  public kind = input<WindowControlButtonKind>(WINDOW_CONTROL_BUTTON_KINDS.DEFAULT);
 
-  canAnimate = createCanAnimateSignal();
+  public canAnimate = createCanAnimateSignal();
 
   protected spinnerConfig = computed(() => WINDOW_CONTROL_BUTTON_SPINNER_CONFIG[this.size()]);
 }

@@ -27,11 +27,11 @@ export class IconDirective {
   private icons = inject(ICONS_TOKEN, { optional: true });
   private sanitizer = inject(DomSanitizer);
 
-  iconNameToUse = input.required<string>({ alias: 'etIcon' });
+  public iconNameToUse = input.required<string>({ alias: 'etIcon' });
 
-  allowHardcodedColor = input(false, { transform: booleanAttribute });
+  public allowHardcodedColor = input(false, { transform: booleanAttribute });
 
-  iconSrc = computed(() => {
+  public iconSrc = computed(() => {
     if (!this.icons) {
       return null;
     }
@@ -84,7 +84,7 @@ export class IconDirective {
     return this.sanitizer.bypassSecurityTrustHtml(svg);
   });
 
-  hostClasses = computed(() => `et-icon et-icon--${this.iconNameToUse()}`);
+  public hostClasses = computed(() => `et-icon et-icon--${this.iconNameToUse()}`);
 
   constructor() {
     if (!this.icons) {

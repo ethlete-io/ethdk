@@ -25,13 +25,13 @@ import { TabLabelDirective } from './tab-label.directive';
   },
 })
 export class TabComponent {
-  label = input('');
-  icon = input<string | null>(null);
-  disabled = input(false);
+  public label = input('');
+  public icon = input<string | null>(null);
+  public disabled = input(false);
 
-  customLabel = contentChild(TabLabelDirective);
+  public customLabel = contentChild(TabLabelDirective);
   /** @internal */
-  implicitLabelRef = viewChild.required<TemplateRef<unknown>>('implicitLabel');
+  public implicitLabelRef = viewChild.required<TemplateRef<unknown>>('implicitLabel');
   /** @internal */
-  contentRef = viewChild.required<TemplateRef<unknown>>('contentTpl');
+  public contentRef = viewChild.required<TemplateRef<unknown>>('contentTpl');
 }

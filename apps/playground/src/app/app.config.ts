@@ -32,7 +32,7 @@ export const appConfig: ApplicationConfig = {
       },
       {
         name: 'red',
-        isDefaultAlt: true,
+        type: 'error',
         primary: {
           color: {
             default: '255 0 0',

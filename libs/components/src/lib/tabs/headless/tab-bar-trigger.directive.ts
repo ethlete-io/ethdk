@@ -27,19 +27,19 @@ export class TabBarTriggerDirective {
   private scrollable = inject(ScrollableDirective, { optional: true });
   protected tabBar = inject(TAB_BAR_TOKEN);
 
-  disabled = input(false);
+  public disabled = input(false);
 
-  readonly ID = `et-tab-trigger-${nextTriggerId++}`;
+  public readonly ID = `et-tab-trigger-${nextTriggerId++}`;
 
-  justActivated = signal(false);
+  public justActivated = signal(false);
 
-  isSelected = computed(() => {
+  public isSelected = computed(() => {
     const idx = this.tabBar.triggers().indexOf(this);
 
     return idx === this.tabBar.selectedIndex();
   });
 
-  tabIndex = computed(() => {
+  public tabIndex = computed(() => {
     const myIndex = this.tabBar.triggers().indexOf(this);
     const focusedIdx = this.tabBar.focusedIndex();
 
@@ -75,17 +75,17 @@ export class TabBarTriggerDirective {
   }
 
   /** @internal */
-  focus() {
+  public focus() {
     this.elementRef.nativeElement.focus();
     this.scrollIntoView();
   }
 
   /** @internal */
-  getElement() {
+  public getElement() {
     return this.elementRef.nativeElement;
   }
 
-  handleClick() {
+  public handleClick() {
     if (!this.disabled()) {
       const wasSelected = this.isSelected();
 

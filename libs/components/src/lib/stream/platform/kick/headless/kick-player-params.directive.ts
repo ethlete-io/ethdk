@@ -5,14 +5,14 @@ import { STREAM_PLAYER_PARAMS_TOKEN, StreamPlayerParams } from '../../../stream-
   providers: [{ provide: STREAM_PLAYER_PARAMS_TOKEN, useExisting: KickPlayerParamsDirective }],
 })
 export class KickPlayerParamsDirective implements StreamPlayerParams {
-  channel = input.required<string>();
-  width = input<string | number>('100%');
-  height = input<string | number>('100%');
-  muted = input(false, { transform: booleanAttribute });
+  public channel = input.required<string>();
+  public width = input<string | number>('100%');
+  public height = input<string | number>('100%');
+  public muted = input(false, { transform: booleanAttribute });
 
-  playerId = computed(() => `kick-${this.channel()}`);
+  public playerId = computed(() => `kick-${this.channel()}`);
 
-  createBindings() {
+  public createBindings() {
     return [
       inputBinding('channel', () => this.channel()),
       inputBinding('width', () => this.width()),

@@ -9,5 +9,5 @@ import { DragHandleDirective } from '@ethlete/core';
   },
 })
 export class PipCollapseOverlayDirective {
-  dragHandle = input.required<DragHandleDirective>();
+  public dragHandle = input.required<DragHandleDirective>();
 }

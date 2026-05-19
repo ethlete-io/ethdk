@@ -1,0 +1,19 @@
+<input
+  #nativeInput
+  [type]="inputDir.type()"
+  [value]="inputDir.value()"
+  [disabled]="inputDir.disabled()"
+  [readOnly]="inputDir.readonly()"
+  [required]="inputDir.required()"
+  [placeholder]="inputDir.placeholder()"
+  [autocomplete]="inputDir.autocomplete()"
+  [attr.name]="inputDir.name() || null"
+  [attr.aria-invalid]="inputDir.shouldDisplayError() || null"
+  [attr.aria-describedby]="inputDir.describedById() || null"
+  [attr.aria-labelledby]="inputDir.labelId() || null"
+  [attr.data-text-align]="inputDir.textAlign()"
+  (input)="syncNativeValue($event)"
+  (focus)="inputDir.focused.set(true)"
+  (blur)="inputDir.focused.set(false); inputDir.touched.set(true)"
+  class="et-input-native"
+/>

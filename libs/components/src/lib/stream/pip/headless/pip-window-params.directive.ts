@@ -7,11 +7,11 @@ export class PipWindowParamsDirective {
   public aspectRatio = inject(PIP_WINDOW_ASPECT_RATIO_TOKEN);
   private config = injectStreamConfig();
 
-  minWidth = signal(this.config.pipWindow.minWidth);
-  maxWidth = signal(this.config.pipWindow.maxWidth);
-  minHeight = signal(this.config.pipWindow.minHeight);
-  maxHeight = signal(this.config.pipWindow.maxHeight);
-  desiredSize = signal(this.config.pipWindow.desiredSize);
-  collapsePeek = signal(this.config.pipWindow.collapsePeek);
-  viewportPadding = signal(this.config.pipWindow.viewportPadding);
+  public minWidth = signal(this.config.pipWindow.minWidth);
+  public maxWidth = signal(this.config.pipWindow.maxWidth);
+  public minHeight = signal(this.config.pipWindow.minHeight);
+  public maxHeight = signal(this.config.pipWindow.maxHeight);
+  public desiredSize = signal(this.config.pipWindow.desiredSize);
+  public collapsePeek = signal(this.config.pipWindow.collapsePeek);
+  public viewportPadding = signal(this.config.pipWindow.viewportPadding);
 }

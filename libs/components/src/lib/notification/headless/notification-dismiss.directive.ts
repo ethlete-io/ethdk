@@ -28,7 +28,7 @@ export class NotificationDismissDirective {
     }
   }
 
-  dismiss() {
+  public dismiss() {
     this.notification?.ref().dismiss();
   }
 }

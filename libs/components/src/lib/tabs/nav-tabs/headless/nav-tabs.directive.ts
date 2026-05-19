@@ -11,7 +11,7 @@ export class NavTabsDirective {
   private routerEvent = injectRouterEvent();
 
   /** @internal */
-  navigationVersion = computed(() => {
+  public navigationVersion = computed(() => {
     const event = this.routerEvent();
 
     if (event instanceof NavigationEnd) {

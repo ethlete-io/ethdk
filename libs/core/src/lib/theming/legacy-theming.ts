@@ -112,7 +112,7 @@ export const createThemeStyle = (theme: ColorTheme, isAlt: boolean) => {
   const stringSuffix = isAlt ? '-alt' : '';
 
   const selectors = [
-    ...((theme.isDefault && !isAlt) || (theme.isDefaultAlt && isAlt)
+    ...((theme.isDefault && !isAlt) || ((theme as ColorTheme & { isDefaultAlt?: boolean }).isDefaultAlt && isAlt)
       ? [':root', `.et-theme${stringSuffix}--default`]
       : []),
     `.et-theme${stringSuffix}--${cssThemeName}`,
@@ -217,7 +217,9 @@ export const createTailwindColorThemes = (themes: ColorTheme[], prefix = 'et') =
 export const provideColorThemes = (themes: ColorTheme[]) => {
   if (isDevMode()) {
     const defaultCount = themes.filter((theme) => theme.isDefault).length;
-    const defaultAltCount = themes.filter((theme) => theme.isDefaultAlt).length;
+    const defaultAltCount = themes.filter(
+      (theme) => (theme as ColorTheme & { isDefaultAlt?: boolean }).isDefaultAlt,
+    ).length;
 
     if (defaultCount === 0) {
       console.warn(
@@ -243,5 +245,5 @@ export const provideColorThemes = (themes: ColorTheme[]) => {
 
   createRootThemeCss(themes);
 
-  return [ɵProvideColorThemes(themes.map((theme) => theme.name)), ɵProvideColorThemesPrefix('et')];
+  return [ɵProvideColorThemes(themes), ɵProvideColorThemesPrefix('et')];
 };

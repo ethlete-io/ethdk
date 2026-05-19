@@ -125,7 +125,7 @@ export class ScrollableNavigationDirective {
 
   private manualActiveNavigationIndex = signal<number | null>(null);
 
-  navigation = computed<ScrollableNavigation>(
+  public navigation = computed<ScrollableNavigation>(
     () => {
       const allIntersections = this.scrollable.childIntersections();
       const manualActiveIndex = this.manualActiveNavigationIndex();
@@ -170,10 +170,10 @@ export class ScrollableNavigationDirective {
     },
   );
 
-  activeIndex = computed(() => this.navigation().activeIndex);
+  public activeIndex = computed(() => this.navigation().activeIndex);
 
   /** @internal */
-  dotsContainerStyleBindings = signalStyles(this.navigationDotsContainer, {
+  public dotsContainerStyleBindings = signalStyles(this.navigationDotsContainer, {
     transform: computed(() => {
       const activeIdx = this.navigation().activeIndex;
       const childCount = this.navigation().items.length;
@@ -224,7 +224,7 @@ export class ScrollableNavigationDirective {
       .subscribe();
   }
 
-  scrollToElementViaNavigation(elementIndex: number) {
+  public scrollToElementViaNavigation(elementIndex: number) {
     const element = this.scrollable.scrollableChildren()[elementIndex];
     if (!element) return;
 

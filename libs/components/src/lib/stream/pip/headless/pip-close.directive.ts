@@ -19,10 +19,10 @@ export class PipCloseDirective {
   private pipWindow = inject(PipWindowComponent, { optional: true });
   private tokenEntry = inject(PIP_ENTRY_TOKEN, { optional: true });
 
-  entry = input<StreamPipEntry>();
+  public entry = input<StreamPipEntry>();
   private pipManager = injectPipManager();
 
-  close(event: Event) {
+  public close(event: Event) {
     event.stopPropagation();
     const e = this.resolveEntry();
     if (e) {

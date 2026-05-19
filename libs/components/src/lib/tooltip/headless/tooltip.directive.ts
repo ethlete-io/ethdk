@@ -45,21 +45,21 @@ export class TooltipDirective {
   private colorProvider = inject(COLOR_PROVIDER, { optional: true });
   private surfaceProvider = inject(SURFACE_PROVIDER, { optional: true });
 
-  content = input<TooltipContent | null>(null, { alias: 'etTooltip' });
-  ariaDescription = input<string | null>(null, { alias: 'etTooltipAriaDescription' });
-  placement = input<Placement>('top');
-  fallbackPlacements = input<Placement[] | undefined>(undefined);
-  offset = input<OffsetOptions | null>(8);
-  arrowPadding = input<Padding | null>(8);
-  viewportPadding = input<Padding | null>(8);
-  showDelay = input(DEFAULT_TOOLTIP_DELAY);
-  disabled = input(false, { alias: 'etTooltipDisabled' });
+  public content = input<TooltipContent | null>(null, { alias: 'etTooltip' });
+  public ariaDescription = input<string | null>(null, { alias: 'etTooltipAriaDescription' });
+  public placement = input<Placement>('top');
+  public fallbackPlacements = input<Placement[] | undefined>(undefined);
+  public offset = input<OffsetOptions | null>(8);
+  public arrowPadding = input<Padding | null>(8);
+  public viewportPadding = input<Padding | null>(8);
+  public showDelay = input(DEFAULT_TOOLTIP_DELAY);
+  public disabled = input(false, { alias: 'etTooltipDisabled' });
   private overlayManager = injectOverlayManager();
   private focusVisibleTracker = injectFocusVisibleTracker();
   private renderer = injectRenderer();
 
   /** @internal */
-  overlayRef = signal<OverlayRef<TooltipComponent, unknown> | null>(null);
+  public overlayRef = signal<OverlayRef<TooltipComponent, unknown> | null>(null);
 
   private hasHover = signal(false);
   private hasFocus = signal(false);
@@ -110,7 +110,7 @@ export class TooltipDirective {
     });
   }
 
-  show() {
+  public show() {
     if (this.disabled()) {
       return;
     }
@@ -187,7 +187,7 @@ export class TooltipDirective {
       .subscribe();
   }
 
-  hide() {
+  public hide() {
     this.overlayRef()?.close(undefined, true);
   }
 

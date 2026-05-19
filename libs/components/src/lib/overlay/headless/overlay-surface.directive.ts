@@ -15,8 +15,7 @@ export type OverlaySurfaceContext = {
 })
 export class OverlaySurfaceDirective {
   private overlay = inject(OverlayDirective, { optional: true });
-  /** @internal */
-  private tpl = inject<TemplateRef<OverlaySurfaceContext>>(TemplateRef);
+  public templateRef = inject<TemplateRef<OverlaySurfaceContext>>(TemplateRef);
   private destroyRef = inject(DestroyRef);
 
   constructor() {
@@ -36,9 +35,5 @@ export class OverlaySurfaceDirective {
         }
       });
     }
-  }
-
-  get templateRef(): TemplateRef<OverlaySurfaceContext> {
-    return this.tpl;
   }
 }

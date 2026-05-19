@@ -30,10 +30,10 @@ export const YOUTUBE_PLAYER_SLOT_TOKEN = new InjectionToken<YoutubePlayerSlotDir
 export class YoutubePlayerSlotDirective {
   private params = inject(YoutubePlayerParamsDirective);
 
-  streamSlotPriority = input(false, { transform: booleanAttribute });
-  streamSlotOnPipBack = input<() => void>();
+  public streamSlotPriority = input(false, { transform: booleanAttribute });
+  public streamSlotOnPipBack = input<() => void>();
 
-  slot = createStreamPlayerSlot({
+  public slot = createStreamPlayerSlot({
     playerId: computed(() => `youtube-${this.params.videoId()}`),
     aspectRatio: 16 / 9,
     streamSlotPriority: this.streamSlotPriority,

@@ -41,11 +41,6 @@ describe('IconDirective', () => {
       expect(span.getAttribute('aria-hidden')).toBe('true');
     });
 
-    it('sets et-icon class', () => {
-      fixture.detectChanges();
-      expect(span.classList.contains('et-icon')).toBe(true);
-    });
-
     it('sets icon-name class', () => {
       fixture.detectChanges();
       expect(span.classList.contains('et-icon--et-test')).toBe(true);

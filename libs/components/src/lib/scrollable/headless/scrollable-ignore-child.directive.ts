@@ -7,5 +7,5 @@ import { Directive, input } from '@angular/core';
   },
 })
 export class ScrollableIgnoreChildDirective {
-  enabled = input(true);
+  public enabled = input(true);
 }

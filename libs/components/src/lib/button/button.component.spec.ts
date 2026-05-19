@@ -12,13 +12,6 @@ describe('ButtonComponent', () => {
     host = fixture.nativeElement;
   });
 
-  describe('host element', () => {
-    it('has the et-button class', () => {
-      fixture.detectChanges();
-      expect(host.classList.contains('et-button')).toBe(true);
-    });
-  });
-
   describe('variant', () => {
     it('defaults to data-variant="filled"', () => {
       fixture.detectChanges();

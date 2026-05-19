@@ -68,7 +68,7 @@ type FabVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS];
     FocusRingDirective,
     {
       directive: ProvideColorDirective,
-      inputs: ['etProvideColor:color', 'etProvideAltColor:altColor'],
+      inputs: ['etProvideColor:color'],
     },
   ],
   host: {
@@ -83,14 +83,14 @@ type FabVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS];
 export class FabComponent {
   protected buttonDir = inject(ButtonDirective);
 
-  variant = input<FabVariant>(BUTTON_VARIANTS.FILLED);
-  size = input<ButtonSize>(BUTTON_SIZES.MD);
-  expanded = input(false, { transform: booleanAttribute });
-  iconAlignment = input<ButtonIconAlignment>(BUTTON_ICON_ALIGNMENTS.START);
+  public variant = input<FabVariant>(BUTTON_VARIANTS.FILLED);
+  public size = input<ButtonSize>(BUTTON_SIZES.MD);
+  public expanded = input(false, { transform: booleanAttribute });
+  public iconAlignment = input<ButtonIconAlignment>(BUTTON_ICON_ALIGNMENTS.START);
 
-  canAnimate = createCanAnimateSignal();
+  public canAnimate = createCanAnimateSignal();
 
-  spinnerConfig = computed(() => BUTTON_SPINNER_CONFIG[this.size()]);
+  public spinnerConfig = computed(() => BUTTON_SPINNER_CONFIG[this.size()]);
 
-  expandedAttr = computed(() => (this.expanded() ? true : null));
+  public expandedAttr = computed(() => (this.expanded() ? true : null));
 }

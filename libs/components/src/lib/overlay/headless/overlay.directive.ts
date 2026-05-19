@@ -34,40 +34,40 @@ import { OverlayTriggerDirective } from './overlay-trigger.directive';
 export class OverlayDirective {
   private destroyRef = inject(DestroyRef);
 
-  mode = input<OverlayMode>('non-modal');
-  role = input<OverlayRole | undefined>(undefined);
-  open = model(false);
-  disabled = input(false);
-  disableClose = input(false);
-  autoFocus = input<OverlayAutoFocusTarget | string | false | undefined>(undefined);
-  restoreFocus = input(true);
-  hasBackdrop = input<boolean | undefined>(undefined);
-  closeOnEscape = input(true);
-  closeOnOutsidePointer = input(true);
-  hostClass = input<string | string[] | undefined>(undefined);
-  backdropClass = input<string | string[] | undefined>(undefined);
-  panelClass = input<string | string[] | undefined>(undefined);
-  placement = input<Placement>('bottom');
-  fallbackPlacements = input<Placement[] | undefined>(undefined);
-  offset = input<OffsetOptions | null>(8);
-  viewportPadding = input<Padding | null>(8);
-  autoResize = input(false);
-  shift = input(true);
-  autoHide = input(false);
-  autoCloseIfReferenceHidden = input(false);
-  mirrorWidth = input(false);
+  public mode = input<OverlayMode>('non-modal');
+  public role = input<OverlayRole | undefined>(undefined);
+  public open = model(false);
+  public disabled = input(false);
+  public disableClose = input(false);
+  public autoFocus = input<OverlayAutoFocusTarget | string | false | undefined>(undefined);
+  public restoreFocus = input(true);
+  public hasBackdrop = input<boolean | undefined>(undefined);
+  public closeOnEscape = input(true);
+  public closeOnOutsidePointer = input(true);
+  public hostClass = input<string | string[] | undefined>(undefined);
+  public backdropClass = input<string | string[] | undefined>(undefined);
+  public panelClass = input<string | string[] | undefined>(undefined);
+  public placement = input<Placement>('bottom');
+  public fallbackPlacements = input<Placement[] | undefined>(undefined);
+  public offset = input<OffsetOptions | null>(8);
+  public viewportPadding = input<Padding | null>(8);
+  public autoResize = input(false);
+  public shift = input(true);
+  public autoHide = input(false);
+  public autoCloseIfReferenceHidden = input(false);
+  public mirrorWidth = input(false);
   private overlayManager = injectOverlayManager();
 
   /** @internal */
-  registeredAnchor = signal<OverlayAnchorDirective | null>(null);
+  public registeredAnchor = signal<OverlayAnchorDirective | null>(null);
   /** @internal */
-  registeredSurface = signal<OverlaySurfaceDirective | null>(null);
+  public registeredSurface = signal<OverlaySurfaceDirective | null>(null);
   /** @internal */
-  registeredTrigger = signal<OverlayTriggerDirective | null>(null);
+  public registeredTrigger = signal<OverlayTriggerDirective | null>(null);
   /** @internal */
-  overlayRef = signal<OverlayRef<OverlayTemplateHostComponent, unknown> | null>(null);
+  public overlayRef = signal<OverlayRef<OverlayTemplateHostComponent, unknown> | null>(null);
 
-  isMounted = computed(() => this.overlayRef() !== null);
+  public isMounted = computed(() => this.overlayRef() !== null);
 
   private originElement = computed(() => {
     return (
@@ -122,7 +122,7 @@ export class OverlayDirective {
     }
   }
 
-  show() {
+  public show() {
     if (this.disabled()) {
       return;
     }
@@ -132,7 +132,7 @@ export class OverlayDirective {
     }
   }
 
-  hide(result?: unknown) {
+  public hide(result?: unknown) {
     this.overlayRef()?.close(result, true);
 
     if (this.open()) {
@@ -140,7 +140,7 @@ export class OverlayDirective {
     }
   }
 
-  toggle() {
+  public toggle() {
     if (this.open()) {
       this.hide();
 
@@ -151,21 +151,21 @@ export class OverlayDirective {
   }
 
   /** @internal */
-  unregisterTrigger(trigger: OverlayTriggerDirective) {
+  public unregisterTrigger(trigger: OverlayTriggerDirective) {
     if (this.registeredTrigger() === trigger) {
       this.registeredTrigger.set(null);
     }
   }
 
   /** @internal */
-  unregisterAnchor(anchor: OverlayAnchorDirective) {
+  public unregisterAnchor(anchor: OverlayAnchorDirective) {
     if (this.registeredAnchor() === anchor) {
       this.registeredAnchor.set(null);
     }
   }
 
   /** @internal */
-  unregisterSurface(surface: OverlaySurfaceDirective) {
+  public unregisterSurface(surface: OverlaySurfaceDirective) {
     if (this.registeredSurface() === surface) {
       this.registeredSurface.set(null);
     }

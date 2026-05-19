@@ -14,7 +14,7 @@ import { PIP_CHROME_REF_TOKEN } from './pip-chrome-ref.token';
 export class PipGridToggleDirective {
   protected chrome = inject(PIP_CHROME_REF_TOKEN, { optional: true });
 
-  toggle(event: Event) {
+  public toggle(event: Event) {
     event.stopPropagation();
     this.chrome?.animations.toggleMultiView();
   }

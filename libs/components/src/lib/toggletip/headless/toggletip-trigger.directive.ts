@@ -77,11 +77,11 @@ export class ToggletipTriggerDirective {
     });
   }
 
-  isOpen() {
+  public isOpen() {
     return this.toggletip?.open() ?? false;
   }
 
-  pressedVariant() {
+  public pressedVariant() {
     if (!this.isOpen()) {
       return null;
     }

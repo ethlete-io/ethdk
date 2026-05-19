@@ -154,7 +154,7 @@ export class StreamPlayerErrorComponent {
   private locale = injectLocale();
   private surfaceThemes = injectSurfaceThemes({ optional: true });
 
-  cardSurface = computed(() => {
+  public cardSurface = computed(() => {
     const themes = this.surfaceThemes;
     if (!themes) return null;
 
@@ -164,12 +164,12 @@ export class StreamPlayerErrorComponent {
     return resolveSurfaceByElevation(themes, type, elevation)?.name ?? null;
   });
 
-  heading = computed(() => this.config.transformer(this.config.heading, this.locale.currentLocale()));
-  description = computed(() => this.config.transformer(this.config.description, this.locale.currentLocale()));
-  retryLabel = computed(() => this.config.transformer(this.config.retryLabel, this.locale.currentLocale()));
-  retryButtonColor = computed(() => this.config.retryButtonColor);
+  public heading = computed(() => this.config.transformer(this.config.heading, this.locale.currentLocale()));
+  public description = computed(() => this.config.transformer(this.config.description, this.locale.currentLocale()));
+  public retryLabel = computed(() => this.config.transformer(this.config.retryLabel, this.locale.currentLocale()));
+  public retryButtonColor = computed(() => this.config.retryButtonColor);
 
-  retry() {
+  public retry() {
     this.errorDirective.context.retry();
   }
 }

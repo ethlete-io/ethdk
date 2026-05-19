@@ -87,7 +87,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
   ],
 })
 export class VimeoPlayerSlotStorybookComponent {
-  videoId = input<string | number>(148751763);
+  public videoId = input<string | number>(148751763);
 
   protected selectedIndex = signal(0);
 }

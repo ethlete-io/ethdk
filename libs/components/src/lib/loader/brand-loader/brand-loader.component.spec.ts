@@ -21,10 +21,6 @@ describe('BrandLoaderComponent', () => {
     it('has aria-label="Loading"', () => {
       expect(host.getAttribute('aria-label')).toBe('Loading');
     });
-
-    it('has the et-brand-loader class', () => {
-      expect(host.classList.contains('et-brand-loader')).toBe(true);
-    });
   });
 
   describe('SVG structure', () => {

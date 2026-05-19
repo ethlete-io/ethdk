@@ -20,6 +20,6 @@ import { StreamImports } from '../../stream.imports';
   imports: [StreamImports, JsonPipe],
 })
 export class YoutubePlayerStorybookComponent {
-  videoId = input('dQw4w9WgXcQ');
+  public videoId = input('dQw4w9WgXcQ');
   protected player = viewChild.required(YoutubePlayerSlotComponent);
 }

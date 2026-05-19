@@ -20,6 +20,6 @@ import { StreamImports } from '../../stream.imports';
   imports: [StreamImports, JsonPipe],
 })
 export class TikTokPlayerStorybookComponent {
-  videoId = input('6718335390845095173');
+  public videoId = input('6718335390845095173');
   protected player = viewChild.required(TikTokPlayerSlotComponent);
 }

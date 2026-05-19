@@ -111,11 +111,11 @@ const WINDOW_CONTROL_BUTTON_EXAMPLES = [
   imports: [...BUTTON_IMPORTS],
 })
 export class ButtonTextStorybookComponent {
-  color = input('brand');
-  disabled = input(false, { transform: booleanAttribute });
-  loading = input(false, { transform: booleanAttribute });
+  public color = input('brand');
+  public disabled = input(false, { transform: booleanAttribute });
+  public loading = input(false, { transform: booleanAttribute });
 
-  readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
+  public readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
 }
 
 @Component({
@@ -150,13 +150,13 @@ export class ButtonTextStorybookComponent {
   imports: [...BUTTON_IMPORTS],
 })
 export class ButtonSurfaceStorybookComponent {
-  color = input('brand');
-  disabled = input(false, { transform: booleanAttribute });
-  loading = input(false, { transform: booleanAttribute });
-  pressed = input(false, { transform: booleanAttribute });
+  public color = input('brand');
+  public disabled = input(false, { transform: booleanAttribute });
+  public loading = input(false, { transform: booleanAttribute });
+  public pressed = input(false, { transform: booleanAttribute });
 
-  readonly VARIANTS = SURFACE_VARIANTS;
-  readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
+  public readonly VARIANTS = SURFACE_VARIANTS;
+  public readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
 }
 
 @Component({
@@ -193,13 +193,13 @@ export class ButtonSurfaceStorybookComponent {
   providers: [provideIcons(ARROW_RIGHT_ICON, CLIPBOARD_CHECK_ICON, FLOPPY_DISK_ICON, PENCIL_ICON, PLUS_ICON)],
 })
 export class ButtonIconStorybookComponent {
-  color = input('brand');
-  disabled = input(false, { transform: booleanAttribute });
-  loading = input(false, { transform: booleanAttribute });
-  pressed = input(false, { transform: booleanAttribute });
+  public color = input('brand');
+  public disabled = input(false, { transform: booleanAttribute });
+  public loading = input(false, { transform: booleanAttribute });
+  public pressed = input(false, { transform: booleanAttribute });
 
-  readonly VARIANTS = SURFACE_VARIANTS;
-  readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
+  public readonly VARIANTS = SURFACE_VARIANTS;
+  public readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
 }
 
 @Component({
@@ -256,16 +256,16 @@ export class ButtonIconStorybookComponent {
   providers: [provideIcons(ARROW_RIGHT_ICON, CLIPBOARD_CHECK_ICON, FLOPPY_DISK_ICON, PENCIL_ICON, PLUS_ICON)],
 })
 export class ButtonFabStorybookComponent {
-  color = input('brand');
-  disabled = input(false, { transform: booleanAttribute });
-  loading = input(false, { transform: booleanAttribute });
+  public color = input('brand');
+  public disabled = input(false, { transform: booleanAttribute });
+  public loading = input(false, { transform: booleanAttribute });
 
-  readonly VARIANTS = SURFACE_VARIANTS;
-  readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
+  public readonly VARIANTS = SURFACE_VARIANTS;
+  public readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
 
-  expandedSize = signal<string | null>(null);
+  public expandedSize = signal<string | null>(null);
 
-  toggleExpanded(size: string) {
+  public toggleExpanded(size: string) {
     this.expandedSize.update((current) => (current === size ? null : size));
   }
 }
@@ -322,13 +322,13 @@ export class ButtonFabStorybookComponent {
   providers: [provideIcons(ARROW_OUT_UP_RIGHT_ICON, FOCUS_FRAME_ICON, GRID_2X2_ICON, TIMES_ICON)],
 })
 export class ButtonWindowControlStorybookComponent {
-  color = input('brand');
-  disabled = input(false, { transform: booleanAttribute });
-  loading = input(false, { transform: booleanAttribute });
-  pressed = input(false, { transform: booleanAttribute });
+  public color = input('brand');
+  public disabled = input(false, { transform: booleanAttribute });
+  public loading = input(false, { transform: booleanAttribute });
+  public pressed = input(false, { transform: booleanAttribute });
 
-  readonly BUTTON_EXAMPLES = WINDOW_CONTROL_BUTTON_EXAMPLES;
-  readonly CLOSE_KIND = WINDOW_CONTROL_BUTTON_KINDS.CLOSE;
+  public readonly BUTTON_EXAMPLES = WINDOW_CONTROL_BUTTON_EXAMPLES;
+  public readonly CLOSE_KIND = WINDOW_CONTROL_BUTTON_KINDS.CLOSE;
 }
 
 @Component({
@@ -370,13 +370,13 @@ export class ButtonWindowControlStorybookComponent {
   providers: [provideIcons(ARROW_RIGHT_ICON, CLIPBOARD_CHECK_ICON, FLOPPY_DISK_ICON, PENCIL_ICON, PLUS_ICON)],
 })
 export class ButtonSurfaceIconStorybookComponent {
-  color = input('brand');
-  disabled = input(false, { transform: booleanAttribute });
-  loading = input(false, { transform: booleanAttribute });
+  public color = input('brand');
+  public disabled = input(false, { transform: booleanAttribute });
+  public loading = input(false, { transform: booleanAttribute });
 
-  readonly VARIANTS = SURFACE_VARIANTS;
-  readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
-  readonly ICON_ALIGNMENTS = ICON_ALIGNMENTS;
+  public readonly VARIANTS = SURFACE_VARIANTS;
+  public readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
+  public readonly ICON_ALIGNMENTS = ICON_ALIGNMENTS;
 }
 
 @Component({
@@ -412,10 +412,10 @@ export class ButtonSurfaceIconStorybookComponent {
   providers: [provideIcons(ARROW_RIGHT_ICON, CLIPBOARD_CHECK_ICON, FLOPPY_DISK_ICON, PENCIL_ICON, PLUS_ICON)],
 })
 export class ButtonTextIconStorybookComponent {
-  color = input('brand');
-  disabled = input(false, { transform: booleanAttribute });
-  loading = input(false, { transform: booleanAttribute });
+  public color = input('brand');
+  public disabled = input(false, { transform: booleanAttribute });
+  public loading = input(false, { transform: booleanAttribute });
 
-  readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
-  readonly ICON_ALIGNMENTS = ICON_ALIGNMENTS;
+  public readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
+  public readonly ICON_ALIGNMENTS = ICON_ALIGNMENTS;
 }

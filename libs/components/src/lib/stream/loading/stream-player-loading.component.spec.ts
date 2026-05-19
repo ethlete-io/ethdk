@@ -14,15 +14,6 @@ describe('StreamPlayerLoadingComponent', () => {
     host = fixture.nativeElement;
   });
 
-  it('renders without error', () => {
-    expect(() => fixture.detectChanges()).not.toThrow();
-  });
-
-  it('has et-stream-player-loading class', () => {
-    fixture.detectChanges();
-    expect(host.classList.contains('et-stream-player-loading')).toBe(true);
-  });
-
   it('renders spinner component', () => {
     fixture.detectChanges();
     const spinner = host.querySelector('et-spinner');

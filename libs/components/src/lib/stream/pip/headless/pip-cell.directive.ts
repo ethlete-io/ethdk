@@ -23,7 +23,7 @@ import { PipCellData } from './pip-chrome-state';
 export class PipCellDirective {
   private chrome = inject(PIP_CHROME_REF_TOKEN);
 
-  cell = input.required<PipCellData>({ alias: 'etPipCell' });
+  public cell = input.required<PipCellData>({ alias: 'etPipCell' });
 
   constructor() {
     const elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -37,7 +37,7 @@ export class PipCellDirective {
     });
   }
 
-  selectCell() {
+  public selectCell() {
     this.chrome.animations.selectCell(this.cell().playerId);
   }
 }

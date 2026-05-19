@@ -11,8 +11,8 @@ import { ScrollableScrollOrigin } from './scrollable.types';
 export class ScrollableSnapDirective {
   private scrollable = inject(ScrollableDirective);
 
-  enabled = input(true);
-  snapOrigin = input<ScrollableScrollOrigin>('auto');
+  public enabled = input(true);
+  public snapOrigin = input<ScrollableScrollOrigin>('auto');
 
   constructor() {
     this.scrollable.activateChildIntersections();

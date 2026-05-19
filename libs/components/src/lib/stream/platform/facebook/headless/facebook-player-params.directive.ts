@@ -5,13 +5,13 @@ import { STREAM_PLAYER_PARAMS_TOKEN, StreamPlayerParams } from '../../../stream-
   providers: [{ provide: STREAM_PLAYER_PARAMS_TOKEN, useExisting: FacebookPlayerParamsDirective }],
 })
 export class FacebookPlayerParamsDirective implements StreamPlayerParams {
-  videoId = input.required<string>();
-  width = input<string | number>('100%');
-  height = input<string | number>('100%');
+  public videoId = input.required<string>();
+  public width = input<string | number>('100%');
+  public height = input<string | number>('100%');
 
-  playerId = computed(() => `facebook-${this.videoId()}`);
+  public playerId = computed(() => `facebook-${this.videoId()}`);
 
-  createBindings() {
+  public createBindings() {
     return [
       inputBinding('videoId', () => this.videoId()),
       inputBinding('width', () => this.width()),

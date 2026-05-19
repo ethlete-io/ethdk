@@ -46,7 +46,7 @@ export class NotificationStorybookComponent {
   private destroyRef = inject(DestroyRef);
   protected manager = injectNotificationManager();
 
-  openSuccess() {
+  public openSuccess() {
     this.manager.open({
       status: 'success',
       title: 'Changes saved',
@@ -54,7 +54,7 @@ export class NotificationStorybookComponent {
     });
   }
 
-  openInfo() {
+  public openInfo() {
     this.manager.open({
       status: 'info',
       title: 'Update available',
@@ -62,7 +62,7 @@ export class NotificationStorybookComponent {
     });
   }
 
-  openError() {
+  public openError() {
     this.manager.open({
       status: 'error',
       title: 'Upload failed',
@@ -70,11 +70,11 @@ export class NotificationStorybookComponent {
     });
   }
 
-  openLoading() {
+  public openLoading() {
     this.manager.open({ status: 'loading', title: 'Uploading…', message: 'Please wait.' });
   }
 
-  openWithAction() {
+  public openWithAction() {
     this.manager.open({
       status: 'info',
       title: 'File deleted',
@@ -83,7 +83,7 @@ export class NotificationStorybookComponent {
     });
   }
 
-  openWithMessage() {
+  public openWithMessage() {
     this.manager.open({
       status: 'success',
       title: 'Profile updated',
@@ -91,7 +91,7 @@ export class NotificationStorybookComponent {
     });
   }
 
-  openWithUpdate() {
+  public openWithUpdate() {
     const ref = this.manager.open({
       status: 'loading',
       title: 'Working on it…',

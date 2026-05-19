@@ -118,35 +118,35 @@ const SCROLLABLE_ITEMS = Array.from({ length: 7 }, (_, i) => ({
   `,
 })
 export class ScrollableStorybookComponent {
-  color = input<string | null>(null);
-  itemSize = input<ScrollableItemSize>('auto');
-  direction = input<ScrollableDirection>('horizontal');
-  scrollableRole = input<string>();
-  scrollableClass = input<string | null>(null);
-  renderMasks = input(true);
-  maskVariant = input<ScrollableMaskVariant>('gradient');
-  renderButtons = input(true);
-  renderScrollbars = input(false);
-  stickyButtons = input(false);
-  cursorDragScroll = input(true);
-  snap = input(false);
-  renderNavigation = input(false);
-  buttonPosition = input<ScrollableButtonPosition>('inside');
-  scrollOrigin = input<ScrollableScrollOrigin>('auto');
-  scrollMode = input<ScrollableScrollMode>('container');
-  scrollMargin = input(0);
-  darkenNonIntersectingItems = input(false);
+  public color = input<string | null>(null);
+  public itemSize = input<ScrollableItemSize>('auto');
+  public direction = input<ScrollableDirection>('horizontal');
+  public scrollableRole = input<string>();
+  public scrollableClass = input<string | null>(null);
+  public renderMasks = input(true);
+  public maskVariant = input<ScrollableMaskVariant>('gradient');
+  public renderButtons = input(true);
+  public renderScrollbars = input(false);
+  public stickyButtons = input(false);
+  public cursorDragScroll = input(true);
+  public snap = input(false);
+  public renderNavigation = input(false);
+  public buttonPosition = input<ScrollableButtonPosition>('inside');
+  public scrollOrigin = input<ScrollableScrollOrigin>('auto');
+  public scrollMode = input<ScrollableScrollMode>('container');
+  public scrollMargin = input(0);
+  public darkenNonIntersectingItems = input(false);
 
-  scrollable = viewChild.required(ScrollableComponent);
-  makeScrollable = signal(true);
-  readonly ITEMS = SCROLLABLE_ITEMS;
+  public scrollable = viewChild.required(ScrollableComponent);
+  public makeScrollable = signal(true);
+  public readonly ITEMS = SCROLLABLE_ITEMS;
 
-  scrollToIndex(index: number) {
+  public scrollToIndex(index: number) {
     this.scrollable().scrollableDir.scrollToElementByIndex({ index });
   }
 
   // eslint-disable-next-line ethlete/no-trivial-wrapper-method
-  doClick(item: number) {
+  public doClick(item: number) {
     alert(item);
   }
 }

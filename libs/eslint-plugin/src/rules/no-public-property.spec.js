@@ -26,5 +26,20 @@ tester.run('no-public-property', rule, {
       output: `class Foo { readonly value = 1; }`,
       errors: [{ messageId: 'noPublicProperty' }],
     },
+    {
+      code: `
+        @Component({ template: '{{ themeClass() }}' })
+        class Foo {
+          public themeClass = computed(() => 'x');
+        }
+      `,
+      output: `
+        @Component({ template: '{{ themeClass() }}' })
+        class Foo {
+          protected themeClass = computed(() => 'x');
+        }
+      `,
+      errors: [{ messageId: 'shouldBeProtected', data: { name: 'themeClass' } }],
+    },
   ],
 });

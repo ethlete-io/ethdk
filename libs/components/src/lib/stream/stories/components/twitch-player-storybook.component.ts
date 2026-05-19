@@ -20,7 +20,7 @@ import { StreamImports } from '../../stream.imports';
   imports: [StreamImports, JsonPipe],
 })
 export class TwitchPlayerStorybookComponent {
-  src = input.required<string>();
-  autoplay = input(false);
+  public src = input.required<string>();
+  public autoplay = input(false);
   protected player = viewChild.required(TwitchPlayerSlotComponent);
 }

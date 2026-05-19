@@ -82,7 +82,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
   ],
 })
 export class FacebookPlayerSlotStorybookComponent {
-  videoId = input('10155364627206729');
+  public videoId = input('10155364627206729');
 
   protected selectedIndex = signal(0);
 }

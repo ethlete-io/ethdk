@@ -20,6 +20,6 @@ import { StreamImports } from '../../stream.imports';
   imports: [StreamImports, JsonPipe],
 })
 export class KickPlayerStorybookComponent {
-  channel = input('xqc');
+  public channel = input('xqc');
   protected player = viewChild.required(KickPlayerSlotComponent);
 }

@@ -8,9 +8,9 @@ import { ScrollableDirective } from './scrollable.directive';
 export class ScrollableDragDirective {
   private scrollable = inject(ScrollableDirective);
 
-  enabled = input(true);
+  public enabled = input(true);
 
-  cursorDragScrollState = useCursorDragScroll(this.scrollable.getScrollContainerRef(), {
+  public cursorDragScrollState = useCursorDragScroll(this.scrollable.getScrollContainerRef(), {
     enabled: this.enabled,
     allowedDirection: this.scrollable.direction,
   });

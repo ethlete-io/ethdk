@@ -39,14 +39,14 @@ let nextId = 0;
   },
 })
 export class BrandLoaderComponent {
-  readonly PATH = BRAND_E_PATH;
-  readonly OUTLINE_PATH = BRAND_E_OUTLINE_PATH;
+  public readonly PATH = BRAND_E_PATH;
+  public readonly OUTLINE_PATH = BRAND_E_OUTLINE_PATH;
 
-  readonly SHAPE_CLIP_ID = `et-brand-loader-shape-${nextId}`;
-  shapeClip = `url(#${this.SHAPE_CLIP_ID})`;
+  public readonly SHAPE_CLIP_ID = `et-brand-loader-shape-${nextId}`;
+  public shapeClip = `url(#${this.SHAPE_CLIP_ID})`;
 
-  readonly FILL_CLIP_ID = `et-brand-loader-fill-${nextId}`;
-  fillClip = `url(#${this.FILL_CLIP_ID})`;
+  public readonly FILL_CLIP_ID = `et-brand-loader-fill-${nextId}`;
+  public fillClip = `url(#${this.FILL_CLIP_ID})`;
 
   constructor() {
     nextId++;

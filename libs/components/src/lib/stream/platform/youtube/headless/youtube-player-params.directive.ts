@@ -5,14 +5,14 @@ import { STREAM_PLAYER_PARAMS_TOKEN, StreamPlayerParams } from '../../../stream-
   providers: [{ provide: STREAM_PLAYER_PARAMS_TOKEN, useExisting: YoutubePlayerParamsDirective }],
 })
 export class YoutubePlayerParamsDirective implements StreamPlayerParams {
-  videoId = input.required<string>();
-  startTime = input(0, { transform: numberAttribute });
-  width = input<string | number>('100%');
-  height = input<string | number>('100%');
+  public videoId = input.required<string>();
+  public startTime = input(0, { transform: numberAttribute });
+  public width = input<string | number>('100%');
+  public height = input<string | number>('100%');
 
-  playerId = computed(() => `youtube-${this.videoId()}`);
+  public playerId = computed(() => `youtube-${this.videoId()}`);
 
-  createBindings() {
+  public createBindings() {
     return [
       inputBinding('videoId', () => this.videoId()),
       inputBinding('startTime', () => this.startTime()),

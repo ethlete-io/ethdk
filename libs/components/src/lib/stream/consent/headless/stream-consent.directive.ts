@@ -17,9 +17,9 @@ export class StreamConsentDirective {
   private handler = injectStreamUserConsentProvider();
   private localGranted = signal(false);
 
-  isGranted = this.handler ? computed(() => (this.handler as ConsentHandler).isGranted()) : this.localGranted;
+  public isGranted = this.handler ? computed(() => (this.handler as ConsentHandler).isGranted()) : this.localGranted;
 
-  grant() {
+  public grant() {
     if (this.handler) {
       this.handler.grant();
     } else {
@@ -27,7 +27,7 @@ export class StreamConsentDirective {
     }
   }
 
-  revoke() {
+  public revoke() {
     if (this.handler) {
       this.handler.revoke?.();
     } else {

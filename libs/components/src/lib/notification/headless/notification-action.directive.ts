@@ -28,7 +28,7 @@ export class NotificationActionDirective {
     }
   }
 
-  runAction() {
+  public runAction() {
     this.notification?.action()?.handler();
     this.notification?.ref().dismiss();
   }

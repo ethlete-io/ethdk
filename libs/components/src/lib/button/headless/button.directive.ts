@@ -25,14 +25,14 @@ type ButtonType = (typeof BUTTON_TYPES)[keyof typeof BUTTON_TYPES];
 export class ButtonDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  disabled = input(false, { transform: booleanAttribute });
-  loading = input(false, { transform: booleanAttribute });
-  type = input<ButtonType>('button');
-  pressed = input(false, { transform: booleanAttribute });
-  emitAriaPressed = input(true, { transform: booleanAttribute });
+  public disabled = input(false, { transform: booleanAttribute });
+  public loading = input(false, { transform: booleanAttribute });
+  public type = input<ButtonType>('button');
+  public pressed = input(false, { transform: booleanAttribute });
+  public emitAriaPressed = input(true, { transform: booleanAttribute });
 
-  readonly IS_BUTTON = this.elementRef.nativeElement.tagName === 'BUTTON';
-  readonly IS_ANCHOR = this.elementRef.nativeElement.tagName === 'A';
+  public readonly IS_BUTTON = this.elementRef.nativeElement.tagName === 'BUTTON';
+  public readonly IS_ANCHOR = this.elementRef.nativeElement.tagName === 'A';
 
-  isInactive = computed(() => this.disabled() || this.loading());
+  public isInactive = computed(() => this.disabled() || this.loading());
 }

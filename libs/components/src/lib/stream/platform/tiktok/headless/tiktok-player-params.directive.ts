@@ -5,15 +5,15 @@ import { STREAM_PLAYER_PARAMS_TOKEN, StreamPlayerParams } from '../../../stream-
   providers: [{ provide: STREAM_PLAYER_PARAMS_TOKEN, useExisting: TikTokPlayerParamsDirective }],
 })
 export class TikTokPlayerParamsDirective implements StreamPlayerParams {
-  videoId = input.required<string>();
-  width = input<string | number>('100%');
-  height = input<string | number>('100%');
+  public videoId = input.required<string>();
+  public width = input<string | number>('100%');
+  public height = input<string | number>('100%');
 
-  readonly ASPECT_RATIO = 9 / 16;
+  public readonly ASPECT_RATIO = 9 / 16;
 
-  playerId = computed(() => `tiktok-${this.videoId()}`);
+  public playerId = computed(() => `tiktok-${this.videoId()}`);
 
-  createBindings() {
+  public createBindings() {
     return [
       inputBinding('videoId', () => this.videoId()),
       inputBinding('width', () => this.width()),

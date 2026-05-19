@@ -92,7 +92,7 @@ import { TabComponent } from './tab.component';
     },
     {
       directive: ProvideColorDirective,
-      inputs: ['etProvideColor:color', 'etProvideAltColor:altColor'],
+      inputs: ['etProvideColor:color'],
     },
     {
       directive: TabBarDirective,
@@ -375,12 +375,12 @@ import { TabComponent } from './tab.component';
 export class TabGroupComponent {
   protected tabGroup = inject(TabGroupDirective);
 
-  size = input<TabSize>(TAB_SIZES.MD);
-  tabs = contentChildren(TabComponent);
+  public size = input<TabSize>(TAB_SIZES.MD);
+  public tabs = contentChildren(TabComponent);
   protected triggerElements = computed(() => this.tabGroup.tabBar.triggers());
 
   /** @internal */
-  tabGroupId = this.tabGroup.tabBar.ID;
+  public tabGroupId = this.tabGroup.tabBar.ID;
 
   protected isPanelHidden(index: number) {
     if (this.tabGroup.preserveContent()) {

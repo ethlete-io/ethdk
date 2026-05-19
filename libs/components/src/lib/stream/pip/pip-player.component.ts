@@ -53,18 +53,22 @@ export class PipPlayerComponent {
   private el = inject(ElementRef<HTMLElement>);
   protected pipCell = inject(PipCellDirective, { optional: true });
 
-  entry = input<StreamPipEntry>();
-  showThumbnail = input<boolean>();
+  public entry = input<StreamPipEntry>();
+  public showThumbnail = input<boolean>();
   private streamManager = injectStreamManager();
   private pipManager = injectPipManager();
   private renderer = injectRenderer();
-  isReady = signal(false);
+  public isReady = signal(false);
 
-  resolvedEntry = computed(() => this.entry() ?? this.pipCell?.cell().pip ?? (null as unknown as StreamPipEntry));
+  public resolvedEntry = computed(
+    () => this.entry() ?? this.pipCell?.cell().pip ?? (null as unknown as StreamPipEntry),
+  );
 
-  thumbnailUrl = computed(() => this.resolvedEntry().thumbnail?.() ?? null);
+  public thumbnailUrl = computed(() => this.resolvedEntry().thumbnail?.() ?? null);
 
-  isThumbVisible = computed(() => this.showThumbnail() ?? (this.pipCell ? !this.pipCell.cell().isFeatured : false));
+  public isThumbVisible = computed(
+    () => this.showThumbnail() ?? (this.pipCell ? !this.pipCell.cell().isFeatured : false),
+  );
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.pipManager.parkPlayerElement(this.resolvedEntry().playerId));

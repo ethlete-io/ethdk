@@ -9,9 +9,9 @@ import {
   input,
   isDevMode,
   runInInjectionContext,
+  signal,
   untracked,
 } from '@angular/core';
-import { setInputSignal } from '../utils';
 import {
   createCssSurfaceName,
   injectSurfaceThemes,
@@ -20,6 +20,10 @@ import {
 } from './surface-theme.util';
 
 export const SURFACE_PROVIDER = new InjectionToken<ProvideSurfaceDirective>('SurfaceProvider');
+
+const FORCED_SURFACE_UNSET = Symbol('FORCED_SURFACE_UNSET');
+
+type ForcedSurfaceState = string | null | typeof FORCED_SURFACE_UNSET;
 
 @Directive({
   selector: '[etProvideSurface]',
@@ -34,11 +38,22 @@ export class ProvideSurfaceDirective {
   private injector = inject(Injector);
 
   private currentProviderSync: EffectRef | null = null;
+  private forcedSurface = signal<ForcedSurfaceState>(FORCED_SURFACE_UNSET);
 
   surface = input<string | null>(undefined, { alias: 'etProvideSurface' });
 
+  effectiveSurface = computed(() => {
+    const forcedSurface = this.forcedSurface();
+
+    if (forcedSurface !== FORCED_SURFACE_UNSET) {
+      return forcedSurface;
+    }
+
+    return this.surface();
+  });
+
   resolvedTheme = computed<SurfaceTheme | null>(() => {
-    const value = this.surface();
+    const value = this.effectiveSurface();
 
     if (!this.themes || !value) return null;
 
@@ -58,7 +73,7 @@ export class ProvideSurfaceDirective {
   surfaceType = computed(() => this.resolvedTheme()?.type ?? null);
 
   surfaceName = computed(() => {
-    const value = this.surface();
+    const value = this.effectiveSurface();
 
     if (!this.themes || !value) return;
 
@@ -80,17 +95,43 @@ export class ProvideSurfaceDirective {
 
     runInInjectionContext(this.injector, () => {
       this.currentProviderSync = effect(() => {
-        const provideSurface = provider.surface();
+        const provideSurface = provider.effectiveSurface();
 
         untracked(() => {
-          setInputSignal(this.surface, provideSurface);
+          if (provideSurface === undefined) {
+            this.clearForcedSurface();
+
+            return;
+          }
+
+          this.forceSurface(provideSurface);
         });
       });
     });
   }
 
   stopSyncWithProvider() {
+    const hadProviderSync = !!this.currentProviderSync;
+
     this.currentProviderSync?.destroy();
     this.currentProviderSync = null;
+
+    if (hadProviderSync) {
+      this.clearForcedSurface();
+    }
+  }
+
+  /** @internal */
+  forceSurface(surface: string | null) {
+    this.forcedSurface.set(surface);
+  }
+
+  /** @internal */
+  clearForcedSurface() {
+    if (this.forcedSurface() === FORCED_SURFACE_UNSET) {
+      return;
+    }
+
+    this.forcedSurface.set(FORCED_SURFACE_UNSET);
   }
 }

@@ -141,26 +141,6 @@
   --color-et-theme-ink-focus: rgb(var(--et-color-primary-ink-focus));
   --color-et-theme-ink-active: rgb(var(--et-color-primary-ink-active));
   --color-et-theme-ink-disabled: rgb(var(--et-color-primary-ink-disabled));
-
-  /* Alt theme dynamic colors */
-
-  --color-et-alt-theme: rgb(var(--et-color-alt-primary));
-  --color-et-alt-theme-hover: rgb(var(--et-color-alt-primary-hover));
-  --color-et-alt-theme-focus: rgb(var(--et-color-alt-primary-focus));
-  --color-et-alt-theme-active: rgb(var(--et-color-alt-primary-active));
-  --color-et-alt-theme-disabled: rgb(var(--et-color-alt-primary-disabled));
-
-  --color-et-on-alt-theme: rgb(var(--et-color-on-alt-primary));
-  --color-et-on-alt-theme-hover: rgb(var(--et-color-on-alt-primary-hover));
-  --color-et-on-alt-theme-focus: rgb(var(--et-color-on-alt-primary-focus));
-  --color-et-on-alt-theme-active: rgb(var(--et-color-on-alt-primary-active));
-  --color-et-on-alt-theme-disabled: rgb(var(--et-color-on-alt-primary-disabled));
-
-  --color-et-alt-theme-ink: rgb(var(--et-color-alt-primary-ink));
-  --color-et-alt-theme-ink-hover: rgb(var(--et-color-alt-primary-ink-hover));
-  --color-et-alt-theme-ink-focus: rgb(var(--et-color-alt-primary-ink-focus));
-  --color-et-alt-theme-ink-active: rgb(var(--et-color-alt-primary-ink-active));
-  --color-et-alt-theme-ink-disabled: rgb(var(--et-color-alt-primary-ink-disabled));
 }
 
 @layer base {
@@ -186,26 +166,6 @@
     --et-color-primary-ink-disabled: 0 255 161;
   }
 
-  .et-color-alt--brand {
-    --et-color-alt-primary: 0 255 161;
-    --et-color-alt-primary-hover: 76 247 184;
-    --et-color-alt-primary-focus: 76 247 184;
-    --et-color-alt-primary-active: 0 198 126;
-    --et-color-alt-primary-disabled: 0 122 77;
-
-    --et-color-alt-on-primary: 0 0 0;
-    --et-color-alt-on-primary-hover: 0 0 0;
-    --et-color-alt-on-primary-focus: 0 0 0;
-    --et-color-alt-on-primary-active: 0 0 0;
-    --et-color-alt-on-primary-disabled: 0 36 23;
-
-    --et-color-alt-primary-ink: 0 255 161;
-    --et-color-alt-primary-ink-hover: 0 255 161;
-    --et-color-alt-primary-ink-focus: 0 255 161;
-    --et-color-alt-primary-ink-active: 0 255 161;
-    --et-color-alt-primary-ink-disabled: 0 255 161;
-  }
-
   .et-color--danger {
     --et-color-primary: 220 38 38;
     --et-color-primary-hover: 239 68 68;
@@ -224,26 +184,6 @@
     --et-color-primary-ink-focus: 220 38 38;
     --et-color-primary-ink-active: 220 38 38;
     --et-color-primary-ink-disabled: 220 38 38;
-  }
-
-  .et-color-alt--danger {
-    --et-color-alt-primary: 220 38 38;
-    --et-color-alt-primary-hover: 239 68 68;
-    --et-color-alt-primary-focus: 239 68 68;
-    --et-color-alt-primary-active: 185 28 28;
-    --et-color-alt-primary-disabled: 120 52 52;
-
-    --et-color-alt-on-primary: 255 255 255;
-    --et-color-alt-on-primary-hover: 255 255 255;
-    --et-color-alt-on-primary-focus: 255 255 255;
-    --et-color-alt-on-primary-active: 255 255 255;
-    --et-color-alt-on-primary-disabled: 255 220 220;
-
-    --et-color-alt-primary-ink: 220 38 38;
-    --et-color-alt-primary-ink-hover: 220 38 38;
-    --et-color-alt-primary-ink-focus: 220 38 38;
-    --et-color-alt-primary-ink-active: 220 38 38;
-    --et-color-alt-primary-ink-disabled: 220 38 38;
   }
 
   .et-color--success {
@@ -266,26 +206,6 @@
     --et-color-primary-ink-disabled: 22 163 74;
   }
 
-  .et-color-alt--success {
-    --et-color-alt-primary: 22 163 74;
-    --et-color-alt-primary-hover: 34 197 94;
-    --et-color-alt-primary-focus: 34 197 94;
-    --et-color-alt-primary-active: 21 128 61;
-    --et-color-alt-primary-disabled: 46 111 68;
-
-    --et-color-alt-on-primary: 255 255 255;
-    --et-color-alt-on-primary-hover: 255 255 255;
-    --et-color-alt-on-primary-focus: 255 255 255;
-    --et-color-alt-on-primary-active: 255 255 255;
-    --et-color-alt-on-primary-disabled: 221 247 231;
-
-    --et-color-alt-primary-ink: 22 163 74;
-    --et-color-alt-primary-ink-hover: 22 163 74;
-    --et-color-alt-primary-ink-focus: 22 163 74;
-    --et-color-alt-primary-ink-active: 22 163 74;
-    --et-color-alt-primary-ink-disabled: 22 163 74;
-  }
-
   .et-color--warning {
     --et-color-primary: 217 119 6;
     --et-color-primary-hover: 245 158 11;
@@ -304,26 +224,6 @@
     --et-color-primary-ink-focus: 217 119 6;
     --et-color-primary-ink-active: 217 119 6;
     --et-color-primary-ink-disabled: 217 119 6;
-  }
-
-  .et-color-alt--warning {
-    --et-color-alt-primary: 217 119 6;
-    --et-color-alt-primary-hover: 245 158 11;
-    --et-color-alt-primary-focus: 245 158 11;
-    --et-color-alt-primary-active: 180 83 9;
-    --et-color-alt-primary-disabled: 133 77 14;
-
-    --et-color-alt-on-primary: 255 255 255;
-    --et-color-alt-on-primary-hover: 255 255 255;
-    --et-color-alt-on-primary-focus: 255 255 255;
-    --et-color-alt-on-primary-active: 255 255 255;
-    --et-color-alt-on-primary-disabled: 255 237 213;
-
-    --et-color-alt-primary-ink: 217 119 6;
-    --et-color-alt-primary-ink-hover: 217 119 6;
-    --et-color-alt-primary-ink-focus: 217 119 6;
-    --et-color-alt-primary-ink-active: 217 119 6;
-    --et-color-alt-primary-ink-disabled: 217 119 6;
   }
 
   .et-color--neutral {
@@ -346,26 +246,6 @@
     --et-color-primary-ink-disabled: 161 161 161;
   }
 
-  .et-color-alt--neutral {
-    --et-color-alt-primary: 82 82 82;
-    --et-color-alt-primary-hover: 115 115 115;
-    --et-color-alt-primary-focus: 115 115 115;
-    --et-color-alt-primary-active: 64 64 64;
-    --et-color-alt-primary-disabled: 64 64 64;
-
-    --et-color-alt-on-primary: 255 255 255;
-    --et-color-alt-on-primary-hover: 255 255 255;
-    --et-color-alt-on-primary-focus: 255 255 255;
-    --et-color-alt-on-primary-active: 255 255 255;
-    --et-color-alt-on-primary-disabled: 212 212 212;
-
-    --et-color-alt-primary-ink: 229 229 229;
-    --et-color-alt-primary-ink-hover: 245 245 245;
-    --et-color-alt-primary-ink-focus: 245 245 245;
-    --et-color-alt-primary-ink-active: 212 212 212;
-    --et-color-alt-primary-ink-disabled: 161 161 161;
-  }
-
   .et-color--neutral-dark {
     --et-color-primary: 23 23 23;
     --et-color-primary-hover: 38 38 38;
@@ -384,26 +264,6 @@
     --et-color-primary-ink-focus: 38 38 38;
     --et-color-primary-ink-active: 10 10 10;
     --et-color-primary-ink-disabled: 115 115 115;
-  }
-
-  .et-color-alt--neutral-dark {
-    --et-color-alt-primary: 23 23 23;
-    --et-color-alt-primary-hover: 38 38 38;
-    --et-color-alt-primary-focus: 38 38 38;
-    --et-color-alt-primary-active: 10 10 10;
-    --et-color-alt-primary-disabled: 64 64 64;
-
-    --et-color-alt-on-primary: 255 255 255;
-    --et-color-alt-on-primary-hover: 255 255 255;
-    --et-color-alt-on-primary-focus: 255 255 255;
-    --et-color-alt-on-primary-active: 255 255 255;
-    --et-color-alt-on-primary-disabled: 212 212 212;
-
-    --et-color-alt-primary-ink: 23 23 23;
-    --et-color-alt-primary-ink-hover: 38 38 38;
-    --et-color-alt-primary-ink-focus: 38 38 38;
-    --et-color-alt-primary-ink-active: 10 10 10;
-    --et-color-alt-primary-ink-disabled: 115 115 115;
   }
 }
 

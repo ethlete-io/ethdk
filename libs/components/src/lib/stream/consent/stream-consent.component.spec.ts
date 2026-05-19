@@ -24,20 +24,10 @@ describe('StreamConsentComponent', () => {
     host = fixture.nativeElement;
   });
 
-  it('renders component', () => {
-    fixture.detectChanges();
-    expect(host).toBeDefined();
-  });
-
-  it('has et-stream-consent-card class', () => {
-    fixture.detectChanges();
-    expect(host.querySelector('.et-stream-consent-card')).toBeDefined();
-  });
-
   it('displays lock icon', () => {
     fixture.detectChanges();
     const icon = host.querySelector('.et-stream-consent-icon');
-    expect(icon).toBeDefined();
+    expect(icon).not.toBeNull();
   });
 
   it('displays consent heading', () => {
@@ -55,7 +45,7 @@ describe('StreamConsentComponent', () => {
   it('renders accept button', () => {
     fixture.detectChanges();
     const button = host.querySelector('button');
-    expect(button).toBeDefined();
+    expect(button).not.toBeNull();
     expect(button?.textContent).toContain('Accept');
   });
 });

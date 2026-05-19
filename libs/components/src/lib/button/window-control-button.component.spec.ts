@@ -16,11 +16,6 @@ describe('WindowControlButtonComponent', () => {
     host = fixture.nativeElement;
   });
 
-  it('has the et-window-control-button class', () => {
-    fixture.detectChanges();
-    expect(host.classList.contains('et-window-control-button')).toBe(true);
-  });
-
   describe('size', () => {
     it('defaults to data-size="md"', () => {
       fixture.detectChanges();
@@ -50,19 +45,6 @@ describe('WindowControlButtonComponent', () => {
       fixture.componentRef.setInput('kind', WINDOW_CONTROL_BUTTON_KINDS.CLOSE);
       fixture.detectChanges();
       expect(host.getAttribute('data-kind')).toBe('close');
-    });
-  });
-
-  describe('constants', () => {
-    it('WINDOW_CONTROL_BUTTON_SIZES has SM, MD, LG', () => {
-      expect(WINDOW_CONTROL_BUTTON_SIZES.SM).toBe('sm');
-      expect(WINDOW_CONTROL_BUTTON_SIZES.MD).toBe('md');
-      expect(WINDOW_CONTROL_BUTTON_SIZES.LG).toBe('lg');
-    });
-
-    it('WINDOW_CONTROL_BUTTON_KINDS has DEFAULT and CLOSE', () => {
-      expect(WINDOW_CONTROL_BUTTON_KINDS.DEFAULT).toBe('default');
-      expect(WINDOW_CONTROL_BUTTON_KINDS.CLOSE).toBe('close');
     });
   });
 

@@ -14,7 +14,7 @@ export class TabBarUnderlineDirective {
   private trigger = inject(TAB_BAR_TRIGGER_TOKEN);
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  isActive = computed(() => this.tabBar.activeTrigger() === this.trigger);
+  public isActive = computed(() => this.tabBar.activeTrigger() === this.trigger);
 
   constructor() {
     effect(() => {

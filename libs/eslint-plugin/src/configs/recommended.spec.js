@@ -126,21 +126,97 @@ test('no-restricted-syntax: async arrow is flagged', () => {
   expect(msgs.some((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('async'))).toBe(true);
 });
 
-// ── no-restricted-syntax: public keyword ──────────────────────────────────────
+// ── explicit public opt-in ───────────────────────────────────────────────────
 
-test('no-restricted-syntax: public method is flagged', () => {
+test('explicit public method is valid', () => {
   const msgs = lint(`class Foo { public doWork() {} }`);
-  expect(msgs.some((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('public'))).toBe(true);
+  expect(ruleIds(msgs)).not.toContain('no-restricted-syntax');
 });
 
-test('no-public-property: public non-injected property is flagged', () => {
+test('explicit public property is valid', () => {
   const msgs = lint(`class Foo { public value = 1; }`);
-  expect(ruleIds(msgs)).toContain('ethlete/no-public-property');
+  expect(ruleIds(msgs)).not.toContain('ethlete/no-public-property');
 });
 
-test('no-public-property: public injected property is valid', () => {
+test('explicit public injected property is valid', () => {
   const msgs = lint(`class Foo { public service = inject(MyService); }`);
   expect(ruleIds(msgs)).not.toContain('ethlete/no-public-property');
+  expect(ruleIds(msgs)).not.toContain('ethlete/inject-member-accessibility');
+});
+
+test('no-redundant-internal: private member internal tag is flagged', () => {
+  const msgs = lint(`class Foo { /** @internal */ private service = inject(MyService); }`);
+  expect(ruleIds(msgs)).toContain('ethlete/no-redundant-internal');
+});
+
+test('no-redundant-internal: public member internal tag is flagged', () => {
+  const msgs = lint(`class Foo { /** @internal */ public service = inject(MyService); }`);
+  expect(ruleIds(msgs)).not.toContain('ethlete/no-redundant-internal');
+});
+
+test('template-member-accessibility: template member without explicit modifier is flagged', () => {
+  const msgs = lint(`
+    @Component({ template: '{{ themeClass() }}' })
+    class Foo {
+      themeClass = computed(() => 'x');
+    }
+  `);
+  expect(ruleIds(msgs)).toContain('ethlete/template-member-accessibility');
+});
+
+test('template-member-accessibility: explicit public template member is valid', () => {
+  const msgs = lint(`
+    @Component({ template: '{{ themeClass() }}' })
+    class Foo {
+      public themeClass = computed(() => 'x');
+    }
+  `);
+  expect(ruleIds(msgs)).not.toContain('ethlete/template-member-accessibility');
+});
+
+test('template-member-accessibility: implemented contract member requires explicit public', () => {
+  const msgs = lint(`
+    type PublicApi = {
+      activate(): void;
+    };
+
+    @Directive({})
+    class Foo implements PublicApi {
+      activate() {}
+    }
+  `);
+  expect(ruleIds(msgs)).toContain('ethlete/template-member-accessibility');
+});
+
+test('template-member-accessibility: implicit public angular member requires explicit public', () => {
+  const msgs = lint(`
+    @Directive({})
+    class Foo {
+      value = signal(false);
+    }
+  `);
+  expect(ruleIds(msgs)).toContain('ethlete/template-member-accessibility');
+});
+
+test('template-member-accessibility: implicit public angular member with internal tag still requires explicit public', () => {
+  const msgs = lint(`
+    @Directive({})
+    class Foo {
+      /** @internal */
+      value = signal(false);
+    }
+  `);
+  expect(ruleIds(msgs)).toContain('ethlete/template-member-accessibility');
+});
+
+test('template-member-accessibility: unnecessary protected member is flagged', () => {
+  const msgs = lint(`
+    @Component({ template: '' })
+    class Foo {
+      protected value = signal(false);
+    }
+  `);
+  expect(ruleIds(msgs)).toContain('ethlete/template-member-accessibility');
 });
 
 test('prefer-concise-angular-host-directives: directive-only object is flagged', () => {

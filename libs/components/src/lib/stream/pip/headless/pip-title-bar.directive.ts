@@ -18,5 +18,5 @@ export class PipTitleBarDirective {
   public dragHandle = inject(DragHandleDirective);
   private dims = signalHostElementDimensions();
 
-  titleBarH = computed(() => this.dims().client?.height ?? 32);
+  public titleBarH = computed(() => this.dims().client?.height ?? 32);
 }

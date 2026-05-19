@@ -17,7 +17,7 @@ export class NavTabLinkDirective {
 
   private routerLinkIsActive = signal(this.routerLinkActive.isActive ?? false);
 
-  isActive = computed(() => this.routerLinkIsActive());
+  public isActive = computed(() => this.routerLinkIsActive());
 
   constructor() {
     this.routerLinkActive.isActiveChange

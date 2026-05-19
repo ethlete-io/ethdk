@@ -62,13 +62,13 @@ const SIZES = Object.values(TAB_SIZES);
   providers: [provideIcons(GRID_2X2_ICON, PENCIL_ICON, PLUS_ICON)],
 })
 export class TabsStorybookComponent {
-  orientation = input<'horizontal' | 'vertical'>('horizontal');
-  variant = input<'primary' | 'secondary'>('secondary');
-  fit = input<'content' | 'fill'>('content');
-  divider = input(true);
-  disabled = input(false);
-  preserveContent = input(true);
-  sessionMemoryKey = input<string | null>(null);
-  color = input<string | null>('brand');
-  readonly SIZES = SIZES;
+  public orientation = input<'horizontal' | 'vertical'>('horizontal');
+  public variant = input<'primary' | 'secondary'>('secondary');
+  public fit = input<'content' | 'fill'>('content');
+  public divider = input(true);
+  public disabled = input(false);
+  public preserveContent = input(true);
+  public sessionMemoryKey = input<string | null>(null);
+  public color = input<string | null>('brand');
+  public readonly SIZES = SIZES;
 }

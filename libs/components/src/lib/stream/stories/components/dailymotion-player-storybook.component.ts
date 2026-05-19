@@ -20,6 +20,6 @@ import { StreamImports } from '../../stream.imports';
   imports: [StreamImports, JsonPipe],
 })
 export class DailymotionPlayerStorybookComponent {
-  videoId = input('x84sh87');
+  public videoId = input('x84sh87');
   protected player = viewChild.required(DailymotionPlayerSlotComponent);
 }

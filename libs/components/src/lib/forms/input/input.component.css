@@ -1,0 +1,35 @@
+et-input {
+  display: block;
+  flex: 1;
+  min-inline-size: 0;
+  color: inherit;
+
+  .et-input-native {
+    display: block;
+    inline-size: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font: inherit;
+    color: inherit;
+    caret-color: var(--et-theme-color-primary-solid, currentColor);
+    padding: 0;
+    min-width: 0;
+
+    &::placeholder {
+      color: color-mix(in srgb, currentColor 46%, transparent);
+    }
+
+    &[data-text-align='start'] {
+      text-align: start;
+    }
+
+    &[data-text-align='center'] {
+      text-align: center;
+    }
+
+    &[data-text-align='end'] {
+      text-align: end;
+    }
+  }
+}

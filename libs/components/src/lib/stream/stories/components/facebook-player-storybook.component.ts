@@ -20,6 +20,6 @@ import { StreamImports } from '../../stream.imports';
   imports: [StreamImports, JsonPipe],
 })
 export class FacebookPlayerStorybookComponent {
-  videoId = input('10155364627206729');
+  public videoId = input('10155364627206729');
   protected player = viewChild.required(FacebookPlayerSlotComponent);
 }

@@ -17,18 +17,18 @@ let nextPanelId = 0;
 export class TabPanelDirective {
   private tabGroup = inject(TAB_GROUP_TOKEN);
 
-  triggerId = input<string | null>(null);
-  readonly ID = `et-tab-panel-${nextPanelId++}`;
+  public triggerId = input<string | null>(null);
+  public readonly ID = `et-tab-panel-${nextPanelId++}`;
 
-  isActive = computed(() => {
+  public isActive = computed(() => {
     const idx = this.tabGroup.panels().indexOf(this);
 
     return idx === this.tabGroup.tabBar.selectedIndex();
   });
 
-  isInactive = computed(() => !this.isActive());
+  public isInactive = computed(() => !this.isActive());
 
-  isHidden = computed(() => {
+  public isHidden = computed(() => {
     if (this.tabGroup.preserveContent()) {
       return !this.isActive();
     }
@@ -36,7 +36,7 @@ export class TabPanelDirective {
     return false;
   });
 
-  shouldRender = computed(() => {
+  public shouldRender = computed(() => {
     if (this.tabGroup.preserveContent()) {
       return true;
     }

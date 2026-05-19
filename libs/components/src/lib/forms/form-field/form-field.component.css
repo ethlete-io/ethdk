@@ -1,0 +1,559 @@
+@property --et-form-field-gap {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 4px;
+}
+
+@property --et-form-field-control-border-radius {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 4px;
+}
+
+@property --et-form-field-control-border-width {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 1px;
+}
+
+@property --et-form-field-control-padding-block {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 8px;
+}
+
+@property --et-form-field-control-padding-inline {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 12px;
+}
+
+@property --et-form-field-control-font-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 14px;
+}
+
+@property --et-form-field-control-line-height {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1.5;
+}
+
+@property --et-form-field-control-affix-gap {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 8px;
+}
+
+@property --et-form-field-control-disabled-opacity {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0.5;
+}
+
+@property --et-form-field-control-min-height {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 40px;
+}
+
+@property --et-form-field-label-font-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 14px;
+}
+
+@property --et-form-field-error-font-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 12px;
+}
+
+@property --et-form-field-hint-font-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 12px;
+}
+
+@property --et-form-field-support-duration {
+  syntax: '<time>';
+  inherits: true;
+  initial-value: 180ms;
+}
+
+@property --et-form-field-support-offset {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 4px;
+}
+
+et-form-field {
+  --et-theme-color-primary-solid: rgb(var(--et-theme-color-primary-rgb));
+  --_et-form-field-control-background: transparent;
+  --_et-form-field-control-focus-ring: color-mix(in srgb, var(--et-theme-color-primary-solid) 18%, transparent);
+  --_et-form-field-floating-label-scale: 0.75;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--et-form-field-gap);
+  color: var(--et-surface-color-solid, currentColor);
+
+  &:where([data-size='sm']) {
+    --et-form-field-gap: 4px;
+    --et-form-field-control-border-radius: 4px;
+    --et-form-field-control-padding-block: 4px;
+    --et-form-field-control-padding-inline: 10px;
+    --et-form-field-control-affix-gap: 6px;
+    --et-form-field-control-font-size: 12px;
+    --et-form-field-control-min-height: 42px;
+    --et-form-field-label-font-size: 12px;
+  }
+
+  &:where([data-size='md']) {
+    --et-form-field-gap: 5px;
+    --et-form-field-control-border-radius: 5px;
+    --et-form-field-control-padding-block: 6px;
+    --et-form-field-control-padding-inline: 12px;
+    --et-form-field-control-affix-gap: 8px;
+    --et-form-field-control-font-size: 14px;
+    --et-form-field-control-min-height: 50px;
+    --et-form-field-label-font-size: 13px;
+  }
+
+  &:where([data-size='lg']) {
+    --et-form-field-gap: 6px;
+    --et-form-field-control-border-radius: 6px;
+    --et-form-field-control-padding-block: 8px;
+    --et-form-field-control-padding-inline: 14px;
+    --et-form-field-control-affix-gap: 10px;
+    --et-form-field-control-font-size: 16px;
+    --et-form-field-control-min-height: 58px;
+    --et-form-field-label-font-size: 14px;
+  }
+
+  &[data-fill='filled'] {
+    --_et-form-field-control-background: var(--et-surface-background-solid, var(--et-surface-base-solid, transparent));
+  }
+
+  .et-form-field-shell {
+    display: flex;
+    flex-direction: column;
+    gap: var(--et-form-field-gap);
+    min-inline-size: 0;
+    overflow: visible;
+  }
+
+  .et-form-field-label-area {
+    display: flex;
+    align-items: center;
+    font-size: var(--et-form-field-label-font-size);
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--et-surface-color-muted-solid, currentColor);
+    cursor: text;
+    user-select: none;
+    min-inline-size: 0;
+    transition:
+      color 150ms ease,
+      opacity 150ms ease;
+
+    et-label {
+      display: inline-flex;
+      align-items: center;
+      min-inline-size: 0;
+    }
+  }
+
+  .et-form-field-label-area--floating {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 0;
+    z-index: 1;
+    max-inline-size: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transform: translateY(-50%);
+    transform-origin: left top;
+    pointer-events: none;
+    transition:
+      color 150ms ease,
+      opacity 150ms ease,
+      inset-block-start 150ms ease,
+      inset-inline-start 150ms ease,
+      transform 150ms ease;
+  }
+
+  .et-form-field-control-frame {
+    position: relative;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    gap: var(--et-form-field-control-affix-gap);
+    min-inline-size: 0;
+    min-block-size: var(--et-form-field-control-min-height);
+    padding-block: var(--et-form-field-control-padding-block);
+    padding-inline: var(--et-form-field-control-padding-inline);
+    border: var(--et-form-field-control-border-width) solid
+      var(--_et-control-border, var(--et-surface-border-solid, currentColor));
+    border-radius: var(--et-form-field-control-border-radius);
+    background: var(--_et-form-field-control-background);
+    font-size: var(--et-form-field-control-font-size);
+    line-height: var(--et-form-field-control-line-height);
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      box-shadow 150ms ease,
+      opacity 150ms ease;
+    cursor: text;
+  }
+
+  .et-form-field-affix {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--et-surface-color-muted-solid, currentColor);
+    opacity: 0.78;
+    pointer-events: none;
+    transition:
+      color 150ms ease,
+      opacity 150ms ease;
+
+    &:empty {
+      display: none;
+    }
+
+    > * {
+      pointer-events: none;
+    }
+
+    > :is(button, a[href], input, select, textarea, summary, label, [role='button'], [tabindex]:not([tabindex='-1'])) {
+      pointer-events: auto;
+    }
+
+    button {
+      font: inherit;
+      color: inherit;
+      border: none;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+    }
+  }
+
+  .et-form-field-control-area {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-inline-size: 0;
+
+    > * {
+      min-inline-size: 0;
+    }
+  }
+
+  .et-form-field-control-slot {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-inline-size: 0;
+  }
+
+  &:where([data-control-type='text-input']) {
+    &[data-label-mode='static'] {
+      .et-form-field-shell {
+        padding-block-start: calc(var(--et-form-field-label-font-size) * 1.2 + var(--et-form-field-gap));
+      }
+
+      .et-form-field-control-area {
+        position: static;
+      }
+
+      .et-form-field-label-area {
+        position: absolute;
+        inset-block-start: 0;
+        inset-inline-start: var(--et-form-field-control-padding-inline);
+        transform: translateY(calc(-100% - var(--et-form-field-gap) - var(--et-form-field-control-border-width)));
+      }
+
+      &[data-appearance='underline'][data-fill='transparent'] .et-form-field-label-area {
+        inset-inline-start: 0;
+      }
+    }
+
+    &[data-label-mode='floating-inside'],
+    &[data-label-mode='floating-outside'] {
+      .et-input-native::placeholder {
+        transition: color 150ms ease;
+      }
+
+      &:not([data-label-floated]) .et-input-native::placeholder {
+        color: transparent;
+      }
+    }
+
+    &[data-label-mode='floating-outside'] {
+      .et-form-field-control-area {
+        align-self: stretch;
+        display: flex;
+        align-items: center;
+      }
+
+      .et-form-field-label-area--floating {
+        inset-inline-start: 0;
+      }
+
+      .et-form-field-shell {
+        padding-block-start: calc(var(--et-form-field-label-font-size) * 1.2 + var(--et-form-field-gap));
+      }
+
+      &[data-label-floated] .et-form-field-label-area--floating {
+        inset-block-start: 0;
+        inset-inline-start: calc(var(--_et-form-field-prefix-offset, 0px) * -1);
+        transform: translateY(
+          calc(
+            -100% - var(--et-form-field-gap) - var(--et-form-field-control-border-width) -
+              var(--et-form-field-control-padding-block)
+          )
+        );
+      }
+    }
+
+    &[data-label-mode='floating-inside'] {
+      --_et-form-field-float-inside-extra-padding: calc(
+        var(--et-form-field-label-font-size) * var(--_et-form-field-floating-label-scale) + 2px
+      );
+
+      .et-form-field-control-area {
+        align-self: stretch;
+        display: flex;
+        align-items: center;
+      }
+
+      .et-form-field-label-area--floating {
+        inset-inline-start: 0;
+      }
+
+      &[data-label-floated] {
+        .et-form-field-control-area {
+          padding-block-start: var(--_et-form-field-float-inside-extra-padding);
+        }
+
+        .et-form-field-label-area--floating {
+          inset-block-start: 4px;
+          transform: scale(var(--_et-form-field-floating-label-scale));
+        }
+      }
+
+      .et-form-field-control-slot {
+        font-size: calc(var(--et-form-field-control-font-size) * 0.96);
+      }
+    }
+
+    .et-form-field-label-area {
+      max-inline-size: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .et-form-field-control-frame:hover,
+    &:has(.et-form-field-label-area:hover) .et-form-field-control-frame {
+      border-color: var(--_et-control-border, var(--et-surface-interaction-hover-solid, currentColor));
+    }
+
+    &[data-error] {
+      .et-form-field-control-frame:hover,
+      &:has(.et-form-field-label-area:hover) .et-form-field-control-frame,
+      .et-form-field-control-frame {
+        border-color: var(--et-theme-color-primary-solid);
+      }
+    }
+
+    &:has(:focus) .et-form-field-control-frame {
+      --et-theme-color-primary-rgb: var(
+        --et-color-primary-focus,
+        var(--et-color-primary-hover, var(--et-color-primary))
+      );
+      border-color: var(--_et-control-border, var(--et-theme-color-primary-solid, highlight));
+    }
+
+    &:has(:focus) .et-form-field-label-area,
+    &:has(:focus) .et-form-field-affix {
+      color: var(--et-surface-color-solid, currentColor);
+      opacity: 1;
+    }
+
+    &:has(:disabled) {
+      .et-form-field-control-frame {
+        opacity: var(--et-form-field-control-disabled-opacity);
+        pointer-events: none;
+        box-shadow: none;
+      }
+
+      .et-form-field-label-area {
+        cursor: not-allowed;
+      }
+    }
+
+    &[data-appearance='underline'] {
+      .et-form-field-control-frame {
+        border-top: none;
+        border-inline: none;
+        border-radius: 0;
+        box-shadow: none;
+      }
+
+      &[data-fill='transparent'] {
+        .et-form-field-control-frame {
+          padding-inline: 0;
+        }
+      }
+    }
+  }
+
+  &:where([data-control-type='checkbox']) {
+    .et-form-field-shell {
+      padding-block-start: 0;
+    }
+
+    &:has([aria-disabled='true']) .et-form-field-label-area,
+    &:has(:disabled) .et-form-field-label-area {
+      cursor: not-allowed;
+    }
+
+    .et-form-field-control-frame {
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      min-block-size: auto;
+      cursor: default;
+    }
+
+    .et-form-field-control-area {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .et-form-field-label-area {
+      position: static;
+      order: 2;
+      transform: none;
+      cursor: pointer;
+    }
+
+    .et-form-field-control-slot {
+      order: 1;
+      flex: 0 0 auto;
+    }
+  }
+
+  .et-form-field-support {
+    overflow: clip;
+    block-size: 0;
+  }
+
+  .et-form-field-support-stack {
+    position: relative;
+    display: grid;
+  }
+
+  .et-form-field-support-content {
+    grid-area: 1 / 1;
+    min-inline-size: 0;
+    opacity: 0;
+    transform: translateY(0);
+
+    &[data-active] {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    &[data-state='leaving'][data-direction='to-above'] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transform: translateY(calc(var(--et-form-field-support-offset) * -1));
+      pointer-events: none;
+    }
+
+    &[data-state='leaving'][data-direction='to-below'] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transform: translateY(var(--et-form-field-support-offset));
+      pointer-events: none;
+    }
+  }
+
+  .et-form-field-errors {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: var(--et-form-field-error-font-size);
+    color: var(--_et-form-field-frozen-error-color, var(--et-theme-color-primary-solid));
+    padding-inline-start: calc(var(--et-form-field-control-padding-inline) - 2px);
+  }
+
+  .et-form-field-hint {
+    font-size: var(--et-form-field-hint-font-size);
+    color: var(--et-surface-color-muted-solid, currentColor);
+    padding-inline-start: calc(var(--et-form-field-control-padding-inline) - 2px);
+
+    &:empty {
+      display: none;
+    }
+  }
+
+  &[data-error] {
+    --_et-control-border: var(--et-theme-color-primary-solid);
+
+    .et-form-field-label-area {
+      color: var(--et-theme-color-primary-solid);
+    }
+  }
+
+  &[data-can-animate] {
+    .et-form-field-support {
+      transition: block-size var(--et-form-field-support-duration) ease;
+    }
+
+    .et-form-field-support-content {
+      transition:
+        opacity var(--et-form-field-support-duration) ease,
+        transform var(--et-form-field-support-duration) ease;
+
+      &[data-active][data-direction='from-above'] {
+        @starting-style {
+          opacity: 0;
+          transform: translateY(calc(var(--et-form-field-support-offset) * -1));
+        }
+      }
+
+      &[data-active][data-direction='from-below'] {
+        @starting-style {
+          opacity: 0;
+          transform: translateY(var(--et-form-field-support-offset));
+        }
+      }
+    }
+  }
+
+  &:has([aria-required='true']) .et-form-field-label-area et-label::after,
+  &:has([required]) .et-form-field-label-area et-label::after {
+    content: ' *';
+    color: var(--et-theme-color-primary-solid);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  et-form-field {
+    --et-form-field-support-duration: 1ms;
+    --et-form-field-support-offset: 0px;
+  }
+}

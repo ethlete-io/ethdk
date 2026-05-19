@@ -17,7 +17,7 @@ export class ScrollableDarkenDirective {
   );
 
   /** @internal */
-  nonFullIntersectingClassBindings = signalClasses(this.nonFullIntersecting, {
+  public nonFullIntersectingClassBindings = signalClasses(this.nonFullIntersecting, {
     'et-scrollable-item--not-intersecting': signal(true),
   });
 

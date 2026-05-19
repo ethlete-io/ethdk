@@ -87,7 +87,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
   ],
 })
 export class TikTokPlayerSlotStorybookComponent {
-  videoId = input('6718335390845095173');
+  public videoId = input('6718335390845095173');
 
   protected selectedIndex = signal(0);
 }

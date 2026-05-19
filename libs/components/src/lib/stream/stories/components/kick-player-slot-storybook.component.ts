@@ -87,7 +87,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
   ],
 })
 export class KickPlayerSlotStorybookComponent {
-  channel = input('xqc');
+  public channel = input('xqc');
 
   protected selectedIndex = signal(0);
 }

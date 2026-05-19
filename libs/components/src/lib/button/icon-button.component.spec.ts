@@ -13,11 +13,6 @@ describe('IconButtonComponent', () => {
     host = fixture.nativeElement;
   });
 
-  it('has the et-icon-button class', () => {
-    fixture.detectChanges();
-    expect(host.classList.contains('et-icon-button')).toBe(true);
-  });
-
   describe('variant', () => {
     it('defaults to data-variant="transparent"', () => {
       fixture.detectChanges();

@@ -102,29 +102,29 @@ const BASE_STROKE_WIDTH = 10;
   },
 })
 export class SpinnerComponent {
-  diameter = input(18, { transform: numberAttribute });
-  strokeWidth = input(2.25, { transform: numberAttribute });
-  track = input(false, { transform: booleanAttribute });
-  value = input(0, { transform: numberAttribute });
-  determinate = input(false, { transform: booleanAttribute });
+  public diameter = input(18, { transform: numberAttribute });
+  public strokeWidth = input(2.25, { transform: numberAttribute });
+  public track = input(false, { transform: booleanAttribute });
+  public value = input(0, { transform: numberAttribute });
+  public determinate = input(false, { transform: booleanAttribute });
 
-  circleRadius = computed(() => Math.max(1, (this.diameter() - BASE_STROKE_WIDTH) / 2));
+  public circleRadius = computed(() => Math.max(1, (this.diameter() - BASE_STROKE_WIDTH) / 2));
 
-  normalizedStrokeWidth = computed(() => (this.strokeWidth() / this.diameter()) * 100);
+  public normalizedStrokeWidth = computed(() => (this.strokeWidth() / this.diameter()) * 100);
 
-  viewBox = computed(() => {
+  public viewBox = computed(() => {
     const diameter = this.circleRadius() * 2 + this.strokeWidth();
 
     return `0 0 ${diameter} ${diameter}`;
   });
 
-  strokeCircumference = computed(() => 2 * Math.PI * this.circleRadius());
+  public strokeCircumference = computed(() => 2 * Math.PI * this.circleRadius());
 
-  circleStrokeWidth = computed(() => this.normalizedStrokeWidth());
+  public circleStrokeWidth = computed(() => this.normalizedStrokeWidth());
 
-  clampedValue = computed(() => Math.max(0, Math.min(100, this.value())));
+  public clampedValue = computed(() => Math.max(0, Math.min(100, this.value())));
 
-  determinateDashOffset = computed(() => {
+  public determinateDashOffset = computed(() => {
     const circumference = this.strokeCircumference();
 
     return circumference - (this.clampedValue() / 100) * circumference;

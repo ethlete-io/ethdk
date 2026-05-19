@@ -19,5 +19,5 @@ import { StreamImports } from '../../stream.imports';
   ],
 })
 export class YoutubePlayerSlotConsentStorybookComponent {
-  videoId = input('dQw4w9WgXcQ');
+  public videoId = input('dQw4w9WgXcQ');
 }

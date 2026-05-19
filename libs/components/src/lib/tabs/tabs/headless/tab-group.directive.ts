@@ -15,15 +15,15 @@ export class TabGroupDirective {
   public tabBar = inject(TabBarDirective);
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  preserveContent = input(true);
-  selectedIndex = model(0);
-  sessionMemoryKey = input<string | null>(null);
+  public preserveContent = input(true);
+  public selectedIndex = model(0);
+  public sessionMemoryKey = input<string | null>(null);
   private sessionMemoryAvailable = canUseSessionMemory();
 
   /** @internal */
-  panels = signal<TabPanelDirective[]>([]);
+  public panels = signal<TabPanelDirective[]>([]);
 
-  restoredSessionMemoryKey = signal('');
+  public restoredSessionMemoryKey = signal('');
 
   constructor() {
     effect(() => {
@@ -115,12 +115,12 @@ export class TabGroupDirective {
   }
 
   /** @internal */
-  registerPanel(panel: TabPanelDirective) {
+  public registerPanel(panel: TabPanelDirective) {
     this.panels.update((list) => [...list, panel]);
   }
 
   /** @internal */
-  unregisterPanel(panel: TabPanelDirective) {
+  public unregisterPanel(panel: TabPanelDirective) {
     this.panels.update((list) => list.filter((p) => p !== panel));
   }
 

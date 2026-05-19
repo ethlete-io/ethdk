@@ -136,7 +136,7 @@ export class PipSlotPlaceholderComponent {
   private locale = injectLocale();
   private surfaceThemes = injectSurfaceThemes({ optional: true });
 
-  cardSurface = computed(() => {
+  public cardSurface = computed(() => {
     const themes = this.surfaceThemes;
     if (!themes) return null;
 
@@ -146,15 +146,15 @@ export class PipSlotPlaceholderComponent {
     return resolveSurfaceByElevation(themes, type, elevation)?.name ?? null;
   });
 
-  isInPip = computed(() => {
+  public isInPip = computed(() => {
     const playerId = this.slotPlayerId();
     if (!playerId) return false;
     return this.pipManager.pips().some((p) => p.playerId === playerId);
   });
 
-  message = computed(() => this.config.transformer(this.config.message, this.locale.currentLocale()));
-  backLabel = computed(() => this.config.transformer(this.config.backLabel, this.locale.currentLocale()));
-  backButtonColor = computed(() => this.config.backButtonColor);
+  public message = computed(() => this.config.transformer(this.config.message, this.locale.currentLocale()));
+  public backLabel = computed(() => this.config.transformer(this.config.backLabel, this.locale.currentLocale()));
+  public backButtonColor = computed(() => this.config.backButtonColor);
 
   constructor() {
     effect(() => {

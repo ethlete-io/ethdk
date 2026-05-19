@@ -15,7 +15,7 @@ import { OverlayDirective } from './overlay.directive';
 export class OverlayTriggerDirective {
   private overlay = inject(OverlayDirective, { optional: true });
   private destroyRef = inject(DestroyRef);
-  private hostElement = inject<ElementRef<HTMLElement>>(ElementRef);
+  public elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   constructor() {
     this.overlay?.registeredTrigger.set(this);
@@ -36,19 +36,15 @@ export class OverlayTriggerDirective {
     }
   }
 
-  get elementRef() {
-    return this.hostElement;
-  }
-
-  toggle() {
+  public toggle() {
     this.overlay?.toggle();
   }
 
-  isOpen() {
+  public isOpen() {
     return this.overlay?.open() ?? false;
   }
 
-  expanded() {
+  public expanded() {
     return this.overlay?.open() ?? null;
   }
 }

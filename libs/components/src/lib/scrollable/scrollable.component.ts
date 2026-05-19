@@ -75,21 +75,21 @@ import {
 export class ScrollableComponent {
   public scrollableDir = inject(ScrollableDirective);
 
-  renderMasks = input(true);
-  maskVariant = input<ScrollableMaskVariant>('gradient');
-  renderButtons = input(true);
-  buttonPosition = input<ScrollableButtonPosition>('inside');
-  renderNavigation = input(false);
-  snap = input(false);
-  cursorDragScroll = input(true);
-  darkenNonIntersectingItems = input(false);
-  stickyButtons = input(false);
-  showLoadingTemplate = input(false);
-  loadingTemplatePosition = input<ScrollableLoadingTemplatePosition>('end');
-  scrollableRole = input<string | null>(null);
-  scrollableClass = input<string | null>(null);
+  public renderMasks = input(true);
+  public maskVariant = input<ScrollableMaskVariant>('gradient');
+  public renderButtons = input(true);
+  public buttonPosition = input<ScrollableButtonPosition>('inside');
+  public renderNavigation = input(false);
+  public snap = input(false);
+  public cursorDragScroll = input(true);
+  public darkenNonIntersectingItems = input(false);
+  public stickyButtons = input(false);
+  public showLoadingTemplate = input(false);
+  public loadingTemplatePosition = input<ScrollableLoadingTemplatePosition>('end');
+  public scrollableRole = input<string | null>(null);
+  public scrollableClass = input<string | null>(null);
 
-  intersectionChange = outputFromObservable<ScrollableIntersectionChange[]>(
+  public intersectionChange = outputFromObservable<ScrollableIntersectionChange[]>(
     toObservable(this.scrollableDir.childIntersections).pipe(
       takeUntilDestroyed(),
       debounceTime(50),
@@ -104,7 +104,7 @@ export class ScrollableComponent {
     ),
   );
 
-  scrollStateChange = outputFromObservable<ScrollableScrollState>(
+  public scrollStateChange = outputFromObservable<ScrollableScrollState>(
     toObservable(
       computed(() => ({
         canScroll: this.scrollableDir.canScroll(),
@@ -117,9 +117,9 @@ export class ScrollableComponent {
   private scrollContainerEl = viewChild<ElementRef<HTMLElement>>('scrollable');
   private scrollObserver = viewChild.required(ScrollObserverDirective);
 
-  renderButtonsInside = computed(() => this.buttonPosition() === 'inside' && this.renderButtons());
-  renderButtonsInFooter = computed(() => this.buttonPosition() === 'footer' && this.renderButtons());
-  canAnimate = createCanAnimateSignal();
+  public renderButtonsInside = computed(() => this.buttonPosition() === 'inside' && this.renderButtons());
+  public renderButtonsInFooter = computed(() => this.buttonPosition() === 'footer' && this.renderButtons());
+  public canAnimate = createCanAnimateSignal();
 
   constructor() {
     const scrollContainerEl$ = toObservable(this.scrollContainerEl);

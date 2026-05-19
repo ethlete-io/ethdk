@@ -10,14 +10,14 @@ const MATCH_CHANNEL = /(?:www\.|go\.)?twitch\.tv\/([a-zA-Z0-9_]+)/;
   providers: [{ provide: STREAM_PLAYER_PARAMS_TOKEN, useExisting: TwitchPlayerParamsDirective }],
 })
 export class TwitchPlayerParamsDirective implements StreamPlayerParams {
-  src = input.required<string>();
-  width = input<string | number>('100%');
-  height = input<string | number>('100%');
-  autoplay = input(false, { transform: booleanAttribute });
-  chat = input(false, { transform: booleanAttribute });
-  startTime = input(0, { transform: numberAttribute });
+  public src = input.required<string>();
+  public width = input<string | number>('100%');
+  public height = input<string | number>('100%');
+  public autoplay = input(false, { transform: booleanAttribute });
+  public chat = input(false, { transform: booleanAttribute });
+  public startTime = input(0, { transform: numberAttribute });
 
-  channel = computed(() => {
+  public channel = computed(() => {
     const s = this.src();
     if (MATCH_VIDEO.test(s)) return null;
     const m = s.match(MATCH_CHANNEL);
@@ -25,7 +25,7 @@ export class TwitchPlayerParamsDirective implements StreamPlayerParams {
     return /^\d+$/.test(s) ? null : s;
   });
 
-  video = computed(() => {
+  public video = computed(() => {
     const s = this.src();
     const m = s.match(MATCH_VIDEO);
     if (m) return m[1] ?? null;
@@ -33,12 +33,12 @@ export class TwitchPlayerParamsDirective implements StreamPlayerParams {
     return /^\d+$/.test(s) ? s : null;
   });
 
-  playerId = computed(() => {
+  public playerId = computed(() => {
     const c = this.channel();
     return c ? `twitch-channel-${c}` : `twitch-video-${this.video()}`;
   });
 
-  createBindings() {
+  public createBindings() {
     return [
       inputBinding('src', () => this.src()),
       inputBinding('width', () => this.width()),

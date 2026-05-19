@@ -87,7 +87,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
   ],
 })
 export class SoopPlayerSlotStorybookComponent {
-  userId = input<string | null>('kbsnews');
+  public userId = input<string | null>('kbsnews');
 
   protected selectedIndex = signal(0);
 }

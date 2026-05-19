@@ -87,7 +87,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
   ],
 })
 export class DailymotionPlayerSlotStorybookComponent {
-  videoId = input('x84sh87');
+  public videoId = input('x84sh87');
 
   protected selectedIndex = signal(0);
 }

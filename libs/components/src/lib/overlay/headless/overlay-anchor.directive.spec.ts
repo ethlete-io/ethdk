@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import '../../../test-helpers';
 import { OverlayAnchorDirective } from './overlay-anchor.directive';
 import { OverlaySurfaceDirective } from './overlay-surface.directive';
@@ -8,38 +9,44 @@ import { OverlayDirective } from './overlay.directive';
 @Component({
   template: `
     <div etOverlay>
-      <button etOverlayAnchor>Anchor</button>
+      @if (showAnchor) {
+        <button etOverlayAnchor type="button">Anchor</button>
+      }
+
       <ng-template etOverlaySurface>Surface</ng-template>
     </div>
   `,
   imports: [OverlayDirective, OverlayAnchorDirective, OverlaySurfaceDirective],
 })
-class AnchorTestHost {}
+class OverlayAnchorDirectiveTestHost {
+  showAnchor = true;
+}
 
 describe('OverlayAnchorDirective', () => {
-  let fixture: ComponentFixture<AnchorTestHost>;
-  let button: HTMLButtonElement;
+  let fixture: ComponentFixture<OverlayAnchorDirectiveTestHost>;
+  let overlayDirective: OverlayDirective;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [AnchorTestHost],
+      imports: [OverlayAnchorDirectiveTestHost],
     });
-    fixture = TestBed.createComponent(AnchorTestHost);
-    button = fixture.nativeElement.querySelector('button');
+
+    fixture = TestBed.createComponent(OverlayAnchorDirectiveTestHost);
+    fixture.detectChanges();
+    overlayDirective = fixture.debugElement.query(By.directive(OverlayDirective)).injector.get(OverlayDirective);
   });
 
-  it('renders anchor element as a button', () => {
-    fixture.detectChanges();
-    expect(button.tagName.toLowerCase()).toBe('button');
+  it('registers the anchor directive with the parent overlay', () => {
+    const anchorDirective = fixture.debugElement
+      .query(By.directive(OverlayAnchorDirective))
+      .injector.get(OverlayAnchorDirective);
+
+    expect(overlayDirective.registeredAnchor()).toBe(anchorDirective);
   });
 
-  it('has etOverlayAnchor attribute', () => {
-    fixture.detectChanges();
-    expect(button.getAttribute('etOverlayAnchor')).toBe('');
-  });
+  it('unregisters the anchor when the anchor element is removed', () => {
+    fixture.destroy();
 
-  it('has export name etOverlayAnchor', () => {
-    fixture.detectChanges();
-    expect(button.getAttribute('etOverlayAnchor')).toBe('');
+    expect(overlayDirective.registeredAnchor()).toBeNull();
   });
 });

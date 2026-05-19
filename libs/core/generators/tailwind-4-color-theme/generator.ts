@@ -39,10 +39,12 @@ export type ThemeSwatch = {
   inkColor?: ThemeInkColorMap;
 };
 
+type ColorThemeType = 'success' | 'warning' | 'error';
+
 type Theme = {
   name: string;
+  type?: ColorThemeType;
   isDefault?: boolean;
-  isDefaultAlt?: boolean;
   primary: ThemeSwatch;
   secondary?: ThemeSwatch;
   tertiary?: ThemeSwatch;
@@ -264,9 +266,9 @@ function parseThemeObject(obj: any, sourceFile: any): Theme {
         }
         break;
 
-      case 'isDefaultAlt':
-        if (initializer.isKind(SyntaxKind.TrueKeyword)) {
-          theme.isDefaultAlt = true;
+      case 'type':
+        if (initializer.isKind(SyntaxKind.StringLiteral)) {
+          theme.type = initializer.getLiteralValue() as ColorThemeType;
         }
         break;
 
@@ -289,8 +291,6 @@ function parseThemeObject(obj: any, sourceFile: any): Theme {
 
 function validateThemeConfiguration(themes: Theme[]): void {
   const defaultThemes = themes.filter((t) => t.isDefault);
-  const defaultAltThemes = themes.filter((t) => t.isDefaultAlt);
-  const bothDefaultAndAlt = themes.filter((t) => t.isDefault && t.isDefaultAlt);
 
   // Error: No default theme
   if (defaultThemes.length === 0) {
@@ -304,18 +304,22 @@ function validateThemeConfiguration(themes: Theme[]): void {
     );
   }
 
-  // Error: Theme has both isDefault and isDefaultAlt
-  if (bothDefaultAndAlt.length > 0) {
-    throw new Error(
-      `Theme "${bothDefaultAndAlt[0]!.name}" has both isDefault and isDefaultAlt set to true. A theme can only be one or the other`,
-    );
+  // Error: Duplicate theme types
+  const typedThemes = themes.filter((t) => t.type);
+  const typeMap = new Map<string, string[]>();
+
+  for (const theme of typedThemes) {
+    const existing = typeMap.get(theme.type!) || [];
+    existing.push(theme.name);
+    typeMap.set(theme.type!, existing);
   }
 
-  // Error: Multiple default alt themes
-  if (defaultAltThemes.length > 1) {
-    throw new Error(
-      `Multiple default alt themes found: ${defaultAltThemes.map((t) => t.name).join(', ')}. Only one theme can have isDefaultAlt: true`,
-    );
+  for (const [type, names] of typeMap) {
+    if (names.length > 1) {
+      throw new Error(
+        `Multiple themes with type "${type}" found: ${names.join(', ')}. Only one theme can have a given type`,
+      );
+    }
   }
 }
 
@@ -447,8 +451,7 @@ function generateTailwindThemeCss(themes: Theme[], prefix: string, schema: Gener
 
   // Validation is now done separately before this function is called
   const defaultThemes = themes.filter((t) => t.isDefault);
-  const defaultAltThemes = themes.filter((t) => t.isDefaultAlt);
-  const regularThemes = themes.filter((t) => !t.isDefault && !t.isDefaultAlt);
+  const regularThemes = themes.filter((t) => !t.isDefault);
 
   // Generate static Tailwind @theme block for each theme
   for (const theme of themes) {
@@ -488,14 +491,11 @@ function generateTailwindThemeCss(themes: Theme[], prefix: string, schema: Gener
 
   tailwindVars.push('');
 
-  // Generate dynamic theme variables - check main themes and alt themes separately
+  // Main theme dynamic colors
   const mainThemes = [...defaultThemes, ...regularThemes];
   const hasSecondary = mainThemes.some((t) => t.secondary);
   const hasTertiary = mainThemes.some((t) => t.tertiary);
-  const hasAltSecondary = defaultAltThemes.some((t) => t.secondary);
-  const hasAltTertiary = defaultAltThemes.some((t) => t.tertiary);
 
-  // Main theme dynamic colors
   tailwindVars.push('  /* Dynamic theme colors (references runtime CSS variables) */');
   addDynamicThemeColors(tailwindVars, prefix, 'theme', 'primary', true);
   addDynamicInkColors(tailwindVars, prefix, 'theme-ink', 'primary-ink');
@@ -508,53 +508,24 @@ function generateTailwindThemeCss(themes: Theme[], prefix: string, schema: Gener
     addDynamicThemeColors(tailwindVars, prefix, 'theme-tertiary', 'tertiary', false);
   }
 
-  // Alt theme dynamic colors
-  tailwindVars.push('  /* Alt theme dynamic colors */');
-  addDynamicThemeColors(tailwindVars, prefix, 'alt-theme', 'alt-primary', true);
-  addDynamicInkColors(tailwindVars, prefix, 'alt-theme-ink', 'alt-primary-ink');
-
-  if (hasAltSecondary) {
-    addDynamicThemeColors(tailwindVars, prefix, 'alt-theme-secondary', 'alt-secondary', false);
-  }
-
-  if (hasAltTertiary) {
-    addDynamicThemeColors(tailwindVars, prefix, 'alt-theme-tertiary', 'alt-tertiary', false);
-  }
-
-  // Generate runtime CSS for ALL themes (both main and alt variants)
+  // Generate runtime CSS for all themes
   themes.forEach((theme) => {
     const name = createCssThemeName(theme.name);
 
-    // Determine if this is the default or default-alt theme
+    // Determine if this is the default theme
     const isDefault = theme.isDefault;
-    const isDefaultAlt = theme.isDefaultAlt;
 
-    // Generate main color variant (.et-color--{name})
+    // Generate color variant (.et-color--{name})
     if (isDefault) {
       // Default color gets :root and .et-color--default selectors
       const selectors = [':root', `.${prefix}-color--default`, `.${prefix}-color--${name}`];
       themeVars.push(`${selectors.join(', ')} {`);
-    } else if (!isDefaultAlt) {
+    } else {
       // Regular colors just get their own class
       themeVars.push(`.${prefix}-color--${name} {`);
     }
 
-    if (isDefault || !isDefaultAlt) {
-      addThemeColorVariants(themeVars, prefix, '', theme);
-      themeVars.push('}\n');
-    }
-
-    // Generate alt color variant (.et-color-alt--{name})
-    if (isDefaultAlt) {
-      // Default alt color gets :root and .et-color-alt--default selectors
-      const selectors = [':root', `.${prefix}-color-alt--default`, `.${prefix}-color-alt--${name}`];
-      themeVars.push(`${selectors.join(', ')} {`);
-    } else {
-      // All colors (including default and regular) get an alt variant
-      themeVars.push(`.${prefix}-color-alt--${name} {`);
-    }
-
-    addThemeColorVariants(themeVars, prefix, 'alt-', theme);
+    addThemeColorVariants(themeVars, prefix, '', theme);
     themeVars.push('}\n');
   });
 

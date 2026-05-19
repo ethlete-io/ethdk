@@ -16,7 +16,6 @@ import {
   injectSurfaceContextTracker,
   injectSurfaceThemes,
   resolveSurfaceByElevation,
-  setInputSignal,
 } from '@ethlete/core';
 import { IconButtonComponent } from '../button/icon-button.component';
 import { TextButtonComponent } from '../button/text-button.component';
@@ -103,7 +102,13 @@ export class NotificationComponent {
       const theme = this.resolvedColor();
 
       untracked(() => {
-        setInputSignal(this.provideTheme.mainColor, theme);
+        if (theme) {
+          this.provideTheme.forceMainColor(theme);
+
+          return;
+        }
+
+        this.provideTheme.clearForcedMainColor();
       });
     });
 
@@ -111,7 +116,13 @@ export class NotificationComponent {
       const surface = this.resolvedSurface();
 
       untracked(() => {
-        setInputSignal(this.provideSurface.surface, surface?.name ?? null);
+        if (surface) {
+          this.provideSurface.forceSurface(surface.name);
+
+          return;
+        }
+
+        this.provideSurface.clearForcedSurface();
       });
     });
 

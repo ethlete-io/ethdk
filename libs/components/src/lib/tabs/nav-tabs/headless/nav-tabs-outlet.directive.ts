@@ -14,7 +14,7 @@ let nextOutletId = 0;
 export class NavTabsOutletDirective {
   private tabBar = inject(TabBarDirective);
 
-  readonly ID = `et-nav-tabs-outlet-${nextOutletId++}`;
+  public readonly ID = `et-nav-tabs-outlet-${nextOutletId++}`;
 
-  activeTriggerId = computed(() => this.tabBar.activeTrigger()?.ID ?? null);
+  public activeTriggerId = computed(() => this.tabBar.activeTrigger()?.ID ?? null);
 }

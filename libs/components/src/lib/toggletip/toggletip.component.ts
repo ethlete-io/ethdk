@@ -54,24 +54,24 @@ export class ToggletipComponent {
   private triggerSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
   protected injector = inject(Injector);
 
-  animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
+  public animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
 
   private surfaceThemes = injectSurfaceThemes({ optional: true });
   private data = injectOverlayData<ToggletipContentData>();
 
-  toggletipId = computed(() => this.data.id);
+  public toggletipId = computed(() => this.data.id);
   protected contentId = computed(() => this.data.contentId);
-  protected content = computed(() => this.data.content);
-  hasTemplate = computed(() => this.content() instanceof TemplateRef);
-  contentText = computed<string | null>(() => {
+  public content = computed(() => this.data.content);
+  public hasTemplate = computed(() => this.content() instanceof TemplateRef);
+  public contentText = computed<string | null>(() => {
     const content = this.content();
     return typeof content === 'string' ? content : null;
   });
-  contentTemplate = computed<TemplateRef<unknown> | null>(() => {
+  public contentTemplate = computed<TemplateRef<unknown> | null>(() => {
     const content = this.content();
     return content instanceof TemplateRef ? content : null;
   });
-  protected resolvedSurface = computed(() => {
+  public resolvedSurface = computed(() => {
     const themes = this.surfaceThemes;
     const parentSurfaceProvider = this.data.surfaceProvider ?? this.triggerSurfaceProvider ?? null;
 

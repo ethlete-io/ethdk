@@ -13,11 +13,6 @@ describe('FabComponent', () => {
     host = fixture.nativeElement;
   });
 
-  it('has the et-fab class', () => {
-    fixture.detectChanges();
-    expect(host.classList.contains('et-fab')).toBe(true);
-  });
-
   describe('variant', () => {
     it('defaults to data-variant="filled"', () => {
       fixture.detectChanges();

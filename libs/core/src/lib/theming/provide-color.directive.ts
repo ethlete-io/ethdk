@@ -9,12 +9,16 @@ import {
   input,
   isDevMode,
   runInInjectionContext,
+  signal,
   untracked,
 } from '@angular/core';
-import { setInputSignal } from '../utils';
-import { createCssColorThemeName, injectColorThemes, injectColorThemesPrefix } from './color-theme.util';
+import { ColorTheme, createCssColorThemeName, injectColorThemes, injectColorThemesPrefix } from './color-theme.util';
 
 export const COLOR_PROVIDER = new InjectionToken<ProvideColorDirective>('ColorProvider');
+
+const FORCED_MAIN_COLOR_UNSET = Symbol('FORCED_MAIN_COLOR_UNSET');
+
+type ForcedMainColorState = string | ColorTheme | null | typeof FORCED_MAIN_COLOR_UNSET;
 
 @Directive({
   selector: '[etProvideColor]',
@@ -29,51 +33,41 @@ export class ProvideColorDirective {
   private injector = inject(Injector);
 
   private currentProviderSync: EffectRef | null = null;
+  private forcedMainColor = signal<ForcedMainColorState>(FORCED_MAIN_COLOR_UNSET);
 
-  mainColor = input<string | null>(undefined, { alias: 'etProvideColor' });
-  altColor = input<string | null>(undefined, { alias: 'etProvideAltColor' });
+  mainColor = input<string | ColorTheme | null>(undefined, { alias: 'etProvideColor' });
 
-  mainColorName = computed(() => {
-    const value = this.mainColor();
+  effectiveMainColor = computed(() => {
+    const forcedMainColor = this.forcedMainColor();
 
-    if (!this.themes || !value) return;
-
-    if (isDevMode() && !this.themes?.some((theme) => theme === value) && value !== null) {
-      console.error(`Theme ${value} does not exist. Please make sure to add it to provideColorThemes()`);
+    if (forcedMainColor !== FORCED_MAIN_COLOR_UNSET) {
+      return forcedMainColor;
     }
 
-    return createCssColorThemeName(value);
+    return this.mainColor();
   });
 
-  altColorName = computed(() => {
-    const value = this.altColor();
+  mainColorName = computed(() => {
+    const raw = this.effectiveMainColor();
+    const value = typeof raw === 'object' && raw !== null ? raw.name : raw;
 
     if (!this.themes || !value) return;
 
-    if (isDevMode() && !this.themes?.some((theme) => theme === value) && value !== null) {
-      console.warn(`Theme ${value} does not exist. Please make sure to add it to provideColorThemes()`);
+    if (isDevMode() && !this.themes.some((theme) => theme.name === value) && value !== null) {
+      console.error(`Theme ${value} does not exist. Please make sure to add it to provideColorThemesWithTailwind4()`);
     }
 
     return createCssColorThemeName(value);
   });
 
   protected themeClass = computed(() => {
-    const themes: string[] = [];
     const prefix = this.prefix || 'et';
 
     if (this.mainColorName()) {
-      themes.push(`${prefix}-color--${this.mainColorName()}`);
+      return `${prefix}-color--${this.mainColorName()}`;
     }
 
-    if (this.altColorName()) {
-      themes.push(`${prefix}-color-alt--${this.altColorName()}`);
-    }
-
-    if (!themes.length) {
-      themes.push(`${prefix}-color--inherited`);
-    }
-
-    return themes.join(' ');
+    return `${prefix}-color--inherited`;
   });
 
   syncWithProvider(provider: ProvideColorDirective) {
@@ -81,19 +75,43 @@ export class ProvideColorDirective {
 
     runInInjectionContext(this.injector, () => {
       this.currentProviderSync = effect(() => {
-        const provideMainColor = provider.mainColor();
-        const provideAltColor = provider.altColor();
+        const provideMainColor = provider.effectiveMainColor();
 
         untracked(() => {
-          setInputSignal(this.mainColor, provideMainColor);
-          setInputSignal(this.altColor, provideAltColor);
+          if (provideMainColor === undefined) {
+            this.clearForcedMainColor();
+
+            return;
+          }
+
+          this.forceMainColor(provideMainColor);
         });
       });
     });
   }
 
   stopSyncWithProvider() {
+    const hadProviderSync = !!this.currentProviderSync;
+
     this.currentProviderSync?.destroy();
     this.currentProviderSync = null;
+
+    if (hadProviderSync) {
+      this.clearForcedMainColor();
+    }
+  }
+
+  /** @internal */
+  forceMainColor(color: string | ColorTheme | null) {
+    this.forcedMainColor.set(color);
+  }
+
+  /** @internal */
+  clearForcedMainColor() {
+    if (this.forcedMainColor() === FORCED_MAIN_COLOR_UNSET) {
+      return;
+    }
+
+    this.forcedMainColor.set(FORCED_MAIN_COLOR_UNSET);
   }
 }

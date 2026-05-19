@@ -28,7 +28,7 @@ export class VimeoPlayerDirective implements StreamPlayer {
   private scriptLoader = injectStreamScriptLoader();
   private renderer = injectRenderer();
 
-  readonly CAPABILITIES: StreamPlayerCapabilities = {
+  public readonly CAPABILITIES: StreamPlayerCapabilities = {
     canPlay: true,
     canPause: true,
     canMute: true,
@@ -38,8 +38,8 @@ export class VimeoPlayerDirective implements StreamPlayer {
     hasThumbnail: false,
   };
 
-  state = signal<StreamPlayerState>({ ...DEFAULT_STREAM_PLAYER_STATE });
-  thumbnail = signal<string | null>(null);
+  public state = signal<StreamPlayerState>({ ...DEFAULT_STREAM_PLAYER_STATE });
+  public thumbnail = signal<string | null>(null);
 
   private playerResource = rxResource({
     params: () => (isPlatformBrowser(this.platformId) ? this.params.videoId() : null),
@@ -173,27 +173,27 @@ export class VimeoPlayerDirective implements StreamPlayer {
     });
   }
 
-  play() {
+  public play() {
     this.playerResource.value()?.play();
   }
 
-  pause() {
+  public pause() {
     this.playerResource.value()?.pause();
   }
 
-  mute() {
+  public mute() {
     this.playerResource.value()?.setMuted(true);
   }
 
-  unmute() {
+  public unmute() {
     this.playerResource.value()?.setMuted(false);
   }
 
-  seek(seconds: number) {
+  public seek(seconds: number) {
     this.playerResource.value()?.setCurrentTime(seconds);
   }
 
-  retry() {
+  public retry() {
     this.playerResource.reload();
   }
 }

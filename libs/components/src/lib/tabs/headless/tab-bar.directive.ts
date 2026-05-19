@@ -27,26 +27,26 @@ let nextTabBarId = 0;
 export class TabBarDirective {
   private destroyRef = inject(DestroyRef);
 
-  orientation = input<TabBarOrientation>(TAB_BAR_ORIENTATIONS.HORIZONTAL);
-  fit = input<TabBarFit>(TAB_BAR_FITS.CONTENT);
-  variant = input<TabBarVariant>(TAB_BAR_VARIANTS.SECONDARY);
-  divider = input(true);
+  public orientation = input<TabBarOrientation>(TAB_BAR_ORIENTATIONS.HORIZONTAL);
+  public fit = input<TabBarFit>(TAB_BAR_FITS.CONTENT);
+  public variant = input<TabBarVariant>(TAB_BAR_VARIANTS.SECONDARY);
+  public divider = input(true);
   /** @internal */
-  triggers = signal<TabBarTriggerDirective[]>([]);
+  public triggers = signal<TabBarTriggerDirective[]>([]);
   /** @internal */
-  focusedIndex = signal(-1);
-  selectedIndex = signal(0);
+  public focusedIndex = signal(-1);
+  public selectedIndex = signal(0);
 
   /** @internal */
-  readonly ID = `et-tab-bar-${nextTabBarId++}`;
+  public readonly ID = `et-tab-bar-${nextTabBarId++}`;
 
   /** @internal */
-  lastActiveUnderlineElement = signal<HTMLElement | null>(null);
+  public lastActiveUnderlineElement = signal<HTMLElement | null>(null);
 
   /** @internal */
-  animationsReady = signal(false);
+  public animationsReady = signal(false);
 
-  activeTrigger = computed(() => {
+  public activeTrigger = computed(() => {
     const idx = this.selectedIndex();
     const all = this.triggers();
 
@@ -67,17 +67,17 @@ export class TabBarDirective {
   }
 
   /** @internal */
-  registerTrigger(trigger: TabBarTriggerDirective) {
+  public registerTrigger(trigger: TabBarTriggerDirective) {
     this.triggers.update((list) => [...list, trigger]);
   }
 
   /** @internal */
-  unregisterTrigger(trigger: TabBarTriggerDirective) {
+  public unregisterTrigger(trigger: TabBarTriggerDirective) {
     this.triggers.update((list) => list.filter((t) => t !== trigger));
   }
 
   /** @internal */
-  selectTrigger(trigger: TabBarTriggerDirective) {
+  public selectTrigger(trigger: TabBarTriggerDirective) {
     const idx = this.triggers().indexOf(trigger);
 
     if (idx !== -1) {
@@ -85,7 +85,7 @@ export class TabBarDirective {
     }
   }
 
-  handleKeydown(event: KeyboardEvent) {
+  public handleKeydown(event: KeyboardEvent) {
     const isHorizontal = this.orientation() === TAB_BAR_ORIENTATIONS.HORIZONTAL;
     const nextKey = isHorizontal ? 'ArrowRight' : 'ArrowDown';
     const prevKey = isHorizontal ? 'ArrowLeft' : 'ArrowUp';
@@ -108,7 +108,7 @@ export class TabBarDirective {
     }
   }
 
-  handleFocusout(event: FocusEvent) {
+  public handleFocusout(event: FocusEvent) {
     const relatedTarget = event.relatedTarget as HTMLElement | null;
     const triggers = this.triggers();
     const isFocusStillInBar = relatedTarget !== null && triggers.some((t) => t.getElement() === relatedTarget);

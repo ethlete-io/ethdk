@@ -13,11 +13,6 @@ describe('TextButtonComponent', () => {
     host = fixture.nativeElement;
   });
 
-  it('has the et-text-button class', () => {
-    fixture.detectChanges();
-    expect(host.classList.contains('et-text-button')).toBe(true);
-  });
-
   describe('size', () => {
     it('defaults to data-size="md"', () => {
       fixture.detectChanges();

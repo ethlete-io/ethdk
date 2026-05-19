@@ -9,7 +9,7 @@ export class ScrollableActiveChildDirective {
   private destroyRef = inject(DestroyRef);
 
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  isActiveChildEnabled = input(true, { alias: 'etScrollableActiveChild', transform: booleanAttribute });
+  public isActiveChildEnabled = input(true, { alias: 'etScrollableActiveChild', transform: booleanAttribute });
 
   private isActiveChildEnabledSignal = linkedSignal(() => this.isActiveChildEnabled());
 

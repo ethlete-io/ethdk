@@ -26,9 +26,9 @@ import { SpinnerComponent } from '../../spinner.component';
   imports: [SpinnerComponent],
 })
 export class SpinnerStorybookComponent {
-  diameter = input(45);
-  strokeWidth = input(2);
-  track = input(true);
-  determinate = input(false);
-  value = input(0);
+  public diameter = input(45);
+  public strokeWidth = input(2);
+  public track = input(true);
+  public determinate = input(false);
+  public value = input(0);
 }

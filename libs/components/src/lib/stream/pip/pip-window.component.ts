@@ -49,14 +49,14 @@ export class PipWindowComponent {
   protected dragHandle = computed(() => this.titleBar().dragHandle);
   protected titleBarH = computed(() => this.titleBar().titleBarH());
 
-  sizeState = createPipWindowSize({
+  public sizeState = createPipWindowSize({
     params: this.params,
     titleBarH: this.titleBarH,
   });
 
-  forcedTitleBar = signal(false);
+  public forcedTitleBar = signal(false);
 
-  posState = createPipWindowPosition({
+  public posState = createPipWindowPosition({
     params: this.params,
     titleBarH: this.titleBarH,
     size: this.sizeState,
@@ -65,5 +65,5 @@ export class PipWindowComponent {
     forcedTitleBar: this.forcedTitleBar,
   });
 
-  readonly RESIZE_EDGES: ResizeEdge[] = ['s', 'e', 'w', 'se', 'sw'];
+  public readonly RESIZE_EDGES: ResizeEdge[] = ['s', 'e', 'w', 'se', 'sw'];
 }

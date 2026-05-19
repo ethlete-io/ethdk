@@ -1,3 +1,4 @@
+export * from './color-interactive-container.directive';
 export * from './color-interactive.directive';
 export * from './color-theme.util';
 export * from './legacy-theming';

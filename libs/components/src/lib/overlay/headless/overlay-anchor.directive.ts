@@ -10,7 +10,7 @@ import { OverlayDirective } from './overlay.directive';
 export class OverlayAnchorDirective {
   private overlay = inject(OverlayDirective, { optional: true });
   private destroyRef = inject(DestroyRef);
-  private hostElement = inject<ElementRef<HTMLElement>>(ElementRef);
+  public elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   constructor() {
     this.overlay?.registeredAnchor.set(this);
@@ -29,9 +29,5 @@ export class OverlayAnchorDirective {
         }
       });
     }
-  }
-
-  get elementRef() {
-    return this.hostElement;
   }
 }

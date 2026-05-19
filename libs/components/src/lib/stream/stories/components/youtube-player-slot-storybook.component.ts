@@ -222,7 +222,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
   ],
 })
 export class YoutubePlayerSlotStorybookComponent {
-  videoId = input<string>('dQw4w9WgXcQ');
+  public videoId = input<string>('dQw4w9WgXcQ');
 
   protected selectedIndex = signal(0);
 }

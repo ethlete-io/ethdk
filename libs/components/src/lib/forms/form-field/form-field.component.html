@@ -1,0 +1,72 @@
+<div class="et-form-field-shell">
+  <div (mousedown)="handleFramePointerDown($event)" class="et-form-field-control-frame">
+    <div #prefixEl class="et-form-field-affix et-form-field-prefix">
+      <ng-content select="[etInputPrefix]" />
+    </div>
+
+    <div (mousedown)="handleFramePointerDown($event)" class="et-form-field-control-area">
+      @if (formFieldDir.usesTextFieldShell()) {
+        <div [class.et-form-field-label-area--floating]="hasFloatingTextLabel()" class="et-form-field-label-area">
+          <ng-content select="et-label" />
+        </div>
+      }
+
+      @if (!formFieldDir.usesTextFieldShell()) {
+        <div class="et-form-field-label-area">
+          <ng-content select="et-label" />
+        </div>
+      }
+
+      <div class="et-form-field-control-slot">
+        <ng-content />
+      </div>
+    </div>
+
+    <div class="et-form-field-affix et-form-field-suffix">
+      <ng-content select="[etInputSuffix]" />
+    </div>
+  </div>
+</div>
+
+@if (shouldRenderSupport()) {
+  <div [style.block-size.px]="supportHeight()" class="et-form-field-support">
+    <div class="et-form-field-support-stack">
+      @if (shouldRenderError()) {
+        <div
+          #errorContent
+          #errorAnimatable="etAnimatable"
+          [id]="formFieldDir.errorId()"
+          [attr.aria-atomic]="errorActive() ? 'true' : null"
+          [attr.aria-hidden]="errorHiddenFromAssistiveTech() ? 'true' : null"
+          [attr.aria-live]="errorActive() ? 'polite' : null"
+          [attr.data-active]="errorActive() || null"
+          [attr.data-direction]="errorDirection()"
+          [attr.data-state]="errorState()"
+          [style.--_et-form-field-frozen-error-color]="errorColor()"
+          class="et-form-field-support-content et-form-field-errors"
+          etAnimatable
+        >
+          @for (error of visibleErrors(); track $index) {
+            <et-form-error [error]="error" />
+          }
+        </div>
+      }
+
+      @if (shouldRenderHint()) {
+        <div
+          #hintContent
+          #hintAnimatable="etAnimatable"
+          [id]="formFieldDir.hintId()"
+          [attr.aria-hidden]="hintHiddenFromAssistiveTech() ? 'true' : null"
+          [attr.data-active]="hintActive() || null"
+          [attr.data-direction]="hintDirection()"
+          [attr.data-state]="hintState()"
+          class="et-form-field-support-content et-form-field-hint"
+          etAnimatable
+        >
+          <ng-content select="et-hint" />
+        </div>
+      }
+    </div>
+  </div>
+}

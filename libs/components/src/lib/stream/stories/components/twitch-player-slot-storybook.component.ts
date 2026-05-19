@@ -87,7 +87,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
   ],
 })
 export class TwitchPlayerSlotStorybookComponent {
-  src = input('lofigirl');
+  public src = input('lofigirl');
 
   protected selectedIndex = signal(0);
 }

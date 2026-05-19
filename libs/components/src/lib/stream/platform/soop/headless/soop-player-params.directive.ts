@@ -5,17 +5,17 @@ import { STREAM_PLAYER_PARAMS_TOKEN, StreamPlayerParams } from '../../../stream-
   providers: [{ provide: STREAM_PLAYER_PARAMS_TOKEN, useExisting: SoopPlayerParamsDirective }],
 })
 export class SoopPlayerParamsDirective implements StreamPlayerParams {
-  userId = input<string | null>(null);
-  videoId = input<string | null>(null);
-  width = input<string | number>('100%');
-  height = input<string | number>('100%');
+  public userId = input<string | null>(null);
+  public videoId = input<string | null>(null);
+  public width = input<string | number>('100%');
+  public height = input<string | number>('100%');
 
-  playerId = computed(() => {
+  public playerId = computed(() => {
     const u = this.userId();
     return u ? `soop-user-${u}` : `soop-video-${this.videoId()}`;
   });
 
-  createBindings() {
+  public createBindings() {
     return [
       inputBinding('userId', () => this.userId()),
       inputBinding('videoId', () => this.videoId()),

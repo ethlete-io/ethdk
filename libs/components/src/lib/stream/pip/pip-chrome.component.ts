@@ -65,19 +65,21 @@ import { PipWindowComponent } from './pip-window.component';
   },
 })
 export class StreamPipChromeComponent implements PipChromeRef {
-  stageRef = viewChild<PipStageDirective, ElementRef<HTMLElement>>(PipStageDirective, { read: ElementRef });
-  pipWindowRef = viewChild(PipWindowComponent);
-  gridBtnRef = viewChild<PipGridToggleDirective, ElementRef<HTMLElement>>(PipGridToggleDirective, { read: ElementRef });
-  protected pipManager = injectPipManager();
+  public stageRef = viewChild<PipStageDirective, ElementRef<HTMLElement>>(PipStageDirective, { read: ElementRef });
+  public pipWindowRef = viewChild(PipWindowComponent);
+  public gridBtnRef = viewChild<PipGridToggleDirective, ElementRef<HTMLElement>>(PipGridToggleDirective, {
+    read: ElementRef,
+  });
+  public pipManager = injectPipManager();
 
-  state = createPipChromeState();
-  animations = createPipChromeAnimations(this.state, {
+  public state = createPipChromeState();
+  public animations = createPipChromeAnimations(this.state, {
     stageRef: this.stageRef,
     gridBtnRef: this.gridBtnRef,
     pipWindowRef: this.pipWindowRef,
   });
 
-  readonly CLOSE_KIND = WINDOW_CONTROL_BUTTON_KINDS.CLOSE;
-  controlsColor = computed(() => this.pipManager.pipChromeConfig().controlsColor);
-  readonly WINDOW_CONTROL_BUTTON_SIZE = WINDOW_CONTROL_BUTTON_SIZES.SM;
+  public readonly CLOSE_KIND = WINDOW_CONTROL_BUTTON_KINDS.CLOSE;
+  public controlsColor = computed(() => this.pipManager.pipChromeConfig().controlsColor);
+  public readonly WINDOW_CONTROL_BUTTON_SIZE = WINDOW_CONTROL_BUTTON_SIZES.SM;
 }

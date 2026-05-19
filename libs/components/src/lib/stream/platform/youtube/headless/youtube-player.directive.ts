@@ -41,7 +41,7 @@ export class YoutubePlayerDirective implements StreamPlayer {
   private scriptLoader = injectStreamScriptLoader();
   private renderer = injectRenderer();
 
-  readonly CAPABILITIES: StreamPlayerCapabilities = {
+  public readonly CAPABILITIES: StreamPlayerCapabilities = {
     canPlay: true,
     canPause: true,
     canMute: true,
@@ -51,8 +51,8 @@ export class YoutubePlayerDirective implements StreamPlayer {
     hasThumbnail: true,
   };
 
-  state = signal<StreamPlayerState>({ ...DEFAULT_STREAM_PLAYER_STATE });
-  thumbnail = computed(() => `https://img.youtube.com/vi/${this.params.videoId()}/mqdefault.jpg`);
+  public state = signal<StreamPlayerState>({ ...DEFAULT_STREAM_PLAYER_STATE });
+  public thumbnail = computed(() => `https://img.youtube.com/vi/${this.params.videoId()}/mqdefault.jpg`);
 
   private playerResource = rxResource({
     params: () => (isPlatformBrowser(this.platformId) ? this.params.videoId() : null),
@@ -156,29 +156,29 @@ export class YoutubePlayerDirective implements StreamPlayer {
     });
   }
 
-  play() {
+  public play() {
     this.playerResource.value()?.playVideo();
   }
 
-  pause() {
+  public pause() {
     this.playerResource.value()?.pauseVideo();
   }
 
-  mute() {
+  public mute() {
     this.playerResource.value()?.mute();
     this.state.update((s) => ({ ...s, isMuted: true }));
   }
 
-  unmute() {
+  public unmute() {
     this.playerResource.value()?.unMute();
     this.state.update((s) => ({ ...s, isMuted: false }));
   }
 
-  seek(seconds: number) {
+  public seek(seconds: number) {
     this.playerResource.value()?.seekTo(seconds, true);
   }
 
-  retry() {
+  public retry() {
     this.playerResource.reload();
   }
 }

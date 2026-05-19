@@ -137,9 +137,9 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
   ],
 })
 export class MixedPlayerSlotStorybookComponent {
-  youtubeVideoId = input<string>('dQw4w9WgXcQ');
-  twitchChannel = input<string>('lofigirl');
-  tiktokVideoIdA = input<string>('6718335390845095173');
+  public youtubeVideoId = input<string>('dQw4w9WgXcQ');
+  public twitchChannel = input<string>('lofigirl');
+  public tiktokVideoIdA = input<string>('6718335390845095173');
 
   protected selectedIndex = signal(0);
 }

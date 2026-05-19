@@ -141,14 +141,23 @@ export class MyComponent {
 
 ## Protected / Public / Static
 
-- **Never** use `public` or `static` keywords.
+- **Never** use `static`.
+- **Use `public` as an explicit opt-in** when a member intentionally exposes an external API across class boundaries. On Angular classes, reachable members should use explicit `public` unless they are intentionally hidden with `private` / `protected`.
 - **Never** use `protected` unless absolutely necessary — the following count as absolutely necessary:
   - The member is referenced in the component's **HTML template file**.
   - The member is referenced in a **`host:` binding expression** inside the `@Component` / `@Directive` decorator (e.g. `'[attr.inert]': 'myMember ? ...'`).
 
+These template-visible or host-visible members should use an explicit accessibility modifier. Lint may auto-fix them to `public` as the safer default when external usage is unknown; switch to `protected` when the member is intentionally template-only.
+
 ## `@internal`
 
 Some members must be technically public (no `private` keyword) because they are called from another class — for example, self-registration methods called by sub-directives via DI. These are not part of the consumer API. Mark them with a `/** @internal */` JSDoc comment instead of using a `_` prefix.
+
+`@internal` does not replace explicit `public` on those members. If a member is still technically reachable, keep it `public` and add `@internal` to describe that it is not consumer API.
+
+Do not add `@internal` to `private` or `protected` members. Those are already hidden from consumers, so the tag adds noise without changing the emitted public type surface.
+
+`@internal` may appear together with explicit `public` when a member must stay technically public to satisfy a contract or interop pattern, but should still be stripped from the consumer-facing type surface.
 
 Build tools such as API Extractor will strip `@internal` members from generated `.d.ts` files, so consumers won't see them in autocomplete.
 

@@ -52,8 +52,8 @@ import { TOOLTIP_IMPORTS } from '../../tooltip.imports';
   imports: [BUTTON_IMPORTS, TOOLTIP_IMPORTS],
 })
 export class TooltipStorybookComponent {
-  placement = input<'top' | 'right' | 'bottom' | 'left'>('top');
-  disabled = input(false);
+  public placement = input<'top' | 'right' | 'bottom' | 'left'>('top');
+  public disabled = input(false);
   protected tooltipText = input('A lightweight tooltip built on the new overlay primitives.');
   protected templateTooltipAriaDescription = input(
     'Tooltip. Templated content works too, so richer help and compact metadata are possible.',

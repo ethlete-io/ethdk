@@ -27,7 +27,7 @@ export class TwitchPlayerDirective implements StreamPlayer {
   private el = injectHostElement();
   private scriptLoader = injectStreamScriptLoader();
 
-  readonly CAPABILITIES: StreamPlayerCapabilities = {
+  public readonly CAPABILITIES: StreamPlayerCapabilities = {
     canPlay: true,
     canPause: true,
     canMute: true,
@@ -37,8 +37,8 @@ export class TwitchPlayerDirective implements StreamPlayer {
     hasThumbnail: false,
   };
 
-  state = signal<StreamPlayerState>({ ...DEFAULT_STREAM_PLAYER_STATE });
-  thumbnail = signal<string | null>(null);
+  public state = signal<StreamPlayerState>({ ...DEFAULT_STREAM_PLAYER_STATE });
+  public thumbnail = signal<string | null>(null);
 
   private playerResource = rxResource({
     params: (): TwitchPlayerParams | null => {
@@ -169,29 +169,29 @@ export class TwitchPlayerDirective implements StreamPlayer {
     });
   }
 
-  play() {
+  public play() {
     this.playerResource.value()?.play();
   }
 
-  pause() {
+  public pause() {
     this.playerResource.value()?.pause();
   }
 
-  mute() {
+  public mute() {
     this.playerResource.value()?.setMuted(true);
     this.state.update((s) => ({ ...s, isMuted: true }));
   }
 
-  unmute() {
+  public unmute() {
     this.playerResource.value()?.setMuted(false);
     this.state.update((s) => ({ ...s, isMuted: false }));
   }
 
-  seek(seconds: number) {
+  public seek(seconds: number) {
     this.playerResource.value()?.seek(seconds);
   }
 
-  retry() {
+  public retry() {
     this.playerResource.reload();
   }
 }

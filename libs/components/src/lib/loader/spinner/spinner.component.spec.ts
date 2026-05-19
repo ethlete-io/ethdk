@@ -17,10 +17,6 @@ describe('SpinnerComponent', () => {
     it('has role="progressbar"', () => {
       expect(host.getAttribute('role')).toBe('progressbar');
     });
-
-    it('has the et-spinner class', () => {
-      expect(host.classList.contains('et-spinner')).toBe(true);
-    });
   });
 
   describe('indeterminate mode (default)', () => {

@@ -63,21 +63,21 @@ const ELEMENT_INTERSECTION_THRESHOLD = [
 export class ScrollableDirective {
   // --- Inputs ---
 
-  itemSize = input('auto', { transform: typedBreakpointTransform<ScrollableItemSize>() });
-  direction = input('horizontal', {
+  public itemSize = input('auto', { transform: typedBreakpointTransform<ScrollableItemSize>() });
+  public direction = input('horizontal', {
     transform: typedBreakpointTransform<ScrollableDirection>(),
   });
-  scrollMode = input('container', {
+  public scrollMode = input('container', {
     transform: typedBreakpointTransform<ScrollableScrollMode>(),
   });
-  scrollOrigin = input<ScrollableScrollOrigin>('auto');
-  scrollMargin = input(0, { transform: numberAttribute });
-  renderScrollbars = input(false);
+  public scrollOrigin = input<ScrollableScrollOrigin>('auto');
+  public scrollMargin = input(0, { transform: numberAttribute });
+  public renderScrollbars = input(false);
 
   // --- Internal template refs (set by Tier 3 template) ---
 
   /** @internal */
-  scrollContainerRef = signal<ElementRef<HTMLElement> | null>(null);
+  public scrollContainerRef = signal<ElementRef<HTMLElement> | null>(null);
 
   // --- Lazy intersection ---
 
@@ -87,19 +87,19 @@ export class ScrollableDirective {
 
   private allScrollableChildren = signalElementChildren(this.scrollContainerRef);
 
-  scrollableChildren = computed(() => this.allScrollableChildren().filter((c) => !isScrollableChildIgnored(c)));
+  public scrollableChildren = computed(() => this.allScrollableChildren().filter((c) => !isScrollableChildIgnored(c)));
 
   // --- Scroll state ---
 
   /** @internal */
-  scrollObserverRef = signal<ScrollObserverDirective | null>(null);
+  public scrollObserverRef = signal<ScrollObserverDirective | null>(null);
 
-  containerScrollState = signalElementScrollState(this.scrollContainerRef);
+  public containerScrollState = signalElementScrollState(this.scrollContainerRef);
 
-  isAtStart = computed(() => this.scrollObserverRef()?.isAtStart() ?? false);
-  isAtEnd = computed(() => this.scrollObserverRef()?.isAtEnd() ?? false);
+  public isAtStart = computed(() => this.scrollObserverRef()?.isAtStart() ?? false);
+  public isAtEnd = computed(() => this.scrollObserverRef()?.isAtEnd() ?? false);
 
-  canScroll = computed(() =>
+  public canScroll = computed(() =>
     this.direction() === 'horizontal'
       ? this.containerScrollState().canScrollHorizontally
       : this.containerScrollState().canScrollVertically,
@@ -107,7 +107,7 @@ export class ScrollableDirective {
 
   // --- Lazy child intersections ---
 
-  childIntersections = signalElementIntersection(this.scrollableChildren, {
+  public childIntersections = signalElementIntersection(this.scrollableChildren, {
     root: this.scrollContainerRef,
     threshold: ELEMENT_INTERSECTION_THRESHOLD,
     enabled: this.childIntersectionsActivated,
@@ -115,7 +115,7 @@ export class ScrollableDirective {
 
   // --- Container dimensions (always available, cheap) ---
 
-  scrollableDimensions = signalElementDimensions(this.scrollContainerRef);
+  public scrollableDimensions = signalElementDimensions(this.scrollContainerRef);
 
   // --- Active children (self-registration) ---
 
@@ -124,36 +124,36 @@ export class ScrollableDirective {
   // --- Loading template (self-registration) ---
 
   /** @internal */
-  loadingTemplateRef = signal<ScrollableLoadingTemplateRef | null>(null);
+  public loadingTemplateRef = signal<ScrollableLoadingTemplateRef | null>(null);
 
-  loadingTemplate = this.loadingTemplateRef.asReadonly();
+  public loadingTemplate = this.loadingTemplateRef.asReadonly();
 
   // --- Sub-directive registrations ---
 
   /** @internal */
-  masksDirective = signal<unknown | null>(null);
+  public masksDirective = signal<unknown | null>(null);
   /** @internal */
-  buttonsDirective = signal<unknown | null>(null);
+  public buttonsDirective = signal<unknown | null>(null);
   /** @internal */
-  navigationDirective = signal<unknown | null>(null);
+  public navigationDirective = signal<unknown | null>(null);
   /** @internal */
-  snapDirective = signal<unknown | null>(null);
+  public snapDirective = signal<unknown | null>(null);
   /** @internal */
-  dragDirective = signal<unknown | null>(null);
+  public dragDirective = signal<unknown | null>(null);
   /** @internal */
-  darkenDirective = signal<unknown | null>(null);
+  public darkenDirective = signal<unknown | null>(null);
 
   // --- Host bindings ---
 
   /** @internal */
-  hostAttributeBindings = signalHostAttributes({
+  public hostAttributeBindings = signalHostAttributes({
     'item-size': this.itemSize,
     direction: this.direction,
     'render-scrollbars': this.renderScrollbars,
   });
 
   /** @internal */
-  hostClassBindings = signalHostClasses({
+  public hostClassBindings = signalHostClasses({
     'et-scrollable--can-scroll': this.canScroll,
     'et-scrollable--is-at-start': this.isAtStart,
     'et-scrollable--is-at-end': this.isAtEnd,
@@ -164,7 +164,7 @@ export class ScrollableDirective {
 
   // --- Computed ---
 
-  gapValue = computed(() => {
+  public gapValue = computed(() => {
     this.scrollableDimensions();
 
     const scrollable = this.scrollContainerRef()?.nativeElement;
@@ -179,7 +179,7 @@ export class ScrollableDirective {
   });
 
   /** @internal */
-  hostStyleBindings = signalHostStyles({
+  public hostStyleBindings = signalHostStyles({
     '--item-count': computed(() => this.scrollableChildren().length),
     '--item-gap': this.gapValue,
   });
@@ -201,17 +201,17 @@ export class ScrollableDirective {
   // --- Registration API ---
 
   /** @internal */
-  unregisterActiveChild(child: ScrollableActiveChildRef) {
+  public unregisterActiveChild(child: ScrollableActiveChildRef) {
     this.activeChildren.update((children) => children.filter((c) => c !== child));
   }
 
-  activateChildIntersections() {
+  public activateChildIntersections() {
     this.childIntersectionsActivated.set(true);
   }
 
   // --- Scroll methods ---
 
-  scrollOneContainerSize(scrollDirection: 'start' | 'end') {
+  public scrollOneContainerSize(scrollDirection: 'start' | 'end') {
     const scrollElement = this.scrollContainerRef()?.nativeElement;
     if (!scrollElement) return;
 
@@ -233,7 +233,7 @@ export class ScrollableDirective {
     }
   }
 
-  scrollOneItemSize(scrollDirection: 'start' | 'end') {
+  public scrollOneItemSize(scrollDirection: 'start' | 'end') {
     const allIntersections = this.childIntersections();
     const scrollElement = this.scrollContainerRef()?.nativeElement;
 
@@ -252,7 +252,9 @@ export class ScrollableDirective {
     this.scrollToElement(target);
   }
 
-  getElementScrollCoordinates(options: Omit<ScrollToElementOptions, 'container'> & { ignoreForcedOrigin?: boolean }) {
+  public getElementScrollCoordinates(
+    options: Omit<ScrollToElementOptions, 'container'> & { ignoreForcedOrigin?: boolean },
+  ) {
     const scrollElement = this.scrollContainerRef()?.nativeElement;
     const { origin } = options;
     const forcedOrigin = this.scrollOrigin();
@@ -268,11 +270,11 @@ export class ScrollableDirective {
     });
   }
 
-  scrollToElement(options: Omit<ScrollToElementOptions, 'container'> & { ignoreForcedOrigin?: boolean }) {
+  public scrollToElement(options: Omit<ScrollToElementOptions, 'container'> & { ignoreForcedOrigin?: boolean }) {
     this.scrollContainerRef()?.nativeElement.scroll(this.getElementScrollCoordinates(options));
   }
 
-  scrollToElementByIndex(
+  public scrollToElementByIndex(
     options: Omit<ScrollToElementOptions, 'container'> & { index: number; ignoreForcedOrigin?: boolean },
   ) {
     const elements = this.scrollableChildren();
@@ -282,7 +284,7 @@ export class ScrollableDirective {
     this.scrollToElement({ element, ...options });
   }
 
-  scrollToStartDirection() {
+  public scrollToStartDirection() {
     if (this.scrollMode() === 'container') {
       this.scrollOneContainerSize('start');
     } else {
@@ -290,7 +292,7 @@ export class ScrollableDirective {
     }
   }
 
-  scrollToEndDirection() {
+  public scrollToEndDirection() {
     if (this.scrollMode() === 'container') {
       this.scrollOneContainerSize('end');
     } else {
@@ -298,11 +300,11 @@ export class ScrollableDirective {
     }
   }
 
-  getActiveChildren() {
+  public getActiveChildren() {
     return this.activeChildren.asReadonly();
   }
 
-  getScrollContainerRef() {
+  public getScrollContainerRef() {
     return this.scrollContainerRef.asReadonly();
   }
 }

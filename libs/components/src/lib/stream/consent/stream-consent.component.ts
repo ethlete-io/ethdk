@@ -153,7 +153,7 @@ export class StreamConsentComponent {
   private locale = injectLocale();
   private surfaceThemes = injectSurfaceThemes({ optional: true });
 
-  cardSurface = computed(() => {
+  public cardSurface = computed(() => {
     const themes = this.surfaceThemes;
     if (!themes) return null;
 
@@ -163,8 +163,8 @@ export class StreamConsentComponent {
     return resolveSurfaceByElevation(themes, type, elevation)?.name ?? null;
   });
 
-  heading = computed(() => this.config.transformer(this.config.heading, this.locale.currentLocale()));
-  description = computed(() => this.config.transformer(this.config.description, this.locale.currentLocale()));
-  acceptLabel = computed(() => this.config.transformer(this.config.acceptLabel, this.locale.currentLocale()));
-  acceptButtonColor = computed(() => this.config.acceptButtonColor);
+  public heading = computed(() => this.config.transformer(this.config.heading, this.locale.currentLocale()));
+  public description = computed(() => this.config.transformer(this.config.description, this.locale.currentLocale()));
+  public acceptLabel = computed(() => this.config.transformer(this.config.acceptLabel, this.locale.currentLocale()));
+  public acceptButtonColor = computed(() => this.config.acceptButtonColor);
 }

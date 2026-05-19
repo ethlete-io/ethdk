@@ -139,11 +139,6 @@ const recommendedTs = {
         selector: 'FunctionExpression[async=true]',
         message: 'No async/await. Use RxJS for all async operations.',
       },
-      // No public keyword on class members
-      {
-        selector: "MethodDefinition[accessibility='public']",
-        message: 'No public keyword on class members.',
-      },
       // No static class members
       {
         selector: 'MethodDefinition[static=true]',
@@ -218,8 +213,15 @@ const recommendedTs = {
     // No inject(X).member chaining — assign to a const first
     'ethlete/no-inject-chain': 'error',
 
-    // No public properties except explicit injected external APIs
-    'ethlete/no-public-property': 'error',
+    // No @internal on members already hidden by private/protected
+    'ethlete/no-redundant-internal': 'error',
+
+    // Non-injected Angular members should use explicit accessibility when they
+    // participate in the reachable surface. Template/host members must be
+    // explicit, other implicit-public members must be public. @internal does
+    // not replace explicit public; protected remains valid for template-only
+    // members.
+    'ethlete/template-member-accessibility': 'error',
 
     // No explicit trivial return types TypeScript can infer
     'ethlete/no-trivial-return-type': 'error',

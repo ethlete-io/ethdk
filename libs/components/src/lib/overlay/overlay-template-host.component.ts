@@ -33,7 +33,7 @@ export class OverlayTemplateHostComponent {
   private animatedLifecycleInstance = inject(ANIMATED_LIFECYCLE_TOKEN);
   private data = injectOverlayData<OverlayTemplateHostData>();
 
-  animatedLifecycle = signal(this.animatedLifecycleInstance);
+  public animatedLifecycle = signal(this.animatedLifecycleInstance);
 
   protected template = computed(() => this.data.template);
   protected context = computed(() => this.data.context);

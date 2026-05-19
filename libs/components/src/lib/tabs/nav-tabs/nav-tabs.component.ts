@@ -31,7 +31,7 @@ import { NavTabsDirective } from './headless/nav-tabs.directive';
     },
     {
       directive: ProvideColorDirective,
-      inputs: ['etProvideColor:color', 'etProvideAltColor:altColor'],
+      inputs: ['etProvideColor:color'],
     },
     {
       directive: TabBarDirective,
@@ -149,5 +149,5 @@ import { NavTabsDirective } from './headless/nav-tabs.directive';
 export class NavTabsComponent {
   protected tabBar = inject(TabBarDirective);
 
-  size = input<TabSize>(TAB_SIZES.MD);
+  public size = input<TabSize>(TAB_SIZES.MD);
 }

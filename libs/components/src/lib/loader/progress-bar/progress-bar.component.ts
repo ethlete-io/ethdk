@@ -36,8 +36,8 @@ import {
   },
 })
 export class ProgressBarComponent {
-  value = input(0, { transform: numberAttribute });
-  indeterminate = input(false, { transform: booleanAttribute });
+  public value = input(0, { transform: numberAttribute });
+  public indeterminate = input(false, { transform: booleanAttribute });
 
-  clampedValue = computed(() => Math.max(0, Math.min(100, this.value())));
+  public clampedValue = computed(() => Math.max(0, Math.min(100, this.value())));
 }

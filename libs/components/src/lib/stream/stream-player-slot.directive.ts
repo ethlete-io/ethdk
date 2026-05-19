@@ -62,8 +62,8 @@ export class StreamPlayerSlotDirective {
   private provideSurface = inject(ProvideSurfaceDirective);
   private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
 
-  streamSlotPriority = input(false, { transform: booleanAttribute });
-  streamSlotOnPipBack = input<() => void>();
+  public streamSlotPriority = input(false, { transform: booleanAttribute });
+  public streamSlotOnPipBack = input<() => void>();
   private surfaceThemes = injectSurfaceThemes({ optional: true });
   private styleManager = injectStyleManager();
 
@@ -76,7 +76,7 @@ export class StreamPlayerSlotDirective {
     return resolveSurfaceByElevation(themes, type, elevation);
   });
 
-  slot = createStreamPlayerSlot({
+  public slot = createStreamPlayerSlot({
     playerId: this.params.playerId,
     aspectRatio: this.params.ASPECT_RATIO ?? 16 / 9,
     streamSlotPriority: this.streamSlotPriority,

@@ -7,5 +7,5 @@ import { Directive, input } from '@angular/core';
   },
 })
 export class TabTriggerDirective {
-  panelId = input<string | null>(null);
+  public panelId = input<string | null>(null);
 }

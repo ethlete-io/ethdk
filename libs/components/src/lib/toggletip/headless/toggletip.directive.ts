@@ -41,21 +41,21 @@ export class ToggletipDirective {
   private colorProvider = inject(COLOR_PROVIDER, { optional: true });
   private surfaceProvider = inject(SURFACE_PROVIDER, { optional: true });
 
-  content = input<ToggletipContent | null>(null, { alias: 'etToggletip' });
-  ariaLabel = input<string | null>(null, { alias: 'etToggletipAriaLabel' });
-  ariaLabelledBy = input<string | null>(null, { alias: 'etToggletipAriaLabelledBy' });
-  placement = input<Placement>('top');
-  fallbackPlacements = input<Placement[] | undefined>(undefined);
-  offset = input<OffsetOptions | null>(10);
-  arrowPadding = input<Padding | null>(8);
-  viewportPadding = input<Padding | null>(8);
-  disabled = input(false, { alias: 'etToggletipDisabled' });
-  open = model(false, { alias: 'etToggletipOpen' });
+  public content = input<ToggletipContent | null>(null, { alias: 'etToggletip' });
+  public ariaLabel = input<string | null>(null, { alias: 'etToggletipAriaLabel' });
+  public ariaLabelledBy = input<string | null>(null, { alias: 'etToggletipAriaLabelledBy' });
+  public placement = input<Placement>('top');
+  public fallbackPlacements = input<Placement[] | undefined>(undefined);
+  public offset = input<OffsetOptions | null>(10);
+  public arrowPadding = input<Padding | null>(8);
+  public viewportPadding = input<Padding | null>(8);
+  public disabled = input(false, { alias: 'etToggletipDisabled' });
+  public open = model(false, { alias: 'etToggletipOpen' });
 
   private overlayManager = injectOverlayManager();
 
   /** @internal */
-  overlayRef = signal<OverlayRef<ToggletipComponent, unknown> | null>(null);
+  public overlayRef = signal<OverlayRef<ToggletipComponent, unknown> | null>(null);
 
   private toggletipId = createToggletipId();
   private contentId = `${this.toggletipId}-content`;
@@ -115,7 +115,7 @@ export class ToggletipDirective {
     });
   }
 
-  toggle() {
+  public toggle() {
     if (this.disabled() || this.content() === null) {
       this.hide();
 
@@ -125,7 +125,7 @@ export class ToggletipDirective {
     this.open.update((open) => !open);
   }
 
-  show() {
+  public show() {
     if (this.disabled() || this.content() === null) {
       return;
     }
@@ -133,23 +133,23 @@ export class ToggletipDirective {
     this.open.set(true);
   }
 
-  hide() {
+  public hide() {
     this.open.set(false);
   }
 
-  isOpen() {
+  public isOpen() {
     return this.open();
   }
 
-  controls() {
+  public controls() {
     return this.open() ? this.toggletipId : null;
   }
 
-  expanded() {
+  public expanded() {
     return this.content() && !this.disabled() ? this.open() : null;
   }
 
-  popupRole() {
+  public popupRole() {
     return this.content() && !this.disabled() ? 'dialog' : null;
   }
 

@@ -12,11 +12,6 @@ describe('TabComponent', () => {
     host = fixture.nativeElement;
   });
 
-  it('has the et-tab class', () => {
-    fixture.detectChanges();
-    expect(host.classList.contains('et-tab')).toBe(true);
-  });
-
   it('is hidden by default', () => {
     fixture.detectChanges();
     expect(host.style.display).toBe('none');

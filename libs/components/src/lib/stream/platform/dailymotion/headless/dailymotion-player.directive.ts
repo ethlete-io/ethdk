@@ -21,7 +21,7 @@ export class DailymotionPlayerDirective implements StreamPlayer {
   private el = injectHostElement();
   private renderer = injectRenderer();
 
-  readonly CAPABILITIES: StreamPlayerCapabilities = {
+  public readonly CAPABILITIES: StreamPlayerCapabilities = {
     canPlay: false,
     canPause: false,
     canMute: false,
@@ -31,8 +31,8 @@ export class DailymotionPlayerDirective implements StreamPlayer {
     hasThumbnail: false,
   };
 
-  state = signal<StreamPlayerState>({ ...DEFAULT_STREAM_PLAYER_STATE });
-  thumbnail = signal<string | null>(null);
+  public state = signal<StreamPlayerState>({ ...DEFAULT_STREAM_PLAYER_STATE });
+  public thumbnail = signal<string | null>(null);
 
   private playerResource = rxResource({
     params: () => (isPlatformBrowser(this.platformId) ? this.params.videoId() : null),
@@ -83,27 +83,27 @@ export class DailymotionPlayerDirective implements StreamPlayer {
 
   // Dailymotion embeds have no programmatic control API without a dashboard-created player ID
 
-  play() {
+  public play() {
     // no-op
   }
 
-  pause() {
+  public pause() {
     // no-op
   }
 
-  mute() {
+  public mute() {
     // no-op
   }
 
-  unmute() {
+  public unmute() {
     // no-op
   }
 
-  seek() {
+  public seek() {
     // no-op
   }
 
-  retry() {
+  public retry() {
     this.playerResource.reload();
   }
 }

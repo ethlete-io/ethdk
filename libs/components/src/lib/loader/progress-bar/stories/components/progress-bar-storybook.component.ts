@@ -20,6 +20,6 @@ import { ProgressBarComponent } from '../../progress-bar.component';
   imports: [ProgressBarComponent],
 })
 export class ProgressBarStorybookComponent {
-  value = input(42);
-  indeterminate = input(false);
+  public value = input(42);
+  public indeterminate = input(false);
 }

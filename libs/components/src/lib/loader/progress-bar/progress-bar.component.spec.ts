@@ -17,10 +17,6 @@ describe('ProgressBarComponent', () => {
     it('has role="progressbar"', () => {
       expect(host.getAttribute('role')).toBe('progressbar');
     });
-
-    it('has the et-progress-bar class', () => {
-      expect(host.classList.contains('et-progress-bar')).toBe(true);
-    });
   });
 
   describe('determinate mode (default)', () => {

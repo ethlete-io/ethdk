@@ -54,8 +54,8 @@ import { TOGGLETIP_IMPORTS } from '../../toggletip.imports';
   imports: [BUTTON_IMPORTS, TOGGLETIP_IMPORTS],
 })
 export class ToggletipStorybookComponent {
-  placement = input<'top' | 'right' | 'bottom' | 'left'>('top');
-  disabled = input(false);
+  public placement = input<'top' | 'right' | 'bottom' | 'left'>('top');
+  public disabled = input(false);
   protected toggletipText = input('A click-triggered toggletip for richer, interactive guidance.');
   protected templateToggletipAriaLabel = input('Matchday note');
 

@@ -46,7 +46,7 @@ const PRESSED_VARIANT_MAP: Record<IconButtonVariant, string> = {
     FocusRingDirective,
     {
       directive: ProvideColorDirective,
-      inputs: ['etProvideColor:color', 'etProvideAltColor:altColor'],
+      inputs: ['etProvideColor:color'],
     },
   ],
   host: {
@@ -60,12 +60,12 @@ const PRESSED_VARIANT_MAP: Record<IconButtonVariant, string> = {
 export class IconButtonComponent {
   protected buttonDir = inject(ButtonDirective);
 
-  variant = input<IconButtonVariant>(BUTTON_VARIANTS.TRANSPARENT);
-  size = input<ButtonSize>(BUTTON_SIZES.MD);
+  public variant = input<IconButtonVariant>(BUTTON_VARIANTS.TRANSPARENT);
+  public size = input<ButtonSize>(BUTTON_SIZES.MD);
 
-  canAnimate = createCanAnimateSignal();
+  public canAnimate = createCanAnimateSignal();
 
-  spinnerConfig = computed(() => BUTTON_SPINNER_CONFIG[this.size()]);
+  public spinnerConfig = computed(() => BUTTON_SPINNER_CONFIG[this.size()]);
 
-  pressedVariant = computed(() => (this.buttonDir.pressed() ? PRESSED_VARIANT_MAP[this.variant()] : null));
+  public pressedVariant = computed(() => (this.buttonDir.pressed() ? PRESSED_VARIANT_MAP[this.variant()] : null));
 }

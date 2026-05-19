@@ -24,7 +24,7 @@ export class TikTokPlayerDirective implements StreamPlayer {
   private el = injectHostElement();
   private renderer = injectRenderer();
 
-  readonly CAPABILITIES: StreamPlayerCapabilities = {
+  public readonly CAPABILITIES: StreamPlayerCapabilities = {
     canPlay: true,
     canPause: true,
     canMute: true,
@@ -34,8 +34,8 @@ export class TikTokPlayerDirective implements StreamPlayer {
     hasThumbnail: false,
   };
 
-  state = signal<StreamPlayerState>({ ...DEFAULT_STREAM_PLAYER_STATE });
-  thumbnail = signal<string | null>(null);
+  public state = signal<StreamPlayerState>({ ...DEFAULT_STREAM_PLAYER_STATE });
+  public thumbnail = signal<string | null>(null);
 
   private iframe: HTMLIFrameElement | null = null;
 
@@ -132,27 +132,27 @@ export class TikTokPlayerDirective implements StreamPlayer {
     });
   }
 
-  play() {
+  public play() {
     this.post('play');
   }
 
-  pause() {
+  public pause() {
     this.post('pause');
   }
 
-  mute() {
+  public mute() {
     this.post('mute');
   }
 
-  unmute() {
+  public unmute() {
     this.post('unMute');
   }
 
-  seek(seconds: number) {
+  public seek(seconds: number) {
     this.post('seekTo', seconds);
   }
 
-  retry() {
+  public retry() {
     this.playerResource.reload();
   }
 
