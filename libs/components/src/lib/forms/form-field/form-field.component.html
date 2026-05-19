@@ -6,7 +6,11 @@
 
     <div (mousedown)="handleFramePointerDown($event)" class="et-form-field-control-area">
       @if (formFieldDir.usesTextFieldShell()) {
-        <div [class.et-form-field-label-area--floating]="hasFloatingTextLabel()" class="et-form-field-label-area">
+        <div
+          [class.et-form-field-label-area--floating]="hasFloatingTextLabel()"
+          [class.et-form-field-label-area--inline]="hasInlineLabel()"
+          class="et-form-field-label-area"
+        >
           <ng-content select="et-label" />
         </div>
       }

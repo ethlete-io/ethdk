@@ -75,6 +75,11 @@ const LABEL_MODE_EXAMPLES: LabelModeExample[] = [
     placeholder: 'Current stacked label',
   },
   {
+    label: 'Inline Label',
+    mode: FORM_FIELD_LABEL_MODES.INLINE,
+    placeholder: 'Label as inline prefix',
+  },
+  {
     label: 'Floating Inside',
     mode: FORM_FIELD_LABEL_MODES.FLOATING_INSIDE,
     placeholder: 'Label floats inside the frame',
@@ -88,6 +93,7 @@ const LABEL_MODE_EXAMPLES: LabelModeExample[] = [
 
 const SHOWCASE_LABEL_MODES = [
   { value: FORM_FIELD_LABEL_MODES.STATIC, label: 'Static' },
+  { value: FORM_FIELD_LABEL_MODES.INLINE, label: 'Inline' },
   { value: FORM_FIELD_LABEL_MODES.FLOATING_INSIDE, label: 'Float Inside' },
   { value: FORM_FIELD_LABEL_MODES.FLOATING_OUTSIDE, label: 'Float Outside' },
 ] as const;
@@ -328,7 +334,7 @@ export class InputWithPrefixSuffixStorybookComponent {
 @Component({
   selector: 'et-sb-input-label-modes',
   template: `
-    <div class="flex max-w-3xl flex-col gap-6 p-8 font-sans" etProvideSurface="dark">
+    <div class="flex max-w-5xl flex-col gap-6 p-8 font-sans" etProvideSurface="dark">
       <div class="flex flex-col gap-2">
         <h3 class="m-0 text-sm font-semibold uppercase tracking-[0.18em] text-et-surface">Label Modes</h3>
         <p class="m-0 text-sm text-et-surface-muted">
@@ -336,7 +342,7 @@ export class InputWithPrefixSuffixStorybookComponent {
         </p>
       </div>
 
-      <div class="grid items-end gap-5 md:grid-cols-3 ">
+      <div class="grid items-end gap-5 md:grid-cols-4 ">
         @for (example of LABEL_MODE_EXAMPLES; track example.mode) {
           @let exampleField = demoForm[example.mode];
 
@@ -357,6 +363,7 @@ export class InputWithPrefixSuffixStorybookComponent {
 export class InputLabelModesStorybookComponent {
   private formModel = signal<Record<FormFieldLabelMode, string>>({
     [FORM_FIELD_LABEL_MODES.STATIC]: '',
+    [FORM_FIELD_LABEL_MODES.INLINE]: '',
     [FORM_FIELD_LABEL_MODES.FLOATING_INSIDE]: '',
     [FORM_FIELD_LABEL_MODES.FLOATING_OUTSIDE]: '',
   });
@@ -369,7 +376,7 @@ export class InputLabelModesStorybookComponent {
 @Component({
   selector: 'et-sb-input-variants-showcase',
   template: `
-    <div [etProvideSurface]="theme()" [etProvideColor]="color()" class="flex max-w-6xl flex-col gap-8 p-8 font-sans">
+    <div [etProvideSurface]="theme()" [etProvideColor]="color()" class="flex max-w-8xl flex-col gap-8 p-8 font-sans">
       @for (section of SHOWCASE_SECTIONS; track section.label) {
         <section class="flex flex-col gap-5">
           <header class="flex items-center gap-3 border-b border-et-surface-border pb-3">

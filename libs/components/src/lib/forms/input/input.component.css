@@ -16,6 +16,11 @@ et-input {
     padding: 0;
     min-width: 0;
 
+    &:not(:focus) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     &::placeholder {
       color: color-mix(in srgb, currentColor 46%, transparent);
     }

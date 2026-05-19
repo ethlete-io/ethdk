@@ -247,7 +247,14 @@ export class FormFieldComponent {
   protected displaysError = computed(() => this.semanticSupportState() === SUPPORT_CONTENT_STATE.ERROR);
 
   protected hasFloatingTextLabel = computed(
-    () => this.formFieldDir.usesTextFieldShell() && this.labelMode() !== FORM_FIELD_LABEL_MODES.STATIC,
+    () =>
+      this.formFieldDir.usesTextFieldShell() &&
+      this.labelMode() !== FORM_FIELD_LABEL_MODES.STATIC &&
+      this.labelMode() !== FORM_FIELD_LABEL_MODES.INLINE,
+  );
+
+  protected hasInlineLabel = computed(
+    () => this.formFieldDir.usesTextFieldShell() && this.labelMode() === FORM_FIELD_LABEL_MODES.INLINE,
   );
 
   protected prefixOffset = computed(() => {
@@ -425,7 +432,9 @@ export class FormFieldComponent {
       return;
     }
 
-    if (event.target !== event.currentTarget) {
+    const target = event.target as HTMLElement;
+
+    if (target.closest('input, textarea, select, button, a[href]')) {
       return;
     }
 

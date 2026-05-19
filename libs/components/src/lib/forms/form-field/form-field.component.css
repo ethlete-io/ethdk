@@ -285,6 +285,47 @@ et-form-field {
       }
     }
 
+    &[data-label-mode='inline'] {
+      .et-form-field-control-frame {
+        align-items: stretch;
+      }
+
+      .et-form-field-control-area {
+        position: static;
+        gap: var(--et-form-field-control-affix-gap);
+        align-items: stretch;
+      }
+
+      .et-form-field-control-slot {
+        display: flex;
+        align-items: center;
+      }
+
+      .et-form-field-label-area--inline {
+        position: static;
+        flex-shrink: 0;
+        transform: none;
+        white-space: nowrap;
+        pointer-events: auto;
+        font-size: var(--et-form-field-control-font-size);
+        line-height: var(--et-form-field-control-line-height);
+        display: flex;
+        align-items: center;
+        margin-block: calc(var(--et-form-field-control-padding-block) * -1);
+      }
+
+      &[data-appearance='underline'] .et-form-field-label-area--inline::after {
+        content: ':';
+      }
+
+      &[data-appearance='box'] .et-form-field-label-area--inline {
+        padding-inline-end: var(--et-form-field-control-padding-inline);
+        margin-inline-end: calc(var(--et-form-field-control-padding-inline) - var(--et-form-field-control-affix-gap));
+        border-inline-end: var(--et-form-field-control-border-width) solid
+          var(--_et-control-border, var(--et-surface-border-solid, currentColor));
+      }
+    }
+
     &[data-label-mode='floating-inside'],
     &[data-label-mode='floating-outside'] {
       .et-input-native::placeholder {
@@ -332,21 +373,16 @@ et-form-field {
         align-self: stretch;
         display: flex;
         align-items: center;
+        padding-block-start: var(--_et-form-field-float-inside-extra-padding);
       }
 
       .et-form-field-label-area--floating {
         inset-inline-start: 0;
       }
 
-      &[data-label-floated] {
-        .et-form-field-control-area {
-          padding-block-start: var(--_et-form-field-float-inside-extra-padding);
-        }
-
-        .et-form-field-label-area--floating {
-          inset-block-start: 4px;
-          transform: scale(var(--_et-form-field-floating-label-scale));
-        }
+      &[data-label-floated] .et-form-field-label-area--floating {
+        inset-block-start: 4px;
+        transform: scale(var(--_et-form-field-floating-label-scale));
       }
 
       .et-form-field-control-slot {
@@ -362,7 +398,7 @@ et-form-field {
     }
 
     .et-form-field-control-frame:hover,
-    &:has(.et-form-field-label-area:hover) .et-form-field-control-frame {
+    &:not(:has(:focus)):has(.et-form-field-label-area:hover) .et-form-field-control-frame {
       border-color: var(--_et-control-border, var(--et-surface-interaction-hover-solid, currentColor));
     }
 

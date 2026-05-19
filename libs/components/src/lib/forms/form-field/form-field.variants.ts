@@ -14,6 +14,7 @@ export type FormFieldFill = (typeof FORM_FIELD_FILLS)[keyof typeof FORM_FIELD_FI
 
 export const FORM_FIELD_LABEL_MODES = {
   STATIC: 'static',
+  INLINE: 'inline',
   FLOATING_INSIDE: 'floating-inside',
   FLOATING_OUTSIDE: 'floating-outside',
 } as const;
