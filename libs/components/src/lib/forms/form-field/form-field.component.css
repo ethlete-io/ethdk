@@ -160,8 +160,7 @@ et-form-field {
       opacity 150ms ease;
 
     et-label {
-      display: inline-flex;
-      align-items: center;
+      display: inline;
       min-inline-size: 0;
     }
   }
@@ -178,6 +177,9 @@ et-form-field {
     transform: translateY(-50%);
     transform-origin: left top;
     pointer-events: none;
+  }
+
+  &[data-can-animate] .et-form-field-label-area--floating {
     transition:
       color 150ms ease,
       opacity 150ms ease,
@@ -452,43 +454,6 @@ et-form-field {
     }
   }
 
-  &:where([data-control-type='checkbox']) {
-    .et-form-field-shell {
-      padding-block-start: 0;
-    }
-
-    &:has([aria-disabled='true']) .et-form-field-label-area,
-    &:has(:disabled) .et-form-field-label-area {
-      cursor: not-allowed;
-    }
-
-    .et-form-field-control-frame {
-      border: none;
-      border-radius: 0;
-      padding: 0;
-      min-block-size: auto;
-      cursor: default;
-    }
-
-    .et-form-field-control-area {
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-    }
-
-    .et-form-field-label-area {
-      position: static;
-      order: 2;
-      transform: none;
-      cursor: pointer;
-    }
-
-    .et-form-field-control-slot {
-      order: 1;
-      flex: 0 0 auto;
-    }
-  }
-
   .et-form-field-support {
     overflow: clip;
     block-size: 0;
@@ -578,12 +543,6 @@ et-form-field {
         }
       }
     }
-  }
-
-  &:has([aria-required='true']) .et-form-field-label-area et-label::after,
-  &:has([required]) .et-form-field-label-area et-label::after {
-    content: ' *';
-    color: var(--et-theme-color-primary-solid);
   }
 }
 

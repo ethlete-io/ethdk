@@ -1,0 +1,48 @@
+<div class="et-choice-field-control">
+  <div class="et-choice-field-control-slot">
+    <ng-content />
+  </div>
+
+  <div class="et-choice-field-label-area">
+    <ng-content select="et-label" />
+  </div>
+</div>
+
+@if (shouldRenderSupport()) {
+  <div [style.block-size.px]="supportHeight()" class="et-choice-field-support">
+    <div class="et-choice-field-support-stack">
+      @if (shouldRenderError()) {
+        <div
+          #errorContent
+          #errorAnimatable="etAnimatable"
+          [id]="formFieldDir.errorId()"
+          [attr.aria-atomic]="errorActive() ? 'true' : null"
+          [attr.aria-hidden]="!errorActive() ? 'true' : null"
+          [attr.aria-live]="errorActive() ? 'polite' : null"
+          [attr.data-active]="errorActive() || null"
+          [style.--_et-choice-field-frozen-error-color]="errorColor()"
+          class="et-choice-field-support-content et-choice-field-errors"
+          etAnimatable
+        >
+          @for (error of visibleErrors(); track $index) {
+            <et-form-error [error]="error" />
+          }
+        </div>
+      }
+
+      @if (shouldRenderHint()) {
+        <div
+          #hintContent
+          #hintAnimatable="etAnimatable"
+          [id]="formFieldDir.hintId()"
+          [attr.aria-hidden]="!hintActive() ? 'true' : null"
+          [attr.data-active]="hintActive() || null"
+          class="et-choice-field-support-content et-choice-field-hint"
+          etAnimatable
+        >
+          <ng-content select="et-hint" />
+        </div>
+      }
+    </div>
+  </div>
+}

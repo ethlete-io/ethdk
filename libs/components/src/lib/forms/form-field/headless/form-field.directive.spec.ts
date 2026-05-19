@@ -5,7 +5,7 @@ import '../../../../test-helpers';
 import { InputDirective } from '../../input/headless';
 import { HintComponent } from '../hint.component';
 import { FormFieldDirective } from './form-field.directive';
-import { FormFieldControl } from './form-field.tokens';
+import { FORM_FIELD_CONTROL_TYPES, FormFieldControl } from './form-field.tokens';
 import { LabelDirective } from './label.directive';
 
 @Component({
@@ -67,6 +67,7 @@ describe('FormFieldDirective', () => {
       errors: signal([{ kind: 'required', message: 'Required' }]),
       name: signal('test'),
       describedBy: signal<string | null>(null),
+      controlType: signal(FORM_FIELD_CONTROL_TYPES.TEXT_INPUT),
       activate: () => undefined,
     };
 
@@ -85,6 +86,7 @@ describe('FormFieldDirective', () => {
       errors: signal([{ kind: 'required', message: 'Required' }]),
       name: signal('test'),
       describedBy: signal<string | null>(null),
+      controlType: signal(FORM_FIELD_CONTROL_TYPES.TEXT_INPUT),
       activate: () => undefined,
     };
 
@@ -102,6 +104,7 @@ describe('FormFieldDirective', () => {
       errors: signal([]),
       name: signal('test'),
       describedBy: signal<string | null>(null),
+      controlType: signal(FORM_FIELD_CONTROL_TYPES.TEXT_INPUT),
       activate: () => undefined,
     };
 
@@ -122,6 +125,7 @@ describe('FormFieldDirective', () => {
       errors: signal([]),
       name: signal('myfield'),
       describedBy,
+      controlType: signal(FORM_FIELD_CONTROL_TYPES.TEXT_INPUT),
       activate: () => undefined,
     };
 
@@ -167,6 +171,7 @@ describe('FormFieldDirective', () => {
       errors,
       name: signal('myfield'),
       describedBy,
+      controlType: signal(FORM_FIELD_CONTROL_TYPES.TEXT_INPUT),
       activate: () => undefined,
     };
 

@@ -23,10 +23,10 @@ class NotificationDirectiveTestHost {
 describe('NotificationDirective', () => {
   let fixture: ComponentFixture<NotificationDirectiveTestHost>;
   let ref: NotificationRef;
-  let actionHandler: ReturnType<typeof vi.fn>;
+  let actionHandler: () => void;
 
   beforeEach(() => {
-    actionHandler = vi.fn();
+    actionHandler = vi.fn() as unknown as () => void;
     ref = createNotificationRef(
       {
         status: 'info',

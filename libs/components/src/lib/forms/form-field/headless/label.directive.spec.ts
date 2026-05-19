@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../test-helpers';
+import { InputDirective } from '../../input/headless';
 import { FormFieldDirective } from './form-field.directive';
 import { LabelDirective } from './label.directive';
 
@@ -8,11 +9,34 @@ import { LabelDirective } from './label.directive';
   template: `
     <div etFormField>
       <et-label>Test</et-label>
+      <input etInput />
     </div>
   `,
-  imports: [FormFieldDirective, LabelDirective],
+  imports: [FormFieldDirective, InputDirective, LabelDirective],
 })
 class LabelTestHost {}
+
+@Component({
+  template: `
+    <div etFormField>
+      <et-label>Required</et-label>
+      <input [required]="true" etInput />
+    </div>
+  `,
+  imports: [FormFieldDirective, InputDirective, LabelDirective],
+})
+class RequiredLabelTestHost {}
+
+@Component({
+  template: `
+    <div etFormField>
+      <et-label>Optional</et-label>
+      <input etInput />
+    </div>
+  `,
+  imports: [FormFieldDirective, InputDirective, LabelDirective],
+})
+class OptionalLabelTestHost {}
 
 @Component({
   template: `<et-label>Standalone</et-label>`,
@@ -36,8 +60,32 @@ describe('LabelDirective', () => {
     });
 
     it('should register with parent form field', () => {
-      const formFieldDir = fixture.debugElement.children[0].injector.get(FormFieldDirective);
+      const formFieldDir = fixture.debugElement.children[0]!.injector.get(FormFieldDirective);
       expect(formFieldDir.registeredLabel()).toBeTruthy();
+    });
+  });
+
+  describe('required marker', () => {
+    it('renders a required marker when the control is required', () => {
+      TestBed.configureTestingModule({ imports: [RequiredLabelTestHost] });
+
+      const fixture = TestBed.createComponent(RequiredLabelTestHost);
+      fixture.detectChanges();
+
+      const marker = fixture.nativeElement.querySelector('.et-label-required-marker');
+
+      expect(marker?.textContent?.trim()).toBe('*');
+    });
+
+    it('does not render a required marker when the control is optional', () => {
+      TestBed.configureTestingModule({ imports: [OptionalLabelTestHost] });
+
+      const fixture = TestBed.createComponent(OptionalLabelTestHost);
+      fixture.detectChanges();
+
+      const marker = fixture.nativeElement.querySelector('.et-label-required-marker');
+
+      expect(marker).toBeNull();
     });
   });
 

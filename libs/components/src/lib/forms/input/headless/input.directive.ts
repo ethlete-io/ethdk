@@ -21,7 +21,6 @@ export class InputDirective implements FormValueControl<string>, FormFieldContro
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
 
-  // FormValueControl — bound by [formField]
   public value = model('');
   public touched = model(false);
   public disabled = input(false);
@@ -32,17 +31,14 @@ export class InputDirective implements FormValueControl<string>, FormFieldContro
   public required = input(false);
   public name = input('');
 
-  // Own inputs
   public type = input<InputType>(INPUT_TYPES.TEXT);
   public placeholder = input('');
   public autocomplete = input('');
   public textAlign = input<InputTextAlignment>(INPUT_TEXT_ALIGNMENTS.START);
 
-  // Computed
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
   public hasValue = computed(() => this.value().length > 0);
 
-  // Form field integration
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.TEXT_INPUT);
   public focused = signal(false);

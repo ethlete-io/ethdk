@@ -1,76 +1,44 @@
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
-import {
-  FormFieldCombinedStorybookComponent,
-  FormFieldInputStorybookComponent,
-  FormFieldUsernameHintStorybookComponent,
-  InputLabelModesStorybookComponent,
-  InputVariantsShowcaseStorybookComponent,
-  InputWithPrefixSuffixStorybookComponent,
-} from './components';
+import { FormFieldInputStorybookComponent } from './components';
 
 export default {
   title: 'Components/Forms/Input',
   component: FormFieldInputStorybookComponent,
   decorators: [moduleMetadata({ imports: [FormFieldInputStorybookComponent] })],
+  argTypes: {
+    appearance: { control: 'select', options: ['box', 'underline'] },
+    fill: { control: 'select', options: ['transparent', 'filled'] },
+    size: { control: 'select', options: ['sm', 'md', 'lg'] },
+    labelMode: { control: 'select', options: ['static', 'inline', 'floating-inside', 'floating-outside'] },
+    type: { control: 'select', options: ['text', 'email', 'password', 'search', 'tel', 'number'] },
+    label: { control: 'text' },
+    placeholder: { control: 'text' },
+    hint: { control: 'text' },
+    value: { control: 'text' },
+    disabled: { control: 'boolean' },
+    required: { control: 'boolean' },
+    showPrefix: { control: 'boolean' },
+    showSuffix: { control: 'boolean' },
+    color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
+  },
+  args: {
+    appearance: 'box',
+    fill: 'transparent',
+    size: 'md',
+    labelMode: 'static',
+    type: 'text',
+    label: 'Label',
+    placeholder: 'Placeholder',
+    hint: '',
+    value: '',
+    disabled: false,
+    required: false,
+    showPrefix: false,
+    showSuffix: false,
+    color: 'brand',
+  },
 } as Meta<FormFieldInputStorybookComponent>;
 
 type Story = StoryObj<FormFieldInputStorybookComponent>;
 
 export const Default: Story = {};
-
-export const WithPrefixSuffix: StoryObj<InputWithPrefixSuffixStorybookComponent> = {
-  decorators: [moduleMetadata({ imports: [InputWithPrefixSuffixStorybookComponent] })],
-  render: () => ({
-    template: `<et-sb-input-with-prefix-suffix />`,
-  }),
-};
-
-export const UsernameLargeHint: StoryObj<FormFieldUsernameHintStorybookComponent> = {
-  decorators: [moduleMetadata({ imports: [FormFieldUsernameHintStorybookComponent] })],
-  render: () => ({
-    template: `<et-sb-form-field-username-hint />`,
-  }),
-};
-
-const COLOR_OPTIONS = ['brand', 'danger', 'success', 'warning', 'neutral'] as const;
-
-export const VariantsShowcase: StoryObj<InputVariantsShowcaseStorybookComponent> = {
-  decorators: [moduleMetadata({ imports: [InputVariantsShowcaseStorybookComponent] })],
-  argTypes: {
-    color: { control: 'select', options: COLOR_OPTIONS },
-    theme: {
-      control: 'select',
-      options: ['dark', 'light'],
-    },
-    disabled: {
-      control: 'boolean',
-    },
-    value: {
-      control: 'text',
-    },
-  },
-  args: {
-    color: 'brand',
-    theme: 'dark',
-    disabled: false,
-    value: '',
-  },
-  render: (args) => ({
-    props: args,
-    template: `<et-sb-input-variants-showcase [color]="color" [theme]="theme" [disabled]="disabled" [value]="value" />`,
-  }),
-};
-
-export const LabelModes: StoryObj<InputLabelModesStorybookComponent> = {
-  decorators: [moduleMetadata({ imports: [InputLabelModesStorybookComponent] })],
-  render: () => ({
-    template: `<et-sb-input-label-modes />`,
-  }),
-};
-
-export const CombinedForm: StoryObj<FormFieldCombinedStorybookComponent> = {
-  decorators: [moduleMetadata({ imports: [FormFieldCombinedStorybookComponent] })],
-  render: () => ({
-    template: `<et-sb-form-field-combined />`,
-  }),
-};

@@ -1,0 +1,145 @@
+@property --et-choice-field-gap {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 8px;
+}
+
+@property --et-choice-field-support-duration {
+  syntax: '<time>';
+  inherits: true;
+  initial-value: 180ms;
+}
+
+@property --et-choice-field-support-offset {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 4px;
+}
+
+@property --et-choice-field-label-font-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 14px;
+}
+
+@property --et-choice-field-error-font-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 12px;
+}
+
+@property --et-choice-field-hint-font-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 12px;
+}
+
+et-choice-field {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  gap: 4px;
+  color: var(--et-surface-color-solid, currentColor);
+
+  .et-choice-field-control {
+    display: flex;
+    align-items: center;
+    gap: var(--et-choice-field-gap);
+  }
+
+  .et-choice-field-control-slot {
+    flex: 0 0 auto;
+  }
+
+  .et-choice-field-label-area {
+    display: flex;
+    align-items: baseline;
+    font-size: var(--et-choice-field-label-font-size);
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--et-surface-color-muted-solid, currentColor);
+    cursor: pointer;
+    user-select: none;
+    min-inline-size: 0;
+    flex: 1;
+    overflow: hidden;
+
+    et-label {
+      display: inline;
+      min-inline-size: 0;
+    }
+  }
+
+  &:has([aria-disabled='true']) .et-choice-field-label-area,
+  &:has(:disabled) .et-choice-field-label-area {
+    cursor: not-allowed;
+  }
+
+  .et-choice-field-support {
+    overflow: clip;
+    block-size: 0;
+  }
+
+  .et-choice-field-support-stack {
+    position: relative;
+    display: grid;
+  }
+
+  .et-choice-field-support-content {
+    grid-area: 1 / 1;
+    min-inline-size: 0;
+    opacity: 0;
+    transform: translateY(0);
+
+    &[data-active] {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .et-choice-field-errors {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: var(--et-choice-field-error-font-size);
+    color: var(--_et-choice-field-frozen-error-color, var(--et-theme-color-primary-solid));
+    padding-inline-start: calc(var(--et-choice-field-gap) + var(--et-checkbox-size, 20px));
+  }
+
+  .et-choice-field-hint {
+    font-size: var(--et-choice-field-hint-font-size);
+    color: var(--et-surface-color-muted-solid, currentColor);
+    padding-inline-start: calc(var(--et-choice-field-gap) + var(--et-checkbox-size, 20px));
+
+    &:empty {
+      display: none;
+    }
+  }
+
+  &[data-can-animate] {
+    .et-choice-field-support {
+      transition: block-size var(--et-choice-field-support-duration) ease;
+    }
+
+    .et-choice-field-support-content {
+      transition:
+        opacity var(--et-choice-field-support-duration) ease,
+        transform var(--et-choice-field-support-duration) ease;
+
+      &[data-active] {
+        @starting-style {
+          opacity: 0;
+          transform: translateY(var(--et-choice-field-support-offset));
+        }
+      }
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  et-choice-field {
+    --et-choice-field-support-duration: 1ms;
+    --et-choice-field-support-offset: 0px;
+  }
+}

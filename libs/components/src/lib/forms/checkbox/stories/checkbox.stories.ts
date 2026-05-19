@@ -1,5 +1,5 @@
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
-import { FormFieldCheckboxStorybookComponent } from './components';
+import { CheckboxGroupStorybookComponent, FormFieldCheckboxStorybookComponent } from './checkbox-storybook.component';
 
 export default {
   title: 'Components/Forms/Checkbox',
@@ -10,3 +10,10 @@ export default {
 type Story = StoryObj<FormFieldCheckboxStorybookComponent>;
 
 export const Default: Story = {};
+
+export const Group: StoryObj<CheckboxGroupStorybookComponent> = {
+  render: () => ({
+    moduleMetadata: { imports: [CheckboxGroupStorybookComponent] },
+    template: '<et-sb-checkbox-group />',
+  }),
+};

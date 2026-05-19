@@ -4,6 +4,9 @@ import { ValidationError } from '@angular/forms/signals';
 export const FORM_FIELD_CONTROL_TYPES = {
   TEXT_INPUT: 'text-input',
   CHECKBOX: 'checkbox',
+  RADIO: 'radio',
+  SWITCH: 'switch',
+  SEGMENTED_BUTTON: 'segmented-button',
 } as const;
 
 export type FormFieldControlType = (typeof FORM_FIELD_CONTROL_TYPES)[keyof typeof FORM_FIELD_CONTROL_TYPES];
@@ -13,6 +16,7 @@ export type FormFieldControl = {
   invalid: Signal<boolean>;
   errors: Signal<readonly ValidationError.WithOptionalFieldTree[]>;
   name: Signal<string>;
+  required?: Signal<boolean>;
   describedBy: WritableSignal<string | null>;
   controlType: Signal<FormFieldControlType>;
   focused?: Signal<boolean>;
@@ -30,6 +34,7 @@ export type FormFieldDirectiveBase = {
   registerHint(hint: HintComponentBase): void;
   unregisterHint(hint: HintComponentBase): void;
   unregisterLabel(label: LabelDirectiveBase): void;
+  registeredControl: WritableSignal<FormFieldControl | null>;
   registeredHint: WritableSignal<HintComponentBase | null>;
   registeredLabel: WritableSignal<LabelDirectiveBase | null>;
   activate(): void;

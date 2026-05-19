@@ -35,7 +35,7 @@ describe('NotificationComponent', () => {
         title: 'Upload failed',
         message: 'Please try again.',
         progress: 42,
-        action: { label: 'Retry', onClick: () => undefined },
+        action: { label: 'Retry', handler: () => undefined },
       },
       {
         managerConfig: {

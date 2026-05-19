@@ -42,14 +42,14 @@ describe('CheckboxDirective', () => {
     });
 
     it('should register with parent form field', () => {
-      const formFieldDir = fixture.debugElement.children[0].injector.get(FormFieldDirective);
+      const formFieldDir = fixture.debugElement.children[0]!.injector.get(FormFieldDirective);
       expect(formFieldDir.registeredControl()).toBeTruthy();
     });
 
     it('should compute labelId from registered label', () => {
-      const checkboxDir = fixture.debugElement.children[0]
-        .query((el) => el.nativeElement.matches('[etCheckbox]'))
-        .injector.get(CheckboxDirective);
+      const checkboxDir = fixture.debugElement.children[0]!.query((el) =>
+        el.nativeElement.matches('[etCheckbox]'),
+      ).injector.get(CheckboxDirective);
 
       expect(checkboxDir.labelId()).toMatch(/^et-label-\d+$/);
     });
@@ -76,7 +76,7 @@ describe('CheckboxDirective', () => {
 
     it('should toggle checked on click', () => {
       const checkboxEl = fixture.nativeElement.querySelector('[etCheckbox]') as HTMLElement;
-      const checkboxDir = fixture.debugElement.children[0].injector.get(CheckboxDirective);
+      const checkboxDir = fixture.debugElement.children[0]!.injector.get(CheckboxDirective);
 
       expect(checkboxDir.checked()).toBe(false);
 
@@ -89,7 +89,7 @@ describe('CheckboxDirective', () => {
 
     it('should toggle back to unchecked on second click', () => {
       const checkboxEl = fixture.nativeElement.querySelector('[etCheckbox]') as HTMLElement;
-      const checkboxDir = fixture.debugElement.children[0].injector.get(CheckboxDirective);
+      const checkboxDir = fixture.debugElement.children[0]!.injector.get(CheckboxDirective);
 
       checkboxEl.click();
       checkboxEl.click();
@@ -100,7 +100,7 @@ describe('CheckboxDirective', () => {
 
     it('should set touched on blur', () => {
       const checkboxEl = fixture.nativeElement.querySelector('[etCheckbox]') as HTMLElement;
-      const checkboxDir = fixture.debugElement.children[0].injector.get(CheckboxDirective);
+      const checkboxDir = fixture.debugElement.children[0]!.injector.get(CheckboxDirective);
 
       expect(checkboxDir.touched()).toBe(false);
 

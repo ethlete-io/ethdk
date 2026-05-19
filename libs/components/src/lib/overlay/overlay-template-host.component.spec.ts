@@ -1,6 +1,7 @@
 import { Component, TemplateRef, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
+import { OverlaySurfaceContext } from './headless/overlay-surface.directive';
 import { OVERLAY_DATA } from './overlay-data';
 import { OverlayTemplateHostComponent, OverlayTemplateHostData } from './overlay-template-host.component';
 
@@ -33,7 +34,7 @@ describe('OverlayTemplateHostComponent', () => {
         close: () => undefined,
         message: 'Rendered through ngTemplateOutlet',
       } as OverlayTemplateHostData['context'] & { message: string },
-      template: contentFixture.componentInstance.template(),
+      template: contentFixture.componentInstance.template() as unknown as TemplateRef<OverlaySurfaceContext>,
     };
 
     TestBed.resetTestingModule();

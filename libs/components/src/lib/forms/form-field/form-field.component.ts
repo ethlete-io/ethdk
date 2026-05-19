@@ -295,7 +295,6 @@ export class FormFieldComponent {
   });
 
   protected errorActive = computed(() => this.semanticSupportState() === SUPPORT_CONTENT_STATE.ERROR);
-  protected errorHiddenFromAssistiveTech = computed(() => !this.errorActive());
   protected errorState = computed(() => {
     const presentation = this.supportPresentation();
 
@@ -306,7 +305,6 @@ export class FormFieldComponent {
   protected visibleErrors = computed(() => this.supportPresentation().renderedErrors);
 
   protected hintActive = computed(() => this.semanticSupportState() === SUPPORT_CONTENT_STATE.HINT);
-  protected hintHiddenFromAssistiveTech = computed(() => !this.hintActive());
   protected hintState = computed(() => {
     const presentation = this.supportPresentation();
 
@@ -433,8 +431,15 @@ export class FormFieldComponent {
     }
 
     const target = event.target as HTMLElement;
+    const tagName = target.tagName;
 
-    if (target.closest('input, textarea, select, button, a[href]')) {
+    if (
+      tagName === 'INPUT' ||
+      tagName === 'TEXTAREA' ||
+      tagName === 'SELECT' ||
+      tagName === 'BUTTON' ||
+      tagName === 'A'
+    ) {
       return;
     }
 

@@ -37,22 +37,22 @@ describe('InputDirective', () => {
     });
 
     it('should register with parent form field', () => {
-      const formFieldDir = fixture.debugElement.children[0].injector.get(FormFieldDirective);
+      const formFieldDir = fixture.debugElement.children[0]!.injector.get(FormFieldDirective);
       expect(formFieldDir.registeredControl()).toBeTruthy();
     });
 
     it('should compute labelId from registered label', () => {
-      const inputDir = fixture.debugElement.children[0]
-        .query((el) => el.nativeElement.matches('[etInput]'))
-        .injector.get(InputDirective);
+      const inputDir = fixture.debugElement.children[0]!.query((el) =>
+        el.nativeElement.matches('[etInput]'),
+      ).injector.get(InputDirective);
 
       expect(inputDir.labelId()).toMatch(/^et-label-\d+$/);
     });
 
     it('should have describedBy set from form field', () => {
-      const inputDir = fixture.debugElement.children[0]
-        .query((el) => el.nativeElement.matches('[etInput]'))
-        .injector.get(InputDirective);
+      const inputDir = fixture.debugElement.children[0]!.query((el) =>
+        el.nativeElement.matches('[etInput]'),
+      ).injector.get(InputDirective);
 
       expect(inputDir.describedById()).toContain('et-form-field-error');
     });
@@ -73,12 +73,12 @@ describe('InputDirective', () => {
     });
 
     it('should have null labelId without parent', () => {
-      const inputDir = fixture.debugElement.children[0].injector.get(InputDirective);
+      const inputDir = fixture.debugElement.children[0]!.injector.get(InputDirective);
       expect(inputDir.labelId()).toBeNull();
     });
 
     it('should have null describedBy without parent', () => {
-      const inputDir = fixture.debugElement.children[0].injector.get(InputDirective);
+      const inputDir = fixture.debugElement.children[0]!.injector.get(InputDirective);
       expect(inputDir.describedById()).toBeNull();
     });
   });
@@ -91,7 +91,7 @@ describe('InputDirective', () => {
       TestBed.configureTestingModule({ imports: [StandaloneInputTestHost] });
       fixture = TestBed.createComponent(StandaloneInputTestHost);
       fixture.detectChanges();
-      inputDir = fixture.debugElement.children[0].injector.get(InputDirective);
+      inputDir = fixture.debugElement.children[0]!.injector.get(InputDirective);
     });
 
     it('should have empty value by default', () => {
