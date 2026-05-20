@@ -61,10 +61,15 @@ et-radio-group {
   .et-radio-group-hint {
     font-size: var(--et-radio-group-hint-font-size);
     color: var(--et-surface-color-muted-solid, currentColor);
+    transition: color 150ms ease;
 
     &:empty {
       display: none;
     }
+  }
+
+  &[data-disabled] .et-radio-group-hint {
+    color: var(--et-surface-interaction-disabled-solid, currentColor);
   }
 
   &[data-can-animate] {

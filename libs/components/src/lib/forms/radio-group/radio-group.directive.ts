@@ -12,6 +12,7 @@ import { RADIO_GROUP_TOKEN, RadioGroupDirectiveBase, RadioGroupItem, RadioGroupL
     '[attr.aria-required]': 'required() || null',
     '[attr.aria-describedby]': 'describedById() || null',
     '[attr.aria-labelledby]': 'labelId() || null',
+    '[attr.data-disabled]': 'disabled() || null',
   },
 })
 export class RadioGroupDirective implements RadioGroupDirectiveBase, FormFieldControl {

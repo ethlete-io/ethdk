@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
 import { disabled, form, FormField, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
+import { HintComponent } from '../../form-field';
 import { RadioGroupComponent, RadioGroupLabelDirective } from '../../radio-group';
 import { RADIO_IMPORTS } from '../radio.imports';
 
@@ -14,15 +15,26 @@ import { RADIO_IMPORTS } from '../radio.imports';
         @for (option of options(); track option.value) {
           <et-radio [value]="option.value">{{ option.label }}</et-radio>
         }
+        @if (hint()) {
+          <et-hint>{{ hint() }}</et-hint>
+        }
       </et-radio-group>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [...RADIO_IMPORTS, RadioGroupComponent, RadioGroupLabelDirective, FormField, ProvideColorDirective],
+  imports: [
+    ...RADIO_IMPORTS,
+    RadioGroupComponent,
+    RadioGroupLabelDirective,
+    FormField,
+    ProvideColorDirective,
+    HintComponent,
+  ],
 })
 export class FormFieldRadioStorybookComponent {
   public label = input('Favorite color');
+  public hint = input('');
   public disabled = input(false);
   public required = input(false);
   public color = input('brand');

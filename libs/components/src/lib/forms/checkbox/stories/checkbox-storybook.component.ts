@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, ViewEncapsulation } from '@angular/core';
-import { form, FormField, required } from '@angular/forms/signals';
+import { ChangeDetectionStrategy, Component, inject, input, signal, ViewEncapsulation } from '@angular/core';
+import { disabled, form, FormField, required } from '@angular/forms/signals';
+import { ProvideColorDirective } from '@ethlete/core';
 import { CheckboxGroupDirective } from '../../checkbox-group';
 import { CHOICE_FIELD_IMPORTS } from '../../choice-field';
 import { CHECKBOX_IMPORTS } from '../checkbox.imports';
@@ -7,43 +8,40 @@ import { CHECKBOX_IMPORTS } from '../checkbox.imports';
 @Component({
   selector: 'et-sb-form-field-checkbox',
   template: `
-    <div class="flex max-w-md flex-col gap-4 p-8 font-sans">
+    <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
       <et-choice-field>
         <et-checkbox [formField]="demoForm.acceptTerms" />
         <et-label>I accept the terms and conditions</et-label>
+        @if (hint()) {
+          <et-hint>{{ hint() }}</et-hint>
+        }
       </et-choice-field>
-
-      <et-choice-field>
-        <et-checkbox [formField]="demoForm.newsletter" />
-        <et-label>Subscribe to newsletter</et-label>
-      </et-choice-field>
-
-      <p class="text-xs text-et-surface-muted">"Accept terms" is required. Click away from it to trigger validation.</p>
-
-      <pre class="rounded bg-et-surface-bg p-2 text-xs">{{ debugInfo() }}</pre>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [...CHOICE_FIELD_IMPORTS, ...CHECKBOX_IMPORTS, FormField],
+  imports: [...CHOICE_FIELD_IMPORTS, ...CHECKBOX_IMPORTS, FormField, ProvideColorDirective],
 })
 export class FormFieldCheckboxStorybookComponent {
+  public color = input('brand');
+  public hint = input('');
+  public disabled = input(false);
+  public required = input(false);
+
   private formModel = signal({
     acceptTerms: false,
-    newsletter: false,
   });
 
   public demoForm = form(this.formModel, (s) => {
-    required(s.acceptTerms, { message: 'You must accept the terms' });
+    disabled(s, () => this.disabled());
+    required(s.acceptTerms, { when: () => this.required(), message: 'You must accept the terms' });
   });
-
-  public debugInfo = computed(() => JSON.stringify(this.formModel(), null, 2));
 }
 
 @Component({
   selector: 'et-sb-checkbox-group',
   template: `
-    <div class="flex max-w-md flex-col gap-4 p-8 font-sans">
+    <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
       <et-choice-field>
         <et-checkbox
           [skipGroup]="true"
@@ -70,17 +68,18 @@ export class FormFieldCheckboxStorybookComponent {
           <et-label>Option C</et-label>
         </et-choice-field>
       </div>
-
-      <pre class="rounded bg-et-surface-bg p-2 text-xs">{{ debugInfo() }}</pre>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [...CHOICE_FIELD_IMPORTS, ...CHECKBOX_IMPORTS, FormField],
+  imports: [...CHOICE_FIELD_IMPORTS, ...CHECKBOX_IMPORTS, FormField, ProvideColorDirective],
   hostDirectives: [CheckboxGroupDirective],
 })
 export class CheckboxGroupStorybookComponent {
   protected groupDir = inject(CheckboxGroupDirective);
+
+  public color = input('brand');
+  public disabled = input(false);
 
   private formModel = signal({
     optionA: false,
@@ -88,7 +87,7 @@ export class CheckboxGroupStorybookComponent {
     optionC: false,
   });
 
-  public demoForm = form(this.formModel);
-
-  public debugInfo = computed(() => JSON.stringify(this.formModel(), null, 2));
+  public demoForm = form(this.formModel, (s) => {
+    disabled(s, () => this.disabled());
+  });
 }

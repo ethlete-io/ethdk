@@ -64,6 +64,9 @@ et-choice-field {
     min-inline-size: 0;
     flex: 1;
     overflow: hidden;
+    transition:
+      color 150ms ease,
+      opacity 150ms ease;
 
     et-label {
       display: inline;
@@ -74,6 +77,13 @@ et-choice-field {
   &:has([aria-disabled='true']) .et-choice-field-label-area,
   &:has(:disabled) .et-choice-field-label-area {
     cursor: not-allowed;
+    color: var(--et-surface-interaction-disabled-solid, currentColor);
+    pointer-events: none;
+  }
+
+  &:has([aria-disabled='true']) .et-choice-field-hint,
+  &:has(:disabled) .et-choice-field-hint {
+    color: var(--et-surface-interaction-disabled-solid, currentColor);
   }
 
   .et-choice-field-support {
@@ -111,6 +121,7 @@ et-choice-field {
     font-size: var(--et-choice-field-hint-font-size);
     color: var(--et-surface-color-muted-solid, currentColor);
     padding-inline-start: calc(var(--et-choice-field-gap) + var(--et-checkbox-size, 20px));
+    transition: color 150ms ease;
 
     &:empty {
       display: none;

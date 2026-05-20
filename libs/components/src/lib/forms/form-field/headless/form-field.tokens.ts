@@ -17,6 +17,8 @@ export type FormFieldControl = {
   errors: Signal<readonly ValidationError.WithOptionalFieldTree[]>;
   name: Signal<string>;
   required?: Signal<boolean>;
+  disabled?: Signal<boolean>;
+  effectiveDisabled?: Signal<boolean>;
   describedBy: WritableSignal<string | null>;
   controlType: Signal<FormFieldControlType>;
   focused?: Signal<boolean>;

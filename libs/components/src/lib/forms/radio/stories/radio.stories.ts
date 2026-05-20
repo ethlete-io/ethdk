@@ -7,12 +7,14 @@ export default {
   decorators: [moduleMetadata({ imports: [FormFieldRadioStorybookComponent] })],
   argTypes: {
     label: { control: 'text' },
+    hint: { control: 'text' },
     disabled: { control: 'boolean' },
     required: { control: 'boolean' },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
   },
   args: {
     label: 'Favorite color',
+    hint: '',
     disabled: false,
     required: false,
     color: 'brand',

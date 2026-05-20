@@ -46,9 +46,16 @@ et-radio {
   width: fit-content;
 
   &[aria-disabled='true'] {
-    opacity: var(--et-radio-opacity-disabled);
     pointer-events: none;
     cursor: default;
+
+    .et-radio-circle {
+      opacity: var(--et-radio-opacity-disabled);
+    }
+
+    .et-radio-label {
+      color: var(--et-surface-interaction-disabled-solid, currentColor);
+    }
   }
 
   .et-radio-circle {
@@ -110,11 +117,17 @@ et-radio {
 
   &[data-can-animate] {
     .et-radio-circle {
-      transition: border-color var(--et-radio-transition-duration) ease;
+      transition:
+        border-color var(--et-radio-transition-duration) ease,
+        opacity var(--et-radio-transition-duration) ease;
 
       &::after {
         transition: transform var(--et-radio-transition-duration) ease;
       }
+    }
+
+    .et-radio-label {
+      transition: color var(--et-radio-transition-duration) ease;
     }
   }
 }

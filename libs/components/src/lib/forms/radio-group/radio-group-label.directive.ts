@@ -26,6 +26,7 @@ let uniqueIdCounter = 0;
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[attr.id]': 'id()',
+    '[attr.data-disabled]': 'effectiveDisabled() || null',
   },
   styles: `
     et-radio-group-label {
@@ -47,6 +48,10 @@ let uniqueIdCounter = 0;
       color: var(--et-theme-color-primary-solid);
       margin-inline-start: 0.45ch;
     }
+
+    et-radio-group-label[data-disabled] .et-radio-group-label-required-marker {
+      color: var(--et-surface-interaction-disabled-solid, currentColor);
+    }
   `,
 })
 export class RadioGroupLabelDirective implements RadioGroupLabelBase {
@@ -55,6 +60,7 @@ export class RadioGroupLabelDirective implements RadioGroupLabelBase {
 
   public id = signal(`et-radio-group-label-${uniqueIdCounter++}`);
   public requiredMarkerVisible = computed(() => this.radioGroup.required());
+  public effectiveDisabled = computed(() => this.radioGroup.disabled());
 
   constructor() {
     this.radioGroup.registeredLabel.set(this);

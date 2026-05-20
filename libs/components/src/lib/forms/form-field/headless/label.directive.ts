@@ -26,6 +26,7 @@ let uniqueIdCounter = 0;
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[attr.id]': 'id()',
+    '[attr.data-disabled]': 'effectiveDisabled() || null',
     '(click)': 'activateControl()',
   },
   styles: `
@@ -43,6 +44,10 @@ let uniqueIdCounter = 0;
       color: var(--et-theme-color-primary-solid);
       margin-inline-start: 0.45ch;
     }
+
+    et-label[data-disabled] .et-label-required-marker {
+      color: var(--et-surface-interaction-disabled-solid, currentColor);
+    }
   `,
 })
 export class LabelDirective implements LabelDirectiveBase {
@@ -51,6 +56,12 @@ export class LabelDirective implements LabelDirectiveBase {
 
   public id = signal(`et-label-${uniqueIdCounter++}`);
   public requiredMarkerVisible = computed(() => this.formField?.registeredControl()?.required?.() ?? false);
+  public effectiveDisabled = computed(
+    () =>
+      this.formField?.registeredControl()?.effectiveDisabled?.() ??
+      this.formField?.registeredControl()?.disabled?.() ??
+      false,
+  );
 
   constructor() {
     this.formField?.registeredLabel.set(this);

@@ -150,6 +150,8 @@ et-checkbox {
   }
 
   &[data-can-animate] {
+    transition: opacity var(--et-checkbox-transition-duration) ease;
+
     .et-checkbox-box {
       transition:
         background-color var(--et-checkbox-transition-duration) ease,

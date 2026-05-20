@@ -498,17 +498,22 @@ et-form-field {
     gap: 2px;
     font-size: var(--et-form-field-error-font-size);
     color: var(--_et-form-field-frozen-error-color, var(--et-theme-color-primary-solid));
-    padding-inline-start: calc(var(--et-form-field-control-padding-inline) - 2px);
+    padding-inline-start: calc(var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width));
   }
 
   .et-form-field-hint {
     font-size: var(--et-form-field-hint-font-size);
     color: var(--et-surface-color-muted-solid, currentColor);
-    padding-inline-start: calc(var(--et-form-field-control-padding-inline) - 2px);
+    padding-inline-start: calc(var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width));
+    transition: color 150ms ease;
 
     &:empty {
       display: none;
     }
+  }
+
+  &:has(:disabled) .et-form-field-hint {
+    color: var(--et-surface-interaction-disabled-solid, currentColor);
   }
 
   &[data-error] {
