@@ -15,6 +15,9 @@
     "storybook": "nx run playground:storybook --no-open",
     "update-nx": "rm -f migrations.json && yarn dlx nx migrate latest && yarn dlx nx migrate --run-migrations --if-exists"
   },
+  "resolutions": {
+    "webpack": "5.101.2"
+  },
   "dependencies": {
     "@angular/animations": "20.3.6",
     "@angular/cdk": "20.2.9",
