@@ -1,17 +1,5 @@
-import {
-  computed,
-  DestroyRef,
-  Directive,
-  effect,
-  ElementRef,
-  inject,
-  input,
-  model,
-  signal,
-  untracked,
-} from '@angular/core';
+import { computed, DestroyRef, Directive, ElementRef, inject, input, model, signal } from '@angular/core';
 import { FormCheckboxControl, ValidationError } from '@angular/forms/signals';
-import { CHECKBOX_GROUP_TOKEN } from '../../checkbox-group/checkbox-group.tokens';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 
 @Directive({
@@ -26,20 +14,19 @@ import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '..
     '[attr.aria-labelledby]': 'labelId() || null',
     '[attr.tabindex]': 'disabled() ? -1 : 0',
     '(click)': 'toggle()',
-    '(keydown.space)': 'toggle(); $event.preventDefault()',
+    '(keydown.space)': '$event.preventDefault()',
+    '(keyup.space)': 'toggle()',
     '(blur)': 'touched.set(true)',
   },
 })
 export class CheckboxDirective implements FormCheckboxControl, FormFieldControl {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
-  private checkboxGroup = inject(CHECKBOX_GROUP_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
-  private el = inject(ElementRef);
+  private el = inject<ElementRef<HTMLElement>>(ElementRef);
 
   public checked = model(false);
   public indeterminate = model(false);
   public touched = model(false);
-  public skipGroup = input(false);
   public disabled = input(false);
   public invalid = input(false);
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
@@ -63,36 +50,8 @@ export class CheckboxDirective implements FormCheckboxControl, FormFieldControl 
 
   public describedById = computed(() => this.describedBy());
 
-  private groupItem = { checked: this.checked, indeterminate: this.indeterminate };
-
   constructor() {
     this.formField?.registerControl(this);
-
-    if (this.checkboxGroup) {
-      const group = this.checkboxGroup;
-      let registered = false;
-
-      effect(() => {
-        const skip = this.skipGroup();
-
-        untracked(() => {
-          if (skip && registered) {
-            group.unregisterItem(this.groupItem);
-            registered = false;
-          } else if (!skip && !registered) {
-            group.registerItem(this.groupItem);
-            registered = true;
-          }
-        });
-      });
-
-      this.destroyRef.onDestroy(() => {
-        if (registered) {
-          group.unregisterItem(this.groupItem);
-        }
-      });
-    }
-
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
   }
 
@@ -115,6 +74,6 @@ export class CheckboxDirective implements FormCheckboxControl, FormFieldControl 
     if (this.disabled()) return;
 
     this.toggle();
-    this.el.nativeElement.focus();
+    this.el.nativeElement.focus({ focusVisible: false } as unknown as FocusOptions);
   }
 }

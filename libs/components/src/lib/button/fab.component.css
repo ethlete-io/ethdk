@@ -22,7 +22,7 @@
   height: var(--_et-fab-size, 4rem);
   font-size: var(--et-button-font-size);
   font-weight: var(--et-button-font-weight);
-  box-shadow: var(--et-button-shadow), var(--_et-focus-ring-shadow);
+  box-shadow: var(--et-button-shadow);
   cursor: var(--et-button-cursor);
   text-decoration: none;
   appearance: none;
@@ -36,7 +36,8 @@
     transition:
       background 120ms ease,
       color 120ms ease,
-      box-shadow 120ms ease;
+      box-shadow 120ms ease,
+      outline-color 120ms ease;
   }
 
   &::after {
@@ -47,6 +48,27 @@
     border: 0 solid transparent;
     border-radius: inherit;
     pointer-events: none;
+    transition: background 120ms ease;
+  }
+
+  /* --- Filled (default) --- */
+
+  &:where([data-variant='filled']) {
+    &:hover::after {
+      background: rgb(var(--et-theme-color-on-primary-rgb) / 0.08);
+    }
+
+    &:focus-visible::after {
+      background: rgb(var(--et-theme-color-on-primary-rgb) / 0.12);
+    }
+
+    &:active::after {
+      background: rgb(var(--et-theme-color-on-primary-rgb) / 0.16);
+    }
+
+    &:focus-visible:active::after {
+      background: rgb(var(--et-theme-color-on-primary-rgb) / 0.16);
+    }
   }
 
   &:where([data-size='xs']) {

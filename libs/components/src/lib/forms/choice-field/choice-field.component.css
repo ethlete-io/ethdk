@@ -74,6 +74,18 @@ et-choice-field {
     }
   }
 
+  &:where(:has(.et-choice-field-control:hover)) .et-choice-field-label-area {
+    color: var(--et-surface-color-solid, currentColor);
+  }
+
+  &:where(:has(.et-choice-field-control:active)) .et-choice-field-label-area {
+    color: var(--et-surface-color-solid, currentColor);
+  }
+
+  &:where(:has(:focus-visible)) .et-choice-field-label-area {
+    color: var(--et-surface-color-solid, currentColor);
+  }
+
   &:has([aria-disabled='true']) .et-choice-field-label-area,
   &:has(:disabled) .et-choice-field-label-area {
     cursor: not-allowed;
@@ -89,6 +101,7 @@ et-choice-field {
   .et-choice-field-support {
     overflow: clip;
     block-size: 0;
+    user-select: none;
   }
 
   .et-choice-field-support-stack {
@@ -100,7 +113,6 @@ et-choice-field {
     grid-area: 1 / 1;
     min-inline-size: 0;
     opacity: 0;
-    transform: translateY(0);
 
     &[data-active] {
       opacity: 1;
@@ -113,15 +125,16 @@ et-choice-field {
     flex-direction: column;
     gap: 2px;
     font-size: var(--et-choice-field-error-font-size);
-    color: var(--_et-choice-field-frozen-error-color, var(--et-theme-color-primary-solid));
+    color: var(--et-theme-color-primary-solid);
     padding-inline-start: calc(var(--et-choice-field-gap) + var(--et-checkbox-size, 20px));
+    transform: translateY(var(--et-choice-field-support-offset));
   }
 
   .et-choice-field-hint {
     font-size: var(--et-choice-field-hint-font-size);
     color: var(--et-surface-color-muted-solid, currentColor);
     padding-inline-start: calc(var(--et-choice-field-gap) + var(--et-checkbox-size, 20px));
-    transition: color 150ms ease;
+    transform: translateY(calc(-1 * var(--et-choice-field-support-offset)));
 
     &:empty {
       display: none;
@@ -136,21 +149,22 @@ et-choice-field {
     .et-choice-field-support-content {
       transition:
         opacity var(--et-choice-field-support-duration) ease,
-        transform var(--et-choice-field-support-duration) ease;
+        transform var(--et-choice-field-support-duration) ease,
+        color 150ms ease;
+    }
 
-      &[data-active] {
-        @starting-style {
-          opacity: 0;
-          transform: translateY(var(--et-choice-field-support-offset));
-        }
+    .et-choice-field-errors[data-active] {
+      @starting-style {
+        opacity: 0;
+        transform: translateY(var(--et-choice-field-support-offset));
       }
     }
-  }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  et-choice-field {
-    --et-choice-field-support-duration: 1ms;
-    --et-choice-field-support-offset: 0px;
+    .et-choice-field-hint[data-active] {
+      @starting-style {
+        opacity: 0;
+        transform: translateY(calc(-1 * var(--et-choice-field-support-offset)));
+      }
+    }
   }
 }

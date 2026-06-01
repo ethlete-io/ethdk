@@ -198,8 +198,7 @@ et-form-field {
     min-block-size: var(--et-form-field-control-min-height);
     padding-block: var(--et-form-field-control-padding-block);
     padding-inline: var(--et-form-field-control-padding-inline);
-    border: var(--et-form-field-control-border-width) solid
-      var(--_et-control-border, var(--et-surface-border-solid, currentColor));
+    border: var(--et-form-field-control-border-width) solid var(--et-surface-border-solid, currentColor);
     border-radius: var(--et-form-field-control-border-radius);
     background: var(--_et-form-field-control-background);
     font-size: var(--et-form-field-control-font-size);
@@ -323,8 +322,7 @@ et-form-field {
       &[data-appearance='box'] .et-form-field-label-area--inline {
         padding-inline-end: var(--et-form-field-control-padding-inline);
         margin-inline-end: calc(var(--et-form-field-control-padding-inline) - var(--et-form-field-control-affix-gap));
-        border-inline-end: var(--et-form-field-control-border-width) solid
-          var(--_et-control-border, var(--et-surface-border-solid, currentColor));
+        border-inline-end: var(--et-form-field-control-border-width) solid var(--et-surface-border-solid, currentColor);
       }
     }
 
@@ -399,30 +397,36 @@ et-form-field {
       white-space: nowrap;
     }
 
-    .et-form-field-control-frame:hover,
-    &:not(:has(:focus)):has(.et-form-field-label-area:hover) .et-form-field-control-frame {
-      border-color: var(--_et-control-border, var(--et-surface-interaction-hover-solid, currentColor));
+    &:where(:hover:not(:has(.et-color-interactive-exclude:hover))) .et-form-field-control-frame {
+      border-color: var(--et-surface-interaction-hover-solid, currentColor);
     }
 
-    &[data-error] {
-      .et-form-field-control-frame:hover,
-      &:has(.et-form-field-label-area:hover) .et-form-field-control-frame,
-      .et-form-field-control-frame {
-        border-color: var(--et-theme-color-primary-solid);
-      }
-    }
-
-    &:has(:focus) .et-form-field-control-frame {
-      --et-theme-color-primary-rgb: var(
-        --et-color-primary-focus,
-        var(--et-color-primary-hover, var(--et-color-primary))
-      );
-      border-color: var(--_et-control-border, var(--et-theme-color-primary-solid, highlight));
-    }
-
-    &:has(:focus) .et-form-field-label-area,
-    &:has(:focus) .et-form-field-affix {
+    &:where(:hover:not(:has(.et-color-interactive-exclude:hover))) .et-form-field-label-area,
+    &:where(:hover:not(:has(.et-color-interactive-exclude:hover))) .et-form-field-affix {
       color: var(--et-surface-color-solid, currentColor);
+      opacity: 1;
+    }
+
+    &:where(:has(:focus-visible)) .et-form-field-control-frame {
+      border-color: var(--et-theme-color-primary-solid);
+    }
+
+    &:where(:has(:focus-visible)) .et-form-field-label-area,
+    &:where(:has(:focus-visible)) .et-form-field-affix {
+      color: var(--et-surface-color-solid, currentColor);
+      opacity: 1;
+    }
+
+    &[data-error] .et-form-field-control-frame {
+      border-color: var(--et-theme-color-primary-solid);
+    }
+
+    &[data-error] .et-form-field-label-area {
+      color: var(--et-theme-color-primary-solid);
+    }
+
+    &[data-error] .et-form-field-affix {
+      color: var(--et-theme-color-primary-solid);
       opacity: 1;
     }
 
@@ -449,6 +453,11 @@ et-form-field {
       &[data-fill='transparent'] {
         .et-form-field-control-frame {
           padding-inline: 0;
+        }
+
+        .et-form-field-errors,
+        .et-form-field-hint {
+          padding-inline-start: 0;
         }
       }
     }
@@ -497,7 +506,7 @@ et-form-field {
     flex-direction: column;
     gap: 2px;
     font-size: var(--et-form-field-error-font-size);
-    color: var(--_et-form-field-frozen-error-color, var(--et-theme-color-primary-solid));
+    color: var(--et-theme-color-primary-solid);
     padding-inline-start: calc(var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width));
   }
 
@@ -514,14 +523,6 @@ et-form-field {
 
   &:has(:disabled) .et-form-field-hint {
     color: var(--et-surface-interaction-disabled-solid, currentColor);
-  }
-
-  &[data-error] {
-    --_et-control-border: var(--et-theme-color-primary-solid);
-
-    .et-form-field-label-area {
-      color: var(--et-theme-color-primary-solid);
-    }
   }
 
   &[data-can-animate] {

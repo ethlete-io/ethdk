@@ -18,12 +18,12 @@
   user-select: none;
   line-height: var(--et-button-line-height);
   white-space: nowrap;
-  box-shadow: var(--_et-focus-ring-shadow);
 
   &[data-can-animate] {
     transition:
       color 120ms ease,
       box-shadow 120ms ease,
+      outline-color 120ms ease,
       opacity 120ms ease;
   }
 

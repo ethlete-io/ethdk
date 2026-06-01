@@ -47,7 +47,8 @@ const classMemberOrder = require('./rules/class-member-order');
 const classConstantProperty = require('./rules/class-constant-property');
 const preferConciseAngularHostDirectives = require('./rules/prefer-concise-angular-host-directives');
 const preferConciseAngularStyleMetadata = require('./rules/prefer-concise-angular-style-metadata');
-const { recommendedTs, recommendedTemplate } = require('./configs/recommended');
+const noTypedInjectedElementRef = require('./rules/no-typed-injected-element-ref');
+const { recommendedTs, recommendedTemplate, recommendedSpec } = require('./configs/recommended');
 
 /** @type {import('eslint').ESLint.Plugin} */
 const plugin = {
@@ -102,6 +103,7 @@ const plugin = {
     'class-constant-property': classConstantProperty,
     'prefer-concise-angular-host-directives': preferConciseAngularHostDirectives,
     'prefer-concise-angular-style-metadata': preferConciseAngularStyleMetadata,
+    'no-typed-injected-element-ref': noTypedInjectedElementRef,
   },
 };
 
@@ -126,7 +128,7 @@ const configs = {
    * Both together as a flat array — the most common usage:
    *   export default [...baseConfig, ...ethlete.configs.recommended]
    */
-  recommended: [recommendedTsWithPlugin, recommendedTemplateWithPlugin],
+  recommended: [recommendedTsWithPlugin, recommendedTemplateWithPlugin, recommendedSpec],
 };
 
 const ethletePlugin = { ...plugin, configs };

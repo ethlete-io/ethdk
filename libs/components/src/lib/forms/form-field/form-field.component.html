@@ -25,7 +25,7 @@
 </div>
 
 @if (shouldRenderSupport()) {
-  <div [style.block-size.px]="supportHeight()" class="et-form-field-support">
+  <div [style.block-size.px]="supportHeight()" class="et-form-field-support" etColorInteractiveExclude>
     <div class="et-form-field-support-stack">
       @if (shouldRenderError()) {
         <div
@@ -38,7 +38,7 @@
           [attr.data-active]="errorActive() || null"
           [attr.data-direction]="errorDirection()"
           [attr.data-state]="errorState()"
-          [style.--_et-form-field-frozen-error-color]="errorColor()"
+          [etProvideColor]="errorColorTheme"
           class="et-form-field-support-content et-form-field-errors"
           etAnimatable
         >

@@ -1,0 +1,40 @@
+<div class="et-segmented-button-group-buttons">
+  <ng-content />
+</div>
+
+@if (support.shouldRenderSupport()) {
+  <div [style.block-size.px]="support.supportHeight()" class="et-segmented-button-group-support">
+    <div class="et-segmented-button-group-support-stack">
+      @if (support.shouldRenderError()) {
+        <div
+          #errorContent
+          #errorAnimatable="etAnimatable"
+          [attr.aria-atomic]="support.errorActive() ? 'true' : null"
+          [attr.aria-hidden]="!support.errorActive() ? 'true' : null"
+          [attr.aria-live]="support.errorActive() ? 'polite' : null"
+          [attr.data-active]="support.errorActive() || null"
+          [etProvideColor]="support.errorColorTheme"
+          class="et-segmented-button-group-support-content et-segmented-button-group-errors"
+          etAnimatable
+        >
+          @for (error of support.visibleErrors(); track $index) {
+            <et-form-error [error]="error" />
+          }
+        </div>
+      }
+
+      @if (support.shouldRenderHint()) {
+        <div
+          #hintContent
+          #hintAnimatable="etAnimatable"
+          [attr.aria-hidden]="!support.hintActive() ? 'true' : null"
+          [attr.data-active]="support.hintActive() || null"
+          class="et-segmented-button-group-support-content et-segmented-button-group-hint"
+          etAnimatable
+        >
+          <ng-content select="et-hint" />
+        </div>
+      }
+    </div>
+  </div>
+}

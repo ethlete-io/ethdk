@@ -1,0 +1,38 @@
+<ng-content />
+
+@if (support.shouldRenderSupport()) {
+  <div [style.block-size.px]="support.supportHeight()" class="et-checkbox-group-support">
+    <div class="et-checkbox-group-support-stack">
+      @if (support.shouldRenderError()) {
+        <div
+          #errorContent
+          #errorAnimatable="etAnimatable"
+          [attr.aria-atomic]="support.errorActive() ? 'true' : null"
+          [attr.aria-hidden]="!support.errorActive() ? 'true' : null"
+          [attr.aria-live]="support.errorActive() ? 'polite' : null"
+          [attr.data-active]="support.errorActive() || null"
+          [etProvideColor]="support.errorColorTheme"
+          class="et-checkbox-group-support-content et-checkbox-group-errors"
+          etAnimatable
+        >
+          @for (error of support.visibleErrors(); track $index) {
+            <et-form-error [error]="error" />
+          }
+        </div>
+      }
+
+      @if (support.shouldRenderHint()) {
+        <div
+          #hintContent
+          #hintAnimatable="etAnimatable"
+          [attr.aria-hidden]="!support.hintActive() ? 'true' : null"
+          [attr.data-active]="support.hintActive() || null"
+          class="et-checkbox-group-support-content et-checkbox-group-hint"
+          etAnimatable
+        >
+          <ng-content select="et-hint" />
+        </div>
+      }
+    </div>
+  </div>
+}

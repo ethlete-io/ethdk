@@ -288,12 +288,11 @@ import { TabComponent } from './tab.component';
         border-radius: 0.5rem;
         padding: 4px 8px;
         margin: -4px -8px;
-        box-shadow: var(--_et-focus-ring-shadow);
-        transition: box-shadow 120ms ease;
       }
 
       &:focus-visible .et-tab-group__trigger-content {
-        box-shadow: var(--_et-focus-ring-shadow);
+        outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+        outline-offset: 2px;
       }
 
       .et-tab-group__trigger-icon {

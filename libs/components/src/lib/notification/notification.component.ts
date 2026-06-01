@@ -103,12 +103,12 @@ export class NotificationComponent {
 
       untracked(() => {
         if (theme) {
-          this.provideTheme.forceMainColor(theme);
+          this.provideTheme.forceColor(theme);
 
           return;
         }
 
-        this.provideTheme.clearForcedMainColor();
+        this.provideTheme.clearForcedColor();
       });
     });
 

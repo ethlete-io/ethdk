@@ -11,6 +11,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { ColorInteractiveDirective, createCanAnimateSignal } from '@ethlete/core';
+import { FocusRingDirective } from '../../focus-ring';
 import { CheckboxDirective } from './headless';
 
 @Component({
@@ -22,10 +23,11 @@ import { CheckboxDirective } from './headless';
   hostDirectives: [
     {
       directive: CheckboxDirective,
-      inputs: ['checked', 'indeterminate', 'disabled', 'invalid', 'errors', 'required', 'name', 'skipGroup'],
+      inputs: ['checked', 'indeterminate', 'disabled', 'invalid', 'errors', 'required', 'name'],
       outputs: ['checkedChange', 'indeterminateChange', 'touchedChange'],
     },
     ColorInteractiveDirective,
+    FocusRingDirective,
   ],
   host: {
     class: 'et-checkbox',

@@ -16,9 +16,9 @@ import { ColorTheme, createCssColorThemeName, injectColorThemes, injectColorThem
 
 export const COLOR_PROVIDER = new InjectionToken<ProvideColorDirective>('ColorProvider');
 
-const FORCED_MAIN_COLOR_UNSET = Symbol('FORCED_MAIN_COLOR_UNSET');
+const FORCED_COLOR_UNSET = Symbol('FORCED_COLOR_UNSET');
 
-type ForcedMainColorState = string | ColorTheme | null | typeof FORCED_MAIN_COLOR_UNSET;
+type ForcedColorState = string | ColorTheme | null | typeof FORCED_COLOR_UNSET;
 
 @Directive({
   selector: '[etProvideColor]',
@@ -33,22 +33,22 @@ export class ProvideColorDirective {
   private injector = inject(Injector);
 
   private currentProviderSync: EffectRef | null = null;
-  private forcedMainColor = signal<ForcedMainColorState>(FORCED_MAIN_COLOR_UNSET);
+  private forcedColor = signal<ForcedColorState>(FORCED_COLOR_UNSET);
 
-  mainColor = input<string | ColorTheme | null>(undefined, { alias: 'etProvideColor' });
+  color = input<string | ColorTheme | null>(undefined, { alias: 'etProvideColor' });
 
-  effectiveMainColor = computed(() => {
-    const forcedMainColor = this.forcedMainColor();
+  effectiveColor = computed(() => {
+    const forcedColor = this.forcedColor();
 
-    if (forcedMainColor !== FORCED_MAIN_COLOR_UNSET) {
-      return forcedMainColor;
+    if (forcedColor !== FORCED_COLOR_UNSET) {
+      return forcedColor;
     }
 
-    return this.mainColor();
+    return this.color();
   });
 
-  mainColorName = computed(() => {
-    const raw = this.effectiveMainColor();
+  colorName = computed(() => {
+    const raw = this.effectiveColor();
     const value = typeof raw === 'object' && raw !== null ? raw.name : raw;
 
     if (!this.themes || !value) return;
@@ -63,8 +63,8 @@ export class ProvideColorDirective {
   protected themeClass = computed(() => {
     const prefix = this.prefix || 'et';
 
-    if (this.mainColorName()) {
-      return `${prefix}-color--${this.mainColorName()}`;
+    if (this.colorName()) {
+      return `${prefix}-color--${this.colorName()}`;
     }
 
     return `${prefix}-color--inherited`;
@@ -75,16 +75,16 @@ export class ProvideColorDirective {
 
     runInInjectionContext(this.injector, () => {
       this.currentProviderSync = effect(() => {
-        const provideMainColor = provider.effectiveMainColor();
+        const provideColor = provider.effectiveColor();
 
         untracked(() => {
-          if (provideMainColor === undefined) {
-            this.clearForcedMainColor();
+          if (provideColor === undefined) {
+            this.clearForcedColor();
 
             return;
           }
 
-          this.forceMainColor(provideMainColor);
+          this.forceColor(provideColor);
         });
       });
     });
@@ -97,21 +97,21 @@ export class ProvideColorDirective {
     this.currentProviderSync = null;
 
     if (hadProviderSync) {
-      this.clearForcedMainColor();
+      this.clearForcedColor();
     }
   }
 
   /** @internal */
-  forceMainColor(color: string | ColorTheme | null) {
-    this.forcedMainColor.set(color);
+  forceColor(color: string | ColorTheme | null) {
+    this.forcedColor.set(color);
   }
 
   /** @internal */
-  clearForcedMainColor() {
-    if (this.forcedMainColor() === FORCED_MAIN_COLOR_UNSET) {
+  clearForcedColor() {
+    if (this.forcedColor() === FORCED_COLOR_UNSET) {
       return;
     }
 
-    this.forcedMainColor.set(FORCED_MAIN_COLOR_UNSET);
+    this.forcedColor.set(FORCED_COLOR_UNSET);
   }
 }

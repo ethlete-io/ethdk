@@ -1,19 +1,24 @@
-:where(.et-color-interactive:hover),
+:where(.et-color-interactive:hover:not(:has(.et-color-interactive-exclude:hover))),
 :where(.et-color-interactive-container:hover) :where(.et-color-interactive) {
   --et-theme-color-primary-rgb: var(--et-color-primary-hover, var(--et-color-primary));
+  --et-theme-color-primary-solid: rgb(var(--et-theme-color-primary-rgb));
   --et-theme-color-on-primary-rgb: var(--et-color-on-primary-hover, var(--et-color-on-primary));
+  --et-theme-color-on-primary-solid: rgb(var(--et-theme-color-on-primary-rgb));
   --et-theme-color-ink-rgb: var(
     --et-color-primary-ink-hover,
     var(--et-color-primary-ink, var(--et-color-primary-hover, var(--et-color-primary)))
   );
+  --et-theme-color-ink-solid: rgb(var(--et-theme-color-ink-rgb));
 }
 
 :where(.et-color-interactive:focus-visible) {
   --et-theme-color-primary-rgb: var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)));
+  --et-theme-color-primary-solid: rgb(var(--et-theme-color-primary-rgb));
   --et-theme-color-on-primary-rgb: var(
     --et-color-on-primary-focus,
     var(--et-color-on-primary-hover, var(--et-color-on-primary))
   );
+  --et-theme-color-on-primary-solid: rgb(var(--et-theme-color-on-primary-rgb));
   --et-theme-color-ink-rgb: var(
     --et-color-primary-ink-focus,
     var(
@@ -21,17 +26,21 @@
       var(--et-color-primary-ink, var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary))))
     )
   );
+  --et-theme-color-ink-solid: rgb(var(--et-theme-color-ink-rgb));
 }
 
-:where(.et-color-interactive:active) {
+:where(.et-color-interactive:active:not(:has(.et-color-interactive-exclude:hover))),
+:where(.et-color-interactive-container:active) :where(.et-color-interactive) {
   --et-theme-color-primary-rgb: var(
     --et-color-primary-active,
     var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))
   );
+  --et-theme-color-primary-solid: rgb(var(--et-theme-color-primary-rgb));
   --et-theme-color-on-primary-rgb: var(
     --et-color-on-primary-active,
     var(--et-color-on-primary-focus, var(--et-color-on-primary-hover, var(--et-color-on-primary)))
   );
+  --et-theme-color-on-primary-solid: rgb(var(--et-theme-color-on-primary-rgb));
   --et-theme-color-ink-rgb: var(
     --et-color-primary-ink-active,
     var(
@@ -48,6 +57,25 @@
       )
     )
   );
+  --et-theme-color-ink-solid: rgb(var(--et-theme-color-ink-rgb));
+}
+
+:where(.et-color-interactive--has-focus:has(:focus-visible)) {
+  --et-theme-color-primary-rgb: var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)));
+  --et-theme-color-primary-solid: rgb(var(--et-theme-color-primary-rgb));
+  --et-theme-color-on-primary-rgb: var(
+    --et-color-on-primary-focus,
+    var(--et-color-on-primary-hover, var(--et-color-on-primary))
+  );
+  --et-theme-color-on-primary-solid: rgb(var(--et-theme-color-on-primary-rgb));
+  --et-theme-color-ink-rgb: var(
+    --et-color-primary-ink-focus,
+    var(
+      --et-color-primary-ink-hover,
+      var(--et-color-primary-ink, var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary))))
+    )
+  );
+  --et-theme-color-ink-solid: rgb(var(--et-theme-color-ink-rgb));
 }
 
 :where(.et-color-interactive[disabled]),
@@ -59,6 +87,7 @@
       var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)))
     )
   );
+  --et-theme-color-primary-solid: rgb(var(--et-theme-color-primary-rgb));
   --et-theme-color-on-primary-rgb: var(
     --et-color-on-primary-disabled,
     var(
@@ -66,6 +95,7 @@
       var(--et-color-on-primary-focus, var(--et-color-on-primary-hover, var(--et-color-on-primary)))
     )
   );
+  --et-theme-color-on-primary-solid: rgb(var(--et-theme-color-on-primary-rgb));
   --et-theme-color-ink-rgb: var(
     --et-color-primary-ink-disabled,
     var(
@@ -88,4 +118,5 @@
       )
     )
   );
+  --et-theme-color-ink-solid: rgb(var(--et-theme-color-ink-rgb));
 }

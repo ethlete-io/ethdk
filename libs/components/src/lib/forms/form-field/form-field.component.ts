@@ -15,7 +15,8 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ValidationError } from '@angular/forms/signals';
 import {
   AnimatableDirective,
-  ColorInteractiveContainerDirective,
+  ColorInteractiveExcludeDirective,
+  ColorInteractiveHasFocusDirective,
   createCanAnimateSignal,
   injectErrorTheme,
   injectSurfaceThemes,
@@ -167,12 +168,12 @@ const reduceSupportPresentation = ({
   styleUrl: './form-field.component.css',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AnimatableDirective, FormErrorComponent],
+  imports: [AnimatableDirective, ColorInteractiveExcludeDirective, FormErrorComponent, ProvideColorDirective],
   hostDirectives: [
     FormFieldDirective,
     { directive: ProvideColorDirective, inputs: ['etProvideColor:color'] },
     { directive: ProvideSurfaceDirective, inputs: ['etProvideSurface:surface'] },
-    ColorInteractiveContainerDirective,
+    ColorInteractiveHasFocusDirective,
   ],
   host: {
     class: 'et-form-field',
@@ -206,7 +207,7 @@ export class FormFieldComponent {
   protected errorAnimatable = viewChild<AnimatableDirective>('errorAnimatable');
   protected hintAnimatable = viewChild<AnimatableDirective>('hintAnimatable');
 
-  private errorColorTheme = injectErrorTheme();
+  protected errorColorTheme = injectErrorTheme();
   private surfaceThemes = injectSurfaceThemes({ optional: true });
 
   private errorDimensions = signalElementDimensions(this.errorContent);
@@ -301,7 +302,6 @@ export class FormFieldComponent {
     return presentation.leavingState === SUPPORT_CONTENT_STATE.ERROR ? 'leaving' : 'active';
   });
   protected errorDirection = computed(() => this.supportPresentation().errorDirection);
-  protected errorColor = computed(() => this.supportPresentation().frozenErrorColor);
   protected visibleErrors = computed(() => this.supportPresentation().renderedErrors);
 
   protected hintActive = computed(() => this.semanticSupportState() === SUPPORT_CONTENT_STATE.HINT);
@@ -401,12 +401,12 @@ export class FormFieldComponent {
 
       untracked(() => {
         if (showError) {
-          this.provideColor.forceMainColor(this.errorColorTheme);
+          this.provideColor.forceColor(this.errorColorTheme);
 
           return;
         }
 
-        this.provideColor.clearForcedMainColor();
+        this.provideColor.clearForcedColor();
       });
     });
 
