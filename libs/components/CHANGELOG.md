@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.0-next.2
+
+### Minor Changes
+
+- [#2960](https://github.com/ethlete-io/ethdk/pull/2960) [`5d1d3ac`](https://github.com/ethlete-io/ethdk/commit/5d1d3accbd4a7657bc50cdc0653a7ca24fe761e2) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add tab and nav tab components
+
+- [#2960](https://github.com/ethlete-io/ethdk/pull/2960) [`5d1d3ac`](https://github.com/ethlete-io/ethdk/commit/5d1d3accbd4a7657bc50cdc0653a7ca24fe761e2) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add variants to icon and fab buttons
+
+- [#2960](https://github.com/ethlete-io/ethdk/pull/2960) [`5d1d3ac`](https://github.com/ethlete-io/ethdk/commit/5d1d3accbd4a7657bc50cdc0653a7ca24fe761e2) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add scrollable component
+
+### Patch Changes
+
+- [#2960](https://github.com/ethlete-io/ethdk/pull/2960) [`8d31d0b`](https://github.com/ethlete-io/ethdk/commit/8d31d0b0ea523c6f79680e3a2cbf5ceba109f5d9) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix minor style issues in pip components
+
 ## 0.1.0-next.1
 
 ### Minor Changes
