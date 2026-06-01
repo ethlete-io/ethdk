@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.71.0
+
+### Minor Changes
+
+- [`d01f6a8`](https://github.com/ethlete-io/ethdk/commit/d01f6a894757666efa186dab46f3e60a3e6110de) Thanks [@TomTomB](https://github.com/TomTomB)! - Support unordered bracket sources in new bracket component
+
 ## 4.70.1
 
 ### Patch Changes
