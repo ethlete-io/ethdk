@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 6.0.0-next.6
+
+### Patch Changes
+
+- [#2960](https://github.com/ethlete-io/ethdk/pull/2960) [`8d31d0b`](https://github.com/ethlete-io/ethdk/commit/8d31d0b0ea523c6f79680e3a2cbf5ceba109f5d9) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix bearer token revocation not working
+
 ## 6.0.0-next.5
 
 ### Minor Changes
