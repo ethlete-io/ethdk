@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.71.1
+
+### Patch Changes
+
+- [`80c3e17`](https://github.com/ethlete-io/ethdk/commit/80c3e17a93adbf62a4261a9540b2c53060f1ac25) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix match highlighting in unsorted bracket sources
+
 ## 4.71.0
 
 ### Minor Changes
