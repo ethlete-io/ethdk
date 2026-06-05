@@ -16,3 +16,5 @@ libs/types/src/lib/api
 .changeset/*.md
 CHANGELOG.md
 /.nx/workspace-data
+
+/.claude

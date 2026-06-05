@@ -1,8 +1,5 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(node -e ' *)",
-      "Bash(git ls-remote *)"
-    ]
+    "allow": ["Bash(node -e ' *)", "Bash(git ls-remote *)"]
   }
 }
