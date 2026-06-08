@@ -197,17 +197,8 @@ const handleFinalRound = <TRoundData, TMatchData>(params: {
     lastLowerRound,
   } = params;
 
-  const currentLowerRound = lowerRounds[currentUpperRoundIndex] || null;
-  const nextLowerRound = lowerRounds[currentUpperRoundIndex + 1] || null;
-  const previousLowerRound = lowerRounds[currentUpperRoundIndex - 1] || null;
-
-  if (!currentLowerRound) throw new Error('currentLowerRound is null');
-
-  const isAsyncBracket = currentLowerRound.id !== lastLowerRound.id;
-  const finalLowerRound = isAsyncBracket ? nextLowerRound : currentLowerRound;
-
-  if (!finalLowerRound) throw new Error('finalLowerRound is null');
-  if (finalLowerRound.id !== lastLowerRound.id) throw new Error('finalLowerRound is not the last lower round');
+  const finalLowerRound = lastLowerRound;
+  const isAsyncBracket = nextUpperRound?.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL;
 
   if (nextUpperRound) {
     relations.push(
@@ -265,6 +256,7 @@ const handleFinalRound = <TRoundData, TMatchData>(params: {
       );
     }
   } else {
+    const previousLowerRound = lowerRounds[lowerRounds.length - 2] || null;
     if (!previousLowerRound) throw new Error('previousLowerRound is null');
     relations.push(
       createOneToOneRelation({
@@ -420,6 +412,33 @@ export const generateRoundRelationsNew = <TRoundData, TMatchData>(
         firstUpperRound,
         firstLowerRound,
       });
+    }
+  }
+
+  if (hasLowerRounds && firstLowerRound) {
+    const assignedRoundIds = new Set(relations.map((r) => r.currentRound.id));
+
+    for (let i = 0; i < lowerRounds.length - 1; i++) {
+      const lowerRound = lowerRounds[i];
+      if (!lowerRound || assignedRoundIds.has(lowerRound.id)) continue;
+
+      const prevLowerRound = i > 0 ? (lowerRounds[i - 1] ?? null) : null;
+      const nextLowerRound = lowerRounds[i + 1];
+
+      if (!nextLowerRound) continue;
+
+      if (!prevLowerRound) {
+        relations.push(createNothingToOneRelation({ currentRound: lowerRound, nextRound: nextLowerRound }));
+      } else {
+        relations.push(
+          createOneToOneRelation({
+            currentRound: lowerRound,
+            previousRound: prevLowerRound,
+            nextRound: nextLowerRound,
+            rootRound: firstLowerRound,
+          }),
+        );
+      }
     }
   }
 

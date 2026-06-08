@@ -88,7 +88,17 @@ export const createRoundsMapBase = <TRoundData, TMatchData>(
 
   const splitRoundsRest: NewBracketRoundWithRelationsBase<TRoundData>[] = [];
 
-  for (const [roundIndex, round] of source.rounds.entries()) {
+  const TERMINAL_ROUND_SORT_PRIORITY: Partial<Record<string, number>> = {
+    [COMMON_BRACKET_ROUND_TYPE.FINAL]: 1,
+    [DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL]: 2,
+    [COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE]: 3,
+  };
+
+  const orderedRounds = [...source.rounds].sort(
+    (a, b) => (TERMINAL_ROUND_SORT_PRIORITY[a.type] ?? 0) - (TERMINAL_ROUND_SORT_PRIORITY[b.type] ?? 0),
+  );
+
+  for (const [roundIndex, round] of orderedRounds.entries()) {
     const isUpperBracket = round.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET;
     const isLowerBracket = round.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET;
     const isCommonDoubleEliminationRound = !isUpperBracket && !isLowerBracket && isDoubleElimination;
@@ -97,15 +107,15 @@ export const createRoundsMapBase = <TRoundData, TMatchData>(
     const roundId = round.id as BracketRoundId;
     const shouldSplitRound = shouldSplitRoundsInTwo && matches.length % 2 === 0;
     const isFirstRound = roundIndex === 0;
-    const isLastRound = roundIndex === source.rounds.length - 1;
+    const isLastRound = roundIndex === orderedRounds.length - 1;
 
-    const isFirstOfType = source.rounds.findIndex((r) => r.type === round.type) === roundIndex;
+    const isFirstOfType = orderedRounds.findIndex((r) => r.type === round.type) === roundIndex;
     const isLastOfType =
-      source.rounds
+      orderedRounds
         .slice()
         .reverse()
         .findIndex((r) => r.type === round.type) ===
-      source.rounds.length - roundIndex - 1;
+      orderedRounds.length - roundIndex - 1;
 
     if (shouldSplitRound) {
       const firstHalfRoundId = `${roundId}--half-1` as BracketRoundId;
