@@ -1,3 +1,4 @@
+export { ClubListView } from './Club/clubList.view';
 export { CountryView } from './Country/country.view';
 export { DateRangeRequestData } from './DateRange/dateRangeRequest.data';
 export { MatchStatus } from './Enum/Match/match.status';
@@ -31,7 +32,6 @@ export { IdentityView } from './Identity/identity.view';
 export { FormationStructureView } from './Lineup/formationStructure.view';
 export { LineupListView } from './Lineup/lineupList.view';
 export { LineupPlayerView } from './Lineup/lineupPlayer.view';
-export { LineupPlayerV2View } from './Lineup/lineupPlayerV.view';
 export { DetailedMatchListView } from './Match/detailedMatchList.view';
 export { MatchGameLineupRequestData } from './Match/Game/matchGameLineupRequest.data';
 export { IdentityMatchResultView } from './Match/identityMatchResult.view';

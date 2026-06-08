@@ -1,0 +1,17 @@
+<div class="et-checkbox-option-box">
+  <svg class="et-checkbox-option-check" viewBox="0 0 12 10" fill="none">
+    <path
+      d="M1 5L4.5 8.5L11 1.5"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </svg>
+</div>
+<div class="et-checkbox-option-content">
+  <span [attr.id]="optionDirective.labelId()" class="et-checkbox-option-label">
+    <ng-content />
+  </span>
+  <ng-content select="et-description" />
+</div>

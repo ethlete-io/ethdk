@@ -1,0 +1,101 @@
+@property --et-checkbox-group-support-duration {
+  syntax: '<time>';
+  inherits: true;
+  initial-value: 180ms;
+}
+
+@property --et-checkbox-group-support-offset {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 4px;
+}
+
+@property --et-checkbox-group-error-font-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 12px;
+}
+
+@property --et-checkbox-group-hint-font-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 12px;
+}
+
+@property --et-checkbox-group-gap {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 8px;
+}
+
+et-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--et-checkbox-group-gap);
+  color: var(--et-surface-color-solid, currentColor);
+
+  .et-checkbox-group-support {
+    overflow: clip;
+    block-size: 0;
+  }
+
+  .et-checkbox-group-support-stack {
+    position: relative;
+    display: grid;
+  }
+
+  .et-checkbox-group-support-content {
+    grid-area: 1 / 1;
+    min-inline-size: 0;
+    opacity: 0;
+    transform: translateY(0);
+
+    &[data-active] {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .et-checkbox-group-errors {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-block-start: 4px;
+    font-size: var(--et-checkbox-group-error-font-size);
+    color: var(--et-theme-color-primary-solid, currentColor);
+  }
+
+  .et-checkbox-group-hint {
+    padding-block-start: 4px;
+    font-size: var(--et-checkbox-group-hint-font-size);
+    color: var(--et-surface-color-muted-solid, currentColor);
+
+    &:empty {
+      display: none;
+    }
+  }
+
+  &[data-can-animate] {
+    .et-checkbox-group-support {
+      transition: block-size var(--et-checkbox-group-support-duration) ease;
+    }
+
+    .et-checkbox-group-support-content {
+      transition:
+        opacity var(--et-checkbox-group-support-duration) ease,
+        transform var(--et-checkbox-group-support-duration) ease;
+
+      @starting-style {
+        &[data-active] {
+          opacity: 0;
+          transform: translateY(calc(var(--et-checkbox-group-support-offset) * -1));
+        }
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    --et-checkbox-group-support-duration: 1ms;
+    --et-checkbox-group-support-offset: 0px;
+  }
+}

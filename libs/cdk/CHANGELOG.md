@@ -1,113 +1,16 @@
 # @ethlete/cdk
 
-## 5.0.0-next.10
+## 4.71.1
 
 ### Patch Changes
 
-- [`b27fe8a`](https://github.com/ethlete-io/ethdk/commit/b27fe8aad4750d9425098f5bc8544180dc97c0cb) Thanks [@TomTomB](https://github.com/TomTomB)! - Version bump for internal api changes
+- [`80c3e17`](https://github.com/ethlete-io/ethdk/commit/80c3e17a93adbf62a4261a9540b2c53060f1ac25) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix match highlighting in unsorted bracket sources
 
-## 5.0.0-next.9
+## 4.71.0
 
 ### Minor Changes
 
-- [#2933](https://github.com/ethlete-io/ethdk/pull/2933) [`1c15eb5`](https://github.com/ethlete-io/ethdk/commit/1c15eb56f7369ffa8f068dce67c5e5343763de42) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add picture in picture support to streams
-
-## 5.0.0-next.8
-
-### Patch Changes
-
-- [`4721513`](https://github.com/ethlete-io/ethdk/commit/47215130cd9b06aad096c441282ae4e32201e3d8) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix overlays throwing if opened from within a reactive context
-
-## 5.0.0-next.7
-
-### Patch Changes
-
-- [`f0a47a0`](https://github.com/ethlete-io/ethdk/commit/f0a47a08b9e178c9317f28d1f4ae7daa5e3a3901) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix angular throwing NG0602 if a overlay gets opened from within a effect
-
-## 5.0.0-next.6
-
-### Minor Changes
-
-- [#2926](https://github.com/ethlete-io/ethdk/pull/2926) [`26966e3`](https://github.com/ethlete-io/ethdk/commit/26966e316e58694ef898f60cab7f5fd8a8d34381) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add stream components. Supported are DailyMotion, Facebook, Kick, SOOP (formerly AfreecaTV), TikTok, Twitch, Vimeo and YouTube. For GDPR compliance, the stream can be wrapped in a Stream Consent component
-
-### Patch Changes
-
-- [#2926](https://github.com/ethlete-io/ethdk/pull/2926) [`bd3f5b8`](https://github.com/ethlete-io/ethdk/commit/bd3f5b828198db8096cdb8ea186dfcb1e5608406) Thanks [@github-actions](https://github.com/apps/github-actions)! - Mark multiple select as touched if the user unselects options via badge
-
-## 5.0.0-next.5
-
-### Minor Changes
-
-- [#2925](https://github.com/ethlete-io/ethdk/pull/2925) [`9a029e6`](https://github.com/ethlete-io/ethdk/commit/9a029e62c0e23b870e7972e19b3f7c1d2358ef95) Thanks [@github-actions](https://github.com/apps/github-actions)! - Auto hide masks in scrollable components if the user is not scrolling and the scrollable container is the same size as the items inside
-
-- [#2925](https://github.com/ethlete-io/ethdk/pull/2925) [`44e43a5`](https://github.com/ethlete-io/ethdk/commit/44e43a50b69c47ca8d60be22481ba09215b6e4ac) Thanks [@github-actions](https://github.com/apps/github-actions)! - Stop carousel auto play if its not inside the viewport
-
-- [#2925](https://github.com/ethlete-io/ethdk/pull/2925) [`9a029e6`](https://github.com/ethlete-io/ethdk/commit/9a029e62c0e23b870e7972e19b3f7c1d2358ef95) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add support for breakpoint values in scrollable component inputs like `[itemSize]="{ xs: 'half', md: 'full' }"`. Normal values like `itemSize="half"` will still work as before, applying to all breakpoints.
-
-### Patch Changes
-
-- [#2925](https://github.com/ethlete-io/ethdk/pull/2925) [`9a029e6`](https://github.com/ethlete-io/ethdk/commit/9a029e62c0e23b870e7972e19b3f7c1d2358ef95) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix scrollable scroll snapping not working correctly in some edge cases
-
-- [#2925](https://github.com/ethlete-io/ethdk/pull/2925) [`9a029e6`](https://github.com/ethlete-io/ethdk/commit/9a029e62c0e23b870e7972e19b3f7c1d2358ef95) Thanks [@github-actions](https://github.com/apps/github-actions)! - Only darken partial visible items inside scrollable if there actually are partially visible items without scrolling
-
-- [#2925](https://github.com/ethlete-io/ethdk/pull/2925) [`9a029e6`](https://github.com/ethlete-io/ethdk/commit/9a029e62c0e23b870e7972e19b3f7c1d2358ef95) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix the right navigation arrow and mask appearing for a few ms in scrollable components that are not scrollable at the moment
-
-## 5.0.0-next.4
-
-### Patch Changes
-
-- [#2923](https://github.com/ethlete-io/ethdk/pull/2923) [`5c5fc57`](https://github.com/ethlete-io/ethdk/commit/5c5fc57e2e45b5fd78f0d20bacf0ec310cc84e2b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix et picture displaying nothing if a data uri gets passed as a source
-
-## 5.0.0-next.3
-
-### Patch Changes
-
-- [`58525cd`](https://github.com/ethlete-io/ethdk/commit/58525cd7123c8e20739b0841b2f0abf5920296f1) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scroll blocking getting applied even if the page is currently not scrollable
-
-## 5.0.0-next.2
-
-### Patch Changes
-
-- [`95e656d`](https://github.com/ethlete-io/ethdk/commit/95e656d036368a48cbd17a399f7c0c61c49ab0fa) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix overlay origin not getting inferred correctly
-
-- [`95e656d`](https://github.com/ethlete-io/ethdk/commit/95e656d036368a48cbd17a399f7c0c61c49ab0fa) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix scroll blocker getting stuck in blocked state
-
-## 5.0.0-next.1
-
-### Patch Changes
-
-- Updated dependencies [[`d99c3f0`](https://github.com/ethlete-io/ethdk/commit/d99c3f0fc3d6b3b0e7105d21d1f7119cde68b561)]:
-  - @ethlete/types@2.0.0-next.0
-
-## 5.0.0-next.0
-
-### Major Changes
-
-- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove deprecated cdk menu. The migration will try to auto migrate all usages, but manual code changes are needed.
-
-- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove usage of legacy @ethlete/theming package and migrate to @ethlete/core
-
-- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`5503fbb`](https://github.com/ethlete-io/ethdk/commit/5503fbb21d948d4e2d59928afa4be9846eb2102d) Thanks [@github-actions](https://github.com/apps/github-actions)! - You must run `yarn nx generate @ethlete/cdk:migrate-to-v5` after updating to this version. Updating this package also requires updating `@ethlete/core` to its latest version. **Please check the console output for warnings about any manual code changes that may be needed.**
-
-- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49) Thanks [@github-actions](https://github.com/apps/github-actions)! - Move `createProvider` function into @ethlete/core. Usages will be migrated automatically.
-
-- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`58678e9`](https://github.com/ethlete-io/ethdk/commit/58678e9d57f7ff85e2a3159657bda15f06b8e5cd) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove `placements` in favor of `strategies` api during overlay creation.
-
-- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove deprecated `emptyText` input inside combobox component and migrate to new `bodyEmptyText` input
-
-### Minor Changes
-
-- [#2907](https://github.com/ethlete-io/ethdk/pull/2907) [`da0ef0a`](https://github.com/ethlete-io/ethdk/commit/da0ef0a6425c1ac40c42fd13906af49860418a29) Thanks [@nicks-passiert](https://github.com/nicks-passiert)! - add new sizes for scrollable item
-
-### Patch Changes
-
-- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`3d7f302`](https://github.com/ethlete-io/ethdk/commit/3d7f30253502adada00825fda3653441c01071da) Thanks [@github-actions](https://github.com/apps/github-actions)! - Update scroll blocking logic to hide the actual scrollbar instead of just disabling it. **Warning:** This change sets a contain contents style on the angular root element to prevent layout shifts when overlays are opened. This may have unintended side effects on some applications. Please test your application thoroughly after updating to this version by opening and closing overlays.
-
-- [#2891](https://github.com/ethlete-io/ethdk/pull/2891) [`3d7f302`](https://github.com/ethlete-io/ethdk/commit/3d7f30253502adada00825fda3653441c01071da) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix auto focus management inside overlays
-
-- Updated dependencies [[`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`99b3f64`](https://github.com/ethlete-io/ethdk/commit/99b3f646701cb763512e7148592457dc509f55e5), [`e4a7c6f`](https://github.com/ethlete-io/ethdk/commit/e4a7c6ff868e6dd541d4533e509b30821f6c83b5), [`d080bb2`](https://github.com/ethlete-io/ethdk/commit/d080bb2cc246d4559ffcbf88c319b9437133d377), [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`f5ad487`](https://github.com/ethlete-io/ethdk/commit/f5ad4879061917e91bebf144889774226202308b), [`27aa7a8`](https://github.com/ethlete-io/ethdk/commit/27aa7a825573a12c3360530d1d32df7c4690e7e8), [`3d7f302`](https://github.com/ethlete-io/ethdk/commit/3d7f30253502adada00825fda3653441c01071da), [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49), [`3d7f302`](https://github.com/ethlete-io/ethdk/commit/3d7f30253502adada00825fda3653441c01071da), [`6816054`](https://github.com/ethlete-io/ethdk/commit/68160548e8df8cd8fbaff61afa684442f7f7a7e5), [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`f4847d4`](https://github.com/ethlete-io/ethdk/commit/f4847d4eb25b70706a4ee8c81addcd58a7d99995), [`451e170`](https://github.com/ethlete-io/ethdk/commit/451e170f2df1c49fca07bde053efa75bd23ca22f), [`f5ad487`](https://github.com/ethlete-io/ethdk/commit/f5ad4879061917e91bebf144889774226202308b), [`55dc627`](https://github.com/ethlete-io/ethdk/commit/55dc627a6a49f3a8a5c8f80f63f163e443e07099), [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`5d7ae57`](https://github.com/ethlete-io/ethdk/commit/5d7ae57859077357e2e8a1761286c4744e58d4b9), [`ee5014f`](https://github.com/ethlete-io/ethdk/commit/ee5014f33dc7d79b43774aaafc2fd187073871be), [`7e0f4d9`](https://github.com/ethlete-io/ethdk/commit/7e0f4d943abe6ae61719fcb7003cc8c19496320e), [`d080bb2`](https://github.com/ethlete-io/ethdk/commit/d080bb2cc246d4559ffcbf88c319b9437133d377), [`3d7f302`](https://github.com/ethlete-io/ethdk/commit/3d7f30253502adada00825fda3653441c01071da), [`5e764b9`](https://github.com/ethlete-io/ethdk/commit/5e764b92cbcc6b6ec288a84b397d291f0b1138fb), [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49), [`e4a7c6f`](https://github.com/ethlete-io/ethdk/commit/e4a7c6ff868e6dd541d4533e509b30821f6c83b5), [`d8f381f`](https://github.com/ethlete-io/ethdk/commit/d8f381f39710db99c2f26af64dbf9e4df75c8a49), [`ca6cdfb`](https://github.com/ethlete-io/ethdk/commit/ca6cdfbaa99430a89244024a8810249bb99e3d91), [`6816054`](https://github.com/ethlete-io/ethdk/commit/68160548e8df8cd8fbaff61afa684442f7f7a7e5), [`6e41e09`](https://github.com/ethlete-io/ethdk/commit/6e41e09668d2077fba27de1e11bacc98480becfe), [`8a85984`](https://github.com/ethlete-io/ethdk/commit/8a859841acaf7c10c876c7eb921f4c7e25e41764), [`5e764b9`](https://github.com/ethlete-io/ethdk/commit/5e764b92cbcc6b6ec288a84b397d291f0b1138fb), [`d080bb2`](https://github.com/ethlete-io/ethdk/commit/d080bb2cc246d4559ffcbf88c319b9437133d377), [`e4a7c6f`](https://github.com/ethlete-io/ethdk/commit/e4a7c6ff868e6dd541d4533e509b30821f6c83b5), [`5e764b9`](https://github.com/ethlete-io/ethdk/commit/5e764b92cbcc6b6ec288a84b397d291f0b1138fb)]:
-  - @ethlete/core@5.0.0-next.0
-  - @ethlete/query@6.0.0-next.0
+- [`d01f6a8`](https://github.com/ethlete-io/ethdk/commit/d01f6a894757666efa186dab46f3e60a3e6110de) Thanks [@TomTomB](https://github.com/TomTomB)! - Support unordered bracket sources in new bracket component
 
 ## 4.70.1
 

@@ -84,8 +84,6 @@ const formSupportFactory = () => {
     return supportState().renderedErrors;
   });
 
-  const errorColor = computed(() => supportState().frozenErrorColor);
-
   const supportHeight = computed(() => {
     switch (semanticSupportState()) {
       case SUPPORT_CONTENT_STATE.ERROR:
@@ -182,16 +180,17 @@ const formSupportFactory = () => {
       if (!provideColor) return;
 
       if (showError) {
-        provideColor.forceMainColor(errorColorTheme);
+        provideColor.forceColor(errorColorTheme);
 
         return;
       }
 
-      provideColor.clearForcedMainColor();
+      provideColor.clearForcedColor();
     });
   });
 
   return {
+    errorColorTheme,
     formFieldDir,
     errorContent,
     hintContent,
@@ -205,7 +204,6 @@ const formSupportFactory = () => {
     errorActive,
     hintActive,
     visibleErrors,
-    errorColor,
     supportHeight,
   };
 };

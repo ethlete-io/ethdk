@@ -213,6 +213,9 @@ const recommendedTs = {
     // No inject(X).member chaining — assign to a const first
     'ethlete/no-inject-chain': 'error',
 
+    // inject(ElementRef) must use inject<ElementRef<HTMLElement>>(ElementRef) — not inject(ElementRef) or inject(ElementRef<...>)
+    'ethlete/no-typed-injected-element-ref': 'error',
+
     // No @internal on members already hidden by private/protected
     'ethlete/no-redundant-internal': 'error',
 
@@ -385,4 +388,16 @@ const recommendedTemplate = {
   },
 };
 
-module.exports = { recommendedTs, recommendedTemplate };
+/**
+ * Relaxed rules for test/spec files.
+ * Non-null assertions are common and intentional in tests.
+ * @type {import('eslint').Linter.Config}
+ */
+const recommendedSpec = {
+  files: ['**/*.spec.ts'],
+  rules: {
+    '@typescript-eslint/no-non-null-assertion': 'off',
+  },
+};
+
+module.exports = { recommendedTs, recommendedTemplate, recommendedSpec };

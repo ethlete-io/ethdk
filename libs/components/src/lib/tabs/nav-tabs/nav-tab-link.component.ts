@@ -118,12 +118,11 @@ import { NavTabLinkDirective } from './headless/nav-tab-link.directive';
         border-radius: 0.5rem;
         padding: 4px 8px;
         margin: -4px -8px;
-        box-shadow: var(--_et-focus-ring-shadow);
-        transition: box-shadow 120ms ease;
       }
 
       &:focus-visible .et-nav-tab-link__content {
-        box-shadow: var(--_et-focus-ring-shadow);
+        outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+        outline-offset: 2px;
       }
 
       .et-tab-bar-underline {

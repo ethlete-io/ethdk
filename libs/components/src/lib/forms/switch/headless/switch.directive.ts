@@ -21,7 +21,7 @@ import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '..
 export class SwitchDirective implements FormFieldControl {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
-  private el = inject(ElementRef);
+  private el = inject<ElementRef<HTMLElement>>(ElementRef);
 
   public checked = model(false);
   public touched = model(false);

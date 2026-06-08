@@ -17,3 +17,5 @@ libs/types/src/lib/api
 CHANGELOG.md
 /.nx/workspace-data
 .nx/self-healing
+
+/.claude

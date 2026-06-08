@@ -43,6 +43,7 @@ let uniqueIdCounter = 0;
       display: inline-block;
       color: var(--et-theme-color-primary-solid);
       margin-inline-start: 0.45ch;
+      transition: color 150ms ease;
     }
 
     et-label[data-disabled] .et-label-required-marker {

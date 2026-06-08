@@ -50,7 +50,7 @@ import { PIP_ENTRY_TOKEN } from './headless/pip-entry.token';
 })
 export class PipPlayerComponent {
   private document = inject(DOCUMENT);
-  private el = inject(ElementRef<HTMLElement>);
+  private el = inject<ElementRef<HTMLElement>>(ElementRef);
   protected pipCell = inject(PipCellDirective, { optional: true });
 
   public entry = input<StreamPipEntry>();

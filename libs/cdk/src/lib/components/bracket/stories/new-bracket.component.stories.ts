@@ -7,7 +7,7 @@ import {
 } from '../components/new-bracket';
 import CustomMDXDocumentation from './bracket.docs.mdx';
 import { StorybookBracketNewComponent } from './components';
-import { ET_DUMMY_DATA_DOUBLE_ASYNC, ET_DUMMY_DATA_SINGLE, ET_DUMMY_DATA_SWISS } from './dummy-data';
+import { DFB_DOUBLE_DUMMY, ET_DUMMY_DATA_DOUBLE_ASYNC, ET_DUMMY_DATA_SINGLE, ET_DUMMY_DATA_SWISS } from './dummy-data';
 import { FIFA_DUMMY_DATA_DOUBLE, GgData } from './dummy-data/FIFA_DUMMY_DATA_DOUBLE';
 import { FIFA_DUMMY_DATA_SINGLE } from './dummy-data/FIFA_DUMMY_DATA_SINGLE';
 
@@ -188,5 +188,13 @@ export const Swiss = {
   render: Template,
   args: {
     source: generateBracketDataForEthlete(ET_DUMMY_DATA_SWISS as unknown as RoundStageStructureWithMatchesView[]),
+  },
+};
+
+export const DFB = {
+  render: Template,
+
+  args: {
+    source: DFB_DOUBLE_DUMMY,
   },
 };
