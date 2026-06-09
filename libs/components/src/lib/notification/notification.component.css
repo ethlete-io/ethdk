@@ -1,7 +1,7 @@
 @property --et-notification-border-radius {
   syntax: '<length>';
   inherits: false;
-  initial-value: 10px;
+  initial-value: 4px;
 }
 
 @property --et-notification-padding {
@@ -33,7 +33,7 @@
 @property --et-notification-border-width {
   syntax: '<length>';
   inherits: false;
-  initial-value: 3px;
+  initial-value: 4px;
 }
 
 @property --et-notification-font-size {
