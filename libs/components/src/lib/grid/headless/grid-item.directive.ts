@@ -1,6 +1,6 @@
 import {
-  Directive,
   computed,
+  Directive,
   effect,
   ElementRef,
   inject,
@@ -23,20 +23,14 @@ export class GridItemDirective {
   private grid = inject(GRID_TOKEN);
   public hostElement = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  // --- Inputs ---
-
   public itemId = input.required<string>();
   public minColSpan = input(1, { transform: numberAttribute });
   public maxColSpan = input(12, { transform: numberAttribute });
   public minRowSpan = input(1, { transform: numberAttribute });
   public maxRowSpan = input(4, { transform: numberAttribute });
 
-  // --- Drag state ---
-
   public isBeingDragged = computed(() => this.grid.dragState()?.itemId === this.itemId());
   private frozenPosition = signal<{ col: number; row: number; colSpan: number; rowSpan: number } | null>(null);
-
-  // --- Derived ---
 
   public currentPosition = computed(() => {
     const layout = this.grid.layout();
@@ -59,38 +53,25 @@ export class GridItemDirective {
   public currentColSpan = computed(() => this.renderPosition()?.colSpan ?? 1);
   public currentRowSpan = computed(() => this.renderPosition()?.rowSpan ?? 1);
 
-  // --- Host style bindings ---
-
   public hostStyles = signalHostStyles({
     'grid-column': computed(() => `${this.currentCol() + 1} / span ${this.currentColSpan()}`),
     'grid-row': computed(() => `${this.currentRow() + 1} / span ${this.currentRowSpan()}`),
   });
 
   constructor() {
-    // Register element for FLIP animations
     effect((onCleanup) => {
       const id = this.itemId();
       const el = this.hostElement.nativeElement;
-      this.grid.itemElements.set(id, el);
-      onCleanup(() => this.grid.itemElements.delete(id));
-    });
-
-    let lastPosStr = '';
-    effect(() => {
-      const pos = this.renderPosition();
-      const isDragged = this.isBeingDragged();
-      const dragActive = !!this.grid.dragState();
-      const posStr = JSON.stringify(pos);
-
-      if (posStr !== lastPosStr) {
-        lastPosStr = posStr;
-        console.log('[GRID-ITEM] position CHANGED', {
-          id: untracked(() => this.itemId()),
-          pos,
-          isDragged,
-          dragActive,
-        });
-      }
+      this.grid.registerItem(id, {
+        el,
+        constraints: {
+          minColSpan: this.minColSpan(),
+          maxColSpan: this.maxColSpan(),
+          minRowSpan: this.minRowSpan(),
+          maxRowSpan: this.maxRowSpan(),
+        },
+      });
+      onCleanup(() => this.grid.unregisterItem(id));
     });
 
     effect(() => {

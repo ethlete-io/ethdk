@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ViewEncapsulation,
+  booleanAttribute,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { GridComponent } from '../../grid.component';
 import { GridItemComponent } from '../../grid-item.component';
 import { GridBreakpointConfig, GridItemConfig } from '../../headless/grid.types';
@@ -7,45 +15,62 @@ import { DummyChartComponent, DummyTableComponent, DummyTextComponent } from './
 const INITIAL_ITEMS: GridItemConfig[] = [
   {
     id: 'chart-1',
-    componentType: 'chart',
+    type: 'chart',
+    version: 1,
+    data: undefined,
     layout: {
       lg: { col: 0, row: 0, colSpan: 4, rowSpan: 2 },
       md: { col: 0, row: 0, colSpan: 3, rowSpan: 2 },
       sm: { col: 0, row: 0, colSpan: 2, rowSpan: 2 },
     },
-    constraints: { minColSpan: 2, maxColSpan: 8, minRowSpan: 1, maxRowSpan: 4 },
   },
   {
     id: 'table-1',
-    componentType: 'table',
+    type: 'table',
+    version: 1,
+    data: undefined,
     layout: {
       lg: { col: 4, row: 0, colSpan: 4, rowSpan: 2 },
       md: { col: 3, row: 0, colSpan: 3, rowSpan: 2 },
       sm: { col: 0, row: 2, colSpan: 2, rowSpan: 2 },
     },
-    constraints: { minColSpan: 2, maxColSpan: 8, minRowSpan: 1, maxRowSpan: 4 },
   },
   {
     id: 'text-1',
-    componentType: 'text',
+    type: 'text',
+    version: 1,
+    data: undefined,
     layout: {
       lg: { col: 8, row: 0, colSpan: 4, rowSpan: 1 },
       md: { col: 0, row: 2, colSpan: 3, rowSpan: 1 },
       sm: { col: 0, row: 4, colSpan: 2, rowSpan: 1 },
     },
-    constraints: { minColSpan: 2, maxColSpan: 6, minRowSpan: 1, maxRowSpan: 3 },
   },
   {
     id: 'chart-2',
-    componentType: 'chart',
+    type: 'chart',
+    version: 1,
+    data: undefined,
     layout: {
       lg: { col: 8, row: 1, colSpan: 4, rowSpan: 2 },
       md: { col: 3, row: 2, colSpan: 3, rowSpan: 2 },
       sm: { col: 0, row: 5, colSpan: 2, rowSpan: 2 },
     },
-    constraints: { minColSpan: 2, maxColSpan: 8, minRowSpan: 1, maxRowSpan: 4 },
   },
 ];
+
+// Constraints live on the component level, not in the persisted data structure.
+// Each type registers its own min/max spans via et-grid-item inputs.
+const COMPONENT_CONSTRAINTS: Record<
+  string,
+  { minColSpan: number; maxColSpan: number; minRowSpan: number; maxRowSpan: number }
+> = {
+  chart: { minColSpan: 2, maxColSpan: 8, minRowSpan: 1, maxRowSpan: 4 },
+  table: { minColSpan: 2, maxColSpan: 8, minRowSpan: 1, maxRowSpan: 4 },
+  text: { minColSpan: 2, maxColSpan: 6, minRowSpan: 1, maxRowSpan: 3 },
+};
+
+const DEFAULT_COMPONENT_CONSTRAINTS = { minColSpan: 1, maxColSpan: 12, minRowSpan: 1, maxRowSpan: 4 };
 
 @Component({
   selector: 'et-sb-grid',
@@ -83,27 +108,31 @@ const INITIAL_ITEMS: GridItemConfig[] = [
       </div>
 
       <et-grid
+        #gridRef
         [breakpoints]="breakpoints()"
         [rowHeight]="rowHeight()"
         [gap]="gap()"
         [initialItems]="gridItems()"
-        (layoutChange)="onLayoutChange($event)"
+        [readOnly]="readOnly()"
+        (layoutChange)="saveLayout($event)"
       >
         @for (item of gridItems(); track item.id) {
+          @let c = getConstraints(item.type);
+          @let status = gridRef.grid.getMigrationStatus(item.id);
           <et-grid-item
             [itemId]="item.id"
-            [minColSpan]="item.constraints.minColSpan"
-            [maxColSpan]="item.constraints.maxColSpan"
-            [minRowSpan]="item.constraints.minRowSpan"
-            [maxRowSpan]="item.constraints.maxRowSpan"
-            [ariaLabel]="item.componentType + ' widget'"
+            [minColSpan]="c.minColSpan"
+            [maxColSpan]="c.maxColSpan"
+            [minRowSpan]="c.minRowSpan"
+            [maxRowSpan]="c.maxRowSpan"
+            [ariaLabel]="item.type + ' widget'"
           >
             <div
               class="text-xs uppercase tracking-wide"
               etGridItemDragHandle
               style="color: rgb(var(--et-surface-color-muted))"
             >
-              ⠿ {{ item.componentType }}
+              ⠿ {{ item.type }}
             </div>
 
             <button
@@ -116,15 +145,30 @@ const INITIAL_ITEMS: GridItemConfig[] = [
               ✕
             </button>
 
-            @switch (item.componentType) {
-              @case ('chart') {
-                <et-sb-dummy-chart />
-              }
-              @case ('table') {
-                <et-sb-dummy-table />
-              }
-              @case ('text') {
-                <et-sb-dummy-text />
+            @if (status.state === 'needs-intervention' || status.state === 'failed') {
+              <div class="flex flex-col items-center justify-center h-full gap-2 p-4 text-center">
+                <span style="font-size: 24px">⚠️</span>
+                <div class="text-sm font-semibold" style="color: rgb(var(--et-surface-color))">
+                  {{ status.state === 'failed' ? 'Component failed to load' : 'Manual update required' }}
+                </div>
+                <div class="text-xs" style="color: rgb(var(--et-surface-color-muted))">
+                  {{ item.type }} v{{ item.version }}
+                  @if (status.state === 'needs-intervention') {
+                    → needs upgrade to v{{ status.toVersion }}
+                  }
+                </div>
+              </div>
+            } @else {
+              @switch (item.type) {
+                @case ('chart') {
+                  <et-sb-dummy-chart />
+                }
+                @case ('table') {
+                  <et-sb-dummy-table />
+                }
+                @case ('text') {
+                  <et-sb-dummy-text />
+                }
               }
             }
           </et-grid-item>
@@ -147,16 +191,23 @@ const INITIAL_ITEMS: GridItemConfig[] = [
 export class GridStorybookComponent {
   public rowHeight = input(100);
   public gap = input(16);
+  public readOnly = input(false, { transform: booleanAttribute });
   public breakpoints = input<GridBreakpointConfig[]>([
     { name: 'lg', columns: 12, minWidth: 1200 },
     { name: 'md', columns: 6, minWidth: 768 },
     { name: 'sm', columns: 2, minWidth: 0 },
   ]);
 
+  public gridRef = viewChild.required<GridComponent>('gridRef');
+
   public gridItems = signal<GridItemConfig[]>(INITIAL_ITEMS);
   public exportedLayout = signal<string | null>(null);
 
   private nextId = INITIAL_ITEMS.length + 1;
+
+  public getConstraints(type: string) {
+    return COMPONENT_CONSTRAINTS[type] ?? DEFAULT_COMPONENT_CONSTRAINTS;
+  }
 
   public addChart() {
     this.addItem('chart');
@@ -178,7 +229,7 @@ export class GridStorybookComponent {
     this.exportedLayout.set(JSON.stringify(this.gridItems(), null, 2));
   }
 
-  public onLayoutChange(_state: unknown) {
+  public saveLayout(_state: unknown) {
     // Could update the stored layout here
   }
 
@@ -187,14 +238,10 @@ export class GridStorybookComponent {
 
     const item: GridItemConfig = {
       id,
-      componentType: type,
+      type,
+      version: 1,
+      data: undefined,
       layout: {},
-      constraints: {
-        minColSpan: 2,
-        maxColSpan: type === 'text' ? 6 : 8,
-        minRowSpan: 1,
-        maxRowSpan: type === 'text' ? 3 : 4,
-      },
     };
 
     this.gridItems.update((items) => [...items, item]);

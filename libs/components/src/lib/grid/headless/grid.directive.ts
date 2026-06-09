@@ -1,5 +1,6 @@
 import {
   afterNextRender,
+  booleanAttribute,
   computed,
   Directive,
   effect,
@@ -11,11 +12,15 @@ import {
   untracked,
 } from '@angular/core';
 import { signalHostElementDimensions } from '@ethlete/core';
+import { injectGridConfig } from './grid-config';
 import { GRID_TOKEN } from './grid.tokens';
 import {
   GridBreakpointConfig,
   GridBreakpointName,
+  GridComponentRegistration,
   GridItemConfig,
+  GridItemConstraints,
+  GridItemMigrationStatus,
   GridItemPosition,
   GridLayoutEntry,
   GridSerializedState,
@@ -44,12 +49,30 @@ export type GridDragState = {
   targetPosition: GridItemPosition;
 };
 
-const fallbackPosition = (item: GridItemConfig): GridItemPosition => ({
-  col: 0,
-  row: 0,
-  colSpan: item.constraints.minColSpan,
-  rowSpan: item.constraints.minRowSpan,
-});
+const DEFAULT_CONSTRAINTS: GridItemConstraints = {
+  minColSpan: 1,
+  maxColSpan: 12,
+  minRowSpan: 1,
+  maxRowSpan: 24,
+};
+
+const resolveItemConstraints = (
+  id: string,
+  context: {
+    itemConfigs: GridItemConfig[];
+    registrations: GridComponentRegistration[];
+    constraintsRegistry: Map<string, GridItemConstraints>;
+  },
+): GridItemConstraints => {
+  const item = context.itemConfigs.find((i) => i.id === id);
+  if (item) {
+    const registration = context.registrations.find((r) => r.type === item.type);
+    if (registration?.constraints) {
+      return { ...DEFAULT_CONSTRAINTS, ...registration.constraints };
+    }
+  }
+  return context.constraintsRegistry.get(id) ?? DEFAULT_CONSTRAINTS;
+};
 
 @Directive({
   selector: '[etGrid]',
@@ -57,43 +80,36 @@ const fallbackPosition = (item: GridItemConfig): GridItemPosition => ({
   providers: [{ provide: GRID_TOKEN, useExisting: GridDirective }],
   host: {
     class: 'et-grid',
+    '[class.et-grid--readonly]': 'readOnly()',
   },
 })
 export class GridDirective {
-  // --- DI ---
-
   private injector = inject(Injector);
-
-  // --- Inputs ---
 
   public breakpoints = input<GridBreakpointConfig[]>(DEFAULT_BREAKPOINTS);
   public rowHeight = input(100);
   public gap = input(16);
   public initialItems = input<GridItemConfig[]>([]);
-
-  // --- Outputs ---
+  public readOnly = input(false, { transform: booleanAttribute });
 
   public layoutChange = output<GridSerializedState>();
+  private gridConfig = injectGridConfig();
 
-  // --- State ---
+  public registrations = computed(() => this.gridConfig.registrations);
 
   private dimensions = signalHostElementDimensions();
   private itemConfigs = signal<GridItemConfig[]>([]);
   private layoutOverrides = signal<Record<GridBreakpointName, GridLayoutEntry[]>>({});
   public dragState = signal<GridDragState | null>(null);
+  public migrationStatuses = signal<Map<string, GridItemMigrationStatus>>(new Map());
 
-  // --- Resize session state ---
+  private constraintsRegistry = new Map<string, GridItemConstraints>();
 
   private resizeBaseLayout = signal<GridLayoutEntry[] | null>(null);
 
-  // --- FLIP animation registry ---
-
-  public itemElements = new Map<string, HTMLElement>();
-  // eslint-disable-next-line ethlete/class-constant-property
-  public ghostElement: HTMLElement | null = null;
+  private itemElements = new Map<string, HTMLElement>();
+  private ghostElement: HTMLElement | null = null;
   private rectSnapshot = new Map<string, DOMRect>();
-
-  // --- Derived ---
 
   public containerWidth = computed(() => this.dimensions().client?.width ?? 0);
 
@@ -120,7 +136,7 @@ export class GridDirective {
 
     return items.map((item) => ({
       id: item.id,
-      position: item.layout[breakpoint] ?? fallbackPosition(item),
+      position: item.layout[breakpoint] ?? { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
     }));
   });
 
@@ -133,12 +149,11 @@ export class GridDirective {
     const columns = this.activeColumns();
     const clamped = clampPosition({
       position: drag.targetPosition,
-      constraints: this.itemConfigs().find((i) => i.id === drag.itemId)?.constraints ?? {
-        minColSpan: 1,
-        maxColSpan: 12,
-        minRowSpan: 1,
-        maxRowSpan: 4,
-      },
+      constraints: resolveItemConstraints(drag.itemId, {
+        itemConfigs: this.itemConfigs(),
+        registrations: this.gridConfig.registrations,
+        constraintsRegistry: this.constraintsRegistry,
+      }),
       columns,
     });
 
@@ -162,8 +177,6 @@ export class GridDirective {
     return entry?.position ?? null;
   });
 
-  // --- Constructor ---
-
   constructor() {
     effect(() => {
       const initial = this.initialItems();
@@ -174,8 +187,10 @@ export class GridDirective {
         const current = this.itemConfigs();
 
         if (current.length === 0) {
-          // First initialization
-          this.itemConfigs.set(initial);
+          // First initialization — run migrations on all items
+          const { items, statuses } = this.runMigrations(initial);
+          this.itemConfigs.set(items);
+          this.migrationStatuses.set(statuses);
 
           return;
         }
@@ -183,9 +198,18 @@ export class GridDirective {
         const currentIds = new Set(current.map((c) => c.id));
         const newItems = initial.filter((item) => !currentIds.has(item.id));
 
-        // Add only new items without resetting existing runtime positions
         for (const item of newItems) {
-          this.addItem(item);
+          const { items: migrated, statuses } = this.runMigrations([item]);
+          const migratedItem = migrated[0];
+
+          if (migratedItem) {
+            this.migrationStatuses.update((prev) => {
+              const next = new Map(prev);
+              statuses.forEach((v, k) => next.set(k, v));
+              return next;
+            });
+            this.placeItem(migratedItem);
+          }
         }
 
         // Remove items no longer in initial
@@ -210,27 +234,46 @@ export class GridDirective {
         const columns = this.activeColumns();
 
         if (!existing || existing.length !== items.length) {
-          const entries: GridLayoutEntry[] = items.map((item) => ({
-            id: item.id,
-            position: item.layout[breakpoint] ?? fallbackPosition(item),
-          }));
+          const existingById = existing ? new Map(existing.map((e) => [e.id, e])) : new Map<string, GridLayoutEntry>();
+          const entries: GridLayoutEntry[] = [];
+
+          for (const item of items) {
+            const existingEntry = existingById.get(item.id);
+
+            if (existingEntry) {
+              entries.push(existingEntry);
+            } else {
+              const constraints = this.getConstraints(item.id);
+              const position =
+                item.layout[breakpoint] ??
+                autoPlace({
+                  entries,
+                  colSpan: constraints.minColSpan,
+                  rowSpan: constraints.minRowSpan,
+                  columns,
+                });
+              entries.push({ id: item.id, position });
+            }
+          }
 
           const compacted = compactLayout(entries, columns);
 
           this.layoutOverrides.update((prev) => ({ ...prev, [breakpoint]: compacted }));
         } else {
-          // Validate existing positions fit within the current column count
+          // Cap items that overflow the column boundary after a breakpoint change.
+          // Min span is intentionally NOT enforced here: newly-added items are placed
+          // with 1×1 defaults before their GridItemDirective registers real constraints,
+          // and registerConstraints() corrects the size on first registration.
+          // Enforcing min here would resize those items again on the next addItem call
+          // and cause them to overlap their neighbours.
           const clamped = existing.map((entry) => {
-            const config = items.find((i) => i.id === entry.id);
-            const constraints = config?.constraints ?? {
-              minColSpan: 1,
-              maxColSpan: columns,
-              minRowSpan: 1,
-              maxRowSpan: 4,
-            };
-            const clampedPos = clampPosition({ position: entry.position, constraints, columns });
+            const constraints = this.getConstraints(entry.id);
+            const pos = entry.position;
+            const colSpan = Math.min(pos.colSpan, constraints.maxColSpan, columns);
+            const col = Math.min(pos.col, columns - colSpan);
+            const rowSpan = Math.min(pos.rowSpan, constraints.maxRowSpan);
 
-            return { ...entry, position: clampedPos };
+            return { ...entry, position: { col, row: pos.row, colSpan, rowSpan } };
           });
 
           const hasChanged = clamped.some((e, i) => {
@@ -248,7 +291,67 @@ export class GridDirective {
     });
   }
 
-  // --- FLIP animation API ---
+  public registerConstraints(id: string, constraints: GridItemConstraints) {
+    const isFirstRegistration = !this.constraintsRegistry.has(id);
+    this.constraintsRegistry.set(id, constraints);
+
+    if (!isFirstRegistration) return;
+
+    // On first registration the item may have been auto-placed with 1×1 defaults
+    // (because addItem runs before the GridItemDirective initialises). If so,
+    // re-place it now at the correct minimum size.
+    const breakpoint = this.activeBreakpoint();
+    const existing = this.layoutOverrides()[breakpoint];
+    if (!existing) return;
+
+    const entry = existing.find((e) => e.id === id);
+    if (!entry) return;
+
+    const pos = entry.position;
+    if (pos.colSpan >= constraints.minColSpan && pos.rowSpan >= constraints.minRowSpan) return;
+
+    const cols = this.activeColumns();
+    const others = existing.filter((e) => e.id !== id);
+    const newPosition = autoPlace({
+      entries: others,
+      colSpan: Math.max(pos.colSpan, constraints.minColSpan),
+      rowSpan: Math.max(pos.rowSpan, constraints.minRowSpan),
+      columns: cols,
+    });
+
+    const updated = existing.map((e) => (e.id === id ? { ...e, position: newPosition } : e));
+    const compacted = compactLayout(updated, cols);
+    this.layoutOverrides.update((prev) => ({ ...prev, [breakpoint]: compacted }));
+  }
+
+  public registerItem(id: string, options: { el: HTMLElement; constraints: GridItemConstraints }) {
+    this.itemElements.set(id, options.el);
+    this.registerConstraints(id, options.constraints);
+  }
+
+  public unregisterItem(id: string) {
+    this.itemElements.delete(id);
+    this.constraintsRegistry.delete(id);
+  }
+
+  public setGhostElement(el: HTMLElement | null) {
+    if (this.ghostElement !== el) {
+      this.ghostElement = el;
+      this.rectSnapshot.delete('__ghost__');
+    }
+  }
+
+  public getConstraints(id: string): GridItemConstraints {
+    return resolveItemConstraints(id, {
+      itemConfigs: this.itemConfigs(),
+      registrations: this.gridConfig.registrations,
+      constraintsRegistry: this.constraintsRegistry,
+    });
+  }
+
+  public getMigrationStatus(id: string): GridItemMigrationStatus {
+    return this.migrationStatuses().get(id) ?? { state: 'ok' };
+  }
 
   public snapshotRects() {
     this.rectSnapshot.clear();
@@ -264,7 +367,6 @@ export class GridDirective {
 
   public animateLayoutTransition(options?: { excludeIds?: Set<string>; scaleIds?: Set<string> }) {
     const excludeIds = options?.excludeIds ?? new Set();
-    const scaleIds = options?.scaleIds ?? new Set();
     const snapshot = new Map(this.rectSnapshot);
     const ghostEl = this.ghostElement;
 
@@ -283,7 +385,7 @@ export class GridDirective {
           const scaleX = oldRect.width / newRect.width;
           const scaleY = oldRect.height / newRect.height;
           const hasMoved = Math.abs(dx) > 1 || Math.abs(dy) > 1;
-          const hasResized = scaleIds.has(id) && (Math.abs(scaleX - 1) > 0.01 || Math.abs(scaleY - 1) > 0.01);
+          const hasResized = Math.abs(scaleX - 1) > 0.01 || Math.abs(scaleY - 1) > 0.01;
 
           if (!hasMoved && !hasResized) continue;
 
@@ -326,8 +428,6 @@ export class GridDirective {
       { injector: this.injector },
     );
   }
-
-  // --- Drag API ---
 
   public beginDrag(itemId: string) {
     const entry = this.baseLayout().find((e) => e.id === itemId);
@@ -374,35 +474,19 @@ export class GridDirective {
     this.emitLayoutChange();
   }
 
-  // --- Public API ---
+  public addItem(type: string, data: unknown) {
+    const registration = this.gridConfig.registrations.find((r) => r.type === type);
+    const id = crypto.randomUUID();
 
-  public addItem(config: GridItemConfig) {
-    const breakpoint = this.activeBreakpoint();
-    const columns = this.activeColumns();
-    const currentLayout = this.baseLayout();
-
-    const position =
-      config.layout[breakpoint] ??
-      autoPlace({
-        entries: currentLayout,
-        colSpan: config.constraints.minColSpan,
-        rowSpan: config.constraints.minRowSpan,
-        columns,
-      });
-
-    const itemWithLayout: GridItemConfig = {
-      ...config,
-      layout: {
-        ...config.layout,
-        [breakpoint]: position,
-      },
+    const config: GridItemConfig = {
+      id,
+      type,
+      version: registration?.version ?? 1,
+      data,
+      layout: {},
     };
 
-    this.itemConfigs.update((items) => [...items, itemWithLayout]);
-
-    this.updateLayoutForCurrentBreakpoint([...currentLayout, { id: config.id, position }]);
-
-    this.emitLayoutChange();
+    this.placeItem(config);
   }
 
   public removeItem(id: string) {
@@ -448,7 +532,7 @@ export class GridDirective {
 
     if (!item) return;
 
-    const clamped = clampPosition({ position: newPosition, constraints: item.constraints, columns });
+    const clamped = clampPosition({ position: newPosition, constraints: this.getConstraints(id), columns });
     const currentLayout = this.baseLayout().map((e) => (e.id === id ? { ...e, position: clamped } : e));
 
     const resolved = resolveCollisions({ entries: currentLayout, movedId: id, columns });
@@ -479,12 +563,18 @@ export class GridDirective {
       rowSpan: newRowSpan,
     };
 
-    const clamped = clampPosition({ position: newPosition, constraints: item.constraints, columns });
+    const clamped = clampPosition({ position: newPosition, constraints: this.getConstraints(id), columns });
 
     // Try to shrink horizontal neighbors before pushing them down
     const currentLayout = base.map((e) => (e.id === id ? { ...e, position: clamped } : e));
 
-    const withShrunk = this.shrinkNeighbors({ layout: currentLayout, resizedId: id, resizedPos: clamped, columns });
+    const withShrunk = this.shrinkNeighbors({
+      layout: currentLayout,
+      resizedId: id,
+      resizedPos: clamped,
+      originalPos: entry.position,
+      columns,
+    });
     const resolved = resolveCollisions({ entries: withShrunk, movedId: id, columns });
     this.updateLayoutForCurrentBreakpoint(resolved);
     this.updateItemLayout(id, clamped);
@@ -504,32 +594,29 @@ export class GridDirective {
   }
 
   public restoreState(state: GridSerializedState) {
-    const bpMinWidths: Record<string, number> = {};
-
-    for (const bp of this.breakpoints()) {
-      bpMinWidths[bp.name] = bp.minWidth;
-    }
-
     const items: GridItemConfig[] = state.items.map((item) => ({
       id: item.id,
-      componentType: item.componentType,
-      layout: item.layout,
-      constraints: item.constraints,
+      type: item.type,
+      version: item.version ?? 1,
+      data: item.data,
+      layout: { ...item.layout },
     }));
 
-    this.itemConfigs.set(items);
+    const { items: migrated, statuses } = this.runMigrations(items);
+    this.itemConfigs.set(migrated);
+    this.migrationStatuses.set(statuses);
 
     const overrides: Record<GridBreakpointName, GridLayoutEntry[]> = {};
 
     for (const [bpName, columns] of Object.entries(state.columns)) {
-      overrides[bpName] = items.map((item) => ({
+      overrides[bpName] = migrated.map((item) => ({
         id: item.id,
         position:
           item.layout[bpName] ??
           autoPlace({
             entries: [],
-            colSpan: item.constraints.minColSpan,
-            rowSpan: item.constraints.minRowSpan,
+            colSpan: this.getConstraints(item.id).minColSpan,
+            rowSpan: this.getConstraints(item.id).minRowSpan,
             columns,
           }),
       }));
@@ -538,16 +625,119 @@ export class GridDirective {
     this.layoutOverrides.set(overrides);
   }
 
-  // --- Internal ---
+  private placeItem(config: GridItemConfig) {
+    const breakpoint = this.activeBreakpoint();
+    const columns = this.activeColumns();
+    const currentLayout = this.baseLayout();
+    const constraints = this.getConstraints(config.id);
+
+    const position =
+      config.layout[breakpoint] ??
+      autoPlace({
+        entries: currentLayout,
+        colSpan: constraints.minColSpan,
+        rowSpan: constraints.minRowSpan,
+        columns,
+      });
+
+    const itemWithLayout: GridItemConfig = {
+      ...config,
+      layout: {
+        ...config.layout,
+        [breakpoint]: position,
+      },
+    };
+
+    this.itemConfigs.update((items) => [...items, itemWithLayout]);
+    this.updateLayoutForCurrentBreakpoint([...currentLayout, { id: config.id, position }]);
+    this.emitLayoutChange();
+  }
+
+  private runMigrations(items: GridItemConfig[]): {
+    items: GridItemConfig[];
+    statuses: Map<string, GridItemMigrationStatus>;
+  } {
+    const registrations = this.gridConfig.registrations;
+    const statuses = new Map<string, GridItemMigrationStatus>();
+
+    const migratedItems = items.map((item) => {
+      const originalVersion = item.version;
+      let current = { ...item };
+
+      try {
+        const registration = registrations.find((r) => r.type === current.type);
+        const migrations = registration?.migrations ?? [];
+
+        let found = true;
+
+        while (found) {
+          found = false;
+          const next = migrations.find((m) => m.fromVersion === current.version);
+
+          if (!next) break;
+
+          found = true;
+
+          if (next.requiresUserIntervention) {
+            // Run migrate (if provided) to produce partial data for the config component
+            let partialData: unknown = current.data;
+            if (next.migrate) {
+              partialData = next.migrate(current).data;
+            }
+            statuses.set(item.id, {
+              state: 'needs-intervention',
+              fromVersion: current.version,
+              toVersion: next.toVersion,
+              partialData,
+            });
+            // Stop the chain — item stays at current version
+            return current;
+          }
+
+          if (next.migrate) {
+            current = next.migrate(current);
+          }
+
+          current = { ...current, version: next.toVersion };
+
+          // Apply constraint-driven layout adjustments when constraints changed in this migration step
+          if (next.constraints) {
+            const c = next.constraints;
+            const updatedLayout: typeof current.layout = {};
+            for (const [bp, pos] of Object.entries(current.layout)) {
+              updatedLayout[bp] = {
+                ...pos,
+                colSpan: Math.max(c.minColSpan, Math.min(pos.colSpan, c.maxColSpan)),
+                rowSpan: Math.max(c.minRowSpan, Math.min(pos.rowSpan, c.maxRowSpan)),
+              };
+            }
+            current = { ...current, layout: updatedLayout };
+          }
+        }
+
+        if (current.version !== originalVersion) {
+          statuses.set(item.id, { state: 'migrated', fromVersion: originalVersion, toVersion: current.version });
+        } else {
+          statuses.set(item.id, { state: 'ok' });
+        }
+      } catch (error) {
+        statuses.set(item.id, { state: 'failed', fromVersion: originalVersion, error });
+      }
+
+      return current;
+    });
+
+    return { items: migratedItems, statuses };
+  }
 
   private shrinkNeighbors(options: {
     layout: GridLayoutEntry[];
     resizedId: string;
     resizedPos: GridItemPosition;
+    originalPos: GridItemPosition;
     columns: number;
   }): GridLayoutEntry[] {
-    const { layout, resizedId, resizedPos, columns } = options;
-    const items = this.itemConfigs();
+    const { layout, resizedId, resizedPos, originalPos, columns } = options;
 
     // Compute candidate shrunk positions
     const candidates = layout.map((entry) => {
@@ -555,13 +745,14 @@ export class GridDirective {
 
       const pos = entry.position;
 
-      const rowOverlap = pos.row < resizedPos.row + resizedPos.rowSpan && pos.row + pos.rowSpan > resizedPos.row;
+      // Use original row range so items that only entered the overlap zone due to a south/north
+      // resize are not treated as horizontal neighbors and incorrectly shrunk.
+      const rowOverlap = pos.row < originalPos.row + originalPos.rowSpan && pos.row + pos.rowSpan > originalPos.row;
       const colOverlap = pos.col < resizedPos.col + resizedPos.colSpan && pos.col + pos.colSpan > resizedPos.col;
 
       if (!rowOverlap || !colOverlap) return entry;
 
-      const config = items.find((i) => i.id === entry.id);
-      const minColSpan = config?.constraints.minColSpan ?? 1;
+      const minColSpan = this.getConstraints(entry.id).minColSpan;
 
       const neighborIsRight = pos.col >= resizedPos.col;
       const shrunkPos = { ...pos };

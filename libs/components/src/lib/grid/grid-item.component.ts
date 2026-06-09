@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject, input, output } from '@angular/core';
-import { ResizeHandlesComponent } from '@ethlete/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject, input, output } from '@angular/core';
+import { ResizeHandlesComponent, injectLocale } from '@ethlete/core';
+import { injectGridConfig } from './headless/grid-config';
 import { GridDragDirective } from './headless/grid-drag.directive';
 import { GridItemDirective } from './headless/grid-item.directive';
 import { GridResizeDirective } from './headless/grid-resize.directive';
@@ -8,7 +9,7 @@ import { GRID_TOKEN } from './headless/grid.tokens';
 @Component({
   selector: 'et-grid-item, [et-grid-item]',
   template: `
-    <div class="et-grid-item__drag-handle" aria-label="Drag to reorder">
+    <div [attr.aria-label]="dragHandleAriaLabel()" class="et-grid-item__drag-handle">
       <ng-content select="[etGridItemDragHandle]" />
     </div>
 
@@ -18,10 +19,10 @@ import { GRID_TOKEN } from './headless/grid.tokens';
 
     <et-resize-handles
       [edges]="gridResize.resizeEdges()"
-      [disabled]="gridResize.isResizing()"
-      (resizeStarted)="gridResize.onResizeStarted()"
-      (resizeMoved)="gridResize.onResizeMoved($event)"
-      (resizeEnded)="gridResize.onResizeEnded()"
+      [disabled]="gridResize.isResizing() || isReadOnly()"
+      (resizeStarted)="gridResize.beginResize()"
+      (resizeMoved)="gridResize.updateResize($event)"
+      (resizeEnded)="gridResize.finishResize()"
       (pointerdown)="$event.stopPropagation()"
     />
 
@@ -42,12 +43,12 @@ import { GRID_TOKEN } from './headless/grid.tokens';
   ],
   host: {
     class: 'et-grid-item',
-    '[class.et-grid-item--dragging]': 'gridDrag.dragHandle.isDragging()',
+    '[class.et-grid-item--dragging]': '!isReadOnly() && gridDrag.dragHandle.isDragging()',
     '[class.et-grid-item--resizing]': 'gridResize.isResizing()',
     '[attr.role]': '"group"',
     '[attr.aria-label]': 'ariaLabel()',
     '[attr.tabindex]': '"0"',
-    '(keydown)': 'onKeydown($event)',
+    '(keydown)': 'applyKeyboardShortcut($event)',
   },
   styles: `
     @property --et-grid-item-border-radius {
@@ -239,8 +240,17 @@ export class GridItemComponent {
   public ariaLabel = input<string>('Grid item');
 
   public removed = output<void>();
+  private gridConfig = injectGridConfig();
+  private locale = injectLocale();
 
-  public onKeydown(event: KeyboardEvent) {
+  protected isReadOnly = computed(() => this.grid.readOnly());
+
+  protected dragHandleAriaLabel = computed(() =>
+    this.gridConfig.transformer(this.gridConfig.dragHandleAriaLabel, this.locale.currentLocale()),
+  );
+
+  public applyKeyboardShortcut(event: KeyboardEvent) {
+    if (this.isReadOnly()) return;
     const pos = this.gridItem.currentPosition();
 
     if (!pos) return;

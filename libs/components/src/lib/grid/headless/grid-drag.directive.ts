@@ -1,7 +1,7 @@
 import { afterNextRender, computed, Directive, ElementRef, inject, Injector, signal } from '@angular/core';
-import { DragHandleDirective, DragMoveEvent, signalHostStyles } from '@ethlete/core';
+import { DragHandleDirective, DragMoveEvent, injectRenderer, signalHostStyles } from '@ethlete/core';
 import { outputToObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { tap } from 'rxjs';
+import { filter, tap } from 'rxjs';
 import { GridItemDirective } from './grid-item.directive';
 import { GRID_TOKEN } from './grid.tokens';
 
@@ -15,16 +15,17 @@ import { GRID_TOKEN } from './grid.tokens';
   ],
   host: {
     class: 'et-grid-drag',
-    '[class.et-grid-drag--active]': 'dragHandle.isDragging()',
-    '[attr.aria-grabbed]': 'dragHandle.isDragging()',
+    '[class.et-grid-drag--active]': '!grid.readOnly() && dragHandle.isDragging()',
+    '[attr.aria-grabbed]': '!grid.readOnly() && dragHandle.isDragging()',
   },
 })
 export class GridDragDirective {
-  private grid = inject(GRID_TOKEN);
+  protected grid = inject(GRID_TOKEN);
   private gridItem = inject(GridItemDirective);
   private injector = inject(Injector);
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   public dragHandle = inject(DragHandleDirective);
+  private renderer = injectRenderer();
 
   private dragStartClient = signal<{ x: number; y: number } | null>(null);
   private dragPixelOffset = signal<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -39,10 +40,15 @@ export class GridDragDirective {
   constructor() {
     outputToObservable(this.dragHandle.dragStarted)
       .pipe(
+        filter(() => !this.grid.readOnly()),
         tap(() => {
-          console.log('[DRAG] started', this.gridItem.itemId());
           this.dragPixelOffset.set({ x: 0, y: 0 });
           this.dragStartClient.set(null);
+
+          // Lift out of document flow before beginDrag changes the layout
+          const rect = this.elementRef.nativeElement.getBoundingClientRect();
+          this.applyFixed(rect);
+
           this.grid.beginDrag(this.gridItem.itemId());
         }),
         takeUntilDestroyed(),
@@ -51,6 +57,7 @@ export class GridDragDirective {
 
     outputToObservable<DragMoveEvent>(this.dragHandle.dragMoved)
       .pipe(
+        filter(() => !this.grid.readOnly()),
         tap((event) => {
           const startClient = this.dragStartClient();
           const anchor = startClient ?? { x: event.clientX, y: event.clientY };
@@ -106,6 +113,7 @@ export class GridDragDirective {
 
     outputToObservable(this.dragHandle.dragEnded)
       .pipe(
+        filter(() => !this.grid.readOnly()),
         tap(() => {
           const currentOffset = this.dragPixelOffset();
           const ghostPos = this.grid.ghostPosition();
@@ -128,18 +136,7 @@ export class GridDragDirective {
             settleFromY = currentOffset.y - targetPixelY;
           }
 
-          console.log('[DRAG] ended', {
-            itemId: this.gridItem.itemId(),
-            currentOffset,
-            ghostPos,
-            originPos,
-            cellWidth,
-            cellHeight,
-            settleFromX,
-            settleFromY,
-            willAnimate: Math.abs(settleFromX) > 1 || Math.abs(settleFromY) > 1,
-          });
-
+          // Reset transform — element stays position:fixed at original screen coords
           this.dragStartClient.set(null);
           this.dragPixelOffset.set({ x: 0, y: 0 });
           this.grid.snapshotRects();
@@ -149,15 +146,16 @@ export class GridDragDirective {
           afterNextRender(
             () => {
               const el = this.elementRef.nativeElement;
-              const existingAnims = el.getAnimations();
-              console.log('[DRAG] afterNextRender fired', {
-                existingAnimations: existingAnims.length,
-                settleFromX,
-                settleFromY,
-                elTagName: el.tagName,
-                elCurrentTransform: el.style.transform,
-              });
-              existingAnims.forEach((a) => a.cancel());
+
+              // Briefly release fixed to measure where the element landed in the grid,
+              // then re-anchor fixed there so the settle animation stays out of flow.
+              this.releaseFixed();
+              const finalRect = el.getBoundingClientRect();
+              this.applyFixed(finalRect);
+
+              el.getAnimations().forEach((a) => a.cancel());
+
+              const releaseFixed = () => this.releaseFixed();
 
               if (Math.abs(settleFromX) > 1 || Math.abs(settleFromY) > 1) {
                 const anim = el.animate(
@@ -167,9 +165,10 @@ export class GridDragDirective {
                   ],
                   { duration: 250, easing: 'cubic-bezier(0.2, 0, 0, 1)' },
                 );
-                console.log('[DRAG] settle animation started', anim.playState);
+                anim.onfinish = releaseFixed;
+                anim.oncancel = releaseFixed;
               } else {
-                console.log('[DRAG] settle skipped (below threshold)');
+                releaseFixed();
               }
             },
             { injector: this.injector },
@@ -178,5 +177,21 @@ export class GridDragDirective {
         takeUntilDestroyed(),
       )
       .subscribe();
+  }
+
+  private applyFixed(rect: { left: number; top: number; width: number; height: number }) {
+    const el = this.elementRef.nativeElement;
+    this.renderer.setStyle(el, {
+      position: 'fixed',
+      left: `${rect.left}px`,
+      top: `${rect.top}px`,
+      width: `${rect.width}px`,
+      height: `${rect.height}px`,
+    });
+  }
+
+  private releaseFixed() {
+    const el = this.elementRef.nativeElement;
+    this.renderer.removeStyles(el, 'position', 'left', 'top', 'width', 'height');
   }
 }

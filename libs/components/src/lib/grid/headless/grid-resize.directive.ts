@@ -19,7 +19,9 @@ export class GridResizeDirective {
 
   private resizeStartPos = signal<{ col: number; row: number; colSpan: number; rowSpan: number } | null>(null);
 
-  public onResizeStarted() {
+  public beginResize() {
+    if (this.grid.readOnly()) return;
+
     const pos = this.gridItem.currentPosition();
 
     if (pos) {
@@ -28,7 +30,7 @@ export class GridResizeDirective {
     }
   }
 
-  public onResizeMoved(event: ResizeMoveEvent) {
+  public updateResize(event: ResizeMoveEvent) {
     const start = this.resizeStartPos();
 
     if (!start) return;
@@ -51,11 +53,15 @@ export class GridResizeDirective {
       newColSpan = Math.max(1, start.colSpan + Math.round(event.dx / cellWidth));
     }
 
-    // West edges: move col left and grow span
+    // West edges: move col left and grow span, keeping right edge fixed
     if (event.edge === 'w' || event.edge === 'sw' || event.edge === 'nw') {
+      const rightEdge = start.col + start.colSpan;
       const colDelta = Math.round(event.dx / cellWidth);
       newCol = Math.max(0, start.col + colDelta);
-      newColSpan = Math.max(1, start.colSpan - (newCol - start.col));
+      newColSpan = rightEdge - newCol;
+      // Clamp against constraints and recalculate col to keep right edge fixed
+      newColSpan = Math.min(this.gridItem.maxColSpan(), Math.max(this.gridItem.minColSpan(), newColSpan));
+      newCol = rightEdge - newColSpan;
     }
 
     // South edges: grow/shrink span downward
@@ -63,11 +69,15 @@ export class GridResizeDirective {
       newRowSpan = Math.max(1, start.rowSpan + Math.round(event.dy / cellHeight));
     }
 
-    // North edges: move row up and grow span
+    // North edges: move row up and grow span, keeping bottom edge fixed
     if (event.edge === 'n' || event.edge === 'ne' || event.edge === 'nw') {
+      const bottomEdge = start.row + start.rowSpan;
       const rowDelta = Math.round(event.dy / cellHeight);
       newRow = Math.max(0, start.row + rowDelta);
-      newRowSpan = Math.max(1, start.rowSpan - (newRow - start.row));
+      newRowSpan = bottomEdge - newRow;
+      // Clamp against constraints and recalculate row to keep bottom edge fixed
+      newRowSpan = Math.min(this.gridItem.maxRowSpan(), Math.max(this.gridItem.minRowSpan(), newRowSpan));
+      newRow = bottomEdge - newRowSpan;
     }
 
     const currentPos = this.gridItem.currentPosition();
@@ -86,7 +96,7 @@ export class GridResizeDirective {
     this.grid.animateLayoutTransition({ scaleIds: new Set([this.gridItem.itemId()]) });
   }
 
-  public onResizeEnded() {
+  public finishResize() {
     this.resizeStartPos.set(null);
     this.isResizing.set(false);
     this.grid.commitResize();

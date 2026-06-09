@@ -8,7 +8,8 @@ import {
   inject,
   viewChild,
 } from '@angular/core';
-import { signalHostStyles } from '@ethlete/core';
+import { injectLocale, signalHostStyles } from '@ethlete/core';
+import { injectGridConfig } from './headless/grid-config';
 import { GridDirective } from './headless/grid.directive';
 
 @Component({
@@ -29,14 +30,14 @@ import { GridDirective } from './headless/grid.directive';
   hostDirectives: [
     {
       directive: GridDirective,
-      inputs: ['breakpoints', 'rowHeight', 'gap', 'initialItems'],
+      inputs: ['breakpoints', 'rowHeight', 'gap', 'initialItems', 'readOnly'],
       outputs: ['layoutChange'],
     },
   ],
   host: {
     class: 'et-grid',
     role: 'region',
-    '[attr.aria-label]': '"Interactive grid layout"',
+    '[attr.aria-label]': 'ariaLabel()',
   },
   styles: `
     @property --et-grid-gap {
@@ -85,11 +86,25 @@ import { GridDirective } from './headless/grid.directive';
         grid-column 0s,
         grid-row 0s;
     }
+
+    .et-grid--readonly {
+      .et-grid-item__drag-handle {
+        cursor: default;
+        pointer-events: none;
+      }
+    }
   `,
 })
 export class GridComponent {
-  protected grid = inject(GridDirective);
+  public grid = inject(GridDirective);
   private ghostRef = viewChild<ElementRef<HTMLElement>>('ghostRef');
+  private gridConfig = injectGridConfig();
+  private locale = injectLocale();
+
+  protected ariaLabel = computed(() => {
+    const label = this.grid.readOnly() ? this.gridConfig.readonlyAriaLabel : this.gridConfig.interactiveAriaLabel;
+    return this.gridConfig.transformer(label, this.locale.currentLocale());
+  });
 
   public hostStyles = signalHostStyles({
     '--_et-grid-columns': computed(() => `${this.grid.activeColumns()}`),
@@ -99,7 +114,7 @@ export class GridComponent {
 
   constructor() {
     effect(() => {
-      this.grid.ghostElement = this.ghostRef()?.nativeElement ?? null;
+      this.grid.setGhostElement(this.ghostRef()?.nativeElement ?? null);
     });
   }
 }

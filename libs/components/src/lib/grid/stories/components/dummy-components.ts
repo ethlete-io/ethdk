@@ -28,6 +28,7 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@a
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DummyChartComponent {
+  public data = input<unknown>();
   public title = input('Chart Widget');
   public readonly BARS = [65, 40, 80, 55, 90, 45, 70, 60, 85, 50];
 }
@@ -54,6 +55,7 @@ export class DummyChartComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DummyTableComponent {
+  public data = input<unknown>();
   public title = input('Table Widget');
   public readonly ROWS = [
     { name: 'Revenue', value: '$12,450' },
@@ -76,6 +78,7 @@ export class DummyTableComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DummyTextComponent {
+  public data = input<unknown>();
   public title = input('Text Widget');
   public body = input(
     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',

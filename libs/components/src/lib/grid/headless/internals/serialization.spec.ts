@@ -12,20 +12,22 @@ describe('serialization', () => {
   const items: GridItemConfig[] = [
     {
       id: 'item-1',
-      componentType: 'chart',
+      type: 'chart',
+      version: 1,
+      data: undefined,
       layout: {
         lg: { col: 0, row: 0, colSpan: 4, rowSpan: 2 },
         md: { col: 0, row: 0, colSpan: 3, rowSpan: 2 },
       },
-      constraints: { minColSpan: 2, maxColSpan: 8, minRowSpan: 1, maxRowSpan: 4 },
     },
     {
       id: 'item-2',
-      componentType: 'table',
+      type: 'table',
+      version: 1,
+      data: undefined,
       layout: {
         lg: { col: 4, row: 0, colSpan: 4, rowSpan: 2 },
       },
-      constraints: { minColSpan: 2, maxColSpan: 6, minRowSpan: 1, maxRowSpan: 3 },
     },
   ];
 
@@ -37,9 +39,9 @@ describe('serialization', () => {
       expect(result.rowHeight).toBe(100);
       expect(result.items).toHaveLength(2);
       expect(result.items[0]?.id).toBe('item-1');
-      expect(result.items[0]?.componentType).toBe('chart');
-      expect(result.items[0]?.layout.lg).toEqual({ col: 0, row: 0, colSpan: 4, rowSpan: 2 });
-      expect(result.items[0]?.constraints.minColSpan).toBe(2);
+      expect(result.items[0]?.type).toBe('chart');
+      expect(result.items[0]?.version).toBe(1);
+      expect(result.items[0]?.layout['lg']).toEqual({ col: 0, row: 0, colSpan: 4, rowSpan: 2 });
     });
 
     it('should be JSON-serializable', () => {
@@ -61,7 +63,23 @@ describe('serialization', () => {
       expect(deserialized.breakpoints).toHaveLength(3);
       expect(deserialized.items).toHaveLength(2);
       expect(deserialized.items[0]?.id).toBe('item-1');
-      expect(deserialized.items[0]?.layout.lg).toEqual({ col: 0, row: 0, colSpan: 4, rowSpan: 2 });
+      expect(deserialized.items[0]?.version).toBe(1);
+      expect(deserialized.items[0]?.layout['lg']).toEqual({ col: 0, row: 0, colSpan: 4, rowSpan: 2 });
+    });
+
+    it('should default version to 1 for legacy items without a version field', () => {
+      const state: GridSerializedState = {
+        columns: { lg: 12 },
+        rowHeight: 100,
+        items: [
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          { id: 'legacy', type: 'chart', data: undefined, layout: {} } as any,
+        ],
+      };
+
+      const result = deserializeGridLayout(state, { lg: 1200 });
+
+      expect(result.items[0]?.version).toBe(1);
     });
 
     it('should reconstruct breakpoint configs with minWidth', () => {

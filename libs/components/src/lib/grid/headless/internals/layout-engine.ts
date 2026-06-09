@@ -112,6 +112,7 @@ export const resolveCollisions = (options: ResolveCollisionsOptions) => {
   if (!moved) return entries;
 
   const result = entries.map((e) => ({ ...e, position: { ...e.position } }));
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const movedEntry = result.find((e) => e.id === movedId)!;
 
   // Detect same-size swap: exactly one colliding item with matching dimensions
@@ -120,6 +121,8 @@ export const resolveCollisions = (options: ResolveCollisionsOptions) => {
 
   if (
     swapTarget &&
+    swapTarget.position.col === movedEntry.position.col &&
+    swapTarget.position.row === movedEntry.position.row &&
     swapTarget.position.colSpan === movedEntry.position.colSpan &&
     swapTarget.position.rowSpan === movedEntry.position.rowSpan &&
     originPosition

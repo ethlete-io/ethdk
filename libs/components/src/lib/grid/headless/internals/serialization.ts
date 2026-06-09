@@ -22,9 +22,10 @@ export const serializeGridLayout = (options: SerializeOptions): GridSerializedSt
     rowHeight,
     items: items.map((item) => ({
       id: item.id,
-      componentType: item.componentType,
+      type: item.type,
+      version: item.version,
+      data: item.data,
       layout: { ...item.layout },
-      constraints: { ...item.constraints },
     })),
   };
 };
@@ -45,9 +46,10 @@ export const deserializeGridLayout = (
 
   const items: GridItemConfig[] = state.items.map((item) => ({
     id: item.id,
-    componentType: item.componentType,
+    type: item.type,
+    version: item.version ?? 1,
+    data: item.data,
     layout: { ...item.layout },
-    constraints: { ...item.constraints },
   }));
 
   return { breakpoints, items, rowHeight: state.rowHeight };
