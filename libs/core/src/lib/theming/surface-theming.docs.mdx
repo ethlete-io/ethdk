@@ -1,0 +1,214 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Core/Theming/Surface" />
+
+# Surface Theming — Design Specification
+
+Surface themes define the background, text hierarchy, border, and interaction colors for a UI surface (page, card, panel, toolbar). Surfaces are elevation-aware — nested surfaces know their depth in the stack.
+
+---
+
+## What is a surface theme
+
+A surface theme is a named set of tokens for a complete UI layer. Unlike color themes (which drive component accent colors), surface themes drive the canvas that components sit on: background, text, and borders. Components automatically adapt their ink colors to the active surface.
+
+---
+
+## SurfaceTheme structure
+
+<table>
+  <tr>
+    <td>Field</td>
+    <td>Type</td>
+    <td>Description</td>
+  </tr>
+  <tr>
+    <td>`name`</td>
+    <td>`string`</td>
+    <td>Identifier used to apply the surface (e.g. `'dark'`, `'light-elevated'`)</td>
+  </tr>
+  <tr>
+    <td>`type`</td>
+    <td>`'light' | 'dark'`</td>
+    <td>Overall luminosity — used for automatic contrast decisions</td>
+  </tr>
+  <tr>
+    <td>`elevation`</td>
+    <td>`number`</td>
+    <td>Stack depth: 0 = base, 1 = raised, 2 = higher. Components can request "next elevation" automatically.</td>
+  </tr>
+  <tr>
+    <td>`isDefault?`</td>
+    <td>`boolean`</td>
+    <td>Applied when no explicit surface input is set</td>
+  </tr>
+  <tr>
+    <td>`background`</td>
+    <td>RGB</td>
+    <td>Background fill color</td>
+  </tr>
+  <tr>
+    <td>`color`</td>
+    <td>RGB</td>
+    <td>Primary text color</td>
+  </tr>
+  <tr>
+    <td>`colorMuted`</td>
+    <td>RGB</td>
+    <td>Secondary / supporting text</td>
+  </tr>
+  <tr>
+    <td>`colorSubtle`</td>
+    <td>RGB</td>
+    <td>Tertiary / placeholder text</td>
+  </tr>
+  <tr>
+    <td>`border`</td>
+    <td>RGB</td>
+    <td>Divider and border color</td>
+  </tr>
+  <tr>
+    <td>`interactionColor?`</td>
+    <td>RGB per state</td>
+    <td>Overlay color for interactive surfaces (hover, focus, active, disabled). Used by `[etSurfaceInteractive]`.</td>
+  </tr>
+</table>
+
+Color values use space-separated channel numbers (same format as color themes): `"R G B"`.
+
+---
+
+## Registration
+
+```ts
+provideSurfaceThemesWithTailwind4([DARK_SURFACE, LIGHT_SURFACE, DARK_ELEVATED_SURFACE, DARK_ELEVATED_2_SURFACE]);
+```
+
+---
+
+## Applying a surface
+
+```html
+<div etProvideSurface="dark">...</div>
+<div [etProvideSurface]="myCustomSurface">...</div>
+```
+
+The directive sets the surface context. All components inside inherit the surface tokens.
+
+---
+
+## CSS tokens generated
+
+When a surface is active, these custom properties are available to descendants:
+
+<table>
+  <tr>
+    <td>Token</td>
+    <td>Role</td>
+  </tr>
+  <tr>
+    <td>`--et-surface-background-solid`</td>
+    <td>Background fill (use this for `background-color`)</td>
+  </tr>
+  <tr>
+    <td>`--et-surface-background-rgb`</td>
+    <td>RGB channels of background (for `rgba()` overlays)</td>
+  </tr>
+  <tr>
+    <td>`--et-surface-color-solid`</td>
+    <td>Primary text color</td>
+  </tr>
+  <tr>
+    <td>`--et-surface-color-rgb`</td>
+    <td>RGB channels of primary text</td>
+  </tr>
+  <tr>
+    <td>`--et-surface-color-muted-solid`</td>
+    <td>Secondary text color</td>
+  </tr>
+  <tr>
+    <td>`--et-surface-color-muted-rgb`</td>
+    <td>RGB channels of muted text</td>
+  </tr>
+  <tr>
+    <td>`--et-surface-color-subtle-solid`</td>
+    <td>Tertiary text color</td>
+  </tr>
+  <tr>
+    <td>`--et-surface-color-subtle-rgb`</td>
+    <td>RGB channels of subtle text</td>
+  </tr>
+  <tr>
+    <td>`--et-surface-border-solid`</td>
+    <td>Border / divider color</td>
+  </tr>
+  <tr>
+    <td>`--et-surface-border-rgb`</td>
+    <td>RGB channels of border</td>
+  </tr>
+  <tr>
+    <td>`--et-surface-interaction-solid`</td>
+    <td>Default interaction overlay color</td>
+  </tr>
+  <tr>
+    <td>`--et-surface-interaction-hover-solid`</td>
+    <td>Hover state overlay</td>
+  </tr>
+  <tr>
+    <td>`--et-surface-interaction-focus-solid`</td>
+    <td>Focus state overlay</td>
+  </tr>
+  <tr>
+    <td>`--et-surface-interaction-active-solid`</td>
+    <td>Active/pressed overlay</td>
+  </tr>
+  <tr>
+    <td>`--et-surface-interaction-disabled-solid`</td>
+    <td>Disabled state overlay</td>
+  </tr>
+</table>
+
+Every token above also has an `-rgb` variant for constructing `rgba()` values manually.
+
+---
+
+## Elevation nesting
+
+Surfaces can be nested. The context tracker maintains the current elevation stack — a component inside a `dark` (elevation 0) surface can request elevation 1 and automatically receive `dark-elevated` without being explicitly told which surface to use.
+
+In Figma: model elevation levels as separate frames/components with their own surface variable modes. Nesting a raised card inside a base page automatically applies the elevation-1 mode.
+
+---
+
+## Figma mapping
+
+Each surface theme = one variable mode. Define variables for:
+
+<table>
+  <tr>
+    <td>Figma variable</td>
+    <td>Maps to</td>
+  </tr>
+  <tr>
+    <td>`surface/background`</td>
+    <td>`--et-surface-background-solid`</td>
+  </tr>
+  <tr>
+    <td>`surface/text/primary`</td>
+    <td>`--et-surface-color-solid`</td>
+  </tr>
+  <tr>
+    <td>`surface/text/muted`</td>
+    <td>`--et-surface-color-muted-solid`</td>
+  </tr>
+  <tr>
+    <td>`surface/text/subtle`</td>
+    <td>`--et-surface-color-subtle-solid`</td>
+  </tr>
+  <tr>
+    <td>`surface/border`</td>
+    <td>`--et-surface-border-solid`</td>
+  </tr>
+</table>
+
+Switching variable mode (dark / light / dark-elevated) changes the entire surface layer. Components on that surface adapt automatically via the inherited custom properties.

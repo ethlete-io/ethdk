@@ -1,0 +1,247 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Components/Button/Window Control" />
+
+# Window Control Button — Design Specification
+
+Square icon-only button for toolbar and window chrome controls. No variants — single visual style with two kinds.
+
+---
+
+## Anatomy
+
+```
+[ icon ]                      ← always fills the button square
+[ loader overlay ]            ← absolute, fades in during loading state
+```
+
+- **Icon slot** — direct child content; always `1em × 1em` (matches `--_et-window-control-button-icon-size`)
+- **Loader** — absolutely positioned spinner that replaces the icon visually
+- **Shape** — square, fixed width and height per size, border-radius 4 px
+
+---
+
+## Kinds
+
+<table>
+  <tr>
+    <td>Kind</td>
+    <td>Rest</td>
+    <td>Hover / Focus</td>
+    <td>Active</td>
+  </tr>
+  <tr>
+    <td>`default`</td>
+    <td>transparent</td>
+    <td>primary tint at 14%</td>
+    <td>primary tint at 22%</td>
+  </tr>
+  <tr>
+    <td>`close`</td>
+    <td>transparent</td>
+    <td>`rgba(232, 17, 35, 0.92)` background, white icon</td>
+    <td>`rgba(196, 14, 29, 0.96)` background, white icon</td>
+  </tr>
+</table>
+
+---
+
+## Sizes
+
+The system uses **1rem = 10px**. All values below are in px. The button is square — width equals height.
+
+<table>
+  <tr>
+    <td>Size</td>
+    <td>Button size (W = H)</td>
+    <td>Icon size</td>
+    <td>Border radius</td>
+  </tr>
+  <tr>
+    <td>`sm`</td>
+    <td>28</td>
+    <td>14</td>
+    <td>4</td>
+  </tr>
+  <tr>
+    <td>`md` (default)</td>
+    <td>32</td>
+    <td>16</td>
+    <td>4</td>
+  </tr>
+  <tr>
+    <td>`lg`</td>
+    <td>36</td>
+    <td>18</td>
+    <td>4</td>
+  </tr>
+</table>
+
+`xs` and `xl` are **not supported**.
+
+**Loading spinner dimensions (px):**
+
+<table>
+  <tr>
+    <td>Size</td>
+    <td>Diameter</td>
+    <td>Stroke width</td>
+  </tr>
+  <tr>
+    <td>`sm`</td>
+    <td>12</td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td>`md`</td>
+    <td>14</td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td>`lg`</td>
+    <td>16</td>
+    <td>2.5</td>
+  </tr>
+</table>
+
+---
+
+## States
+
+**Default kind — primary tint opacity per state:**
+
+<table>
+  <tr>
+    <td>State</td>
+    <td>Primary opacity</td>
+  </tr>
+  <tr>
+    <td>Rest</td>
+    <td>0%</td>
+  </tr>
+  <tr>
+    <td>Hover</td>
+    <td>14%</td>
+  </tr>
+  <tr>
+    <td>Focus-visible</td>
+    <td>18%</td>
+  </tr>
+  <tr>
+    <td>Active</td>
+    <td>22%</td>
+  </tr>
+</table>
+
+**Pressed state — primary tint opacity:**
+
+<table>
+  <tr>
+    <td>State</td>
+    <td>Primary opacity</td>
+  </tr>
+  <tr>
+    <td>Rest (pressed)</td>
+    <td>18%</td>
+  </tr>
+  <tr>
+    <td>Hover (pressed)</td>
+    <td>24%</td>
+  </tr>
+  <tr>
+    <td>Focus-visible (pressed)</td>
+    <td>28%</td>
+  </tr>
+  <tr>
+    <td>Active (pressed)</td>
+    <td>32%</td>
+  </tr>
+</table>
+
+**Close kind:**
+
+<table>
+  <tr>
+    <td>State</td>
+    <td>Background</td>
+    <td>Icon color</td>
+  </tr>
+  <tr>
+    <td>Rest</td>
+    <td>transparent</td>
+    <td>ink</td>
+  </tr>
+  <tr>
+    <td>Hover / Focus-visible</td>
+    <td>`rgba(232, 17, 35, 0.92)`</td>
+    <td>`#ffffff`</td>
+  </tr>
+  <tr>
+    <td>Active</td>
+    <td>`rgba(196, 14, 29, 0.96)`</td>
+    <td>`#ffffff`</td>
+  </tr>
+</table>
+
+**Shared states:**
+
+<table>
+  <tr>
+    <td>State</td>
+    <td>Visual behavior</td>
+  </tr>
+  <tr>
+    <td>Disabled</td>
+    <td>40% opacity, `cursor: not-allowed`</td>
+  </tr>
+  <tr>
+    <td>Loading</td>
+    <td>Icon → opacity 0; spinner overlay fades in (absolute center)</td>
+  </tr>
+</table>
+
+All transitions run at **120 ms ease** across background, color, box-shadow, outline-color, and opacity.
+
+---
+
+## Fallback colors (when no theme is provided)
+
+When no color theme is applied, the button falls back to:
+
+- Background: transparent
+- Icon color: `rgba(255, 255, 255, 0.92)` (suitable for dark toolbar backgrounds)
+
+---
+
+## Color theming
+
+See **Core/Theming/Color** for full system documentation including ColorTheme structure, registration, and Figma mapping.
+
+Tokens this button consumes:
+
+<table>
+  <tr>
+    <td>Token</td>
+    <td>Role</td>
+  </tr>
+  <tr>
+    <td>`--et-theme-color-primary`</td>
+    <td>Tint background layer for the `default` kind</td>
+  </tr>
+  <tr>
+    <td>`--et-theme-color-primary-opacity`</td>
+    <td>Opacity of the tint layer — set by the component per state</td>
+  </tr>
+  <tr>
+    <td>`--et-theme-color-ink-solid`</td>
+    <td>Icon color in the default kind at rest</td>
+  </tr>
+</table>
+
+---
+
+## Focus ring
+
+Rendered by `FocusRingDirective` — a separate visual layer outside the button's own box model. Shown only on keyboard focus (`:focus-visible`).
+
+In Figma, implement the focus ring as an overlay frame placed around the button component, not as a property of the button itself.

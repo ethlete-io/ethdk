@@ -1,0 +1,195 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Components/Button/Text" />
+
+# Text Button — Design Specification
+
+No background, no border. Text with an optional icon; underline on hover.
+
+---
+
+## Anatomy
+
+```
+[ icon ] [ label ] [ icon ]   ← iconAlignment: 'start' (default) | 'end'
+         [ loader overlay ]   ← absolute, fades in during loading state
+```
+
+- **Icon slot** — `[etIcon]` attribute selector; always `1em × 1em` (relative to font-size)
+- **Label** — inline flex container
+- **Loader** — absolutely positioned spinner that replaces icon + label visually
+
+---
+
+## Sizes
+
+The system uses **1rem = 10px**. All values below are in px.
+
+<table>
+  <tr>
+    <td>Size</td>
+    <td>Padding (V × H)</td>
+    <td>Font size</td>
+    <td>Border radius</td>
+    <td>Icon gap</td>
+  </tr>
+  <tr>
+    <td>`xs`</td>
+    <td>2 × 8</td>
+    <td>12</td>
+    <td>3</td>
+    <td>4</td>
+  </tr>
+  <tr>
+    <td>`sm`</td>
+    <td>4 × 12</td>
+    <td>14</td>
+    <td>4</td>
+    <td>5</td>
+  </tr>
+  <tr>
+    <td>`md` (default)</td>
+    <td>8 × 16</td>
+    <td>14</td>
+    <td>4</td>
+    <td>6</td>
+  </tr>
+  <tr>
+    <td>`lg`</td>
+    <td>10 × 20</td>
+    <td>16</td>
+    <td>6</td>
+    <td>7</td>
+  </tr>
+  <tr>
+    <td>`xl`</td>
+    <td>14 × 28</td>
+    <td>18</td>
+    <td>8</td>
+    <td>8</td>
+  </tr>
+</table>
+
+Common across all sizes: font-weight **500**, line-height **1.5**.
+
+**Loading spinner dimensions (px):**
+
+<table>
+  <tr>
+    <td>Size</td>
+    <td>Diameter</td>
+    <td>Stroke width</td>
+  </tr>
+  <tr>
+    <td>`xs`</td>
+    <td>12</td>
+    <td>1.5</td>
+  </tr>
+  <tr>
+    <td>`sm`</td>
+    <td>14</td>
+    <td>1.75</td>
+  </tr>
+  <tr>
+    <td>`md`</td>
+    <td>16</td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td>`lg`</td>
+    <td>20</td>
+    <td>2.5</td>
+  </tr>
+  <tr>
+    <td>`xl`</td>
+    <td>24</td>
+    <td>3</td>
+  </tr>
+</table>
+
+---
+
+## States
+
+<table>
+  <tr>
+    <td>State</td>
+    <td>Visual behavior</td>
+  </tr>
+  <tr>
+    <td>Default</td>
+    <td>Text color, no background</td>
+  </tr>
+  <tr>
+    <td>Hover</td>
+    <td>Underline</td>
+  </tr>
+  <tr>
+    <td>Focus-visible</td>
+    <td>Underline + focus ring (see Focus Ring section)</td>
+  </tr>
+  <tr>
+    <td>Active</td>
+    <td>Underline</td>
+  </tr>
+  <tr>
+    <td>Disabled</td>
+    <td>`cursor: not-allowed`; 40% opacity</td>
+  </tr>
+  <tr>
+    <td>Loading</td>
+    <td>Icon + label → opacity 0; spinner overlay fades in (absolute center)</td>
+  </tr>
+</table>
+
+All transitions run at **120 ms ease**.
+
+---
+
+## Icon alignment
+
+<table>
+  <tr>
+    <td>Value</td>
+    <td>Behavior</td>
+  </tr>
+  <tr>
+    <td>`start` (default)</td>
+    <td>Icon appears before the label</td>
+  </tr>
+  <tr>
+    <td>`end`</td>
+    <td>Icon appears after the label</td>
+  </tr>
+</table>
+
+---
+
+## Color theming
+
+See **Core/Theming/Color** for full system documentation including ColorTheme structure, registration, and Figma mapping.
+
+Tokens this button consumes:
+
+<table>
+  <tr>
+    <td>Token</td>
+    <td>Role</td>
+  </tr>
+  <tr>
+    <td>`--et-theme-color-primary-solid`</td>
+    <td>Text and icon color</td>
+  </tr>
+  <tr>
+    <td>`--et-theme-color-ink-solid`</td>
+    <td>Ink color (uses inkColor swatch when defined, otherwise falls back to primary)</td>
+  </tr>
+</table>
+
+---
+
+## Focus ring
+
+Rendered by `FocusRingDirective` — a separate visual layer outside the button's own box model. Shown only on keyboard focus (`:focus-visible`).
+
+In Figma, implement the focus ring as an overlay frame placed around the button component, not as a property of the button itself.

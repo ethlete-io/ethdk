@@ -1,0 +1,345 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Components/Button/FAB" />
+
+# FAB — Design Specification
+
+Floating Action Button. Always circular; can expand to a pill with a label.
+
+---
+
+## Anatomy
+
+```
+[ icon ] [ label? ]           ← expanded=false: icon only
+                               ← expanded=true:  icon + label (pill)
+[ loader overlay ]            ← absolute, fades in during loading state
+```
+
+- **Icon slot** — `[etIcon]` attribute selector
+- **Label** — hidden by default; revealed via width animation when `expanded=true`
+- **Loader** — absolutely positioned spinner that replaces icon + label visually
+- **Shape** — always fully circular (`border-radius: 9999px`), height matches width
+
+Icon position is controlled by `iconAlignment` (`start` | `end`, default `start`).
+
+---
+
+## Variants
+
+<table>
+  <tr>
+    <td>Variant</td>
+    <td>Background</td>
+    <td>Text</td>
+    <td>Border</td>
+    <td>Shadow</td>
+  </tr>
+  <tr>
+    <td>`filled` (default)</td>
+    <td>primary color solid</td>
+    <td>on-primary</td>
+    <td>none</td>
+    <td>yes</td>
+  </tr>
+  <tr>
+    <td>`outline`</td>
+    <td>primary at 0% opacity</td>
+    <td>ink</td>
+    <td>ink, 1 px</td>
+    <td>none</td>
+  </tr>
+  <tr>
+    <td>`tonal`</td>
+    <td>primary at 16% opacity</td>
+    <td>ink</td>
+    <td>none</td>
+    <td>none</td>
+  </tr>
+  <tr>
+    <td>`transparent`</td>
+    <td>primary at 0% opacity</td>
+    <td>ink</td>
+    <td>none</td>
+    <td>none</td>
+  </tr>
+</table>
+
+**Interaction states — `filled` variant** uses an `on-primary` color overlay (not the primary tint), because the background is already a solid primary color:
+
+<table>
+  <tr>
+    <td>State</td>
+    <td>Overlay</td>
+  </tr>
+  <tr>
+    <td>Hover</td>
+    <td>on-primary at 8%</td>
+  </tr>
+  <tr>
+    <td>Focus-visible</td>
+    <td>on-primary at 12%</td>
+  </tr>
+  <tr>
+    <td>Active</td>
+    <td>on-primary at 16%</td>
+  </tr>
+</table>
+
+**Interaction states — `outline` / `tonal` / `transparent`** use the same primary tint opacity system as the Surface Button:
+
+<table>
+  <tr>
+    <td>Variant</td>
+    <td>Rest</td>
+    <td>Hover</td>
+    <td>Focus-visible</td>
+    <td>Active</td>
+  </tr>
+  <tr>
+    <td>`outline`</td>
+    <td>0%</td>
+    <td>8%</td>
+    <td>12%</td>
+    <td>16%</td>
+  </tr>
+  <tr>
+    <td>`tonal`</td>
+    <td>16%</td>
+    <td>24%</td>
+    <td>28%</td>
+    <td>32%</td>
+  </tr>
+  <tr>
+    <td>`transparent`</td>
+    <td>0%</td>
+    <td>8%</td>
+    <td>12%</td>
+    <td>16%</td>
+  </tr>
+</table>
+
+**Box shadow — `filled` variant only (px at 1rem = 10px):**
+
+<table>
+  <tr>
+    <td>State</td>
+    <td>Shadow</td>
+  </tr>
+  <tr>
+    <td>Rest</td>
+    <td>`0 3px 8px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.12)`</td>
+  </tr>
+  <tr>
+    <td>Hover</td>
+    <td>`0 6px 12px rgba(0,0,0,0.22), 0 2px 4px rgba(0,0,0,0.14)`</td>
+  </tr>
+  <tr>
+    <td>Active</td>
+    <td>`0 2px 6px rgba(0,0,0,0.18), 0 1px 2px rgba(0,0,0,0.1)`</td>
+  </tr>
+</table>
+
+---
+
+## Sizes
+
+The system uses **1rem = 10px**. All values below are in px.
+
+<table>
+  <tr>
+    <td>Size</td>
+    <td>Button size (W = H)</td>
+    <td>Icon size</td>
+    <td>Label font size</td>
+    <td>Label gap</td>
+  </tr>
+  <tr>
+    <td>`xs`</td>
+    <td>28</td>
+    <td>14</td>
+    <td>12</td>
+    <td>5</td>
+  </tr>
+  <tr>
+    <td>`sm`</td>
+    <td>36</td>
+    <td>18</td>
+    <td>12</td>
+    <td>6</td>
+  </tr>
+  <tr>
+    <td>`md` (default)</td>
+    <td>40</td>
+    <td>20</td>
+    <td>13</td>
+    <td>8</td>
+  </tr>
+  <tr>
+    <td>`lg`</td>
+    <td>48</td>
+    <td>24</td>
+    <td>14</td>
+    <td>10</td>
+  </tr>
+  <tr>
+    <td>`xl`</td>
+    <td>56</td>
+    <td>28</td>
+    <td>16</td>
+    <td>12</td>
+  </tr>
+</table>
+
+Common across all sizes: font-weight **500**, line-height **1.5**.
+
+**Loading spinner dimensions (px):**
+
+<table>
+  <tr>
+    <td>Size</td>
+    <td>Diameter</td>
+    <td>Stroke width</td>
+  </tr>
+  <tr>
+    <td>`xs`</td>
+    <td>12</td>
+    <td>1.5</td>
+  </tr>
+  <tr>
+    <td>`sm`</td>
+    <td>14</td>
+    <td>1.75</td>
+  </tr>
+  <tr>
+    <td>`md`</td>
+    <td>16</td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td>`lg`</td>
+    <td>20</td>
+    <td>2.5</td>
+  </tr>
+  <tr>
+    <td>`xl`</td>
+    <td>24</td>
+    <td>3</td>
+  </tr>
+</table>
+
+---
+
+## Expand / collapse animation
+
+<table>
+  <tr>
+    <td>Property</td>
+    <td>Duration</td>
+    <td>Easing</td>
+  </tr>
+  <tr>
+    <td>Expand (pill width)</td>
+    <td>380 ms</td>
+    <td>`cubic-bezier(0.22, 0.9, 0.3, 1)`</td>
+  </tr>
+  <tr>
+    <td>Collapse (pill width)</td>
+    <td>220 ms</td>
+    <td>`cubic-bezier(0.4, 0, 0.2, 1)`</td>
+  </tr>
+  <tr>
+    <td>Label fade-in</td>
+    <td>180 ms (40 ms delay)</td>
+    <td>expand easing</td>
+  </tr>
+  <tr>
+    <td>Label fade-out</td>
+    <td>180 ms</td>
+    <td>collapse easing</td>
+  </tr>
+</table>
+
+---
+
+## States
+
+<table>
+  <tr>
+    <td>State</td>
+    <td>Visual behavior</td>
+  </tr>
+  <tr>
+    <td>Default</td>
+    <td>Base variant colors + shadow (filled only)</td>
+  </tr>
+  <tr>
+    <td>Hover</td>
+    <td>Overlay shift (see variant table) + elevated shadow (filled)</td>
+  </tr>
+  <tr>
+    <td>Focus-visible</td>
+    <td>Overlay shift + focus ring (see Focus Ring section)</td>
+  </tr>
+  <tr>
+    <td>Active</td>
+    <td>Higher overlay + reduced shadow (filled)</td>
+  </tr>
+  <tr>
+    <td>Disabled</td>
+    <td>40% opacity, `cursor: not-allowed`</td>
+  </tr>
+  <tr>
+    <td>Loading</td>
+    <td>Icon + label → opacity 0; spinner overlay fades in (absolute center)</td>
+  </tr>
+</table>
+
+All background/color/shadow transitions run at **120 ms ease**.
+
+---
+
+## Color theming
+
+See **Core/Theming/Color** for full system documentation including ColorTheme structure, registration, and Figma mapping.
+
+Tokens this button consumes:
+
+<table>
+  <tr>
+    <td>Token</td>
+    <td>Role</td>
+  </tr>
+  <tr>
+    <td>`--et-theme-color-primary-solid`</td>
+    <td>Solid background for `filled` variant</td>
+  </tr>
+  <tr>
+    <td>`--et-theme-color-primary`</td>
+    <td>Tint layer for `outline`, `tonal`, `transparent` variants</td>
+  </tr>
+  <tr>
+    <td>`--et-theme-color-primary-opacity`</td>
+    <td>Opacity of the tint layer — set by the component per variant + state</td>
+  </tr>
+  <tr>
+    <td>`--et-theme-color-on-primary`</td>
+    <td>Text/icon color on a solid primary background (`filled` variant)</td>
+  </tr>
+  <tr>
+    <td>`--et-theme-color-on-primary-rgb`</td>
+    <td>RGB channels of on-primary — used for the hover/focus/active overlay on the `filled` variant</td>
+  </tr>
+  <tr>
+    <td>`--et-theme-color-ink-solid`</td>
+    <td>Text and border color for non-filled variants</td>
+  </tr>
+</table>
+
+---
+
+## Focus ring
+
+Rendered by `FocusRingDirective` — a separate visual layer outside the button's own box model. Shown only on keyboard focus (`:focus-visible`).
+
+In Figma, implement the focus ring as an overlay frame placed around the button component, not as a property of the button itself.
