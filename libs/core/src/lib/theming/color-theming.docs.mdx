@@ -87,11 +87,7 @@ Color values are space-separated channel numbers — no `rgb()` wrapper:
 Themes are registered once at application bootstrap:
 
 ```ts
-provideColorThemesWithTailwind4([
-  BRAND_THEME,
-  DANGER_THEME,
-  SUCCESS_THEME,
-])
+provideColorThemesWithTailwind4([BRAND_THEME, DANGER_THEME, SUCCESS_THEME]);
 ```
 
 ---
@@ -101,8 +97,8 @@ provideColorThemesWithTailwind4([
 Pass the theme name or a `ColorTheme` object to any component that accepts a `color` input:
 
 ```html
-<button et-button [etProvideColor]="'brand'">Label</button>
-<button et-button [etProvideColor]="dangerTheme">Delete</button>
+<button [etProvideColor]="'brand'" et-button>Label</button>
+<button [etProvideColor]="dangerTheme" et-button>Delete</button>
 ```
 
 `[etProvideColor]` can also wrap a container — all themed children inside inherit its color context.
