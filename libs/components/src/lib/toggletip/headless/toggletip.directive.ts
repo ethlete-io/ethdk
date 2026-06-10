@@ -18,7 +18,7 @@ import { tap } from 'rxjs';
 import { OverlayRef } from '../../overlay';
 import { injectOverlayManager } from '../../overlay/overlay-manager';
 import { TOGGLETIP_ERROR_CODES } from '../toggletip-errors';
-import { ToggletipComponent, ToggletipContentData } from '../toggletip.component';
+import { ToggletipComponent } from '../toggletip.component';
 import { createToggletipId } from '../toggletip.utils';
 
 export type ToggletipContent = string | TemplateRef<unknown>;
@@ -172,10 +172,10 @@ export class ToggletipDirective {
     }
 
     const hostElement = this.elementRef.nativeElement;
-    const overlayRef = this.overlayManager.open<ToggletipComponent, ToggletipContentData>(ToggletipComponent, {
+    const overlayRef = this.overlayManager.open<ToggletipComponent>(ToggletipComponent, {
       id: this.toggletipId,
-      data: {
-        id: this.toggletipId,
+      inputBindings: {
+        toggletipId: this.toggletipId,
         contentId: this.contentId,
         content,
         colorProvider: this.colorProvider ?? null,

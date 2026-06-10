@@ -115,10 +115,13 @@ export const resolveCollisions = (options: ResolveCollisionsOptions) => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const movedEntry = result.find((e) => e.id === movedId)!;
 
-  // Detect same-size swap: exactly one colliding item with matching dimensions
+  // Detect swap candidates: exactly one colliding item
   const colliding = result.filter((e) => e.id !== movedId && itemsCollide(movedEntry.position, e.position));
   const swapTarget = colliding.length === 1 ? colliding[0] : undefined;
 
+  // Same-position same-size swap — only when origin was immediately adjacent to the target.
+  // Without the adjacency guard a far-away drag (e.g. 4 rows up) would teleport the collider
+  // back to the drag origin instead of simply pushing it out of the way.
   if (
     swapTarget &&
     swapTarget.position.col === movedEntry.position.col &&
@@ -127,10 +130,58 @@ export const resolveCollisions = (options: ResolveCollisionsOptions) => {
     swapTarget.position.rowSpan === movedEntry.position.rowSpan &&
     originPosition
   ) {
-    // Swap: move the colliding item to the moved item's origin
-    swapTarget.position = { ...originPosition };
+    const dragRowDir = Math.sign(originPosition.row - movedEntry.position.row);
+    const dragColDir = Math.sign(originPosition.col - movedEntry.position.col);
 
-    return compactLayout(result, columns);
+    const adjacentToOrigin =
+      (dragRowDir > 0 && swapTarget.position.row + swapTarget.position.rowSpan === originPosition.row) ||
+      (dragRowDir < 0 && originPosition.row + originPosition.rowSpan === swapTarget.position.row) ||
+      (dragColDir > 0 && swapTarget.position.col + swapTarget.position.colSpan === originPosition.col) ||
+      (dragColDir < 0 && originPosition.col + originPosition.colSpan === swapTarget.position.col);
+
+    if (adjacentToOrigin) {
+      swapTarget.position = { ...originPosition };
+
+      return compactLayout(result, columns);
+    }
+  }
+
+  // Horizontal same-row swap for different-size items: when the dragged item moved
+  // sideways within the same row and its single collider fits in the vacated origin space.
+  if (swapTarget && originPosition) {
+    const sameRowBand =
+      originPosition.row === movedEntry.position.row &&
+      swapTarget.position.row === movedEntry.position.row &&
+      swapTarget.position.rowSpan === movedEntry.position.rowSpan;
+
+    const movedDir = Math.sign(movedEntry.position.col - originPosition.col);
+
+    // Log whenever a single-collision drag is evaluated so we can see why the swap does/doesn't fire
+    if (sameRowBand && movedDir !== 0) {
+      const proposedCol =
+        movedDir > 0 ? originPosition.col : originPosition.col + originPosition.colSpan - swapTarget.position.colSpan;
+
+      const proposedPos = { ...swapTarget.position, col: proposedCol };
+
+      const fits =
+        proposedCol >= 0 &&
+        proposedCol + swapTarget.position.colSpan <= columns &&
+        // The two items must not overlap after the swap
+        (movedEntry.position.col >= proposedCol + swapTarget.position.colSpan ||
+          proposedCol >= movedEntry.position.col + movedEntry.position.colSpan);
+
+      const noSideEffects =
+        fits &&
+        !result.some(
+          (other) => other.id !== swapTarget.id && other.id !== movedId && itemsCollide(proposedPos, other.position),
+        );
+
+      if (noSideEffects) {
+        swapTarget.position = proposedPos;
+
+        return compactLayout(result, columns);
+      }
+    }
   }
 
   // Sort non-moved items by row so we cascade downward
@@ -140,7 +191,7 @@ export const resolveCollisions = (options: ResolveCollisionsOptions) => {
   const toCheck = [movedEntry];
 
   while (toCheck.length > 0) {
-    const current = toCheck.shift()!;
+    const current = toCheck.shift() as GridLayoutEntry;
 
     for (const entry of others) {
       if (entry === current) continue;

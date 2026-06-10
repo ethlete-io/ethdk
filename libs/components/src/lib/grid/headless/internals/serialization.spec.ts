@@ -13,7 +13,6 @@ describe('serialization', () => {
     {
       id: 'item-1',
       type: 'chart',
-      version: 1,
       data: undefined,
       layout: {
         lg: { col: 0, row: 0, colSpan: 4, rowSpan: 2 },
@@ -23,7 +22,6 @@ describe('serialization', () => {
     {
       id: 'item-2',
       type: 'table',
-      version: 1,
       data: undefined,
       layout: {
         lg: { col: 4, row: 0, colSpan: 4, rowSpan: 2 },
@@ -40,7 +38,6 @@ describe('serialization', () => {
       expect(result.items).toHaveLength(2);
       expect(result.items[0]?.id).toBe('item-1');
       expect(result.items[0]?.type).toBe('chart');
-      expect(result.items[0]?.version).toBe(1);
       expect(result.items[0]?.layout['lg']).toEqual({ col: 0, row: 0, colSpan: 4, rowSpan: 2 });
     });
 
@@ -63,23 +60,7 @@ describe('serialization', () => {
       expect(deserialized.breakpoints).toHaveLength(3);
       expect(deserialized.items).toHaveLength(2);
       expect(deserialized.items[0]?.id).toBe('item-1');
-      expect(deserialized.items[0]?.version).toBe(1);
       expect(deserialized.items[0]?.layout['lg']).toEqual({ col: 0, row: 0, colSpan: 4, rowSpan: 2 });
-    });
-
-    it('should default version to 1 for legacy items without a version field', () => {
-      const state: GridSerializedState = {
-        columns: { lg: 12 },
-        rowHeight: 100,
-        items: [
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          { id: 'legacy', type: 'chart', data: undefined, layout: {} } as any,
-        ],
-      };
-
-      const result = deserializeGridLayout(state, { lg: 1200 });
-
-      expect(result.items[0]?.version).toBe(1);
     });
 
     it('should reconstruct breakpoint configs with minWidth', () => {

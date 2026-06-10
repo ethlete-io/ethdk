@@ -1,28 +1,20 @@
 import '../../test-helpers';
-import { OverlayRef } from './overlay-ref';
+import { createOverlayRef } from './overlay-ref';
 
-describe('OverlayRef', () => {
-  let overlayRef: OverlayRef;
-
-  beforeEach(() => {
-    overlayRef = new OverlayRef({});
-  });
-
+describe('createOverlayRef', () => {
   it('initializes with empty id', () => {
-    expect(overlayRef.id).toBe('');
+    const ref = createOverlayRef({});
+    expect(ref.id).toBe('');
   });
 
   it('initializes with null componentInstance', () => {
-    expect(overlayRef.componentInstance).toBeNull();
+    const ref = createOverlayRef({});
+    expect(ref.componentInstance).toBeNull();
   });
 
-  it('initializes with null componentRef', () => {
-    expect(overlayRef.componentRef).toBeNull();
-  });
-
-  it('stores config passed to constructor', () => {
+  it('stores config', () => {
     const config = { data: { key: 'value' } };
-    const ref = new OverlayRef(config);
+    const ref = createOverlayRef(config);
     expect(ref.config).toEqual(config);
   });
 });

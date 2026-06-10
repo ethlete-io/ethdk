@@ -122,8 +122,8 @@ describe('GridDirective', () => {
   describe('initialItems', () => {
     it('loads items from initialItems input on first render', () => {
       fixture.componentRef.setInput('items', [
-        { id: 'a', type: 'test', version: 1, data: undefined, layout: {} },
-        { id: 'b', type: 'test', version: 1, data: undefined, layout: {} },
+        { id: 'a', type: 'test', data: undefined, layout: {} },
+        { id: 'b', type: 'test', data: undefined, layout: {} },
       ] satisfies GridItemConfig[]);
       fixture.detectChanges();
       expect(getDirective().items()).toHaveLength(2);
@@ -131,13 +131,13 @@ describe('GridDirective', () => {
 
     it('adds new items when initialItems grows', () => {
       fixture.componentRef.setInput('items', [
-        { id: 'a', type: 'test', version: 1, data: undefined, layout: {} },
+        { id: 'a', type: 'test', data: undefined, layout: {} },
       ] satisfies GridItemConfig[]);
       fixture.detectChanges();
 
       fixture.componentRef.setInput('items', [
-        { id: 'a', type: 'test', version: 1, data: undefined, layout: {} },
-        { id: 'b', type: 'test', version: 1, data: undefined, layout: {} },
+        { id: 'a', type: 'test', data: undefined, layout: {} },
+        { id: 'b', type: 'test', data: undefined, layout: {} },
       ] satisfies GridItemConfig[]);
       fixture.detectChanges();
 
@@ -146,13 +146,13 @@ describe('GridDirective', () => {
 
     it('removes items when initialItems shrinks', () => {
       fixture.componentRef.setInput('items', [
-        { id: 'a', type: 'test', version: 1, data: undefined, layout: {} },
-        { id: 'b', type: 'test', version: 1, data: undefined, layout: {} },
+        { id: 'a', type: 'test', data: undefined, layout: {} },
+        { id: 'b', type: 'test', data: undefined, layout: {} },
       ] satisfies GridItemConfig[]);
       fixture.detectChanges();
 
       fixture.componentRef.setInput('items', [
-        { id: 'a', type: 'test', version: 1, data: undefined, layout: {} },
+        { id: 'a', type: 'test', data: undefined, layout: {} },
       ] satisfies GridItemConfig[]);
       fixture.detectChanges();
 
@@ -169,7 +169,7 @@ describe('GridDirective', () => {
 
     it('removeItem removes the item from the layout', () => {
       fixture.componentRef.setInput('items', [
-        { id: 'x', type: 'test', version: 1, data: undefined, layout: {} },
+        { id: 'x', type: 'test', data: undefined, layout: {} },
       ] satisfies GridItemConfig[]);
       fixture.detectChanges();
 
@@ -187,8 +187,8 @@ describe('GridDirective', () => {
   describe('layout', () => {
     it('returns layout entries for all items', () => {
       fixture.componentRef.setInput('items', [
-        { id: 'p', type: 'test', version: 1, data: undefined, layout: {} },
-        { id: 'q', type: 'test', version: 1, data: undefined, layout: {} },
+        { id: 'p', type: 'test', data: undefined, layout: {} },
+        { id: 'q', type: 'test', data: undefined, layout: {} },
       ] satisfies GridItemConfig[]);
       fixture.detectChanges();
 
@@ -200,7 +200,7 @@ describe('GridDirective', () => {
 
     it('all positions have non-negative col and row', () => {
       fixture.componentRef.setInput('items', [
-        { id: 'r', type: 'test', version: 1, data: undefined, layout: {} },
+        { id: 'r', type: 'test', data: undefined, layout: {} },
       ] satisfies GridItemConfig[]);
       fixture.detectChanges();
 
@@ -215,7 +215,7 @@ describe('GridDirective', () => {
   describe('drag lifecycle', () => {
     it('beginDrag sets dragState with the item id', () => {
       fixture.componentRef.setInput('items', [
-        { id: 'drag-me', type: 'test', version: 1, data: undefined, layout: {} },
+        { id: 'drag-me', type: 'test', data: undefined, layout: {} },
       ] satisfies GridItemConfig[]);
       fixture.detectChanges();
 
@@ -225,7 +225,7 @@ describe('GridDirective', () => {
 
     it('commitDrag clears drag state', () => {
       fixture.componentRef.setInput('items', [
-        { id: 'drag-me', type: 'test', version: 1, data: undefined, layout: {} },
+        { id: 'drag-me', type: 'test', data: undefined, layout: {} },
       ] satisfies GridItemConfig[]);
       fixture.detectChanges();
 
@@ -236,7 +236,7 @@ describe('GridDirective', () => {
 
     it('ghostPosition is non-null while dragging', () => {
       fixture.componentRef.setInput('items', [
-        { id: 'drag-me', type: 'test', version: 1, data: undefined, layout: {} },
+        { id: 'drag-me', type: 'test', data: undefined, layout: {} },
       ] satisfies GridItemConfig[]);
       fixture.detectChanges();
 
@@ -246,23 +246,13 @@ describe('GridDirective', () => {
 
     it('ghostPosition returns null after drag is committed', () => {
       fixture.componentRef.setInput('items', [
-        { id: 'drag-me', type: 'test', version: 1, data: undefined, layout: {} },
+        { id: 'drag-me', type: 'test', data: undefined, layout: {} },
       ] satisfies GridItemConfig[]);
       fixture.detectChanges();
 
       getDirective().beginDrag('drag-me');
       getDirective().commitDrag();
       expect(getDirective().ghostPosition()).toBeNull();
-    });
-  });
-
-  describe('migration status', () => {
-    it('getMigrationStatus returns ok for items with no migrations configured', () => {
-      fixture.componentRef.setInput('items', [
-        { id: 'no-migration', type: 'widget', version: 1, data: undefined, layout: {} },
-      ] satisfies GridItemConfig[]);
-      fixture.detectChanges();
-      expect(getDirective().getMigrationStatus('no-migration').state).toBe('ok');
     });
   });
 });

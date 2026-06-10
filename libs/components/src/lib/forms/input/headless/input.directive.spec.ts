@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../test-helpers';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
@@ -37,22 +37,22 @@ describe('InputDirective', () => {
     });
 
     it('should register with parent form field', () => {
-      const formFieldDir = fixture.debugElement.children[0]!.injector.get(FormFieldDirective);
+      const formFieldDir = (fixture.debugElement.children[0] as DebugElement).injector.get(FormFieldDirective);
       expect(formFieldDir.registeredControl()).toBeTruthy();
     });
 
     it('should compute labelId from registered label', () => {
-      const inputDir = fixture.debugElement.children[0]!.query((el) =>
-        el.nativeElement.matches('[etInput]'),
-      ).injector.get(InputDirective);
+      const inputDir = (fixture.debugElement.children[0] as DebugElement)
+        .query((el) => el.nativeElement.matches('[etInput]'))
+        .injector.get(InputDirective);
 
       expect(inputDir.labelId()).toMatch(/^et-label-\d+$/);
     });
 
     it('should have null describedBy when no error or hint is present', () => {
-      const inputDir = fixture.debugElement.children[0]!.query((el) =>
-        el.nativeElement.matches('[etInput]'),
-      ).injector.get(InputDirective);
+      const inputDir = (fixture.debugElement.children[0] as DebugElement)
+        .query((el) => el.nativeElement.matches('[etInput]'))
+        .injector.get(InputDirective);
 
       // describedBy is only set by the form field when there is an active error or hint
       expect(inputDir.describedById()).toBeNull();
@@ -74,12 +74,12 @@ describe('InputDirective', () => {
     });
 
     it('should have null labelId without parent', () => {
-      const inputDir = fixture.debugElement.children[0]!.injector.get(InputDirective);
+      const inputDir = (fixture.debugElement.children[0] as DebugElement).injector.get(InputDirective);
       expect(inputDir.labelId()).toBeNull();
     });
 
     it('should have null describedBy without parent', () => {
-      const inputDir = fixture.debugElement.children[0]!.injector.get(InputDirective);
+      const inputDir = (fixture.debugElement.children[0] as DebugElement).injector.get(InputDirective);
       expect(inputDir.describedById()).toBeNull();
     });
   });
@@ -92,7 +92,7 @@ describe('InputDirective', () => {
       TestBed.configureTestingModule({ imports: [StandaloneInputTestHost] });
       fixture = TestBed.createComponent(StandaloneInputTestHost);
       fixture.detectChanges();
-      inputDir = fixture.debugElement.children[0]!.injector.get(InputDirective);
+      inputDir = (fixture.debugElement.children[0] as DebugElement).injector.get(InputDirective);
     });
 
     it('should have empty value by default', () => {

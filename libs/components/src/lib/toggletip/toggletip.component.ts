@@ -8,6 +8,7 @@ import {
   computed,
   effect,
   inject,
+  input,
   untracked,
   viewChild,
 } from '@angular/core';
@@ -22,16 +23,7 @@ import {
   resolveSurfaceByElevation,
   setInputSignal,
 } from '@ethlete/core';
-import { injectOverlayData } from '../overlay';
 import { ToggletipContent } from './headless/toggletip.directive';
-
-export type ToggletipContentData = {
-  id: string;
-  contentId: string;
-  content: ToggletipContent;
-  colorProvider: ProvideColorDirective | null;
-  surfaceProvider: ProvideSurfaceDirective | null;
-};
 
 @Component({
   selector: 'et-toggletip',
@@ -54,14 +46,15 @@ export class ToggletipComponent {
   private triggerSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
   protected injector = inject(Injector);
 
+  public toggletipId = input.required<string>();
+  protected contentId = input.required<string>();
+  public content = input.required<ToggletipContent>();
+  public colorProvider = input.required<ProvideColorDirective | null>();
+  public surfaceProvider = input.required<ProvideSurfaceDirective | null>();
+
   public animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
-
   private surfaceThemes = injectSurfaceThemes({ optional: true });
-  private data = injectOverlayData<ToggletipContentData>();
 
-  public toggletipId = computed(() => this.data.id);
-  protected contentId = computed(() => this.data.contentId);
-  public content = computed(() => this.data.content);
   public hasTemplate = computed(() => this.content() instanceof TemplateRef);
   public contentText = computed<string | null>(() => {
     const content = this.content();
@@ -73,7 +66,7 @@ export class ToggletipComponent {
   });
   public resolvedSurface = computed(() => {
     const themes = this.surfaceThemes;
-    const parentSurfaceProvider = this.data.surfaceProvider ?? this.triggerSurfaceProvider ?? null;
+    const parentSurfaceProvider = this.surfaceProvider() ?? this.triggerSurfaceProvider ?? null;
 
     if (!themes || !parentSurfaceProvider) {
       return null;
@@ -89,11 +82,15 @@ export class ToggletipComponent {
   });
 
   constructor() {
-    const providedColor = this.data.colorProvider ?? this.triggerColorProvider ?? null;
+    effect(() => {
+      const providedColor = this.colorProvider() ?? this.triggerColorProvider ?? null;
 
-    if (providedColor) {
-      this.ownColorProvider.syncWithProvider(providedColor);
-    }
+      untracked(() => {
+        if (providedColor) {
+          this.ownColorProvider.syncWithProvider(providedColor);
+        }
+      });
+    });
 
     effect(() => {
       const surface = this.resolvedSurface();

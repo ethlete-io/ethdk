@@ -92,6 +92,23 @@ import { GridDirective } from './headless/grid.directive';
         cursor: default;
         pointer-events: none;
       }
+
+      .et-grid-item__actions {
+        display: none;
+      }
+
+      .et-grid-item:hover {
+        .et-resize-handle--e::after,
+        .et-resize-handle--s::after,
+        .et-resize-handle--w::after,
+        .et-resize-handle--n::after,
+        .et-resize-handle--se::after,
+        .et-resize-handle--sw::after,
+        .et-resize-handle--ne::after,
+        .et-resize-handle--nw::after {
+          content: unset;
+        }
+      }
     }
   `,
 })

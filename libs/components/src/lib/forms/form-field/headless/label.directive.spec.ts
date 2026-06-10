@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../test-helpers';
 import { InputDirective } from '../../input/headless';
@@ -60,7 +60,7 @@ describe('LabelDirective', () => {
     });
 
     it('should register with parent form field', () => {
-      const formFieldDir = fixture.debugElement.children[0]!.injector.get(FormFieldDirective);
+      const formFieldDir = (fixture.debugElement.children[0] as DebugElement).injector.get(FormFieldDirective);
       expect(formFieldDir.registeredLabel()).toBeTruthy();
     });
   });

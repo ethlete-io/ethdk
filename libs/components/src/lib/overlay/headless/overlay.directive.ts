@@ -18,7 +18,7 @@ import { OverlayAutoFocusTarget, OverlayMode, OverlayRole } from '../overlay-con
 import { OVERLAY_ERROR_CODES } from '../overlay-errors';
 import { injectOverlayManager } from '../overlay-manager';
 import { OverlayRef } from '../overlay-ref';
-import { OverlayTemplateHostComponent, OverlayTemplateHostData } from '../overlay-template-host.component';
+import { OverlayTemplateHostComponent } from '../overlay-template-host.component';
 import { OverlayAnchorDirective } from './overlay-anchor.directive';
 import { OverlaySurfaceContext, OverlaySurfaceDirective } from './overlay-surface.directive';
 import { OverlayTriggerDirective } from './overlay-trigger.directive';
@@ -105,7 +105,7 @@ export class OverlayDirective {
 
       if (!shouldBeOpen && currentRef) {
         untracked(() => {
-          currentRef.close(undefined, true);
+          currentRef.close();
         });
       }
     });
@@ -133,7 +133,7 @@ export class OverlayDirective {
   }
 
   public hide(result?: unknown) {
-    this.overlayRef()?.close(result, true);
+    this.overlayRef()?.close(result);
 
     if (this.open()) {
       this.open.set(false);
@@ -183,48 +183,43 @@ export class OverlayDirective {
       close: (result?: unknown) => this.hide(result),
     };
 
-    const data: OverlayTemplateHostData = {
-      context: templateContext,
-      template: surface.templateRef,
-    };
-
     const origin = this.originElement();
     const isAnchored = this.mode() === 'non-modal' && origin !== null;
-    const overlayRef = this.overlayManager.open<OverlayTemplateHostComponent, OverlayTemplateHostData>(
-      OverlayTemplateHostComponent,
-      {
-        autoFocus: this.autoFocus(),
-        backdropClass: this.backdropClass(),
-        closeOnEscape: this.closeOnEscape(),
-        closeOnOutsidePointer: this.closeOnOutsidePointer(),
-        data,
-        disableClose: this.disableClose(),
-        hasBackdrop: this.hasBackdrop(),
-        hostClass: this.hostClass(),
-        mode: this.mode(),
-        origin: isAnchored ? origin : undefined,
-        panelClass: this.panelClass(),
-        positionStrategy: isAnchored
-          ? {
-              kind: 'anchored',
-              referenceElement: origin,
-              placement: this.placement(),
-              fallbackPlacements: this.fallbackPlacements(),
-              offset: this.offset(),
-              viewportPadding: this.viewportPadding(),
-              autoResize: this.autoResize(),
-              shift: this.shift(),
-              autoHide: this.autoHide(),
-              autoCloseIfReferenceHidden: this.autoCloseIfReferenceHidden(),
-              mirrorWidth: this.mirrorWidth(),
-            }
-          : {
-              kind: 'center',
-            },
-        restoreFocus: this.restoreFocus(),
-        role: this.role(),
+    const overlayRef = this.overlayManager.open<OverlayTemplateHostComponent>(OverlayTemplateHostComponent, {
+      autoFocus: this.autoFocus(),
+      backdropClass: this.backdropClass(),
+      closeOnEscape: this.closeOnEscape(),
+      closeOnOutsidePointer: this.closeOnOutsidePointer(),
+      inputBindings: {
+        template: surface.templateRef,
+        context: templateContext,
       },
-    );
+      disableClose: this.disableClose(),
+      hasBackdrop: this.hasBackdrop(),
+      hostClass: this.hostClass(),
+      mode: this.mode(),
+      origin: isAnchored ? origin : undefined,
+      panelClass: this.panelClass(),
+      positionStrategy: isAnchored
+        ? {
+            kind: 'anchored',
+            referenceElement: origin,
+            placement: this.placement(),
+            fallbackPlacements: this.fallbackPlacements(),
+            offset: this.offset(),
+            viewportPadding: this.viewportPadding(),
+            autoResize: this.autoResize(),
+            shift: this.shift(),
+            autoHide: this.autoHide(),
+            autoCloseIfReferenceHidden: this.autoCloseIfReferenceHidden(),
+            mirrorWidth: this.mirrorWidth(),
+          }
+        : {
+            kind: 'center',
+          },
+      restoreFocus: this.restoreFocus(),
+      role: this.role(),
+    });
 
     this.overlayRef.set(overlayRef);
 

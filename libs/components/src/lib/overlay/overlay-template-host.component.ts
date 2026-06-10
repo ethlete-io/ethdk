@@ -4,18 +4,12 @@ import {
   Component,
   TemplateRef,
   ViewEncapsulation,
-  computed,
   inject,
+  input,
   signal,
 } from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedLifecycleDirective } from '@ethlete/core';
 import { OverlaySurfaceContext } from './headless/overlay-surface.directive';
-import { injectOverlayData } from './overlay-data';
-
-export type OverlayTemplateHostData = {
-  context: OverlaySurfaceContext;
-  template: TemplateRef<OverlaySurfaceContext>;
-};
 
 @Component({
   selector: 'et-overlay-template-host',
@@ -31,10 +25,9 @@ export type OverlayTemplateHostData = {
 })
 export class OverlayTemplateHostComponent {
   private animatedLifecycleInstance = inject(ANIMATED_LIFECYCLE_TOKEN);
-  private data = injectOverlayData<OverlayTemplateHostData>();
+
+  protected template = input.required<TemplateRef<OverlaySurfaceContext>>();
+  protected context = input.required<OverlaySurfaceContext>();
 
   public animatedLifecycle = signal(this.animatedLifecycleInstance);
-
-  protected template = computed(() => this.data.template);
-  protected context = computed(() => this.data.context);
 }

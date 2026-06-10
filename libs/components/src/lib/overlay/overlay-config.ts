@@ -9,7 +9,7 @@ export type OverlayMode = 'modal' | 'non-modal';
 
 export type OverlayPositionStrategy = OverlayRuntimePositionStrategy;
 
-export type OverlayConfig<TD = unknown> = {
+export type OverlayConfig = {
   viewContainerRef?: ViewContainerRef;
   injector?: Injector;
   id?: string;
@@ -18,7 +18,7 @@ export type OverlayConfig<TD = unknown> = {
   positionStrategy?: OverlayPositionStrategy;
   hasBackdrop?: boolean;
   disableClose?: boolean;
-  data?: TD | null;
+  inputBindings?: Record<string, unknown>;
   ariaDescribedBy?: string | null;
   ariaLabelledBy?: string | null;
   ariaLabel?: string | null;

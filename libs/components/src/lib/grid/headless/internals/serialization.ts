@@ -23,7 +23,6 @@ export const serializeGridLayout = (options: SerializeOptions): GridSerializedSt
     items: items.map((item) => ({
       id: item.id,
       type: item.type,
-      version: item.version,
       data: item.data,
       layout: { ...item.layout },
     })),
@@ -47,7 +46,6 @@ export const deserializeGridLayout = (
   const items: GridItemConfig[] = state.items.map((item) => ({
     id: item.id,
     type: item.type,
-    version: item.version ?? 1,
     data: item.data,
     layout: { ...item.layout },
   }));

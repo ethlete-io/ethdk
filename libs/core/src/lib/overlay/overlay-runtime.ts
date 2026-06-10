@@ -7,34 +7,21 @@ import {
   computed,
   createComponent,
   inject,
+  inputBinding,
   signal,
 } from '@angular/core';
-import { arrow, autoUpdate, computePosition, flip, hide, limitShift, offset, shift, size } from '@floating-ui/dom';
 import { filter, take } from 'rxjs';
 import { ANIMATED_LIFECYCLE_TOKEN, nextFrame } from '../animations';
 import { injectRenderer } from '../providers';
 import { createRootProvider } from '../utils';
-import { OverlayRuntimeRef } from './overlay-runtime-ref';
+import { applyInitialFocus, isHTMLElement, setupFocusTrap } from './overlay-focus';
+import { setBackdropStyles, setBaseElementStyles, setupPositioning } from './overlay-position';
+import { OverlayRuntimeRef, createOverlayRuntimeRef } from './overlay-runtime-ref';
 import {
-  OverlayRuntimeAnchoredPosition,
-  OverlayRuntimeAutoFocusTarget,
-  OverlayRuntimeCenteredPosition,
   OverlayRuntimeCloseEvent,
   OverlayRuntimeComponentBase,
   OverlayRuntimeMountConfig,
 } from './overlay-runtime.types';
-
-const FOCUSABLE_SELECTOR = [
-  'a[href]',
-  'area[href]',
-  'button:not([disabled])',
-  'input:not([disabled]):not([type="hidden"])',
-  'select:not([disabled])',
-  'textarea:not([disabled])',
-  'iframe',
-  '[tabindex]:not([tabindex="-1"])',
-  '[contenteditable="true"]',
-].join(',');
 
 type OverlayRuntime = {
   mount: <TComponent extends object, TResult = unknown>(
@@ -94,284 +81,6 @@ export const [provideOverlayRuntime, injectOverlayRuntime] = createRootProvider(
       return openEntriesState().at(-1) === overlayRef;
     };
 
-    const normalizeAutoFocus = (value: OverlayRuntimeAutoFocusTarget | string | false | undefined) => {
-      return value ?? 'first-tabbable';
-    };
-
-    const isHTMLElement = (value: unknown): value is HTMLElement => {
-      return value instanceof HTMLElement;
-    };
-
-    const isFocusable = (element: HTMLElement) => {
-      const view = document.defaultView;
-      const style = view?.getComputedStyle(element);
-      const isVisible =
-        style?.display !== 'none' && style?.visibility !== 'hidden' && element.getClientRects().length > 0;
-
-      return isVisible && !element.hasAttribute('disabled') && element.tabIndex >= 0;
-    };
-
-    const getFocusableElements = (container: HTMLElement) => {
-      return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(isFocusable);
-    };
-
-    const getHeadingElement = (container: HTMLElement) => {
-      return container.querySelector<HTMLElement>('h1, h2, h3, h4, h5, h6, [role="heading"]');
-    };
-
-    const focusElement = (element: HTMLElement | null) => {
-      if (!element) {
-        return;
-      }
-
-      element.focus({ preventScroll: true });
-    };
-
-    const setBaseElementStyles = (
-      config: OverlayRuntimeMountConfig<object>,
-      hostElement: HTMLElement,
-      paneElement: HTMLElement,
-    ) => {
-      renderer.setStyle(hostElement, {
-        position: 'fixed',
-        top: '0',
-        left: '0',
-        right: '0',
-        bottom: '0',
-        display: 'block',
-        pointerEvents: config.hasBackdrop === false ? 'none' : 'auto',
-      });
-
-      renderer.setStyle(paneElement, {
-        pointerEvents: 'auto',
-        outline: 'none',
-      });
-    };
-
-    const setBackdropStyles = (backdropElement: HTMLElement) => {
-      renderer.setStyle(backdropElement, {
-        position: 'absolute',
-        top: '0',
-        left: '0',
-        right: '0',
-        bottom: '0',
-      });
-    };
-
-    const applyCenteredPosition = (
-      hostElement: HTMLElement,
-      paneElement: HTMLElement,
-      config: OverlayRuntimeCenteredPosition,
-    ) => {
-      void config;
-
-      renderer.setStyle(hostElement, {
-        display: 'grid',
-        placeItems: 'center',
-        padding: '16px',
-        overflow: 'auto',
-      });
-
-      renderer.setStyle(paneElement, {
-        position: 'relative',
-      });
-    };
-
-    const createAnchoredPositionCleanup = (
-      strategy: OverlayRuntimeAnchoredPosition,
-      paneElement: HTMLElement,
-      overlayRef: OverlayRuntimeRef<object, unknown>,
-    ) => {
-      const arrowElement = paneElement.querySelector<HTMLElement>('[et-floating-arrow]');
-
-      renderer.setStyle(paneElement, {
-        position: 'absolute',
-        top: '0',
-        left: '0',
-        width: strategy.mirrorWidth ? `${strategy.referenceElement.offsetWidth}px` : 'max-content',
-      });
-
-      const cleanup = autoUpdate(strategy.referenceElement, paneElement, () => {
-        const middleware = [];
-
-        middleware.push(offset(strategy.offset ?? 8));
-        middleware.push(
-          flip({
-            fallbackPlacements: strategy.fallbackPlacements ?? undefined,
-            fallbackAxisSideDirection: 'start',
-          }),
-        );
-
-        if (strategy.autoResize) {
-          middleware.push(
-            size({
-              padding: strategy.viewportPadding ?? 8,
-              apply({ availableHeight, availableWidth }) {
-                renderer.setCssProperties(paneElement, {
-                  '--et-overlay-max-width': `${availableWidth}px`,
-                  '--et-overlay-max-height': `${availableHeight}px`,
-                });
-              },
-            }),
-          );
-        }
-
-        if (strategy.shift !== false) {
-          middleware.push(
-            shift({
-              limiter: limitShift(),
-              padding: strategy.viewportPadding ?? 8,
-            }),
-          );
-        }
-
-        if (arrowElement) {
-          middleware.push(
-            arrow({
-              element: arrowElement,
-              padding: strategy.arrowPadding ?? 4,
-            }),
-          );
-        }
-
-        if (strategy.autoHide || strategy.autoCloseIfReferenceHidden) {
-          middleware.push(
-            hide({
-              strategy: 'referenceHidden',
-            }),
-          );
-        }
-
-        computePosition(strategy.referenceElement, paneElement, {
-          placement: strategy.placement ?? 'bottom',
-          strategy: 'absolute',
-          middleware,
-        }).then(({ x, y, placement, middlewareData }) => {
-          renderer.setStyle(paneElement, {
-            transform: `translate3d(${x}px, ${y}px, 0)`,
-            width: strategy.mirrorWidth ? `${strategy.referenceElement.offsetWidth}px` : null,
-          });
-          renderer.setAttribute(paneElement, 'data-overlay-placement', placement);
-
-          if (arrowElement && middlewareData.arrow) {
-            renderer.setCssProperty(
-              arrowElement,
-              '--et-floating-arrow-translate',
-              `translate3d(${middlewareData.arrow.x ?? 0}px, ${middlewareData.arrow.y ?? 0}px, 0)`,
-            );
-          }
-
-          if (middlewareData.hide?.referenceHidden) {
-            if (strategy.autoCloseIfReferenceHidden) {
-              overlayRef.close(undefined, 'api');
-              return;
-            }
-
-            renderer.setStyle(paneElement, {
-              visibility: strategy.autoHide ? 'hidden' : null,
-            });
-            return;
-          }
-
-          renderer.setStyle(paneElement, {
-            visibility: null,
-          });
-        });
-      });
-
-      return () => {
-        cleanup();
-      };
-    };
-
-    const setupPositioning = (
-      config: OverlayRuntimeMountConfig<object>,
-      hostElement: HTMLElement,
-      paneElement: HTMLElement,
-      overlayRef: OverlayRuntimeRef<object, unknown>,
-    ) => {
-      const strategy = config.positionStrategy ?? { kind: 'center' };
-
-      if (strategy.kind === 'anchored') {
-        renderer.setStyle(hostElement, {
-          pointerEvents: config.hasBackdrop === false ? 'none' : 'auto',
-        });
-
-        return createAnchoredPositionCleanup(strategy, paneElement, overlayRef);
-      }
-
-      applyCenteredPosition(hostElement, paneElement, strategy);
-
-      return () => undefined;
-    };
-
-    const applyInitialFocus = (paneElement: HTMLElement, autoFocus: OverlayRuntimeAutoFocusTarget | string | false) => {
-      if (autoFocus === false) {
-        return;
-      }
-
-      if (autoFocus === 'container') {
-        focusElement(paneElement);
-        return;
-      }
-
-      if (autoFocus === 'first-heading') {
-        focusElement(getHeadingElement(paneElement) ?? paneElement);
-        return;
-      }
-
-      if (autoFocus === 'first-tabbable') {
-        focusElement(getFocusableElements(paneElement)[0] ?? paneElement);
-        return;
-      }
-
-      focusElement(paneElement.querySelector<HTMLElement>(autoFocus) ?? paneElement);
-    };
-
-    const setupFocusTrap = (
-      paneElement: HTMLElement,
-      overlayRef: OverlayRuntimeRef<object, unknown>,
-      enabled: boolean,
-    ) => {
-      if (!enabled) {
-        return () => undefined;
-      }
-
-      const onKeyDown = (event: KeyboardEvent) => {
-        if (event.key !== 'Tab' || !isTopMost(overlayRef)) {
-          return;
-        }
-
-        const focusableElements = getFocusableElements(paneElement);
-        if (focusableElements.length === 0) {
-          event.preventDefault();
-          focusElement(paneElement);
-          return;
-        }
-
-        const firstElement = focusableElements[0];
-        const lastElement = focusableElements[focusableElements.length - 1];
-        const activeElement = document.activeElement;
-
-        if (event.shiftKey && activeElement === firstElement) {
-          event.preventDefault();
-          focusElement(lastElement ?? null);
-          return;
-        }
-
-        if (!event.shiftKey && activeElement === lastElement) {
-          event.preventDefault();
-          focusElement(firstElement ?? null);
-        }
-      };
-
-      paneElement.addEventListener('keydown', onKeyDown);
-
-      return () => {
-        paneElement.removeEventListener('keydown', onKeyDown);
-      };
-    };
-
     const getAnimatedLifecycle = (componentRef: ReturnType<typeof createComponent>) => {
       const componentLifecycle = (componentRef.instance as OverlayRuntimeComponentBase).animatedLifecycle?.();
 
@@ -388,26 +97,27 @@ export const [provideOverlayRuntime, injectOverlayRuntime] = createRootProvider(
       const paneElement = renderer.createElement('div');
       const backdropElement = config.hasBackdrop === false ? null : renderer.createElement('div');
       const previousFocusedElement = isHTMLElement(document.activeElement) ? document.activeElement : null;
-      const autoFocus = normalizeAutoFocus(config.autoFocus);
+      const autoFocus = config.autoFocus ?? 'first-tabbable';
 
       renderer.addClass(hostElement, 'et-overlay-runtime-entry');
       renderer.addClass(paneElement, 'et-overlay-runtime-pane');
-      setBaseElementStyles(config as OverlayRuntimeMountConfig<object>, hostElement, paneElement);
-      renderer.setAttribute(hostElement, 'data-overlay-id', config.id);
-      renderer.setAttribute(paneElement, 'data-overlay-id', config.id);
-      renderer.setAttribute(paneElement, 'role', config.role ?? null);
-      renderer.setAttribute(paneElement, 'tabindex', '-1');
-      renderer.setAttribute(paneElement, 'aria-modal', config.role ? `${config.modal !== false}` : null);
-      renderer.setAttribute(paneElement, 'aria-describedby', config.ariaDescribedBy ?? null);
-      renderer.setAttribute(paneElement, 'aria-labelledby', config.ariaLabelledBy ?? null);
-      renderer.setAttribute(paneElement, 'aria-label', config.ariaLabel ?? null);
+      setBaseElementStyles(config as OverlayRuntimeMountConfig<object>, hostElement, paneElement, renderer);
+      renderer.setAttributes(hostElement, {
+        'data-overlay-id': config.id,
+        role: config.role ?? null,
+        tabindex: '-1',
+        'aria-modal': config.role ? `${config.modal !== false}` : null,
+        'aria-describedby': config.ariaDescribedBy ?? null,
+        'aria-labelledby': config.ariaLabelledBy ?? null,
+        'aria-label': config.ariaLabel ?? null,
+      });
 
-      (config.hostClass ?? []).forEach((className) => renderer.addClass(hostElement, className));
-      (config.paneClass ?? []).forEach((className) => renderer.addClass(paneElement, className));
+      renderer.addClass(hostElement, ...(config.hostClass ?? []));
+      renderer.addClass(paneElement, ...(config.paneClass ?? []));
 
       if (backdropElement) {
         renderer.addClass(backdropElement, 'et-overlay-runtime-backdrop');
-        setBackdropStyles(backdropElement);
+        setBackdropStyles(backdropElement, renderer);
         renderer.setAttribute(backdropElement, 'data-overlay-id', config.id);
         (config.backdropClass ?? []).forEach((className) => renderer.addClass(backdropElement, className));
         renderer.appendChild(hostElement, backdropElement);
@@ -416,11 +126,9 @@ export const [provideOverlayRuntime, injectOverlayRuntime] = createRootProvider(
       renderer.appendChild(hostElement, paneElement);
       renderer.appendChild(root, hostElement);
 
-      const overlayRef = new OverlayRuntimeRef<TComponent, TResult>(
+      const overlayRef = createOverlayRuntimeRef<TComponent, TResult>(
         config.id,
-        {
-          ...config,
-        },
+        { ...config },
         {
           rootElement: root,
           hostElement,
@@ -441,6 +149,7 @@ export const [provideOverlayRuntime, injectOverlayRuntime] = createRootProvider(
         environmentInjector,
         elementInjector,
         hostElement: paneElement,
+        bindings: Object.entries(config.inputBindings ?? {}).map(([key, value]) => inputBinding(key, () => value)),
       });
 
       appRef.attachView(componentRef.hostView);
@@ -456,6 +165,7 @@ export const [provideOverlayRuntime, injectOverlayRuntime] = createRootProvider(
           hostElement,
           paneElement,
           overlayRef as OverlayRuntimeRef<object, unknown>,
+          renderer,
         ),
       );
 
@@ -473,7 +183,7 @@ export const [provideOverlayRuntime, injectOverlayRuntime] = createRootProvider(
         maybeDestroyRootElement();
 
         if (config.restoreFocus !== false && previousFocusedElement?.isConnected) {
-          focusElement(previousFocusedElement);
+          previousFocusedElement.focus({ preventScroll: true });
         }
 
         overlayRef.finishClose(closeEvent);
@@ -536,7 +246,13 @@ export const [provideOverlayRuntime, injectOverlayRuntime] = createRootProvider(
       }
 
       cleanupFns.push(
-        setupFocusTrap(paneElement, overlayRef as OverlayRuntimeRef<object, unknown>, config.modal !== false),
+        setupFocusTrap(
+          paneElement,
+          overlayRef as OverlayRuntimeRef<object, unknown>,
+          config.modal !== false,
+          isTopMost,
+          document,
+        ),
       );
 
       nextFrame(() => {
@@ -546,7 +262,7 @@ export const [provideOverlayRuntime, injectOverlayRuntime] = createRootProvider(
 
         const lifecycle = getAnimatedLifecycle(componentRef);
         if (!lifecycle) {
-          applyInitialFocus(paneElement, autoFocus);
+          applyInitialFocus(paneElement, autoFocus, document);
           overlayRef.markOpened();
           return;
         }
@@ -558,7 +274,7 @@ export const [provideOverlayRuntime, injectOverlayRuntime] = createRootProvider(
             take(1),
           )
           .subscribe(() => {
-            applyInitialFocus(paneElement, autoFocus);
+            applyInitialFocus(paneElement, autoFocus, document);
             overlayRef.markOpened();
           });
       });

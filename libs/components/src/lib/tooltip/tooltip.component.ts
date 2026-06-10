@@ -7,6 +7,7 @@ import {
   computed,
   effect,
   inject,
+  input,
   untracked,
   viewChild,
 } from '@angular/core';
@@ -21,15 +22,7 @@ import {
   resolveSurfaceByElevation,
   setInputSignal,
 } from '@ethlete/core';
-import { injectOverlayData } from '../overlay';
 import { TooltipContent } from './headless/tooltip.directive';
-
-export type TooltipContentData = {
-  id: string;
-  content: TooltipContent;
-  colorProvider: ProvideColorDirective | null;
-  surfaceProvider: ProvideSurfaceDirective | null;
-};
 
 @Component({
   selector: 'et-tooltip',
@@ -52,11 +45,14 @@ export class TooltipComponent {
   private triggerColorProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
   private triggerSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
 
+  public tooltipId = input.required<string>();
+  public content = input.required<TooltipContent>();
+  public colorProvider = input.required<ProvideColorDirective | null>();
+  public surfaceProvider = input.required<ProvideSurfaceDirective | null>();
+
   public animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
   private surfaceThemes = injectSurfaceThemes({ optional: true });
-  private data = injectOverlayData<TooltipContentData>();
-  public tooltipId = computed(() => this.data.id);
-  public content = computed(() => this.data.content);
+
   public hasTemplate = computed(() => this.content() instanceof TemplateRef);
   public contentText = computed<string | null>(() => {
     const content = this.content();
@@ -68,7 +64,7 @@ export class TooltipComponent {
   });
   public resolvedSurface = computed(() => {
     const themes = this.surfaceThemes;
-    const parentSurfaceProvider = this.data.surfaceProvider ?? this.triggerSurfaceProvider ?? null;
+    const parentSurfaceProvider = this.surfaceProvider() ?? this.triggerSurfaceProvider ?? null;
 
     if (!themes || !parentSurfaceProvider) {
       return null;
@@ -84,11 +80,15 @@ export class TooltipComponent {
   });
 
   constructor() {
-    const providedColor = this.data.colorProvider ?? this.triggerColorProvider ?? null;
+    effect(() => {
+      const providedColor = this.colorProvider() ?? this.triggerColorProvider ?? null;
 
-    if (providedColor) {
-      this.ownColorProvider.syncWithProvider(providedColor);
-    }
+      untracked(() => {
+        if (providedColor) {
+          this.ownColorProvider.syncWithProvider(providedColor);
+        }
+      });
+    });
 
     effect(() => {
       const surface = this.resolvedSurface();

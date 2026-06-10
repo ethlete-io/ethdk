@@ -19,7 +19,6 @@ export type GridItemConstraints = {
 export type GridItemConfig<TType extends string = string, TData = unknown> = {
   id: string;
   type: TType;
-  version: number;
   data: TData;
   layout: Record<GridBreakpointName, GridItemPosition>;
 };
@@ -41,24 +40,9 @@ export type GridLayoutEntry = {
   position: GridItemPosition;
 };
 
-export type GridItemMigration<TData = unknown> = {
-  fromVersion: number;
-  toVersion: number;
-  requiresUserIntervention?: boolean;
-  constraints?: GridItemConstraints;
-  migrate?: (item: GridItemConfig<string, TData>) => GridItemConfig<string, TData>;
-};
-
-export type GridItemMigrationStatus =
-  | { state: 'ok' }
-  | { state: 'migrated'; fromVersion: number; toVersion: number }
-  | { state: 'needs-intervention'; fromVersion: number; toVersion: number; partialData: unknown }
-  | { state: 'failed'; fromVersion: number; error: unknown };
-
 export type GridComponentRegistration<TData = unknown> = {
   component: Type<{ data: InputSignal<TData> }>;
   type: string;
-  version: number;
   constraints?: {
     minColSpan?: number;
     maxColSpan?: number;
@@ -66,7 +50,6 @@ export type GridComponentRegistration<TData = unknown> = {
     maxRowSpan?: number;
   };
   configComponent?: Type<unknown>;
-  migrations?: GridItemMigration<TData>[];
 };
 
 /**

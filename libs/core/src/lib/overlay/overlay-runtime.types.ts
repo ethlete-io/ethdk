@@ -65,4 +65,5 @@ export type OverlayRuntimeMountConfig<TComponent extends object> = {
   hostClass?: string[];
   backdropClass?: string[];
   paneClass?: string[];
+  inputBindings?: Record<string, unknown>;
 };

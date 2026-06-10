@@ -9,84 +9,90 @@ import {
 
 export type OverlayRuntimeState = 'mounting' | 'mounted' | 'closing' | 'closed';
 
-export class OverlayRuntimeRef<TComponent extends object = object, TResult = unknown> {
-  componentInstance: TComponent | null = null;
-  componentRef: ComponentRef<TComponent> | null = null;
+export const createOverlayRuntimeRef = <TComponent extends object, TResult = unknown>(
+  id: string,
+  config: Omit<OverlayRuntimeMountConfig<TComponent>, 'component'>,
+  elements: OverlayRuntimeElements,
+  requestClose: (result: TResult | undefined, source: OverlayRuntimeCloseSource) => void,
+) => {
+  const _state = signal<OverlayRuntimeState>('mounting');
+  const _componentInstance = signal<TComponent | null>(null);
 
-  readonly state = signal<OverlayRuntimeState>('mounting');
+  const beforeOpenedSubject = new Subject<void>();
+  const afterOpenedSubject = new Subject<void>();
+  const beforeClosedSubject = new Subject<OverlayRuntimeCloseEvent<TResult>>();
+  const afterClosedSubject = new Subject<OverlayRuntimeCloseEvent<TResult>>();
 
-  beforeOpenedSubject = new Subject<void>();
-  afterOpenedSubject = new Subject<void>();
-  beforeClosedSubject = new Subject<OverlayRuntimeCloseEvent<TResult>>();
-  afterClosedSubject = new Subject<OverlayRuntimeCloseEvent<TResult>>();
+  return {
+    id,
+    config,
+    elements,
+    state: _state.asReadonly(),
+    componentInstance: _componentInstance.asReadonly(),
 
-  constructor(
-    readonly id: string,
-    readonly config: Omit<OverlayRuntimeMountConfig<TComponent>, 'component'>,
-    readonly elements: OverlayRuntimeElements,
-    private requestClose: (result: TResult | undefined, source: OverlayRuntimeCloseSource) => void,
-  ) {}
+    // Internal — driven by overlay-runtime.ts
+    beforeOpenedSubject,
 
-  close(result?: TResult, source: OverlayRuntimeCloseSource = 'api') {
-    if (this.state() === 'closing' || this.state() === 'closed') {
-      return;
-    }
+    close(result?: TResult, source: OverlayRuntimeCloseSource = 'api') {
+      if (_state() === 'closing' || _state() === 'closed') {
+        return;
+      }
 
-    this.requestClose(result, source);
-  }
+      requestClose(result, source);
+    },
 
-  beforeOpened(): Observable<void> {
-    return this.beforeOpenedSubject.asObservable();
-  }
+    beforeOpened(): Observable<void> {
+      return beforeOpenedSubject.asObservable();
+    },
+    afterOpened(): Observable<void> {
+      return afterOpenedSubject.asObservable();
+    },
+    beforeClosed(): Observable<OverlayRuntimeCloseEvent<TResult>> {
+      return beforeClosedSubject.asObservable();
+    },
+    afterClosed(): Observable<OverlayRuntimeCloseEvent<TResult>> {
+      return afterClosedSubject.asObservable();
+    },
 
-  afterOpened(): Observable<void> {
-    return this.afterOpenedSubject.asObservable();
-  }
+    attachComponentRef(componentRef: ComponentRef<TComponent>) {
+      _componentInstance.set(componentRef.instance);
+    },
 
-  beforeClosed(): Observable<OverlayRuntimeCloseEvent<TResult>> {
-    return this.beforeClosedSubject.asObservable();
-  }
+    markOpened() {
+      if (_state() !== 'mounting') {
+        return;
+      }
 
-  afterClosed(): Observable<OverlayRuntimeCloseEvent<TResult>> {
-    return this.afterClosedSubject.asObservable();
-  }
+      _state.set('mounted');
+      afterOpenedSubject.next();
+      afterOpenedSubject.complete();
+    },
 
-  attachComponentRef(componentRef: ComponentRef<TComponent>) {
-    this.componentRef = componentRef;
-    this.componentInstance = componentRef.instance;
-  }
+    beginClose(closeEvent: OverlayRuntimeCloseEvent<TResult>): boolean {
+      if (_state() === 'closing' || _state() === 'closed') {
+        return false;
+      }
 
-  markOpened() {
-    if (this.state() !== 'mounting') {
-      return;
-    }
+      _state.set('closing');
+      beforeClosedSubject.next(closeEvent);
+      beforeClosedSubject.complete();
 
-    this.state.set('mounted');
-    this.afterOpenedSubject.next();
-    this.afterOpenedSubject.complete();
-  }
+      return true;
+    },
 
-  beginClose(closeEvent: OverlayRuntimeCloseEvent<TResult>) {
-    if (this.state() === 'closing' || this.state() === 'closed') {
-      return false;
-    }
+    finishClose(closeEvent: OverlayRuntimeCloseEvent<TResult>) {
+      if (_state() === 'closed') {
+        return;
+      }
 
-    this.state.set('closing');
-    this.beforeClosedSubject.next(closeEvent);
-    this.beforeClosedSubject.complete();
+      _state.set('closed');
+      _componentInstance.set(null);
+      afterClosedSubject.next(closeEvent);
+      afterClosedSubject.complete();
+    },
+  };
+};
 
-    return true;
-  }
-
-  finishClose(closeEvent: OverlayRuntimeCloseEvent<TResult>) {
-    if (this.state() === 'closed') {
-      return;
-    }
-
-    this.state.set('closed');
-    this.componentInstance = null;
-    this.componentRef = null;
-    this.afterClosedSubject.next(closeEvent);
-    this.afterClosedSubject.complete();
-  }
-}
+export type OverlayRuntimeRef<TComponent extends object = object, TResult = unknown> = ReturnType<
+  typeof createOverlayRuntimeRef<TComponent, TResult>
+>;

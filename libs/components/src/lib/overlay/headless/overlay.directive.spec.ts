@@ -3,9 +3,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { setInputSignal } from '@ethlete/core';
 import '../../../test-helpers';
-import { OverlayTemplateHostData } from '../overlay-template-host.component';
 import { OverlayAnchorDirective } from './overlay-anchor.directive';
-import { OverlaySurfaceDirective } from './overlay-surface.directive';
+import { OverlaySurfaceContext, OverlaySurfaceDirective } from './overlay-surface.directive';
 import { OverlayDirective } from './overlay.directive';
 
 @Component({
@@ -74,8 +73,10 @@ describe('OverlayDirective', () => {
     overlayDirective.show();
     fixture.detectChanges();
 
-    const overlayData = overlayDirective.overlayRef()?.config.data as OverlayTemplateHostData | undefined;
-    overlayData?.context.close('done');
+    const context = overlayDirective.overlayRef()?.config.inputBindings?.['context'] as
+      | OverlaySurfaceContext
+      | undefined;
+    context?.close('done');
     fixture.detectChanges();
 
     expect(overlayDirective.open()).toBe(false);

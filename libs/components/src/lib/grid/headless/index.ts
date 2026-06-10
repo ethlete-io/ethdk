@@ -6,3 +6,5 @@ export { GRID_TOKEN } from './grid.tokens';
 export { provideGridConfig, injectGridConfig } from './grid-config';
 export type { GridConfig } from './grid-config';
 export * from './grid.types';
+export { createGridAdapter, toGridPosition, fromGridPosition } from './grid-adapter';
+export type { GridAdapter } from './grid-adapter';

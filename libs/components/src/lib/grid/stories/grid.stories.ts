@@ -1,5 +1,5 @@
 import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
-import { GridDataStorybookComponent, GridMigrationStorybookComponent, GridStorybookComponent } from './components';
+import { GridDataStorybookComponent, GridStorybookComponent } from './components';
 
 export default {
   title: 'Components/Grid',
@@ -51,21 +51,21 @@ export const SixColumnGrid: Story = {
   },
 };
 
-export const MigrationScenarios: StoryObj<GridMigrationStorybookComponent> = {
-  decorators: [moduleMetadata({ imports: [GridMigrationStorybookComponent] })],
-  render: () => ({ template: '<et-sb-grid-migration />' }),
-};
-
-export const DataDrivenWidgets: StoryObj<GridDataStorybookComponent> = {
+export const BackendIntegration: StoryObj<GridDataStorybookComponent> = {
   decorators: [moduleMetadata({ imports: [GridDataStorybookComponent] })],
   render: () => ({ template: '<et-sb-grid-data />' }),
   parameters: {
     docs: {
       description: {
         story:
-          'Each grid item carries typed data in its `GridItemConfig.data` field. ' +
-          'Widget components receive data as a typed input — layout and data are stored together ' +
-          'but managed independently. Click the ✎ button on any widget to edit its data inline.',
+          'Demonstrates the adapter pattern for backend-integrated dashboards. ' +
+          'Widget layout is stored per-breakpoint on the backend as `{x, y, cols, rows}` — ' +
+          "a different shape from the grid's internal `{col, row, colSpan, rowSpan}`. " +
+          '`createGridAdapter()` bridges the two: `fromExternal` maps backend widgets to ' +
+          '`GridItemConfig[]` for the grid to render, and `toExternal` converts back to ' +
+          'the API shape for `PATCH /partners/dashboard/:uuid`. ' +
+          'Click **Show API Payload** after dragging, resizing, or adding widgets to inspect ' +
+          'the exact JSON the adapter produces.',
       },
     },
   },

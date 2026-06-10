@@ -1,10 +1,8 @@
-import { Type } from '@angular/core';
 import { createStaticRootProvider } from '@ethlete/core';
 import { GridComponentRegistration } from './grid.types';
 
 export type GridConfig = {
   registrations: GridComponentRegistration[];
-  invalidStateComponent?: Type<unknown>;
   interactiveAriaLabel: string;
   readonlyAriaLabel: string;
   dragHandleAriaLabel: string;

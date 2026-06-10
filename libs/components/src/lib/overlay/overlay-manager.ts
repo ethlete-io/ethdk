@@ -1,13 +1,12 @@
 import { Type, computed } from '@angular/core';
 import { OverlayRuntimeRef, createRootProvider, injectOverlayRuntime } from '@ethlete/core';
 import { OverlayConfig } from './overlay-config';
-import { OVERLAY_DATA } from './overlay-data';
-import { OverlayRef } from './overlay-ref';
+import { OVERLAY_REF, OverlayRef, createOverlayRef } from './overlay-ref';
 
 export type OverlayManager = {
-  open: <TComponent extends object, TData = unknown, TResult = unknown>(
+  open: <TComponent extends object, TResult = unknown>(
     component: Type<TComponent>,
-    config?: OverlayConfig<TData>,
+    config?: OverlayConfig,
   ) => OverlayRef<TComponent, TResult>;
   openOverlays: ReturnType<typeof computed<OverlayRef<object, unknown>[]>>;
 };
@@ -34,12 +33,12 @@ export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
         .filter((overlayRef): overlayRef is OverlayRef<object, unknown> => overlayRef !== undefined);
     });
 
-    const open = <TComponent extends object, TData = unknown, TResult = unknown>(
+    const open = <TComponent extends object, TResult = unknown>(
       component: Type<TComponent>,
-      config: OverlayConfig<TData> = {},
+      config: OverlayConfig = {},
     ) => {
       const id = config.id ?? `et-overlay-${++overlayId}`;
-      const overlayRef = new OverlayRef<TComponent, TResult>(config);
+      const overlayRef = createOverlayRef<TComponent, TResult>(config);
       const modal = config.mode !== 'non-modal';
       const role = config.role ?? (modal ? 'dialog' : undefined);
       const disableClose = config.disableClose ?? false;
@@ -58,11 +57,8 @@ export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
         component,
         viewContainerRef: config.viewContainerRef,
         injector: config.injector,
-        providers: [
-          { provide: OverlayRef, useValue: overlayRef },
-          { provide: OVERLAY_DATA, useValue: config.data ?? null },
-          ...(config.providers ?? []),
-        ],
+        providers: [{ provide: OVERLAY_REF, useValue: overlayRef }, ...(config.providers ?? [])],
+        inputBindings: config.inputBindings,
         role,
         positionStrategy,
         hasBackdrop: config.hasBackdrop ?? modal,

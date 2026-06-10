@@ -20,7 +20,6 @@ import {
   GridComponentRegistration,
   GridItemConfig,
   GridItemConstraints,
-  GridItemMigrationStatus,
   GridItemPosition,
   GridLayoutEntry,
   GridSerializedState,
@@ -101,7 +100,6 @@ export class GridDirective {
   private itemConfigs = signal<GridItemConfig[]>([]);
   private layoutOverrides = signal<Record<GridBreakpointName, GridLayoutEntry[]>>({});
   public dragState = signal<GridDragState | null>(null);
-  public migrationStatuses = signal<Map<string, GridItemMigrationStatus>>(new Map());
 
   private constraintsRegistry = new Map<string, GridItemConstraints>();
 
@@ -187,10 +185,7 @@ export class GridDirective {
         const current = this.itemConfigs();
 
         if (current.length === 0) {
-          // First initialization — run migrations on all items
-          const { items, statuses } = this.runMigrations(initial);
-          this.itemConfigs.set(items);
-          this.migrationStatuses.set(statuses);
+          this.itemConfigs.set(initial);
 
           return;
         }
@@ -199,17 +194,7 @@ export class GridDirective {
         const newItems = initial.filter((item) => !currentIds.has(item.id));
 
         for (const item of newItems) {
-          const { items: migrated, statuses } = this.runMigrations([item]);
-          const migratedItem = migrated[0];
-
-          if (migratedItem) {
-            this.migrationStatuses.update((prev) => {
-              const next = new Map(prev);
-              statuses.forEach((v, k) => next.set(k, v));
-              return next;
-            });
-            this.placeItem(migratedItem);
-          }
+          this.placeItem(item);
         }
 
         // Remove items no longer in initial
@@ -349,10 +334,6 @@ export class GridDirective {
     });
   }
 
-  public getMigrationStatus(id: string): GridItemMigrationStatus {
-    return this.migrationStatuses().get(id) ?? { state: 'ok' };
-  }
-
   public snapshotRects() {
     this.rectSnapshot.clear();
 
@@ -475,13 +456,11 @@ export class GridDirective {
   }
 
   public addItem(type: string, data: unknown) {
-    const registration = this.gridConfig.registrations.find((r) => r.type === type);
     const id = crypto.randomUUID();
 
     const config: GridItemConfig = {
       id,
       type,
-      version: registration?.version ?? 1,
       data,
       layout: {},
     };
@@ -576,6 +555,7 @@ export class GridDirective {
       columns,
     });
     const resolved = resolveCollisions({ entries: withShrunk, movedId: id, columns });
+
     this.updateLayoutForCurrentBreakpoint(resolved);
     this.updateItemLayout(id, clamped);
     this.emitLayoutChange();
@@ -597,19 +577,16 @@ export class GridDirective {
     const items: GridItemConfig[] = state.items.map((item) => ({
       id: item.id,
       type: item.type,
-      version: item.version ?? 1,
       data: item.data,
       layout: { ...item.layout },
     }));
 
-    const { items: migrated, statuses } = this.runMigrations(items);
-    this.itemConfigs.set(migrated);
-    this.migrationStatuses.set(statuses);
+    this.itemConfigs.set(items);
 
     const overrides: Record<GridBreakpointName, GridLayoutEntry[]> = {};
 
     for (const [bpName, columns] of Object.entries(state.columns)) {
-      overrides[bpName] = migrated.map((item) => ({
+      overrides[bpName] = items.map((item) => ({
         id: item.id,
         position:
           item.layout[bpName] ??
@@ -653,83 +630,6 @@ export class GridDirective {
     this.emitLayoutChange();
   }
 
-  private runMigrations(items: GridItemConfig[]): {
-    items: GridItemConfig[];
-    statuses: Map<string, GridItemMigrationStatus>;
-  } {
-    const registrations = this.gridConfig.registrations;
-    const statuses = new Map<string, GridItemMigrationStatus>();
-
-    const migratedItems = items.map((item) => {
-      const originalVersion = item.version;
-      let current = { ...item };
-
-      try {
-        const registration = registrations.find((r) => r.type === current.type);
-        const migrations = registration?.migrations ?? [];
-
-        let found = true;
-
-        while (found) {
-          found = false;
-          const next = migrations.find((m) => m.fromVersion === current.version);
-
-          if (!next) break;
-
-          found = true;
-
-          if (next.requiresUserIntervention) {
-            // Run migrate (if provided) to produce partial data for the config component
-            let partialData: unknown = current.data;
-            if (next.migrate) {
-              partialData = next.migrate(current).data;
-            }
-            statuses.set(item.id, {
-              state: 'needs-intervention',
-              fromVersion: current.version,
-              toVersion: next.toVersion,
-              partialData,
-            });
-            // Stop the chain — item stays at current version
-            return current;
-          }
-
-          if (next.migrate) {
-            current = next.migrate(current);
-          }
-
-          current = { ...current, version: next.toVersion };
-
-          // Apply constraint-driven layout adjustments when constraints changed in this migration step
-          if (next.constraints) {
-            const c = next.constraints;
-            const updatedLayout: typeof current.layout = {};
-            for (const [bp, pos] of Object.entries(current.layout)) {
-              updatedLayout[bp] = {
-                ...pos,
-                colSpan: Math.max(c.minColSpan, Math.min(pos.colSpan, c.maxColSpan)),
-                rowSpan: Math.max(c.minRowSpan, Math.min(pos.rowSpan, c.maxRowSpan)),
-              };
-            }
-            current = { ...current, layout: updatedLayout };
-          }
-        }
-
-        if (current.version !== originalVersion) {
-          statuses.set(item.id, { state: 'migrated', fromVersion: originalVersion, toVersion: current.version });
-        } else {
-          statuses.set(item.id, { state: 'ok' });
-        }
-      } catch (error) {
-        statuses.set(item.id, { state: 'failed', fromVersion: originalVersion, error });
-      }
-
-      return current;
-    });
-
-    return { items: migratedItems, statuses };
-  }
-
   private shrinkNeighbors(options: {
     layout: GridLayoutEntry[];
     resizedId: string;
@@ -759,15 +659,33 @@ export class GridDirective {
 
       if (neighborIsRight) {
         const newCol = resizedPos.col + resizedPos.colSpan;
-        const colReduction = newCol - pos.col;
-        const newColSpan = Math.max(minColSpan, pos.colSpan - colReduction);
-        const clampedCol = Math.min(newCol, columns - newColSpan);
-        shrunkPos.col = clampedCol;
-        shrunkPos.colSpan = newColSpan;
+        // Prefer sliding the neighbor right over shrinking it — only shrink if its
+        // full colSpan no longer fits within the grid at the new column.
+        if (newCol + pos.colSpan <= columns) {
+          shrunkPos.col = newCol;
+        } else {
+          // Compute reduction from the max-slide position, not from the base col.
+          // Using the base col would count the already-slid distance as part of the
+          // shrink, causing a double-step on the first frame where slide is impossible.
+          const maxSlideCol = columns - pos.colSpan;
+          const excessCols = newCol - maxSlideCol;
+          const newColSpan = Math.max(minColSpan, pos.colSpan - excessCols);
+          const clampedCol = Math.min(newCol, columns - newColSpan);
+          shrunkPos.col = clampedCol;
+          shrunkPos.colSpan = newColSpan;
+        }
       } else {
         const maxRight = resizedPos.col;
-        const newColSpan = Math.max(minColSpan, maxRight - pos.col);
-        shrunkPos.colSpan = newColSpan;
+        // Prefer sliding the neighbor left over shrinking it — only shrink if its
+        // full colSpan would go below column 0 at the new position.
+        if (maxRight - pos.colSpan >= 0) {
+          shrunkPos.col = maxRight - pos.colSpan;
+        } else {
+          // Compute reduction from the max-slide position (col 0), not from the base col.
+          const newColSpan = Math.max(minColSpan, maxRight);
+          shrunkPos.col = 0;
+          shrunkPos.colSpan = newColSpan;
+        }
       }
 
       return { ...entry, position: shrunkPos };
@@ -782,6 +700,19 @@ export class GridDirective {
       // Only check items that actually changed
       if (entry.position.col === original.position.col && entry.position.colSpan === original.position.colSpan)
         return entry;
+
+      // If the shrunk position still overlaps the resized item (couldn't be shrunk enough to
+      // fit alongside it), revert to the original so resolveCollisions can push it to another row.
+      const resizedEntry = candidates.find((c) => c.id === resizedId);
+      if (
+        resizedEntry &&
+        resizedEntry.position.row < entry.position.row + entry.position.rowSpan &&
+        resizedEntry.position.row + resizedEntry.position.rowSpan > entry.position.row &&
+        resizedEntry.position.col < entry.position.col + entry.position.colSpan &&
+        resizedEntry.position.col + resizedEntry.position.colSpan > entry.position.col
+      ) {
+        return original;
+      }
 
       // Check if the new position collides with any other non-resized item
       const collides = candidates.some(

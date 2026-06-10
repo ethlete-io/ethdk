@@ -24,7 +24,7 @@ import { filter, fromEvent, map, switchMap, takeUntil, tap, timer } from 'rxjs';
 import { OverlayRef } from '../../overlay';
 import { injectOverlayManager } from '../../overlay/overlay-manager';
 import { TOOLTIP_ERROR_CODES } from '../tooltip-errors';
-import { TooltipComponent, TooltipContentData } from '../tooltip.component';
+import { TooltipComponent } from '../tooltip.component';
 import { createTooltipId } from '../tooltip.utils';
 
 export type TooltipContent = string | TemplateRef<unknown>;
@@ -138,10 +138,10 @@ export class TooltipDirective {
 
     const tooltipId = createTooltipId();
     const hostElement = this.elementRef.nativeElement;
-    const overlayRef = this.overlayManager.open<TooltipComponent, TooltipContentData>(TooltipComponent, {
+    const overlayRef = this.overlayManager.open<TooltipComponent>(TooltipComponent, {
       id: tooltipId,
-      data: {
-        id: tooltipId,
+      inputBindings: {
+        tooltipId,
         content,
         colorProvider: this.colorProvider ?? null,
         surfaceProvider: this.surfaceProvider ?? null,
@@ -188,7 +188,7 @@ export class TooltipDirective {
   }
 
   public hide() {
-    this.overlayRef()?.close(undefined, true);
+    this.overlayRef()?.close();
   }
 
   private setupHoverBehavior() {

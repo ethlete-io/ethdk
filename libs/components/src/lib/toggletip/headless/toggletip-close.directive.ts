@@ -1,5 +1,5 @@
 import { Directive, inject } from '@angular/core';
-import { OverlayRef } from '../../overlay';
+import { OVERLAY_REF, OverlayRef } from '../../overlay';
 import { ToggletipComponent } from '../toggletip.component';
 
 @Directive({
@@ -9,5 +9,5 @@ import { ToggletipComponent } from '../toggletip.component';
   },
 })
 export class ToggletipCloseDirective {
-  protected overlayRef = inject<OverlayRef<ToggletipComponent, unknown>>(OverlayRef);
+  protected overlayRef = inject<OverlayRef<ToggletipComponent, unknown>>(OVERLAY_REF);
 }
