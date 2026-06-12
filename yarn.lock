@@ -4114,7 +4114,7 @@ __metadata:
     "@swc/core": "npm:1.13.5"
     "@swc/helpers": "npm:0.5.17"
     "@types/jest": "npm:30.0.0"
-    "@types/mdx": "npm:2.0.13"
+    "@types/mdx": "npm:2.0.14"
     "@types/node": "npm:24.8.1"
     "@typescript-eslint/utils": "npm:8.46.1"
     angular-eslint: "npm:20.4.0"
@@ -8734,7 +8734,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/mdx@npm:2.0.13, @types/mdx@npm:^2.0.0":
+"@types/mdx@npm:2.0.14":
+  version: 2.0.14
+  resolution: "@types/mdx@npm:2.0.14"
+  checksum: 10c0/f1e3873c1e36e2685fb99222bf81a23c55a8e2edf49d0c45cabf2c875b0ae814cd6050cce5770ff1c6881ac747d2ad33731e1de32139b04cf181d8d7e1943ff4
+  languageName: node
+  linkType: hard
+
+"@types/mdx@npm:^2.0.0":
   version: 2.0.13
   resolution: "@types/mdx@npm:2.0.13"
   checksum: 10c0/5edf1099505ac568da55f9ae8a93e7e314e8cbc13d3445d0be61b75941226b005e1390d9b95caecf5dcb00c9d1bab2f1f60f6ff9876dc091a48b547495007720
