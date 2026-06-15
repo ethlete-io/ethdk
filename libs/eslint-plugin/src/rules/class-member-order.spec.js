@@ -31,11 +31,20 @@ tester.run('class-member-order', rule, {
     },
     {
       code: `class C {
+  label = this.buildLabel();
+
   buildLabel() {
     return 'ready';
   }
+}`,
+    },
+    {
+      code: `class C {
+  warningBanner = computed(() => this.detectApiEnvironmentLabel());
 
-  label = this.buildLabel();
+  detectApiEnvironmentLabel() {
+    return 'warning';
+  }
 }`,
     },
     {
@@ -103,20 +112,20 @@ tester.run('class-member-order', rule, {
     },
     {
       code: `class C {
-  label = this.buildLabel();
-
   buildLabel() {
     return 'ready';
   }
+
+  label = this.buildLabel();
 }`,
       output: `class C {
 
+  label = this.buildLabel();
   buildLabel() {
     return 'ready';
   }
-  label = this.buildLabel();
 }`,
-      errors: [{ messageId: 'dependencyOrder' }],
+      errors: [{ messageId: 'groupOrder' }],
     },
   ],
 });

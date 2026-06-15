@@ -232,14 +232,11 @@ const sortMembers = (members) => {
   const remainingMembers = [...members];
   /** @type {TMemberEntry[]} */
   const sortedMembers = [];
+  const remainingNames = new Set(remainingMembers.map((m) => m.name));
 
   while (remainingMembers.length > 0) {
     const readyMembers = remainingMembers
-      .filter((member) =>
-        [...member.dependencies].every(
-          (dependencyName) => !remainingMembers.some((remainingMember) => remainingMember.name === dependencyName),
-        ),
-      )
+      .filter((member) => [...member.dependencies].every((dependencyName) => !remainingNames.has(dependencyName)))
       .sort((left, right) => {
         if (left.groupIndex !== right.groupIndex) {
           return left.groupIndex - right.groupIndex;
@@ -258,6 +255,7 @@ const sortMembers = (members) => {
 
     const nextMemberIndex = remainingMembers.indexOf(nextMember);
     remainingMembers.splice(nextMemberIndex, 1);
+    remainingNames.delete(nextMember.name);
   }
 
   return sortedMembers;
@@ -375,6 +373,21 @@ const classMemberOrder = {
 
         if (members.length < 2) {
           return;
+        }
+
+        // Methods live on the prototype and are available regardless of declaration order,
+        // so this.method() calls in initializers don't create real ordering dependencies.
+        const methodNames = new Set(
+          members.filter((m) => m.group === 'method' || m.group === 'private-method').map((m) => m.name),
+        );
+        if (methodNames.size > 0) {
+          for (const member of members) {
+            for (const dep of member.dependencies) {
+              if (methodNames.has(dep)) {
+                member.dependencies.delete(dep);
+              }
+            }
+          }
         }
 
         const fix = buildClassOrderFix(sourceCode, node, members);

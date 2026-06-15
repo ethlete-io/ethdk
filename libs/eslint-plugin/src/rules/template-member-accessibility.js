@@ -88,6 +88,20 @@ const templateMemberAccessibility = {
   },
   create(context) {
     const sourceCode = context.sourceCode;
+    /** @type {WeakMap<any, Set<string>>} */
+    const contractMembersCache = new WeakMap();
+
+    /**
+     * @param {any} classNode
+     */
+    const getContractMembers = (classNode) => {
+      if (contractMembersCache.has(classNode)) {
+        return contractMembersCache.get(classNode);
+      }
+      const result = getImplementedContractMemberNames({ classNode, context });
+      contractMembersCache.set(classNode, result);
+      return result;
+    };
 
     /**
      * @param {any} node
@@ -103,7 +117,7 @@ const templateMemberAccessibility = {
       const memberName = getMemberName(node);
       if (!memberName) return;
 
-      const implementedContractMembers = getImplementedContractMemberNames({ classNode, context });
+      const implementedContractMembers = getContractMembers(classNode);
       const implementsPublicContract = implementedContractMembers.has(memberName);
 
       if (implementsPublicContract) {
@@ -160,7 +174,7 @@ const templateMemberAccessibility = {
       const memberName = getMemberName(node);
       if (!memberName) return;
 
-      const implementedContractMembers = getImplementedContractMemberNames({ classNode, context });
+      const implementedContractMembers = getContractMembers(classNode);
       if (implementedContractMembers.has(memberName)) return;
 
       if (isReferencedFromTemplateOrHost(classNode, memberName, context)) return;
