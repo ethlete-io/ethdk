@@ -1,5 +1,13 @@
 # @ethlete/core
 
+## 5.0.0-next.9
+
+### Minor Changes
+
+- [`5d1d3ac`](https://github.com/ethlete-io/ethdk/commit/5d1d3accbd4a7657bc50cdc0653a7ca24fe761e2) Thanks [@TomTomB](https://github.com/TomTomB)! - Add overlay runtime
+
+- [`5d1d3ac`](https://github.com/ethlete-io/ethdk/commit/5d1d3accbd4a7657bc50cdc0653a7ca24fe761e2) Thanks [@TomTomB](https://github.com/TomTomB)! - Cleanup surface and color theming
+
 ## 5.0.0-next.8
 
 ### Minor Changes
