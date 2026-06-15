@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 4.0.0-next.2
+
+### Patch Changes
+
+- [`a690217`](https://github.com/ethlete-io/ethdk/commit/a6902172efd9bd1956a16237e79acbfbd816d946) Thanks [@TomTomB](https://github.com/TomTomB)! - Version bump only
+
 ## 4.0.0-next.1
 
 ### Patch Changes

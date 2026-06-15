@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 6.0.0-next.7
+
+### Patch Changes
+
+- [`a690217`](https://github.com/ethlete-io/ethdk/commit/a6902172efd9bd1956a16237e79acbfbd816d946) Thanks [@TomTomB](https://github.com/TomTomB)! - Version bump only
+
 ## 6.0.0-next.6
 
 ### Patch Changes
