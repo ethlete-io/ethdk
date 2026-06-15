@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-next.4
+
+### Patch Changes
+
+- [`a690217`](https://github.com/ethlete-io/ethdk/commit/a6902172efd9bd1956a16237e79acbfbd816d946) Thanks [@TomTomB](https://github.com/TomTomB)! - Version bump only
+
 ## 0.1.0-next.3
 
 ### Patch Changes

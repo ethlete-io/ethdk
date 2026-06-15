@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/cdk",
-  "version": "5.0.0-next.10",
+  "version": "5.0.0-next.11",
   "license": "MIT",
   "sideEffects": false,
   "exports": {
