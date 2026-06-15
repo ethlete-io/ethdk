@@ -92,7 +92,7 @@ import { GRID_TOKEN } from './headless/grid.tokens';
         box-shadow: 0 0 0 2px var(--et-grid-item-focus-ring-color, #2563eb);
       }
 
-      &--dragging {
+      &:is(.et-grid-item--dragging) {
         z-index: 100;
         box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
         opacity: 0.95;
@@ -100,7 +100,7 @@ import { GRID_TOKEN } from './headless/grid.tokens';
         user-select: none;
       }
 
-      &--resizing {
+      &:is(.et-grid-item--resizing) {
         z-index: 100;
         user-select: none;
       }
