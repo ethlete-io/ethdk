@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-next.3
+
+### Patch Changes
+
+- [`5d1d3ac`](https://github.com/ethlete-io/ethdk/commit/5d1d3accbd4a7657bc50cdc0653a7ca24fe761e2) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix minor lint edge cases
+
 ## 0.1.0-next.2
 
 ### Patch Changes
