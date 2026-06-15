@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-next.6
+
+### Patch Changes
+
+- [`b73a127`](https://github.com/ethlete-io/ethdk/commit/b73a127002a06e3aa0c4e7e977b1ad1f3e04e7e6) Thanks [@TomTomB](https://github.com/TomTomB)! - Bump yet again, final one for sure, pinky promise
+
 ## 0.1.0-beta.5
 
 ### Patch Changes
