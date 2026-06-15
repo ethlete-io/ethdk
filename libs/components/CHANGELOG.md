@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.0-beta.4
+
+### Patch Changes
+
+- [`ddb5d09`](https://github.com/ethlete-io/ethdk/commit/ddb5d09e4bc56e18cc8c228aa78a200441e7a766) Thanks [@TomTomB](https://github.com/TomTomB)! - Bump to beta
+
+- Updated dependencies [[`ddb5d09`](https://github.com/ethlete-io/ethdk/commit/ddb5d09e4bc56e18cc8c228aa78a200441e7a766)]:
+  - @ethlete/core@5.0.0-beta.11
+
 ## 0.1.0-next.3
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/contentful",
-  "version": "4.0.0-next.2",
+  "version": "4.0.0-beta.3",
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {
@@ -10,9 +10,9 @@
     "@angular/core": "21.2.13",
     "@angular/router": "21.2.13",
     "@contentful/rich-text-types": "17.2.7",
-    "@ethlete/cdk": "^5.0.0-next.0",
-    "@ethlete/core": "^5.0.0-next.0",
-    "@ethlete/query": "^6.0.0-next.0",
+    "@ethlete/cdk": "^5.0.0-beta.12",
+    "@ethlete/core": "^5.0.0-beta.11",
+    "@ethlete/query": "^6.0.0-beta.8",
     "@nx/vite": "22.7.2",
     "rxjs": "7.8.2",
     "vite": "8.0.13"

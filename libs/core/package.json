@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/core",
-  "version": "5.0.0-next.10",
+  "version": "5.0.0-beta.11",
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {
@@ -11,7 +11,7 @@
     "@angular/forms": "21.2.13",
     "@angular/platform-browser": "21.2.13",
     "@angular/router": "21.2.13",
-    "@ethlete/types": "^2.0.0-next.0",
+    "@ethlete/types": "^2.0.0-beta.4",
     "@floating-ui/dom": "1.7.6",
     "@nx/devkit": "22.7.2",
     "@nx/vite": "22.7.2",

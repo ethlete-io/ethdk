@@ -1,5 +1,15 @@
 # @ethlete/query
 
+## 6.0.0-beta.8
+
+### Patch Changes
+
+- [`ddb5d09`](https://github.com/ethlete-io/ethdk/commit/ddb5d09e4bc56e18cc8c228aa78a200441e7a766) Thanks [@TomTomB](https://github.com/TomTomB)! - Bump to beta
+
+- Updated dependencies [[`ddb5d09`](https://github.com/ethlete-io/ethdk/commit/ddb5d09e4bc56e18cc8c228aa78a200441e7a766)]:
+  - @ethlete/types@2.0.0-beta.4
+  - @ethlete/core@5.0.0-beta.11
+
 ## 6.0.0-next.7
 
 ### Patch Changes

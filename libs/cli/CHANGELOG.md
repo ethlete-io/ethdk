@@ -1,5 +1,11 @@
 # @ethlete/cli
 
+## 2.0.1-beta.1
+
+### Patch Changes
+
+- [`ddb5d09`](https://github.com/ethlete-io/ethdk/commit/ddb5d09e4bc56e18cc8c228aa78a200441e7a766) Thanks [@TomTomB](https://github.com/TomTomB)! - Bump to beta
+
 ## 2.0.1-next.0
 
 ### Patch Changes
