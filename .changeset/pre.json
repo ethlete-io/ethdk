@@ -1,6 +1,6 @@
 {
   "mode": "pre",
-  "tag": "next",
+  "tag": "beta",
   "initialVersions": {
     "@ethlete/cdk": "4.70.1",
     "@ethlete/cli": "2.0.0",
