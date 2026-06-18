@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.14
+
+### Patch Changes
+
+- [`6ee86dc`](https://github.com/ethlete-io/ethdk/commit/6ee86dc6e2dde7ec6661d12e92fe1ceb87bc5800) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix color theme migration to include html and css files
+
 ## 5.0.0-next.13
 
 ### Patch Changes
