@@ -108,9 +108,7 @@ export default async function migrateColorThemes(tree: Tree) {
     // Check if file contains provideThemes or imports from @ethlete/theming or @ethlete/cdk,
     // or any template/CSS strings that need replacing
     const needsImportMigration =
-      content.includes('provideThemes') ||
-      content.includes('@ethlete/theming') ||
-      content.includes('@ethlete/cdk');
+      content.includes('provideThemes') || content.includes('@ethlete/theming') || content.includes('@ethlete/cdk');
 
     const needsTemplateMigration = TEMPLATE_REPLACEMENTS.some(([oldStr]) => content.includes(oldStr));
     const needsCssMigration = CSS_REPLACEMENTS.some(([oldStr]) => content.includes(oldStr));
