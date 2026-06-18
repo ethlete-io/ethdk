@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.13
+
+### Patch Changes
+
+- [`8f77e78`](https://github.com/ethlete-io/ethdk/commit/8f77e78d39a8fa91b9ccb8e038e9b3f62a9f1b94) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix theme class name generation for legacy tailwind 3 themes
+
 ## 5.0.0-next.12
 
 ### Patch Changes
