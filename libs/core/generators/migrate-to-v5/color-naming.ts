@@ -28,6 +28,8 @@ const TEMPLATE_REPLACEMENTS: [string, string][] = [
   ['etSurfaceThemed', 'etSurfaced'],
   ['[theme]=', '[color]='],
   ['[altTheme]=', '[altColor]='],
+  ['et-theme-alt--', 'et-color-alt--'],
+  ['et-theme--', 'et-color--'],
 ];
 
 /**

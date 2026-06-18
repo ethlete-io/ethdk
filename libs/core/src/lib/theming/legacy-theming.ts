@@ -109,13 +109,13 @@ export const createRootThemeCss = (themes: ColorTheme[]) => {
  */
 export const createThemeStyle = (theme: ColorTheme, isAlt: boolean) => {
   const cssThemeName = createCssColorThemeName(theme.name);
-  const stringSuffix = isAlt ? '-alt' : '';
+  const classPrefix = isAlt ? 'et-color-alt' : 'et-color';
 
   const selectors = [
     ...((theme.isDefault && !isAlt) || ((theme as ColorTheme & { isDefaultAlt?: boolean }).isDefaultAlt && isAlt)
-      ? [':root', `.et-theme${stringSuffix}--default`]
+      ? [':root', `.${classPrefix}--default`]
       : []),
-    `.et-theme${stringSuffix}--${cssThemeName}`,
+    `.${classPrefix}--${cssThemeName}`,
   ];
 
   const css = `
@@ -127,7 +127,7 @@ export const createThemeStyle = (theme: ColorTheme, isAlt: boolean) => {
   `;
 
   const style = document.createElement('style');
-  style.id = `et-theme${stringSuffix}--${cssThemeName}`;
+  style.id = `${classPrefix}--${cssThemeName}`;
   style.appendChild(document.createTextNode(css));
   document.head.appendChild(style);
 };
