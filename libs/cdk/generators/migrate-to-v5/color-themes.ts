@@ -1,5 +1,27 @@
 import { Tree, logger, readJson, visitNotIgnoredFiles, writeJson } from '@nx/devkit';
 
+const TEMPLATE_REPLACEMENTS: [string, string][] = [
+  ['[etProvideTheme]', '[etProvideColor]'],
+  ['etProvideTheme', 'etProvideColor'],
+  ['[etProvideAltTheme]', '[etProvideAltColor]'],
+  ['etProvideAltTheme', 'etProvideAltColor'],
+  ['[etColorThemed]', '[etColored]'],
+  ['etColorThemed', 'etColored'],
+  ['[etSurfaceThemed]', '[etSurfaced]'],
+  ['etSurfaceThemed', 'etSurfaced'],
+  ['[theme]=', '[color]='],
+  ['[altTheme]=', '[altColor]='],
+  ['et-theme-alt--', 'et-color-alt--'],
+  ['et-theme--', 'et-color--'],
+];
+
+const CSS_REPLACEMENTS: [string, string][] = [
+  ['.et-color-themed', '.et-colored'],
+  ['.et-surface-themed', '.et-surfaced'],
+  ['.et-theme--', '.et-color--'],
+  ['.et-theme-alt--', '.et-color-alt--'],
+];
+
 // Theming-related exports that moved from @ethlete/theming and @ethlete/cdk to @ethlete/core
 const THEMING_EXPORTS = new Set([
   'ProvideThemeDirective',
@@ -24,6 +46,54 @@ export default async function migrateColorThemes(tree: Tree) {
   let importsMerged = 0;
   let packagesRemoved = 0;
 
+  // Migrate HTML template files
+  visitNotIgnoredFiles(tree, '', (filePath) => {
+    if (!filePath.endsWith('.html')) {
+      return;
+    }
+
+    const content = tree.read(filePath, 'utf-8');
+    if (!content) {
+      return;
+    }
+
+    let modified = content;
+
+    for (const [oldStr, newStr] of TEMPLATE_REPLACEMENTS) {
+      modified = modified.replaceAll(oldStr, newStr);
+    }
+
+    if (modified !== content) {
+      tree.write(filePath, modified);
+      filesModified++;
+      console.log(`   ✓ ${filePath}`);
+    }
+  });
+
+  // Migrate CSS/SCSS files
+  visitNotIgnoredFiles(tree, '', (filePath) => {
+    if (!filePath.endsWith('.css') && !filePath.endsWith('.scss')) {
+      return;
+    }
+
+    const content = tree.read(filePath, 'utf-8');
+    if (!content) {
+      return;
+    }
+
+    let modified = content;
+
+    for (const [oldStr, newStr] of CSS_REPLACEMENTS) {
+      modified = modified.replaceAll(oldStr, newStr);
+    }
+
+    if (modified !== content) {
+      tree.write(filePath, modified);
+      filesModified++;
+      console.log(`   ✓ ${filePath}`);
+    }
+  });
+
   // Migrate TypeScript files
   visitNotIgnoredFiles(tree, '', (filePath) => {
     if (!filePath.endsWith('.ts')) {
@@ -35,17 +105,48 @@ export default async function migrateColorThemes(tree: Tree) {
       return;
     }
 
-    // Check if file contains provideThemes or imports from @ethlete/theming or @ethlete/cdk
-    if (
-      !content.includes('provideThemes') &&
-      !content.includes('@ethlete/theming') &&
-      !content.includes('@ethlete/cdk')
-    ) {
+    // Check if file contains provideThemes or imports from @ethlete/theming or @ethlete/cdk,
+    // or any template/CSS strings that need replacing
+    const needsImportMigration =
+      content.includes('provideThemes') ||
+      content.includes('@ethlete/theming') ||
+      content.includes('@ethlete/cdk');
+
+    const needsTemplateMigration = TEMPLATE_REPLACEMENTS.some(([oldStr]) => content.includes(oldStr));
+    const needsCssMigration = CSS_REPLACEMENTS.some(([oldStr]) => content.includes(oldStr));
+
+    if (!needsImportMigration && !needsTemplateMigration && !needsCssMigration) {
       return;
     }
 
     let modified = content;
     let fileChanges = 0;
+
+    // Apply template replacements (covers inline templates and class usages)
+    if (needsTemplateMigration) {
+      for (const [oldStr, newStr] of TEMPLATE_REPLACEMENTS) {
+        modified = modified.replaceAll(oldStr, newStr);
+      }
+      fileChanges++;
+    }
+
+    // Apply CSS replacements (covers inline styles)
+    if (needsCssMigration) {
+      for (const [oldStr, newStr] of CSS_REPLACEMENTS) {
+        modified = modified.replaceAll(oldStr, newStr);
+      }
+      fileChanges++;
+    }
+
+    if (!needsImportMigration) {
+      if (modified !== content) {
+        tree.write(filePath, modified);
+        filesModified++;
+        console.log(`   ✓ ${filePath} (${fileChanges} change${fileChanges !== 1 ? 's' : ''})`);
+      }
+
+      return;
+    }
 
     // Replace provideThemes with provideColorThemes
     const beforeProvideThemesCount = (modified.match(/\bprovideThemes\b/g) || []).length;

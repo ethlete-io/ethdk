@@ -48,6 +48,20 @@ export type GridDragState = {
   targetPosition: GridItemPosition;
 };
 
+const positionsEqual = (a: GridItemPosition, b: GridItemPosition) =>
+  a.col === b.col && a.row === b.row && a.colSpan === b.colSpan && a.rowSpan === b.rowSpan;
+
+const layoutsEqual = (a: Record<string, GridItemPosition>, b: Record<string, GridItemPosition>) => {
+  const aKeys = Object.keys(a);
+  if (aKeys.length !== Object.keys(b).length) return false;
+
+  return aKeys.every((k) => {
+    const ap = a[k];
+    const bp = b[k];
+    return ap !== undefined && bp !== undefined && positionsEqual(ap, bp);
+  });
+};
+
 const DEFAULT_CONSTRAINTS: GridItemConstraints = {
   minColSpan: 1,
   maxColSpan: 12,
@@ -178,7 +192,6 @@ export class GridDirective {
   constructor() {
     effect(() => {
       const initial = this.initialItems();
-
       untracked(() => {
         if (initial.length === 0) return;
 
@@ -190,16 +203,47 @@ export class GridDirective {
           return;
         }
 
-        const currentIds = new Set(current.map((c) => c.id));
-        const newItems = initial.filter((item) => !currentIds.has(item.id));
+        const currentById = new Map(current.map((c) => [c.id, c]));
+        const initialIds = new Set(initial.map((i) => i.id));
+
+        const newItems = initial.filter((item) => !currentById.has(item.id));
+        const removedIds = current.filter((c) => !initialIds.has(c.id)).map((c) => c.id);
+
+        // Pure layout update — same item set but positions changed (e.g. the host
+        // reset its signal to a saved snapshot after the user cancelled edits).
+        // A structural add/remove takes precedence and is handled below.
+        if (newItems.length === 0 && removedIds.length === 0) {
+          const anyLayoutChanged = initial.some((incoming) => {
+            const existing = currentById.get(incoming.id);
+            return existing && !layoutsEqual(existing.layout, incoming.layout);
+          });
+
+          if (anyLayoutChanged) {
+            // Restore itemConfigs from the incoming snapshot.
+            this.itemConfigs.set(initial);
+
+            // Rebuild layoutOverrides for every breakpoint that has already been
+            // visited so the grid renders the restored positions immediately without
+            // waiting for a breakpoint switch.
+            const visitedBps = Object.keys(this.layoutOverrides());
+            if (visitedBps.length > 0) {
+              const restored: Record<string, GridLayoutEntry[]> = {};
+              for (const bp of visitedBps) {
+                restored[bp] = initial.map((item) => ({
+                  id: item.id,
+                  position: item.layout[bp] ?? { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+                }));
+              }
+              this.layoutOverrides.set(restored);
+            }
+          }
+
+          return;
+        }
 
         for (const item of newItems) {
           this.placeItem(item);
         }
-
-        // Remove items no longer in initial
-        const initialIds = new Set(initial.map((i) => i.id));
-        const removedIds = current.filter((c) => !initialIds.has(c.id)).map((c) => c.id);
 
         for (const id of removedIds) {
           this.removeItem(id);
@@ -285,28 +329,34 @@ export class GridDirective {
     // On first registration the item may have been auto-placed with 1×1 defaults
     // (because addItem runs before the GridItemDirective initialises). If so,
     // re-place it now at the correct minimum size.
-    const breakpoint = this.activeBreakpoint();
-    const existing = this.layoutOverrides()[breakpoint];
-    if (!existing) return;
+    // All signal reads are wrapped in untracked() to prevent this method from
+    // inadvertently becoming a dependency of the caller's reactive context
+    // (e.g. GridItemDirective's registration effect), which would cause the
+    // layoutOverrides.update() write below to re-trigger that effect in a loop.
+    untracked(() => {
+      const breakpoint = this.activeBreakpoint();
+      const existing = this.layoutOverrides()[breakpoint];
+      if (!existing) return;
 
-    const entry = existing.find((e) => e.id === id);
-    if (!entry) return;
+      const entry = existing.find((e) => e.id === id);
+      if (!entry) return;
 
-    const pos = entry.position;
-    if (pos.colSpan >= constraints.minColSpan && pos.rowSpan >= constraints.minRowSpan) return;
+      const pos = entry.position;
+      if (pos.colSpan >= constraints.minColSpan && pos.rowSpan >= constraints.minRowSpan) return;
 
-    const cols = this.activeColumns();
-    const others = existing.filter((e) => e.id !== id);
-    const newPosition = autoPlace({
-      entries: others,
-      colSpan: Math.max(pos.colSpan, constraints.minColSpan),
-      rowSpan: Math.max(pos.rowSpan, constraints.minRowSpan),
-      columns: cols,
+      const cols = this.activeColumns();
+      const others = existing.filter((e) => e.id !== id);
+      const newPosition = autoPlace({
+        entries: others,
+        colSpan: Math.max(pos.colSpan, constraints.minColSpan),
+        rowSpan: Math.max(pos.rowSpan, constraints.minRowSpan),
+        columns: cols,
+      });
+
+      const updated = existing.map((e) => (e.id === id ? { ...e, position: newPosition } : e));
+      const compacted = compactLayout(updated, cols);
+      this.layoutOverrides.update((prev) => ({ ...prev, [breakpoint]: compacted }));
     });
-
-    const updated = existing.map((e) => (e.id === id ? { ...e, position: newPosition } : e));
-    const compacted = compactLayout(updated, cols);
-    this.layoutOverrides.update((prev) => ({ ...prev, [breakpoint]: compacted }));
   }
 
   public registerItem(id: string, options: { el: HTMLElement; constraints: GridItemConstraints }) {
@@ -490,6 +540,7 @@ export class GridDirective {
         const compacted = compactLayout(currentLayout, columns);
 
         this.updateLayoutForCurrentBreakpoint(compacted);
+        this.compactOtherBreakpoints(id);
         this.emitLayoutChange();
         this.animateLayoutTransition({ excludeIds: new Set([id]) });
       };
@@ -501,6 +552,7 @@ export class GridDirective {
       const compacted = compactLayout(currentLayout, columns);
 
       this.updateLayoutForCurrentBreakpoint(compacted);
+      this.compactOtherBreakpoints(id);
       this.emitLayoutChange();
     }
   }
@@ -566,8 +618,25 @@ export class GridDirective {
   }
 
   public getSerializedState(): GridSerializedState {
+    const overrides = this.layoutOverrides();
+
+    // layoutOverrides is the authoritative source for any breakpoint that has been visited.
+    // itemConfigs.layout[bp] lags behind for breakpoints that haven't been written back
+    // yet (e.g. items pushed by moveItem/resizeItem collision resolution, or items whose
+    // non-current-breakpoint positions haven't been visited since the last change).
+    const items = this.itemConfigs().map((item) => {
+      const layout: Record<string, GridItemPosition> = { ...item.layout };
+
+      for (const [bp, entries] of Object.entries(overrides)) {
+        const entry = entries.find((e) => e.id === item.id);
+        if (entry) layout[bp] = entry.position;
+      }
+
+      return { ...item, layout };
+    });
+
     return serializeGridLayout({
-      items: this.itemConfigs(),
+      items,
       breakpoints: this.breakpoints(),
       rowHeight: this.rowHeight(),
     });
@@ -603,27 +672,52 @@ export class GridDirective {
   }
 
   private placeItem(config: GridItemConfig) {
-    const breakpoint = this.activeBreakpoint();
+    const activeBp = this.activeBreakpoint();
     const columns = this.activeColumns();
     const currentLayout = this.baseLayout();
     const constraints = this.getConstraints(config.id);
+    const allBreakpoints = this.breakpoints();
+    const overrides = this.layoutOverrides();
+    const existingItems = this.itemConfigs();
 
+    // Start from any layouts already in the config (e.g. when re-adding from API data).
+    const layout: Record<string, GridItemPosition> = { ...config.layout };
+
+    // Place on the active breakpoint first so other breakpoints can use it as a reference.
     const position =
-      config.layout[breakpoint] ??
+      layout[activeBp] ??
       autoPlace({
         entries: currentLayout,
         colSpan: constraints.minColSpan,
         rowSpan: constraints.minRowSpan,
         columns,
       });
+    layout[activeBp] = position;
 
-    const itemWithLayout: GridItemConfig = {
-      ...config,
-      layout: {
-        ...config.layout,
-        [breakpoint]: position,
-      },
-    };
+    // Auto-place on every other breakpoint that has no position yet.
+    // This ensures the emitted layoutChange always carries all breakpoints so
+    // the host's gridItems signal never loses sm/md positions for new items.
+    for (const bp of allBreakpoints) {
+      if (bp.name === activeBp || layout[bp.name]) continue;
+
+      // Effective layout for this breakpoint: prefer layoutOverrides (already visited),
+      // fall back to itemConfigs.layout[bp] (original API positions).
+      const bpEntries: GridLayoutEntry[] =
+        overrides[bp.name] ??
+        existingItems.map((item) => ({
+          id: item.id,
+          position: item.layout[bp.name] ?? { col: 0, row: 0, colSpan: 1, rowSpan: 1 },
+        }));
+
+      layout[bp.name] = autoPlace({
+        entries: bpEntries,
+        colSpan: Math.min(constraints.minColSpan, bp.columns),
+        rowSpan: constraints.minRowSpan,
+        columns: bp.columns,
+      });
+    }
+
+    const itemWithLayout: GridItemConfig = { ...config, layout };
 
     this.itemConfigs.update((items) => [...items, itemWithLayout]);
     this.updateLayoutForCurrentBreakpoint([...currentLayout, { id: config.id, position }]);
@@ -727,6 +821,20 @@ export class GridDirective {
 
       return collides ? original : entry;
     });
+  }
+
+  /** Compact all visited breakpoints (layoutOverrides entries) after an item is removed. */
+  private compactOtherBreakpoints(removedId: string) {
+    const activeBp = this.activeBreakpoint();
+    const bpColumns = new Map(this.breakpoints().map((b) => [b.name, b.columns]));
+
+    for (const [bp, entries] of Object.entries(this.layoutOverrides())) {
+      if (bp === activeBp) continue;
+      const withoutItem = entries.filter((e) => e.id !== removedId);
+      const cols = bpColumns.get(bp) ?? 1;
+      const compacted = compactLayout(withoutItem, cols);
+      this.layoutOverrides.update((prev) => ({ ...prev, [bp]: compacted }));
+    }
   }
 
   private updateLayoutForCurrentBreakpoint(entries: GridLayoutEntry[]) {

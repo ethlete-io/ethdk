@@ -489,6 +489,121 @@ export const appConfig = {
     expect(result).not.toContain('provideThemes()');
   });
 
+  describe('HTML template migration', () => {
+    it('should replace et-theme-- class prefixes with et-color-- in HTML files', async () => {
+      tree.write(
+        'component.html',
+        `<div class="et-theme--primary">
+  <span class="et-theme-alt--secondary">content</span>
+</div>`,
+      );
+
+      await migrateColorThemes(tree);
+
+      const result = tree.read('component.html', 'utf-8');
+      expect(result).toContain('et-color--primary');
+      expect(result).toContain('et-color-alt--secondary');
+      expect(result).not.toContain('et-theme--');
+      expect(result).not.toContain('et-theme-alt--');
+    });
+
+    it('should replace directive bindings in HTML files', async () => {
+      tree.write(
+        'component.html',
+        `<div [etProvideTheme]="theme" [theme]="myTheme" [altTheme]="altMyTheme">
+  <span etColorThemed etSurfaceThemed>content</span>
+</div>`,
+      );
+
+      await migrateColorThemes(tree);
+
+      const result = tree.read('component.html', 'utf-8');
+      expect(result).toContain('[etProvideColor]');
+      expect(result).toContain('[color]="myTheme"');
+      expect(result).toContain('[altColor]="altMyTheme"');
+      expect(result).toContain('etColored');
+      expect(result).toContain('etSurfaced');
+      expect(result).not.toContain('[etProvideTheme]');
+      expect(result).not.toContain('[theme]=');
+      expect(result).not.toContain('[altTheme]=');
+      expect(result).not.toContain('etColorThemed');
+      expect(result).not.toContain('etSurfaceThemed');
+    });
+
+    it('should replace inline template class names in TypeScript files', async () => {
+      tree.write(
+        'component.ts',
+        `import { Component } from '@angular/core';
+
+@Component({
+  template: \`<div class="et-theme--primary et-theme-alt--secondary">content</div>\`,
+})
+export class MyComponent {}`,
+      );
+
+      await migrateColorThemes(tree);
+
+      const result = tree.read('component.ts', 'utf-8');
+      expect(result).toContain('et-color--primary');
+      expect(result).toContain('et-color-alt--secondary');
+      expect(result).not.toContain('et-theme--');
+      expect(result).not.toContain('et-theme-alt--');
+    });
+  });
+
+  describe('CSS/SCSS migration', () => {
+    it('should replace et-theme-- selectors in CSS files', async () => {
+      tree.write(
+        'styles.css',
+        `.et-theme--primary { color: red; }
+.et-theme-alt--secondary { color: blue; }`,
+      );
+
+      await migrateColorThemes(tree);
+
+      const result = tree.read('styles.css', 'utf-8');
+      expect(result).toContain('.et-color--primary');
+      expect(result).toContain('.et-color-alt--secondary');
+      expect(result).not.toContain('.et-theme--');
+      expect(result).not.toContain('.et-theme-alt--');
+    });
+
+    it('should replace et-theme-- selectors in SCSS files', async () => {
+      tree.write(
+        'styles.scss',
+        `.et-theme--primary {
+  color: red;
+
+  .et-theme-alt--secondary { color: blue; }
+}`,
+      );
+
+      await migrateColorThemes(tree);
+
+      const result = tree.read('styles.scss', 'utf-8');
+      expect(result).toContain('.et-color--primary');
+      expect(result).toContain('.et-color-alt--secondary');
+      expect(result).not.toContain('.et-theme--');
+      expect(result).not.toContain('.et-theme-alt--');
+    });
+
+    it('should replace et-color-themed and et-surface-themed selectors', async () => {
+      tree.write(
+        'styles.scss',
+        `.et-color-themed { display: block; }
+.et-surface-themed { display: inline; }`,
+      );
+
+      await migrateColorThemes(tree);
+
+      const result = tree.read('styles.scss', 'utf-8');
+      expect(result).toContain('.et-colored');
+      expect(result).toContain('.et-surfaced');
+      expect(result).not.toContain('.et-color-themed');
+      expect(result).not.toContain('.et-surface-themed');
+    });
+  });
+
   describe('package.json migration', () => {
     it('should remove @ethlete/theming from dependencies but keep @ethlete/cdk', async () => {
       tree.write(

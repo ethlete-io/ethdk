@@ -1,5 +1,5 @@
 import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
-import { GridDataStorybookComponent, GridStorybookComponent } from './components';
+import { GridDataStorybookComponent, GridPartnerStorybookComponent, GridStorybookComponent } from './components';
 
 export default {
   title: 'Components/Grid',
@@ -48,6 +48,21 @@ export const SixColumnGrid: Story = {
       { name: 'md', columns: 3, minWidth: 500 },
       { name: 'sm', columns: 1, minWidth: 0 },
     ],
+  },
+};
+
+export const PartnerDashboard: StoryObj<GridPartnerStorybookComponent> = {
+  decorators: [moduleMetadata({ imports: [GridPartnerStorybookComponent] })],
+  render: () => ({ template: '<et-sb-grid-real-world />' }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Real-world dashboard layout with mixed widget types across three breakpoints. ' +
+          'Widget types include: team, contacts, summary, text, attribute_list. ' +
+          'Drag and resize widgets, then click **Show API Payload** to inspect the converted output.',
+      },
+    },
   },
 };
 
