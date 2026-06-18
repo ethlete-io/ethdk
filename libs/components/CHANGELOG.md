@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-next.6
+
+### Patch Changes
+
+- [`6ee86dc`](https://github.com/ethlete-io/ethdk/commit/6ee86dc6e2dde7ec6661d12e92fe1ceb87bc5800) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix grid edge cases
+
 ## 0.1.0-next.5
 
 ### Patch Changes

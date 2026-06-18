@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/components",
-  "version": "0.1.0-next.5",
+  "version": "0.1.0-next.6",
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {
