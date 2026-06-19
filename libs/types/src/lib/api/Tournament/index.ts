@@ -3,7 +3,6 @@ export { BaseStageStageStructureView } from './baseStageStageStructure.view';
 export { TournamentListView } from './tournamentList.view';
 export { SingleEliminationStageStageStructureView } from './singleEliminationStageStageStructure.view';
 export { GroupStageStageStructureView } from './groupStageStageStructure.view';
-export { SwissStageStructureView } from './swissStageStructure.view';
 export { GroupStageStructureView } from './groupStageStructure.view';
 export { ListSearchRequestData } from './listSearchRequest.data';
 export { RoundStageStructureView } from './roundStageStructure.view';
