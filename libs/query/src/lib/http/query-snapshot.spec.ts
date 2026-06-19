@@ -1,4 +1,4 @@
-import { HttpClient, HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
   createEnvironmentInjector,
@@ -118,6 +118,7 @@ describe('createQuerySnapshotFn', () => {
     TestBed.tick();
 
     state.rawResponse.set({ foo: true });
+    state.latestHttpEvent.set(new HttpResponse({ body: { foo: true } }));
 
     expect(snap.isAlive()).toBeTruthy();
 
@@ -230,6 +231,7 @@ describe('createQuerySnapshotFn', () => {
       TestBed.tick();
 
       state.rawResponse.set({ foo: true });
+      state.latestHttpEvent.set(new HttpResponse({ body: { foo: true } }));
       TestBed.tick();
 
       expect(executionTypes).toContain('success');
@@ -248,6 +250,7 @@ describe('createQuerySnapshotFn', () => {
       state.loading.set(null);
       TestBed.tick();
       state.rawResponse.set({ foo: true });
+      state.latestHttpEvent.set(new HttpResponse({ body: { foo: true } }));
       TestBed.tick();
 
       expect(emissions).toEqual([true, false]);

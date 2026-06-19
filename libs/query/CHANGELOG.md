@@ -1,5 +1,29 @@
 # @ethlete/query
 
+## 5.44.0
+
+### Minor Changes
+
+- [`8d2efef`](https://github.com/ethlete-io/ethdk/commit/8d2efef2a367db82d44977a3fdfe56396bb46515) Thanks [@TomTomB](https://github.com/TomTomB)! - Minor bump only
+
+## 5.43.2
+
+### Patch Changes
+
+- [`830b987`](https://github.com/ethlete-io/ethdk/commit/830b987eba43a51252c3c55eee5590ceef8bf1cb) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix query v3 features not reacting to 204 responses due to null checks
+
+## 5.44.0
+
+### Minor Changes
+
+- [`8d2efef`](https://github.com/ethlete-io/ethdk/commit/8d2efef2a367db82d44977a3fdfe56396bb46515) Thanks [@TomTomB](https://github.com/TomTomB)! - Minor bump only
+
+## 5.43.2
+
+### Patch Changes
+
+- [`830b987`](https://github.com/ethlete-io/ethdk/commit/830b987eba43a51252c3c55eee5590ceef8bf1cb) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix query v3 features not reacting to 204 responses due to null checks
+
 ## 6.0.0-next.9
 
 ### Patch Changes

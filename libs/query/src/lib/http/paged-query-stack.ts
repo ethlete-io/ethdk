@@ -292,7 +292,7 @@ export const createPagedQueryStack = <
   const initialPage = signal(options.initialPage ?? 1);
   const loadedMinPage = signal(initialPage());
   const loadedMaxPage = signal(initialPage());
-  const lastResetTimestamp = signal(Date.now());
+  const resetTrigger = signal(0);
 
   const pageDirection = signal<PagedQueryStackDirection>('next');
 
@@ -318,7 +318,7 @@ export const createPagedQueryStack = <
   });
 
   effect(() => {
-    lastResetTimestamp();
+    resetTrigger();
 
     const args = options.args(initialPage(), []);
 
@@ -452,7 +452,7 @@ export const createPagedQueryStack = <
 
     initialPage.set(page);
     pageDirection.set('next');
-    lastResetTimestamp.set(Date.now());
+    resetTrigger.update((v) => v + 1);
   };
 
   const canFetchPreviousPage = computed(() => {

@@ -214,8 +214,6 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
   };
 
   const updateState = (event: HttpEvent<ResponseType<TArgs>>) => {
-    currentEvent.set(event);
-
     switch (event.type) {
       case HttpEventType.Response:
         {
@@ -245,6 +243,8 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
         }
         break;
     }
+
+    currentEvent.set(event);
   };
 
   const updateErrorState = (errorResponse: unknown) => {

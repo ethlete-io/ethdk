@@ -1,3 +1,4 @@
+import { HttpEventType } from '@angular/common/http';
 import { computed, CreateEffectOptions, effect, Signal, untracked } from '@angular/core';
 import { getActiveConsumer, setActiveConsumer } from '@angular/core/primitives/signals';
 import { RequestHttpEvent } from './http-request';
@@ -236,12 +237,12 @@ export const withSuccessHandling = <TArgs extends QueryArgs>(options: WithSucces
     fn: (context) => {
       nestedEffect(
         () => {
-          const response = context.state.response();
+          const event = context.state.latestHttpEvent();
 
-          if (response === null) return;
+          if (!event || event.type !== HttpEventType.Response) return;
 
           untracked(() => {
-            options.handler(response as NonNullable<ResponseType<TArgs>>);
+            options.handler(context.state.response() as NonNullable<ResponseType<TArgs>>);
           });
         },
         { injector: context.deps.injector },
