@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.44.0
+
+### Minor Changes
+
+- [`8d2efef`](https://github.com/ethlete-io/ethdk/commit/8d2efef2a367db82d44977a3fdfe56396bb46515) Thanks [@TomTomB](https://github.com/TomTomB)! - Minor bump only
+
 ## 5.43.2
 
 ### Patch Changes
