@@ -1,4 +1,4 @@
-import { HttpEvent } from '@angular/common/http';
+import { HttpEvent, HttpEventType } from '@angular/common/http';
 import { computed, Signal, untracked } from '@angular/core';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { QueryDependencies } from './query-dependencies';
@@ -203,12 +203,12 @@ export const withSuccessHandling = <TArgs extends QueryArgs>(options: WithSucces
     fn: (context) => {
       nestedEffect(
         () => {
-          const response = context.state.response();
+          const event = context.state.latestHttpEvent();
 
-          if (response === null) return;
+          if (!event || event.type !== HttpEventType.Response) return;
 
           untracked(() => {
-            options.handler(response as NonNullable<ResponseType<TArgs>>);
+            options.handler(context.state.response() as NonNullable<ResponseType<TArgs>>);
           });
         },
         { injector: context.deps.injector },

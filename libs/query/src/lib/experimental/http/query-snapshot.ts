@@ -1,3 +1,4 @@
+import { HttpEventType } from '@angular/common/http';
 import { effect, signal, untracked } from '@angular/core';
 import { QueryArgs, QuerySnapshot } from './query';
 import { QueryDependencies } from './query-dependencies';
@@ -37,7 +38,8 @@ export const createQuerySnapshotFn = <TArgs extends QueryArgs>(options: CreateQu
 
           if (currentLoading) return;
 
-          if (!currentResponse && !currentError) return;
+          const hasCompletedResponse = currentLatestHttpEvent?.type === HttpEventType.Response;
+          if (!hasCompletedResponse && !currentError) return;
 
           // kill the effect once loading is done and we either have a response or an error
           killEffectRef.destroy();
