@@ -1,5 +1,5 @@
 import { afterNextRender, computed, Directive, ElementRef, inject, Injector, signal } from '@angular/core';
-import { DragHandleDirective, DragMoveEvent, injectRenderer, signalHostStyles } from '@ethlete/core';
+import { DragHandleDirective, DragMoveEvent, injectRenderer } from '@ethlete/core';
 import { outputToObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, tap } from 'rxjs';
 import { GridItemDirective } from './grid-item.directive';
@@ -17,6 +17,7 @@ import { GRID_TOKEN } from './grid.tokens';
     class: 'et-grid-drag',
     '[class.et-grid-drag--active]': '!grid.readOnly() && dragHandle.isDragging()',
     '[attr.aria-grabbed]': '!grid.readOnly() && dragHandle.isDragging()',
+    '[style.transform]': 'dragTransform()',
   },
 })
 export class GridDragDirective {
@@ -30,11 +31,9 @@ export class GridDragDirective {
   private dragStartClient = signal<{ x: number; y: number } | null>(null);
   private dragPixelOffset = signal<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  public hostStyles = signalHostStyles({
-    transform: computed(() => {
-      const offset = this.dragPixelOffset();
-      return `translate(${offset.x}px, ${offset.y}px)`;
-    }),
+  protected dragTransform = computed(() => {
+    const offset = this.dragPixelOffset();
+    return `translate(${offset.x}px, ${offset.y}px)`;
   });
 
   constructor() {

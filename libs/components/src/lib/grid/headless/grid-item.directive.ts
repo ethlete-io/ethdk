@@ -9,7 +9,6 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { signalHostStyles } from '@ethlete/core';
 import { GRID_TOKEN } from './grid.tokens';
 
 @Directive({
@@ -17,6 +16,8 @@ import { GRID_TOKEN } from './grid.tokens';
   exportAs: 'etGridItem',
   host: {
     class: 'et-grid-item',
+    '[style.grid-column]': 'gridColumn()',
+    '[style.grid-row]': 'gridRow()',
   },
 })
 export class GridItemDirective {
@@ -53,10 +54,8 @@ export class GridItemDirective {
   public currentColSpan = computed(() => this.renderPosition()?.colSpan ?? 1);
   public currentRowSpan = computed(() => this.renderPosition()?.rowSpan ?? 1);
 
-  public hostStyles = signalHostStyles({
-    'grid-column': computed(() => `${this.currentCol() + 1} / span ${this.currentColSpan()}`),
-    'grid-row': computed(() => `${this.currentRow() + 1} / span ${this.currentRowSpan()}`),
-  });
+  protected gridColumn = computed(() => `${this.currentCol() + 1} / span ${this.currentColSpan()}`);
+  protected gridRow = computed(() => `${this.currentRow() + 1} / span ${this.currentRowSpan()}`);
 
   constructor() {
     effect((onCleanup) => {

@@ -102,6 +102,42 @@ describe('layout-engine', () => {
 
       expect(item2?.position.row).toBe(0);
     });
+
+    it('should clamp horizontally out-of-bounds positions into the grid', () => {
+      // colSpan 12 / col 8 are 12-column values rendered in a 6-column grid (stale breakpoint data).
+      const entries: GridLayoutEntry[] = [
+        { id: 'opportunities', position: { col: 8, row: 2, colSpan: 4, rowSpan: 3 } },
+      ];
+
+      const result = compactLayout(entries, 6);
+      const pos = result[0]?.position;
+
+      expect(pos?.col).toBe(2);
+      expect(pos?.colSpan).toBe(4);
+      expect((pos?.col ?? 0) + (pos?.colSpan ?? 0)).toBeLessThanOrEqual(6);
+    });
+
+    it('should never produce overlaps when clamping drops an item onto an occupied cell', () => {
+      // Reproduces the resize bug: in a 6-col grid, opportunities sits at col 8 (out of bounds).
+      // Clamping alone would slide it to col 2 — straight on top of contacts at col 0.
+      const entries: GridLayoutEntry[] = [
+        { id: 'managers', position: { col: 0, row: 0, colSpan: 6, rowSpan: 2 } },
+        { id: 'contacts', position: { col: 0, row: 2, colSpan: 6, rowSpan: 3 } },
+        { id: 'opportunities', position: { col: 8, row: 2, colSpan: 4, rowSpan: 3 } },
+      ];
+
+      const result = compactLayout(entries, 6);
+
+      // No pair of items may overlap, and every item stays in bounds.
+      for (const entry of result) {
+        expect(entry.position.col + entry.position.colSpan).toBeLessThanOrEqual(6);
+
+        for (const other of result) {
+          if (other.id === entry.id) continue;
+          expect(itemsCollide(entry.position, other.position)).toBe(false);
+        }
+      }
+    });
   });
 
   describe('autoPlace', () => {

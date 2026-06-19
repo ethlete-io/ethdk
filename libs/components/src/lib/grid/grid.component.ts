@@ -8,7 +8,7 @@ import {
   inject,
   viewChild,
 } from '@angular/core';
-import { injectLocale, signalHostStyles } from '@ethlete/core';
+import { injectLocale } from '@ethlete/core';
 import { injectGridConfig } from './headless/grid-config';
 import { GridDirective } from './headless/grid.directive';
 
@@ -38,6 +38,9 @@ import { GridDirective } from './headless/grid.directive';
     class: 'et-grid',
     role: 'region',
     '[attr.aria-label]': 'ariaLabel()',
+    '[style.--_et-grid-columns]': 'gridColumns()',
+    '[style.--et-grid-gap]': 'gridGap()',
+    '[style.--et-grid-row-height]': 'gridRowHeight()',
   },
   styles: `
     @property --et-grid-gap {
@@ -123,11 +126,9 @@ export class GridComponent {
     return this.gridConfig.transformer(label, this.locale.currentLocale());
   });
 
-  public hostStyles = signalHostStyles({
-    '--_et-grid-columns': computed(() => `${this.grid.activeColumns()}`),
-    '--et-grid-gap': computed(() => `${this.grid.gap()}px`),
-    '--et-grid-row-height': computed(() => `${this.grid.rowHeight()}px`),
-  });
+  protected gridColumns = computed(() => this.grid.activeColumns());
+  protected gridGap = computed(() => `${this.grid.gap()}px`);
+  protected gridRowHeight = computed(() => `${this.grid.rowHeight()}px`);
 
   constructor() {
     effect(() => {

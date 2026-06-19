@@ -70,9 +70,4 @@ describe('GridDragDirective', () => {
     fixture.detectChanges();
     expect(getDragDirective().dragHandle.isDragging()).toBe(false);
   });
-
-  it('host styles are defined', () => {
-    fixture.detectChanges();
-    expect(getDragDirective().hostStyles).toBeDefined();
-  });
 });

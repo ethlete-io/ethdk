@@ -44,15 +44,42 @@ export const findCollision = (options: FindCollisionOptions) =>
   options.entries.find((entry) => entry.id !== options.excludeId && itemsCollide(entry.position, options.position));
 
 /**
- * Compacts the layout vertically (moves items up as far as possible without collision).
+ * Clamps a position so it fits horizontally within the given column count.
+ * Reduces an over-wide span and slides an out-of-bounds column back in range.
  */
-export const compactLayout = (entries: GridLayoutEntry[], _columns: number) => {
-  const sorted = [...entries].sort((a, b) => a.position.row - b.position.row || a.position.col - b.position.col);
+const clampToColumns = (position: GridItemPosition, columns: number): GridItemPosition => {
+  const colSpan = Math.max(1, Math.min(position.colSpan, columns));
+  const col = Math.max(0, Math.min(position.col, columns - colSpan));
+
+  return { ...position, col, colSpan };
+};
+
+/**
+ * Compacts the layout vertically (moves items up as far as possible without collision).
+ *
+ * Also acts as a self-healing normaliser: positions that overflow the grid horizontally
+ * (e.g. stale data from a wider breakpoint clamped into a narrower one — a colSpan of 12
+ * or a col of 8 in a 6-column grid) are first clamped back into bounds, then any items
+ * left overlapping are pushed down before the upward compaction runs. This guarantees the
+ * returned layout is always in-bounds and overlap-free regardless of the input — clamping
+ * a column alone is not enough, because it can drop an item on top of an existing one.
+ */
+export const compactLayout = (entries: GridLayoutEntry[], columns: number) => {
+  const sorted = [...entries]
+    .map((entry) => ({ ...entry, position: clampToColumns(entry.position, columns) }))
+    .sort((a, b) => a.position.row - b.position.row || a.position.col - b.position.col);
   const compacted: GridLayoutEntry[] = [];
 
   for (const entry of sorted) {
     const candidate = { ...entry, position: { ...entry.position } };
 
+    // Push down past any already-placed item it overlaps. This resolves overlaps introduced
+    // by clamping out-of-bounds columns (which the upward pass below cannot fix on its own).
+    while (findCollision({ entries: compacted, position: candidate.position, excludeId: candidate.id })) {
+      candidate.position.row += 1;
+    }
+
+    // Then pull up as far as possible without colliding.
     while (candidate.position.row > 0) {
       const moved = { ...candidate, position: { ...candidate.position, row: candidate.position.row - 1 } };
 
