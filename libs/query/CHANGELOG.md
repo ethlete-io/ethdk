@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.43.2
+
+### Patch Changes
+
+- [`830b987`](https://github.com/ethlete-io/ethdk/commit/830b987eba43a51252c3c55eee5590ceef8bf1cb) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix query v3 features not reacting to 204 responses due to null checks
+
 ## 5.43.1
 
 ### Patch Changes
