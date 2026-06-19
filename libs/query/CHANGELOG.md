@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 6.0.0-next.10
+
+### Patch Changes
+
+- [`256b1b0`](https://github.com/ethlete-io/ethdk/commit/256b1b02d7598a0a6540af55447799a8ced469c4) Thanks [@TomTomB](https://github.com/TomTomB)! - Bump only to implement fixes from 5.44.0
+
 ## 5.44.0
 
 ### Minor Changes
