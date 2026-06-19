@@ -1,4 +1,4 @@
-import { HttpClient, HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
   createEnvironmentInjector,
@@ -89,6 +89,7 @@ describe('createQuerySnapshotFn', () => {
     TestBed.flushEffects();
 
     state.response.set({ foo: true });
+    state.latestHttpEvent.set(new HttpResponse({ body: { foo: true } }));
 
     expect(snap.isAlive()).toBeTruthy();
 
