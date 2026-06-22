@@ -3,6 +3,23 @@
 
 const SCREAMING_CASE_RE = /^[A-Z][A-Z0-9_]*$/;
 
+/**
+ * @param {any} classNode
+ */
+const hasPipeDecorator = (classNode) => {
+  const decorators = classNode.decorators ?? [];
+  return decorators.some((/** @type {any} */ dec) => {
+    const expr = dec.expression;
+    if (expr.type === 'CallExpression') {
+      return expr.callee.type === 'Identifier' && expr.callee.name === 'Pipe';
+    }
+    if (expr.type === 'Identifier') {
+      return expr.name === 'Pipe';
+    }
+    return false;
+  });
+};
+
 const REACTIVE_APIS = new Set([
   'signal',
   'computed',
@@ -306,6 +323,10 @@ const classConstantProperty = {
           const memberName = getMemberName(member);
 
           if (memberName === null || writtenMembers.has(memberName)) {
+            continue;
+          }
+
+          if (memberName === 'transform' && hasPipeDecorator(node.parent)) {
             continue;
           }
 

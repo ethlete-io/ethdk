@@ -17,6 +17,8 @@ tester.run('class-constant-property', rule, {
     { code: `class Foo { count = signal(0); }` },
     { code: `class Foo { form = new FormGroup({}); }` },
     { code: `class Foo { readonly BASE = 2; value = this.BASE * 2; }` },
+    // transform = utilFn in a @Pipe class is the mandated pattern (no-pipe-logic), not a class constant
+    { code: `@Pipe({ name: 'myPipe' }) class MyPipe { transform = myUtil; }` },
   ],
   invalid: [
     {
