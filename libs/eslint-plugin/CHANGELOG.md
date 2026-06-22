@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-next.7
+
+### Patch Changes
+
+- [`7e8ac6b`](https://github.com/ethlete-io/ethdk/commit/7e8ac6bf18f580289c7c7966c6c33a2a7f077299) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix false positives in pipes
+
 ## 0.1.0-next.6
 
 ### Patch Changes
