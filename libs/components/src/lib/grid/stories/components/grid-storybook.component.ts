@@ -1,8 +1,6 @@
 import { booleanAttribute, ChangeDetectionStrategy, Component, input, signal, ViewEncapsulation } from '@angular/core';
-import { GridItemComponent } from '../../grid-item.component';
 import { GridComponent } from '../../grid.component';
-import { GridItemConfig } from '../../headless/grid.types';
-import { DummyChartComponent, DummyTableComponent, DummyTextComponent } from './dummy-components';
+import { GridBreakpointConfig, GridItemConfig } from '../../headless/grid.types';
 
 const DEMO_ITEMS: GridItemConfig[] = [
   {
@@ -47,15 +45,6 @@ const DEMO_ITEMS: GridItemConfig[] = [
   },
 ];
 
-const CONSTRAINTS: Record<string, { minColSpan: number; maxColSpan: number; minRowSpan: number; maxRowSpan: number }> =
-  {
-    chart: { minColSpan: 3, maxColSpan: 12, minRowSpan: 2, maxRowSpan: 4 },
-    table: { minColSpan: 2, maxColSpan: 12, minRowSpan: 2, maxRowSpan: 4 },
-    text: { minColSpan: 2, maxColSpan: 12, minRowSpan: 1, maxRowSpan: 4 },
-  };
-
-const DEFAULT_CONSTRAINTS = { minColSpan: 1, maxColSpan: 12, minRowSpan: 1, maxRowSpan: 4 };
-
 @Component({
   selector: 'et-sb-grid',
   template: `
@@ -65,72 +54,21 @@ const DEFAULT_CONSTRAINTS = { minColSpan: 1, maxColSpan: 12, minRowSpan: 1, maxR
       [gap]="gap()"
       [readOnly]="readOnly()"
       [initialItems]="items()"
-    >
-      @for (item of items(); track item.id) {
-        @let c = getConstraints(item.type);
-        <et-grid-item
-          [itemId]="item.id"
-          [minColSpan]="c.minColSpan"
-          [maxColSpan]="c.maxColSpan"
-          [minRowSpan]="c.minRowSpan"
-          [maxRowSpan]="c.maxRowSpan"
-          [ariaLabel]="item.type + ' widget'"
-        >
-          <div
-            class="text-[11px] uppercase tracking-wide"
-            etGridItemDragHandle
-            style="color: rgb(var(--et-surface-color-muted))"
-          >
-            ⠿ {{ item.type }}
-          </div>
-
-          <div etGridItemAction>
-            <button
-              (click)="removeItem(item.id)"
-              class="size-5 flex items-center justify-center rounded text-xs cursor-pointer"
-              style="color: rgb(var(--et-surface-color-muted))"
-              aria-label="Remove widget"
-            >
-              ✕
-            </button>
-          </div>
-
-          @switch (item.type) {
-            @case ('chart') {
-              <et-sb-dummy-chart />
-            }
-            @case ('table') {
-              <et-sb-dummy-table />
-            }
-            @case ('text') {
-              <et-sb-dummy-text />
-            }
-          }
-        </et-grid-item>
-      }
-    </et-grid>
+    />
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [GridComponent, GridItemComponent, DummyChartComponent, DummyTableComponent, DummyTextComponent],
+  imports: [GridComponent],
 })
 export class GridStorybookComponent {
   public rowHeight = input(100);
   public gap = input(16);
   public readOnly = input(false, { transform: booleanAttribute });
-  public breakpoints = input([
+  public breakpoints = input<GridBreakpointConfig[]>([
     { name: 'lg', columns: 12, minWidth: 1200 },
     { name: 'md', columns: 6, minWidth: 768 },
     { name: 'sm', columns: 2, minWidth: 0 },
   ]);
 
   public items = signal<GridItemConfig[]>(DEMO_ITEMS);
-
-  public getConstraints(type: string) {
-    return CONSTRAINTS[type] ?? DEFAULT_CONSTRAINTS;
-  }
-
-  public removeItem(id: string) {
-    this.items.update((items) => items.filter((i) => i.id !== id));
-  }
 }

@@ -4,6 +4,7 @@ export * from './cookie';
 export * from './i18n';
 export * from './key-press-manager';
 export * from './logger';
+export * from './markdown';
 export * from './math';
 export * from './object';
 export * from './runtime-error';

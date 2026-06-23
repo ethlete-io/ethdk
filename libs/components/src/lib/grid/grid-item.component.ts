@@ -1,5 +1,21 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject, input, output } from '@angular/core';
-import { ResizeHandlesComponent, injectLocale } from '@ethlete/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ViewEncapsulation,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+} from '@angular/core';
+import {
+  ProvideSurfaceDirective,
+  ResizeHandlesComponent,
+  SURFACE_PROVIDER,
+  injectLocale,
+  injectSurfaceThemes,
+  resolveSurfaceByElevation,
+} from '@ethlete/core';
 import { injectGridConfig } from './headless/grid-config';
 import { GridDragDirective } from './headless/grid-drag.directive';
 import { GridItemDirective } from './headless/grid-item.directive';
@@ -40,6 +56,7 @@ import { GRID_TOKEN } from './headless/grid.tokens';
     },
     GridDragDirective,
     GridResizeDirective,
+    ProvideSurfaceDirective,
   ],
   host: {
     class: 'et-grid-item',
@@ -51,51 +68,17 @@ import { GRID_TOKEN } from './headless/grid.tokens';
     '(keydown)': 'applyKeyboardShortcut($event)',
   },
   styles: `
-    @property --et-grid-item-border-radius {
-      syntax: '<length>';
-      inherits: false;
-      initial-value: 8px;
-    }
-
-    @property --et-grid-item-bg {
-      syntax: '<color>';
-      inherits: false;
-      initial-value: rgb(var(--et-surface-background, 255 255 255));
-    }
-
-    @property --et-grid-item-shadow {
-      syntax: '*';
-      inherits: false;
-      initial-value: 0 1px 3px rgba(0, 0, 0, 0.12);
-    }
-
-    @property --et-grid-item-drag-handle-height {
-      syntax: '<length>';
-      inherits: false;
-      initial-value: 32px;
-    }
-
     .et-grid-item {
       position: relative;
-      border-radius: var(--et-grid-item-border-radius);
-      background: var(--et-grid-item-bg);
-      box-shadow: var(--et-grid-item-shadow);
-      border: 1px solid rgb(var(--et-surface-border, 229 229 229));
-      color: rgb(var(--et-surface-color, 23 23 23));
-      overflow: hidden;
       display: flex;
       flex-direction: column;
       outline: none;
       will-change: transform;
-
-      &:focus-visible {
-        box-shadow: 0 0 0 2px var(--et-grid-item-focus-ring-color, #2563eb);
-      }
+      border-radius: var(--et-grid-item-radius, 0);
+      background: var(--et-grid-item-bg, var(--et-surface-background-solid));
 
       &:is(.et-grid-item--dragging) {
         z-index: 100;
-        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
-        opacity: 0.95;
         cursor: grabbing;
         user-select: none;
       }
@@ -125,8 +108,8 @@ import { GRID_TOKEN } from './headless/grid.tokens';
       content: '';
       position: absolute;
       border-radius: 2px;
-      background: rgb(var(--et-surface-color, 23 23 23) / 0.2);
-      transition: opacity 0.15s ease;
+      background: var(--et-grid-item-resize-handle-color, var(--et-surface-color-solid));
+      opacity: 0.2;
     }
 
     .et-grid-item:hover .et-resize-handle--e::after,
@@ -202,11 +185,9 @@ import { GRID_TOKEN } from './headless/grid.tokens';
     }
 
     .et-grid-item__drag-handle {
-      height: var(--et-grid-item-drag-handle-height);
       cursor: grab;
       display: flex;
       align-items: center;
-      padding-inline: 8px;
       user-select: none;
       touch-action: none;
 
@@ -217,7 +198,6 @@ import { GRID_TOKEN } from './headless/grid.tokens';
 
     .et-grid-item__content {
       flex: 1;
-      overflow: hidden;
       min-height: 0;
     }
 
@@ -233,21 +213,40 @@ import { GRID_TOKEN } from './headless/grid.tokens';
 export class GridItemComponent {
   private grid = inject(GRID_TOKEN);
   private gridItem = inject(GridItemDirective);
-
+  private provideSurface = inject(ProvideSurfaceDirective);
+  private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
   public gridDrag = inject(GridDragDirective);
   public gridResize = inject(GridResizeDirective);
 
   public ariaLabel = input<string>('Grid item');
 
   public removed = output<void>();
+
+  private surfaceThemes = injectSurfaceThemes({ optional: true });
   private gridConfig = injectGridConfig();
   private locale = injectLocale();
 
   protected isReadOnly = computed(() => this.grid.readOnly());
-
   protected dragHandleAriaLabel = computed(() =>
     this.gridConfig.transformer(this.gridConfig.dragHandleAriaLabel, this.locale.currentLocale()),
   );
+  private resolvedSurface = computed(() => {
+    const themes = this.surfaceThemes;
+    const parent = this.parentSurfaceProvider;
+    if (!themes || !parent) return null;
+    return resolveSurfaceByElevation(themes, parent.surfaceType() ?? 'dark', parent.elevation() + 1);
+  });
+
+  constructor() {
+    effect(() => {
+      const surface = this.resolvedSurface();
+      if (surface) {
+        this.provideSurface.forceSurface(surface.name);
+      } else {
+        this.provideSurface.clearForcedSurface();
+      }
+    });
+  }
 
   public applyKeyboardShortcut(event: KeyboardEvent) {
     if (this.isReadOnly()) return;

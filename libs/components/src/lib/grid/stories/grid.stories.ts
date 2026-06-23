@@ -1,10 +1,37 @@
 import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
+import { provideGridConfig } from '../headless/grid-config';
 import { GridDataStorybookComponent, GridPartnerStorybookComponent, GridStorybookComponent } from './components';
+import { DummyChartComponent, DummyTableComponent, DummyTextComponent } from './components/dummy-components';
 
 export default {
   title: 'Components/Grid',
   component: GridStorybookComponent,
-  decorators: [moduleMetadata({ imports: [GridStorybookComponent] })],
+  decorators: [
+    moduleMetadata({
+      imports: [GridStorybookComponent],
+      providers: [
+        ...provideGridConfig({
+          registrations: [
+            {
+              type: 'chart',
+              component: DummyChartComponent,
+              constraints: { minColSpan: 3, maxColSpan: 12, minRowSpan: 2, maxRowSpan: 4 },
+            },
+            {
+              type: 'table',
+              component: DummyTableComponent,
+              constraints: { minColSpan: 2, maxColSpan: 12, minRowSpan: 2, maxRowSpan: 4 },
+            },
+            {
+              type: 'text',
+              component: DummyTextComponent,
+              constraints: { minColSpan: 2, maxColSpan: 12, minRowSpan: 1, maxRowSpan: 4 },
+            },
+          ],
+        }),
+      ],
+    }),
+  ],
   args: {
     rowHeight: 100,
     gap: 16,

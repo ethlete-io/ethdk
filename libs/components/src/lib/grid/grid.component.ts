@@ -1,20 +1,53 @@
+import { NgComponentOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  ViewEncapsulation,
   computed,
   effect,
   ElementRef,
   inject,
   viewChild,
+  ViewEncapsulation,
 } from '@angular/core';
 import { injectLocale } from '@ethlete/core';
+import { GridItemComponent } from './grid-item.component';
 import { injectGridConfig } from './headless/grid-config';
 import { GridDirective } from './headless/grid.directive';
 
 @Component({
   selector: 'et-grid, [et-grid]',
   template: `
+    @for (entry of registeredItems(); track entry.item.id) {
+      <et-grid-item
+        [itemId]="entry.item.id"
+        [minColSpan]="entry.reg.constraints?.minColSpan ?? 1"
+        [maxColSpan]="entry.reg.constraints?.maxColSpan ?? 12"
+        [minRowSpan]="entry.reg.constraints?.minRowSpan ?? 1"
+        [maxRowSpan]="entry.reg.constraints?.maxRowSpan ?? 4"
+      >
+        @if (dragHandleComponent()) {
+          <div etGridItemDragHandle>
+            <ng-container
+              [ngComponentOutlet]="dragHandleComponent()!"
+              [ngComponentOutletInputs]="{ data: entry.item.data, itemId: entry.item.id }"
+            />
+          </div>
+        } @else {
+          <div etGridItemDragHandle></div>
+        }
+        <ng-container [ngComponentOutlet]="entry.reg.component" [ngComponentOutletInputs]="{ data: entry.item.data }" />
+        @if (actionsComponent()) {
+          <div etGridItemAction>
+            <ng-container
+              [ngComponentOutlet]="actionsComponent()!"
+              [ngComponentOutletInputs]="{ data: entry.item.data, itemId: entry.item.id }"
+            />
+          </div>
+        } @else if (!isReadOnly()) {
+          <button (click)="grid.removeItem(entry.item.id)" etGridItemAction>✕</button>
+        }
+      </et-grid-item>
+    }
     <ng-content />
     @if (grid.ghostPosition(); as ghost) {
       <div
@@ -27,6 +60,7 @@ import { GridDirective } from './headless/grid.directive';
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [GridItemComponent, NgComponentOutlet],
   hostDirectives: [
     {
       directive: GridDirective,
@@ -120,6 +154,19 @@ export class GridComponent {
   private ghostRef = viewChild<ElementRef<HTMLElement>>('ghostRef');
   private gridConfig = injectGridConfig();
   private locale = injectLocale();
+
+  protected isReadOnly = computed(() => this.grid.readOnly());
+
+  protected dragHandleComponent = computed(() => this.gridConfig.dragHandleComponent);
+  protected actionsComponent = computed(() => this.gridConfig.actionsComponent);
+
+  protected registeredItems = computed(() => {
+    const registrations = this.gridConfig.registrations;
+    return this.grid.items().flatMap((item) => {
+      const reg = registrations.find((r) => r.type === item.type);
+      return reg ? [{ item, reg }] : [];
+    });
+  });
 
   protected ariaLabel = computed(() => {
     const label = this.grid.readOnly() ? this.gridConfig.readonlyAriaLabel : this.gridConfig.interactiveAriaLabel;

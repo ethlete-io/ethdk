@@ -1,3 +1,4 @@
+import { Type } from '@angular/core';
 import { createStaticRootProvider } from '@ethlete/core';
 import { GridComponentRegistration } from './grid.types';
 
@@ -7,6 +8,10 @@ export type GridConfig = {
   readonlyAriaLabel: string;
   dragHandleAriaLabel: string;
   transformer: (text: string, locale: string) => string;
+  /** Replaces the default drag handle for all registered items. Receives `data` and `itemId` as inputs. */
+  dragHandleComponent?: Type<unknown>;
+  /** Replaces the default ✕ button for all registered items. Receives `data` and `itemId` as inputs. */
+  actionsComponent?: Type<unknown>;
 };
 
 export const DEFAULT_GRID_CONFIG: GridConfig = {
