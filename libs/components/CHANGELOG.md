@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-next.8
+
+### Minor Changes
+
+- [`7dcbb8e`](https://github.com/ethlete-io/ethdk/commit/7dcbb8e3f3823728bc370fb89d1a89ee831e779b) Thanks [@TomTomB](https://github.com/TomTomB)! - Support surface theming in grid
+
 ## 0.1.0-next.7
 
 ### Patch Changes
