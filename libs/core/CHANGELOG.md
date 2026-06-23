@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.14
+
+### Minor Changes
+
+- [`7dcbb8e`](https://github.com/ethlete-io/ethdk/commit/7dcbb8e3f3823728bc370fb89d1a89ee831e779b) Thanks [@TomTomB](https://github.com/TomTomB)! - Add utils for converting between markdown and html
+
 ## 5.0.0-next.13
 
 ### Patch Changes
