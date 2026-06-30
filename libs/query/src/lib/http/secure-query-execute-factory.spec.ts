@@ -2,7 +2,7 @@ import { HttpHeaders, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Injector, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Subject } from 'rxjs';
+import { config as rxjsConfig, Subject } from 'rxjs';
 import { vi } from 'vitest';
 import { AnyBearerAuthProvider } from '../auth';
 import { AnyQuerySnapshot, QueryArgs } from './query';
@@ -32,7 +32,6 @@ describe('createSecureExecuteFactory', () => {
     } as unknown as AnyBearerAuthProvider;
 
     mockDeps = {
-      effectScheduler: { flush: vi.fn() },
       injector: TestBed.inject(Injector),
     } as unknown as QueryDependencies;
 
@@ -139,9 +138,9 @@ describe('createSecureExecuteFactory', () => {
     expect(executeState?.previousKey).toBeTruthy();
   });
 
-  it('should throw error if tokens are not available', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (mockAuthProvider.accessToken as any) = signal(null);
+  it('waits for the access token instead of throwing when the auth query is done but the token is not set yet', () => {
+    const accessToken = signal<string | null>(null);
+    (mockAuthProvider.accessToken as unknown as ReturnType<typeof signal>) = accessToken;
 
     const mockQuery = {
       response: () => ({}),
@@ -153,16 +152,28 @@ describe('createSecureExecuteFactory', () => {
 
     mockLatestExecutedQuery.set({ key: 'test', snapshot: mockQuery });
 
+    const transformSpy = vi.fn();
     const exec = createSecureExecuteFactory({
-      authProvider: mockAuthProvider as AnyBearerAuthProvider,
+      authProvider: mockAuthProvider,
       deps: mockDeps,
       state: mockState,
-      transformAuthAndExec: vi.fn(),
+      transformAuthAndExec: transformSpy,
     });
 
     TestBed.runInInjectionContext(() => {
-      expect(() => exec({})).toThrow('Tokens are not available inside authAndExec');
+      // Previously this threw `tokensNotAvailableInsideAuthAndExec`; the auth query already
+      // has a response, but the token is populated on a separate reactive timeline.
+      expect(() => exec({})).not.toThrow();
     });
+
+    TestBed.tick();
+    expect(transformSpy).not.toHaveBeenCalled();
+
+    // Token populated a tick later (e.g. by the token-extraction effect).
+    accessToken.set('late-token');
+    TestBed.tick();
+
+    expect(transformSpy).toHaveBeenCalledTimes(1);
   });
 
   it('should set loading state when auth query is pending', () => {
@@ -365,6 +376,88 @@ describe('createSecureExecuteFactory', () => {
       expect(headers).toBeInstanceOf(HttpHeaders);
       expect(headers?.get('Authorization')).toBe('Bearer test-token');
       expect(headers?.get('X-Custom')).toBe('value');
+    });
+  });
+
+  /**
+   * Regression coverage for the auth provider edge case with two query clients ("main" + "external"):
+   *
+   * - The auth/login query is a SECURE query (it lives on another client and needs that client's
+   *   token to run). Its completion is driven through several nested toObservable/effect layers.
+   * - The access token is only populated by a SEPARATE Angular `effect` in
+   *   `setupBearerQueryRegistry` that reads the login response and calls `setTokens`.
+   *
+   * Previously `exec` called `authAndExec` purely because the auth query was "done"
+   * (`isAlive` -> false / `response()` present), racing the token: when the response became
+   * observable before the token-extraction effect had run, `authAndExec` threw
+   * `tokensNotAvailableInsideAuthAndExec` and never recovered.
+   *
+   * The fix gates `authAndExec` on `accessToken()` itself, so it waits for the token instead.
+   */
+  describe('Effect race condition: token populated after the auth query completes', () => {
+    it('does not fire authAndExec prematurely and proceeds once the token is populated (in-flight auth query)', async () => {
+      const accessToken = signal<string | null>(null);
+      (mockAuthProvider.accessToken as unknown as ReturnType<typeof signal>) = accessToken;
+
+      // Login query is in-flight when the secure query executes (the common case).
+      const response = signal<unknown>(null);
+      const loading = signal(true);
+      const isAlive = signal(true);
+
+      const authQuery = {
+        response: () => response(),
+        error: () => null,
+        loading: () => loading(),
+        lastTimeExecutedAt: () => null,
+        isAlive,
+      } as unknown as AnyQuerySnapshot;
+
+      mockLatestExecutedQuery.set({ key: 'login', snapshot: authQuery });
+
+      const transformSpy = vi.fn();
+      const exec = createSecureExecuteFactory({
+        authProvider: mockAuthProvider,
+        deps: mockDeps,
+        state: mockState,
+        transformAuthAndExec: transformSpy,
+      });
+
+      // A premature authAndExec would throw inside the wait subscription; RxJS reports such
+      // errors asynchronously via this hook, so we can assert none occurred.
+      const unhandled: unknown[] = [];
+      const originalOnUnhandledError = rxjsConfig.onUnhandledError;
+      rxjsConfig.onUnhandledError = (err) => unhandled.push(err);
+
+      try {
+        TestBed.runInInjectionContext(() => {
+          exec({});
+        });
+
+        TestBed.tick();
+        // Still waiting on the in-flight login query.
+        expect(transformSpy).not.toHaveBeenCalled();
+
+        // The login query resolves: response is observable and the query dies.
+        // BUT the token-extraction effect has NOT run yet -> accessToken still null.
+        response.set({ accessToken: 'tok', refreshToken: 'ref' });
+        loading.set(false);
+        isAlive.set(false);
+        TestBed.tick();
+        await new Promise((resolve) => setTimeout(resolve, 1));
+
+        // It must NOT have fired authAndExec on completion alone -> no thrown error.
+        expect(transformSpy).not.toHaveBeenCalled();
+        expect(unhandled).toHaveLength(0);
+
+        // The token-extraction effect runs one tick later and sets the token...
+        accessToken.set('tok');
+        TestBed.tick();
+
+        // ...and now the secure query proceeds with the available token.
+        expect(transformSpy).toHaveBeenCalledTimes(1);
+      } finally {
+        rxjsConfig.onUnhandledError = originalOnUnhandledError;
+      }
     });
   });
 });

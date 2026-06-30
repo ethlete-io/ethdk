@@ -31,12 +31,15 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
 
   let authQuerySubscription = Subscription.EMPTY;
   let tokenRefreshSubscription = Subscription.EMPTY;
+  let tokenWaitSubscription = Subscription.EMPTY;
 
   const reset = () => {
     authQuerySubscription.unsubscribe();
     authQuerySubscription = Subscription.EMPTY;
     tokenRefreshSubscription.unsubscribe();
     tokenRefreshSubscription = Subscription.EMPTY;
+    tokenWaitSubscription.unsubscribe();
+    tokenWaitSubscription = Subscription.EMPTY;
     resetExecuteState({
       executeState,
       executeOptions: { deps: options.deps, state: options.state },
@@ -93,12 +96,33 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
     );
   };
 
+  // The auth query completing and the access token being populated happen on two
+  // different reactive timelines: the token is set by a separate token-extraction
+  // effect (see `setupBearerQueryRegistry`), and for cross-client / secure auth
+  // queries the completion is delivered through several nested `toObservable` hops.
+  // Calling `authAndExec` purely because the auth query is "done" therefore races
+  // the token and can run while it is still null. Gate on the token signal instead:
+  // execute immediately if it is already available, otherwise wait for it.
+  const authAndExecWhenTokenReady = (executeArgs?: QueryExecuteArgs<TArgs>) => {
+    if (options.authProvider.accessToken()) {
+      authAndExec(executeArgs);
+      return;
+    }
+
+    tokenWaitSubscription.unsubscribe();
+    tokenWaitSubscription = toObservable(options.authProvider.accessToken, {
+      injector: options.deps.injector,
+    })
+      .pipe(
+        filter(Boolean),
+        take(1),
+        tap(() => authAndExec(executeArgs)),
+      )
+      .subscribe();
+  };
+
   const exec = (executeArgs?: QueryExecuteArgs<TArgs>) => {
     circularChecker.check();
-
-    // Make sure all effects are flushed before reading the args.
-    // A withArgs feature effect might still be pending otherwise resulting in the wrong args being read.
-    options.deps.effectScheduler.flush();
 
     const execArgsWithDefaults: QueryExecuteArgs<TArgs> = {
       args: executeArgs?.args ?? options.state.args(),
@@ -109,6 +133,8 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
     authQuerySubscription = Subscription.EMPTY;
     tokenRefreshSubscription.unsubscribe();
     tokenRefreshSubscription = Subscription.EMPTY;
+    tokenWaitSubscription.unsubscribe();
+    tokenWaitSubscription = Subscription.EMPTY;
 
     tokenRefreshSubscription = options.authProvider.afterTokenRefresh$
       .pipe(
@@ -146,7 +172,7 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
                 if (query.error()) {
                   error(query);
                 } else if (query.response()) {
-                  authAndExec(execArgsWithDefaults);
+                  authAndExecWhenTokenReady(execArgsWithDefaults);
                 }
               }),
             );
@@ -154,7 +180,7 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
         )
         .subscribe();
     } else if (authQuery.response()) {
-      authAndExec(execArgsWithDefaults);
+      authAndExecWhenTokenReady(execArgsWithDefaults);
     } else if (authQuery.error()) {
       error(authQuery);
     } else {
