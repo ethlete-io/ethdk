@@ -313,9 +313,7 @@ describe('query features', () => {
 
     it('withResponseUpdate can override the stored response reactively', () => {
       const override = signal<{ id: number } | null>(null);
-      const { execute, state } = buildQuery([
-        withResponseUpdate<QueryArgs>({ updater: () => override() }),
-      ]);
+      const { execute, state } = buildQuery([withResponseUpdate<QueryArgs>({ updater: () => override() })]);
 
       execute({ args: { queryParams: { id: 1 } } });
       flushOk({ id: 1 });

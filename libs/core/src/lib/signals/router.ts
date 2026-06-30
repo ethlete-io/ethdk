@@ -1,11 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import {
-  Injector,
-  PLATFORM_ID,
-  Signal,
-  computed,
-  inject,
-} from '@angular/core';
+import { Injector, PLATFORM_ID, Signal, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Data, NavigationEnd, NavigationSkipped, Params, Router } from '@angular/router';
 import { equal } from '../utils';

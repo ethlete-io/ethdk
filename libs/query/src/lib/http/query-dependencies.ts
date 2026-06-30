@@ -1,5 +1,12 @@
 import { HttpClient } from '@angular/common/http';
-import { createEnvironmentInjector, DestroyRef, EnvironmentInjector, ErrorHandler, inject, Injector } from '@angular/core';
+import {
+  createEnvironmentInjector,
+  DestroyRef,
+  EnvironmentInjector,
+  ErrorHandler,
+  inject,
+  Injector,
+} from '@angular/core';
 import { AnyCreateQueryClientResult, QueryClient } from './query-client';
 import { createQueryContext, QueryContext } from './query-context';
 import { QueryConfig } from './query-creator';
