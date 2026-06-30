@@ -133,7 +133,6 @@ describe('createBaseQuery', () => {
       expect(callArgs.deps.client).toEqual(injectClient());
       expect(callArgs.deps.destroyRef).toBeDefined();
       expect(callArgs.deps.injector).toBeInstanceOf(EnvironmentInjector);
-      expect(callArgs.deps.effectScheduler).toBeDefined();
       expect(callArgs.deps.ngErrorHandler).toBeInstanceOf(ErrorHandler);
       expect(callArgs.deps.httpClient).toBeInstanceOf(HttpClient);
     });

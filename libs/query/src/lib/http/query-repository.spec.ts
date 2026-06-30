@@ -1,8 +1,8 @@
 import { HttpClient, HttpHeaders, provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { DestroyRef, ErrorHandler, Injector } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { createQueryRepository, QueryRepository } from './query-repository';
+import { createQueryRepository, QueryRepository, QueryRepositoryEvent } from './query-repository';
 
 describe('createQueryRepository', () => {
   let repo: QueryRepository;
@@ -135,5 +135,27 @@ describe('createQueryRepository', () => {
     expect(() =>
       repo.request({ consumerDestroyRef: destroyRef, method: 'POST', route: '/test', key: 'my_key' }),
     ).toThrow();
+  });
+
+  describe('events$ on error -> retry -> success', () => {
+    it('emits exactly one request-error then one request-success, with no spurious events', () => {
+      const httpTesting = TestBed.inject(HttpTestingController);
+      const events: QueryRepositoryEvent[] = [];
+      repo.events$.subscribe((e) => events.push(e));
+
+      const { request } = repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/test' });
+
+      // 1. First attempt fails.
+      httpTesting.expectOne((r) => r.url.includes('/test')).flush('boom', { status: 500, statusText: 'Server Error' });
+      TestBed.tick();
+
+      // 2. Re-execute the same request -> succeeds.
+      request.execute();
+      httpTesting.expectOne((r) => r.url.includes('/test')).flush({ ok: true });
+      TestBed.tick();
+
+      const types = events.map((e) => e.type);
+      expect(types).toEqual(['request-error', 'request-success']);
+    });
   });
 });

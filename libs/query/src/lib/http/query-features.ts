@@ -1,7 +1,9 @@
 import { HttpEventType } from '@angular/common/http';
-import { computed, CreateEffectOptions, effect, Signal, untracked } from '@angular/core';
+import { CreateEffectOptions, effect, Signal, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { getActiveConsumer, setActiveConsumer } from '@angular/core/primitives/signals';
-import { RequestHttpEvent } from './http-request';
+import { filter } from 'rxjs';
+import { HttpErrorEvent, RequestHttpEvent } from './http-request';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { QueryDependencies } from './query-dependencies';
 import { QueryErrorResponse } from './query-error-response';
@@ -91,22 +93,32 @@ export const withArgs = <TArgs extends QueryArgs>(args: () => NoInfer<RequestArg
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WITH_ARGS,
     fn: (context) => {
-      const currArgs = computed(() => args());
+      // `state.args` is reactively backed by this source, so every reader (exec, polling,
+      // auto-refresh) always sees the latest value with no pending-effect window. Sentinels are
+      // resolved here: CLEAR -> null, `null` ("don't change") -> keep the previous value.
+      let previous: RequestArgs<TArgs> | null = null;
+      context.state.subtle.setArgsSource(() => {
+        const value = args();
 
+        if (value === CLEAR_QUERY_ARGS) {
+          previous = null;
+          return null;
+        }
+
+        if (value === null) return previous;
+
+        previous = value;
+        return value;
+      });
+
+      // Trigger (auto-)execution whenever the resolved args change.
       nestedEffect(
         () => {
-          const currArgsNow = currArgs();
+          const currArgsNow = context.state.args();
 
           if (currArgsNow === null) return;
 
           untracked(() => {
-            if (currArgsNow === CLEAR_QUERY_ARGS) {
-              context.state.args.set(null);
-              return;
-            }
-
-            context.state.args.set(currArgsNow);
-
             if (context.flags.shouldAutoExecute) context.execute({ args: currArgsNow });
           });
         },
@@ -183,18 +195,9 @@ export const withLogging = <TArgs extends QueryArgs>(options: WithLoggingFeature
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WITH_LOGGING,
     fn: (context) => {
-      nestedEffect(
-        () => {
-          const event = context.state.latestHttpEvent();
-
-          if (event === null) return;
-
-          untracked(() => {
-            options.logFn(event);
-          });
-        },
-        { injector: context.deps.injector },
-      );
+      context.state.events$.pipe(takeUntilDestroyed(context.deps.destroyRef)).subscribe((event) => {
+        options.logFn(event);
+      });
     },
   });
 };
@@ -209,18 +212,14 @@ export const withErrorHandling = <TArgs extends QueryArgs>(options: WithErrorHan
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WITH_ERROR_HANDLING,
     fn: (context) => {
-      nestedEffect(
-        () => {
-          const error = context.state.error();
-
-          if (error === null) return;
-
-          untracked(() => {
-            options.handler(error);
-          });
-        },
-        { injector: context.deps.injector },
-      );
+      context.state.events$
+        .pipe(
+          filter((event): event is HttpErrorEvent => event.type === 'error'),
+          takeUntilDestroyed(context.deps.destroyRef),
+        )
+        .subscribe((event) => {
+          options.handler(event.error);
+        });
     },
   });
 };
@@ -235,18 +234,14 @@ export const withSuccessHandling = <TArgs extends QueryArgs>(options: WithSucces
   return createQueryFeature<TArgs>({
     type: QueryFeatureType.WITH_SUCCESS_HANDLING,
     fn: (context) => {
-      nestedEffect(
-        () => {
-          const event = context.state.latestHttpEvent();
-
-          if (!event || event.type !== HttpEventType.Response) return;
-
-          untracked(() => {
-            options.handler(context.state.response() as NonNullable<ResponseType<TArgs>>);
-          });
-        },
-        { injector: context.deps.injector },
-      );
+      context.state.events$
+        .pipe(
+          filter((event) => event.type === HttpEventType.Response),
+          takeUntilDestroyed(context.deps.destroyRef),
+        )
+        .subscribe(() => {
+          options.handler(context.state.response() as NonNullable<ResponseType<TArgs>>);
+        });
     },
   });
 };

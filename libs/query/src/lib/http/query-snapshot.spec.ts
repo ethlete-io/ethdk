@@ -1,13 +1,6 @@
 import { HttpClient, HttpErrorResponse, HttpResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import {
-  createEnvironmentInjector,
-  DestroyRef,
-  EnvironmentInjector,
-  ErrorHandler,
-  signal,
-  ɵEffectScheduler,
-} from '@angular/core';
+import { createEnvironmentInjector, DestroyRef, EnvironmentInjector, ErrorHandler, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { QuerySnapshot } from './query';
 import { createQueryClient, QueryClientRef } from './query-client';
@@ -52,7 +45,6 @@ describe('createQuerySnapshotFn', () => {
       scopeDestroyRef: TestBed.inject(DestroyRef),
       client: TestBed.runInInjectionContext(() => injectClient()),
       injector: envInjector,
-      effectScheduler: TestBed.inject(ɵEffectScheduler),
       ngErrorHandler: TestBed.inject(ErrorHandler),
       httpClient: TestBed.inject(HttpClient),
     };
@@ -72,7 +64,6 @@ describe('createQuerySnapshotFn', () => {
     deps.injector = newEnvInjector;
     deps.destroyRef = newEnvInjector.get(DestroyRef);
     deps.scopeDestroyRef = TestBed.inject(DestroyRef);
-    deps.effectScheduler = TestBed.inject(ɵEffectScheduler);
     deps.ngErrorHandler = TestBed.inject(ErrorHandler);
     deps.httpClient = TestBed.inject(HttpClient);
 

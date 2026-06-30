@@ -1,4 +1,5 @@
 import { Signal, WritableSignal, computed, linkedSignal, signal } from '@angular/core';
+import { Observable, Subject, Subscription } from 'rxjs';
 import { HttpRequest, HttpRequestLoadingState, RequestHttpEvent } from './http-request';
 import { QueryArgs, RawResponseType, RequestArgs, ResponseType } from './query';
 import { QueryErrorResponse } from './query-error-response';
@@ -10,6 +11,20 @@ export type SetupQueryStateOptions<TArgs extends QueryArgs> = {
 export type QueryStateSubtle<TArgs extends QueryArgs> = {
   request: WritableSignal<HttpRequest<TArgs> | null>;
   rawResponse: WritableSignal<RawResponseType<TArgs> | null>;
+
+  /**
+   * Forwards the given request's discrete event stream onto the query-level `events$`.
+   * Called by `queryExecute` whenever a request is (re-)executed.
+   */
+  bindRequestEvents: (request: HttpRequest<TArgs>) => void;
+
+  /**
+   * Installs the reactive source that backs `state.args`. The `withArgs` feature uses this so that
+   * `state.args` always reflects the latest args (pulled from the reactive source on read) instead
+   * of being push-updated by an effect that may not have run yet. Without a `withArgs` feature the
+   * default source returns `null`.
+   */
+  setArgsSource: (source: () => RequestArgs<TArgs> | null) => void;
 };
 
 export type QueryState<TArgs extends QueryArgs> = {
@@ -22,6 +37,16 @@ export type QueryState<TArgs extends QueryArgs> = {
   lastTimeExecutedAt: WritableSignal<number | null>;
   lastTriggeredBy: WritableSignal<string | null>;
   executionState: Signal<QueryExecutionState<TArgs> | null>;
+
+  /**
+   * A discrete, query-level stream of every request event, fed synchronously from the current
+   * request's `events$` at the moment each event occurs. Side-effect features
+   * (success/error/logging) subscribe to this instead of edge-detecting on the shared, resettable
+   * `response`/`error`/`latestHttpEvent` signals — so they cannot miss a transition when the next
+   * execution swaps the underlying request.
+   */
+  events$: Observable<RequestHttpEvent<TArgs>>;
+
   subtle: QueryStateSubtle<TArgs>;
 };
 
@@ -70,9 +95,23 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
   const error = linkedSignal(() => request()?.error() ?? null);
   const latestHttpEvent = linkedSignal(() => request()?.currentEvent() ?? null);
 
-  const args = signal<RequestArgs<TArgs> | null>(null);
+  // `args` is reactively sourced: reads always reflect the latest value from the installed source
+  // (e.g. the `withArgs` feature), so there is no stale window between a source change and an
+  // effect writing it. It stays writable (reset / auth-error clear it via `.set(null)`); a manual
+  // set is overridden again the next time the source's dependencies change.
+  const argsSource = signal<() => RequestArgs<TArgs> | null>(() => null);
+  const args = linkedSignal(() => argsSource()());
+  const setArgsSource = (source: () => RequestArgs<TArgs> | null) => argsSource.set(source);
+
   const lastTimeExecutedAt = signal<number | null>(null);
   const lastTriggeredBy = signal<string | null>(null);
+
+  const requestEvents$ = new Subject<RequestHttpEvent<TArgs>>();
+  let requestEventsSubscription = Subscription.EMPTY;
+  const bindRequestEvents = (request: HttpRequest<TArgs>) => {
+    requestEventsSubscription.unsubscribe();
+    requestEventsSubscription = request.events$.subscribe((event) => requestEvents$.next(event));
+  };
 
   const executionState = computed<QueryExecutionState<TArgs> | null>(() => {
     const currentResponse = response();
@@ -119,9 +158,12 @@ export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStat
     lastTimeExecutedAt,
     lastTriggeredBy,
     executionState,
+    events$: requestEvents$.asObservable(),
     subtle: {
       request,
       rawResponse,
+      bindRequestEvents,
+      setArgsSource,
     },
   };
 

@@ -1,6 +1,6 @@
 import { HttpClient, HttpEvent, HttpEventType, HttpProgressEvent } from '@angular/common/http';
 import { ErrorHandler, Signal, computed, signal } from '@angular/core';
-import { Subscription, catchError, retry, tap, throwError, timer } from 'rxjs';
+import { Observable, Subject, Subscription, catchError, retry, tap, throwError, timer } from 'rxjs';
 import { buildTimestampFromSeconds } from '../legacy/request';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { extractExpiresInSeconds } from './query-cache-utils';
@@ -104,6 +104,14 @@ export type HttpRequest<TArgs extends QueryArgs> = {
   /** The current event of the request */
   currentEvent: Signal<RequestHttpEvent<TArgs> | null>;
 
+  /**
+   * A discrete stream of every event of this request, emitted synchronously at the moment the
+   * event is processed (including the terminal Response / error event). Unlike the `currentEvent`
+   * signal, this never coalesces or gets reset, so consumers cannot miss a transition. Completes
+   * when the request is destroyed.
+   */
+  events$: Observable<RequestHttpEvent<TArgs>>;
+
   /** Whether the request is stale or not aka the cache header has expired */
   isStale: Signal<boolean>;
 };
@@ -122,6 +130,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
   const { args, clientOptions, dependencies } = options;
 
   const currentEvent = signal<RequestHttpEvent<TArgs> | null>(null);
+  const event$ = new Subject<RequestHttpEvent<TArgs>>();
   const loading = signal<HttpRequestLoadingState | null>(null);
   const error = signal<QueryErrorResponse | null>(null);
   const response = signal<ResponseType<TArgs> | null>(null);
@@ -204,13 +213,12 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
   };
 
   const destroy = () => {
-    if (currentStreamSubscription.closed) {
-      return false;
-    }
+    const wasActive = !currentStreamSubscription.closed;
 
     currentStreamSubscription.unsubscribe();
+    event$.complete();
 
-    return true;
+    return wasActive;
   };
 
   const updateState = (event: HttpEvent<ResponseType<TArgs>>) => {
@@ -245,6 +253,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     }
 
     currentEvent.set(event);
+    event$.next(event);
   };
 
   const updateErrorState = (errorResponse: unknown) => {
@@ -252,7 +261,10 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
 
     error.set(errorRes);
     loading.set(null);
-    currentEvent.set({ type: 'error', error: errorRes });
+
+    const errorEvent: HttpErrorEvent = { type: 'error', error: errorRes };
+    currentEvent.set(errorEvent);
+    event$.next(errorEvent);
 
     options.dependencies.ngErrorHandler.handleError(errorRes.raw);
   };
@@ -302,6 +314,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     error: error.asReadonly(),
     response: response.asReadonly(),
     currentEvent: currentEvent.asReadonly(),
+    events$: event$.asObservable(),
     isStale,
   };
 

@@ -69,6 +69,7 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
   state.lastTimeExecutedAt.set(Date.now());
   state.lastTriggeredBy.set(runQueryOptions?.triggeredBy ?? null);
   state.subtle.request.set(request);
+  state.subtle.bindRequestEvents(request);
 };
 
 export const circularQueryDependencyChecker = () => {

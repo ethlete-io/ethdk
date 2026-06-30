@@ -44,10 +44,6 @@ export const createExecuteFn = <TArgs extends QueryArgs>(
   const exec = (executeArgs?: QueryExecuteArgs<TArgs>) => {
     circularChecker.check();
 
-    // Make sure all effects are flushed before reading the args.
-    // A withArgs feature effect might still be pending otherwise resulting in the wrong args being read.
-    executeOptions.deps.effectScheduler.flush();
-
     const { args = executeOptions.state.args(), options } = executeArgs ?? {};
 
     queryExecute({ executeOptions, executeState, args, options });

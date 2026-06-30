@@ -1,7 +1,6 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpEventType } from '@angular/common/http';
 import { DestroyRef, ErrorHandler, Injector } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { combineLatest, Observable, Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { buildRoute } from '../legacy';
 import { createHttpRequest, HttpRequest } from './http-request';
 import { QueryArgs, RequestArgs } from './query';
@@ -241,25 +240,16 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
 
       consumers.set(consumerDestroyRef, destroyListener);
 
-      const eventSubscription = combineLatest([
-        toObservable(request.error, { injector: config.dependencies.injector }),
-        toObservable(request.response, { injector: config.dependencies.injector }),
-      ]).subscribe(([errorValue, responseValue]) => {
-        if (errorValue?.raw instanceof HttpErrorResponse) {
-          eventsSubject.next({
-            type: 'request-error',
-            error: errorValue.raw,
-            key,
-            isSecure,
-            request,
-          });
-        } else if (responseValue !== null && !errorValue) {
-          eventsSubject.next({
-            type: 'request-success',
-            key,
-            isSecure,
-            request,
-          });
+      // Drive repository events off the request's discrete, terminal event stream rather than
+      // recombining the `error` + `response` signals via combineLatest (which could observe stale
+      // pairings). Each settle emits exactly one terminal event.
+      const eventSubscription = request.events$.subscribe((event) => {
+        if (event.type === 'error') {
+          if (event.error.raw instanceof HttpErrorResponse) {
+            eventsSubject.next({ type: 'request-error', error: event.error.raw, key, isSecure, request });
+          }
+        } else if (event.type === HttpEventType.Response) {
+          eventsSubject.next({ type: 'request-success', key, isSecure, request });
         }
       });
 

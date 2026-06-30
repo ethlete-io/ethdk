@@ -1,13 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import {
-  createEnvironmentInjector,
-  DestroyRef,
-  EnvironmentInjector,
-  ErrorHandler,
-  inject,
-  Injector,
-  ɵEffectScheduler,
-} from '@angular/core';
+import { createEnvironmentInjector, DestroyRef, EnvironmentInjector, ErrorHandler, inject, Injector } from '@angular/core';
 import { AnyCreateQueryClientResult, QueryClient } from './query-client';
 import { createQueryContext, QueryContext } from './query-context';
 import { QueryConfig } from './query-creator';
@@ -33,9 +25,6 @@ export type QueryDependencies = {
   /** The injector of the query */
   injector: EnvironmentInjector;
 
-  /** The effect scheduler */
-  effectScheduler: ɵEffectScheduler;
-
   /** The error handler */
   ngErrorHandler: ErrorHandler;
 
@@ -55,7 +44,6 @@ export const setupQueryDependencies = (options: SetupQueryDependenciesOptions) =
     scopeDestroyRef: hostInjector.get(DestroyRef),
     client: hostInjector.get<QueryClient>(clientToken),
     injector: undefined as unknown as EnvironmentInjector, // Will be set after injector creation
-    effectScheduler: hostInjector.get(ɵEffectScheduler),
     ngErrorHandler: hostInjector.get(ErrorHandler),
     httpClient: hostInjector.get(HttpClient),
   };
