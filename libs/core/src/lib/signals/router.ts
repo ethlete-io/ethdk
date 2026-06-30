@@ -4,14 +4,10 @@ import {
   PLATFORM_ID,
   Signal,
   computed,
-  effect,
   inject,
-  linkedSignal,
-  signal,
-  untracked,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Data, Event, NavigationEnd, NavigationSkipped, Params, Router } from '@angular/router';
+import { Data, NavigationEnd, NavigationSkipped, Params, Router } from '@angular/router';
 import { equal } from '../utils';
 import { memoizeSignal, previousSignalValue } from './signal-data-utils';
 
@@ -92,21 +88,33 @@ export const injectIsRouterInitialized = memoizeSignal(() => {
  */
 export const injectUrl = memoizeSignal(() => {
   const event = injectRouterEvent();
+  const router = inject(Router);
 
-  return linkedSignal<Event | null, string>({
-    source: event,
-    computation: (curr, prev) => {
-      if (curr instanceof NavigationEnd) {
-        return curr.urlAfterRedirects;
-      } else if (curr instanceof NavigationSkipped) {
-        return curr.url;
-      } else if (prev?.value) {
-        return prev.value;
-      }
+  // Captured once for reads that happen before the router has committed any
+  // navigation (SSR / initial load), where `router.url` isn't reliable yet.
+  const initialRoute = createInitialRoute();
 
-      return createInitialRoute();
-    },
-  }).asReadonly();
+  return computed(() => {
+    // We depend on `event` and `currentNavigation` only to get re-evaluated
+    // around each navigation, but we read the *committed* url straight from the
+    // router. The router commits `currentUrlTree` before it activates components,
+    // so `router.url` is already correct inside a child component's constructor —
+    // unlike the NavigationEnd event, which only reaches this signal *after*
+    // activation.
+    event();
+    const currentNavigation = router.currentNavigation();
+
+    // Before the very first navigation the router url isn't populated yet (e.g.
+    // SSR / a deep link read before the initial navigation runs), so fall back
+    // to the browser location captured at startup. `navigated` flips only at
+    // NavigationEnd, so we also check for an in-flight navigation to stay correct
+    // during the initial navigation's component construction.
+    if (router.navigated || currentNavigation !== null) {
+      return router.url;
+    }
+
+    return initialRoute;
+  });
 });
 
 /**
@@ -150,21 +158,19 @@ export const injectRouterState = memoizeSignal(() => {
   const event = injectRouterEvent();
   const router = inject(Router);
 
-  const routerState = signal<RouterState>(createRouterState(router));
+  // We only depend on `event` to get re-evaluated on every router event, but we
+  // read the *committed* snapshot straight from the router. The router commits
+  // `routerState` before it activates components (and emits ActivationStart
+  // before NavigationEnd), so this is already correct inside a child component's
+  // constructor — unlike an effect, which only flushes after construction.
+  return computed<RouterState>(
+    () => {
+      event();
 
-  effect(() => {
-    const e = event();
-
-    untracked(() => {
-      if (e instanceof NavigationEnd && e.id === -1) {
-        return;
-      } else {
-        routerState.set(createRouterState(router));
-      }
-    });
-  });
-
-  return computed(() => routerState(), { equal });
+      return createRouterState(router);
+    },
+    { equal },
+  );
 });
 
 /** Inject a signal containing the current route fragment (the part after the # inside the url if present) */
