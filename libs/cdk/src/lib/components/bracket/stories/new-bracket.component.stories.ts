@@ -188,10 +188,10 @@ export const Swiss = {
   args: {
     source: generateBracketDataForEthlete(ET_DUMMY_DATA_SWISS as unknown as RoundStageStructureWithMatchesView[]),
     swissColors: {
-      neutral: '#9ca3af',
-      positive: '#22c55e',
-      warning: '#eab308',
-      negative: '#ef4444',
+      neutral: '#374151',
+      positive: '#17D08C',
+      warning: '#F0B620',
+      negative: '#F83B51',
     },
   },
 };

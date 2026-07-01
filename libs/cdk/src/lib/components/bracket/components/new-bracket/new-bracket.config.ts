@@ -4,9 +4,9 @@ import { BracketMatchComponent, BracketRoundHeaderComponent } from './drawing/gr
 import { BracketSwissGroupColorType } from './linked';
 
 /**
- * Colors for the swiss group borders, headers and connection lines, keyed by the group
- * color type (see getSwissGroupColorType). Connection lines between two differently
- * colored groups are drawn with a gradient from the source to the target color.
+ * Colors for the swiss group borders and connection lines, keyed by the group color type
+ * (see getSwissGroupColorType). Connection lines are drawn in the neutral color and fade
+ * into the target group color on the last portion before touching its border.
  * Any CSS color value is allowed. Missing entries fall back to `currentColor`
  * (the `--bracket-line-color` / `--bracket-swiss-group-border-color` custom properties).
  */
