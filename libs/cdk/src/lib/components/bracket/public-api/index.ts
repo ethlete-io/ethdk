@@ -4,6 +4,7 @@ export * as BracketNew from '../components/new-bracket';
 export * from '../components/new-bracket/new-bracket-default-match.component';
 export * from '../components/new-bracket/new-bracket-default-round-header.component';
 export * from '../components/new-bracket/new-bracket.component';
+export * from '../components/new-bracket/new-bracket.config';
 export * from '../constants';
 export * from '../directives/bracket-match';
 export * from '../directives/bracket-round';

@@ -1,5 +1,5 @@
 import { BracketSubColumn } from './bracket-sub-column';
-import { Dimensions } from './types';
+import { Dimensions, Spacing } from './types';
 
 export type BracketMasterColumnSectionType = 'round' | 'gap';
 
@@ -7,10 +7,14 @@ export type BracketMasterColumnSection<TRoundData, TMatchData> = {
   subColumns: ReadonlyArray<BracketSubColumn<TRoundData, TMatchData>>;
   dimensions: Dimensions;
   type: BracketMasterColumnSectionType;
+
+  /** Overrides the master column padding for this section */
+  padding?: Spacing;
 };
 
 export type CreateBracketMasterColumnSectionConfig = {
   type: BracketMasterColumnSectionType;
+  padding?: Spacing;
 };
 
 export type MutableBracketMasterColumnSection<TRoundData, TMatchData> = {
@@ -21,7 +25,7 @@ export type MutableBracketMasterColumnSection<TRoundData, TMatchData> = {
 export const createBracketMasterColumnSection = <TRoundData, TMatchData>(
   config: CreateBracketMasterColumnSectionConfig,
 ): MutableBracketMasterColumnSection<TRoundData, TMatchData> => {
-  const { type } = config;
+  const { type, padding } = config;
 
   const subColumns: BracketSubColumn<TRoundData, TMatchData>[] = [];
 
@@ -34,6 +38,7 @@ export const createBracketMasterColumnSection = <TRoundData, TMatchData>(
     },
     subColumns,
     type,
+    padding,
   };
 
   const pushSubColumn = (...newSubColumns: BracketSubColumn<TRoundData, TMatchData>[]) => {

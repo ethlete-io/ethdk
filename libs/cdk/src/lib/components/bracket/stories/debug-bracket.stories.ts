@@ -7,7 +7,15 @@ import {
 } from '../components/new-bracket';
 import CustomMDXDocumentation from './bracket.docs.mdx';
 import { StorybookBracketNewComponent, StorybookDebugBracketComponent } from './components';
-import { DFB_DOUBLE_DUMMY, ET_DUMMY_DATA_DOUBLE_ASYNC, ET_DUMMY_DATA_SINGLE, ET_DUMMY_DATA_SWISS } from './dummy-data';
+import {
+  DFB_DOUBLE_DUMMY,
+  DFB_DOUBLE_DUMMY_NO_FINAL,
+  DFB_DOUBLE_DUMMY_NO_FINAL_NO_UPPER_FIRST,
+  ET_DUMMY_DATA_DOUBLE_ASYNC,
+  ET_DUMMY_DATA_DOUBLE_SYNC,
+  ET_DUMMY_DATA_SINGLE,
+  ET_DUMMY_DATA_SWISS,
+} from './dummy-data';
 import { FIFA_DUMMY_DATA_DOUBLE, GgData } from './dummy-data/FIFA_DUMMY_DATA_DOUBLE';
 import { FIFA_DUMMY_DATA_SINGLE } from './dummy-data/FIFA_DUMMY_DATA_SINGLE';
 
@@ -140,7 +148,6 @@ const Template: StoryFn<StorybookBracketNewComponent> = (args) => ({
 
 export const Single = {
   render: Template,
-
   args: {
     source: generateBracketDataForEthlete(ET_DUMMY_DATA_SINGLE as unknown as RoundStageStructureWithMatchesView[]),
   },
@@ -148,7 +155,6 @@ export const Single = {
 
 export const SingleGg = {
   render: Template,
-
   args: {
     source: generateBracketDataForGg(FIFA_DUMMY_DATA_SINGLE as unknown as GgData),
   },
@@ -156,7 +162,6 @@ export const SingleGg = {
 
 export const DoubleGg = {
   render: Template,
-
   args: {
     source: generateBracketDataForGg(FIFA_DUMMY_DATA_DOUBLE as unknown as GgData),
   },
@@ -164,7 +169,6 @@ export const DoubleGg = {
 
 export const DoubleEtAsync = {
   render: Template,
-
   args: {
     source: generateBracketDataForEthlete(
       ET_DUMMY_DATA_DOUBLE_ASYNC as unknown as RoundStageStructureWithMatchesView[],
@@ -172,25 +176,15 @@ export const DoubleEtAsync = {
   },
 };
 
-// export const Double_Sync = {
-//   render: Template,
-
-//   args: {
-//     roundsWithMatches: ET_DUMMY_DATA_DOUBLE_SYNC as any,
-//   },
-// };
-
-// export const Double_Async = {
-//   render: Template,
-
-//   args: {
-//     roundsWithMatches: ET_DUMMY_DATA_DOUBLE_ASYNC as any,
-//   },
-// };
+export const DoubleEtSync = {
+  render: Template,
+  args: {
+    source: generateBracketDataForEthlete(ET_DUMMY_DATA_DOUBLE_SYNC as unknown as RoundStageStructureWithMatchesView[]),
+  },
+};
 
 export const Swiss = {
   render: Template,
-
   args: {
     source: generateBracketDataForEthlete(ET_DUMMY_DATA_SWISS as unknown as RoundStageStructureWithMatchesView[]),
   },
@@ -198,8 +192,21 @@ export const Swiss = {
 
 export const DFB = {
   render: Template,
-
   args: {
     source: DFB_DOUBLE_DUMMY,
+  },
+};
+
+export const DFB_NO_FINAL = {
+  render: Template,
+  args: {
+    source: DFB_DOUBLE_DUMMY_NO_FINAL,
+  },
+};
+
+export const DFB_NO_FINAL_NO_FIRST_UPPER = {
+  render: Template,
+  args: {
+    source: DFB_DOUBLE_DUMMY_NO_FINAL_NO_UPPER_FIRST,
   },
 };

@@ -19,5 +19,6 @@ export type CreateBracketGridConfig = {
   finalMatchHeight: number;
   finalColumnWidth: number;
   swissGroupPadding: number;
+  swissGroupBorderWidth: number;
   layout: BracketDataLayout;
 };

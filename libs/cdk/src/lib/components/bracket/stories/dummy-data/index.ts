@@ -1,4 +1,5 @@
 export * from './DFB_DOUBLE_DUMMY';
+export * from './DFB_DOUBLE_DUMMY_SPECIALS';
 export * from './ET_DUMMY_DATA_DOUBLE_SYNC';
 export * from './ET_DUMMY_DATA_SINGLE';
 export * from './ET_DUMMY_DATA_SWISS';

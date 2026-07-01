@@ -68,6 +68,7 @@ export class StorybookDebugBracketComponent {
   finalColumnWidth = input(400, { transform: numberAttribute });
   roundHeaderGap = input(20, { transform: numberAttribute });
   swissGroupPadding = input(10, { transform: numberAttribute });
+  swissGroupBorderWidth = input(1, { transform: numberAttribute });
 
   layout = input<BracketDataLayout>(BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT);
 
@@ -92,6 +93,7 @@ export class StorybookDebugBracketComponent {
       finalColumnWidth: this.finalColumnWidth(),
       roundHeaderGap: this.hideRoundHeaders() ? 0 : this.roundHeaderGap(),
       swissGroupPadding: this.swissGroupPadding(),
+      swissGroupBorderWidth: this.swissGroupBorderWidth(),
     };
 
     const components = {

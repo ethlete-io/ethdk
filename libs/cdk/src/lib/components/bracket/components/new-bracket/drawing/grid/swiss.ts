@@ -1,4 +1,4 @@
-import { generateBracketRoundSwissGroupMaps, NewBracket } from '../../linked';
+import { BracketRoundSwissData, generateBracketRoundSwissGroupMaps, NewBracket } from '../../linked';
 import {
   BracketComponents,
   BracketElementToCreate,
@@ -12,14 +12,52 @@ import {
 import { createBracketGapMasterColumn } from './prebuild';
 import { ComputedBracketGrid, CreateBracketGridConfig } from './types';
 
-// TODO
-// The longest master col gets the original gaps (roundRowGap, rowGap)
-// For the master cols before it, the gaps are computed so that the total height is the same as the longest master col
-// For the master cols after it, original gaps are used again resulting in a top alignment.
-// We push one more gap element at the end of the column to fill the remaining space if any
-//
-// Since we want to draw a line around each group of matches, we need to adjust the column width to account for the border width and the gap between the border and the match elements
-// This can be done using the swissGroupPadding option
+type SwissColumnMetrics = {
+  naturalHeight: number;
+  stretchableGapCount: number;
+};
+
+const getSwissGroupBoxPadding = (options: CreateBracketGridConfig) =>
+  options.swissGroupPadding + options.swissGroupBorderWidth;
+
+const calculateSwissColumnMetrics = <TRoundData, TMatchData>(
+  groupMap: BracketRoundSwissData<TRoundData, TMatchData>,
+  options: CreateBracketGridConfig,
+): SwissColumnMetrics => {
+  const includeHeaders = options.roundHeaderHeight > 0;
+  const boxPadding = getSwissGroupBoxPadding(options);
+
+  let naturalHeight = 0;
+  let stretchableGapCount = 0;
+
+  for (const [groupIndex, group] of Array.from(groupMap.groups.values()).entries()) {
+    if (groupIndex !== 0) {
+      // The gap section between two groups
+      naturalHeight += options.rowRoundGap;
+      stretchableGapCount++;
+    }
+
+    // The round header gap is not stretchable: the first match should always sit directly
+    // below it, no matter how much a column gets stretched.
+    if (includeHeaders) {
+      naturalHeight += options.roundHeaderHeight + options.roundHeaderGap;
+    }
+
+    const matchGapCount = Math.max(0, group.matches.size - 1);
+
+    naturalHeight += boxPadding * 2 + group.matches.size * options.matchHeight + matchGapCount * options.rowGap;
+    stretchableGapCount += matchGapCount;
+  }
+
+  return { naturalHeight, stretchableGapCount };
+};
+
+// The naturally tallest master column (the round with the most groups) keeps the original
+// gaps (rowGap, rowRoundGap, roundHeaderGap) and defines the total bracket height.
+// The master cols before it are stretched to that height by distributing the missing
+// height evenly across all of their gap elements.
+// The master cols after it keep the original gaps, resulting in a top alignment. They get
+// one more gap element at the end of the column to fill the remaining space if any.
 export const createSwissGrid = <TRoundData, TMatchData>(
   bracketData: NewBracket<TRoundData, TMatchData>,
   options: CreateBracketGridConfig,
@@ -31,24 +69,90 @@ export const createSwissGrid = <TRoundData, TMatchData>(
 
   const grid = createBracketGrid<TRoundData, TMatchData>({ spanElementWidth: options.columnWidth });
 
-  for (const [groupMapIndex, groupMap] of Array.from(swissGroupMaps.values()).entries()) {
+  const groupMaps = Array.from(swissGroupMaps.values());
+  const columnMetrics = groupMaps.map((groupMap) => calculateSwissColumnMetrics(groupMap, options));
+
+  const totalHeight = Math.max(...columnMetrics.map((metrics) => metrics.naturalHeight));
+  const longestColumnIndex = columnMetrics.findIndex((metrics) => metrics.naturalHeight === totalHeight);
+
+  for (const [groupMapIndex, groupMap] of groupMaps.entries()) {
     const isLastGroupMap = groupMapIndex === swissGroupMaps.size - 1;
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const metrics = columnMetrics[groupMapIndex]!;
+    const heightToFill = totalHeight - metrics.naturalHeight;
+    const isStretched = groupMapIndex < longestColumnIndex && metrics.stretchableGapCount > 0;
+    const gapStretch = isStretched ? heightToFill / metrics.stretchableGapCount : 0;
+
+    const rowGap = options.rowGap + gapStretch;
+    const rowRoundGap = options.rowRoundGap + gapStretch;
+
+    // The border and group padding are part of the column width (the match elements
+    // shrink by them), so the column footprint stays at columnWidth and the group borders
+    // drawn around the matches don't overflow the bracket container. The padding lives on
+    // the match list sections, the header and gap sections stay unpadded and span the
+    // whole column width.
+    const boxPadding = getSwissGroupBoxPadding(options);
 
     const { masterColumn, pushSection } = createBracketMasterColumn<TRoundData, TMatchData>({
       columnWidth: options.columnWidth,
       padding: {
-        bottom: options.swissGroupPadding,
-        left: options.swissGroupPadding,
-        right: options.swissGroupPadding,
-        top: options.swissGroupPadding,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        top: 0,
       },
     });
 
     for (const [groupIndex, group] of Array.from(groupMap.groups.values()).entries()) {
       const isLastGroup = groupIndex === groupMap.groups.size - 1;
 
+      if (options.roundHeaderHeight > 0) {
+        const firstMatchRound = group.matches.first()?.round;
+
+        if (!firstMatchRound) throw new Error('No rounds found in Swiss group');
+
+        const headerColumnSection = createBracketMasterColumnSection<TRoundData, TMatchData>({
+          type: 'round',
+        });
+
+        const headerSubColumn = createBracketSubColumn<TRoundData, TMatchData>({
+          span: {
+            isStart: true,
+            isEnd: true,
+          },
+        });
+
+        const headerElement = createBracketElement<TRoundData, TMatchData>({
+          type: 'header',
+          area: `h${group.id}`,
+          partHeights: [options.roundHeaderHeight],
+          elementHeight: options.roundHeaderHeight,
+          component: components.roundHeader,
+          round: firstMatchRound,
+          roundSwissGroup: group,
+        });
+
+        const headerGapElement = createBracketElement<TRoundData, TMatchData>({
+          type: 'roundHeaderGap',
+          area: '.',
+          partHeights: [options.roundHeaderGap],
+          elementHeight: options.roundHeaderGap,
+        });
+
+        headerSubColumn.pushElement(headerElement.element, headerGapElement.element);
+        headerColumnSection.pushSubColumn(headerSubColumn.subColumn);
+        pushSection(headerColumnSection.masterColumnSection);
+      }
+
       const { masterColumnSection, pushSubColumn } = createBracketMasterColumnSection<TRoundData, TMatchData>({
         type: 'round',
+        padding: {
+          bottom: boxPadding,
+          left: boxPadding,
+          right: boxPadding,
+          top: boxPadding,
+        },
       });
 
       const { subColumn, pushElement } = createBracketSubColumn<TRoundData, TMatchData>({
@@ -59,30 +163,6 @@ export const createSwissGrid = <TRoundData, TMatchData>(
       });
 
       const elementsToCreate: Array<BracketElementToCreate<TRoundData, TMatchData>> = [];
-
-      if (options.roundHeaderHeight > 0) {
-        const firstMatchRound = group.matches.first()?.round;
-
-        if (!firstMatchRound) throw new Error('No rounds found in Swiss group');
-
-        elementsToCreate.push(
-          {
-            type: 'header',
-            area: `h${group.id}`,
-            partHeights: [options.roundHeaderHeight],
-            elementHeight: options.roundHeaderHeight,
-            component: components.roundHeader,
-            round: firstMatchRound,
-            roundSwissGroup: group,
-          },
-          {
-            type: 'roundHeaderGap',
-            area: '.',
-            partHeights: [options.roundHeaderGap],
-            elementHeight: options.roundHeaderGap,
-          },
-        );
-      }
 
       for (const [matchIndex, match] of Array.from(group.matches.values()).entries()) {
         const isLastMatch = matchIndex === group.matches.size - 1;
@@ -102,8 +182,8 @@ export const createSwissGrid = <TRoundData, TMatchData>(
           elementsToCreate.push({
             type: 'matchGap',
             area: '.',
-            partHeights: [options.rowGap],
-            elementHeight: options.rowGap,
+            partHeights: [rowGap],
+            elementHeight: rowGap,
           });
         }
       }
@@ -132,8 +212,8 @@ export const createSwissGrid = <TRoundData, TMatchData>(
         const groupGapElement = createBracketElement<TRoundData, TMatchData>({
           area: '.',
           type: 'roundGap',
-          elementHeight: options.rowRoundGap,
-          partHeights: [options.rowRoundGap],
+          elementHeight: rowRoundGap,
+          partHeights: [rowRoundGap],
         });
 
         groupGapSubColumn.pushElement(groupGapElement.element);
@@ -142,6 +222,34 @@ export const createSwissGrid = <TRoundData, TMatchData>(
 
         pushSection(groupGapColumnSection.masterColumnSection);
       }
+    }
+
+    // Top aligned columns end above the total height, so we fill the remaining space with
+    // one last gap element.
+    const fillerHeight = isStretched ? 0 : heightToFill;
+
+    if (fillerHeight > 0) {
+      const fillerColumnSection = createBracketMasterColumnSection<TRoundData, TMatchData>({
+        type: 'gap',
+      });
+
+      const fillerSubColumn = createBracketSubColumn<TRoundData, TMatchData>({
+        span: {
+          isStart: true,
+          isEnd: true,
+        },
+      });
+
+      const fillerElement = createBracketElement<TRoundData, TMatchData>({
+        area: '.',
+        type: 'colGap',
+        elementHeight: fillerHeight,
+        partHeights: [fillerHeight],
+      });
+
+      fillerSubColumn.pushElement(fillerElement.element);
+      fillerColumnSection.pushSubColumn(fillerSubColumn.subColumn);
+      pushSection(fillerColumnSection.masterColumnSection);
     }
 
     grid.pushMasterColumn(masterColumn);
@@ -159,8 +267,6 @@ export const createSwissGrid = <TRoundData, TMatchData>(
   grid.calculateDimensions();
 
   const finalizedGrid = finalizeBracketGrid(grid);
-
-  console.log(grid);
 
   return {
     raw: grid,
