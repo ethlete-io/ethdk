@@ -24,11 +24,39 @@ export type BracketRoundMapWithSwissData<TRoundData, TMatchData> = Map<
   BracketRoundSwissData<TRoundData, TMatchData>
 >;
 
+export const SWISS_ADVANCE_WINS = 3;
+export const SWISS_ELIMINATE_LOSSES = 3;
+
+export const BRACKET_SWISS_GROUP_COLOR_TYPE = {
+  /** The starting group (0-0) */
+  NEUTRAL: 'neutral',
+
+  /** The group has more wins than losses */
+  POSITIVE: 'positive',
+
+  /** The group is one loss away from elimination */
+  NEGATIVE: 'negative',
+
+  /** Everything in between */
+  WARNING: 'warning',
+} as const;
+
+export type BracketSwissGroupColorType =
+  (typeof BRACKET_SWISS_GROUP_COLOR_TYPE)[keyof typeof BRACKET_SWISS_GROUP_COLOR_TYPE];
+
+export const getSwissGroupColorType = (wins: number, losses: number): BracketSwissGroupColorType => {
+  if (wins === 0 && losses === 0) return BRACKET_SWISS_GROUP_COLOR_TYPE.NEUTRAL;
+  if (losses === SWISS_ELIMINATE_LOSSES - 1) return BRACKET_SWISS_GROUP_COLOR_TYPE.NEGATIVE;
+  if (wins > losses) return BRACKET_SWISS_GROUP_COLOR_TYPE.POSITIVE;
+
+  return BRACKET_SWISS_GROUP_COLOR_TYPE.WARNING;
+};
+
 const factorialCache = new Map<number, number>();
 
 export const getAvailableSwissGroupsForRound = (roundNumber: number, totalMatchesInRound: number) => {
-  const ADVANCE_WINS = 3;
-  const ELIMINATE_LOSSES = 3;
+  const ADVANCE_WINS = SWISS_ADVANCE_WINS;
+  const ELIMINATE_LOSSES = SWISS_ELIMINATE_LOSSES;
 
   // Cache factorial calculations
   const getFactorial = (n: number): number => {

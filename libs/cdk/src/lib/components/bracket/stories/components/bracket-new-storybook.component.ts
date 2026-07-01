@@ -11,6 +11,7 @@ import {
   BRACKET_DATA_LAYOUT,
   BracketDataLayout,
   BracketDataSource,
+  BracketSwissColors,
   NewBracketComponent,
 } from '../../components/new-bracket';
 import { BracketRoundSwissGroup, NewBracketMatch, NewBracketRound } from '../../components/new-bracket/linked';
@@ -74,6 +75,7 @@ export class FinalMatchComponent<TRoundData = unknown, TMatchData = unknown> {
         [rowRoundGap]="rowRoundGap()"
         [roundHeaderGap]="roundHeaderGap()"
         [swissGroupPadding]="swissGroupPadding()"
+        [swissColors]="swissColors()"
       />
     </et-scrollable>
   `,
@@ -104,6 +106,8 @@ export class StorybookBracketNewComponent {
 
   hideRoundHeaders = input(false, { transform: booleanAttribute });
   disableJourneyHighlight = input(false, { transform: booleanAttribute });
+
+  swissColors = input<BracketSwissColors | undefined>(undefined);
 
   finalMatchComponent = FinalMatchComponent;
 }

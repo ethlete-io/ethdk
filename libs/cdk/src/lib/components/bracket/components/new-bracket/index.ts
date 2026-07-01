@@ -4,3 +4,4 @@ export * from './linked';
 export * from './new-bracket-default-match.component';
 export * from './new-bracket-default-round-header.component';
 export * from './new-bracket.component';
+export * from './new-bracket.config';

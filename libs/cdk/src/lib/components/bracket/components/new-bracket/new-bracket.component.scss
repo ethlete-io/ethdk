@@ -27,4 +27,8 @@
     color: var(--bracket-line-color);
     transition: opacity 0.2s;
   }
+
+  .et-bracket-new-swiss-group-border {
+    color: var(--bracket-swiss-group-border-color, var(--bracket-line-color));
+  }
 }
