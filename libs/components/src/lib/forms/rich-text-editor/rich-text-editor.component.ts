@@ -10,7 +10,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ColorInteractiveContainerDirective, markdownToHtml } from '@ethlete/core';
+import { markdownToHtml } from '@ethlete/core';
 import { fromEvent, tap } from 'rxjs';
 import { IconButtonComponent } from '../../button/icon-button.component';
 import {
@@ -41,7 +41,6 @@ import { RichTextEditorDirective } from './headless';
       inputs: ['value', 'disabled', 'readonly', 'hidden', 'invalid', 'errors', 'required', 'name', 'placeholder'],
       outputs: ['valueChange', 'touchedChange'],
     },
-    ColorInteractiveContainerDirective,
   ],
   host: {
     class: 'et-rich-text-editor',

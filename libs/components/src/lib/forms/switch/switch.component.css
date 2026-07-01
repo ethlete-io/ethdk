@@ -35,9 +35,6 @@
 }
 
 et-switch {
-  --et-theme-color-primary-solid: rgb(var(--et-theme-color-primary-rgb));
-  --et-theme-color-on-primary-solid: rgb(var(--et-theme-color-on-primary-rgb));
-
   display: inline-flex;
   align-items: center;
   cursor: pointer;

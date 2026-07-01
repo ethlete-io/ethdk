@@ -1,3 +1,16 @@
+/* Rest-state values, so `-solid` is always usable without every consumer re-deriving it from
+   `-rgb` by hand (this used to be duplicated verbatim across checkbox/radio/switch/segmented-button/
+   checkbox-option). Declared first so the more specific :hover/:focus-visible/:active rules below
+   — same 0-specificity :where(), so source order decides — win whenever they also apply. */
+:where(.et-color-interactive) {
+  --et-theme-color-primary-rgb: var(--et-color-primary);
+  --et-theme-color-primary-solid: rgb(var(--et-theme-color-primary-rgb));
+  --et-theme-color-on-primary-rgb: var(--et-color-on-primary);
+  --et-theme-color-on-primary-solid: rgb(var(--et-theme-color-on-primary-rgb));
+  --et-theme-color-ink-rgb: var(--et-color-primary-ink, var(--et-color-primary));
+  --et-theme-color-ink-solid: rgb(var(--et-theme-color-ink-rgb));
+}
+
 :where(.et-color-interactive:hover:not(:has(.et-color-interactive-exclude:hover))),
 :where(.et-color-interactive-container:hover) :where(.et-color-interactive) {
   --et-theme-color-primary-rgb: var(--et-color-primary-hover, var(--et-color-primary));

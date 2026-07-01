@@ -2,10 +2,10 @@
   <button
     [pressed]="dir.boldActive()"
     [disabled]="dir.disabled() || dir.readonly()"
+    [mutedUntilPressed]="true"
     (mousedown)="$event.preventDefault()"
     (click)="dir.toggleBold()"
     et-icon-button
-    [mutedUntilPressed]="true"
     size="xs"
     type="button"
     aria-label="Bold"
@@ -16,10 +16,10 @@
   <button
     [pressed]="dir.italicActive()"
     [disabled]="dir.disabled() || dir.readonly()"
+    [mutedUntilPressed]="true"
     (mousedown)="$event.preventDefault()"
     (click)="dir.toggleItalic()"
     et-icon-button
-    [mutedUntilPressed]="true"
     size="xs"
     type="button"
     aria-label="Italic"
@@ -30,10 +30,10 @@
   <button
     [pressed]="dir.strikeActive()"
     [disabled]="dir.disabled() || dir.readonly()"
+    [mutedUntilPressed]="true"
     (mousedown)="$event.preventDefault()"
     (click)="dir.toggleStrikethrough()"
     et-icon-button
-    [mutedUntilPressed]="true"
     size="xs"
     type="button"
     aria-label="Strikethrough"
@@ -46,10 +46,10 @@
   <button
     [pressed]="dir.unorderedListActive()"
     [disabled]="dir.disabled() || dir.readonly()"
+    [mutedUntilPressed]="true"
     (mousedown)="$event.preventDefault()"
     (click)="dir.toggleUnorderedList()"
     et-icon-button
-    [mutedUntilPressed]="true"
     size="xs"
     type="button"
     aria-label="Bulleted list"
@@ -60,10 +60,10 @@
   <button
     [pressed]="dir.orderedListActive()"
     [disabled]="dir.disabled() || dir.readonly()"
+    [mutedUntilPressed]="true"
     (mousedown)="$event.preventDefault()"
     (click)="dir.toggleOrderedList()"
     et-icon-button
-    [mutedUntilPressed]="true"
     size="xs"
     type="button"
     aria-label="Numbered list"
@@ -74,15 +74,15 @@
   <button
     [pressed]="dir.linkActive()"
     [disabled]="dir.disabled() || dir.readonly()"
+    [mutedUntilPressed]="true"
     (mousedown)="$event.preventDefault()"
     (click)="promptForLink()"
     et-icon-button
-    [mutedUntilPressed]="true"
     size="xs"
     type="button"
     aria-label="Link"
   >
-    <i etIcon="et-link" [allowHardcodedColor]="true"></i>
+    <i [allowHardcodedColor]="true" etIcon="et-link"></i>
   </button>
 </div>
 

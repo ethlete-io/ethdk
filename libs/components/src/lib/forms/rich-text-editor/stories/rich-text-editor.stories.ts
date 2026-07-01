@@ -39,6 +39,7 @@ export const Default: Story = {};
 
 export const WithMarkdown: Story = {
   args: {
-    value: 'A short intro with **bold**, *italic* and ~~strikethrough~~.\n\n- First item\n- Second item\n\nA [link](https://example.com) too.',
+    value:
+      'A short intro with **bold**, *italic* and ~~strikethrough~~.\n\n- First item\n- Second item\n\nA [link](https://example.com) too.',
   },
 };

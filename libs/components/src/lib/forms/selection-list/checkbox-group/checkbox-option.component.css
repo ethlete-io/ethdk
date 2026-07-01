@@ -35,9 +35,6 @@
 }
 
 et-checkbox-option {
-  --et-theme-color-primary-solid: rgb(var(--et-theme-color-primary-rgb));
-  --et-theme-color-on-primary-solid: rgb(var(--et-theme-color-on-primary-rgb));
-
   display: flex;
   align-items: flex-start;
   gap: var(--et-checkbox-option-gap);
