@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-next.9
+
+### Minor Changes
+
+- [#2995](https://github.com/ethlete-io/ethdk/pull/2995) [`5ca2461`](https://github.com/ethlete-io/ethdk/commit/5ca246117f43bac39ef73204c0e37871bad9781f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add basic rich text editor
+
 ## 0.1.0-next.8
 
 ### Minor Changes

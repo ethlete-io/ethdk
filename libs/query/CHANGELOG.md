@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 6.0.0-next.11
+
+### Patch Changes
+
+- [#2995](https://github.com/ethlete-io/ethdk/pull/2995) [`9038da9`](https://github.com/ethlete-io/ethdk/commit/9038da9dba1af6597ce24056f45354b4073673aa) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix `withSuccessHandling`, `withErrorHandling` and `withLogging` callbacks sometimes being skipped when a query re-executes in quick succession (e.g. polling, auto-refresh, or fast repeated requests). Each execution's result now reliably triggers its handler.
+
+- [#2995](https://github.com/ethlete-io/ethdk/pull/2995) [`24b4fd7`](https://github.com/ethlete-io/ethdk/commit/24b4fd7e1aebda8a4844d4a8ec9700aa1a89a0ee) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix secure queries intermittently throwing `tokensNotAvailableInsideAuthAndExec` when the auth query completes on a different reactive timeline than the access token is set on (e.g. a cross-client / secure login query whose token is populated by a separate effect). The secure execute factory now waits for the access token to be available before running the request instead of assuming it is set the moment the auth query has a response, and recovers automatically once the token arrives.
+
 ## 6.0.0-next.10
 
 ### Patch Changes
