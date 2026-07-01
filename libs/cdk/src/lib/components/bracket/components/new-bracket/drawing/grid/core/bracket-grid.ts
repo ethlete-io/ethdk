@@ -1,3 +1,4 @@
+import { DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE } from '../../../core';
 import { BracketElementSpanCoordinates } from './bracket-element';
 import { BracketMasterColumn } from './bracket-master-column';
 import { Dimensions } from './types';
@@ -164,7 +165,16 @@ export const createBracketGrid = <TRoundData, TMatchData>(config: {
               const totalSpannedWidth = calculateSpannedWidth(span, masterCols);
               const spanStartLeft = calculateSpanStartLeft(span, masterCols);
               const width = config.spanElementWidth;
-              spanDimensions.set(spanKey, { width, left: spanStartLeft + (totalSpannedWidth - width) * 0.5 });
+
+              // Winner bracket rounds span two lower bracket columns. Left-align them within that
+              // span (factor 0) instead of centering (factor 0.5) so each winner round n sits above
+              // the lower bracket round its losers drop into (round 2n-2) — the round whose matches
+              // merge into the next one. That makes the participant's drop target unambiguous. Every
+              // other spanning round (e.g. lower rounds split across sub-columns) stays centered.
+              const round = element.type === 'header' || element.type === 'match' ? element.round : null;
+              const alignFactor = round?.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET ? 0 : 0.5;
+
+              spanDimensions.set(spanKey, { width, left: spanStartLeft + (totalSpannedWidth - width) * alignFactor });
             }
 
             const storedDimensions = spanDimensions.get(spanKey);
