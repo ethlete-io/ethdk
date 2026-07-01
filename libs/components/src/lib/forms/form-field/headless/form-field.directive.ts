@@ -60,7 +60,11 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
 
   public hasValue = computed(() => this.registeredControl()?.hasValue?.() ?? false);
 
-  public usesTextFieldShell = computed(() => this.controlType() === FORM_FIELD_CONTROL_TYPES.TEXT_INPUT);
+  public usesTextFieldShell = computed(
+    () =>
+      this.controlType() === FORM_FIELD_CONTROL_TYPES.TEXT_INPUT ||
+      this.controlType() === FORM_FIELD_CONTROL_TYPES.RICH_TEXT,
+  );
 
   public shouldFloatLabel = computed(() => this.focused() || this.hasValue());
 

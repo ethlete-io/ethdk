@@ -1,0 +1,125 @@
+@property --et-rich-text-editor-toolbar-gap {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 2px;
+}
+
+@property --et-rich-text-editor-toolbar-padding {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 4px;
+}
+
+@property --et-rich-text-editor-button-radius {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 4px;
+}
+
+@property --et-rich-text-editor-min-height {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 96px;
+}
+
+@property --et-rich-text-editor-content-gap {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 8px;
+}
+
+et-rich-text-editor {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-inline-size: 0;
+  color: inherit;
+
+  .et-rte-toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--et-rich-text-editor-toolbar-gap);
+    padding: var(--et-rich-text-editor-toolbar-padding);
+    padding-inline: calc(var(--et-form-field-control-padding-inline) - var(--et-rich-text-editor-toolbar-padding));
+    border-block-end: var(--et-form-field-control-border-width, 1px) solid
+      color-mix(in srgb, currentColor 12%, transparent);
+
+    /* et-icon-button defaults to a fully round shape; the toolbar wants a squarer button. */
+    .et-icon-button {
+      border-radius: var(--et-rich-text-editor-button-radius);
+    }
+  }
+
+  .et-rte-toolbar-divider {
+    inline-size: 1px;
+    align-self: stretch;
+    margin-block: 4px;
+    margin-inline: 2px;
+    background: color-mix(in srgb, currentColor 12%, transparent);
+  }
+
+  .et-rte-content {
+    display: block;
+    flex: 1;
+    min-inline-size: 0;
+    padding-block: var(--et-form-field-control-padding-block);
+    padding-inline: var(--et-form-field-control-padding-inline);
+    min-block-size: var(--et-rich-text-editor-min-height);
+    outline: none;
+    color: inherit;
+    caret-color: var(--et-theme-color-primary-solid, currentColor);
+    overflow-wrap: anywhere;
+
+    &:empty::before {
+      content: attr(data-placeholder);
+      color: color-mix(in srgb, currentColor 46%, transparent);
+      pointer-events: none;
+    }
+
+    > :first-child {
+      margin-block-start: 0;
+    }
+
+    > :last-child {
+      margin-block-end: 0;
+    }
+
+    p {
+      margin-block: 0;
+    }
+
+    p + p,
+    ul,
+    ol {
+      margin-block-start: var(--et-rich-text-editor-content-gap);
+    }
+
+    ul,
+    ol {
+      margin-block-end: 0;
+      padding-inline-start: 1.5em;
+      list-style-position: outside;
+    }
+
+    ul {
+      list-style-type: disc;
+    }
+
+    ol {
+      list-style-type: decimal;
+    }
+
+    li {
+      margin-block: 0;
+    }
+
+    li::marker {
+      color: color-mix(in srgb, currentColor 60%, transparent);
+    }
+
+    a {
+      color: var(--et-theme-color-primary-solid, currentColor);
+      text-decoration: underline;
+    }
+  }
+}

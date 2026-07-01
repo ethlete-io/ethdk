@@ -195,6 +195,31 @@
     }
   }
 
+  /* --- Muted until pressed --- */
+
+  /* Overrides every variant above while unpressed: swaps the theme-color tint for the neutral
+     surface-interaction color (via SurfaceInteractiveDirective, always mounted by ButtonDirective)
+     so an idle toggle button reads as chrome, not as content colored by the ambient theme. Mirrors
+     the shape of the variant rules above (transparent at rest, increasingly tinted on interaction)
+     but there's no surface equivalent of --et-theme-color-primary-opacity to ramp, so the tint
+     step is spelled out per state instead of driven by one shared opacity variable. */
+  &[data-muted-until-pressed]:not([data-pressed='true']) {
+    background: transparent;
+    color: currentColor;
+
+    &:hover:not([disabled]):not([aria-disabled='true']) {
+      background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+    }
+
+    &:focus-visible {
+      background: color-mix(in srgb, var(--et-surface-interaction-solid) 16%, transparent);
+    }
+
+    &:active {
+      background: color-mix(in srgb, var(--et-surface-interaction-solid) 20%, transparent);
+    }
+  }
+
   .et-icon-button-icon {
     display: flex;
     align-items: center;

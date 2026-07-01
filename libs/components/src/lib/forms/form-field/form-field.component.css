@@ -264,7 +264,7 @@ et-form-field {
     min-inline-size: 0;
   }
 
-  &:where([data-control-type='text-input']) {
+  &:where([data-control-type='text-input'], [data-control-type='rich-text']) {
     &[data-label-mode='static'] {
       .et-form-field-shell {
         padding-block-start: calc(var(--et-form-field-label-font-size) * 1.2 + var(--et-form-field-gap));
@@ -460,6 +460,22 @@ et-form-field {
           padding-inline-start: 0;
         }
       }
+    }
+  }
+
+  &:where([data-control-type='rich-text']) {
+    .et-form-field-control-frame {
+      align-items: stretch;
+      padding: 0;
+      cursor: auto;
+    }
+
+    .et-form-field-control-area {
+      align-items: stretch;
+    }
+
+    .et-form-field-control-slot {
+      align-items: stretch;
     }
   }
 

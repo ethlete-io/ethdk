@@ -39,7 +39,7 @@ const PRESSED_VARIANT_MAP: Record<IconButtonVariant, string> = {
   hostDirectives: [
     {
       directive: ButtonDirective,
-      inputs: ['disabled', 'loading', 'type', 'pressed'],
+      inputs: ['disabled', 'loading', 'type', 'pressed', 'mutedUntilPressed'],
     },
     ButtonStylesDirective,
     ColorInteractiveDirective,

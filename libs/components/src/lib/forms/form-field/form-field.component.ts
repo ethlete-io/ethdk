@@ -434,6 +434,7 @@ export class FormFieldComponent {
     const tagName = target.tagName;
 
     if (
+      target.isContentEditable ||
       tagName === 'INPUT' ||
       tagName === 'TEXTAREA' ||
       tagName === 'SELECT' ||

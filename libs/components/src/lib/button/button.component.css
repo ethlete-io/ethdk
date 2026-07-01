@@ -183,6 +183,28 @@
     }
   }
 
+  /* --- Muted until pressed --- */
+
+  /* See icon-button.component.css for the rationale — same neutral-until-active behavior, applied
+     to this component's --_et-button-* indirection variables instead of background/color directly. */
+  &[data-muted-until-pressed]:not([data-pressed='true']) {
+    --_et-button-background: transparent;
+    --_et-button-color: currentColor;
+    --_et-button-border-color: transparent;
+
+    &:hover:not([disabled]):not([aria-disabled='true']) {
+      --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+    }
+
+    &:focus-visible {
+      --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 16%, transparent);
+    }
+
+    &:active {
+      --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 20%, transparent);
+    }
+  }
+
   .et-button-icon {
     display: flex;
     align-items: center;
