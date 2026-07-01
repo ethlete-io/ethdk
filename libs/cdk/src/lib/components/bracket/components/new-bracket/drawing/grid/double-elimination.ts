@@ -1,5 +1,5 @@
 import { COMMON_BRACKET_ROUND_TYPE, DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE } from '../../core';
-import { NewBracket } from '../../linked';
+import { NewBracket, NewBracketRound } from '../../linked';
 import {
   BracketComponents,
   createBracketElement,
@@ -25,12 +25,25 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
 ): ComputedBracketGrid<TRoundData, TMatchData> => {
   const grid = createBracketGrid<TRoundData, TMatchData>({ spanElementWidth: options.columnWidth });
 
-  const upperBracketRounds = Array.from(
+  const presentUpperBracketRounds = Array.from(
     bracketData.roundsByType.getOrThrow(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET).values(),
   );
   const lowerBracketRounds = Array.from(
     bracketData.roundsByType.getOrThrow(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET).values(),
   );
+
+  // A complete winner bracket has (lowerRounds / 2) + 1 rounds. If fewer are present, the winner
+  // bracket starts later than round 1 — e.g. a small double elimination where lower-round 1 is
+  // seeded directly from a group phase and has no winner round feeding it. Pad the front of the
+  // winner rounds with nulls so the column mapping keeps treating the winner bracket as complete:
+  // the missing early rounds become empty slots above the lower rounds they never fed, and every
+  // present winner round lines up above its real drop-in lower round.
+  const fullUpperRoundCount = Math.floor(lowerBracketRounds.length / 2) + 1;
+  const frontMissingUpperRounds = Math.max(0, fullUpperRoundCount - presentUpperBracketRounds.length);
+  const upperBracketRounds: (NewBracketRound<TRoundData, TMatchData> | null)[] = [
+    ...Array.from({ length: frontMissingUpperRounds }, () => null),
+    ...presentUpperBracketRounds,
+  ];
 
   const remainingRounds = Array.from(bracketData.rounds.values()).filter(
     (r) =>
@@ -42,7 +55,7 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
   const thirdPlaceRound = bracketData.roundsByType.get(COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE)?.first() ?? null;
   const hasReverseFinal = !!bracketData.roundsByType.get(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL)?.first();
 
-  const firstUpperRound = upperBracketRounds[0];
+  const firstUpperRound = presentUpperBracketRounds[0];
   const firstLowerRound = lowerBracketRounds[0];
 
   if (!firstUpperRound || !firstLowerRound) {
@@ -109,11 +122,12 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
         previousSubColumnIndex >= 0 ? calculateLowerRoundIndex(previousSubColumnIndex, columnSplitFactor) : -1;
       const nextLowerRoundIndex = calculateLowerRoundIndex(nextSubColumnIndex, columnSplitFactor);
 
-      const upperRound = upperBracketRounds[currentUpperRoundIndex];
-
-      if (!upperRound) {
+      if (currentUpperRoundIndex < 0 || currentUpperRoundIndex >= upperBracketRounds.length) {
         throw new Error('Upper round not found for subColumnIndex: ' + subColumnIndex);
       }
+
+      // May be null for a leading winner slot that does not exist (front-truncated winner bracket).
+      const upperRound = upperBracketRounds[currentUpperRoundIndex];
 
       // For upper bracket spans - check if this round is different from the previous occurrence
       const isUpperSpanStart = isFirstSubColumnInMasterColumn
@@ -138,19 +152,43 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
             currentLowerRoundIndex
         : nextLowerRoundIndex !== currentLowerRoundIndex;
 
-      const upperSubColumn = createRoundBracketSubColumnRelativeToFirstRound({
-        firstRound: firstUpperRound,
-        round: upperRound,
-        options,
-        hasReverseFinal,
-        span: {
-          isStart: isUpperSpanStart,
-          isEnd: isUpperSpanEnd,
-        },
-        components,
-      });
+      const upperSpan = { isStart: isUpperSpanStart, isEnd: isUpperSpanEnd };
 
-      pushUpperSubColumn(upperSubColumn);
+      if (upperRound) {
+        pushUpperSubColumn(
+          createRoundBracketSubColumnRelativeToFirstRound({
+            firstRound: firstUpperRound,
+            round: upperRound,
+            options,
+            hasReverseFinal,
+            span: upperSpan,
+            components,
+          }),
+        );
+      } else {
+        // Empty leading winner slot: reserve the same vertical space a real winner round (rendered
+        // relative to the first present round) would occupy, so the lower bracket rows below stay
+        // aligned, but render nothing in it.
+        const emptyUpperHeight =
+          (options.roundHeaderHeight > 0 ? options.roundHeaderHeight + options.roundHeaderGap : 0) +
+          firstUpperRound.matchCount * options.matchHeight +
+          Math.max(0, firstUpperRound.matchCount - 1) * options.rowGap;
+
+        const { subColumn: emptyUpperSubColumn, pushElement: pushEmptyUpperElement } = createBracketSubColumn<
+          TRoundData,
+          TMatchData
+        >({ span: upperSpan });
+
+        const { element: emptyUpperElement } = createBracketElement<TRoundData, TMatchData>({
+          area: '.',
+          type: 'colGap',
+          elementHeight: emptyUpperHeight,
+          partHeights: [emptyUpperHeight],
+        });
+
+        pushEmptyUpperElement(emptyUpperElement);
+        pushUpperSubColumn(emptyUpperSubColumn);
+      }
 
       const upperLowerGapSubColumn = createBracketSubColumn<TRoundData, TMatchData>({
         span: {
@@ -194,7 +232,11 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
 
     grid.pushMasterColumn(masterColumn);
 
-    if (remainingRounds.length) {
+    // Always separate consecutive lower rounds with a gap column. The trailing gap after the
+    // last lower round is only needed to connect to the finals section (remainingRounds); in a
+    // truncated bracket without a final we must still gap the intermediate rounds, otherwise the
+    // rounds sit flush against each other and their connector lines collapse to zero width.
+    if (!isLastLowerRound || remainingRounds.length) {
       grid.pushMasterColumn(
         createBracketGapMasterColumn({
           existingMasterColumns: grid.grid.masterColumns,
