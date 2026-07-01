@@ -418,23 +418,33 @@ export const generateRoundRelationsNew = <TRoundData, TMatchData>(
   if (hasLowerRounds && firstLowerRound) {
     const assignedRoundIds = new Set(relations.map((r) => r.currentRound.id));
 
-    for (let i = 0; i < lowerRounds.length - 1; i++) {
+    for (let i = 0; i < lowerRounds.length; i++) {
       const lowerRound = lowerRounds[i];
       if (!lowerRound || assignedRoundIds.has(lowerRound.id)) continue;
 
       const prevLowerRound = i > 0 ? (lowerRounds[i - 1] ?? null) : null;
-      const nextLowerRound = lowerRounds[i + 1];
+      const nextLowerRound = lowerRounds[i + 1] ?? null;
 
-      if (!nextLowerRound) continue;
-
-      if (!prevLowerRound) {
-        relations.push(createNothingToOneRelation({ currentRound: lowerRound, nextRound: nextLowerRound }));
-      } else {
+      if (nextLowerRound) {
+        if (!prevLowerRound) {
+          relations.push(createNothingToOneRelation({ currentRound: lowerRound, nextRound: nextLowerRound }));
+        } else {
+          relations.push(
+            createOneToOneRelation({
+              currentRound: lowerRound,
+              previousRound: prevLowerRound,
+              nextRound: nextLowerRound,
+              rootRound: firstLowerRound,
+            }),
+          );
+        }
+      } else if (prevLowerRound) {
+        // Truncated bracket: the last lower round has no final round to feed into, so it terminates here.
+        // In a complete bracket this round is wired up by handleFinalRound and already in assignedRoundIds.
         relations.push(
-          createOneToOneRelation({
+          createOneToNothingRelation({
             currentRound: lowerRound,
             previousRound: prevLowerRound,
-            nextRound: nextLowerRound,
             rootRound: firstLowerRound,
           }),
         );

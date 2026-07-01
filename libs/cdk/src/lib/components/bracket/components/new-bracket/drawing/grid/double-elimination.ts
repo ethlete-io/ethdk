@@ -194,7 +194,11 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
 
     grid.pushMasterColumn(masterColumn);
 
-    if (remainingRounds.length) {
+    // Always separate consecutive lower rounds with a gap column. The trailing gap after the
+    // last lower round is only needed to connect to the finals section (remainingRounds); in a
+    // truncated bracket without a final we must still gap the intermediate rounds, otherwise the
+    // rounds sit flush against each other and their connector lines collapse to zero width.
+    if (!isLastLowerRound || remainingRounds.length) {
       grid.pushMasterColumn(
         createBracketGapMasterColumn({
           existingMasterColumns: grid.grid.masterColumns,

@@ -321,8 +321,15 @@ export const generateMatchRelationsNew = <TRoundData, TMatchData>(
 
   for (const match of bracketData.matches.values()) {
     const relation = match.round.relation;
-    const { nextRoundMatchPosition, previousUpperRoundMatchPosition, previousLowerRoundMatchPosition } =
-      generateMatchRelationPositions(relation, match);
+
+    const positions = generateMatchRelationPositions(relation, match);
+
+    // A round without a resolved relation (e.g. a truncated bracket where a round has no
+    // successor/predecessor to wire up) keeps the placeholder relation from createNewBracket.
+    // Skip it so the match renders without connector lines instead of crashing the whole bracket.
+    if (!positions) continue;
+
+    const { nextRoundMatchPosition, previousUpperRoundMatchPosition, previousLowerRoundMatchPosition } = positions;
 
     switch (relation.type) {
       case 'nothing-to-one':
