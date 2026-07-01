@@ -1,5 +1,30 @@
 # @ethlete/cdk
 
+## 5.0.0-next.15
+
+### Minor Changes
+
+- [#2995](https://github.com/ethlete-io/ethdk/pull/2995) [`5ca2461`](https://github.com/ethlete-io/ethdk/commit/5ca246117f43bac39ef73204c0e37871bad9781f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Support swiss mode in bracket new as per design spec
+
+### Patch Changes
+
+- [#2996](https://github.com/ethlete-io/ethdk/pull/2996) [`b64e055`](https://github.com/ethlete-io/ethdk/commit/b64e0553c6480d5efde342675fd09899f0d45c0f) Thanks [@baltruschat](https://github.com/baltruschat)! - Position winner rounds correctly when the winner bracket starts after round 1
+
+  Some double elimination brackets omit the early winner rounds — e.g. a small bracket where the first lower round is seeded directly from a group phase and has no winner round feeding it. The grid previously placed the first present winner round in the leftmost column, so every winner round was one column too far left relative to its drop-in lower round. The grid now detects the missing leading winner rounds (a complete winner bracket has lowerRounds / 2 + 1 rounds) and leaves those leading slots empty, so each present winner round lines up above the lower round its losers actually drop into.
+
+- [#2996](https://github.com/ethlete-io/ethdk/pull/2996) [`b64e055`](https://github.com/ethlete-io/ethdk/commit/b64e0553c6480d5efde342675fd09899f0d45c0f) Thanks [@baltruschat](https://github.com/baltruschat)! - Align winner bracket rounds above their drop-in loser round
+
+  In the double elimination grid, winner bracket rounds that span two lower bracket columns were centered over that span, leaving them half a column off from the loser round they relate to. They are now left-aligned within the span so winner round n sits directly above the loser round its losers drop into (round 2n − 2) — the round whose matches merge into the next one — making the drop target unambiguous. The first winner round and the winner final are single-column and stay in place; lower rounds and other brackets are unaffected.
+
+- [#2996](https://github.com/ethlete-io/ethdk/pull/2996) [`b64e055`](https://github.com/ethlete-io/ethdk/commit/b64e0553c6480d5efde342675fd09899f0d45c0f) Thanks [@baltruschat](https://github.com/baltruschat)! - Fix rendering of truncated double elimination brackets
+
+  Brackets whose data ends before the grand final (e.g. only the currently available rounds are loaded) no longer crash and now draw their lower bracket connector lines correctly:
+  - The last lower bracket round is no longer left without a relation when there is no final round to feed into (it now terminates with a `one-to-nothing` relation), which previously caused a `Cannot destructure property 'nextRoundMatchPosition'` error.
+  - `generateMatchRelationsNew` skips matches whose round has no resolved relation instead of throwing, so incomplete brackets degrade gracefully.
+  - Lower bracket rounds are now separated by a gap column even when no finals section exists, so their connector lines are no longer collapsed to zero width and become invisible.
+
+  Brackets that are truncated at the front (missing the first winner bracket round) are covered by the same changes.
+
 ## 5.0.0-next.14
 
 ### Patch Changes

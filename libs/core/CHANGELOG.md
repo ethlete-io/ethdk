@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.15
+
+### Patch Changes
+
+- [#2995](https://github.com/ethlete-io/ethdk/pull/2995) [`05da5f2`](https://github.com/ethlete-io/ethdk/commit/05da5f2c9ac78907f8be5003690332eea1f99ff8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix `injectRoute`, `injectUrl` and the `injectRouterState` based signals (`injectPathParams`, `injectQueryParams`, `injectRouteData`, etc.) returning the previous route when read synchronously inside a component constructor during navigation. They now read the already committed router state instead of waiting for the `NavigationEnd` event.
+
 ## 5.0.0-next.14
 
 ### Minor Changes
