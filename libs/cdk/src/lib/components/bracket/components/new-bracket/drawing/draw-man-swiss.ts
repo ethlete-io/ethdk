@@ -138,11 +138,13 @@ const groupBorderRect = (
   return `<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="${border.radius}" stroke="${color ?? 'currentColor'}" fill="none" stroke-width="${border.width}" class="et-bracket-new-swiss-group-border et-bracket-new-swiss-group-border--${group.id} et-bracket-new-swiss-group-border--${group.colorType}" />`;
 };
 
-// A horizontal gradient from the source group color to the target group color. The
-// connection lines always run from left to right, so user space coordinates can be used
-// (they also work for straight lines, where the bounding box has no height).
-const lineGradientDef = (id: string, fromX: number, toX: number, fromColor: string, toColor: string) =>
-  `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${fromX}" y1="0" x2="${toX}" y2="0"><stop offset="0%" stop-color="${fromColor}" /><stop offset="100%" stop-color="${toColor}" /></linearGradient>`;
+// A horizontal gradient for the connection lines: they leave the source group in its
+// color, fade to the neutral color towards their vertical jog in the middle and fade into
+// the target group color on the second half. The connection lines always run from left to
+// right, so user space coordinates can be used (they also work for straight lines, where
+// the bounding box has no height).
+const lineGradientDef = (id: string, fromX: number, toX: number, from: string, neutral: string, to: string) =>
+  `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${fromX}" y1="0" x2="${toX}" y2="0"><stop offset="0%" stop-color="${from}" /><stop offset="50%" stop-color="${neutral}" /><stop offset="100%" stop-color="${to}" /></linearGradient>`;
 
 export const drawSwissMan = (dimensions: DrawSwissManDimensions) => {
   const svgParts: string[] = [];
@@ -178,21 +180,21 @@ export const drawSwissMan = (dimensions: DrawSwissManDimensions) => {
       for (const { geometry: target, shortIds } of targets) {
         if (!target) continue;
 
-        const fromColor = colors?.[group.colorType];
-        const toColor = colors?.[target.colorType];
+        const neutralColor = colors?.neutral;
+        const fromColor = colors?.[group.colorType] ?? neutralColor;
+        const toColor = colors?.[target.colorType] ?? neutralColor;
 
-        let stroke: string | undefined;
+        let stroke = neutralColor;
 
-        if (fromColor && toColor && fromColor !== toColor) {
+        if (neutralColor && (fromColor !== neutralColor || toColor !== neutralColor)) {
           const gradientId = `${dimensions.idPrefix}-swiss-line-${edgeIndex}`;
+          const fromX = group.position.inline.end;
+          const toX = target.position.inline.start;
 
-          gradientDefs.push(
-            lineGradientDef(gradientId, group.position.inline.end, target.position.inline.start, fromColor, toColor),
-          );
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          gradientDefs.push(lineGradientDef(gradientId, fromX, toX, fromColor!, neutralColor, toColor!));
 
           stroke = `url(#${gradientId})`;
-        } else {
-          stroke = fromColor ?? toColor;
         }
 
         const pathOptions: PathOptions = { ...dimensions.path, className: shortIds.join(' '), stroke };
