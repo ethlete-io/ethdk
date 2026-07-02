@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.32.0
+
+### Minor Changes
+
+- [`2dd0e34`](https://github.com/ethlete-io/ethdk/commit/2dd0e346802aa2d0bc38e1a2111082294ff51199) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `createProvider`, `createRootProvider`, `createStaticProvider` and `createStaticRootProvider` utilities for building typed injection-token based providers
+
 ## 4.31.0
 
 ### Minor Changes
