@@ -1,5 +1,15 @@
 # @ethlete/cdk
 
+## 5.0.0-next.16
+
+### Minor Changes
+
+- [#2997](https://github.com/ethlete-io/ethdk/pull/2997) [`f382d14`](https://github.com/ethlete-io/ethdk/commit/f382d14fd8a32923c865bf59db74d092ace3a7a5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add option to render a continue element at the end of a bracket if theres a follow up competition stage
+
+### Patch Changes
+
+- [#2997](https://github.com/ethlete-io/ethdk/pull/2997) [`f382d14`](https://github.com/ethlete-io/ethdk/commit/f382d14fd8a32923c865bf59db74d092ace3a7a5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix bracket highlighting getting laggy on larger brackets
+
 ## 5.0.0-next.15
 
 ### Minor Changes

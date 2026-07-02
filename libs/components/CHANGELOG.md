@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-next.10
+
+### Patch Changes
+
+- [`c52eb0b`](https://github.com/ethlete-io/ethdk/commit/c52eb0b80d79b30a8cd40584734c471c217565c4) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix muted until pressed style on buttons
+
+- [`c52eb0b`](https://github.com/ethlete-io/ethdk/commit/c52eb0b80d79b30a8cd40584734c471c217565c4) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix minor formatting issues in rich text editor
+
 ## 0.1.0-next.9
 
 ### Minor Changes
