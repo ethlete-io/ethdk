@@ -15,7 +15,12 @@ import {
   calculateUpperLowerRatio,
   calculateUpperRoundIndex,
 } from './double-elimination-utils';
-import { createBracketGapMasterColumn, createRoundBracketSubColumnRelativeToFirstRound } from './prebuild';
+import {
+  createBracketContinueMasterColumn,
+  createBracketGapMasterColumn,
+  createRoundBracketSubColumnRelativeToFirstRound,
+  getBracketContinueMatches,
+} from './prebuild';
 import { ComputedBracketGrid, CreateBracketGridConfig } from './types';
 
 export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
@@ -372,6 +377,30 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
         createBracketGapMasterColumn({
           existingMasterColumns: grid.grid.masterColumns,
           columnGap: options.columnGap,
+        }),
+      );
+    }
+  }
+
+  if (options.continueElement && components.continue) {
+    const continueMatches = getBracketContinueMatches(bracketData);
+
+    if (continueMatches.length) {
+      grid.pushMasterColumn(
+        createBracketGapMasterColumn({
+          existingMasterColumns: grid.grid.masterColumns,
+          columnGap: options.columnGap,
+        }),
+      );
+
+      grid.pushMasterColumn(
+        createBracketContinueMasterColumn({
+          existingMasterColumns: grid.grid.masterColumns,
+          columnWidth: options.continueElement.columnWidth,
+          elementHeight: options.continueElement.elementHeight,
+          headerOffset: options.roundHeaderHeight > 0 ? options.roundHeaderHeight + options.roundHeaderGap : 0,
+          component: components.continue,
+          matches: continueMatches,
         }),
       );
     }

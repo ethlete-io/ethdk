@@ -29,8 +29,14 @@ export type BracketMatchComponent<TRoundData, TMatchData> = ComponentType<{
   bracketMatch: InputSignal<NewBracketMatch<TRoundData, TMatchData>>;
 }>;
 
+export type BracketContinueComponent<TRoundData, TMatchData> = ComponentType<{
+  /** The matches whose winners advance to the next competition stage */
+  bracketMatches: InputSignal<NewBracketMatch<TRoundData, TMatchData>[]>;
+}>;
+
 export type BracketComponents<TRoundData, TMatchData> = {
   roundHeader: BracketRoundHeaderComponent<TRoundData, TMatchData>;
   match: BracketMatchComponent<TRoundData, TMatchData>;
   finalMatch: BracketMatchComponent<TRoundData, TMatchData>;
+  continue?: BracketContinueComponent<TRoundData, TMatchData>;
 };

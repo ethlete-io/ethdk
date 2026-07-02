@@ -76,6 +76,10 @@ export class FinalMatchComponent<TRoundData = unknown, TMatchData = unknown> {
         [roundHeaderGap]="roundHeaderGap()"
         [swissGroupPadding]="swissGroupPadding()"
         [swissColors]="swissColors()"
+        [showContinueElement]="showContinueElement()"
+        [continueColumnWidth]="continueColumnWidth()"
+        [continueElementHeight]="continueElementHeight()"
+        [continueLineDashArray]="continueLineDashArray()"
       />
     </et-scrollable>
   `,
@@ -106,6 +110,11 @@ export class StorybookBracketNewComponent {
 
   hideRoundHeaders = input(false, { transform: booleanAttribute });
   disableJourneyHighlight = input(false, { transform: booleanAttribute });
+
+  showContinueElement = input(false, { transform: booleanAttribute });
+  continueColumnWidth = input(250, { transform: numberAttribute });
+  continueElementHeight = input(75, { transform: numberAttribute });
+  continueLineDashArray = input(6, { transform: numberAttribute });
 
   swissColors = input<BracketSwissColors | undefined>(undefined);
 

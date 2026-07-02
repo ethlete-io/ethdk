@@ -18,13 +18,15 @@
           @let inputs =
             element.type === 'header'
               ? { bracketRound: element.round, bracketRoundSwissGroup: element.roundSwissGroup }
-              : {
-                  bracketRound: element.round,
-                  bracketMatch: element.match,
-                  bracketRoundSwissGroup: element.roundSwissGroup,
-                };
+              : element.type === 'continue'
+                ? { bracketMatches: element.matches }
+                : {
+                    bracketRound: element.round,
+                    bracketMatch: element.match,
+                    bracketRoundSwissGroup: element.roundSwissGroup,
+                  };
 
-          @let highlightClass = element.type === 'header' ? '' : element.classes;
+          @let highlightClass = element.type === 'match' ? element.classes : '';
 
           <li
             [style.width.px]="element.dimensions.width"
@@ -33,7 +35,7 @@
             [style.left.px]="element.dimensions.left - round.dimensions.left"
             class="et-bracket-new-element et-bracket-new-element--{{ element.type }} {{ highlightClass }}"
           >
-            <ng-container *ngComponentOutlet="element.component; inputs: inputs" />
+            <ng-container *ngComponentOutlet="$any(element.component); inputs: inputs" />
           </li>
         }
       </ul>

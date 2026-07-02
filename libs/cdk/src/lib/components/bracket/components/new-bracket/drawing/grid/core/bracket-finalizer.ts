@@ -1,7 +1,7 @@
 import { BracketMap } from '../../../core';
 import { BracketRoundSwissGroup, NewBracketMatch, NewBracketRound } from '../../../linked';
 import { MutableBracketGrid } from './bracket-grid';
-import { BracketMatchComponent, BracketRoundHeaderComponent, Dimensions } from './types';
+import { BracketContinueComponent, BracketMatchComponent, BracketRoundHeaderComponent, Dimensions } from './types';
 
 export type FinalizedBracketColumn<TRoundData = unknown, TMatchData = unknown> = {
   dimensions: Dimensions;
@@ -26,9 +26,17 @@ export type FinalizedMatchBracketElement<TRoundData, TMatchData> = {
   classes: string;
 };
 
+export type FinalizedContinueBracketElement<TRoundData, TMatchData> = {
+  type: 'continue';
+  dimensions: Dimensions;
+  component: BracketContinueComponent<TRoundData, TMatchData>;
+  matches: NewBracketMatch<TRoundData, TMatchData>[];
+};
+
 export type FinalizedBracketElement<TRoundData = unknown, TMatchData = unknown> =
   | FinalizedHeaderBracketElement<TRoundData, TMatchData>
-  | FinalizedMatchBracketElement<TRoundData, TMatchData>;
+  | FinalizedMatchBracketElement<TRoundData, TMatchData>
+  | FinalizedContinueBracketElement<TRoundData, TMatchData>;
 
 export type FinalizedBracketMatchElementMap<TRoundData, TMatchData> = BracketMap<
   string,
@@ -77,6 +85,13 @@ export const finalizeBracketGrid = <TRoundData, TMatchData>(grid: MutableBracket
 
           elements.push(matchEl);
           finalizedElementMap.set(element.match.id, matchEl);
+        } else if (element.type === 'continue') {
+          elements.push({
+            type: 'continue',
+            dimensions: element.dimensions,
+            component: element.component,
+            matches: element.matches,
+          });
         }
       }
 

@@ -32,3 +32,14 @@
     color: var(--bracket-swiss-group-border-color, var(--bracket-line-color));
   }
 }
+
+.et-new-bracket-host--journey-hover {
+  path,
+  .et-bracket-new-element--match {
+    opacity: 0.5;
+  }
+
+  .et-bracket-new-journey-active {
+    opacity: 1 !important;
+  }
+}

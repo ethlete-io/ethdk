@@ -1,6 +1,6 @@
 import { BracketRoundSwissGroup, NewBracketMatch, NewBracketRound } from '../../../linked';
 import { BracketElementPart, createBracketElementPart } from './bracket-element-part';
-import { BracketMatchComponent, BracketRoundHeaderComponent, Dimensions } from './types';
+import { BracketContinueComponent, BracketMatchComponent, BracketRoundHeaderComponent, Dimensions } from './types';
 
 /**
  * An element is a slice of a section.
@@ -30,10 +30,14 @@ export type MatchBracketElement<TRoundData, TMatchData> = BracketElementBase &
 
 export type GapBracketElement = BracketElementBase & GapBracketElementDetails;
 
+export type ContinueBracketElement<TRoundData, TMatchData> = BracketElementBase &
+  ContinueBracketElementDetails<TRoundData, TMatchData>;
+
 export type BracketElement<TRoundData, TMatchData> =
   | HeaderBracketElement<TRoundData, TMatchData>
   | MatchBracketElement<TRoundData, TMatchData>
-  | GapBracketElement;
+  | GapBracketElement
+  | ContinueBracketElement<TRoundData, TMatchData>;
 
 export type BracketElementSpanCoordinates = {
   masterColumnStart: number;
@@ -77,15 +81,26 @@ export type GapBracketElementDetails = {
 
 export type GapBracketElementToCreate = BracketElementToCreateBase & GapBracketElementDetails;
 
+export type ContinueBracketElementDetails<TRoundData, TMatchData> = {
+  type: 'continue';
+  component: BracketContinueComponent<TRoundData, TMatchData>;
+  matches: NewBracketMatch<TRoundData, TMatchData>[];
+};
+
+export type ContinueBracketElementToCreate<TRoundData, TMatchData> = BracketElementToCreateBase &
+  ContinueBracketElementDetails<TRoundData, TMatchData>;
+
 export type BracketElementToCreate<TRoundData, TMatchData> =
   | HeaderBracketElementToCreate<TRoundData, TMatchData>
   | MatchBracketElementToCreate<TRoundData, TMatchData>
-  | GapBracketElementToCreate;
+  | GapBracketElementToCreate
+  | ContinueBracketElementToCreate<TRoundData, TMatchData>;
 
 export type BracketElementType =
   | HeaderBracketElementToCreate<any, any>['type']
   | MatchBracketElementToCreate<any, any>['type']
-  | GapBracketElementToCreate['type'];
+  | GapBracketElementToCreate['type']
+  | ContinueBracketElementToCreate<any, any>['type'];
 
 export type MutableBracketElement<TRoundData, TMatchData> = {
   element: BracketElement<TRoundData, TMatchData>;
@@ -142,6 +157,13 @@ export const createBracketElement = <TRoundData, TMatchData>(
           ...newElementBase,
           type,
         } satisfies GapBracketElement;
+      case 'continue':
+        return {
+          ...newElementBase,
+          type,
+          component: config.component,
+          matches: config.matches,
+        } satisfies ContinueBracketElement<TRoundData, TMatchData>;
       default:
         throw new Error(`Unknown element type: ${type as unknown as string}`);
     }

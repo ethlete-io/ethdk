@@ -4,10 +4,11 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  DOCUMENT,
   effect,
+  ElementRef,
   inject,
   input,
+  NgZone,
   numberAttribute,
   Renderer2,
   ViewEncapsulation,
@@ -18,6 +19,7 @@ import { BRACKET_DATA_LAYOUT, BracketDataLayout, TOURNAMENT_MODE } from './core'
 import { drawMan, drawSwissMan } from './drawing';
 import {
   BracketComponents,
+  BracketContinueComponent,
   BracketMatchComponent,
   BracketRoundHeaderComponent,
   CreateBracketGridConfig,
@@ -26,11 +28,12 @@ import {
   createSwissGrid,
 } from './drawing/grid';
 import { BracketDataSource } from './integrations';
-import { createJourneyHighlight } from './journey-highlight';
+import { setupJourneyHighlight as setupJourneyHighlightListeners } from './journey-highlight';
 import { createNewBracket, generateBracketRoundSwissGroupMaps } from './linked';
-import { BracketSwissColors, injectNewBracketConfig } from './new-bracket.config';
+import { NewBracketDefaultContinueComponent } from './new-bracket-default-continue.component';
 import { NewBracketDefaultMatchComponent } from './new-bracket-default-match.component';
 import { NewBracketDefaultRoundHeaderComponent } from './new-bracket-default-round-header.component';
+import { BracketSwissColors, injectNewBracketConfig } from './new-bracket.config';
 
 @Component({
   selector: 'et-new-bracket',
@@ -72,9 +75,15 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
   layout = input<BracketDataLayout>(this.config.layout ?? BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT);
   hideRoundHeaders = input(this.config.hideRoundHeaders ?? false, { transform: booleanAttribute });
 
+  showContinueElement = input(this.config.showContinueElement ?? false, { transform: booleanAttribute });
+  continueColumnWidth = input(this.config.continueColumnWidth ?? 250, { transform: numberAttribute });
+  continueElementHeight = input(this.config.continueElementHeight ?? 75, { transform: numberAttribute });
+  continueLineDashArray = input(this.config.continueLineDashArray ?? 6, { transform: numberAttribute });
+
   roundHeaderComponent = input<BracketRoundHeaderComponent<TRoundData, TMatchData> | undefined>();
   matchComponent = input<BracketMatchComponent<TRoundData, TMatchData> | undefined>();
   finalMatchComponent = input<BracketMatchComponent<TRoundData, TMatchData> | undefined>();
+  continueComponent = input<BracketContinueComponent<TRoundData, TMatchData> | undefined>();
 
   bracketData = computed(() => createNewBracket(this.source(), { layout: this.layout() }));
 
@@ -97,6 +106,13 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
       roundHeaderGap: this.hideRoundHeaders() ? 0 : this.roundHeaderGap(),
       swissGroupPadding: this.swissGroupPadding(),
       swissGroupBorderWidth: this.lineWidth(),
+      continueElement:
+        this.showContinueElement() && this.layout() === BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT
+          ? {
+              columnWidth: this.continueColumnWidth(),
+              elementHeight: this.continueElementHeight(),
+            }
+          : null,
     };
 
     const swissConfig = bracketData.mode === TOURNAMENT_MODE.SWISS_WITH_ELIMINATION ? this.config.swiss : undefined;
@@ -113,6 +129,7 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
         swissConfig?.roundHeaderComponent ??
         this.config.roundHeaderComponent ??
         NewBracketDefaultRoundHeaderComponent,
+      continue: this.continueComponent() ?? this.config.continueComponent ?? NewBracketDefaultContinueComponent,
     };
 
     switch (bracketData.mode) {
@@ -170,14 +187,15 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
         dashOffset: this.lineDashOffset(),
         width: this.lineWidth(),
       },
+      continuePath: {
+        dashArray: this.continueLineDashArray(),
+        dashOffset: this.lineDashOffset(),
+        width: this.lineWidth(),
+      },
     });
   });
 
   svgContent = computed(() => this.domSanitizer.bypassSecurityTrustHtml(this.drawManData()));
-
-  journeyHighlight = computed(() =>
-    this.disableJourneyHighlight() ? null : createJourneyHighlight(this.bracketData()),
-  );
 
   constructor() {
     this.setupJourneyHighlight();
@@ -185,36 +203,15 @@ export class NewBracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
   private setupJourneyHighlight() {
     const renderer = inject(Renderer2);
-    const doc = inject(DOCUMENT);
-    const styleId = `et-new-bracket-journey-highlight--${this.elementId}`;
-
-    let oldStyleEl: unknown = null;
+    const ngZone = inject(NgZone);
+    const host = inject(ElementRef<HTMLElement>).nativeElement;
 
     effect(() => {
-      const newHighlightStyle = this.journeyHighlight();
-      const head = doc.head;
+      if (this.disableJourneyHighlight()) return;
 
-      if (oldStyleEl) {
-        renderer.removeChild(head, oldStyleEl);
-      }
+      const teardown = ngZone.runOutsideAngular(() => setupJourneyHighlightListeners(host, renderer));
 
-      if (newHighlightStyle) {
-        const el = renderer.createElement('style');
-        renderer.setAttribute(el, 'id', styleId);
-        renderer.appendChild(el, renderer.createText(newHighlightStyle));
-
-        renderer.appendChild(head, el);
-        oldStyleEl = el;
-      } else {
-        oldStyleEl = null;
-      }
-
-      return () => {
-        if (oldStyleEl) {
-          renderer.removeChild(head, oldStyleEl);
-          oldStyleEl = null;
-        }
-      };
+      return () => teardown();
     });
   }
 }
