@@ -12,8 +12,9 @@ export default {
     disabled: { control: 'boolean' },
     loading: { control: 'boolean' },
     pressed: { control: 'boolean' },
+    mutedUntilPressed: { control: 'boolean' },
   },
-  args: { color: 'brand', disabled: false, loading: false, pressed: false },
+  args: { color: 'brand', disabled: false, loading: false, pressed: false, mutedUntilPressed: false },
 } as Meta<ButtonSurfaceStorybookComponent>;
 
 type Story = StoryObj<ButtonSurfaceStorybookComponent>;
@@ -29,6 +30,7 @@ export const WithIcon: StoryObj<ButtonSurfaceIconStorybookComponent> = {
         [color]="color"
         [disabled]="disabled"
         [loading]="loading"
+        [mutedUntilPressed]="mutedUntilPressed"
       />
     `,
   }),

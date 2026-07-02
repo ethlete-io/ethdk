@@ -264,6 +264,63 @@ describe('RichTextEditorDom', () => {
     });
   });
 
+  describe('toggleInline across blocks', () => {
+    it('wraps each list item slice separately when the selection spans items', () => {
+      const { root, dom } = setup('<ul><li>one</li><li>two</li></ul>');
+      const [li1, li2] = Array.from(root.querySelectorAll('li'));
+      select(li1?.firstChild as Node, 0, li2?.firstChild as Node, 3);
+
+      dom.toggleInline('em');
+
+      expect(root.innerHTML).toBe('<ul><li><em>one</em></li><li><em>two</em></li></ul>');
+    });
+
+    it('does not create list items when the selection sweeps up an empty item', () => {
+      const { root, dom } = setup('<ol><li><br></li><li>two</li><li>three</li></ol>');
+      const [li1, li2] = Array.from(root.querySelectorAll('li'));
+      select(li1 as Node, 0, li2?.firstChild as Node, 3);
+
+      dom.toggleInline('em');
+
+      expect(root.innerHTML).toBe('<ol><li><br></li><li><em>two</em></li><li>three</li></ol>');
+    });
+
+    it('reports the mark as active right after wrapping across items', () => {
+      const { root, dom } = setup('<ol><li><br></li><li>two</li><li>three</li></ol>');
+      const [li1, li3] = [root.querySelectorAll('li')[0], root.querySelectorAll('li')[2]];
+      select(li1 as Node, 0, li3?.firstChild as Node, 5);
+
+      dom.toggleInline('em');
+
+      expect(dom.markStates()?.italic).toBe(true);
+    });
+
+    it('keeps reporting earlier marks after stacking a second mark across items', () => {
+      const { root, dom } = setup('<ul><li>one</li><li>two</li></ul>');
+      const [li1, li2] = Array.from(root.querySelectorAll('li'));
+      select(li1?.firstChild as Node, 0, li2?.firstChild as Node, 3);
+
+      dom.toggleInline('strong');
+      dom.toggleInline('em');
+
+      expect(root.innerHTML).toBe(
+        '<ul><li><em><strong>one</strong></em></li><li><em><strong>two</strong></em></li></ul>',
+      );
+      expect(dom.markStates()?.bold).toBe(true);
+      expect(dom.markStates()?.italic).toBe(true);
+    });
+
+    it('wraps each paragraph slice separately when the selection spans paragraphs', () => {
+      const { root, dom } = setup('<p>one</p><p>two</p>');
+      const [p1, p2] = Array.from(root.children);
+      select(p1?.firstChild as Node, 0, p2?.firstChild as Node, 3);
+
+      dom.toggleInline('strong');
+
+      expect(root.innerHTML).toBe('<p><strong>one</strong></p><p><strong>two</strong></p>');
+    });
+  });
+
   describe('toggleList', () => {
     it('wraps the covered paragraphs into a list', () => {
       const { root, dom } = setup('<p>one</p><p>two</p>');
@@ -293,6 +350,61 @@ describe('RichTextEditorDom', () => {
       dom.toggleList('ol');
 
       expect(root.innerHTML).toBe('<ol><li>one</li></ol>');
+    });
+
+    it('starts a list with one empty item when the editor is empty', () => {
+      const { root, dom } = setup('');
+      select(root, 0, root, 0);
+
+      dom.toggleList('ul');
+
+      expect(root.innerHTML).toBe('<ul><li><br></li></ul>');
+
+      const li = root.querySelector('li') as HTMLElement;
+      const range = doc.getSelection()?.getRangeAt(0);
+      expect(range?.collapsed).toBe(true);
+      expect(li.contains(range?.startContainer ?? null)).toBe(true);
+    });
+
+    it('converts a list to the other type instead of nesting it', () => {
+      const { root, dom } = setup('<ul><li>one</li><li>two</li></ul>');
+      const li = root.querySelector('li') as HTMLElement;
+      select(li.firstChild as Node, 0, li.firstChild as Node, 3);
+
+      dom.toggleList('ol');
+
+      expect(root.innerHTML).toBe('<ol><li>one</li><li>two</li></ol>');
+    });
+
+    it('toggles an empty-editor list back and forth without nesting items', () => {
+      const { root, dom } = setup('');
+      select(root, 0, root, 0);
+
+      dom.toggleList('ul');
+      dom.toggleList('ol');
+      dom.toggleList('ul');
+
+      expect(root.innerHTML).toBe('<ul><li><br></li></ul>');
+    });
+
+    it('hoists the items of a covered list when the selection also spans a paragraph', () => {
+      const { root, dom } = setup('<p>one</p><ol><li>two</li></ol>');
+      const p = root.querySelector('p') as HTMLElement;
+      const li = root.querySelector('li') as HTMLElement;
+      select(p.firstChild as Node, 0, li.firstChild as Node, 3);
+
+      dom.toggleList('ul');
+
+      expect(root.innerHTML).toBe('<ul><li>one</li><li>two</li></ul>');
+    });
+
+    it('marks the list state active after starting a list in an empty editor', () => {
+      const { root, dom } = setup('');
+      select(root, 0, root, 0);
+
+      dom.toggleList('ol');
+
+      expect(dom.markStates()?.orderedList).toBe(true);
     });
   });
 

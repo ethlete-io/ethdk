@@ -134,6 +134,7 @@ export class ButtonTextStorybookComponent {
                 [disabled]="disabled()"
                 [loading]="loading()"
                 [pressed]="pressed()"
+                [mutedUntilPressed]="mutedUntilPressed()"
                 et-button
                 type="button"
               >
@@ -154,6 +155,7 @@ export class ButtonSurfaceStorybookComponent {
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
   public pressed = input(false, { transform: booleanAttribute });
+  public mutedUntilPressed = input(false, { transform: booleanAttribute });
 
   public readonly VARIANTS = SURFACE_VARIANTS;
   public readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
@@ -176,6 +178,7 @@ export class ButtonSurfaceStorybookComponent {
                 [loading]="loading()"
                 [pressed]="pressed()"
                 [attr.aria-label]="buttonExample.iconLabel"
+                [mutedUntilPressed]="mutedUntilPressed()"
                 et-icon-button
                 type="button"
               >
@@ -197,6 +200,7 @@ export class ButtonIconStorybookComponent {
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
   public pressed = input(false, { transform: booleanAttribute });
+  public mutedUntilPressed = input(false, { transform: booleanAttribute });
 
   public readonly VARIANTS = SURFACE_VARIANTS;
   public readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;
@@ -350,6 +354,7 @@ export class ButtonWindowControlStorybookComponent {
                     [disabled]="disabled()"
                     [loading]="loading()"
                     [iconAlignment]="iconAlignment"
+                    [mutedUntilPressed]="mutedUntilPressed()"
                     et-button
                     type="button"
                   >
@@ -373,6 +378,7 @@ export class ButtonSurfaceIconStorybookComponent {
   public color = input('brand');
   public disabled = input(false, { transform: booleanAttribute });
   public loading = input(false, { transform: booleanAttribute });
+  public mutedUntilPressed = input(false, { transform: booleanAttribute });
 
   public readonly VARIANTS = SURFACE_VARIANTS;
   public readonly BUTTON_EXAMPLES = BUTTON_EXAMPLES;

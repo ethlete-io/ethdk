@@ -2,9 +2,9 @@
   <button
     [pressed]="dir.boldActive()"
     [disabled]="dir.disabled() || dir.readonly()"
-    [mutedUntilPressed]="true"
     (mousedown)="$event.preventDefault()"
     (click)="dir.toggleBold()"
+    mutedUntilPressed
     et-icon-button
     size="xs"
     type="button"
@@ -16,9 +16,9 @@
   <button
     [pressed]="dir.italicActive()"
     [disabled]="dir.disabled() || dir.readonly()"
-    [mutedUntilPressed]="true"
     (mousedown)="$event.preventDefault()"
     (click)="dir.toggleItalic()"
+    mutedUntilPressed
     et-icon-button
     size="xs"
     type="button"
@@ -30,9 +30,9 @@
   <button
     [pressed]="dir.strikeActive()"
     [disabled]="dir.disabled() || dir.readonly()"
-    [mutedUntilPressed]="true"
     (mousedown)="$event.preventDefault()"
     (click)="dir.toggleStrikethrough()"
+    mutedUntilPressed
     et-icon-button
     size="xs"
     type="button"
@@ -46,9 +46,9 @@
   <button
     [pressed]="dir.unorderedListActive()"
     [disabled]="dir.disabled() || dir.readonly()"
-    [mutedUntilPressed]="true"
     (mousedown)="$event.preventDefault()"
     (click)="dir.toggleUnorderedList()"
+    mutedUntilPressed
     et-icon-button
     size="xs"
     type="button"
@@ -60,9 +60,9 @@
   <button
     [pressed]="dir.orderedListActive()"
     [disabled]="dir.disabled() || dir.readonly()"
-    [mutedUntilPressed]="true"
     (mousedown)="$event.preventDefault()"
     (click)="dir.toggleOrderedList()"
+    mutedUntilPressed
     et-icon-button
     size="xs"
     type="button"
@@ -74,9 +74,9 @@
   <button
     [pressed]="dir.linkActive()"
     [disabled]="dir.disabled() || dir.readonly()"
-    [mutedUntilPressed]="true"
     (mousedown)="$event.preventDefault()"
     (click)="promptForLink()"
+    mutedUntilPressed
     et-icon-button
     size="xs"
     type="button"

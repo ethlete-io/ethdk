@@ -199,24 +199,77 @@
 
   /* Overrides every variant above while unpressed: swaps the theme-color tint for the neutral
      surface-interaction color (via SurfaceInteractiveDirective, always mounted by ButtonDirective)
-     so an idle toggle button reads as chrome, not as content colored by the ambient theme. Mirrors
-     the shape of the variant rules above (transparent at rest, increasingly tinted on interaction)
-     but there's no surface equivalent of --et-theme-color-primary-opacity to ramp, so the tint
-     step is spelled out per state instead of driven by one shared opacity variable. */
+     so an idle toggle button reads as chrome, not as content colored by the ambient theme. Each
+     variant keeps its own structural signature (outline keeps a neutral border, tonal/filled keep
+     a soft/solid-ish neutral fill) — only the color source swaps, so variants stay distinguishable
+     while muted. There's no surface equivalent of --et-theme-color-primary-opacity to ramp, so the
+     tint step is spelled out per state instead of driven by one shared opacity variable. */
   &[data-muted-until-pressed]:not([data-pressed='true']) {
-    background: transparent;
     color: currentColor;
 
-    &:hover:not([disabled]):not([aria-disabled='true']) {
-      background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+    &:where([data-variant='filled']) {
+      background: color-mix(in srgb, var(--et-surface-interaction-solid) 32%, transparent);
+
+      &:hover:not([disabled]):not([aria-disabled='true']) {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid) 40%, transparent);
+      }
+
+      &:focus-visible {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid) 44%, transparent);
+      }
+
+      &:active {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid) 48%, transparent);
+      }
     }
 
-    &:focus-visible {
+    &:where([data-variant='outline']) {
+      background: transparent;
+      border-color: var(--et-surface-interaction-solid);
+
+      &:hover:not([disabled]):not([aria-disabled='true']) {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+      }
+
+      &:focus-visible {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid) 16%, transparent);
+      }
+
+      &:active {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid) 20%, transparent);
+      }
+    }
+
+    &:where([data-variant='tonal']) {
       background: color-mix(in srgb, var(--et-surface-interaction-solid) 16%, transparent);
+
+      &:hover:not([disabled]):not([aria-disabled='true']) {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid) 24%, transparent);
+      }
+
+      &:focus-visible {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid) 28%, transparent);
+      }
+
+      &:active {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid) 32%, transparent);
+      }
     }
 
-    &:active {
-      background: color-mix(in srgb, var(--et-surface-interaction-solid) 20%, transparent);
+    &:where([data-variant='transparent']) {
+      background: transparent;
+
+      &:hover:not([disabled]):not([aria-disabled='true']) {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+      }
+
+      &:focus-visible {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid) 16%, transparent);
+      }
+
+      &:active {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid) 20%, transparent);
+      }
     }
   }
 

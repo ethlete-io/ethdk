@@ -186,22 +186,79 @@
   /* --- Muted until pressed --- */
 
   /* See icon-button.component.css for the rationale — same neutral-until-active behavior, applied
-     to this component's --_et-button-* indirection variables instead of background/color directly. */
+     to this component's --_et-button-* indirection variables instead of background/color directly.
+     Each variant keeps its own structural signature (outline keeps a border, tonal keeps a soft
+     fill, filled keeps a solid-ish fill) — only the color source swaps from the theme color to the
+     neutral surface-interaction color, so variants stay distinguishable while muted. */
   &[data-muted-until-pressed]:not([data-pressed='true']) {
-    --_et-button-background: transparent;
     --_et-button-color: currentColor;
-    --_et-button-border-color: transparent;
 
-    &:hover:not([disabled]):not([aria-disabled='true']) {
-      --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+    &:where([data-variant='filled']) {
+      --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 32%, transparent);
+      --_et-button-border-color: transparent;
+
+      &:hover:not([disabled]):not([aria-disabled='true']) {
+        --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 40%, transparent);
+      }
+
+      &:focus-visible {
+        --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 44%, transparent);
+      }
+
+      &:active {
+        --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 48%, transparent);
+      }
     }
 
-    &:focus-visible {
+    &:where([data-variant='outline']) {
+      --_et-button-background: transparent;
+      --_et-button-border-color: var(--et-surface-interaction-solid);
+
+      &:hover:not([disabled]):not([aria-disabled='true']) {
+        --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+      }
+
+      &:focus-visible {
+        --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 16%, transparent);
+      }
+
+      &:active {
+        --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 20%, transparent);
+      }
+    }
+
+    &:where([data-variant='tonal']) {
       --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 16%, transparent);
+      --_et-button-border-color: transparent;
+
+      &:hover:not([disabled]):not([aria-disabled='true']) {
+        --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 24%, transparent);
+      }
+
+      &:focus-visible {
+        --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 28%, transparent);
+      }
+
+      &:active {
+        --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 32%, transparent);
+      }
     }
 
-    &:active {
-      --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 20%, transparent);
+    &:where([data-variant='transparent']) {
+      --_et-button-background: transparent;
+      --_et-button-border-color: transparent;
+
+      &:hover:not([disabled]):not([aria-disabled='true']) {
+        --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+      }
+
+      &:focus-visible {
+        --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 16%, transparent);
+      }
+
+      &:active {
+        --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 20%, transparent);
+      }
     }
   }
 

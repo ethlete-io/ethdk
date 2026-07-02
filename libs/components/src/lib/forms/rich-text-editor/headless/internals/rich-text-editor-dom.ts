@@ -177,18 +177,109 @@ const richTextEditorDomFactory = () => {
 
   const isBlockEmpty = (el: HTMLElement) => (el.textContent ?? '').trim().length === 0;
 
-  const wrapInline = (range: Range, tag: InlineTag) => {
-    const wrapper = renderer.createElement(tag);
+  // An inline wrapper must stay inside its block: extracting a range that crosses <li>/<p>
+  // boundaries clones the partially covered blocks into the wrapper (an <em> holding <li>s inside
+  // the list), which is invalid markup and serializes to broken markdown. Split such a range into
+  // one slice per covered block so each slice can be wrapped within its own block. Whitespace-only
+  // slices (e.g. an empty <li> swept up by an imprecise drag) are dropped entirely.
+  const blockSlices = (range: Range): Range[] => {
+    const el = root();
+    // Boundaries resolving to no block are root-level inline flow — the root is their block, so
+    // two null boundaries count as the same block just like two boundaries in the same <li>/<p>.
+    const startBlock = closestWithin(range.startContainer, 'li, p');
+    const endBlock = closestWithin(range.endContainer, 'li, p');
 
-    try {
-      range.surroundContents(wrapper);
-    } catch {
-      renderer.appendChild(wrapper, range.extractContents());
-      range.insertNode(wrapper);
+    if (!el || startBlock === endBlock) {
+      return [range];
     }
 
-    collectDescendants(wrapper, tag).forEach((nested) => unwrapElement(nested));
-    selectNodeContents(wrapper);
+    const leaves: Node[] = [];
+
+    el.childNodes.forEach((child) => {
+      if (!range.intersectsNode(child)) {
+        return;
+      }
+
+      if (child instanceof HTMLElement && (child.tagName === 'UL' || child.tagName === 'OL')) {
+        child.childNodes.forEach((item) => {
+          if (range.intersectsNode(item)) {
+            leaves.push(item);
+          }
+        });
+      } else {
+        leaves.push(child);
+      }
+    });
+
+    const slices: Range[] = [];
+
+    leaves.forEach((leaf) => {
+      const slice = doc.createRange();
+      slice.selectNodeContents(leaf);
+
+      if (leaf.contains(range.startContainer)) {
+        slice.setStart(range.startContainer, range.startOffset);
+      }
+
+      if (leaf.contains(range.endContainer)) {
+        slice.setEnd(range.endContainer, range.endOffset);
+      }
+
+      trimRangeWhitespace(slice);
+
+      if (!slice.collapsed && slice.toString().trim().length > 0) {
+        slices.push(slice);
+      }
+    });
+
+    return slices;
+  };
+
+  const wrapInline = (range: Range, tag: InlineTag) => {
+    const wrappers: HTMLElement[] = [];
+
+    blockSlices(range).forEach((slice) => {
+      const wrapper = renderer.createElement(tag);
+
+      try {
+        slice.surroundContents(wrapper);
+      } catch {
+        renderer.appendChild(wrapper, slice.extractContents());
+        slice.insertNode(wrapper);
+      }
+
+      collectDescendants(wrapper, tag).forEach((nested) => unwrapElement(nested));
+      wrappers.push(wrapper);
+    });
+
+    const first = wrappers[0];
+    const last = wrappers[wrappers.length - 1];
+
+    if (!first || !last) {
+      return;
+    }
+
+    if (first === last) {
+      selectNodeContents(first);
+
+      return;
+    }
+
+    // Anchor the restored selection inside the first/last wrapper rather than before/after them
+    // (selectAcross) — markStates() resolves the active marks from the selection's start
+    // container, so a boundary outside the wrapper would leave the toolbar button unpressed
+    // until the user re-selects.
+    const selection = doc.getSelection();
+
+    if (!selection) {
+      return;
+    }
+
+    const restored = doc.createRange();
+    restored.setStart(first, 0);
+    restored.setEnd(last, last.childNodes.length);
+    selection.removeAllRanges();
+    selection.addRange(restored);
   };
 
   const pathFromAncestor = (ancestor: Node, node: Node): number[] | null => {
@@ -439,6 +530,22 @@ const richTextEditorDomFactory = () => {
     return true;
   };
 
+  // The selection may be anchored on an element boundary rather than in a text node — e.g. the
+  // restored selection after a cross-block wrap starts at (wrapper, 0). Marks *below* such an
+  // anchor (a <strong> inside the <em> wrapper) are invisible to an ancestor walk, so descend to
+  // the deepest node at the selection's start position first.
+  const resolveStartNode = (range: Range): Node => {
+    let node: Node = range.startContainer;
+    let offset = range.startOffset;
+
+    while (node.nodeType === Node.ELEMENT_NODE && node.childNodes.length > 0) {
+      node = node.childNodes[Math.min(offset, node.childNodes.length - 1)] as Node;
+      offset = 0;
+    }
+
+    return node;
+  };
+
   const markStates = (): RichTextMarkStates | null => {
     const editable = getSelection();
 
@@ -446,7 +553,7 @@ const richTextEditorDomFactory = () => {
       return null;
     }
 
-    const node = editable.range.startContainer;
+    const node = resolveStartNode(editable.range);
 
     return {
       bold: !!closestWithin(node, 'strong'),
@@ -607,15 +714,49 @@ const richTextEditorDomFactory = () => {
       return;
     }
 
-    const blocks = blocksInRange(editable.range);
+    // Caret inside a list of the other type: switch the list's type in place. Falling through to
+    // the block-wrapping path below would treat the whole list as one block and nest its <li>s
+    // inside a new <li>, going one level deeper on every toggle.
+    const otherList = closestWithin(editable.range.startContainer, listTag === 'ul' ? 'ol' : 'ul');
 
-    if (blocks.length === 0) {
+    if (otherList) {
+      const converted = renderer.createElement(listTag);
+
+      while (otherList.firstChild) {
+        renderer.appendChild(converted, otherList.firstChild);
+      }
+
+      replaceWith(otherList, [converted]);
+      selectNodeContents(converted);
+      el.normalize();
+
       return;
     }
 
+    const blocks = blocksInRange(editable.range);
     const list = renderer.createElement(listTag);
 
+    // An empty editor has no blocks to wrap — start a fresh list with one empty item instead.
+    // The <br> gives the item a line box so the caret has somewhere to land (see exitListItem).
+    if (blocks.length === 0) {
+      const li = renderer.createElement('li');
+      renderer.appendChild(li, renderer.createElement('br'));
+      renderer.appendChild(list, li);
+      renderer.appendChild(el, list);
+      collapseInto(li, 0);
+
+      return;
+    }
+
     blocks.forEach((block) => {
+      // A block that is itself a list (a selection spanning a paragraph and a list of the other
+      // type) contributes its items directly — wrapping it would nest its <li>s inside a new <li>.
+      if (block instanceof HTMLElement && (block.tagName === 'UL' || block.tagName === 'OL')) {
+        childrenByTag(block, 'li').forEach((item) => renderer.appendChild(list, item));
+
+        return;
+      }
+
       const li = renderer.createElement('li');
 
       if (block.nodeType === Node.TEXT_NODE) {
