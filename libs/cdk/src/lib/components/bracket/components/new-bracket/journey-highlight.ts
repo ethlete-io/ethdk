@@ -1,21 +1,72 @@
-import { NewBracket } from './linked';
+import { AngularRenderer } from '@ethlete/core';
 
-export const createJourneyHighlight = <TRoundData, TMatchData>(bracketData: NewBracket<TRoundData, TMatchData>) => {
-  let styles = '';
+const PARTICIPANT_SHORT_ID_PATTERN = /^p\d+$/;
 
-  for (const participant of bracketData.participants.values()) {
-    styles += `
-          .et-new-bracket-host:has(.${participant.shortId}:hover) {
-            path, .et-bracket-new-element--match {
-                opacity: 0.5;
-            }
+export const JOURNEY_HOVER_HOST_CLASS = 'et-new-bracket-host--journey-hover';
+export const JOURNEY_ACTIVE_ELEMENT_CLASS = 'et-bracket-new-journey-active';
 
-            .${participant.shortId} {
-                opacity: 1 !important;
-            }
-          }
-        `;
-  }
+const getParticipantShortIds = (element: Element | null) =>
+  element ? Array.from(element.classList).filter((cls) => PARTICIPANT_SHORT_ID_PATTERN.test(cls)) : [];
 
-  return styles.replace(/\s+/g, ' ').trim();
+export const setupJourneyHighlight = (host: HTMLElement, renderer: AngularRenderer): (() => void) => {
+  let activeElements: Element[] = [];
+  let activeShortIds: string[] = [];
+
+  const clear = () => {
+    if (!activeElements.length) return;
+
+    for (const el of activeElements) {
+      renderer.removeClass(el as HTMLElement, JOURNEY_ACTIVE_ELEMENT_CLASS);
+    }
+
+    renderer.removeClass(host, JOURNEY_HOVER_HOST_CLASS);
+    activeElements = [];
+    activeShortIds = [];
+  };
+
+  const activate = (shortIds: string[]) => {
+    const isSame =
+      shortIds.length === activeShortIds.length && shortIds.every((id, index) => id === activeShortIds[index]);
+
+    if (isSame) return;
+
+    clear();
+
+    const elements: Element[] = [];
+
+    for (const shortId of shortIds) {
+      elements.push(...Array.from(host.querySelectorAll(`.${shortId}`)));
+    }
+
+    for (const el of elements) {
+      renderer.addClass(el as HTMLElement, JOURNEY_ACTIVE_ELEMENT_CLASS);
+    }
+
+    renderer.addClass(host, JOURNEY_HOVER_HOST_CLASS);
+    activeElements = elements;
+    activeShortIds = shortIds;
+  };
+
+  const onMouseOver = (event: Event) => {
+    const target = event.target as Element | null;
+    const container = target?.closest('.et-bracket-new-element--match, path') ?? null;
+    const shortIds = getParticipantShortIds(container);
+
+    if (shortIds.length) {
+      activate(shortIds);
+    } else {
+      clear();
+    }
+  };
+
+  const onMouseLeave = () => clear();
+
+  const removeMouseOverListener = renderer.listen(host, 'mouseover', onMouseOver);
+  const removeMouseLeaveListener = renderer.listen(host, 'mouseleave', onMouseLeave);
+
+  return () => {
+    removeMouseOverListener();
+    removeMouseLeaveListener();
+    clear();
+  };
 };

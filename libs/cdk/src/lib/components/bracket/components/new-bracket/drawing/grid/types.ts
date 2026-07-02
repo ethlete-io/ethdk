@@ -21,4 +21,8 @@ export type CreateBracketGridConfig = {
   swissGroupPadding: number;
   swissGroupBorderWidth: number;
   layout: BracketDataLayout;
+  continueElement?: {
+    columnWidth: number;
+    elementHeight: number;
+  } | null;
 };

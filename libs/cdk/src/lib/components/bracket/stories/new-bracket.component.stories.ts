@@ -119,6 +119,26 @@ export default {
         type: 'number',
       },
     },
+    showContinueElement: {
+      control: {
+        type: 'boolean',
+      },
+    },
+    continueColumnWidth: {
+      control: {
+        type: 'number',
+      },
+    },
+    continueElementHeight: {
+      control: {
+        type: 'number',
+      },
+    },
+    continueLineDashArray: {
+      control: {
+        type: 'number',
+      },
+    },
   },
   args: {
     columnGap: 60,
@@ -139,6 +159,10 @@ export default {
     rowRoundGap: 70,
     roundHeaderGap: 20,
     swissGroupPadding: 10,
+    showContinueElement: false,
+    continueColumnWidth: 250,
+    continueElementHeight: 75,
+    continueLineDashArray: 6,
   },
 } as Meta<StorybookBracketNewComponent>;
 
@@ -214,5 +238,21 @@ export const DFB_NO_FINAL_NO_FIRST_UPPER = {
   render: Template,
   args: {
     source: DFB_DOUBLE_DUMMY_NO_FINAL_NO_UPPER_FIRST,
+  },
+};
+
+export const DFB_NO_FINAL_WITH_CONTINUE = {
+  render: Template,
+  args: {
+    source: DFB_DOUBLE_DUMMY_NO_FINAL,
+    showContinueElement: true,
+  },
+};
+
+export const SingleWithContinue = {
+  render: Template,
+  args: {
+    source: generateBracketDataForEthlete(ET_DUMMY_DATA_SINGLE as unknown as RoundStageStructureWithMatchesView[]),
+    showContinueElement: true,
   },
 };

@@ -1,6 +1,6 @@
 import { createStaticRootProvider } from '@ethlete/core';
 import { BracketDataLayout } from './core';
-import { BracketMatchComponent, BracketRoundHeaderComponent } from './drawing/grid';
+import { BracketContinueComponent, BracketMatchComponent, BracketRoundHeaderComponent } from './drawing/grid';
 import { BracketSwissGroupColorType } from './linked';
 
 /**
@@ -44,10 +44,15 @@ export type NewBracketConfig<TRoundData = any, TMatchData = any> = {
   swissGroupBorderRadius?: number;
   layout?: BracketDataLayout;
   hideRoundHeaders?: boolean;
+  showContinueElement?: boolean;
+  continueColumnWidth?: number;
+  continueElementHeight?: number;
+  continueLineDashArray?: number;
 
   roundHeaderComponent?: BracketRoundHeaderComponent<TRoundData, TMatchData>;
   matchComponent?: BracketMatchComponent<TRoundData, TMatchData>;
   finalMatchComponent?: BracketMatchComponent<TRoundData, TMatchData>;
+  continueComponent?: BracketContinueComponent<TRoundData, TMatchData>;
 
   /** Swiss specific overrides. These win over the top level component defaults. */
   swiss?: BracketSwissConfig<TRoundData, TMatchData>;

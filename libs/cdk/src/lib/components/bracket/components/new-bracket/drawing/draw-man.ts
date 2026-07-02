@@ -1,9 +1,9 @@
 import { BRACKET_ROUND_MIRROR_TYPE, COMMON_BRACKET_ROUND_TYPE } from '../core';
 import { CurveOptions, curvePath } from './curve';
-import { ComputedBracketGrid, Dimensions } from './grid';
+import { ComputedBracketGrid, Dimensions, isBracketContinueMatch } from './grid';
 import { linePath } from './line';
 import { BracketPosition } from './math';
-import { PathOptions } from './path';
+import { path, PathOptions } from './path';
 
 export type DrawManDimensions = {
   columnWidth: number;
@@ -15,6 +15,9 @@ export type DrawManDimensions = {
   bracketGrid: ComputedBracketGrid<any, any>;
   path: Omit<PathOptions, 'className'>;
   curve: Omit<CurveOptions, 'path' | 'inverted'>;
+
+  /** Path options for the lines connecting the continuing matches to the continue element */
+  continuePath?: Omit<PathOptions, 'className'>;
 };
 
 const makePos = (dimensions: Dimensions): BracketPosition => ({
@@ -33,9 +36,15 @@ const makePos = (dimensions: Dimensions): BracketPosition => ({
 export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions) => {
   const svgParts: string[] = [];
 
+  const continueElement = dimensions.bracketGrid.columns
+    .flatMap((col) => col.elements)
+    .find((el) => el.type === 'continue');
+  const continuePos = continueElement ? makePos(continueElement.dimensions) : null;
+  const continueSources: { pos: BracketPosition; className: string }[] = [];
+
   for (const col of dimensions.bracketGrid.columns) {
     for (const el of col.elements) {
-      if (el.type === 'header') continue;
+      if (el.type !== 'match') continue;
 
       const currentMatchParticipantsShortIds = [el.match.home?.shortId, el.match.away?.shortId]
         .filter((id) => !!id)
@@ -47,6 +56,10 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions) =
 
       // No lines for the third place match
       if (el.round.type === COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE) continue;
+
+      if (continuePos && isBracketContinueMatch(el.match)) {
+        continueSources.push({ pos: currentPos, className: el.match.winner?.shortId || '' });
+      }
 
       switch (el.match.relation.type) {
         case 'nothing-to-one': {
@@ -124,6 +137,56 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions) =
         }
       }
     }
+  }
+
+  if (continuePos && continueSources.length) {
+    const continuePathOptions = dimensions.continuePath ?? dimensions.path;
+    const sharedPathOptions: PathOptions = { ...continuePathOptions, className: '' };
+    const curveAmount = dimensions.curve.lineStartingCurveAmount;
+    const trunkInline = continuePos.inline.start - dimensions.columnGap / 2;
+    const continueBlockCenter = continuePos.block.center;
+    const sourceBlocks = continueSources.map((source) => source.pos.block.center);
+    const firstSourceBlock = Math.min(...sourceBlocks);
+    const lastSourceBlock = Math.max(...sourceBlocks);
+    const trunkBlocks: number[] = [continueBlockCenter];
+
+    for (const source of continueSources) {
+      const sourceBlockCenter = source.pos.block.center;
+      const blockDistance = continueBlockCenter - sourceBlockCenter;
+      const sourcePathOptions: PathOptions = { ...continuePathOptions, className: source.className };
+
+      const isTrunkCorner =
+        (sourceBlockCenter === firstSourceBlock && blockDistance > 0.5) ||
+        (sourceBlockCenter === lastSourceBlock && blockDistance < -0.5);
+
+      if (!isTrunkCorner) {
+        svgParts.push(path(`M ${source.pos.inline.end} ${sourceBlockCenter} H ${trunkInline}`, sourcePathOptions));
+        trunkBlocks.push(sourceBlockCenter);
+      } else {
+        const curve = Math.min(curveAmount, Math.abs(blockDistance));
+        const curveEndBlock = sourceBlockCenter + curve * Math.sign(blockDistance);
+
+        svgParts.push(
+          path(
+            `M ${source.pos.inline.end} ${sourceBlockCenter}
+             H ${trunkInline - curve}
+             Q ${trunkInline} ${sourceBlockCenter}, ${trunkInline} ${curveEndBlock}`,
+            sourcePathOptions,
+          ),
+        );
+
+        trunkBlocks.push(curveEndBlock);
+      }
+    }
+
+    const trunkBlockStart = Math.min(...trunkBlocks);
+    const trunkBlockEnd = Math.max(...trunkBlocks);
+
+    if (trunkBlockEnd - trunkBlockStart > 0.5) {
+      svgParts.push(path(`M ${trunkInline} ${trunkBlockStart} V ${trunkBlockEnd}`, sharedPathOptions));
+    }
+
+    svgParts.push(path(`M ${trunkInline} ${continueBlockCenter} H ${continuePos.inline.start}`, sharedPathOptions));
   }
 
   return svgParts.join('');
