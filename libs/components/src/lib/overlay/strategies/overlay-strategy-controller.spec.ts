@@ -1,0 +1,194 @@
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { Component } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { BehaviorSubject } from 'rxjs';
+import '../../../test-helpers';
+import { injectOverlayManager } from '../overlay-manager';
+import { OverlayRef } from '../overlay-ref';
+import { OverlayStrategy, OverlayStrategyContext } from './overlay-strategy.types';
+
+const MD_QUERY = '(min-width: 768px)';
+
+class FakeBreakpointObserver {
+  private states = new Map<string, BehaviorSubject<{ matches: boolean }>>();
+
+  private state(query: string) {
+    const subject = this.states.get(query);
+
+    if (!subject) {
+      const newSubject = new BehaviorSubject({ matches: false });
+      this.states.set(query, newSubject);
+
+      return newSubject;
+    }
+
+    return subject;
+  }
+
+  observe(query: string) {
+    return this.state(query).asObservable();
+  }
+
+  isMatched(query: string) {
+    return this.state(query).value.matches;
+  }
+
+  setMatches(query: string, matches: boolean) {
+    this.state(query).next({ matches });
+  }
+}
+
+@Component({ template: 'overlay content' })
+class StrategyTestContentComponent {}
+
+const flushFrames = () =>
+  new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+
+describe('overlay strategy controller', () => {
+  let fakeBreakpoints: FakeBreakpointObserver;
+
+  const createTestStrategy = (id: string, config: OverlayStrategy['config']): OverlayStrategy => ({
+    id,
+    config,
+    onSwitchedTo: vi.fn(),
+    onSwitchedAwayFrom: vi.fn(),
+    onBeforeEnter: vi.fn((context: OverlayStrategyContext) => context.lifecycle.enter()),
+    onAfterEnter: vi.fn(),
+    onBeforeLeave: vi.fn((context: OverlayStrategyContext) => context.lifecycle.leave()),
+    onAfterLeave: vi.fn(),
+  });
+
+  let smallStrategy: OverlayStrategy;
+  let largeStrategy: OverlayStrategy;
+  let openedRef: OverlayRef<StrategyTestContentComponent, unknown> | null = null;
+
+  beforeEach(() => {
+    fakeBreakpoints = new FakeBreakpointObserver();
+    openedRef = null;
+
+    TestBed.configureTestingModule({
+      providers: [{ provide: BreakpointObserver, useValue: fakeBreakpoints }],
+    });
+
+    smallStrategy = createTestStrategy('small', {
+      width: '100%',
+      maxWidth: '640px',
+      containerClass: 'et-overlay--bottom-sheet',
+      bodyClass: 'small-body',
+      positionStrategy: () => ({ kind: 'global', vertical: 'end' }),
+    });
+
+    largeStrategy = createTestStrategy('large', {
+      maxWidth: '80vw',
+      containerClass: 'et-overlay--dialog',
+      documentClass: 'large-document',
+      positionStrategy: vi.fn(() => ({ kind: 'center' }) as const),
+    });
+  });
+
+  afterEach(() => {
+    openedRef?.close();
+  });
+
+  const openOverlay = () => {
+    const overlayRef = TestBed.runInInjectionContext(() =>
+      injectOverlayManager().open<StrategyTestContentComponent, unknown>(StrategyTestContentComponent, {
+        strategies: () => [{ strategy: smallStrategy }, { breakpoint: 'md', strategy: largeStrategy }],
+      }),
+    );
+
+    openedRef = overlayRef;
+    TestBed.inject(BreakpointObserver);
+    TestBed.tick();
+
+    return overlayRef;
+  };
+
+  it('applies the highest matched strategy on open', () => {
+    const overlayRef = openOverlay();
+    const elements = overlayRef.elements;
+
+    expect(elements?.paneElement.classList.contains('et-overlay--bottom-sheet')).toBe(true);
+    expect(elements?.paneElement.style.width).toBe('100%');
+    expect(elements?.paneElement.style.maxWidth).toBe('640px');
+    expect(document.body.classList.contains('small-body')).toBe(true);
+  });
+
+  it('resolves event origins to the nearest clickable element', () => {
+    const button = document.createElement('button');
+    const icon = document.createElement('span');
+    button.appendChild(icon);
+    document.body.appendChild(button);
+
+    const clickEvent = new MouseEvent('click', { bubbles: true });
+    icon.dispatchEvent(clickEvent);
+
+    const positionStrategy = vi.fn(() => ({ kind: 'global' }) as const);
+    smallStrategy.config.positionStrategy = positionStrategy;
+
+    openedRef = TestBed.runInInjectionContext(() =>
+      injectOverlayManager().open<StrategyTestContentComponent, unknown>(StrategyTestContentComponent, {
+        strategies: () => [{ strategy: smallStrategy }],
+        origin: clickEvent,
+      }),
+    );
+    TestBed.tick();
+
+    expect(positionStrategy).toHaveBeenCalledWith(button);
+
+    button.remove();
+  });
+
+  it('renders the content component inside the overlay container', () => {
+    const overlayRef = openOverlay();
+
+    expect(overlayRef.elements?.paneElement.textContent).toContain('overlay content');
+    expect(overlayRef.componentInstance()).toBeInstanceOf(StrategyTestContentComponent);
+  });
+
+  it('delegates enter and leave animations to the active strategy', async () => {
+    const overlayRef = openOverlay();
+
+    await flushFrames();
+
+    expect(smallStrategy.onBeforeEnter).toHaveBeenCalledOnce();
+    expect(largeStrategy.onBeforeEnter).not.toHaveBeenCalled();
+
+    overlayRef.close();
+
+    expect(smallStrategy.onBeforeLeave).toHaveBeenCalledOnce();
+  });
+
+  it('switches strategies when the breakpoint changes', () => {
+    const overlayRef = openOverlay();
+    const elements = overlayRef.elements;
+
+    fakeBreakpoints.setMatches(MD_QUERY, true);
+    TestBed.tick();
+
+    expect(smallStrategy.onSwitchedAwayFrom).toHaveBeenCalledOnce();
+    expect(largeStrategy.onSwitchedTo).toHaveBeenCalledOnce();
+
+    // class buckets are diffed per element
+    expect(elements?.paneElement.classList.contains('et-overlay--bottom-sheet')).toBe(false);
+    expect(elements?.paneElement.classList.contains('et-overlay--dialog')).toBe(true);
+    expect(document.body.classList.contains('small-body')).toBe(false);
+    expect(document.documentElement.classList.contains('large-document')).toBe(true);
+
+    // position is re-resolved and sizing re-applied
+    expect(largeStrategy.config.positionStrategy).toHaveBeenCalled();
+    expect(elements?.hostElement.style.padding).toBe('16px');
+    expect(elements?.paneElement.style.width).toBe('');
+    expect(elements?.paneElement.style.maxWidth).toBe('80vw');
+
+    // switching back applies the previous strategy again
+    fakeBreakpoints.setMatches(MD_QUERY, false);
+    TestBed.tick();
+
+    expect(largeStrategy.onSwitchedAwayFrom).toHaveBeenCalledOnce();
+    expect(smallStrategy.onSwitchedTo).toHaveBeenCalledOnce();
+    expect(elements?.paneElement.classList.contains('et-overlay--bottom-sheet')).toBe(true);
+    expect(document.documentElement.classList.contains('large-document')).toBe(false);
+  });
+
+});

@@ -6,10 +6,22 @@ export type OverlayRuntimeRole = 'dialog' | 'alertdialog';
 
 export type OverlayRuntimeAutoFocusTarget = 'container' | 'first-heading' | 'first-tabbable';
 
-export type OverlayRuntimeCloseSource = 'api' | 'escape' | 'outside-pointer';
+export type OverlayRuntimeCloseSource = 'api' | 'escape' | 'outside-pointer' | 'drag';
 
 export type OverlayRuntimeCenteredPosition = {
   kind: 'center';
+};
+
+export type OverlayRuntimeGlobalPositionAlignment = 'start' | 'center' | 'end' | 'stretch';
+
+export type OverlayRuntimeGlobalPosition = {
+  kind: 'global';
+  /** Horizontal placement of the pane inside the viewport. Defaults to `center`. */
+  horizontal?: OverlayRuntimeGlobalPositionAlignment;
+  /** Vertical placement of the pane inside the viewport. Defaults to `center`. */
+  vertical?: OverlayRuntimeGlobalPositionAlignment;
+  /** Padding applied to the host element. Defaults to `0`. */
+  padding?: string;
 };
 
 export type OverlayRuntimeAnchoredPosition = {
@@ -27,7 +39,10 @@ export type OverlayRuntimeAnchoredPosition = {
   mirrorWidth?: boolean;
 };
 
-export type OverlayRuntimePositionStrategy = OverlayRuntimeCenteredPosition | OverlayRuntimeAnchoredPosition;
+export type OverlayRuntimePositionStrategy =
+  | OverlayRuntimeCenteredPosition
+  | OverlayRuntimeAnchoredPosition
+  | OverlayRuntimeGlobalPosition;
 
 export type OverlayRuntimeElements = {
   rootElement: HTMLElement;
@@ -43,6 +58,25 @@ export type OverlayRuntimeCloseEvent<TResult = unknown> = {
 
 export type OverlayRuntimeComponentBase = {
   animatedLifecycle?: Signal<AnimatedLifecycleDirective | undefined>;
+};
+
+export type OverlayRuntimeAnimationDelegateEnterContext = {
+  lifecycle: AnimatedLifecycleDirective;
+  elements: OverlayRuntimeElements;
+};
+
+export type OverlayRuntimeAnimationDelegateLeaveContext = OverlayRuntimeAnimationDelegateEnterContext & {
+  closeEvent: OverlayRuntimeCloseEvent;
+};
+
+/**
+ * Overrides the runtime's default enter/leave animation handling.
+ * A delegate must eventually drive the lifecycle state to `entered` (enter) or `left` (leave),
+ * otherwise the overlay will never finish opening or closing.
+ */
+export type OverlayRuntimeAnimationDelegate = {
+  enter?: (context: OverlayRuntimeAnimationDelegateEnterContext) => void;
+  leave?: (context: OverlayRuntimeAnimationDelegateLeaveContext) => void;
 };
 
 export type OverlayRuntimeMountConfig<TComponent extends object> = {
@@ -66,4 +100,6 @@ export type OverlayRuntimeMountConfig<TComponent extends object> = {
   backdropClass?: string[];
   paneClass?: string[];
   inputBindings?: Record<string, unknown>;
+  outputBindings?: Record<string, (event: unknown) => unknown>;
+  animationDelegate?: OverlayRuntimeAnimationDelegate;
 };

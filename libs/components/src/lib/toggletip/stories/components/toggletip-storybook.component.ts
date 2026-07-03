@@ -6,6 +6,11 @@ import { TOGGLETIP_IMPORTS } from '../../toggletip.imports';
   selector: 'et-sb-toggletip',
   template: `
     <div class="flex flex-col gap-8 p-8 font-sans" style="min-height: 24rem;">
+      <header class="flex flex-col gap-1">
+        <h2 class="text-h5 font-title">Toggletips</h2>
+        <p class="text-small text-white/60">Click-triggered popovers with interactive content and focus left free.</p>
+      </header>
+
       <div class="flex flex-wrap items-center gap-4">
         <button
           [etToggletip]="toggletipText()"
@@ -32,7 +37,7 @@ import { TOGGLETIP_IMPORTS } from '../../toggletip.imports';
         </button>
       </div>
 
-      <div class="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-600">
+      <div class="rounded-2xl border border-dashed border-white/15 p-6 text-small text-white/60">
         Toggletips are click-triggered, can contain interactive content, and close on outside press or Escape.
       </div>
 

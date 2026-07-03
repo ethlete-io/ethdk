@@ -14,11 +14,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RuntimeError } from '@ethlete/core';
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 import { take, tap } from 'rxjs';
-import { OverlayAutoFocusTarget, OverlayMode, OverlayRole } from '../overlay-config';
+import { OverlayConfig, OverlayAutoFocusTarget, OverlayMode, OverlayRole } from '../overlay-config';
 import { OVERLAY_ERROR_CODES } from '../overlay-errors';
 import { injectOverlayManager } from '../overlay-manager';
 import { OverlayRef } from '../overlay-ref';
 import { OverlayTemplateHostComponent } from '../overlay-template-host.component';
+import { anchoredOverlayStrategy, centeredOverlayStrategy } from '../strategies';
 import { OverlayAnchorDirective } from './overlay-anchor.directive';
 import { OverlaySurfaceContext, OverlaySurfaceDirective } from './overlay-surface.directive';
 import { OverlayTriggerDirective } from './overlay-trigger.directive';
@@ -185,7 +186,7 @@ export class OverlayDirective {
 
     const origin = this.originElement();
     const isAnchored = this.mode() === 'non-modal' && origin !== null;
-    const overlayRef = this.overlayManager.open<OverlayTemplateHostComponent>(OverlayTemplateHostComponent, {
+    const config: OverlayConfig = {
       autoFocus: this.autoFocus(),
       backdropClass: this.backdropClass(),
       closeOnEscape: this.closeOnEscape(),
@@ -200,10 +201,9 @@ export class OverlayDirective {
       mode: this.mode(),
       origin: isAnchored ? origin : undefined,
       panelClass: this.panelClass(),
-      positionStrategy: isAnchored
-        ? {
-            kind: 'anchored',
-            referenceElement: origin,
+      strategies: isAnchored
+        ? anchoredOverlayStrategy({
+            containerClass: 'et-overlay--anchored',
             placement: this.placement(),
             fallbackPlacements: this.fallbackPlacements(),
             offset: this.offset(),
@@ -213,13 +213,14 @@ export class OverlayDirective {
             autoHide: this.autoHide(),
             autoCloseIfReferenceHidden: this.autoCloseIfReferenceHidden(),
             mirrorWidth: this.mirrorWidth(),
-          }
-        : {
-            kind: 'center',
-          },
+          })
+        : centeredOverlayStrategy({
+            containerClass: 'et-overlay--centered',
+          }),
       restoreFocus: this.restoreFocus(),
       role: this.role(),
-    });
+    };
+    const overlayRef = this.overlayManager.open<OverlayTemplateHostComponent>(OverlayTemplateHostComponent, config);
 
     this.overlayRef.set(overlayRef);
 

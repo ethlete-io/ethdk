@@ -10,11 +10,8 @@ import {
   inject,
   input,
   untracked,
-  viewChild,
 } from '@angular/core';
 import {
-  ANIMATED_LIFECYCLE_TOKEN,
-  AnimatedLifecycleDirective,
   COLOR_PROVIDER,
   ProvideColorDirective,
   ProvideSurfaceDirective,
@@ -31,7 +28,7 @@ import { ToggletipContent } from './headless/toggletip.directive';
   styleUrl: './toggletip.component.css',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgTemplateOutlet, AnimatedLifecycleDirective],
+  imports: [NgTemplateOutlet],
   hostDirectives: [ProvideColorDirective, ProvideSurfaceDirective],
   host: {
     class: 'et-toggletip',
@@ -52,7 +49,6 @@ export class ToggletipComponent {
   public colorProvider = input.required<ProvideColorDirective | null>();
   public surfaceProvider = input.required<ProvideSurfaceDirective | null>();
 
-  public animatedLifecycle = viewChild(ANIMATED_LIFECYCLE_TOKEN);
   private surfaceThemes = injectSurfaceThemes({ optional: true });
 
   public hasTemplate = computed(() => this.content() instanceof TemplateRef);

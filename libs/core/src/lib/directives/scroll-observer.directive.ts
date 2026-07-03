@@ -1,4 +1,5 @@
-import { Directive, ElementRef, Signal, computed, inject, model, signal } from '@angular/core';
+import { Directive, ElementRef, Signal, computed, inject, isSignal, model, signal } from '@angular/core';
+import { MaybeSignal } from '../signals';
 import { signalElementIntersection } from '../signals/element-intersection';
 
 @Directive({
@@ -8,18 +9,26 @@ import { signalElementIntersection } from '../signals/element-intersection';
 export class ScrollObserverDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  enabled = model<boolean>(true);
+  enabled = model<MaybeSignal<boolean>>(true);
+
+  private enabledValue = computed(() => {
+    const enabled = this.enabled();
+
+    if (isSignal(enabled)) return enabled();
+
+    return enabled;
+  });
 
   private _startEl = signal<ElementRef<HTMLElement> | null>(null);
   private _endEl = signal<ElementRef<HTMLElement> | null>(null);
 
   private _startIntersection = signalElementIntersection(this._startEl as Signal<ElementRef<HTMLElement> | null>, {
     root: this.elementRef,
-    enabled: this.enabled,
+    enabled: this.enabledValue,
   });
   private _endIntersection = signalElementIntersection(this._endEl as Signal<ElementRef<HTMLElement> | null>, {
     root: this.elementRef,
-    enabled: this.enabled,
+    enabled: this.enabledValue,
   });
 
   isAtStart = computed(() => this._startIntersection()[0]?.isIntersecting ?? false);

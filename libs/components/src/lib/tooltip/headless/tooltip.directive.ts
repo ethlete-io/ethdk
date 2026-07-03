@@ -21,7 +21,7 @@ import {
 } from '@ethlete/core';
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 import { filter, fromEvent, map, switchMap, takeUntil, tap, timer } from 'rxjs';
-import { OverlayRef } from '../../overlay';
+import { OverlayConfig, OverlayRef, anchoredOverlayStrategy } from '../../overlay';
 import { injectOverlayManager } from '../../overlay/overlay-manager';
 import { TOOLTIP_ERROR_CODES } from '../tooltip-errors';
 import { TooltipComponent } from '../tooltip.component';
@@ -138,7 +138,7 @@ export class TooltipDirective {
 
     const tooltipId = createTooltipId();
     const hostElement = this.elementRef.nativeElement;
-    const overlayRef = this.overlayManager.open<TooltipComponent>(TooltipComponent, {
+    const config: OverlayConfig = {
       id: tooltipId,
       inputBindings: {
         tooltipId,
@@ -153,9 +153,9 @@ export class TooltipDirective {
       closeOnEscape: false,
       closeOnOutsidePointer: false,
       panelClass: 'et-tooltip-panel',
-      positionStrategy: {
-        kind: 'anchored',
-        referenceElement: hostElement,
+      strategies: anchoredOverlayStrategy({
+        containerClass: 'et-overlay--tooltip',
+        arrow: true,
         placement: this.placement(),
         fallbackPlacements: this.fallbackPlacements(),
         offset: this.offset(),
@@ -164,10 +164,11 @@ export class TooltipDirective {
         shift: true,
         autoHide: true,
         autoCloseIfReferenceHidden: true,
-      },
+      }),
       restoreFocus: false,
       autoFocus: false,
-    });
+    };
+    const overlayRef = this.overlayManager.open<TooltipComponent>(TooltipComponent, config);
 
     this.overlayRef.set(overlayRef);
     this.syncHostDescription(tooltipId);

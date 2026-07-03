@@ -6,6 +6,11 @@ import { TOOLTIP_IMPORTS } from '../../tooltip.imports';
   selector: 'et-sb-tooltip',
   template: `
     <div class="flex flex-col gap-8 p-8 font-sans" style="min-height: 18rem;">
+      <header class="flex flex-col gap-1">
+        <h2 class="text-h5 font-title">Tooltips</h2>
+        <p class="text-small text-white/60">Hover- and focus-triggered hints anchored to their trigger.</p>
+      </header>
+
       <div class="flex flex-wrap items-center gap-4">
         <button [etTooltip]="tooltipText()" [placement]="placement()" et-button size="sm" variant="outline">
           Text tooltip
@@ -33,7 +38,7 @@ import { TOOLTIP_IMPORTS } from '../../tooltip.imports';
         </button>
       </div>
 
-      <div class="flex items-center justify-center rounded-2xl border border-dashed border-slate-300 p-12">
+      <div class="flex items-center justify-center rounded-2xl border border-dashed border-white/15 p-12">
         <button [etTooltip]="tooltipText()" [placement]="placement()" et-button size="sm" variant="transparent">
           Center target
         </button>
@@ -41,7 +46,7 @@ import { TOOLTIP_IMPORTS } from '../../tooltip.imports';
 
       <ng-template #tooltipTemplateRef>
         <div class="flex max-w-xs flex-col gap-1">
-          <strong class="text-xs font-semibold uppercase tracking-widest">Tooltip</strong>
+          <strong class="text-small font-semibold uppercase tracking-widest">Tooltip</strong>
           <span>Templated content works too, so richer help and compact metadata are possible.</span>
         </div>
       </ng-template>

@@ -13,6 +13,8 @@ import {
   tap,
 } from 'rxjs';
 
+import { animationDebugLog } from './animation-debug';
+
 export const ANIMATABLE_TOKEN = new InjectionToken<AnimatableDirective>('ANIMATABLE_DIRECTIVE_TOKEN');
 
 export type AnimationEndEvent = {
@@ -59,7 +61,7 @@ export class AnimatableDirective {
     const el = this.elementRef.nativeElement;
 
     merge(
-      merge(fromEvent<AnimationEvent>(el, 'animationstart'), fromEvent<TransitionEvent>(el, 'transitionstart')).pipe(
+      merge(fromEvent<AnimationEvent>(el, 'animationstart'), fromEvent<TransitionEvent>(el, 'transitionrun')).pipe(
         filter((e) => e.target === el && !e.pseudoElement),
         map(() => 'start' as const),
       ),
@@ -83,6 +85,11 @@ export class AnimatableDirective {
                 this.activeBatchTransitionId = this.pendingTransitionIds.shift();
               }
 
+              animationDebugLog(
+                `animatable ${el.tagName.toLowerCase()}`,
+                `start (count ${this.activeAnimationCount}, batch "${this.activeBatchTransitionId}", pending [${this.pendingTransitionIds.join(', ')}])`,
+              );
+
               if (!didEmitStart) {
                 didEmitStart = true;
                 this.animationStartSubject$.next();
@@ -95,6 +102,11 @@ export class AnimatableDirective {
               if (this.activeAnimationCount > 0) {
                 this.updateActiveAnimationCount(-1);
 
+                animationDebugLog(
+                  `animatable ${el.tagName.toLowerCase()}`,
+                  `${eventType} (count ${this.activeAnimationCount}, batch "${this.activeBatchTransitionId}")`,
+                );
+
                 if (this.activeAnimationCount === 0 && didEmitStart) {
                   didEmitStart = false;
                   this.animationEndSubject$.next({
@@ -104,6 +116,10 @@ export class AnimatableDirective {
                   this.activeBatchTransitionId = undefined;
                 }
               } else {
+                animationDebugLog(
+                  `animatable ${el.tagName.toLowerCase()}`,
+                  `${eventType} ignored — count already 0 (start ${didEmitStart ? '' : 'not '}emitted)`,
+                );
                 console.warn(
                   `${el.tagName} received animation end/cancel event but activeAnimationCount is already 0. Start was ${didEmitStart ? '' : 'not '}emitted.`,
                 );

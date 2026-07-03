@@ -15,7 +15,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { COLOR_PROVIDER, RuntimeError, SURFACE_PROVIDER } from '@ethlete/core';
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 import { tap } from 'rxjs';
-import { OverlayRef } from '../../overlay';
+import { OverlayConfig, OverlayRef, anchoredOverlayStrategy } from '../../overlay';
 import { injectOverlayManager } from '../../overlay/overlay-manager';
 import { TOGGLETIP_ERROR_CODES } from '../toggletip-errors';
 import { ToggletipComponent } from '../toggletip.component';
@@ -172,7 +172,7 @@ export class ToggletipDirective {
     }
 
     const hostElement = this.elementRef.nativeElement;
-    const overlayRef = this.overlayManager.open<ToggletipComponent>(ToggletipComponent, {
+    const config: OverlayConfig = {
       id: this.toggletipId,
       inputBindings: {
         toggletipId: this.toggletipId,
@@ -192,9 +192,9 @@ export class ToggletipDirective {
       closeOnEscape: true,
       closeOnOutsidePointer: true,
       panelClass: 'et-toggletip-panel',
-      positionStrategy: {
-        kind: 'anchored',
-        referenceElement: hostElement,
+      strategies: anchoredOverlayStrategy({
+        containerClass: 'et-overlay--toggletip',
+        arrow: true,
         placement: this.placement(),
         fallbackPlacements: this.fallbackPlacements(),
         offset: this.offset(),
@@ -203,10 +203,11 @@ export class ToggletipDirective {
         shift: true,
         autoHide: true,
         autoCloseIfReferenceHidden: true,
-      },
+      }),
       restoreFocus: true,
       autoFocus: 'first-tabbable',
-    });
+    };
+    const overlayRef = this.overlayManager.open<ToggletipComponent>(ToggletipComponent, config);
 
     this.overlayRef.set(overlayRef);
 

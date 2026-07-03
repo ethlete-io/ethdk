@@ -9,3 +9,4 @@ export * from './math';
 export * from './object';
 export * from './runtime-error';
 export * from './session-memory';
+export * from './swipe';

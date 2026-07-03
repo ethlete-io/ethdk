@@ -5,6 +5,7 @@ import {
   OverlayRuntimeCloseSource,
   OverlayRuntimeElements,
   OverlayRuntimeMountConfig,
+  OverlayRuntimePositionStrategy,
 } from './overlay-runtime.types';
 
 export type OverlayRuntimeState = 'mounting' | 'mounted' | 'closing' | 'closed';
@@ -17,6 +18,8 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
 ) => {
   const _state = signal<OverlayRuntimeState>('mounting');
   const _componentInstance = signal<TComponent | null>(null);
+
+  let positionUpdater: ((strategy: OverlayRuntimePositionStrategy) => void) | null = null;
 
   const beforeOpenedSubject = new Subject<void>();
   const afterOpenedSubject = new Subject<void>();
@@ -56,6 +59,19 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
 
     attachComponentRef(componentRef: ComponentRef<TComponent>) {
       _componentInstance.set(componentRef.instance);
+    },
+
+    /** @internal */
+    attachPositionUpdater(updater: (strategy: OverlayRuntimePositionStrategy) => void) {
+      positionUpdater = updater;
+    },
+
+    updatePositionStrategy(strategy: OverlayRuntimePositionStrategy) {
+      if (_state() === 'closing' || _state() === 'closed') {
+        return;
+      }
+
+      positionUpdater?.(strategy);
     },
 
     markOpened() {

@@ -3,6 +3,7 @@ import { outputFromObservable, takeUntilDestroyed } from '@angular/core/rxjs-int
 import { BehaviorSubject, filter, of, Subject, switchMap, take, takeUntil, tap } from 'rxjs';
 import { injectRenderer } from '../providers';
 import { ANIMATABLE_TOKEN, AnimatableDirective, AnimationEndEvent } from './animatable.directive';
+import { animationDebugLog } from './animation-debug';
 import { forceReflow, fromNextFrame } from './animation-utils';
 
 export const ANIMATED_LIFECYCLE_TOKEN = new InjectionToken<AnimatedLifecycleDirective>(
@@ -98,6 +99,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     if (currentState === 'entering') return;
 
     if ((currentState === 'init' && !this.isConstructed) || this.skipNextEnter()) {
+      this.debugLog('enter: instant (not constructed or skipNextEnter)', { currentState });
       this.updateState('entered');
       this.skipNextEnter.set(false);
       this.addClass(ANIMATION_CLASSES.enterDone);
@@ -118,6 +120,14 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
 
     const skipAnimation = this.forcedAtFrameId !== null && this.forcedAtFrameId === this.currentFrameId;
     this.forcedAtFrameId = null;
+
+    this.debugLog(
+      `enter: ${skipAnimation ? 'skip (forced this frame)' : isInterrupting ? 'interrupting leave' : 'normal'}`,
+      {
+        currentState,
+        transitionId,
+      },
+    );
 
     if (skipAnimation) {
       this.removeClasses(
@@ -177,6 +187,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     if (currentState === 'leaving') return;
 
     if (currentState === 'init') {
+      this.debugLog('leave: instant (state is init, enter never ran)');
       this.updateState('left');
       this.addClass(ANIMATION_CLASSES.leaveDone);
       this.forcedAtFrameId = null;
@@ -196,6 +207,14 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
 
     const skipAnimation = this.forcedAtFrameId !== null && this.forcedAtFrameId === this.currentFrameId;
     this.forcedAtFrameId = null;
+
+    this.debugLog(
+      `leave: ${skipAnimation ? 'skip (forced this frame)' : isInterrupting ? 'interrupting enter' : 'normal'}`,
+      {
+        currentState,
+        transitionId,
+      },
+    );
 
     if (skipAnimation) {
       this.removeClasses(
@@ -334,9 +353,26 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
         switchMap(() => this.animatable.isAnimating$),
         take(1),
         switchMap((isAnimating) => {
+          if (isAnimating) {
+            return of(true);
+          }
+
+          this.debugLog(`${transitionId}: interrupt found no running transition, re-checking next frame`);
+
+          return fromNextFrame().pipe(
+            switchMap(() => this.animatable.isAnimating$),
+            take(1),
+          );
+        }),
+        take(1),
+        switchMap((isAnimating) => {
           if (!isAnimating && this.state$.value === expectedState) {
+            this.debugLog(`${transitionId}: interrupt completes INSTANTLY (no transition running after class swap)`);
+
             return of({ cancelled: false, transitionId } as AnimationEndEvent);
           }
+
+          this.debugLog(`${transitionId}: interrupt waiting for animation end`, { isAnimating });
 
           return this.animatable.animationEnd$.pipe(
             switchMap((e) => {
@@ -348,6 +384,11 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
                 take(1),
                 switchMap((stillAnimating) => {
                   if (!stillAnimating && this.state$.value === expectedState) {
+                    this.debugLog(
+                      `${transitionId}: interrupt completes via foreign animation end (batch id was "${e.transitionId}")`,
+                      { stillAnimating },
+                    );
+
                     return of({ cancelled: false, transitionId } as AnimationEndEvent);
                   }
 
@@ -359,7 +400,10 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
           );
         }),
         filter((e) => this.state$.value === expectedState && !e.cancelled),
-        tap(() => onComplete()),
+        tap(() => {
+          this.debugLog(`${transitionId}: interrupt complete`);
+          onComplete();
+        }),
         take(1),
         takeUntil(cancelSignal),
         takeUntilDestroyed(this.destroyRef),
@@ -380,6 +424,18 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
   }
 
   private updateState(newState: AnimatedLifecycleState) {
+    this.debugLog(`state: ${this.state$.value} → ${newState}`);
     this.state$.next(newState);
+  }
+
+  private debugLog(message: string, data?: Record<string, unknown>) {
+    const el = this.element;
+    const scope = `lifecycle ${el.tagName.toLowerCase()}${el.classList.contains('et-overlay') ? '.et-overlay' : ''}`;
+
+    if (data) {
+      animationDebugLog(scope, message, data);
+    } else {
+      animationDebugLog(scope, message);
+    }
   }
 }

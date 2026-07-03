@@ -4,6 +4,7 @@ import { OverlayRuntimeRef } from './overlay-runtime-ref';
 import {
   OverlayRuntimeAnchoredPosition,
   OverlayRuntimeCenteredPosition,
+  OverlayRuntimeGlobalPosition,
   OverlayRuntimeMountConfig,
 } from './overlay-runtime.types';
 
@@ -57,14 +58,72 @@ export const applyCenteredPosition = (
   });
 };
 
+export const applyGlobalPosition = (
+  hostElement: HTMLElement,
+  paneElement: HTMLElement,
+  renderer: AngularRenderer,
+  config: OverlayRuntimeGlobalPosition,
+) => {
+  renderer.setStyle(hostElement, {
+    display: 'grid',
+    // an explicit full-size cell keeps the grid area definite so percentage
+    // based pane sizes (e.g. max-height: calc(100% - 72px)) can resolve
+    gridTemplateRows: '100%',
+    gridTemplateColumns: '100%',
+    placeItems: `${config.vertical ?? 'center'} ${config.horizontal ?? 'center'}`,
+    padding: config.padding ?? '0',
+  });
+
+  renderer.setStyle(paneElement, {
+    position: 'relative',
+  });
+};
+
+/**
+ * Clears every inline style any position strategy kind may have set and
+ * restores the base element styles, so a different strategy can be applied afterwards.
+ */
+export const resetPositioningStyles = (
+  config: OverlayRuntimeMountConfig<object>,
+  hostElement: HTMLElement,
+  paneElement: HTMLElement,
+  renderer: AngularRenderer,
+) => {
+  renderer.setStyle(hostElement, {
+    gridTemplateRows: null,
+    gridTemplateColumns: null,
+    placeItems: null,
+    padding: null,
+    overflow: null,
+  });
+
+  renderer.setStyle(paneElement, {
+    position: null,
+    top: null,
+    left: null,
+    width: null,
+    transform: null,
+    visibility: null,
+  });
+
+  renderer.setCssProperties(paneElement, {
+    '--et-overlay-max-width': null,
+    '--et-overlay-max-height': null,
+    '--et-overlay-anchored-x': null,
+    '--et-overlay-anchored-y': null,
+  });
+
+  renderer.removeAttribute(paneElement, 'data-overlay-placement');
+
+  setBaseElementStyles(config, hostElement, paneElement, renderer);
+};
+
 export const createAnchoredPositionCleanup = (
   strategy: OverlayRuntimeAnchoredPosition,
   paneElement: HTMLElement,
   overlayRef: OverlayRuntimeRef<object, unknown>,
   renderer: AngularRenderer,
 ) => {
-  const arrowElement = paneElement.querySelector<HTMLElement>('[et-floating-arrow]');
-
   renderer.setStyle(paneElement, {
     position: 'absolute',
     top: '0',
@@ -73,6 +132,7 @@ export const createAnchoredPositionCleanup = (
   });
 
   const cleanup = autoUpdate(strategy.referenceElement, paneElement, () => {
+    const arrowElement = paneElement.querySelector<HTMLElement>('[et-floating-arrow]');
     const middleware = [];
 
     middleware.push(offset(strategy.offset ?? 8));
@@ -132,6 +192,11 @@ export const createAnchoredPositionCleanup = (
         transform: `translate3d(${x}px, ${y}px, 0)`,
         width: strategy.mirrorWidth ? `${strategy.referenceElement.offsetWidth}px` : null,
       });
+      // exposed so animations can compose their transforms with the anchored position
+      renderer.setCssProperties(paneElement, {
+        '--et-overlay-anchored-x': `${x}px`,
+        '--et-overlay-anchored-y': `${y}px`,
+      });
       renderer.setAttribute(paneElement, 'data-overlay-placement', placement);
 
       if (arrowElement && middlewareData.arrow) {
@@ -180,6 +245,12 @@ export const setupPositioning = (
     });
 
     return createAnchoredPositionCleanup(strategy, paneElement, overlayRef, renderer);
+  }
+
+  if (strategy.kind === 'global') {
+    applyGlobalPosition(hostElement, paneElement, renderer, strategy);
+
+    return () => undefined;
   }
 
   applyCenteredPosition(hostElement, paneElement, renderer, strategy);

@@ -9,11 +9,11 @@ describe('createOverlayRef', () => {
 
   it('initializes with null componentInstance', () => {
     const ref = createOverlayRef({});
-    expect(ref.componentInstance).toBeNull();
+    expect(ref.componentInstance()).toBeNull();
   });
 
   it('stores config', () => {
-    const config = { data: { key: 'value' } };
+    const config = { inputBindings: { key: 'value' } };
     const ref = createOverlayRef(config);
     expect(ref.config).toEqual(config);
   });
