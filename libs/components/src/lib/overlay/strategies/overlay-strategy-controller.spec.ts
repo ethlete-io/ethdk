@@ -190,5 +190,4 @@ describe('overlay strategy controller', () => {
     expect(elements?.paneElement.classList.contains('et-overlay--bottom-sheet')).toBe(true);
     expect(document.documentElement.classList.contains('large-document')).toBe(false);
   });
-
 });

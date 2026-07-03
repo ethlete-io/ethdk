@@ -37,7 +37,14 @@ import { dialogOverlayStrategy } from '../../strategies';
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BUTTON_IMPORTS, OverlayHeaderDirective, OverlayBodyComponent, OverlayFooterDirective, OverlayTitleDirective, OverlayCloseDirective],
+  imports: [
+    BUTTON_IMPORTS,
+    OverlayHeaderDirective,
+    OverlayBodyComponent,
+    OverlayFooterDirective,
+    OverlayTitleDirective,
+    OverlayCloseDirective,
+  ],
   hostDirectives: [OverlayMainDirective],
   styles: `
     et-sb-qp-overlay {

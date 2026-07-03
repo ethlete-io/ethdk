@@ -72,7 +72,9 @@ export class OverlayPopoverExampleComponent {}
     <div class="flex flex-col gap-8 p-8 font-sans">
       <header class="flex flex-col gap-1">
         <h2 class="text-h5 font-title">Overlays</h2>
-        <p class="text-small text-white/60">Dialogs, sheets and transforming strategies built on the overlay primitives.</p>
+        <p class="text-small text-white/60">
+          Dialogs, sheets and transforming strategies built on the overlay primitives.
+        </p>
       </header>
 
       <section class="flex flex-col gap-3">
@@ -80,7 +82,9 @@ export class OverlayPopoverExampleComponent {}
         <div class="flex flex-wrap gap-4">
           <button (click)="openDialog()" et-button size="sm">Dialog</button>
           <button (click)="openAnchoredDialog($event)" et-button size="sm" variant="tonal">Anchored dialog</button>
-          <button (click)="openAnchoredPopover($event)" et-button size="sm" variant="tonal">Anchored popover (arrow)</button>
+          <button (click)="openAnchoredPopover($event)" et-button size="sm" variant="tonal">
+            Anchored popover (arrow)
+          </button>
           <button (click)="openFullScreen($event)" et-button size="sm" variant="outline">Full-screen dialog</button>
         </div>
       </section>
@@ -96,7 +100,9 @@ export class OverlayPopoverExampleComponent {}
       </section>
 
       <section class="flex flex-col gap-3">
-        <h3 class="text-small font-semibold uppercase tracking-widest text-white/50">Transforming (resize while open)</h3>
+        <h3 class="text-small font-semibold uppercase tracking-widest text-white/50">
+          Transforming (resize while open)
+        </h3>
         <div class="flex flex-wrap gap-4">
           <button (click)="openBottomSheetToDialog()" et-button size="sm">Bottom sheet → dialog</button>
           <button (click)="openFullScreenToDialog($event)" et-button size="sm">Full-screen → dialog</button>

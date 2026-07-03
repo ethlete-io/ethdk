@@ -190,7 +190,9 @@ export class UrlRoutingDemoOverlayComponent {}
       </div>
     </et-overlay-header>
     <et-overlay-body dividers="dynamic">
-      <p class="text-medium text-white/70">Home page. On narrow viewports the sidebar collapses into a "☰ Menu" page.</p>
+      <p class="text-medium text-white/70">
+        Home page. On narrow viewports the sidebar collapses into a "☰ Menu" page.
+      </p>
     </et-overlay-body>
     @if (!sidebar.renderSidebar()) {
       <et-overlay-footer>
@@ -263,7 +265,9 @@ export class SidebarDemoPage2Component {
       </div>
     </et-overlay-header>
     <et-overlay-body dividers="dynamic">
-      <p class="text-medium text-white/70">About page. Starts full-screen on mobile and becomes a dialog on larger screens.</p>
+      <p class="text-medium text-white/70">
+        About page. Starts full-screen on mobile and becomes a dialog on larger screens.
+      </p>
     </et-overlay-body>
     @if (!sidebar.renderSidebar()) {
       <et-overlay-footer>

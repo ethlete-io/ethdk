@@ -48,8 +48,8 @@ describe('OverlayDirective', () => {
     fixture.detectChanges();
 
     const overlayRef = overlayDirective.overlayRef();
-    const positionStrategy = TestBed.runInInjectionContext(
-      () => overlayRef?.config.strategies?.()[0]?.strategy.config.positionStrategy?.(anchor),
+    const positionStrategy = TestBed.runInInjectionContext(() =>
+      overlayRef?.config.strategies?.()[0]?.strategy.config.positionStrategy?.(anchor),
     );
 
     expect(host.getAttribute('data-overlay-open')).toBe('true');
@@ -68,8 +68,8 @@ describe('OverlayDirective', () => {
     overlayDirective.show();
     fixture.detectChanges();
 
-    const positionStrategy = TestBed.runInInjectionContext(
-      () => overlayDirective.overlayRef()?.config.strategies?.()[0]?.strategy.config.positionStrategy?.(),
+    const positionStrategy = TestBed.runInInjectionContext(() =>
+      overlayDirective.overlayRef()?.config.strategies?.()[0]?.strategy.config.positionStrategy?.(),
     );
 
     expect(positionStrategy?.kind).toBe('center');
