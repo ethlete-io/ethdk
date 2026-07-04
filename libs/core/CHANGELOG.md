@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.16
+
+### Minor Changes
+
+- [#2999](https://github.com/ethlete-io/ethdk/pull/2999) [`0232803`](https://github.com/ethlete-io/ethdk/commit/0232803afcee04ddc5d8c6ab57a8e920a908e1ac) Thanks [@github-actions](https://github.com/apps/github-actions)! - Update overlay runtime to support stategies
+
 ## 5.0.0-next.15
 
 ### Patch Changes
