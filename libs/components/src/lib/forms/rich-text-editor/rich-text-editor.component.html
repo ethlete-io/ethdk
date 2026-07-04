@@ -71,11 +71,13 @@
     <i etIcon="et-list-numbered"></i>
   </button>
 
+  <span class="et-rte-toolbar-divider" aria-hidden="true"></span>
+
   <button
     [pressed]="dir.linkActive()"
     [disabled]="dir.disabled() || dir.readonly()"
     (mousedown)="$event.preventDefault()"
-    (click)="promptForLink()"
+    (click)="dir.promptForLink()"
     mutedUntilPressed
     et-icon-button
     size="xs"
@@ -105,3 +107,5 @@
   role="textbox"
   aria-multiline="true"
 ></div>
+
+<et-rich-text-editor-floating-toolbar />

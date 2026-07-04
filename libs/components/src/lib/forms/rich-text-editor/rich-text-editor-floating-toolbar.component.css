@@ -1,0 +1,42 @@
+et-rich-text-editor-floating-toolbar {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: var(--et-rich-text-editor-toolbar-gap, 2px);
+  padding: var(--et-rich-text-editor-toolbar-padding, 4px);
+  border-radius: 10px;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: var(--et-surface-background-solid, var(--et-surface-2, rgb(32 32 32)));
+  color: var(--et-color-main-contrast, rgb(244 244 245));
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
+  scale: 0.96;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 120ms var(--ease-out-5, ease),
+    scale 120ms var(--ease-out-5, ease),
+    visibility 120ms var(--ease-out-5, ease);
+
+  .et-icon-button {
+    border-radius: var(--et-rich-text-editor-button-radius, 4px);
+  }
+
+  .et-rte-toolbar-divider {
+    inline-size: 1px;
+    align-self: stretch;
+    margin-block: 4px;
+    margin-inline: 2px;
+    background: color-mix(in srgb, currentColor 20%, transparent);
+  }
+}
+
+et-rich-text-editor-floating-toolbar.et-rte-floating-toolbar--visible {
+  scale: 1;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}

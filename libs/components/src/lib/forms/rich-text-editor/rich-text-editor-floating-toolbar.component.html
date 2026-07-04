@@ -1,0 +1,57 @@
+<button
+  [pressed]="dir.boldActive()"
+  (mousedown)="$event.preventDefault()"
+  (click)="dir.toggleBold()"
+  mutedUntilPressed
+  et-icon-button
+  size="xs"
+  type="button"
+  tabindex="-1"
+  aria-label="Bold"
+>
+  <i etIcon="et-bold"></i>
+</button>
+
+<button
+  [pressed]="dir.italicActive()"
+  (mousedown)="$event.preventDefault()"
+  (click)="dir.toggleItalic()"
+  mutedUntilPressed
+  et-icon-button
+  size="xs"
+  type="button"
+  tabindex="-1"
+  aria-label="Italic"
+>
+  <i etIcon="et-italic"></i>
+</button>
+
+<button
+  [pressed]="dir.strikeActive()"
+  (mousedown)="$event.preventDefault()"
+  (click)="dir.toggleStrikethrough()"
+  mutedUntilPressed
+  et-icon-button
+  size="xs"
+  type="button"
+  tabindex="-1"
+  aria-label="Strikethrough"
+>
+  <i etIcon="et-strikethrough"></i>
+</button>
+
+<span class="et-rte-toolbar-divider" aria-hidden="true"></span>
+
+<button
+  [pressed]="dir.linkActive()"
+  (mousedown)="$event.preventDefault()"
+  (click)="dir.promptForLink()"
+  mutedUntilPressed
+  et-icon-button
+  size="xs"
+  type="button"
+  tabindex="-1"
+  aria-label="Link"
+>
+  <i [allowHardcodedColor]="true" etIcon="et-link"></i>
+</button>

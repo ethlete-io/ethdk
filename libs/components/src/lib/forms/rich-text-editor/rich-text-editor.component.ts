@@ -24,6 +24,7 @@ import {
   STRIKETHROUGH_ICON,
 } from '../../icon';
 import { RichTextEditorDirective } from './headless';
+import { RichTextEditorFloatingToolbarComponent } from './rich-text-editor-floating-toolbar.component';
 
 @Component({
   selector: 'et-rich-text-editor',
@@ -31,7 +32,7 @@ import { RichTextEditorDirective } from './headless';
   styleUrl: './rich-text-editor.component.css',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconButtonComponent, IconDirective],
+  imports: [IconButtonComponent, IconDirective, RichTextEditorFloatingToolbarComponent],
   providers: [
     provideIcons(BOLD_ICON, ITALIC_ICON, STRIKETHROUGH_ICON, LIST_BULLETED_ICON, LIST_NUMBERED_ICON, LINK_ICON),
   ],
@@ -59,8 +60,6 @@ export class RichTextEditorComponent {
       this.renderExternalValue();
     });
 
-    // Keep the toolbar's active-mark highlighting in sync with caret movement. The directive
-    // ignores selection changes that land outside its editable root.
     fromEvent(this.document, 'selectionchange')
       .pipe(
         tap(() => this.dir.refreshActiveMarks()),
@@ -108,22 +107,6 @@ export class RichTextEditorComponent {
         this.dir.toggleStrikethrough();
         break;
     }
-  }
-
-  protected promptForLink() {
-    // Mirror the other toolbar buttons' toggle behavior: with the caret already inside a link,
-    // clicking again removes it instead of re-prompting for a URL to edit it.
-    if (this.dir.linkActive()) {
-      this.dir.setLink('');
-
-      return;
-    }
-
-    const url = this.document.defaultView?.prompt('Link URL');
-
-    if (url === null || url === undefined) return;
-
-    this.dir.setLink(url);
   }
 
   private renderExternalValue(markdown = this.dir.value()) {

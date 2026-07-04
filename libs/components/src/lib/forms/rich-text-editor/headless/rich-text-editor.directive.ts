@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { computed, DestroyRef, Directive, inject, input, model, signal } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { htmlToMarkdown } from '@ethlete/core';
@@ -11,6 +12,7 @@ import { injectRichTextEditorDom, provideRichTextEditorDom } from './internals/r
 export class RichTextEditorDirective implements FormValueControl<string>, FormFieldControl {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
+  private document = inject(DOCUMENT);
 
   public value = model('');
   public touched = model(false);
@@ -68,10 +70,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
     if (!root) return;
 
-    // Browsers create <div> line wrappers in contenteditable; map them to <p> so htmlToMarkdown
-    // treats them as paragraph breaks instead of stripping the tags and merging lines.
-    const html = root.innerHTML.replace(/<div>/gi, '<p>').replace(/<\/div>/gi, '</p>');
-    const markdown = htmlToMarkdown(html);
+    const markdown = htmlToMarkdown(this.serializeCleanHtml(root));
 
     this.lastEmittedMarkdown = markdown;
     this.value.set(markdown);
@@ -115,6 +114,22 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     this.runCommand(() => (url ? this.editorDom.applyLink(url) : this.editorDom.removeLink()));
   }
 
+  public promptForLink() {
+    if (this.disabled() || this.readonly()) return;
+
+    if (this.linkActive()) {
+      this.setLink('');
+
+      return;
+    }
+
+    const url = this.document.defaultView?.prompt('Link URL');
+
+    if (url === null || url === undefined) return;
+
+    this.setLink(url);
+  }
+
   public handleBackspace() {
     if (this.disabled() || this.readonly() || !this.editorDom.root()) return false;
 
@@ -136,6 +151,26 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
     this.editorDom.insertToken(node);
     this.syncFromDom();
+  }
+
+  private serializeCleanHtml(root: HTMLElement) {
+    const clone = root.cloneNode(true) as HTMLElement;
+
+    let removed = true;
+
+    while (removed) {
+      removed = false;
+
+      // eslint-disable-next-line ethlete/no-dom-query
+      clone.querySelectorAll('strong, em, del, a').forEach((el) => {
+        if ((el.textContent ?? '').length === 0) {
+          el.remove();
+          removed = true;
+        }
+      });
+    }
+
+    return clone.innerHTML.replace(/<div>/gi, '<p>').replace(/<\/div>/gi, '</p>');
   }
 
   private runCommand(command: () => void) {
