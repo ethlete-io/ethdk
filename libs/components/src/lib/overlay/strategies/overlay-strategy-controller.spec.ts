@@ -110,7 +110,8 @@ describe('overlay strategy controller', () => {
 
     expect(elements?.paneElement.classList.contains('et-overlay--bottom-sheet')).toBe(true);
     expect(elements?.paneElement.style.width).toBe('100%');
-    expect(elements?.paneElement.style.maxWidth).toBe('640px');
+    // config max sizes are composed with the anchored auto-resize vars so the pane never exceeds the available space
+    expect(elements?.paneElement.style.maxWidth).toBe('min(640px, var(--et-overlay-max-width, 640px))');
     expect(document.body.classList.contains('small-body')).toBe(true);
   });
 
@@ -179,7 +180,7 @@ describe('overlay strategy controller', () => {
     expect(largeStrategy.config.positionStrategy).toHaveBeenCalled();
     expect(elements?.hostElement.style.padding).toBe('16px');
     expect(elements?.paneElement.style.width).toBe('');
-    expect(elements?.paneElement.style.maxWidth).toBe('80vw');
+    expect(elements?.paneElement.style.maxWidth).toBe('min(80vw, var(--et-overlay-max-width, 80vw))');
 
     // switching back applies the previous strategy again
     fakeBreakpoints.setMatches(MD_QUERY, false);

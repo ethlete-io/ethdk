@@ -1,11 +1,21 @@
-import { InjectionToken, Provider, TemplateRef, afterNextRender, computed, inject, signal } from '@angular/core';
+import {
+  InjectionToken,
+  Provider,
+  Signal,
+  TemplateRef,
+  WritableSignal,
+  afterNextRender,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { Breakpoint, injectBreakpointObserver, signalElementDimensions } from '@ethlete/core';
+import { Breakpoint, createProvider, injectBreakpointObserver, signalElementDimensions } from '@ethlete/core';
 import { distinctUntilChanged, tap } from 'rxjs';
 import { OverlayBodyDividerType } from '../overlay-body.component';
 import { OverlayHeaderTemplateDirective } from '../overlay-header-template.directive';
 import { OVERLAY_REF } from '../overlay-ref';
-import { OverlayRouterService } from '../routing/overlay-router';
+import { injectOverlayRouter } from '../routing/overlay-router';
 import { OverlaySidebarPageComponent } from './overlay-sidebar-page.component';
 
 export const SIDEBAR_OVERLAY_CONFIG = new InjectionToken<SidebarOverlayConfig>('SIDEBAR_OVERLAY_CONFIG');
@@ -30,66 +40,86 @@ export type SidebarOverlayConfig = {
   renderSidebarFrom?: Breakpoint | number;
 };
 
-export class SidebarOverlayService {
-  private config = inject(SIDEBAR_OVERLAY_CONFIG);
-  private router = inject(OverlayRouterService);
-  private overlayRef = inject(OVERLAY_REF);
-  private breakpointObserver = injectBreakpointObserver();
+export type SidebarOverlay = {
+  /** Whether the sidebar renders inline (`true`) or is collapsed into a navigable page (`false`). */
+  renderSidebar: Signal<boolean>;
 
-  private threshold =
-    typeof this.config.renderSidebarFrom === 'number'
-      ? this.config.renderSidebarFrom
-      : this.breakpointObserver.getBreakpointSize(this.config.renderSidebarFrom ?? 'md', 'min');
+  sidebarContentTemplate: WritableSignal<TemplateRef<unknown> | null>;
+  sidebarHeaderTemplate: WritableSignal<OverlayHeaderTemplateDirective | null>;
+  sidebarPageDividers: WritableSignal<OverlayBodyDividerType>;
+};
 
-  private paneElement = signal<HTMLElement | null>(null);
-  private paneDimensions = signalElementDimensions(this.paneElement);
+export const [provideSidebarOverlayService, injectSidebarOverlay, SIDEBAR_OVERLAY_TOKEN] = createProvider(
+  (): SidebarOverlay => {
+    const config = inject(SIDEBAR_OVERLAY_CONFIG);
+    const router = injectOverlayRouter();
+    const overlayRef = inject(OVERLAY_REF);
+    const breakpointObserver = injectBreakpointObserver();
 
-  renderSidebar = computed(() => {
-    const width = this.paneDimensions().offset?.width ?? null;
+    const threshold =
+      typeof config.renderSidebarFrom === 'number'
+        ? config.renderSidebarFrom
+        : breakpointObserver.getBreakpointSize(config.renderSidebarFrom ?? 'md', 'min');
 
-    return width !== null && width >= this.threshold;
-  });
+    const paneElement = signal<HTMLElement | null>(null);
+    const paneDimensions = signalElementDimensions(paneElement);
 
-  sidebarContentTemplate = signal<TemplateRef<unknown> | null>(null);
-  sidebarHeaderTemplate = signal<OverlayHeaderTemplateDirective | null>(null);
-  sidebarPageDividers = signal<OverlayBodyDividerType>(false);
+    const renderSidebar = computed(() => {
+      const width = paneDimensions().offset?.width ?? null;
 
-  constructor() {
-    afterNextRender(() => this.paneElement.set(this.overlayRef.elements?.paneElement ?? null));
+      return width !== null && width >= threshold;
+    });
 
-    const sidebarPageRoute = this.config.sidebarPageRoute ?? '/sidebar';
+    const sidebarContentTemplate = signal<TemplateRef<unknown> | null>(null);
+    const sidebarHeaderTemplate = signal<OverlayHeaderTemplateDirective | null>(null);
+    const sidebarPageDividers = signal<OverlayBodyDividerType>(false);
 
-    toObservable(this.renderSidebar)
+    afterNextRender(() => paneElement.set(overlayRef.elements?.paneElement ?? null));
+
+    const sidebarPageRoute = config.sidebarPageRoute ?? '/sidebar';
+
+    toObservable(renderSidebar)
       .pipe(
         distinctUntilChanged(),
-        tap((renderSidebar) => {
-          if (renderSidebar) {
-            this.router.transitionType.set('vertical');
-            this.router.removeRoute(sidebarPageRoute);
+        tap((render) => {
+          if (render) {
+            router.transitionType.set('vertical');
+            router.removeRoute(sidebarPageRoute);
 
             // if the user is currently on the sidebar route, navigate to the initial route.
-            if (this.router.currentRoute() === sidebarPageRoute) {
-              this.router.navigateToInitialRoute();
+            if (router.currentRoute() === sidebarPageRoute) {
+              router.navigateToInitialRoute();
             }
           } else {
-            this.router.transitionType.set('overlay');
+            router.transitionType.set('overlay');
 
-            this.router.addRoute({
+            router.addRoute({
               path: sidebarPageRoute,
               component: OverlaySidebarPageComponent,
               inputs: {
-                headerTemplate: this.sidebarHeaderTemplate,
-                bodyTemplate: this.sidebarContentTemplate,
-                pageDividers: this.sidebarPageDividers,
+                headerTemplate: sidebarHeaderTemplate,
+                bodyTemplate: sidebarContentTemplate,
+                pageDividers: sidebarPageDividers,
               },
+              // the sidebar conceptually sits to the left of the content pages: it slides in
+              // from the left and content pages slide back in from the right when leaving it
+              navigationDirection: { to: 'backward', from: 'forward' },
             });
           }
         }),
         takeUntilDestroyed(),
       )
       .subscribe();
-  }
-}
+
+    return {
+      renderSidebar,
+      sidebarContentTemplate,
+      sidebarHeaderTemplate,
+      sidebarPageDividers,
+    };
+  },
+  { name: 'SidebarOverlay' },
+);
 
 export const provideSidebarOverlayConfig = (config: SidebarOverlayConfig): Provider[] => {
   return [
@@ -101,9 +131,9 @@ export const provideSidebarOverlayConfig = (config: SidebarOverlayConfig): Provi
 };
 
 /**
- * Provides both the sidebar config and the {@link SidebarOverlayService} in one call, mirroring
+ * Provides both the sidebar config and the sidebar overlay service in one call, mirroring
  * {@link provideOverlayRouter}. Requires an overlay router to also be provided.
  */
 export const provideSidebarOverlay = (config: SidebarOverlayConfig = {}): Provider[] => {
-  return [...provideSidebarOverlayConfig(config), SidebarOverlayService];
+  return [...provideSidebarOverlayConfig(config), ...provideSidebarOverlayService()];
 };

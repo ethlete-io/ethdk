@@ -7,6 +7,7 @@ import {
   Type,
   ViewContainerRef,
   ViewEncapsulation,
+  afterNextRender,
   effect,
   inject,
   input,
@@ -92,6 +93,21 @@ export class OverlayContainerComponent {
     }
 
     this.rootBoundary.override.set(this.elementRef.nativeElement);
+
+    afterNextRender(() => {
+      if (!this.renderArrow()) return;
+
+      const host = this.elementRef.nativeElement;
+      const style = getComputedStyle(host);
+      const borderWidth = parseFloat(style.borderTopWidth) || 0;
+
+      if (!borderWidth) return;
+
+      this.renderer.setCssProperties(host, {
+        '--_et-overlay-arrow-pane-border-width': `${borderWidth}px`,
+        '--_et-overlay-arrow-pane-border-color': style.borderTopColor,
+      });
+    });
 
     this.animatedLifecycle()
       .state$.pipe(

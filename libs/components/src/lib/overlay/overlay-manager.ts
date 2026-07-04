@@ -139,7 +139,7 @@ export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
         role,
         positionStrategy: controller.initialMountConfig.positionStrategy,
         animationDelegate: controller.initialMountConfig.animationDelegate,
-        hasBackdrop: resolvedConfig.hasBackdrop ?? modal,
+        hasBackdrop: resolvedConfig.hasBackdrop ?? controller.initialMountConfig.hasBackdrop ?? modal,
         modal,
         autoFocus: resolvedConfig.autoFocus,
         restoreFocus: resolvedConfig.restoreFocus,

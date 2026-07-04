@@ -26,8 +26,8 @@ import {
       </div>
 
       <div dividers="dynamic" et-overlay-body>
-        <div class="flex max-w-md flex-col gap-4">
-          @for (paragraph of paragraphs; track $index) {
+        <div class="flex max-w-md flex-col gap-4 text-base text-white/80">
+          @for (paragraph of PARAGRAPHS; track $index) {
             <p>{{ paragraph }}</p>
           }
         </div>
@@ -44,11 +44,18 @@ import {
   imports: [BUTTON_IMPORTS, OVERLAY_CONTENT_IMPORTS],
 })
 export class OverlayExampleOverlayComponent {
-  protected paragraphs = Array.from(
-    { length: 12 },
-    (_, index) =>
-      `Paragraph ${index + 1}: the overlay body scrolls independently while header and footer stay pinned. Resize the viewport while a transforming overlay is open to watch it switch strategies without remounting.`,
-  );
+  protected readonly PARAGRAPHS = [
+    'The overlay body scrolls independently while the header and footer stay pinned in place.',
+    'Dialogs are capped at 80% of the viewport height by default, so long content like this scrolls instead of growing past the screen.',
+    'The divider lines above and below the body are dynamic — they only appear once the content behind them is actually scrolled out of view.',
+    'Resize the viewport while a transforming overlay is open to watch it switch strategies without remounting its content.',
+    'Sheets can be dragged past their edge; the pane visually extends so no gap appears while over-dragging.',
+    'Anchored overlays follow their origin element and flip or shrink when they would otherwise leave the viewport.',
+    'Focus is trapped inside the overlay while it is open and restored to the trigger once it closes.',
+    'Pressing Escape or clicking the backdrop closes the overlay unless closing is explicitly disabled.',
+    'The confirm button below closes this overlay with the result value "confirmed".',
+    'Everything you see here — header, body, footer, dividers — is composed from the overlay content primitives.',
+  ];
 }
 
 @Component({
@@ -120,6 +127,10 @@ export class OverlayPopoverExampleComponent {}
       color: #fafafa;
     }
 
+    .et-sb-overlay-panel--bordered {
+      border: 1px solid rgb(255 255 255 / 0.25);
+    }
+
     .et-overlay--dialog.et-sb-overlay-panel,
     .et-overlay--anchored-dialog.et-sb-overlay-panel {
       border-radius: 12px;
@@ -143,14 +154,15 @@ export class OverlayStorybookComponent {
   }
 
   protected openAnchoredDialog(origin: Event) {
-    this.open({ strategies: anchoredDialogOverlayStrategy(), origin });
+    this.open({ strategies: anchoredDialogOverlayStrategy({ minWidth: 500 }), origin });
   }
 
   protected openAnchoredPopover(origin: Event) {
     this.overlayManager.open(OverlayPopoverExampleComponent, {
-      strategies: anchoredDialogOverlayStrategy({ placement: 'bottom' }),
+      strategies: anchoredDialogOverlayStrategy({ placement: 'bottom', minWidth: 'unset' }),
       origin,
-      panelClass: 'et-sb-overlay-panel',
+      // bordered: the arrow overlaps the pane border and continues it on its protruding edges
+      panelClass: ['et-sb-overlay-panel', 'et-sb-overlay-panel--bordered'],
     });
   }
 

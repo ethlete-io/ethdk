@@ -2,7 +2,7 @@ import { Directive, ElementRef, InjectionToken, booleanAttribute, inject, input 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, fromEvent, tap } from 'rxjs';
 import { OVERLAY_REF } from '../overlay-ref';
-import { OverlayRouterService } from './overlay-router';
+import { injectOverlayRouter } from './overlay-router';
 
 export const OVERLAY_BACK_OR_CLOSE_TOKEN = new InjectionToken<OverlayBackOrCloseDirective>(
   'OVERLAY_BACK_OR_CLOSE_TOKEN',
@@ -23,9 +23,9 @@ export const OVERLAY_BACK_OR_CLOSE_TOKEN = new InjectionToken<OverlayBackOrClose
 })
 export class OverlayBackOrCloseDirective {
   private overlayRef = inject(OVERLAY_REF);
-  private router = inject(OverlayRouterService);
   private elementRef = inject<ElementRef<HTMLButtonElement>>(ElementRef);
   public disabled = input(false, { transform: booleanAttribute });
+  private router = injectOverlayRouter();
 
   constructor() {
     fromEvent<PointerEvent>(this.elementRef.nativeElement, 'click')

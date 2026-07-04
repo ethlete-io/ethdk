@@ -1,6 +1,9 @@
 .et-overlay-router-outlet-host {
   --_et-overlay-router-transition-easing: var(--ease-in-out-4);
 
+  display: block;
+  block-size: 100%;
+
   &.et-overlay-router-outlet-transition--none {
     .et-overlay-router-outlet-page {
       &.et-animation-enter-from,
@@ -167,23 +170,32 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
-  align-items: start;
+  block-size: 100%;
   overflow: hidden;
-  transition: block-size 300ms var(--_et-overlay-router-transition-easing);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .et-overlay-router-outlet {
-    transition-duration: 0ms;
-  }
 }
 
 .et-overlay-router-outlet-page {
   grid-area: 1 / 1 / 2 / 2;
   pointer-events: none;
+  overflow: hidden auto;
+
+  &:not(:empty) {
+    background-color: var(
+      --et-overlay-router-outlet-page-background,
+      var(--_et-overlay-router-outlet-page-background, transparent)
+    );
+  }
 
   > * {
     pointer-events: auto;
+  }
+
+  &.et-overlay-router-outlet-page--active:not(:empty) {
+    pointer-events: auto;
+  }
+
+  > .et-overlay-main {
+    block-size: 100%;
   }
 }
 

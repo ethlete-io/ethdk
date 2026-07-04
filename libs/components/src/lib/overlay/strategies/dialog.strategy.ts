@@ -7,6 +7,7 @@ export const [provideDialogStrategyDefaults, injectDialogStrategyDefaults] =
     {
       maxHeight: '80vh',
       maxWidth: '80vw',
+      width: 'min(512px, 80vw)',
       containerClass: 'et-overlay--dialog',
       positionStrategy: () => ({ kind: 'global' }),
     },

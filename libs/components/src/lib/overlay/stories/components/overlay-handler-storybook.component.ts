@@ -15,24 +15,22 @@ import { dialogOverlayStrategy } from '../../strategies';
 @Component({
   selector: 'et-sb-qp-overlay',
   template: `
-    <div etOverlayMain>
-      <div etOverlayHeader>
-        <h2 class="text-h6 font-title" etOverlayTitle>Query-param overlay</h2>
-      </div>
+    <div etOverlayHeader>
+      <h2 class="text-h6 font-title" etOverlayTitle>Query-param overlay</h2>
+    </div>
 
-      <et-overlay-body>
-        <p class="text-medium text-white/70">
-          Driven by the <code class="rounded bg-white/10 px-1 py-0.5 text-small">?demo=</code> query param. Current
-          value: <strong class="font-semibold text-white">{{ overlayQueryParam() }}</strong>
-        </p>
-        <p class="mt-3 text-small text-white/50">
-          Removing the param — or closing below — tears the overlay down and clears the URL.
-        </p>
-      </et-overlay-body>
+    <et-overlay-body>
+      <p class="text-medium text-white/70">
+        Driven by the <code class="rounded bg-white/10 px-1 py-0.5 text-small">?demo=</code> query param. Current value:
+        <strong class="font-semibold text-white">{{ overlayQueryParam() }}</strong>
+      </p>
+      <p class="mt-3 text-small text-white/50">
+        Removing the param — or closing below — tears the overlay down and clears the URL.
+      </p>
+    </et-overlay-body>
 
-      <div class="flex justify-end" etOverlayFooter>
-        <button et-button etOverlayClose size="sm" variant="outline">Close</button>
-      </div>
+    <div class="flex justify-end" etOverlayFooter>
+      <button et-button etOverlayClose size="sm" variant="outline">Close</button>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,

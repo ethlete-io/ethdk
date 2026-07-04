@@ -5,14 +5,13 @@ import {
   TemplateRef,
   ViewEncapsulation,
   contentChild,
-  inject,
   input,
   viewChild,
 } from '@angular/core';
-import { signalHostClasses, syncSignal } from '@ethlete/core';
+import { syncSignal } from '@ethlete/core';
 import { OverlayBodyDividerType } from '../overlay-body.component';
 import { OVERLAY_HEADER_TEMPLATE_TOKEN } from '../overlay-header-template.directive';
-import { SidebarOverlayService } from './sidebar-overlay';
+import { injectSidebarOverlay } from './sidebar-overlay';
 
 @Component({
   selector: 'et-overlay-sidebar',
@@ -30,17 +29,14 @@ import { SidebarOverlayService } from './sidebar-overlay';
   imports: [NgTemplateOutlet],
   host: {
     class: 'et-overlay-sidebar-host',
+    '[class.et-overlay-sidebar--visible]': 'sidebar.renderSidebar()',
   },
 })
 export class OverlaySidebarComponent {
-  protected sidebar = inject(SidebarOverlayService);
   public pageDividers = input<OverlayBodyDividerType>(false);
   public sidebarContent = viewChild.required<TemplateRef<unknown>>('sidebarContentTpl');
   public sidebarHeaderContent = contentChild(OVERLAY_HEADER_TEMPLATE_TOKEN);
-
-  public hostClassBindings = signalHostClasses({
-    'et-overlay-sidebar--visible': this.sidebar.renderSidebar,
-  });
+  protected sidebar = injectSidebarOverlay();
 
   constructor() {
     syncSignal(this.sidebarContent, this.sidebar.sidebarContentTemplate, { skipSyncRead: true });

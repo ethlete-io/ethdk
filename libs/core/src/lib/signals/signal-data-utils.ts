@@ -1,4 +1,16 @@
-import { Signal, WritableSignal, afterNextRender, effect, isDevMode, isSignal, signal, untracked } from '@angular/core';
+import {
+  EnvironmentInjector,
+  Signal,
+  WritableSignal,
+  afterNextRender,
+  effect,
+  inject,
+  isDevMode,
+  isSignal,
+  runInInjectionContext,
+  signal,
+  untracked,
+} from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { map, pairwise } from 'rxjs';
 
@@ -122,9 +134,17 @@ export const deferredSignal = <T extends () => unknown>(valueFn: T) => {
 };
 
 export const memoizeSignal = <T>(factory: () => Signal<T>) => {
-  let cached: Signal<T> | null = null;
+  const cache = new WeakMap<EnvironmentInjector, Signal<T>>();
+
   return () => {
-    if (!cached) cached = factory();
+    const envInjector = inject(EnvironmentInjector);
+
+    let cached = cache.get(envInjector);
+    if (!cached) {
+      cached = runInInjectionContext(envInjector, factory);
+      cache.set(envInjector, cached);
+    }
+
     return cached;
   };
 };

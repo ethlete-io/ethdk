@@ -15,6 +15,7 @@ const DEFAULT_ANCHORED_DIALOG_POSITION: AnchoredPositionOptions = {
   offset: 10,
   arrowPadding: 16,
   shift: true,
+  autoResize: true,
 };
 
 export type AnchoredDialogOverlayStrategyOptions = Partial<OverlayBreakpointConfig> & AnchoredPositionOptions;
@@ -24,10 +25,12 @@ export const [provideAnchoredDialogStrategyDefaults, injectAnchoredDialogStrateg
     {
       maxHeight: '80vh',
       maxWidth: '80vw',
+      minWidth: '288px',
       containerClass: 'et-overlay--anchored-dialog',
       positionStrategy: buildAnchoredRuntimePositionStrategy(DEFAULT_ANCHORED_DIALOG_POSITION),
       applyTransformOrigin: true,
       arrow: true,
+      hasBackdrop: false,
     },
     {
       name: 'Anchored Dialog Overlay Strategy Defaults',
@@ -169,7 +172,7 @@ export const anchoredDialogOverlayStrategy = (
           arrowPadding: arrowPadding ?? DEFAULT_ANCHORED_DIALOG_POSITION.arrowPadding,
           viewportPadding,
           shift: shift ?? DEFAULT_ANCHORED_DIALOG_POSITION.shift,
-          autoResize,
+          autoResize: autoResize ?? DEFAULT_ANCHORED_DIALOG_POSITION.autoResize,
           autoHide,
           autoCloseIfReferenceHidden,
           mirrorWidth,

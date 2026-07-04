@@ -16,19 +16,13 @@ import {
   input,
   signal,
   untracked,
-  viewChild,
   viewChildren,
 } from '@angular/core';
-import {
-  AnimatedIfDirective,
-  AnimatedLifecycleDirective,
-  AnimatedLifecycleState,
-  signalElementDimensions,
-  signalHostClasses,
-} from '@ethlete/core';
+import { AnimatedIfDirective, AnimatedLifecycleDirective, AnimatedLifecycleState, injectRenderer } from '@ethlete/core';
 import { OverlayMainDirective } from '../overlay-main.directive';
-import { SidebarOverlayService } from '../sidebar/sidebar-overlay';
-import { OverlayRouterService } from './overlay-router';
+import { OVERLAY_REF } from '../overlay-ref';
+import { injectSidebarOverlay } from '../sidebar/sidebar-overlay';
+import { injectOverlayRouter } from './overlay-router';
 import { OVERLAY_ROUTER_OUTLET_DISABLED_TEMPLATE_TOKEN } from './overlay-router-outlet-disabled-template.directive';
 import { OVERLAY_SHARED_ROUTE_TEMPLATE_TOKEN } from './overlay-shared-route-template.directive';
 
@@ -43,7 +37,7 @@ export const OVERLAY_ROUTER_OUTLET_TOKEN = new InjectionToken<OverlayRouterOutle
       <ng-content />
     </ng-template>
 
-    <div [style.block-size.px]="outletHeight()" class="et-overlay-router-outlet">
+    <div class="et-overlay-router-outlet">
       @for (page of router.routes(); track page.path) {
         <div
           #pageWrapper
@@ -60,7 +54,6 @@ export const OVERLAY_ROUTER_OUTLET_TOKEN = new InjectionToken<OverlayRouterOutle
 
       @if (outletDisabledTemplate()) {
         <div
-          #disabledPageWrapper
           (stateChange)="disabledPageAnimationStateChange($event)"
           class="et-overlay-router-outlet-page et-overlay-router-outlet-page--active"
           etAnimatedLifecycle
@@ -84,11 +77,22 @@ export const OVERLAY_ROUTER_OUTLET_TOKEN = new InjectionToken<OverlayRouterOutle
   ],
   host: {
     class: 'et-overlay-router-outlet-host',
+    '[class.et-overlay-router-outlet-nav-dir--backward]': "router.navigationDirection() === 'backward'",
+    '[class.et-overlay-router-outlet-nav-dir--forward]': "router.navigationDirection() === 'forward'",
+    '[class.et-overlay-router-outlet-transition--slide]': "transitionType() === 'slide'",
+    '[class.et-overlay-router-outlet-transition--fade]': "transitionType() === 'fade'",
+    '[class.et-overlay-router-outlet-transition--overlay]': "transitionType() === 'overlay'",
+    '[class.et-overlay-router-outlet-transition--vertical]': "transitionType() === 'vertical'",
+    '[class.et-overlay-router-outlet-transition--none]': "transitionType() === 'none'",
+    '[class.et-overlay-router-outlet--disabled]': 'disabled()',
+    '[class.et-overlay-router-outlet--has-disabled-template]': '!!outletDisabledTemplate()',
+    '[class.et-overlay-router-outlet--has-shared-route-template]': '!!sharedRouteTemplate()',
   },
 })
 export class OverlayRouterOutletComponent {
-  protected router = inject(OverlayRouterService);
   private injector = inject(Injector);
+  private overlayRef = inject(OVERLAY_REF, { optional: true });
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   public disabled = input(false, { transform: booleanAttribute });
 
@@ -96,12 +100,11 @@ export class OverlayRouterOutletComponent {
   public outletDisabledTemplate = contentChild(OVERLAY_ROUTER_OUTLET_DISABLED_TEMPLATE_TOKEN, { read: TemplateRef });
 
   public pageWrappers = viewChildren<ElementRef<HTMLElement>>('pageWrapper');
-  public disabledPageWrapper = viewChild<ElementRef<HTMLElement>>('disabledPageWrapper');
-  public readonly hasSidebar = !!inject(SidebarOverlayService, { optional: true });
+  protected router = injectOverlayRouter();
+  private renderer = injectRenderer();
+  public readonly hasSidebar = !!injectSidebarOverlay({ optional: true });
   public wasDisabled = signal(false);
 
-  // We need to keep track of the disabled state until the exit animation is finished.
-  // Otherwise, a wrong animation will be played when the disabled state is toggled off.
   public keepDisabledTransition = computed(() => this.wasDisabled() || this.disabled());
 
   public activePageElement = computed(() => {
@@ -112,45 +115,33 @@ export class OverlayRouterOutletComponent {
     return wrappers[currentPageIndex]?.nativeElement ?? null;
   });
 
-  // The page currently driving the outlet height: the disabled placeholder while disabled, else the active route.
-  private measuredPageElement = computed(() =>
-    this.disabled() && this.outletDisabledTemplate()
-      ? (this.disabledPageWrapper()?.nativeElement ?? null)
-      : this.activePageElement(),
-  );
+  protected transitionType = computed(() => {
+    const type = this.router.transitionType();
 
-  private pageDimensions = signalElementDimensions(this.measuredPageElement);
+    if (type !== 'none' && this.keepDisabledTransition()) {
+      return 'fade';
+    }
 
-  /** Measured height of the visible page — drives the outlet's animated height so it doesn't snap on navigation. */
-  protected outletHeight = computed(() => this.pageDimensions().offset?.height ?? null);
-
-  public hostClassBindings = signalHostClasses({
-    'et-overlay-router-outlet-nav-dir--backward': computed(() => this.router.navigationDirection() === 'backward'),
-    'et-overlay-router-outlet-nav-dir--forward': computed(() => this.router.navigationDirection() === 'forward'),
-    'et-overlay-router-outlet-transition--slide': computed(
-      () => this.router.transitionType() === 'slide' && !this.keepDisabledTransition(),
-    ),
-    'et-overlay-router-outlet-transition--fade': computed(
-      () =>
-        this.router.transitionType() === 'fade' ||
-        (this.keepDisabledTransition() && this.router.transitionType() !== 'none'),
-    ),
-    'et-overlay-router-outlet-transition--overlay': computed(
-      () => this.router.transitionType() === 'overlay' && !this.keepDisabledTransition(),
-    ),
-    'et-overlay-router-outlet-transition--vertical': computed(
-      () => this.router.transitionType() === 'vertical' && !this.keepDisabledTransition(),
-    ),
-    'et-overlay-router-outlet-transition--none': computed(() => this.router.transitionType() === 'none'),
-    'et-overlay-router-outlet--disabled': this.disabled,
-    'et-overlay-router-outlet--has-disabled-template': this.outletDisabledTemplate,
-    'et-overlay-router-outlet--has-shared-route-template': this.sharedRouteTemplate,
+    return type;
   });
 
   constructor() {
-    // Move focus to the newly-activated page so keyboard and screen-reader users follow the flow.
-    // The initial page is skipped — the overlay's own autoFocus handles first focus. Focus is applied
-    // after the next render so it wins over the browser focusing the link that was just clicked.
+    afterNextRender(() => {
+      const paneElement = this.overlayRef?.elements?.paneElement;
+
+      if (!paneElement) return;
+
+      const background = getComputedStyle(paneElement).backgroundColor;
+
+      if (!background || background === 'transparent' || background === 'rgba(0, 0, 0, 0)') return;
+
+      this.renderer.setCssProperty(
+        this.elementRef.nativeElement,
+        '--_et-overlay-router-outlet-page-background',
+        background,
+      );
+    });
+
     let isFirstNavigation = true;
 
     effect(() => {

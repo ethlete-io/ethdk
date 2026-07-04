@@ -146,6 +146,15 @@ export type OverlayBreakpointConfig = {
   dragToDismiss?: OverlayDragToDismissConfig;
 
   /**
+   * Whether a backdrop element is rendered behind the overlay. Only applied at mount time (the
+   * initially matched strategy) — it cannot change during breakpoint switches. An explicit
+   * `hasBackdrop` on the overlay config always wins over this strategy default.
+   *
+   * @default undefined // falls back to the overlay config / modal behavior
+   */
+  hasBackdrop?: boolean;
+
+  /**
    * Whether the transform origin should be set using the config's `origin` property value.
    *
    * @default false

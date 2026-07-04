@@ -1,13 +1,8 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject, viewChild } from '@angular/core';
-import {
-  ANIMATED_LIFECYCLE_TOKEN,
-  AnimatedIfDirective,
-  AnimatedLifecycleDirective,
-  signalHostClasses,
-} from '@ethlete/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject, viewChild } from '@angular/core';
+import { ANIMATED_LIFECYCLE_TOKEN, AnimatedIfDirective, AnimatedLifecycleDirective } from '@ethlete/core';
 import { OVERLAY_REF } from '../overlay-ref';
-import { OverlayRouterService } from './overlay-router';
+import { injectOverlayRouter } from './overlay-router';
 
 @Component({
   selector: 'et-overlay-route-header-template-outlet',
@@ -25,6 +20,8 @@ import { OverlayRouterService } from './overlay-router';
   imports: [AnimatedIfDirective, AnimatedLifecycleDirective, NgTemplateOutlet],
   host: {
     class: 'et-overlay-route-header-template-outlet-host',
+    '[class.et-overlay-router-outlet-nav-dir--backward]': "router.navigationDirection() === 'backward'",
+    '[class.et-overlay-router-outlet-nav-dir--forward]': "router.navigationDirection() === 'forward'",
   },
   styles: `
     .et-overlay-route-header-template-outlet-host {
@@ -64,12 +61,7 @@ import { OverlayRouterService } from './overlay-router';
   `,
 })
 export class OverlayRouteHeaderTemplateOutletComponent {
-  private router = inject(OverlayRouterService);
   protected overlay = inject(OVERLAY_REF);
   public animatedLifecycle = viewChild.required(ANIMATED_LIFECYCLE_TOKEN);
-
-  public hostClassBindings = signalHostClasses({
-    'et-overlay-router-outlet-nav-dir--backward': computed(() => this.router.navigationDirection() === 'backward'),
-    'et-overlay-router-outlet-nav-dir--forward': computed(() => this.router.navigationDirection() === 'forward'),
-  });
+  protected router = injectOverlayRouter();
 }

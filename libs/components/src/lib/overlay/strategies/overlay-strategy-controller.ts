@@ -32,6 +32,7 @@ export type OverlayStrategyControllerMountConfig = {
   backdropClass: string[];
   animationDelegate: OverlayRuntimeAnimationDelegate;
   renderArrow: boolean;
+  hasBackdrop: boolean | undefined;
 };
 
 export type OverlayStrategyController = {
@@ -141,12 +142,28 @@ export const createOverlayStrategyController = (
     return strategyConfig.positionStrategy?.(originElement) ?? { kind: 'global' };
   };
 
+  const composeMaxSize = (value: number | string | undefined, cssVar: string) => {
+    if (value === undefined) return `var(${cssVar})`;
+
+    const cssValue = coerceCssPixelValue(value);
+
+    return `min(${cssValue}, var(${cssVar}, ${cssValue}))`;
+  };
+
+  const composeMinSize = (value: number | string | undefined, cssVar: string) => {
+    if (value === undefined) return null;
+
+    const cssValue = coerceCssPixelValue(value);
+
+    return `min(${cssValue}, var(${cssVar}, ${cssValue}))`;
+  };
+
   const applySizingStyles = (paneElement: HTMLElement, strategyConfig: OverlayBreakpointConfig) => {
     renderer.setStyle(paneElement, {
-      maxWidth: strategyConfig.maxWidth ? coerceCssPixelValue(strategyConfig.maxWidth) : null,
-      maxHeight: strategyConfig.maxHeight ? coerceCssPixelValue(strategyConfig.maxHeight) : null,
-      minWidth: strategyConfig.minWidth ? coerceCssPixelValue(strategyConfig.minWidth) : null,
-      minHeight: strategyConfig.minHeight ? coerceCssPixelValue(strategyConfig.minHeight) : null,
+      maxWidth: composeMaxSize(strategyConfig.maxWidth, '--et-overlay-max-width'),
+      maxHeight: composeMaxSize(strategyConfig.maxHeight, '--et-overlay-max-height'),
+      minWidth: composeMinSize(strategyConfig.minWidth, '--et-overlay-max-width'),
+      minHeight: composeMinSize(strategyConfig.minHeight, '--et-overlay-max-height'),
       width: strategyConfig.width ? coerceCssPixelValue(strategyConfig.width) : null,
       height: strategyConfig.height ? coerceCssPixelValue(strategyConfig.height) : null,
     });
@@ -334,6 +351,7 @@ export const createOverlayStrategyController = (
       backdropClass: normalizeClasses(activeStrategy.config.backdropClass),
       animationDelegate,
       renderArrow: activeStrategy.config.arrow ?? false,
+      hasBackdrop: activeStrategy.config.hasBackdrop,
     },
     attach,
   };

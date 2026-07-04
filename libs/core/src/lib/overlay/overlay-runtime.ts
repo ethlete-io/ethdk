@@ -44,10 +44,20 @@ export const [provideOverlayRuntime, injectOverlayRuntime] = createRootProvider(
 
     let rootElement: HTMLElement | null = null;
 
+    // Synchronous teardown for each currently-mounted overlay, run when the runtime's injector is
+    // destroyed (app teardown). Registered on mount, removed once the overlay is destroyed normally.
+    const mountedTeardowns = new Set<() => void>();
+
     const getRootElement = () => {
       if (rootElement) {
         return rootElement;
       }
+
+      // A previous Angular app (e.g. the one that existed before a Storybook HMR update or story
+      // switch) may have left its runtime root orphaned in <body> if it was torn down mid-animation.
+      // Such a node keeps a backdrop/pane on screen and blocks pointer events, so clear any stragglers
+      // before creating ours.
+      document.querySelectorAll('.et-overlay-runtime-root').forEach((el) => el.remove());
 
       rootElement = renderer.createElement('div');
       renderer.addClass(rootElement, 'et-overlay-runtime-root');
@@ -180,7 +190,12 @@ export const [provideOverlayRuntime, injectOverlayRuntime] = createRootProvider(
       );
       cleanupFns.push(() => positionCleanup());
 
+      let currentPositionStrategy = config.positionStrategy;
+      const getOriginElement = () =>
+        currentPositionStrategy?.kind === 'anchored' ? currentPositionStrategy.referenceElement : null;
+
       overlayRef.attachPositionUpdater((strategy) => {
+        currentPositionStrategy = strategy;
         positionCleanup();
         resetPositioningStyles(config as OverlayRuntimeMountConfig<object>, hostElement, paneElement, renderer);
         positionCleanup = setupPositioning(
@@ -212,6 +227,12 @@ export const [provideOverlayRuntime, injectOverlayRuntime] = createRootProvider(
 
         overlayRef.finishClose(closeEvent);
       };
+
+      // Allows the runtime to synchronously destroy this overlay on app teardown, bypassing the
+      // async leave animation (whose completion callback would never fire once the app is gone).
+      const forceTeardown = () => destroyMountedOverlay({ result: undefined, source: 'api' });
+      mountedTeardowns.add(forceTeardown);
+      cleanupFns.push(() => mountedTeardowns.delete(forceTeardown));
 
       const beginClose = (closeEvent: OverlayRuntimeCloseEvent<TResult>) => {
         if (!overlayRef.beginClose(closeEvent)) {
@@ -284,6 +305,18 @@ export const [provideOverlayRuntime, injectOverlayRuntime] = createRootProvider(
           }
 
           overlayRef.close(undefined, 'outside-pointer');
+
+          const originElement = getOriginElement();
+          if (originElement && originElement.contains(target)) {
+            const swallowReopenClick = (clickEvent: MouseEvent) => {
+              if (isHTMLElement(clickEvent.target) && originElement.contains(clickEvent.target)) {
+                clickEvent.stopImmediatePropagation();
+                clickEvent.preventDefault();
+              }
+            };
+
+            document.addEventListener('click', swallowReopenClick, { capture: true, once: true });
+          }
         };
 
         document.addEventListener('pointerdown', onPointerDown, true);
@@ -352,7 +385,7 @@ export const [provideOverlayRuntime, injectOverlayRuntime] = createRootProvider(
     };
 
     destroyRef.onDestroy(() => {
-      openEntriesState().forEach((entry) => entry.close(undefined, 'api'));
+      [...mountedTeardowns].forEach((teardown) => teardown());
       maybeDestroyRootElement();
     });
 

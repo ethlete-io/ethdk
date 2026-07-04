@@ -1,5 +1,5 @@
 import { Directive, ElementRef, InjectionToken, OnInit, booleanAttribute, inject, input } from '@angular/core';
-import { RuntimeError, signalHostClasses } from '@ethlete/core';
+import { RuntimeError } from '@ethlete/core';
 import { resolveClosestOverlay } from './get-closest-overlay';
 import { OVERLAY_ERROR_CODES } from './overlay-errors';
 import { injectOverlayManager } from './overlay-manager';
@@ -15,6 +15,9 @@ export const OVERLAY_MAIN_TOKEN = new InjectionToken<OverlayMainDirective>('OVER
       useExisting: OverlayMainDirective,
     },
   ],
+  host: {
+    '[class.et-overlay-main]': 'enabled()',
+  },
 })
 export class OverlayMainDirective implements OnInit {
   private parent = inject(OVERLAY_MAIN_TOKEN, { optional: true, skipSelf: true });
@@ -24,10 +27,6 @@ export class OverlayMainDirective implements OnInit {
 
   public enabled = input(true, { alias: 'etOverlayMain', transform: booleanAttribute });
   private overlayManager = injectOverlayManager();
-
-  public hostClassBindings = signalHostClasses({
-    'et-overlay-main': this.enabled,
-  });
 
   public ngOnInit() {
     this.overlayRef = resolveClosestOverlay({
