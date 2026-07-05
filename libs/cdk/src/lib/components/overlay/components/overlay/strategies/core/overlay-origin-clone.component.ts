@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ViewEncapsulation, inject } from '@angular/core';
 import { AnimatedLifecycleDirective } from '@ethlete/core';
 
 @Component({
@@ -11,7 +11,6 @@ import { AnimatedLifecycleDirective } from '@ethlete/core';
     class: 'et-overlay-origin-clone',
     inert: 'true',
   },
-  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './overlay-origin-clone.component.scss',
 })
 export class OverlayOriginCloneComponent {

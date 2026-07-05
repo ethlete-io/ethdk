@@ -1,5 +1,5 @@
-import { CDK_TABLE, CdkFooterRowDef } from '@angular/cdk/table';
-import { Directive, IterableDiffers, TemplateRef, inject } from '@angular/core';
+import { CdkFooterRowDef } from '@angular/cdk/table';
+import { Directive } from '@angular/core';
 
 @Directive({
   selector: '[etFooterRowDef]',
@@ -7,12 +7,4 @@ import { Directive, IterableDiffers, TemplateRef, inject } from '@angular/core';
   // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
   inputs: ['columns: etFooterRowDef', 'sticky: etFooterRowDefSticky'],
 })
-export class FooterRowDefDirective extends CdkFooterRowDef {
-  constructor() {
-    const template = inject<TemplateRef<unknown>>(TemplateRef);
-    const _differs = inject(IterableDiffers);
-    const _table = inject(CDK_TABLE, { optional: true });
-
-    super(template, _differs, _table);
-  }
-}
+export class FooterRowDefDirective extends CdkFooterRowDef {}

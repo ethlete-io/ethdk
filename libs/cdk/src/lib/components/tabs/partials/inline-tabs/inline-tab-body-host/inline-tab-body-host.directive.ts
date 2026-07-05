@@ -1,6 +1,5 @@
 import { CdkPortalOutlet } from '@angular/cdk/portal';
-import { DOCUMENT } from '@angular/common';
-import { ComponentFactoryResolver, Directive, OnDestroy, OnInit, ViewContainerRef, inject } from '@angular/core';
+import { Directive, OnDestroy, OnInit } from '@angular/core';
 
 @Directive({
   selector: '[etInlineTabBodyHost]',
@@ -9,12 +8,4 @@ import { ComponentFactoryResolver, Directive, OnDestroy, OnInit, ViewContainerRe
     class: 'et-inline-tab-body-host',
   },
 })
-export class InlineTabBodyHostDirective extends CdkPortalOutlet implements OnInit, OnDestroy {
-  constructor() {
-    const componentFactoryResolver = inject(ComponentFactoryResolver);
-    const viewContainerRef = inject(ViewContainerRef);
-    const _document = inject<Document>(DOCUMENT);
-
-    super(componentFactoryResolver, viewContainerRef, _document);
-  }
-}
+export class InlineTabBodyHostDirective extends CdkPortalOutlet implements OnInit, OnDestroy {}

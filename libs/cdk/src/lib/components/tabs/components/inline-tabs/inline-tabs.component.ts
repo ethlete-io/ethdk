@@ -4,7 +4,6 @@ import { NgClass, NgStyle } from '@angular/common';
 import {
   AfterContentChecked,
   AfterContentInit,
-  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   ContentChildren,
@@ -47,7 +46,6 @@ type InlineTabsBaseHeader = {
   templateUrl: 'inline-tabs.component.html',
   styleUrls: ['inline-tabs.component.scss'],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [
     {
       provide: TAB_GROUP,

@@ -1,5 +1,5 @@
-import { CDK_TABLE, CdkColumnDef } from '@angular/cdk/table';
-import { Directive, InjectionToken, Input, inject } from '@angular/core';
+import { CdkColumnDef } from '@angular/cdk/table';
+import { Directive, InjectionToken, Input } from '@angular/core';
 
 export const SORT_HEADER_COLUMN_DEF = new InjectionToken<ColumnDefDirective>('SortHeaderColumnDef');
 
@@ -19,12 +19,6 @@ export class ColumnDefDirective extends CdkColumnDef {
   }
   override set name(name: string) {
     this._setNameInput(name);
-  }
-
-  constructor() {
-    const _table = inject(CDK_TABLE, { optional: true });
-
-    super(_table);
   }
 
   protected override _updateColumnCssClassName() {

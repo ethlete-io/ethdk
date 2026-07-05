@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, inject, InjectionToken, Input, viewChild, ChangeDetectionStrategy } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, inject, InjectionToken, Input, viewChild } from '@angular/core';
 import { nextFrame } from '@ethlete/core';
 import { BehaviorSubject } from 'rxjs';
 
@@ -13,7 +13,6 @@ export const MASONRY_ITEM_TOKEN = new InjectionToken<MasonryItemComponent>('ET_M
     role: 'listitem',
     style: 'opacity: 0;',
   },
-  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [{ provide: MASONRY_ITEM_TOKEN, useExisting: MasonryItemComponent }],
 })
 export class MasonryItemComponent implements AfterViewInit {

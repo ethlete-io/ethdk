@@ -3,7 +3,6 @@ import { Direction, Directionality } from '@angular/cdk/bidi';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { CdkScrollableModule } from '@angular/cdk/scrolling';
 import {
-  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   ElementRef,
@@ -28,7 +27,6 @@ export type InlineTabBodyOriginState = 'left' | 'right';
   selector: 'et-inline-tab-body',
   templateUrl: 'inline-tab-body.component.html',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.Eager,
   animations: [tabAnimations.translateTab],
   imports: [CdkScrollableModule, InlineTabBodyHostDirective],
   host: {

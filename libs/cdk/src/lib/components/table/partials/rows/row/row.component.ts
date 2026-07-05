@@ -1,5 +1,5 @@
-import { CdkRow, CdkTableModule, CDK_ROW_TEMPLATE } from '@angular/cdk/table';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { CDK_ROW_TEMPLATE, CdkRow, CdkTableModule } from '@angular/cdk/table';
+import { Component, ViewEncapsulation } from '@angular/core';
 
 @Component({
   selector: 'et-row, [et-row], [et-row]',
@@ -8,7 +8,6 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/
     class: 'et-row et-data-table__row',
     role: 'row',
   },
-  changeDetection: ChangeDetectionStrategy.Eager,
   encapsulation: ViewEncapsulation.None,
   exportAs: 'etRow',
   providers: [{ provide: CdkRow, useExisting: RowComponent }],

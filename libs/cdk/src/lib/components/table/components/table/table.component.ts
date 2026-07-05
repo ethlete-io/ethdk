@@ -9,7 +9,6 @@ import {
 } from '@angular/cdk/table';
 import {
   AfterContentInit,
-  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   Input,
@@ -66,7 +65,6 @@ import { TableBusyOutletDirective } from '../../partials/table-busy-outlet';
     { provide: STICKY_POSITIONING_LISTENER, useValue: null },
   ],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [HeaderRowOutlet, DataRowOutlet, NoDataRowOutlet, FooterRowOutlet, TableBusyOutletDirective],
 })
 export class TableComponent<T> extends CdkTable<T> implements AfterContentInit {

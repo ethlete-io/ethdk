@@ -1,11 +1,10 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { BreadcrumbImports } from '../../breadcrumb.imports';
 import { BreadcrumbItemDirective } from '../../directives';
 
 @Component({
   selector: 'et-router-component-one',
-  changeDetection: ChangeDetectionStrategy.Eager,
   template: ` <h1>One</h1> `,
 })
 export class RouterOneComponent {}
@@ -26,7 +25,6 @@ export class RouterOneComponent {}
       </et-breadcrumb>
     </ng-template>
   `,
-  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [RouterLink, BreadcrumbImports],
 })
 export class RouterTwoComponent {}
@@ -50,7 +48,6 @@ export class RouterTwoComponent {}
       </et-breadcrumb>
     </ng-template>
   `,
-  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [RouterLink, BreadcrumbImports],
 })
 export class RouterThreeComponent {}
@@ -77,7 +74,6 @@ export class RouterThreeComponent {}
       </et-breadcrumb>
     </ng-template>
   `,
-  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [RouterLink, BreadcrumbImports],
 })
 export class RouterFourComponent {}
@@ -107,7 +103,6 @@ export class RouterFourComponent {}
       </et-breadcrumb>
     </ng-template>
   `,
-  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [RouterLink, BreadcrumbImports, BreadcrumbItemDirective],
 })
 export class RouterFiveComponent {}
