@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-next.8
+
+### Minor Changes
+
+- [`edea44b`](https://github.com/ethlete-io/ethdk/commit/edea44bf1c494420f02b545202f4b24db9a6395c) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to angular 22
+
 ## 0.1.0-next.7
 
 ### Patch Changes
