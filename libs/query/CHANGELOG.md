@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 6.0.0-next.12
+
+### Minor Changes
+
+- [`edea44b`](https://github.com/ethlete-io/ethdk/commit/edea44bf1c494420f02b545202f4b24db9a6395c) Thanks [@TomTomB](https://github.com/TomTomB)! - Update to angular 22
+
 ## 6.0.0-next.11
 
 ### Patch Changes
