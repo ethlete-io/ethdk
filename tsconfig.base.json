@@ -27,7 +27,11 @@
       "@ethlete/query": ["libs/query/src/index.ts"],
       "@ethlete/query/testing": ["libs/query/testing/index.ts"],
       "@ethlete/types": ["libs/types/src/index.ts"]
-    }
+    },
+    "strict": false,
+    "noUncheckedSideEffectImports": false,
+    "types": ["*"],
+    "ignoreDeprecations": "6.0"
   },
   "exclude": ["node_modules", "tmp"]
 }
