@@ -19,7 +19,7 @@ import { HeaderCellDefDirective } from '../header-cell-def';
     </ng-container>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.Default,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [ColumnDefDirective, HeaderCellDefDirective, HeaderCellDirective, CellDefDirective, CellDirective],
 })
 export class TextColumnComponent<T> extends CdkTextColumn<T> {

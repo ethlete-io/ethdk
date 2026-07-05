@@ -1,4 +1,4 @@
-import { Component, ElementRef, InjectionToken, OnInit, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, ElementRef, InjectionToken, OnInit, computed, effect, inject, input, signal, ChangeDetectionStrategy } from '@angular/core';
 import {
   ScrollObserverDirective,
   ScrollObserverEndDirective,
@@ -34,6 +34,7 @@ export type OverlayBodyDividerType = 'static' | 'dynamic' | false;
     },
     provideBoundaryElement(),
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   host: {
     class: 'et-overlay-body',
   },

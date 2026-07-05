@@ -47,7 +47,7 @@ type InlineTabsBaseHeader = {
   templateUrl: 'inline-tabs.component.html',
   styleUrls: ['inline-tabs.component.scss'],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.Default,
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [
     {
       provide: TAB_GROUP,

@@ -14,6 +14,7 @@ import { ComboboxImports } from '../../combobox.imports';
 @Component({
   selector: 'et-sb-combobox-selected-option',
   template: ` <p>{{ option() | json }}</p> `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [JsonPipe],
 })
 export class StorybookComboboxSelectedOptionComponent {

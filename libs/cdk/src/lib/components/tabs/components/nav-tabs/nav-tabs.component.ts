@@ -24,7 +24,7 @@ import { ActiveTabUnderlineBarManager, ActiveTabUnderlineDirective, PaginatedTab
   selector: '[et-nav-tabs]',
   templateUrl: 'nav-tabs.component.html',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.Default,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [ScrollableComponent],
   host: {
     class: 'et-nav-tabs',

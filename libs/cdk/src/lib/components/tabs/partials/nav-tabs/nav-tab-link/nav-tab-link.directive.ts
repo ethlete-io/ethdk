@@ -14,6 +14,7 @@ import {
   OnDestroy,
   OnInit,
   untracked,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { isActive, IsActiveMatchOptions, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { applyHostListeners } from '@ethlete/core';
@@ -39,6 +40,7 @@ let nextUniqueId = 0;
     '[attr.tabIndex]': '_getTabIndex()',
     '[attr.role]': '_getRole()',
   },
+  changeDetection: ChangeDetectionStrategy.Eager,
   hostDirectives: [{ directive: ActiveTabUnderlineDirective, inputs: ['fitUnderlineToContent'] }],
 })
 export class NavTabLinkComponent implements OnInit, AfterViewInit, OnDestroy, FocusableOption {

@@ -26,7 +26,7 @@ export const TAB_GROUP = new InjectionToken<unknown>('TAB_GROUP');
 @Component({
   selector: 'et-inline-tab',
   templateUrl: 'inline-tab.component.html',
-  changeDetection: ChangeDetectionStrategy.Default,
+  changeDetection: ChangeDetectionStrategy.Eager,
   encapsulation: ViewEncapsulation.None,
   providers: [{ provide: TAB, useExisting: InlineTabComponent }],
   host: {

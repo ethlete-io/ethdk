@@ -8,7 +8,7 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/
     class: 'et-header-row et-data-table__header-row',
     role: 'row',
   },
-  changeDetection: ChangeDetectionStrategy.Default,
+  changeDetection: ChangeDetectionStrategy.Eager,
   encapsulation: ViewEncapsulation.None,
   exportAs: 'etHeaderRow',
   providers: [{ provide: CdkHeaderRow, useExisting: HeaderRowComponent }],

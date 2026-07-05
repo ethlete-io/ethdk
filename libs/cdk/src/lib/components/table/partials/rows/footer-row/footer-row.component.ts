@@ -8,7 +8,7 @@ import { Component, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/
     class: 'et-footer-row et-data-table__row',
     role: 'row',
   },
-  changeDetection: ChangeDetectionStrategy.Default,
+  changeDetection: ChangeDetectionStrategy.Eager,
   encapsulation: ViewEncapsulation.None,
   exportAs: 'etFooterRow',
   providers: [{ provide: CdkFooterRow, useExisting: FooterRowComponent }],
