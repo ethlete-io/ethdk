@@ -64,6 +64,7 @@
     "@nx/vitest": "23.1.0-beta.7",
     "@nx/web": "23.1.0-beta.7",
     "@nx/workspace": "23.1.0-beta.7",
+    "@oxc-project/runtime": "^0.115.0",
     "@playwright/test": "1.60.0",
     "@schematics/angular": "22.0.5",
     "@storybook/addon-a11y": "10.4.0",

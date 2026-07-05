@@ -4457,6 +4457,7 @@ __metadata:
     "@nx/vitest": "npm:23.1.0-beta.7"
     "@nx/web": "npm:23.1.0-beta.7"
     "@nx/workspace": "npm:23.1.0-beta.7"
+    "@oxc-project/runtime": "npm:^0.115.0"
     "@playwright/test": "npm:1.60.0"
     "@schematics/angular": "npm:22.0.5"
     "@storybook/addon-a11y": "npm:10.4.0"
@@ -6691,6 +6692,13 @@ __metadata:
   version: 0.127.0
   resolution: "@oxc-parser/binding-win32-x64-msvc@npm:0.127.0"
   conditions: os=win32 & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@oxc-project/runtime@npm:^0.115.0":
+  version: 0.115.0
+  resolution: "@oxc-project/runtime@npm:0.115.0"
+  checksum: 10c0/88905181724fcad06d2852969e706a25a7b6c4fadac22dd6aece24b882a947eda7487451e0824781c9dc87b40b2c6ee582790e47fec5a9ba5d27c6e8c6c35bc1
   languageName: node
   linkType: hard
 
