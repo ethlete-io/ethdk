@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-next.14
+
+### Minor Changes
+
+- [#3002](https://github.com/ethlete-io/ethdk/pull/3002) [`6bf6d5c`](https://github.com/ethlete-io/ethdk/commit/6bf6d5cd11ed546b412abb93f518a60b4e09f857) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add heading options to rich text editor toolbar
+
 ## 0.1.0-next.13
 
 ### Minor Changes

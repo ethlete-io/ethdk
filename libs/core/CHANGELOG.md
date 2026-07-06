@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.18
+
+### Patch Changes
+
+- [`d7c4fbe`](https://github.com/ethlete-io/ethdk/commit/d7c4fbe23359ebf68e4f769ac6eda05ce01f90c8) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix broken heading support in markdown utils
+
 ## 5.0.0-next.17
 
 ### Minor Changes
