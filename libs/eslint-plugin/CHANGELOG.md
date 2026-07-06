@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-next.9
+
+### Patch Changes
+
+- [`b323ef6`](https://github.com/ethlete-io/ethdk/commit/b323ef66130d196e5c893e844d50ecfc85487373) Thanks [@TomTomB](https://github.com/TomTomB)! - `class-member-order`: recognize custom `injectXyz()` helper functions (not just the raw `inject()` call) as inject-group members, so they're required to be declared before inputs/outputs/queries/properties like other injected dependencies.
+
 ## 0.1.0-next.8
 
 ### Minor Changes
