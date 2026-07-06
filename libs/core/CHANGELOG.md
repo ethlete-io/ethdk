@@ -1,5 +1,15 @@
 # @ethlete/core
 
+## 5.0.0-next.19
+
+### Minor Changes
+
+- [#3006](https://github.com/ethlete-io/ethdk/pull/3006) [`f6b9c10`](https://github.com/ethlete-io/ethdk/commit/f6b9c10b9702722d55a8a815ad9539a92c65e20a) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `runtimePrefix` option to the `tailwind-4-color-theme` generator. This decouples the Tailwind utility color prefix (`prefix`, e.g. `bg-fut-primary`) from the runtime theme-swap prefix used by `ProvideColorDirective`/`etProvideColor` (the `.et-color--<name>` selectors and `--et-color-primary` CSS variables). Previously both were driven by the same `prefix` value, which broke consumers whose Tailwind utility naming convention differs from their runtime theme-switching convention. `runtimePrefix` defaults to `prefix`, so existing usages are unaffected.
+
+### Patch Changes
+
+- [#3003](https://github.com/ethlete-io/ethdk/pull/3003) [`e7f482b`](https://github.com/ethlete-io/ethdk/commit/e7f482bc170b27374c03cd84b1a5df23ceda9bf6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix markdown headings not being parsed when directly followed by a list or paragraph without a blank line
+
 ## 5.0.0-next.18
 
 ### Patch Changes
