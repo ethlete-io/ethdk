@@ -181,13 +181,9 @@ function extractThemesFromContent(content: string, filePath: string): Theme[] {
     throw new Error('THEMES export has no initializer');
   }
 
-  // Handle 'satisfies' expression: [array] satisfies Type[]
-  if (initializer.isKind(SyntaxKind.SatisfiesExpression)) {
-    initializer = initializer.getExpression();
-  }
-
-  // Handle 'as const': [array] as const
-  if (initializer.isKind(SyntaxKind.AsExpression)) {
+  // Handle 'satisfies X'/'as const' wrappers, in either order: [array] satisfies Type[],
+  // [array] as const, or both combined.
+  while (initializer.isKind(SyntaxKind.SatisfiesExpression) || initializer.isKind(SyntaxKind.AsExpression)) {
     initializer = initializer.getExpression();
   }
 
@@ -215,8 +211,9 @@ function extractThemesFromContent(content: string, filePath: string): Theme[] {
         continue;
       }
 
-      // Handle 'as const' on individual theme objects
-      if (themeObj.isKind(SyntaxKind.AsExpression)) {
+      // Handle 'as const' and 'satisfies X' wrappers on individual theme objects, in
+      // either order (e.g. `{...} satisfies Theme`, `{...} as const`, or both combined).
+      while (themeObj.isKind(SyntaxKind.AsExpression) || themeObj.isKind(SyntaxKind.SatisfiesExpression)) {
         themeObj = themeObj.getExpression();
       }
 

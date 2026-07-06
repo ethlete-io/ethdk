@@ -118,6 +118,57 @@ describe('tailwind-4-color-theme generator', () => {
     expect(content).toContain('--et-color-on-primary: 21 22 22;');
   });
 
+  it('should parse individual theme objects using `satisfies X` instead of `as const`', async () => {
+    const themesContent = `
+    import { type ColorTheme as EthleteTheme } from '@ethlete/core';
+
+    export const PITCH_GREEN = {
+      name: 'pitch-green',
+      isDefault: true,
+      type: 'success',
+      primary: {
+        color: {
+          default: '7 244 104',
+          hover: '58 245 133',
+        },
+        onColor: {
+          default: '21 22 22',
+        },
+      },
+    } satisfies EthleteTheme;
+
+    export const RED = {
+      name: 'red',
+      type: 'error',
+      primary: {
+        color: {
+          default: '239 68 68',
+        },
+        onColor: {
+          default: '252 252 247',
+        },
+      },
+    } satisfies EthleteTheme;
+
+    export const THEMES = [PITCH_GREEN, RED] satisfies EthleteTheme[];
+  `;
+
+    tree.write('src/themes.ts', themesContent);
+
+    await migrate(tree, {
+      themesPath: 'src/themes.ts',
+      outputPath: 'src/styles/tailwind-themes.css',
+      skipFormat: true,
+    });
+
+    expect(consoleWarnSpy).not.toHaveBeenCalledWith(expect.stringContaining('is not an object literal'));
+
+    const content = tree.read('src/styles/tailwind-themes.css', 'utf-8');
+    expect(content).toContain('--color-et-pitch-green: rgb(7 244 104);');
+    expect(content).toContain('--color-et-red: rgb(239 68 68);');
+    expect(content).toContain('.et-color--pitch-green');
+  });
+
   it('should use custom prefix', async () => {
     const themesContent = `
     export const BRAND = { 
