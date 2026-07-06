@@ -145,6 +145,79 @@ describe('tailwind-4-color-theme generator', () => {
     expect(content).toContain('--color-custom-on-brand: rgb(255 255 255);');
   });
 
+  it('should decouple the Tailwind utility prefix from the runtime theme-swap prefix', async () => {
+    const themesContent = `
+    export const BRAND = {
+      name: 'brand',
+      isDefault: true,
+      primary: {
+        color: { default: '0 0 0', hover: '10 10 10' },
+        onColor: { default: '255 255 255' }
+      }
+    } as const;
+    export const themes = [BRAND];
+  `;
+
+    tree.write('src/themes.ts', themesContent);
+
+    await migrate(tree, {
+      themesPath: 'src/themes.ts',
+      outputPath: 'src/styles/tw.css',
+      prefix: 'fut',
+      runtimePrefix: 'et',
+      skipFormat: true,
+    });
+
+    const content = tree.read('src/styles/tw.css', 'utf-8');
+
+    // Static per-theme utility classes use the Tailwind utility prefix.
+    expect(content).toContain('--color-fut-brand: rgb(0 0 0);');
+    expect(content).toContain('--color-fut-on-brand: rgb(255 255 255);');
+
+    // The dynamic "current theme" utility still uses the Tailwind utility prefix for its
+    // own name, but reads the runtime prefix's CSS variable.
+    expect(content).toContain('--color-fut-theme: rgb(var(--et-color-primary));');
+    expect(content).toContain('--color-fut-on-theme: rgb(var(--et-color-on-primary));');
+
+    // The runtime theme-swap selectors and variables use the runtime prefix, not the
+    // Tailwind utility prefix.
+    expect(content).toContain('.et-color--default, .et-color--brand {');
+    expect(content).toContain('--et-color-primary: 0 0 0;');
+    expect(content).not.toContain('fut-color--');
+    expect(content).not.toContain('--fut-color-primary');
+
+    // The convenience alias block also follows the runtime prefix.
+    expect(content).toContain('[class*="et-color--"]');
+    expect(content).toContain('--et-theme-color-primary-rgb: var(--et-color-primary);');
+  });
+
+  it('should default runtimePrefix to prefix when not specified', async () => {
+    const themesContent = `
+    export const BRAND = {
+      name: 'brand',
+      isDefault: true,
+      primary: {
+        color: { default: '0 0 0' },
+        onColor: { default: '255 255 255' }
+      }
+    } as const;
+    export const themes = [BRAND];
+  `;
+
+    tree.write('src/themes.ts', themesContent);
+
+    await migrate(tree, {
+      themesPath: 'src/themes.ts',
+      outputPath: 'src/styles/tw.css',
+      prefix: 'custom',
+      skipFormat: true,
+    });
+
+    const content = tree.read('src/styles/tw.css', 'utf-8');
+    expect(content).toContain('.custom-color--default, .custom-color--brand {');
+    expect(content).toContain('--custom-color-primary: 0 0 0;');
+  });
+
   it('should handle kebab-case theme names', async () => {
     const themesContent = `
     export const PITCH_GREEN = { 
