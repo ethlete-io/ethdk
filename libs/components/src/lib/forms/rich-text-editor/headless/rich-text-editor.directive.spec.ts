@@ -76,8 +76,15 @@ describe('RichTextEditorDirective', () => {
         dir.toggleStrikethrough();
         dir.toggleUnorderedList();
         dir.toggleOrderedList();
+        dir.toggleHeading(1);
+        dir.toggleHeading(2);
         dir.setLink('https://example.com');
       }).not.toThrow();
+    });
+
+    it('reports no active heading by default', () => {
+      dir.refreshActiveMarks();
+      expect(dir.headingLevel()).toBeNull();
     });
   });
 });

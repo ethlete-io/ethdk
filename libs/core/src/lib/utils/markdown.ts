@@ -166,11 +166,12 @@ export const htmlToMarkdown = (html: string): string => {
     (_, code: string) => `\n\`\`\`\n${unescapeHtml(code.trim())}\n\`\`\`\n`,
   );
 
-  // Headings
+  // Headings — keep the inner markup so the inline passes below turn any nested
+  // bold/italic/link/code into markdown; leftover tags are stripped at the end.
   for (let i = 6; i >= 1; i--) {
     md = md.replace(
       new RegExp(`<h${i}[^>]*>([\\s\\S]*?)<\\/h${i}>`, 'gi'),
-      (_, content: string) => `\n${'#'.repeat(i)} ${stripTags(content).trim()}\n`,
+      (_, content: string) => `\n${'#'.repeat(i)} ${content.trim()}\n`,
     );
   }
 

@@ -3,7 +3,7 @@ import { computed, DestroyRef, Directive, inject, input, model, signal } from '@
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { htmlToMarkdown } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
-import { injectRichTextEditorDom, provideRichTextEditorDom } from './internals/rich-text-editor-dom';
+import { HeadingTag, injectRichTextEditorDom, provideRichTextEditorDom } from './internals/rich-text-editor-dom';
 
 @Directive({
   selector: '[etRichTextEditor]',
@@ -44,6 +44,8 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   public unorderedListActive = signal(false);
   public orderedListActive = signal(false);
   public linkActive = signal(false);
+
+  public headingLevel = signal<number | null>(null);
 
   /** @internal */
   public lastEmittedMarkdown: string | null = null;
@@ -86,6 +88,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     this.unorderedListActive.set(states?.unorderedList ?? false);
     this.orderedListActive.set(states?.orderedList ?? false);
     this.linkActive.set(states?.link ?? false);
+    this.headingLevel.set(states?.heading ?? null);
   }
 
   public toggleBold() {
@@ -106,6 +109,10 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
   public toggleOrderedList() {
     this.runCommand(() => this.editorDom.toggleList('ol'));
+  }
+
+  public toggleHeading(level: number) {
+    this.runCommand(() => this.editorDom.toggleHeading(`h${level}` as HeadingTag));
   }
 
   public setLink(href: string) {

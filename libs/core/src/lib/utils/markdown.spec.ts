@@ -13,6 +13,10 @@ describe('markdownToHtml', () => {
     expect(markdownToHtml('#### Heading 4')).toBe('<h4>Heading 4</h4>');
   });
 
+  it('converts inline formatting inside headings', () => {
+    expect(markdownToHtml('# **bold** title')).toBe('<h1><strong>bold</strong> title</h1>');
+  });
+
   it('converts bold and italic', () => {
     expect(markdownToHtml('**bold**')).toBe('<p><strong>bold</strong></p>');
     expect(markdownToHtml('__bold__')).toBe('<p><strong>bold</strong></p>');
@@ -120,6 +124,13 @@ describe('htmlToMarkdown', () => {
     expect(htmlToMarkdown('<h1>Heading 1</h1>')).toBe('# Heading 1');
     expect(htmlToMarkdown('<h2>Heading 2</h2>')).toBe('## Heading 2');
     expect(htmlToMarkdown('<h3>Heading 3</h3>')).toBe('### Heading 3');
+  });
+
+  it('preserves inline formatting inside headings', () => {
+    expect(htmlToMarkdown('<h1><strong>bold</strong> title</h1>')).toBe('# **bold** title');
+    expect(htmlToMarkdown('<h2>a <a href="https://example.com">link</a></h2>')).toBe(
+      '## a [link](https://example.com)',
+    );
   });
 
   it('converts bold and italic', () => {

@@ -44,6 +44,50 @@
   <span class="et-rte-toolbar-divider" aria-hidden="true"></span>
 
   <button
+    [pressed]="dir.headingLevel() === 1"
+    [disabled]="dir.disabled() || dir.readonly()"
+    (mousedown)="$event.preventDefault()"
+    (click)="dir.toggleHeading(1)"
+    mutedUntilPressed
+    et-icon-button
+    size="xs"
+    type="button"
+    aria-label="Heading 1"
+  >
+    <i etIcon="et-heading-1"></i>
+  </button>
+
+  <button
+    [pressed]="dir.headingLevel() === 2"
+    [disabled]="dir.disabled() || dir.readonly()"
+    (mousedown)="$event.preventDefault()"
+    (click)="dir.toggleHeading(2)"
+    mutedUntilPressed
+    et-icon-button
+    size="xs"
+    type="button"
+    aria-label="Heading 2"
+  >
+    <i etIcon="et-heading-2"></i>
+  </button>
+
+  <button
+    [pressed]="dir.headingLevel() === 3"
+    [disabled]="dir.disabled() || dir.readonly()"
+    (mousedown)="$event.preventDefault()"
+    (click)="dir.toggleHeading(3)"
+    mutedUntilPressed
+    et-icon-button
+    size="xs"
+    type="button"
+    aria-label="Heading 3"
+  >
+    <i etIcon="et-heading-3"></i>
+  </button>
+
+  <span class="et-rte-toolbar-divider" aria-hidden="true"></span>
+
+  <button
     [pressed]="dir.unorderedListActive()"
     [disabled]="dir.disabled() || dir.readonly()"
     (mousedown)="$event.preventDefault()"

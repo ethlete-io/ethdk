@@ -40,6 +40,6 @@ export const Default: Story = {};
 export const WithMarkdown: Story = {
   args: {
     value:
-      'A short intro with **bold**, *italic* and ~~strikethrough~~.\n\n- First item\n- Second item\n\nA [link](https://example.com) too.',
+      '# Main heading\n\nA short intro with **bold**, *italic* and ~~strikethrough~~.\n\n## A subheading\n\n- First item\n- Second item\n\nA [link](https://example.com) too.',
   },
 };

@@ -15,6 +15,9 @@ import { fromEvent, tap } from 'rxjs';
 import { IconButtonComponent } from '../../button/icon-button.component';
 import {
   BOLD_ICON,
+  HEADING_1_ICON,
+  HEADING_2_ICON,
+  HEADING_3_ICON,
   IconDirective,
   ITALIC_ICON,
   LINK_ICON,
@@ -34,7 +37,17 @@ import { RichTextEditorFloatingToolbarComponent } from './rich-text-editor-float
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IconButtonComponent, IconDirective, RichTextEditorFloatingToolbarComponent],
   providers: [
-    provideIcons(BOLD_ICON, ITALIC_ICON, STRIKETHROUGH_ICON, LIST_BULLETED_ICON, LIST_NUMBERED_ICON, LINK_ICON),
+    provideIcons(
+      BOLD_ICON,
+      ITALIC_ICON,
+      STRIKETHROUGH_ICON,
+      HEADING_1_ICON,
+      HEADING_2_ICON,
+      HEADING_3_ICON,
+      LIST_BULLETED_ICON,
+      LIST_NUMBERED_ICON,
+      LINK_ICON,
+    ),
   ],
   hostDirectives: [
     {

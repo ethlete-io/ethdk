@@ -4,6 +4,9 @@ import { createProvider, injectRenderer } from '@ethlete/core';
 
 export type InlineTag = 'strong' | 'em' | 'del';
 export type ListTag = 'ul' | 'ol';
+export type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+
+const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6';
 
 export type EditableSelection = {
   selection: Selection;
@@ -17,6 +20,8 @@ export type RichTextMarkStates = {
   unorderedList: boolean;
   orderedList: boolean;
   link: boolean;
+  /** Heading level of the block the selection starts in, or `null` when it is not a heading. */
+  heading: number | null;
 };
 
 const richTextEditorDomFactory = () => {
@@ -554,6 +559,7 @@ const richTextEditorDomFactory = () => {
     }
 
     const node = resolveStartNode(editable.range);
+    const headingEl = closestWithin(node, HEADING_SELECTOR);
 
     return {
       bold: !!closestWithin(node, 'strong'),
@@ -562,6 +568,7 @@ const richTextEditorDomFactory = () => {
       unorderedList: !!closestWithin(node, 'ul'),
       orderedList: !!closestWithin(node, 'ol'),
       link: !!closestWithin(node, 'a'),
+      heading: headingEl ? Number(headingEl.tagName[1]) : null,
     };
   };
 
@@ -781,6 +788,90 @@ const richTextEditorDomFactory = () => {
     el.normalize();
   };
 
+  // Re-tag a block-level element in place, carrying its children (including any inline marks)
+  // into the new element. Used to turn a paragraph into a heading and back.
+  const replaceBlockTag = (block: HTMLElement, tag: HeadingTag | 'p'): HTMLElement => {
+    const replacement = renderer.createElement(tag);
+
+    while (block.firstChild) {
+      renderer.appendChild(replacement, block.firstChild);
+    }
+
+    replaceWith(block, [replacement]);
+
+    return replacement;
+  };
+
+  const toggleHeading = (tag: HeadingTag) => {
+    const editable = getSelection();
+    const el = root();
+
+    if (!el || !editable) {
+      return;
+    }
+
+    const blocks = blocksInRange(editable.range);
+
+    // An empty editor has no block to convert — start a fresh heading with an empty line box so
+    // the caret has somewhere to land, mirroring toggleList's empty-editor branch.
+    if (blocks.length === 0) {
+      const heading = renderer.createElement(tag);
+      renderer.appendChild(heading, renderer.createElement('br'));
+      renderer.appendChild(el, heading);
+      collapseInto(heading, 0);
+
+      return;
+    }
+
+    const produced: Node[] = [];
+
+    blocks.forEach((block) => {
+      // A heading cannot contain list items, so leave lists untouched — the heading button is a
+      // no-op over a selected list rather than producing invalid markup.
+      if (block instanceof HTMLElement && (block.tagName === 'UL' || block.tagName === 'OL')) {
+        produced.push(block);
+
+        return;
+      }
+
+      if (block instanceof HTMLElement && block.matches(HEADING_SELECTOR)) {
+        // Same level toggles back to a paragraph; a different level re-levels the heading.
+        produced.push(replaceBlockTag(block, block.tagName.toLowerCase() === tag ? 'p' : tag));
+
+        return;
+      }
+
+      if (block instanceof HTMLElement) {
+        produced.push(replaceBlockTag(block, tag));
+
+        return;
+      }
+
+      // A bare text node (or <br>) sitting directly under the root has no wrapping block — move it
+      // into a fresh heading in the same position.
+      const heading = renderer.createElement(tag);
+      const ref = block.nextSibling;
+
+      renderer.removeChild(el, block);
+      renderer.appendChild(heading, block);
+      renderer.insertBefore(el, heading, ref);
+      produced.push(heading);
+    });
+
+    const first = produced[0];
+    const last = produced[produced.length - 1];
+
+    if (first && last) {
+      if (first === last) {
+        selectNodeContents(first);
+      } else {
+        selectAcross(first, last);
+      }
+    }
+
+    el.normalize();
+  };
+
   const applyLink = (href: string) => {
     const editable = getSelection();
 
@@ -889,6 +980,7 @@ const richTextEditorDomFactory = () => {
     markStates,
     toggleInline,
     toggleList,
+    toggleHeading,
     applyLink,
     removeLink,
     insertToken,
