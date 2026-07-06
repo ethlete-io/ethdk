@@ -19,8 +19,12 @@
     },
     "prefix": {
       "type": "string",
-      "description": "Prefix for color variable names (e.g., 'et' creates --color-et-primary)",
+      "description": "Prefix for Tailwind utility color variable names (e.g., 'et' creates --color-et-primary, usable as bg-et-primary)",
       "default": "et"
+    },
+    "runtimePrefix": {
+      "type": "string",
+      "description": "Prefix for the runtime theme-swap mechanism: the CSS custom properties (--<runtimePrefix>-color-primary) and selectors (.<runtimePrefix>-color--<name>) that ProvideColorDirective (etProvideColor) toggles between. Defaults to the same value as 'prefix'. Set this separately when your Tailwind utility prefix needs to differ from your runtime theme-switching prefix (e.g. because '--color-primary' is already a documented public API elsewhere in your app)."
     },
     "skipFormat": {
       "type": "boolean",
