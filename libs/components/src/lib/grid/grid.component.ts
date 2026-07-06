@@ -10,6 +10,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { injectLocale } from '@ethlete/core';
+import { GridItemDefaultActionsComponent } from './grid-item-default-actions.component';
 import { GridItemComponent } from './grid-item.component';
 import { injectGridConfig } from './headless/grid-config';
 import { GridDirective } from './headless/grid.directive';
@@ -25,16 +26,6 @@ import { GridDirective } from './headless/grid.directive';
         [minRowSpan]="entry.reg.constraints?.minRowSpan ?? 1"
         [maxRowSpan]="entry.reg.constraints?.maxRowSpan ?? 4"
       >
-        @if (dragHandleComponent()) {
-          <div etGridItemDragHandle>
-            <ng-container
-              [ngComponentOutlet]="dragHandleComponent()!"
-              [ngComponentOutletInputs]="{ data: entry.item.data, itemId: entry.item.id }"
-            />
-          </div>
-        } @else {
-          <div etGridItemDragHandle></div>
-        }
         <ng-container [ngComponentOutlet]="entry.reg.component" [ngComponentOutletInputs]="{ data: entry.item.data }" />
         @if (actionsComponent()) {
           <div etGridItemAction>
@@ -43,8 +34,6 @@ import { GridDirective } from './headless/grid.directive';
               [ngComponentOutletInputs]="{ data: entry.item.data, itemId: entry.item.id }"
             />
           </div>
-        } @else if (!isReadOnly()) {
-          <button (click)="grid.removeItem(entry.item.id)" etGridItemAction>✕</button>
         }
       </et-grid-item>
     }
@@ -71,6 +60,7 @@ import { GridDirective } from './headless/grid.directive';
   host: {
     class: 'et-grid',
     role: 'region',
+    '[class.et-grid--readonly]': 'grid.readOnly()',
     '[attr.aria-label]': 'ariaLabel()',
     '[style.--_et-grid-columns]': 'gridColumns()',
     '[style.--et-grid-gap]': 'gridGap()',
@@ -125,11 +115,6 @@ import { GridDirective } from './headless/grid.directive';
     }
 
     .et-grid--readonly {
-      .et-grid-item__drag-handle {
-        cursor: default;
-        pointer-events: none;
-      }
-
       .et-grid-item__actions {
         display: none;
       }
@@ -151,14 +136,14 @@ import { GridDirective } from './headless/grid.directive';
 })
 export class GridComponent {
   public grid = inject(GridDirective);
-  private ghostRef = viewChild<ElementRef<HTMLElement>>('ghostRef');
   private gridConfig = injectGridConfig();
   private locale = injectLocale();
+  private ghostRef = viewChild<ElementRef<HTMLElement>>('ghostRef');
 
-  protected isReadOnly = computed(() => this.grid.readOnly());
-
-  protected dragHandleComponent = computed(() => this.gridConfig.dragHandleComponent);
-  protected actionsComponent = computed(() => this.gridConfig.actionsComponent);
+  protected actionsComponent = computed(() => {
+    const configured = this.gridConfig.actionsComponent;
+    return configured === undefined ? GridItemDefaultActionsComponent : configured;
+  });
 
   protected registeredItems = computed(() => {
     const registrations = this.gridConfig.registrations;

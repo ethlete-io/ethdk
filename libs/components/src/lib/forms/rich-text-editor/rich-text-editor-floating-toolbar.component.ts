@@ -66,7 +66,7 @@ export class RichTextEditorFloatingToolbarComponent {
         this.renderer.listen(root, 'pointerdown', () => (this.pointerSelectingInContent = true)),
         this.renderer.listen(root, 'keyup', () => this.evaluate()),
         this.renderer.listen(root, 'blur', () => this.hide()),
-        this.renderer.listen(this.document, 'pointerup', () => this.onDocumentPointerUp()),
+        this.renderer.listen(this.document, 'pointerup', () => this.finishContentPointerSelection()),
         this.renderer.listen(this.document, 'selectionchange', () => this.reposition()),
       ];
 
@@ -83,7 +83,7 @@ export class RichTextEditorFloatingToolbarComponent {
     return usable ? range : null;
   }
 
-  private onDocumentPointerUp() {
+  private finishContentPointerSelection() {
     if (!this.pointerSelectingInContent) return;
 
     this.pointerSelectingInContent = false;

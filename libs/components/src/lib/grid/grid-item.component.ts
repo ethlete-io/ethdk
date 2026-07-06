@@ -1,22 +1,22 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   ViewEncapsulation,
   computed,
   effect,
   inject,
   input,
   output,
+  viewChild,
 } from '@angular/core';
 import {
   ProvideSurfaceDirective,
   ResizeHandlesComponent,
   SURFACE_PROVIDER,
-  injectLocale,
   injectSurfaceThemes,
   resolveSurfaceByElevation,
 } from '@ethlete/core';
-import { injectGridConfig } from './headless/grid-config';
 import { GridDragDirective } from './headless/grid-drag.directive';
 import { GridItemDirective } from './headless/grid-item.directive';
 import { GridResizeDirective } from './headless/grid-resize.directive';
@@ -25,11 +25,7 @@ import { GRID_TOKEN } from './headless/grid.tokens';
 @Component({
   selector: 'et-grid-item, [et-grid-item]',
   template: `
-    <div [attr.aria-label]="dragHandleAriaLabel()" class="et-grid-item__drag-handle">
-      <ng-content select="[etGridItemDragHandle]" />
-    </div>
-
-    <div (pointerdown)="$event.stopPropagation()" class="et-grid-item__content">
+    <div #itemContent (pointerdown)="blockPointerDownWhenReadOnly($event)" class="et-grid-item__content">
       <ng-content />
     </div>
 
@@ -184,21 +180,17 @@ import { GRID_TOKEN } from './headless/grid.tokens';
       border-radius: 1px;
     }
 
-    .et-grid-item__drag-handle {
-      cursor: grab;
-      display: flex;
-      align-items: center;
-      user-select: none;
-      touch-action: none;
-
-      .et-grid-item--dragging & {
-        cursor: grabbing;
-      }
-    }
-
     .et-grid-item__content {
       flex: 1;
       min-height: 0;
+    }
+
+    .et-grid:not(.et-grid--readonly) .et-grid-item__content {
+      cursor: grab;
+    }
+
+    .et-grid-item--dragging .et-grid-item__content {
+      cursor: grabbing;
     }
 
     .et-grid-item__actions {
@@ -218,18 +210,15 @@ export class GridItemComponent {
   public gridDrag = inject(GridDragDirective);
   public gridResize = inject(GridResizeDirective);
 
+  private surfaceThemes = injectSurfaceThemes({ optional: true });
+
   public ariaLabel = input<string>('Grid item');
 
   public removed = output<void>();
 
-  private surfaceThemes = injectSurfaceThemes({ optional: true });
-  private gridConfig = injectGridConfig();
-  private locale = injectLocale();
+  private itemContent = viewChild<ElementRef<HTMLElement>>('itemContent');
 
   protected isReadOnly = computed(() => this.grid.readOnly());
-  protected dragHandleAriaLabel = computed(() =>
-    this.gridConfig.transformer(this.gridConfig.dragHandleAriaLabel, this.locale.currentLocale()),
-  );
   private resolvedSurface = computed(() => {
     const themes = this.surfaceThemes;
     const parent = this.parentSurfaceProvider;
@@ -246,6 +235,19 @@ export class GridItemComponent {
         this.provideSurface.clearForcedSurface();
       }
     });
+
+    effect(() => {
+      const el = this.itemContent()?.nativeElement;
+      if (el) {
+        this.grid.registerContentElement(this.gridItem.itemId(), el);
+      }
+    });
+  }
+
+  protected blockPointerDownWhenReadOnly(event: PointerEvent) {
+    if (this.isReadOnly()) {
+      event.stopPropagation();
+    }
   }
 
   public applyKeyboardShortcut(event: KeyboardEvent) {
@@ -285,6 +287,8 @@ export class GridItemComponent {
     if (event.shiftKey) {
       let handled = true;
 
+      this.grid.snapshotRects();
+
       switch (event.key) {
         case 'ArrowRight':
           this.grid.resizeItem({ id: this.gridItem.itemId(), newColSpan: pos.colSpan + 1, newRowSpan: pos.rowSpan });
@@ -303,8 +307,14 @@ export class GridItemComponent {
       }
 
       if (handled) {
+        // Discrete keyboard step: animate the neighbours (translate-only) and commit
+        // so the resize base doesn't carry over into the next keypress or gesture.
+        this.grid.animateLayoutTransition({ excludeIds: new Set([this.gridItem.itemId()]) });
+        this.grid.commitResize();
         event.preventDefault();
         event.stopPropagation();
+      } else {
+        this.grid.commitResize();
       }
     }
 

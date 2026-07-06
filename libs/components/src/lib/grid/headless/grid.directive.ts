@@ -11,7 +11,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { signalHostElementDimensions } from '@ethlete/core';
+import { injectRenderer, signalHostElementDimensions } from '@ethlete/core';
 import { injectGridConfig } from './grid-config';
 import { GRID_TOKEN } from './grid.tokens';
 import {
@@ -46,6 +46,29 @@ export type GridDragState = {
   itemId: string;
   originPosition: GridItemPosition;
   targetPosition: GridItemPosition;
+};
+
+export const GRID_DEBUG_STORAGE_KEY = 'et-grid-debug';
+
+let cachedGridDebug: boolean | null = null;
+
+export const isGridDebugEnabled = () => {
+  if (cachedGridDebug === null) {
+    try {
+      cachedGridDebug = globalThis.localStorage?.getItem(GRID_DEBUG_STORAGE_KEY) === 'true';
+    } catch {
+      cachedGridDebug = false;
+    }
+  }
+
+  return cachedGridDebug;
+};
+
+export const gridDebug = (...args: unknown[]) => {
+  if (!isGridDebugEnabled()) return;
+
+  const timestamp = (globalThis.performance?.now() ?? 0).toFixed(1);
+  console.log(`\x1B[36m[et-grid ${timestamp}ms]\x1B[m`, ...args);
 };
 
 const positionsEqual = (a: GridItemPosition, b: GridItemPosition) =>
@@ -98,6 +121,8 @@ const resolveItemConstraints = (
 })
 export class GridDirective {
   private injector = inject(Injector);
+  private renderer = injectRenderer();
+  private gridConfig = injectGridConfig();
 
   public breakpoints = input<GridBreakpointConfig[]>(DEFAULT_BREAKPOINTS);
   public rowHeight = input(100);
@@ -106,7 +131,6 @@ export class GridDirective {
   public readOnly = input(false, { transform: booleanAttribute });
 
   public layoutChange = output<GridSerializedState>();
-  private gridConfig = injectGridConfig();
 
   public registrations = computed(() => this.gridConfig.registrations);
 
@@ -120,7 +144,9 @@ export class GridDirective {
   private resizeBaseLayout = signal<GridLayoutEntry[] | null>(null);
 
   private itemElements = new Map<string, HTMLElement>();
+  private contentElements = new Map<string, HTMLElement>();
   private ghostElement: HTMLElement | null = null;
+  private lastFlipAt = 0;
   private rectSnapshot = new Map<string, DOMRect>();
 
   public containerWidth = computed(() => this.dimensions().client?.width ?? 0);
@@ -366,7 +392,18 @@ export class GridDirective {
 
   public unregisterItem(id: string) {
     this.itemElements.delete(id);
+    this.contentElements.delete(id);
     this.constraintsRegistry.delete(id);
+  }
+
+  /**
+   * The item's inner content wrapper. Used by the counter-scaled resize FLIP so the
+   * box can scale while the content takes the inverse scale and stays undistorted.
+   */
+  public registerContentElement(id: string, el: HTMLElement) {
+    if (this.contentElements.get(id) !== el) {
+      this.contentElements.set(id, el);
+    }
   }
 
   public setGhostElement(el: HTMLElement | null) {
@@ -396,63 +433,147 @@ export class GridDirective {
     }
   }
 
-  public animateLayoutTransition(options?: { excludeIds?: Set<string>; scaleIds?: Set<string> }) {
+  public animateLayoutTransition(options?: { excludeIds?: Set<string>; durationMs?: number }) {
     const excludeIds = options?.excludeIds ?? new Set();
+    const durationMs = options?.durationMs ?? 250;
     const snapshot = new Map(this.rectSnapshot);
     const ghostEl = this.ghostElement;
+    const debug = isGridDebugEnabled();
+    const scheduledAt = debug ? performance.now() : 0;
 
     afterNextRender(
       () => {
+        const t0 = debug ? performance.now() : 0;
+
+        // The FLIP is split into read → write → read → write phases so the loop never
+        // interleaves a getBoundingClientRect() with a cancel() on the same element.
+        // Interleaving forces the browser to recompute layout twice PER item, which
+        // stalls the frame and shows up as an occasional chop on larger grids.
+        type Flip = {
+          el: HTMLElement;
+          content: HTMLElement | null;
+          running: Animation[];
+          fromRect: DOMRect;
+        };
+
+        // Phase 1 — read every "from" rect together (no writes in between, so the
+        // browser can serve them from a single layout pass).
+        //  - Mid-animation elements: their snapshot (taken a frame earlier) is stale, so
+        //    read the actual current on-screen rect and continue from exactly there.
+        //  - Otherwise: use the snapshot, which holds the pre-layout-change position.
+        const flips: Flip[] = [];
+
         for (const [id, el] of this.itemElements) {
           if (excludeIds.has(id)) continue;
 
-          const oldRect = snapshot.get(id);
+          const running = el.getAnimations();
+          const fromRect = running.length > 0 ? el.getBoundingClientRect() : snapshot.get(id);
 
-          if (!oldRect) continue;
+          if (!fromRect) continue;
 
-          const newRect = el.getBoundingClientRect();
-          const dx = oldRect.left - newRect.left;
-          const dy = oldRect.top - newRect.top;
-          const scaleX = oldRect.width / newRect.width;
-          const scaleY = oldRect.height / newRect.height;
-          const hasMoved = Math.abs(dx) > 1 || Math.abs(dy) > 1;
-          const hasResized = Math.abs(scaleX - 1) > 0.01 || Math.abs(scaleY - 1) > 0.01;
+          flips.push({ el, content: this.contentElements.get(id) ?? null, running, fromRect });
+        }
 
-          if (!hasMoved && !hasResized) continue;
+        const ghostRunning = ghostEl ? ghostEl.getAnimations() : [];
+        let ghostFrom: DOMRect | undefined;
+        if (ghostEl) {
+          ghostFrom = ghostRunning.length > 0 ? ghostEl.getBoundingClientRect() : snapshot.get('__ghost__');
+        }
 
-          el.getAnimations().forEach((a) => a.cancel());
+        const interrupted = debug ? flips.filter((f) => f.running.length > 0).length : 0;
+        const t1 = debug ? performance.now() : 0;
 
-          if (hasResized) {
-            el.animate(
-              [
-                { transform: `translate(${dx}px, ${dy}px) scale(${scaleX}, ${scaleY})`, transformOrigin: 'top left' },
-                { transform: 'translate(0px, 0px) scale(1, 1)', transformOrigin: 'top left' },
-              ],
-              { duration: 250, easing: 'cubic-bezier(0.2, 0, 0, 1)' },
-            );
+        // Phase 2 — cancel all in-flight animations (writes only).
+        for (const flip of flips) {
+          flip.running.forEach((a) => a.cancel());
+          flip.content?.getAnimations().forEach((a) => a.cancel());
+        }
+        ghostRunning.forEach((a) => a.cancel());
+
+        const t2 = debug ? performance.now() : 0;
+
+        // Phase 3 — read every target rect together (single layout pass).
+        const targets = flips.map((flip) => flip.el.getBoundingClientRect());
+        const ghostTarget = ghostEl ? ghostEl.getBoundingClientRect() : null;
+
+        const t3 = debug ? performance.now() : 0;
+        let animated = 0;
+        let maxDx = 0;
+        let maxDy = 0;
+
+        // Phase 4 — start the animations (writes only).
+        flips.forEach((flip, i) => {
+          const { el, content, fromRect } = flip;
+          const newRect = targets[i];
+
+          if (!newRect) return;
+
+          const dx = fromRect.left - newRect.left;
+          const dy = fromRect.top - newRect.top;
+          const scaleX = newRect.width > 0 ? fromRect.width / newRect.width : 1;
+          const scaleY = newRect.height > 0 ? fromRect.height / newRect.height : 1;
+          const moved = Math.abs(dx) > 1 || Math.abs(dy) > 1;
+          const resized = Math.abs(scaleX - 1) > 0.01 || Math.abs(scaleY - 1) > 0.01;
+
+          if (!moved && !resized) return;
+
+          if (debug) {
+            animated++;
+            maxDx = Math.max(maxDx, Math.abs(dx));
+            maxDy = Math.max(maxDy, Math.abs(dy));
+          }
+
+          if (resized) {
+            // Counter-scaled FLIP: the box scales from its old to new size while the
+            // content wrapper takes the inverse scale, so text/children never distort.
+            // Easing is baked into sampled keyframes (played linearly) so the outer and
+            // inner scales multiply to ~1 on every frame, not just at the endpoints.
+            this.animateCounterScaled({ el, content, dx, dy, scaleX, scaleY, durationMs });
           } else {
             el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'translate(0px, 0px)' }], {
-              duration: 250,
+              duration: durationMs,
+              easing: 'cubic-bezier(0.2, 0, 0, 1)',
+            });
+          }
+        });
+
+        if (ghostEl && ghostFrom && ghostTarget) {
+          const dx = ghostFrom.left - ghostTarget.left;
+          const dy = ghostFrom.top - ghostTarget.top;
+
+          if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+            ghostEl.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'translate(0px, 0px)' }], {
+              duration: 200,
               easing: 'cubic-bezier(0.2, 0, 0, 1)',
             });
           }
         }
 
-        if (ghostEl) {
-          const oldRect = snapshot.get('__ghost__');
+        if (debug) {
+          const t4 = performance.now();
+          const gapSinceLast = this.lastFlipAt ? t0 - this.lastFlipAt : -1;
+          this.lastFlipAt = t0;
 
-          if (oldRect) {
-            const newRect = ghostEl.getBoundingClientRect();
-            const dx = oldRect.left - newRect.left;
-            const dy = oldRect.top - newRect.top;
+          const round = (n: number) => Math.round(n * 100) / 100;
+          const info = {
+            items: flips.length,
+            interrupted, // items already mid-animation when this FLIP started
+            animated, // items that actually started a new animation
+            maxDx: round(maxDx),
+            maxDy: round(maxDy),
+            renderDelay: round(t0 - scheduledAt), // schedule → afterNextRender gap
+            readFrom: round(t1 - t0),
+            cancel: round(t2 - t1),
+            readTarget: round(t3 - t2),
+            startAnim: round(t4 - t3),
+            total: round(t4 - t0),
+            gapSinceLast: round(gapSinceLast), // time between consecutive FLIPs
+          };
 
-            if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
-              ghostEl.getAnimations().forEach((a) => a.cancel());
-              ghostEl.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'translate(0px, 0px)' }], {
-                duration: 200,
-                easing: 'cubic-bezier(0.2, 0, 0, 1)',
-              });
-            }
+          if (info.total > 6 || (gapSinceLast >= 0 && gapSinceLast < 12)) {
+            gridDebug('flip ⚠', info);
+          } else {
+            gridDebug('flip', info);
           }
         }
       },
@@ -852,5 +973,51 @@ export class GridDirective {
 
   private emitLayoutChange() {
     this.layoutChange.emit(this.getSerializedState());
+  }
+
+  private animateCounterScaled(options: {
+    el: HTMLElement;
+    content: HTMLElement | null;
+    dx: number;
+    dy: number;
+    scaleX: number;
+    scaleY: number;
+    durationMs: number;
+  }) {
+    const { el, content, dx, dy, scaleX, scaleY, durationMs } = options;
+    const steps = 14;
+    const outer: Keyframe[] = [];
+    const inner: Keyframe[] = [];
+
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic — matches the translate easing feel
+      const sx = scaleX + (1 - scaleX) * eased;
+      const sy = scaleY + (1 - scaleY) * eased;
+      const tx = dx * (1 - eased);
+      const ty = dy * (1 - eased);
+
+      outer.push({
+        offset: t,
+        transform: `translate(${tx}px, ${ty}px) scale(${sx}, ${sy})`,
+        transformOrigin: 'top left',
+      });
+      inner.push({ offset: t, transform: `scale(${1 / sx}, ${1 / sy})`, transformOrigin: 'top left' });
+    }
+
+    // Clip the box for the duration. When the item grows back (scaleX/scaleY < 1) the
+    // content wrapper is counter-scaled UP past the box, and browsers count transformed
+    // descendants in an ancestor's scrollable overflow — so without clipping the content
+    // spills out and flashes scrollbars. overflow:hidden turns it into a clean reveal.
+    // Only counter-scale sets this, and nothing else touches inline overflow, so
+    // restoring to '' (back to the CSS value) on finish/cancel is safe.
+    this.renderer.setStyle(el, { overflow: 'hidden' });
+    const restore = () => this.renderer.removeStyles(el, 'overflow');
+
+    const outerAnim = el.animate(outer, { duration: durationMs, easing: 'linear' });
+    outerAnim.onfinish = restore;
+    outerAnim.oncancel = restore;
+
+    content?.animate(inner, { duration: durationMs, easing: 'linear' });
   }
 }

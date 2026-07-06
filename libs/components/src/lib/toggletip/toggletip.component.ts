@@ -43,13 +43,13 @@ export class ToggletipComponent {
   private triggerSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
   protected injector = inject(Injector);
 
+  private surfaceThemes = injectSurfaceThemes({ optional: true });
+
   public toggletipId = input.required<string>();
   protected contentId = input.required<string>();
   public content = input.required<ToggletipContent>();
   public colorProvider = input.required<ProvideColorDirective | null>();
   public surfaceProvider = input.required<ProvideSurfaceDirective | null>();
-
-  private surfaceThemes = injectSurfaceThemes({ optional: true });
 
   public hasTemplate = computed(() => this.content() instanceof TemplateRef);
   public contentText = computed<string | null>(() => {

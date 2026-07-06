@@ -42,12 +42,12 @@ export class TooltipComponent {
   private triggerColorProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
   private triggerSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
 
+  private surfaceThemes = injectSurfaceThemes({ optional: true });
+
   public tooltipId = input.required<string>();
   public content = input.required<TooltipContent>();
   public colorProvider = input.required<ProvideColorDirective | null>();
   public surfaceProvider = input.required<ProvideSurfaceDirective | null>();
-
-  private surfaceThemes = injectSurfaceThemes({ optional: true });
 
   public hasTemplate = computed(() => this.content() instanceof TemplateRef);
   public contentText = computed<string | null>(() => {

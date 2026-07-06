@@ -16,9 +16,9 @@ import { PIP_ENTRY_TOKEN } from './pip-entry.token';
 export class PipBackDirective {
   private chrome = inject(PIP_CHROME_REF_TOKEN, { optional: true });
   private tokenEntry = inject(PIP_ENTRY_TOKEN, { optional: true });
+  private pipManager = injectPipManager();
 
   public entry = input<StreamPipEntry>();
-  private pipManager = injectPipManager();
 
   public back(event: Event) {
     event.stopPropagation();

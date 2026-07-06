@@ -61,9 +61,9 @@ export class OverlayBodyComponent implements OnInit {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   private scrollObserver = inject(ScrollObserverDirective);
+  private overlayManager = injectOverlayManager();
 
   public dividers = input<OverlayBodyDividerType>(false);
-  private overlayManager = injectOverlayManager();
 
   public dividersEnabled = computed(() => this.dividers() === 'dynamic' || this.dividers() === 'static');
   public dynamicDividersEnabled = computed(() => this.dividers() === 'dynamic');

@@ -1,8 +1,9 @@
 import { afterNextRender, computed, Directive, ElementRef, inject, Injector, signal } from '@angular/core';
-import { DragHandleDirective, DragMoveEvent, injectRenderer } from '@ethlete/core';
 import { outputToObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { DragHandleDirective, DragMoveEvent, injectRenderer } from '@ethlete/core';
 import { filter, tap } from 'rxjs';
 import { GridItemDirective } from './grid-item.directive';
+import { gridDebug, isGridDebugEnabled } from './grid.directive';
 import { GRID_TOKEN } from './grid.tokens';
 
 @Directive({
@@ -30,6 +31,9 @@ export class GridDragDirective {
 
   private dragStartClient = signal<{ x: number; y: number } | null>(null);
   private dragPixelOffset = signal<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  private dragMoveCount = 0;
+  private lastGhostMoveAt = 0;
 
   protected dragTransform = computed(() => {
     const offset = this.dragPixelOffset();
@@ -88,12 +92,20 @@ export class GridDragDirective {
           const newCol = Math.max(0, Math.min(originPos.col + colDelta, columns - originPos.colSpan));
           const newRow = Math.max(0, originPos.row + rowDelta);
 
-          const currentGhost = this.grid.ghostPosition();
-          const ghostWillMove = !currentGhost || currentGhost.col !== newCol || currentGhost.row !== newRow;
+          // Gate on whether the RAW target cell changed — not on ghostPosition(), which
+          // is the collision-resolved position. During a swap, resolution relocates the
+          // dragged item so the resolved ghost never equals the raw target, which made
+          // this fire on every pointermove and restart every neighbour's animation ~120×/s
+          // (the chop). layout() is a pure function of targetPosition, so if that cell is
+          // unchanged nothing needs re-animating.
+          const prevTarget = this.grid.dragState()?.targetPosition;
+          const targetChanged = !prevTarget || prevTarget.col !== newCol || prevTarget.row !== newRow;
 
-          if (ghostWillMove) {
-            this.grid.snapshotRects();
-          }
+          this.dragMoveCount++;
+
+          if (!targetChanged) return;
+
+          this.grid.snapshotRects();
 
           this.grid.updateDragTarget({
             col: newCol,
@@ -102,9 +114,20 @@ export class GridDragDirective {
             rowSpan: originPos.rowSpan,
           });
 
-          if (ghostWillMove) {
-            this.grid.animateLayoutTransition({ excludeIds: new Set([this.gridItem.itemId()]) });
+          if (isGridDebugEnabled()) {
+            const now = performance.now();
+            const sinceLast = this.lastGhostMoveAt ? Math.round((now - this.lastGhostMoveAt) * 100) / 100 : -1;
+            gridDebug('ghost→', {
+              col: newCol,
+              row: newRow,
+              movesSinceLastGhostMove: this.dragMoveCount, // raw pointermoves between cell crossings
+              msSinceLastGhostMove: sinceLast,
+            });
+            this.lastGhostMoveAt = now;
+            this.dragMoveCount = 0;
           }
+
+          this.grid.animateLayoutTransition({ excludeIds: new Set([this.gridItem.itemId()]) });
         }),
         takeUntilDestroyed(),
       )

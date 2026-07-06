@@ -78,11 +78,11 @@ export class RichTextEditorComponent {
     });
   }
 
-  protected onInput() {
+  protected syncValueFromDom() {
     this.dir.syncFromDom();
   }
 
-  protected onKeydown(event: KeyboardEvent) {
+  protected interceptBackspaceKey(event: KeyboardEvent) {
     if (event.key !== 'Backspace') return;
 
     if (this.dir.handleBackspace()) {
@@ -90,7 +90,7 @@ export class RichTextEditorComponent {
     }
   }
 
-  protected onBeforeInput(event: InputEvent) {
+  protected interceptFormattingCommand(event: InputEvent) {
     // Keep keyboard shortcuts (Ctrl/Cmd+B, …) running through our Selection/Range commands
     // instead of the browser's deprecated execCommand-backed formatting.
     switch (event.inputType) {

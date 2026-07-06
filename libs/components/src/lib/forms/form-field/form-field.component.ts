@@ -196,6 +196,9 @@ export class FormFieldComponent {
 
   protected formFieldDir = inject(FormFieldDirective);
 
+  protected errorColorTheme = injectErrorTheme();
+  private surfaceThemes = injectSurfaceThemes({ optional: true });
+
   public appearance = input<FormFieldAppearance>(FORM_FIELD_APPEARANCES.BOX);
   public fill = input<FormFieldFill>(FORM_FIELD_FILLS.TRANSPARENT);
   public labelMode = input<FormFieldLabelMode>(FORM_FIELD_LABEL_MODES.STATIC);
@@ -206,9 +209,6 @@ export class FormFieldComponent {
   public prefixEl = viewChild<ElementRef<HTMLElement>>('prefixEl');
   protected errorAnimatable = viewChild<AnimatableDirective>('errorAnimatable');
   protected hintAnimatable = viewChild<AnimatableDirective>('hintAnimatable');
-
-  protected errorColorTheme = injectErrorTheme();
-  private surfaceThemes = injectSurfaceThemes({ optional: true });
 
   private errorDimensions = signalElementDimensions(this.errorContent);
   private hintDimensions = signalElementDimensions(this.hintContent);

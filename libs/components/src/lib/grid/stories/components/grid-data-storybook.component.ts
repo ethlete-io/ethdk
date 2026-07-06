@@ -304,7 +304,7 @@ const DEFAULT_CONSTRAINTS = { minColSpan: 1, maxColSpan: 12, minRowSpan: 1, maxR
             [rowHeight]="rowHeight()"
             [gap]="gap()"
             [initialItems]="gridItems()"
-            (layoutChange)="onLayoutChange($event)"
+            (layoutChange)="syncGridItemsWithLayout($event)"
           >
             @for (item of gridItems(); track item.id) {
               @let c = getConstraints(item.type);
@@ -316,12 +316,8 @@ const DEFAULT_CONSTRAINTS = { minColSpan: 1, maxColSpan: 12, minRowSpan: 1, maxR
                 [maxRowSpan]="c.maxRowSpan"
                 [ariaLabel]="item.type + ' widget'"
               >
-                <div
-                  class="text-[11px] uppercase tracking-wide"
-                  etGridItemDragHandle
-                  style="color: rgb(var(--et-surface-color-muted))"
-                >
-                  ⠿ {{ item.type }}
+                <div class="text-[11px] uppercase tracking-wide" style="color: rgb(var(--et-surface-color-muted))">
+                  {{ item.type }}
                 </div>
 
                 <div class="flex gap-1" etGridItemAction>
@@ -522,7 +518,7 @@ export class GridDataStorybookComponent {
   // Keep gridItems in sync with positions after drag/resize/add/remove.
   // The grid emits the full updated layout; we merge new positions into our signal
   // while preserving each item's data (which the grid doesn't touch).
-  public onLayoutChange(state: GridSerializedState) {
+  public syncGridItemsWithLayout(state: GridSerializedState) {
     this.gridItems.update((current) =>
       current.map((item) => {
         const updated = state.items.find((s) => s.id === item.id);

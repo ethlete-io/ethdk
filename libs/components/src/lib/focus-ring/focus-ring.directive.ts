@@ -14,9 +14,8 @@ import { FocusRingStylesComponent } from './focus-ring-styles.component';
   },
 })
 export class FocusRingDirective {
-  public disabled = input(false, { transform: booleanAttribute });
-
   private styleManager = injectStyleManager();
+  public disabled = input(false, { transform: booleanAttribute });
 
   protected active = signal(false);
 

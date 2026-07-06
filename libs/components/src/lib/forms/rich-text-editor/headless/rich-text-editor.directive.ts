@@ -14,6 +14,9 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
 
+  /** @internal */
+  public editorDom = injectRichTextEditorDom();
+
   public value = model('');
   public touched = model(false);
   public disabled = input(false);
@@ -44,9 +47,6 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
   /** @internal */
   public lastEmittedMarkdown: string | null = null;
-
-  /** @internal */
-  public editorDom = injectRichTextEditorDom();
 
   constructor() {
     this.formField?.registerControl(this);

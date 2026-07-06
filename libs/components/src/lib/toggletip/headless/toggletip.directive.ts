@@ -41,6 +41,8 @@ export class ToggletipDirective {
   private colorProvider = inject(COLOR_PROVIDER, { optional: true });
   private surfaceProvider = inject(SURFACE_PROVIDER, { optional: true });
 
+  private overlayManager = injectOverlayManager();
+
   public content = input<ToggletipContent | null>(null, { alias: 'etToggletip' });
   public ariaLabel = input<string | null>(null, { alias: 'etToggletipAriaLabel' });
   public ariaLabelledBy = input<string | null>(null, { alias: 'etToggletipAriaLabelledBy' });
@@ -51,8 +53,6 @@ export class ToggletipDirective {
   public viewportPadding = input<Padding | null>(8);
   public disabled = input(false, { alias: 'etToggletipDisabled' });
   public open = model(false, { alias: 'etToggletipOpen' });
-
-  private overlayManager = injectOverlayManager();
 
   /** @internal */
   public overlayRef = signal<OverlayRef<ToggletipComponent, unknown> | null>(null);

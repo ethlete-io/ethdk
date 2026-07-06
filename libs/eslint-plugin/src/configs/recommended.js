@@ -191,6 +191,12 @@ const recommendedTs = {
         message:
           'No barrel imports (index files). Import directly from the source file to avoid breaking lazy loading.',
       },
+      // No on-prefixed method names — name the method after what it does, not that it handles an event
+      {
+        selector: 'MethodDefinition[key.name=/^on[A-Z]/]',
+        message:
+          'No on-prefixed method names. Name the method after what it does (e.g. onLayoutChange -> syncGridItemsWithLayout).',
+      },
     ],
 
     // ── Native DOM globals ──────────────────────────────────────────────────

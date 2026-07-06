@@ -61,11 +61,11 @@ export class StreamPlayerSlotDirective {
   private playerComponent = inject(STREAM_PLAYER_COMPONENT_TOKEN);
   private provideSurface = inject(ProvideSurfaceDirective);
   private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
+  private surfaceThemes = injectSurfaceThemes({ optional: true });
+  private styleManager = injectStyleManager();
 
   public streamSlotPriority = input(false, { transform: booleanAttribute });
   public streamSlotOnPipBack = input<() => void>();
-  private surfaceThemes = injectSurfaceThemes({ optional: true });
-  private styleManager = injectStyleManager();
 
   private resolvedSurface = computed(() => {
     const themes = this.surfaceThemes;

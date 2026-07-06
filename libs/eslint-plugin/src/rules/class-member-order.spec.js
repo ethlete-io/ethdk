@@ -60,8 +60,25 @@ tester.run('class-member-order', rule, {
   readonly ID = nextId++;
 }`,
     },
+    {
+      code: `class C {
+  private locale = injectLocale();
+  size = input(0);
+}`,
+    },
   ],
   invalid: [
+    {
+      code: `class C {
+  size = input(0);
+  private locale = injectLocale();
+}`,
+      output: `class C {
+  private locale = injectLocale();
+  size = input(0);
+}`,
+      errors: [{ messageId: 'groupOrder' }],
+    },
     {
       code: `class C {
   state = signal(false);

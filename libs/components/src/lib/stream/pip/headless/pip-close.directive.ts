@@ -18,9 +18,9 @@ export class PipCloseDirective {
   private chrome = inject(PIP_CHROME_REF_TOKEN, { optional: true });
   private pipWindow = inject(PipWindowComponent, { optional: true });
   private tokenEntry = inject(PIP_ENTRY_TOKEN, { optional: true });
+  private pipManager = injectPipManager();
 
   public entry = input<StreamPipEntry>();
-  private pipManager = injectPipManager();
 
   public close(event: Event) {
     event.stopPropagation();

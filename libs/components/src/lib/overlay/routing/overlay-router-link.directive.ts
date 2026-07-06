@@ -23,10 +23,10 @@ export const OVERLAY_ROUTER_LINK_TOKEN = new InjectionToken<OverlayRouterLinkDir
 })
 export class OverlayRouterLinkDirective {
   private elementRef = inject<ElementRef<HTMLButtonElement>>(ElementRef);
+  private router = injectOverlayRouter();
   public path = input.required<string | (string | number)[]>({ alias: 'etOverlayRouterLink' });
   public disabled = input(false, { transform: booleanAttribute });
   public navigationDirection = input<OverlayRouterNavigationDirection | null>(null);
-  private router = injectOverlayRouter();
 
   public isActive = computed(() => this.router.resolvePath(this.path()).route === this.router.currentRoute());
 

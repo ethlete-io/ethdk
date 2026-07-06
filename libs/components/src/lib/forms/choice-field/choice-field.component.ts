@@ -31,12 +31,11 @@ import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../fo
   },
 })
 export class ChoiceFieldComponent {
+  public support = injectFormSupport();
   private errorContentRef = viewChild<ElementRef<HTMLElement>>('errorContent');
   private hintContentRef = viewChild<ElementRef<HTMLElement>>('hintContent');
   private errorAnimatableRef = viewChild<AnimatableDirective>('errorAnimatable');
   private hintAnimatableRef = viewChild<AnimatableDirective>('hintAnimatable');
-
-  public support = injectFormSupport();
   public canAnimate = createCanAnimateSignal();
 
   constructor() {

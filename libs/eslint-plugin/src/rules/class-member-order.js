@@ -81,6 +81,18 @@ const isPropertyInitializedWith = (node, apiNames) => {
   return apiName !== null && apiNames.has(apiName);
 };
 
+const INJECT_HELPER_NAME_PATTERN = /^inject[A-Z]/;
+
+/**
+ * @param {any} node
+ */
+const isPropertyInitializedWithInject = (node) => {
+  if (node.type !== 'PropertyDefinition') return false;
+
+  const apiName = getCallRootName(node.value);
+  return apiName !== null && (apiName === 'inject' || INJECT_HELPER_NAME_PATTERN.test(apiName));
+};
+
 /**
  * @param {any} node
  * @returns {TMemberGroup | null}
@@ -89,7 +101,7 @@ const getMemberGroup = (node) => {
   if (node.static) return null;
 
   if (node.type === 'PropertyDefinition') {
-    if (isPropertyInitializedWith(node, new Set(['inject']))) {
+    if (isPropertyInitializedWithInject(node)) {
       return 'inject';
     }
 

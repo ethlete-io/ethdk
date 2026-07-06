@@ -40,6 +40,15 @@ export type GridLayoutEntry = {
   position: GridItemPosition;
 };
 
+/**
+ * Contract for a grid item's `actionsComponent`: a component that receives the item's `itemId` and
+ * `data` as inputs. Both are always provided by the grid.
+ */
+export type GridItemActionsComponent<TData = unknown> = Type<{
+  itemId: InputSignal<string>;
+  data: InputSignal<TData>;
+}>;
+
 export type GridComponentRegistration<TData = unknown> = {
   component: Type<{ data: InputSignal<TData> }>;
   type: string;

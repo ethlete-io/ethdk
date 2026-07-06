@@ -44,6 +44,9 @@ export class TooltipDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private colorProvider = inject(COLOR_PROVIDER, { optional: true });
   private surfaceProvider = inject(SURFACE_PROVIDER, { optional: true });
+  private overlayManager = injectOverlayManager();
+  private focusVisibleTracker = injectFocusVisibleTracker();
+  private renderer = injectRenderer();
 
   public content = input<TooltipContent | null>(null, { alias: 'etTooltip' });
   public ariaDescription = input<string | null>(null, { alias: 'etTooltipAriaDescription' });
@@ -54,9 +57,6 @@ export class TooltipDirective {
   public viewportPadding = input<Padding | null>(8);
   public showDelay = input(DEFAULT_TOOLTIP_DELAY);
   public disabled = input(false, { alias: 'etTooltipDisabled' });
-  private overlayManager = injectOverlayManager();
-  private focusVisibleTracker = injectFocusVisibleTracker();
-  private renderer = injectRenderer();
 
   /** @internal */
   public overlayRef = signal<OverlayRef<TooltipComponent, unknown> | null>(null);

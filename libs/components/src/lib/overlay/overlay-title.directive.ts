@@ -16,10 +16,10 @@ let uniqueId = 0;
 export class OverlayTitleDirective implements OnInit {
   private overlayRef: OverlayRef<object, unknown> | null = inject(OVERLAY_REF, { optional: true });
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-
-  public id = input(`et-overlay-title-${uniqueId++}`);
   private overlayManager = injectOverlayManager();
   private renderer = injectRenderer();
+
+  public id = input(`et-overlay-title-${uniqueId++}`);
 
   public ngOnInit() {
     this.overlayRef = resolveClosestOverlay({

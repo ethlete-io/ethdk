@@ -34,6 +34,7 @@ import { OverlayTriggerDirective } from './overlay-trigger.directive';
 })
 export class OverlayDirective {
   private destroyRef = inject(DestroyRef);
+  private overlayManager = injectOverlayManager();
 
   public mode = input<OverlayMode>('non-modal');
   public role = input<OverlayRole | undefined>(undefined);
@@ -57,7 +58,6 @@ export class OverlayDirective {
   public autoHide = input(false);
   public autoCloseIfReferenceHidden = input(false);
   public mirrorWidth = input(false);
-  private overlayManager = injectOverlayManager();
 
   /** @internal */
   public registeredAnchor = signal<OverlayAnchorDirective | null>(null);

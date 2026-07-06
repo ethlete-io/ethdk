@@ -130,11 +130,11 @@ import { injectPipSlotPlaceholderConfig } from './pip-slot-placeholder-config';
 export class PipSlotPlaceholderComponent {
   private slotPlayerId = inject(STREAM_SLOT_PLAYER_ID_TOKEN);
   private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
-  private bringBackDir = viewChild(PipBringBackDirective);
   private pipManager = injectPipManager();
   private config = injectPipSlotPlaceholderConfig();
   private locale = injectLocale();
   private surfaceThemes = injectSurfaceThemes({ optional: true });
+  private bringBackDir = viewChild(PipBringBackDirective);
 
   public cardSurface = computed(() => {
     const themes = this.surfaceThemes;

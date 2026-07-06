@@ -105,10 +105,10 @@ const openQueryParamOverlay = createOverlayHandlerWithQueryParamLifecycle<QueryP
 })
 export class OverlayHandlerStorybookComponent {
   private router = inject(Router);
+  protected currentParam = injectQueryParam('demo');
 
   // Initialized once — reacts to any ?demo= param for the component's lifetime.
   protected handler = openQueryParamOverlay();
-  protected currentParam = injectQueryParam('demo');
 
   protected open(value: string) {
     this.router.navigate([], { queryParams: { demo: value }, queryParamsHandling: 'merge' });

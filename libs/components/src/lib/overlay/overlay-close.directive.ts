@@ -15,13 +15,13 @@ import { OVERLAY_REF, OverlayRef } from './overlay-ref';
 export class OverlayCloseDirective implements OnInit {
   private overlayRef: OverlayRef<object, unknown> | null = inject(OVERLAY_REF, { optional: true });
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private overlayManager = injectOverlayManager();
 
   public ariaLabel = input<string>(undefined, { alias: 'aria-label' });
   public type = input<'submit' | 'button' | 'reset'>('button');
 
   public closeResult = input<unknown>(undefined, { alias: 'etOverlayClose' });
   public closeResultAlt = input<unknown>(undefined, { alias: 'et-overlay-close' });
-  private overlayManager = injectOverlayManager();
 
   constructor() {
     applyHostListener('click', () => {

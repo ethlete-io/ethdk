@@ -93,6 +93,8 @@ export class OverlayRouterOutletComponent {
   private injector = inject(Injector);
   private overlayRef = inject(OVERLAY_REF, { optional: true });
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  protected router = injectOverlayRouter();
+  private renderer = injectRenderer();
 
   public disabled = input(false, { transform: booleanAttribute });
 
@@ -100,8 +102,6 @@ export class OverlayRouterOutletComponent {
   public outletDisabledTemplate = contentChild(OVERLAY_ROUTER_OUTLET_DISABLED_TEMPLATE_TOKEN, { read: TemplateRef });
 
   public pageWrappers = viewChildren<ElementRef<HTMLElement>>('pageWrapper');
-  protected router = injectOverlayRouter();
-  private renderer = injectRenderer();
   public readonly hasSidebar = !!injectSidebarOverlay({ optional: true });
   public wasDisabled = signal(false);
 

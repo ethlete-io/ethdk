@@ -313,6 +313,23 @@ test('no-output-on-prefix: output named selectDate is valid', () => {
   expect(ruleIds(msgs)).not.toContain('@angular-eslint/no-output-on-prefix');
 });
 
+// ── no-restricted-syntax: on-prefixed method names ────────────────────────────
+
+test('no-restricted-syntax: on-prefixed method name is flagged', () => {
+  const msgs = lint(`class Foo { onLayoutChange() {} }`);
+  expect(msgs.some((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('on-prefixed'))).toBe(true);
+});
+
+test('no-restricted-syntax: descriptive method name is valid', () => {
+  const msgs = lint(`class Foo { syncGridItemsWithLayout() {} }`);
+  expect(msgs.some((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('on-prefixed'))).toBe(false);
+});
+
+test('no-restricted-syntax: ngOnInit lifecycle hook is not flagged as on-prefixed', () => {
+  const msgs = lint(`class Foo { ngOnInit() {} }`);
+  expect(msgs.some((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('on-prefixed'))).toBe(false);
+});
+
 // ── ethlete/require-on-push-change-detection ─────────────────────────────────
 
 test('prefer-on-push: component without OnPush is flagged', () => {

@@ -52,12 +52,12 @@ export class PipPlayerComponent {
   private document = inject(DOCUMENT);
   private el = inject<ElementRef<HTMLElement>>(ElementRef);
   protected pipCell = inject(PipCellDirective, { optional: true });
-
-  public entry = input<StreamPipEntry>();
-  public showThumbnail = input<boolean>();
   private streamManager = injectStreamManager();
   private pipManager = injectPipManager();
   private renderer = injectRenderer();
+
+  public entry = input<StreamPipEntry>();
+  public showThumbnail = input<boolean>();
   public isReady = signal(false);
 
   public resolvedEntry = computed(

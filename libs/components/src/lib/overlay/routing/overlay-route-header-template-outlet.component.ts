@@ -62,6 +62,6 @@ import { injectOverlayRouter } from './overlay-router';
 })
 export class OverlayRouteHeaderTemplateOutletComponent {
   protected overlay = inject(OVERLAY_REF);
-  public animatedLifecycle = viewChild.required(ANIMATED_LIFECYCLE_TOKEN);
   protected router = injectOverlayRouter();
+  public animatedLifecycle = viewChild.required(ANIMATED_LIFECYCLE_TOKEN);
 }

@@ -191,17 +191,10 @@ const posEq = (a: GridItemPosition | undefined, b: GridItemPosition | undefined)
         [rowHeight]="100"
         [gap]="16"
         [initialItems]="gridItems()"
-        (layoutChange)="onLayoutChange($event)"
+        (layoutChange)="syncGridItemsWithLayout($event)"
       >
         @for (item of gridItems(); track item.id) {
           <et-grid-item [itemId]="item.id" [ariaLabel]="item.type + ' widget'">
-            <div
-              class="text-[11px] uppercase tracking-wide"
-              etGridItemDragHandle
-              style="color: rgb(var(--et-surface-color-muted))"
-            >
-              ⠿ {{ item.type }}
-            </div>
             <div class="flex flex-col justify-center h-full p-3 box-border gap-1">
               <div class="text-xs font-semibold" style="color: rgb(var(--et-surface-color))">
                 {{ asData(item.data).title }}
@@ -327,7 +320,7 @@ export class GridPartnerStorybookComponent {
     return data as { title: string };
   }
 
-  public onLayoutChange(state: GridSerializedState) {
+  public syncGridItemsWithLayout(state: GridSerializedState) {
     this.gridItems.update((current) =>
       current.map((item) => {
         const updated = state.items.find((s) => s.id === item.id);

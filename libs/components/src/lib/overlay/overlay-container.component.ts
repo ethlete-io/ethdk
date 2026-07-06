@@ -57,6 +57,11 @@ export class OverlayContainerComponent {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected overlayRef = inject(OVERLAY_REF);
+  private surfaceThemes = injectSurfaceThemes({ optional: true });
+  private surfaceContextTracker = injectSurfaceContextTracker();
+  private renderer = injectRenderer();
+
+  public rootBoundary = injectBoundaryElement();
 
   public component = input.required<Type<object>>();
   public componentInputs = input<Record<string, unknown> | undefined>(undefined);
@@ -65,11 +70,6 @@ export class OverlayContainerComponent {
   public renderArrow = input(false);
 
   private contentOutlet = viewChild.required('contentOutlet', { read: ViewContainerRef });
-  private surfaceThemes = injectSurfaceThemes({ optional: true });
-  private surfaceContextTracker = injectSurfaceContextTracker();
-  private renderer = injectRenderer();
-
-  public rootBoundary = injectBoundaryElement();
   public animatedLifecycle = signal(inject(ANIMATED_LIFECYCLE_TOKEN));
   public contentComponentRef = signal<ComponentRef<object> | null>(null);
 

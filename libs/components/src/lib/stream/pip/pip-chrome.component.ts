@@ -65,12 +65,12 @@ import { PipWindowComponent } from './pip-window.component';
   },
 })
 export class StreamPipChromeComponent implements PipChromeRef {
+  public pipManager = injectPipManager();
   public stageRef = viewChild<PipStageDirective, ElementRef<HTMLElement>>(PipStageDirective, { read: ElementRef });
   public pipWindowRef = viewChild(PipWindowComponent);
   public gridBtnRef = viewChild<PipGridToggleDirective, ElementRef<HTMLElement>>(PipGridToggleDirective, {
     read: ElementRef,
   });
-  public pipManager = injectPipManager();
 
   public state = createPipChromeState();
   public animations = createPipChromeAnimations(this.state, {

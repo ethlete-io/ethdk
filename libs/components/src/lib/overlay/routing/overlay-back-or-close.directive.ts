@@ -24,8 +24,8 @@ export const OVERLAY_BACK_OR_CLOSE_TOKEN = new InjectionToken<OverlayBackOrClose
 export class OverlayBackOrCloseDirective {
   private overlayRef = inject(OVERLAY_REF);
   private elementRef = inject<ElementRef<HTMLButtonElement>>(ElementRef);
-  public disabled = input(false, { transform: booleanAttribute });
   private router = injectOverlayRouter();
+  public disabled = input(false, { transform: booleanAttribute });
 
   constructor() {
     fromEvent<PointerEvent>(this.elementRef.nativeElement, 'click')

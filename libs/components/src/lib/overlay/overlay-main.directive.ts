@@ -24,9 +24,9 @@ export class OverlayMainDirective implements OnInit {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   private overlayRef: OverlayRef<object, unknown> | null = inject(OVERLAY_REF, { optional: true });
+  private overlayManager = injectOverlayManager();
 
   public enabled = input(true, { alias: 'etOverlayMain', transform: booleanAttribute });
-  private overlayManager = injectOverlayManager();
 
   public ngOnInit() {
     this.overlayRef = resolveClosestOverlay({

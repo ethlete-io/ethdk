@@ -33,10 +33,10 @@ import { injectSidebarOverlay } from './sidebar-overlay';
   },
 })
 export class OverlaySidebarComponent {
+  protected sidebar = injectSidebarOverlay();
   public pageDividers = input<OverlayBodyDividerType>(false);
   public sidebarContent = viewChild.required<TemplateRef<unknown>>('sidebarContentTpl');
   public sidebarHeaderContent = contentChild(OVERLAY_HEADER_TEMPLATE_TOKEN);
-  protected sidebar = injectSidebarOverlay();
 
   constructor() {
     syncSignal(this.sidebarContent, this.sidebar.sidebarContentTemplate, { skipSyncRead: true });
