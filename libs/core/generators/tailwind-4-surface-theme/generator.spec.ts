@@ -174,4 +174,50 @@ describe('tailwind-4-surface-theme generator', () => {
     expect(content).toContain('--color-fut-surface-card-bg: rgb(255 255 255);');
     expect(content).toContain('.fut-surface--card {');
   });
+
+  it('should decouple the Tailwind utility prefix from the runtime theme-swap prefix', async () => {
+    tree.write('src/surface-themes.ts', CARD_AND_SHEET);
+
+    await migrate(tree, {
+      themesPath: 'src/surface-themes.ts',
+      outputPath: 'src/styles/tw.css',
+      prefix: 'fut',
+      runtimePrefix: 'et',
+      skipFormat: true,
+    });
+
+    const content = tree.read('src/styles/tw.css', 'utf-8');
+
+    // Static per-theme utility classes and the dynamic "current surface" utility use the
+    // Tailwind utility prefix.
+    expect(content).toContain('--color-fut-surface-card-bg: rgb(255 255 255);');
+    expect(content).toContain('--color-fut-surface-bg: rgb(var(--et-surface-background));');
+    expect(content).toContain('--color-fut-surface-interaction: rgb(var(--et-surface-interaction));');
+
+    // The runtime theme-swap selectors and variables use the runtime prefix, not the
+    // Tailwind utility prefix.
+    expect(content).toContain('.et-surface--default-light, .et-surface--card {');
+    expect(content).toContain('--et-surface-background: 255 255 255;');
+    expect(content).not.toContain('fut-surface--');
+    expect(content).not.toContain('--fut-surface-background');
+
+    // The convenience alias block also follows the runtime prefix.
+    expect(content).toContain('[class*="et-surface--"]');
+    expect(content).toContain('--et-surface-background-rgb: var(--et-surface-background);');
+  });
+
+  it('should default runtimePrefix to prefix when not specified', async () => {
+    tree.write('src/surface-themes.ts', CARD_AND_SHEET);
+
+    await migrate(tree, {
+      themesPath: 'src/surface-themes.ts',
+      outputPath: 'src/styles/tw.css',
+      prefix: 'custom',
+      skipFormat: true,
+    });
+
+    const content = tree.read('src/styles/tw.css', 'utf-8');
+    expect(content).toContain('.custom-surface--default-light, .custom-surface--card {');
+    expect(content).toContain('--custom-surface-background: 255 255 255;');
+  });
 });
