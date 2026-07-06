@@ -17,6 +17,10 @@
       "default": "src/styles/generated-tailwind-surface-themes.css",
       "x-prompt": "Where should the generated CSS be saved?"
     },
+    "typesOutputPath": {
+      "type": "string",
+      "description": "Where to output the generated `EthleteSurfaceThemeNameRegistry` augmentation (a .d.ts that narrows `etProvideSurface` and other surface-theme-name APIs to your actual surface theme names). Defaults to `outputPath` with its extension swapped to `.d.ts`."
+    },
     "prefix": {
       "type": "string",
       "description": "Prefix for surface variable names (e.g., 'et' creates --color-et-surface-*)",

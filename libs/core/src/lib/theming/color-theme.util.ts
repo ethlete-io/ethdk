@@ -47,6 +47,31 @@ export type ColorTheme = {
   tertiary?: ThemeSwatch;
 };
 
+/**
+ * Augmentable registry for the literal set of color theme names an app defines. Left
+ * empty by default, which keeps theme-name-accepting APIs (like `etProvideColor`) typed
+ * as plain `string`.
+ *
+ * Apps that want those APIs checked and autocompleted against their own theme names
+ * should augment this interface once, near where their themes are defined:
+ *
+ * ```ts
+ * declare module '@ethlete/core' {
+ *   interface EthleteColorThemeNameRegistry {
+ *     name: 'pitch-green' | 'red' | 'light-grey';
+ *   }
+ * }
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface
+export interface EthleteColorThemeNameRegistry {
+  // Intentionally empty - see doc comment above.
+}
+
+export type RegisteredColorThemeName = EthleteColorThemeNameRegistry extends { name: infer N extends string }
+  ? N
+  : string;
+
 export const createCssColorThemeName = (name: string) => name.replace(/([A-Z])/g, (g) => `-${g[0]!.toLowerCase()}`);
 
 export const [ɵProvideColorThemes, injectColorThemes] = createStaticProvider<ColorTheme[]>(undefined, {

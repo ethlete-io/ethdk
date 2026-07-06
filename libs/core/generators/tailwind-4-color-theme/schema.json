@@ -17,6 +17,10 @@
       "default": "src/styles/generated-tailwind-themes.css",
       "x-prompt": "Where should the generated CSS be saved?"
     },
+    "typesOutputPath": {
+      "type": "string",
+      "description": "Where to output the generated `EthleteColorThemeNameRegistry` augmentation (a .d.ts that narrows `etProvideColor` and other theme-name APIs to your actual theme names). Defaults to `outputPath` with its extension swapped to `.d.ts`."
+    },
     "prefix": {
       "type": "string",
       "description": "Prefix for Tailwind utility color variable names (e.g., 'et' creates --color-et-primary, usable as bg-et-primary)",

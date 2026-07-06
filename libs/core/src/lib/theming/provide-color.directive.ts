@@ -7,18 +7,25 @@ import {
   InjectionToken,
   Injector,
   input,
+  InputSignal,
   isDevMode,
   runInInjectionContext,
   signal,
   untracked,
 } from '@angular/core';
-import { ColorTheme, createCssColorThemeName, injectColorThemes, injectColorThemesPrefix } from './color-theme.util';
+import {
+  ColorTheme,
+  createCssColorThemeName,
+  injectColorThemes,
+  injectColorThemesPrefix,
+  RegisteredColorThemeName,
+} from './color-theme.util';
 
 export const COLOR_PROVIDER = new InjectionToken<ProvideColorDirective>('ColorProvider');
 
 const FORCED_COLOR_UNSET = Symbol('FORCED_COLOR_UNSET');
 
-type ForcedColorState = string | ColorTheme | null | typeof FORCED_COLOR_UNSET;
+type ForcedColorState = RegisteredColorThemeName | ColorTheme | null | typeof FORCED_COLOR_UNSET;
 
 @Directive({
   selector: '[etProvideColor]',
@@ -35,7 +42,9 @@ export class ProvideColorDirective {
   private currentProviderSync: EffectRef | null = null;
   private forcedColor = signal<ForcedColorState>(FORCED_COLOR_UNSET);
 
-  color = input<string | ColorTheme | null>(undefined, { alias: 'etProvideColor' });
+  color: InputSignal<RegisteredColorThemeName | ColorTheme | null | undefined> = input<
+    RegisteredColorThemeName | ColorTheme | null
+  >(undefined, { alias: 'etProvideColor' });
 
   effectiveColor = computed(() => {
     const forcedColor = this.forcedColor();
@@ -102,7 +111,7 @@ export class ProvideColorDirective {
   }
 
   /** @internal */
-  forceColor(color: string | ColorTheme | null) {
+  forceColor(color: RegisteredColorThemeName | ColorTheme | null) {
     this.forcedColor.set(color);
   }
 

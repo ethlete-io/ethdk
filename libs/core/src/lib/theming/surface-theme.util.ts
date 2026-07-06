@@ -30,6 +30,31 @@ export type SurfaceTheme = {
   border: SurfaceThemeColor;
 };
 
+/**
+ * Augmentable registry for the literal set of surface theme names an app defines. Left
+ * empty by default, which keeps surface-theme-name-accepting APIs (like `etProvideSurface`)
+ * typed as plain `string`.
+ *
+ * Apps that want those APIs checked and autocompleted against their own surface theme
+ * names should augment this interface once, near where their surface themes are defined:
+ *
+ * ```ts
+ * declare module '@ethlete/core' {
+ *   interface EthleteSurfaceThemeNameRegistry {
+ *     name: 'card' | 'sheet' | 'popover';
+ *   }
+ * }
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface
+export interface EthleteSurfaceThemeNameRegistry {
+  // Intentionally empty - see doc comment above.
+}
+
+export type RegisteredSurfaceThemeName = EthleteSurfaceThemeNameRegistry extends { name: infer N extends string }
+  ? N
+  : string;
+
 export const createCssSurfaceName = (name: string) => name.replace(/([A-Z])/g, (g) => `-${g[0]!.toLowerCase()}`);
 
 export const resolveSurfaceByElevation = (themes: SurfaceTheme[], type: SurfaceType, elevation: number) =>

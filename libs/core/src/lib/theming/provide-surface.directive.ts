@@ -7,6 +7,7 @@ import {
   InjectionToken,
   Injector,
   input,
+  InputSignal,
   isDevMode,
   runInInjectionContext,
   signal,
@@ -16,6 +17,7 @@ import {
   createCssSurfaceName,
   injectSurfaceThemes,
   injectSurfaceThemesPrefix,
+  RegisteredSurfaceThemeName,
   SurfaceTheme,
 } from './surface-theme.util';
 
@@ -23,7 +25,7 @@ export const SURFACE_PROVIDER = new InjectionToken<ProvideSurfaceDirective>('Sur
 
 const FORCED_SURFACE_UNSET = Symbol('FORCED_SURFACE_UNSET');
 
-type ForcedSurfaceState = string | null | typeof FORCED_SURFACE_UNSET;
+type ForcedSurfaceState = RegisteredSurfaceThemeName | null | typeof FORCED_SURFACE_UNSET;
 
 @Directive({
   selector: '[etProvideSurface]',
@@ -40,7 +42,10 @@ export class ProvideSurfaceDirective {
   private currentProviderSync: EffectRef | null = null;
   private forcedSurface = signal<ForcedSurfaceState>(FORCED_SURFACE_UNSET);
 
-  surface = input<string | null>(undefined, { alias: 'etProvideSurface' });
+  surface: InputSignal<RegisteredSurfaceThemeName | null | undefined> = input<RegisteredSurfaceThemeName | null>(
+    undefined,
+    { alias: 'etProvideSurface' },
+  );
 
   effectiveSurface = computed(() => {
     const forcedSurface = this.forcedSurface();
@@ -122,7 +127,7 @@ export class ProvideSurfaceDirective {
   }
 
   /** @internal */
-  forceSurface(surface: string | null) {
+  forceSurface(surface: RegisteredSurfaceThemeName | null) {
     this.forcedSurface.set(surface);
   }
 

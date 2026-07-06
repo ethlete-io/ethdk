@@ -169,6 +169,64 @@ describe('tailwind-4-color-theme generator', () => {
     expect(content).toContain('.et-color--pitch-green');
   });
 
+  it('should generate an EthleteColorThemeNameRegistry augmentation next to the CSS by default', async () => {
+    const themesContent = `
+    export const PITCH_GREEN = {
+      name: 'pitch-green',
+      isDefault: true,
+      primary: { color: { default: '7 244 104' }, onColor: { default: '21 22 22' } },
+    } as const;
+    export const RED = {
+      name: 'red',
+      primary: { color: { default: '239 68 68' }, onColor: { default: '252 252 247' } },
+    } as const;
+    export const THEMES = [PITCH_GREEN, RED];
+  `;
+
+    tree.write('src/themes.ts', themesContent);
+
+    await migrate(tree, {
+      themesPath: 'src/themes.ts',
+      outputPath: 'src/styles/tailwind-themes.css',
+      skipFormat: true,
+    });
+
+    expect(tree.exists('src/styles/tailwind-themes.d.ts')).toBe(true);
+
+    const content = tree.read('src/styles/tailwind-themes.d.ts', 'utf-8');
+    expect(content).toContain(`declare module '@ethlete/core'`);
+    expect(content).toContain('interface EthleteColorThemeNameRegistry');
+    expect(content).toContain(`name: 'pitch-green' | 'red';`);
+    // Must be a module (not a global script) for the module augmentation to merge correctly.
+    expect(content).toContain('export {};');
+  });
+
+  it('should honor a custom typesOutputPath', async () => {
+    const themesContent = `
+    export const BRAND = {
+      name: 'brand',
+      isDefault: true,
+      primary: { color: { default: '0 0 0' }, onColor: { default: '255 255 255' } },
+    } as const;
+    export const THEMES = [BRAND];
+  `;
+
+    tree.write('src/themes.ts', themesContent);
+
+    await migrate(tree, {
+      themesPath: 'src/themes.ts',
+      outputPath: 'src/styles/tw.css',
+      typesOutputPath: 'src/types/theme-names.d.ts',
+      skipFormat: true,
+    });
+
+    expect(tree.exists('src/types/theme-names.d.ts')).toBe(true);
+    expect(tree.exists('src/styles/tw.d.ts')).toBe(false);
+
+    const content = tree.read('src/types/theme-names.d.ts', 'utf-8');
+    expect(content).toContain(`name: 'brand';`);
+  });
+
   it('should use custom prefix', async () => {
     const themesContent = `
     export const BRAND = { 
