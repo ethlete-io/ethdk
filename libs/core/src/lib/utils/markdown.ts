@@ -63,6 +63,11 @@ export const markdownToHtml = (markdown: string): string => {
     return makePlaceholder('CODE', idx);
   });
 
+  // Markdown headings don't require blank lines around them, but blocks are
+  // split on blank lines below. Isolate each heading line into its own block so
+  // a heading directly followed by a list/paragraph isn't swallowed into it.
+  text = text.replace(/^(#{1,6}\s+.+)$/gm, '\n\n$1\n\n');
+
   const html = text
     .split(/\n\n+/)
     .map((block) => {

@@ -17,6 +17,16 @@ describe('markdownToHtml', () => {
     expect(markdownToHtml('# **bold** title')).toBe('<h1><strong>bold</strong> title</h1>');
   });
 
+  it('converts a heading directly followed by a list (no blank line)', () => {
+    const input = '### Branding\n- item one\n- item two';
+    expect(markdownToHtml(input)).toBe('<h3>Branding</h3>\n<ul><li>item one</li><li>item two</li></ul>');
+  });
+
+  it('converts a heading directly followed by a paragraph (no blank line)', () => {
+    const input = '## Title\nsome text';
+    expect(markdownToHtml(input)).toBe('<h2>Title</h2>\n<p>some text</p>');
+  });
+
   it('converts bold and italic', () => {
     expect(markdownToHtml('**bold**')).toBe('<p><strong>bold</strong></p>');
     expect(markdownToHtml('__bold__')).toBe('<p><strong>bold</strong></p>');
