@@ -1,4 +1,3 @@
-export * from '../animations';
 export * from '../components/inline-tabs';
 export * from '../components/nav-tabs';
 export * from '../partials/inline-tabs/inline-tab';

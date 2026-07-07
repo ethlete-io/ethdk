@@ -17,7 +17,6 @@ import { AccordionLabelDirective } from './accordion-label.directive';
 import { CHEVRON_ICON } from '../../icons/chevron-icon';
 import { IconDirective } from '../../icons/icon.directive';
 import { PortalModule } from '@angular/cdk/portal';
-import { accordionAnimations } from './accordion.component.animations';
 import { provideIcons } from '../../icons/icon-provider';
 import { toObservable } from '@angular/core/rxjs-interop';
 
@@ -31,7 +30,6 @@ let accordionId = 0;
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: ACCORDION_COMPONENT, useExisting: AccordionComponent }, provideIcons(CHEVRON_ICON)],
   imports: [AccordionLabelDirective, PortalModule, IconDirective],
-  animations: [accordionAnimations.animateOpenClose],
   host: {
     class: 'et-accordion',
   },

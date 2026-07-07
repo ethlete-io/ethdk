@@ -1,4 +1,3 @@
-import { AnimationEvent } from '@angular/animations';
 import { Direction, Directionality } from '@angular/cdk/bidi';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { CdkScrollableModule } from '@angular/cdk/scrolling';
@@ -15,8 +14,7 @@ import {
   ViewEncapsulation,
   inject,
 } from '@angular/core';
-import { Subject, Subscription, distinctUntilChanged, startWith } from 'rxjs';
-import { tabAnimations } from '../../../animations';
+import { Subscription } from 'rxjs';
 import { InlineTabBodyHostDirective } from '../inline-tab-body-host';
 
 export type InlineTabBodyPositionState = 'left' | 'center' | 'right' | 'left-origin-center' | 'right-origin-center';
@@ -27,7 +25,6 @@ export type InlineTabBodyOriginState = 'left' | 'right';
   selector: 'et-inline-tab-body',
   templateUrl: 'inline-tab-body.component.html',
   encapsulation: ViewEncapsulation.None,
-  animations: [tabAnimations.translateTab],
   imports: [CdkScrollableModule, InlineTabBodyHostDirective],
   host: {
     class: 'et-inline-tab-body',
@@ -39,13 +36,12 @@ export class InlineTabBodyComponent implements OnInit, OnDestroy {
   private _cdr = inject(ChangeDetectorRef);
 
   private _positionIndex!: number;
-  private _centeringSub = Subscription.EMPTY;
-  private _leavingSub = Subscription.EMPTY;
   private _dirChangeSubscription = Subscription.EMPTY;
 
-  _position!: InlineTabBodyPositionState;
+  private _initialized = false;
+  private _wasCentered = false;
 
-  readonly _translateTabComplete = new Subject<AnimationEvent>();
+  _position!: InlineTabBodyPositionState;
 
   @Output()
   readonly _onCentering = new EventEmitter<number>();
@@ -69,40 +65,30 @@ export class InlineTabBodyComponent implements OnInit, OnDestroy {
   origin!: number | null;
 
   @Input()
-  animationDuration = '500ms';
-
-  @Input()
   preserveContent = false;
 
   @Input()
   set position(position: number) {
     this._positionIndex = position;
     this._computePositionAnimationState();
+
+    if (this._initialized) {
+      this._syncPortal();
+    }
   }
 
   constructor() {
     if (this._dir) {
       this._dirChangeSubscription = this._dir.change.subscribe((dir: Direction) => {
         this._computePositionAnimationState(dir);
+
+        if (this._initialized) {
+          this._syncPortal();
+        }
+
         this._cdr.markForCheck();
       });
     }
-
-    this._translateTabComplete
-      .pipe(
-        distinctUntilChanged((x, y) => {
-          return x.fromState === y.fromState && x.toState === y.toState;
-        }),
-      )
-      .subscribe((event) => {
-        if (this._isCenterPosition(event.toState) && this._isCenterPosition(this._position)) {
-          this._onCentered.emit();
-        }
-
-        if (this._isCenterPosition(event.fromState) && !this._isCenterPosition(this._position)) {
-          this._afterLeavingCenter.emit();
-        }
-      });
   }
 
   ngOnInit() {
@@ -110,34 +96,12 @@ export class InlineTabBodyComponent implements OnInit, OnDestroy {
       this._position = this._computePositionFromOrigin(this.origin);
     }
 
-    this._centeringSub = this._beforeCentering
-      .pipe(startWith(this._isCenterPosition(this._position)))
-      .subscribe((isCentering: boolean) => {
-        if (isCentering && !this._portalHost.hasAttached()) {
-          this._portalHost.attach(this._content);
-        }
-      });
-
-    this._leavingSub = this._afterLeavingCenter.subscribe(() => {
-      if (!this.preserveContent) {
-        this._portalHost.detach();
-      }
-    });
+    this._initialized = true;
+    this._syncPortal();
   }
 
   ngOnDestroy() {
     this._dirChangeSubscription.unsubscribe();
-    this._translateTabComplete.complete();
-    this._centeringSub.unsubscribe();
-    this._leavingSub.unsubscribe();
-  }
-
-  _onTranslateTabStarted(event: AnimationEvent): void {
-    const isCentering = this._isCenterPosition(event.toState);
-    this._beforeCentering.emit(isCentering);
-    if (isCentering) {
-      this._onCentering.emit(this._elementRef.nativeElement.clientHeight);
-    }
   }
 
   _getLayoutDirection(): Direction {
@@ -146,6 +110,36 @@ export class InlineTabBodyComponent implements OnInit, OnDestroy {
 
   _isCenterPosition(position: InlineTabBodyPositionState | string): boolean {
     return position == 'center' || position == 'left-origin-center' || position == 'right-origin-center';
+  }
+
+  /**
+   * Attaches the content portal when this body is centered and detaches it once it leaves the center
+   * (unless `preserveContent` is set). This replaces the `@angular/animations` `translateTab` trigger,
+   * whose only remaining role was driving the portal lifecycle — the slide itself never animated
+   * (the animation duration was always `0ms`) and visibility is controlled by the parent group.
+   */
+  private _syncPortal() {
+    const isCentered = this._isCenterPosition(this._position);
+
+    if (isCentered) {
+      this._beforeCentering.emit(true);
+
+      if (!this._portalHost.hasAttached()) {
+        this._portalHost.attach(this._content);
+      }
+
+      this._onCentering.emit(this._elementRef.nativeElement.clientHeight);
+      this._onCentered.emit();
+    } else if (this._wasCentered) {
+      this._beforeCentering.emit(false);
+      this._afterLeavingCenter.emit();
+
+      if (!this.preserveContent) {
+        this._portalHost.detach();
+      }
+    }
+
+    this._wasCentered = isCentered;
   }
 
   private _computePositionAnimationState(dir: Direction = this._getLayoutDirection()) {

@@ -1,4 +1,4 @@
-import { Meta, StoryFn, applicationConfig, moduleMetadata } from '@storybook/angular';
+import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
 
 import { AccordionComponent } from './accordion.component';
 import { AccordionHintDirective } from './accordion-hint.directive';
@@ -6,7 +6,6 @@ import { AccordionHintWrapperDirective } from './accordion-hint-wrapper.directiv
 import { AccordionLabelDirective } from './accordion-label.directive';
 import { AccordionLabelWrapperDirective } from './accordion-label-wrapper.directive';
 import CustomMDXDocumentation from './accordion.component.docs.mdx';
-import { provideAnimations } from '@angular/platform-browser/animations';
 
 export default {
   title: 'CDK/Accordion',
@@ -19,9 +18,6 @@ export default {
         AccordionHintDirective,
         AccordionHintWrapperDirective,
       ],
-    }),
-    applicationConfig({
-      providers: [provideAnimations()],
     }),
   ],
   argTypes: {

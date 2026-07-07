@@ -1,5 +1,4 @@
-import { provideAnimations } from '@angular/platform-browser/animations';
-import { Meta, StoryFn, applicationConfig, moduleMetadata } from '@storybook/angular';
+import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
 import { InlineTabComponent } from '../../partials/inline-tabs/inline-tab';
 import { InlineTabLabelDirective } from '../../partials/inline-tabs/inline-tab-label';
 import { InlineTabsComponent } from './inline-tabs.component';
@@ -11,9 +10,6 @@ export default {
   decorators: [
     moduleMetadata({
       imports: [InlineTabComponent, InlineTabLabelDirective],
-    }),
-    applicationConfig({
-      providers: [provideAnimations()],
     }),
   ],
   argTypes: {

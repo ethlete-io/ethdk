@@ -1,16 +1,10 @@
-import { provideAnimations } from '@angular/platform-browser/animations';
-import { applicationConfig, Meta, StoryFn } from '@storybook/angular';
+import { Meta, StoryFn } from '@storybook/angular';
 import { SortStorybookComponent } from './components';
 import CustomMDXDocumentation from './sort.docs.mdx';
 
 export default {
   title: 'CDK/Sort',
   component: SortStorybookComponent,
-  decorators: [
-    applicationConfig({
-      providers: [provideAnimations()],
-    }),
-  ],
   argTypes: {
     arrowPosition: {
       control: {
