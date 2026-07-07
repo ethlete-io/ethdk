@@ -1,5 +1,23 @@
 # @ethlete/core
 
+## 5.0.0-next.20
+
+### Minor Changes
+
+- [#3007](https://github.com/ethlete-io/ethdk/pull/3007) [`74974ff`](https://github.com/ethlete-io/ethdk/commit/74974ff36e64b80c750358441d8f5e8647557bdc) Thanks [@github-actions](https://github.com/apps/github-actions)! - Support satisfies for theme definitions
+
+- [#3007](https://github.com/ethlete-io/ethdk/pull/3007) [`6539c72`](https://github.com/ethlete-io/ethdk/commit/6539c727c6d56ed9add30fa41039a0880d5c5121) Thanks [@github-actions](https://github.com/apps/github-actions)! - Gave surface theming the same treatment as color theming:
+  - Added an augmentable `EthleteSurfaceThemeNameRegistry` (mirroring `EthleteColorThemeNameRegistry`), so `etProvideSurface` and `provideSurfaceThemesWithTailwind4` can be narrowed to your app's actual surface theme names instead of a plain `string`.
+  - `tailwind-4-surface-theme` now also generates a `.d.ts` (next to the CSS output by default, or at a custom `typesOutputPath`) that augments the registry automatically.
+  - Fixed `tailwind-4-surface-theme` failing to parse individual surface theme objects written with `satisfies X` instead of `as const`, matching the same fix in `tailwind-4-color-theme`.
+  - Added a `runtimePrefix` option to `tailwind-4-surface-theme`, decoupling the Tailwind utility surface prefix from the runtime theme-swap prefix used by `ProvideSurfaceDirective`/`etProvideSurface` (the `.et-surface--<name>` selectors and `--et-surface-*` CSS variables) - the same fix already applied to `tailwind-4-color-theme`. Defaults to `prefix`, so existing usages are unaffected.
+
+- [#3007](https://github.com/ethlete-io/ethdk/pull/3007) [`6539c72`](https://github.com/ethlete-io/ethdk/commit/6539c727c6d56ed9add30fa41039a0880d5c5121) Thanks [@github-actions](https://github.com/apps/github-actions)! - `tailwind-4-color-theme` now also generates a `.d.ts` file (next to the CSS output by default, or at a custom `typesOutputPath`) that augments `EthleteColorThemeNameRegistry` with your theme names. Previously this had to be hand-written; now it's kept in sync automatically whenever you regenerate. Also fixed the generator failing to parse individual theme objects written with `satisfies X` instead of `as const` (e.g. `export const RED = { ... } satisfies ColorTheme;`).
+
+### Patch Changes
+
+- [#3009](https://github.com/ethlete-io/ethdk/pull/3009) [`9a029a5`](https://github.com/ethlete-io/ethdk/commit/9a029a551b5e2d8d30cba5382384dcbd47565f66) Thanks [@TomTomB](https://github.com/TomTomB)! - Fix `setupScrollRestoration` scrolling to top only after the new route had already painted under zoneless change detection, causing a visible jump from the previous scroll offset on tall pages. It is now driven synchronously off `router.events` (`NavigationEnd` / `NavigationSkipped`) instead of going through signal interop plus `debounceTime`, so `scrollTop = 0` lands before the first paint of the new route. All existing behavior (query param triggers, fragment scrolling, `routerDisableScrollTop`) is unchanged.
+
 ## 5.0.0-next.19
 
 ### Minor Changes
