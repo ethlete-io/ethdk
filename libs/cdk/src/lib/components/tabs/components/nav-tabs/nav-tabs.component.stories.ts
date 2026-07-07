@@ -1,4 +1,3 @@
-import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, withHashLocation } from '@angular/router';
 import { Meta, StoryFn, applicationConfig } from '@storybook/angular';
 import CustomMDXDocumentation from './nav-tabs.component.docs.mdx';
@@ -16,7 +15,6 @@ export default {
   decorators: [
     applicationConfig({
       providers: [
-        provideAnimations(),
         provideRouter(
           [
             { path: 'one', component: RouterOneComponent },

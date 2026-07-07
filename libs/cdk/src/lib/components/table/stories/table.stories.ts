@@ -1,16 +1,10 @@
-import { provideAnimations } from '@angular/platform-browser/animations';
-import { applicationConfig, Meta, StoryFn } from '@storybook/angular';
+import { Meta, StoryFn } from '@storybook/angular';
 import { TableStorybookComponent } from './components';
 import CustomMDXDocumentation from './table.docs.mdx';
 
 export default {
   title: 'CDK/Table',
   component: TableStorybookComponent,
-  decorators: [
-    applicationConfig({
-      providers: [provideAnimations()],
-    }),
-  ],
   argTypes: {
     dataSource: {
       control: {

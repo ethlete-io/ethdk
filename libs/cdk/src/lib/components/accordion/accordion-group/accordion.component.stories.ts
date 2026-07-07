@@ -1,9 +1,8 @@
-import { Meta, StoryFn, applicationConfig, moduleMetadata } from '@storybook/angular';
+import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
 
 import { AccordionComponent } from '../accordion/accordion.component';
 import { AccordionGroupComponent } from './accordion-group.component';
 import CustomMDXDocumentation from './accordion-group.component.docs.mdx';
-import { provideAnimations } from '@angular/platform-browser/animations';
 
 export default {
   title: 'CDK/Accordion/Group',
@@ -11,9 +10,6 @@ export default {
   decorators: [
     moduleMetadata({
       imports: [AccordionComponent],
-    }),
-    applicationConfig({
-      providers: [provideAnimations()],
     }),
   ],
   argTypes: {
