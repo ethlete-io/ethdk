@@ -17,13 +17,23 @@
     },
     "publish": {
       "executor": "nx:run-commands",
+      "dependsOn": ["build"],
       "options": {
         "command": "node tools/scripts/publish.mjs cli {args.ver} {args.tag}"
-      },
-      "dependsOn": ["build"]
+      }
     },
     "lint": {
-      "executor": "@nx/eslint:lint"
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/.eslintrc.json",
+        "{workspaceRoot}/.eslintignore",
+        "{workspaceRoot}/eslint.config.mjs",
+        "{workspaceRoot}/tools/eslint-rules/**/*",
+        {
+          "externalDependencies": ["eslint"]
+        }
+      ]
     }
   }
 }
