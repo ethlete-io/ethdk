@@ -151,9 +151,7 @@ export const createRouterState = (router: Router): RouterState => {
  * where `router.url` is already committed. Falls back to the browser location before the first navigation commits.
  */
 export const createRoute = (router: Router) => {
-  const url = router.navigated
-    ? router.url
-    : window.location.pathname + window.location.search + window.location.hash;
+  const url = router.navigated ? router.url : window.location.pathname + window.location.search + window.location.hash;
 
   return url.split('?')[0]?.split('#')[0] ?? '';
 };
