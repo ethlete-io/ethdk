@@ -1,8 +1,9 @@
 import { isPlatformBrowser } from '@angular/common';
 import { DOCUMENT, inject, PLATFORM_ID } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { combineLatest, debounceTime, pairwise } from 'rxjs';
-import { injectRoute, injectRouterState } from '../router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavigationEnd, NavigationSkipped, Router } from '@angular/router';
+import { filter } from 'rxjs';
+import { createRoute, createRouterState } from '../router';
 
 export type SetupScrollRestorationConfig = {
   /**
@@ -63,15 +64,27 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
     return;
   }
 
-  const state = injectRouterState();
-  const route = injectRoute();
+  const router = inject(Router);
   const document = inject(DOCUMENT);
 
-  combineLatest([toObservable(state).pipe(pairwise()), toObservable(route).pipe(pairwise())])
-    .pipe(debounceTime(1))
-    .subscribe(([[prevState, currState], [prevRoute, currRoute]]) => {
-      const sameUrlNavigation = prevRoute === currRoute;
+  let prev = { state: createRouterState(router), route: createRoute(router) };
+
+  router.events
+    .pipe(
+      filter(
+        (e): e is NavigationEnd | NavigationSkipped => e instanceof NavigationEnd || e instanceof NavigationSkipped,
+      ),
+      takeUntilDestroyed(),
+    )
+    .subscribe(() => {
+      const curr = { state: createRouterState(router), route: createRoute(router) };
+
+      const prevState = prev.state;
+      const currState = curr.state;
+      const sameUrlNavigation = prev.route === curr.route;
       const didFragmentChange = prevState.fragment !== currState.fragment;
+
+      prev = curr;
 
       if (sameUrlNavigation) {
         const allQueryParams = [
