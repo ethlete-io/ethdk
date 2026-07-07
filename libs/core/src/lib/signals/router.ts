@@ -127,7 +127,7 @@ export const injectRoute = memoizeSignal(() => {
   });
 });
 
-const createRouterState = (router: Router) => {
+export const createRouterState = (router: Router): RouterState => {
   let route = router.routerState.snapshot.root;
 
   while (route.firstChild) {
@@ -143,6 +143,19 @@ const createRouterState = (router: Router) => {
     title: title ?? null,
     fragment,
   };
+};
+
+/**
+ * Read the current route (the committed url without query params and fragment) straight from the router.
+ * Unlike the `injectRoute` signal this reads synchronously, so it can be used inside a `router.events` handler
+ * where `router.url` is already committed. Falls back to the browser location before the first navigation commits.
+ */
+export const createRoute = (router: Router) => {
+  const url = router.navigated
+    ? router.url
+    : window.location.pathname + window.location.search + window.location.hash;
+
+  return url.split('?')[0]?.split('#')[0] ?? '';
 };
 
 /**
