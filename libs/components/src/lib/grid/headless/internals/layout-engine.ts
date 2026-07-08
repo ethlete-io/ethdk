@@ -24,6 +24,21 @@ export type ResolveCollisionsOptions = {
   movedId: string;
   columns: number;
   originPosition?: GridItemPosition;
+  rowFloors?: RowFloors;
+};
+
+/**
+ * Per-item lower bound (in rows) for the upward compaction pass. An item with a
+ * floor is never pulled above it — used during live resize gestures to keep
+ * unrelated items from collapsing into freshly vacated space while the pointer
+ * is still down. Items without an entry compact all the way up (floor 0).
+ */
+export type RowFloors = ReadonlyMap<string, number>;
+
+export type CompactLayoutOptions = {
+  entries: GridLayoutEntry[];
+  columns: number;
+  rowFloors?: RowFloors;
 };
 
 /**
@@ -64,7 +79,8 @@ const clampToColumns = (position: GridItemPosition, columns: number): GridItemPo
  * returned layout is always in-bounds and overlap-free regardless of the input — clamping
  * a column alone is not enough, because it can drop an item on top of an existing one.
  */
-export const compactLayout = (entries: GridLayoutEntry[], columns: number) => {
+export const compactLayout = (options: CompactLayoutOptions) => {
+  const { entries, columns, rowFloors } = options;
   const sorted = [...entries]
     .map((entry) => ({ ...entry, position: clampToColumns(entry.position, columns) }))
     .sort((a, b) => a.position.row - b.position.row || a.position.col - b.position.col);
@@ -79,8 +95,10 @@ export const compactLayout = (entries: GridLayoutEntry[], columns: number) => {
       candidate.position.row += 1;
     }
 
-    // Then pull up as far as possible without colliding.
-    while (candidate.position.row > 0) {
+    // Then pull up as far as possible without colliding (never above the item's floor).
+    const floor = rowFloors?.get(entry.id) ?? 0;
+
+    while (candidate.position.row > floor) {
       const moved = { ...candidate, position: { ...candidate.position, row: candidate.position.row - 1 } };
 
       if (findCollision({ entries: compacted, position: moved.position, excludeId: candidate.id })) {
@@ -133,7 +151,7 @@ export const clampPosition = (options: ClampPositionOptions) => {
  * Cascades: if pushed items collide with others, those are pushed down too.
  */
 export const resolveCollisions = (options: ResolveCollisionsOptions) => {
-  const { entries, movedId, columns, originPosition } = options;
+  const { entries, movedId, columns, originPosition, rowFloors } = options;
   const moved = entries.find((e) => e.id === movedId);
 
   if (!moved) return entries;
@@ -169,7 +187,7 @@ export const resolveCollisions = (options: ResolveCollisionsOptions) => {
     if (adjacentToOrigin) {
       swapTarget.position = { ...originPosition };
 
-      return compactLayout(result, columns);
+      return compactLayout({ entries: result, columns, rowFloors });
     }
   }
 
@@ -206,7 +224,7 @@ export const resolveCollisions = (options: ResolveCollisionsOptions) => {
       if (noSideEffects) {
         swapTarget.position = proposedPos;
 
-        return compactLayout(result, columns);
+        return compactLayout({ entries: result, columns, rowFloors });
       }
     }
   }
@@ -234,7 +252,7 @@ export const resolveCollisions = (options: ResolveCollisionsOptions) => {
     }
   }
 
-  return compactLayout(result, columns);
+  return compactLayout({ entries: result, columns, rowFloors });
 };
 
 /**

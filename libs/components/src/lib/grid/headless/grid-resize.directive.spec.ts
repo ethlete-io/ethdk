@@ -8,16 +8,31 @@ import { GridResizeDirective } from './grid-resize.directive';
 import { GridItemConfig } from './grid.types';
 
 class ResizeObserverMock {
-  observe() {
-    return;
+  static instances: ResizeObserverMock[] = [];
+
+  private targets = new Set<Element>();
+
+  constructor(private callback: ResizeObserverCallback) {
+    ResizeObserverMock.instances.push(this);
   }
 
-  unobserve() {
-    return;
+  observe(target: Element) {
+    this.targets.add(target);
+  }
+
+  unobserve(target: Element) {
+    this.targets.delete(target);
   }
 
   disconnect() {
-    return;
+    this.targets.clear();
+  }
+
+  emit() {
+    const entries = [...this.targets].map((target) => ({ target }) as ResizeObserverEntry);
+    if (entries.length > 0) {
+      this.callback(entries, this as unknown as ResizeObserver);
+    }
   }
 }
 
@@ -31,7 +46,7 @@ class ResizeObserverMock {
   `,
 })
 class TestHostComponent {
-  items: GridItemConfig[] = [{ id: 'resize-item', type: 'test', version: 1, data: undefined, layout: {} }];
+  items: GridItemConfig[] = [{ id: 'resize-item', type: 'test', data: undefined, layout: {} }];
 }
 
 describe('GridResizeDirective', () => {
@@ -43,8 +58,17 @@ describe('GridResizeDirective', () => {
 
   const getGridDirective = () => fixture.debugElement.query(By.directive(GridDirective)).injector.get(GridDirective);
 
+  const measureGrid = (width = 1216) => {
+    const gridEl = fixture.debugElement.query(By.directive(GridDirective)).nativeElement as HTMLElement;
+    Object.defineProperty(gridEl, 'clientWidth', { configurable: true, value: width });
+    TestBed.tick();
+    ResizeObserverMock.instances.forEach((instance) => instance.emit());
+    fixture.detectChanges();
+  };
+
   beforeEach(() => {
     originalResizeObserverDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'ResizeObserver');
+    ResizeObserverMock.instances = [];
 
     Object.defineProperty(globalThis, 'ResizeObserver', {
       configurable: true,
@@ -79,23 +103,75 @@ describe('GridResizeDirective', () => {
     expect(getResizeDirective().resizeEdges()).toHaveLength(8);
   });
 
-  it('beginResize sets isResizing to true when item has a position', () => {
+  it('does not begin a resize before the grid is measured', () => {
     fixture.detectChanges();
+    getResizeDirective().beginResize();
+    expect(getResizeDirective().isResizing()).toBe(false);
+  });
+
+  it('beginResize sets isResizing to true when the grid is measured', () => {
+    fixture.detectChanges();
+    measureGrid();
     getResizeDirective().beginResize();
     expect(getResizeDirective().isResizing()).toBe(true);
   });
 
   it('finishResize clears isResizing', () => {
     fixture.detectChanges();
+    measureGrid();
     getResizeDirective().beginResize();
     getResizeDirective().finishResize();
     expect(getResizeDirective().isResizing()).toBe(false);
   });
 
-  it('finishResize calls commitResize on the grid', () => {
+  it('finishResize commits the resize on the grid', () => {
     fixture.detectChanges();
+    measureGrid();
     const commitSpy = vi.spyOn(getGridDirective(), 'commitResize');
+    getResizeDirective().beginResize();
     getResizeDirective().finishResize();
     expect(commitSpy).toHaveBeenCalledOnce();
+  });
+
+  it('grows the item by one column when the east edge crosses a cell midpoint', () => {
+    fixture.detectChanges();
+    measureGrid();
+
+    const geometry = getGridDirective().geometry();
+    getResizeDirective().beginResize();
+    getResizeDirective().updateResize({
+      edge: 'e',
+      dx: geometry.strideX * 0.7,
+      dy: 0,
+      clientX: 0,
+      clientY: 0,
+    });
+    getResizeDirective().finishResize();
+
+    const entry = getGridDirective()
+      .baseLayout()
+      .find((e) => e.id === 'resize-item');
+    expect(entry?.position.colSpan).toBe(2);
+  });
+
+  it('cancelResize restores the pre-resize layout', () => {
+    fixture.detectChanges();
+    measureGrid();
+
+    const before = getGridDirective().baseLayout();
+    const geometry = getGridDirective().geometry();
+
+    getResizeDirective().beginResize();
+    getResizeDirective().updateResize({
+      edge: 'e',
+      dx: geometry.strideX * 1.7,
+      dy: 0,
+      clientX: 0,
+      clientY: 0,
+    });
+    getResizeDirective().cancelResize();
+
+    expect(getGridDirective().baseLayout()).toEqual(before);
+    expect(getResizeDirective().isResizing()).toBe(false);
   });
 });

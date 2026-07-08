@@ -2,8 +2,10 @@ import {
   afterNextRender,
   booleanAttribute,
   computed,
+  DestroyRef,
   Directive,
   effect,
+  ElementRef,
   inject,
   Injector,
   input,
@@ -11,7 +13,9 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { injectRenderer, signalHostElementDimensions } from '@ethlete/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { injectPrefersReducedMotion, signalHostElementDimensions } from '@ethlete/core';
+import { filter, switchMap, tap, timer } from 'rxjs';
 import { injectGridConfig } from './grid-config';
 import { GRID_TOKEN } from './grid.tokens';
 import {
@@ -28,9 +32,13 @@ import {
   autoPlace,
   clampPosition,
   compactLayout,
+  computeGeometry,
+  computeGridHeight,
   DEFAULT_BREAKPOINTS,
+  positionsEqual,
   resolveBreakpoint,
   resolveCollisions,
+  rowsToPixelHeight,
   serializeGridLayout,
 } from './internals';
 
@@ -71,9 +79,6 @@ export const gridDebug = (...args: unknown[]) => {
   console.log(`\x1B[36m[et-grid ${timestamp}ms]\x1B[m`, ...args);
 };
 
-const positionsEqual = (a: GridItemPosition, b: GridItemPosition) =>
-  a.col === b.col && a.row === b.row && a.colSpan === b.colSpan && a.rowSpan === b.rowSpan;
-
 const layoutsEqual = (a: Record<string, GridItemPosition>, b: Record<string, GridItemPosition>) => {
   const aKeys = Object.keys(a);
   if (aKeys.length !== Object.keys(b).length) return false;
@@ -110,6 +115,9 @@ const resolveItemConstraints = (
   return context.constraintsRegistry.get(id) ?? DEFAULT_CONSTRAINTS;
 };
 
+const LEAVE_ANIMATION_MS = 200;
+const CONTAINER_RESIZE_SETTLE_MS = 150;
+
 @Directive({
   selector: '[etGrid]',
   exportAs: 'etGrid',
@@ -117,12 +125,17 @@ const resolveItemConstraints = (
   host: {
     class: 'et-grid',
     '[class.et-grid--readonly]': 'readOnly()',
+    '[style.height.px]': 'hostHeight()',
+    '[style.transition]': 'containerTransition()',
+    '[style.--et-grid-anim-duration]': 'isResizeActive() ? "160ms" : null',
   },
 })
 export class GridDirective {
   private injector = inject(Injector);
-  private renderer = injectRenderer();
+  private destroyRef = inject(DestroyRef);
+  public elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private gridConfig = injectGridConfig();
+  private reducedMotion = injectPrefersReducedMotion();
 
   public breakpoints = input<GridBreakpointConfig[]>(DEFAULT_BREAKPOINTS);
   public rowHeight = input(100);
@@ -142,14 +155,22 @@ export class GridDirective {
   private constraintsRegistry = new Map<string, GridItemConstraints>();
 
   private resizeBaseLayout = signal<GridLayoutEntry[] | null>(null);
+  private pendingResize: { id: string; position: GridItemPosition } | null = null;
+  private lastResizeTarget: GridItemPosition | null = null;
 
-  private itemElements = new Map<string, HTMLElement>();
-  private contentElements = new Map<string, HTMLElement>();
-  private ghostElement: HTMLElement | null = null;
-  private lastFlipAt = 0;
-  private rectSnapshot = new Map<string, DOMRect>();
+  public leavingIds = signal<ReadonlySet<string>>(new Set<string>());
+
+  public isResizeActive = signal(false);
+  private animationsReady = signal(false);
+  private isContainerResizing = signal(false);
 
   public containerWidth = computed(() => this.dimensions().client?.width ?? 0);
+
+  public isReady = computed(() => this.containerWidth() > 0);
+
+  public animationsEnabled = computed(
+    () => this.animationsReady() && !this.isContainerResizing() && !this.reducedMotion(),
+  );
 
   public activeBreakpoint = computed(() => {
     const width = this.containerWidth();
@@ -159,6 +180,36 @@ export class GridDirective {
   public activeColumns = computed(() => {
     const bp = this.breakpoints().find((b) => b.name === this.activeBreakpoint());
     return bp?.columns ?? 12;
+  });
+
+  private paddings = computed(() => {
+    this.dimensions();
+
+    if (typeof getComputedStyle === 'undefined') {
+      return { left: 0, top: 0, right: 0, bottom: 0 };
+    }
+
+    const style = getComputedStyle(this.elementRef.nativeElement);
+
+    return {
+      left: parseFloat(style.paddingLeft) || 0,
+      top: parseFloat(style.paddingTop) || 0,
+      right: parseFloat(style.paddingRight) || 0,
+      bottom: parseFloat(style.paddingBottom) || 0,
+    };
+  });
+
+  public geometry = computed(() => {
+    const padding = this.paddings();
+
+    return computeGeometry({
+      contentWidth: Math.max(0, this.containerWidth() - padding.left - padding.right),
+      columns: this.activeColumns(),
+      gap: this.gap(),
+      rowHeight: this.rowHeight(),
+      originX: padding.left,
+      originY: padding.top,
+    });
   });
 
   public items = computed(() => this.itemConfigs());
@@ -205,6 +256,17 @@ export class GridDirective {
     });
   });
 
+  public containerHeightPx = computed(() => {
+    const padding = this.paddings();
+    return rowsToPixelHeight(computeGridHeight(this.layout()), this.geometry()) + padding.top + padding.bottom;
+  });
+
+  protected hostHeight = computed(() => (this.isReady() ? this.containerHeightPx() : null));
+
+  protected containerTransition = computed(() =>
+    this.animationsEnabled() ? 'height var(--et-grid-anim-duration, 250ms) cubic-bezier(0.2, 0, 0, 1)' : 'none',
+  );
+
   public ghostPosition = computed((): GridItemPosition | null => {
     const drag = this.dragState();
 
@@ -216,6 +278,28 @@ export class GridDirective {
   });
 
   constructor() {
+    // Enable animations one frame after the first measurement so initial placement
+    // is never animated, then suppress them while the container width is in flux.
+    effect(() => {
+      if (!this.isReady()) return;
+
+      untracked(() => {
+        if (this.animationsReady()) return;
+
+        afterNextRender(() => this.animationsReady.set(true), { injector: this.injector });
+      });
+    });
+
+    toObservable(this.containerWidth)
+      .pipe(
+        filter(() => this.animationsReady()),
+        tap(() => this.isContainerResizing.set(true)),
+        switchMap(() => timer(CONTAINER_RESIZE_SETTLE_MS)),
+        tap(() => this.isContainerResizing.set(false)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
     effect(() => {
       const initial = this.initialItems();
       untracked(() => {
@@ -311,7 +395,7 @@ export class GridDirective {
             }
           }
 
-          const compacted = compactLayout(entries, columns);
+          const compacted = compactLayout({ entries, columns });
 
           this.layoutOverrides.update((prev) => ({ ...prev, [breakpoint]: compacted }));
         } else {
@@ -338,12 +422,18 @@ export class GridDirective {
           });
 
           if (hasChanged) {
-            const compacted = compactLayout(clamped, columns);
+            const compacted = compactLayout({ entries: clamped, columns });
             this.layoutOverrides.update((prev) => ({ ...prev, [breakpoint]: compacted }));
           }
         }
       });
     });
+  }
+
+  public getContainerOrigin(): { left: number; top: number } {
+    const el = this.elementRef.nativeElement;
+    const rect = el.getBoundingClientRect();
+    return { left: rect.left + el.clientLeft, top: rect.top + el.clientTop };
   }
 
   public registerConstraints(id: string, constraints: GridItemConstraints) {
@@ -380,37 +470,15 @@ export class GridDirective {
       });
 
       const updated = existing.map((e) => (e.id === id ? { ...e, position: newPosition } : e));
-      const compacted = compactLayout(updated, cols);
+      const compacted = compactLayout({ entries: updated, columns: cols });
       this.layoutOverrides.update((prev) => ({ ...prev, [breakpoint]: compacted }));
     });
   }
 
-  public registerItem(id: string, options: { el: HTMLElement; constraints: GridItemConstraints }) {
-    this.itemElements.set(id, options.el);
-    this.registerConstraints(id, options.constraints);
-  }
+  public unregisterConstraints(id: string) {
+    if (!this.constraintsRegistry.has(id)) return;
 
-  public unregisterItem(id: string) {
-    this.itemElements.delete(id);
-    this.contentElements.delete(id);
     this.constraintsRegistry.delete(id);
-  }
-
-  /**
-   * The item's inner content wrapper. Used by the counter-scaled resize FLIP so the
-   * box can scale while the content takes the inverse scale and stays undistorted.
-   */
-  public registerContentElement(id: string, el: HTMLElement) {
-    if (this.contentElements.get(id) !== el) {
-      this.contentElements.set(id, el);
-    }
-  }
-
-  public setGhostElement(el: HTMLElement | null) {
-    if (this.ghostElement !== el) {
-      this.ghostElement = el;
-      this.rectSnapshot.delete('__ghost__');
-    }
   }
 
   public getConstraints(id: string): GridItemConstraints {
@@ -421,190 +489,38 @@ export class GridDirective {
     });
   }
 
-  public snapshotRects() {
-    this.rectSnapshot.clear();
-
-    for (const [id, el] of this.itemElements) {
-      this.rectSnapshot.set(id, el.getBoundingClientRect());
-    }
-
-    if (this.ghostElement) {
-      this.rectSnapshot.set('__ghost__', this.ghostElement.getBoundingClientRect());
-    }
-  }
-
-  public animateLayoutTransition(options?: { excludeIds?: Set<string>; durationMs?: number }) {
-    const excludeIds = options?.excludeIds ?? new Set();
-    const durationMs = options?.durationMs ?? 250;
-    const snapshot = new Map(this.rectSnapshot);
-    const ghostEl = this.ghostElement;
-    const debug = isGridDebugEnabled();
-    const scheduledAt = debug ? performance.now() : 0;
-
-    afterNextRender(
-      () => {
-        const t0 = debug ? performance.now() : 0;
-
-        // The FLIP is split into read → write → read → write phases so the loop never
-        // interleaves a getBoundingClientRect() with a cancel() on the same element.
-        // Interleaving forces the browser to recompute layout twice PER item, which
-        // stalls the frame and shows up as an occasional chop on larger grids.
-        type Flip = {
-          el: HTMLElement;
-          content: HTMLElement | null;
-          running: Animation[];
-          fromRect: DOMRect;
-        };
-
-        // Phase 1 — read every "from" rect together (no writes in between, so the
-        // browser can serve them from a single layout pass).
-        //  - Mid-animation elements: their snapshot (taken a frame earlier) is stale, so
-        //    read the actual current on-screen rect and continue from exactly there.
-        //  - Otherwise: use the snapshot, which holds the pre-layout-change position.
-        const flips: Flip[] = [];
-
-        for (const [id, el] of this.itemElements) {
-          if (excludeIds.has(id)) continue;
-
-          const running = el.getAnimations();
-          const fromRect = running.length > 0 ? el.getBoundingClientRect() : snapshot.get(id);
-
-          if (!fromRect) continue;
-
-          flips.push({ el, content: this.contentElements.get(id) ?? null, running, fromRect });
-        }
-
-        const ghostRunning = ghostEl ? ghostEl.getAnimations() : [];
-        let ghostFrom: DOMRect | undefined;
-        if (ghostEl) {
-          ghostFrom = ghostRunning.length > 0 ? ghostEl.getBoundingClientRect() : snapshot.get('__ghost__');
-        }
-
-        const interrupted = debug ? flips.filter((f) => f.running.length > 0).length : 0;
-        const t1 = debug ? performance.now() : 0;
-
-        // Phase 2 — cancel all in-flight animations (writes only).
-        for (const flip of flips) {
-          flip.running.forEach((a) => a.cancel());
-          flip.content?.getAnimations().forEach((a) => a.cancel());
-        }
-        ghostRunning.forEach((a) => a.cancel());
-
-        const t2 = debug ? performance.now() : 0;
-
-        // Phase 3 — read every target rect together (single layout pass).
-        const targets = flips.map((flip) => flip.el.getBoundingClientRect());
-        const ghostTarget = ghostEl ? ghostEl.getBoundingClientRect() : null;
-
-        const t3 = debug ? performance.now() : 0;
-        let animated = 0;
-        let maxDx = 0;
-        let maxDy = 0;
-
-        // Phase 4 — start the animations (writes only).
-        flips.forEach((flip, i) => {
-          const { el, content, fromRect } = flip;
-          const newRect = targets[i];
-
-          if (!newRect) return;
-
-          const dx = fromRect.left - newRect.left;
-          const dy = fromRect.top - newRect.top;
-          const scaleX = newRect.width > 0 ? fromRect.width / newRect.width : 1;
-          const scaleY = newRect.height > 0 ? fromRect.height / newRect.height : 1;
-          const moved = Math.abs(dx) > 1 || Math.abs(dy) > 1;
-          const resized = Math.abs(scaleX - 1) > 0.01 || Math.abs(scaleY - 1) > 0.01;
-
-          if (!moved && !resized) return;
-
-          if (debug) {
-            animated++;
-            maxDx = Math.max(maxDx, Math.abs(dx));
-            maxDy = Math.max(maxDy, Math.abs(dy));
-          }
-
-          if (resized) {
-            // Counter-scaled FLIP: the box scales from its old to new size while the
-            // content wrapper takes the inverse scale, so text/children never distort.
-            // Easing is baked into sampled keyframes (played linearly) so the outer and
-            // inner scales multiply to ~1 on every frame, not just at the endpoints.
-            this.animateCounterScaled({ el, content, dx, dy, scaleX, scaleY, durationMs });
-          } else {
-            el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'translate(0px, 0px)' }], {
-              duration: durationMs,
-              easing: 'cubic-bezier(0.2, 0, 0, 1)',
-            });
-          }
-        });
-
-        if (ghostEl && ghostFrom && ghostTarget) {
-          const dx = ghostFrom.left - ghostTarget.left;
-          const dy = ghostFrom.top - ghostTarget.top;
-
-          if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
-            ghostEl.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'translate(0px, 0px)' }], {
-              duration: 200,
-              easing: 'cubic-bezier(0.2, 0, 0, 1)',
-            });
-          }
-        }
-
-        if (debug) {
-          const t4 = performance.now();
-          const gapSinceLast = this.lastFlipAt ? t0 - this.lastFlipAt : -1;
-          this.lastFlipAt = t0;
-
-          const round = (n: number) => Math.round(n * 100) / 100;
-          const info = {
-            items: flips.length,
-            interrupted, // items already mid-animation when this FLIP started
-            animated, // items that actually started a new animation
-            maxDx: round(maxDx),
-            maxDy: round(maxDy),
-            renderDelay: round(t0 - scheduledAt), // schedule → afterNextRender gap
-            readFrom: round(t1 - t0),
-            cancel: round(t2 - t1),
-            readTarget: round(t3 - t2),
-            startAnim: round(t4 - t3),
-            total: round(t4 - t0),
-            gapSinceLast: round(gapSinceLast), // time between consecutive FLIPs
-          };
-
-          if (info.total > 6 || (gapSinceLast >= 0 && gapSinceLast < 12)) {
-            gridDebug('flip ⚠', info);
-          } else {
-            gridDebug('flip', info);
-          }
-        }
-      },
-      { injector: this.injector },
-    );
-  }
-
-  public beginDrag(itemId: string) {
+  public beginDrag(itemId: string): GridItemPosition | null {
     const entry = this.baseLayout().find((e) => e.id === itemId);
 
-    if (!entry) return;
+    if (!entry) return null;
 
     this.dragState.set({
       itemId,
       originPosition: entry.position,
       targetPosition: entry.position,
     });
+
+    return entry.position;
   }
 
-  public updateDragTarget(targetPosition: GridItemPosition) {
+  public updateDragTarget(cell: { col: number; row: number }) {
     const drag = this.dragState();
 
     if (!drag) return;
+
+    const targetPosition: GridItemPosition = { ...drag.originPosition, col: cell.col, row: cell.row };
+
+    // Gate here (not in the gesture directive) so a no-op target never re-runs
+    // collision resolution or touches any item's slot.
+    if (positionsEqual(drag.targetPosition, targetPosition)) return;
 
     this.dragState.set({ ...drag, targetPosition });
   }
 
-  public commitDrag() {
+  public commitDrag(): GridItemPosition | null {
     const drag = this.dragState();
 
-    if (!drag) return;
+    if (!drag) return null;
 
     // Commit the full resolved layout (includes swaps and collision resolution)
     const resolvedLayout = this.layout();
@@ -624,6 +540,114 @@ export class GridDirective {
 
     this.dragState.set(null);
     this.emitLayoutChange();
+
+    return resolvedLayout.find((e) => e.id === drag.itemId)?.position ?? null;
+  }
+
+  public cancelDrag() {
+    this.dragState.set(null);
+  }
+
+  public beginResize(itemId: string): GridItemPosition | null {
+    const base = this.baseLayout();
+    const entry = base.find((e) => e.id === itemId);
+
+    if (!entry) return null;
+
+    this.resizeBaseLayout.set(base);
+    this.pendingResize = null;
+    this.lastResizeTarget = null;
+    this.isResizeActive.set(true);
+
+    return entry.position;
+  }
+
+  public updateResize(itemId: string, target: GridItemPosition) {
+    const base = this.resizeBaseLayout();
+
+    if (!base) return;
+
+    if (this.lastResizeTarget && positionsEqual(this.lastResizeTarget, target)) return;
+    this.lastResizeTarget = target;
+
+    const entry = base.find((e) => e.id === itemId);
+
+    if (!entry) return;
+
+    const columns = this.activeColumns();
+    const clamped = clampPosition({ position: target, constraints: this.getConstraints(itemId), columns });
+
+    // Try to shrink horizontal neighbors before pushing them down
+    const currentLayout = base.map((e) => (e.id === itemId ? { ...e, position: clamped } : e));
+
+    const withShrunk = this.shrinkNeighbors({
+      layout: currentLayout,
+      resizedId: itemId,
+      resizedPos: clamped,
+      originalPos: entry.position,
+      columns,
+    });
+
+    const rowFloors = new Map(base.map((e) => [e.id, e.position.row]));
+    rowFloors.set(itemId, clamped.row);
+
+    const resolved = resolveCollisions({ entries: withShrunk, movedId: itemId, columns, rowFloors });
+
+    this.updateLayoutForCurrentBreakpoint(resolved);
+
+    const resolvedEntry = resolved.find((e) => e.id === itemId);
+    this.pendingResize = { id: itemId, position: resolvedEntry?.position ?? clamped };
+  }
+
+  public commitResize(): GridItemPosition | null {
+    const pending = this.pendingResize;
+
+    this.resizeBaseLayout.set(null);
+    this.pendingResize = null;
+    this.lastResizeTarget = null;
+    this.isResizeActive.set(false);
+
+    if (!pending) return null;
+
+    // Run the upward compaction that was held back during the gesture, so freed-up
+    // space is reclaimed only once the pointer is released.
+    const compacted = compactLayout({ entries: this.baseLayout(), columns: this.activeColumns() });
+    this.updateLayoutForCurrentBreakpoint(compacted);
+
+    const finalPosition = compacted.find((e) => e.id === pending.id)?.position ?? pending.position;
+
+    this.updateItemLayout(pending.id, finalPosition);
+    this.emitLayoutChange();
+
+    return finalPosition;
+  }
+
+  public cancelResize() {
+    const base = this.resizeBaseLayout();
+
+    this.resizeBaseLayout.set(null);
+    this.pendingResize = null;
+    this.lastResizeTarget = null;
+    this.isResizeActive.set(false);
+
+    if (base) {
+      this.updateLayoutForCurrentBreakpoint(base);
+    }
+  }
+
+  /** One-shot resize (keyboard / programmatic): begin + update + commit in a single call. */
+  public resizeItem(options: ResizeItemOptions) {
+    const start = this.beginResize(options.id);
+
+    if (!start) return;
+
+    this.updateResize(options.id, {
+      col: options.newCol ?? start.col,
+      row: options.newRow ?? start.row,
+      colSpan: options.newColSpan,
+      rowSpan: options.newRowSpan,
+    });
+    this.commitResize();
   }
 
   public addItem(type: string, data: unknown) {
@@ -640,42 +664,33 @@ export class GridDirective {
   }
 
   public removeItem(id: string) {
-    const el = this.itemElements.get(id);
+    if (this.leavingIds().has(id)) return;
+    if (!this.itemConfigs().some((i) => i.id === id)) return;
 
-    if (el) {
-      const anim = el.animate(
-        [
-          { transform: 'scale(1)', opacity: '1' },
-          { transform: 'scale(0.9)', opacity: '0' },
-        ],
-        { duration: 200, easing: 'cubic-bezier(0.4, 0, 1, 1)', fill: 'forwards' },
-      );
+    if (!this.animationsEnabled()) {
+      this.finalizeRemove(id);
 
-      anim.onfinish = () => {
-        anim.cancel();
-        this.snapshotRects();
-        this.itemConfigs.update((items) => items.filter((i) => i.id !== id));
-
-        const columns = this.activeColumns();
-        const currentLayout = this.baseLayout().filter((e) => e.id !== id);
-        const compacted = compactLayout(currentLayout, columns);
-
-        this.updateLayoutForCurrentBreakpoint(compacted);
-        this.compactOtherBreakpoints(id);
-        this.emitLayoutChange();
-        this.animateLayoutTransition({ excludeIds: new Set([id]) });
-      };
-    } else {
-      this.itemConfigs.update((items) => items.filter((i) => i.id !== id));
-
-      const columns = this.activeColumns();
-      const currentLayout = this.baseLayout().filter((e) => e.id !== id);
-      const compacted = compactLayout(currentLayout, columns);
-
-      this.updateLayoutForCurrentBreakpoint(compacted);
-      this.compactOtherBreakpoints(id);
-      this.emitLayoutChange();
+      return;
     }
+
+    // Mark the item as leaving — its directive plays the scale/opacity-out transition —
+    // then actually remove it once the animation has finished. Neighbours retarget
+    // automatically when the layout compacts.
+    this.leavingIds.update((ids) => new Set(ids).add(id));
+
+    timer(LEAVE_ANIMATION_MS)
+      .pipe(
+        tap(() => {
+          this.leavingIds.update((ids) => {
+            const next = new Set(ids);
+            next.delete(id);
+            return next;
+          });
+          this.finalizeRemove(id);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
   public moveItem(id: string, newPosition: GridItemPosition) {
@@ -691,51 +706,6 @@ export class GridDirective {
     this.updateLayoutForCurrentBreakpoint(resolved);
     this.updateItemLayout(id, clamped);
     this.emitLayoutChange();
-  }
-
-  public resizeItem(options: ResizeItemOptions) {
-    const { id, newColSpan, newRowSpan, newCol, newRow } = options;
-    const columns = this.activeColumns();
-    const item = this.itemConfigs().find((i) => i.id === id);
-
-    // Use the stored pre-resize layout as the base (captures original neighbor positions)
-    if (!this.resizeBaseLayout()) {
-      this.resizeBaseLayout.set(this.baseLayout());
-    }
-
-    const base = this.resizeBaseLayout() ?? this.baseLayout();
-    const entry = base.find((e) => e.id === id);
-
-    if (!item || !entry) return;
-
-    const newPosition: GridItemPosition = {
-      col: newCol ?? entry.position.col,
-      row: newRow ?? entry.position.row,
-      colSpan: newColSpan,
-      rowSpan: newRowSpan,
-    };
-
-    const clamped = clampPosition({ position: newPosition, constraints: this.getConstraints(id), columns });
-
-    // Try to shrink horizontal neighbors before pushing them down
-    const currentLayout = base.map((e) => (e.id === id ? { ...e, position: clamped } : e));
-
-    const withShrunk = this.shrinkNeighbors({
-      layout: currentLayout,
-      resizedId: id,
-      resizedPos: clamped,
-      originalPos: entry.position,
-      columns,
-    });
-    const resolved = resolveCollisions({ entries: withShrunk, movedId: id, columns });
-
-    this.updateLayoutForCurrentBreakpoint(resolved);
-    this.updateItemLayout(id, clamped);
-    this.emitLayoutChange();
-  }
-
-  public commitResize() {
-    this.resizeBaseLayout.set(null);
   }
 
   public getSerializedState(): GridSerializedState {
@@ -790,6 +760,18 @@ export class GridDirective {
     }
 
     this.layoutOverrides.set(overrides);
+  }
+
+  private finalizeRemove(id: string) {
+    this.itemConfigs.update((items) => items.filter((i) => i.id !== id));
+
+    const columns = this.activeColumns();
+    const currentLayout = this.baseLayout().filter((e) => e.id !== id);
+    const compacted = compactLayout({ entries: currentLayout, columns });
+
+    this.updateLayoutForCurrentBreakpoint(compacted);
+    this.compactOtherBreakpoints(id);
+    this.emitLayoutChange();
   }
 
   private placeItem(config: GridItemConfig) {
@@ -953,7 +935,7 @@ export class GridDirective {
       if (bp === activeBp) continue;
       const withoutItem = entries.filter((e) => e.id !== removedId);
       const cols = bpColumns.get(bp) ?? 1;
-      const compacted = compactLayout(withoutItem, cols);
+      const compacted = compactLayout({ entries: withoutItem, columns: cols });
       this.layoutOverrides.update((prev) => ({ ...prev, [bp]: compacted }));
     }
   }
@@ -973,51 +955,5 @@ export class GridDirective {
 
   private emitLayoutChange() {
     this.layoutChange.emit(this.getSerializedState());
-  }
-
-  private animateCounterScaled(options: {
-    el: HTMLElement;
-    content: HTMLElement | null;
-    dx: number;
-    dy: number;
-    scaleX: number;
-    scaleY: number;
-    durationMs: number;
-  }) {
-    const { el, content, dx, dy, scaleX, scaleY, durationMs } = options;
-    const steps = 14;
-    const outer: Keyframe[] = [];
-    const inner: Keyframe[] = [];
-
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic — matches the translate easing feel
-      const sx = scaleX + (1 - scaleX) * eased;
-      const sy = scaleY + (1 - scaleY) * eased;
-      const tx = dx * (1 - eased);
-      const ty = dy * (1 - eased);
-
-      outer.push({
-        offset: t,
-        transform: `translate(${tx}px, ${ty}px) scale(${sx}, ${sy})`,
-        transformOrigin: 'top left',
-      });
-      inner.push({ offset: t, transform: `scale(${1 / sx}, ${1 / sy})`, transformOrigin: 'top left' });
-    }
-
-    // Clip the box for the duration. When the item grows back (scaleX/scaleY < 1) the
-    // content wrapper is counter-scaled UP past the box, and browsers count transformed
-    // descendants in an ancestor's scrollable overflow — so without clipping the content
-    // spills out and flashes scrollbars. overflow:hidden turns it into a clean reveal.
-    // Only counter-scale sets this, and nothing else touches inline overflow, so
-    // restoring to '' (back to the CSS value) on finish/cancel is safe.
-    this.renderer.setStyle(el, { overflow: 'hidden' });
-    const restore = () => this.renderer.removeStyles(el, 'overflow');
-
-    const outerAnim = el.animate(outer, { duration: durationMs, easing: 'linear' });
-    outerAnim.onfinish = restore;
-    outerAnim.oncancel = restore;
-
-    content?.animate(inner, { duration: durationMs, easing: 'linear' });
   }
 }

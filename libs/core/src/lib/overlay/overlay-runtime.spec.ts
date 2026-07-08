@@ -71,6 +71,22 @@ describe('overlay runtime', () => {
     ref.close();
   });
 
+  it('anchors to a virtual element without mirroring its width', () => {
+    const virtualElement = {
+      getBoundingClientRect: () => new DOMRect(120, 80, 0, 0),
+    };
+
+    const ref = mount({
+      positionStrategy: { kind: 'anchored', referenceElement: virtualElement, mirrorWidth: true },
+    });
+
+    expect(ref.elements.paneElement.style.position).toBe('absolute');
+    // mirrorWidth requires a measurable HTMLElement; virtual references fall back to max-content
+    expect(ref.elements.paneElement.style.width).toBe('max-content');
+
+    ref.close();
+  });
+
   it('uses the animation delegate instead of the default enter/leave', async () => {
     const enter = vi.fn();
     const leave = vi.fn();

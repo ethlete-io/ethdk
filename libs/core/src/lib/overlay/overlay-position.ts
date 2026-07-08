@@ -1,5 +1,6 @@
 import { arrow, autoUpdate, computePosition, flip, hide, limitShift, offset, shift, size } from '@floating-ui/dom';
 import { AngularRenderer } from '../providers';
+import { isHTMLElement } from './overlay-focus';
 import { OverlayRuntimeRef } from './overlay-runtime-ref';
 import {
   OverlayRuntimeAnchoredPosition,
@@ -124,11 +125,15 @@ export const createAnchoredPositionCleanup = (
   overlayRef: OverlayRuntimeRef<object, unknown>,
   renderer: AngularRenderer,
 ) => {
+  // mirrorWidth needs a real element to measure; virtual references fall back to max-content
+  const mirrorWidthElement =
+    strategy.mirrorWidth && isHTMLElement(strategy.referenceElement) ? strategy.referenceElement : null;
+
   renderer.setStyle(paneElement, {
     position: 'absolute',
     top: '0',
     left: '0',
-    width: strategy.mirrorWidth ? `${strategy.referenceElement.offsetWidth}px` : 'max-content',
+    width: mirrorWidthElement ? `${mirrorWidthElement.offsetWidth}px` : 'max-content',
   });
 
   const cleanup = autoUpdate(strategy.referenceElement, paneElement, () => {
@@ -190,7 +195,7 @@ export const createAnchoredPositionCleanup = (
     }).then(({ x, y, placement, middlewareData }) => {
       renderer.setStyle(paneElement, {
         transform: `translate3d(${x}px, ${y}px, 0)`,
-        width: strategy.mirrorWidth ? `${strategy.referenceElement.offsetWidth}px` : null,
+        width: mirrorWidthElement ? `${mirrorWidthElement.offsetWidth}px` : null,
       });
       // exposed so animations can compose their transforms with the anchored position
       renderer.setCssProperties(paneElement, {

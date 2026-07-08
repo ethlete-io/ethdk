@@ -105,6 +105,11 @@ export const injectDeviceInputType = memoizeSignal(() => {
   });
 });
 
+/** Inject a signal that indicates if the user prefers reduced motion */
+export const injectPrefersReducedMotion = memoizeSignal(() =>
+  injectObserveMediaQuery('(prefers-reduced-motion: reduce)'),
+);
+
 /** Inject a signal containing a boolean value indicating if the user can hover (eg. using a mouse) */
 export const injectCanHover = memoizeSignal(() => injectObserveMediaQuery('(hover: hover)'));
 

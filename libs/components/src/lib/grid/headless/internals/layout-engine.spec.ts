@@ -74,7 +74,7 @@ describe('layout-engine', () => {
     it('should move items up when space is available', () => {
       const entries: GridLayoutEntry[] = [{ id: '1', position: { col: 0, row: 3, colSpan: 2, rowSpan: 1 } }];
 
-      const result = compactLayout(entries, 12);
+      const result = compactLayout({ entries, columns: 12 });
 
       expect(result[0]?.position.row).toBe(0);
     });
@@ -85,7 +85,7 @@ describe('layout-engine', () => {
         { id: '2', position: { col: 0, row: 5, colSpan: 2, rowSpan: 1 } },
       ];
 
-      const result = compactLayout(entries, 12);
+      const result = compactLayout({ entries, columns: 12 });
       const item2 = result.find((e) => e.id === '2');
 
       expect(item2?.position.row).toBe(2);
@@ -97,7 +97,7 @@ describe('layout-engine', () => {
         { id: '2', position: { col: 4, row: 5, colSpan: 4, rowSpan: 1 } },
       ];
 
-      const result = compactLayout(entries, 12);
+      const result = compactLayout({ entries, columns: 12 });
       const item2 = result.find((e) => e.id === '2');
 
       expect(item2?.position.row).toBe(0);
@@ -109,7 +109,7 @@ describe('layout-engine', () => {
         { id: 'opportunities', position: { col: 8, row: 2, colSpan: 4, rowSpan: 3 } },
       ];
 
-      const result = compactLayout(entries, 6);
+      const result = compactLayout({ entries, columns: 6 });
       const pos = result[0]?.position;
 
       expect(pos?.col).toBe(2);
@@ -126,7 +126,7 @@ describe('layout-engine', () => {
         { id: 'opportunities', position: { col: 8, row: 2, colSpan: 4, rowSpan: 3 } },
       ];
 
-      const result = compactLayout(entries, 6);
+      const result = compactLayout({ entries, columns: 6 });
 
       // No pair of items may overlap, and every item stays in bounds.
       for (const entry of result) {
@@ -137,6 +137,27 @@ describe('layout-engine', () => {
           expect(itemsCollide(entry.position, other.position)).toBe(false);
         }
       }
+    });
+
+    it('should not pull an item above its row floor', () => {
+      const entries: GridLayoutEntry[] = [
+        { id: '1', position: { col: 0, row: 1, colSpan: 2, rowSpan: 1 } },
+        { id: '2', position: { col: 0, row: 5, colSpan: 2, rowSpan: 1 } },
+      ];
+
+      const result = compactLayout({ entries, columns: 12, rowFloors: new Map([['1', 1]]) });
+
+      // Item 1 is floored at row 1; item 2 has no floor and stops right below it.
+      expect(result.find((e) => e.id === '1')?.position.row).toBe(1);
+      expect(result.find((e) => e.id === '2')?.position.row).toBe(2);
+    });
+
+    it('should still allow a floored item to return down to its floor after being pushed', () => {
+      const entries: GridLayoutEntry[] = [{ id: '1', position: { col: 0, row: 4, colSpan: 2, rowSpan: 1 } }];
+
+      const result = compactLayout({ entries, columns: 12, rowFloors: new Map([['1', 2]]) });
+
+      expect(result[0]?.position.row).toBe(2);
     });
   });
 

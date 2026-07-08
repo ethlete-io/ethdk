@@ -1,5 +1,5 @@
 import { Injector, Signal, StaticProvider, Type, ViewContainerRef } from '@angular/core';
-import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
+import { OffsetOptions, Padding, Placement, VirtualElement } from '@floating-ui/dom';
 import { AnimatedLifecycleDirective } from '../animations';
 
 export type OverlayRuntimeRole = 'dialog' | 'alertdialog';
@@ -26,7 +26,7 @@ export type OverlayRuntimeGlobalPosition = {
 
 export type OverlayRuntimeAnchoredPosition = {
   kind: 'anchored';
-  referenceElement: HTMLElement;
+  referenceElement: HTMLElement | VirtualElement;
   placement?: Placement;
   fallbackPlacements?: Placement[];
   offset?: OffsetOptions | null;

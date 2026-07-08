@@ -6,16 +6,31 @@ import { GridDirective } from './headless/grid.directive';
 import { GridItemConfig } from './headless/grid.types';
 
 class ResizeObserverMock {
-  observe() {
-    return;
+  static instances: ResizeObserverMock[] = [];
+
+  private targets = new Set<Element>();
+
+  constructor(private callback: ResizeObserverCallback) {
+    ResizeObserverMock.instances.push(this);
   }
 
-  unobserve() {
-    return;
+  observe(target: Element) {
+    this.targets.add(target);
+  }
+
+  unobserve(target: Element) {
+    this.targets.delete(target);
   }
 
   disconnect() {
-    return;
+    this.targets.clear();
+  }
+
+  emit() {
+    const entries = [...this.targets].map((target) => ({ target }) as ResizeObserverEntry);
+    if (entries.length > 0) {
+      this.callback(entries, this as unknown as ResizeObserver);
+    }
   }
 }
 
@@ -36,8 +51,17 @@ describe('GridComponent', () => {
 
   const getGrid = () => fixture.debugElement.query(By.directive(GridDirective)).injector.get(GridDirective);
 
+  const measureGrid = (width = 1216) => {
+    const gridEl = fixture.debugElement.query(By.directive(GridDirective)).nativeElement as HTMLElement;
+    Object.defineProperty(gridEl, 'clientWidth', { configurable: true, value: width });
+    TestBed.tick();
+    ResizeObserverMock.instances.forEach((instance) => instance.emit());
+    fixture.detectChanges();
+  };
+
   beforeEach(() => {
     originalResizeObserverDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'ResizeObserver');
+    ResizeObserverMock.instances = [];
 
     Object.defineProperty(globalThis, 'ResizeObserver', {
       configurable: true,
@@ -107,6 +131,7 @@ describe('GridComponent', () => {
   it('renders the ghost element when drag is active', () => {
     fixture.componentInstance.items = [{ id: 'a', type: 'test', version: 1, data: undefined, layout: {} }];
     fixture.detectChanges();
+    measureGrid();
 
     getGrid().beginDrag('a');
     fixture.detectChanges();

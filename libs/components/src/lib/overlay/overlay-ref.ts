@@ -1,5 +1,5 @@
 import { InjectionToken, TemplateRef, signal } from '@angular/core';
-import { OverlayRuntimeCloseSource, OverlayRuntimeRef } from '@ethlete/core';
+import { OverlayRuntimeCloseSource, OverlayRuntimePositionStrategy, OverlayRuntimeRef } from '@ethlete/core';
 import { Observable, Subject, take, tap } from 'rxjs';
 import { OverlayConfig } from './overlay-config';
 
@@ -28,6 +28,14 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
 
   const close = (result?: TResult) => {
     _runtimeRef?.close(result);
+  };
+
+  /**
+   * Re-applies positioning with a new strategy in place, without remounting the overlay.
+   * Note: a strategy-controller breakpoint switch will override this with its own strategy again.
+   */
+  const updatePositionStrategy = (strategy: OverlayRuntimePositionStrategy) => {
+    _runtimeRef?.updatePositionStrategy(strategy);
   };
 
   /** @internal Close the overlay while reporting how the close was initiated. */
@@ -107,6 +115,7 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
     componentInstance,
     close,
     closeVia,
+    updatePositionStrategy,
     attachComponentInstanceOverride,
     afterOpened,
     beforeClosed,

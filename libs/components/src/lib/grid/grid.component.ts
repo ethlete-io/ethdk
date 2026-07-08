@@ -1,51 +1,49 @@
 import { NgComponentOutlet } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  ElementRef,
-  inject,
-  viewChild,
-  ViewEncapsulation,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, ViewEncapsulation } from '@angular/core';
 import { injectLocale } from '@ethlete/core';
 import { GridItemDefaultActionsComponent } from './grid-item-default-actions.component';
 import { GridItemComponent } from './grid-item.component';
 import { injectGridConfig } from './headless/grid-config';
 import { GridDirective } from './headless/grid.directive';
+import { positionToPixelRect } from './headless/internals';
 
 @Component({
   selector: 'et-grid, [et-grid]',
   template: `
-    @for (entry of registeredItems(); track entry.item.id) {
-      <et-grid-item
-        [itemId]="entry.item.id"
-        [minColSpan]="entry.reg.constraints?.minColSpan ?? 1"
-        [maxColSpan]="entry.reg.constraints?.maxColSpan ?? 12"
-        [minRowSpan]="entry.reg.constraints?.minRowSpan ?? 1"
-        [maxRowSpan]="entry.reg.constraints?.maxRowSpan ?? 4"
-      >
-        <ng-container [ngComponentOutlet]="entry.reg.component" [ngComponentOutletInputs]="{ data: entry.item.data }" />
-        @if (actionsComponent()) {
-          <div etGridItemAction>
-            <ng-container
-              [ngComponentOutlet]="actionsComponent()!"
-              [ngComponentOutletInputs]="{ data: entry.item.data, itemId: entry.item.id }"
-            />
-          </div>
-        }
-      </et-grid-item>
+    @if (grid.isReady()) {
+      @for (entry of registeredItems(); track entry.item.id) {
+        <et-grid-item
+          [itemId]="entry.item.id"
+          [minColSpan]="entry.reg.constraints?.minColSpan ?? 1"
+          [maxColSpan]="entry.reg.constraints?.maxColSpan ?? 12"
+          [minRowSpan]="entry.reg.constraints?.minRowSpan ?? 1"
+          [maxRowSpan]="entry.reg.constraints?.maxRowSpan ?? 4"
+        >
+          <ng-container
+            [ngComponentOutlet]="entry.reg.component"
+            [ngComponentOutletInputs]="{ data: entry.item.data }"
+          />
+          @if (actionsComponent()) {
+            <div etGridItemAction>
+              <ng-container
+                [ngComponentOutlet]="actionsComponent()!"
+                [ngComponentOutletInputs]="{ data: entry.item.data, itemId: entry.item.id }"
+              />
+            </div>
+          }
+        </et-grid-item>
+      }
+      @if (ghostRect(); as ghost) {
+        <div
+          [style.translate]="ghost.x + 'px ' + ghost.y + 'px'"
+          [style.width.px]="ghost.width"
+          [style.height.px]="ghost.height"
+          [style.transition]="ghostTransition()"
+          class="et-grid-ghost"
+        ></div>
+      }
     }
     <ng-content />
-    @if (grid.ghostPosition(); as ghost) {
-      <div
-        #ghostRef
-        [style.grid-column]="ghost.col + 1 + ' / span ' + ghost.colSpan"
-        [style.grid-row]="ghost.row + 1 + ' / span ' + ghost.rowSpan"
-        class="et-grid-ghost"
-      ></div>
-    }
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -62,23 +60,8 @@ import { GridDirective } from './headless/grid.directive';
     role: 'region',
     '[class.et-grid--readonly]': 'grid.readOnly()',
     '[attr.aria-label]': 'ariaLabel()',
-    '[style.--_et-grid-columns]': 'gridColumns()',
-    '[style.--et-grid-gap]': 'gridGap()',
-    '[style.--et-grid-row-height]': 'gridRowHeight()',
   },
   styles: `
-    @property --et-grid-gap {
-      syntax: '<length>';
-      inherits: false;
-      initial-value: 16px;
-    }
-
-    @property --et-grid-row-height {
-      syntax: '<length>';
-      inherits: false;
-      initial-value: 100px;
-    }
-
     @property --et-grid-padding {
       syntax: '<length>';
       inherits: false;
@@ -86,10 +69,8 @@ import { GridDirective } from './headless/grid.directive';
     }
 
     .et-grid {
-      display: grid;
-      grid-template-columns: repeat(var(--_et-grid-columns, 12), 1fr);
-      grid-auto-rows: var(--et-grid-row-height);
-      gap: var(--et-grid-gap);
+      display: block;
+      box-sizing: border-box;
       padding: var(--et-grid-padding);
       position: relative;
       min-height: 0;
@@ -105,13 +86,15 @@ import { GridDirective } from './headless/grid.directive';
     }
 
     .et-grid-ghost {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
       border-radius: 8px;
       background: rgb(var(--et-surface-color, 23 23 23) / 0.08);
       border: 2px dashed rgb(var(--et-surface-color, 23 23 23) / 0.2);
+      box-sizing: border-box;
       pointer-events: none;
-      transition:
-        grid-column 0s,
-        grid-row 0s;
     }
 
     .et-grid--readonly {
@@ -138,7 +121,6 @@ export class GridComponent {
   public grid = inject(GridDirective);
   private gridConfig = injectGridConfig();
   private locale = injectLocale();
-  private ghostRef = viewChild<ElementRef<HTMLElement>>('ghostRef');
 
   protected actionsComponent = computed(() => {
     const configured = this.gridConfig.actionsComponent;
@@ -158,13 +140,14 @@ export class GridComponent {
     return this.gridConfig.transformer(label, this.locale.currentLocale());
   });
 
-  protected gridColumns = computed(() => this.grid.activeColumns());
-  protected gridGap = computed(() => `${this.grid.gap()}px`);
-  protected gridRowHeight = computed(() => `${this.grid.rowHeight()}px`);
+  protected ghostRect = computed(() => {
+    const position = this.grid.ghostPosition();
+    return position ? positionToPixelRect(position, this.grid.geometry()) : null;
+  });
 
-  constructor() {
-    effect(() => {
-      this.grid.setGhostElement(this.ghostRef()?.nativeElement ?? null);
-    });
-  }
+  protected ghostTransition = computed(() =>
+    this.grid.animationsEnabled()
+      ? 'translate 200ms cubic-bezier(0.2, 0, 0, 1), width 200ms cubic-bezier(0.2, 0, 0, 1), height 200ms cubic-bezier(0.2, 0, 0, 1)'
+      : 'none',
+  );
 }

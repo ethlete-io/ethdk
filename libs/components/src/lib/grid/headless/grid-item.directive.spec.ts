@@ -8,16 +8,31 @@ import { GridItemDirective } from './grid-item.directive';
 import { GridItemConfig } from './grid.types';
 
 class ResizeObserverMock {
-  observe() {
-    return;
+  static instances: ResizeObserverMock[] = [];
+
+  private targets = new Set<Element>();
+
+  constructor(private callback: ResizeObserverCallback) {
+    ResizeObserverMock.instances.push(this);
   }
 
-  unobserve() {
-    return;
+  observe(target: Element) {
+    this.targets.add(target);
+  }
+
+  unobserve(target: Element) {
+    this.targets.delete(target);
   }
 
   disconnect() {
-    return;
+    this.targets.clear();
+  }
+
+  emit() {
+    const entries = [...this.targets].map((target) => ({ target }) as ResizeObserverEntry);
+    if (entries.length > 0) {
+      this.callback(entries, this as unknown as ResizeObserver);
+    }
   }
 }
 
@@ -37,7 +52,7 @@ class ResizeObserverMock {
   `,
 })
 class TestHostComponent {
-  items: GridItemConfig[] = [{ id: 'item-1', type: 'test', version: 1, data: undefined, layout: {} }];
+  items: GridItemConfig[] = [{ id: 'item-1', type: 'test', data: undefined, layout: {} }];
   minColSpan = 2;
   maxColSpan = 6;
   minRowSpan = 1;
@@ -53,8 +68,17 @@ describe('GridItemDirective', () => {
 
   const getGridDirective = () => fixture.debugElement.query(By.directive(GridDirective)).injector.get(GridDirective);
 
+  const measureGrid = (width = 1216) => {
+    const gridEl = fixture.debugElement.query(By.directive(GridDirective)).nativeElement as HTMLElement;
+    Object.defineProperty(gridEl, 'clientWidth', { configurable: true, value: width });
+    TestBed.tick();
+    ResizeObserverMock.instances.forEach((instance) => instance.emit());
+    fixture.detectChanges();
+  };
+
   beforeEach(() => {
     originalResizeObserverDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'ResizeObserver');
+    ResizeObserverMock.instances = [];
 
     Object.defineProperty(globalThis, 'ResizeObserver', {
       configurable: true,
@@ -92,12 +116,8 @@ describe('GridItemDirective', () => {
     fixture.detectChanges();
 
     // Simulate what the registration effect does when minColSpan input changes:
-    // the effect calls registerItem with the new constraints.
-    const el = getItemDirective().hostElement.nativeElement;
-    getGridDirective().registerItem('item-1', {
-      el,
-      constraints: { minColSpan: 4, maxColSpan: 6, minRowSpan: 1, maxRowSpan: 3 },
-    });
+    // the effect calls registerConstraints with the new constraints.
+    getGridDirective().registerConstraints('item-1', { minColSpan: 4, maxColSpan: 6, minRowSpan: 1, maxRowSpan: 3 });
 
     expect(getGridDirective().getConstraints('item-1').minColSpan).toBe(4);
   });
@@ -122,13 +142,50 @@ describe('GridItemDirective', () => {
     expect(getItemDirective().isBeingDragged()).toBe(false);
   });
 
-  it('freezes renderPosition during drag so the dragged item stays in place visually', () => {
+  it('derives its slot rect from the layout position and grid geometry', () => {
     fixture.detectChanges();
-    const posBeforeDrag = getItemDirective().currentPosition();
-    getGridDirective().beginDrag('item-1');
+    measureGrid();
 
-    const renderPos = getItemDirective().renderPosition();
-    expect(renderPos?.col).toBe(posBeforeDrag?.col);
-    expect(renderPos?.row).toBe(posBeforeDrag?.row);
+    const item = getItemDirective();
+    const pos = item.currentPosition();
+    const geometry = getGridDirective().geometry();
+    const slot = item.slotRect();
+
+    expect(slot).not.toBeNull();
+    expect(slot?.x).toBeCloseTo(geometry.originX + pos!.col * geometry.strideX);
+    expect(slot?.y).toBeCloseTo(geometry.originY + pos!.row * geometry.strideY);
+    expect(item.renderedRect()).toEqual(slot);
+  });
+
+  it('follows direct control during a gesture and returns to its slot afterwards', () => {
+    fixture.detectChanges();
+    measureGrid();
+
+    const item = getItemDirective();
+    const slot = item.slotRect();
+
+    item.startDirectControl();
+    expect(item.renderMode()).toBe('direct');
+    expect(item.renderedRect()).toEqual(slot);
+
+    item.updateDirectRect({ x: 123, y: 45, width: 200, height: 100 });
+    expect(item.renderedRect()).toEqual({ x: 123, y: 45, width: 200, height: 100 });
+    // layout-driven slot is untouched by direct control
+    expect(item.slotRect()).toEqual(slot);
+
+    item.stopDirectControl();
+    expect(item.renderMode()).toBe('layout');
+    expect(item.renderedRect()).toEqual(item.slotRect());
+  });
+
+  it('ignores updateDirectRect while not direct-controlled', () => {
+    fixture.detectChanges();
+    measureGrid();
+
+    const item = getItemDirective();
+    const slot = item.slotRect();
+
+    item.updateDirectRect({ x: 999, y: 999, width: 10, height: 10 });
+    expect(item.renderedRect()).toEqual(slot);
   });
 });

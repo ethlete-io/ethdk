@@ -1,0 +1,35 @@
+.et-menu-item {
+  .et-menu-item-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+
+    &:not(:has(*)) {
+      display: none;
+    }
+
+    svg {
+      inline-size: var(--et-menu-item-icon-size);
+      block-size: var(--et-menu-item-icon-size);
+    }
+  }
+
+  .et-menu-item-content {
+    flex: 1;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .et-menu-item-trailing {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+
+    &:not(:has(*)) {
+      display: none;
+    }
+  }
+}

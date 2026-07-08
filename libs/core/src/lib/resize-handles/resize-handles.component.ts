@@ -20,8 +20,11 @@ export type ResizeEdge = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
 
 export type ResizeMoveEvent = {
   edge: ResizeEdge;
+  /** Cumulative delta from the pointerdown position. */
   dx: number;
   dy: number;
+  clientX: number;
+  clientY: number;
 };
 
 const EDGE_CURSORS: Record<ResizeEdge, string> = {
@@ -57,7 +60,12 @@ const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge): Obse
     of<GestureEvent>({ type: 'start', edge }),
     fromEvent<PointerEvent>(document, 'pointermove').pipe(
       filter((e) => e.pointerId === pointerId),
-      map((e): GestureEvent => ({ type: 'move', data: { edge, dx: e.clientX - startX, dy: e.clientY - startY } })),
+      map(
+        (e): GestureEvent => ({
+          type: 'move',
+          data: { edge, dx: e.clientX - startX, dy: e.clientY - startY, clientX: e.clientX, clientY: e.clientY },
+        }),
+      ),
       takeUntil(end$),
     ),
     of<GestureEvent>({ type: 'end' }),

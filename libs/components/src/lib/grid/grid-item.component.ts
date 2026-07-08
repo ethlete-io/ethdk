@@ -1,14 +1,12 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
   ViewEncapsulation,
   computed,
   effect,
   inject,
   input,
   output,
-  viewChild,
 } from '@angular/core';
 import {
   ProvideSurfaceDirective,
@@ -25,7 +23,7 @@ import { GRID_TOKEN } from './headless/grid.tokens';
 @Component({
   selector: 'et-grid-item, [et-grid-item]',
   template: `
-    <div #itemContent (pointerdown)="blockPointerDownWhenReadOnly($event)" class="et-grid-item__content">
+    <div (pointerdown)="blockPointerDownWhenReadOnly($event)" class="et-grid-item__content">
       <ng-content />
     </div>
 
@@ -65,23 +63,37 @@ import { GRID_TOKEN } from './headless/grid.tokens';
   },
   styles: `
     .et-grid-item {
-      position: relative;
+      position: absolute;
+      top: 0;
+      left: 0;
+      box-sizing: border-box;
       display: flex;
       flex-direction: column;
       outline: none;
-      will-change: transform;
+      will-change: translate;
       border-radius: var(--et-grid-item-radius, 0);
       background: var(--et-grid-item-bg, var(--et-surface-background-solid));
 
-      &:is(.et-grid-item--dragging) {
+      &:is(.et-grid-item--dragging, .et-grid-item--resizing, .et-grid-item--direct, .et-grid-item--settling) {
         z-index: 100;
+      }
+
+      &:is(.et-grid-item--dragging) {
         cursor: grabbing;
         user-select: none;
       }
 
       &:is(.et-grid-item--resizing) {
-        z-index: 100;
         user-select: none;
+      }
+
+      &:is(.et-grid-item--entering, .et-grid-item--leaving) {
+        scale: 0.9;
+        opacity: 0;
+      }
+
+      &:is(.et-grid-item--leaving) {
+        pointer-events: none;
       }
     }
 
@@ -216,8 +228,6 @@ export class GridItemComponent {
 
   public removed = output<void>();
 
-  private itemContent = viewChild<ElementRef<HTMLElement>>('itemContent');
-
   protected isReadOnly = computed(() => this.grid.readOnly());
   private resolvedSurface = computed(() => {
     const themes = this.surfaceThemes;
@@ -233,13 +243,6 @@ export class GridItemComponent {
         this.provideSurface.forceSurface(surface.name);
       } else {
         this.provideSurface.clearForcedSurface();
-      }
-    });
-
-    effect(() => {
-      const el = this.itemContent()?.nativeElement;
-      if (el) {
-        this.grid.registerContentElement(this.gridItem.itemId(), el);
       }
     });
   }
@@ -287,8 +290,6 @@ export class GridItemComponent {
     if (event.shiftKey) {
       let handled = true;
 
-      this.grid.snapshotRects();
-
       switch (event.key) {
         case 'ArrowRight':
           this.grid.resizeItem({ id: this.gridItem.itemId(), newColSpan: pos.colSpan + 1, newRowSpan: pos.rowSpan });
@@ -307,14 +308,8 @@ export class GridItemComponent {
       }
 
       if (handled) {
-        // Discrete keyboard step: animate the neighbours (translate-only) and commit
-        // so the resize base doesn't carry over into the next keypress or gesture.
-        this.grid.animateLayoutTransition({ excludeIds: new Set([this.gridItem.itemId()]) });
-        this.grid.commitResize();
         event.preventDefault();
         event.stopPropagation();
-      } else {
-        this.grid.commitResize();
       }
     }
 

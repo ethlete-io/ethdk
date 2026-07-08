@@ -192,7 +192,9 @@ export const [provideOverlayRuntime, injectOverlayRuntime] = createRootProvider(
 
       let currentPositionStrategy = config.positionStrategy;
       const getOriginElement = () =>
-        currentPositionStrategy?.kind === 'anchored' ? currentPositionStrategy.referenceElement : null;
+        currentPositionStrategy?.kind === 'anchored' && isHTMLElement(currentPositionStrategy.referenceElement)
+          ? currentPositionStrategy.referenceElement
+          : null;
 
       overlayRef.attachPositionUpdater((strategy) => {
         currentPositionStrategy = strategy;

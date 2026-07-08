@@ -21,16 +21,25 @@ import {
 
 import { applyHostListener } from '../utils/angular/host-listener';
 
+export type DragStartEvent = {
+  /** Pointer position at pointerdown — NOT at commit-threshold crossing. */
+  readonly clientX: number;
+  readonly clientY: number;
+};
+
 export type DragMoveEvent = {
   readonly stepX: number;
   readonly stepY: number;
   readonly clientX: number;
   readonly clientY: number;
+  /** Cumulative delta from the pointerdown position. */
+  readonly totalDx: number;
+  readonly totalDy: number;
 };
 
 type DragGestureEvent =
   | { readonly type: 'tapped' }
-  | { readonly type: 'start' }
+  | { readonly type: 'start'; readonly data: DragStartEvent }
   | { readonly type: 'move'; readonly data: DragMoveEvent }
   | { readonly type: 'end' };
 
@@ -64,14 +73,38 @@ const setupDragObservable = (
         el.setPointerCapture(pointerId);
         lastX = e.clientX;
         lastY = e.clientY;
-        return of({ type: 'start' as const });
+        // Emit the catch-up move together with start so consumers snap to the pointer
+        // at commit instead of trailing it by the threshold distance until the next move.
+        const start: DragGestureEvent = { type: 'start', data: { clientX: startX, clientY: startY } };
+        const catchUpMove: DragGestureEvent = {
+          type: 'move',
+          data: {
+            stepX: e.clientX - startX,
+            stepY: e.clientY - startY,
+            clientX: e.clientX,
+            clientY: e.clientY,
+            totalDx: e.clientX - startX,
+            totalDy: e.clientY - startY,
+          },
+        };
+        return of(start, catchUpMove);
       }
 
       const stepX = e.clientX - lastX;
       const stepY = e.clientY - lastY;
       lastX = e.clientX;
       lastY = e.clientY;
-      return of({ type: 'move' as const, data: { stepX, stepY, clientX: e.clientX, clientY: e.clientY } });
+      return of({
+        type: 'move' as const,
+        data: {
+          stepX,
+          stepY,
+          clientX: e.clientX,
+          clientY: e.clientY,
+          totalDx: e.clientX - startX,
+          totalDy: e.clientY - startY,
+        },
+      });
     }),
     takeUntil(end$),
   );
@@ -106,10 +139,10 @@ export class DragHandleDirective {
     ),
   );
 
-  dragStarted = outputFromObservable<void>(
+  dragStarted = outputFromObservable<DragStartEvent>(
     this.gesture$.pipe(
-      filter((e) => e.type === 'start'),
-      map(() => undefined),
+      filter((e): e is Extract<DragGestureEvent, { type: 'start' }> => e.type === 'start'),
+      map((e) => e.data),
     ),
   );
 
