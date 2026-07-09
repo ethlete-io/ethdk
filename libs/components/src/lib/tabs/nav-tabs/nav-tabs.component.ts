@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject, input } from '@angular/core';
+import { Component, ViewEncapsulation, inject, input } from '@angular/core';
 import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
 import { SCROLLABLE_IMPORTS } from '../../scrollable/scrollable.imports';
 import { TabBarDirective } from '../headless/tab-bar.directive';
@@ -22,7 +22,6 @@ import { NavTabsDirective } from './headless/nav-tabs.directive';
     </et-scrollable>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [SCROLLABLE_IMPORTS],
   hostDirectives: [
     {

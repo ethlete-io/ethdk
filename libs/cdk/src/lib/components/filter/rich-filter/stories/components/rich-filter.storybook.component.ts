@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { RichFilterImports } from '../../rich-filter.imports';
 
 @Component({
@@ -35,7 +35,6 @@ import { RichFilterImports } from '../../rich-filter.imports';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RichFilterImports],
 })
 export class RichFilterStorybookComponent {

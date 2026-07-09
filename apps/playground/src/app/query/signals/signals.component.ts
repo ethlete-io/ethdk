@@ -1,5 +1,5 @@
 import { JsonPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, Injector, ViewEncapsulation } from '@angular/core';
+import { Component, inject, Injector, ViewEncapsulation } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import {
@@ -46,7 +46,6 @@ const legacyGetPosts = createLegacyQueryCreator({ creator: getPosts });
 @Component({
   selector: 'ethlete-query-signals',
   templateUrl: './signals.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [ReactiveFormsModule, QueryDirective, JsonPipe],
 })

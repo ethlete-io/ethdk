@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { PictureImports } from '../../picture.imports';
 
 @Component({
@@ -6,7 +6,6 @@ import { PictureImports } from '../../picture.imports';
   template: `<div class="mb-4 flex justify-center px-14">
     <et-picture [alt]="alt" [defaultSrc]="defaultSrc" [width]="width" [height]="height" [hasPriority]="hasPriority" />
   </div>`,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [PictureImports],
 })

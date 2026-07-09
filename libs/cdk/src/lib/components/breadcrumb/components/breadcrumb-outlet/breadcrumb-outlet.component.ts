@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { injectBreadcrumbManager } from '../../providers/breadcrumb-manager.provider';
 
 @Component({
@@ -11,7 +11,6 @@ import { injectBreadcrumbManager } from '../../providers/breadcrumb-manager.prov
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'et-breadcrumb-outlet',
   },

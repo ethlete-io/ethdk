@@ -26,8 +26,9 @@ const plugin = require('../index');
  *   `ethlete` so all referenced rules are resolvable.
  *
  * @param {string} code
+ * @param {Record<string, unknown>} [settings] optional shared settings (e.g. `{ ethlete: { angularMajor: 21 } }`)
  */
-const lint = (code) => {
+const lint = (code, settings) => {
   const linter = new Linter({ configType: 'flat' });
   return linter.verify(
     code,
@@ -44,6 +45,7 @@ const lint = (code) => {
           ecmaVersion: 2022,
           sourceType: 'module',
         },
+        ...(settings ? { settings } : {}),
       },
     ],
     { filename: 'test.ts' },
@@ -332,18 +334,44 @@ test('no-restricted-syntax: ngOnInit lifecycle hook is not flagged as on-prefixe
 
 // ── ethlete/require-on-push-change-detection ─────────────────────────────────
 
-test('prefer-on-push: component without OnPush is flagged', () => {
-  const msgs = lint(`
+test('require-on-push: on Angular <= 21, component without OnPush is flagged', () => {
+  const msgs = lint(
+    `
+import { Component } from '@angular/core';
 @Component({ selector: 'my-cmp', template: '' })
-class MyCmp {}`);
+class MyCmp {}`,
+    { ethlete: { angularMajor: 21 } },
+  );
   expect(ruleIds(msgs)).toContain('ethlete/require-on-push-change-detection');
 });
 
-test('prefer-on-push: component with OnPush is valid', () => {
-  const msgs = lint(`
-@Component({ selector: 'my-cmp', template: '', changeDetection: ChangeDetectionStrategy.OnPush, encapsulation: ViewEncapsulation.None })
-class MyCmp {}`);
+test('require-on-push: on Angular 22+, missing OnPush is NOT required', () => {
+  const msgs = lint(
+    `
+import { Component } from '@angular/core';
+@Component({ selector: 'my-cmp', template: '' })
+class MyCmp {}`,
+    { ethlete: { angularMajor: 22 } },
+  );
   expect(ruleIds(msgs)).not.toContain('ethlete/require-on-push-change-detection');
+});
+
+// ── ethlete/no-redundant-on-push-change-detection ────────────────────────────
+
+test('no-redundant-on-push: explicit OnPush is flagged', () => {
+  const msgs = lint(`
+import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+@Component({ selector: 'my-cmp', template: '', encapsulation: ViewEncapsulation.None, changeDetection: ChangeDetectionStrategy.OnPush })
+class MyCmp {}`);
+  expect(ruleIds(msgs)).toContain('ethlete/no-redundant-on-push-change-detection');
+});
+
+test('no-redundant-on-push: component without OnPush is valid', () => {
+  const msgs = lint(`
+import { Component, ViewEncapsulation } from '@angular/core';
+@Component({ selector: 'my-cmp', template: '', encapsulation: ViewEncapsulation.None })
+class MyCmp {}`);
+  expect(ruleIds(msgs)).not.toContain('ethlete/no-redundant-on-push-change-detection');
 });
 
 // ── ethlete/require-view-encapsulation-none ────────────────────────────────────

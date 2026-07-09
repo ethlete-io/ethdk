@@ -1,12 +1,4 @@
-import {
-  afterNextRender,
-  ChangeDetectionStrategy,
-  Component,
-  DOCUMENT,
-  ElementRef,
-  inject,
-  ViewEncapsulation,
-} from '@angular/core';
+import { afterNextRender, Component, DOCUMENT, ElementRef, inject, ViewEncapsulation } from '@angular/core';
 import {
   provideColorThemesWithTailwind4,
   ProvideSurfaceDirective,
@@ -117,7 +109,6 @@ const customViewports = {
   selector: 'ethlete-sb-root',
   template: '<ng-content />',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [ProvideSurfaceDirective],
   host: {
     style: 'display: contents',

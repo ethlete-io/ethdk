@@ -1,5 +1,5 @@
 import { OverlayModule } from '@angular/cdk/overlay';
-import { ChangeDetectionStrategy, Component, viewChild, ViewEncapsulation } from '@angular/core';
+import { Component, viewChild, ViewEncapsulation } from '@angular/core';
 import { AnimatedOverlayDirective } from '@ethlete/core';
 import { Placement } from '@floating-ui/dom';
 import { ToggletipDirective } from '../../directives/toggletip';
@@ -72,7 +72,6 @@ import { ToggletipCloseDirective } from '../../partials/toggletip-close';
   ],
   imports: [ToggletipDirective, OverlayModule, ToggletipCloseDirective],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ToggletipStorybookComponent {
   showTooltip = true;

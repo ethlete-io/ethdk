@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Injector, ViewEncapsulation, inject, input, signal } from '@angular/core';
+import { Component, Injector, ViewEncapsulation, inject, input, signal } from '@angular/core';
 import {
   ArchTestAccordionComponent,
   ArchTestAccordionItemComponent,
@@ -9,7 +9,6 @@ import {
   selector: 'ethlete-overlay-test-component',
   template: `<p>Test</p>
     <p>{{ foo() }}</p> `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [],
   hostDirectives: [],
@@ -64,7 +63,6 @@ export class TestCompComponent {
       overlay component custom
     </button>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [ArchTestAccordionComponent, ArchTestAccordionItemComponent, ArchTestOverlayTriggerDirective],
   hostDirectives: [],

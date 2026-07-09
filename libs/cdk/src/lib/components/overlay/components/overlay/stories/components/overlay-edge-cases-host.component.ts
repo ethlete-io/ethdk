@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, signal, ViewEncapsulation } from '@angular/core';
+import { Component, effect, signal, ViewEncapsulation } from '@angular/core';
 import { injectOverlayManager } from '../../overlay-manager';
 import { dialogOverlayStrategy } from '../../strategies';
 import { OverlaySimpleContentComponent } from './overlay-shared-content.component';
@@ -59,7 +59,6 @@ import { STORY_HOST_STYLES } from './story-styles';
       }
     `,
   ],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })
 export class OpenFromEffectHostComponent {

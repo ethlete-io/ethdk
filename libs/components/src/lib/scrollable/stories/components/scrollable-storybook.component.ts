@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, signal, viewChild } from '@angular/core';
+import { Component, ViewEncapsulation, input, signal, viewChild } from '@angular/core';
 import { BUTTON_IMPORTS } from '../../../button';
 import {
   ScrollableButtonPosition,
@@ -70,7 +70,6 @@ const SCROLLABLE_ITEMS = Array.from({ length: 7 }, (_, i) => ({
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [SCROLLABLE_IMPORTS, ScrollableActiveChildDirective, BUTTON_IMPORTS],
   styles: `
     .et-sb-scrollable-item {

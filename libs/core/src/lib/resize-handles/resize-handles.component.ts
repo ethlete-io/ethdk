@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, booleanAttribute, input } from '@angular/core';
+import { Component, ViewEncapsulation, booleanAttribute, input } from '@angular/core';
 import { outputFromObservable, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   Observable,
@@ -83,7 +83,6 @@ const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge): Obse
       ></div>
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   styles: `
     @property --et-resize-handles-z-index {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
+import { Component, ViewEncapsulation, input } from '@angular/core';
 import { SpinnerComponent } from '../../spinner.component';
 
 @Component({
@@ -22,7 +22,6 @@ import { SpinnerComponent } from '../../spinner.component';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [SpinnerComponent],
 })
 export class SpinnerStorybookComponent {

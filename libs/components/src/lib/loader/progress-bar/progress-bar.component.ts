@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ViewEncapsulation,
-  booleanAttribute,
-  computed,
-  input,
-  numberAttribute,
-} from '@angular/core';
+import { Component, ViewEncapsulation, booleanAttribute, computed, input, numberAttribute } from '@angular/core';
 
 @Component({
   selector: 'et-progress-bar',
@@ -25,7 +17,6 @@ import {
   `,
   styleUrl: './progress-bar.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'et-progress-bar',
     '[class.et-progress-bar--indeterminate]': 'indeterminate()',

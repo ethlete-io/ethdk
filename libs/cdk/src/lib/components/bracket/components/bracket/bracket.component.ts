@@ -1,15 +1,6 @@
 import { ComponentPortal, ComponentType, PortalModule } from '@angular/cdk/portal';
 import { AsyncPipe } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  Injector,
-  Input,
-  TrackByFunction,
-  ViewEncapsulation,
-  inject,
-} from '@angular/core';
+import { Component, ElementRef, Injector, Input, TrackByFunction, ViewEncapsulation, inject } from '@angular/core';
 import { RoundStageStructureWithMatchesView } from '@ethlete/types';
 import { BehaviorSubject, map } from 'rxjs';
 import { BRACKET_CONFIG_TOKEN, BRACKET_MATCH_ID_TOKEN, BRACKET_ROUND_ID_TOKEN, BRACKET_TOKEN } from '../../constants';
@@ -23,7 +14,6 @@ import { Memo } from './memo.decorator';
   templateUrl: './bracket.component.html',
   styleUrls: ['./bracket.component.scss'],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PortalModule, AsyncPipe],
   host: {
     class: 'et-bracket',

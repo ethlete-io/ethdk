@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  Signal,
-  ViewEncapsulation,
-  computed,
-  contentChild,
-  inject,
-} from '@angular/core';
+import { Component, Signal, ViewEncapsulation, computed, contentChild, inject } from '@angular/core';
 import { IntersectionObserverEntryWithDetails, signalHostClasses } from '@ethlete/core';
 import { RICH_FILTER_BUTTON_TOKEN } from '../../directives/rich-filter-button';
 import { RICH_FILTER_BUTTON_SLOT_TOKEN } from '../../directives/rich-filter-button-slot';
@@ -29,7 +21,6 @@ export const signalVisibilityChangeClasses = (cfg: {
   styleUrls: ['./rich-filter-host.component.scss'],
   template: '<ng-content />',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'et-rich-filter-host',
   },

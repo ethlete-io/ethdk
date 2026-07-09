@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, InjectionToken, ViewEncapsulation } from '@angular/core';
+import { Component, inject, InjectionToken, ViewEncapsulation } from '@angular/core';
 import { FormFieldStateService } from '../../../../services';
 
 export const LABEL_TOKEN = new InjectionToken<LabelComponent>('ET_LABEL_COMPONENT_TOKEN');
@@ -20,7 +20,6 @@ let nextUniqueId = 0;
     <ng-content select="[etLabelSuffix]" />
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   exportAs: 'etLabel',
   imports: [AsyncPipe],
   providers: [{ provide: LABEL_TOKEN, useExisting: LabelComponent }],

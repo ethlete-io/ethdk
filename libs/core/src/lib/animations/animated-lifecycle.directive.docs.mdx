@@ -18,7 +18,6 @@ import { AnimatedLifecycleDirective } from '@ethlete/core';
 
 @Component({
   selector: 'app-modal',
-  standalone: true,
   imports: [AnimatedLifecycleDirective],
   template: `
     <div #lifecycle="etAnimatedLifecycle" [class.open]="isOpen()" etAnimatedLifecycle>

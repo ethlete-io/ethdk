@@ -28,7 +28,6 @@ Note that this is **not an exhaustive list**, and you should refer to the full d
 
 ### Angular Practices
 
-- **Change Detection**: Always use [`OnPush`](#components-directives-services--pipes-and-other-angular-specific-rules) strategy
 - **Encapsulation**: Always use [`ViewEncapsulation.None`](#components)
 - **Dependency Injection**: Use [`inject()`](#inject) instead of constructor injection
 - **Lifecycle**: Avoid [legacy lifecycle hooks](#components-directives-services--pipes-and-other-angular-specific-rules), use signals and effects
@@ -653,7 +652,6 @@ export class MyComponent {
 
 ### Components
 
-- Always use `ChangeDetectionStrategy.OnPush` for better performance.
 - Always use `ViewEncapsulation.None` for consistency.
 - Stick to inline templates and styles for smaller components.
 - Use external `.component.html` and `.component.css/scss` files for more complex components.

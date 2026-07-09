@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject, model } from '@angular/core';
+import { Component, ViewEncapsulation, inject, model } from '@angular/core';
 import { Router } from '@angular/router';
 import { injectQueryParam } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../../../button';
@@ -34,7 +34,6 @@ import { dialogOverlayStrategy } from '../../strategies';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     BUTTON_IMPORTS,
     OverlayHeaderDirective,
@@ -91,7 +90,6 @@ const openQueryParamOverlay = createOverlayHandlerWithQueryParamLifecycle<QueryP
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [BUTTON_IMPORTS, OverlayHandlerLinkDirective],
   styles: `
     .et-sb-qp-panel {

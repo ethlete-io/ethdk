@@ -68,11 +68,9 @@ You can also provide custom default components for parts of the combobox using t
 ```ts
 @Component({
   selector: 'show-body-more-items-hint-template',
-
   imports: [],
   template: `<p>More items available via search</p>`,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ShowBodyMoreItemsHintTemplateComponent {}
 ```
@@ -80,7 +78,6 @@ export class ShowBodyMoreItemsHintTemplateComponent {}
 ```ts
 @Component({
   selector: 'example-with-hint',
-
   imports: [ShowBodyMoreItemsHintTemplateComponent],
   template: `
     <et-select-field [formControl]="fg">
@@ -95,7 +92,6 @@ export class ShowBodyMoreItemsHintTemplateComponent {}
     </et-select-field>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExampleWithHintComponent {
   showBodyMoreItemsHint = ShowBodyMoreItemsHintTemplateComponent;
@@ -107,7 +103,6 @@ export class ExampleWithHintComponent {
 ```ts
 @Component({
   selector: 'option',
-
   imports: [PictureComponent],
   template:
   `
@@ -122,7 +117,6 @@ export class ExampleWithHintComponent {
   }
   `
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OptionTemplateComponent {
   option = input.required<UserView>();
@@ -136,7 +130,6 @@ The input must be named `option`.
 ```ts
 @Component({
   selector: 'example-with-custom-option',
-
   imports: [OptionTemplateComponent],
   template: `
     <et-select-field [formControl]="fg">
@@ -151,7 +144,6 @@ The input must be named `option`.
     </et-select-field>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExampleWithCustomOptionComponent {
   optionTemplateComponent = OptionTemplateComponent;
@@ -234,7 +226,6 @@ Use to filter static options. If you are recieving options from an API, `filterI
 ```ts
 @Component({
   selector: 'example',
-
   imports: [],
   template: `
     <et-select-field [formControl]="fg">
@@ -244,7 +235,6 @@ Use to filter static options. If you are recieving options from an API, `filterI
     </et-select-field>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExampleComponent {
   options = [
@@ -294,7 +284,6 @@ Emits typed in value.
 ```ts
 @Component({
   selector: 'example',
-
   imports: [],
   template: `
     <et-select-field [formControl]="fg">
@@ -309,7 +298,6 @@ Emits typed in value.
     </et-select-field>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExampleWithCustomOptionComponent {
   logFilterInputValue(event: string) {

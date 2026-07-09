@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, forwardRef, inject, Type, ViewEncapsulation } from '@angular/core';
+import { Component, forwardRef, inject, Type, ViewEncapsulation } from '@angular/core';
 import { DynamicFormFieldDirective } from '../../../../directives/dynamic-form-field';
 import { StaticFormFieldDirective } from '../../../../directives/static-form-field';
 import { WriteableInputDirective } from '../../../../directives/writeable-input';
@@ -17,7 +17,6 @@ import { CheckboxFieldDirective } from '../../directives/checkbox-field';
     <et-error [errors]="inputState.errors$ | async" />
   `,
   styleUrls: ['./checkbox-field.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-form-field et-checkbox-field',

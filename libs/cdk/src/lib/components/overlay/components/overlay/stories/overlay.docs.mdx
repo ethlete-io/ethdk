@@ -348,7 +348,6 @@ Dont forget to add the `OverlayRouterService` and `SidebarOverlayService` to the
     <et-overlay-router-outlet />
   `,
 
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [OverlayWithSidebarImports],
   providers: [OverlayRouterService, SidebarOverlayService],
@@ -397,8 +396,6 @@ Dont forget to add the `OverlayRouterService` and `FilterOverlayService` to the 
 @Component({
   selector: 'et-sb-new-overlay-with-filtering',
   template: `...`,
-
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   providers: [OverlayRouterService, FilterOverlayService],
 })

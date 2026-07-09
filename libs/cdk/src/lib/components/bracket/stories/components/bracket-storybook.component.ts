@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { RoundStageStructureWithMatchesView } from '@ethlete/types';
 import { ScrollableImports } from '../../../scrollable/scrollable.imports';
 import { BracketComponent } from '../../components/bracket';
@@ -39,7 +39,6 @@ import { BracketComponent } from '../../components/bracket';
     `,
   ],
   imports: [BracketComponent, ScrollableImports],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })
 export class StorybookBracketComponent {

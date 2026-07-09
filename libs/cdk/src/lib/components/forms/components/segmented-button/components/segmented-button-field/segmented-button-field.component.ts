@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { StaticFormFieldDirective } from '../../../../directives/static-form-field';
 import { SegmentedButtonFieldDirective } from '../../directives/segmented-button-field';
 
@@ -10,7 +10,6 @@ import { SegmentedButtonFieldDirective } from '../../directives/segmented-button
     </div>
   `,
   styleUrls: ['./segmented-button-field.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-form-field et-segmented-button-field',

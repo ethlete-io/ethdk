@@ -20,7 +20,6 @@ import { AnimatedIfDirective, AnimatedLifecycleDirective } from '@ethlete/core';
 
 @Component({
   selector: 'app-modal',
-  standalone: true,
   imports: [AnimatedIfDirective, AnimatedLifecycleDirective],
   template: `
     <button (click)="isOpen.set(!isOpen())">Toggle</button>

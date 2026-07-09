@@ -3,6 +3,49 @@
 
 const COMPONENT_ORDER = ['selector', 'template', 'styleUrl', 'encapsulation', 'changeDetection'];
 
+// OnPush became the default change detection strategy in Angular 22, so from
+// v22 onward it must NOT be declared (see no-redundant-on-push-change-detection).
+// This rule therefore only applies to older Angular, where OnPush is opt-in.
+const MAX_MAJOR = 21;
+
+/** @type {number | null | undefined} */
+let cachedAngularMajor;
+
+/**
+ * Detect the workspace's installed Angular major version. Cached across files.
+ *
+ * @returns {number | null} major version, or null when it cannot be determined
+ */
+const detectAngularMajor = () => {
+  if (cachedAngularMajor !== undefined) return cachedAngularMajor;
+
+  try {
+    const pkg = require('@angular/core/package.json');
+    const major = Number.parseInt(String(pkg.version).split('.')[0], 10);
+    cachedAngularMajor = Number.isNaN(major) ? null : major;
+  } catch {
+    cachedAngularMajor = null;
+  }
+
+  return cachedAngularMajor;
+};
+
+/**
+ * Resolve the Angular major version to gate on. An explicit
+ * `settings.ethlete.angularMajor` wins over auto-detection — handy for
+ * pinning behaviour and for tests.
+ *
+ * @param {import('eslint').Rule.RuleContext} context
+ * @returns {number | null}
+ */
+const getAngularMajor = (context) => {
+  const settings = /** @type {any} */ (context.settings);
+  const override = settings?.ethlete?.angularMajor;
+  if (typeof override === 'number') return override;
+
+  return detectAngularMajor();
+};
+
 /**
  * @param {import('estree').Property['key']} key
  */
@@ -204,6 +247,12 @@ const requireOnPushChangeDetection = {
     schema: [],
   },
   create(context) {
+    // Only enforce on Angular <= 21, where OnPush is opt-in. On v22+ (or when
+    // the version is unknown — this workspace targets modern Angular) stay
+    // silent so no-redundant-on-push-change-detection owns the metadata.
+    const angularMajor = getAngularMajor(context);
+    if (angularMajor === null || angularMajor > MAX_MAJOR) return {};
+
     const sourceCode = context.sourceCode;
 
     /**

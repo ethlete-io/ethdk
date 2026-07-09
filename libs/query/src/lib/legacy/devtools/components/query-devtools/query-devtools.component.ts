@@ -1,6 +1,5 @@
 import { AsyncPipe, JsonPipe, NgClass } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   TrackByFunction,
@@ -30,7 +29,6 @@ type QueryViewMode = 'query' | 'authProvider';
   selector: 'et-query-devtools',
   templateUrl: './query-devtools.component.html',
   styleUrls: ['./query-devtools.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.ShadowDom,
   host: {
     class: 'et-query-devtools',

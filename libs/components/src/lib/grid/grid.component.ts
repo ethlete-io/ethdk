@@ -1,5 +1,5 @@
 import { NgComponentOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, ViewEncapsulation } from '@angular/core';
+import { Component, computed, inject, ViewEncapsulation } from '@angular/core';
 import { injectLocale } from '@ethlete/core';
 import { GridItemDefaultActionsComponent } from './grid-item-default-actions.component';
 import { GridItemComponent } from './grid-item.component';
@@ -46,7 +46,6 @@ import { positionToPixelRect } from './headless/internals';
     <ng-content />
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [GridItemComponent, NgComponentOutlet],
   hostDirectives: [
     {

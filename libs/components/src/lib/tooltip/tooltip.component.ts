@@ -1,15 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  TemplateRef,
-  ViewEncapsulation,
-  computed,
-  effect,
-  inject,
-  input,
-  untracked,
-} from '@angular/core';
+import { Component, TemplateRef, ViewEncapsulation, computed, effect, inject, input, untracked } from '@angular/core';
 import {
   COLOR_PROVIDER,
   ProvideColorDirective,
@@ -26,7 +16,6 @@ import { TooltipContent } from './headless/tooltip.directive';
   templateUrl: './tooltip.component.html',
   styleUrl: './tooltip.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NgTemplateOutlet],
   hostDirectives: [ProvideColorDirective, ProvideSurfaceDirective],
   host: {

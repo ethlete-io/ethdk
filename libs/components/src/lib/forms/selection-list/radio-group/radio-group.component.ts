@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, ElementRef, viewChild, ViewEncapsulation } from '@angular/core';
+import { Component, effect, ElementRef, viewChild, ViewEncapsulation } from '@angular/core';
 import { AnimatableDirective, createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
 import { FormErrorComponent } from '../../form-field/form-error.component';
 import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../../form-field/headless';
@@ -9,7 +9,6 @@ import { SelectionListDirective } from '../../selection-list/headless';
   templateUrl: './radio-group.component.html',
   styleUrl: './radio-group.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AnimatableDirective, FormErrorComponent, ProvideColorDirective],
   providers: [provideFormSupport()],
   hostDirectives: [

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject } from '@angular/core';
+import { Component, ViewEncapsulation, computed, inject } from '@angular/core';
 import {
   ProvideSurfaceDirective,
   SURFACE_PROVIDER,
@@ -25,7 +25,6 @@ import { injectStreamConsentConfig } from './stream-consent-config';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [StreamConsentAcceptDirective, ButtonComponent, IconDirective, ProvideSurfaceDirective],
   providers: [provideIcons(LOCK_ICON)],
   hostDirectives: [StreamConsentDirective],

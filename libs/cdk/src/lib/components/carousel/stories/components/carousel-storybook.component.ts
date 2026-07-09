@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
+import { Component, ViewEncapsulation, input } from '@angular/core';
 import { CarouselTransitionType } from '../../carousel.directive';
 import { CarouselImports } from '../../carousel.imports';
 
@@ -46,7 +46,6 @@ import { CarouselImports } from '../../carousel.imports';
       </div>
     </et-carousel>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   styles: `
     .sb-controls {

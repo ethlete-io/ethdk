@@ -1,6 +1,5 @@
 import { JsonPipe } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
   Component,
   ComponentRef,
   ElementRef,
@@ -349,7 +348,6 @@ export const dfbLikePaginationAdapter = <T>(response: Paginated<T>) => {
     <button (click)="execWherePostIdIs4()">Exec where post id is 4</button>
     <button (click)="execAll()">Exec all</button> -->
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [],
 })
@@ -477,7 +475,6 @@ export class DynCompComponent {
   selector: 'ethlete-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })
 export class AppComponent {

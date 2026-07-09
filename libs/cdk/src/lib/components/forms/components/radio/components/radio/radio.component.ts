@@ -1,5 +1,5 @@
 import { AsyncPipe, NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { Component, ViewEncapsulation, inject } from '@angular/core';
 import { InputDirective } from '../../../../directives/input';
 import { NativeInputRefDirective } from '../../../../directives/native-input-ref';
 import { InputBase } from '../../../../utils';
@@ -10,7 +10,6 @@ import { RADIO_GROUP_TOKEN } from '../../directives/radio-group';
   selector: 'et-radio',
   templateUrl: './radio.component.html',
   styleUrls: ['./radio.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-radio',

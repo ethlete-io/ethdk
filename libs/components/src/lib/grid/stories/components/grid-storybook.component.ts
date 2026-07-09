@@ -1,4 +1,4 @@
-import { booleanAttribute, ChangeDetectionStrategy, Component, input, signal, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, input, signal, ViewEncapsulation } from '@angular/core';
 import { GridComponent } from '../../grid.component';
 import { GridBreakpointConfig, GridItemConfig } from '../../headless/grid.types';
 
@@ -57,7 +57,6 @@ const DEMO_ITEMS: GridItemConfig[] = [
     />
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [GridComponent],
 })
 export class GridStorybookComponent {

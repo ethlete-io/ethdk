@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, signal, ViewEncapsulation } from '@angular/core';
+import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { form, FormField, required } from '@angular/forms/signals';
 import { CHOICE_FIELD_IMPORTS } from '../../choice-field';
 import { SWITCH_IMPORTS } from '../switch.imports';
@@ -28,7 +28,6 @@ import { SWITCH_IMPORTS } from '../switch.imports';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [...CHOICE_FIELD_IMPORTS, ...SWITCH_IMPORTS, FormField],
 })
 export class FormFieldSwitchStorybookComponent {
@@ -61,7 +60,6 @@ export class FormFieldSwitchStorybookComponent {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [...CHOICE_FIELD_IMPORTS, ...SWITCH_IMPORTS],
 })
 export class SwitchDisabledStorybookComponent {}

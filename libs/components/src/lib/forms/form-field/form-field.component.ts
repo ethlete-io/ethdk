@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -167,7 +166,6 @@ const reduceSupportPresentation = ({
   templateUrl: './form-field.component.html',
   styleUrl: './form-field.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AnimatableDirective, ColorInteractiveExcludeDirective, FormErrorComponent, ProvideColorDirective],
   hostDirectives: [
     FormFieldDirective,

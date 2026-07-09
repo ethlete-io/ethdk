@@ -1,13 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ViewEncapsulation,
-  computed,
-  effect,
-  inject,
-  input,
-  output,
-} from '@angular/core';
+import { Component, ViewEncapsulation, computed, effect, inject, input, output } from '@angular/core';
 import {
   ProvideSurfaceDirective,
   ResizeHandlesComponent,
@@ -41,7 +32,6 @@ import { GRID_TOKEN } from './headless/grid.tokens';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ResizeHandlesComponent],
   hostDirectives: [
     {

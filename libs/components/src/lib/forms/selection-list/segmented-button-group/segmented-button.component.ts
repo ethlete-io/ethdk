@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
+import { Component, inject, ViewEncapsulation } from '@angular/core';
 import { ColorInteractiveDirective, createCanAnimateSignal } from '@ethlete/core';
 import { SelectionOptionDirective } from '../headless';
 
@@ -7,7 +7,6 @@ import { SelectionOptionDirective } from '../headless';
   template: '<ng-content />',
   styleUrl: './segmented-button.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [
     {
       directive: SelectionOptionDirective,

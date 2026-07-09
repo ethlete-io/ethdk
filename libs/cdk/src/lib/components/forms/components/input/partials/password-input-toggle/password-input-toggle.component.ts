@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation, input } from '@angular/core';
+import { Component, inject, ViewEncapsulation, input } from '@angular/core';
 import { INPUT_TOKEN } from '../../../../directives/input';
 import { PASSWORD_INPUT_TOKEN } from '../../directives/password-input';
 
@@ -7,7 +7,6 @@ import { PASSWORD_INPUT_TOKEN } from '../../directives/password-input';
   selector: 'et-password-input-toggle',
   templateUrl: './password-input-toggle.component.html',
   styleUrls: ['./password-input-toggle.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-password-input-toggle',

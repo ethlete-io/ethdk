@@ -1,18 +1,9 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  OnInit,
-  TemplateRef,
-  ViewEncapsulation,
-  viewChild,
-} from '@angular/core';
+import { Component, inject, OnInit, TemplateRef, ViewEncapsulation, viewChild } from '@angular/core';
 import { NativeSelectOptionDirective } from '../../directives/native-select-option';
 
 @Component({
   selector: 'et-native-select-option',
   template: ` <ng-template #textTpl> <ng-content /></ng-template> `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-native-select-option',

@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
+import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
 import { ColorInteractiveDirective, createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import { SpinnerComponent } from '../loader';
@@ -48,7 +48,6 @@ import { ButtonDirective } from './headless';
   `,
   styleUrl: './text-button.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NgTemplateOutlet, SpinnerComponent],
   hostDirectives: [
     {

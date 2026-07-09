@@ -337,7 +337,7 @@ export const createMutation = <TArgs extends QueryArguments | void = void, TResp
   };
 };
 
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup } from '@angular/forms';
 import { Subject, takeUntil, tap } from 'rxjs';
@@ -578,7 +578,6 @@ export const putPost = createMutation({
     }
   `,
 
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })
 export class TestCompComponent {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { BrandLoaderComponent } from '../../brand-loader.component';
 
 @Component({
@@ -24,7 +24,6 @@ import { BrandLoaderComponent } from '../../brand-loader.component';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [BrandLoaderComponent],
 })
 export class BrandSpinnerStorybookComponent {}

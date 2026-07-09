@@ -1,7 +1,6 @@
 import { ComponentType } from '@angular/cdk/portal';
 import { DOCUMENT } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
   Component,
   ComponentRef,
   ElementRef,
@@ -349,7 +348,6 @@ export const createContentfulIncludeMap = (config: CreateContentfulIncludeMapCon
   selector: 'et-contentful-rich-text-renderer',
   template: ``,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'et-contentful-rich-text-renderer',
   },

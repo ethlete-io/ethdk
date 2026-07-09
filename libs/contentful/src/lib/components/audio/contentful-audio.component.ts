@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, input } from '@angular/core';
+import { Component, ViewEncapsulation, computed, input } from '@angular/core';
 import { NgClassType } from '@ethlete/core';
 import { ContentfulGqlAsset, isContentfulGqlAsset } from '../../gql';
 import { ContentfulRestAsset } from '../../types';
@@ -14,7 +14,6 @@ import { ContentfulRestAsset } from '../../types';
       </figure>
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [NgClass],
 })

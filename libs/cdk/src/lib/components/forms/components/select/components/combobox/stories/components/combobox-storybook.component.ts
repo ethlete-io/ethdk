@@ -1,13 +1,5 @@
 import { JsonPipe } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  ViewEncapsulation,
-  inject,
-  input,
-  signal,
-} from '@angular/core';
+import { ChangeDetectorRef, Component, ViewEncapsulation, inject, input, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ComboboxImports } from '../../combobox.imports';
 
@@ -58,7 +50,6 @@ export class StorybookComboboxSelectedOptionComponent {
 
     <button (click)="clearValue()">Clear</button>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   styles: [
     `

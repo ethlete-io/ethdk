@@ -1,14 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  ViewEncapsulation,
-  computed,
-  inject,
-  input,
-  viewChild,
-} from '@angular/core';
+import { Component, ElementRef, ViewEncapsulation, computed, inject, input, viewChild } from '@angular/core';
 import { outputFromObservable, takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
   ProvideColorDirective,
@@ -40,7 +31,6 @@ import {
   templateUrl: './scrollable.component.html',
   styleUrl: './scrollable.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ScrollObserverDirective,
     ScrollObserverStartDirective,

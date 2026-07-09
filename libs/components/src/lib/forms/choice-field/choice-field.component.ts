@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, ElementRef, viewChild, ViewEncapsulation } from '@angular/core';
+import { Component, effect, ElementRef, viewChild, ViewEncapsulation } from '@angular/core';
 import {
   AnimatableDirective,
   ColorInteractiveContainerDirective,
@@ -14,7 +14,6 @@ import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../fo
   templateUrl: './choice-field.component.html',
   styleUrl: './choice-field.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     AnimatableDirective,
     ColorInteractiveContainerDirective,

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
+import { Component, ViewEncapsulation, input } from '@angular/core';
 import { ProgressBarComponent } from '../../progress-bar.component';
 
 @Component({
@@ -16,7 +16,6 @@ import { ProgressBarComponent } from '../../progress-bar.component';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ProgressBarComponent],
 })
 export class ProgressBarStorybookComponent {

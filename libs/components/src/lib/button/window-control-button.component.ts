@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
+import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
 import { ColorInteractiveDirective, createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import { SpinnerComponent } from '../loader';
@@ -45,7 +45,6 @@ const WINDOW_CONTROL_BUTTON_SPINNER_CONFIG = {
   `,
   styleUrl: './window-control-button.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [SpinnerComponent],
   hostDirectives: [
     {

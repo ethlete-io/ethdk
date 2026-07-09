@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  DestroyRef,
-  inject,
-  signal,
-  ViewEncapsulation,
-} from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal, ViewEncapsulation } from '@angular/core';
 import { FORM_FIELD_TOKEN, LabelDirectiveBase } from './form-field.tokens';
 
 let uniqueIdCounter = 0;
@@ -23,7 +15,6 @@ let uniqueIdCounter = 0;
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[attr.id]': 'id()',
     '[attr.data-disabled]': 'effectiveDisabled() || null',

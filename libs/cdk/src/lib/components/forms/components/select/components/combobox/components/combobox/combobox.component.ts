@@ -1,5 +1,5 @@
 import { AsyncPipe, NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { Component, ViewEncapsulation, inject } from '@angular/core';
 import { AnimatedOverlayDirective } from '@ethlete/core';
 import { CHEVRON_ICON } from '../../../../../../../icons/chevron-icon';
 import { provideIcons } from '../../../../../../../icons/icon-provider';
@@ -16,7 +16,6 @@ import { ComboboxBodyComponent } from '../../partials/combobox-body';
   selector: 'et-combobox',
   templateUrl: './combobox.component.html',
   styleUrls: ['./combobox.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-combobox',

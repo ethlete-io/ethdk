@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { Breakpoint } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../../../button';
 import { OverlayConfig } from '../../overlay-config';
@@ -40,7 +40,6 @@ import {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [BUTTON_IMPORTS, OVERLAY_CONTENT_IMPORTS],
 })
 export class OverlayExampleOverlayComponent {
@@ -68,7 +67,6 @@ export class OverlayExampleOverlayComponent {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [BUTTON_IMPORTS, OVERLAY_CONTENT_IMPORTS],
 })
 export class OverlayPopoverExampleComponent {}
@@ -119,7 +117,6 @@ export class OverlayPopoverExampleComponent {}
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [BUTTON_IMPORTS],
   styles: `
     .et-sb-overlay-panel {

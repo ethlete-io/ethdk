@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { SelectionListOptionDirective } from '../../directives/selection-list-option';
 
 @Component({
@@ -13,7 +13,6 @@ import { SelectionListOptionDirective } from '../../directives/selection-list-op
     </div>
   `,
   styleUrls: ['./selection-list-option.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [{ directive: SelectionListOptionDirective, inputs: ['value', 'disabled', 'isResetOption'] }],
 })

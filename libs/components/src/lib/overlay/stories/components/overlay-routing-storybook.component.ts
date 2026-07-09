@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, signal } from '@angular/core';
+import { Component, ViewEncapsulation, signal } from '@angular/core';
 import { BUTTON_IMPORTS } from '../../../button';
 import { OverlayBodyComponent } from '../../overlay-body.component';
 import { OverlayCloseDirective } from '../../overlay-close.directive';
@@ -39,7 +39,6 @@ import { dialogOverlayStrategy, transformingFullScreenDialogToDialogOverlayStrat
     </dl>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [OverlayHeaderTemplateDirective],
 })
 export class RoutingDemoPage1Component {}
@@ -62,7 +61,6 @@ export class RoutingDemoPage1Component {}
     </ul>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [OverlayHeaderTemplateDirective],
 })
 export class RoutingDemoPage2Component {
@@ -88,7 +86,6 @@ export class RoutingDemoPage2Component {
     </p>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [OverlayHeaderTemplateDirective],
 })
 export class RoutingDemoPage3Component {}
@@ -123,7 +120,6 @@ export class RoutingDemoPage3Component {}
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     BUTTON_IMPORTS,
     OverlayHeaderDirective,
@@ -170,7 +166,6 @@ export class RoutingDemoOverlayComponent {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     BUTTON_IMPORTS,
     OverlayHeaderDirective,
@@ -231,7 +226,6 @@ export class UrlRoutingDemoOverlayComponent {}
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     BUTTON_IMPORTS,
     OverlayHeaderDirective,
@@ -281,7 +275,6 @@ export class SidebarDemoPage1Component {
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     BUTTON_IMPORTS,
     OverlayHeaderDirective,
@@ -332,7 +325,6 @@ export class SidebarDemoPage2Component {
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     BUTTON_IMPORTS,
     OverlayHeaderDirective,
@@ -364,7 +356,6 @@ export class SidebarDemoPage3Component {
     <et-overlay-router-outlet />
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     BUTTON_IMPORTS,
     OverlaySidebarComponent,
@@ -424,7 +415,6 @@ export class SidebarDemoOverlayComponent {}
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [BUTTON_IMPORTS],
   styles: `
     .et-sb-routing-panel {

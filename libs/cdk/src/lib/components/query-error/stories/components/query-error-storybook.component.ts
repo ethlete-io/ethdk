@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
+import { Component, ViewEncapsulation, input } from '@angular/core';
 import { RequestError } from '@ethlete/query';
 import { QueryErrorComponent } from '../../components/query-error';
 
@@ -20,7 +20,6 @@ import { QueryErrorComponent } from '../../components/query-error';
   ],
   imports: [QueryErrorComponent],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QueryErrorStorybookComponent {
   readonly error = input<RequestError | null>(null);

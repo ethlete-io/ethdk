@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  ViewEncapsulation,
-  computed,
-  inject,
-  viewChild,
-} from '@angular/core';
+import { Component, ElementRef, ViewEncapsulation, computed, inject, viewChild } from '@angular/core';
 import { WINDOW_CONTROL_BUTTON_KINDS, WINDOW_CONTROL_BUTTON_SIZES, WindowControlButtonComponent } from '../../button';
 import {
   ARROW_OUT_UP_RIGHT_ICON,
@@ -35,7 +27,6 @@ import { PipWindowComponent } from './pip-window.component';
   templateUrl: './pip-chrome.component.html',
   styleUrl: './pip-chrome.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ...ICON_IMPORTS,
     PipWindowComponent,

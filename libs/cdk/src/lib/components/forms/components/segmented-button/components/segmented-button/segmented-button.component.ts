@@ -1,13 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  OnInit,
-  ViewEncapsulation,
-  inject,
-  viewChild,
-} from '@angular/core';
+import { Component, ElementRef, OnInit, ViewEncapsulation, inject, viewChild } from '@angular/core';
 import { InputDirective } from '../../../../directives/input';
 import { InputBase } from '../../../../utils';
 import { SEGMENTED_BUTTON_TOKEN, SegmentedButtonDirective } from '../../directives/segmented-button';
@@ -17,7 +9,6 @@ import { SEGMENTED_BUTTON_GROUP_TOKEN } from '../../directives/segmented-button-
   selector: 'et-segmented-button',
   templateUrl: './segmented-button.component.html',
   styleUrls: ['./segmented-button.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-segmented-button',

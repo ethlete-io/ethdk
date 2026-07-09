@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
+import { Component, ViewEncapsulation, input } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { GRID_2X2_ICON, IconDirective, PENCIL_ICON, PLUS_ICON, provideIcons } from '../../../icon';
 import { NavTabLinkComponent } from '../../nav-tabs/nav-tab-link.component';
@@ -33,7 +33,6 @@ const SIZES = Object.values(TAB_SIZES);
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NavTabsComponent, NavTabLinkComponent, RouterOutlet, IconDirective],
   providers: [provideIcons(GRID_2X2_ICON, PENCIL_ICON, PLUS_ICON)],
 })

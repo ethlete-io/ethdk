@@ -1,6 +1,5 @@
 import { NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
   Component,
   ElementRef,
   InjectionToken,
@@ -64,7 +63,6 @@ export const OVERLAY_ROUTER_OUTLET_TOKEN = new InjectionToken<OverlayRouterOutle
       }
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-overlay-router-outlet-host',

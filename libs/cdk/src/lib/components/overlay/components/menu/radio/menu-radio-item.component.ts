@@ -1,7 +1,6 @@
 import { ENTER, SPACE } from '@angular/cdk/keycodes';
 import { AsyncPipe, NgClass } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
   Component,
   ElementRef,
   ViewEncapsulation,
@@ -26,7 +25,6 @@ import { MENU_TRIGGER_TOKEN } from '../menu-trigger.directive';
   selector: 'et-menu-radio-item',
   templateUrl: './menu-radio-item.component.html',
   styleUrl: './menu-radio-item.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-menu-radio-item',

@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, TemplateRef, ViewEncapsulation, input } from '@angular/core';
+import { Component, TemplateRef, ViewEncapsulation, input } from '@angular/core';
 import {
   OverlayBodyComponent,
   OverlayBodyDividerType,
@@ -21,7 +21,6 @@ import {
       <ng-container *ngTemplateOutlet="bodyTemplate()" />
     </et-overlay-body>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-overlay-sidebar-page-host',

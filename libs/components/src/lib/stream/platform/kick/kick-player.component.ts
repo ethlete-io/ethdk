@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { Component, ViewEncapsulation, inject } from '@angular/core';
 import { KickPlayerParamsDirective } from './headless/kick-player-params.directive';
 import { KICK_PLAYER_TOKEN, KickPlayerDirective } from './headless/kick-player.directive';
 
@@ -6,7 +6,6 @@ import { KICK_PLAYER_TOKEN, KickPlayerDirective } from './headless/kick-player.d
   selector: 'et-kick-player',
   template: '',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [
     {
       directive: KickPlayerParamsDirective,

@@ -1,15 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  effect,
-  ElementRef,
-  inject,
-  Renderer2,
-  signal,
-  ViewEncapsulation,
-} from '@angular/core';
+import { Component, DestroyRef, effect, ElementRef, inject, Renderer2, signal, ViewEncapsulation } from '@angular/core';
 import { autoUpdate, computePosition, flip, offset, shift, VirtualElement } from '@floating-ui/dom';
 import { IconButtonComponent } from '../../button/icon-button.component';
 import { BOLD_ICON, IconDirective, ITALIC_ICON, LINK_ICON, provideIcons, STRIKETHROUGH_ICON } from '../../icon';
@@ -20,7 +10,6 @@ import { RichTextEditorDirective } from './headless';
   templateUrl: './rich-text-editor-floating-toolbar.component.html',
   styleUrl: './rich-text-editor-floating-toolbar.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IconButtonComponent, IconDirective],
   providers: [provideIcons(BOLD_ICON, ITALIC_ICON, STRIKETHROUGH_ICON, LINK_ICON)],
   host: {

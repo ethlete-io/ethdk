@@ -1,7 +1,6 @@
 import { ENTER, SPACE } from '@angular/cdk/keycodes';
 import { AsyncPipe, NgClass } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
   Component,
   ElementRef,
   Type,
@@ -30,7 +29,6 @@ import { MENU_TRIGGER_TOKEN } from '../menu-trigger.directive';
   selector: 'et-menu-checkbox-item',
   templateUrl: './menu-checkbox-item.component.html',
   styleUrl: './menu-checkbox-item.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-menu-checkbox-item',

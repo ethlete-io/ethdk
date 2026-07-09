@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Type, ViewEncapsulation, forwardRef, inject } from '@angular/core';
+import { Component, Type, ViewEncapsulation, forwardRef, inject } from '@angular/core';
 import { DynamicFormFieldDirective } from '../../../../directives/dynamic-form-field';
 import { StaticFormFieldDirective } from '../../../../directives/static-form-field';
 import { WriteableInputDirective } from '../../../../directives/writeable-input';
@@ -17,7 +17,6 @@ import { SelectFieldDirective } from '../../directives/select-field';
     </div>
     <et-error [errors]="inputState.errors$ | async" />
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-form-field et-select-field',

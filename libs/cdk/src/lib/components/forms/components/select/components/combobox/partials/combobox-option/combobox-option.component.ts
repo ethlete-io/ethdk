@@ -1,14 +1,5 @@
 import { AsyncPipe, NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  InjectionToken,
-  ViewEncapsulation,
-  computed,
-  inject,
-  input,
-} from '@angular/core';
+import { Component, ElementRef, InjectionToken, ViewEncapsulation, computed, inject, input } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { createComponentId, signalHostAttributes, signalHostClasses } from '@ethlete/core';
 import { switchMap } from 'rxjs';
@@ -19,7 +10,6 @@ export const COMBOBOX_OPTION_TOKEN = new InjectionToken<ComboboxOptionComponent>
 @Component({
   selector: 'et-combobox-option',
   templateUrl: './combobox-option.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-combobox-option',

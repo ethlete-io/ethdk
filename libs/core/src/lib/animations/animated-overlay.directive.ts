@@ -61,7 +61,6 @@ export type AnimatedOverlayState = 'init' | 'mounting' | 'mounted' | 'unmounting
   host: {
     class: 'et-animated-overlay',
   },
-  standalone: true,
 })
 export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
   private overlayService = inject(Overlay);

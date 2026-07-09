@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ViewEncapsulation,
-  computed,
-  effect,
-  inject,
-  untracked,
-} from '@angular/core';
+import { Component, ViewEncapsulation, computed, effect, inject, untracked } from '@angular/core';
 import {
   COLOR_PROVIDER,
   ProvideColorDirective,
@@ -25,7 +17,6 @@ import { MenuDirective, MenuPanelDirective } from './headless';
   templateUrl: './menu.component.html',
   styleUrl: './menu.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [SpinnerComponent],
   hostDirectives: [MenuPanelDirective, ProvideColorDirective, ProvideSurfaceDirective],
   host: {

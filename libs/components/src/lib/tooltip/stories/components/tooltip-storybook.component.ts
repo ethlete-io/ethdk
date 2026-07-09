@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, TemplateRef, ViewEncapsulation, input, viewChild } from '@angular/core';
+import { Component, TemplateRef, ViewEncapsulation, input, viewChild } from '@angular/core';
 import { BUTTON_IMPORTS } from '../../../button';
 import { TOOLTIP_IMPORTS } from '../../tooltip.imports';
 
@@ -53,7 +53,6 @@ import { TOOLTIP_IMPORTS } from '../../tooltip.imports';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [BUTTON_IMPORTS, TOOLTIP_IMPORTS],
 })
 export class TooltipStorybookComponent {

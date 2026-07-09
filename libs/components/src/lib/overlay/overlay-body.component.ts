@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   ElementRef,
   InjectionToken,
@@ -36,7 +35,6 @@ export type OverlayBodyDividerType = 'static' | 'dynamic' | false;
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ScrollObserverStartDirective, ScrollObserverEndDirective],
   providers: [
     {

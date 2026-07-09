@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { applyHeadTitleBinding } from '@ethlete/core';
 import {
   EntityStore,
@@ -133,7 +133,6 @@ const getMediaSearchNested2 = queryClient.get({
       }
     </ul>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [InfinityQueryDirective, InfinityQueryTriggerDirective],
 })

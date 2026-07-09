@@ -1,13 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  ViewEncapsulation,
-  computed,
-  inject,
-  input,
-  signal,
-} from '@angular/core';
+import { Component, DestroyRef, ViewEncapsulation, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { timer } from 'rxjs';
 import { tap } from 'rxjs/operators';
@@ -145,7 +136,6 @@ const posEq = (a: GridItemPosition | undefined, b: GridItemPosition | undefined)
     </details>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GridDebugComponent {
   private destroyRef = inject(DestroyRef);

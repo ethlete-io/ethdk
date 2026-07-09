@@ -10,7 +10,6 @@ const SESSION_MEMORY_KEY = 'test-tabs';
 const SESSION_MEMORY_STORAGE_KEY = `et-tab-group:${SESSION_MEMORY_KEY}`;
 
 @Component({
-  standalone: true,
   imports: [TabGroupComponent, TabComponent],
   template: `
     <et-tab-group
@@ -31,7 +30,6 @@ class TestHostComponent {
 }
 
 @Component({
-  standalone: true,
   imports: [TabGroupComponent, TabComponent],
   template: `
     <div>

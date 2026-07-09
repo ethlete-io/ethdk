@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { Component, ViewEncapsulation, inject } from '@angular/core';
 import { TwitchPlayerParamsDirective } from './headless/twitch-player-params.directive';
 import { TWITCH_PLAYER_TOKEN, TwitchPlayerDirective } from './headless/twitch-player.directive';
 
@@ -6,7 +6,6 @@ import { TWITCH_PLAYER_TOKEN, TwitchPlayerDirective } from './headless/twitch-pl
   selector: 'et-twitch-player',
   template: '',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [
     {
       directive: TwitchPlayerParamsDirective,

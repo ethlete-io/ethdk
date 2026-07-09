@@ -22,6 +22,7 @@ const noSubscribeWithBody = require('./rules/no-subscribe-with-body');
 const requireDollarSuffix = require('./rules/require-dollar-suffix');
 const noPipeLogic = require('./rules/no-pipe-logic');
 const enforceRoutingViewNaming = require('./rules/enforce-routing-view-naming');
+const noRedundantOnPushChangeDetection = require('./rules/no-redundant-on-push-change-detection');
 const requireOnPushChangeDetection = require('./rules/require-on-push-change-detection');
 const requireViewEncapsulationNone = require('./rules/require-view-encapsulation-none');
 const noLegacyAngularDecorators = require('./rules/no-legacy-angular-decorators');
@@ -78,6 +79,7 @@ const plugin = {
     'require-dollar-suffix': requireDollarSuffix,
     'no-pipe-logic': noPipeLogic,
     'enforce-routing-view-naming': enforceRoutingViewNaming,
+    'no-redundant-on-push-change-detection': noRedundantOnPushChangeDetection,
     'require-on-push-change-detection': requireOnPushChangeDetection,
     'require-view-encapsulation-none': requireViewEncapsulationNone,
     'no-legacy-angular-decorators': noLegacyAngularDecorators,

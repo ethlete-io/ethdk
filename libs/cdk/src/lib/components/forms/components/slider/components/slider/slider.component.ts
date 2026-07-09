@@ -1,7 +1,6 @@
 import { Directionality } from '@angular/cdk/bidi';
 import { AsyncPipe, DOCUMENT, NgTemplateOutlet } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
   Component,
   ElementRef,
   Input,
@@ -79,7 +78,6 @@ const getPointerPositionOnPage = (event: MouseEvent | TouchEvent, id: number | n
   selector: 'et-slider',
   templateUrl: './slider.component.html',
   styleUrls: ['./slider.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-slider',

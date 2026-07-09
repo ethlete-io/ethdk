@@ -1,7 +1,6 @@
 import { coerceElement } from '@angular/cdk/coercion';
 import { AsyncPipe } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
   Component,
   ElementRef,
   Input,
@@ -26,7 +25,6 @@ import { paginate } from '../../utils';
   templateUrl: './pagination.component.html',
   styleUrls: ['./pagination.component.scss'],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AsyncPipe, PaginationLinkDirective],
   providers: [PaginationHeadService],
   host: {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { ColorInteractiveDirective, createCanAnimateSignal } from '@ethlete/core';
 import { SwitchDirective } from './headless';
 
@@ -7,7 +7,6 @@ import { SwitchDirective } from './headless';
   templateUrl: './switch.component.html',
   styleUrl: './switch.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [
     {
       directive: SwitchDirective,

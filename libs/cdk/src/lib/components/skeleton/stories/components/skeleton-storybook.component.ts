@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
+import { Component, ViewEncapsulation, input } from '@angular/core';
 import { SkeletonComponent } from '../../components/skeleton';
 import { SkeletonItemComponent } from '../../partials/skeleton-item';
 
@@ -47,7 +47,6 @@ import { SkeletonItemComponent } from '../../partials/skeleton-item';
   ],
   imports: [SkeletonComponent, SkeletonItemComponent],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SkeletonStorybookComponent {
   readonly loadingAllyText = input('Loading...');

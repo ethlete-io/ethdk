@@ -1,6 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
   Component,
   Injector,
   TemplateRef,
@@ -27,7 +26,6 @@ import { ToggletipContent } from './headless/toggletip.directive';
   templateUrl: './toggletip.component.html',
   styleUrl: './toggletip.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NgTemplateOutlet],
   hostDirectives: [ProvideColorDirective, ProvideSurfaceDirective],
   host: {

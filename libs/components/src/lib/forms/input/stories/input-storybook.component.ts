@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
+import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
 import { disabled, form, FormField, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import {
@@ -36,7 +36,6 @@ import { INPUT_IMPORTS } from '../input.imports';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ...FORM_FIELD_IMPORTS,
     ...INPUT_IMPORTS,

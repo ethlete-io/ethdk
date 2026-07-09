@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, ViewEncapsulation, inject, viewChild } from '@angular/core';
+import { Component, ElementRef, ViewEncapsulation, inject, viewChild } from '@angular/core';
 import { syncSignal } from '@ethlete/core';
 import { CAROUSEL_TOKEN, CarouselDirective } from './carousel.directive';
 
@@ -14,7 +14,6 @@ import { CAROUSEL_TOKEN, CarouselDirective } from './carousel.directive';
     </div>
   `,
   styleUrl: './carousel.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-carousel-host',

@@ -1,11 +1,4 @@
-import {
-  booleanAttribute,
-  ChangeDetectionStrategy,
-  Component,
-  input,
-  numberAttribute,
-  ViewEncapsulation,
-} from '@angular/core';
+import { booleanAttribute, Component, input, numberAttribute, ViewEncapsulation } from '@angular/core';
 import { ScrollableImports } from '../../../scrollable/scrollable.imports';
 import {
   BRACKET_DATA_LAYOUT,
@@ -23,7 +16,6 @@ import { BracketRoundSwissGroup, NewBracketMatch, NewBracketRound } from '../../
 
     <p>{{ bracketMatch().id }}</p>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-sb-final-match-host',
@@ -84,7 +76,6 @@ export class FinalMatchComponent<TRoundData = unknown, TMatchData = unknown> {
     </et-scrollable>
   `,
   imports: [NewBracketComponent, ScrollableImports],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })
 export class StorybookBracketNewComponent {

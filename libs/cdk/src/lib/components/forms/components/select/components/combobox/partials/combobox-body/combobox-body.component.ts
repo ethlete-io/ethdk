@@ -1,6 +1,5 @@
 import { AsyncPipe, NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
   Component,
   ElementRef,
   InjectionToken,
@@ -31,7 +30,6 @@ export const COMBOBOX_BODY_TOKEN = new InjectionToken<ComboboxBodyComponent>('ET
 @Component({
   selector: 'et-combobox-body',
   templateUrl: './combobox-body.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-combobox-body et-with-default-animation',

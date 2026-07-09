@@ -1,13 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import {
-  booleanAttribute,
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  input,
-  ViewEncapsulation,
-} from '@angular/core';
+import { booleanAttribute, Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
 import { createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import { SpinnerComponent } from '../loader';
@@ -57,7 +49,6 @@ type FabVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS];
   `,
   styleUrl: './fab.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NgTemplateOutlet, SpinnerComponent],
   hostDirectives: [
     {

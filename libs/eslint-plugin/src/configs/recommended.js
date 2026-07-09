@@ -350,8 +350,13 @@ const recommendedTs = {
 
     // ── Angular components ──────────────────────────────────────────────────
 
-    // Always use ChangeDetectionStrategy.OnPush
+    // Require ChangeDetectionStrategy.OnPush on Angular <= 21, where it is opt-in
+    // (version-aware: inert on Angular 22+, where OnPush is the default).
     'ethlete/require-on-push-change-detection': 'error',
+
+    // No redundant ChangeDetectionStrategy.OnPush — it is the default since Angular 22
+    // (version-aware: inert on older Angular). Also removes the now-unused import.
+    'ethlete/no-redundant-on-push-change-detection': 'error',
 
     // Always use ViewEncapsulation.None (angular-eslint's use-component-view-encapsulation does the
     // opposite — it disallows None, so we use our own custom rule instead)

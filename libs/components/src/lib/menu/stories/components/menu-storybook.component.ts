@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, signal } from '@angular/core';
+import { Component, ViewEncapsulation, input, signal } from '@angular/core';
 import { Placement } from '@floating-ui/dom';
 import {
   ARROW_OUT_UP_RIGHT_ICON,
@@ -78,7 +78,6 @@ import { MENU_IMPORTS } from '../../menu.imports';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [...MENU_IMPORTS, IconDirective],
   providers: [provideIcons(PLUS_ICON, FLOPPY_DISK_ICON, ARROW_OUT_UP_RIGHT_ICON, TIMES_ICON)],
   styles: `

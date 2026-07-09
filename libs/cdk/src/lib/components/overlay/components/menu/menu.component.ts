@@ -2,7 +2,6 @@ import { DOWN_ARROW, END, HOME, LEFT_ARROW, RIGHT_ARROW, TAB, UP_ARROW } from '@
 import { NgTemplateOutlet } from '@angular/common';
 import {
   booleanAttribute,
-  ChangeDetectionStrategy,
   Component,
   contentChild,
   contentChildren,
@@ -48,7 +47,6 @@ let uniqueId = 0;
       <ng-content />
     </et-scrollable>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-menu',

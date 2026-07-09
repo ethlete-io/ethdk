@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, signal, ViewEncapsulation } from '@angular/core';
+import { Component, inject, input, signal, ViewEncapsulation } from '@angular/core';
 import { Router } from '@angular/router';
 import { injectQueryParam } from '@ethlete/core';
 import {
@@ -160,7 +160,6 @@ type HandlerDemoResult = 'confirmed' | 'dismissed';
   ],
   imports: [OverlayTitleDirective, OverlayHeaderDirective, OverlayBodyComponent, OverlayFooterDirective],
   hostDirectives: [OverlayMainDirective],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })
 export class OverlayHandlerDemoComponent {
@@ -329,7 +328,6 @@ type ResultEntry = { value: string; type: 'confirmed' | 'dismissed' | 'null'; in
       }
     `,
   ],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })
 export class OverlayHandlerHostComponent {
@@ -547,7 +545,6 @@ export class OverlayHandlerHostComponent {
     OverlayFooterDirective,
   ],
   hostDirectives: [OverlayMainDirective],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })
 export class OverlayQueryParamDemoComponent {
@@ -764,7 +761,6 @@ export const createQueryParamDemoOverlay = createOverlayHandlerWithQueryParamLif
       }
     `,
   ],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })
 export class OverlayQueryParamHostComponent {

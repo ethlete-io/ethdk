@@ -3,7 +3,6 @@ import { AnimatedLifecycleDirective } from '@ethlete/core';
 
 @Component({
   selector: 'et-overlay-origin-clone',
-  standalone: true,
   template: '<ng-content />',
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [AnimatedLifecycleDirective],

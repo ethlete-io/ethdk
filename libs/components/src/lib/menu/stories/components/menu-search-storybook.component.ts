@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, signal } from '@angular/core';
+import { Component, ViewEncapsulation, computed, signal } from '@angular/core';
 import { MENU_IMPORTS } from '../../menu.imports';
 
 const PLAYERS = ['Alice Anderson', 'Bob Brown', 'Charlie Clark', 'Dana Davis', 'Erin Evans', 'Frank Fisher'];
@@ -29,7 +29,6 @@ const PLAYERS = ['Alice Anderson', 'Bob Brown', 'Charlie Clark', 'Dana Davis', '
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [...MENU_IMPORTS],
   styles: `
     .et-sb-menu-page {

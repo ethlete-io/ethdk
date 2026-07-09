@@ -1,14 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import {
-  afterNextRender,
-  ChangeDetectionStrategy,
-  Component,
-  effect,
-  ElementRef,
-  inject,
-  viewChild,
-  ViewEncapsulation,
-} from '@angular/core';
+import { afterNextRender, Component, effect, ElementRef, inject, viewChild, ViewEncapsulation } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { markdownToHtml } from '@ethlete/core';
 import { fromEvent, tap } from 'rxjs';
@@ -34,7 +25,6 @@ import { RichTextEditorFloatingToolbarComponent } from './rich-text-editor-float
   templateUrl: './rich-text-editor.component.html',
   styleUrl: './rich-text-editor.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IconButtonComponent, IconDirective, RichTextEditorFloatingToolbarComponent],
   providers: [
     provideIcons(

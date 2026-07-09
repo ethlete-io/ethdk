@@ -1,14 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  TemplateRef,
-  ViewEncapsulation,
-  contentChild,
-  inject,
-  input,
-  viewChild,
-} from '@angular/core';
+import { Component, TemplateRef, ViewEncapsulation, contentChild, inject, input, viewChild } from '@angular/core';
 import { signalHostClasses, syncSignal } from '@ethlete/core';
 import { OVERLAY_HEADER_TEMPLATE_TOKEN, OverlayBodyDividerType } from '../common';
 import { OverlayRouterService } from '../routing';
@@ -25,7 +16,6 @@ import { SidebarOverlayService } from './sidebar-overlay';
       <ng-container *ngTemplateOutlet="sidebarContent()" />
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-overlay-sidebar-host',

@@ -35,7 +35,6 @@ class ResizeObserverMock {
 }
 
 @Component({
-  standalone: true,
   imports: [GridComponent],
   template: `<et-grid [initialItems]="items()" />`,
 })

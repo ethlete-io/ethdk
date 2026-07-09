@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, ViewEncapsulation } from '@angular/core';
+import { Component, input, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { InputImports } from '../../input.imports';
 
@@ -12,7 +12,6 @@ import { InputImports } from '../../input.imports';
 
     <p>{{ fg.value }}</p>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [InputImports, ReactiveFormsModule],
 })

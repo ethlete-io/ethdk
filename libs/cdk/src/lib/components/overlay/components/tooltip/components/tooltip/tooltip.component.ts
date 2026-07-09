@@ -1,14 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  InjectionToken,
-  Injector,
-  ViewEncapsulation,
-  inject,
-  viewChild,
-} from '@angular/core';
+import { Component, ElementRef, InjectionToken, Injector, ViewEncapsulation, inject, viewChild } from '@angular/core';
 import {
   ANIMATED_LIFECYCLE_TOKEN,
   AnimatedLifecycleDirective,
@@ -24,7 +15,6 @@ export const TOOLTIP = new InjectionToken<TooltipComponent>('Tooltip');
   selector: 'et-tooltip',
   templateUrl: './tooltip.component.html',
   styleUrls: ['./tooltip.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [NgTemplateOutlet, AnimatedLifecycleDirective],
   hostDirectives: [ProvideColorDirective],

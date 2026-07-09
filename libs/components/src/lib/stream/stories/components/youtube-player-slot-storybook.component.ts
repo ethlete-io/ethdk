@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, signal } from '@angular/core';
+import { Component, ViewEncapsulation, input, signal } from '@angular/core';
 import { ButtonComponent } from '../../../button/button.component';
 import { TextButtonComponent } from '../../../button/text-button.component';
 import { TabImports } from '../../../tabs/tabs.imports';
@@ -203,7 +203,6 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [StreamImports, ButtonComponent, TextButtonComponent, TabImports],
   providers: [
     ...provideStreamConfig({

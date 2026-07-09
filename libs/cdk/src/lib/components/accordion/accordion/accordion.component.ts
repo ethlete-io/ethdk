@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   ViewEncapsulation,
   booleanAttribute,
@@ -27,7 +26,6 @@ let accordionId = 0;
   templateUrl: './accordion.component.html',
   styleUrls: ['./accordion.component.scss'],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: ACCORDION_COMPONENT, useExisting: AccordionComponent }, provideIcons(CHEVRON_ICON)],
   imports: [AccordionLabelDirective, PortalModule, IconDirective],
   host: {

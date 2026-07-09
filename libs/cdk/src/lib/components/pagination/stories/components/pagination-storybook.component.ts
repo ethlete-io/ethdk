@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
+import { Component, ViewEncapsulation, input } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { PaginationComponent } from '../../components/pagination';
 
@@ -66,7 +66,6 @@ import { PaginationComponent } from '../../components/pagination';
   ],
   imports: [PaginationComponent],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PaginationStorybookComponent {
   pageControl = new FormControl<number | null>(1);

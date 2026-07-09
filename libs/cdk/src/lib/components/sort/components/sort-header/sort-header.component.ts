@@ -2,7 +2,6 @@ import { AriaDescriber, FocusMonitor } from '@angular/cdk/a11y';
 import { ENTER, SPACE } from '@angular/cdk/keycodes';
 import {
   AfterViewInit,
-  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   ElementRef,
@@ -35,7 +34,6 @@ import { ArrowViewStateTransition } from './sort-header.types';
     '[attr.aria-sort]': '_ariaSortAttr',
   },
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IconDirective],
   providers: [provideIcons(CHEVRON_ICON)],
 })

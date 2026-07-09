@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { Component, ViewEncapsulation, inject } from '@angular/core';
 import {
   STREAM_PLAYER_COMPONENT_TOKEN,
   STREAM_PLAYER_SLOT_TOKEN,
@@ -11,7 +11,6 @@ import { YoutubePlayerComponent } from './youtube-player.component';
   selector: 'et-youtube-player-slot',
   template: '<ng-content />',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: STREAM_PLAYER_COMPONENT_TOKEN, useValue: YoutubePlayerComponent }],
   hostDirectives: [
     {

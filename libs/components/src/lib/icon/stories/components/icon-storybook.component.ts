@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { CHEVRON_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../headless';
 
 @Component({
@@ -43,7 +43,6 @@ import { CHEVRON_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../hea
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IconDirective],
   providers: [provideIcons(CHEVRON_ICON, TIMES_ICON)],
 })

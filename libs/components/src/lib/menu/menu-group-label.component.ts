@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, ViewEncapsulation, inject } from '@angular/core';
+import { Component, DestroyRef, ElementRef, ViewEncapsulation, inject } from '@angular/core';
 import { createComponentId } from '@ethlete/core';
 import { MENU_SELECTION_GROUP_TOKEN } from './headless';
 
@@ -7,7 +7,6 @@ import { MENU_SELECTION_GROUP_TOKEN } from './headless';
   template: `<ng-content />`,
   styleUrl: './menu-group-label.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'et-menu-group-label',
     role: 'presentation',

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
+import { Component, Input, ViewEncapsulation } from '@angular/core';
 
 let nextUniqueId = 0;
 
@@ -7,7 +7,6 @@ let nextUniqueId = 0;
   template: '<ng-content />',
   styleUrls: ['nav-tabs-outlet.component.scss'],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'et-nav-tabs-outlet',
     role: 'tabpanel',

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
+import { Component, inject, ViewEncapsulation } from '@angular/core';
 import { ScrollableDirective } from './scrollable.directive';
 
 @Component({
@@ -8,7 +8,6 @@ import { ScrollableDirective } from './scrollable.directive';
     <div class="et-scrollable-mask et-scrollable-mask--end"></div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'et-scrollable-masks',
   },

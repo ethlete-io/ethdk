@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { injectOverlayManager } from '../../overlay-manager';
 import {
   anchoredDialogOverlayStrategy,
@@ -120,7 +120,6 @@ import { STORY_HOST_STYLES } from './story-styles';
       }
     `,
   ],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })
 export class OverlayShowcaseHostComponent {

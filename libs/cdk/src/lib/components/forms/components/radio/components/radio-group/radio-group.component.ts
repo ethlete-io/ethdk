@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, forwardRef, inject, ViewEncapsulation } from '@angular/core';
+import { Component, forwardRef, inject, ViewEncapsulation } from '@angular/core';
 import { DynamicFormGroupDirective } from '../../../../directives/dynamic-form-group';
 import { StaticFormGroupDirective } from '../../../../directives/static-form-group';
 import { WriteableInputDirective } from '../../../../directives/writeable-input';
@@ -16,7 +16,6 @@ import { RadioGroupDirective } from '../../directives/radio-group';
     <et-error [errors]="inputState.errors$ | async" />
   `,
   styleUrls: ['./radio-group.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-form-group et-radio-group',

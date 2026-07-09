@@ -1,5 +1,5 @@
 import { AsyncPipe, JsonPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, isDevMode } from '@angular/core';
+import { Component, ViewEncapsulation, isDevMode } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { applyHeadTitleBinding, createDestroy } from '@ethlete/core';
@@ -127,7 +127,6 @@ export const postRefreshToken = client.post({
       <input [formControl]="form2.controls.limit" type="number" placeholder="Limit" />
     </form>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [ReactiveFormsModule, QueryDirective, JsonPipe, AsyncPipe],
 })

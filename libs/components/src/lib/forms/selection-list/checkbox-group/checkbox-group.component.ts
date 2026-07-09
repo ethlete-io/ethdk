@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, ElementRef, viewChild, ViewEncapsulation } from '@angular/core';
+import { Component, effect, ElementRef, viewChild, ViewEncapsulation } from '@angular/core';
 import { AnimatableDirective, createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
 import { FormErrorComponent } from '../../form-field/form-error.component';
 import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../../form-field/headless';
@@ -9,7 +9,6 @@ import { SELECTION_LIST_MULTIPLE, SelectionListDirective } from '../headless';
   templateUrl: './checkbox-group.component.html',
   styleUrl: './checkbox-group.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AnimatableDirective, FormErrorComponent, ProvideColorDirective],
   providers: [{ provide: SELECTION_LIST_MULTIPLE, useValue: true }, provideFormSupport()],
   hostDirectives: [

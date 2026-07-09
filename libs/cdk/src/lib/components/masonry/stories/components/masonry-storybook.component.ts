@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { MasonryComponent } from '../../components/masonry';
 import { MasonryItemComponent } from '../../partials/masonry-item';
 
@@ -15,7 +15,6 @@ import { MasonryItemComponent } from '../../partials/masonry-item';
       <p style="margin: 0; padding: 10px 0; ">{{ randomLorem }}</p>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })
 export class RandomKittenComponent {
@@ -75,7 +74,6 @@ export class RandomKittenComponent {
       }
     </et-masonry>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [MasonryComponent, MasonryItemComponent, RandomKittenComponent],
 })

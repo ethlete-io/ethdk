@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { GridComponent } from '../grid.component';
 import { GridItemComponent } from '../grid-item.component';
-import { GridDirective } from './grid.directive';
+import { GridComponent } from '../grid.component';
 import { GridItemDirective } from './grid-item.directive';
+import { GridDirective } from './grid.directive';
 import { GridItemConfig } from './grid.types';
 
 class ResizeObserverMock {
@@ -37,7 +37,6 @@ class ResizeObserverMock {
 }
 
 @Component({
-  standalone: true,
   imports: [GridComponent, GridItemComponent],
   template: `
     <et-grid [initialItems]="items">

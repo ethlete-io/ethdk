@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Type, ViewEncapsulation, forwardRef } from '@angular/core';
+import { Component, Type, ViewEncapsulation, forwardRef } from '@angular/core';
 import { DynamicFormFieldDirective } from '../../../../directives/dynamic-form-field';
 import { InputDirective } from '../../../../directives/input';
 import { StaticFormFieldDirective } from '../../../../directives/static-form-field';
@@ -8,7 +8,6 @@ import { SelectionListFieldDirective } from '../../directives/selection-list-fie
 @Component({
   selector: 'et-selection-list-field',
   template: `<ng-content />`,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [
     StaticFormFieldDirective,

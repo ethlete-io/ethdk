@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
+import { Component, ViewEncapsulation, input } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { SegmentedButtonGroupRenderAs } from '../../components/segmented-button-group';
 import { SegmentedButtonImports } from '../../segmented-button.imports';
@@ -20,7 +20,6 @@ import { SegmentedButtonImports } from '../../segmented-button.imports';
       </et-segmented-button-field>
     </et-segmented-button-group>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [SegmentedButtonImports, ReactiveFormsModule],
 })

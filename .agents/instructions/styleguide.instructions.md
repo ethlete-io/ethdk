@@ -45,7 +45,6 @@ Refer to the rules below for all style checks. Only consult `docs/STYLEGUIDE.md`
 
 ## Angular
 
-- **`ChangeDetectionStrategy.OnPush`** always
 - **`ViewEncapsulation.None`** always
 - **No function calls in templates** as value bindings — use `computed()` signals instead; event bindings `(click)="fn()"` are fine
 - **No legacy lifecycle hooks** (`ngOnChanges`, `ngAfterViewInit`, `ngAfterContentInit`, etc.)

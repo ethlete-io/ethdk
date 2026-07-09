@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
+import { Component, ViewEncapsulation, input } from '@angular/core';
 import { GRID_2X2_ICON, PENCIL_ICON, PLUS_ICON, provideIcons } from '../../../icon';
 import { TAB_SIZES } from '../../tab-sizes';
 import { TabGroupComponent } from '../../tabs/tab-group.component';
@@ -57,7 +57,6 @@ const SIZES = Object.values(TAB_SIZES);
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TabGroupComponent, TabComponent, TabLabelDirective],
   providers: [provideIcons(GRID_2X2_ICON, PENCIL_ICON, PLUS_ICON)],
 })

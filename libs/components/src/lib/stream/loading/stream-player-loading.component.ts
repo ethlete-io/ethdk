@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { SpinnerComponent } from '../../loader';
 import { injectStreamPlayerLoadingConfig } from './stream-player-loading-config';
 
@@ -6,7 +6,6 @@ import { injectStreamPlayerLoadingConfig } from './stream-player-loading-config'
   selector: 'et-stream-player-loading',
   template: ` <et-spinner [diameter]="config.spinnerDiameter" [strokeWidth]="config.spinnerStrokeWidth" track /> `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [SpinnerComponent],
   host: {
     class: 'et-stream-player-loading',

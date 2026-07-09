@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { Component, ViewEncapsulation, inject } from '@angular/core';
 import { TikTokPlayerParamsDirective } from './headless/tiktok-player-params.directive';
 import { TIKTOK_PLAYER_TOKEN, TikTokPlayerDirective } from './headless/tiktok-player.directive';
 
@@ -6,7 +6,6 @@ import { TIKTOK_PLAYER_TOKEN, TikTokPlayerDirective } from './headless/tiktok-pl
   selector: 'et-tiktok-player',
   template: '',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [
     {
       directive: TikTokPlayerParamsDirective,

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ViewEncapsulation, inject } from '@angular/core';
+import { Component, DestroyRef, ViewEncapsulation, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { take, tap, timer } from 'rxjs';
 import { BUTTON_IMPORTS } from '../../../button';
@@ -39,7 +39,6 @@ const TOTAL_TICKS = TOTAL_MS / TICK_MS;
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NOTIFICATION_IMPORTS, BUTTON_IMPORTS],
 })
 export class NotificationStorybookComponent {

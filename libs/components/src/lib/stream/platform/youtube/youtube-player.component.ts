@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { Component, ViewEncapsulation, inject } from '@angular/core';
 import { YoutubePlayerParamsDirective } from './headless/youtube-player-params.directive';
 import { YOUTUBE_PLAYER_TOKEN, YoutubePlayerDirective } from './headless/youtube-player.directive';
 
@@ -6,7 +6,6 @@ import { YOUTUBE_PLAYER_TOKEN, YoutubePlayerDirective } from './headless/youtube
   selector: 'et-youtube-player',
   template: '',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [
     {
       directive: YoutubePlayerParamsDirective,

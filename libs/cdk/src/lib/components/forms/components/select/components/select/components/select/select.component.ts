@@ -1,13 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  TemplateRef,
-  ViewEncapsulation,
-  inject,
-  viewChild,
-} from '@angular/core';
+import { AfterViewInit, Component, TemplateRef, ViewEncapsulation, inject, viewChild } from '@angular/core';
 import { CHEVRON_ICON } from '../../../../../../../icons/chevron-icon';
 import { provideIcons } from '../../../../../../../icons/icon-provider';
 import { IconDirective } from '../../../../../../../icons/icon.directive';
@@ -21,7 +13,6 @@ import { SelectBodyComponent } from '../../partials/select-body';
   selector: 'et-select',
   templateUrl: './select.component.html',
   styleUrls: ['./select.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-select',

@@ -1,7 +1,7 @@
 import { CdkDialogContainer } from '@angular/cdk/dialog';
 import { OverlayRef as CdkOverlayRef } from '@angular/cdk/overlay';
 import { CdkPortalOutlet } from '@angular/cdk/portal';
-import { ChangeDetectionStrategy, Component, DestroyRef, ViewEncapsulation, computed, inject } from '@angular/core';
+import { Component, DestroyRef, ViewEncapsulation, computed, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   ANIMATED_LIFECYCLE_TOKEN,
@@ -30,7 +30,6 @@ import { OverlayRef } from '../overlay-ref';
     <ng-template cdkPortalOutlet />
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'et-overlay',
     tabindex: '-1',

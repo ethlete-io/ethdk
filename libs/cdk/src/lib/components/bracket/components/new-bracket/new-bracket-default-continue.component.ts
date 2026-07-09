@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component, input, ViewEncapsulation } from '@angular/core';
+import { Component, input, ViewEncapsulation } from '@angular/core';
 import { NewBracketMatch } from './linked';
 
 @Component({
   selector: 'et-new-bracket-default-continue',
   template: ` Next stage ({{ bracketMatches().length }}) `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-new-bracket-default-continue-host',

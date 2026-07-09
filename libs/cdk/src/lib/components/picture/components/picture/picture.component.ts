@@ -1,7 +1,6 @@
 import { NgClass } from '@angular/common';
 import {
   booleanAttribute,
-  ChangeDetectionStrategy,
   Component,
   computed,
   ElementRef,
@@ -26,7 +25,6 @@ import {
   selector: 'et-picture',
   templateUrl: './picture.component.html',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NgClass],
   host: {
     class: 'et-picture',

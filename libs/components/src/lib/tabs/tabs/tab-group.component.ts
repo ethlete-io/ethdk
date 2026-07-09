@@ -1,13 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ViewEncapsulation,
-  computed,
-  contentChildren,
-  inject,
-  input,
-} from '@angular/core';
+import { Component, ViewEncapsulation, computed, contentChildren, inject, input } from '@angular/core';
 import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
 import { FocusRingDirective } from '../../focus-ring';
 import { IconDirective } from '../../icon';
@@ -76,7 +68,6 @@ import { TabComponent } from './tab.component';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     TabBarTriggerDirective,
     TabBarUnderlineDirective,

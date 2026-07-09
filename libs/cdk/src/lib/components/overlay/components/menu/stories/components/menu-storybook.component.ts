@@ -1,5 +1,5 @@
 import { OverlayModule } from '@angular/cdk/overlay';
-import { ChangeDetectionStrategy, Component, Injectable, ViewEncapsulation, inject } from '@angular/core';
+import { Component, Injectable, ViewEncapsulation, inject } from '@angular/core';
 import { CheckboxImports } from '../../../../../forms/components/checkbox/checkbox.imports';
 import { InputImports } from '../../../../../forms/components/input/input.imports';
 import { provideValidatorErrorsService } from '../../../../../forms/services';
@@ -12,7 +12,6 @@ export class TestService {}
 @Component({
   selector: 'et-sb-menu-item',
   template: `<p>Menu</p>`,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })
 export class MenuItemStorybookComponent {
@@ -165,7 +164,6 @@ export class MenuItemStorybookComponent {
   ],
   imports: [OverlayModule, CheckboxImports, MenuImports, InputImports],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [TestService, provideValidatorErrorsService()],
 })
 export class MenuStorybookComponent {}

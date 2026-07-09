@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   DOCUMENT,
   DestroyRef,
@@ -30,7 +29,6 @@ import { PIP_ENTRY_TOKEN } from './headless/pip-entry.token';
   `,
   styleUrl: './pip-player.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     {
       provide: PIP_ENTRY_TOKEN,

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { StaticFormFieldDirective } from '../../../../directives/static-form-field';
 import { RadioFieldDirective } from '../../directives/radio-field';
 
@@ -11,7 +11,6 @@ import { RadioFieldDirective } from '../../directives/radio-field';
     </div>
   `,
   styleUrls: ['./radio-field.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-form-field et-radio-field',

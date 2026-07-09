@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { CheckboxImports } from '../../checkbox.imports';
 
@@ -34,7 +34,6 @@ import { CheckboxImports } from '../../checkbox.imports';
       <et-checkbox />
     </et-checkbox-card-field>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [CheckboxImports, ReactiveFormsModule],
 })

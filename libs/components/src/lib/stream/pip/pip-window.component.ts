@@ -1,14 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ViewEncapsulation,
-  computed,
-  contentChild,
-  inject,
-  signal,
-  viewChild,
-} from '@angular/core';
+import { Component, ViewEncapsulation, computed, contentChild, inject, signal, viewChild } from '@angular/core';
 import { ResizeEdge, ResizeHandlesComponent } from '@ethlete/core';
 import { PipCollapseOverlayDirective } from './headless/pip-collapse-overlay.directive';
 import { PipTitleBarTemplateDirective } from './headless/pip-title-bar-template.directive';
@@ -22,7 +13,6 @@ import { createPipWindowSize } from './headless/internals/pip-window-size';
   templateUrl: './pip-window.component.html',
   styleUrl: './pip-window.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NgTemplateOutlet, ResizeHandlesComponent, PipTitleBarDirective, PipCollapseOverlayDirective],
   hostDirectives: [PipWindowParamsDirective],
   host: {

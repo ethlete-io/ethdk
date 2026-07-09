@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { SlideToggleImports } from '../../slide-toggle.imports';
 
@@ -10,7 +10,6 @@ import { SlideToggleImports } from '../../slide-toggle.imports';
       <et-label>Slide it</et-label>
     </et-slide-toggle-field>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [SlideToggleImports, ReactiveFormsModule],
 })

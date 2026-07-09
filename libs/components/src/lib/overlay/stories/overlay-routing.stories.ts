@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { provideRouter, withHashLocation } from '@angular/router';
 import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular';
 import { provideOverlay } from '../overlay.imports';
@@ -8,7 +8,6 @@ import { OverlayRoutingStorybookComponent } from './components';
   selector: 'et-sb-routing-catch-all',
   template: '',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 class RoutingCatchAllComponent {}
 

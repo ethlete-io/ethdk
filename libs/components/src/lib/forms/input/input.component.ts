@@ -1,12 +1,4 @@
-import {
-  afterNextRender,
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  inject,
-  viewChild,
-  ViewEncapsulation,
-} from '@angular/core';
+import { afterNextRender, Component, ElementRef, inject, viewChild, ViewEncapsulation } from '@angular/core';
 import { ColorInteractiveDirective } from '@ethlete/core';
 import { InputDirective } from './headless';
 
@@ -15,7 +7,6 @@ import { InputDirective } from './headless';
   templateUrl: './input.component.html',
   styleUrl: './input.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [
     {
       directive: InputDirective,

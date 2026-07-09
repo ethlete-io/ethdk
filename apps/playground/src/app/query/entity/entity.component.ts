@@ -1,14 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  Directive,
-  Injectable,
-  OnInit,
-  ViewEncapsulation,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, Directive, Injectable, OnInit, ViewEncapsulation, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { QueryButtonComponent } from '@ethlete/cdk';
 import {
@@ -111,7 +102,6 @@ export class TestDirective {
       </ul>
     </ng-container>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [ReactiveFormsModule, QueryButtonComponent, AsyncPipe, QueryDirective, TestDirective],
   hostDirectives: [TestDirective],

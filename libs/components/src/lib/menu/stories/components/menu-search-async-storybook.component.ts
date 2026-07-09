@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, signal } from '@angular/core';
+import { Component, ViewEncapsulation, computed, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { map, switchMap, tap, timer } from 'rxjs';
 import { MENU_IMPORTS } from '../../menu.imports';
@@ -46,7 +46,6 @@ const SIMULATED_LATENCY = 700;
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [...MENU_IMPORTS],
   styles: `
     .et-sb-menu-page {

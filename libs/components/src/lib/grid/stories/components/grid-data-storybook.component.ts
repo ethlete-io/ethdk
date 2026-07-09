@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, input, signal } from '@angular/core';
+import { Component, ViewEncapsulation, computed, input, signal } from '@angular/core';
 import { GridItemComponent } from '../../grid-item.component';
 import { GridComponent } from '../../grid.component';
 import { createGridAdapter, fromGridPosition, toGridPosition } from '../../headless/grid-adapter';
@@ -99,7 +99,6 @@ const adapter = createGridAdapter<MockWidgetView>(
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DecimalPipe],
 })
 export class KpiWidgetComponent {
@@ -134,7 +133,6 @@ export class KpiWidgetComponent {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChartWidgetComponent {
   public data = input.required<ChartData>();
@@ -171,7 +169,6 @@ export class ChartWidgetComponent {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NotesWidgetComponent {
   public data = input.required<NotesData>();
@@ -469,7 +466,6 @@ const DEFAULT_CONSTRAINTS = { minColSpan: 1, maxColSpan: 12, minRowSpan: 1, maxR
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [GridComponent, GridItemComponent, KpiWidgetComponent, ChartWidgetComponent, NotesWidgetComponent],
 })
 export class GridDataStorybookComponent {

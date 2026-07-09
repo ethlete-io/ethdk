@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
+import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
 import { disabled, form, FormField, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import { HintComponent } from '../../../form-field';
@@ -22,7 +22,6 @@ import { CheckboxOptionComponent } from '../checkbox-option.component';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CheckboxGroupComponent, CheckboxOptionComponent, FormField, ProvideColorDirective, HintComponent],
 })
 export class CheckboxGroupStorybookComponent {

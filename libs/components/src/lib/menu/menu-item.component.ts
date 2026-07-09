@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
+import { Component, ViewEncapsulation, input } from '@angular/core';
 import { MenuItemDirective } from './headless';
 
 export const MENU_ITEM_VARIANTS = {
@@ -13,7 +13,6 @@ export type MenuItemVariant = (typeof MENU_ITEM_VARIANTS)[keyof typeof MENU_ITEM
   templateUrl: './menu-item.component.html',
   styleUrl: './menu-item.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [
     {
       directive: MenuItemDirective,

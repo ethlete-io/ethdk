@@ -1,6 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
   Component,
   ElementRef,
   InjectionToken,
@@ -28,7 +27,6 @@ export const MENU_TEMPLATE = new InjectionToken<TemplateRef<unknown>>('MENU_TEMP
       <ng-container *ngTemplateOutlet="_menuTemplate; injector: injector" />
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-menu-container',

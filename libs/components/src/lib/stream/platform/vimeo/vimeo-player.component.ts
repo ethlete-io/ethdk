@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { Component, ViewEncapsulation, inject } from '@angular/core';
 import { VimeoPlayerParamsDirective } from './headless/vimeo-player-params.directive';
 import { VIMEO_PLAYER_TOKEN, VimeoPlayerDirective } from './headless/vimeo-player.directive';
 
@@ -6,7 +6,6 @@ import { VIMEO_PLAYER_TOKEN, VimeoPlayerDirective } from './headless/vimeo-playe
   selector: 'et-vimeo-player',
   template: '',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [
     {
       directive: VimeoPlayerParamsDirective,

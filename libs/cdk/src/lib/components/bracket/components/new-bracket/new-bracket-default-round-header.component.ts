@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, ViewEncapsulation } from '@angular/core';
+import { Component, input, ViewEncapsulation } from '@angular/core';
 import { BracketRoundSwissGroup, NewBracketRound } from './linked';
 
 @Component({
@@ -10,7 +10,6 @@ import { BracketRoundSwissGroup, NewBracketRound } from './linked';
       ({{ bracketRoundSwissGroup()?.name }})
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-new-bracket-default-round-header-host',

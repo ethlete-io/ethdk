@@ -1,6 +1,5 @@
 import { JsonPipe } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   ViewEncapsulation,
@@ -26,7 +25,6 @@ import { CONTENTFUL_DUMMY_DATA_3 } from './dummy-data-3';
   selector: 'ethlete-rich-test-org-store',
   template: `<p>{{ sys().contentType.sys.id }}</p>
     <pre>{{ fields() | json }}</pre> `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [JsonPipe],
   hostDirectives: [],
@@ -43,7 +41,6 @@ export class RichTextTestOrganizationStoreComponent {
   selector: 'ethlete-rich-test-teaser-half-collection',
   template: `<p>{{ sys().contentType.sys.id }}</p>
     <pre>{{ fields() | json }}</pre> `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [JsonPipe],
   hostDirectives: [],
@@ -58,7 +55,6 @@ export class RichTextTestTeaserHalfCollectionComponent {
   selector: 'ethlete-rich-test-news-element',
   template: `<p>{{ sys().contentType.sys.id }}</p>
     <pre>{{ fields() | json }}</pre> `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [JsonPipe],
   hostDirectives: [],
@@ -77,7 +73,6 @@ export class RichTextTestNewsElementComponent {
     <button (click)="buttonClick()">Click me</button>
     <p>Clicks: {{ clicks() }}</p>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [JsonPipe],
   hostDirectives: [],
@@ -104,7 +99,6 @@ export class RichTextTestShortNewsElementComponent {
   selector: 'ethlete-rich-test-teaser-collection',
   template: `<p>{{ sys().contentType.sys.id }}</p>
     <pre>{{ fields() | json }}</pre> `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [JsonPipe],
   hostDirectives: [],
@@ -127,7 +121,6 @@ export class RichTextTestTeaserCollectionComponent {
     <button (click)="render5()">Render dummy content 3</button>
     <et-contentful-rich-text-renderer [content]="data()" richTextPath="items[0].fields.html" />
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [ContentfulRichTextRendererComponent],
   providers: [

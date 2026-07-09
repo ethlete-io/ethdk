@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
+import { Component, ViewEncapsulation, input } from '@angular/core';
 
 @Component({
   selector: 'et-sb-dummy-chart',
@@ -25,7 +25,6 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@a
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DummyChartComponent {
   public data = input<unknown>();
@@ -52,7 +51,6 @@ export class DummyChartComponent {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DummyTableComponent {
   public data = input<unknown>();
@@ -75,7 +73,6 @@ export class DummyTableComponent {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DummyTextComponent {
   public data = input<unknown>();

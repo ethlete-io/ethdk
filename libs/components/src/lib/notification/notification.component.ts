@@ -1,13 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ViewEncapsulation,
-  afterNextRender,
-  computed,
-  effect,
-  inject,
-  untracked,
-} from '@angular/core';
+import { Component, ViewEncapsulation, afterNextRender, computed, effect, inject, untracked } from '@angular/core';
 import {
   ANIMATED_LIFECYCLE_TOKEN,
   AnimatedLifecycleDirective,
@@ -32,7 +23,6 @@ import { injectNotificationManagerConfig } from './notification-config';
   templateUrl: './notification.component.html',
   styleUrl: './notification.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     NotificationActionDirective,
     NotificationDismissDirective,

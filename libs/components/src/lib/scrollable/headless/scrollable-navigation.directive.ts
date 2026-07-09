@@ -1,13 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  ViewEncapsulation,
-  computed,
-  inject,
-  signal,
-  viewChild,
-} from '@angular/core';
+import { Component, ElementRef, ViewEncapsulation, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { signalElementDimensions, signalStyles } from '@ethlete/core';
 import { EMPTY, debounceTime, filter, fromEvent, switchMap, tap } from 'rxjs';
@@ -41,7 +32,6 @@ import { ScrollableNavigation } from './scrollable.types';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'et-scrollable-navigation',
     'aria-hidden': 'true',

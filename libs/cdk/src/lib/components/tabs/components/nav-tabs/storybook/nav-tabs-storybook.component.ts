@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation, inject } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, inject } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { NavTabLinkComponent } from '../../../partials/nav-tabs/nav-tab-link';
 import { NavTabsOutletComponent } from '../../../partials/nav-tabs/nav-tabs-outlet';
@@ -20,7 +20,6 @@ import { NavTabsComponent } from '../nav-tabs.component';
     </et-nav-tabs-outlet>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NavTabsComponent, NavTabsOutletComponent, NavTabLinkComponent, RouterModule],
 })
 export class TabNavPanelStorybookComponent implements OnInit {

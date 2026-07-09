@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
+import { Component, ViewEncapsulation, input } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { AutosizeTextareaDirective } from '../../directives/autosize-textarea';
 import { InputImports } from '../../input.imports';
@@ -17,7 +17,6 @@ import { InputImports } from '../../input.imports';
       <et-label>Textarea input</et-label>
     </et-input-field>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [InputImports, AutosizeTextareaDirective, ReactiveFormsModule],
 })

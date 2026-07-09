@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ViewEncapsulation,
-  booleanAttribute,
-  contentChildren,
-  input,
-} from '@angular/core';
+import { Component, ViewEncapsulation, booleanAttribute, contentChildren, input } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { combineLatest, map, pairwise, switchMap, tap } from 'rxjs';
 
@@ -15,7 +8,6 @@ import { ACCORDION_COMPONENT } from '../accordion';
   selector: 'et-accordion-group',
   templateUrl: './accordion-group.component.html',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'et-accordion-group',
   },

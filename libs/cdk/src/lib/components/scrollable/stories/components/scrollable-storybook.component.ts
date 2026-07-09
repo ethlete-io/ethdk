@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, viewChild } from '@angular/core';
+import { Component, ViewEncapsulation, input, viewChild } from '@angular/core';
 import { NgClassType } from '@ethlete/core';
 import { ScrollableButtonPosition, ScrollableComponent, ScrollableScrollOrigin } from '../../components/scrollable';
 import { ScrollableImports } from '../../scrollable.imports';
@@ -113,7 +113,6 @@ import { ScrollableScrollMode } from '../../types';
   ],
   imports: [ScrollableImports],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ScrollableStorybookComponent {
   makeScrollable = true;

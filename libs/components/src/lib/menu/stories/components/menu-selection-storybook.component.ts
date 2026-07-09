@@ -1,5 +1,5 @@
 import { JsonPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, linkedSignal, signal } from '@angular/core';
+import { Component, ViewEncapsulation, linkedSignal, signal } from '@angular/core';
 import { FormField, form } from '@angular/forms/signals';
 import { MENU_IMPORTS } from '../../menu.imports';
 
@@ -46,7 +46,6 @@ import { MENU_IMPORTS } from '../../menu.imports';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [...MENU_IMPORTS, FormField, JsonPipe],
   styles: `
     .et-sb-menu-page {

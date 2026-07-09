@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   ComponentRef,
   DestroyRef,
@@ -40,7 +39,6 @@ import { OVERLAY_REF } from './overlay-ref';
   templateUrl: './overlay-container.component.html',
   styleUrl: './overlay-container.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provideBoundaryElement()],
   hostDirectives: [AnimatedLifecycleDirective, ProvideColorDirective, ProvideSurfaceDirective],
   host: {

@@ -1,5 +1,5 @@
 import { JsonPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, viewChild } from '@angular/core';
+import { Component, ViewEncapsulation, input, viewChild } from '@angular/core';
 import { KickPlayerSlotComponent } from '../../platform/kick/kick-player-slot.component';
 import { StreamImports } from '../../stream.imports';
 
@@ -16,7 +16,6 @@ import { StreamImports } from '../../stream.imports';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [StreamImports, JsonPipe],
 })
 export class KickPlayerStorybookComponent {

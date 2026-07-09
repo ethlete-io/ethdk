@@ -1,6 +1,5 @@
 import {
   AfterContentInit,
-  ChangeDetectionStrategy,
   Component,
   contentChildren,
   effect,
@@ -39,7 +38,6 @@ type MasonryState = {
     <ng-content select="[etMasonryItem], et-masonry-item, ng-container" />
   `,
   styleUrls: ['./masonry.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-masonry',

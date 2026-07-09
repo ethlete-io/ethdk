@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, signal, viewChild } from '@angular/core';
+import { Component, ViewEncapsulation, computed, signal, viewChild } from '@angular/core';
 import { GridItemComponent } from '../../grid-item.component';
 import { GridComponent } from '../../grid.component';
 import { createGridAdapter, fromGridPosition, toGridPosition } from '../../headless/grid-adapter';
@@ -271,7 +271,6 @@ const posEq = (a: GridItemPosition | undefined, b: GridItemPosition | undefined)
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [GridComponent, GridItemComponent],
 })
 export class GridPartnerStorybookComponent {

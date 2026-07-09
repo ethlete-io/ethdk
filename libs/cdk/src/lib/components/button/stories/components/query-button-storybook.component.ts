@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { V2QueryClient } from '@ethlete/query';
 import { ButtonImports } from '../../button.imports';
 
@@ -28,7 +28,6 @@ const getPosts = client.get({
       Query Button
     </button>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [ButtonImports, AsyncPipe],
 })

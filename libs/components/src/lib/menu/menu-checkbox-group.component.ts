@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { MENU_SELECTION_GROUP_MULTIPLE, MenuSelectionGroupDirective } from './headless';
 
 @Component({
@@ -8,7 +8,6 @@ import { MENU_SELECTION_GROUP_MULTIPLE, MenuSelectionGroupDirective } from './he
     <ng-content />
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: MENU_SELECTION_GROUP_MULTIPLE, useValue: true }],
   hostDirectives: [
     {

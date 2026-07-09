@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, ViewEncapsulation, inject } from '@angular/core';
+import { Component, ElementRef, ViewEncapsulation, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { FocusRingDirective } from '../../focus-ring';
 import { TabBarTriggerDirective } from '../headless/tab-bar-trigger.directive';
@@ -9,7 +9,6 @@ import { NavTabLinkDirective } from './headless/nav-tab-link.directive';
   selector: 'a[et-nav-tab-link]',
   template: `<span class="et-nav-tab-link__content"><ng-content /></span><span etTabBarUnderline></span>`,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TabBarUnderlineDirective],
   hostDirectives: [
     {

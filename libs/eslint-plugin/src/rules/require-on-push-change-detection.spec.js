@@ -7,6 +7,8 @@ const rule = require('./require-on-push-change-detection');
 
 const tester = new RuleTester({
   languageOptions: { ecmaVersion: 2022, sourceType: 'module', parser: tsParser },
+  // Pin the gate to Angular <= 21, where OnPush is opt-in and this rule applies.
+  settings: { ethlete: { angularMajor: 21 } },
 });
 
 tester.run('require-on-push-change-detection', rule, {
@@ -22,6 +24,13 @@ class MyCmp {}`,
       code: `
 @Directive({ selector: '[myDir]' })
 class MyDir {}`,
+    },
+    // On Angular 22+, OnPush is the default — the rule must NOT require it.
+    {
+      code: `
+@Component({ selector: 'my-cmp', template: '' })
+class MyCmp {}`,
+      settings: { ethlete: { angularMajor: 22 } },
     },
   ],
   invalid: [

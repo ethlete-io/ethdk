@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
+import { Component, Input, ViewEncapsulation } from '@angular/core';
 import { SortDirection } from '@ethlete/query';
 import { SortHeaderArrowPosition } from '../../partials/sort';
 import { SortImports } from '../../sort.imports';
@@ -19,7 +19,6 @@ import { SortImports } from '../../sort.imports';
   `,
   imports: [SortImports],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SortStorybookComponent {
   @Input()

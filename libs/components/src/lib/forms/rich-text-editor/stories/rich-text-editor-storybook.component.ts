@@ -1,5 +1,5 @@
 import { JsonPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
+import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
 import { disabled, form, FormField, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import {
@@ -33,7 +33,6 @@ import { RICH_TEXT_EDITOR_IMPORTS } from '../rich-text-editor.imports';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [...FORM_FIELD_IMPORTS, ...RICH_TEXT_EDITOR_IMPORTS, FormField, ProvideColorDirective, JsonPipe],
 })
 export class FormFieldRichTextEditorStorybookComponent {

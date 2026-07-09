@@ -1,5 +1,5 @@
 import { AsyncPipe, JsonPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, signal } from '@angular/core';
+import { Component, ViewEncapsulation, computed, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ComboboxImports, provideValidatorErrorsService } from '@ethlete/cdk';
 import { map, timer } from 'rxjs';
@@ -219,7 +219,6 @@ const makeQuery2 = () => {
 @Component({
   selector: 'ethlete-playground-combobox',
   templateUrl: './combobox.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [ReactiveFormsModule, ComboboxImports, AsyncPipe, JsonPipe],
   hostDirectives: [],

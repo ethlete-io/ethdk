@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  ViewEncapsulation,
-  computed,
-  inject,
-  viewChildren,
-} from '@angular/core';
+import { Component, ElementRef, ViewEncapsulation, computed, inject, viewChildren } from '@angular/core';
 import { signalStyles } from '@ethlete/core';
 import { CAROUSEL_ITEM_NAV_TOKEN, CarouselItemNavDirective } from './carousel-item-nav.directive';
 
@@ -29,7 +21,6 @@ import { CAROUSEL_ITEM_NAV_TOKEN, CarouselItemNavDirective } from './carousel-it
       }
     </ul>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-carousel-item-nav-host',

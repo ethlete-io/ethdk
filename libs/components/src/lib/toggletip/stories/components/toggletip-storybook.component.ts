@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, TemplateRef, ViewEncapsulation, input, viewChild } from '@angular/core';
+import { Component, TemplateRef, ViewEncapsulation, input, viewChild } from '@angular/core';
 import { BUTTON_IMPORTS } from '../../../button';
 import { TOGGLETIP_IMPORTS } from '../../toggletip.imports';
 
@@ -55,7 +55,6 @@ import { TOGGLETIP_IMPORTS } from '../../toggletip.imports';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [BUTTON_IMPORTS, TOGGLETIP_IMPORTS],
 })
 export class ToggletipStorybookComponent {

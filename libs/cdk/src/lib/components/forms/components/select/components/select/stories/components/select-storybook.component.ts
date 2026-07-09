@@ -1,5 +1,5 @@
 import { JsonPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { SelectImports } from '../../select.imports';
 
@@ -22,7 +22,6 @@ import { SelectImports } from '../../select.imports';
 
     <button (click)="fg.setValue(null)">Clear</button>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [SelectImports, ReactiveFormsModule, JsonPipe],
 })

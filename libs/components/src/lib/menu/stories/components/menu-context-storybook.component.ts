@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, signal } from '@angular/core';
+import { Component, ViewEncapsulation, signal } from '@angular/core';
 import { MENU_IMPORTS } from '../../menu.imports';
 
 @Component({
@@ -28,7 +28,6 @@ import { MENU_IMPORTS } from '../../menu.imports';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [...MENU_IMPORTS],
   styles: `
     .et-sb-menu-context-page {

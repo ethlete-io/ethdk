@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { provideNotificationManager } from '../../notification-manager';
 import { NotificationStorybookComponent } from './notification-storybook.component';
 
@@ -13,7 +13,6 @@ const statusColorMapping = {
   selector: 'et-sb-notification-bottom-end',
   template: `<et-sb-notification />`,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NotificationStorybookComponent],
   providers: [
     provideNotificationManager({
@@ -28,7 +27,6 @@ export class NotificationBottomEndStorybookComponent {}
   selector: 'et-sb-notification-bottom-center',
   template: `<et-sb-notification />`,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NotificationStorybookComponent],
   providers: [
     provideNotificationManager({
@@ -43,7 +41,6 @@ export class NotificationBottomCenterStorybookComponent {}
   selector: 'et-sb-notification-bottom-start',
   template: `<et-sb-notification />`,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NotificationStorybookComponent],
   providers: [
     provideNotificationManager({
@@ -58,7 +55,6 @@ export class NotificationBottomStartStorybookComponent {}
   selector: 'et-sb-notification-top-end',
   template: `<et-sb-notification />`,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NotificationStorybookComponent],
   providers: [
     provideNotificationManager({
@@ -73,7 +69,6 @@ export class NotificationTopEndStorybookComponent {}
   selector: 'et-sb-notification-top-center',
   template: `<et-sb-notification />`,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NotificationStorybookComponent],
   providers: [
     provideNotificationManager({
@@ -88,7 +83,6 @@ export class NotificationTopCenterStorybookComponent {}
   selector: 'et-sb-notification-top-start',
   template: `<et-sb-notification />`,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NotificationStorybookComponent],
   providers: [
     provideNotificationManager({

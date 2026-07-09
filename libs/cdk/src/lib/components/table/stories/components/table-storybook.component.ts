@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation, viewChild } from '@angular/core';
+import { Component, Input, ViewEncapsulation, viewChild } from '@angular/core';
 import { clone } from '@ethlete/core';
 import { Sort } from '@ethlete/query';
 import { BehaviorSubject } from 'rxjs';
@@ -66,7 +66,6 @@ import { TableImports } from '../../table.imports';
     `,
   ],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TableStorybookComponent {
   // TODO: Skipped for migration because:

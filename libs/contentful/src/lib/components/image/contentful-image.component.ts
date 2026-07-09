@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   ViewEncapsulation,
   booleanAttribute,
@@ -36,7 +35,6 @@ import {
       [sources]="_sources()"
     />
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [PictureComponent],
   host: {

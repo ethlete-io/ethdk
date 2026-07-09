@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -19,7 +18,6 @@ import { CheckboxDirective } from './headless';
   templateUrl: './checkbox.component.html',
   styleUrl: './checkbox.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [
     {
       directive: CheckboxDirective,

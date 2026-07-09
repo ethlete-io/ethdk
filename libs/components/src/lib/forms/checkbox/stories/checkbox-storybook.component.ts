@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
+import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
 import { disabled, form, FormField, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import { CHOICE_FIELD_IMPORTS } from '../../choice-field';
@@ -26,7 +26,6 @@ import { CHECKBOX_IMPORTS } from '../checkbox.imports';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [...CHOICE_FIELD_IMPORTS, ...CHECKBOX_IMPORTS, FormField, ProvideColorDirective],
 })
 export class FormFieldCheckboxStorybookComponent {

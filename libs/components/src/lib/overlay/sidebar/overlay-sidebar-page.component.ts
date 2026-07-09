@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, TemplateRef, ViewEncapsulation, input } from '@angular/core';
+import { Component, TemplateRef, ViewEncapsulation, input } from '@angular/core';
 import { OverlayBodyComponent, OverlayBodyDividerType } from '../overlay-body.component';
 import { OverlayHeaderDirective } from '../overlay-header.directive';
 import { OverlayHeaderTemplateDirective } from '../overlay-header-template.directive';
@@ -19,7 +19,6 @@ import { OverlayMainDirective } from '../overlay-main.directive';
     </et-overlay-body>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [OverlayHeaderDirective, OverlayBodyComponent, NgTemplateOutlet],
   hostDirectives: [OverlayMainDirective],
   host: {

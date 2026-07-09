@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
+import { Component, inject, ViewEncapsulation } from '@angular/core';
 import { InputDirective } from '../../../../directives/input';
 import { NativeInputRefDirective } from '../../../../directives/native-input-ref';
 import { DecoratedInputBase } from '../../../../utils';
@@ -9,7 +9,6 @@ import { COLOR_INPUT_TOKEN, ColorInputDirective } from '../../directives/color-i
   selector: 'et-color-input',
   templateUrl: './color-input.component.html',
   styleUrls: ['./color-input.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-color-input',

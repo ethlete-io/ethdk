@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
+import { Component, ViewEncapsulation, inject } from '@angular/core';
 import { OVERLAY_ROUTER_OUTLET_TOKEN } from './overlay-router-outlet.component';
 
 @Component({
@@ -9,7 +9,6 @@ import { OVERLAY_ROUTER_OUTLET_TOKEN } from './overlay-router-outlet.component';
       <ng-container *ngTemplateOutlet="tpl" />
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-overlay-shared-route-template-outlet-host',

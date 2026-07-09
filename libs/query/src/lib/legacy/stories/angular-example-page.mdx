@@ -40,11 +40,9 @@ import { controlValueSignal } from '@ethlete/core';
 
 @Component({
   selector: 'app-product-list',
-
   imports: [QueryDirective, ReactiveFormsModule],
   templateUrl: './product-list.component.html',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProductListComponent {
   getProductsQuery = getProducts.createSignal();

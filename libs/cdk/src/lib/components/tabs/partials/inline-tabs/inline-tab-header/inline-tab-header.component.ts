@@ -1,7 +1,6 @@
 import {
   AfterContentChecked,
   AfterContentInit,
-  ChangeDetectionStrategy,
   Component,
   ContentChildren,
   forwardRef,
@@ -18,7 +17,6 @@ import { InlineTabLabelWrapperDirective } from '../inline-tab-label-wrapper';
   selector: 'et-inline-tab-header',
   templateUrl: 'inline-tab-header.component.html',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ScrollableComponent],
   host: {
     class: 'et-inline-tab-header',

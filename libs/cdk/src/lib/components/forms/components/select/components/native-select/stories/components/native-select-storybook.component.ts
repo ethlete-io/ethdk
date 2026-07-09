@@ -1,5 +1,5 @@
 import { JsonPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { NativeSelectImports } from '../../native-select.imports';
 
@@ -21,7 +21,6 @@ import { NativeSelectImports } from '../../native-select.imports';
 
     <pre> {{ fg.value | json }} </pre>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [NativeSelectImports, ReactiveFormsModule, JsonPipe],
 })

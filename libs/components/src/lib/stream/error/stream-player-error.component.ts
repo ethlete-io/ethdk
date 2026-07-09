@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject } from '@angular/core';
+import { Component, ViewEncapsulation, computed, inject } from '@angular/core';
 import {
   ProvideSurfaceDirective,
   SURFACE_PROVIDER,
@@ -24,7 +24,6 @@ import { injectStreamPlayerErrorConfig } from './stream-player-error-config';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ButtonComponent, IconDirective, ProvideSurfaceDirective],
   providers: [provideIcons(TRIANGLE_EXCLAMATION_ICON)],
   hostDirectives: [StreamPlayerErrorDirective],

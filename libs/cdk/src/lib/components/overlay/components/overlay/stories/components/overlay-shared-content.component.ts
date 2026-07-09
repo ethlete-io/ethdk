@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
+import { Component, inject, ViewEncapsulation } from '@angular/core';
 import {
   OverlayBodyComponent,
   OverlayCloseDirective,
@@ -114,7 +114,6 @@ export type OverlaySimpleContentData = {
     OverlayFooterDirective,
   ],
   hostDirectives: [OverlayMainDirective],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })
 export class OverlaySimpleContentComponent {

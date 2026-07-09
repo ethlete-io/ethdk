@@ -1,4 +1,4 @@
-import { booleanAttribute, ChangeDetectionStrategy, Component, input, signal, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, input, signal, ViewEncapsulation } from '@angular/core';
 import {
   ARROW_OUT_UP_RIGHT_ICON,
   ARROW_RIGHT_ICON,
@@ -107,7 +107,6 @@ const WINDOW_CONTROL_BUTTON_EXAMPLES = [
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [...BUTTON_IMPORTS],
 })
 export class ButtonTextStorybookComponent {
@@ -147,7 +146,6 @@ export class ButtonTextStorybookComponent {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [...BUTTON_IMPORTS],
 })
 export class ButtonSurfaceStorybookComponent {
@@ -191,7 +189,6 @@ export class ButtonSurfaceStorybookComponent {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [...BUTTON_IMPORTS, ...ICON_IMPORTS],
   providers: [provideIcons(ARROW_RIGHT_ICON, CLIPBOARD_CHECK_ICON, FLOPPY_DISK_ICON, PENCIL_ICON, PLUS_ICON)],
 })
@@ -255,7 +252,6 @@ export class ButtonIconStorybookComponent {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [...BUTTON_IMPORTS, ...ICON_IMPORTS],
   providers: [provideIcons(ARROW_RIGHT_ICON, CLIPBOARD_CHECK_ICON, FLOPPY_DISK_ICON, PENCIL_ICON, PLUS_ICON)],
 })
@@ -321,7 +317,6 @@ export class ButtonFabStorybookComponent {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [...BUTTON_IMPORTS, ...ICON_IMPORTS],
   providers: [provideIcons(ARROW_OUT_UP_RIGHT_ICON, FOCUS_FRAME_ICON, GRID_2X2_ICON, TIMES_ICON)],
 })
@@ -370,7 +365,6 @@ export class ButtonWindowControlStorybookComponent {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [...BUTTON_IMPORTS, ...ICON_IMPORTS],
   providers: [provideIcons(ARROW_RIGHT_ICON, CLIPBOARD_CHECK_ICON, FLOPPY_DISK_ICON, PENCIL_ICON, PLUS_ICON)],
 })
@@ -413,7 +407,6 @@ export class ButtonSurfaceIconStorybookComponent {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [...BUTTON_IMPORTS, ...ICON_IMPORTS],
   providers: [provideIcons(ARROW_RIGHT_ICON, CLIPBOARD_CHECK_ICON, FLOPPY_DISK_ICON, PENCIL_ICON, PLUS_ICON)],
 })

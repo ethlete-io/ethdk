@@ -1,7 +1,6 @@
 import { NgComponentOutlet } from '@angular/common';
 import {
   booleanAttribute,
-  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -38,7 +37,6 @@ import { BracketSwissColors, injectNewBracketConfig } from './new-bracket.config
   selector: 'et-new-bracket',
   templateUrl: './new-bracket.component.html',
   styleUrl: './new-bracket.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-new-bracket-host',

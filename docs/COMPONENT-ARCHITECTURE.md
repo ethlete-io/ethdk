@@ -375,7 +375,6 @@ A component-directive is a `@Component` with an **attribute selector** and a `<n
 @Component({
   selector: '[etSelectTrigger]',
   template: `<ng-content />`,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   styles: `
     @property --_et-select-trigger-height {

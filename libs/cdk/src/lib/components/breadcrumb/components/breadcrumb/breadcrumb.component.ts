@@ -1,14 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  contentChildren,
-  effect,
-  input,
-  signal,
-  ViewEncapsulation,
-} from '@angular/core';
+import { Component, computed, contentChildren, effect, input, signal, ViewEncapsulation } from '@angular/core';
 import { signalHostElementDimensions, signalHostElementScrollState } from '@ethlete/core';
 import { OffsetOptions } from '@floating-ui/dom';
 import { CHEVRON_ICON } from '../../../icons/chevron-icon';
@@ -75,7 +66,6 @@ const MIN_ITEMS_TO_RENDER = 3;
   `,
   styleUrl: './breadcrumb.component.scss',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'et-breadcrumb',
   },

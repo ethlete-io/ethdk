@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { InputImports } from '../../input.imports';
 
@@ -10,7 +10,6 @@ import { InputImports } from '../../input.imports';
       <et-label>Text input</et-label>
     </et-input-field>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [InputImports, ReactiveFormsModule],
 })

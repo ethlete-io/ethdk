@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
+import { Component, inject, ViewEncapsulation } from '@angular/core';
 import { InputDirective } from '../../../../directives/input';
 import { NativeInputRefDirective } from '../../../../directives/native-input-ref';
 import { DecoratedInputBase } from '../../../../utils';
@@ -9,7 +9,6 @@ import { DATE_INPUT_TOKEN, DateInputDirective } from '../../directives/date-inpu
   selector: 'et-date-input',
   templateUrl: './date-input.component.html',
   styleUrls: ['./date-input.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-date-input',

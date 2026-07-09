@@ -2,7 +2,6 @@ import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal, ComponentType } from '@angular/cdk/portal';
 import { NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
   Component,
   ComponentRef,
   ContentChildren,
@@ -157,7 +156,6 @@ export class EtAccordionDirective {
 @Component({
   selector: 'ethlete-arch-test-accordion',
   template: `<ng-content />`,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [{ directive: EtAccordionDirective, inputs: ['mode'] }],
 })
@@ -185,7 +183,6 @@ export class ArchTestAccordionComponent {
       <ng-content />
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [PropsDirective],
   hostDirectives: [{ directive: EtAccordionItemDirective, inputs: ['disabled', 'isExpanded'] }],
@@ -599,7 +596,6 @@ export class ArchTestOverlayTriggerDirective {
     }
     <div [etProps]="overlay.arrowProps"></div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   styles: [
     `

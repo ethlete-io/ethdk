@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  TemplateRef,
-  ViewEncapsulation,
-  contentChild,
-  input,
-  viewChild,
-} from '@angular/core';
+import { Component, TemplateRef, ViewEncapsulation, contentChild, input, viewChild } from '@angular/core';
 import { TabLabelDirective } from './tab-label.directive';
 
 @Component({
@@ -18,7 +10,6 @@ import { TabLabelDirective } from './tab-label.directive';
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'et-tab',
     style: 'display: none',

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { MENU_SELECTION_ITEM_KIND, MenuItemDirective, MenuSelectionItemDirective } from './headless';
 
 @Component({
@@ -6,7 +6,6 @@ import { MENU_SELECTION_ITEM_KIND, MenuItemDirective, MenuSelectionItemDirective
   templateUrl: './menu-selection-item.component.html',
   styleUrl: './menu-selection-item.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: MENU_SELECTION_ITEM_KIND, useValue: 'radio' }],
   hostDirectives: [
     {

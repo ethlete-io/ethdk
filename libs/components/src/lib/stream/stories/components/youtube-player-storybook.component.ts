@@ -1,5 +1,5 @@
 import { JsonPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, viewChild } from '@angular/core';
+import { Component, ViewEncapsulation, input, viewChild } from '@angular/core';
 import { YoutubePlayerSlotComponent } from '../../platform/youtube/youtube-player-slot.component';
 import { StreamImports } from '../../stream.imports';
 
@@ -16,7 +16,6 @@ import { StreamImports } from '../../stream.imports';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [StreamImports, JsonPipe],
 })
 export class YoutubePlayerStorybookComponent {

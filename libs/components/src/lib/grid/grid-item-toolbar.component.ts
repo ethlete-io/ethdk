@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 
 @Component({
   selector: 'et-grid-item-toolbar, [et-grid-item-toolbar]',
   template: `<ng-content />`,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'et-grid-item-toolbar',
     '(pointerdown)': '$event.stopPropagation()',

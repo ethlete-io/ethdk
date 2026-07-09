@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation, inject } from '@angular/core';
+import { Component, Input, ViewEncapsulation, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ValidationErrors } from '@angular/forms';
 import { signalHostClasses } from '@ethlete/core';
@@ -14,7 +14,6 @@ let _uniqueIdCounter = 0;
   selector: 'et-error',
   templateUrl: './error.component.html',
   styleUrls: ['./error.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-error',

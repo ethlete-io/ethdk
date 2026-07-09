@@ -1,13 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ViewEncapsulation,
-  computed,
-  effect,
-  inject,
-  untracked,
-  viewChild,
-} from '@angular/core';
+import { Component, ViewEncapsulation, computed, effect, inject, untracked, viewChild } from '@angular/core';
 import {
   ProvideSurfaceDirective,
   SURFACE_PROVIDER,
@@ -38,7 +29,6 @@ import { injectPipSlotPlaceholderConfig } from './pip-slot-placeholder-config';
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PipBringBackDirective, ButtonComponent, IconDirective, ProvideSurfaceDirective],
   providers: [provideIcons(ARROW_OUT_UP_RIGHT_ICON)],
   styles: `

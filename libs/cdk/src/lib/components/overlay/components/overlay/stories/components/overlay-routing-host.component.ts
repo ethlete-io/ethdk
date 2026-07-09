@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal, ViewEncapsulation } from '@angular/core';
+import { Component, inject, signal, ViewEncapsulation } from '@angular/core';
 import { ProgressSpinnerComponent } from '../../../../../progress-spinner';
 import {
   OverlayBodyComponent,
@@ -29,7 +29,6 @@ import { RouterOutlet } from '@angular/router';
 @Component({
   selector: 'et-sb-routing-story-route',
   template: `<router-outlet />`,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [RouterOutlet],
 })
@@ -50,7 +49,6 @@ export class RoutingStorybookRouteComponent {}
       <p class="rt-page-text">Use the footer buttons to move between steps.</p>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [OverlayHeaderTemplateDirective],
 })
@@ -69,7 +67,6 @@ export class RoutingDemoPage1Component {}
       </ul>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [OverlayHeaderTemplateDirective],
 })
@@ -83,7 +80,6 @@ export class RoutingDemoPage2Component {}
       <p class="rt-page-text">Final step. Close the overlay or navigate back to any previous step.</p>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [OverlayHeaderTemplateDirective],
 })
@@ -196,7 +192,6 @@ const RT_STYLES = `
     </div>
   `,
   styles: [OVERLAY_PANEL_STYLES, RT_STYLES],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [OverlayMainDirective],
   providers: [OverlayRouterService],
@@ -243,7 +238,6 @@ export class RoutingDemoOverlayComponent {
       </et-overlay-footer>
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [OverlayMainDirective],
   imports: [
@@ -280,7 +274,6 @@ export class SidebarDemoPage1Component {
       </et-overlay-footer>
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [OverlayMainDirective],
   imports: [
@@ -315,7 +308,6 @@ export class SidebarDemoPage2Component {
       </et-overlay-footer>
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [OverlayMainDirective],
   imports: [
@@ -431,7 +423,6 @@ const SB_STYLES = `
     <et-overlay-router-outlet />
   `,
   styles: [OVERLAY_PANEL_STYLES, SB_STYLES],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   providers: [OverlayRouterService, SidebarOverlayService],
   imports: [
@@ -477,7 +468,6 @@ export class SidebarDemoOverlayComponent {}
     </div>
   `,
   styles: [STORY_HOST_STYLES],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })
 export class OverlayRoutingHostComponent {

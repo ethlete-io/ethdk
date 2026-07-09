@@ -1,12 +1,4 @@
-import {
-  booleanAttribute,
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-  numberAttribute,
-  ViewEncapsulation,
-} from '@angular/core';
+import { booleanAttribute, Component, computed, input, numberAttribute, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { controlValueSignal } from '@ethlete/core';
 import {
@@ -29,7 +21,6 @@ import { createNewBracket } from '../../components/new-bracket/linked';
   selector: 'et-sb-debug-bracket',
   templateUrl: './debug-bracket-storybook.component.html',
   imports: [ReactiveFormsModule],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     style: 'display: grid; width: 100%; height: 100%; position: relative;',

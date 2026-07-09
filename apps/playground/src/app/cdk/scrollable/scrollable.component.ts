@@ -1,13 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  ViewChild,
-  ViewEncapsulation,
-  computed,
-  effect,
-  signal,
-} from '@angular/core';
+import { Component, ElementRef, ViewChild, ViewEncapsulation, computed, effect, signal } from '@angular/core';
 import { ScrollableImports } from '@ethlete/cdk';
 import {
   injectObserveBreakpoint,
@@ -23,7 +14,6 @@ const perfNow = performance.now();
   selector: 'ethlete-scrollable',
   templateUrl: './scrollable.component.html',
   styleUrls: ['./scrollable.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [ScrollableImports],
 })
@@ -245,7 +235,6 @@ export class EthleteScrollableComponent {
       <div class="scroll-content-item"></div>
     </ethlete-scrollable>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [EthleteScrollableComponent],
 })

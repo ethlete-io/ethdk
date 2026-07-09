@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, ViewEncapsulation } from '@angular/core';
+import { Component, inject, input, ViewEncapsulation } from '@angular/core';
 import { IconButtonComponent } from '../../button/icon-button.component';
 import { CHEVRON_ICON } from '../../icon/headless/chevron-icon';
 import { provideIcons } from '../../icon/headless/icon-provider';
@@ -35,7 +35,6 @@ import { ScrollableButtonPosition } from './scrollable.types';
     </button>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IconDirective, IconButtonComponent],
   providers: [provideIcons(CHEVRON_ICON)],
   host: {

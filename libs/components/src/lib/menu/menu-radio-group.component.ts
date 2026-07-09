@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { MenuSelectionGroupDirective } from './headless';
 
 @Component({
@@ -8,7 +8,6 @@ import { MenuSelectionGroupDirective } from './headless';
     <ng-content />
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [
     {
       directive: MenuSelectionGroupDirective,

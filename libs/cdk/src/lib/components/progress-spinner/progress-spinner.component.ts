@@ -1,6 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
   Component,
   ElementRef,
   InjectionToken,
@@ -39,7 +38,6 @@ const BASE_STROKE_WIDTH = 10;
   selector: 'et-progress-spinner, et-spinner',
   templateUrl: './progress-spinner.component.html',
   styleUrls: ['./progress-spinner.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-progress-spinner',

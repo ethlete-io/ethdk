@@ -1,13 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ViewEncapsulation,
-  booleanAttribute,
-  computed,
-  input,
-  numberAttribute,
-} from '@angular/core';
+import { Component, ViewEncapsulation, booleanAttribute, computed, input, numberAttribute } from '@angular/core';
 
 const BASE_STROKE_WIDTH = 10;
 
@@ -88,7 +80,6 @@ const BASE_STROKE_WIDTH = 10;
   `,
   styleUrl: './spinner.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NgTemplateOutlet],
   host: {
     class: 'et-spinner',

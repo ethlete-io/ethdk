@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
+import { Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
 import { injectLocale } from '@ethlete/core';
 import { IconButtonComponent } from '../button/icon-button.component';
 import { ICON_IMPORTS, TIMES_ICON, provideIcons } from '../icon';
@@ -23,7 +23,6 @@ import { GRID_TOKEN } from './headless/grid.tokens';
     </et-grid-item-toolbar>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [GridItemToolbarComponent, IconButtonComponent, ...ICON_IMPORTS],
   providers: [provideIcons(TIMES_ICON)],
   styles: `

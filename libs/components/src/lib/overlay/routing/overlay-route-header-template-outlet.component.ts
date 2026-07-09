@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject, viewChild } from '@angular/core';
+import { Component, ViewEncapsulation, inject, viewChild } from '@angular/core';
 import { ANIMATED_LIFECYCLE_TOKEN, AnimatedIfDirective, AnimatedLifecycleDirective } from '@ethlete/core';
 import { OVERLAY_REF } from '../overlay-ref';
 import { injectOverlayRouter } from './overlay-router';
@@ -16,7 +16,6 @@ import { injectOverlayRouter } from './overlay-router';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AnimatedIfDirective, AnimatedLifecycleDirective, NgTemplateOutlet],
   host: {
     class: 'et-overlay-route-header-template-outlet-host',

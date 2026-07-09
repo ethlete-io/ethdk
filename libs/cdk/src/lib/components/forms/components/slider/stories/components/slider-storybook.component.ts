@@ -1,5 +1,5 @@
 import { JsonPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { SliderImports } from '../../slider.imports';
 
@@ -65,7 +65,6 @@ import { SliderImports } from '../../slider.imports';
 
     <pre> {{ fg.value | json }} </pre>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [SliderImports, ReactiveFormsModule, JsonPipe],
 })

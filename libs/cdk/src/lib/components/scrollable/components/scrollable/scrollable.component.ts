@@ -1,6 +1,5 @@
 import { NgClass, NgTemplateOutlet } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
   Component,
   ElementRef,
   ViewEncapsulation,
@@ -91,7 +90,6 @@ export type ScrollableLoadingTemplatePosition = 'start' | 'end';
   templateUrl: './scrollable.component.html',
   styleUrls: ['./scrollable.component.scss'],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     NgClass,
     ScrollableIgnoreChildDirective,

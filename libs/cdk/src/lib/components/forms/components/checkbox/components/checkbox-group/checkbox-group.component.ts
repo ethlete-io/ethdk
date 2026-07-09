@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { StaticFormGroupDirective } from '../../../../directives/static-form-group';
 import { CheckboxGroupDirective } from '../../directives/checkbox-group';
 
@@ -6,7 +6,6 @@ import { CheckboxGroupDirective } from '../../directives/checkbox-group';
   selector: 'et-checkbox-group',
   template: ` <ng-content /> `,
   styleUrls: ['./checkbox-group.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-form-group et-checkbox-group',

@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
+import { Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CONTENTFUL_CONFIG } from '../../constants/contentful.constants';
 import { createContentfulConfig } from '../../utils/contentful-config';
@@ -28,7 +28,6 @@ const getPrimaryDomain = (host: string): string => {
     style: 'display: contents',
   },
   imports: [RouterLink],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
 })
 export class ContentfulLinkComponent {

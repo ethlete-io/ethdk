@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, ViewEncapsulation } from '@angular/core';
+import { Component, inject, ViewEncapsulation } from '@angular/core';
 import { ColorInteractiveDirective, createCanAnimateSignal } from '@ethlete/core';
 import { DescriptionComponent } from '../../description';
 import { SelectionOptionDirective } from '../headless';
@@ -8,7 +8,6 @@ import { SelectionOptionDirective } from '../headless';
   templateUrl: './radio.component.html',
   styleUrl: './radio.component.css',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DescriptionComponent],
   hostDirectives: [
     {

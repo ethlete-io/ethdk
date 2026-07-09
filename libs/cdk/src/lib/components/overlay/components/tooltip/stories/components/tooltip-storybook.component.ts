@@ -1,5 +1,5 @@
 import { OverlayModule } from '@angular/cdk/overlay';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { Placement } from '@floating-ui/dom';
 import { TooltipDirective } from '../../directives/tooltip';
 
@@ -53,7 +53,6 @@ import { TooltipDirective } from '../../directives/tooltip';
   ],
   imports: [TooltipDirective, OverlayModule],
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TooltipStorybookComponent {
   placement: Placement = 'bottom';
