@@ -1,5 +1,24 @@
 # @ethlete/core
 
+## 5.0.0-next.21
+
+### Minor Changes
+
+- [#3013](https://github.com/ethlete-io/ethdk/pull/3013) [`3f2eaad`](https://github.com/ethlete-io/ethdk/commit/3f2eaadf324bc6962a78efd2be1b7935106cc423) Thanks [@github-actions](https://github.com/apps/github-actions)! - Enrich the drag and resize gesture events:
+  - `DragHandleDirective`'s `dragStarted` output now emits a `DragStartEvent` with the `clientX` / `clientY` of the initial pointerdown (previously it emitted `void`).
+  - `DragMoveEvent` now includes `totalDx` / `totalDy`, the cumulative delta from the pointerdown position, alongside the per-step deltas.
+  - `ResizeMoveEvent` now includes `clientX` / `clientY`.
+
+  These give consumers absolute pointer information without having to accumulate the per-step deltas themselves.
+
+- [#3013](https://github.com/ethlete-io/ethdk/pull/3013) [`3f2eaad`](https://github.com/ethlete-io/ethdk/commit/3f2eaadf324bc6962a78efd2be1b7935106cc423) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay: anchored positioning now accepts a `VirtualElement` (from `@floating-ui/dom`) as the `referenceElement`, not just an `HTMLElement`. This makes it possible to anchor an overlay to an arbitrary point or region — for example positioning a context menu at the pointer. When a virtual reference is used, `mirrorWidth` and origin-element based behaviors gracefully fall back since there is no real element to measure.
+
+- [#3013](https://github.com/ethlete-io/ethdk/pull/3013) [`3f2eaad`](https://github.com/ethlete-io/ethdk/commit/3f2eaadf324bc6962a78efd2be1b7935106cc423) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `injectPrefersReducedMotion`, a signal that reflects the `(prefers-reduced-motion: reduce)` media query so components can opt out of animations for users who prefer reduced motion.
+
+### Patch Changes
+
+- [`4e9f2b4`](https://github.com/ethlete-io/ethdk/commit/4e9f2b4d12335fafef192350aef8ffc584996a91) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove the now-redundant `changeDetection: ChangeDetectionStrategy.OnPush` declaration (and its `ChangeDetectionStrategy` import) from all components. OnPush is the default change detection strategy since Angular 22, so this is a no-op cleanup with no behavioral change.
+
 ## 5.0.0-next.20
 
 ### Minor Changes
