@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.1.0-next.15
+
+### Minor Changes
+
+- [#3013](https://github.com/ethlete-io/ethdk/pull/3013) [`3f2eaad`](https://github.com/ethlete-io/ethdk/commit/3f2eaadf324bc6962a78efd2be1b7935106cc423) Thanks [@github-actions](https://github.com/apps/github-actions)! - Grid: layout changes are now animated. The container height transitions smoothly as items are added, removed, or reflowed, and items animate on enter and leave instead of snapping. Animations are automatically disabled during the initial render and while the container width is settling (e.g. on resize) so placement never animates unexpectedly, and are fully suppressed for users who prefer reduced motion. Animation duration is tunable via the `--et-grid-anim-duration` custom property.
+
+- [#3013](https://github.com/ethlete-io/ethdk/pull/3013) [`3f2eaad`](https://github.com/ethlete-io/ethdk/commit/3f2eaadf324bc6962a78efd2be1b7935106cc423) Thanks [@github-actions](https://github.com/apps/github-actions)! - Grid: dragging an item near the edge of a scrollable ancestor now auto-scrolls the container, so items can be moved to positions that are off-screen without letting go. The scroll speed ramps up with edge proximity and stops as soon as the drag ends.
+
+- [#3013](https://github.com/ethlete-io/ethdk/pull/3013) [`3f2eaad`](https://github.com/ethlete-io/ethdk/commit/3f2eaadf324bc6962a78efd2be1b7935106cc423) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add a new `Menu` component and headless menu primitives. It provides a fully accessible, overlay-anchored menu system built on the styled components `MenuComponent` (`et-menu`), `MenuItemComponent` (`et-menu-item`), `MenuItemShortcutComponent` (`et-menu-item-shortcut`), `MenuSeparatorComponent` (`et-menu-separator`), `MenuGroupLabelComponent` (`et-menu-group-label`), and the selection components `MenuRadioGroupComponent` / `MenuRadioItemComponent` and `MenuCheckboxGroupComponent` / `MenuCheckboxItemComponent`. All are bundled in `MenuImports`.
+
+  Highlights:
+  - Open a menu from any element with `etMenuTrigger`, nest submenus, and open at the pointer as a right-click context menu with `etMenuContextTrigger`.
+  - Full keyboard support with roving focus, typeahead, and configurable hover intent so submenus don't flicker on diagonal pointer movement.
+  - Single- and multi-select groups (`radio` / `checkbox` semantics) via `etMenuSelectionGroup` / `etMenuSelectionItem`.
+  - Built-in filtering with `input[etMenuSearch]`, including async search sources.
+  - Headless directives (`etMenu`, `etMenuPanel`, `etMenuItem`, `etMenuTrigger`, `etMenuContextTrigger`, `etMenuSelectionGroup`, `etMenuSelectionItem`, `etMenuSurface`, `input[etMenuSearch]`) are exported for building custom menu UIs.
+
+- [#3013](https://github.com/ethlete-io/ethdk/pull/3013) [`3f2eaad`](https://github.com/ethlete-io/ethdk/commit/3f2eaadf324bc6962a78efd2be1b7935106cc423) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay: add `overlayRef.updatePositionStrategy(strategy)` to re-apply positioning with a new strategy without remounting the overlay. Useful for repositioning an open overlay (e.g. moving an anchored menu to a new reference or point). Note that a strategy-controller breakpoint switch will override this with its own strategy again.
+
+### Patch Changes
+
+- [#3013](https://github.com/ethlete-io/ethdk/pull/3013) [`3f2eaad`](https://github.com/ethlete-io/ethdk/commit/3f2eaadf324bc6962a78efd2be1b7935106cc423) Thanks [@github-actions](https://github.com/apps/github-actions)! - Grid: rework drag and resize on a unified pixel/span geometry model so the live preview, the clamped pixel rect, and the snapped grid position can no longer disagree. This fixes item drift and overlap during fast drags and resizes near the grid bounds, keeps items within their configured min/max span constraints, and makes a drag snap to the pointer on commit instead of trailing it by the drag threshold.
+
+- [`4e9f2b4`](https://github.com/ethlete-io/ethdk/commit/4e9f2b4d12335fafef192350aef8ffc584996a91) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove the now-redundant `changeDetection: ChangeDetectionStrategy.OnPush` declaration (and its `ChangeDetectionStrategy` import) from all components. OnPush is the default change detection strategy since Angular 22, so this is a no-op cleanup with no behavioral change.
+
 ## 0.1.0-next.14
 
 ### Minor Changes

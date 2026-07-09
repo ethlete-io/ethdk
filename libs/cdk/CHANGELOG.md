@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.19
+
+### Patch Changes
+
+- [`4e9f2b4`](https://github.com/ethlete-io/ethdk/commit/4e9f2b4d12335fafef192350aef8ffc584996a91) Thanks [@TomTomB](https://github.com/TomTomB)! - Remove the now-redundant `changeDetection: ChangeDetectionStrategy.OnPush` declaration (and its `ChangeDetectionStrategy` import) from all components. OnPush is the default change detection strategy since Angular 22, so this is a no-op cleanup with no behavioral change.
+
 ## 5.0.0-next.18
 
 ### Major Changes
