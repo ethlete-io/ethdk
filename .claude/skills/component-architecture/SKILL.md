@@ -64,3 +64,6 @@ detail, examples, and rationale.
 When a change is non-trivial or you're unsure how a piece should be tiered, open
 `docs/COMPONENT-ARCHITECTURE.md` and follow it — don't infer the architecture from
 a single nearby file.
+
+A new component domain also needs a guide page on the VitePress docs site
+(`apps/docs/components/<domain>.md` + sidebar entry) — see the **`docs`** skill.

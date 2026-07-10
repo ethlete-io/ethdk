@@ -96,3 +96,9 @@ Summary of the cross-package change.
 After writing, sanity-check the frontmatter parses: package names are quoted,
 each has a valid level (`patch` | `minor` | `major`), and the file has the
 `---` … `---` block followed by a blank line and the note.
+
+## Companion: docs
+
+A change that warrants a `minor` or `major` changeset (new/changed/removed
+public API or behavior) almost always also needs a docs update in `apps/docs` —
+see the **`docs`** skill. Patch-level internal fixes usually don't.

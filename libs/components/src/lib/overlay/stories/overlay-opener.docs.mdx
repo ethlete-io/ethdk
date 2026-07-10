@@ -1,0 +1,41 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Components/Overlay/Using Openers" />
+
+# Overlay openers
+
+Imperative overlays are split into three pieces:
+
+1. **Definition** (module scope, no DI) — binds the component to its base config once.
+2. **Opener** (injection context) — opens/closes overlays and wires lifecycle callbacks.
+3. **Ref** (inside the overlay component) — typed access to the open overlay.
+
+```ts
+// module scope
+export const productOverlay = defineOverlay<ProductOverlayComponent, ProductResult>({
+  component: ProductOverlayComponent,
+  strategies: dialogOverlayStrategy({ maxWidth: '480px' }),
+});
+
+// in a consuming component
+private product = createOverlayOpener(productOverlay, {
+  afterClosed: (result) => console.log(result),
+});
+this.product.open({ origin: event, bindings: [inputBinding('productId', () => '42')] });
+
+// inside ProductOverlayComponent
+protected overlayRef = productOverlay.injectRef();
+```
+
+Configs merge **additively** across definition → opener → per-open: `bindings`, `providers` and
+class lists concatenate; scalar options are most-specific-wins.
+
+For URL-driven overlays (open while a query param is present, deep-linkable, back/forward aware),
+use `defineQueryParamOverlay({ component, queryParamKey, ... })` — the component must expose an
+`overlayQueryParam` model. The same `createOverlayOpener` then returns `open(value)` / `close()`,
+and `[etQueryParamOverlayLink]` opens it from templates. The story below demonstrates both kinds.
+
+**Full guide** — concepts, merge semantics, query-param lifecycle and migration from the old
+handler API — in the SDK docs:
+[main](https://ethlete-sdk-docs.web.app/components/overlay-openers) /
+[next](https://ethlete-sdk-docs-next.web.app/components/overlay-openers).

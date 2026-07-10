@@ -1,0 +1,179 @@
+# Overlays
+
+The overlay system is the foundation for everything floating in `@ethlete/components` — dialogs, sheets, popovers, and internally also [menus](/components/menu), [tooltips](/components/tooltip) and [toggletips](/components/toggletip). It renders a component (or template) in a detached pane, positions it (centered, anchored, or strategy-driven), and manages backdrop, focus, dismissal and animations.
+
+## Setup
+
+Call `provideOverlay()` once at bootstrap — it registers the scroll blocker that locks body scroll while overlays are open:
+
+```ts
+export const appConfig: ApplicationConfig = {
+  providers: [provideOverlay()],
+};
+```
+
+## Opening an overlay
+
+`injectOverlayManager()` returns the root `OverlayManager`. `open(component, config?)` mounts the component and returns a typed `OverlayRef`:
+
+```ts
+export class ExampleComponent {
+  private overlayManager = injectOverlayManager();
+
+  protected openDialog() {
+    const ref = this.overlayManager.open(ExampleOverlayComponent, {
+      strategies: dialogOverlayStrategy({ maxWidth: '480px' }),
+    });
+
+    ref.afterClosed().subscribe((result) => console.log(result));
+  }
+}
+```
+
+::: tip Prefer overlay openers
+For overlays opened from more than one place — or anything with lifecycle callbacks — use the [overlay opener API](/components/overlay-openers) (`defineOverlay` + `createOverlayOpener`) instead of calling the manager directly. It removes the repeated config and handles subscription cleanup for you.
+:::
+
+Defaults worth knowing:
+
+| Option                                   | Default                                                                    |
+| ---------------------------------------- | -------------------------------------------------------------------------- |
+| `mode`                                   | `'modal'` — set `'non-modal'` for popover-style overlays                   |
+| `role`                                   | `'dialog'` when modal                                                      |
+| `hasBackdrop`                            | Follows `mode` (modal → backdrop)                                          |
+| `closeOnEscape`, `closeOnOutsidePointer` | `true`; `disableClose: true` forces both off                               |
+| Position                                 | Anchored to `origin` when it's an element, otherwise centered              |
+| `origin` (with strategies)               | Falls back to the currently focused element (used as transform origin too) |
+
+Data goes in via `bindings` (Angular's `inputBinding` / `outputBinding` / `twoWayBinding`) and `providers` — see [passing data](/components/overlay-openers#passing-data-into-the-overlay).
+
+### The overlay ref
+
+The `OverlayRef` is returned by `open` and injectable inside the overlay via the `OVERLAY_REF` token (or, with openers, via `definition.injectRef()`):
+
+- `close(result?)` — close with an optional typed result
+- `afterOpened()`, `beforeClosed()`, `afterClosed()` — one-shot observables
+- `componentInstance()` — the content component instance
+- `updatePositionStrategy(strategy)` — reposition without remounting
+
+## Live demo
+
+<StoryEmbed id="components-overlay--default" height="480px" />
+
+## Building overlay content
+
+Import `OVERLAY_CONTENT_IMPORTS` into the overlay component and structure it with the content pieces — a grid layout with pinned header/footer and a scrolling body:
+
+```html
+<div etOverlayMain>
+  <div etOverlayHeader>
+    <h2 et-overlay-title>Example overlay</h2>
+  </div>
+
+  <div dividers="dynamic" et-overlay-body>… scrolling content …</div>
+
+  <div etOverlayFooter>
+    <button et-button etOverlayClose variant="outline">Cancel</button>
+    <button et-button etOverlayClose="confirmed">Confirm</button>
+  </div>
+</div>
+```
+
+| Piece                    | Selector                               | Purpose                                                                                           |
+| ------------------------ | -------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `OverlayMainDirective`   | `[etOverlayMain]`                      | Layout wrapper enabling pinned header/footer + scrolling body; often applied via `hostDirectives` |
+| `OverlayHeaderDirective` | `[etOverlayHeader]`                    | Pinned header region                                                                              |
+| `OverlayBodyComponent`   | `et-overlay-body`, `[et-overlay-body]` | Scrollable body; `dividers: 'static' \| 'dynamic' \| false` shows edge dividers while scrolled    |
+| `OverlayFooterDirective` | `[etOverlayFooter]`                    | Pinned footer region                                                                              |
+| `OverlayTitleDirective`  | `[etOverlayTitle]`                     | Wires the overlay's `aria-labelledby` to the title element                                        |
+| `OverlayCloseDirective`  | `[etOverlayClose]`                     | Click closes the nearest overlay; the bound value becomes the close result                        |
+
+## Strategies
+
+A strategy controls the overlay's position, sizing, classes and animation. Pass one via `config.strategies`:
+
+| Factory                                                  | Shape                                                             |
+| -------------------------------------------------------- | ----------------------------------------------------------------- |
+| `dialogOverlayStrategy`                                  | Centered dialog (`width: min(512px, 80vw)` by default)            |
+| `fullScreenDialogOverlayStrategy`                        | Full-screen, animates from the origin element                     |
+| `bottomSheetOverlayStrategy`                             | Bottom sheet, drag-to-dismiss downwards                           |
+| `topSheetOverlayStrategy`                                | Top sheet, drag-to-dismiss upwards                                |
+| `leftSheetOverlayStrategy` / `rightSheetOverlayStrategy` | Side sheets, drag-to-dismiss sideways                             |
+| `anchoredDialogOverlayStrategy`                          | Anchored popover next to `origin` (floating-ui), arrow by default |
+| `centeredOverlayStrategy`                                | Plain centered pane with size overrides                           |
+
+Every factory accepts a partial `OverlayBreakpointConfig` (sizes, classes, `dragToDismiss`, `hasBackdrop`, `arrow`, …).
+
+### Responsive (transforming) strategies
+
+`strategies` is an array of `{ breakpoint?, strategy }` entries — the controller picks the entry matching the current `min-width` and **switches live on resize without remounting** the content. Presets cover the common pairs:
+
+```ts
+this.overlayManager.open(ExampleOverlayComponent, {
+  // bottom sheet below `md`, dialog from `md` upwards
+  strategies: transformingBottomSheetToDialogOverlayStrategy({ breakpoint: 'md' }),
+});
+```
+
+Also available: `transformingFullScreenDialogToDialogOverlayStrategy` and `transformingFullScreenDialogToRightSheetOverlayStrategy`. Custom combinations are just arrays — each strategy provider (e.g. `injectDialogStrategy()`) exposes `.build(config)`, and app-wide defaults can be tuned via `provideDialogStrategyDefaults` and friends.
+
+### Anchored overlays and the arrow
+
+Anchored strategies position relative to `config.origin` using floating-ui (`placement`, `fallbackPlacements`, `offset`, `shift`, `autoHide`, …). With `arrow: true` (the `anchoredDialogOverlayStrategy` default) the pane renders an arrow pointing at the origin that inherits the pane's background and border — the same arrow used by menus, tooltips and toggletips.
+
+## Declarative overlays
+
+For template-driven popovers there's a headless directive set (`OVERLAY_IMPORTS`) that skips the manager entirely:
+
+```html
+<div [(open)]="filtersOpen" etOverlay placement="bottom-start">
+  <button etOverlayTrigger et-button>Filters</button>
+
+  <ng-template etOverlaySurface let-close="close">
+    <div class="filters-panel">
+      …
+      <button (click)="close()" et-button>Done</button>
+    </div>
+  </ng-template>
+</div>
+```
+
+- `[etOverlay]` — orchestrator; `open` is a two-way model, plus `show()` / `hide(result?)` / `toggle()`. Defaults to **non-modal** (the manager defaults to modal).
+- `[etOverlayTrigger]` — click toggles, manages `aria-expanded`.
+- `[etOverlayAnchor]` — optional separate positioning reference.
+- `ng-template[etOverlaySurface]` — the content (required); context provides `close(result?)`.
+
+When an anchor/trigger exists (and mode is non-modal) the surface opens anchored; otherwise centered.
+
+## Routing inside overlays
+
+Multi-step overlays (wizards, settings dialogs) use the overlay router — an internal router independent of Angular's, optionally mirrored into the URL:
+
+```ts
+this.overlayManager.open(SettingsOverlayComponent, {
+  strategies: dialogOverlayStrategy({ width: 480, height: 'min(520px, 80vh)' }),
+  providers: [
+    provideOverlayRouter({
+      routes: [
+        { path: '/', component: GeneralPageComponent },
+        { path: '/members', component: MembersPageComponent },
+      ],
+      syncUrl: true, // deep links + browser back/forward via a query param
+    }),
+  ],
+});
+```
+
+Inside the overlay:
+
+- `<et-overlay-router-outlet />` renders the active route with slide/fade transitions.
+- `[etOverlayRouterLink]="'/members'"` navigates (absolute or relative paths, `aria-current` when active).
+- `[etOverlayBackOrClose]` goes back — or closes the overlay when there's no history.
+- `ng-template[etOverlayHeaderTemplate]` in a page + `<et-overlay-route-header-template-outlet />` in the shared header lets each route supply its own header content.
+- `injectOverlayRouter()` gives programmatic access (`navigate`, `back`, `currentRoute`, …).
+
+<StoryEmbed id="components-overlay-with-routing--default" height="520px" />
+
+### Sidebar layouts
+
+`provideSidebarOverlay(config?)` (requires the overlay router) adds a responsive sidebar: above `renderSidebarFrom` (default `'md'`, measured against the **pane** width) the `<et-overlay-sidebar>` renders inline next to the outlet; below it, the sidebar collapses into a navigable route of its own.

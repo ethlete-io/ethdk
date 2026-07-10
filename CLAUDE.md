@@ -41,11 +41,26 @@ theming** token systems (`--et-surface-*-solid`, `--et-theme-color-*`) — never
 hardcode colors. Read the **`theming`** skill (`.claude/skills/theming/`) before
 touching any color, background, border, or interaction-state styling.
 
+Theme **names** (`brand`, `danger`, `dark-elevated`, …) are registered by the
+consuming app — the SDK defines none. Don't hardcode name unions in types, docs,
+or examples; semantic colors resolve via theme `type` (e.g. `injectErrorTheme()`).
+
 ## Releasing
 
 Every change to a published package needs a changeset. Use the **`changeset`**
 skill (`.claude/skills/changeset/`) — write the file directly; don't run the
 interactive `npx changeset` CLI.
+
+## Documentation
+
+Written docs live in the VitePress site at `apps/docs` (deployed per branch),
+with one guide per component domain under `apps/docs/components/`. Any change to
+a public API, behavior, or default in `libs/components` must update the matching
+guide (or add a new page for a new domain) — treat it like the changeset: part
+of the change, not a follow-up. Use the **`docs`** skill
+(`.claude/skills/docs/`) for structure, story embeds (`<StoryEmbed>`), and
+verification. Docs embeds reference Storybook story ids — when renaming a story
+title, grep `apps/docs` for the old id.
 
 ## Linting & style
 

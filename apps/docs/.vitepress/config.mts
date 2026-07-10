@@ -13,41 +13,55 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Query', link: '/query/' },
-      { text: 'Core', link: '/core/' },
-      { text: 'CDK', link: '/cdk/' },
+      { text: 'Components', link: '/components/' },
     ],
 
     sidebar: {
-      '/query/': [
+      '/components/': [
         {
-          text: 'Query',
+          text: 'Components',
+          items: [{ text: 'Overview', link: '/components/' }],
+        },
+        {
+          text: 'Floating & overlays',
           items: [
-            { text: 'Overview', link: '/query/' },
-            { text: 'Query Creator', link: '/query/query-creator' },
-            { text: 'Query Client', link: '/query/query-client' },
-            { text: 'Query Features', link: '/query/query-features' },
-            { text: 'Auth Provider', link: '/query/auth' },
-            { text: 'Query Stack', link: '/query/query-stack' },
-            { text: 'Paged Query Stack', link: '/query/paged-query-stack' },
-            { text: 'GQL', link: '/query/gql' },
-            { text: 'Error Reference', link: '/query/errors' },
+            { text: 'Overlays', link: '/components/overlays' },
+            { text: 'Overlay Openers', link: '/components/overlay-openers' },
+            { text: 'Menu', link: '/components/menu' },
+            { text: 'Tooltip', link: '/components/tooltip' },
+            { text: 'Toggletip', link: '/components/toggletip' },
           ],
         },
-      ],
-      '/core/': [
         {
-          text: 'Core',
+          text: 'Elements',
           items: [
-            { text: 'Overview', link: '/core/' },
-            { text: 'RuntimeError', link: '/core/runtime-error' },
+            { text: 'Button', link: '/components/button' },
+            { text: 'Icon', link: '/components/icon' },
+            { text: 'Loaders', link: '/components/loader' },
           ],
         },
-      ],
-      '/cdk/': [
         {
-          text: 'CDK',
-          items: [{ text: 'Overview', link: '/cdk/' }],
+          text: 'Forms',
+          items: [{ text: 'Forms', link: '/components/forms' }],
+        },
+        {
+          text: 'Layout & structure',
+          items: [
+            { text: 'Grid', link: '/components/grid' },
+            { text: 'Scrollable', link: '/components/scrollable' },
+            { text: 'Tabs', link: '/components/tabs' },
+          ],
+        },
+        {
+          text: 'Feedback & media',
+          items: [
+            { text: 'Notification', link: '/components/notification' },
+            { text: 'Stream', link: '/components/stream' },
+          ],
+        },
+        {
+          text: 'Utilities',
+          items: [{ text: 'Focus Ring', link: '/components/focus-ring' }],
         },
       ],
     },

@@ -27,6 +27,13 @@ Storybook (`apps/playground`) registers both systems globally
 (`.storybook/preview.ts`, themes in `src/themes.ts` / `src/surface-themes.ts`),
 including a `danger` theme with `type: 'error'`.
 
+**Theme names are app-defined — the SDK ships none.** Names like `brand`,
+`danger`, `neutral` or `dark-elevated` are just what this repo's Storybook
+registers. Never hardcode a theme-name union in component types, docs, or
+examples — present such names as app examples only. The portable handle is the
+theme **`type`** (`injectErrorTheme()` finds the app's `type: 'error'` theme),
+not the name.
+
 ## Tokens components may consume
 
 Component CSS must use these **derived** tokens — never the raw
