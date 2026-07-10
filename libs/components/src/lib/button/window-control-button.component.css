@@ -6,7 +6,7 @@
 
 @property --_et-window-control-button-icon-size {
   syntax: '<length>';
-  inherits: false;
+  inherits: true;
   initial-value: 16px;
 }
 

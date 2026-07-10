@@ -1,6 +1,6 @@
 @property --_et-icon-button-icon-size {
   syntax: '<length>';
-  inherits: false;
+  inherits: true;
   initial-value: 20px;
 }
 
