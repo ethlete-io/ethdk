@@ -97,6 +97,12 @@
   }
 }
 
+/* the always-visible ::before punches through an ancestor's visibility: hidden,
+   so it must be re-hidden explicitly while the pane waits for its enter animation */
+.et-force-invisible .et-overlay-arrow::before {
+  visibility: hidden;
+}
+
 [data-overlay-placement^='top'] > .et-overlay-arrow {
   bottom: calc(var(--_et-overlay-arrow-overlap) * -1);
   left: 0;

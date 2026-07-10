@@ -1,5 +1,6 @@
 import { Component, ViewEncapsulation, input, signal } from '@angular/core';
 import { Placement } from '@floating-ui/dom';
+import { BUTTON_IMPORTS } from '../../../button';
 import {
   ARROW_OUT_UP_RIGHT_ICON,
   FLOPPY_DISK_ICON,
@@ -14,8 +15,8 @@ import { MENU_IMPORTS } from '../../menu.imports';
   selector: 'et-sb-menu',
   template: `
     <div class="et-sb-menu-page">
-      <div [placement]="placement()" [hoverOpen]="hoverOpen()" [disabled]="disabled()" etMenu>
-        <button class="et-sb-menu-trigger" etMenuTrigger type="button">File</button>
+      <div [placement]="placement()" [hoverOpen]="hoverOpen()" [disabled]="disabled()" [arrow]="arrow()" etMenu>
+        <button etMenuTrigger et-button size="sm" variant="outline" type="button">File</button>
 
         <ng-template etMenuSurface>
           <et-menu>
@@ -78,7 +79,7 @@ import { MENU_IMPORTS } from '../../menu.imports';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [...MENU_IMPORTS, IconDirective],
+  imports: [...MENU_IMPORTS, ...BUTTON_IMPORTS, IconDirective],
   providers: [provideIcons(PLUS_ICON, FLOPPY_DISK_ICON, ARROW_OUT_UP_RIGHT_ICON, TIMES_ICON)],
   styles: `
     .et-sb-menu-page {
@@ -87,16 +88,6 @@ import { MENU_IMPORTS } from '../../menu.imports';
       gap: 16px;
       padding: 32px;
       font-family: sans-serif;
-    }
-
-    .et-sb-menu-trigger {
-      padding: 8px 16px;
-      border: 1px solid rgb(255 255 255 / 0.2);
-      border-radius: 8px;
-      background: rgb(255 255 255 / 0.06);
-      color: inherit;
-      font: inherit;
-      cursor: pointer;
     }
 
     .et-sb-menu-log {
@@ -110,6 +101,7 @@ export class MenuStorybookComponent {
   public placement = input<Placement | 'auto'>('auto');
   public hoverOpen = input(true);
   public disabled = input(false);
+  public arrow = input(true);
 
   public lastAction = signal<string | null>(null);
 }

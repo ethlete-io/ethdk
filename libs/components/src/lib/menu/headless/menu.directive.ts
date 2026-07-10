@@ -56,6 +56,9 @@ export class MenuDirective {
   public fallbackPlacements = input<Placement[] | undefined>(undefined);
   public offset = input<OffsetOptions | null | 'auto'>('auto');
   public viewportPadding = input<Padding | null>(8);
+  /** Render an arrow pointing at the trigger. Trigger-anchored root menus only — submenus and context menus never render one. */
+  public arrow = input(true);
+  public arrowPadding = input<Padding | null>(8);
   public autoFocus = input(true);
   public hoverOpen = input(true);
   public hoverOpenDelay = input(120);
@@ -733,6 +736,7 @@ export class MenuDirective {
       placement: this.resolvedPlacement(),
       fallbackPlacements: this.resolvedFallbackPlacements(),
       offset: this.resolvedOffset(),
+      arrowPadding: this.arrowPadding(),
       viewportPadding: this.viewportPadding(),
       autoResize: true,
       // cross axis so a menu that fits on neither side slides over its parent instead of
@@ -743,6 +747,7 @@ export class MenuDirective {
     if (!point) {
       return anchoredOverlayStrategy({
         containerClass,
+        arrow: this.resolvedArrow(),
         ...positionOptions,
       });
     }
@@ -806,11 +811,21 @@ export class MenuDirective {
     return ['left-start', 'right-end', 'left-end'];
   }
 
+  private resolvedArrow() {
+    // a point anchor (context menu) has no element the arrow could meaningfully point at
+    return this.arrow() && this.isRoot && !this.anchorPoint();
+  }
+
   private resolvedOffset(): OffsetOptions | null {
     const offset = this.offset();
 
     if (offset !== 'auto') {
       return offset;
+    }
+
+    // the arrow protrudes half its size past the pane edge, so it needs a real gap
+    if (this.resolvedArrow()) {
+      return 10;
     }
 
     return this.isRoot && !this.anchorPoint() ? 4 : 0;

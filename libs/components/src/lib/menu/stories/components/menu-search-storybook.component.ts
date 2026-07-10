@@ -1,4 +1,5 @@
 import { Component, ViewEncapsulation, computed, signal } from '@angular/core';
+import { BUTTON_IMPORTS } from '../../../button';
 import { MENU_IMPORTS } from '../../menu.imports';
 
 const PLAYERS = ['Alice Anderson', 'Bob Brown', 'Charlie Clark', 'Dana Davis', 'Erin Evans', 'Frank Fisher'];
@@ -8,7 +9,7 @@ const PLAYERS = ['Alice Anderson', 'Bob Brown', 'Charlie Clark', 'Dana Davis', '
   template: `
     <div class="et-sb-menu-page">
       <div etMenu>
-        <button class="et-sb-menu-trigger" etMenuTrigger type="button">Assign player</button>
+        <button etMenuTrigger et-button size="sm" variant="outline" type="button">Assign player</button>
 
         <ng-template etMenuSurface>
           <et-menu>
@@ -29,7 +30,7 @@ const PLAYERS = ['Alice Anderson', 'Bob Brown', 'Charlie Clark', 'Dana Davis', '
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [...MENU_IMPORTS],
+  imports: [...MENU_IMPORTS, ...BUTTON_IMPORTS],
   styles: `
     .et-sb-menu-page {
       display: grid;
@@ -37,16 +38,6 @@ const PLAYERS = ['Alice Anderson', 'Bob Brown', 'Charlie Clark', 'Dana Davis', '
       gap: 16px;
       padding: 32px;
       font-family: sans-serif;
-    }
-
-    .et-sb-menu-trigger {
-      padding: 8px 16px;
-      border: 1px solid rgb(255 255 255 / 0.2);
-      border-radius: 8px;
-      background: rgb(255 255 255 / 0.06);
-      color: inherit;
-      font: inherit;
-      cursor: pointer;
     }
 
     .et-sb-menu-empty {

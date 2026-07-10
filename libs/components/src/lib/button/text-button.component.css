@@ -108,12 +108,12 @@
       content: '';
       position: absolute;
       inset-inline: 0.04em;
-      bottom: -0.14em;
+      bottom: 0.15em;
       height: 0.08em;
       border-radius: 999px;
       background: currentColor;
-      opacity: 0.55;
-      transform: scaleX(0.92);
+      opacity: 0;
+      transform: scaleX(0.6);
       transform-origin: center;
       transition:
         opacity 160ms ease,

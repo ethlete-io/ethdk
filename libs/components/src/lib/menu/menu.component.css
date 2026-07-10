@@ -80,6 +80,10 @@
   overflow: visible;
   background: transparent;
   box-shadow: none;
+
+  /* mirrors the .et-menu surface background and border so the arrow reads as part of the panel */
+  --et-overlay-arrow-background: var(--et-surface-background-solid, var(--et-surface-2, rgb(32 32 32)));
+  --et-overlay-arrow-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
 }
 
 .et-menu {

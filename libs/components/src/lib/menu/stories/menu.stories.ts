@@ -9,6 +9,7 @@ export default {
     placement: 'auto',
     hoverOpen: true,
     disabled: false,
+    arrow: true,
   },
   argTypes: {
     placement: {
@@ -17,6 +18,7 @@ export default {
     },
     hoverOpen: { control: 'boolean' },
     disabled: { control: 'boolean' },
+    arrow: { control: 'boolean' },
   },
 } as Meta<MenuStorybookComponent>;
 

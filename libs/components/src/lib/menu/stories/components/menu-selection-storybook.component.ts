@@ -1,6 +1,7 @@
 import { JsonPipe } from '@angular/common';
 import { Component, ViewEncapsulation, linkedSignal, signal } from '@angular/core';
 import { FormField, form } from '@angular/forms/signals';
+import { BUTTON_IMPORTS } from '../../../button';
 import { MENU_IMPORTS } from '../../menu.imports';
 
 @Component({
@@ -8,7 +9,7 @@ import { MENU_IMPORTS } from '../../menu.imports';
   template: `
     <div class="et-sb-menu-page">
       <div etMenu>
-        <button class="et-sb-menu-trigger" etMenuTrigger type="button">View options</button>
+        <button etMenuTrigger et-button size="sm" variant="outline" type="button">View options</button>
 
         <ng-template etMenuSurface>
           <et-menu>
@@ -46,7 +47,7 @@ import { MENU_IMPORTS } from '../../menu.imports';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [...MENU_IMPORTS, FormField, JsonPipe],
+  imports: [...MENU_IMPORTS, ...BUTTON_IMPORTS, FormField, JsonPipe],
   styles: `
     .et-sb-menu-page {
       display: grid;
@@ -54,16 +55,6 @@ import { MENU_IMPORTS } from '../../menu.imports';
       gap: 16px;
       padding: 32px;
       font-family: sans-serif;
-    }
-
-    .et-sb-menu-trigger {
-      padding: 8px 16px;
-      border: 1px solid rgb(255 255 255 / 0.2);
-      border-radius: 8px;
-      background: rgb(255 255 255 / 0.06);
-      color: inherit;
-      font: inherit;
-      cursor: pointer;
     }
 
     .et-sb-menu-readout {
