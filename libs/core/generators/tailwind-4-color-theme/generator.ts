@@ -542,17 +542,26 @@ function generateTailwindThemeCss(
   const hasSecondary = mainThemes.some((t) => t.secondary);
   const hasTertiary = mainThemes.some((t) => t.tertiary);
 
-  tailwindVars.push('  /* Dynamic theme colors (references runtime CSS variables) */');
-  addDynamicThemeColors(tailwindVars, utilityPrefix, runtimePrefix, 'theme', 'primary', true);
-  addDynamicInkColors(tailwindVars, utilityPrefix, runtimePrefix, 'theme-ink', 'primary-ink');
+  // Collect the dynamic theme colors once. They are emitted in `@theme` (so Tailwind generates
+  // the utilities) and ALSO re-declared on every color selector in the alias block below. A
+  // Tailwind `@theme` variable only lands on `:root`, so `rgb(var(--<runtime>-color-*))` resolves
+  // once against the root color scope and inherits that concrete color into descendants — which
+  // means `bg-<prefix>-theme-*` utilities would ignore nested `.<runtime>-color--*` scopes.
+  // Re-declaring them per color selector makes the utilities resolve against the nearest scope.
+  const dynamicColorVars: string[] = [];
+  addDynamicThemeColors(dynamicColorVars, utilityPrefix, runtimePrefix, 'theme', 'primary', false);
+  addDynamicInkColors(dynamicColorVars, utilityPrefix, runtimePrefix, 'theme-ink', 'primary-ink');
 
   if (hasSecondary) {
-    addDynamicThemeColors(tailwindVars, utilityPrefix, runtimePrefix, 'theme-secondary', 'secondary', false);
+    addDynamicThemeColors(dynamicColorVars, utilityPrefix, runtimePrefix, 'theme-secondary', 'secondary', false);
   }
 
   if (hasTertiary) {
-    addDynamicThemeColors(tailwindVars, utilityPrefix, runtimePrefix, 'theme-tertiary', 'tertiary', false);
+    addDynamicThemeColors(dynamicColorVars, utilityPrefix, runtimePrefix, 'theme-tertiary', 'tertiary', false);
   }
+
+  tailwindVars.push('  /* Dynamic theme colors (references runtime CSS variables) */');
+  tailwindVars.push(...dynamicColorVars);
 
   // Generate runtime CSS for all themes
   themes.forEach((theme) => {
@@ -575,6 +584,13 @@ function generateTailwindThemeCss(
     themeVars.push('}\n');
   });
 
+  // Re-indent the dynamic theme colors (from 2-space `@theme` indent to the 4-space alias-block
+  // indent) and drop trailing blank lines so they slot cleanly into the alias selector below.
+  const dynamicColorAliasLines = dynamicColorVars.map((line) => (line === '' ? '' : `  ${line}`));
+  while (dynamicColorAliasLines.length && dynamicColorAliasLines[dynamicColorAliasLines.length - 1] === '') {
+    dynamicColorAliasLines.pop();
+  }
+
   // Convenience var aliases — available on any element with a color class (or root for default)
   const aliasBlock = `/* Convenience aliases (rgb + solid + opacity variants) */
 @layer base {
@@ -593,6 +609,11 @@ function generateTailwindThemeCss(
     --${runtimePrefix}-theme-color-ink-opacity: 1;
     --${runtimePrefix}-theme-color-ink-solid: rgb(var(--${runtimePrefix}-theme-color-ink-rgb) / var(--${runtimePrefix}-theme-color-ink-opacity));
     --${runtimePrefix}-theme-color-ink: rgb(var(--${runtimePrefix}-theme-color-ink-rgb) / var(--${runtimePrefix}-theme-color-ink-opacity));
+
+    /* Dynamic Tailwind theme colors — re-declared per color scope so that
+       bg-${utilityPrefix}-theme-* utilities resolve against the nearest .${runtimePrefix}-color--*
+       scope instead of the value computed once at :root. */
+${dynamicColorAliasLines.join('\n')}
   }
 }
 `;

@@ -123,7 +123,6 @@
   --color-et-neutral-dark-ink-disabled: rgb(115 115 115);
 
   /* Dynamic theme colors (references runtime CSS variables) */
-
   --color-et-theme: rgb(var(--et-color-primary));
   --color-et-theme-hover: rgb(var(--et-color-primary-hover));
   --color-et-theme-focus: rgb(var(--et-color-primary-focus));
@@ -287,5 +286,26 @@
     --et-theme-color-ink-opacity: 1;
     --et-theme-color-ink-solid: rgb(var(--et-theme-color-ink-rgb) / var(--et-theme-color-ink-opacity));
     --et-theme-color-ink: rgb(var(--et-theme-color-ink-rgb) / var(--et-theme-color-ink-opacity));
+
+    /* Dynamic Tailwind theme colors — re-declared per color scope so that
+       bg-et-theme-* utilities resolve against the nearest .et-color--*
+       scope instead of the value computed once at :root. */
+    --color-et-theme: rgb(var(--et-color-primary));
+    --color-et-theme-hover: rgb(var(--et-color-primary-hover));
+    --color-et-theme-focus: rgb(var(--et-color-primary-focus));
+    --color-et-theme-active: rgb(var(--et-color-primary-active));
+    --color-et-theme-disabled: rgb(var(--et-color-primary-disabled));
+
+    --color-et-on-theme: rgb(var(--et-color-on-primary));
+    --color-et-on-theme-hover: rgb(var(--et-color-on-primary-hover));
+    --color-et-on-theme-focus: rgb(var(--et-color-on-primary-focus));
+    --color-et-on-theme-active: rgb(var(--et-color-on-primary-active));
+    --color-et-on-theme-disabled: rgb(var(--et-color-on-primary-disabled));
+
+    --color-et-theme-ink: rgb(var(--et-color-primary-ink));
+    --color-et-theme-ink-hover: rgb(var(--et-color-primary-ink-hover));
+    --color-et-theme-ink-focus: rgb(var(--et-color-primary-ink-focus));
+    --color-et-theme-ink-active: rgb(var(--et-color-primary-ink-active));
+    --color-et-theme-ink-disabled: rgb(var(--et-color-primary-ink-disabled));
   }
 }

@@ -227,5 +227,19 @@
 
     --et-surface-interaction-disabled-rgb: var(--et-surface-interaction-disabled);
     --et-surface-interaction-disabled-solid: rgb(var(--et-surface-interaction-disabled-rgb));
+
+    /* Dynamic Tailwind surface colors — re-declared per surface scope so that
+       bg-et-surface-* utilities resolve against the nearest surface
+       (e.g. a nested elevated surface) instead of the value computed once at :root. */
+    --color-et-surface-bg: rgb(var(--et-surface-background));
+    --color-et-surface: rgb(var(--et-surface-color));
+    --color-et-surface-muted: rgb(var(--et-surface-color-muted));
+    --color-et-surface-subtle: rgb(var(--et-surface-color-subtle));
+    --color-et-surface-border: rgb(var(--et-surface-border));
+    --color-et-surface-interaction: rgb(var(--et-surface-interaction));
+    --color-et-surface-interaction-hover: rgb(var(--et-surface-interaction-hover));
+    --color-et-surface-interaction-focus: rgb(var(--et-surface-interaction-focus));
+    --color-et-surface-interaction-active: rgb(var(--et-surface-interaction-active));
+    --color-et-surface-interaction-disabled: rgb(var(--et-surface-interaction-disabled));
   }
 }

@@ -414,30 +414,16 @@ function generateSurfaceThemeCss(
     tailwindVars.push('');
   }
 
-  // Dynamic surface colors (reference runtime CSS variables)
+  // Dynamic surface colors (reference runtime CSS variables).
+  // These are ALSO re-declared on every surface selector in the alias block below. A Tailwind
+  // `@theme` variable only lands on `:root`, so `rgb(var(--<runtime>-surface-*))` resolves once
+  // against the root surface and inherits that concrete color into descendants — which means
+  // `bg-<prefix>-surface-*` utilities would ignore nested surface scopes (e.g. an elevated
+  // surface). Re-declaring them per surface selector makes the utilities resolve against the
+  // nearest surface instead.
+  const dynamicSurfaceColors = buildDynamicSurfaceColors(utilityPrefix, runtimePrefix);
   tailwindVars.push('  /* Dynamic surface colors (references runtime CSS variables) */');
-  tailwindVars.push(`  --color-${utilityPrefix}-surface-bg: rgb(var(--${runtimePrefix}-surface-background));`);
-  tailwindVars.push(`  --color-${utilityPrefix}-surface: rgb(var(--${runtimePrefix}-surface-color));`);
-  tailwindVars.push(`  --color-${utilityPrefix}-surface-muted: rgb(var(--${runtimePrefix}-surface-color-muted));`);
-  tailwindVars.push(`  --color-${utilityPrefix}-surface-subtle: rgb(var(--${runtimePrefix}-surface-color-subtle));`);
-  tailwindVars.push(`  --color-${utilityPrefix}-surface-border: rgb(var(--${runtimePrefix}-surface-border));`);
-
-  // Dynamic interaction colors (reference runtime CSS variables)
-  tailwindVars.push(
-    `  --color-${utilityPrefix}-surface-interaction: rgb(var(--${runtimePrefix}-surface-interaction));`,
-  );
-  tailwindVars.push(
-    `  --color-${utilityPrefix}-surface-interaction-hover: rgb(var(--${runtimePrefix}-surface-interaction-hover));`,
-  );
-  tailwindVars.push(
-    `  --color-${utilityPrefix}-surface-interaction-focus: rgb(var(--${runtimePrefix}-surface-interaction-focus));`,
-  );
-  tailwindVars.push(
-    `  --color-${utilityPrefix}-surface-interaction-active: rgb(var(--${runtimePrefix}-surface-interaction-active));`,
-  );
-  tailwindVars.push(
-    `  --color-${utilityPrefix}-surface-interaction-disabled: rgb(var(--${runtimePrefix}-surface-interaction-disabled));`,
-  );
+  tailwindVars.push(...dynamicSurfaceColors.map((decl) => `  ${decl}`));
 
   // Runtime CSS — theme selector classes
   for (const theme of themes) {
@@ -509,6 +495,11 @@ function generateSurfaceThemeCss(
 
     --${runtimePrefix}-surface-interaction-disabled-rgb: var(--${runtimePrefix}-surface-interaction-disabled);
     --${runtimePrefix}-surface-interaction-disabled-solid: rgb(var(--${runtimePrefix}-surface-interaction-disabled-rgb));
+
+    /* Dynamic Tailwind surface colors — re-declared per surface scope so that
+       bg-${utilityPrefix}-surface-* utilities resolve against the nearest surface
+       (e.g. a nested elevated surface) instead of the value computed once at :root. */
+${dynamicSurfaceColors.map((decl) => `    ${decl}`).join('\n')}
   }
 }
 `;
@@ -522,6 +513,23 @@ ${themeVars.join('\n')}
 }
 
 ${aliasBlock}`;
+}
+
+// Dynamic surface color declarations (unindented). Emitted in `@theme` (so Tailwind generates
+// the utilities) and re-declared on every surface selector (so the utilities resolve per scope).
+function buildDynamicSurfaceColors(utilityPrefix: string, runtimePrefix: string): string[] {
+  return [
+    `--color-${utilityPrefix}-surface-bg: rgb(var(--${runtimePrefix}-surface-background));`,
+    `--color-${utilityPrefix}-surface: rgb(var(--${runtimePrefix}-surface-color));`,
+    `--color-${utilityPrefix}-surface-muted: rgb(var(--${runtimePrefix}-surface-color-muted));`,
+    `--color-${utilityPrefix}-surface-subtle: rgb(var(--${runtimePrefix}-surface-color-subtle));`,
+    `--color-${utilityPrefix}-surface-border: rgb(var(--${runtimePrefix}-surface-border));`,
+    `--color-${utilityPrefix}-surface-interaction: rgb(var(--${runtimePrefix}-surface-interaction));`,
+    `--color-${utilityPrefix}-surface-interaction-hover: rgb(var(--${runtimePrefix}-surface-interaction-hover));`,
+    `--color-${utilityPrefix}-surface-interaction-focus: rgb(var(--${runtimePrefix}-surface-interaction-focus));`,
+    `--color-${utilityPrefix}-surface-interaction-active: rgb(var(--${runtimePrefix}-surface-interaction-active));`,
+    `--color-${utilityPrefix}-surface-interaction-disabled: rgb(var(--${runtimePrefix}-surface-interaction-disabled));`,
+  ];
 }
 
 function pushSurfaceVars(vars: string[], runtimePrefix: string, theme: SurfaceTheme, indent: string): void {
