@@ -1,19 +1,19 @@
 import { provideRouter, withHashLocation } from '@angular/router';
 import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular';
 import { provideOverlay } from '../overlay.imports';
-import { OverlayHandlerStorybookComponent } from './components';
+import { OverlayOpenerStorybookComponent } from './components';
 
 export default {
-  title: 'Components/Overlay/Using Handlers',
-  component: OverlayHandlerStorybookComponent,
+  title: 'Components/Overlay/Using Openers',
+  component: OverlayOpenerStorybookComponent,
   decorators: [
-    moduleMetadata({ imports: [OverlayHandlerStorybookComponent] }),
+    moduleMetadata({ imports: [OverlayOpenerStorybookComponent] }),
     applicationConfig({
       providers: [provideOverlay(), provideRouter([], withHashLocation())],
     }),
   ],
-} as Meta<OverlayHandlerStorybookComponent>;
+} as Meta<OverlayOpenerStorybookComponent>;
 
-type Story = StoryObj<OverlayHandlerStorybookComponent>;
+type Story = StoryObj<OverlayOpenerStorybookComponent>;
 
 export const Default: Story = {};

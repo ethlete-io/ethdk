@@ -46,8 +46,8 @@ import { dialogOverlayStrategy } from '../../strategies';
   styles: `
     et-sb-qp-overlay {
       display: block;
-      width: 460px;
-      max-width: 100%;
+      width: 100%;
+      max-width: 460px;
     }
   `,
 })
@@ -99,8 +99,8 @@ const demoOverlay = defineQueryParamOverlay({
   styles: `
     et-sb-merge-overlay {
       display: block;
-      width: 460px;
-      max-width: 100%;
+      width: 100%;
+      max-width: 460px;
     }
   `,
 })
@@ -117,7 +117,7 @@ const mergeDemoOverlay = defineOverlay<MergeDemoOverlayComponent, string>({
 });
 
 @Component({
-  selector: 'et-sb-overlay-handler',
+  selector: 'et-sb-overlay-opener',
   template: `
     <div class="flex flex-col gap-8 p-8 font-sans">
       <header class="flex flex-col gap-1">
@@ -178,7 +178,7 @@ const mergeDemoOverlay = defineOverlay<MergeDemoOverlayComponent, string>({
     }
   `,
 })
-export class OverlayHandlerStorybookComponent {
+export class OverlayOpenerStorybookComponent {
   protected currentParam = injectQueryParam('demo');
   protected readonly DEMO_OVERLAY = demoOverlay;
 
