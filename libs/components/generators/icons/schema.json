@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "et-icons",
+  "title": "Ethlete Icon Generator",
+  "description": "Generates etIcon IconDefinitions and typed names from an installed SVG icon source. Auto-detects Font Awesome (pro, then free).",
+  "type": "object",
+  "properties": {
+    "configPath": {
+      "type": "string",
+      "description": "Path to the icons config JSON (relative to workspace root). Lists the icons/variants to generate.",
+      "default": "src/icons.json",
+      "x-prompt": "Where is your icons config file?"
+    },
+    "outputPath": {
+      "type": "string",
+      "description": "Where to write the generated IconDefinition constants (.ts).",
+      "default": "src/generated/et-icons.ts"
+    },
+    "typesOutputPath": {
+      "type": "string",
+      "description": "Where to write the generated name/variant type augmentation (.d.ts). Defaults to 'et-icon-registry.d.ts' next to outputPath."
+    },
+    "source": {
+      "type": "string",
+      "description": "Icon source package to read SVGs from (expects a `svgs/<variant>/<name>.svg` layout). 'auto' detects Font Awesome pro then free.",
+      "default": "auto"
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "description": "Skip formatting files after generation.",
+      "default": false
+    }
+  },
+  "required": []
+}

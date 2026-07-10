@@ -1,0 +1,9 @@
+{
+  "generators": {
+    "icons": {
+      "factory": "./icons/generator",
+      "schema": "./icons/schema.json",
+      "description": "Generate etIcon IconDefinitions and typed names from an installed SVG icon source (auto-detects Font Awesome)"
+    }
+  }
+}

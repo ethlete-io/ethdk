@@ -89,5 +89,59 @@ describe('IconDirective', () => {
       const duplicate = { ...VALID_ICON };
       expect(() => provideIcons(VALID_ICON, duplicate)).toThrow();
     });
+
+    it('allows the same name across different variants', () => {
+      const solid = { name: 'shield', variant: 'solid', data: VALID_ICON.data };
+      const light = { name: 'shield', variant: 'light', data: VALID_ICON.data };
+      expect(() => provideIcons(solid, light)).not.toThrow();
+    });
+
+    it('throws when the same name/variant pair is registered twice', () => {
+      const solid = { name: 'shield', variant: 'solid', data: VALID_ICON.data };
+      expect(() => provideIcons(solid, { ...solid })).toThrow();
+    });
+  });
+
+  describe('variants', () => {
+    const SHIELD_SOLID = { name: 'shield', variant: 'solid', data: VALID_ICON.data };
+    const SHIELD_LIGHT = { name: 'shield', variant: 'light', data: VALID_ICON_2.data };
+
+    @Component({
+      template: `<span [etIcon]="name" [variant]="variant"></span>`,
+      imports: [IconDirective],
+    })
+    class VariantHost {
+      name = 'shield';
+      variant: string | undefined = undefined;
+    }
+
+    let fixture: ComponentFixture<VariantHost>;
+    let span: HTMLSpanElement;
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({
+        imports: [VariantHost],
+        providers: [provideIcons(SHIELD_SOLID, SHIELD_LIGHT)],
+      });
+      fixture = TestBed.createComponent(VariantHost);
+      span = fixture.nativeElement.querySelector('span');
+    });
+
+    it('falls back to the solid variant when none is given', () => {
+      fixture.detectChanges();
+      expect(span.querySelector('svg')).toBeTruthy();
+      expect(span.classList.contains('et-icon--shield')).toBe(true);
+    });
+
+    it('resolves the requested variant and reflects it in the host class', () => {
+      fixture.componentInstance.variant = 'light';
+      fixture.detectChanges();
+      expect(span.classList.contains('et-icon--shield--light')).toBe(true);
+    });
+
+    it('throws when the requested variant is not registered', () => {
+      fixture.componentInstance.variant = 'thin';
+      expect(() => fixture.detectChanges()).toThrow();
+    });
   });
 });
