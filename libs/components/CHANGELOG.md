@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.1.0-next.16
+
+### Minor Changes
+
+- [`89a1d38`](https://github.com/ethlete-io/ethdk/commit/89a1d383cea36583c9459bd13e6c41ec25e0ecb7) Thanks [@TomTomB](https://github.com/TomTomB)! - Add icon variants and an icon generator.
+  - `IconDefinition` gains an optional `variant`, and `provideIcons` now keys the registry by name + variant, so the same icon name can exist in multiple styles.
+  - `IconDirective` gains a `variant` input: `<i etIcon="shield" variant="light">`. When omitted it matches a variant-less icon first, then falls back to the `solid` variant.
+  - `etIcon` and `variant` are now typed against the augmentable `EthleteIconNameRegistry` / `EthleteIconVariantRegistry` interfaces (they stay `string` until augmented).
+  - New `@ethlete/components:icons` generator reads a small config, auto-detects an installed SVG source (Font Awesome pro then free), and generates `IconDefinition` constants plus a `.d.ts` that augments the registries. Run with `nx g @ethlete/components:icons`.
+
+### Patch Changes
+
+- [`ea1eb65`](https://github.com/ethlete-io/ethdk/commit/ea1eb656b4f1144602830a3cd27a521ca50a9d06) Thanks [@TomTomB](https://github.com/TomTomB)! - Theming: add `AutoSurfaceDirective` (`etAutoSurface`), which resolves the surface
+  theme one elevation above its parent (or an explicitly provided) surface context
+  and applies it through a host `ProvideSurfaceDirective`. Meant to be used as a
+  host directive on components that render inside a detached overlay pane, where
+  surface context can't cascade through the DOM.
+
+  Tooltip and toggletip now use `AutoSurfaceDirective` as a host directive instead
+  of duplicating the auto-surface resolution logic. No change to their rendered
+  surface.
+
+- [`efe9cc3`](https://github.com/ethlete-io/ethdk/commit/efe9cc30b61245fd3c7fd1eaeedc3be7b85ed275) Thanks [@TomTomB](https://github.com/TomTomB)! - Grid: prevent text selection inside a grid item when dragging it in
+  non-readonly mode. `user-select` is now disabled on the item content whenever the
+  grid is editable, instead of only after a drag has committed — so the initial
+  pointer movement before the drag threshold no longer selects the item's text.
+
+- [`70308a7`](https://github.com/ethlete-io/ethdk/commit/70308a7e0ce81d97c91d55fb7f619f1384a0e3bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Overlay routing: support routes that nest their own `et-overlay-header`/`et-overlay-body`/`et-overlay-footer` (a full `et-overlay-main`) directly inside the router outlet, without a shared shell or sidebar. Previously the active route grew past the overlay, pushing the footer off-screen and preventing the body from scrolling.
+  - The router-outlet content wrapper now propagates a bounded height, so each route's body scrolls with its header and footer pinned. Combine with a fixed dialog height to keep a stable size across navigation.
+  - On navigation, focus now moves to the first sensible element of the new page (first-tabbable, so buttons/inputs win over headings), mirroring the overlay's open-time `autoFocus` behaviour and respecting the configured `autoFocus` (including `false`). It falls back to the page container when the page has nothing tabbable.
+  - Removed the stray focus outline that appeared around the whole modal on window blur/refocus, caused by the programmatically focused page container.
+
 ## 0.1.0-next.15
 
 ### Minor Changes
