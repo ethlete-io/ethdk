@@ -10,15 +10,7 @@ import {
   input,
   untracked,
 } from '@angular/core';
-import {
-  COLOR_PROVIDER,
-  ProvideColorDirective,
-  ProvideSurfaceDirective,
-  SURFACE_PROVIDER,
-  injectSurfaceThemes,
-  resolveSurfaceByElevation,
-  setInputSignal,
-} from '@ethlete/core';
+import { AutoSurfaceDirective, COLOR_PROVIDER, ProvideColorDirective } from '@ethlete/core';
 import { ToggletipContent } from './headless/toggletip.directive';
 
 @Component({
@@ -27,7 +19,7 @@ import { ToggletipContent } from './headless/toggletip.directive';
   styleUrl: './toggletip.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [NgTemplateOutlet],
-  hostDirectives: [ProvideColorDirective, ProvideSurfaceDirective],
+  hostDirectives: [ProvideColorDirective, { directive: AutoSurfaceDirective, inputs: ['surfaceProvider'] }],
   host: {
     class: 'et-toggletip',
     '[attr.id]': 'toggletipId()',
@@ -36,18 +28,13 @@ import { ToggletipContent } from './headless/toggletip.directive';
 })
 export class ToggletipComponent {
   private ownColorProvider = inject(ProvideColorDirective);
-  private ownSurfaceProvider = inject(ProvideSurfaceDirective);
   private triggerColorProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
-  private triggerSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
   protected injector = inject(Injector);
-
-  private surfaceThemes = injectSurfaceThemes({ optional: true });
 
   public toggletipId = input.required<string>();
   protected contentId = input.required<string>();
   public content = input.required<ToggletipContent>();
   public colorProvider = input.required<ProvideColorDirective | null>();
-  public surfaceProvider = input.required<ProvideSurfaceDirective | null>();
 
   public hasTemplate = computed(() => this.content() instanceof TemplateRef);
   public contentText = computed<string | null>(() => {
@@ -58,22 +45,6 @@ export class ToggletipComponent {
     const content = this.content();
     return content instanceof TemplateRef ? content : null;
   });
-  public resolvedSurface = computed(() => {
-    const themes = this.surfaceThemes;
-    const parentSurfaceProvider = this.surfaceProvider() ?? this.triggerSurfaceProvider ?? null;
-
-    if (!themes || !parentSurfaceProvider) {
-      return null;
-    }
-
-    return (
-      resolveSurfaceByElevation(
-        themes,
-        parentSurfaceProvider.surfaceType() ?? 'dark',
-        parentSurfaceProvider.elevation() + 1,
-      )?.name ?? null
-    );
-  });
 
   constructor() {
     effect(() => {
@@ -83,14 +54,6 @@ export class ToggletipComponent {
         if (providedColor) {
           this.ownColorProvider.syncWithProvider(providedColor);
         }
-      });
-    });
-
-    effect(() => {
-      const surface = this.resolvedSurface();
-
-      untracked(() => {
-        setInputSignal(this.ownSurfaceProvider.surface, surface);
       });
     });
   }

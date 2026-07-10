@@ -1,14 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, TemplateRef, ViewEncapsulation, computed, effect, inject, input, untracked } from '@angular/core';
-import {
-  COLOR_PROVIDER,
-  ProvideColorDirective,
-  ProvideSurfaceDirective,
-  SURFACE_PROVIDER,
-  injectSurfaceThemes,
-  resolveSurfaceByElevation,
-  setInputSignal,
-} from '@ethlete/core';
+import { AutoSurfaceDirective, COLOR_PROVIDER, ProvideColorDirective } from '@ethlete/core';
 import { TooltipContent } from './headless/tooltip.directive';
 
 @Component({
@@ -17,7 +9,7 @@ import { TooltipContent } from './headless/tooltip.directive';
   styleUrl: './tooltip.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [NgTemplateOutlet],
-  hostDirectives: [ProvideColorDirective, ProvideSurfaceDirective],
+  hostDirectives: [ProvideColorDirective, { directive: AutoSurfaceDirective, inputs: ['surfaceProvider'] }],
   host: {
     class: 'et-tooltip',
     role: 'tooltip',
@@ -27,16 +19,11 @@ import { TooltipContent } from './headless/tooltip.directive';
 })
 export class TooltipComponent {
   private ownColorProvider = inject(ProvideColorDirective);
-  private ownSurfaceProvider = inject(ProvideSurfaceDirective);
   private triggerColorProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
-  private triggerSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
-
-  private surfaceThemes = injectSurfaceThemes({ optional: true });
 
   public tooltipId = input.required<string>();
   public content = input.required<TooltipContent>();
   public colorProvider = input.required<ProvideColorDirective | null>();
-  public surfaceProvider = input.required<ProvideSurfaceDirective | null>();
 
   public hasTemplate = computed(() => this.content() instanceof TemplateRef);
   public contentText = computed<string | null>(() => {
@@ -47,22 +34,6 @@ export class TooltipComponent {
     const content = this.content();
     return content instanceof TemplateRef ? content : null;
   });
-  public resolvedSurface = computed(() => {
-    const themes = this.surfaceThemes;
-    const parentSurfaceProvider = this.surfaceProvider() ?? this.triggerSurfaceProvider ?? null;
-
-    if (!themes || !parentSurfaceProvider) {
-      return null;
-    }
-
-    return (
-      resolveSurfaceByElevation(
-        themes,
-        parentSurfaceProvider.surfaceType() ?? 'dark',
-        parentSurfaceProvider.elevation() + 1,
-      )?.name ?? null
-    );
-  });
 
   constructor() {
     effect(() => {
@@ -72,14 +43,6 @@ export class TooltipComponent {
         if (providedColor) {
           this.ownColorProvider.syncWithProvider(providedColor);
         }
-      });
-    });
-
-    effect(() => {
-      const surface = this.resolvedSurface();
-
-      untracked(() => {
-        setInputSignal(this.ownSurfaceProvider.surface, surface);
       });
     });
   }
