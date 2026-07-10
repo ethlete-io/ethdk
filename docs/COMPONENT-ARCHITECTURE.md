@@ -1,6 +1,8 @@
 # SDK Component Architecture
 
-This document defines the component design system used across `libs/cdk`. Every complex component in this SDK follows a three-tier model that separates behavior from presentation, enabling full customization while keeping a great out-of-the-box experience.
+This document defines the component design system used across `libs/components`. Every complex component in this SDK follows a three-tier model that separates behavior from presentation, enabling full customization while keeping a great out-of-the-box experience.
+
+> `libs/components` (`@ethlete/components`) is the active UI library. `libs/cdk` is in maintenance mode — the same architecture applies, but new component work belongs in `libs/components`. Tier 1 primitives live in `libs/core`.
 
 ---
 
@@ -14,14 +16,14 @@ Examples: `ListKeyManagerDirective`, `OverlayDirective`, `DragHandleDirective`
 
 Rules:
 
-- No dependency on any `libs/cdk` domain
+- No dependency on any `libs/components` domain
 - No `hostDirectives` pointing to Tier 2/3 code
 - May declare **private** (`--_`) `@property` tokens when the primitive owns and sets them
 - Must **not** declare public (`--et-`) design tokens — those belong to the consuming Tier 3 component
 
 ---
 
-### Tier 2 — Headless Compositions (`libs/cdk`)
+### Tier 2 — Headless Compositions (`libs/components`)
 
 All behavior + state for a domain component, zero visual opinion. These are the "shadcn layer" — users who need full template control build on top of these.
 
@@ -29,7 +31,7 @@ Examples: `SelectDirective`, `SelectTriggerDirective`, `SelectPanelDirective`
 
 Rules:
 
-- Lives in `libs/cdk` alongside its Tier 3 counterpart
+- Lives in `libs/components` alongside its Tier 3 counterpart
 - Holds all inputs, host bindings, and state
 - Sub-directives/components self-register via DI (see [Self-Registration Pattern](#self-registration-pattern))
 - No required template structure imposed on the user
@@ -38,7 +40,7 @@ Rules:
 
 ---
 
-### Tier 3 — Default Components (`libs/cdk`)
+### Tier 3 — Default Components (`libs/components`)
 
 Opinionated template + design tokens + Tier 2 directive as `hostDirective`. Covers 90% of use cases with zero configuration.
 
@@ -417,11 +419,11 @@ Use a component-directive (over a plain `@Directive`) when the piece of Tier 2 n
 
 ## Library Placement
 
-| Tier                   | Location    | Reasoning                                      |
-| ---------------------- | ----------- | ---------------------------------------------- |
-| 1 — Primitives         | `libs/core` | Generic, domain-free, reusable anywhere        |
-| 2 — Headless           | `libs/cdk`  | Domain-specific behavior stays with its domain |
-| 3 — Default components | `libs/cdk`  | Co-located with Tier 2 counterpart             |
+| Tier                   | Location          | Reasoning                                      |
+| ---------------------- | ----------------- | ---------------------------------------------- |
+| 1 — Primitives         | `libs/core`       | Generic, domain-free, reusable anywhere        |
+| 2 — Headless           | `libs/components` | Domain-specific behavior stays with its domain |
+| 3 — Default components | `libs/components` | Co-located with Tier 2 counterpart             |
 
 ---
 
@@ -430,7 +432,7 @@ Use a component-directive (over a plain `@Directive`) when the piece of Tier 2 n
 Complex components are split across subfolders inside their domain directory. The folder name reflects the architectural tier of its contents.
 
 ```
-libs/cdk/src/lib/components/select/
+libs/components/src/lib/select/
 ├── index.ts                  ← barrel: re-exports headless/ and component files
 │
 ├── headless/                 ← Tier 2: all behavior, zero visual opinion

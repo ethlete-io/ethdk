@@ -1,4 +1,4 @@
-import { NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
+import { DOCUMENT, NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import {
   Component,
   ElementRef,
@@ -17,7 +17,13 @@ import {
   untracked,
   viewChildren,
 } from '@angular/core';
-import { AnimatedIfDirective, AnimatedLifecycleDirective, AnimatedLifecycleState, injectRenderer } from '@ethlete/core';
+import {
+  AnimatedIfDirective,
+  AnimatedLifecycleDirective,
+  AnimatedLifecycleState,
+  applyInitialFocus,
+  injectRenderer,
+} from '@ethlete/core';
 import { OverlayMainDirective } from '../overlay-main.directive';
 import { OVERLAY_REF } from '../overlay-ref';
 import { injectSidebarOverlay } from '../sidebar/sidebar-overlay';
@@ -91,6 +97,7 @@ export class OverlayRouterOutletComponent {
   private injector = inject(Injector);
   private overlayRef = inject(OVERLAY_REF, { optional: true });
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private document = inject(DOCUMENT);
   protected router = injectOverlayRouter();
   private renderer = injectRenderer();
 
@@ -152,7 +159,7 @@ export class OverlayRouterOutletComponent {
           return;
         }
 
-        afterNextRender(() => this.activePageElement()?.focus({ preventScroll: true }), {
+        afterNextRender(() => this.focusActivePage(), {
           injector: this.injector,
         });
       });
@@ -169,5 +176,18 @@ export class OverlayRouterOutletComponent {
     } else if (state === 'left') {
       this.wasDisabled.set(false);
     }
+  }
+
+  /**
+   * Moves focus into the freshly navigated page, mirroring the overlay's own open-time focus behaviour
+   * (first-tabbable by default, so buttons/inputs win over headings). Falls back to the page wrapper when
+   * the page has nothing tabbable. Respects the overlay's `autoFocus` config, including `false`.
+   */
+  private focusActivePage() {
+    const activePage = this.activePageElement();
+
+    if (!activePage) return;
+
+    applyInitialFocus(activePage, this.overlayRef?.config.autoFocus ?? 'first-tabbable', this.document);
   }
 }

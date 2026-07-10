@@ -181,6 +181,85 @@ export class RoutingDemoOverlayComponent {
 })
 export class UrlRoutingDemoOverlayComponent {}
 
+// ─── Nested header/footer routing demo: pages ────────────────────────────────
+// Each route nests its own header/body/footer (et-overlay-main) and the outlet is placed
+// directly as the overlay content — no shared shell, no sidebar, no fixed dialog height.
+
+@Component({
+  selector: 'et-sb-nt-page-1',
+  template: `
+    <et-overlay-header>
+      <h3 class="text-h6 font-title" etOverlayTitle>General</h3>
+    </et-overlay-header>
+    <et-overlay-body dividers="dynamic">
+      <p class="text-base text-white/80">
+        Each route here nests its own header, body and footer inside the routing view. The dialog keeps a fixed size
+        across navigation; when a page's body overflows it scrolls while the header and footer stay pinned.
+      </p>
+      <ul class="mt-4 flex flex-col divide-y divide-white/10">
+        @for (i of LONG; track i) {
+          <li class="flex items-center justify-between gap-4 py-3">
+            <span class="text-base">Setting {{ i }}</span>
+            <span class="text-small text-white/50">Value {{ i }}</span>
+          </li>
+        }
+      </ul>
+    </et-overlay-body>
+    <et-overlay-footer>
+      <button et-button etOverlayRouterLink="/short" size="sm">Short page →</button>
+    </et-overlay-footer>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [
+    BUTTON_IMPORTS,
+    OverlayHeaderDirective,
+    OverlayBodyComponent,
+    OverlayFooterDirective,
+    OverlayTitleDirective,
+    OverlayRouterLinkDirective,
+  ],
+  hostDirectives: [OverlayMainDirective],
+})
+export class NestedRoutingDemoPage1Component {
+  protected readonly LONG = Array.from({ length: 25 }, (_, i) => i + 1);
+}
+
+@Component({
+  selector: 'et-sb-nt-page-2',
+  template: `
+    <et-overlay-header>
+      <h3 class="text-h6 font-title" etOverlayTitle>Short page</h3>
+    </et-overlay-header>
+    <et-overlay-body dividers="dynamic">
+      <p class="text-base text-white/80">
+        A short page. The dialog keeps the same fixed size as the other routes — the footer stays pinned to the bottom.
+      </p>
+    </et-overlay-body>
+    <et-overlay-footer>
+      <button et-button etOverlayRouterLink="/" size="sm" variant="outline">← General</button>
+    </et-overlay-footer>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [
+    BUTTON_IMPORTS,
+    OverlayHeaderDirective,
+    OverlayBodyComponent,
+    OverlayFooterDirective,
+    OverlayTitleDirective,
+    OverlayRouterLinkDirective,
+  ],
+  hostDirectives: [OverlayMainDirective],
+})
+export class NestedRoutingDemoPage2Component {}
+
+@Component({
+  selector: 'et-sb-nt-overlay',
+  template: `<et-overlay-router-outlet />`,
+  encapsulation: ViewEncapsulation.None,
+  imports: [OverlayRouterOutletComponent],
+})
+export class NestedRoutingDemoOverlayComponent {}
+
 // ─── Sidebar navigation demo: pages ──────────────────────────────────────────
 
 @Component({
@@ -410,6 +489,7 @@ export class SidebarDemoOverlayComponent {}
       <div class="flex flex-wrap gap-4">
         <button (click)="openWithRouting()" et-button size="sm">Multi-step routing</button>
         <button (click)="openWithUrlRouting()" et-button size="sm" variant="outline">URL-synced routing</button>
+        <button (click)="openWithNestedHeaderFooter()" et-button size="sm" variant="tonal">Nested header/footer</button>
         <button (click)="openWithSidebar()" et-button size="sm" variant="tonal">Sidebar navigation</button>
       </div>
     </div>
@@ -458,6 +538,22 @@ export class OverlayRoutingStorybookComponent {
             { path: '/', component: RoutingDemoPage1Component },
             { path: '/members', component: RoutingDemoPage2Component },
             { path: '/review', component: RoutingDemoPage3Component },
+          ],
+        }),
+      ],
+    });
+  }
+
+  public openWithNestedHeaderFooter() {
+    this.overlayManager.open(NestedRoutingDemoOverlayComponent, {
+      // fixed height so the dialog keeps a stable size across navigation instead of resizing per page
+      strategies: dialogOverlayStrategy({ width: 480, height: 'min(520px, 80vh)' }),
+      panelClass: 'et-sb-routing-panel',
+      providers: [
+        provideOverlayRouter({
+          routes: [
+            { path: '/', component: NestedRoutingDemoPage1Component },
+            { path: '/short', component: NestedRoutingDemoPage2Component },
           ],
         }),
       ],

@@ -178,6 +178,7 @@
   grid-area: 1 / 1 / 2 / 2;
   pointer-events: none;
   overflow: hidden auto;
+  outline: none;
 
   &:not(:empty) {
     background-color: var(

@@ -1,477 +1,91 @@
-# Style Guide v0.14.0
+# Style Guide v0.15.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
 **This guide is a work in progress and will be updated regularly.**
 
+> **Enforcement:** most rules below are enforced automatically by
+> `@ethlete/eslint-plugin` — run `npx nx lint <project>` and fix what it reports,
+> rather than hand-checking. When working with an agent, the **`styleguide`** skill
+> distills the judgment calls lint can't check, and **`component-architecture`**
+> covers component structure.
+
 ## TL;DR
 
-A comprehensive summary of our key coding standards.
+Key standards at a glance. **Most are enforced by lint** (see [Enforced by lint](#enforced-by-lint)); the rest are judgment calls documented in the sections below. Not exhaustive.
 
-Note that this is **not an exhaustive list**, and you should refer to the full document for more details.
-
-### Type System
-
-- **Type Safety**: Use [`unknown`](#any-and-any) instead of `any`, [`type`](#type--interface) over `interface`, descriptive [generics](#generics)
-- **Imports**: Never use [`import type` or inline `type` specifiers](#import-type) — always use regular value imports
-- **Generics**: Always start with `T` (e.g., `TValue`, `TResult`) and use [descriptive names](#generics)
-- **Constants**: Use [object literals with `as const`](#enums) instead of enums
-- **Type Assertions**: Use [type guards](#any-and-any) to narrow types rather than forced assertions
-
-### Code Structure
-
-- **Variables**: Use [`const`](#variables) by default, `let` only when necessary, never use `var`
-- **Functions**: Use [arrow functions](#functions) for standalone code, regular methods in classes
-- **Equality**: Always use [`===` and `!==`](#equality-checks) for comparisons
-- **Private Members**: Use the [`private` keyword](#private), not `#` or `_` prefix
-- **Async**: Prefer [RxJS](#async--try-catch) over `async/await` for asynchronous operations
-
-### Angular Practices
-
-- **Encapsulation**: Always use [`ViewEncapsulation.None`](#components)
-- **Dependency Injection**: Use [`inject()`](#inject) instead of constructor injection
-- **Lifecycle**: Avoid [legacy lifecycle hooks](#components-directives-services--pipes-and-other-angular-specific-rules), use signals and effects
-- **Templates**: Avoid [function calls](#components-directives-services--pipes-and-other-angular-specific-rules) in templates except signal reads
-
-### State Management
-
-- **Signals**: Use for [synchronous state](#rxjs) management
-- **RxJS**: Use for [asynchronous operations](#rxjs), always [unsubscribe](#rxjs) properly
-- **Effects**: Use for [side effects](#rxjs) related to signal changes
-
-### Naming & Organization
-
-- **Component Naming**: End routing components with [`-view`](#general-file-structure) suffix
-- **File Structure**: Place [related files](#general-file-structure) together in appropriate directories
-- **Exports**: Use [`index.ts`](#general-file-structure) files to export from directories containing related files
-
-### NX Workspace
-
-- **Library Structure**: Create [buildable libraries](#nx-workspace) with clear import paths
-- **Domain Separation**: Organize by [domain and purpose](#nx-workspace) (`domain`, `uikit`, `queries`, etc.)
-- **Changesets**: Document changes with [clear, specific changeset messages](#changesets)
+- **Types**: `unknown` not `any`; `type` not `interface`; `as const` objects not `enum`; `T`-prefixed descriptive generics; regular value imports (no `import type`); narrow with type guards.
+- **Code**: `const` by default (`let` only to reassign, never `var`); one declaration per statement; `===` / `!==`; arrow fns standalone, methods in classes; max two params (object param beyond that).
+- **State**: signals for synchronous state, RxJS for async — always unsubscribe; effects for signal-driven side effects.
+- **Angular**: `ViewEncapsulation.None`; `inject()` not constructor injection; no legacy lifecycle hooks — prefer `constructor` + `afterNextRender` + `DestroyRef.onDestroy`; no function calls in templates except signal reads.
+- **Naming & structure**: name things after what they do; routing components end in `-view`; mirror routes in folders; keep related files together.
+- **Changesets**: one focused, imperative-mood entry per change (see the `changeset` skill).
 
 ---
 
-## `any` and `$any()`
+## Enforced by lint
 
-- **Never** use `any` in TypeScript.
-- **Never** use `$any()` in templates.
-- Use `unknown` instead. If casting to a specific type is necessary, use a type assertion.
+Run `npx nx lint <project> --fix` — the rules below are enforced (and mostly auto-fixed) by `@ethlete/eslint-plugin` (`libs/eslint-plugin/src/configs/recommended.js`). This table is a lookup for _why_ a fix was applied; don't hand-check these.
 
-```ts
-// ❌
-const myVar: any = 'test';
+| Rule                                                                                                                              | Enforced by                                                                                                                                                                                                         |
+| --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No `any` / `$any()`; use `unknown` + type guards                                                                                  | `@typescript-eslint/no-explicit-any`, `@angular-eslint/template/no-any`                                                                                                                                             |
+| No `interface` — use `type`                                                                                                       | `@typescript-eslint/consistent-type-definitions`                                                                                                                                                                    |
+| No `enum` — use an `as const` object + derived union                                                                              | `no-restricted-syntax`                                                                                                                                                                                              |
+| No `var`; prefer `const`; one declaration per statement                                                                           | `no-var`, `prefer-const`, `one-var`                                                                                                                                                                                 |
+| `===` / `!==` only                                                                                                                | `eqeqeq`                                                                                                                                                                                                            |
+| Max two function parameters                                                                                                       | `max-params`                                                                                                                                                                                                        |
+| No `import type` / inline `type` specifiers                                                                                       | `ethlete/no-type-only-import`                                                                                                                                                                                       |
+| Generic params `T`-prefixed (`TValue`), never bare `T`                                                                            | `@typescript-eslint/naming-convention`                                                                                                                                                                              |
+| No `async`/`await` — use RxJS                                                                                                     | `no-restricted-syntax`                                                                                                                                                                                              |
+| Arrow fns standalone; methods in classes; no arrow-fn class props; no `function` keyword                                          | `no-restricted-syntax`                                                                                                                                                                                              |
+| Blank line before `return` in multi-line guard clauses                                                                            | `ethlete/guard-return-newline`                                                                                                                                                                                      |
+| No trivially-inferable explicit return types                                                                                      | `ethlete/no-trivial-return-type`                                                                                                                                                                                    |
+| camelCase / PascalCase / UPPER*CASE; no `#` or `*` member prefixes                                                                | `@typescript-eslint/naming-convention`, `ethlete/no-leading-underscore-class-member`                                                                                                                                |
+| No SCREAMING_CASE locals; class constants `readonly` + SCREAMING_CASE                                                             | `ethlete/no-screaming-case-local`, `ethlete/class-constant-property`                                                                                                                                                |
+| No `readonly` on reactive members (signals, inputs, computed, inject)                                                             | `ethlete/no-readonly-signal`                                                                                                                                                                                        |
+| No `static` members                                                                                                               | `no-restricted-syntax`                                                                                                                                                                                              |
+| Injected providers `private` by default, `protected` only when template/host-visible; explicit accessibility on reachable members | `ethlete/inject-member-accessibility`, `ethlete/template-member-accessibility`                                                                                                                                      |
+| No `inject(X).member` chaining; no pure member aliases                                                                            | `ethlete/no-inject-chain`, `ethlete/no-member-alias`                                                                                                                                                                |
+| No redundant `@internal` on `private`/`protected` members                                                                         | `ethlete/no-redundant-internal`                                                                                                                                                                                     |
+| Observable vars/props end with `$`                                                                                                | `ethlete/require-dollar-suffix`                                                                                                                                                                                     |
+| No body in `subscribe()`; no `subscribe` in `pipe()`; no RxJS in `effect()`/`computed()`                                          | `ethlete/no-subscribe-with-body`, `ethlete/no-subscribe-in-pipe`, `ethlete/no-rxjs-in-effect`                                                                                                                       |
+| `ViewEncapsulation.None`                                                                                                          | `ethlete/require-view-encapsulation-none`                                                                                                                                                                           |
+| No legacy lifecycle hooks; no legacy Angular decorators (`@HostBinding`, `@Input`, …)                                             | `no-restricted-syntax`, `ethlete/no-legacy-angular-decorators`                                                                                                                                                      |
+| No `@Injectable`; no route guards; no resolvers                                                                                   | `no-restricted-syntax`                                                                                                                                                                                              |
+| Outputs: no `on` prefix, no native event names                                                                                    | `@angular-eslint/no-output-on-prefix`, `@angular-eslint/no-output-native`                                                                                                                                           |
+| No logic in pipe `transform`                                                                                                      | `ethlete/no-pipe-logic`                                                                                                                                                                                             |
+| Consistent class-member + decorator-metadata order; concise host-directive / style metadata                                       | `ethlete/class-member-order`, `ethlete/angular-decorator-property-order`, `ethlete/prefer-concise-angular-host-directives`, `ethlete/prefer-concise-angular-style-metadata`                                         |
+| Routing components: `-view` path + `ViewComponent` class name                                                                     | `ethlete/enforce-routing-view-naming`                                                                                                                                                                               |
+| No direct `document` / `window` / DOM query / observers / cookies / `window.location`                                             | `no-restricted-globals`, `ethlete/no-direct-dom-manipulation`, `ethlete/no-dom-query`, `ethlete/no-native-observers`, `ethlete/no-document-cookie`, `ethlete/no-window-location`                                    |
+| No barrel (index) imports — import from the source file                                                                           | `no-restricted-syntax`                                                                                                                                                                                              |
+| Prefer `@ethlete/core` utils over raw APIs (clone/equal, rxjs timers, media query, viewport size, SEO, locale, router state)      | `ethlete/prefer-clone-equal`, `ethlete/prefer-rxjs-timer`, `ethlete/prefer-match-media`, `ethlete/prefer-viewport-size`, `ethlete/no-angular-seo-services`, `ethlete/no-locale-id`, `ethlete/no-angular-router-api` |
 
-// ✅
-const myVar: unknown = 'test';
+## Accessibility & visibility
 
-const isString = (value: unknown): value is string => typeof value === 'string';
+Lint auto-fixes injected providers to `private` and flags template/host-visible members, but the _intent_ is yours:
 
-if (isString(myVar)) {
-  console.log(myVar); // is a string
-}
-```
+- Injected provider → `private` by default; `protected` **only** when referenced from the HTML template or a `host:` binding expression; **drop the modifier entirely** if keeping it `private` would force a member alias (a property whose sole purpose is re-exposing a nested member — expose the injected symbol directly instead).
+- Never add a member that only **aliases** another member's nested property (`foo = this.thing.foo`) — widen the source member's visibility and use it directly.
+- For a member that must stay technically public purely for cross-class/DI use (e.g. a self-registration method called by a sub-directive), keep it `public` and tag `/** @internal */` so build tooling strips it from the published `.d.ts`. Never put `@internal` on `private`/`protected` members.
 
-## Private
+## Naming & functions with intent
 
-- **Never** use `#` or `_` as a prefix on any class member, regardless of visibility.
-- The `private` (or `protected`) keyword is **only required for `inject()` providers**. For all other class members (inputs, outputs, viewChild results, computed signals, observables, methods, etc.) visibility is the author's choice.
-  - Use `private` on an injected provider by default.
-  - Use `protected` instead if the injected symbol is referenced in the component's **HTML template** or in a **`host:` binding expression** inside the `@Component` / `@Directive` decorator.
-  - **Exception**: drop `private` entirely (no modifier = package-level public) when keeping it `private` would force you to create a member alias — i.e. a property whose sole purpose is re-exposing a nested member of the injected symbol (see [`no-member-alias`](#no-member-alias)). Remove the alias and expose the injected symbol directly.
+Case conventions, the `T` generic prefix, arrow-vs-method, and the two-param limit are all lint-enforced. What lint can't judge:
 
-```ts
-export class MyComponent {
-  // ✅
-  private zeroService = inject(ZeroService);
-
-  // ✅ — protected because zeroService is used in the template
-  protected zeroService = inject(ZeroService);
-
-  // ✅ — no modifier because keeping it private would force a member alias
-  zeroService = inject(ZeroService);
-
-  // ❌
-  _zeroService = inject(ZeroService);
-
-  // ❌
-  #zeroService = inject(ZeroService);
-
-  // ❌ — member alias: exposes a nested property of an injected symbol
-  private context = inject(SomeContextToken);
-  error = this.context.error; // remove this; expose `context` directly instead
-}
-```
-
-## no-member-alias
-
-A class member that exists solely as an alias for a nested property of another member accessed via `this` is a violation:
+- **Name things after what they do**, not after the mechanism. `onChange` that posts a form → `sendFormValueToApi`. Descriptive generics (`TValue`, `TResult`), descriptive constant/variable names.
+- When a function needs more than two parameters, take a single **object parameter** with a named `type` rather than widening the signature.
 
 ```ts
-// ❌
-export class MyDirective {
-  private context = inject(SOME_CONTEXT_TOKEN);
-  error = this.context.error; // pure alias — adds no value
-}
-
-// ✅ — expose the injected symbol directly
-export class MyDirective {
-  context = inject(SOME_CONTEXT_TOKEN);
-  // callers use directive.context.error
-}
-```
-
-The same rule applies to any class member, not just injected ones:
-
-```ts
-// ❌
-export class MyComponent {
-  private stuff = buildStuff();
-  protected foo = this.stuff.foo; // pure alias
-}
-
-// ✅
-export class MyComponent {
-  protected stuff = buildStuff();
-  // template uses stuff.foo directly
-}
-```
-
-## Protected / Public / Static
-
-- **Never** use `static`.
-- **Use `public` as an explicit opt-in** when a member intentionally exposes an external API across class boundaries. On Angular classes, reachable members should use explicit `public` unless they are intentionally hidden with `private` / `protected`.
-- **Never** use `protected` unless absolutely necessary — the following count as absolutely necessary:
-  - The member is referenced in the component's **HTML template file**.
-  - The member is referenced in a **`host:` binding expression** inside the `@Component` / `@Directive` decorator (e.g. `'[attr.inert]': 'myMember ? ...'`).
-
-These template-visible or host-visible members should use an explicit accessibility modifier. Lint may auto-fix them to `public` as the safer default when external usage is unknown; switch to `protected` when the member is intentionally template-only.
-
-## `@internal`
-
-Some members must be technically public (no `private` keyword) because they are called from another class — for example, self-registration methods called by sub-directives via DI. These are not part of the consumer API. Mark them with a `/** @internal */` JSDoc comment instead of using a `_` prefix.
-
-`@internal` does not replace explicit `public` on those members. If a member is still technically reachable, keep it `public` and add `@internal` to describe that it is not consumer API.
-
-Do not add `@internal` to `private` or `protected` members. Those are already hidden from consumers, so the tag adds noise without changing the emitted public type surface.
-
-`@internal` may appear together with explicit `public` when a member must stay technically public to satisfy a contract or interop pattern, but should still be stripped from the consumer-facing type surface.
-
-Build tools such as API Extractor will strip `@internal` members from generated `.d.ts` files, so consumers won't see them in autocomplete.
-
-```ts
-export class StreamConsentDirective {
-  /** @internal */
-  registerContentSlot(slot: StreamConsentSlot) {
-    this.contentSlot.set(slot);
-  }
-}
-```
-
-## Readonly
-
-- Use the `readonly` keyword to declare constants where appropriate.
-
-```ts
-import { YOUTUBE } from "./constants";
-
-let idCounter = 0;
-
-export class MyComponent {
-  // ✅
-  readonly YOUTUBE = YOUTUBE;
-
-  // ✅
-  readonly ID = idCounter++;
-
-  // ❌
-  readonly mySignal = signal(false);
-
-  // ❌
-  readonly myInput = input(false);
-
-  // ❌
-  readonly myComputed = computed(() => {});
-
-  // ❌
-  readonly log() {
-    console.log("test");
-  }
-}
-```
-
-## Inject
-
-- Only use `inject` for full services and other tokens.
-- **Never** use `inject` to inject explicit properties.
-
-```ts
-export class MyComponent {
-  // ✅
-  private myService = inject(MyService);
-
-  // ❌
-  private myMember = inject(MyService).myMember;
-  private myOtherMember = inject(MyService).myOtherMember;
-}
-```
-
-## Enums
-
-- **Never** use TypeScript enums. Instead, use regular objects marked with `as const`.
-
-```ts
-// ❌
-export enum NotificationType {
-  Club = 'club',
-  Sport = 'sport',
-}
-
-// ❌ (applies to const as well)
-export const enum NotificationType {
-  Club = 'club',
-  Sport = 'sport',
-}
-
-// ✅
-export const NOTIFICATION_TYPE = {
-  CLUB: 'club',
-  SPORT: 'sport',
-} as const;
-
-export type NotificationType = (typeof NOTIFICATION_TYPE)[keyof typeof NOTIFICATION_TYPE];
-```
-
-## Formatting
-
-- **Never** use **snake_case**.
-
-```ts
-// ❌
-const my_const = true;
-```
-
-- Use **NormalCase** for class names (e.g., components, services, etc.).
-
-```ts
-// ✅
-export class MyComponent {}
-```
-
-- Use **SCREAMING_CASE** for constants.
-  - **Do not** use SCREAMING_CASE for variables declared inside functions.
-  - **Do not** use SCREAMING_CASE for function names.
-
-```ts
-// ✅
-const MY_CONST = true;
-
-const myFunction = () => {
-  // ✅
-  const random = Math.random();
-
-  // ❌
-  const RANDOM = Math.random();
-};
-
-// ❌
-const MY_FUNCTION = () => {};
-```
-
-- Use **camelCase** for everything else.
-
-## Functions
-
-- Use arrow functions for standalone functions.
-- Use regular methods inside classes.
-- **Do not** use arrow functions inside classes.
-- **Do not** use the `function` keyword.
-- Limit functions to a maximum of two parameters. Use an object parameter for more complex inputs.
-- Ensure the function name clearly describes its purpose and behavior.
-
-```ts
-// ✅
-const myFunction = () => {}
-
-// ❌
-function myFunction() {}
-
-class MyClass {
-  // ✅
-  method() {}
-
-  // ❌
-  arrowMethod = () => {}
-}
-
-// ✅
-const logMessage = (scope: string, message: string) => {}
-
-// ❌
-const logMessage = (scope: string, message: string, logLevel: string) => {}
-
-// ✅
-type MyFunctionWithParamsConfig = {
-  scope: string;
-  logLevel: string;
-}
-
-const logMessage = (message: string, config: MyFunctionWithParamsConfig) => {}
-
-// ❌ The function name doesn't describe what it does
-const onChange = () => {
-  const formValue = myForm.getRawValue();
-
-  sendToApi(formValue);
-}
-
-// ✅
-const sendMyFormValueToApi() {
-  const formValue = myForm.getRawValue();
-
-  sendToApi(formValue);
-}
-
-```
-
-- In multi-line guard clauses, add an empty line before the `return` statement. This does not apply to single-line guards (e.g., `if (x) return;`).
-
-```ts
-// ❌
-if (!allFilled) {
-  this.selectFirstUnfilledGuidedSlot();
-  return;
-}
-
-// ✅
-if (!allFilled) {
-  this.selectFirstUnfilledGuidedSlot();
-
-  return;
-}
-
-// ✅ (single-line guard — no empty line needed)
-if (!slot) return;
-```
-
-- **Do not** add explicit return types unless TypeScript cannot infer them, or the inferred type would be unwieldy compared to a hand-written one. Omit `: void`, `: boolean`, `: string`, and all other trivially-inferred types.
-
-```ts
-// ❌
-greet(): void {
-  console.log('hi');
-}
-
-// ✅
-greet() {
-  console.log('hi');
-}
-
-// ❌ — TypeScript infers this fine
-getLabel(): string {
-  return this.label();
-}
-
-// ✅ — TypeScript cannot infer recursive return types
-flatten(value: unknown[]): unknown[] {
-  return value.flatMap((v) => Array.isArray(v) ? this.flatten(v) : v);
-}
-```
-
-## Variables
-
-- **Never** use `var`.
-- **Never** use `let` unless the variable needs to be reassigned.
-- **Never** declare multiple variables using a single `let` or `const` statement.
-- **Always** use `const` for variables that do not need to be reassigned.
-
-```ts
-// ❌
-var myVar = 'test';
-
-// ❌
-let myVar = 'test';
-
-// ✅
-const myVar = 'test';
-
-// ✅
-let count = 0;
-
-const add = () => {
-  count++;
-};
-
-// ❌
-const myVar1 = 'test',
-  myVar2 = 'test';
-
-// ✅
-const myVar1 = 'test';
-const myVar2 = 'test';
-```
-
-## Equality Checks
-
-- **Never** use `==` or `!=`.
-- Always use `===` or `!==`.
-
-## Type / Interface
-
-- **Never** use the `interface` keyword.
-- Always use the `type` keyword instead.
-
-## Import Type
-
-- **Never** use `import type { Foo } from 'bar'`.
-- **Never** use inline `type` specifiers: `import { type Foo } from 'bar'`.
-- Always use a regular value import instead.
-
-```ts
-// ❌
-import type { MyType } from './my-module';
-
-// ❌
-import { type MyType } from './my-module';
-
-// ✅
-import { MyType } from './my-module';
-```
-
-## Generics
-
-- **Never** use single-letter generics.
-- Always use descriptive names for generics.
-- Always start generic names with a capital `T` followed by a capitalized name.
-
-```ts
-// ❌
-const myFunction = <T>(value: T) => {};
-
-// ✅
-const myFunction = <TValue>(value: TValue) => {};
-```
-
-## Async / Try-Catch
-
-- **Never** use the `async` keyword. Instead, use RxJS for handling asynchronous operations.
-
-```ts
-const API_URL = 'https://api.example.com';
-
-// ❌
-const fetchData = async () => {
-  try {
-    const res = await fetch(API_URL);
-    return await res.json();
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-// ✅
-const data$ = from(fetch(API_URL)).pipe(switchMap((res) => from(res.json())));
+// ❌ name describes the trigger, not the behaviour
+const onChange = () => sendToApi(myForm.getRawValue());
+
+// ✅ name describes the behaviour
+const sendFormValueToApi = () => sendToApi(myForm.getRawValue());
+
+// ✅ object param instead of a third positional arg
+type LogMessageConfig = { scope: string; logLevel: string };
+const logMessage = (message: string, config: LogMessageConfig) => {};
 ```
 
 ## TypeScript Config
@@ -482,201 +96,45 @@ const data$ = from(fetch(API_URL)).pipe(switchMap((res) => from(res.json())));
 - Set `resolveJsonModule` to `true` only if necessary. JSON files should be fetched via HTTP requests.
 - Set `esModuleInterop` to `true` only if necessary.
 
-## RxJS
+## Signals vs RxJS
 
-- Use RxJS for asynchronous operations.
-- Avoid using `.subscribe()` within an observable pipe.
-- Never use `.subscribe()` to extract data from an observable.
-- Do not use RxJS to manage synchronous state—use signals instead.
-- Use the dollar sign (`$`) to indicate observables.
-- Always unsubscribe from observables when they are no longer needed. Use one of the following methods to ensure this:
-  - The `takeUntilDestroyed()` operator (requires an injection context).
-  - The `.unsubscribe()` method from the `Subscription` class returned by `subscribe()`.
-  - Operators like `takeUntil`, `takeWhile`, or `take`.
-  - **When using operators, always place them at the end of the pipe.**
-- Keep the `subscribe()` call empty and use the `tap` operator to handle side effects.
-- Avoid using RxJS within effects or computed values. This can lead to memory leaks and is likely not the best solution for the problem.
+- **Synchronous state → signals. Asynchronous work → RxJS.** Never model sync state with a `BehaviorSubject`; never use RxJS just to read a value back synchronously. Bridge with `toSignal()` / `toObservable()` instead of copying values across with `.subscribe()`.
+- **Always unsubscribe.** Prefer `takeUntilDestroyed()`; otherwise `take` / `takeUntil` / `takeWhile`, and place the limiting operator **last** in the pipe. Side effects go in `tap()`, not the `subscribe()` callback. (Lint blocks bodies in `subscribe()` but cannot prove you unsubscribe.)
+- Don't reach for RxJS inside `effect()` / `computed()` — model the stream with `toObservable(signal).pipe(switchMap(...))` instead of subscribing per run.
 
 ```ts
-// ❌
-const clickCount$ = new BehaviorSubject(0);
+// ❌ sync state as a subject          // ✅ signal
+const count$ = new BehaviorSubject(0);
+const count = signal(0);
 
-// ✅
-const clickCount = signal(0);
-
-// ❌
-let data: string | null = null;
-
-someObservable$.subscribe((res) => data = res);
-
-// ✅
-const data = toSignal(someObservable$);
-
-// ❌
-from(fetch(API_URL)).pipe(
-  tap((res) => {
-    // ❌ subscription inside a pipe
-    from(res.json()).subscribe((data) => {
-      // ❌ code inside the subscribe call
-      console.log(data);
-    });
-  }),
-).subscribe() // ❌ subscription made without unsubscribe logic
-
-// ✅
-from(fetch(API_URL))
-  .pipe(
-    // ✅ switching to the inner observable
-    switchMap((res) => from(res.json())),
-    // ✅ performing side effects via tap
-    tap((data) => console.log(data)),
-    // ✅ clean up once the e.g. component is destroyed
-    // ✅ placed as the last operator inside the pipe
-    takeUntilDestroyed(),
-  )
-  .subscribe();
-
-
-// ❌ every time the page signal changes this effect will run and create a new subscription.
-effect(() => {
-  const page = myPageSignal();
-
-  fetchFromMyApi(page).pipe(tap(res) => console.log(res)).subscribe();
-})
-
-// ✅
-toObservable(myPageSignal)
-  .pipe(
-    switchMap((page) => fetchFromMyApi(page)),
-    tap((res) => console.log(res)),
-    takeUntilDestroyed(),
-  )
-  .subscribe();
+// ✅ react to a signal without subscribing inside an effect
+toObservable(page)
+  .pipe(
+    switchMap((p) => fetchPage(p)),
+    tap(handle),
+    takeUntilDestroyed(),
+  )
+  .subscribe();
 ```
 
-## Components, Directives, Services & Pipes and other Angular specific rules
+## Angular patterns
 
-- Use `inject` for dependency injection.
-- Avoid using function calls as value bindings inside Angular templates, except for signal reads.
+Lint covers the mechanical Angular rules (`ViewEncapsulation.None`, no legacy hooks/decorators, no native DOM/`window`, output naming, class-member + decorator-metadata order, no `@Injectable` / guards / resolvers). The judgment calls:
 
-```ts
-export class MyComponent {
-  buttonText = input.required<string>();
-
-  betterIsButtonDisabled = computed(() => this.buttonText() === 'foo');
-
-  isButtonDisabled() {
-    return this.buttonText() === 'foo';
-  }
-
-  log() {
-    console.log('this is fine');
-  }
-}
-```
+- **No function calls in template value bindings except signal reads** — a method in a binding re-runs every change-detection cycle. Move it into a `computed()` and bind that. Event bindings (`(click)="save()"`) are fine.
+- **Prefer the `constructor`** (runs in the injection context) over `ngOnInit` / `ngOnDestroy`: `afterNextRender()` for first-render work, `inject(DestroyRef).onDestroy(...)` for cleanup.
+- **Prefer utility functions + provider factories over services** — `createProvider` / `createRootProvider` and the `injectX()` helper pattern from `@ethlete/core`, not an `@Injectable`.
+- **Most directives can be plain functions.** Move the logic into a function so it's reusable without applying a directive; keep a directive only when a host element genuinely needs it. Avoid common input/output names that clash with the host component.
+- **Pipes carry no logic** — put it in a utility function called from a `computed()`; most pipes can be replaced by a `computed` outright.
+- **Components**: inline template/styles for small components, external `.html` / `.css` files for complex ones.
 
 ```html
-<!-- ❌ This function will run on EVERY change detection cycle -->
-<button [disabled]="isButtonDisabled()">Button</button>
-
-<!-- ✅ This will update only if the computed value changes -->
-<button [disabled]="betterIsButtonDisabled()">Button</button>
-
-<!-- ✅ Event bindings are fine of cause -->
-<button (click)="log()">Button</button>
+<!-- ❌ runs every CD cycle -->
+<button [disabled]="isDisabled()">
+  <!-- ✅ computed signal -->
+  <button [disabled]="disabled()"></button>
+</button>
 ```
-
-- Avoid using native DOM APIs (e.g., `document.`, `window.`).
-- Refrain from using native names for inputs and outputs, such as `title`, `change`, or `hidden`.
-- Do not prefix outputs with `on`, such as `onSelectDate` or `onEnter`. Instead, use names like `selectDate` or `enter`.
-- Avoid using outdated lifecycle hooks (`ngOnChanges`, `ngAfterViewInit`, `ngAfterContentInit`, etc.).
-- Minimize the use of `ngOnInit` and `ngOnDestroy`. Prefer the `constructor`, as it runs within the injection context.
-- Follow the example below to structure your code effectively.
-- **Initialization dependency takes precedence over member order.** If a member's initializer references another member, the referenced member must be declared first — regardless of its position in the default order. The order below is the tiebreaker for independent members:
-  1. DI (`inject(...)`)
-  2. Inputs
-  3. Outputs
-  4. viewChild / viewChildren / contentChild / contentChildren
-  5. Private members / computed
-  6. Public members / computed / forms / external utilities
-  7. Constructor (effects, `afterNextRender`, `DestroyRef.onDestroy`)
-  8. Public methods
-  9. Private methods
-
-```ts
-export class MyComponent {
-  // dependency injection first
-  private myService = inject(MyService);
-
-  // inputs
-  myInput = input();
-
-  // outputs
-  myOutput = output();
-
-  // private members
-  private shouldDoStuff = computed(() => {});
-
-  // public members
-  readonly ICQ_LINK = ICQ;
-  readonly MSN_LINK = MSN;
-
-  computedStuff = computed(() => {});
-
-  form = new FormGroup(...);
-
-  stuff = useMyExternalUtilFunction();
-
-  // constructor
-  constructor(){
-    effect(() => console.log(this.computedStuff()));
-
-    // ngOnInit
-    afterNextRender(() => console.log('init'));
-
-    // ngOnDestroy
-    inject(DestroyRef).onDestroy(() => console.log('cleanup'));
-  }
-
-  // lifecycle hooks (avoid if possible)
-
-  // public methods
-  greet() {
-    console.log('hi mom');
-  }
-
-  // private methods
-  private calculateGreeting() {}
-}
-```
-
-### Components
-
-- Always use `ViewEncapsulation.None` for consistency.
-- Stick to inline templates and styles for smaller components.
-- Use external `.component.html` and `.component.css/scss` files for more complex components.
-
-### Directives
-
-- Avoid using common names for inputs and outputs. If common names are used, the directive may not be applicable to a component that already uses the same names for its inputs or outputs.
-- With the new signal APIs, most directives can be replaced with utility functions. Consider moving the core logic into a simple function and using that function within the directive. This approach allows the logic to be reused without requiring the directive to be applied.
-
-### Services
-
-- Prefer modular utility functions over Angular services.
-- Use `createRootProvider` and related helpers from `@ethlete/core` instead of `@Injectable` services.
-
-### Pipes
-
-- Pipes should not contain logic. Instead, place the logic in a utility function. Nowadays, most pipes can be replaced by a simple utility function call within a `computed`.
-
-### Guards
-
-- **Do not** use Guards.
-
-### Resolvers
-
-- **Do not** use resolvers. Use the query library to fetch data.
 
 ## General File Structure
 

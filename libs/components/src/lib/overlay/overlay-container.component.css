@@ -31,6 +31,10 @@
     &:not(.et-overlay-main) {
       display: grid;
     }
+
+    &:not(.et-overlay-main):has(.et-overlay-router-outlet-host) {
+      grid-template-rows: minmax(0, 1fr);
+    }
   }
 
   &.et-overlay--anchored,
