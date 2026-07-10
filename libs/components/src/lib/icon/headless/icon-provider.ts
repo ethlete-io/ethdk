@@ -26,14 +26,14 @@ export type IconDefinition = {
  * }
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface, @typescript-eslint/consistent-type-definitions
 export interface EthleteIconNameRegistry {}
 
 /**
  * Augmentable registry for the literal set of icon variants an app uses. Empty by default,
  * which keeps the `variant` input typed as plain `string`. See {@link EthleteIconNameRegistry}.
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface, @typescript-eslint/consistent-type-definitions
 export interface EthleteIconVariantRegistry {}
 
 export type RegisteredIconName = EthleteIconNameRegistry extends { name: infer N extends string } ? N : string;

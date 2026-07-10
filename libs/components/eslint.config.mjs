@@ -29,7 +29,9 @@ export default [
   {
     ...ethlete.configs.recommendedTs,
     files: ['**/*.ts'],
-    ignores: ['**/*.spec.ts', '**/*.test.ts', '**/test-helpers.ts'],
+    // Generators are Node/nx tooling scripts, not Angular library code — the Angular/RxJS
+    // styleguide (no function declarations, no async/await, etc.) does not apply to them.
+    ignores: ['**/*.spec.ts', '**/*.test.ts', '**/test-helpers.ts', '**/generators/**'],
     rules: {
       ...ethlete.configs.recommendedTs.rules,
       // Angular selector conventions (project-specific)
