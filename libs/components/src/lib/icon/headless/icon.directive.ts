@@ -1,11 +1,11 @@
-import { booleanAttribute, computed, Directive, inject, InjectionToken, input } from '@angular/core';
+import { booleanAttribute, computed, Directive, inject, InjectionToken, input, InputSignal } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { RuntimeError } from '@ethlete/core';
 import { ICON_ERROR_CODES } from './icon-errors';
 import {
   DEFAULT_ICON_VARIANT,
-  ICONS_TOKEN,
   iconRegistryKey,
+  ICONS_TOKEN,
   RegisteredIconName,
   RegisteredIconVariant,
 } from './icon-provider';
@@ -33,15 +33,9 @@ export class IconDirective {
   private icons = inject(ICONS_TOKEN, { optional: true });
   private sanitizer = inject(DomSanitizer);
 
-  public iconNameToUse = input.required<RegisteredIconName>({ alias: 'etIcon' });
+  public iconNameToUse: InputSignal<RegisteredIconName> = input.required<RegisteredIconName>({ alias: 'etIcon' });
 
-  /**
-   * Style variant to resolve (e.g. `'light'`). When omitted, the directive matches a
-   * variant-less registration first, then falls back to the `'solid'` variant — so
-   * `<i etIcon="shield">` resolves the solid style and `<i etIcon="shield" variant="light">`
-   * the light one, without encoding the variant into the name.
-   */
-  public variant = input<RegisteredIconVariant | undefined>(undefined);
+  public variant: InputSignal<RegisteredIconVariant | undefined> = input<RegisteredIconVariant | undefined>(undefined);
 
   public allowHardcodedColor = input(false, { transform: booleanAttribute });
 

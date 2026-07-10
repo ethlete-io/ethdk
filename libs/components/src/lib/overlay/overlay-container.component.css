@@ -33,6 +33,7 @@
     }
 
     &:not(.et-overlay-main):has(.et-overlay-router-outlet-host) {
+      grid-template-columns: minmax(0, 1fr);
       grid-template-rows: minmax(0, 1fr);
     }
   }

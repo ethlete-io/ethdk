@@ -7,6 +7,7 @@ import {
   WritableSignal,
   effect,
   inject,
+  inputBinding,
   isSignal,
   untracked,
 } from '@angular/core';
@@ -233,8 +234,8 @@ export const createOverlayHandlerWithQueryParamLifecycle = <
           return;
         }
 
-        // Seed the initial value via inputBindings; two-way sync is wired up in afterOpened.
-        overlayRef = handler.open({ inputBindings: { [OVERLAY_QUERY_PARAM_INPUT_NAME]: value } });
+        // Seed the initial value via an input binding; two-way sync is wired up in afterOpened.
+        overlayRef = handler.open({ bindings: [inputBinding(OVERLAY_QUERY_PARAM_INPUT_NAME, () => value)] });
       });
     });
 

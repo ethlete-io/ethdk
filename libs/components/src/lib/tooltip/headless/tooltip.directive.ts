@@ -8,6 +8,7 @@ import {
   effect,
   inject,
   input,
+  inputBinding,
   signal,
   untracked,
 } from '@angular/core';
@@ -140,12 +141,12 @@ export class TooltipDirective {
     const hostElement = this.elementRef.nativeElement;
     const config: OverlayConfig = {
       id: tooltipId,
-      inputBindings: {
-        tooltipId,
-        content,
-        colorProvider: this.colorProvider ?? null,
-        surfaceProvider: this.surfaceProvider ?? null,
-      },
+      bindings: [
+        inputBinding('tooltipId', () => tooltipId),
+        inputBinding('content', () => content),
+        inputBinding('colorProvider', () => this.colorProvider ?? null),
+        inputBinding('surfaceProvider', () => this.surfaceProvider ?? null),
+      ],
       disableClose: true,
       hasBackdrop: false,
       mode: 'non-modal',

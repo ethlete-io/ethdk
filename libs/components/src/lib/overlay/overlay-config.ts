@@ -1,4 +1,4 @@
-import { Injector, StaticProvider, ViewContainerRef } from '@angular/core';
+import { Binding, Injector, StaticProvider, ViewContainerRef } from '@angular/core';
 import { OverlayStrategyBreakpoint } from './strategies/overlay-strategy.types';
 
 export type OverlayAutoFocusTarget = 'container' | 'first-heading' | 'first-tabbable';
@@ -22,10 +22,12 @@ export type OverlayConfig = {
   role?: OverlayRole;
   hasBackdrop?: boolean;
   disableClose?: boolean;
-  inputBindings?: Record<string, unknown>;
 
-  /** Event listeners bound to the overlay component's outputs. */
-  outputBindings?: Record<string, (event: unknown) => unknown>;
+  /**
+   * Bindings applied to the overlay component, using Angular's native binding API
+   * (`inputBinding`, `outputBinding`, `twoWayBinding`).
+   */
+  bindings?: Binding[];
 
   ariaDescribedBy?: string | null;
   ariaLabelledBy?: string | null;

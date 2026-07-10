@@ -7,8 +7,6 @@ import {
   computed,
   createComponent,
   inject,
-  inputBinding,
-  outputBinding,
   signal,
 } from '@angular/core';
 import { filter, take } from 'rxjs';
@@ -164,10 +162,7 @@ export const [provideOverlayRuntime, injectOverlayRuntime] = createRootProvider(
         environmentInjector,
         elementInjector,
         hostElement: paneElement,
-        bindings: [
-          ...Object.entries(config.inputBindings ?? {}).map(([key, value]) => inputBinding(key, () => value)),
-          ...Object.entries(config.outputBindings ?? {}).map(([key, listener]) => outputBinding(key, listener)),
-        ],
+        bindings: config.bindings ?? [],
       });
 
       // pane classes are applied after component creation — Angular replaces the host

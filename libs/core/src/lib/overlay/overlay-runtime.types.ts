@@ -1,4 +1,4 @@
-import { Injector, Signal, StaticProvider, Type, ViewContainerRef } from '@angular/core';
+import { Binding, Injector, Signal, StaticProvider, Type, ViewContainerRef } from '@angular/core';
 import { OffsetOptions, Padding, Placement, VirtualElement } from '@floating-ui/dom';
 import { AnimatedLifecycleDirective } from '../animations';
 
@@ -99,7 +99,10 @@ export type OverlayRuntimeMountConfig<TComponent extends object> = {
   hostClass?: string[];
   backdropClass?: string[];
   paneClass?: string[];
-  inputBindings?: Record<string, unknown>;
-  outputBindings?: Record<string, (event: unknown) => unknown>;
+  /**
+   * Bindings applied to the mounted component, using Angular's native binding API
+   * (`inputBinding`, `outputBinding`, `twoWayBinding`).
+   */
+  bindings?: Binding[];
   animationDelegate?: OverlayRuntimeAnimationDelegate;
 };

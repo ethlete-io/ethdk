@@ -1,3 +1,4 @@
+import { inputBinding } from '@angular/core';
 import '../../test-helpers';
 import { createOverlayRef } from './overlay-ref';
 
@@ -13,7 +14,7 @@ describe('createOverlayRef', () => {
   });
 
   it('stores config', () => {
-    const config = { inputBindings: { key: 'value' } };
+    const config = { bindings: [inputBinding('key', () => 'value')] };
     const ref = createOverlayRef(config);
     expect(ref.config).toEqual(config);
   });

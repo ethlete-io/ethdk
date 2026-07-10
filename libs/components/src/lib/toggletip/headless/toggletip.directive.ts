@@ -7,6 +7,7 @@ import {
   effect,
   inject,
   input,
+  inputBinding,
   model,
   signal,
   untracked,
@@ -174,13 +175,13 @@ export class ToggletipDirective {
     const hostElement = this.elementRef.nativeElement;
     const config: OverlayConfig = {
       id: this.toggletipId,
-      inputBindings: {
-        toggletipId: this.toggletipId,
-        contentId: this.contentId,
-        content,
-        colorProvider: this.colorProvider ?? null,
-        surfaceProvider: this.surfaceProvider ?? null,
-      },
+      bindings: [
+        inputBinding('toggletipId', () => this.toggletipId),
+        inputBinding('contentId', () => this.contentId),
+        inputBinding('content', () => content),
+        inputBinding('colorProvider', () => this.colorProvider ?? null),
+        inputBinding('surfaceProvider', () => this.surfaceProvider ?? null),
+      ],
       role: 'dialog',
       ariaLabel: this.resolvedAriaLabel(),
       ariaLabelledBy: this.ariaLabelledBy(),

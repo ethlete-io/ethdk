@@ -7,6 +7,7 @@ import {
   effect,
   inject,
   input,
+  inputBinding,
   model,
   signal,
   untracked,
@@ -584,10 +585,7 @@ export class MenuDirective {
     };
 
     const config: OverlayConfig = {
-      inputBindings: {
-        template: surface.templateRef,
-        context: templateContext,
-      },
+      bindings: [inputBinding('template', () => surface.templateRef), inputBinding('context', () => templateContext)],
       mode: 'non-modal',
       hasBackdrop: false,
       autoFocus: false,

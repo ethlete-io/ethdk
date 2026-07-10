@@ -1,4 +1,4 @@
-import { DOCUMENT, EnvironmentInjector, Type, computed, inject } from '@angular/core';
+import { DOCUMENT, EnvironmentInjector, Type, computed, inject, inputBinding } from '@angular/core';
 import { OverlayRuntimeRef, createRootProvider, injectOverlayRuntime } from '@ethlete/core';
 import { OverlayConfig } from './overlay-config';
 import { OverlayContainerComponent } from './overlay-container.component';
@@ -80,8 +80,7 @@ export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
         viewContainerRef: config.viewContainerRef,
         injector: config.injector,
         providers: [{ provide: OVERLAY_REF, useValue: overlayRef }, ...(config.providers ?? [])],
-        inputBindings: config.inputBindings,
-        outputBindings: config.outputBindings,
+        bindings: config.bindings,
         role,
         positionStrategy,
         hasBackdrop: config.hasBackdrop ?? modal,
@@ -130,12 +129,11 @@ export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
         viewContainerRef: resolvedConfig.viewContainerRef,
         injector: resolvedConfig.injector,
         providers: [{ provide: OVERLAY_REF, useValue: overlayRef }, ...(resolvedConfig.providers ?? [])],
-        inputBindings: {
-          component,
-          componentInputs: resolvedConfig.inputBindings,
-          componentOutputs: resolvedConfig.outputBindings,
-          renderArrow: controller.initialMountConfig.renderArrow,
-        },
+        bindings: [
+          inputBinding('component', () => component),
+          inputBinding('componentBindings', () => resolvedConfig.bindings),
+          inputBinding('renderArrow', () => controller.initialMountConfig.renderArrow),
+        ],
         role,
         positionStrategy: controller.initialMountConfig.positionStrategy,
         animationDelegate: controller.initialMountConfig.animationDelegate,

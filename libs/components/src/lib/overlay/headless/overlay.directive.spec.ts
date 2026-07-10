@@ -79,10 +79,10 @@ describe('OverlayDirective', () => {
     overlayDirective.show();
     fixture.detectChanges();
 
-    const context = overlayDirective.overlayRef()?.config.inputBindings?.['context'] as
-      | OverlaySurfaceContext
-      | undefined;
-    context?.close('done');
+    const instance = overlayDirective.overlayRef()?.componentInstance() as {
+      context: () => OverlaySurfaceContext;
+    } | null;
+    instance?.context().close('done');
     fixture.detectChanges();
 
     expect(overlayDirective.open()).toBe(false);

@@ -1,4 +1,5 @@
 import {
+  Binding,
   Component,
   ComponentRef,
   DestroyRef,
@@ -10,8 +11,6 @@ import {
   effect,
   inject,
   input,
-  inputBinding,
-  outputBinding,
   signal,
   untracked,
   viewChild,
@@ -62,8 +61,7 @@ export class OverlayContainerComponent {
   public rootBoundary = injectBoundaryElement();
 
   public component = input.required<Type<object>>();
-  public componentInputs = input<Record<string, unknown> | undefined>(undefined);
-  public componentOutputs = input<Record<string, (event: unknown) => unknown> | undefined>(undefined);
+  public componentBindings = input<Binding[] | undefined>(undefined);
 
   public renderArrow = input(false);
 
@@ -130,13 +128,8 @@ export class OverlayContainerComponent {
       untracked(() => {
         this.contentComponentRef()?.destroy();
 
-        const inputs = this.componentInputs() ?? {};
-        const outputs = this.componentOutputs() ?? {};
         const componentRef = outlet.createComponent(component, {
-          bindings: [
-            ...Object.entries(inputs).map(([key, value]) => inputBinding(key, () => value)),
-            ...Object.entries(outputs).map(([key, listener]) => outputBinding(key, listener)),
-          ],
+          bindings: this.componentBindings() ?? [],
         });
 
         this.contentComponentRef.set(componentRef);
