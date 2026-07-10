@@ -58,12 +58,6 @@
   initial-value: 16px;
 }
 
-@property --et-menu-item-destructive-color {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: rgb(248 113 113);
-}
-
 @property --et-menu-separator-margin-block {
   syntax: '<length>';
   inherits: false;
@@ -91,12 +85,21 @@
 .et-menu {
   --_et-menu-background: var(--et-surface-background-solid, var(--et-surface-2, rgb(32 32 32)));
   --_et-menu-color: var(--et-surface-color-solid, var(--et-color-main-contrast, rgb(244 244 245)));
-  --_et-menu-border: rgb(255 255 255 / 0.1);
+  --_et-menu-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
   --_et-menu-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
   --_et-menu-radius: 10px;
-  --_et-menu-item-active-background: rgb(255 255 255 / 0.08);
-  --_et-menu-muted-color: rgb(255 255 255 / 0.55);
-  --_et-menu-separator-color: rgb(255 255 255 / 0.1);
+  --_et-menu-item-active-background: color-mix(
+    in srgb,
+    var(--et-surface-interaction-solid, rgb(255 255 255)) 12%,
+    transparent
+  );
+  --_et-menu-item-pressed-background: color-mix(
+    in srgb,
+    var(--et-surface-interaction-solid, rgb(255 255 255)) 20%,
+    transparent
+  );
+  --_et-menu-muted-color: var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55));
+  --_et-menu-separator-color: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
 
   display: block;
   min-inline-size: var(--et-menu-min-width);
@@ -109,6 +112,12 @@
   font-size: var(--et-menu-item-font-size);
   box-shadow: var(--_et-menu-shadow);
   outline: none;
+
+  /* applied while the block size animates after a content change (e.g. search filtering),
+     so content outside the animated size stays hidden */
+  &.et-menu--resizing {
+    overflow: clip;
+  }
 
   .et-menu-header {
     padding: var(--et-menu-padding-block) var(--et-menu-padding-inline) 0;
@@ -138,7 +147,8 @@
     .et-menu-search-error {
       margin: 6px 2px 0;
       font-size: 12px;
-      color: var(--et-menu-item-destructive-color);
+      /* the element carries the error color theme via etProvideColor */
+      color: var(--et-theme-color-primary-solid, rgb(248 113 113));
     }
 
     input[etmenusearch] {
@@ -147,14 +157,17 @@
       padding-inline: var(--et-menu-item-padding-inline);
       border-radius: var(--et-menu-item-border-radius);
       border: 1px solid var(--_et-menu-border);
-      background: rgb(255 255 255 / 0.04);
+      background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 6%, transparent);
       color: inherit;
       font: inherit;
       outline: none;
       box-sizing: border-box;
+      transition:
+        border-color 120ms ease,
+        background 120ms ease;
 
       &:focus-visible {
-        border-color: rgb(255 255 255 / 0.3);
+        border-color: var(--et-theme-color-primary-solid, rgb(255 255 255 / 0.3));
       }
 
       &::placeholder {
@@ -191,9 +204,21 @@
     cursor: pointer;
     outline: none;
     box-sizing: border-box;
+    transition:
+      background 120ms ease,
+      color 120ms ease,
+      opacity 120ms ease;
 
-    &[data-active] {
+    /* the roving focus is applied programmatically on mouse-open too, so :focus-visible (instead
+       of [data-active] alone) keeps the highlight from appearing without a hover or keyboard
+       interaction; a trigger whose submenu is open stays highlighted the whole time */
+    &[data-active]:where(:hover, :focus-visible),
+    &[data-menu-open] {
       background: var(--_et-menu-item-active-background);
+    }
+
+    &:active:not([aria-disabled='true']) {
+      background: var(--_et-menu-item-pressed-background);
     }
 
     &[aria-disabled='true'] {
@@ -202,7 +227,8 @@
     }
 
     &[data-variant='destructive'] {
-      color: var(--et-menu-item-destructive-color);
+      /* the item forces the error color theme onto itself while destructive */
+      color: var(--et-theme-color-primary-solid, rgb(248 113 113));
     }
   }
 }

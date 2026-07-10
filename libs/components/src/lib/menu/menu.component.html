@@ -1,4 +1,4 @@
-<div class="et-menu-header">
+<div #menuHeader class="et-menu-header">
   <div class="et-menu-search-field">
     <ng-content select="input[etMenuSearch]" />
 
@@ -8,10 +8,12 @@
   </div>
 
   @if (searchError(); as error) {
-    <p [id]="searchErrorId" class="et-menu-search-error" role="alert">{{ error }}</p>
+    <p [id]="searchErrorId" [etProvideColor]="errorColorTheme" class="et-menu-search-error" role="alert">
+      {{ error }}
+    </p>
   }
 </div>
 
-<div class="et-menu-body">
+<div #menuBody class="et-menu-body">
   <ng-content />
 </div>

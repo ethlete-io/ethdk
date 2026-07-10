@@ -3,5 +3,5 @@
   block-size: 1px;
   margin-block: var(--et-menu-separator-margin-block, 6px);
   margin-inline: calc(var(--et-menu-item-padding-inline, 10px) * -0.5);
-  background: var(--_et-menu-separator-color, rgb(255 255 255 / 0.1));
+  background: var(--_et-menu-separator-color, var(--et-surface-border-solid, rgb(255 255 255 / 0.1)));
 }

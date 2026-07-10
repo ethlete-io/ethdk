@@ -1,6 +1,6 @@
 import { AfterViewInit, DestroyRef, Directive, ElementRef, inject, InjectionToken, model } from '@angular/core';
 import { outputFromObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, filter, of, Subject, switchMap, take, takeUntil, tap } from 'rxjs';
+import { BehaviorSubject, filter, map, of, Subject, switchMap, take, takeUntil, tap } from 'rxjs';
 import { injectRenderer } from '../providers';
 import { ANIMATABLE_TOKEN, AnimatableDirective, AnimationEndEvent } from './animatable.directive';
 import { animationDebugLog } from './animation-debug';
@@ -326,7 +326,30 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
           }
         }),
         switchMap(() => this.animatable.animationEnd$),
-        filter((e) => this.state$.value === expectedState && !e.cancelled && e.transitionId === transitionId),
+        filter(() => this.state$.value === expectedState),
+        switchMap((e) => {
+          if (!e.cancelled && e.transitionId === transitionId) {
+            return of(true);
+          }
+
+          // The batch ended cancelled or under a different id — e.g. the browser cancelled and
+          // restarted a running transition mid-flight (an anchored overlay whose ancestor pane got
+          // destroyed) or a foreign transition on the same element finished. If nothing is
+          // animating anymore the expected end event can never arrive, so treat the transition as
+          // settled instead of waiting forever (mirrors the fallback in handleInterruptedTransition).
+          return this.animatable.isAnimating$.pipe(
+            take(1),
+            tap((stillAnimating) => {
+              if (!stillAnimating) {
+                this.debugLog(
+                  `${transitionId}: completes via fallback (batch id "${e.transitionId ?? 'none'}", cancelled ${e.cancelled})`,
+                );
+              }
+            }),
+            map((stillAnimating) => !stillAnimating),
+          );
+        }),
+        filter((settled) => settled && this.state$.value === expectedState),
         tap(onComplete),
         take(1),
         takeUntil(cancelSignal),

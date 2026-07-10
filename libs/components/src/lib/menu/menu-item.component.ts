@@ -1,4 +1,5 @@
-import { Component, ViewEncapsulation, input } from '@angular/core';
+import { Component, ViewEncapsulation, effect, inject, input, untracked } from '@angular/core';
+import { ProvideColorDirective, injectErrorTheme } from '@ethlete/core';
 import { MenuItemDirective } from './headless';
 
 export const MENU_ITEM_VARIANTS = {
@@ -19,6 +20,7 @@ export type MenuItemVariant = (typeof MENU_ITEM_VARIANTS)[keyof typeof MENU_ITEM
       inputs: ['disabled', 'closeOnActivate'],
       outputs: ['activated'],
     },
+    ProvideColorDirective,
   ],
   host: {
     class: 'et-menu-item',
@@ -26,5 +28,24 @@ export type MenuItemVariant = (typeof MENU_ITEM_VARIANTS)[keyof typeof MENU_ITEM
   },
 })
 export class MenuItemComponent {
+  private provideColor = inject(ProvideColorDirective);
+  private errorColorTheme = injectErrorTheme();
+
   public variant = input<MenuItemVariant>(MENU_ITEM_VARIANTS.DEFAULT);
+
+  constructor() {
+    effect(() => {
+      const isDestructive = this.variant() === MENU_ITEM_VARIANTS.DESTRUCTIVE;
+
+      untracked(() => {
+        if (isDestructive) {
+          this.provideColor.forceColor(this.errorColorTheme);
+
+          return;
+        }
+
+        this.provideColor.clearForcedColor();
+      });
+    });
+  }
 }

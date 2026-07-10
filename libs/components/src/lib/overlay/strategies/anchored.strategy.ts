@@ -1,4 +1,4 @@
-import { OverlayRuntimePositionStrategy } from '@ethlete/core';
+import { OverlayRuntimePositionStrategy, OverlayRuntimeShiftOptions } from '@ethlete/core';
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 import { OverlayBreakpointConfig, OverlayStrategy, OverlayStrategyBreakpoint } from './overlay-strategy.types';
 
@@ -15,7 +15,7 @@ export type AnchoredOverlayStrategyOptions = {
   offset?: OffsetOptions | null;
   arrowPadding?: Padding | null;
   viewportPadding?: Padding | null;
-  shift?: boolean;
+  shift?: boolean | OverlayRuntimeShiftOptions;
   autoResize?: boolean;
   autoHide?: boolean;
   autoCloseIfReferenceHidden?: boolean;

@@ -735,7 +735,9 @@ export class MenuDirective {
       offset: this.resolvedOffset(),
       viewportPadding: this.viewportPadding(),
       autoResize: true,
-      shift: true,
+      // cross axis so a menu that fits on neither side slides over its parent instead of
+      // overflowing the viewport
+      shift: { crossAxis: true },
     };
 
     if (!point) {
@@ -772,7 +774,7 @@ export class MenuDirective {
       offset: this.resolvedOffset(),
       viewportPadding: this.viewportPadding(),
       autoResize: true,
-      shift: true,
+      shift: { crossAxis: true },
     };
   }
 

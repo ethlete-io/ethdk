@@ -9,6 +9,7 @@
     flex: none;
     inline-size: var(--et-menu-item-icon-size, 16px);
     block-size: var(--et-menu-item-icon-size, 16px);
+    color: var(--et-theme-color-primary-solid, currentColor);
   }
 
   &.et-menu-radio-item .et-menu-item-check::before {

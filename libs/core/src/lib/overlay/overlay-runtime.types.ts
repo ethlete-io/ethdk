@@ -24,6 +24,15 @@ export type OverlayRuntimeGlobalPosition = {
   padding?: string;
 };
 
+export type OverlayRuntimeShiftOptions = {
+  /**
+   * Also shift along the placement's cross axis (e.g. horizontally for a `right-*` placement)
+   * when no placement fits the viewport. The pane may then overlap its reference element —
+   * desirable for nested menus, usually not for tooltips. Defaults to `false`.
+   */
+  crossAxis?: boolean;
+};
+
 export type OverlayRuntimeAnchoredPosition = {
   kind: 'anchored';
   referenceElement: HTMLElement | VirtualElement;
@@ -33,7 +42,7 @@ export type OverlayRuntimeAnchoredPosition = {
   arrowPadding?: Padding | null;
   viewportPadding?: Padding | null;
   autoResize?: boolean;
-  shift?: boolean;
+  shift?: boolean | OverlayRuntimeShiftOptions;
   autoHide?: boolean;
   autoCloseIfReferenceHidden?: boolean;
   mirrorWidth?: boolean;

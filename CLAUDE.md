@@ -36,6 +36,11 @@ Component styles are plain CSS (global `et-`-prefixed classes,
 use Tailwind in component source.** Tailwind utility classes are allowed **only in
 story files** (`*.stories.ts` and `stories/`), for demo layout.
 
+All colors in component CSS must come from the **surface theming** and **color
+theming** token systems (`--et-surface-*-solid`, `--et-theme-color-*`) — never
+hardcode colors. Read the **`theming`** skill (`.claude/skills/theming/`) before
+touching any color, background, border, or interaction-state styling.
+
 ## Releasing
 
 Every change to a published package needs a changeset. Use the **`changeset`**

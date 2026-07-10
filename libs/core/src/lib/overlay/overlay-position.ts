@@ -148,6 +148,18 @@ export const createAnchoredPositionCleanup = (
       }),
     );
 
+    if (strategy.shift !== false) {
+      middleware.push(
+        shift({
+          crossAxis: typeof strategy.shift === 'object' ? (strategy.shift.crossAxis ?? false) : false,
+          limiter: limitShift(),
+          padding: strategy.viewportPadding ?? 8,
+        }),
+      );
+    }
+
+    // size must run AFTER shift so the available space is measured from the shifted position —
+    // otherwise a cross-axis-shifted pane gets its max size capped to the unshifted leftover space
     if (strategy.autoResize) {
       middleware.push(
         size({
@@ -158,15 +170,6 @@ export const createAnchoredPositionCleanup = (
               '--et-overlay-max-height': `${availableHeight}px`,
             });
           },
-        }),
-      );
-    }
-
-    if (strategy.shift !== false) {
-      middleware.push(
-        shift({
-          limiter: limitShift(),
-          padding: strategy.viewportPadding ?? 8,
         }),
       );
     }
