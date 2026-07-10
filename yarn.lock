@@ -4340,7 +4340,11 @@ __metadata:
     "@angular/router": 22.0.5
     "@ethlete/core": ^5.0.0-beta.11
     "@floating-ui/dom": 1.7.6
+    "@nx/devkit": 23.1.0-beta.7
     rxjs: 7.8.2
+  peerDependenciesMeta:
+    "@nx/devkit":
+      optional: true
   languageName: unknown
   linkType: soft
 
