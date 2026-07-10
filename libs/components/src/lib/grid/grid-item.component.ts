@@ -189,6 +189,8 @@ import { GRID_TOKEN } from './headless/grid.tokens';
 
     .et-grid:not(.et-grid--readonly) .et-grid-item__content {
       cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     .et-grid-item--dragging .et-grid-item__content {
