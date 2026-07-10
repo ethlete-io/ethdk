@@ -1,5 +1,14 @@
 # @ethlete/core
 
+## 5.0.0-next.23
+
+### Major Changes
+
+- [`11ce5e1`](https://github.com/ethlete-io/ethdk/commit/11ce5e1795249a6b975dab2eab7e8e2a9c9bc979) Thanks [@TomTomB](https://github.com/TomTomB)! - Overlay: replace the `inputBindings` / `outputBindings` config objects with a
+  single `bindings` array using Angular's native binding API. Bind overlay
+  component inputs, outputs, and two-way models with `inputBinding`,
+  `outputBinding`, and `twoWayBinding` from `@angular/core`.
+
 ## 5.0.0-next.22
 
 ### Minor Changes
