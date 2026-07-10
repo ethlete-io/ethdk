@@ -3,14 +3,6 @@ import { setInputSignal } from '../utils';
 import { ProvideSurfaceDirective, SURFACE_PROVIDER } from './provide-surface.directive';
 import { injectSurfaceThemes, resolveSurfaceByElevation } from './surface-theme.util';
 
-/**
- * Auto-resolves a surface theme one elevation above its parent surface context and
- * applies it through a host `ProvideSurfaceDirective`.
- *
- * Meant to be applied as a host directive on components that render inside a detached
- * overlay pane (tooltip, toggletip, …), where the surface context can't cascade through
- * the DOM and has to be re-derived from the trigger's surface provider.
- */
 @Directive({
   selector: '[etAutoSurface]',
   hostDirectives: [ProvideSurfaceDirective],
@@ -48,7 +40,8 @@ export class AutoSurfaceDirective {
       const surface = this.resolvedSurface();
 
       untracked(() => {
-        setInputSignal(this.ownSurfaceProvider.surface, surface);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setInputSignal(this.ownSurfaceProvider.surface as any, surface);
       });
     });
   }
