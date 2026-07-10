@@ -12,7 +12,7 @@ import { OverlayRoutingStorybookComponent } from './components';
 class RoutingCatchAllComponent {}
 
 export default {
-  title: 'Components/Overlay/Routing',
+  title: 'Components/Overlay/With Routing',
   component: OverlayRoutingStorybookComponent,
   decorators: [
     moduleMetadata({ imports: [OverlayRoutingStorybookComponent] }),

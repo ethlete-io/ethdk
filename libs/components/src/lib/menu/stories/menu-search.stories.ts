@@ -2,7 +2,7 @@ import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 import { MenuSearchAsyncStorybookComponent, MenuSearchStorybookComponent } from './components';
 
 export default {
-  title: 'Components/Overlay/Menu Search',
+  title: 'Components/Menu/With Search',
   component: MenuSearchStorybookComponent,
   decorators: [moduleMetadata({ imports: [MenuSearchStorybookComponent, MenuSearchAsyncStorybookComponent] })],
 } as Meta<MenuSearchStorybookComponent>;

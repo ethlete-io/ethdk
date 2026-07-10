@@ -4,7 +4,7 @@ import { provideOverlay } from '../overlay.imports';
 import { OverlayHandlerStorybookComponent } from './components';
 
 export default {
-  title: 'Components/Overlay/Handlers',
+  title: 'Components/Overlay/Using Handlers',
   component: OverlayHandlerStorybookComponent,
   decorators: [
     moduleMetadata({ imports: [OverlayHandlerStorybookComponent] }),
