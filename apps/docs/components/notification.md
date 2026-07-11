@@ -72,7 +72,7 @@ The default `et-notification` covers spinner/title/message/progress/action/dismi
 
 ## Theming
 
-The toast shell exposes size/typography tokens: `--et-notification-border-radius` (`4px`), `--et-notification-padding`, `--et-notification-min-width` (`300px`) / `--et-notification-max-width` (`420px`), `--et-notification-shadow`, `--et-notification-border-width` (`4px`), `--et-notification-font-size` / `--et-notification-line-height`, `--et-notification-gap`, `--et-notification-title-font-weight`, `--et-notification-message-font-size` / `-line-height` / `-opacity`, `--et-notification-progress-bar-height` (`3px`). Status colors resolve through `statusColorMapping` / `controlsColor` — app-registered themes, not tokens.
+The toast shell exposes size/typography tokens: `--et-notification-border-radius` (`4px`), `--et-notification-padding`, `--et-notification-min-width` (`300px`) / `--et-notification-max-width` (`420px`), `--et-notification-shadow`, `--et-notification-border-width` (`4px`), `--et-notification-font-size` / `--et-notification-line-height`, `--et-notification-gap`, `--et-notification-title-font-weight`, `--et-notification-message-font-size` / `-line-height` / `-opacity`, `--et-notification-progress-bar-height` (`3px`). Status colors resolve through `statusColorMapping` / `controlsColor` — [app-registered themes](/core/theming), not tokens.
 
 ## Error codes
 

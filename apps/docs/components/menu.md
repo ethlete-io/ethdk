@@ -160,7 +160,7 @@ Full [menu-pattern](https://www.w3.org/WAI/ARIA/apg/patterns/menu/) semantics ar
 
 ## Theming
 
-Public tokens (defaults in parentheses): `--et-menu-min-width` (`180px`), `--et-menu-max-height` (`40vh`), `--et-menu-padding-block` / `-inline` (`6px`), `--et-menu-item-height` (`36px`), `--et-menu-item-padding-inline` (`10px`), `--et-menu-item-gap` (`10px`), `--et-menu-item-border-radius` (`6px`), `--et-menu-item-font-size` (`14px`), `--et-menu-item-icon-size` (`16px`), `--et-menu-separator-margin-block` (`6px`), `--et-menu-group-label-font-size` (`12px`), `--et-menu-search-height` (`36px`). Colors come from the surface/color theme systems.
+Public tokens (defaults in parentheses): `--et-menu-min-width` (`180px`), `--et-menu-max-height` (`40vh`), `--et-menu-padding-block` / `-inline` (`6px`), `--et-menu-item-height` (`36px`), `--et-menu-item-padding-inline` (`10px`), `--et-menu-item-gap` (`10px`), `--et-menu-item-border-radius` (`6px`), `--et-menu-item-font-size` (`14px`), `--et-menu-item-icon-size` (`16px`), `--et-menu-separator-margin-block` (`6px`), `--et-menu-group-label-font-size` (`12px`), `--et-menu-search-height` (`36px`). Colors come from the [surface/color theme systems](/core/theming).
 
 ## Error codes
 

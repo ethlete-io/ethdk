@@ -1,6 +1,6 @@
 # Error codes
 
-Every error the library throws is a `RuntimeError` from `@ethlete/core`. Its message starts with a stable code — `ET1301: [MenuTriggerDirective] etMenuTrigger must be placed inside an [etMenu] element.` — so you can search this page for the code you see in the console.
+Every error the library throws is a [`RuntimeError` from `@ethlete/core`](/core/utilities#runtime-errors). Its message starts with a stable code — `ET1301: [MenuTriggerDirective] etMenuTrigger must be placed inside an [etMenu] element.` — so you can search this page for the code you see in the console.
 
 ```ts
 import { RuntimeError } from '@ethlete/core';

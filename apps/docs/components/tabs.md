@@ -65,7 +65,7 @@ Standard tabs semantics out of the box: `role="tablist"` / `role="tab"` / `role=
 
 ## Theming
 
-Content tabs: `--et-tab-group-gap` / `--et-tab-group-header-gap` (`0px`), `--et-tab-group-trigger-padding-inline` (`16px`), `--et-tab-group-trigger-padding-block` (`12px`), `--et-tab-group-underline-size` (`2px`), `--et-tab-group-underline-radius` (`1px`), `--et-tab-group-font-size` (`1.4rem`). Nav tabs mirror them as `--et-nav-tabs-gap` / `-underline-size` / `-underline-radius` / `-font-size` plus `--et-nav-tab-link-padding-inline` / `-padding-block`. Colors come from the surface/color theme systems.
+Content tabs: `--et-tab-group-gap` / `--et-tab-group-header-gap` (`0px`), `--et-tab-group-trigger-padding-inline` (`16px`), `--et-tab-group-trigger-padding-block` (`12px`), `--et-tab-group-underline-size` (`2px`), `--et-tab-group-underline-radius` (`1px`), `--et-tab-group-font-size` (`1.4rem`). Nav tabs mirror them as `--et-nav-tabs-gap` / `-underline-size` / `-underline-radius` / `-font-size` plus `--et-nav-tab-link-padding-inline` / `-padding-block`. Colors come from the [surface/color theme systems](/core/theming).
 
 ## Error codes
 

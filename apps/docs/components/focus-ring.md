@@ -33,4 +33,4 @@ Override the private custom properties in your component's CSS scope:
 }
 ```
 
-By default the color follows the active color theme's primary solid, so themed areas get matching rings automatically.
+By default the color follows the active [color theme](/core/theming)'s primary solid, so themed areas get matching rings automatically.

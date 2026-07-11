@@ -73,7 +73,7 @@ A toggletip is a lightweight **dialog**, not a tooltip: the trigger gets `aria-e
 
 ## Theming
 
-Public design tokens: `--et-toggletip-font-size`, `--et-toggletip-line-height`, `--et-toggletip-padding-inline`, `--et-toggletip-padding-block`, `--et-toggletip-gap`. The arrow follows the surface theme (`--et-overlay-arrow-background` / `--et-overlay-arrow-border`).
+Public design tokens: `--et-toggletip-font-size`, `--et-toggletip-line-height`, `--et-toggletip-padding-inline`, `--et-toggletip-padding-block`, `--et-toggletip-gap`. The arrow follows the [surface theme](/core/theming) (`--et-overlay-arrow-background` / `--et-overlay-arrow-border`).
 
 ## Error codes
 

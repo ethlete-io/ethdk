@@ -7,7 +7,7 @@ The active Angular UI library of the Ethlete SDK — overlays, menus, buttons, f
 :::
 
 ::: warning Theme names are project-specific
-Components take `color` / `surface` inputs, but the theme **names** are registered by your app (via the surface/color theming providers), not shipped by the SDK. Wherever these guides use names like `color="brand"` or `danger`, those are the themes this repo's Storybook registers — substitute your own. Semantic behavior (e.g. destructive menu items, form errors) resolves themes by `type` (like `type: 'error'`), so register one theme per semantic type you use.
+Components take `color` / `surface` inputs, but the theme **names** are registered by your app (via the [surface/color theming providers](/core/theming)), not shipped by the SDK. Wherever these guides use names like `color="brand"` or `danger`, those are the themes this repo's Storybook registers — substitute your own. Semantic behavior (e.g. destructive menu items, form errors) resolves themes by `type` (like `type: 'error'`), so register one theme per semantic type you use.
 :::
 
 ## Interactive demos

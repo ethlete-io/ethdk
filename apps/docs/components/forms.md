@@ -144,7 +144,7 @@ Every control family declares public design tokens; override them in your CSS sc
 | `et-segmented-button-group` / `et-segmented-button` | `--et-segmented-button-group-*` (gap, label/error/hint sizes, support, `-track-padding`, `-track-radius`), `--et-segmented-button-padding-x` / `-padding-y`, `-border-radius`, `-transition-duration`, `-opacity-disabled`                                                                       |
 | `et-rich-text-editor`                               | `--et-rich-text-editor-toolbar-gap`, `-toolbar-padding`, `-button-radius`, `-min-height`, `-content-gap`                                                                                                                                                                                         |
 
-All colors resolve through the surface/color theme systems (the error state forces the theme registered with `type: 'error'`).
+All colors resolve through the [surface/color theme systems](/core/theming) (the error state forces the theme registered with `type: 'error'`).
 
 ## Error codes
 

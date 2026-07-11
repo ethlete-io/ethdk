@@ -34,7 +34,7 @@ Five button flavors, all attribute selectors on native `<button>` or `<a>` eleme
 
 - `variant`: `'filled' | 'outline' | 'tonal' | 'transparent'` — surface buttons default to `filled`, icon buttons to `transparent`. Text buttons and window controls have no variant.
 - `size`: `'xs' | 'sm' | 'md' | 'lg' | 'xl'` (default `md`; window controls: `sm | md | lg`).
-- `color` applies one of your app's registered color themes. Theme names are project-specific — the SDK ships none; examples in these guides use the names this repo's Storybook registers (`brand`, `danger`, …).
+- `color` applies one of your app's [registered color themes](/core/theming). Theme names are project-specific — the SDK ships none; examples in these guides use the names this repo's Storybook registers (`brand`, `danger`, …).
 - `iconAlignment`: `'start' | 'end'` positions the `[etIcon]` slot relative to the label (surface, text and FAB buttons — the single-icon flavors don't have it).
 
 ## States

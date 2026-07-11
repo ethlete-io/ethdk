@@ -39,7 +39,7 @@ Not every platform supports every control — each player exposes a static `CAPA
 
 ## Consent gating
 
-Configure a consent component globally and every slot renders it as a gate until the viewer accepts (or wire your CMP through the `STREAM_USER_CONSENT_PROVIDER_TOKEN`):
+Configure a consent component globally and every slot renders it as a gate until the viewer accepts (or wire your CMP through the `STREAM_USER_CONSENT_PROVIDER_TOKEN` — a `ConsentHandler` bound via [`createUserConsentProvider`](/core/providers#user-consent)):
 
 ```ts
 provideStreamConfig({
@@ -47,7 +47,7 @@ provideStreamConfig({
 });
 ```
 
-The built-in `et-stream-consent` shows a lock icon, heading/description and an accept button; texts are configurable via `provideStreamConsentConfig`. Loading (`et-stream-player-loading`) and error (`et-stream-player-error`, with retry) overlays are equally replaceable via `provideStreamConfig`.
+The built-in `et-stream-consent` shows a lock icon, heading/description and an accept button; texts are configurable via `provideStreamConsentConfig` and react to the app [locale](/core/providers#locale). Loading (`et-stream-player-loading`) and error (`et-stream-player-error`, with retry) overlays are equally replaceable via `provideStreamConfig`.
 
 ## Picture-in-picture
 
@@ -70,7 +70,7 @@ A slot's player can detach into a floating, draggable PiP window and hand back l
 
 ## Theming
 
-All stream chrome resolves its colors from the surface/color theme systems. Slots provide a `type: 'dark'` surface scope one elevation above their context (video UI always reads as a dark surface), and the PiP chrome — which mounts into `document.body` — provides the same scope itself.
+All stream chrome resolves its colors from the [surface/color theme systems](/core/theming). Slots provide a `type: 'dark'` surface scope one elevation above their context (video UI always reads as a dark surface), and the PiP chrome — which mounts into `document.body` — provides the same scope itself.
 
 - Slot: `--et-stream-player-slot-radius` (`12px`).
 - PiP window: `--et-pip-border-radius` (`8px`), `--et-pip-backdrop-blur` (`4px`), `--et-pip-title-bar-height` (`32px`), plus `--et-pip-slot-placeholder-*` (gap, padding, icon-size, border-radius, message typography) for the placeholder left behind. The glass background derives from the surface theme; override it via `--et-pip-bg`.

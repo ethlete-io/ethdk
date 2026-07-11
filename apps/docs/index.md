@@ -27,7 +27,8 @@ features:
     details: Custom ESLint rules and shareable flat configs enforcing the Ethlete styleguide.
     link: /eslint/
   - title: '@ethlete/core'
-    details: Shared primitives — runtime errors, utilities and base services used across the SDK.
+    details: Framework primitives — element signals, theming, animations, the overlay runtime and utilities.
+    link: /core/
   - title: '@ethlete/cdk'
     details: Angular CDK extensions and headless UI primitives.
   - title: '@ethlete/contentful'

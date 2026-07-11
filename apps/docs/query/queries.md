@@ -48,7 +48,7 @@ A real query against a mocked backend — execute it, make it fail, and watch th
 
 ## The query client
 
-`createQueryClient(options)` returns a root-provider tuple (`[provide, inject, token]` from `@ethlete/core`). You normally never touch the tuple yourself — creators take the whole client reference, and because the token is provided in root there is nothing to register in your app config.
+`createQueryClient(options)` returns a root-provider tuple ([`[provide, inject, token]` from `@ethlete/core`](/core/utilities#dependency-injection)). You normally never touch the tuple yourself — creators take the whole client reference, and because the token is provided in root there is nothing to register in your app config.
 
 | Option         | Default                   | Description                                                                          |
 | -------------- | ------------------------- | ------------------------------------------------------------------------------------ |

@@ -15,6 +15,7 @@ export default defineConfig({
       { text: 'Home', link: '/' },
       { text: 'Components', link: '/components/' },
       { text: 'Query', link: '/query/' },
+      { text: 'Core', link: '/core/' },
       { text: 'Types', link: '/types/' },
       { text: 'ESLint', link: '/eslint/' },
       { text: 'Contentful', link: '/contentful/' },
@@ -81,6 +82,46 @@ export default defineConfig({
         {
           text: 'Legacy',
           items: [{ text: 'Legacy client (V2)', link: '/query/legacy' }],
+        },
+      ],
+      '/core/': [
+        {
+          text: 'Core',
+          items: [{ text: 'Overview', link: '/core/' }],
+        },
+        {
+          text: 'Signals',
+          items: [
+            { text: 'Element signals', link: '/core/element-signals' },
+            { text: 'Signal utilities', link: '/core/signal-utils' },
+          ],
+        },
+        {
+          text: 'Theming & motion',
+          items: [
+            { text: 'Theming', link: '/core/theming' },
+            { text: 'Animations', link: '/core/animations' },
+            { text: 'Overlay runtime', link: '/core/overlay-runtime' },
+          ],
+        },
+        {
+          text: 'Interaction',
+          items: [
+            { text: 'Scrolling', link: '/core/scrolling' },
+            { text: 'Drag & resize', link: '/core/drag-resize' },
+            { text: 'Directives & pipes', link: '/core/directives-pipes' },
+          ],
+        },
+        {
+          text: 'App services',
+          items: [
+            { text: 'Providers', link: '/core/providers' },
+            { text: 'SEO', link: '/core/seo' },
+          ],
+        },
+        {
+          text: 'Foundation',
+          items: [{ text: 'Utilities', link: '/core/utilities' }],
         },
       ],
       '/components/': [

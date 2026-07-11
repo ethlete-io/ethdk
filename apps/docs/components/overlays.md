@@ -1,6 +1,6 @@
 # Overlays
 
-The overlay system is the foundation for everything floating in `@ethlete/components` — dialogs, sheets, popovers, and internally also [menus](/components/menu), [tooltips](/components/tooltip) and [toggletips](/components/toggletip). It renders a component (or template) in a detached pane, positions it (centered, anchored, or strategy-driven), and manages backdrop, focus, dismissal and animations.
+The overlay system is the foundation for everything floating in `@ethlete/components` — dialogs, sheets, popovers, and internally also [menus](/components/menu), [tooltips](/components/tooltip) and [toggletips](/components/toggletip). It renders a component (or template) in a detached pane, positions it (centered, anchored, or strategy-driven), and manages backdrop, focus, dismissal and animations. Under the hood it drives the [overlay runtime](/core/overlay-runtime) from `@ethlete/core` — relevant only if you're building your own floating primitive.
 
 ## Setup
 
@@ -36,15 +36,15 @@ For overlays opened from more than one place — or anything with lifecycle call
 
 Defaults worth knowing:
 
-| Option                                   | Default                                                                    |
-| ---------------------------------------- | -------------------------------------------------------------------------- |
-| `mode`                                   | `'modal'` — set `'non-modal'` for popover-style overlays                   |
-| `role`                                   | `'dialog'` when modal                                                      |
-| `hasBackdrop`                            | Follows `mode` (modal → backdrop)                                          |
-| `closeOnEscape`, `closeOnOutsidePointer` | `true`; `disableClose: true` forces both off                               |
-| Position                                 | Anchored to `origin` when it's an element, otherwise centered              |
-| `origin` (with strategies)               | Falls back to the currently focused element (used as transform origin too) |
-| `customAnimated`                         | `false` — set `true` to disable the built-in animations and drive your own |
+| Option                                   | Default                                                                                                                    |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `mode`                                   | `'modal'` — set `'non-modal'` for popover-style overlays                                                                   |
+| `role`                                   | `'dialog'` when modal                                                                                                      |
+| `hasBackdrop`                            | Follows `mode` (modal → backdrop)                                                                                          |
+| `closeOnEscape`, `closeOnOutsidePointer` | `true`; `disableClose: true` forces both off                                                                               |
+| Position                                 | Anchored to `origin` when it's an element, otherwise centered                                                              |
+| `origin` (with strategies)               | Falls back to the currently focused element (used as transform origin too)                                                 |
+| `customAnimated`                         | `false` — set `true` to disable the built-in animations and drive your own via the [animation lifecycle](/core/animations) |
 
 Data goes in via `bindings` (Angular's `inputBinding` / `outputBinding` / `twoWayBinding`) and `providers` — see [passing data](/components/overlay-openers#passing-data-into-the-overlay).
 
@@ -110,7 +110,7 @@ Every factory accepts a partial `OverlayBreakpointConfig` (sizes, classes, `drag
 
 ### Responsive (transforming) strategies
 
-`strategies` is an array of `{ breakpoint?, strategy }` entries — the controller picks the entry matching the current `min-width` and **switches live on resize without remounting** the content. Presets cover the common pairs:
+`strategies` is an array of `{ breakpoint?, strategy }` entries — the controller picks the entry matching the current `min-width` and **switches live on resize without remounting** the content. Breakpoint names come from the app's [viewport config](/core/providers#breakpoint-observer) (Tailwind-style `xs`–`2xl` by default). Presets cover the common pairs:
 
 ```ts
 this.overlayManager.open(ExampleOverlayComponent, {

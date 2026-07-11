@@ -55,7 +55,7 @@ The tooltip is a **description**, not a name: the trigger gets `aria-describedby
 
 ## Theming
 
-Text metrics and padding are public design tokens: `--et-tooltip-font-size`, `--et-tooltip-line-height`, `--et-tooltip-font-weight`, `--et-tooltip-letter-spacing`, `--et-tooltip-padding-inline`, `--et-tooltip-padding-block`. The arrow follows the surface theme and can be overridden via `--et-overlay-arrow-background` / `--et-overlay-arrow-border`.
+Text metrics and padding are public design tokens: `--et-tooltip-font-size`, `--et-tooltip-line-height`, `--et-tooltip-font-weight`, `--et-tooltip-letter-spacing`, `--et-tooltip-padding-inline`, `--et-tooltip-padding-block`. The arrow follows the [surface theme](/core/theming) and can be overridden via `--et-overlay-arrow-background` / `--et-overlay-arrow-border`.
 
 ## Error codes
 

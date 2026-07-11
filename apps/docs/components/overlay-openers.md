@@ -88,7 +88,7 @@ private product = createOverlayOpener(productOverlay, {
 
 ## The overlay ref
 
-Inside the overlay component, `definition.injectRef()` returns the fully typed `OverlayRef`. It must be called in the component's injection context (field initializer or constructor) and throws an actionable `RuntimeError` when no overlay is open — e.g. when the component is accidentally rendered outside an overlay.
+Inside the overlay component, `definition.injectRef()` returns the fully typed `OverlayRef`. It must be called in the component's injection context (field initializer or constructor) and throws an actionable [`RuntimeError`](/core/utilities#runtime-errors) when no overlay is open — e.g. when the component is accidentally rendered outside an overlay.
 
 ## Query-param overlays
 

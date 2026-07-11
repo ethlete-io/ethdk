@@ -35,7 +35,7 @@
 | `scrollableClass`            | —              | Extra class(es) on the scroll container                                                               |
 | `color`                      | —              | App-registered color theme for buttons/dots                                                           |
 
-`itemSize`, `direction` and `scrollMode` also accept per-breakpoint maps (e.g. `[itemSize]="{ xs: 'full', md: 'third' }"`).
+`itemSize`, `direction` and `scrollMode` also accept per-breakpoint maps (e.g. `[itemSize]="{ xs: 'full', md: 'third' }"`) — see [breakpoint inputs](/core/signal-utils#breakpoint-inputs) for how these resolve. The underlying scroll math (snap targets, `scrollToElement`) comes from the [core scrolling primitives](/core/scrolling).
 
 Helper directives: `[etScrollableActiveChild]` marks a child as active so it's auto-scrolled into view (great for tab-bar-like lists); `[etScrollableIgnoreChild]` excludes an element from child tracking; `ng-template[etScrollableLoadingTemplate]` renders skeleton content while `showLoadingTemplate` is on.
 
