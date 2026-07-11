@@ -71,6 +71,12 @@ reviewing one.
   don't hardcode a base unless you have a reason (`base` prop exists).
 - Renaming a story title changes its id — grep `apps/docs` for the old id when
   retitling stories.
+- **Max ~4 embeds per page.** All embedded `iframe.html` instances are
+  same-origin with each other and join Storybook's shared `storybook-channel`
+  BroadcastChannel; with ~6–7 live iframes on one page, later stories hang at
+  `sb-show-preparing-story` (or hit `sb-show-errordisplay`) and never render
+  (verified 2026-07 by reproducing with 7 plain iframes vs 2). Pick the most
+  visually distinctive stories, describe the rest in prose — or split the page.
 
 ## Build & verify
 

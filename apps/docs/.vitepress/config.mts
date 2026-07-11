@@ -19,6 +19,7 @@ export default defineConfig({
       { text: 'Types', link: '/types/' },
       { text: 'ESLint', link: '/eslint/' },
       { text: 'Contentful', link: '/contentful/' },
+      { text: 'CDK', link: '/cdk/' },
       { text: 'CLI', link: '/cli/' },
     ],
 
@@ -48,6 +49,41 @@ export default defineConfig({
         {
           text: 'Contentful',
           items: [{ text: 'Overview', link: '/contentful/' }],
+        },
+      ],
+      '/cdk/': [
+        {
+          text: 'CDK',
+          items: [{ text: 'Overview', link: '/cdk/' }],
+        },
+        {
+          text: 'Data & collections',
+          items: [
+            { text: 'Table & sort', link: '/cdk/table' },
+            { text: 'Pagination', link: '/cdk/pagination' },
+            { text: 'Rich filter', link: '/cdk/rich-filter' },
+            { text: 'Query error & button', link: '/cdk/query-error' },
+          ],
+        },
+        {
+          text: 'Forms',
+          items: [{ text: 'Forms', link: '/cdk/forms' }],
+        },
+        {
+          text: 'Layout & media',
+          items: [
+            { text: 'Accordion', link: '/cdk/accordion' },
+            { text: 'Breadcrumb', link: '/cdk/breadcrumb' },
+            { text: 'Carousel', link: '/cdk/carousel' },
+            { text: 'Masonry', link: '/cdk/masonry' },
+            { text: 'Picture', link: '/cdk/picture' },
+            { text: 'Skeleton', link: '/cdk/skeleton' },
+            { text: 'Bracket', link: '/cdk/bracket' },
+          ],
+        },
+        {
+          text: 'Utilities',
+          items: [{ text: 'Utilities', link: '/cdk/utilities' }],
         },
       ],
       '/query/': [

@@ -3,7 +3,7 @@
 The active Angular UI library of the Ethlete SDK — overlays, menus, buttons, forms, tabs, tooltips and more. Components are built signal-first, styled with plain CSS on top of the SDK's surface/color theming systems, and structured in three tiers (primitives → headless directives → default components).
 
 ::: info Components vs CDK
-`@ethlete/components` supersedes `@ethlete/cdk`, which is in maintenance mode. New UI work happens here.
+`@ethlete/components` supersedes [`@ethlete/cdk`](/cdk/), which is in maintenance mode. New UI work happens here.
 :::
 
 ::: warning Theme names are project-specific

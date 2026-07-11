@@ -30,7 +30,8 @@ features:
     details: Framework primitives — element signals, theming, animations, the overlay runtime and utilities.
     link: /core/
   - title: '@ethlete/cdk'
-    details: Angular CDK extensions and headless UI primitives.
+    details: The previous UI library — tables, carousels, selects and more. In maintenance mode, superseded by components.
+    link: /cdk/
   - title: '@ethlete/contentful'
     details: Contentful rendering helpers for Angular.
     link: /contentful/
