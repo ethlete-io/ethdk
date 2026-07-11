@@ -44,6 +44,7 @@ Defaults worth knowing:
 | `closeOnEscape`, `closeOnOutsidePointer` | `true`; `disableClose: true` forces both off                               |
 | Position                                 | Anchored to `origin` when it's an element, otherwise centered              |
 | `origin` (with strategies)               | Falls back to the currently focused element (used as transform origin too) |
+| `customAnimated`                         | `false` — set `true` to disable the built-in animations and drive your own |
 
 Data goes in via `bindings` (Angular's `inputBinding` / `outputBinding` / `twoWayBinding`) and `providers` — see [passing data](/components/overlay-openers#passing-data-into-the-overlay).
 
@@ -55,6 +56,9 @@ The `OverlayRef` is returned by `open` and injectable inside the overlay via the
 - `afterOpened()`, `beforeClosed()`, `afterClosed()` — one-shot observables
 - `componentInstance()` — the content component instance
 - `updatePositionStrategy(strategy)` — reposition without remounting
+- `id`, `config`, `elements` (`paneElement` / `hostElement` / `backdropElement`) — identity and DOM access
+
+The manager also exposes an `openOverlays` computed with every currently open ref.
 
 ## Live demo
 
@@ -79,14 +83,14 @@ Import `OVERLAY_CONTENT_IMPORTS` into the overlay component and structure it wit
 </div>
 ```
 
-| Piece                    | Selector                               | Purpose                                                                                           |
-| ------------------------ | -------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `OverlayMainDirective`   | `[etOverlayMain]`                      | Layout wrapper enabling pinned header/footer + scrolling body; often applied via `hostDirectives` |
-| `OverlayHeaderDirective` | `[etOverlayHeader]`                    | Pinned header region                                                                              |
-| `OverlayBodyComponent`   | `et-overlay-body`, `[et-overlay-body]` | Scrollable body; `dividers: 'static' \| 'dynamic' \| false` shows edge dividers while scrolled    |
-| `OverlayFooterDirective` | `[etOverlayFooter]`                    | Pinned footer region                                                                              |
-| `OverlayTitleDirective`  | `[etOverlayTitle]`                     | Wires the overlay's `aria-labelledby` to the title element                                        |
-| `OverlayCloseDirective`  | `[etOverlayClose]`                     | Click closes the nearest overlay; the bound value becomes the close result                        |
+| Piece                    | Selector                               | Purpose                                                                                                                  |
+| ------------------------ | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `OverlayMainDirective`   | `[etOverlayMain]`                      | Layout wrapper enabling pinned header/footer + scrolling body; often applied via `hostDirectives`                        |
+| `OverlayHeaderDirective` | `[etOverlayHeader]`                    | Pinned header region                                                                                                     |
+| `OverlayBodyComponent`   | `et-overlay-body`, `[et-overlay-body]` | Scrollable body; `dividers: 'static' \| 'dynamic' \| false` shows edge dividers while scrolled; `scrollToTop(behavior?)` |
+| `OverlayFooterDirective` | `[etOverlayFooter]`                    | Pinned footer region                                                                                                     |
+| `OverlayTitleDirective`  | `[etOverlayTitle]`                     | Wires the overlay's `aria-labelledby` to the title element                                                               |
+| `OverlayCloseDirective`  | `[etOverlayClose]`                     | Click closes the nearest overlay; the bound value becomes the close result                                               |
 
 ## Strategies
 
@@ -145,6 +149,27 @@ For template-driven popovers there's a headless directive set (`OVERLAY_IMPORTS`
 
 When an anchor/trigger exists (and mode is non-modal) the surface opens anchored; otherwise centered.
 
+`[etOverlay]` mirrors most of the imperative config as inputs:
+
+| Input                                        | Default       | Notes                                                |
+| -------------------------------------------- | ------------- | ---------------------------------------------------- |
+| `mode`                                       | `'non-modal'` | `'modal'` adds backdrop + focus trap semantics       |
+| `role`                                       | —             | Overrides the mode-derived ARIA role                 |
+| `disabled`                                   | `false`       | Ignores open requests while set                      |
+| `disableClose`                               | `false`       | Forces `closeOnEscape` / `closeOnOutsidePointer` off |
+| `closeOnEscape` / `closeOnOutsidePointer`    | `true`        |                                                      |
+| `hasBackdrop`                                | —             | Follows `mode` when unset                            |
+| `autoFocus` / `restoreFocus`                 | — / `true`    | Initial focus target; restore focus on close         |
+| `hostClass` / `backdropClass` / `panelClass` | —             | Extra classes per overlay element                    |
+| `placement`                                  | `'bottom'`    | floating-ui placement (anchored mode)                |
+| `fallbackPlacements`                         | —             | Tried when `placement` doesn't fit                   |
+| `offset` / `viewportPadding`                 | `8` / `8`     | Distance from anchor / viewport edges                |
+| `shift`                                      | `true`        | Slide along the axis to stay in the viewport         |
+| `autoResize`                                 | `false`       | Constrain size to the available space                |
+| `autoHide`                                   | `false`       | Hide when the anchor leaves the viewport             |
+| `autoCloseIfReferenceHidden`                 | `false`       | Close instead of just hiding                         |
+| `mirrorWidth`                                | `false`       | Match the anchor's width (select-style panels)       |
+
 ## Routing inside overlays
 
 Multi-step overlays (wizards, settings dialogs) use the overlay router — an internal router independent of Angular's, optionally mirrored into the URL:
@@ -177,3 +202,14 @@ Inside the overlay:
 ### Sidebar layouts
 
 `provideSidebarOverlay(config?)` (requires the overlay router) adds a responsive sidebar: above `renderSidebarFrom` (default `'md'`, measured against the **pane** width) the `<et-overlay-sidebar>` renders inline next to the outlet; below it, the sidebar collapses into a navigable route of its own.
+
+## Accessibility
+
+- **Role**: modal overlays default to `role="dialog"` (`config.role` accepts `'dialog' | 'alertdialog'`); non-modal overlays get no role unless you set one.
+- **Name/description**: set `ariaLabel`, `ariaLabelledBy` or `ariaDescribedBy` in the config — or just use `[et-overlay-title]`, which auto-wires the overlay's `aria-labelledby` to the title element when nothing else names it.
+- **Focus**: `autoFocus` targets `'container' | 'first-heading' | 'first-tabbable'`, a CSS selector, or `false`; `restoreFocus` (default `true`) returns focus to the opener on close. With the overlay router, each navigation re-applies initial focus to the new page (default `'first-tabbable'`), and `[etOverlayRouterLink]` sets `aria-current="page"` on the active link.
+- **Dismissal & scroll**: `closeOnEscape` and `closeOnOutsidePointer` default to `true` (`disableClose` forces both off), and body scroll is locked while any _modal_ overlay is open — non-modal overlays (tooltips, popovers) never lock the page.
+
+## Error codes
+
+Structural misuse (pieces outside `[etOverlay]`, missing surface, nested mains) throws [`ET12xx` errors](/components/error-codes#overlay-et12xx) — most in dev mode only.

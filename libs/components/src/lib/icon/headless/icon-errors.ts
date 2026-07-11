@@ -1,3 +1,4 @@
+// codes 1800-1899
 export const ICON_ERROR_CODES = {
   NO_ICONS_PROVIDED: 1800,
   ICON_NOT_FOUND: 1801,

@@ -1,0 +1,135 @@
+# Error codes
+
+Every error the library throws is a `RuntimeError` from `@ethlete/core`. Its message starts with a stable code — `ET1301: [MenuTriggerDirective] etMenuTrigger must be placed inside an [etMenu] element.` — so you can search this page for the code you see in the console.
+
+```ts
+import { RuntimeError } from '@ethlete/core';
+
+try {
+  // …
+} catch (e) {
+  if (e instanceof RuntimeError) {
+    e.code; // 1301
+  }
+}
+```
+
+Some errors carry extra context (the offending config, element, …). That payload isn't serialized into the message — it's logged as a separate `console.error` right after the throw.
+
+Two kinds of checks produce these errors:
+
+- **Structural checks** (a directive placed outside its required parent, a missing required template) run **in dev mode only**, after the first render. Production builds skip them, so fix them during development — the broken structure will silently misbehave in production.
+- **Runtime failures** (an icon name that isn't registered, a player SDK that fails to load) throw in production too.
+
+Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU_ERROR_CODES`, `OVERLAY_ERROR_CODES`) if you need to match on them programmatically.
+
+| Range     | Domain       | Guide                                    |
+| --------- | ------------ | ---------------------------------------- |
+| 1200–1299 | Overlay      | [Overlays](/components/overlays)         |
+| 1300–1399 | Menu         | [Menu](/components/menu)                 |
+| 1400–1499 | Tooltip      | [Tooltip](/components/tooltip)           |
+| 1500–1599 | Toggletip    | [Toggletip](/components/toggletip)       |
+| 1600–1699 | Stream       | [Stream](/components/stream)             |
+| 1700–1799 | Notification | [Notification](/components/notification) |
+| 1800–1899 | Icon         | [Icon](/components/icon)                 |
+| 1900–1999 | Grid         | [Grid](/components/grid)                 |
+| 2000–2099 | Tabs         | [Tabs](/components/tabs)                 |
+| 2100–2199 | Scrollable   | [Scrollable](/components/scrollable)     |
+| 2200–2299 | Form field   | [Forms](/components/forms)               |
+
+::: info Codes below 1200
+Codes `0`–`1001` belong to `@ethlete/query` (query features, auth, web sockets), not to this library.
+:::
+
+## Overlay (ET12xx)
+
+| Code     | Cause                                                                                            | Fix                                                                               |
+| -------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| `ET1200` | An `[etOverlay]` element has no surface template.                                                | Add `<ng-template etOverlaySurface>` inside the `[etOverlay]` element.            |
+| `ET1201` | `etOverlayTrigger` is not inside an `[etOverlay]` element.                                       | Move the trigger inside the overlay root.                                         |
+| `ET1202` | `etOverlayAnchor` is not inside an `[etOverlay]` element.                                        | Move the anchor inside the overlay root.                                          |
+| `ET1203` | `etOverlaySurface` is not inside an `[etOverlay]` element.                                       | Move the surface template inside the overlay root.                                |
+| `ET1204` | Merged overlay strategies each contribute a layout class for the same config key.                | Overwrite the layout class instead of combining strategies that each provide one. |
+| `ET1205` | A closest-overlay lookup ran on an element that isn't rendered inside an open overlay.           | Only call it from content rendered inside an overlay.                             |
+| `ET1206` | An overlay contains nested `<et-overlay-main>` elements or `etOverlayMain` directives.           | Keep exactly one main region per overlay.                                         |
+| `ET1207` | An overlay definition's `injectRef()` was called outside a component opened via that definition. | Call it only inside the component the definition opens.                           |
+
+## Menu (ET13xx)
+
+| Code     | Cause                                                                                                                          | Fix                                                                                                        |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `ET1300` | An `[etMenu]` element has no surface template.                                                                                 | Add `<ng-template etMenuSurface>` inside the `[etMenu]` element.                                           |
+| `ET1301` | `etMenuTrigger` is not inside an `[etMenu]` element.                                                                           | Move the trigger inside the menu root.                                                                     |
+| `ET1302` | `etMenuSurface` is not inside an `[etMenu]` element.                                                                           | Move the surface template inside the menu root.                                                            |
+| `ET1303` | `etMenuItem` is not rendered inside a menu surface, or `etMenuSelectionItem` is used without `etMenuItem` on the same element. | Render items inside the surface; for submenu triggers, nest the `[etMenu]` element inside the parent menu. |
+| `ET1304` | `etMenuPanel` is not rendered inside a menu surface.                                                                           | Move the panel inside the surface template.                                                                |
+| `ET1305` | `etMenuSearch` is not rendered inside a menu surface.                                                                          | Move the search input inside the surface template.                                                         |
+| `ET1306` | `etMenuContextTrigger` is not inside an `[etMenu]` element.                                                                    | Move the context trigger inside the menu root.                                                             |
+| `ET1307` | `etMenuContextTrigger` is placed on a submenu.                                                                                 | Context triggers can only open root menus — move it to the outermost `[etMenu]` element.                   |
+| `ET1320` | A selection item inside a selection group has no value.                                                                        | Add a `[value]` input to the `etMenuSelectionItem`.                                                        |
+| `ET1321` | A radio item is used without a surrounding selection group.                                                                    | Wrap radio items in an `et-menu-radio-group`.                                                              |
+
+## Tooltip (ET14xx)
+
+| Code     | Cause                                             | Fix                                                                               |
+| -------- | ------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `ET1400` | A template tooltip has no accessible description. | Add `etTooltipAriaDescription` so non-visual users get an equivalent description. |
+
+## Toggletip (ET15xx)
+
+| Code     | Cause                                                                  | Fix                                                                            |
+| -------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `ET1500` | A template toggletip has no accessible name.                           | Add `etToggletipAriaLabel` or `etToggletipAriaLabelledBy`.                     |
+| `ET1501` | `etToggletipTrigger` is used on an element without a button directive. | Apply it to an element that also has a button directive such as `[et-button]`. |
+| `ET1502` | `etToggletipTrigger` is not on the same element as `[etToggletip]`.    | Put both directives on the same element.                                       |
+
+## Stream (ET16xx)
+
+| Code     | Cause                                                                       | Fix                                                                                  |
+| -------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `ET1600` | The configured consent component doesn't provide the stream consent token.  | Add `hostDirectives: [StreamConsentDirective]` to the consent component.             |
+| `ET1601` | A platform SDK script failed to load.                                       | Check the URL and network — ad blockers commonly block player SDKs.                  |
+| `ET1602` | The Twitch Embed SDK loaded but its global isn't available.                 | Ensure the Twitch Embed SDK URL is accessible and not rewritten.                     |
+| `ET1603` | The YouTube IFrame API loaded but `YT.Player` isn't available.              | Ensure the YouTube IFrame API URL is accessible and not rewritten.                   |
+| `ET1604` | The configured PiP chrome component doesn't provide the PiP chrome token.   | Add `hostDirectives: [StreamPipChromeComponent]` to the chrome component.            |
+| `ET1605` | The Facebook SDK loaded but its global isn't available.                     | Ensure the Facebook SDK URL is accessible and not rewritten.                         |
+| `ET1606` | The Vimeo Player SDK isn't available, or the player failed to become ready. | Ensure the Vimeo SDK URL is accessible; the message contains the underlying failure. |
+| `ET1607` | The TikTok player reported an error.                                        | The message contains the platform's error value; the video may be unavailable.       |
+| `ET1608` | A Facebook video didn't become ready in time.                               | The video may be unavailable or restricted.                                          |
+
+## Notification (ET17xx)
+
+| Code     | Cause                                                                | Fix                                              |
+| -------- | -------------------------------------------------------------------- | ------------------------------------------------ |
+| `ET1700` | `etNotificationAction` is not inside an `[etNotification]` element.  | Move the action inside the notification.         |
+| `ET1701` | `etNotificationDismiss` is not inside an `[etNotification]` element. | Move the dismiss button inside the notification. |
+
+## Icon (ET18xx)
+
+| Code     | Cause                                                                   | Fix                                                                                           |
+| -------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `ET1800` | `[etIcon]` is used but no icons are registered.                         | Register icons via `provideIcons()` in component or application providers.                    |
+| `ET1801` | The requested icon name (or name/variant combination) isn't registered. | The message lists all available icons — register the missing one or fix the name.             |
+| `ET1802` | The registered icon data contains no `<svg>` element.                   | Provide valid SVG markup.                                                                     |
+| `ET1803` | The icon's `<svg>` is missing `xmlns="http://www.w3.org/2000/svg"`.     | Add the attribute — it's required for `innerHTML`-based rendering.                            |
+| `ET1804` | The icon's `<svg>` is missing `width="100%"` and/or `height="100%"`.    | Add both attributes so the icon scales with its host.                                         |
+| `ET1805` | The icon uses a hardcoded `fill`/`stroke` color.                        | Use `currentColor` so the icon follows the text color, or set `[allowHardcodedColor]="true"`. |
+| `ET1806` | Two icons were registered with the same name/variant combination.       | Make every name/variant combination unique.                                                   |
+
+`ET1802`–`ET1805` are dev-mode-only SVG validations; `ET1800`/`ET1801` also throw in production.
+
+## Grid (ET19xx) & Tabs (ET20xx)
+
+`GRID_ERROR_CODES` (`1900`–`1903`) and `TAB_ERROR_CODES` (`2000`–`2003`) are allocated and exported, but no check currently throws them.
+
+## Scrollable (ET21xx)
+
+| Code     | Cause                                                 | Fix                                                                                                   |
+| -------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `ET2100` | An `etScrollable` has no registered scroll container. | Use the default `<et-scrollable>` component, or register a container via `registerScrollContainer()`. |
+
+## Form field (ET22xx)
+
+| Code     | Cause                                          | Fix                                                                     |
+| -------- | ---------------------------------------------- | ----------------------------------------------------------------------- |
+| `ET2200` | An `<et-form-field>` contains no form control. | Add a control such as `<et-input>` or `<et-checkbox>` inside the field. |

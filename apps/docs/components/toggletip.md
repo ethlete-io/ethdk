@@ -57,10 +57,6 @@ Same floating-ui anchoring as the tooltip, with an arrow:
 | `arrowPadding`       | `8`     |
 | `viewportPadding`    | `8`     |
 
-## Accessibility
-
-A toggletip is a lightweight **dialog**, not a tooltip: the trigger gets `aria-expanded`, `aria-haspopup="dialog"` and `aria-controls`; the overlay opens with `role="dialog"` and an accessible name. String content names it automatically; template content must provide `etToggletipAriaLabel` or `etToggletipAriaLabelledBy` (enforced in dev mode).
-
 ## Tooltip or toggletip?
 
 | —         | Tooltip                               | Toggletip                                         |
@@ -71,6 +67,14 @@ A toggletip is a lightweight **dialog**, not a tooltip: the trigger gets `aria-e
 | Semantics | `role="tooltip"` + `aria-describedby` | `role="dialog"` + `aria-expanded`/`aria-haspopup` |
 | Dismissal | Pointer/focus leaves, <kbd>Esc</kbd>  | Outside click, <kbd>Esc</kbd>, close button       |
 
+## Accessibility
+
+A toggletip is a lightweight **dialog**, not a tooltip: the trigger gets `aria-expanded`, `aria-haspopup="dialog"` and `aria-controls`; the overlay opens with `role="dialog"` and an accessible name. String content names it automatically; template content must provide `etToggletipAriaLabel` or `etToggletipAriaLabelledBy` (enforced in dev mode).
+
 ## Theming
 
 Public design tokens: `--et-toggletip-font-size`, `--et-toggletip-line-height`, `--et-toggletip-padding-inline`, `--et-toggletip-padding-block`, `--et-toggletip-gap`. The arrow follows the surface theme (`--et-overlay-arrow-background` / `--et-overlay-arrow-border`).
+
+## Error codes
+
+Toggletip misuse throws [`ET15xx` errors](/components/error-codes#toggletip-et15xx) in dev mode — a missing accessible name or a trigger without button/toggletip directives.

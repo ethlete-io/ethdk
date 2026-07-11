@@ -41,3 +41,11 @@ The animated Ethlete "E" for full-page or initial loading states. No inputs — 
 ```
 
 <StoryEmbed id="components-loader-brand-loader--default" height="240px" />
+
+## Accessibility
+
+All three render `role="progressbar"`; spinner and progress bar expose `aria-valuenow` / `-valuemin` / `-valuemax` only in determinate mode (indeterminate drops them, as the pattern requires). The brand loader ships an `aria-label="Loading"`; the spinner and progress bar have **no accessible name by default** — add an `aria-label` when they stand alone rather than inside an already-labelled context (like a button's `loading` state, which sets `aria-busy` on the button).
+
+## Theming
+
+Spinner tokens: `--et-spinner-size` (`18px`), `--et-spinner-stroke-width` (`2.25px`), `--et-spinner-color` (`currentColor`), `--et-spinner-track-color` (`transparent`), `--et-spinner-duration` (`1333ms`) — the `diameter`/`strokeWidth` inputs win over the size tokens. Progress bar tokens: `--et-progress-bar-height` (`4px`), `--et-progress-bar-border-radius` (`9999px`). The brand loader has no tokens — size and color it via CSS (`currentColor`).

@@ -4,7 +4,7 @@ Accessible dropdown, context and submenu system built on the [overlay system](/c
 
 ## Anatomy
 
-Three structural pieces: an `[etMenu]` host, a trigger inside it, and an `ng-template[etMenuSurface]` containing the `<et-menu>` panel:
+Three structural pieces: an `[etMenu]` host, a trigger inside it, and an `ng-template[etMenuSurface]` containing the `<et-menu>` panel. The surface template's context provides the `menu` directive and a `close(result?)` function (`<ng-template etMenuSurface let-close="close">`):
 
 ```html
 <div etMenu>
@@ -94,6 +94,8 @@ Radio (single) and checkbox (multi) items work with `[(value)]` on their group o
 
 Activation follows menu conventions: <kbd>Enter</kbd> selects and dismisses, <kbd>Space</kbd> and pointer clicks toggle while keeping the menu open for multi-pick. Checkbox items also support `indeterminate`.
 
+Groups and standalone items carry the usual signal-forms surface alongside `[(value)]` / `[formField]`: `disabled`, `invalid`, `errors`, `required`, `name` and a `touched` model (groups additionally take `multiple`). The underlying headless directives are `etMenuSelectionGroup` and `etMenuSelectionItem` if you're building custom selection rows.
+
 <StoryEmbed id="components-menu-with-selection--default" height="440px" />
 
 ## Search
@@ -114,7 +116,7 @@ Activation follows menu conventions: <kbd>Enter</kbd> selects and dismisses, <kb
 </et-menu>
 ```
 
-For async sources, bind `[loading]` (header spinner + `aria-busy`) and `[error]` (inline `role="alert"` line) on the search input while your request runs. Typing while the menu is focused forwards characters into the search field; <kbd>Escape</kbd> clears a non-empty query before closing the menu.
+For async sources, bind `[loading]` (header spinner + `aria-busy`) and `[error]` (inline `role="alert"` line) on the search input while your request runs. Typing while the menu is focused forwards characters into the search field; <kbd>Escape</kbd> clears a non-empty query before closing the menu — the same reset is available programmatically via `clear()` (`#search="etMenuSearch"`).
 
 <StoryEmbed id="components-menu-with-search--async" height="440px" />
 
@@ -132,6 +134,7 @@ Inputs on `[etMenu]`:
 | `hoverOpen`          | `true`         | Submenu hover-open with `hoverOpenDelay` (120ms) / `hoverCloseDelay` (300ms)                                                          |
 | `autoFocus`          | `true`         | Focus the panel/first item on open                                                                                                    |
 | `open`               | `model(false)` | Two-way open state; methods `show()`, `hide()`, `toggle()`, `closeAll()`, `openAt(point)`                                             |
+| `disabled`           | `false`        | Ignores open requests (trigger clicks, hover, `openAt`) while set                                                                     |
 
 ### Keyboard
 
@@ -145,3 +148,20 @@ Inputs on `[etMenu]`:
 | <kbd>Esc</kbd>                   | Close the current level                                     |
 | <kbd>Tab</kbd>                   | Close the whole menu tree                                   |
 | Printable keys                   | Typeahead — or forwarded into the search input when present |
+
+## Accessibility
+
+Full [menu-pattern](https://www.w3.org/WAI/ARIA/apg/patterns/menu/) semantics are emitted automatically:
+
+- The trigger gets `aria-haspopup="menu"`, live `aria-expanded`, and `aria-controls` pointing at the open panel; the panel is `role="menu"` labelled by its trigger.
+- Items are `role="menuitem"` — or `menuitemradio` / `menuitemcheckbox` with `aria-checked` (`"mixed"` for indeterminate) for selection items. Groups are `role="group"` labelled by their `<et-menu-group-label>`, separators `role="separator"`, shortcuts `aria-hidden`.
+- Focus uses a roving tabindex over enabled items (see [Keyboard](#keyboard)) plus typeahead, and returns to the trigger when the menu closes via item activation, <kbd>Esc</kbd> or <kbd>Tab</kbd>.
+- With search: the panel reflects `[loading]` as `aria-busy`, and an `[error]` renders as a `role="alert"` line wired to the input via `aria-describedby` / `aria-invalid`.
+
+## Theming
+
+Public tokens (defaults in parentheses): `--et-menu-min-width` (`180px`), `--et-menu-max-height` (`40vh`), `--et-menu-padding-block` / `-inline` (`6px`), `--et-menu-item-height` (`36px`), `--et-menu-item-padding-inline` (`10px`), `--et-menu-item-gap` (`10px`), `--et-menu-item-border-radius` (`6px`), `--et-menu-item-font-size` (`14px`), `--et-menu-item-icon-size` (`16px`), `--et-menu-separator-margin-block` (`6px`), `--et-menu-group-label-font-size` (`12px`), `--et-menu-search-height` (`36px`). Colors come from the surface/color theme systems.
+
+## Error codes
+
+Structural misuse (pieces outside `[etMenu]`, missing surface, selection items without values) throws [`ET13xx` errors](/components/error-codes#menu-et13xx) in dev mode.

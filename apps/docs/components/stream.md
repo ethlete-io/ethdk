@@ -25,6 +25,8 @@ Source inputs per platform:
 | TikTok      | `videoId`                                                    | portrait 9∶16 by default        |
 | SOOP        | `userId` or `videoId`                                        | —                               |
 
+Every slot additionally accepts `width` / `height` (iframe sizing — usually leave them alone and size via CSS), `streamSlotPriority` (when several slots want the same player id, a priority slot wins the player) and `streamSlotOnPipBack` (declarative PiP-return callback, the template-friendly alternative to `pipActivate(onBack)`).
+
 ## Live demo
 
 <StoryEmbed id="components-stream-youtube--default" height="480px" />
@@ -32,6 +34,8 @@ Source inputs per platform:
 ## Player state & control
 
 Every player implements the shared `StreamPlayer` interface: a `state` signal (`isReady`, `isLoading`, `isPlaying`, `isMuted`, `isEnded`, `currentTime`, `duration` — `null` for live streams, `error`) and `play()` / `pause()` / `mute()` / `unmute()` / `seek(seconds)` / `retry()`. From a slot, read state via `slot.slotDirective.slot.currentState()`.
+
+Not every platform supports every control — each player exposes a static `CAPABILITIES` (`canPlay`, `canPause`, `canMute`, `canSeek`, `canGetDuration`, `isLiveCapable`, `hasThumbnail`). Methods without the capability are no-ops, so check it to decide which controls to render.
 
 ## Consent gating
 
@@ -54,6 +58,22 @@ A slot's player can detach into a floating, draggable PiP window and hand back l
 <button (click)="slot.slotDirective.slot.pipActivate(() => goBackToThisView())" et-button>Enter PiP</button>
 ```
 
-`pipActivate(onBack?)` / `pipDeactivate()` control it; the PiP window chrome (close, back, grid toggle for multiple simultaneous PiP players) and window sizing are configurable via `provideStreamConfig({ pipChromeComponent, pipWindow, pipSlotPlaceholderComponent })`. The `Mixed` story demonstrates a PiP grid mixing 16∶9 and 9∶16 players.
+`pipActivate(onBack?)` / `pipDeactivate()` control it; the PiP window chrome (close, back, grid toggle for multiple simultaneous PiP players) and window sizing are configurable via `provideStreamConfig({ pipChromeComponent, pipChrome, pipWindow, pipSlotPlaceholderComponent })` — `pipChrome` tunes the appearance of the built-in chrome without replacing it. The `Mixed` story demonstrates a PiP grid mixing 16∶9 and 9∶16 players.
 
 <StoryEmbed id="components-stream-mixed--mixed-aspect-ratios" height="560px" />
+
+## Accessibility
+
+The PiP chrome is fully operable: its focus/close/grid-toggle buttons carry `aria-label`s, and in grid mode each cell is a keyboard-activatable `role="button"` (<kbd>Enter</kbd>/<kbd>Space</kbd> selects the featured player).
+
+The embedded players themselves are third-party iframes, and the built-in consent/loading/error overlays render plain headings and buttons without dialog or live-region semantics — so give the surrounding region an accessible name (e.g. a heading before the slot) and announce player state changes yourself where they matter.
+
+## Theming
+
+- Slot: `--et-stream-player-slot-radius` (`12px`).
+- PiP window: `--et-pip-border-radius` (`8px`), `--et-pip-bg`, `--et-pip-backdrop-blur` (`4px`), `--et-pip-title-bar-height` (`32px`), `--et-stream-pip-chrome-featured-ring-color`, plus `--et-pip-slot-placeholder-*` (gap, padding, icon-size, border-radius, message typography) for the placeholder left behind.
+- Consent gate and error overlay: `--et-stream-consent-*` and `--et-stream-player-error-*` families covering padding, gap, icon size, border radius and heading/description typography.
+
+## Error codes
+
+Consent/PiP wiring problems and platform SDK failures throw [`ET16xx` errors](/components/error-codes#stream-et16xx) — the SDK/loading failures also in production.

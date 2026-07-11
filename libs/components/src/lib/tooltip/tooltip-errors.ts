@@ -1,3 +1,4 @@
+// codes 1400-1499
 export const TOOLTIP_ERROR_CODES = {
   TEMPLATE_TOOLTIP_REQUIRES_DESCRIPTION: 1400,
 } as const;

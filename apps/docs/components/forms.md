@@ -14,9 +14,24 @@ protected demoForm = form(this.formModel, (s) => {
 });
 ```
 
+## Importing
+
+Each control family ships its own imports array — combine the field shell with the controls you use:
+
+| Array                      | Contains                                                                  |
+| -------------------------- | ------------------------------------------------------------------------- |
+| `FORM_FIELD_IMPORTS`       | `et-form-field`, `et-label`, `et-hint`, `etInputPrefix` / `etInputSuffix` |
+| `INPUT_IMPORTS`            | `et-input`                                                                |
+| `CHECKBOX_IMPORTS`         | `et-checkbox`                                                             |
+| `SWITCH_IMPORTS`           | `et-switch`                                                               |
+| `CHOICE_FIELD_IMPORTS`     | `et-choice-field` + label/hint chrome                                     |
+| `RICH_TEXT_EDITOR_IMPORTS` | `et-rich-text-editor`                                                     |
+
+The selection-list groups have no aggregate array — import the components directly (`CheckboxGroupComponent` + `CheckboxOptionComponent`, `RadioGroupComponent` + `RadioComponent`, `SegmentedButtonGroupComponent` + `SegmentedButtonComponent`), and the same goes for `DescriptionComponent` (`et-description`).
+
 ## Text fields — `et-form-field` + `et-input`
 
-The form field renders the shell (label, prefix/suffix affixes, hint/error support region); the control registers itself into it via DI — no manual wiring:
+The form field renders the shell (label, prefix/suffix affixes via `etInputPrefix` / `etInputSuffix`, hint/error support region); the control registers itself into it via DI — no manual wiring:
 
 ```html
 <et-form-field appearance="box" labelMode="floating-inside">
@@ -107,4 +122,25 @@ The field chrome handles error display and aria wiring uniformly:
 
 - Errors show once a control is **touched and invalid** — each signal-forms `ValidationError` renders as an `et-form-error` in the support region (`aria-live="polite"`), replacing the hint with an animated transition. While erroring, the field forces the app's error color theme (the theme registered with `type: 'error'`).
 - `aria-describedby` on the control automatically points at the active error (or hint), `aria-labelledby` at the `et-label`; the label renders a `*` marker when the control is `required`.
-- Dev mode throws an actionable error (`MISSING_CONTROL`, code 1800) if an `et-form-field` contains no control.
+- Dev mode throws an actionable error ([`ET2200`](/components/error-codes#form-field-et22xx)) if an `et-form-field` contains no control.
+
+## Theming
+
+Every control family declares public design tokens; override them in your CSS scope:
+
+| Component                                           | Tokens                                                                                                                                                                                                                                                                                           |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `et-form-field`                                     | `--et-form-field-gap`, `-control-border-radius` / `-border-width` / `-padding-block` / `-padding-inline` / `-font-size` / `-line-height` / `-affix-gap` / `-disabled-opacity` / `-min-height`, `-label-font-size`, `-error-font-size`, `-hint-font-size`, `-support-duration`, `-support-offset` |
+| `et-checkbox`                                       | `--et-checkbox-size`, `-border-radius`, `-border-width`, `-transition-duration`, `-opacity-disabled`                                                                                                                                                                                             |
+| `et-switch`                                         | `--et-switch-track-width`, `-track-height`, `-thumb-size`, `-thumb-offset`, `-transition-duration`, `-opacity-disabled`                                                                                                                                                                          |
+| `et-choice-field`                                   | `--et-choice-field-gap`, `-support-duration`, `-support-offset`, `-label-font-size`, `-error-font-size`, `-hint-font-size`                                                                                                                                                                       |
+| `et-radio-group` / `et-radio`                       | `--et-radio-group-*` (gap, support, error/hint sizes), `--et-radio-size`, `-dot-size`, `-border-width`, `-transition-duration`, `-opacity-disabled`, `-gap`                                                                                                                                      |
+| `et-checkbox-group` / `et-checkbox-option`          | `--et-checkbox-group-*` (gap, support, error/hint sizes), `--et-checkbox-option-size`, `-border-width`, `-border-radius`, `-transition-duration`, `-opacity-disabled`, `-gap`                                                                                                                    |
+| `et-segmented-button-group` / `et-segmented-button` | `--et-segmented-button-group-*` (gap, support, error/hint sizes), `--et-segmented-button-padding-x` / `-padding-y`, `-border-width`, `-transition-duration`, `-opacity-disabled`                                                                                                                 |
+| `et-rich-text-editor`                               | `--et-rich-text-editor-toolbar-gap`, `-toolbar-padding`, `-button-radius`, `-min-height`, `-content-gap`                                                                                                                                                                                         |
+
+All colors resolve through the surface/color theme systems (the error state forces the theme registered with `type: 'error'`).
+
+## Error codes
+
+An `et-form-field` without a control throws [`ET2200`](/components/error-codes#form-field-et22xx) in dev mode.

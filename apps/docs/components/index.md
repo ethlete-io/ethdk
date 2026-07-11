@@ -53,3 +53,4 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 ### Utilities
 
 - [Focus ring](/components/focus-ring) — the shared keyboard-focus outline for custom interactive elements.
+- [Error codes](/components/error-codes) — every `ETxxxx` runtime error, what causes it and how to fix it.

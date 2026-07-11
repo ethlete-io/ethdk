@@ -1,3 +1,4 @@
+// codes 1900-1999
 export const GRID_ERROR_CODES = {
   MISSING_GRID: 1900,
   MISSING_GRID_ITEM: 1901,

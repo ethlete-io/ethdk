@@ -31,6 +31,14 @@ Treat docs like the changeset: part of finishing the change, not a follow-up.
 | `apps/docs/.vitepress/config.mts` | Nav + grouped sidebar (`Floating & overlays`, `Elements`, `Forms`, `Layout & structure`, `Feedback & media`, `Utilities`) |
 | `apps/docs/.vitepress/theme/StoryEmbed.vue` | The story-embed component (registered globally as `<StoryEmbed>`) |
 
+## Guide schema
+
+Every component guide follows the section skeleton in **`SCHEMA.md`** (same
+directory as this file) — intro/import → snippet → live demo → body sections
+with verified-default tables → Accessibility → Theming → Error codes link.
+Read it before writing or restructuring a guide, and run its checklist when
+reviewing one.
+
 ## Writing style
 
 - Code-first: lead with a canonical usage snippet (lift from the domain's

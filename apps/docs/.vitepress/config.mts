@@ -61,7 +61,10 @@ export default defineConfig({
         },
         {
           text: 'Utilities',
-          items: [{ text: 'Focus Ring', link: '/components/focus-ring' }],
+          items: [
+            { text: 'Focus Ring', link: '/components/focus-ring' },
+            { text: 'Error codes', link: '/components/error-codes' },
+          ],
         },
       ],
     },

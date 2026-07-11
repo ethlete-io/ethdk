@@ -51,8 +51,14 @@ Override via the `breakpoints` input. `rowHeight` (default `100`) and `gap` (def
 ## Interaction
 
 - **Pointer**: drag items to move, drag edges/corners to resize — collisions push neighbors and the layout compacts.
-- **Keyboard** (on a focused item): <kbd>Ctrl/Cmd</kbd>+arrows move, <kbd>Shift</kbd>+arrows resize, <kbd>Ctrl/Cmd</kbd>+<kbd>Delete</kbd> removes.
-- Per-item span constraints come from the registration (`constraints`) or the `et-grid-item` inputs (`minColSpan`, `maxColSpan`, `minRowSpan`, `maxRowSpan`).
+- **Keyboard** (on a focused item): <kbd>Ctrl/Cmd</kbd>+arrows move, <kbd>Shift</kbd>+arrows resize, <kbd>Ctrl/Cmd</kbd>+<kbd>Delete</kbd> (or <kbd>Backspace</kbd>) removes.
+- Per-item span constraints come from the registration (`constraints`) or the `et-grid-item` inputs `minColSpan` / `maxColSpan` / `minRowSpan` / `maxRowSpan` (defaults `1` / `12` / `1` / `4`). Each item also takes an `ariaLabel` (default `'Grid item'`) and emits `removed` when it's removed.
+
+## Item actions & labels
+
+In edit mode every item renders an actions component in its top corner — by default `et-grid-item-default-actions`, a small toolbar with a remove button. Replace it globally via `provideGridConfig({ actionsComponent: MyActionsComponent })`; the component receives the item's `itemId` and `data` as inputs and can call the grid's `removeItem()` (see the `GridItemActionsComponent` type). `et-grid-item-toolbar` is the styled toolbar shell (`--et-grid-item-toolbar-*` tokens) you can reuse in a custom actions component.
+
+`GridConfig` also carries the accessibility strings — `interactiveAriaLabel` (`'Interactive grid layout'`), `readonlyAriaLabel` (`'Grid layout'`), `removeActionAriaLabel` (`'Remove item'`) — and a `transformer(text, locale)` hook to run them through your i18n system.
 
 ## Backend integration
 
@@ -66,3 +72,13 @@ const adapter = createGridAdapter<BackendWidget>({
 ```
 
 The `BackendIntegration` story shows the full round trip. A `<et-grid-debug />` component visualizes the underlying cells while developing.
+
+## Accessibility
+
+- The grid host is a `role="region"` labelled from `GridConfig` — `interactiveAriaLabel` normally, `readonlyAriaLabel` when `readOnly` (both run through the config's `transformer` for i18n).
+- Each item is a focusable `role="group"` (`tabindex="0"`) with its `ariaLabel` input as the accessible name — set it per item, the default is a generic `'Grid item'`.
+- All editing is keyboard-reachable (see [Interaction](#interaction)); the drag handle reflects an active drag via `aria-grabbed`, and the default remove button is labelled by `removeActionAriaLabel`.
+
+## Theming
+
+One public token: `--et-grid-padding` (default `0px`) pads the grid container. The default item toolbar exposes `--et-grid-item-toolbar-gap` / `-padding` / `-radius` / `-background` overrides.

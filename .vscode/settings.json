@@ -10,6 +10,7 @@
     "DELAYABLE",
     "endregion",
     "ethlete",
+    "ETxxxx",
     "Googleplay",
     "INLINES",
     "klass",
@@ -25,6 +26,7 @@
     "toggletip",
     "uikit",
     "UNCACHEABLE",
+    "unthrown",
     "viewports"
   ],
   "editor.codeActionsOnSave": {

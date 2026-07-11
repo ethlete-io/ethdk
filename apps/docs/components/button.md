@@ -35,7 +35,7 @@ Five button flavors, all attribute selectors on native `<button>` or `<a>` eleme
 - `variant`: `'filled' | 'outline' | 'tonal' | 'transparent'` — surface buttons default to `filled`, icon buttons to `transparent`. Text buttons and window controls have no variant.
 - `size`: `'xs' | 'sm' | 'md' | 'lg' | 'xl'` (default `md`; window controls: `sm | md | lg`).
 - `color` applies one of your app's registered color themes. Theme names are project-specific — the SDK ships none; examples in these guides use the names this repo's Storybook registers (`brand`, `danger`, …).
-- `iconAlignment`: `'start' | 'end'` positions the `[etIcon]` slot relative to the label.
+- `iconAlignment`: `'start' | 'end'` positions the `[etIcon]` slot relative to the label (surface, text and FAB buttons — the single-icon flavors don't have it).
 
 ## States
 
@@ -43,7 +43,7 @@ All flavors share the headless `ButtonDirective` (`[etButton]`):
 
 - `disabled` and `loading` both make the button **inactive**: native `disabled` on `<button>`, `tabindex="-1"` on `<a>`, plus `aria-disabled`.
 - `loading` additionally overlays a size-matched spinner (`aria-busy`) on top of the hidden label.
-- `pressed` (surface / icon / window-control buttons) marks toggle state — `aria-pressed` is emitted by default (`emitAriaPressed`), and the visual **variant swaps** while pressed (e.g. `filled` ↔ `outline`) so the toggle reads at a glance.
+- `pressed` (surface / icon / window-control buttons) marks toggle state — `aria-pressed` is emitted by default, and the visual **variant swaps** while pressed (e.g. `filled` ↔ `outline`) so the toggle reads at a glance. The `emitAriaPressed` opt-out is only bindable on the raw headless `[etButton]`, not on the styled flavors.
 - `mutedUntilPressed` (surface / icon buttons) keeps the button neutral until pressed, only then adopting its color theme — useful for toolbars.
 - `type` defaults to `'button'`, so forms don't submit accidentally.
 
@@ -54,6 +54,12 @@ Every flavor works on `<a>` for navigation with identical styling:
 ```html
 <a et-button href="/pricing" variant="outline">See pricing</a>
 ```
+
+## Accessibility
+
+All flavors keep native `<button>` / `<a>` semantics — no custom key handling, no role juggling. On top of that the headless directive emits `aria-busy` while loading, `aria-disabled` (plus native `disabled` on buttons, `tabindex="-1"` on anchors) while inactive, and `aria-pressed` for toggles; the loading spinner overlay is `aria-hidden`. Keyboard focus shows the shared [focus ring](/components/focus-ring).
+
+One thing that stays your job: icon-only buttons have no text content, so always give them an `aria-label` (this is not enforced).
 
 ## Design specs & tokens
 

@@ -19,9 +19,9 @@ Or adopt it in your own component the way the built-ins do:
 
 - The ring is pure CSS on `:focus-visible` — mouse clicks don't show it, keyboard focus does. The directive also flashes it during <kbd>Enter</kbd>/<kbd>Space</kbd> activation.
 - The stylesheet is mounted lazily once, on first use.
-- Disable per element with `[etFocusRing]="false"`.
+- Disable per element with the directive's `disabled` input: `<span etFocusRing [disabled]="true">`. On native form elements the binding also hits the element's own `disabled` property, so there it's rarely what you want.
 
-## Customizing
+## Theming
 
 Override the private custom properties in your component's CSS scope:
 

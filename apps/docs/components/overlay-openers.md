@@ -125,7 +125,7 @@ A query-param opener watches the URL from creation until its injection context i
 
 ### Opening from templates
 
-`QueryParamOverlayLinkDirective` opens the overlay declaratively. It takes the definition itself, so the query param key is never duplicated as a string:
+`QueryParamOverlayLinkDirective` opens the overlay declaratively. It takes the definition itself, so the query param key is never duplicated as a string; the value can be a string or a number:
 
 ```html
 <a [etQueryParamOverlayLink]="productOverlay" etQueryParamOverlayLinkValue="42">Show product 42</a>
@@ -179,3 +179,7 @@ export class ShopComponent {
 - Lifecycle callbacks move from the handler's inner config into the `createOverlayOpener` config (same names).
 - `OverlayHandlerLinkDirective` (`etOverlayHandlerLink` + `etOverlayHandlerQueryParamName`) → `QueryParamOverlayLinkDirective` (`[etQueryParamOverlayLink]="definition"` + `etQueryParamOverlayLinkValue`).
 - Behavior change: configs now merge additively (see above) — previously the most specific layer silently replaced `bindings`, `providers` and class fields.
+
+## Error codes
+
+Calling `definition.injectRef()` outside a component opened by that definition throws [`ET1207`](/components/error-codes#overlay-et12xx).
