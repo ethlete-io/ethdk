@@ -19,6 +19,10 @@ features:
     link: /components/
   - title: '@ethlete/query'
     details: Declarative, typesafe HTTP query management with caching, polling, auth and GQL support.
+    link: /query/
+  - title: '@ethlete/types'
+    details: Shared TypeScript types for the Ethlete API — mostly generated, zero runtime code.
+    link: /types/
   - title: '@ethlete/core'
     details: Shared primitives — runtime errors, utilities and base services used across the SDK.
   - title: '@ethlete/cdk'

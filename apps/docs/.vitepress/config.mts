@@ -14,9 +14,51 @@ export default defineConfig({
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Components', link: '/components/' },
+      { text: 'Query', link: '/query/' },
+      { text: 'Types', link: '/types/' },
     ],
 
     sidebar: {
+      '/types/': [
+        {
+          text: 'Types',
+          items: [{ text: 'Overview', link: '/types/' }],
+        },
+      ],
+      '/query/': [
+        {
+          text: 'Query',
+          items: [{ text: 'Overview', link: '/query/' }],
+        },
+        {
+          text: 'Core',
+          items: [
+            { text: 'Queries & creators', link: '/query/queries' },
+            { text: 'Query features', link: '/query/features' },
+            { text: 'Caching & deduplication', link: '/query/caching' },
+            { text: 'Query stacks & pagination', link: '/query/stacks' },
+            { text: 'Errors & retries', link: '/query/errors' },
+          ],
+        },
+        {
+          text: 'HTTP & auth',
+          items: [
+            { text: 'HTTP queries', link: '/query/http' },
+            { text: 'Auth', link: '/query/auth' },
+          ],
+        },
+        {
+          text: 'GraphQL & realtime',
+          items: [
+            { text: 'GraphQL', link: '/query/gql' },
+            { text: 'WebSockets', link: '/query/ws' },
+          ],
+        },
+        {
+          text: 'Legacy',
+          items: [{ text: 'Legacy client (V2)', link: '/query/legacy' }],
+        },
+      ],
       '/components/': [
         {
           text: 'Components',

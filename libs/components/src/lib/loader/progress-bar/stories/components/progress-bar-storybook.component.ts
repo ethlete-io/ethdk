@@ -1,4 +1,5 @@
 import { Component, ViewEncapsulation, input } from '@angular/core';
+import { ProvideSurfaceDirective } from '@ethlete/core';
 import { ProgressBarComponent } from '../../progress-bar.component';
 
 @Component({
@@ -9,14 +10,18 @@ import { ProgressBarComponent } from '../../progress-bar.component';
         <p class="m-0 text-xs font-semibold uppercase tracking-widest">
           {{ indeterminate() ? 'indeterminate' : 'determinate (' + value() + '%)' }}
         </p>
-        <div class="flex items-center justify-center rounded-2xl border border-slate-900/10 bg-white p-6">
+        <div
+          class="flex items-center justify-center rounded-2xl border p-6"
+          etProvideSurface="dark-elevated"
+          style="background: rgb(var(--et-surface-background)); border-color: rgb(var(--et-surface-border))"
+        >
           <et-progress-bar [value]="value()" [indeterminate]="indeterminate()" class="w-full text-et-brand" />
         </div>
       </div>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [ProgressBarComponent],
+  imports: [ProgressBarComponent, ProvideSurfaceDirective],
 })
 export class ProgressBarStorybookComponent {
   public value = input(42);
