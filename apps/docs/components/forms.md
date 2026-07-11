@@ -74,6 +74,7 @@ Boolean controls pair with a label inside `et-choice-field` (instead of `et-form
 - `et-checkbox` — `role="checkbox"`, `checked` + `indeterminate` models (`aria-checked="mixed"` when indeterminate; toggling an indeterminate checkbox resolves to checked).
 - `et-switch` — `role="switch"`, `checked` model, no indeterminate.
 - Both toggle on click and <kbd>Space</kbd>, and mark themselves touched on blur.
+- `et-choice-field` accepts `size: 'sm' | 'md' | 'lg'` (default `'md'`), scaling the control and label together.
 
 <StoryEmbed id="components-forms-switch--default" height="260px" />
 
@@ -89,13 +90,17 @@ Three group flavors over one selection engine — options are projected children
 
 ```html
 <et-radio-group [formField]="demoForm.color">
-  <span class="et-radio-group-label">Favorite color</span>
+  <et-label>Favorite color</et-label>
   @for (option of options(); track option.value) {
   <et-radio [value]="option.value">{{ option.label }}</et-radio>
   }
   <et-hint>Pick one.</et-hint>
 </et-radio-group>
 ```
+
+- The group label is a projected `et-label` — it renders the `*` marker when the group is `required` and wires `aria-labelledby`. A plain `<span class="et-<group>-label">` also works for text-only labels.
+- All three groups accept `size: 'sm' | 'md' | 'lg'` (default `'md'`), matching the `et-form-field` size scale.
+- The segmented button group renders its options on a tonal track; the filled active pill animates between options on selection.
 
 Checkbox options and radios accept an `et-description` child for secondary text, and the headless layer offers a tri-state "select all" control (`[etSelectionListControl]`).
 
@@ -134,9 +139,9 @@ Every control family declares public design tokens; override them in your CSS sc
 | `et-checkbox`                                       | `--et-checkbox-size`, `-border-radius`, `-border-width`, `-transition-duration`, `-opacity-disabled`                                                                                                                                                                                             |
 | `et-switch`                                         | `--et-switch-track-width`, `-track-height`, `-thumb-size`, `-thumb-offset`, `-transition-duration`, `-opacity-disabled`                                                                                                                                                                          |
 | `et-choice-field`                                   | `--et-choice-field-gap`, `-support-duration`, `-support-offset`, `-label-font-size`, `-error-font-size`, `-hint-font-size`                                                                                                                                                                       |
-| `et-radio-group` / `et-radio`                       | `--et-radio-group-*` (gap, support, error/hint sizes), `--et-radio-size`, `-dot-size`, `-border-width`, `-transition-duration`, `-opacity-disabled`, `-gap`                                                                                                                                      |
-| `et-checkbox-group` / `et-checkbox-option`          | `--et-checkbox-group-*` (gap, support, error/hint sizes), `--et-checkbox-option-size`, `-border-width`, `-border-radius`, `-transition-duration`, `-opacity-disabled`, `-gap`                                                                                                                    |
-| `et-segmented-button-group` / `et-segmented-button` | `--et-segmented-button-group-*` (gap, support, error/hint sizes), `--et-segmented-button-padding-x` / `-padding-y`, `-border-width`, `-transition-duration`, `-opacity-disabled`                                                                                                                 |
+| `et-radio-group` / `et-radio`                       | `--et-radio-group-*` (gap, label/error/hint sizes, support), `--et-radio-size`, `-dot-size`, `-border-width`, `-transition-duration`, `-opacity-disabled`, `-gap`                                                                                                                                |
+| `et-checkbox-group` / `et-checkbox-option`          | `--et-checkbox-group-*` (gap, label/error/hint sizes, support), `--et-checkbox-option-size`, `-border-width`, `-border-radius`, `-transition-duration`, `-opacity-disabled`, `-gap`                                                                                                              |
+| `et-segmented-button-group` / `et-segmented-button` | `--et-segmented-button-group-*` (gap, label/error/hint sizes, support, `-track-padding`, `-track-radius`), `--et-segmented-button-padding-x` / `-padding-y`, `-border-radius`, `-transition-duration`, `-opacity-disabled`                                                                       |
 | `et-rich-text-editor`                               | `--et-rich-text-editor-toolbar-gap`, `-toolbar-padding`, `-button-radius`, `-min-height`, `-content-gap`                                                                                                                                                                                         |
 
 All colors resolve through the surface/color theme systems (the error state forces the theme registered with `type: 'error'`).

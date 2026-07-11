@@ -1,37 +1,37 @@
 @property --et-radio-size {
   syntax: '<length>';
-  inherits: false;
+  inherits: true;
   initial-value: 20px;
 }
 
 @property --et-radio-dot-size {
   syntax: '<length>';
-  inherits: false;
+  inherits: true;
   initial-value: 10px;
 }
 
 @property --et-radio-border-width {
   syntax: '<length>';
-  inherits: false;
+  inherits: true;
   initial-value: 2px;
 }
 
 @property --et-radio-transition-duration {
   syntax: '<time>';
-  inherits: false;
+  inherits: true;
   initial-value: 150ms;
 }
 
 @property --et-radio-opacity-disabled {
   syntax: '<number>';
-  inherits: false;
+  inherits: true;
   initial-value: 0.5;
 }
 
 @property --et-radio-gap {
   syntax: '<length>';
-  inherits: false;
-  initial-value: 8px;
+  inherits: true;
+  initial-value: 10px;
 }
 
 et-radio {
@@ -48,9 +48,9 @@ et-radio {
     block-size: var(--et-radio-size);
     border-radius: 50%;
     border: var(--et-radio-border-width) solid var(--_et-control-border, var(--et-surface-border-solid, currentColor));
+    background-color: transparent;
     display: grid;
     place-items: center;
-    margin-block-start: 2px;
 
     &::after {
       content: '';
@@ -70,17 +70,24 @@ et-radio {
   }
 
   .et-radio-label {
-    color: var(--et-surface-color-muted-solid, currentColor);
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--et-surface-color-solid, currentColor);
   }
 
-  &:hover .et-radio-circle {
+  &:hover:not([aria-disabled='true']):not([aria-checked='true']) .et-radio-circle {
     border-color: var(--_et-control-border, var(--et-surface-interaction-hover-solid, currentColor));
+    background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
   }
 
   &:focus-visible .et-radio-circle {
     border-color: var(--et-theme-color-primary-solid);
-    outline: 1px solid var(--et-theme-color-primary-solid);
+    outline: 2px solid var(--et-theme-color-primary-solid);
     outline-offset: 2px;
+  }
+
+  &:active:not([aria-disabled='true']) .et-radio-circle {
+    transform: scale(0.92);
   }
 
   &[aria-disabled='true'] {
@@ -95,6 +102,7 @@ et-radio {
 
   &[aria-checked='true'] .et-radio-circle {
     border-color: var(--et-theme-color-primary-solid, currentColor);
+    background-color: transparent;
 
     &::after {
       transform: scale(1);
@@ -103,7 +111,10 @@ et-radio {
 
   &[data-can-animate] {
     .et-radio-circle {
-      transition: border-color var(--et-radio-transition-duration) ease;
+      transition:
+        border-color var(--et-radio-transition-duration) ease,
+        background-color var(--et-radio-transition-duration) ease,
+        transform var(--et-radio-transition-duration) ease;
 
       &::after {
         transition: transform var(--et-radio-transition-duration) ease;

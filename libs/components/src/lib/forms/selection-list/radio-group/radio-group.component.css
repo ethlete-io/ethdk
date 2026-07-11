@@ -25,7 +25,13 @@
 @property --et-radio-group-gap {
   syntax: '<length>';
   inherits: true;
-  initial-value: 8px;
+  initial-value: 10px;
+}
+
+@property --et-radio-group-label-font-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 13px;
 }
 
 et-radio-group {
@@ -33,6 +39,52 @@ et-radio-group {
   flex-direction: column;
   gap: var(--et-radio-group-gap);
   color: var(--et-surface-color-solid, currentColor);
+
+  > et-label,
+  .et-radio-group-label {
+    font-size: var(--et-radio-group-label-font-size);
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--et-surface-color-muted-solid, currentColor);
+    user-select: none;
+  }
+
+  &[data-size='sm'] {
+    --et-radio-group-label-font-size: 12px;
+    --et-radio-group-gap: 8px;
+
+    et-radio {
+      --et-radio-size: 16px;
+      --et-radio-dot-size: 8px;
+      --et-radio-gap: 8px;
+    }
+
+    .et-radio-label {
+      font-size: 12px;
+      line-height: 16px;
+    }
+  }
+
+  &[data-size='lg'] {
+    --et-radio-group-label-font-size: 14px;
+    --et-radio-group-gap: 12px;
+
+    et-radio {
+      --et-radio-size: 24px;
+      --et-radio-dot-size: 12px;
+      --et-radio-gap: 12px;
+    }
+
+    .et-radio-label {
+      font-size: 16px;
+      line-height: 24px;
+    }
+  }
+
+  &[data-error] {
+    --_et-control-border: var(--et-theme-color-primary-solid);
+  }
 
   .et-radio-group-support {
     overflow: clip;

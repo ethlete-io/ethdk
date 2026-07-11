@@ -1,36 +1,36 @@
 @property --et-switch-track-width {
   syntax: '<length>';
-  inherits: false;
-  initial-value: 36px;
+  inherits: true;
+  initial-value: 40px;
 }
 
 @property --et-switch-track-height {
   syntax: '<length>';
-  inherits: false;
-  initial-value: 20px;
+  inherits: true;
+  initial-value: 22px;
 }
 
 @property --et-switch-thumb-size {
   syntax: '<length>';
-  inherits: false;
+  inherits: true;
   initial-value: 16px;
 }
 
 @property --et-switch-thumb-offset {
   syntax: '<length>';
-  inherits: false;
-  initial-value: 2px;
+  inherits: true;
+  initial-value: 3px;
 }
 
 @property --et-switch-transition-duration {
   syntax: '<time>';
-  inherits: false;
+  inherits: true;
   initial-value: 150ms;
 }
 
 @property --et-switch-opacity-disabled {
   syntax: '<number>';
-  inherits: false;
+  inherits: true;
   initial-value: 0.5;
 }
 
@@ -51,18 +51,18 @@ et-switch {
     width: var(--et-switch-track-width);
     height: var(--et-switch-track-height);
     border-radius: calc(var(--et-switch-track-height) / 2);
-    background-color: var(--_et-control-border, var(--et-surface-border-solid, currentColor));
-    opacity: 0.4;
+    background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 22%, transparent);
   }
 
-  &:hover:not([aria-disabled='true']) .et-switch-track,
-  :where(et-choice-field:has(.et-choice-field-label-area:hover)) &:not([aria-disabled='true']) .et-switch-track {
-    opacity: 0.55;
+  &:hover:not([aria-disabled='true']):not([aria-checked='true']) .et-switch-track,
+  :where(et-choice-field:has(.et-choice-field-label-area:hover))
+    &:not([aria-disabled='true']):not([aria-checked='true'])
+    .et-switch-track {
+    background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 30%, transparent);
   }
 
-  :where(et-choice-field[data-error]) &:not([aria-disabled='true']) .et-switch-track {
-    background-color: var(--et-theme-color-primary-solid);
-    opacity: 0.4;
+  :where(et-choice-field[data-error]) &:not([aria-disabled='true']):not([aria-checked='true']) .et-switch-track {
+    background-color: color-mix(in srgb, var(--et-theme-color-primary-solid) 40%, transparent);
   }
 
   &:focus-visible .et-switch-track {
@@ -70,46 +70,67 @@ et-switch {
     outline-offset: 2px;
   }
 
-  &:active:not([aria-disabled='true']) .et-switch-track {
-    transform: scale(0.95);
+  .et-switch-thumb {
+    /* Off state: a smaller, muted thumb centered in the track. It grows to
+       --et-switch-thumb-size and takes the on-primary color when checked. */
+    position: absolute;
+    top: calc((var(--et-switch-track-height) - var(--et-switch-thumb-size) + 4px) / 2);
+    left: calc((var(--et-switch-track-height) - var(--et-switch-thumb-size) + 4px) / 2);
+    width: calc(var(--et-switch-thumb-size) - 4px);
+    height: calc(var(--et-switch-thumb-size) - 4px);
+    border-radius: calc(var(--et-switch-thumb-size) / 2);
+    background-color: var(--et-surface-color-muted-solid, currentColor);
   }
 
-  .et-switch-thumb {
-    position: absolute;
-    top: var(--et-switch-thumb-offset);
-    left: var(--et-switch-thumb-offset);
+  &:hover:not([aria-disabled='true']) .et-switch-thumb,
+  :where(et-choice-field:has(.et-choice-field-label-area:hover)) &:not([aria-disabled='true']) .et-switch-thumb {
+    background-color: var(--et-surface-color-solid, currentColor);
+  }
+
+  &:active:not([aria-disabled='true']) .et-switch-thumb {
     width: var(--et-switch-thumb-size);
-    height: var(--et-switch-thumb-size);
-    border-radius: 50%;
-    background-color: var(--et-theme-color-on-primary-solid, white);
   }
 
   &[aria-checked='true'] {
     .et-switch-track {
       background-color: var(--et-theme-color-primary-solid, currentColor);
-      opacity: 1;
     }
 
     .et-switch-thumb {
+      top: calc((var(--et-switch-track-height) - var(--et-switch-thumb-size)) / 2);
       left: calc(var(--et-switch-track-width) - var(--et-switch-thumb-size) - var(--et-switch-thumb-offset));
+      width: var(--et-switch-thumb-size);
+      height: var(--et-switch-thumb-size);
+      background-color: var(--et-theme-color-on-primary-solid, white);
     }
 
-    &:hover .et-switch-track,
-    :where(et-choice-field:has(.et-choice-field-label-area:hover)) & .et-switch-track {
-      background-color: var(--et-theme-color-primary-solid, currentColor);
-      opacity: 1;
+    &:hover:not([aria-disabled='true']) .et-switch-thumb,
+    :where(et-choice-field:has(.et-choice-field-label-area:hover)) &:not([aria-disabled='true']) .et-switch-thumb {
+      background-color: var(--et-theme-color-on-primary-solid, white);
+    }
+
+    &:active:not([aria-disabled='true']) .et-switch-thumb {
+      width: calc(var(--et-switch-thumb-size) + 3px);
+      left: calc(var(--et-switch-track-width) - var(--et-switch-thumb-size) - 3px - var(--et-switch-thumb-offset));
     }
   }
 
   &[data-can-animate] {
     .et-switch-track {
-      transition:
-        background-color var(--et-switch-transition-duration) ease,
-        opacity var(--et-switch-transition-duration) ease;
+      transition: background-color var(--et-switch-transition-duration) ease;
     }
 
     .et-switch-thumb {
-      transition: left var(--et-switch-transition-duration) ease;
+      transition:
+        top var(--et-switch-transition-duration) ease,
+        left var(--et-switch-transition-duration) ease,
+        width var(--et-switch-transition-duration) ease,
+        height var(--et-switch-transition-duration) ease,
+        background-color var(--et-switch-transition-duration) ease;
     }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    --et-switch-transition-duration: 1ms;
   }
 }

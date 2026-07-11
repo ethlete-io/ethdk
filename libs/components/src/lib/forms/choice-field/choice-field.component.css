@@ -51,6 +51,34 @@ et-choice-field {
     flex: 0 0 auto;
   }
 
+  &[data-size='sm'] {
+    --et-choice-field-label-font-size: 12px;
+
+    et-checkbox {
+      --et-checkbox-size: 16px;
+    }
+
+    et-switch {
+      --et-switch-track-width: 34px;
+      --et-switch-track-height: 19px;
+      --et-switch-thumb-size: 13px;
+    }
+  }
+
+  &[data-size='lg'] {
+    --et-choice-field-label-font-size: 16px;
+
+    et-checkbox {
+      --et-checkbox-size: 24px;
+    }
+
+    et-switch {
+      --et-switch-track-width: 46px;
+      --et-switch-track-height: 25px;
+      --et-switch-thumb-size: 19px;
+    }
+  }
+
   .et-choice-field-label-area {
     display: flex;
     align-items: baseline;

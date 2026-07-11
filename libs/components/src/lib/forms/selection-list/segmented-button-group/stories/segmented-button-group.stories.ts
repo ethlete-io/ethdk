@@ -11,6 +11,7 @@ export default {
     disabled: { control: 'boolean' },
     required: { control: 'boolean' },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
+    size: { control: 'select', options: ['sm', 'md', 'lg'] },
   },
   args: {
     label: 'View mode',
@@ -18,6 +19,7 @@ export default {
     disabled: false,
     required: false,
     color: 'brand',
+    size: 'md',
   },
 } as Meta<SegmentedButtonGroupStorybookComponent>;
 

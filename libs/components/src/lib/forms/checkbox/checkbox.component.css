@@ -1,30 +1,30 @@
 @property --et-checkbox-size {
   syntax: '<length>';
-  inherits: false;
+  inherits: true;
   initial-value: 20px;
 }
 
 @property --et-checkbox-border-radius {
   syntax: '<length>';
-  inherits: false;
+  inherits: true;
   initial-value: 4px;
 }
 
 @property --et-checkbox-border-width {
   syntax: '<length>';
-  inherits: false;
+  inherits: true;
   initial-value: 2px;
 }
 
 @property --et-checkbox-transition-duration {
   syntax: '<time>';
-  inherits: false;
+  inherits: true;
   initial-value: 150ms;
 }
 
 @property --et-checkbox-opacity-disabled {
   syntax: '<number>';
-  inherits: false;
+  inherits: true;
   initial-value: 0.5;
 }
 

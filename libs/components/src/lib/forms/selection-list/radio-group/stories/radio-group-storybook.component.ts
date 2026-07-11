@@ -1,7 +1,7 @@
 import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
 import { disabled, form, FormField, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
-import { HintComponent } from '../../../form-field';
+import { FormFieldSize, HintComponent, LabelDirective } from '../../../form-field';
 import { RadioGroupComponent } from '../radio-group.component';
 import { RadioComponent } from '../radio.component';
 
@@ -9,8 +9,8 @@ import { RadioComponent } from '../radio.component';
   selector: 'et-sb-radio-group',
   template: `
     <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
-      <et-radio-group [formField]="demoForm.color">
-        <span class="et-radio-group-label">{{ label() }}</span>
+      <et-radio-group [formField]="demoForm.color" [size]="size()">
+        <et-label>{{ label() }}</et-label>
 
         @for (option of options(); track option.value) {
           <et-radio [value]="option.value">{{ option.label }}</et-radio>
@@ -22,7 +22,7 @@ import { RadioComponent } from '../radio.component';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [RadioGroupComponent, RadioComponent, FormField, ProvideColorDirective, HintComponent],
+  imports: [RadioGroupComponent, RadioComponent, FormField, ProvideColorDirective, HintComponent, LabelDirective],
 })
 export class RadioGroupStorybookComponent {
   public label = input('Favorite color');
@@ -30,6 +30,7 @@ export class RadioGroupStorybookComponent {
   public disabled = input(false);
   public required = input(false);
   public color = input('brand');
+  public size = input<FormFieldSize>('md');
 
   public options = input([
     { value: 'red', label: 'Red' },

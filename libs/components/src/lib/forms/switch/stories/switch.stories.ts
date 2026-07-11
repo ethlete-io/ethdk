@@ -5,6 +5,12 @@ export default {
   title: 'Components/Forms/Switch',
   component: FormFieldSwitchStorybookComponent,
   decorators: [moduleMetadata({ imports: [FormFieldSwitchStorybookComponent] })],
+  argTypes: {
+    size: { control: 'select', options: ['sm', 'md', 'lg'] },
+  },
+  args: {
+    size: 'md',
+  },
 } as Meta<FormFieldSwitchStorybookComponent>;
 
 type Story = StoryObj<FormFieldSwitchStorybookComponent>;

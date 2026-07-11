@@ -1,7 +1,7 @@
 import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
 import { disabled, form, FormField, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
-import { HintComponent } from '../../../form-field';
+import { FormFieldSize, HintComponent, LabelDirective } from '../../../form-field';
 import { CheckboxGroupComponent } from '../checkbox-group.component';
 import { CheckboxOptionComponent } from '../checkbox-option.component';
 
@@ -9,8 +9,8 @@ import { CheckboxOptionComponent } from '../checkbox-option.component';
   selector: 'et-sb-checkbox-group',
   template: `
     <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
-      <et-checkbox-group [formField]="demoForm.toppings">
-        <span class="et-checkbox-group-label">{{ label() }}</span>
+      <et-checkbox-group [formField]="demoForm.toppings" [size]="size()">
+        <et-label>{{ label() }}</et-label>
 
         @for (option of options(); track option.value) {
           <et-checkbox-option [value]="option.value">{{ option.label }}</et-checkbox-option>
@@ -22,7 +22,14 @@ import { CheckboxOptionComponent } from '../checkbox-option.component';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [CheckboxGroupComponent, CheckboxOptionComponent, FormField, ProvideColorDirective, HintComponent],
+  imports: [
+    CheckboxGroupComponent,
+    CheckboxOptionComponent,
+    FormField,
+    ProvideColorDirective,
+    HintComponent,
+    LabelDirective,
+  ],
 })
 export class CheckboxGroupStorybookComponent {
   public label = input('Select toppings');
@@ -30,6 +37,7 @@ export class CheckboxGroupStorybookComponent {
   public disabled = input(false);
   public required = input(false);
   public color = input('brand');
+  public size = input<FormFieldSize>('md');
 
   public options = input([
     { value: 'cheese', label: 'Cheese' },

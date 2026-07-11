@@ -1,6 +1,7 @@
-import { Component, effect, ElementRef, viewChild, ViewEncapsulation } from '@angular/core';
+import { Component, effect, ElementRef, input, signal, viewChild, ViewEncapsulation } from '@angular/core';
 import { AnimatableDirective, createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
 import { FormErrorComponent } from '../../form-field/form-error.component';
+import { FORM_FIELD_SIZES, FormFieldSize } from '../../form-field/form-field.variants';
 import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../../form-field/headless';
 import { SelectionListDirective } from '../headless';
 
@@ -22,16 +23,22 @@ import { SelectionListDirective } from '../headless';
   ],
   host: {
     class: 'et-segmented-button-group',
+    '[attr.data-size]': 'size()',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-error]': 'support.displaysError() || null',
   },
 })
 export class SegmentedButtonGroupComponent {
   public support = injectFormSupport();
+  public size = input<FormFieldSize>(FORM_FIELD_SIZES.MD);
+
   private errorContentRef = viewChild<ElementRef<HTMLElement>>('errorContent');
   private hintContentRef = viewChild<ElementRef<HTMLElement>>('hintContent');
   private errorAnimatableRef = viewChild<AnimatableDirective>('errorAnimatable');
   private hintAnimatableRef = viewChild<AnimatableDirective>('hintAnimatable');
+
+  /** @internal The active background element of the currently checked button. Used as the flip animation origin. */
+  public lastActiveBackgroundElement = signal<HTMLElement | null>(null);
   public canAnimate = createCanAnimateSignal();
 
   constructor() {

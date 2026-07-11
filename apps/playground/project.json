@@ -5,6 +5,7 @@
   "sourceRoot": "apps/playground/src",
   "prefix": "ethlete",
   "tags": [],
+  "implicitDependencies": ["components"],
   "targets": {
     "build": {
       "executor": "@angular/build:application",

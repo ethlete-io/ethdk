@@ -1,7 +1,7 @@
 import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
 import { disabled, form, FormField, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
-import { HintComponent } from '../../../form-field';
+import { FormFieldSize, HintComponent, LabelDirective } from '../../../form-field';
 import { SegmentedButtonGroupComponent } from '../segmented-button-group.component';
 import { SegmentedButtonComponent } from '../segmented-button.component';
 
@@ -9,8 +9,8 @@ import { SegmentedButtonComponent } from '../segmented-button.component';
   selector: 'et-sb-segmented-button-group',
   template: `
     <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
-      <et-segmented-button-group [formField]="demoForm.viewMode">
-        <span class="et-segmented-button-group-label">{{ label() }}</span>
+      <et-segmented-button-group [formField]="demoForm.viewMode" [size]="size()">
+        <et-label>{{ label() }}</et-label>
 
         @for (option of options(); track option.value) {
           <et-segmented-button [value]="option.value">{{ option.label }}</et-segmented-button>
@@ -22,7 +22,14 @@ import { SegmentedButtonComponent } from '../segmented-button.component';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [SegmentedButtonGroupComponent, SegmentedButtonComponent, FormField, ProvideColorDirective, HintComponent],
+  imports: [
+    SegmentedButtonGroupComponent,
+    SegmentedButtonComponent,
+    FormField,
+    ProvideColorDirective,
+    HintComponent,
+    LabelDirective,
+  ],
 })
 export class SegmentedButtonGroupStorybookComponent {
   public label = input('View mode');
@@ -30,6 +37,7 @@ export class SegmentedButtonGroupStorybookComponent {
   public disabled = input(false);
   public required = input(false);
   public color = input('brand');
+  public size = input<FormFieldSize>('md');
 
   public options = input([
     { value: 'list', label: 'List' },

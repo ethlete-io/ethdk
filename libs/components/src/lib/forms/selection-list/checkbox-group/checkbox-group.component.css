@@ -25,7 +25,13 @@
 @property --et-checkbox-group-gap {
   syntax: '<length>';
   inherits: true;
-  initial-value: 8px;
+  initial-value: 10px;
+}
+
+@property --et-checkbox-group-label-font-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 13px;
 }
 
 et-checkbox-group {
@@ -33,6 +39,60 @@ et-checkbox-group {
   flex-direction: column;
   gap: var(--et-checkbox-group-gap);
   color: var(--et-surface-color-solid, currentColor);
+
+  > et-label,
+  .et-checkbox-group-label {
+    font-size: var(--et-checkbox-group-label-font-size);
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--et-surface-color-muted-solid, currentColor);
+    user-select: none;
+  }
+
+  &[data-size='sm'] {
+    --et-checkbox-group-label-font-size: 12px;
+    --et-checkbox-group-gap: 8px;
+
+    et-checkbox-option {
+      --et-checkbox-option-size: 16px;
+      --et-checkbox-option-gap: 8px;
+    }
+
+    .et-checkbox-option-label {
+      font-size: 12px;
+      line-height: 16px;
+    }
+
+    .et-checkbox-option-check {
+      inline-size: 10px;
+      block-size: 8px;
+    }
+  }
+
+  &[data-size='lg'] {
+    --et-checkbox-group-label-font-size: 14px;
+    --et-checkbox-group-gap: 12px;
+
+    et-checkbox-option {
+      --et-checkbox-option-size: 24px;
+      --et-checkbox-option-gap: 12px;
+    }
+
+    .et-checkbox-option-label {
+      font-size: 16px;
+      line-height: 24px;
+    }
+
+    .et-checkbox-option-check {
+      inline-size: 14px;
+      block-size: 12px;
+    }
+  }
+
+  &[data-error] {
+    --_et-control-border: var(--et-theme-color-primary-solid);
+  }
 
   .et-checkbox-group-support {
     overflow: clip;

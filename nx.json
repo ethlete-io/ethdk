@@ -54,7 +54,15 @@
     },
     "build-storybook": {
       "cache": true,
-      "inputs": ["default", "^production", "{projectRoot}/.storybook/**/*", "{projectRoot}/tsconfig.storybook.json"]
+      "inputs": [
+        "default",
+        "^production",
+        "{workspaceRoot}/libs/**/*.stories.@(js|jsx|ts|tsx)",
+        "{workspaceRoot}/libs/**/*.docs.mdx",
+        "{workspaceRoot}/libs/**/*-page.mdx",
+        "{projectRoot}/.storybook/**/*",
+        "{projectRoot}/tsconfig.storybook.json"
+      ]
     },
     "@nx/vitest:test": {
       "cache": true,
