@@ -36,6 +36,7 @@ Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU
 | 2000–2099 | Tabs         | [Tabs](/components/tabs)                 |
 | 2100–2199 | Scrollable   | [Scrollable](/components/scrollable)     |
 | 2200–2299 | Form field   | [Forms](/components/forms)               |
+| 2300–2399 | Split button | [Button](/components/button)             |
 
 ::: info Codes below 1200
 Codes `0`–`1001` belong to `@ethlete/query` (query features, auth, web sockets), not to this library.
@@ -152,3 +153,14 @@ All tabs checks run in dev mode only.
 | Code     | Cause                                          | Fix                                                                     |
 | -------- | ---------------------------------------------- | ----------------------------------------------------------------------- |
 | `ET2200` | An `<et-form-field>` contains no form control. | Add a control such as `<et-input>` or `<et-checkbox>` inside the field. |
+
+## Split button (ET23xx)
+
+All split button checks run in dev mode only.
+
+| Code     | Cause                                                              | Fix                                                           |
+| -------- | ------------------------------------------------------------------ | ------------------------------------------------------------- |
+| `ET2300` | An `[etSplitButton]` element has no action segment.                | Add a button with the `etSplitButtonAction` directive.        |
+| `ET2301` | An `[etSplitButton]` element has no trigger segment.               | Add a button with the `etSplitButtonTrigger` directive.       |
+| `ET2302` | `etSplitButtonAction` is not inside an `[etSplitButton]` element.  | Move the action inside the split button (`et-split-button`).  |
+| `ET2303` | `etSplitButtonTrigger` is not inside an `[etSplitButton]` element. | Move the trigger inside the split button (`et-split-button`). |

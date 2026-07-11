@@ -1,0 +1,55 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Components/Button/Split" />
+
+# Split Button — Design Specification
+
+Reference for designers implementing the split button in Figma.
+
+---
+
+## What it is
+
+A split button groups **two adjacent buttons** into one visual control:
+
+- an **action segment** — the primary action, clicked directly
+- a **trigger segment** — a narrow secondary button (usually a chevron icon) that opens a menu with related actions
+
+```
+[ icon  label ][ ▾ ]
+       ↑          ↑
+   action     trigger (divider between the two)
+```
+
+It is a **composition**, not a new button flavor: the segments are regular surface / icon buttons, so every variant, size, color, state and token from the button family applies unchanged.
+
+## Anatomy
+
+- **Container** (`et-split-button`) — inline flex group, `role="group"`. Owns no background or border of its own.
+- **Action segment** (`etSplitButtonAction`) — typically `[et-button]`. Outer corners keep the size's border radius; the corners facing the trigger are squared off.
+- **Trigger segment** (`etSplitButtonTrigger`) — typically `[et-icon-button]`. Same treatment mirrored; inside a split button an icon button loses its circular shape and picks up the surface button's per-size radius on its outer corners.
+- **Divider** — a 1 px line between the segments:
+  - `filled` / `tonal` / `transparent`: rendered as the trigger's start border, default color `currentColor` at 32% (adapts to the variant's text color)
+  - `outline`: the segments' own borders overlap into a single 1 px edge — no extra divider
+
+## Sizing rules
+
+Both segments must use the **same `size`, `variant`, and `color`**. Heights align automatically (segments stretch to the tallest).
+
+## States
+
+Each segment keeps its own `disabled` / `loading` / pressed behavior from the button family. Disabling the whole control means disabling both segments. A disabled `filled` split button stays fully opaque on both segments (the icon-button's usual disabled fade is suppressed to match the surface button).
+
+## Accessibility
+
+- The container is `role="group"`.
+- The trigger is icon-only, so it **must** have an `aria-label` (e.g. "More save options").
+- With `etMenuTrigger` on the trigger segment, the menu system adds `aria-haspopup` / `aria-expanded` automatically.
+
+## CSS custom properties
+
+| Token                             | Default               | Controls           |
+| --------------------------------- | --------------------- | ------------------ |
+| `--et-split-button-divider-color` | `currentColor` at 32% | Divider line color |
+
+All other styling comes from the segments' own button tokens (see the Surface and Icon button docs).
