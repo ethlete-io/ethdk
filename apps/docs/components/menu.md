@@ -124,17 +124,17 @@ For async sources, bind `[loading]` (header spinner + `aria-busy`) and `[error]`
 
 Inputs on `[etMenu]`:
 
-| Input                | Default        | Notes                                                                                                                                 |
-| -------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `placement`          | `'auto'`       | Resolves to `bottom-start` for root menus, `right-start` for submenus/context menus                                                   |
-| `fallbackPlacements` | —              | floating-ui fallbacks                                                                                                                 |
-| `offset`             | `'auto'`       | Resolves to `10` with the arrow, smaller without                                                                                      |
-| `viewportPadding`    | `8`            | Clearance against the viewport edge                                                                                                   |
-| `arrow`              | `true`         | Floating arrow pointing at the trigger (root, trigger-anchored menus only); `arrowPadding` (default `8`) keeps it off rounded corners |
-| `hoverOpen`          | `true`         | Submenu hover-open with `hoverOpenDelay` (120ms) / `hoverCloseDelay` (300ms)                                                          |
-| `autoFocus`          | `true`         | Focus the panel/first item on open                                                                                                    |
-| `open`               | `model(false)` | Two-way open state; methods `show()`, `hide()`, `toggle()`, `closeAll()`, `openAt(point)`                                             |
-| `disabled`           | `false`        | Ignores open requests (trigger clicks, hover, `openAt`) while set                                                                     |
+| Input                | Default        | Notes                                                                                                                                  |
+| -------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `placement`          | `'auto'`       | Resolves to `bottom-start` for root menus, `right-start` for submenus/context menus                                                    |
+| `fallbackPlacements` | —              | floating-ui fallbacks                                                                                                                  |
+| `offset`             | `'auto'`       | Resolves to `10` with the arrow, smaller without                                                                                       |
+| `viewportPadding`    | `8`            | Clearance against the viewport edge                                                                                                    |
+| `arrow`              | `true`         | Floating arrow pointing at the trigger (root, trigger-anchored menus only); `arrowPadding` (default `14`) keeps it off rounded corners |
+| `hoverOpen`          | `true`         | Submenu hover-open with `hoverOpenDelay` (120ms) / `hoverCloseDelay` (300ms)                                                           |
+| `autoFocus`          | `true`         | Focus the panel/first item on open                                                                                                     |
+| `open`               | `model(false)` | Two-way open state; methods `show()`, `hide()`, `toggle()`, `closeAll()`, `openAt(point)`                                              |
+| `disabled`           | `false`        | Ignores open requests (trigger clicks, hover, `openAt`) while set                                                                      |
 
 ### Keyboard
 

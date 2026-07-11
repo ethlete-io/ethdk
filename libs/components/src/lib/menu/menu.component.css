@@ -84,27 +84,6 @@
   /* mirrors the .et-menu surface background and border so the arrow reads as part of the panel */
   --et-overlay-arrow-background: var(--et-surface-background-solid, var(--et-surface-2, rgb(32 32 32)));
   --et-overlay-arrow-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
-
-  /* the rotated arrow dips ~half its diagonal (~9px for a 14px square) past the panel edge nearest
-     the anchor; this keeps the adjacent content (search field / menu items) clear of it */
-  --_et-menu-arrow-clearance: 13px;
-}
-
-/* arrow on the top edge (panel below the trigger): push the first content down.
-   the header collapses to display:none without a search field, so the body becomes the first row. */
-.et-overlay--menu[data-overlay-placement^='bottom'] .et-menu {
-  .et-menu-header:has(input[etmenusearch]) {
-    padding-block-start: var(--_et-menu-arrow-clearance);
-  }
-
-  .et-menu-header:not(:has(input[etmenusearch])) + .et-menu-body {
-    padding-block-start: var(--_et-menu-arrow-clearance);
-  }
-}
-
-/* arrow on the bottom edge (panel above the trigger): push the last content up */
-.et-overlay--menu[data-overlay-placement^='top'] .et-menu .et-menu-body {
-  padding-block-end: var(--_et-menu-arrow-clearance);
 }
 
 .et-menu {

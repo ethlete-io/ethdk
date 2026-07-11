@@ -73,6 +73,9 @@
     --et-overlay-arrow-border,
     var(--_et-overlay-arrow-pane-border-color, transparent)
   );
+  --_et-overlay-arrow-clip: calc(
+    var(--_et-overlay-arrow-size) - var(--_et-overlay-arrow-overlap) - 2 * var(--_et-overlay-arrow-border-width)
+  );
 
   position: absolute;
   z-index: 1;
@@ -106,6 +109,7 @@
 [data-overlay-placement^='top'] > .et-overlay-arrow {
   bottom: calc(var(--_et-overlay-arrow-overlap) * -1);
   left: 0;
+  clip-path: inset(var(--_et-overlay-arrow-clip) -100% -100% -100%);
 
   &::before {
     border-right-width: var(--_et-overlay-arrow-border-width);
@@ -116,6 +120,7 @@
 [data-overlay-placement^='right'] > .et-overlay-arrow {
   left: calc(var(--_et-overlay-arrow-overlap) * -1);
   top: 0;
+  clip-path: inset(-100% var(--_et-overlay-arrow-clip) -100% -100%);
 
   &::before {
     border-bottom-width: var(--_et-overlay-arrow-border-width);
@@ -126,6 +131,7 @@
 [data-overlay-placement^='bottom'] > .et-overlay-arrow {
   top: calc(var(--_et-overlay-arrow-overlap) * -1);
   left: 0;
+  clip-path: inset(-100% -100% var(--_et-overlay-arrow-clip) -100%);
 
   &::before {
     border-top-width: var(--_et-overlay-arrow-border-width);
@@ -136,6 +142,7 @@
 [data-overlay-placement^='left'] > .et-overlay-arrow {
   right: calc(var(--_et-overlay-arrow-overlap) * -1);
   top: 0;
+  clip-path: inset(-100% -100% -100% var(--_et-overlay-arrow-clip));
 
   &::before {
     border-top-width: var(--_et-overlay-arrow-border-width);

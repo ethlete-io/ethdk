@@ -77,3 +77,19 @@ const matchQuery = getMatch(
 See [WebSockets](/query/ws) for the room client this pairs with, and a live demo of this feature below:
 
 <StoryEmbed id="query-demos-live-response-update--default" height="440px" />
+
+## Authoring custom features
+
+`createQueryFeature()` is the extension point behind all the built-in `with*` features — use it to package your own reusable query behavior:
+
+```ts
+const withLogging = <TArgs extends QueryArgs>() =>
+  createQueryFeature<TArgs>({
+    type: 'withLogging',
+    fn: ({ state, execute, deps, flags }) => {
+      nestedEffect(() => console.log('args changed', state.args()));
+    },
+  });
+```
+
+The feature `fn` runs once during query creation and receives the query's internals: its `state` (args, response, error, loading signals), the internal `execute` function, DI `deps` and the resolved feature `flags`. Use `nestedEffect()` (also exported) instead of `effect()` when reacting to signals inside a feature — it creates the effect outside the current reactive context so the feature setup itself never becomes a dependency.

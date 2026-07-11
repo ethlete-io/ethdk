@@ -35,6 +35,8 @@ Each generator emits a `.css` file (import it in your global styles) and a `.d.t
 
 Both provider factories and generators accept a custom prefix (default `'et'`); the provider `prefix` argument must match the generator's `runtimePrefix`.
 
+For code that needs to know the currently active surface (e.g. pickers rendering into overlays), `provideSurfaceContextTracker()` / `injectSurfaceContextTracker()` maintain a registration stack of surface `type` + `elevation` and expose the top entry as signals.
+
 ## Surface themes
 
 A `SurfaceTheme` — all colors are `"R G B"` channel strings:

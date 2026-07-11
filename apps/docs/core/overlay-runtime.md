@@ -66,3 +66,11 @@ The active strategy can be swapped on a live overlay via `ref.updatePositionStra
 Escape and outside-pointer closes only apply to the top-most overlay and are ignored until the enter transition has started — a click that opens an overlay can't immediately close it.
 
 For debugging, the runtime shares the [`et-overlay-debug` localStorage flag](/core/animations#debugging) with the animation system.
+
+## Standalone focus & positioning utilities
+
+The building blocks behind the runtime are exported for custom floating UI:
+
+- **Focus** — `getFocusableElements(container, document)` / `isFocusable(el)` (based on the exported `FOCUSABLE_SELECTOR`), `focusElement(el)`, `applyInitialFocus(…)` and `setupFocusTrap(…)` (returns a cleanup function).
+- **Positioning** — `setupPositioning(…)` plus the lower-level `applyCenteredPosition`, `applyGlobalPosition` and `createAnchoredPositionCleanup` used by the [position strategies](#position-strategies).
+- **Misc** — `getHeadingElement(container)` (finds the first heading for `aria-labelledby`) and the `isHTMLElement` guard.

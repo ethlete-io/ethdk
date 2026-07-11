@@ -36,7 +36,28 @@ Dev mode validates every registered SVG for this: it must have `xmlns`, `width/h
 
 ## Typed icon names
 
-The `etIcon` input is typed against the augmentable `EthleteIconNameRegistry` interface — augment it (or use the generator) to get string-literal completion for your app's icon set instead of plain `string`.
+The `etIcon` input is typed against the augmentable `EthleteIconNameRegistry` interface — augment it (or use the [generator below](#generating-icons)) to get string-literal completion for your app's icon set instead of plain `string`.
+
+## Generating icons
+
+Instead of hand-writing `IconDefinition`s, an Nx generator produces them from an installed SVG icon package:
+
+```bash
+yarn nx g @ethlete/components:icons
+```
+
+It reads a config file (default `src/icons.json`) listing the icons you use:
+
+```json
+{
+  "variants": ["solid"],
+  "icons": ["shield", "user", { "name": "star", "variants": ["solid", "light"] }]
+}
+```
+
+and writes two files: the `IconDefinition` constants plus a `GENERATED_ICONS` aggregate for `provideIcons()` (default `src/generated/et-icons.ts`), and a `.d.ts` that augments `EthleteIconNameRegistry` / `EthleteIconVariantRegistry` so `etIcon` names and variants are string-literal typed. Each SVG is normalized on the way in — `width/height="100%"`, `fill="currentColor"`, license comments stripped — so the output passes the dev-mode validation above.
+
+The `source` option defaults to `'auto'`, which detects Font Awesome (pro, then free) in `node_modules`; any package with a `svgs/<variant>/<name>.svg` layout works when named explicitly. Paths are configurable via `--configPath` / `--outputPath` / `--typesOutputPath`. Re-run the generator whenever the config changes — missing icons warn and are skipped rather than failing the run.
 
 ## Accessibility
 

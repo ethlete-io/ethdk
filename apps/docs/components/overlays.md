@@ -195,13 +195,15 @@ Inside the overlay:
 - `[etOverlayRouterLink]="'/members'"` navigates (absolute or relative paths, `aria-current` when active).
 - `[etOverlayBackOrClose]` goes back — or closes the overlay when there's no history.
 - `ng-template[etOverlayHeaderTemplate]` in a page + `<et-overlay-route-header-template-outlet />` in the shared header lets each route supply its own header content.
+- `ng-template[etOverlaySharedRouteTemplate]` + `<et-overlay-shared-route-template-outlet />` do the same for content shared across **all** routes (rendered wherever the outlet sits).
+- `ng-template[etOverlayRouterOutletDisabledTemplate]` provides fallback content shown while the router outlet is disabled.
 - `injectOverlayRouter()` gives programmatic access (`navigate`, `back`, `currentRoute`, …).
 
 <StoryEmbed id="components-overlay-with-routing--default" height="520px" />
 
 ### Sidebar layouts
 
-`provideSidebarOverlay(config?)` (requires the overlay router) adds a responsive sidebar: above `renderSidebarFrom` (default `'md'`, measured against the **pane** width) the `<et-overlay-sidebar>` renders inline next to the outlet; below it, the sidebar collapses into a navigable route of its own.
+`provideSidebarOverlay(config?)` (requires the overlay router) adds a responsive sidebar: above `renderSidebarFrom` (default `'md'`, measured against the **pane** width) the `<et-overlay-sidebar>` renders inline next to the outlet (with each nav target as an `<et-overlay-sidebar-page>`); below it, the sidebar collapses into a navigable route of its own.
 
 ## Accessibility
 

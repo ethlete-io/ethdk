@@ -85,12 +85,20 @@ npx nx build docs        # strict build; fails on dead links
 ```
 
 For behavioral verification, serve the build (`npx vitepress preview apps/docs --port 4873`,
-background) and drive it with Playwright (same gotchas as the
-`verify-in-storybook` skill: repo-local `playwright`, `domcontentloaded`, never
-`networkidle`). Check per page: `h1` renders, `.story-embed iframe` srcs point at
-the expected story ids, and after `scrollIntoView()` (lazy load!) the frame body
-has class `sb-show-main`. Note: `vitepress preview` serves a stale snapshot after
-a rebuild — restart it before verifying.
+background, **run from the repo root** — it resolves paths against cwd) and run the
+ready-made checker over the pages you touched:
+
+```bash
+node .claude/skills/docs/scripts/verify-pages.mjs /cdk/ /cdk/table /components/menu
+```
+
+It checks per page that the `h1` renders and that every `.story-embed` iframe
+(after `scrollIntoView()` — they're lazy) reaches `body.sb-show-main`, and exits
+non-zero on failure. Requires Storybook on `:4400`. Notes: `vitepress preview`
+serves a stale snapshot after a rebuild — restart it before verifying; a first
+run may need a retry for stories the Storybook dev server compiles on demand.
+If you script it yourself instead, the `verify-in-storybook` gotchas apply
+(repo-local `playwright`, `domcontentloaded`, never `networkidle`).
 
 ## Storybook side
 

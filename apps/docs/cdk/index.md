@@ -30,6 +30,16 @@ Every component has Storybook stories under the **CDK** section:
 - [`main` branch Storybook](https://ethlete-sdk.web.app/)
 - [`next` branch Storybook](https://next-ethlete-sdk.web.app/)
 
+## Migrating from v4
+
+A consumer-facing Nx generator codemods an app from cdk v4 to v5:
+
+```bash
+yarn nx g @ethlete/cdk:migrate-to-v5
+```
+
+It runs seven transforms over your TypeScript, templates and CSS — combobox input/provider renames, `*etLet`/`*ngLet` removal, the theming move to `@ethlete/core` (color-theme class renames included), CDK-menu/`et-menu` consolidation into `MenuImports`, `IsActiveElementDirective` → `ScrollableIsActiveChildDirective`, overlay position-preset rewrites, and the dialog/bottom-sheet merge into the unified overlay (`DialogImports`/`BottomSheetImports` → `OverlayImports`). Each transform can be disabled with its own flag; review the diff afterwards. The [`@ethlete/core` v5 migration](/core/#also-in-the-package) covers the core-side renames.
+
 ## Superseded by @ethlete/components
 
 These CDK domains have a successor — new code should use the `@ethlete/components` version, and fixes made here should usually be mirrored there:

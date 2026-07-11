@@ -72,3 +72,17 @@ post = queryStateResponseSignal(this.postQuery);
 | `EntityStore`                              | No direct equivalent — [caching](/query/caching) dedupes by request; derive shared state with signals. |
 
 The `createLegacyQueryCreator` interop lets both worlds coexist: define new endpoints with the current system and consume them from legacy-style components until those are migrated.
+
+### Automated migration generators
+
+Two Nx generators automate large parts of this migration — run them in order:
+
+```bash
+yarn nx g @ethlete/query:prep-for-query-v3
+yarn nx g @ethlete/query:migrate-to-query-v3
+```
+
+1. **`prep-for-query-v3`** prepares the workspace: it renames every legacy symbol that collides with the current system to its `V2`/`v2` name (`QueryClient` → `V2QueryClient`, `BearerAuthProvider` → `V2BearerAuthProvider`, `buildQueryCacheKey` → `v2BuildQueryCacheKey`, …) in all files importing `@ethlete/query`. Run it (and commit) before upgrading the package.
+2. **`migrate-to-query-v3`** performs the migration itself: it converts `V2QueryClient` instances to `createQueryClient`, generates current-system creators for your legacy ones, rewrites `.prepare()` call sites, wires the [`createLegacyQueryCreator`](#migrating-to-the-current-system) interop where a full conversion isn't possible, removes legacy devtools usage — and writes a migration report listing everything it changed and what still needs manual attention.
+
+Both accept `--skipFormat` to skip re-formatting the touched files. The generators are codemods over your source: review the resulting diff (and the report) rather than trusting it blindly.

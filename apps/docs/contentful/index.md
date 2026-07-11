@@ -102,7 +102,7 @@ The `ContentfulIncludeMap` resolves links against the collection's `includes`:
 - `getEntry<T>(id, contentTypeId)` / `getEntries<T>(ids, contentTypeId)` — pass `ET_CONTENTFUL_ANY_ENTRY_CONTENT_TYPE_SYS_ID` to match any content type. Missing or mismatched entries dev-warn and return `null` (or are omitted from the array).
 - `getAsset(id)` / `getAssets(ids)`
 
-The `isContentfulEntryType<T>(entry, type)` guard narrows an entry by its content-type id.
+The `isContentfulEntryType<T>(entry, type)` guard narrows an entry by its content-type id. To resolve links outside the renderer (e.g. in a page component working with the raw collection), build a map yourself with `createContentfulIncludeMap({ includes })`.
 
 ## Embedded assets
 
