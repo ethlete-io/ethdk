@@ -16,13 +16,37 @@ export default defineConfig({
       { text: 'Components', link: '/components/' },
       { text: 'Query', link: '/query/' },
       { text: 'Types', link: '/types/' },
+      { text: 'ESLint', link: '/eslint/' },
+      { text: 'Contentful', link: '/contentful/' },
+      { text: 'CLI', link: '/cli/' },
     ],
 
     sidebar: {
+      '/eslint/': [
+        {
+          text: 'ESLint plugin',
+          items: [
+            { text: 'Overview', link: '/eslint/' },
+            { text: 'Rules', link: '/eslint/rules' },
+          ],
+        },
+      ],
       '/types/': [
         {
           text: 'Types',
           items: [{ text: 'Overview', link: '/types/' }],
+        },
+      ],
+      '/cli/': [
+        {
+          text: 'CLI',
+          items: [{ text: 'Overview', link: '/cli/' }],
+        },
+      ],
+      '/contentful/': [
+        {
+          text: 'Contentful',
+          items: [{ text: 'Overview', link: '/contentful/' }],
         },
       ],
       '/query/': [

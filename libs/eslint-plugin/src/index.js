@@ -30,7 +30,6 @@ const noAngularSeoServices = require('./rules/no-angular-seo-services');
 const preferCloneEqual = require('./rules/prefer-clone-equal');
 const noDocumentCookie = require('./rules/no-document-cookie');
 const injectMemberAccessibility = require('./rules/inject-member-accessibility');
-const noPublicProperty = require('./rules/no-public-property');
 const noRedundantInternal = require('./rules/no-redundant-internal');
 const templateMemberAccessibility = require('./rules/template-member-accessibility');
 const noAngularRouterApi = require('./rules/no-angular-router-api');
@@ -87,7 +86,6 @@ const plugin = {
     'prefer-clone-equal': preferCloneEqual,
     'no-document-cookie': noDocumentCookie,
     'inject-member-accessibility': injectMemberAccessibility,
-    'no-public-property': noPublicProperty,
     'no-redundant-internal': noRedundantInternal,
     'template-member-accessibility': templateMemberAccessibility,
     'no-angular-router-api': noAngularRouterApi,

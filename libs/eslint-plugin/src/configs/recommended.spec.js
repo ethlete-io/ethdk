@@ -137,12 +137,11 @@ test('explicit public method is valid', () => {
 
 test('explicit public property is valid', () => {
   const msgs = lint(`class Foo { public value = 1; }`);
-  expect(ruleIds(msgs)).not.toContain('ethlete/no-public-property');
+  expect(ruleIds(msgs)).not.toContain('ethlete/template-member-accessibility');
 });
 
 test('explicit public injected property is valid', () => {
   const msgs = lint(`class Foo { public service = inject(MyService); }`);
-  expect(ruleIds(msgs)).not.toContain('ethlete/no-public-property');
   expect(ruleIds(msgs)).not.toContain('ethlete/inject-member-accessibility');
 });
 

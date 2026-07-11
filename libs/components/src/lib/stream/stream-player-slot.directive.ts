@@ -97,7 +97,8 @@ export class StreamPlayerSlotDirective {
         const surface = this.resolvedSurface();
 
         untracked(() => {
-          setInputSignal(this.provideSurface.surface, surface?.name ?? null);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          setInputSignal(this.provideSurface.surface as any, surface?.name ?? null);
         });
       });
     }

@@ -1,11 +1,23 @@
-# cli
+# @ethlete/cli
 
-This library was generated with [Nx](https://nx.dev).
+Release tooling for Changesets-based repos — installs the `et` binary.
 
-## Building
+## Installation
 
-Run `nx build cli` to build the library.
+```bash
+yarn add --dev @ethlete/cli
+```
 
-## Running unit tests
+## Usage
 
-Run `nx test cli` to execute the unit tests via [Jest](https://jestjs.io).
+```bash
+yarn et release
+```
+
+Turns pending changesets into a tagged, pushed release commit (version → tag → commit → push).
+
+## Documentation
+
+Full command reference on the docs site:
+
+- [Overview & usage](https://ethlete-sdk-docs.web.app/cli/)

@@ -43,6 +43,9 @@ reviewing one.
 
 - Code-first: lead with a canonical usage snippet (lift from the domain's
   `stories/components/*.ts` — those are the maintained examples).
+- **Yarn, never npm/npx** in install and run snippets (docs pages *and* package
+  READMEs): `yarn add [--dev] @ethlete/<name>`, `yarn nx …`, `yarn eslint …` —
+  the team uses yarn everywhere (root `yarn.lock`).
 - Options as tables with **verified defaults** — read the source, don't guess.
 - Short sections; cross-link sibling guides (`/components/overlays`).
 - Don't duplicate Storybook design-spec `.docs.mdx` pages (buttons have these) —

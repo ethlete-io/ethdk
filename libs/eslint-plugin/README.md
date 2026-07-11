@@ -5,7 +5,7 @@ ESLint plugin with custom rules and shareable flat configs for the Ethlete codin
 ## Installation
 
 ```bash
-npm install --save-dev @ethlete/eslint-plugin
+yarn add --dev @ethlete/eslint-plugin
 ```
 
 ## Usage
@@ -17,9 +17,10 @@ import ethlete from '@ethlete/eslint-plugin';
 export default [...ethlete.configs.recommended];
 ```
 
-## Rules
+## Documentation
 
-| Rule                             | Description                                                                                     |
-| -------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `ethlete/no-inject-chain`        | Disallows `inject(X).member` chaining — use a `const` instead                                   |
-| `ethlete/no-trivial-return-type` | Disallows explicit `void`, `boolean`, `string`, `number` return types that TypeScript can infer |
+The full rule reference (all rules, grouped, with defaults and auto-fix support) and
+config documentation live on the docs site:
+
+- [Overview & usage](https://ethlete-sdk-docs.web.app/eslint/)
+- [Rule reference](https://ethlete-sdk-docs.web.app/eslint/rules)

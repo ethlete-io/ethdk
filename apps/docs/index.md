@@ -23,10 +23,17 @@ features:
   - title: '@ethlete/types'
     details: Shared TypeScript types for the Ethlete API — mostly generated, zero runtime code.
     link: /types/
+  - title: '@ethlete/eslint-plugin'
+    details: Custom ESLint rules and shareable flat configs enforcing the Ethlete styleguide.
+    link: /eslint/
   - title: '@ethlete/core'
     details: Shared primitives — runtime errors, utilities and base services used across the SDK.
   - title: '@ethlete/cdk'
     details: Angular CDK extensions and headless UI primitives.
   - title: '@ethlete/contentful'
     details: Contentful rendering helpers for Angular.
+    link: /contentful/
+  - title: '@ethlete/cli'
+    details: Release tooling for Changesets-based repos — the `et release` command.
+    link: /cli/
 ---
