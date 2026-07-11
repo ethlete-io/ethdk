@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { GridComponent } from './grid.component';
+import { provideGridConfig } from './headless/grid-config';
 import { GridDirective } from './headless/grid.directive';
 import { GridItemConfig } from './headless/grid.types';
 
@@ -32,6 +33,13 @@ class ResizeObserverMock {
       this.callback(entries, this as unknown as ResizeObserver);
     }
   }
+}
+
+@Component({
+  template: '',
+})
+class TestItemComponent {
+  data = input<unknown>();
 }
 
 @Component({
@@ -67,7 +75,10 @@ describe('GridComponent', () => {
       value: ResizeObserverMock,
     });
 
-    TestBed.configureTestingModule({ imports: [TestHostComponent] });
+    TestBed.configureTestingModule({
+      imports: [TestHostComponent],
+      providers: [...provideGridConfig({ registrations: [{ type: 'test', component: TestItemComponent }] })],
+    });
     fixture = TestBed.createComponent(TestHostComponent);
   });
 

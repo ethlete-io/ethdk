@@ -1,6 +1,7 @@
-import { Directive, ElementRef, effect, inject, input, model, signal, untracked } from '@angular/core';
-import { canUseSessionMemory, createAutoSessionMemoryKey, createSessionMemory } from '@ethlete/core';
+import { Directive, ElementRef, afterNextRender, effect, inject, input, model, signal, untracked } from '@angular/core';
+import { RuntimeError, canUseSessionMemory, createAutoSessionMemoryKey, createSessionMemory } from '@ethlete/core';
 import { TabBarDirective } from '../../headless/tab-bar.directive';
+import { TAB_ERROR_CODES } from '../../tab-errors';
 import { TAB_GROUP_TOKEN } from './tab-group.tokens';
 import { TabPanelDirective } from './tab-panel.directive';
 
@@ -22,6 +23,9 @@ export class TabGroupDirective {
 
   /** @internal */
   public panels = signal<TabPanelDirective[]>([]);
+
+  /** @internal Set by composing components (e.g. et-tab-group) that render panel content themselves instead of registering [etTabPanel] directives. */
+  public managesPanelsInternally = signal(false);
 
   public restoredSessionMemoryKey = signal('');
 
@@ -112,6 +116,17 @@ export class TabGroupDirective {
 
       this.getSessionMemory(sessionMemoryKey).write(resolvedSelectedIndex);
     });
+
+    if (ngDevMode) {
+      afterNextRender(() => {
+        if (!this.managesPanelsInternally() && this.tabBar.triggers().length > 0 && this.panels().length === 0) {
+          throw new RuntimeError(
+            TAB_ERROR_CODES.MISSING_TAB_PANEL,
+            '[TabGroupDirective] The tab group has tab triggers but no [etTabPanel] was registered. Add a panel per tab.',
+          );
+        }
+      });
+    }
   }
 
   /** @internal */

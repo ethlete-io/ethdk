@@ -26,7 +26,7 @@ import {
   signalHostStyles,
   typedBreakpointTransform,
 } from '@ethlete/core';
-import { ScrollableErrorCode } from './scrollable-errors';
+import { SCROLLABLE_ERROR_CODES } from './scrollable-errors';
 import {
   ScrollableDirection,
   ScrollableItemSize,
@@ -189,7 +189,7 @@ export class ScrollableDirective {
       afterNextRender(() => {
         if (!this.scrollContainerRef()) {
           throw new RuntimeError(
-            ScrollableErrorCode.MISSING_SCROLL_CONTAINER,
+            SCROLLABLE_ERROR_CODES.MISSING_SCROLL_CONTAINER,
             '[ScrollableDirective] No scroll container registered. ' +
               'Use registerScrollContainer() from the Tier 3 template or provide a scroll container element.',
           );

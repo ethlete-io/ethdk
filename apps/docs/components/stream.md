@@ -64,14 +64,17 @@ A slot's player can detach into a floating, draggable PiP window and hand back l
 
 ## Accessibility
 
-The PiP chrome is fully operable: its focus/close/grid-toggle buttons carry `aria-label`s, and in grid mode each cell is a keyboard-activatable `role="button"` (<kbd>Enter</kbd>/<kbd>Space</kbd> selects the featured player).
-
-The embedded players themselves are third-party iframes, and the built-in consent/loading/error overlays render plain headings and buttons without dialog or live-region semantics — so give the surrounding region an accessible name (e.g. a heading before the slot) and announce player state changes yourself where they matter.
+- The PiP chrome is fully operable: its focus/close/grid-toggle buttons carry `aria-label`s, and in grid mode each cell is a keyboard-activatable `role="button"` (<kbd>Enter</kbd>/<kbd>Space</kbd> selects the featured player).
+- The built-in overlays carry live-region semantics: the loading overlay is a `role="status"` region labelled "Loading", the error overlay announces via `role="alert"`, and the consent gate is a `role="group"` labelled by its heading. Custom replacements (via `provideStreamConfig`) should provide equivalents.
+- Iframes the library creates itself (Kick, SOOP, Dailymotion, TikTok) carry a descriptive `title`. The YouTube, Vimeo, Twitch and Facebook iframes are created by the platform SDKs and can't be titled from here — give those slots surrounding context (e.g. a heading).
 
 ## Theming
 
+All stream chrome resolves its colors from the surface/color theme systems. Slots provide a `type: 'dark'` surface scope one elevation above their context (video UI always reads as a dark surface), and the PiP chrome — which mounts into `document.body` — provides the same scope itself.
+
 - Slot: `--et-stream-player-slot-radius` (`12px`).
-- PiP window: `--et-pip-border-radius` (`8px`), `--et-pip-bg`, `--et-pip-backdrop-blur` (`4px`), `--et-pip-title-bar-height` (`32px`), `--et-stream-pip-chrome-featured-ring-color`, plus `--et-pip-slot-placeholder-*` (gap, padding, icon-size, border-radius, message typography) for the placeholder left behind.
+- PiP window: `--et-pip-border-radius` (`8px`), `--et-pip-backdrop-blur` (`4px`), `--et-pip-title-bar-height` (`32px`), plus `--et-pip-slot-placeholder-*` (gap, padding, icon-size, border-radius, message typography) for the placeholder left behind. The glass background derives from the surface theme; override it via `--et-pip-bg`.
+- PiP grid: the featured-cell ring uses the color theme's primary; override via `--et-stream-pip-chrome-featured-ring-color`.
 - Consent gate and error overlay: `--et-stream-consent-*` and `--et-stream-player-error-*` families covering padding, gap, icon size, border radius and heading/description typography.
 
 ## Error codes

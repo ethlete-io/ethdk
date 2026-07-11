@@ -50,10 +50,11 @@ export class TikTokPlayerDirective implements StreamPlayer {
         const h = this.params.height();
 
         iframe.src = `https://www.tiktok.com/player/v1/${videoId}?rel=0`;
+        iframe.title = 'TikTok player';
         iframe.width = typeof w === 'number' ? String(w) : w;
         iframe.height = typeof h === 'number' ? String(h) : h;
         this.renderer.setStyle(iframe, { border: 'none' });
-        iframe.scrolling = 'no';
+        this.renderer.setAttribute(iframe, 'scrolling', 'no');
         iframe.allowFullscreen = true;
         iframe.allow = 'accelerometer; autoplay; fullscreen; encrypted-media; gyroscope; picture-in-picture';
 

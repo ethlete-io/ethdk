@@ -29,6 +29,7 @@ import { injectStreamPlayerErrorConfig } from './stream-player-error-config';
   hostDirectives: [StreamPlayerErrorDirective],
   host: {
     class: 'et-stream-player-error',
+    role: 'alert',
   },
   styles: `
     @property --et-stream-player-error-gap {

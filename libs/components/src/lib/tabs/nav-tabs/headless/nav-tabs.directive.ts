@@ -1,6 +1,8 @@
-import { Directive, computed } from '@angular/core';
+import { DestroyRef, Directive, computed, inject } from '@angular/core';
 import { NavigationEnd } from '@angular/router';
 import { injectRouterEvent } from '@ethlete/core';
+import { TabBarDirective } from '../../headless/tab-bar.directive';
+import { injectNavTabsRegistry } from './nav-tabs-registry';
 import { NAV_TABS_TOKEN } from './nav-tabs.tokens';
 
 @Directive({
@@ -9,6 +11,9 @@ import { NAV_TABS_TOKEN } from './nav-tabs.tokens';
 })
 export class NavTabsDirective {
   private routerEvent = injectRouterEvent();
+  private registry = injectNavTabsRegistry();
+  private tabBar = inject(TabBarDirective, { self: true });
+  private destroyRef = inject(DestroyRef);
 
   /** @internal */
   public navigationVersion = computed(() => {
@@ -20,4 +25,12 @@ export class NavTabsDirective {
 
     return -1;
   });
+
+  constructor() {
+    this.registry.register(this.tabBar);
+
+    this.destroyRef.onDestroy(() => {
+      this.registry.unregister(this.tabBar);
+    });
+  }
 }

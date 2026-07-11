@@ -1,5 +1,8 @@
-import { Directive, computed, inject } from '@angular/core';
+import { Directive, afterNextRender, computed, inject } from '@angular/core';
+import { RuntimeError } from '@ethlete/core';
 import { TabBarDirective } from '../../headless/tab-bar.directive';
+import { TAB_ERROR_CODES } from '../../tab-errors';
+import { injectNavTabsRegistry } from './nav-tabs-registry';
 
 let nextOutletId = 0;
 
@@ -12,9 +15,25 @@ let nextOutletId = 0;
   },
 })
 export class NavTabsOutletDirective {
-  private tabBar = inject(TabBarDirective);
+  private nearestTabBar = inject(TabBarDirective, { optional: true });
+  private registry = injectNavTabsRegistry();
 
   public readonly ID = `et-nav-tabs-outlet-${nextOutletId++}`;
 
-  public activeTriggerId = computed(() => this.tabBar.activeTrigger()?.ID ?? null);
+  private tabBar = computed(() => this.nearestTabBar ?? this.registry.single());
+
+  public activeTriggerId = computed(() => this.tabBar()?.activeTrigger()?.ID ?? null);
+
+  constructor() {
+    if (ngDevMode) {
+      afterNextRender(() => {
+        if (!this.nearestTabBar && !this.registry.hasAny()) {
+          throw new RuntimeError(
+            TAB_ERROR_CODES.MISSING_NAV_TABS,
+            '[NavTabsOutletDirective] et-nav-tabs-outlet requires an et-nav-tabs element on the page.',
+          );
+        }
+      });
+    }
+  }
 }

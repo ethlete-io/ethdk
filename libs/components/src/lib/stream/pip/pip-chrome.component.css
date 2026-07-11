@@ -10,12 +10,6 @@ et-stream-pip-chrome.et-stream-pip-chrome--grid
   pointer-events: none;
 }
 
-@property --et-stream-pip-chrome-featured-ring-color {
-  syntax: '<color>';
-  inherits: false;
-  initial-value: #3b82f6;
-}
-
 .et-stream-pip-chrome__stage {
   position: absolute;
   inset: 0;
@@ -74,7 +68,7 @@ et-stream-pip-chrome.et-stream-pip-chrome--grid .et-stream-pip-chrome__cell::aft
 
 et-stream-pip-chrome.et-stream-pip-chrome--grid .et-stream-pip-chrome__cell:hover::after,
 et-stream-pip-chrome.et-stream-pip-chrome--grid .et-stream-pip-chrome__cell:focus-visible::after {
-  box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 0 0 5px color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 35%, transparent);
 }
 
 et-stream-pip-chrome.et-stream-pip-chrome--grid .et-stream-pip-chrome__cell:focus-visible {
@@ -82,7 +76,8 @@ et-stream-pip-chrome.et-stream-pip-chrome--grid .et-stream-pip-chrome__cell:focu
 }
 
 et-stream-pip-chrome.et-stream-pip-chrome--grid .et-stream-pip-chrome__cell--featured::after {
-  box-shadow: inset 0 0 0 5px var(--et-stream-pip-chrome-featured-ring-color);
+  box-shadow: inset 0 0 0 5px
+    var(--et-stream-pip-chrome-featured-ring-color, var(--et-theme-color-primary-solid, #3b82f6));
 }
 
 et-pip-player {

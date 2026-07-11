@@ -1,4 +1,6 @@
-import { Directive, computed, effect, inject, input } from '@angular/core';
+import { Directive, afterNextRender, computed, effect, inject, input } from '@angular/core';
+import { RuntimeError } from '@ethlete/core';
+import { TAB_ERROR_CODES } from '../../tab-errors';
 import { TAB_GROUP_TOKEN, TAB_PANEL_TOKEN } from './tab-group.tokens';
 
 let nextPanelId = 0;
@@ -15,21 +17,27 @@ let nextPanelId = 0;
   },
 })
 export class TabPanelDirective {
-  private tabGroup = inject(TAB_GROUP_TOKEN);
+  private tabGroup = inject(TAB_GROUP_TOKEN, { optional: true });
 
   public triggerId = input<string | null>(null);
   public readonly ID = `et-tab-panel-${nextPanelId++}`;
 
   public isActive = computed(() => {
-    const idx = this.tabGroup.panels().indexOf(this);
+    const tabGroup = this.tabGroup;
 
-    return idx === this.tabGroup.tabBar.selectedIndex();
+    if (!tabGroup) {
+      return false;
+    }
+
+    const idx = tabGroup.panels().indexOf(this);
+
+    return idx === tabGroup.tabBar.selectedIndex();
   });
 
   public isInactive = computed(() => !this.isActive());
 
   public isHidden = computed(() => {
-    if (this.tabGroup.preserveContent()) {
+    if (this.tabGroup?.preserveContent()) {
       return !this.isActive();
     }
 
@@ -37,7 +45,13 @@ export class TabPanelDirective {
   });
 
   public shouldRender = computed(() => {
-    if (this.tabGroup.preserveContent()) {
+    const tabGroup = this.tabGroup;
+
+    if (!tabGroup) {
+      return false;
+    }
+
+    if (tabGroup.preserveContent()) {
       return true;
     }
 
@@ -46,9 +60,20 @@ export class TabPanelDirective {
 
   constructor() {
     effect(() => {
-      this.tabGroup.registerPanel(this);
+      this.tabGroup?.registerPanel(this);
 
-      return () => this.tabGroup.unregisterPanel(this);
+      return () => this.tabGroup?.unregisterPanel(this);
     });
+
+    if (ngDevMode) {
+      afterNextRender(() => {
+        if (!this.tabGroup) {
+          throw new RuntimeError(
+            TAB_ERROR_CODES.MISSING_TAB_GROUP,
+            '[TabPanelDirective] etTabPanel must be placed inside an [etTabGroup] element (e.g. et-tab-group).',
+          );
+        }
+      });
+    }
   }
 }

@@ -9,6 +9,8 @@ import { injectStreamPlayerLoadingConfig } from './stream-player-loading-config'
   imports: [SpinnerComponent],
   host: {
     class: 'et-stream-player-loading',
+    role: 'status',
+    'aria-label': 'Loading',
   },
   styles: `
     .et-stream-player-loading {

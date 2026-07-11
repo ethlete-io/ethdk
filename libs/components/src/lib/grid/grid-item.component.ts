@@ -207,7 +207,7 @@ import { GRID_TOKEN } from './headless/grid.tokens';
   `,
 })
 export class GridItemComponent {
-  private grid = inject(GRID_TOKEN);
+  private grid = inject(GRID_TOKEN, { optional: true });
   private gridItem = inject(GridItemDirective);
   private provideSurface = inject(ProvideSurfaceDirective);
   private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
@@ -220,7 +220,7 @@ export class GridItemComponent {
 
   public removed = output<void>();
 
-  protected isReadOnly = computed(() => this.grid.readOnly());
+  protected isReadOnly = computed(() => this.grid?.readOnly() ?? false);
   private resolvedSurface = computed(() => {
     const themes = this.surfaceThemes;
     const parent = this.parentSurfaceProvider;
@@ -246,28 +246,30 @@ export class GridItemComponent {
   }
 
   public applyKeyboardShortcut(event: KeyboardEvent) {
-    if (this.isReadOnly()) return;
+    const grid = this.grid;
+
+    if (!grid || this.isReadOnly()) return;
     const pos = this.gridItem.currentPosition();
 
     if (!pos) return;
 
-    const columns = this.grid.activeColumns();
+    const columns = grid.activeColumns();
 
     if (event.ctrlKey || event.metaKey) {
       let handled = true;
 
       switch (event.key) {
         case 'ArrowLeft':
-          this.grid.moveItem(this.gridItem.itemId(), { ...pos, col: Math.max(0, pos.col - 1) });
+          grid.moveItem(this.gridItem.itemId(), { ...pos, col: Math.max(0, pos.col - 1) });
           break;
         case 'ArrowRight':
-          this.grid.moveItem(this.gridItem.itemId(), { ...pos, col: Math.min(columns - pos.colSpan, pos.col + 1) });
+          grid.moveItem(this.gridItem.itemId(), { ...pos, col: Math.min(columns - pos.colSpan, pos.col + 1) });
           break;
         case 'ArrowUp':
-          this.grid.moveItem(this.gridItem.itemId(), { ...pos, row: Math.max(0, pos.row - 1) });
+          grid.moveItem(this.gridItem.itemId(), { ...pos, row: Math.max(0, pos.row - 1) });
           break;
         case 'ArrowDown':
-          this.grid.moveItem(this.gridItem.itemId(), { ...pos, row: pos.row + 1 });
+          grid.moveItem(this.gridItem.itemId(), { ...pos, row: pos.row + 1 });
           break;
         default:
           handled = false;
@@ -284,16 +286,16 @@ export class GridItemComponent {
 
       switch (event.key) {
         case 'ArrowRight':
-          this.grid.resizeItem({ id: this.gridItem.itemId(), newColSpan: pos.colSpan + 1, newRowSpan: pos.rowSpan });
+          grid.resizeItem({ id: this.gridItem.itemId(), newColSpan: pos.colSpan + 1, newRowSpan: pos.rowSpan });
           break;
         case 'ArrowLeft':
-          this.grid.resizeItem({ id: this.gridItem.itemId(), newColSpan: pos.colSpan - 1, newRowSpan: pos.rowSpan });
+          grid.resizeItem({ id: this.gridItem.itemId(), newColSpan: pos.colSpan - 1, newRowSpan: pos.rowSpan });
           break;
         case 'ArrowDown':
-          this.grid.resizeItem({ id: this.gridItem.itemId(), newColSpan: pos.colSpan, newRowSpan: pos.rowSpan + 1 });
+          grid.resizeItem({ id: this.gridItem.itemId(), newColSpan: pos.colSpan, newRowSpan: pos.rowSpan + 1 });
           break;
         case 'ArrowUp':
-          this.grid.resizeItem({ id: this.gridItem.itemId(), newColSpan: pos.colSpan, newRowSpan: pos.rowSpan - 1 });
+          grid.resizeItem({ id: this.gridItem.itemId(), newColSpan: pos.colSpan, newRowSpan: pos.rowSpan - 1 });
           break;
         default:
           handled = false;
@@ -307,7 +309,7 @@ export class GridItemComponent {
 
     if (event.key === 'Delete' || event.key === 'Backspace') {
       if (event.ctrlKey || event.metaKey) {
-        this.grid.removeItem(this.gridItem.itemId());
+        grid.removeItem(this.gridItem.itemId());
         this.removed.emit();
         event.preventDefault();
       }

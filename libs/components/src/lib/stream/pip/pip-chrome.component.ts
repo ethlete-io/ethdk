@@ -1,4 +1,14 @@
-import { Component, ElementRef, ViewEncapsulation, computed, inject, viewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  ViewEncapsulation,
+  computed,
+  effect,
+  inject,
+  untracked,
+  viewChild,
+} from '@angular/core';
+import { ProvideSurfaceDirective, injectSurfaceThemes, resolveSurfaceByElevation, setInputSignal } from '@ethlete/core';
 import { WINDOW_CONTROL_BUTTON_KINDS, WINDOW_CONTROL_BUTTON_SIZES, WindowControlButtonComponent } from '../../button';
 import {
   ARROW_OUT_UP_RIGHT_ICON,
@@ -50,6 +60,7 @@ import { PipWindowComponent } from './pip-window.component';
       },
     },
   ],
+  hostDirectives: [ProvideSurfaceDirective],
   host: {
     class: 'et-stream-pip-chrome',
     '[class.et-stream-pip-chrome--grid]': 'state.multiView()',
@@ -57,6 +68,8 @@ import { PipWindowComponent } from './pip-window.component';
 })
 export class StreamPipChromeComponent implements PipChromeRef {
   public pipManager = injectPipManager();
+  private provideSurface = inject(ProvideSurfaceDirective);
+  private surfaceThemes = injectSurfaceThemes({ optional: true });
   public stageRef = viewChild<PipStageDirective, ElementRef<HTMLElement>>(PipStageDirective, { read: ElementRef });
   public pipWindowRef = viewChild(PipWindowComponent);
   public gridBtnRef = viewChild<PipGridToggleDirective, ElementRef<HTMLElement>>(PipGridToggleDirective, {
@@ -73,4 +86,18 @@ export class StreamPipChromeComponent implements PipChromeRef {
   public readonly CLOSE_KIND = WINDOW_CONTROL_BUTTON_KINDS.CLOSE;
   public controlsColor = computed(() => this.pipManager.pipChromeConfig().controlsColor);
   public readonly WINDOW_CONTROL_BUTTON_SIZE = WINDOW_CONTROL_BUTTON_SIZES.SM;
+
+  constructor() {
+    // The chrome is mounted into document.body, so no surface context is inherited.
+    // Stream UI sits on video content and always reads as a dark surface.
+    if (this.surfaceThemes) {
+      effect(() => {
+        const surface = resolveSurfaceByElevation(this.surfaceThemes ?? [], 'dark', 1);
+
+        untracked(() => {
+          setInputSignal(this.provideSurface.surface, surface?.name ?? null);
+        });
+      });
+    }
+  }
 }

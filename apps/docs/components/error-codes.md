@@ -118,9 +118,28 @@ Codes `0`–`1001` belong to `@ethlete/query` (query features, auth, web sockets
 
 `ET1802`–`ET1805` are dev-mode-only SVG validations; `ET1800`/`ET1801` also throw in production.
 
-## Grid (ET19xx) & Tabs (ET20xx)
+## Grid (ET19xx)
 
-`GRID_ERROR_CODES` (`1900`–`1903`) and `TAB_ERROR_CODES` (`2000`–`2003`) are allocated and exported, but no check currently throws them.
+All grid checks run in dev mode only.
+
+| Code     | Cause                                                                           | Fix                                                                                  |
+| -------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `ET1900` | `etGridItem` is not inside an `[etGrid]` element.                               | Render items inside the grid (e.g. `et-grid`).                                       |
+| `ET1901` | `etGridDrag` / `etGridResize` is used outside an `[etGridItem]` element.        | Place the handle on or inside a grid item.                                           |
+| `ET1902` | Two grid item configs share the same `id`.                                      | Make item ids unique; the offending configs are logged alongside the error.          |
+| `ET1903` | `restoreState()` received a state with breakpoint names that aren't configured. | Align the serialized state's breakpoints with the grid's `breakpoints` input.        |
+| `ET1904` | An item's `type` has no registration (such items render nothing).               | Register the type via `provideGridConfig()`; the message lists the registered types. |
+
+## Tabs (ET20xx)
+
+All tabs checks run in dev mode only.
+
+| Code     | Cause                                                                                     | Fix                                                                          |
+| -------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `ET2000` | A tab trigger has no enclosing tab bar.                                                   | Place it inside `et-tab-group`, `et-nav-tabs`, or an `[etTabBar]` element.   |
+| `ET2001` | `<et-tab>` or `etTabPanel` is outside a tab group (an orphan `<et-tab>` renders nothing). | Move it inside `et-tab-group` / an `[etTabGroup]` element.                   |
+| `ET2002` | A headless tab group has triggers but no registered `etTabPanel`.                         | Add a panel per tab.                                                         |
+| `ET2003` | `a[et-nav-tab-link]` or `et-nav-tabs-outlet` is used without an `et-nav-tabs` element.    | Add the `et-nav-tabs` bar (links go inside it; the outlet can be a sibling). |
 
 ## Scrollable (ET21xx)
 

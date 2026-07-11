@@ -14,8 +14,9 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { injectPrefersReducedMotion, signalHostElementDimensions } from '@ethlete/core';
+import { injectPrefersReducedMotion, RuntimeError, signalHostElementDimensions } from '@ethlete/core';
 import { filter, switchMap, tap, timer } from 'rxjs';
+import { GRID_ERROR_CODES } from '../grid-errors';
 import { injectGridConfig } from './grid-config';
 import { GRID_TOKEN } from './grid.tokens';
 import {
@@ -304,6 +305,10 @@ export class GridDirective {
       const initial = this.initialItems();
       untracked(() => {
         if (initial.length === 0) return;
+
+        if (ngDevMode) {
+          this.assertValidItemConfigs(initial);
+        }
 
         const current = this.itemConfigs();
 
@@ -734,6 +739,23 @@ export class GridDirective {
   }
 
   public restoreState(state: GridSerializedState) {
+    if (ngDevMode) {
+      this.assertValidItemConfigs(state.items);
+
+      const known = this.breakpoints().map((b) => b.name);
+      const unknown = Object.keys(state.columns).filter((bp) => !known.includes(bp));
+
+      if (unknown.length > 0) {
+        throw new RuntimeError(
+          GRID_ERROR_CODES.INVALID_LAYOUT_STATE,
+          `[GridDirective] restoreState received a state with unknown breakpoint(s) ${unknown
+            .map((name) => `"${name}"`)
+            .join(', ')}. Configured breakpoints are ${known.map((name) => `"${name}"`).join(', ')}.`,
+          state,
+        );
+      }
+    }
+
     const items: GridItemConfig[] = state.items.map((item) => ({
       id: item.id,
       type: item.type,
@@ -760,6 +782,23 @@ export class GridDirective {
     }
 
     this.layoutOverrides.set(overrides);
+  }
+
+  /** Dev-mode-only: rejects consumer-provided item configs whose ids are not unique. */
+  private assertValidItemConfigs(items: GridItemConfig[]) {
+    const seen = new Set<string>();
+
+    for (const item of items) {
+      if (seen.has(item.id)) {
+        throw new RuntimeError(
+          GRID_ERROR_CODES.DUPLICATE_ITEM_ID,
+          `[GridDirective] Multiple grid item configs share the id "${item.id}". Item ids must be unique.`,
+          items.filter((i) => i.id === item.id),
+        );
+      }
+
+      seen.add(item.id);
+    }
   }
 
   private finalizeRemove(id: string) {

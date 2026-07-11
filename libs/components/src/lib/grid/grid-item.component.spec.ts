@@ -2,7 +2,6 @@ import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { GridItemComponent } from './grid-item.component';
-import { GridComponent } from './grid.component';
 import { GridItemDirective } from './headless/grid-item.directive';
 import { GridDirective } from './headless/grid.directive';
 import { GridItemConfig } from './headless/grid.types';
@@ -30,11 +29,11 @@ const TEST_ITEM: GridItemConfig = {
 };
 
 @Component({
-  imports: [GridComponent, GridItemComponent],
+  imports: [GridDirective, GridItemComponent],
   template: `
-    <et-grid [initialItems]="items">
+    <div [initialItems]="items" etGrid>
       <et-grid-item [ariaLabel]="ariaLabel" itemId="test-item" />
-    </et-grid>
+    </div>
   `,
 })
 class TestHostComponent {

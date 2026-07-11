@@ -82,3 +82,7 @@ The `BackendIntegration` story shows the full round trip. A `<et-grid-debug />` 
 ## Theming
 
 One public token: `--et-grid-padding` (default `0px`) pads the grid container. The default item toolbar exposes `--et-grid-item-toolbar-gap` / `-padding` / `-radius` / `-background` overrides.
+
+## Error codes
+
+Misplaced pieces, duplicate item ids, unregistered item types and invalid serialized states throw [`ET19xx` errors](/components/error-codes#grid-et19xx) in dev mode.

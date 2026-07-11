@@ -70,6 +70,20 @@ class NavTabsTestHost {
   secondDisabled = false;
 }
 
+@Component({
+  template: `
+    <et-nav-tabs>
+      <a et-nav-tab-link="/one">One</a>
+      <a et-nav-tab-link="/two">Two</a>
+    </et-nav-tabs>
+    <et-nav-tabs-outlet>
+      <router-outlet />
+    </et-nav-tabs-outlet>
+  `,
+  imports: [NavTabsComponent, NavTabLinkComponent, NavTabsOutletComponent, RouterOutlet],
+})
+class SiblingOutletTestHost {}
+
 describe('NavTabsComponent', () => {
   let fixture: ComponentFixture<NavTabsTestHost>;
   let router: Router;
@@ -111,7 +125,7 @@ describe('NavTabsComponent', () => {
     });
 
     TestBed.configureTestingModule({
-      imports: [NavTabsRouteOneComponent, NavTabsRouteTwoComponent, NavTabsTestHost],
+      imports: [NavTabsRouteOneComponent, NavTabsRouteTwoComponent, NavTabsTestHost, SiblingOutletTestHost],
       providers: [
         provideRouter([
           { path: 'one', component: NavTabsRouteOneComponent },
@@ -175,6 +189,26 @@ describe('NavTabsComponent', () => {
     expect(secondLinkAfter?.classList.contains('et-nav-tab-link--active')).toBe(true);
     expect(outlet?.getAttribute('aria-labelledby')).toBe(secondLinkAfter?.id ?? null);
     expect(fixture.nativeElement.textContent).toContain('Route two');
+  });
+
+  it('labels an outlet placed as a sibling of the nav tabs with the active link', async () => {
+    fixture.destroy();
+
+    const siblingFixture = TestBed.createComponent(SiblingOutletTestHost);
+
+    await router.navigateByUrl('/one');
+    siblingFixture.detectChanges();
+    await siblingFixture.whenStable();
+    siblingFixture.detectChanges();
+
+    const hostElement = siblingFixture.nativeElement as HTMLElement;
+    const firstLink = hostElement.querySelector('.et-nav-tab-link');
+    const outlet = hostElement.querySelector('et-nav-tabs-outlet');
+
+    expect(outlet?.getAttribute('aria-labelledby')).toBe(firstLink?.id ?? null);
+    expect(hostElement.textContent).toContain('Route one');
+
+    siblingFixture.destroy();
   });
 
   it('reflects nav-tabs public inputs on the host', () => {

@@ -372,6 +372,11 @@ export class TabGroupComponent {
   /** @internal */
   public tabGroupId = this.tabGroup.tabBar.ID;
 
+  constructor() {
+    // the component renders its panels inline instead of registering [etTabPanel] directives
+    this.tabGroup.managesPanelsInternally.set(true);
+  }
+
   protected isPanelHidden(index: number) {
     if (this.tabGroup.preserveContent()) {
       return this.tabGroup.tabBar.selectedIndex() !== index;

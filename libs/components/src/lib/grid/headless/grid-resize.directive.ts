@@ -1,7 +1,8 @@
 import { DOCUMENT } from '@angular/common';
-import { computed, DestroyRef, Directive, effect, inject, signal, untracked } from '@angular/core';
-import { ResizeEdge, ResizeMoveEvent } from '@ethlete/core';
+import { afterNextRender, computed, DestroyRef, Directive, effect, inject, signal, untracked } from '@angular/core';
+import { ResizeEdge, ResizeMoveEvent, RuntimeError } from '@ethlete/core';
 import { filter, fromEvent, merge, Subscription, tap } from 'rxjs';
+import { GRID_ERROR_CODES } from '../grid-errors';
 import { GridItemDirective } from './grid-item.directive';
 import { GRID_TOKEN } from './grid.tokens';
 import { GridItemPosition } from './grid.types';
@@ -22,8 +23,8 @@ import {
   },
 })
 export class GridResizeDirective {
-  private grid = inject(GRID_TOKEN);
-  private gridItem = inject(GridItemDirective);
+  private grid = inject(GRID_TOKEN, { optional: true });
+  private gridItem = inject(GridItemDirective, { optional: true });
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
 
@@ -41,14 +42,25 @@ export class GridResizeDirective {
   private autoScroller = createAutoScroller({
     document: this.document,
     getScrollElement: () =>
-      findScrollableAncestor(this.grid.elementRef.nativeElement) ??
+      (this.grid ? findScrollableAncestor(this.grid.elementRef.nativeElement) : null) ??
       (this.document.scrollingElement as HTMLElement | null),
   });
 
   constructor() {
+    if (ngDevMode) {
+      afterNextRender(() => {
+        if (!this.gridItem) {
+          throw new RuntimeError(
+            GRID_ERROR_CODES.MISSING_GRID_ITEM,
+            '[GridResizeDirective] etGridResize must be placed on or inside an [etGridItem] element.',
+          );
+        }
+      });
+    }
+
     effect(() => {
-      const readOnly = this.grid.readOnly();
-      const breakpoint = this.grid.activeBreakpoint();
+      const readOnly = this.grid?.readOnly() ?? false;
+      const breakpoint = this.grid?.activeBreakpoint() ?? null;
 
       untracked(() => {
         if (!this.start) return;
@@ -62,12 +74,12 @@ export class GridResizeDirective {
     // A same-breakpoint width change re-derives everything (the start rect is computed
     // analytically from the live geometry), so just re-anchor and re-apply.
     effect(() => {
-      this.grid.containerWidth();
+      this.grid?.containerWidth();
 
       untracked(() => {
         if (!this.start) return;
 
-        this.containerOrigin = this.grid.getContainerOrigin();
+        this.containerOrigin = this.grid?.getContainerOrigin() ?? null;
         this.applyResize();
       });
     });
@@ -79,21 +91,25 @@ export class GridResizeDirective {
   }
 
   public beginResize() {
-    if (this.grid.readOnly() || !this.grid.isReady()) return;
+    const grid = this.grid;
+    const gridItem = this.gridItem;
 
-    const start = this.grid.beginResize(this.gridItem.itemId());
+    if (!grid || !gridItem) return;
+    if (grid.readOnly() || !grid.isReady()) return;
+
+    const start = grid.beginResize(gridItem.itemId());
 
     if (!start) return;
 
     this.start = start;
-    this.startBreakpoint = this.grid.activeBreakpoint();
+    this.startBreakpoint = grid.activeBreakpoint();
     this.lastSnap = start;
     this.lastEvent = null;
-    this.startContainerOrigin = this.grid.getContainerOrigin();
+    this.startContainerOrigin = grid.getContainerOrigin();
     this.containerOrigin = this.startContainerOrigin;
     this.isResizing.set(true);
 
-    this.gridItem.startDirectControl();
+    gridItem.startDirectControl();
     this.attachGestureListeners();
   }
 
@@ -111,31 +127,33 @@ export class GridResizeDirective {
 
     // Commit first (layout holds the final slot), then hand rendering back — the box
     // transitions from its live pixel rect to the slot, animating real width/height.
-    this.grid.commitResize();
+    this.grid?.commitResize();
     this.finishGesture();
   }
 
   public cancelResize() {
     if (!this.start) return;
 
-    this.grid.cancelResize();
+    this.grid?.cancelResize();
     this.finishGesture();
   }
 
   private applyResize() {
+    const grid = this.grid;
+    const gridItem = this.gridItem;
     const start = this.start;
     const event = this.lastEvent;
     const startOrigin = this.startContainerOrigin;
     const currentOrigin = this.containerOrigin;
 
-    if (!start || !event || !startOrigin || !currentOrigin) return;
+    if (!grid || !gridItem || !start || !event || !startOrigin || !currentOrigin) return;
 
-    const geometry = this.grid.geometry();
+    const geometry = grid.geometry();
     const startRect = positionToPixelRect(start, geometry);
     const bounds = resizeSpanBounds({
       edge: event.edge,
       start,
-      constraints: this.grid.getConstraints(this.gridItem.itemId()),
+      constraints: grid.getConstraints(gridItem.itemId()),
       columns: geometry.columns,
     });
 
@@ -145,15 +163,15 @@ export class GridResizeDirective {
     const dy = event.dy + (startOrigin.top - currentOrigin.top);
 
     const live = clampResizeRect({ edge: event.edge, dx, dy, startRect, bounds, geometry });
-    this.gridItem.updateDirectRect(live);
+    gridItem.updateDirectRect(live);
 
     const snap = snapResizeSpan({ edge: event.edge, rect: live, start, bounds, geometry, lastSnap: this.lastSnap });
     this.lastSnap = snap;
-    this.grid.updateResize(this.gridItem.itemId(), snap);
+    grid.updateResize(gridItem.itemId(), snap);
   }
 
   private finishGesture() {
-    this.gridItem.stopDirectControl();
+    this.gridItem?.stopDirectControl();
     this.isResizing.set(false);
     this.start = null;
     this.startBreakpoint = null;
@@ -170,7 +188,7 @@ export class GridResizeDirective {
       tap(() => {
         if (!this.start) return;
 
-        this.containerOrigin = this.grid.getContainerOrigin();
+        this.containerOrigin = this.grid?.getContainerOrigin() ?? null;
         this.applyResize();
       }),
     );

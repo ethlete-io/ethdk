@@ -4,12 +4,6 @@
   initial-value: 8px;
 }
 
-@property --et-pip-bg {
-  syntax: '<color>';
-  inherits: false;
-  initial-value: rgba(0, 0, 0, 0.6);
-}
-
 @property --et-pip-backdrop-blur {
   syntax: '<length>';
   inherits: false;
@@ -27,6 +21,7 @@ et-pip-window {
   display: flex;
   flex-direction: column;
   touch-action: none;
+  color: var(--et-surface-color-solid, inherit);
   --et-resize-handles-side-top: var(--et-pip-title-bar-h);
 
   &::after {
@@ -34,7 +29,7 @@ et-pip-window {
     display: block;
     position: absolute;
     inset: 0;
-    background: var(--et-pip-bg);
+    background: var(--et-pip-bg, color-mix(in srgb, var(--et-surface-background-solid, rgb(0 0 0)) 60%, transparent));
     backdrop-filter: blur(var(--et-pip-backdrop-blur));
     z-index: -1;
     transform: translateY(var(--et-pip-title-bar-h));
@@ -154,7 +149,7 @@ et-pip-window.et-pip-window--mode-transitioning {
 et-pip-window .et-resize-handle::before {
   content: '';
   position: absolute;
-  background: rgba(255, 255, 255, 0.65);
+  background: color-mix(in srgb, var(--et-surface-color-solid, rgb(255 255 255)) 65%, transparent);
   border-radius: 3px;
   opacity: 0;
   transition: opacity 0.15s 0s;

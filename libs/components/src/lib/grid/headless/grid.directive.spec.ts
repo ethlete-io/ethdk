@@ -1,7 +1,6 @@
 import { Component, input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { GridComponent } from '../grid.component';
 import { GridDirective } from './grid.directive';
 import { GridItemConfig, GridItemConstraints, GridSerializedState } from './grid.types';
 
@@ -35,8 +34,8 @@ class ResizeObserverMock {
 }
 
 @Component({
-  imports: [GridComponent],
-  template: `<et-grid [initialItems]="items()" />`,
+  imports: [GridDirective],
+  template: `<div [initialItems]="items()" etGrid></div>`,
 })
 class TestHostComponent {
   items = input<GridItemConfig[]>([]);

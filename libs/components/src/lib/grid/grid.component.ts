@@ -1,6 +1,7 @@
 import { NgComponentOutlet } from '@angular/common';
-import { Component, computed, inject, ViewEncapsulation } from '@angular/core';
-import { injectLocale } from '@ethlete/core';
+import { Component, computed, effect, inject, ViewEncapsulation } from '@angular/core';
+import { injectLocale, RuntimeError } from '@ethlete/core';
+import { GRID_ERROR_CODES } from './grid-errors';
 import { GridItemDefaultActionsComponent } from './grid-item-default-actions.component';
 import { GridItemComponent } from './grid-item.component';
 import { injectGridConfig } from './headless/grid-config';
@@ -149,4 +150,31 @@ export class GridComponent {
       ? 'translate 200ms cubic-bezier(0.2, 0, 0, 1), width 200ms cubic-bezier(0.2, 0, 0, 1), height 200ms cubic-bezier(0.2, 0, 0, 1)'
       : 'none',
   );
+
+  constructor() {
+    if (ngDevMode) {
+      effect(() => {
+        const items = this.grid.items();
+
+        if (items.length === 0) return;
+
+        const registrations = this.gridConfig.registrations;
+        const unknownTypes = [
+          ...new Set(items.filter((item) => !registrations.some((r) => r.type === item.type)).map((item) => item.type)),
+        ];
+
+        if (unknownTypes.length > 0) {
+          const registered = registrations.length ? registrations.map((r) => `"${r.type}"`).join(', ') : 'none';
+
+          throw new RuntimeError(
+            GRID_ERROR_CODES.UNKNOWN_ITEM_TYPE,
+            `[GridComponent] No component is registered for grid item type(s) ${unknownTypes
+              .map((type) => `"${type}"`)
+              .join(', ')}. Registered types: ${registered}. Register it via provideGridConfig().`,
+            unknownTypes,
+          );
+        }
+      });
+    }
+  }
 }

@@ -1,6 +1,7 @@
-import { Directive, ElementRef, computed, effect, inject, input, signal } from '@angular/core';
-import { SurfaceInteractiveDirective } from '@ethlete/core';
+import { Directive, ElementRef, afterNextRender, computed, effect, inject, input, signal } from '@angular/core';
+import { RuntimeError, SurfaceInteractiveDirective } from '@ethlete/core';
 import { ScrollableDirective } from '../../scrollable/headless/scrollable.directive';
+import { TAB_ERROR_CODES } from '../tab-errors';
 import { TAB_BAR_TOKEN, TAB_BAR_TRIGGER_TOKEN } from './tab-bar.tokens';
 
 let nextTriggerId = 0;
@@ -17,7 +18,7 @@ let nextTriggerId = 0;
     '[attr.disabled]': 'disabled() || null',
     '[attr.tabindex]': 'tabIndex()',
     '[class.et-tab-bar-trigger--just-activated]': 'justActivated()',
-    '[class.et-tab-bar-trigger--no-initial-transition]': '!tabBar.animationsReady()',
+    '[class.et-tab-bar-trigger--no-initial-transition]': '!tabBar?.animationsReady()',
     '(click)': 'handleClick()',
     '(mouseleave)': 'justActivated.set(false)',
   },
@@ -25,7 +26,7 @@ let nextTriggerId = 0;
 export class TabBarTriggerDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private scrollable = inject(ScrollableDirective, { optional: true });
-  protected tabBar = inject(TAB_BAR_TOKEN);
+  protected tabBar = inject(TAB_BAR_TOKEN, { optional: true });
 
   public disabled = input(false);
 
@@ -34,14 +35,26 @@ export class TabBarTriggerDirective {
   public justActivated = signal(false);
 
   public isSelected = computed(() => {
-    const idx = this.tabBar.triggers().indexOf(this);
+    const tabBar = this.tabBar;
 
-    return idx === this.tabBar.selectedIndex();
+    if (!tabBar) {
+      return false;
+    }
+
+    const idx = tabBar.triggers().indexOf(this);
+
+    return idx === tabBar.selectedIndex();
   });
 
   public tabIndex = computed(() => {
-    const myIndex = this.tabBar.triggers().indexOf(this);
-    const focusedIdx = this.tabBar.focusedIndex();
+    const tabBar = this.tabBar;
+
+    if (!tabBar) {
+      return -1;
+    }
+
+    const myIndex = tabBar.triggers().indexOf(this);
+    const focusedIdx = tabBar.focusedIndex();
 
     if (focusedIdx !== -1) {
       return myIndex === focusedIdx ? 0 : -1;
@@ -52,9 +65,9 @@ export class TabBarTriggerDirective {
 
   constructor() {
     effect(() => {
-      this.tabBar.registerTrigger(this);
+      this.tabBar?.registerTrigger(this);
 
-      return () => this.tabBar.unregisterTrigger(this);
+      return () => this.tabBar?.unregisterTrigger(this);
     });
 
     effect(() => {
@@ -72,6 +85,17 @@ export class TabBarTriggerDirective {
 
       this.scrollIntoView();
     });
+
+    if (ngDevMode) {
+      afterNextRender(() => {
+        if (!this.tabBar) {
+          throw new RuntimeError(
+            TAB_ERROR_CODES.MISSING_TAB_BAR,
+            '[TabBarTriggerDirective] etTabBarTrigger must be placed inside a tab bar (et-tab-group, et-nav-tabs, or an [etTabBar] element).',
+          );
+        }
+      });
+    }
   }
 
   /** @internal */
@@ -89,7 +113,7 @@ export class TabBarTriggerDirective {
     if (!this.disabled()) {
       const wasSelected = this.isSelected();
 
-      this.tabBar.selectTrigger(this);
+      this.tabBar?.selectTrigger(this);
 
       if (!wasSelected) {
         this.justActivated.set(true);

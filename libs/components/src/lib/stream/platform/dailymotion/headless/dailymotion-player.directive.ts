@@ -48,12 +48,13 @@ export class DailymotionPlayerDirective implements StreamPlayer {
         const w = this.params.width();
         const h = this.params.height();
         iframe.src = `https://www.dailymotion.com/embed/video/${videoId}?${qs}`;
+        iframe.title = 'Dailymotion player';
         iframe.width = typeof w === 'number' ? String(w) : w;
         iframe.height = typeof h === 'number' ? String(h) : h;
         this.renderer.setStyle(iframe, { border: 'none' });
         iframe.allow = 'autoplay; encrypted-media';
         iframe.allowFullscreen = true;
-        iframe.scrolling = 'no';
+        this.renderer.setAttribute(iframe, 'scrolling', 'no');
 
         iframe.onload = () => {
           this.state.set({ ...DEFAULT_STREAM_PLAYER_STATE, isReady: true, isLoading: false });

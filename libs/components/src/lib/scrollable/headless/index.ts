@@ -2,7 +2,7 @@ export { ScrollableActiveChildDirective } from './scrollable-active-child.direct
 export { ScrollableButtonsDirective } from './scrollable-buttons.directive';
 export { ScrollableDarkenDirective } from './scrollable-darken.directive';
 export { ScrollableDragDirective } from './scrollable-drag.directive';
-export { ScrollableErrorCode } from './scrollable-errors';
+export { SCROLLABLE_ERROR_CODES } from './scrollable-errors';
 export { ScrollableIgnoreChildDirective } from './scrollable-ignore-child.directive';
 export { ScrollableLoadingTemplateDirective } from './scrollable-loading-template.directive';
 export { ScrollableMasksDirective } from './scrollable-masks.directive';

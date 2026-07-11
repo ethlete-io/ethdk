@@ -46,10 +46,11 @@ export class KickPlayerDirective implements StreamPlayer {
         if (this.params.muted()) qs.set('muted', 'true');
 
         iframe.src = `https://player.kick.com/${channel}?${qs}`;
+        iframe.title = 'Kick player';
         iframe.width = String(this.params.width());
         iframe.height = String(this.params.height());
         this.renderer.setStyle(iframe, { border: 'none' });
-        iframe.scrolling = 'no';
+        this.renderer.setAttribute(iframe, 'scrolling', 'no');
         iframe.allowFullscreen = true;
         iframe.allow = 'autoplay; encrypted-media';
 

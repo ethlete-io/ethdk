@@ -1,8 +1,9 @@
 import { DOCUMENT } from '@angular/common';
-import { DestroyRef, Directive, effect, ElementRef, inject, untracked } from '@angular/core';
+import { afterNextRender, DestroyRef, Directive, effect, ElementRef, inject, untracked } from '@angular/core';
 import { outputToObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DragHandleDirective, DragMoveEvent, DragStartEvent } from '@ethlete/core';
+import { DragHandleDirective, DragMoveEvent, DragStartEvent, RuntimeError } from '@ethlete/core';
 import { filter, fromEvent, merge, Subscription, tap } from 'rxjs';
+import { GRID_ERROR_CODES } from '../grid-errors';
 import { GridItemDirective } from './grid-item.directive';
 import { GRID_TOKEN } from './grid.tokens';
 import { GridItemPosition } from './grid.types';
@@ -25,13 +26,13 @@ import {
   ],
   host: {
     class: 'et-grid-drag',
-    '[class.et-grid-drag--active]': '!grid.readOnly() && dragHandle.isDragging()',
-    '[attr.aria-grabbed]': '!grid.readOnly() && dragHandle.isDragging()',
+    '[class.et-grid-drag--active]': '!grid?.readOnly() && dragHandle.isDragging()',
+    '[attr.aria-grabbed]': '!grid?.readOnly() && dragHandle.isDragging()',
   },
 })
 export class GridDragDirective {
-  protected grid = inject(GRID_TOKEN);
-  private gridItem = inject(GridItemDirective);
+  protected grid = inject(GRID_TOKEN, { optional: true });
+  private gridItem = inject(GridItemDirective, { optional: true });
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
@@ -48,11 +49,22 @@ export class GridDragDirective {
   private autoScroller = createAutoScroller({
     document: this.document,
     getScrollElement: () =>
-      findScrollableAncestor(this.grid.elementRef.nativeElement) ??
+      (this.grid ? findScrollableAncestor(this.grid.elementRef.nativeElement) : null) ??
       (this.document.scrollingElement as HTMLElement | null),
   });
 
   constructor() {
+    if (ngDevMode) {
+      afterNextRender(() => {
+        if (!this.gridItem) {
+          throw new RuntimeError(
+            GRID_ERROR_CODES.MISSING_GRID_ITEM,
+            '[GridDragDirective] etGridDrag must be placed on or inside an [etGridItem] element.',
+          );
+        }
+      });
+    }
+
     outputToObservable(this.dragHandle.dragStarted)
       .pipe(
         tap((event) => this.startDrag(event)),
@@ -77,8 +89,8 @@ export class GridDragDirective {
     // Cancel when the gesture's frame of reference breaks mid-drag: readOnly flips on,
     // or a breakpoint switch invalidates the origin position and column count.
     effect(() => {
-      const readOnly = this.grid.readOnly();
-      const breakpoint = this.grid.activeBreakpoint();
+      const readOnly = this.grid?.readOnly() ?? false;
+      const breakpoint = this.grid?.activeBreakpoint() ?? null;
 
       untracked(() => {
         if (!this.origin) return;
@@ -92,12 +104,12 @@ export class GridDragDirective {
     // A plain width change (e.g. a scrollbar appearing because the grid grew) keeps the
     // breakpoint — re-anchor and re-project instead of cancelling.
     effect(() => {
-      this.grid.containerWidth();
+      this.grid?.containerWidth();
 
       untracked(() => {
         if (!this.origin) return;
 
-        this.containerOrigin = this.grid.getContainerOrigin();
+        this.containerOrigin = this.grid?.getContainerOrigin() ?? null;
         this.applyPointer();
       });
     });
@@ -109,9 +121,13 @@ export class GridDragDirective {
   }
 
   private startDrag(event: DragStartEvent) {
-    if (this.grid.readOnly() || !this.grid.isReady()) return;
+    const grid = this.grid;
+    const gridItem = this.gridItem;
 
-    const origin = this.grid.beginDrag(this.gridItem.itemId());
+    if (!grid || !gridItem) return;
+    if (grid.readOnly() || !grid.isReady()) return;
+
+    const origin = grid.beginDrag(gridItem.itemId());
 
     if (!origin) return;
 
@@ -124,13 +140,13 @@ export class GridDragDirective {
       x: Math.min(Math.max(event.clientX - itemRect.left, 0), itemRect.width),
       y: Math.min(Math.max(event.clientY - itemRect.top, 0), itemRect.height),
     };
-    this.containerOrigin = this.grid.getContainerOrigin();
+    this.containerOrigin = grid.getContainerOrigin();
     this.lastPointer = { clientX: event.clientX, clientY: event.clientY };
     this.origin = origin;
-    this.startBreakpoint = this.grid.activeBreakpoint();
+    this.startBreakpoint = grid.activeBreakpoint();
     this.lastTarget = { col: origin.col, row: origin.row };
 
-    this.gridItem.startDirectControl();
+    gridItem.startDirectControl();
     this.attachGestureListeners();
     this.autoScroller.start(this.lastPointer);
   }
@@ -144,14 +160,15 @@ export class GridDragDirective {
   }
 
   private applyPointer() {
+    const grid = this.grid;
     const origin = this.origin;
     const grabOffset = this.grabOffset;
     const containerOrigin = this.containerOrigin;
     const pointer = this.lastPointer;
 
-    if (!origin || !grabOffset || !containerOrigin || !pointer) return;
+    if (!grid || !origin || !grabOffset || !containerOrigin || !pointer) return;
 
-    const geometry = this.grid.geometry();
+    const geometry = grid.geometry();
     const size = positionToPixelRect(origin, geometry);
 
     const pointerInContainer = {
@@ -163,7 +180,7 @@ export class GridDragDirective {
     // container; vertically its top can reach the current content bottom (so it can
     // still be dropped onto a new last row). Without this the floating item creates
     // page overflow, which feeds the auto-scroller ever more room to scroll into.
-    const contentHeight = rowsToPixelHeight(computeGridHeight(this.grid.layout()), geometry);
+    const contentHeight = rowsToPixelHeight(computeGridHeight(grid.layout()), geometry);
     const maxX = geometry.originX + Math.max(0, geometry.contentWidth - size.width);
     const maxY = geometry.originY + contentHeight;
 
@@ -181,11 +198,11 @@ export class GridDragDirective {
       y: Math.min(Math.max(pointerInContainer.y - float.y, 0), size.height),
     };
 
-    this.gridItem.updateDirectRect({ x: float.x, y: float.y, width: size.width, height: size.height });
+    this.gridItem?.updateDirectRect({ x: float.x, y: float.y, width: size.width, height: size.height });
 
     const cell = projectDragCell({ float, colSpan: origin.colSpan, geometry, lastTarget: this.lastTarget });
     this.lastTarget = cell;
-    this.grid.updateDragTarget(cell);
+    grid.updateDragTarget(cell);
   }
 
   private settleDrag() {
@@ -193,19 +210,19 @@ export class GridDragDirective {
 
     // Commit first (layout now holds the final slot), then hand rendering back —
     // the item transitions from its current pointer rect straight to that slot.
-    this.grid.commitDrag();
+    this.grid?.commitDrag();
     this.finishGesture();
   }
 
   private cancelDrag() {
     if (!this.origin) return;
 
-    this.grid.cancelDrag();
+    this.grid?.cancelDrag();
     this.finishGesture();
   }
 
   private finishGesture() {
-    this.gridItem.stopDirectControl();
+    this.gridItem?.stopDirectControl();
     this.origin = null;
     this.startBreakpoint = null;
     this.grabOffset = null;
@@ -222,7 +239,7 @@ export class GridDragDirective {
       tap(() => {
         if (!this.origin) return;
 
-        this.containerOrigin = this.grid.getContainerOrigin();
+        this.containerOrigin = this.grid?.getContainerOrigin() ?? null;
         this.applyPointer();
       }),
     );

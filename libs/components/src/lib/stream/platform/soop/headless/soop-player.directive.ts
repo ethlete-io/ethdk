@@ -56,10 +56,11 @@ export class SoopPlayerDirective implements StreamPlayer {
           iframe.src = `https://vod.afreecatv.com/player/${params.videoId}`;
         }
 
+        iframe.title = 'SOOP player';
         iframe.width = typeof w === 'number' ? String(w) : w;
         iframe.height = typeof h === 'number' ? String(h) : h;
         this.renderer.setStyle(iframe, { border: 'none' });
-        iframe.scrolling = 'no';
+        this.renderer.setAttribute(iframe, 'scrolling', 'no');
         iframe.allowFullscreen = true;
         iframe.allow = 'autoplay; encrypted-media';
 

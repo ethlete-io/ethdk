@@ -12,12 +12,14 @@ import { StreamConsentAcceptDirective } from './headless/stream-consent-accept.d
 import { StreamConsentDirective } from './headless/stream-consent.directive';
 import { injectStreamConsentConfig } from './stream-consent-config';
 
+let nextHeadingId = 0;
+
 @Component({
   selector: 'et-stream-consent',
   template: `
     <div [etProvideSurface]="cardSurface()" class="et-stream-consent-card" etSurfaced>
       <span class="et-stream-consent-icon" etIcon="et-lock"></span>
-      <h3 class="et-stream-consent-heading">{{ heading() }}</h3>
+      <h3 [id]="HEADING_ID" class="et-stream-consent-heading">{{ heading() }}</h3>
       <p class="et-stream-consent-description">{{ description() }}</p>
       <button [color]="acceptButtonColor()" et-button etStreamConsentAccept>
         {{ acceptLabel() }}
@@ -30,6 +32,8 @@ import { injectStreamConsentConfig } from './stream-consent-config';
   hostDirectives: [StreamConsentDirective],
   host: {
     class: 'et-stream-consent',
+    role: 'group',
+    '[attr.aria-labelledby]': 'HEADING_ID',
   },
   styles: `
     @property --et-stream-consent-padding {
@@ -151,6 +155,7 @@ export class StreamConsentComponent {
   private config = injectStreamConsentConfig();
   private locale = injectLocale();
   private surfaceThemes = injectSurfaceThemes({ optional: true });
+  protected readonly HEADING_ID = `et-stream-consent-heading-${nextHeadingId++}`;
 
   public cardSurface = computed(() => {
     const themes = this.surfaceThemes;
