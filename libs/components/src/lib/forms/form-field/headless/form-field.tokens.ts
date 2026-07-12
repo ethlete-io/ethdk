@@ -9,6 +9,7 @@ export const FORM_FIELD_CONTROL_TYPES = {
   SWITCH: 'switch',
   SEGMENTED_BUTTON: 'segmented-button',
   SELECTION_LIST: 'selection-list',
+  DROPZONE: 'dropzone',
 } as const;
 
 export type FormFieldControlType = (typeof FORM_FIELD_CONTROL_TYPES)[keyof typeof FORM_FIELD_CONTROL_TYPES];

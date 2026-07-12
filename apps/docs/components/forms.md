@@ -1,6 +1,6 @@
 # Forms
 
-Signal-forms-native form controls: input, checkbox, switch, selection lists and a rich text editor, plus the shared field chrome (labels, hints, errors, affixes) that wires accessibility for you.
+Signal-forms-native form controls: input, checkbox, switch, selection lists and a rich text editor, plus the shared field chrome (labels, hints, errors, affixes) that wires accessibility for you. For file uploads, see the [dropzone](/components/dropzone) guide.
 
 ::: info Signal forms only
 These controls implement Angular's [signal forms](https://angular.dev/guide/forms) contracts (`FormValueControl` / `FormCheckboxControl`) and bind via `[formField]` from `@angular/forms/signals`. There is no `ngModel`/`ControlValueAccessor` layer — the classic stack (and specialized date/number/masked inputs) lives only in the legacy `@ethlete/cdk`. Two-way `[(value)]` / `[(checked)]` also works for simple cases.

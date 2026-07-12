@@ -1,0 +1,211 @@
+<ng-content select="et-label" />
+
+<input
+  #fileInput
+  [accept]="dropzoneDir.accept() || null"
+  [multiple]="dropzoneDir.multiple()"
+  [disabled]="dropzoneDir.disabled()"
+  (change)="uploadPickedFiles($event)"
+  (cancel)="resetFilePickerState()"
+  class="et-dropzone-native-input"
+  type="file"
+  tabindex="-1"
+  aria-hidden="true"
+/>
+
+<div [attr.data-has-preview]="singleEntry() ? true : null" class="et-dropzone-area">
+  <button
+    #browseButton
+    [disabled]="dropzoneDir.disabled()"
+    [attr.tabindex]="singleEntry() ? '-1' : null"
+    [attr.aria-invalid]="dropzoneDir.shouldDisplayError() || null"
+    [attr.aria-describedby]="dropzoneDir.describedById() || null"
+    [attr.aria-labelledby]="dropzoneDir.labelId() || null"
+    (click)="openFilePicker()"
+    (focus)="resetFilePickerState()"
+    (blur)="markTriggerTouched()"
+    class="et-dropzone-trigger"
+    type="button"
+    etFocusRing
+  >
+    <span class="et-dropzone-prompt">
+      <ng-content>
+        <i class="et-dropzone-prompt-icon" etIcon="et-upload"></i>
+        <span class="et-dropzone-prompt-text">Drag &amp; drop or click to browse</span>
+      </ng-content>
+    </span>
+  </button>
+
+  @if (singleEntry(); as entry) {
+    <div #entryEl [attr.data-status]="entry.status()" class="et-dropzone-preview">
+      @if (entry.previewUrl(); as previewUrl) {
+        <img [src]="previewUrl" class="et-dropzone-preview-image" alt="" />
+      } @else {
+        <i class="et-dropzone-file-icon" etIcon="et-file"></i>
+      }
+
+      <div class="et-dropzone-preview-info">
+        <span class="et-dropzone-entry-name">{{ entry.name() }}</span>
+
+        @if (entry.size(); as size) {
+          <span class="et-dropzone-entry-size">{{ FORMAT_FILE_SIZE(size) }}</span>
+        }
+
+        @if (entry.source.type === 'file') {
+          <div [attr.data-active]="entry.status() === 'uploading' || null" class="et-dropzone-entry-progress">
+            <div class="et-dropzone-entry-progress-inner">
+              <et-progress-bar [value]="entry.progress() ?? 0" [indeterminate]="entry.progress() === null" />
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="et-dropzone-preview-actions">
+        @if (entry.status() === 'error') {
+          <button
+            [disabled]="dropzoneDir.disabled()"
+            [attr.aria-label]="retryLabel() + ' ' + entry.name()"
+            (click)="dropzoneDir.retryEntry(entry.id)"
+            class="et-dropzone-retry-button"
+            type="button"
+            et-icon-button
+            variant="filled"
+            size="sm"
+          >
+            <i etIcon="et-rotate-right"></i>
+          </button>
+        } @else {
+          <button
+            [disabled]="dropzoneDir.disabled()"
+            [attr.aria-label]="replaceLabel()"
+            (click)="openFilePicker()"
+            class="et-dropzone-replace-button"
+            type="button"
+            et-icon-button
+            variant="filled"
+            size="sm"
+          >
+            <i etIcon="et-rotate-right"></i>
+          </button>
+        }
+        <button
+          [disabled]="dropzoneDir.disabled()"
+          [attr.aria-label]="removeLabel() + ' ' + entry.name()"
+          (click)="removeEntryAnimated(entry, entryEl)"
+          class="et-dropzone-remove-button"
+          type="button"
+          et-icon-button
+          variant="filled"
+          size="sm"
+        >
+          <i etIcon="et-times"></i>
+        </button>
+      </div>
+    </div>
+  }
+</div>
+
+@if (dropzoneDir.multiple() && dropzoneDir.entries().length) {
+  <ul class="et-dropzone-list" role="list">
+    @for (entry of dropzoneDir.entries(); track entry.id) {
+      <li #entryEl [attr.data-status]="entry.status()" class="et-dropzone-item">
+        <div class="et-dropzone-item-thumbnail" aria-hidden="true">
+          @if (entry.previewUrl(); as previewUrl) {
+            <img [src]="previewUrl" class="et-dropzone-preview-image" alt="" />
+          } @else {
+            <i class="et-dropzone-file-icon" etIcon="et-file"></i>
+          }
+        </div>
+
+        <div class="et-dropzone-item-info">
+          <span class="et-dropzone-entry-name">{{ entry.name() }}</span>
+
+          @if (entry.size(); as size) {
+            <span class="et-dropzone-entry-size">{{ FORMAT_FILE_SIZE(size) }}</span>
+          }
+
+          @if (entry.source.type === 'file') {
+            <div [attr.data-active]="entry.status() === 'uploading' || null" class="et-dropzone-entry-progress">
+              <div class="et-dropzone-entry-progress-inner">
+                <et-progress-bar [value]="entry.progress() ?? 0" [indeterminate]="entry.progress() === null" />
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (entry.status() === 'error') {
+          <button
+            [disabled]="dropzoneDir.disabled()"
+            [attr.aria-label]="retryLabel() + ' ' + entry.name()"
+            (click)="dropzoneDir.retryEntry(entry.id)"
+            class="et-dropzone-retry-button"
+            type="button"
+            et-icon-button
+            size="sm"
+          >
+            <i etIcon="et-rotate-right"></i>
+          </button>
+        }
+
+        <button
+          [disabled]="dropzoneDir.disabled()"
+          [attr.aria-label]="removeLabel() + ' ' + entry.name()"
+          (click)="removeEntryAnimated(entry, entryEl)"
+          class="et-dropzone-remove-button"
+          type="button"
+          et-icon-button
+          size="sm"
+        >
+          <i etIcon="et-times"></i>
+        </button>
+      </li>
+    }
+  </ul>
+}
+
+<div class="et-dropzone-live-status" role="status" aria-live="polite">{{ liveStatusMessage() }}</div>
+
+@if (internalErrorMessages().length) {
+  <div [etProvideColor]="support.errorColorTheme" class="et-dropzone-internal-errors" role="alert">
+    @for (message of internalErrorMessages(); track $index) {
+      <span class="et-dropzone-internal-error">{{ message }}</span>
+    }
+  </div>
+}
+
+@if (support.shouldRenderSupport()) {
+  <div [style.block-size.px]="support.supportHeight()" class="et-dropzone-support">
+    <div class="et-dropzone-support-stack">
+      @if (support.shouldRenderError()) {
+        <div
+          #errorContent
+          #errorAnimatable="etAnimatable"
+          [attr.aria-atomic]="support.errorActive() ? 'true' : null"
+          [attr.aria-hidden]="!support.errorActive() ? 'true' : null"
+          [attr.aria-live]="support.errorActive() ? 'polite' : null"
+          [attr.data-active]="support.errorActive() || null"
+          [etProvideColor]="support.errorColorTheme"
+          class="et-dropzone-support-content et-dropzone-errors"
+          etAnimatable
+        >
+          @for (error of support.visibleErrors(); track $index) {
+            <et-form-error [error]="error" />
+          }
+        </div>
+      }
+
+      @if (support.shouldRenderHint()) {
+        <div
+          #hintContent
+          #hintAnimatable="etAnimatable"
+          [attr.aria-hidden]="!support.hintActive() ? 'true' : null"
+          [attr.data-active]="support.hintActive() || null"
+          class="et-dropzone-support-content et-dropzone-hint"
+          etAnimatable
+        >
+          <ng-content select="et-hint" />
+        </div>
+      }
+    </div>
+  </div>
+}

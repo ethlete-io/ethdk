@@ -1,6 +1,7 @@
 export * from './checkbox';
 export * from './choice-field';
 export * from './description';
+export * from './dropzone';
 export * from './form-field';
 export * from './input';
 export * from './rich-text-editor';

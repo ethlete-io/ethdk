@@ -103,11 +103,13 @@ export class IconDirective {
 
       if (!this.allowHardcodedColor()) {
         for (const colorAttribute of SVG_COLOR_ATTRIBUTES) {
-          if (svg.includes(`${colorAttribute}="`) && !svg.includes(`${colorAttribute}="currentColor"`)) {
-            throw new RuntimeError(
-              ICON_ERROR_CODES.HARDCODED_COLOR,
-              `[IconDirective] Icon "${label}" uses a hardcoded value for "${colorAttribute}". Use currentColor instead, or set [allowHardcodedColor]="true".`,
-            );
+          for (const [, value] of svg.matchAll(new RegExp(`\\b${colorAttribute}="([^"]*)"`, 'g'))) {
+            if (value !== 'currentColor' && value !== 'none') {
+              throw new RuntimeError(
+                ICON_ERROR_CODES.HARDCODED_COLOR,
+                `[IconDirective] Icon "${label}" uses the hardcoded value "${value}" for "${colorAttribute}". Use currentColor instead, or set [allowHardcodedColor]="true".`,
+              );
+            }
           }
         }
       }

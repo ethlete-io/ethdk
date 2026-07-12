@@ -185,7 +185,10 @@ export default defineConfig({
         },
         {
           text: 'Forms',
-          items: [{ text: 'Forms', link: '/components/forms' }],
+          items: [
+            { text: 'Forms', link: '/components/forms' },
+            { text: 'Dropzone', link: '/components/dropzone' },
+          ],
         },
         {
           text: 'Layout & structure',

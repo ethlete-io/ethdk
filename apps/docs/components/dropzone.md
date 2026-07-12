@@ -1,0 +1,161 @@
+# Dropzone
+
+A file-upload form control with the upload workflow built in: files are picked via click or drag & drop, uploaded through a [@ethlete/query](https://www.npmjs.com/package/@ethlete/query) query you provide, and the resulting values (e.g. media uuids) land in the form control — with per-file progress, previews, error/retry and remove handling out of the box. Import `DROPZONE_IMPORTS`.
+
+::: info Requires @ethlete/query
+`@ethlete/components` has a peer dependency on `@ethlete/query`. The dropzone executes one query per file via the `upload` config — there is no other transport. Like the other [form controls](/components/forms), it implements Angular's signal forms contract and binds via `[formField]`.
+:::
+
+Define the upload route once with your query client (note `reportProgress: true`):
+
+```ts
+type MediaView = { uuid: string; name: string };
+type UploadMediaArgs = { response: MediaView; body: FormData };
+
+const client = createQueryClient({ baseUrl: 'https://api.example.com', name: 'example' });
+
+const uploadMedia = createPostQuery(client)<UploadMediaArgs>('/media', { reportProgress: true });
+```
+
+Then wire it into the component:
+
+```ts
+protected upload = createDropzoneUpload<UploadMediaArgs, string>({
+  queryCreator: uploadMedia,
+  selectValue: (media) => media.uuid,
+  resolveExisting: (uuid) => ({
+    name: `media-${uuid}.jpg`,
+    previewUrl: `https://cdn.example.com/${uuid}/thumb.jpg`,
+  }),
+});
+
+private formModel = signal<{ avatar: string | null }>({ avatar: null });
+
+protected demoForm = form(this.formModel, (s) => {
+  required(s.avatar, { message: 'Please upload a file' });
+  dropzoneFiles(s.avatar, { accept: 'image/*', maxFileSize: 5 * 1024 * 1024 });
+});
+```
+
+```html
+<et-dropzone [formField]="demoForm.avatar" [upload]="upload">
+  <et-label>Avatar</et-label>
+  <et-hint>PNG or JPG.</et-hint>
+</et-dropzone>
+```
+
+## Live demo
+
+In single mode (the default) a successful upload replaces the drop area with a preview of the exact same size — no layout shift — plus replace/remove actions:
+
+<StoryEmbed id="components-forms-dropzone--default" height="420px" />
+
+## How uploads flow into the form value
+
+The control value only ever contains the values of **successful uploads and existing entries, in entry order**. Files that are still uploading or have failed are visible in the UI (and in the headless `entries()` signal) but never appear in the value — a form submitted mid-upload simply doesn't contain the pending file. To block submission while uploads are running, read the headless directive's `anyUploading` signal (e.g. disable the submit button or use it in a schema validator).
+
+- **Single mode** (`multiple` unset): the value is `TValue | null`. Selecting a new file replaces the current entry (and clears the value until the new upload succeeds).
+- **Multiple mode** (`multiple`): the value is always an array (`[]` when empty). New uploads append on success; removing an entry removes its value.
+
+The value type `TValue` is whatever your `selectValue` returns — typically a uuid string.
+
+## Upload configuration
+
+The `upload` input takes a config object; create it with the `createDropzoneUpload()` helper so `TArgs` and `TValue` are inferred:
+
+| Property          | Required | Description                                                                                                                                                          |
+| ----------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `queryCreator`    | yes      | A `QueryCreator` for the upload route (usually `createPostQuery(client)<Args>('/route', { reportProgress: true })`). One query is created and executed per file.     |
+| `selectValue`     | yes      | Maps the upload response to the control value, e.g. `(media) => media.uuid`.                                                                                         |
+| `createArgs`      | no       | Builds the request args for a file. Default: `FormData` with the file appended under the field name `file`. Override to rename the field or add extra fields/params. |
+| `resolveExisting` | no       | Maps a value already present in the control (edit forms) to display info (`name`, `previewUrl`, `size`). Required as soon as the control can start with a value.     |
+
+`resolveExisting` runs in a reactive context — it may read signals, so asynchronously loaded display data (e.g. an id → media map filled by another query) updates the entry as it arrives.
+
+## Options
+
+On `et-dropzone` (forwarded to the headless `etDropzone` directive):
+
+| Input      | Type                   | Default | Description                                              |
+| ---------- | ---------------------- | ------- | -------------------------------------------------------- |
+| `upload`   | `DropzoneUploadConfig` | —       | The upload workflow config (required).                   |
+| `multiple` | `boolean`              | `false` | Allow several files; the control value becomes an array. |
+
+The built-in texts are customizable: `retryLabel` (`'Retry'`), `removeLabel` (`'Remove'`) and `replaceLabel` (`'Replace file'`) feed the action buttons' accessible labels, and the upload failure message can be replaced (e.g. for i18n) via the `uploadErrorMessage` function input.
+
+## Validation
+
+All constraints live in the form schema, next to the rest of your validation:
+
+- **Emptiness and count** are plain value validation — `required()` for "must upload something", `minLength()` / `maxLength()` for the number of files in multiple mode (type the model as `string[]` for that).
+- **File constraints** use the `dropzoneFiles()` schema rule: `accept` (native semantics — `.png`, `image/png`, `image/*`; also filters the native picker), `maxFileSize` and `minFileSize` (bytes).
+
+```ts
+form(model, (s) => {
+  required(s.media, { message: 'Please upload a file' });
+  maxLength(s.media, 5, { message: 'Upload at most 5 files' });
+  dropzoneFiles(s.media, { accept: 'image/*', maxFileSize: 5 * 1024 * 1024 });
+});
+```
+
+Files violating `dropzoneFiles()` constraints never start an upload. Each violation becomes a regular validation error on the field (`kind: 'dropzoneFiles'`, rendered like any other error below the field) until the next selection, removal or `clear()`. Override the built-in messages via the rule's `message` function. Rejections are also emitted in one batch via the `filesRejected` output (`{ file, reason }[]`); `uploadSucceeded` and `uploadFailed` fire per entry.
+
+## Multiple files
+
+With `multiple`, entries render as a list below the drop area — image thumbnail (an object URL, revoked automatically), name, size, a progress bar while uploading and a remove button per entry:
+
+<StoryEmbed id="components-forms-dropzone--multiple" height="560px" />
+
+## Existing media
+
+When the form starts with existing values (edit forms), the dropzone renders them as regular entries using your `resolveExisting` display info, with full remove support. Writing a new value into the control from outside is reconciled the same way:
+
+<StoryEmbed id="components-forms-dropzone--existing-media" height="560px" />
+
+Initializing the control with a value **without** providing `resolveExisting` throws `ET2401` in dev mode.
+
+## Failed uploads & retry
+
+A failed upload renders like a validation error: the message (`"name": <server message>`, falling back to `"name" failed to upload.` via `uploadErrorLabel`) appears below the field in the app's error color theme, and the entry gets a retry icon button. Retrying re-executes the query with the file's original request args and clears the message on success:
+
+<StoryEmbed id="components-forms-dropzone--failing-uploads" height="420px" />
+
+::: warning Upload progress needs XHR
+Per-file progress requires `reportProgress: true` on the query creator **and** the XHR `HttpClient` backend — browsers do not deliver upload progress events with `provideHttpClient(withFetch())`. Without progress information the dropzone falls back to an indeterminate progress bar.
+:::
+
+## Headless usage
+
+All behavior lives in the `etDropzone` directive (`FormValueControl` + drag & drop + upload orchestration); the `et-dropzone` component is template + tokens on top. For a custom UI, apply the directive yourself and drive it via `selectFiles(files)`, `removeEntry(id)`, `retryEntry(id)` and `clear()`, rendering from the `entries()` signal (each entry exposes `name`, `size`, `previewUrl`, `status`, `progress`, `error` and `value` signals) plus `isDragOver`, `anyUploading`, `anyFailed` and `hasValue`. Drag & drop is handled on the directive's host; the file-picker input is yours to wire.
+
+## Accessibility
+
+- The drop target is a native `<button>` — click and <kbd>Enter</kbd>/<kbd>Space</kbd> open the file picker; the actual `input[type=file]` is visually hidden and `aria-hidden`.
+- Label/hint/error wiring comes from the shared form-field chrome: the trigger carries `aria-labelledby` (from `et-label`), `aria-describedby` (hint/error region) and `aria-invalid`.
+- A polite live region announces upload activity ("Uploading 2 files"); rejected files surface as regular validation errors, upload failures render in a `role="alert"` region below the field.
+- Remove, replace and retry buttons are regular [icon buttons](/components/button) carrying per-entry `aria-label`s including the file name; previews and thumbnails are `aria-hidden`/empty-`alt`.
+- In single mode with a preview shown, the (visually replaced) trigger is removed from the tab order in favor of the replace/remove actions.
+- Entry enter/leave animations (scale/fade plus a FLIP shift of the remaining list items on delete) are disabled under `prefers-reduced-motion`.
+
+## Theming
+
+Colors come from the app-registered [surface and color theme systems](/components/forms#theming) — the drag-over highlight and error states use the active color theme (`--et-theme-color-primary-*`; the error state is scoped to the app's `type: 'error'` theme automatically). Public tokens:
+
+| Token                               | Default | Purpose                              |
+| ----------------------------------- | ------- | ------------------------------------ |
+| `--et-dropzone-min-height`          | `160px` | Drop area height                     |
+| `--et-dropzone-border-radius`       | `12px`  | Drop area corner radius              |
+| `--et-dropzone-border-width`        | `2px`   | Dashed border width                  |
+| `--et-dropzone-gap`                 | `10px`  | Vertical gap between building blocks |
+| `--et-dropzone-thumbnail-size`      | `48px`  | List thumbnail size (multiple mode)  |
+| `--et-dropzone-transition-duration` | `150ms` | Hover/drag-over transition           |
+| `--et-dropzone-opacity-disabled`    | `0.5`   | Disabled dimming                     |
+| `--et-dropzone-label-font-size`     | `13px`  | Projected `et-label` font size       |
+| `--et-dropzone-support-duration`    | `180ms` | Hint/error region animation          |
+| `--et-dropzone-support-offset`      | `4px`   | Hint/error region slide offset       |
+| `--et-dropzone-error-font-size`     | `12px`  | Error text font size                 |
+| `--et-dropzone-hint-font-size`      | `12px`  | Hint text font size                  |
+
+## Error codes
+
+The dropzone owns the `ET2400`–`ET2499` range — see [error codes](/components/error-codes#dropzone-et24xx).

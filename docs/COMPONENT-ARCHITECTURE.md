@@ -165,6 +165,13 @@ To avoid collisions, each component domain owns a fixed numeric range:
 | 1500 – 1599 | Toggletip                 |
 | 1600 – 1699 | Stream (components)       |
 | 1700 – 1799 | Notification (components) |
+| 1800 – 1899 | Icon                      |
+| 1900 – 1999 | Grid                      |
+| 2000 – 2099 | Tabs                      |
+| 2100 – 2199 | Scrollable                |
+| 2200 – 2299 | Form field                |
+| 2300 – 2399 | Split button              |
+| 2400 – 2499 | Dropzone                  |
 
 Add new domains by claiming the next free hundred block.
 

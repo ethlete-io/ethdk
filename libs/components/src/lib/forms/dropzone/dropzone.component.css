@@ -1,0 +1,420 @@
+@property --et-dropzone-min-height {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 160px;
+}
+
+@property --et-dropzone-border-radius {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 12px;
+}
+
+@property --et-dropzone-border-width {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 2px;
+}
+
+@property --et-dropzone-gap {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 10px;
+}
+
+@property --et-dropzone-thumbnail-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 48px;
+}
+
+@property --et-dropzone-transition-duration {
+  syntax: '<time>';
+  inherits: true;
+  initial-value: 150ms;
+}
+
+@property --et-dropzone-opacity-disabled {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0.5;
+}
+
+@property --et-dropzone-label-font-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 13px;
+}
+
+@property --et-dropzone-support-duration {
+  syntax: '<time>';
+  inherits: true;
+  initial-value: 180ms;
+}
+
+@property --et-dropzone-support-offset {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 4px;
+}
+
+@property --et-dropzone-error-font-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 12px;
+}
+
+@property --et-dropzone-hint-font-size {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 12px;
+}
+
+et-dropzone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--et-dropzone-gap);
+  color: var(--et-surface-color-solid, currentColor);
+
+  > et-label {
+    font-size: var(--et-dropzone-label-font-size);
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--et-surface-color-muted-solid, currentColor);
+    user-select: none;
+  }
+
+  .et-dropzone-native-input {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .et-dropzone-area {
+    position: relative;
+    display: grid;
+  }
+
+  .et-dropzone-trigger {
+    grid-area: 1 / 1;
+    display: grid;
+    place-items: center;
+    min-block-size: var(--et-dropzone-min-height);
+    padding: 16px;
+    border: var(--et-dropzone-border-width) dashed var(--et-surface-border-solid, currentColor);
+    border-radius: var(--et-dropzone-border-radius);
+    background-color: transparent;
+    color: var(--et-surface-color-muted-solid, currentColor);
+    font: inherit;
+    cursor: pointer;
+    transition:
+      border-color var(--et-dropzone-transition-duration) ease,
+      background-color var(--et-dropzone-transition-duration) ease;
+
+    &:hover:not(:disabled) {
+      border-color: var(--et-surface-interaction-hover-solid, currentColor);
+      background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 6%, transparent);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+    }
+  }
+
+  .et-dropzone-prompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .et-dropzone-prompt-icon {
+    display: block;
+    inline-size: 28px;
+    block-size: 28px;
+  }
+
+  .et-dropzone-prompt-text {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .et-dropzone-area[data-has-preview] .et-dropzone-prompt {
+    visibility: hidden;
+  }
+
+  .et-dropzone-file-icon {
+    display: block;
+    inline-size: 40px;
+    block-size: 40px;
+    color: var(--et-surface-color-muted-solid, currentColor);
+  }
+
+  .et-dropzone-preview {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border: var(--et-dropzone-border-width) solid var(--et-surface-border-solid, currentColor);
+    border-radius: var(--et-dropzone-border-radius);
+    background-color: var(--et-surface-background-solid, transparent);
+
+    > .et-dropzone-preview-image {
+      position: absolute;
+      inset: 0;
+      inline-size: 100%;
+      block-size: 100%;
+      object-fit: cover;
+      transition: opacity var(--et-dropzone-transition-duration) ease;
+    }
+
+    /* keep the failure message readable no matter what the preview shows */
+    &[data-status='error'] > .et-dropzone-preview-image {
+      opacity: 0.15;
+    }
+
+    .et-dropzone-preview-info {
+      position: absolute;
+      inset: auto 0 0 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 10px 12px;
+      background-color: rgb(0 0 0 / 0.6);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      color: white;
+
+      .et-dropzone-entry-size {
+        color: rgb(255 255 255 / 0.7);
+      }
+    }
+
+    .et-dropzone-preview-actions {
+      position: absolute;
+      inset-block-start: 8px;
+      inset-inline-end: 8px;
+      display: flex;
+      gap: 6px;
+    }
+  }
+
+  .et-dropzone-list {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .et-dropzone-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    border: 1px solid var(--et-surface-border-solid, currentColor);
+    border-radius: calc(var(--et-dropzone-border-radius) / 1.5);
+    background-color: var(--et-surface-background-solid, transparent);
+
+    .et-dropzone-item-thumbnail {
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      inline-size: var(--et-dropzone-thumbnail-size);
+      block-size: var(--et-dropzone-thumbnail-size);
+      overflow: hidden;
+      border-radius: calc(var(--et-dropzone-border-radius) / 2);
+      background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
+
+      .et-dropzone-preview-image {
+        inline-size: 100%;
+        block-size: 100%;
+        object-fit: cover;
+      }
+
+      .et-dropzone-file-icon {
+        inline-size: 22px;
+        block-size: 22px;
+      }
+    }
+
+    .et-dropzone-item-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-inline-size: 0;
+      flex: 1;
+    }
+  }
+
+  .et-dropzone-entry-name {
+    overflow: hidden;
+    font-size: 13px;
+    line-height: 1.4;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .et-dropzone-entry-size {
+    font-size: 12px;
+    color: var(--et-surface-color-muted-solid, currentColor);
+  }
+
+  .et-dropzone-internal-errors {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-block-start: calc(4px - var(--et-dropzone-gap));
+    font-size: var(--et-dropzone-error-font-size);
+    color: var(--et-theme-color-primary-solid, currentColor);
+  }
+
+  /* collapses smoothly when the upload finishes so the file name doesn't jump */
+  .et-dropzone-entry-progress {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition:
+      grid-template-rows var(--et-dropzone-transition-duration) ease,
+      opacity var(--et-dropzone-transition-duration) ease;
+
+    &[data-active] {
+      grid-template-rows: 1fr;
+      opacity: 1;
+    }
+
+    .et-dropzone-entry-progress-inner {
+      min-block-size: 0;
+      overflow: hidden;
+
+      et-progress-bar {
+        margin-block: 4px 2px;
+      }
+    }
+  }
+
+  .et-dropzone-live-status {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .et-dropzone-support {
+    /* pull the hint/error region closer to the control than the flex gap */
+    margin-block-start: calc(4px - var(--et-dropzone-gap));
+    overflow: clip;
+    block-size: 0;
+  }
+
+  .et-dropzone-support-stack {
+    position: relative;
+    display: grid;
+  }
+
+  .et-dropzone-support-content {
+    grid-area: 1 / 1;
+    min-inline-size: 0;
+    opacity: 0;
+    transform: translateY(0);
+
+    &[data-active] {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .et-dropzone-errors {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-block-start: 4px;
+    font-size: var(--et-dropzone-error-font-size);
+    color: var(--et-theme-color-primary-solid, currentColor);
+  }
+
+  .et-dropzone-hint {
+    padding-block-start: 4px;
+    font-size: var(--et-dropzone-hint-font-size);
+    color: var(--et-surface-color-muted-solid, currentColor);
+
+    &:empty {
+      display: none;
+    }
+  }
+
+  &[data-can-animate] {
+    .et-dropzone-support {
+      transition: block-size var(--et-dropzone-support-duration) ease;
+    }
+
+    .et-dropzone-support-content {
+      transition:
+        opacity var(--et-dropzone-support-duration) ease,
+        transform var(--et-dropzone-support-duration) ease;
+
+      @starting-style {
+        &[data-active] {
+          opacity: 0;
+          transform: translateY(calc(var(--et-dropzone-support-offset) * -1));
+        }
+      }
+    }
+
+    .et-dropzone-item,
+    .et-dropzone-preview {
+      transition:
+        opacity var(--et-dropzone-transition-duration) ease,
+        scale var(--et-dropzone-transition-duration) ease;
+
+      @starting-style {
+        opacity: 0;
+        scale: 0.97;
+      }
+    }
+
+    .et-dropzone-internal-errors {
+      transition: opacity var(--et-dropzone-support-duration) ease;
+
+      @starting-style {
+        opacity: 0;
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    --et-dropzone-support-duration: 1ms;
+    --et-dropzone-support-offset: 0px;
+    --et-dropzone-transition-duration: 1ms;
+  }
+}
+
+et-dropzone[data-drag-over] {
+  .et-dropzone-trigger {
+    border-color: var(--et-theme-color-primary-solid, currentColor);
+    background-color: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 8%, transparent);
+  }
+}
+
+et-dropzone[data-error] {
+  .et-dropzone-trigger {
+    border-color: var(--et-theme-color-primary-solid, currentColor);
+  }
+}
+
+et-dropzone[data-disabled] {
+  .et-dropzone-area,
+  .et-dropzone-list {
+    opacity: var(--et-dropzone-opacity-disabled);
+  }
+}

@@ -37,6 +37,7 @@ Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU
 | 2100–2199 | Scrollable   | [Scrollable](/components/scrollable)     |
 | 2200–2299 | Form field   | [Forms](/components/forms)               |
 | 2300–2399 | Split button | [Button](/components/button)             |
+| 2400–2499 | Dropzone     | [Dropzone](/components/dropzone)         |
 
 ::: info Codes below 1200
 Codes `0`–`1001` belong to `@ethlete/query` (query features, auth, web sockets), not to this library.
@@ -164,3 +165,13 @@ All split button checks run in dev mode only.
 | `ET2301` | An `[etSplitButton]` element has no trigger segment.               | Add a button with the `etSplitButtonTrigger` directive.       |
 | `ET2302` | `etSplitButtonAction` is not inside an `[etSplitButton]` element.  | Move the action inside the split button (`et-split-button`).  |
 | `ET2303` | `etSplitButtonTrigger` is not inside an `[etSplitButton]` element. | Move the trigger inside the split button (`et-split-button`). |
+
+## Dropzone (ET24xx)
+
+All dropzone checks run in dev mode only.
+
+| Code     | Cause                                                                                | Fix                                                                                  |
+| -------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| `ET2400` | The `upload` input is not a valid config (missing `queryCreator` or `selectValue`).  | Create the config via `createDropzoneUpload({ queryCreator, selectValue, ... })`.    |
+| `ET2401` | The control was initialized with a value but the config has no `resolveExisting`.    | Add a `resolveExisting` function so existing values can be displayed.                |
+| `ET2402` | The control value shape doesn't match the mode (array in single mode or vice versa). | Set `multiple` to match the value shape, or write a value matching the current mode. |
