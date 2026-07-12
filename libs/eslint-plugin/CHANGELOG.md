@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.11
+
+### Major Changes
+
+- [#3016](https://github.com/ethlete-io/ethdk/pull/3016) [`396bdfb`](https://github.com/ethlete-io/ethdk/commit/396bdfb50dc51d2de0156dd7b7cc0ae3b21dfe9b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove the `no-public-property` rule. It contradicted `template-member-accessibility`, which requires an explicit `public` modifier on surface members — the explicit-public style is the intended one. The rule was never part of the `recommended` config; if you enabled `ethlete/no-public-property` manually, drop it from your ESLint config.
+
 ## 0.1.0-next.10
 
 ### Minor Changes
