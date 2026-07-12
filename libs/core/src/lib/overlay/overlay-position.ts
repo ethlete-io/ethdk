@@ -196,9 +196,26 @@ export const createAnchoredPositionCleanup = (
       strategy: 'absolute',
       middleware,
     }).then(({ x, y, placement, middlewareData }) => {
+      // A detached reference reports a zeroed rect, so floating-ui positions the pane at the
+      // viewport's top-left. Tear the overlay down (without animating from that bogus position)
+      // before applying the transform when auto-close is on, and otherwise leave the pane where it
+      // last was rather than snapping it to the corner.
+      if (middlewareData.hide?.referenceHidden) {
+        if (strategy.autoCloseIfReferenceHidden) {
+          overlayRef.close(undefined, 'reference-detached');
+          return;
+        }
+
+        if (strategy.autoHide) {
+          renderer.setStyle(paneElement, { visibility: 'hidden' });
+        }
+        return;
+      }
+
       renderer.setStyle(paneElement, {
         transform: `translate3d(${x}px, ${y}px, 0)`,
         width: mirrorWidthElement ? `${mirrorWidthElement.offsetWidth}px` : null,
+        visibility: null,
       });
       // exposed so animations can compose their transforms with the anchored position
       renderer.setCssProperties(paneElement, {
@@ -214,22 +231,6 @@ export const createAnchoredPositionCleanup = (
           `translate3d(${middlewareData.arrow.x ?? 0}px, ${middlewareData.arrow.y ?? 0}px, 0)`,
         );
       }
-
-      if (middlewareData.hide?.referenceHidden) {
-        if (strategy.autoCloseIfReferenceHidden) {
-          overlayRef.close(undefined, 'api');
-          return;
-        }
-
-        renderer.setStyle(paneElement, {
-          visibility: strategy.autoHide ? 'hidden' : null,
-        });
-        return;
-      }
-
-      renderer.setStyle(paneElement, {
-        visibility: null,
-      });
     });
   });
 

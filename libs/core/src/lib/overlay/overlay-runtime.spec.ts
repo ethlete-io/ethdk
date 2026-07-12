@@ -124,4 +124,18 @@ describe('overlay runtime', () => {
     expect(fakeLifecycle.leave).toHaveBeenCalledOnce();
     expect(ref.state()).toBe('closed');
   });
+
+  it('tears down synchronously without a leave animation when the reference detaches', async () => {
+    const ref = mount({}, AnimatedOverlayComponent);
+
+    await flushFrames();
+
+    expect(ref.state()).toBe('mounted');
+
+    ref.close(undefined, 'reference-detached');
+
+    // no leave transition to animate away from a stale position — destroy immediately
+    expect(fakeLifecycle.leave).not.toHaveBeenCalled();
+    expect(ref.state()).toBe('closed');
+  });
 });

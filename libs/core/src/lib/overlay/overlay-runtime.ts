@@ -243,7 +243,9 @@ export const [provideOverlayRuntime, injectOverlayRuntime] = createRootProvider(
           `close requested (source "${closeEvent.source}", lifecycle state "${lifecycle?.state$.value ?? 'none'}", delegate ${config.animationDelegate?.leave ? 'yes' : 'no'})`,
         );
 
-        if (!lifecycle) {
+        // The reference element is gone — there is nothing left to animate away from, so tear the
+        // overlay down synchronously instead of playing a leave transition from a stale position.
+        if (!lifecycle || closeEvent.source === 'reference-detached') {
           destroyMountedOverlay(closeEvent);
           return;
         }
