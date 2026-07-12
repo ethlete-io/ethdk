@@ -34,32 +34,32 @@
   }
 
   &:where([data-size='xs']) {
-    width: 2.8rem;
-    height: 2.8rem;
+    width: 2.4rem;
+    height: 2.4rem;
     --_et-icon-button-icon-size: 1.4rem;
   }
 
   &:where([data-size='sm']) {
-    width: 3.6rem;
-    height: 3.6rem;
+    width: 3.1rem;
+    height: 3.1rem;
     --_et-icon-button-icon-size: 1.8rem;
   }
 
   &:where([data-size='md']) {
-    width: 4rem;
-    height: 4rem;
+    width: 3.9rem;
+    height: 3.9rem;
     --_et-icon-button-icon-size: 2rem;
   }
 
   &:where([data-size='lg']) {
-    width: 4.8rem;
-    height: 4.8rem;
+    width: 4.6rem;
+    height: 4.6rem;
     --_et-icon-button-icon-size: 2.4rem;
   }
 
   &:where([data-size='xl']) {
-    width: 5.6rem;
-    height: 5.6rem;
+    width: 5.7rem;
+    height: 5.7rem;
     --_et-icon-button-icon-size: 2.8rem;
   }
 

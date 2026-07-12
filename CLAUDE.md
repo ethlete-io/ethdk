@@ -75,6 +75,13 @@ The rules live in `@ethlete/eslint-plugin`. For the judgment calls lint can't
 enforce (signals vs RxJS, templates, lifecycle/DI patterns, etc.), see the
 **`styleguide`** skill.
 
+After editing any file, format it with Prettier before wrapping up (config is
+`.prettierrc.js`):
+
+```bash
+npx prettier --write <files>
+```
+
 ## Verifying UI changes
 
 Storybook is the ground truth and usually runs on `:4400`. Use the

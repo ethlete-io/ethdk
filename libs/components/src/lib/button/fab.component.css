@@ -72,35 +72,35 @@
   }
 
   &:where([data-size='xs']) {
-    --_et-fab-size: 2.8rem;
+    --_et-fab-size: 2.4rem;
     --_et-fab-label-font-size: 1.2rem;
     --_et-fab-icon-size: 1.4rem;
     --_et-fab-contents-gap: 0.5rem;
   }
 
   &:where([data-size='sm']) {
-    --_et-fab-size: 3.6rem;
+    --_et-fab-size: 3.1rem;
     --_et-fab-label-font-size: 1.2rem;
     --_et-fab-icon-size: 1.8rem;
     --_et-fab-contents-gap: 0.6rem;
   }
 
   &:where([data-size='md']) {
-    --_et-fab-size: 4rem;
+    --_et-fab-size: 3.9rem;
     --_et-fab-label-font-size: 1.3rem;
     --_et-fab-icon-size: 2rem;
     --_et-fab-contents-gap: 0.8rem;
   }
 
   &:where([data-size='lg']) {
-    --_et-fab-size: 4.8rem;
+    --_et-fab-size: 4.6rem;
     --_et-fab-label-font-size: 1.4rem;
     --_et-fab-icon-size: 2.4rem;
     --_et-fab-contents-gap: 1rem;
   }
 
   &:where([data-size='xl']) {
-    --_et-fab-size: 5.6rem;
+    --_et-fab-size: 5.7rem;
     --_et-fab-label-font-size: 1.6rem;
     --_et-fab-icon-size: 2.8rem;
     --_et-fab-contents-gap: 1.2rem;
