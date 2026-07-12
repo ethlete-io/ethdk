@@ -27,8 +27,8 @@ export class ProductListComponent {
     afterClosed: (result) => console.log('closed with', result),
   });
 
-  protected showProduct(event: Event) {
-    this.product.open({ origin: event });
+  protected showProduct() {
+    this.product.open();
   }
 }
 ```
@@ -56,10 +56,9 @@ Inputs and outputs use Angular's native binding API (`inputBinding`, `outputBind
 
 ```ts
 this.product.open({
-  origin: event,
   bindings: [
     inputBinding('productId', () => this.selectedId()),
-    outputBinding('reserved', (amount: number) => this.onReserved(amount)),
+    outputBinding('reserved', (amount: number) => this.updateStock(amount)),
   ],
   providers: [{ provide: PRODUCT_CONTEXT, useValue: this.context }],
 });

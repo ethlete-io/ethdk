@@ -9,9 +9,9 @@ import { injectBreakpointObserver } from '@ethlete/core';
   /* … */
 })
 export class ToolbarComponent {
-  breakpointObserver = injectBreakpointObserver();
+  private breakpointObserver = injectBreakpointObserver();
 
-  isDesktop = this.breakpointObserver.observeBreakpoint({ min: 'lg' });
+  protected isDesktop = this.breakpointObserver.observeBreakpoint({ min: 'lg' });
 }
 ```
 

@@ -9,9 +9,9 @@ Pointer-gesture primitives: a drag handle directive and a resize handles compone
 ```html
 <div
   (dragTapped)="toggle()"
-  (dragStarted)="onStart($event)"
-  (dragMoved)="onMove($event)"
-  (dragEnded)="onEnd()"
+  (dragStarted)="beginDrag($event)"
+  (dragMoved)="updateDrag($event)"
+  (dragEnded)="finishDrag()"
   etDragHandle
 ></div>
 ```

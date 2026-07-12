@@ -36,7 +36,7 @@ export const getMe = secureGetQuery<GetMeQueryArgs>('/me');
   /* … */
 })
 export class LoginFormComponent {
-  auth = injectAuthProvider();
+  private auth = injectAuthProvider();
 
   // a signal holding a frozen snapshot of the latest login execution
   loginState = this.auth.queries.login.snapshot;

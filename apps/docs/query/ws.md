@@ -20,7 +20,7 @@ export const [provideMatchSocket, injectMatchSocket] = createWebSocketClient({
 export class MatchComponent {
   matchId = input.required<string>();
 
-  socket = injectMatchSocket();
+  private socket = injectMatchSocket();
 
   // reactive room: when matchId changes, the old room is left and the new one joined
   matchRoom = this.socket.joinRoom(() => `match:${this.matchId()}`);
