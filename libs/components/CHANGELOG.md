@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0-next.19
+
+### Patch Changes
+
+- [`09ed801`](https://github.com/ethlete-io/ethdk/commit/09ed8010644643a7f019652f986d8454a4cdbdb3) Thanks [@TomTomB](https://github.com/TomTomB)! - Icon button & FAB: sizes now match the surface button's height at every size (`xs`–`xl`), so they line up in a row.
+
+- [#3017](https://github.com/ethlete-io/ethdk/pull/3017) [`4913e22`](https://github.com/ethlete-io/ethdk/commit/4913e226918ab5200b500620bae37c063af0e7ca) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay arrows: anchored-overlay arrows (menu, tooltip, toggletip) now take their background and border from the surface theme by default, so the arrow border stays visible and matches the panel under any theme. Override via `--et-overlay-arrow-background` / `--et-overlay-arrow-border`.
+
 ## 1.0.0-next.18
 
 ### Major Changes

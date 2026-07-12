@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.25
+
+### Patch Changes
+
+- [#3017](https://github.com/ethlete-io/ethdk/pull/3017) [`83853d6`](https://github.com/ethlete-io/ethdk/commit/83853d6138bc7d0a481b5b982c2a7137b9cc65e6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay: anchored overlays with `autoCloseIfReferenceHidden` now close instantly when their anchor is removed, instead of jumping to the viewport corner and animating out from there.
+
 ## 5.0.0-next.24
 
 ### Minor Changes
