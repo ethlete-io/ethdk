@@ -10,6 +10,10 @@
 </et-scrollable>
 ```
 
+```ts
+import { SCROLLABLE_IMPORTS } from '@ethlete/components';
+```
+
 ## Live demo
 
 <StoryEmbed id="components-scrollable--default" height="360px" />

@@ -30,6 +30,10 @@ Attach `[etToggletip]` together with `etToggletipTrigger` to a button:
 </ng-template>
 ```
 
+```ts
+import { TOGGLETIP_IMPORTS } from '@ethlete/components';
+```
+
 - `etToggletipTrigger` couples the toggletip to the button it sits on: the button reflects the open state as pressed, and a disabled button disables the toggletip. It requires both an `et-button` and an `etToggletip` on the same element (enforced in dev mode).
 - `etToggletipClose` on a button **inside** the content closes it.
 - `[data-toggletip-body]` / `[data-toggletip-actions]` are styling hooks — the actions row gets a top border.

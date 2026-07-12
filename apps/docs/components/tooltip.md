@@ -23,6 +23,10 @@ Import `TOOLTIP_IMPORTS` (no provider needed) and attach `[etTooltip]`:
 </ng-template>
 ```
 
+```ts
+import { TOOLTIP_IMPORTS } from '@ethlete/components';
+```
+
 ## Live demo
 
 <StoryEmbed id="components-tooltip--default" height="360px" />

@@ -10,12 +10,20 @@ Small standalone directives and pipes that don't belong to a larger system.
 <div (etClickOutside)="close()" etClickOutside>…</div>
 ```
 
+```ts
+import { ClickOutsideDirective } from '@ethlete/core';
+```
+
 ## Repeat
 
 `*etRepeat` renders its template N times (default `2`) — for skeletons and placeholder rows:
 
 ```html
 <et-skeleton-row *etRepeat="5" />
+```
+
+```ts
+import { RepeatDirective } from '@ethlete/core';
 ```
 
 ## Scroll observer
@@ -28,6 +36,10 @@ Small standalone directives and pipes that don't belong to a larger system.
   <ng-content />
   <div etScrollObserverEnd></div>
 </div>
+```
+
+```ts
+import { ScrollObserverDirective, ScrollObserverStartDirective, ScrollObserverEndDirective } from '@ethlete/core';
 ```
 
 Place `etScrollObserverStart` / `etScrollObserverEnd` sentinels as first/last children; the directive exposes `isAtStart` and `isAtEnd` signals (both default `false`). The `enabled` model input (default `true`) accepts a boolean or a signal.

@@ -5,6 +5,8 @@ Toast/snackbar system. Notifications are opened imperatively through a manager; 
 ## Setup
 
 ```ts
+import { provideNotificationManager } from '@ethlete/components';
+
 provideNotificationManager({
   position: 'bottom-end',
   statusColorMapping: { info: 'brand', error: 'danger', success: 'brand', loading: 'brand' },
@@ -23,6 +25,8 @@ provideNotificationManager({
 ## Opening notifications
 
 ```ts
+import { injectNotificationManager } from '@ethlete/components';
+
 private manager = injectNotificationManager();
 
 save() {
@@ -69,6 +73,10 @@ The ref also offers `dismiss()`, `pauseTimer()` / `resumeTimer()` (hover and foc
 ## Custom notification UI
 
 The default `et-notification` covers spinner/title/message/progress/action/dismiss. For fully custom toasts, build on the headless pieces from `NOTIFICATION_IMPORTS`: `[etNotification]` (takes the `ref`, exposes status/content signals and handles the leave animation), `[etNotificationAction]` (runs the action, then dismisses) and `[etNotificationDismiss]`.
+
+```ts
+import { NOTIFICATION_IMPORTS } from '@ethlete/components';
+```
 
 ## Theming
 

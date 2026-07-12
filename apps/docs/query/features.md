@@ -3,6 +3,8 @@
 Features configure a [query's](/query/queries) behavior and are passed to the creator call. Each feature type can be used **once per query** (using one twice throws in dev mode).
 
 ```ts
+import { withArgs, withErrorHandling, withPolling } from '@ethlete/query';
+
 const matchQuery = getMatch(
   withArgs(() => ({ pathParams: { matchId: this.matchId() } })),
   withPolling({ interval: 10_000 }),
@@ -41,6 +43,8 @@ Only for `GET`/`HEAD`/`OPTIONS` queries — anything else throws.
 Re-executes the query whenever one of the given signals changes:
 
 ```ts
+import { withAutoRefresh } from '@ethlete/query';
+
 withAutoRefresh({ onSignalChanges: [this.locale, this.currency] });
 ```
 
@@ -61,6 +65,8 @@ These listen to the query's discrete event stream, so they never miss a terminal
 Reactively patches the current response without re-fetching — made for pushing websocket messages into an already-loaded query. Return `null` to skip an update; the next real server response overwrites patches.
 
 ```ts
+import { withResponseUpdate } from '@ethlete/query';
+
 const matchQuery = getMatch(
   withArgs(() => ({ pathParams: { matchId: this.matchId() } })),
   withResponseUpdate({
@@ -83,6 +89,8 @@ See [WebSockets](/query/ws) for the room client this pairs with, and a live demo
 `createQueryFeature()` is the extension point behind all the built-in `with*` features — use it to package your own reusable query behavior:
 
 ```ts
+import { createQueryFeature, nestedEffect, QueryArgs } from '@ethlete/query';
+
 const withLogging = <TArgs extends QueryArgs>() =>
   createQueryFeature<TArgs>({
     type: 'withLogging',

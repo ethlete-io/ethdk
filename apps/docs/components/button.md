@@ -26,6 +26,10 @@ Five button flavors, all attribute selectors on native `<button>` or `<a>` eleme
 </button>
 ```
 
+```ts
+import { BUTTON_IMPORTS } from '@ethlete/components';
+```
+
 ## Live demo
 
 <StoryEmbed id="components-button-surface--default" height="400px" />

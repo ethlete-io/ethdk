@@ -18,6 +18,8 @@ A control sits inside a `*-field` wrapper together with an `et-label`; the `[for
 ```
 
 ```ts
+import { InputImports } from '@ethlete/cdk';
+
 @Component({ imports: [InputImports, ReactiveFormsModule] })
 export class SignupComponent {
   email = new FormControl('', [Validators.required, Validators.email]);
@@ -31,6 +33,8 @@ The wrapper wires ids for `label[for]`, `aria-labelledby` and `aria-describedby`
 Error rendering needs a message service — provide it once at the root:
 
 ```ts
+import { provideValidatorErrorsService } from '@ethlete/cdk';
+
 providers: [provideValidatorErrorsService()];
 ```
 
@@ -69,6 +73,10 @@ Extras worth knowing:
 </et-checkbox-group>
 ```
 
+```ts
+import { CheckboxImports } from '@ethlete/cdk';
+```
+
 `CheckboxImports`. Supports an indeterminate state, a card-style variant (`et-checkbox-card-field`) and groups: a checkbox marked `etCheckboxGroupControl` acts as the "select all" master for its siblings (with `aria-controls` wired for you).
 
 ## Radio
@@ -86,6 +94,10 @@ Extras worth knowing:
 </et-radio-group>
 ```
 
+```ts
+import { RadioImports } from '@ethlete/cdk';
+```
+
 `RadioImports`. The group carries the `formControl` and `role="radiogroup"`; each `et-radio` contributes a `value` (compared deeply, so object values work) and an optional `disabled`. A card variant exists as `et-radio-card-field`.
 
 ## Slide toggle
@@ -95,6 +107,10 @@ Extras worth knowing:
   <et-slide-toggle />
   <et-label>Enable notifications</et-label>
 </et-slide-toggle-field>
+```
+
+```ts
+import { SlideToggleImports } from '@ethlete/cdk';
 ```
 
 `SlideToggleImports`. A boolean switch — superseded by the [components switch](/components/forms) for signal-forms apps.
@@ -112,6 +128,10 @@ Extras worth knowing:
 </et-segmented-button-group>
 ```
 
+```ts
+import { SegmentedButtonImports } from '@ethlete/cdk';
+```
+
 `SegmentedButtonImports`. A single-select group rendered as a connected button row with a FLIP-animated active indicator. `renderAs` switches between `'buttons'` (default) and `'tabs'` styling.
 
 ## Slider
@@ -121,6 +141,10 @@ Extras worth knowing:
   <et-label>Volume</et-label>
   <et-slider [min]="0" [max]="100" [step]="1" />
 </et-slider-field>
+```
+
+```ts
+import { SliderImports } from '@ethlete/cdk';
 ```
 
 `SliderImports`. Defaults: `min` 0, `max` 100, `step` 1. Options: `vertical`, `inverted` and `renderValueTooltip`, plus a custom thumb via `<ng-template etSliderThumbContentTemplate>`. Full `role="slider"` semantics with keyboard support (arrows ±1 step, PageUp/PageDown ±10, Home/End) and mouse/touch dragging that snaps to `step`.
@@ -135,6 +159,10 @@ Extras worth knowing:
   <et-selection-list-option value="angular">Angular</et-selection-list-option>
   <et-selection-list-option value="rxjs" disabled>RxJS</et-selection-list-option>
 </et-selection-list-field>
+```
+
+```ts
+import { SelectionListImports } from '@ethlete/cdk';
 ```
 
 `SelectionListImports`. A `role="listbox"` of options with single or `multiple` selection, roving-tabindex keyboard navigation (typeahead, Home/End, Ctrl+A in multiple mode). An `isResetOption` appears selected while the model is empty and clears the value when picked.
@@ -156,6 +184,10 @@ All three select flavors share the same `et-select-field` wrapper (which carries
 </et-select-field>
 ```
 
+```ts
+import { NativeSelectImports } from '@ethlete/cdk';
+```
+
 `NativeSelectImports`. A styled shell around a real `<select>` — best on mobile. Option values aren't limited to strings; the directive maps the selected index back to the bound value.
 
 ### Styled select
@@ -168,6 +200,10 @@ All three select flavors share the same `et-select-field` wrapper (which carries
     <et-select-option value="2" disabled>Bob</et-select-option>
   </et-select>
 </et-select-field>
+```
+
+```ts
+import { SelectImports } from '@ethlete/cdk';
 ```
 
 `SelectImports`. An overlay-based listbox with single/`multiple` selection and complete keyboard handling — Alt+Arrow and Space open, typeahead jumps to options, Escape/Tab close, Backspace removes the last value in multiple mode.
@@ -185,6 +221,10 @@ An autocomplete-style select: a text input filters an option list in an overlay.
     <ng-template etComboboxOptionTemplate let-option="option">{{ option.name }}</ng-template>
   </et-combobox>
 </et-select-field>
+```
+
+```ts
+import { ComboboxImports } from '@ethlete/cdk';
 ```
 
 <StoryEmbed id="cdk-forms-select-combobox--default" height="420px" />

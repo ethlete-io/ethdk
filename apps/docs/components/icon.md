@@ -3,6 +3,8 @@
 Inline-SVG icons rendered by the `[etIcon]` attribute directive — no icon font, no component wrapper. Icons are tree-shakeable constants registered per component (or once at the app root) via `provideIcons()`.
 
 ```ts
+import { CHEVRON_ICON, ICON_IMPORTS, TIMES_ICON, provideIcons } from '@ethlete/components';
+
 @Component({
   imports: [ICON_IMPORTS],
   providers: [provideIcons(CHEVRON_ICON, TIMES_ICON)],

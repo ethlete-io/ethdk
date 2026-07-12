@@ -12,6 +12,10 @@ Each platform ships a raw player (`et-youtube-player`) and a **slot** (`et-youtu
 <et-tiktok-player-slot [videoId]="id()" class="block aspect-9/16" />
 ```
 
+```ts
+import { StreamImports } from '@ethlete/components';
+```
+
 Source inputs per platform:
 
 | Platform    | Source                                                       | Extras                          |
@@ -42,6 +46,8 @@ Not every platform supports every control — each player exposes a static `CAPA
 Configure a consent component globally and every slot renders it as a gate until the viewer accepts (or wire your CMP through the `STREAM_USER_CONSENT_PROVIDER_TOKEN` — a `ConsentHandler` bound via [`createUserConsentProvider`](/core/providers#user-consent)):
 
 ```ts
+import { StreamConsentComponent, provideStreamConfig } from '@ethlete/components';
+
 provideStreamConfig({
   consentComponent: StreamConsentComponent, // the built-in gate, or your own [etStreamConsent] component
 });

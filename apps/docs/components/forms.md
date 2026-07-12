@@ -27,6 +27,10 @@ Each control family ships its own imports array — combine the field shell with
 | `CHOICE_FIELD_IMPORTS`     | `et-choice-field` + label/hint chrome                                     |
 | `RICH_TEXT_EDITOR_IMPORTS` | `et-rich-text-editor`                                                     |
 
+```ts
+import { FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
+```
+
 The selection-list groups have no aggregate array — import the components directly (`CheckboxGroupComponent` + `CheckboxOptionComponent`, `RadioGroupComponent` + `RadioComponent`, `SegmentedButtonGroupComponent` + `SegmentedButtonComponent`), and the same goes for `DescriptionComponent` (`et-description`).
 
 ## Text fields — `et-form-field` + `et-input`

@@ -19,6 +19,10 @@ Two flavors sharing one accessible tab-bar engine: **content tabs** (`et-tab-gro
 </et-tab-group>
 ```
 
+```ts
+import { TabImports } from '@ethlete/components';
+```
+
 - `selectedIndex` is a two-way model (default `0`); disabled tabs are skipped.
 - `label` + optional `icon` render the trigger, or supply a custom `ng-template etTabLabel`.
 - `preserveContent` (default `true`) keeps inactive panels rendered but `hidden` + `inert`; set it to `false` for lazy rendering of only the active panel.
@@ -40,6 +44,10 @@ Anchors + router instead of an index — active state comes from `RouterLinkActi
 <et-nav-tabs-outlet>
   <router-outlet />
 </et-nav-tabs-outlet>
+```
+
+```ts
+import { NavTabImports } from '@ethlete/components';
 ```
 
 `a[et-nav-tab-link]` forwards the usual `RouterLink` inputs (`queryParams`, `fragment`, `relativeTo`, …) and supports `disabled` just like content tabs. The optional `et-nav-tabs-outlet` wrapper gives the routed region proper `role="tabpanel"` semantics — place it as a sibling of `et-nav-tabs` (as above); it finds the bar that labels it automatically.

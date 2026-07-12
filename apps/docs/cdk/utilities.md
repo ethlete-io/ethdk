@@ -7,6 +7,8 @@ Standalone helpers exported from `@ethlete/cdk`.
 `createNavigationDismissChecker()` guards forms against accidental dismissal — typically a form inside an overlay. It snapshots the form's default value, tracks whether the current value differs, and runs your confirmation logic only when there are unsaved changes:
 
 ```ts
+import { createNavigationDismissChecker } from '@ethlete/cdk';
+
 const dismissChecker = createNavigationDismissChecker({
   form: this.form,
   dismissCheckFn: () =>
@@ -25,6 +27,8 @@ dismissChecker.runCheck(); // resolves truthy when closing is OK
 ## Router navigation state
 
 ```ts
+import { injectRouterNavigationState } from '@ethlete/cdk';
+
 const state = injectRouterNavigationState<{ from: string }>();
 ```
 

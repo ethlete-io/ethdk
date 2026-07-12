@@ -1,6 +1,10 @@
 # Loaders
 
-Three loading indicators, all exposing `role="progressbar"` with correct determinate/indeterminate aria values. Colors come from `currentColor`.
+Three loading indicators, all exposing `role="progressbar"` with correct determinate/indeterminate aria values. Colors come from `currentColor`. There is no aggregate imports array — import the components directly:
+
+```ts
+import { BrandLoaderComponent, ProgressBarComponent, SpinnerComponent } from '@ethlete/components';
+```
 
 ## Spinner
 

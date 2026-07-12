@@ -10,6 +10,8 @@ Opening an overlay (dialog, sheet, …) imperatively involves three pieces with 
 
 ```ts
 // product-overlay.ts — module scope, no injection context needed
+import { defineOverlay, dialogOverlayStrategy } from '@ethlete/components';
+
 export const productOverlay = defineOverlay<ProductOverlayComponent, ProductResult>({
   component: ProductOverlayComponent,
   strategies: dialogOverlayStrategy({ maxWidth: '480px' }),
@@ -18,6 +20,8 @@ export const productOverlay = defineOverlay<ProductOverlayComponent, ProductResu
 
 ```ts
 // any component that opens it
+import { createOverlayOpener } from '@ethlete/components';
+
 export class ProductListComponent {
   private product = createOverlayOpener(productOverlay, {
     afterClosed: (result) => console.log('closed with', result),
@@ -97,6 +101,8 @@ Inside the overlay component, `definition.injectRef()` returns the fully typed `
 The component **must** expose an `overlayQueryParam` [model](https://angular.dev/api/core/model) — this is enforced at compile time. It receives the param value and is kept in two-way sync with the URL: writing to the model updates the URL, external URL changes are pushed into the model.
 
 ```ts
+import { defineQueryParamOverlay, dialogOverlayStrategy } from '@ethlete/components';
+
 export class ProductOverlayComponent {
   public overlayQueryParam = model<string>();
 }

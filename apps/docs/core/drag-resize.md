@@ -16,6 +16,10 @@ Pointer-gesture primitives: a drag handle directive and a resize handles compone
 ></div>
 ```
 
+```ts
+import { DragHandleDirective } from '@ethlete/core';
+```
+
 | Input             | Default | Description                                               |
 | ----------------- | ------- | --------------------------------------------------------- |
 | `commitThreshold` | `8`     | Pixels of movement (either axis) before the drag commits. |
@@ -42,6 +46,10 @@ Pointer-gesture primitives: a drag handle directive and a resize handles compone
   (resizeMoved)="updateResize($event)"
   (resizeEnded)="finishResize()"
 />
+```
+
+```ts
+import { ResizeHandlesComponent } from '@ethlete/core';
 ```
 
 | Input      | Default                       | Description                                   |

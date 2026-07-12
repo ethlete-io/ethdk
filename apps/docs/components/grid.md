@@ -7,6 +7,8 @@ An interactive dashboard/widget grid — not a CSS-grid helper and not a data ta
 The grid renders registered components by `type`. Register them once via `provideGridConfig`:
 
 ```ts
+import { provideGridConfig } from '@ethlete/components';
+
 providers: [
   ...provideGridConfig({
     registrations: [
@@ -25,6 +27,10 @@ providers: [
 
 ```html
 <et-grid [initialItems]="items()" [rowHeight]="100" [gap]="16" (layoutChange)="persist($event)" />
+```
+
+```ts
+import { GridImports } from '@ethlete/components';
 ```
 
 Each `GridItemConfig` is `{ id, type, data, layout }`, where `layout` maps breakpoint names to `{ col, row, colSpan, rowSpan }` positions.
@@ -65,6 +71,8 @@ In edit mode every item renders an actions component in its top corner — by de
 `layoutChange` emits a `GridSerializedState` on every edit. If your backend uses a different position shape, bridge it with `createGridAdapter`:
 
 ```ts
+import { createGridAdapter } from '@ethlete/components';
+
 const adapter = createGridAdapter<BackendWidget>({
   fromExternal: (w) => ({ id: w.uuid, type: w.kind, data: w, layout: { lg: toGridPosition(w) } }),
   toExternal: (item, position) => ({ ...item.data, ...fromGridPosition(position) }),

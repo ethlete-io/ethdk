@@ -7,6 +7,8 @@
 ```
 
 ```ts
+import { PaginationImports } from '@ethlete/cdk';
+
 @Component({ imports: [PaginationImports] })
 export class ProductListComponent {
   pageControl = new FormControl<number | null>(1);

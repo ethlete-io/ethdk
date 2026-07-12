@@ -18,6 +18,10 @@ A CSS-class-driven enter/leave animation system — directives manage a lifecycl
 }
 ```
 
+```ts
+import { AnimatedLifecycleDirective } from '@ethlete/core';
+```
+
 The class cycle mirrors Vue's transition contract:
 
 | Phase | Classes (in order)                                                                                            |
@@ -48,6 +52,10 @@ The directive settles even when the browser never fires the expected `transition
     <p>Some animated hint</p>
   </ng-container>
 </div>
+```
+
+```ts
+import { AnimatedIfDirective } from '@ethlete/core';
 ```
 
 ## Animatable

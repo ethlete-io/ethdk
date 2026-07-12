@@ -9,6 +9,8 @@ The keyboard-focus outline used by every interactive component in the library (b
 Or adopt it in your own component the way the built-ins do:
 
 ```ts
+import { FocusRingDirective } from '@ethlete/components';
+
 @Component({
   selector: '[my-button]',
   hostDirectives: [FocusRingDirective],

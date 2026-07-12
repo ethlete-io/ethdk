@@ -7,6 +7,8 @@ The overlay system is the foundation for everything floating in `@ethlete/compon
 Call `provideOverlay()` once at bootstrap — it registers the scroll blocker that locks body scroll while overlays are open:
 
 ```ts
+import { provideOverlay } from '@ethlete/components';
+
 export const appConfig: ApplicationConfig = {
   providers: [provideOverlay()],
 };
@@ -17,6 +19,8 @@ export const appConfig: ApplicationConfig = {
 `injectOverlayManager()` returns the root `OverlayManager`. `open(component, config?)` mounts the component and returns a typed `OverlayRef`:
 
 ```ts
+import { dialogOverlayStrategy, injectOverlayManager } from '@ethlete/components';
+
 export class ExampleComponent {
   private overlayManager = injectOverlayManager();
 
@@ -83,6 +87,10 @@ Import `OVERLAY_CONTENT_IMPORTS` into the overlay component and structure it wit
 </div>
 ```
 
+```ts
+import { OVERLAY_CONTENT_IMPORTS } from '@ethlete/components';
+```
+
 | Piece                    | Selector                               | Purpose                                                                                                                  |
 | ------------------------ | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `OverlayMainDirective`   | `[etOverlayMain]`                      | Layout wrapper enabling pinned header/footer + scrolling body; often applied via `hostDirectives`                        |
@@ -113,6 +121,8 @@ Every factory accepts a partial `OverlayBreakpointConfig` (sizes, classes, `drag
 `strategies` is an array of `{ breakpoint?, strategy }` entries — the controller picks the entry matching the current `min-width` and **switches live on resize without remounting** the content. Breakpoint names come from the app's [viewport config](/core/providers#breakpoint-observer) (Tailwind-style `xs`–`2xl` by default). Presets cover the common pairs:
 
 ```ts
+import { transformingBottomSheetToDialogOverlayStrategy } from '@ethlete/components';
+
 this.overlayManager.open(ExampleOverlayComponent, {
   // bottom sheet below `md`, dialog from `md` upwards
   strategies: transformingBottomSheetToDialogOverlayStrategy({ breakpoint: 'md' }),
@@ -147,6 +157,10 @@ For template-driven popovers there's a headless directive set (`OVERLAY_IMPORTS`
 - `[etOverlayAnchor]` — optional separate positioning reference.
 - `ng-template[etOverlaySurface]` — the content (required); context provides `close(result?)`.
 
+```ts
+import { OVERLAY_IMPORTS } from '@ethlete/components';
+```
+
 When an anchor/trigger exists (and mode is non-modal) the surface opens anchored; otherwise centered.
 
 `[etOverlay]` mirrors most of the imperative config as inputs:
@@ -175,6 +189,8 @@ When an anchor/trigger exists (and mode is non-modal) the surface opens anchored
 Multi-step overlays (wizards, settings dialogs) use the overlay router — an internal router independent of Angular's, optionally mirrored into the URL:
 
 ```ts
+import { provideOverlayRouter } from '@ethlete/components';
+
 this.overlayManager.open(SettingsOverlayComponent, {
   strategies: dialogOverlayStrategy({ width: 480, height: 'min(520px, 80vh)' }),
   providers: [

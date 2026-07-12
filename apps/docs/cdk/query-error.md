@@ -10,6 +10,10 @@ Two pieces that surface [`@ethlete/query`](/query/) state in the UI: a component
 <et-query-error [error]="query.error()" [query]="query" language="de" />
 ```
 
+```ts
+import { QueryErrorComponent } from '@ethlete/cdk';
+```
+
 <StoryEmbed id="cdk-query-error--retryable-error" height="220px" />
 
 | Input              | Default | Purpose                                                                                          |
@@ -28,6 +32,10 @@ The parsing lives in the headless `QueryErrorDirective` (same inputs, exposes th
 
 ```html
 <button [query]="savePost$ | async" (click)="save()" et-query-button>Save</button>
+```
+
+```ts
+import { QueryButtonComponent } from '@ethlete/cdk';
 ```
 
 <StoryEmbed id="cdk-buttons-query-button--default" height="160px" />

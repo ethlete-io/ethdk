@@ -27,6 +27,13 @@ Sugar on top of the [breakpoint observer](/core/providers#breakpoint-observer). 
 Let a component input accept either a plain value or a per-breakpoint map (`{ xs: 1, md: 3 }`), resolved mobile-first against the current breakpoint:
 
 ```ts
+import {
+  provideBreakpointInstance,
+  numberBreakpointTransform,
+  boolBreakpointTransform,
+  typedBreakpointTransform,
+} from '@ethlete/core';
+
 @Component({
   providers: [provideBreakpointInstance(MyGridComponent)],
 })
@@ -70,6 +77,8 @@ For synchronous, non-injected use inside `router.events` handlers there are `cre
 `signalAnimatedNumber(source, options?)` returns a read-only signal that tweens toward the source value — for count-up stats and animated meters:
 
 ```ts
+import { signalAnimatedNumber } from '@ethlete/core';
+
 score = signal(50);
 animatedScore = signalAnimatedNumber(this.score).play();
 ```

@@ -31,6 +31,10 @@ Three structural pieces: an `[etMenu]` host, a trigger inside it, and an `ng-tem
 </div>
 ```
 
+```ts
+import { MENU_IMPORTS } from '@ethlete/components';
+```
+
 ## Live demo
 
 <StoryEmbed id="components-menu--default" height="420px" />

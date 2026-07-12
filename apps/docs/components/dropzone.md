@@ -9,6 +9,8 @@ A file-upload form control with the upload workflow built in: files are picked v
 Define the upload route once with your query client (note `reportProgress: true`):
 
 ```ts
+import { createPostQuery, createQueryClient } from '@ethlete/query';
+
 type MediaView = { uuid: string; name: string };
 type UploadMediaArgs = { response: MediaView; body: FormData };
 
@@ -20,6 +22,8 @@ const uploadMedia = createPostQuery(client)<UploadMediaArgs>('/media', { reportP
 Then wire it into the component:
 
 ```ts
+import { createDropzoneUpload, dropzoneFiles } from '@ethlete/components';
+
 protected upload = createDropzoneUpload<UploadMediaArgs, string>({
   queryCreator: uploadMedia,
   selectValue: (media) => media.uuid,
@@ -42,6 +46,10 @@ protected demoForm = form(this.formModel, (s) => {
   <et-label>Avatar</et-label>
   <et-hint>PNG or JPG.</et-hint>
 </et-dropzone>
+```
+
+```ts
+import { DROPZONE_IMPORTS } from '@ethlete/components';
 ```
 
 ## Live demo
