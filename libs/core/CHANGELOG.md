@@ -1,5 +1,31 @@
 # @ethlete/core
 
+## 5.0.0-next.24
+
+### Minor Changes
+
+- [#3016](https://github.com/ethlete-io/ethdk/pull/3016) [`2f18e43`](https://github.com/ethlete-io/ethdk/commit/2f18e4344759dbbcd17ba0dbeca138f1f7043cdf) Thanks [@github-actions](https://github.com/apps/github-actions)! - Anchored overlays: the `shift` option now also accepts `{ crossAxis?: boolean }` in addition to a boolean. With `crossAxis: true`, an overlay that fits on neither side of its reference is shifted along the placement's cross axis to stay inside the viewport (it may then overlap the reference) instead of overflowing off-screen.
+
+  Menus enable this by default: a nested submenu near the viewport edge first flips to the other side and, when neither side fits, slides over its parent menu — matching native OS menu behavior — instead of being cut off by the viewport.
+
+  The `size` middleware (`autoResize`) now runs after `shift` instead of before it, so `--et-overlay-max-width` / `--et-overlay-max-height` are measured from the pane's shifted position. Previously a cross-axis-shifted pane had its max size capped to the unshifted leftover space, squeezing e.g. a submenu to a sliver instead of letting it keep its width while overlapping its parent.
+
+### Patch Changes
+
+- [#3016](https://github.com/ethlete-io/ethdk/pull/3016) [`2f18e43`](https://github.com/ethlete-io/ethdk/commit/2f18e4344759dbbcd17ba0dbeca138f1f7043cdf) Thanks [@github-actions](https://github.com/apps/github-actions)! - Animations: fix overlays getting stuck in the DOM in an invisible but click-blocking state when their leave transition never reported completion.
+
+  When several anchored overlays close at once (e.g. clicking an item inside a nested menu closes the whole menu tree), destroying an ancestor pane shifts the anchored position of a still-leaving descendant. The browser then cancels and restarts the running transition, so its end event arrives either flagged as cancelled or under a stale transition id — and the animated lifecycle waited forever for an event that could no longer arrive, leaving the pane orphaned at `opacity: 0` while still intercepting pointer events. The lifecycle now treats the transition as settled once no animation is running anymore, matching the fallback the interrupted-transition path already had, so the overlay is torn down reliably.
+
+- [#3016](https://github.com/ethlete-io/ethdk/pull/3016) [`3b359e5`](https://github.com/ethlete-io/ethdk/commit/3b359e52c5efa1cd9b0e79216fc578525aafa8e8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Tailwind surface & color theme generators: fix the dynamic `--color-*-surface-*` /
+  `--color-*-theme-*` variables not resolving per scope. They were emitted only inside
+  `@theme`, which lands on `:root`, so `rgb(var(--<runtime>-surface-background))` resolved
+  once against the root surface and inherited that concrete color into descendants. As a
+  result `bg-<prefix>-surface-*` / `bg-<prefix>-theme-*` utilities ignored nested
+  `.<runtime>-surface--*` / `.<runtime>-color--*` scopes (e.g. an elevated surface would
+  still paint the root background). The dynamic colors are now also re-declared on each
+  surface/color selector in the alias block, so the utilities resolve against the nearest
+  scope while still being generated from `@theme`.
+
 ## 5.0.0-next.23
 
 ### Major Changes
