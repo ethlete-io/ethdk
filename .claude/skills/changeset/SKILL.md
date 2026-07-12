@@ -84,12 +84,20 @@ Summary of the cross-package change.
 
 ## Writing the note
 
+**Keep it brief.** A changeset note is a one-line changelog entry, not a summary
+of the work. Most changes need a single sentence. Resist explaining the root
+cause, the mechanism, the before/after, or every touched surface — the reader
+wants to know what changed for them, nothing more. If you've written more than
+~2 sentences (or bullets) for a routine fix, cut it back.
+
 - Write for the changelog reader (a consumer of the library), not for reviewers
   of this PR. Say what the behaviour/API now does, not "fixed a bug in X".
 - Lead with the area, e.g. `Overlay:`, `Grid:`, `Menu:`, when it helps scanning.
 - Reference public API in backticks (`overlayRef.updatePositionStrategy(...)`).
-- One tight paragraph for simple changes; add bullets for multi-part ones.
-- Keep it to what shipped — no "verified in Storybook", no internal file paths.
+- One sentence for simple changes. Add bullets only when several genuinely
+  distinct things shipped — one line each, not a paragraph each.
+- Keep it to what shipped — no root-cause analysis, no "verified in Storybook",
+  no internal file paths, no rationale the reader doesn't need.
 
 ## Verify
 

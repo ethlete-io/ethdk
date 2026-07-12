@@ -39,9 +39,6 @@
   pointer-events: none;
   background: transparent;
   box-shadow: none;
-
-  --et-overlay-arrow-background: var(--et-surface-background-solid, var(--et-surface-2, rgb(32 32 32)));
-  --et-overlay-arrow-border: rgb(255 255 255 / 0.1);
 }
 
 .et-overlay--tooltip > :nth-child(2) {
@@ -52,7 +49,7 @@
 .et-tooltip {
   --_et-tooltip-background: var(--et-surface-2, rgb(32 32 32));
   --_et-tooltip-color: var(--et-color-main-contrast, rgb(244 244 245));
-  --_et-tooltip-border: rgb(255 255 255 / 0.1);
+  --_et-tooltip-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
   --_et-tooltip-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
   --_et-tooltip-radius: 16px;
   --_et-tooltip-max-width: min(34ch, calc(100vw - 24px));

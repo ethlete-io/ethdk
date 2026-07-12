@@ -32,9 +32,6 @@
   overflow: visible;
   background: transparent;
   box-shadow: none;
-
-  --et-overlay-arrow-background: var(--et-surface-background-solid, var(--et-surface-2, rgb(32 32 32)));
-  --et-overlay-arrow-border: rgb(255 255 255 / 0.1);
 }
 
 .et-overlay--toggletip > :nth-child(2) {
@@ -45,7 +42,7 @@
 .et-toggletip {
   --_et-toggletip-background: var(--et-surface-2, rgb(32 32 32));
   --_et-toggletip-color: var(--et-color-main-contrast, rgb(244 244 245));
-  --_et-toggletip-border: rgb(255 255 255 / 0.1);
+  --_et-toggletip-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
   --_et-toggletip-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
   --_et-toggletip-radius: 16px;
   --_et-toggletip-max-width: min(34ch, calc(100vw - 24px));
