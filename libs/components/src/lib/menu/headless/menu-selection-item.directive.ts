@@ -66,7 +66,7 @@ export class MenuSelectionItemDirective {
       menuItem.setDefaultCloseOnActivate(false);
       menuItem.disabledOverride.set(this.isDisabled);
 
-      outputToObservable(menuItem.activated)
+      outputToObservable(menuItem.activate)
         .pipe(
           takeUntilDestroyed(),
           tap((event) => this.handleActivation(event)),

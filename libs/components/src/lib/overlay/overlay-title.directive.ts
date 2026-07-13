@@ -19,6 +19,7 @@ export class OverlayTitleDirective implements OnInit {
   private overlayManager = injectOverlayManager();
   private renderer = injectRenderer();
 
+  // eslint-disable-next-line ethlete/no-native-html-input-name -- deliberately drives the host [attr.id] and aria-labelledby
   public id = input(`et-overlay-title-${uniqueId++}`);
 
   public ngOnInit() {

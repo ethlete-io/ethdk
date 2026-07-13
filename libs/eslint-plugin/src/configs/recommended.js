@@ -382,6 +382,13 @@ const recommendedTs = {
 
     // Routing components must use paths containing "-view" and class names ending in "ViewComponent"
     'ethlete/enforce-routing-view-naming': 'error',
+
+    // Inputs/models must not be named after a global HTML attribute (title, id, hidden, …) — it collides with the host element
+    'ethlete/no-native-html-input-name': 'error',
+
+    // Outputs should read in the present tense like native DOM events: (playerSelect), not (playerSelected)
+    // (The `on` prefix is already covered by @angular-eslint/no-output-on-prefix.)
+    'ethlete/prefer-present-tense-output': 'warn',
   },
 };
 

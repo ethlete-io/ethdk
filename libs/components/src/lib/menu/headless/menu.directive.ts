@@ -59,6 +59,7 @@ export class MenuDirective {
   /** Render an arrow pointing at the trigger. Trigger-anchored root menus only — submenus and context menus never render one. */
   public arrow = input(true);
   public arrowPadding = input<Padding | null>(14);
+  // eslint-disable-next-line ethlete/no-native-html-input-name -- mirrors the native autofocus behaviour on open
   public autoFocus = input(true);
   public hoverOpen = input(true);
   public hoverOpenDelay = input(120);

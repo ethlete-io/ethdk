@@ -106,7 +106,7 @@ form(model, (s) => {
 });
 ```
 
-Files violating `dropzoneFiles()` constraints never start an upload. Each violation becomes a regular validation error on the field (`kind: 'dropzoneFiles'`, rendered like any other error below the field) until the next selection, removal or `clear()`. Override the built-in messages via the rule's `message` function. Rejections are also emitted in one batch via the `filesRejected` output (`{ file, reason }[]`); `uploadSucceeded` and `uploadFailed` fire per entry.
+Files violating `dropzoneFiles()` constraints never start an upload. Each violation becomes a regular validation error on the field (`kind: 'dropzoneFiles'`, rendered like any other error below the field) until the next selection, removal or `clear()`. Override the built-in messages via the rule's `message` function. Rejections are also emitted in one batch via the `filesReject` output (`{ file, reason }[]`); `uploadSucceed` and `uploadFail` fire per entry.
 
 ## Multiple files
 

@@ -18,7 +18,7 @@ export type MenuItemVariant = (typeof MENU_ITEM_VARIANTS)[keyof typeof MENU_ITEM
     {
       directive: MenuItemDirective,
       inputs: ['disabled', 'closeOnActivate'],
-      outputs: ['activated'],
+      outputs: ['activate'],
     },
     ProvideColorDirective,
   ],

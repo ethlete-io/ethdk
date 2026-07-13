@@ -34,9 +34,9 @@ const createDragEvent = (type: string, files: File[] = []) => {
       [upload]="upload()!"
       [multiple]="multiple()"
       [disabled]="disabled()"
-      (filesRejected)="rejections.push($event)"
-      (uploadSucceeded)="succeeded.push($event)"
-      (uploadFailed)="failed.push($event)"
+      (filesReject)="rejections.push($event)"
+      (uploadSucceed)="succeeded.push($event)"
+      (uploadFail)="failed.push($event)"
       etDropzone
     ></div>
   `,
@@ -71,7 +71,7 @@ class DropzoneInFormFieldTestHost {
       [upload]="upload()!"
       [multiple]="multiple()"
       [formField]="demoForm.media"
-      (filesRejected)="rejections.push($event)"
+      (filesReject)="rejections.push($event)"
       etDropzone
     ></div>
   `,

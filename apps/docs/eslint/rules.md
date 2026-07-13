@@ -128,6 +128,37 @@ source$
 })
 ```
 
+## Component inputs & outputs
+
+Naming conventions for signal-based `input()` / `model()` / `output()`. The `on`-prefix and native-event-name checks for outputs are covered by `@angular-eslint/no-output-on-prefix` and `@angular-eslint/no-output-native`.
+
+| Rule                          | What it enforces                                                                                                                                                                          | Fix | Default |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `no-native-html-input-name`   | An `input()` / `model()` must not share its name with a global HTML attribute (`title`, `id`, `hidden`, `role`, `tabindex`, …) — the host element carries it natively, so the two collide |     | error   |
+| `prefer-present-tense-output` | Outputs read in the present tense like native DOM events (`playerSelect`, not `playerSelected`)                                                                                           |     | warn    |
+
+Element-specific attributes that components routinely mirror on purpose (`disabled`, `value`, `placeholder`, `type`, `size`, `min`, …) are **not** flagged by `no-native-html-input-name` — only the global attributes valid on any element are. When mirroring a global attribute is genuinely intended (e.g. a directive that deliberately drives the host `id` or `autofocus`), disable the rule on that line with a reason.
+
+::: info `prefer-present-tense-output` is a heuristic
+It flags an output whose final word ends in `-ed` (the common past-participle pattern), excluding base-form words that merely end that way (`succeed`, `speed`, `feed`, …). Irregular past tenses that don't end in `-ed` (`sent`, `shown`, `built`) are not detected — hence `warn`, not `error`.
+:::
+
+```ts
+// ❌ collides with the host element's native `title`; past-tense event name
+@Directive()
+export class WidgetComponent {
+  title = input('Chart');
+  playerSelected = output<Player>();
+}
+
+// ✅
+@Directive()
+export class WidgetComponent {
+  heading = input('Chart');
+  playerSelect = output<Player>();
+}
+```
+
 ## DOM, platform & `@ethlete/core`
 
 These rules steer code away from raw browser and Angular platform APIs toward the reactive utilities in `@ethlete/core`.

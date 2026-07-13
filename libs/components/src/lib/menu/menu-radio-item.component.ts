@@ -11,7 +11,7 @@ import { MENU_SELECTION_ITEM_KIND, MenuItemDirective, MenuSelectionItemDirective
     {
       directive: MenuItemDirective,
       inputs: ['closeOnActivate'],
-      outputs: ['activated'],
+      outputs: ['activate'],
     },
     {
       directive: MenuSelectionItemDirective,

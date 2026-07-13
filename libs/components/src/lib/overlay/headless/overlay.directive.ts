@@ -38,10 +38,12 @@ export class OverlayDirective {
   private overlayManager = injectOverlayManager();
 
   public mode = input<OverlayMode>('non-modal');
+  // eslint-disable-next-line ethlete/no-native-html-input-name -- deliberately sets the overlay's ARIA role
   public role = input<OverlayRole | undefined>(undefined);
   public open = model(false);
   public disabled = input(false);
   public disableClose = input(false);
+  // eslint-disable-next-line ethlete/no-native-html-input-name -- mirrors the native autofocus behaviour on open
   public autoFocus = input<OverlayAutoFocusTarget | string | false | undefined>(undefined);
   public restoreFocus = input(true);
   public hasBackdrop = input<boolean | undefined>(undefined);

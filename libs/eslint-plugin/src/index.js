@@ -48,6 +48,8 @@ const classConstantProperty = require('./rules/class-constant-property');
 const preferConciseAngularHostDirectives = require('./rules/prefer-concise-angular-host-directives');
 const preferConciseAngularStyleMetadata = require('./rules/prefer-concise-angular-style-metadata');
 const noTypedInjectedElementRef = require('./rules/no-typed-injected-element-ref');
+const noNativeHtmlInputName = require('./rules/no-native-html-input-name');
+const preferPresentTenseOutput = require('./rules/prefer-present-tense-output');
 const { recommendedTs, recommendedTemplate, recommendedSpec } = require('./configs/recommended');
 
 /** @type {import('eslint').ESLint.Plugin} */
@@ -104,6 +106,8 @@ const plugin = {
     'prefer-concise-angular-host-directives': preferConciseAngularHostDirectives,
     'prefer-concise-angular-style-metadata': preferConciseAngularStyleMetadata,
     'no-typed-injected-element-ref': noTypedInjectedElementRef,
+    'no-native-html-input-name': noNativeHtmlInputName,
+    'prefer-present-tense-output': preferPresentTenseOutput,
   },
 };
 

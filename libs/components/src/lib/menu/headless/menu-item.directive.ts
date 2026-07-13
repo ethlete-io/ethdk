@@ -44,7 +44,7 @@ export class MenuItemDirective {
 
   public disabled = input(false);
   public closeOnActivate = input<boolean | undefined>(undefined);
-  public activated = output<MenuItemActivationEvent>();
+  public activate = output<MenuItemActivationEvent>();
 
   /** @internal The menu whose item list this item belongs to. */
   public owner: MenuDirective | null = null;
@@ -158,7 +158,7 @@ export class MenuItemDirective {
       return;
     }
 
-    this.activated.emit({ source });
+    this.activate.emit({ source });
 
     if (this.closeOnActivate() ?? this.defaultCloseOnActivate) {
       this.owner?.closeAll('item');

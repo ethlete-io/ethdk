@@ -84,13 +84,13 @@ export class DropzoneDirective<TValue = unknown>
   public multiple = input(false);
 
   /** Emits all files of a selection that were rejected, with the reason per file. */
-  public filesRejected = output<DropzoneFileRejection[]>();
+  public filesReject = output<DropzoneFileRejection[]>();
 
   /** Emits when the upload of an entry succeeded (after the control value was updated). */
-  public uploadSucceeded = output<DropzoneEntry<TValue>>();
+  public uploadSucceed = output<DropzoneEntry<TValue>>();
 
   /** Emits when the upload of an entry failed. */
-  public uploadFailed = output<DropzoneEntry<TValue>>();
+  public uploadFail = output<DropzoneEntry<TValue>>();
 
   private internalEntries = signal<DropzoneEntry<TValue>[]>([]);
   private internalLastRejections = signal<DropzoneFileRejection[]>([]);
@@ -210,7 +210,7 @@ export class DropzoneDirective<TValue = unknown>
     this.setRejections(rejections);
 
     if (rejections.length) {
-      this.filesRejected.emit(rejections);
+      this.filesReject.emit(rejections);
     }
 
     if (!accepted.length) {
@@ -359,9 +359,9 @@ export class DropzoneDirective<TValue = unknown>
         untracked(() => {
           if (status === DROPZONE_ENTRY_STATUSES.SUCCESS) {
             this.syncValue();
-            this.uploadSucceeded.emit(entry);
+            this.uploadSucceed.emit(entry);
           } else if (status === DROPZONE_ENTRY_STATUSES.ERROR) {
-            this.uploadFailed.emit(entry);
+            this.uploadFail.emit(entry);
           }
         });
       },

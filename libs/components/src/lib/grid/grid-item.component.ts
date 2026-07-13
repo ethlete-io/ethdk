@@ -218,7 +218,7 @@ export class GridItemComponent {
 
   public ariaLabel = input<string>('Grid item');
 
-  public removed = output<void>();
+  public remove = output<void>();
 
   protected isReadOnly = computed(() => this.grid?.readOnly() ?? false);
   private resolvedSurface = computed(() => {
@@ -310,7 +310,7 @@ export class GridItemComponent {
     if (event.key === 'Delete' || event.key === 'Backspace') {
       if (event.ctrlKey || event.metaKey) {
         grid.removeItem(this.gridItem.itemId());
-        this.removed.emit();
+        this.remove.emit();
         event.preventDefault();
       }
     }

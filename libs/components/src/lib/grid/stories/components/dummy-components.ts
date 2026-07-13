@@ -4,7 +4,7 @@ import { Component, ViewEncapsulation, input } from '@angular/core';
   selector: 'et-sb-dummy-chart',
   template: `
     <div class="h-full flex flex-col p-3 box-border">
-      <div class="text-sm font-semibold mb-1" style="color: rgb(var(--et-surface-color))">{{ title() }}</div>
+      <div class="text-sm font-semibold mb-1" style="color: rgb(var(--et-surface-color))">{{ heading() }}</div>
       <div class="text-[11px] mb-2" style="color: rgb(var(--et-surface-color-muted))">Last 10 days</div>
       <div class="flex-1 flex items-end gap-[3px]" style="min-height: 0">
         @for (bar of BARS; track $index) {
@@ -28,7 +28,7 @@ import { Component, ViewEncapsulation, input } from '@angular/core';
 })
 export class DummyChartComponent {
   public data = input<unknown>();
-  public title = input('Chart Widget');
+  public heading = input('Chart Widget');
   public readonly BARS = [65, 40, 80, 55, 90, 45, 70, 60, 85, 50];
 }
 
@@ -36,7 +36,7 @@ export class DummyChartComponent {
   selector: 'et-sb-dummy-table',
   template: `
     <div class="h-full flex flex-col p-3 box-border">
-      <div class="text-sm font-semibold mb-3" style="color: rgb(var(--et-surface-color))">{{ title() }}</div>
+      <div class="text-sm font-semibold mb-3" style="color: rgb(var(--et-surface-color))">{{ heading() }}</div>
       <div class="flex-1 overflow-auto">
         @for (row of ROWS; track row) {
           <div
@@ -54,7 +54,7 @@ export class DummyChartComponent {
 })
 export class DummyTableComponent {
   public data = input<unknown>();
-  public title = input('Table Widget');
+  public heading = input('Table Widget');
   public readonly ROWS = [
     { name: 'Revenue', value: '$12,450' },
     { name: 'Users', value: '1,234' },
@@ -68,7 +68,7 @@ export class DummyTableComponent {
   selector: 'et-sb-dummy-text',
   template: `
     <div class="h-full flex flex-col p-3 box-border">
-      <div class="text-sm font-semibold mb-2" style="color: rgb(var(--et-surface-color))">{{ title() }}</div>
+      <div class="text-sm font-semibold mb-2" style="color: rgb(var(--et-surface-color))">{{ heading() }}</div>
       <p class="text-[13px] leading-relaxed m-0" style="color: rgb(var(--et-surface-color-muted))">{{ body() }}</p>
     </div>
   `,
@@ -76,7 +76,7 @@ export class DummyTableComponent {
 })
 export class DummyTextComponent {
   public data = input<unknown>();
-  public title = input('Text Widget');
+  public heading = input('Text Widget');
   public body = input(
     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
   );

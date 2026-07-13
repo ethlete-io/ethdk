@@ -21,6 +21,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   public touched = model(false);
   public disabled = input(false);
   public readonly = input(false);
+  // eslint-disable-next-line ethlete/no-native-html-input-name -- form-field hidden state deliberately mirrors the native attribute
   public hidden = input(false);
   public invalid = input(false);
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);

@@ -42,7 +42,7 @@ import { MENU_IMPORTS } from '@ethlete/components';
 ## Items
 
 - `button[et-menu-item]` / `a[et-menu-item]` — a menu row with slots for an `[etIcon]`, the label, and a trailing `<et-menu-item-shortcut>`. `variant="destructive"` switches it to the app's error color theme (the theme registered with `type: 'error'`).
-- The headless `etMenuItem` directive exposes an `activated` output (`{ source: 'pointer' | 'keyboard-enter' | 'keyboard-space' }`) and a `closeOnActivate` input to control whether activating dismisses the menu.
+- The headless `etMenuItem` directive exposes an `activate` output (`{ source: 'pointer' | 'keyboard-enter' | 'keyboard-space' }`) and a `closeOnActivate` input to control whether activating dismisses the menu.
 - `<et-menu-separator />` and `<et-menu-group-label>` structure longer menus (the label is wired into group `aria-labelledby` automatically).
 
 ## Submenus

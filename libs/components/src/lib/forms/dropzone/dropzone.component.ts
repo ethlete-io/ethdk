@@ -55,7 +55,7 @@ import { DropzoneDirective } from './headless/dropzone.directive';
     {
       directive: DropzoneDirective,
       inputs: ['value', 'touched', 'disabled', 'invalid', 'errors', 'required', 'name', 'upload', 'multiple'],
-      outputs: ['valueChange', 'touchedChange', 'filesRejected', 'uploadSucceeded', 'uploadFailed'],
+      outputs: ['valueChange', 'touchedChange', 'filesReject', 'uploadSucceed', 'uploadFail'],
     },
     { directive: ProvideColorDirective, inputs: ['etProvideColor:color'] },
   ],
