@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.0.0-next.20
+
+### Major Changes
+
+- [`44adcac`](https://github.com/ethlete-io/ethdk/commit/44adcac94d7e0f56742e02901221c6e04da7df47) Thanks [@TomTomB](https://github.com/TomTomB)! - Rename past-tense outputs to the present tense, matching native DOM event naming (enforced by the new `ethlete/prefer-present-tense-output` lint rule):
+  - `etMenuItem` (and `et-menu-item` / `et-menu-checkbox-item` / `et-menu-radio-item`): `activated` → `activate`
+  - `etDropzone` / `et-dropzone`: `filesRejected` → `filesReject`, `uploadSucceeded` → `uploadSucceed`, `uploadFailed` → `uploadFail`
+  - `et-grid-item`: `removed` → `remove`
+
+  Update the corresponding template bindings, e.g. `(activated)` → `(activate)`, `(uploadSucceeded)` → `(uploadSucceed)`, `(removed)` → `(remove)`.
+
+### Minor Changes
+
+- [#3018](https://github.com/ethlete-io/ethdk/pull/3018) [`e8f9bcd`](https://github.com/ethlete-io/ethdk/commit/e8f9bcd65b40724b266aff8949951649afafea36) Thanks [@github-actions](https://github.com/apps/github-actions)! - Move all component styles into the `components` CSS cascade layer (`@layer components`).
+
+  Component CSS was previously injected unlayered, which meant it beat Tailwind
+  utility classes (in `@layer utilities`) regardless of specificity — forcing
+  consumers to reach for `!important` (e.g. `flex!`) to override layout, spacing or
+  sizing on components. Because layer precedence is resolved before specificity,
+  `:where()` could not fix this.
+
+  Now that component rules live in `@layer components` (which Tailwind v4 orders
+  before `utilities`), a plain utility class overrides component styles without
+  `!important`. This is a behavior change: any consumer rule that is unlayered or
+  in a later layer now wins over component styles by default. Apps using the
+  default Tailwind v4 layer order (`theme, base, components, utilities`) get the
+  fix automatically; apps that customize layer order should ensure `components`
+  sorts before their utilities.
+
 ## 1.0.0-next.19
 
 ### Patch Changes
