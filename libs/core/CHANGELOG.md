@@ -1,5 +1,13 @@
 # @ethlete/core
 
+## 5.0.0-next.26
+
+### Minor Changes
+
+- [#3018](https://github.com/ethlete-io/ethdk/pull/3018) [`5d26649`](https://github.com/ethlete-io/ethdk/commit/5d266491805f5f0af4a5912a08beab02dafb629b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add an `initials` util and `InitialsPipe` (`| initials`) that extract uppercased initials from a name, capped at a configurable number of characters (defaults to 2).
+
+- [#3018](https://github.com/ethlete-io/ethdk/pull/3018) [`5d26649`](https://github.com/ethlete-io/ethdk/commit/5d266491805f5f0af4a5912a08beab02dafb629b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add a `slugify` util and `SlugifyPipe` (`| slugify`) that convert a string into a URL-friendly slug — diacritics stripped, lowercased, non-alphanumeric runs collapsed to single hyphens.
+
 ## 5.0.0-next.25
 
 ### Patch Changes
