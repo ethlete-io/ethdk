@@ -46,14 +46,16 @@ Place `etScrollObserverStart` / `etScrollObserverEnd` sentinels as first/last ch
 
 ## Pipes
 
-| Pipe             | Signature                 | Description                                                                                                         |
-| ---------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `markdownToHtml` | `string → string`         | Dependency-free Markdown → HTML (headings, emphasis, code blocks, links, images, lists, GFM tables, blockquotes).   |
-| `htmlToMarkdown` | `string → string`         | The reverse conversion.                                                                                             |
-| `inferMimeType`  | `string → string \| null` | Infers a MIME type from a URL or srcset — handles `data:` URIs, Contentful `?fm=` params and a large extension map. |
-| `toArray`        | `number → number[]`       | `3` → `[0, 1, 2]`, for index-based iteration.                                                                       |
+| Pipe             | Signature                       | Description                                                                                                                                  |
+| ---------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `markdownToHtml` | `string → string`               | Dependency-free Markdown → HTML (headings, emphasis, code blocks, links, images, lists, GFM tables, blockquotes).                            |
+| `htmlToMarkdown` | `string → string`               | The reverse conversion.                                                                                                                      |
+| `inferMimeType`  | `string → string \| null`       | Infers a MIME type from a URL or srcset — handles `data:` URIs, Contentful `?fm=` params and a large extension map.                          |
+| `toArray`        | `number → number[]`             | `3` → `[0, 1, 2]`, for index-based iteration.                                                                                                |
+| `initials`       | `(string, maxLength?) → string` | `'John Doe'` → `'JD'`. Uppercased initials of each whitespace-separated word, capped at `maxLength` (default `2`).                           |
+| `slugify`        | `string → string`               | `'Crème brûlée!'` → `'creme-brulee'`. URL-friendly slug: diacritics stripped, lowercased, non-alphanumeric runs collapsed to single hyphens. |
 
-The conversion logic behind `markdownToHtml` / `htmlToMarkdown` and `inferMimeType` is also exported as plain functions — see [Utilities](/core/utilities).
+The conversion logic behind `markdownToHtml` / `htmlToMarkdown` and `inferMimeType`, plus `initials` and `slugify`, is also exported as plain functions — see [Utilities](/core/utilities).
 
 ### Match normalization pipes
 

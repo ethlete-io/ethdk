@@ -60,6 +60,8 @@ Subscribe to host-element events from an injection context, cleaned up on destro
 - `clone(value)` — deep clone (objects, arrays, Map/Set, Date, RegExp, typed arrays).
 - `equal(a, b)` — deep structural equality; used as the `equal` function for many of the SDK's computed signals.
 - `getObjectProperty(obj, 'a.b[2].c')` — nested property access by path; `isObject` / `isArray` type guards.
+- `initials(value, maxLength?)` — uppercased initials of each whitespace-separated word (`'John Doe'` → `'JD'`), capped at `maxLength` (default `2`); the function behind the [`initials` pipe](/core/directives-pipes#pipes).
+- `slugify(value)` — URL-friendly slug (`'Crème brûlée!'` → `'creme-brulee'`): diacritics stripped, lowercased, non-alphanumeric runs collapsed to single hyphens; the function behind the [`slugify` pipe](/core/directives-pipes#pipes).
 
 ## Gestures & input
 
