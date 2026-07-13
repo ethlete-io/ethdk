@@ -450,6 +450,34 @@ describe('createHttpRequest', () => {
     expect(testHttpReq.isStale()).toBeFalsy();
   });
 
+  it('should become stale again once the freshness window elapses', () => {
+    const testHttpReq = createHttpRequest({
+      fullPath: 'https://example.com/test',
+      method: 'GET',
+      dependencies: {
+        httpClient: TestBed.inject(HttpClient),
+        ngErrorHandler: TestBed.inject(ErrorHandler),
+        injector: TestBed.inject(Injector),
+      },
+    });
+
+    testHttpReq.execute();
+
+    // max-age=20 → the default cache adapter halves it into a 10s freshness window.
+    request().flush(responseBody, { headers: { 'cache-control': 'max-age=20' } });
+
+    expect(testHttpReq.isStale()).toBeFalsy();
+
+    // Still inside the window.
+    vi.advanceTimersByTime(9_000);
+    expect(testHttpReq.isStale()).toBeFalsy();
+
+    // Past the window – must be stale again. `isStale` reads wall-clock time, so it must
+    // re-evaluate here even though no signal it depends on has changed.
+    vi.advanceTimersByTime(2_000);
+    expect(testHttpReq.isStale()).toBeTruthy();
+  });
+
   describe('Dynamic Headers', () => {
     it('should support static HttpHeaders', () => {
       const staticHeaders = new HttpHeaders({ 'X-Custom': 'static-value' });

@@ -1,5 +1,5 @@
 import { HttpClient, HttpEvent, HttpEventType, HttpProgressEvent } from '@angular/common/http';
-import { ErrorHandler, Signal, computed, signal } from '@angular/core';
+import { ErrorHandler, Signal, signal } from '@angular/core';
 import { Observable, Subject, Subscription, catchError, retry, tap, throwError, timer } from 'rxjs';
 import { buildTimestampFromSeconds } from '../legacy/request';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
@@ -112,8 +112,13 @@ export type HttpRequest<TArgs extends QueryArgs> = {
    */
   events$: Observable<RequestHttpEvent<TArgs>>;
 
-  /** Whether the request is stale or not aka the cache header has expired */
-  isStale: Signal<boolean>;
+  /**
+   * Whether the request is stale or not aka the cache header has expired.
+   *
+   * This is a plain getter function (evaluated on each call), not a reactive signal, because
+   * staleness depends on wall-clock time rather than on any tracked signal.
+   */
+  isStale: () => boolean;
 };
 
 /** A custom error event since the Angular http client does not provide a specific event for errors */
@@ -140,11 +145,15 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
   const lastExecuteTime = signal(0);
   const expiresIn = signal<number | null>(null);
 
-  const isStale = computed(() => {
+  // NOTE: This must be a plain function, not a `computed`. The freshness check compares against
+  // `Date.now()`, which is not reactive, so a memoized computed would only ever recompute when
+  // `expiresIn` changes — once it evaluated to `false` (fresh) it would stay `false` forever, even
+  // after the window elapsed, turning every `allowCache` execute into a permanent cache hit.
+  const isStale = () => {
     const expiresInTs = expiresIn();
 
     return expiresInTs === null || expiresInTs < Date.now();
-  });
+  };
 
   const createStream = () => {
     const headers = typeof args?.headers === 'function' ? args.headers() : args?.headers;
