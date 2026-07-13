@@ -87,9 +87,12 @@
     block-size: var(--_et-overlay-arrow-size);
     transform: var(--et-floating-arrow-translate, translate3d(0, 0, 0));
     visibility: hidden;
+    /* priority mirrors the border chain: explicit override → measured pane background →
+     surface theme → static fallback, so the arrow paints whatever the pane actually
+     renders (custom panelClass, themed pane) instead of re-deriving a possibly-divergent color */
     background-color: var(
       --et-overlay-arrow-background,
-      var(--et-surface-background-solid, var(--et-surface-2, rgb(32 32 32)))
+      var(--_et-overlay-arrow-pane-background, var(--et-surface-background-solid, var(--et-surface-2, rgb(32 32 32))))
     );
     pointer-events: none;
 

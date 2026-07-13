@@ -95,14 +95,29 @@ export class OverlayContainerComponent {
 
       const host = this.elementRef.nativeElement;
       const style = getComputedStyle(host);
+      const props: Record<string, string> = {};
       const borderWidth = parseFloat(style.borderTopWidth) || 0;
 
-      if (!borderWidth) return;
+      const background = style.backgroundColor;
+      const hostPaintsPane = !!background && background !== 'transparent' && background !== 'rgba(0, 0, 0, 0)';
 
-      this.renderer.setCssProperties(host, {
-        '--_et-overlay-arrow-pane-border-width': `${borderWidth}px`,
-        '--_et-overlay-arrow-pane-border-color': style.borderTopColor,
-      });
+      if (hostPaintsPane) {
+        // the host itself is the visible pane (custom panelClass, dialog): the arrow must
+        // continue its background and match its border exactly — including no border at all
+        // when the pane has none, so a 0px width is forwarded rather than left to the fallback
+        props['--_et-overlay-arrow-pane-background'] = background;
+        props['--_et-overlay-arrow-pane-border-width'] = `${borderWidth}px`;
+        props['--_et-overlay-arrow-pane-border-color'] = borderWidth ? style.borderTopColor : 'transparent';
+      } else if (borderWidth) {
+        // transparent host: background/border live on an inner element (tooltip/toggletip/menu)
+        // and the surface-token fallback fills the rest — only forward a real host border
+        props['--_et-overlay-arrow-pane-border-width'] = `${borderWidth}px`;
+        props['--_et-overlay-arrow-pane-border-color'] = style.borderTopColor;
+      }
+
+      if (Object.keys(props).length) {
+        this.renderer.setCssProperties(host, props);
+      }
     });
 
     this.animatedLifecycle()
