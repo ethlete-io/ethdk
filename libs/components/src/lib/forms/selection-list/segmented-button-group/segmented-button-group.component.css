@@ -1,164 +1,166 @@
-@property --et-segmented-button-group-support-duration {
-  syntax: '<time>';
-  inherits: true;
-  initial-value: 180ms;
-}
-
-@property --et-segmented-button-group-support-offset {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 4px;
-}
-
-@property --et-segmented-button-group-error-font-size {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 12px;
-}
-
-@property --et-segmented-button-group-hint-font-size {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 12px;
-}
-
-@property --et-segmented-button-group-gap {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 10px;
-}
-
-@property --et-segmented-button-group-label-font-size {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 13px;
-}
-
-@property --et-segmented-button-group-track-padding {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 3px;
-}
-
-@property --et-segmented-button-group-track-radius {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 10px;
-}
-
-et-segmented-button-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--et-segmented-button-group-gap);
-  color: var(--et-surface-color-solid, currentColor);
-
-  > et-label,
-  .et-segmented-button-group-label {
-    font-size: var(--et-segmented-button-group-label-font-size);
-    font-weight: 500;
-    line-height: 1.2;
-    letter-spacing: -0.01em;
-    color: var(--et-surface-color-muted-solid, currentColor);
-    user-select: none;
+@layer components {
+  @property --et-segmented-button-group-support-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 180ms;
   }
 
-  &[data-size='sm'] {
-    --et-segmented-button-group-label-font-size: 12px;
-    --et-segmented-button-group-gap: 8px;
-
-    et-segmented-button {
-      --et-segmented-button-padding-x: 10px;
-      --et-segmented-button-padding-y: 4px;
-      font-size: 12px;
-    }
+  @property --et-segmented-button-group-support-offset {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
   }
 
-  &[data-size='lg'] {
-    --et-segmented-button-group-label-font-size: 14px;
-    --et-segmented-button-group-gap: 12px;
-
-    et-segmented-button {
-      --et-segmented-button-padding-x: 18px;
-      --et-segmented-button-padding-y: 8px;
-      font-size: 16px;
-    }
+  @property --et-segmented-button-group-error-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
   }
 
-  .et-segmented-button-group-buttons {
-    display: inline-flex;
-    align-self: flex-start;
-    gap: 2px;
-    padding: var(--et-segmented-button-group-track-padding);
-    border-radius: var(--et-segmented-button-group-track-radius);
-    background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
+  @property --et-segmented-button-group-hint-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
   }
 
-  &[data-error] .et-segmented-button-group-buttons {
-    box-shadow: inset 0 0 0 1px var(--et-theme-color-primary-solid);
+  @property --et-segmented-button-group-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 10px;
   }
 
-  .et-segmented-button-group-support {
-    overflow: clip;
-    block-size: 0;
+  @property --et-segmented-button-group-label-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 13px;
   }
 
-  .et-segmented-button-group-support-stack {
-    position: relative;
-    display: grid;
+  @property --et-segmented-button-group-track-padding {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 3px;
   }
 
-  .et-segmented-button-group-support-content {
-    grid-area: 1 / 1;
-    min-inline-size: 0;
-    opacity: 0;
-    transform: translateY(0);
-
-    &[data-active] {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  @property --et-segmented-button-group-track-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 10px;
   }
 
-  .et-segmented-button-group-errors {
+  et-segmented-button-group {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    padding-block-start: 4px;
-    font-size: var(--et-segmented-button-group-error-font-size);
-    color: var(--et-theme-color-primary-solid, currentColor);
-  }
+    gap: var(--et-segmented-button-group-gap);
+    color: var(--et-surface-color-solid, currentColor);
 
-  .et-segmented-button-group-hint {
-    padding-block-start: 4px;
-    font-size: var(--et-segmented-button-group-hint-font-size);
-    color: var(--et-surface-color-muted-solid, currentColor);
-
-    &:empty {
-      display: none;
+    > et-label,
+    .et-segmented-button-group-label {
+      font-size: var(--et-segmented-button-group-label-font-size);
+      font-weight: 500;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      color: var(--et-surface-color-muted-solid, currentColor);
+      user-select: none;
     }
-  }
 
-  &[data-can-animate] {
+    &:where([data-size='sm']) {
+      --et-segmented-button-group-label-font-size: 12px;
+      --et-segmented-button-group-gap: 8px;
+
+      et-segmented-button {
+        --et-segmented-button-padding-x: 10px;
+        --et-segmented-button-padding-y: 4px;
+        font-size: 12px;
+      }
+    }
+
+    &:where([data-size='lg']) {
+      --et-segmented-button-group-label-font-size: 14px;
+      --et-segmented-button-group-gap: 12px;
+
+      et-segmented-button {
+        --et-segmented-button-padding-x: 18px;
+        --et-segmented-button-padding-y: 8px;
+        font-size: 16px;
+      }
+    }
+
+    .et-segmented-button-group-buttons {
+      display: inline-flex;
+      align-self: flex-start;
+      gap: 2px;
+      padding: var(--et-segmented-button-group-track-padding);
+      border-radius: var(--et-segmented-button-group-track-radius);
+      background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
+    }
+
+    &[data-error] .et-segmented-button-group-buttons {
+      box-shadow: inset 0 0 0 1px var(--et-theme-color-primary-solid);
+    }
+
     .et-segmented-button-group-support {
-      transition: block-size var(--et-segmented-button-group-support-duration) ease;
+      overflow: clip;
+      block-size: 0;
+    }
+
+    .et-segmented-button-group-support-stack {
+      position: relative;
+      display: grid;
     }
 
     .et-segmented-button-group-support-content {
-      transition:
-        opacity var(--et-segmented-button-group-support-duration) ease,
-        transform var(--et-segmented-button-group-support-duration) ease;
+      grid-area: 1 / 1;
+      min-inline-size: 0;
+      opacity: 0;
+      transform: translateY(0);
 
-      @starting-style {
-        &[data-active] {
-          opacity: 0;
-          transform: translateY(calc(var(--et-segmented-button-group-support-offset) * -1));
+      &[data-active] {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .et-segmented-button-group-errors {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding-block-start: 4px;
+      font-size: var(--et-segmented-button-group-error-font-size);
+      color: var(--et-theme-color-primary-solid, currentColor);
+    }
+
+    .et-segmented-button-group-hint {
+      padding-block-start: 4px;
+      font-size: var(--et-segmented-button-group-hint-font-size);
+      color: var(--et-surface-color-muted-solid, currentColor);
+
+      &:empty {
+        display: none;
+      }
+    }
+
+    &[data-can-animate] {
+      .et-segmented-button-group-support {
+        transition: block-size var(--et-segmented-button-group-support-duration) ease;
+      }
+
+      .et-segmented-button-group-support-content {
+        transition:
+          opacity var(--et-segmented-button-group-support-duration) ease,
+          transform var(--et-segmented-button-group-support-duration) ease;
+
+        @starting-style {
+          &[data-active] {
+            opacity: 0;
+            transform: translateY(calc(var(--et-segmented-button-group-support-offset) * -1));
+          }
         }
       }
     }
-  }
 
-  @media (prefers-reduced-motion: reduce) {
-    --et-segmented-button-group-support-duration: 1ms;
-    --et-segmented-button-group-support-offset: 0px;
+    @media (prefers-reduced-motion: reduce) {
+      --et-segmented-button-group-support-duration: 1ms;
+      --et-segmented-button-group-support-offset: 0px;
+    }
   }
 }

@@ -1,208 +1,210 @@
-@property --et-pip-border-radius {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 8px;
-}
+@layer components {
+  @property --et-pip-border-radius {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 8px;
+  }
 
-@property --et-pip-backdrop-blur {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 4px;
-}
+  @property --et-pip-backdrop-blur {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 4px;
+  }
 
-@property --et-pip-title-bar-height {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 32px;
-}
+  @property --et-pip-title-bar-height {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 32px;
+  }
 
-et-pip-window {
-  position: fixed;
-  display: flex;
-  flex-direction: column;
-  touch-action: none;
-  color: var(--et-surface-color-solid, inherit);
-  --et-resize-handles-side-top: var(--et-pip-title-bar-h);
+  et-pip-window {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    touch-action: none;
+    color: var(--et-surface-color-solid, inherit);
+    --et-resize-handles-side-top: var(--et-pip-title-bar-h);
 
-  &::after {
-    content: '';
-    display: block;
-    position: absolute;
-    inset: 0;
-    background: var(--et-pip-bg, color-mix(in srgb, var(--et-surface-background-solid, rgb(0 0 0)) 60%, transparent));
-    backdrop-filter: blur(var(--et-pip-backdrop-blur));
-    z-index: -1;
-    transform: translateY(var(--et-pip-title-bar-h));
-    transition: transform 0.2s ease;
+    &::after {
+      content: '';
+      display: block;
+      position: absolute;
+      inset: 0;
+      background: var(--et-pip-bg, color-mix(in srgb, var(--et-surface-background-solid, rgb(0 0 0)) 60%, transparent));
+      backdrop-filter: blur(var(--et-pip-backdrop-blur));
+      z-index: -1;
+      transform: translateY(var(--et-pip-title-bar-h));
+      transition: transform 0.2s ease;
+      pointer-events: none;
+      border-radius: var(--et-pip-border-radius);
+    }
+  }
+
+  et-pip-window.et-pip-window--dragging .et-pip-window__title-bar {
+    cursor: grabbing;
+  }
+
+  .et-pip-window__title-bar {
+    height: var(--et-pip-title-bar-height);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 6px;
+    transform: translateY(100%);
+    transition:
+      transform 0.2s ease,
+      opacity 0.2s ease;
     pointer-events: none;
-    border-radius: var(--et-pip-border-radius);
+    opacity: 0;
+    cursor: grab;
+    border-radius: var(--et-pip-border-radius) var(--et-pip-border-radius) 0 0;
   }
-}
-
-et-pip-window.et-pip-window--dragging .et-pip-window__title-bar {
-  cursor: grabbing;
-}
-
-.et-pip-window__title-bar {
-  height: var(--et-pip-title-bar-height);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 0 6px;
-  transform: translateY(100%);
-  transition:
-    transform 0.2s ease,
-    opacity 0.2s ease;
-  pointer-events: none;
-  opacity: 0;
-  cursor: grab;
-  border-radius: var(--et-pip-border-radius) var(--et-pip-border-radius) 0 0;
-}
-.et-pip-window__title-bar-spacer {
-  flex: 1;
-}
-
-et-pip-window:hover,
-et-pip-window.et-pip-window--dragging,
-et-pip-window.et-pip-window--collapsed,
-et-pip-window.et-pip-window--title-bar-forced,
-et-pip-window:has(.et-pip-window__title-bar :focus-visible) {
-  .et-pip-window__title-bar {
-    transform: translateY(0);
-    pointer-events: auto;
-    opacity: 1;
+  .et-pip-window__title-bar-spacer {
+    flex: 1;
   }
 
-  &::after {
-    transform: translateY(0);
-  }
-}
+  et-pip-window:hover,
+  et-pip-window.et-pip-window--dragging,
+  et-pip-window.et-pip-window--collapsed,
+  et-pip-window.et-pip-window--title-bar-forced,
+  et-pip-window:has(.et-pip-window__title-bar :focus-visible) {
+    .et-pip-window__title-bar {
+      transform: translateY(0);
+      pointer-events: auto;
+      opacity: 1;
+    }
 
-@media (hover: none) {
-  .et-pip-window__title-bar {
-    transform: translateY(0);
-    pointer-events: auto;
-    animation: etPipWindowTitleBarSlideIn 0.5s ease;
-    opacity: 1;
+    &::after {
+      transform: translateY(0);
+    }
+  }
+
+  @media (hover: none) {
+    .et-pip-window__title-bar {
+      transform: translateY(0);
+      pointer-events: auto;
+      animation: etPipWindowTitleBarSlideIn 0.5s ease;
+      opacity: 1;
+    }
+
+    .et-pip-window__content {
+      border-radius: 0 0 var(--et-pip-border-radius) var(--et-pip-border-radius);
+    }
+  }
+
+  @keyframes etPipWindowTitleBarSlideIn {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
 
   .et-pip-window__content {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: var(--et-pip-content-ratio, calc(16 / 9));
+    border-radius: var(--et-pip-border-radius);
+    transition: border-radius 0.2s ease;
+  }
+
+  et-pip-window:hover .et-pip-window__content,
+  et-pip-window.et-pip-window--dragging .et-pip-window__content,
+  et-pip-window.et-pip-window--collapsed .et-pip-window__content,
+  et-pip-window.et-pip-window--title-bar-forced .et-pip-window__content,
+  et-pip-window:has(.et-pip-window__title-bar :focus-visible) .et-pip-window__content {
     border-radius: 0 0 var(--et-pip-border-radius) var(--et-pip-border-radius);
   }
-}
 
-@keyframes etPipWindowTitleBarSlideIn {
-  from {
-    transform: translateY(100%);
+  .et-pip-window__collapse-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    cursor: grab;
+  }
+
+  .et-pip-interacting iframe,
+  .et-pip-interacting [contenteditable] {
+    pointer-events: none !important;
+    user-select: none !important;
+  }
+
+  et-pip-window.et-pip-window--positioned {
+    top: 0 !important;
+    left: 0 !important;
+    right: auto !important;
+    bottom: auto !important;
+  }
+
+  et-pip-window.et-pip-window--mode-transitioning {
+    transition:
+      width 250ms cubic-bezier(0.4, 0, 0.2, 1),
+      height 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  et-pip-window .et-resize-handle::before {
+    content: '';
+    position: absolute;
+    background: color-mix(in srgb, var(--et-surface-color-solid, rgb(255 255 255)) 65%, transparent);
+    border-radius: 3px;
     opacity: 0;
+    transition: opacity 0.15s 0s;
+    pointer-events: none;
   }
-  to {
-    transform: translateY(0);
+
+  et-pip-window .et-resize-handle:hover::before {
     opacity: 1;
+    transition: opacity 0.15s 0.4s;
   }
-}
 
-.et-pip-window__content {
-  flex: 1;
-  min-height: 0;
-  position: relative;
-  overflow: hidden;
-  aspect-ratio: var(--et-pip-content-ratio, calc(16 / 9));
-  border-radius: var(--et-pip-border-radius);
-  transition: border-radius 0.2s ease;
-}
+  et-pip-window .et-resize-handle--s::before {
+    height: 3px;
+    left: 10px;
+    right: 10px;
+    bottom: 1px;
+  }
 
-et-pip-window:hover .et-pip-window__content,
-et-pip-window.et-pip-window--dragging .et-pip-window__content,
-et-pip-window.et-pip-window--collapsed .et-pip-window__content,
-et-pip-window.et-pip-window--title-bar-forced .et-pip-window__content,
-et-pip-window:has(.et-pip-window__title-bar :focus-visible) .et-pip-window__content {
-  border-radius: 0 0 var(--et-pip-border-radius) var(--et-pip-border-radius);
-}
+  et-pip-window .et-resize-handle--e::before {
+    width: 3px;
+    top: 10px;
+    bottom: 10px;
+    right: 1px;
+  }
 
-.et-pip-window__collapse-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-  cursor: grab;
-}
+  et-pip-window .et-resize-handle--w::before {
+    width: 3px;
+    top: 10px;
+    bottom: 10px;
+    left: 1px;
+  }
 
-.et-pip-interacting iframe,
-.et-pip-interacting [contenteditable] {
-  pointer-events: none !important;
-  user-select: none !important;
-}
+  et-pip-window .et-resize-handle--se::before {
+    width: 8px;
+    height: 8px;
+    bottom: 2px;
+    right: 2px;
+    border-radius: 1px 1px 3px 1px;
+  }
 
-et-pip-window.et-pip-window--positioned {
-  top: 0 !important;
-  left: 0 !important;
-  right: auto !important;
-  bottom: auto !important;
-}
+  et-pip-window .et-resize-handle--sw::before {
+    width: 8px;
+    height: 8px;
+    bottom: 2px;
+    left: 2px;
+    border-radius: 1px 1px 1px 3px;
+  }
 
-et-pip-window.et-pip-window--mode-transitioning {
-  transition:
-    width 250ms cubic-bezier(0.4, 0, 0.2, 1),
-    height 250ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-et-pip-window .et-resize-handle::before {
-  content: '';
-  position: absolute;
-  background: color-mix(in srgb, var(--et-surface-color-solid, rgb(255 255 255)) 65%, transparent);
-  border-radius: 3px;
-  opacity: 0;
-  transition: opacity 0.15s 0s;
-  pointer-events: none;
-}
-
-et-pip-window .et-resize-handle:hover::before {
-  opacity: 1;
-  transition: opacity 0.15s 0.4s;
-}
-
-et-pip-window .et-resize-handle--s::before {
-  height: 3px;
-  left: 10px;
-  right: 10px;
-  bottom: 1px;
-}
-
-et-pip-window .et-resize-handle--e::before {
-  width: 3px;
-  top: 10px;
-  bottom: 10px;
-  right: 1px;
-}
-
-et-pip-window .et-resize-handle--w::before {
-  width: 3px;
-  top: 10px;
-  bottom: 10px;
-  left: 1px;
-}
-
-et-pip-window .et-resize-handle--se::before {
-  width: 8px;
-  height: 8px;
-  bottom: 2px;
-  right: 2px;
-  border-radius: 1px 1px 3px 1px;
-}
-
-et-pip-window .et-resize-handle--sw::before {
-  width: 8px;
-  height: 8px;
-  bottom: 2px;
-  left: 2px;
-  border-radius: 1px 1px 1px 3px;
-}
-
-et-pip-window et-resize-handles[data-active-edge='s'] .et-resize-handle--s::before,
-et-pip-window et-resize-handles[data-active-edge='e'] .et-resize-handle--e::before,
-et-pip-window et-resize-handles[data-active-edge='w'] .et-resize-handle--w::before,
-et-pip-window et-resize-handles[data-active-edge='se'] .et-resize-handle--se::before,
-et-pip-window et-resize-handles[data-active-edge='sw'] .et-resize-handle--sw::before {
-  opacity: 1;
-  transition: none;
+  et-pip-window et-resize-handles[data-active-edge='s'] .et-resize-handle--s::before,
+  et-pip-window et-resize-handles[data-active-edge='e'] .et-resize-handle--e::before,
+  et-pip-window et-resize-handles[data-active-edge='w'] .et-resize-handle--w::before,
+  et-pip-window et-resize-handles[data-active-edge='se'] .et-resize-handle--se::before,
+  et-pip-window et-resize-handles[data-active-edge='sw'] .et-resize-handle--sw::before {
+    opacity: 1;
+    transition: none;
+  }
 }

@@ -1,154 +1,156 @@
-@property --et-rich-text-editor-toolbar-gap {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 2px;
-}
+@layer components {
+  @property --et-rich-text-editor-toolbar-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 2px;
+  }
 
-@property --et-rich-text-editor-toolbar-padding {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 4px;
-}
+  @property --et-rich-text-editor-toolbar-padding {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
 
-@property --et-rich-text-editor-button-radius {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 4px;
-}
+  @property --et-rich-text-editor-button-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
 
-@property --et-rich-text-editor-min-height {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 96px;
-}
+  @property --et-rich-text-editor-min-height {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 96px;
+  }
 
-@property --et-rich-text-editor-content-gap {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 8px;
-}
+  @property --et-rich-text-editor-content-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
 
-et-rich-text-editor {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-inline-size: 0;
-  color: inherit;
-
-  .et-rte-toolbar {
+  et-rich-text-editor {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--et-rich-text-editor-toolbar-gap);
-    padding: var(--et-rich-text-editor-toolbar-padding);
-    padding-inline: calc(var(--et-form-field-control-padding-inline) - var(--et-rich-text-editor-toolbar-padding));
-    border-block-end: var(--et-form-field-control-border-width, 1px) solid
-      color-mix(in srgb, currentColor 12%, transparent);
-
-    /* et-icon-button defaults to a fully round shape; the toolbar wants a squarer button. */
-    .et-icon-button {
-      border-radius: var(--et-rich-text-editor-button-radius);
-    }
-  }
-
-  .et-rte-toolbar-divider {
-    inline-size: 1px;
-    align-self: stretch;
-    margin-block: 4px;
-    margin-inline: 2px;
-    background: color-mix(in srgb, currentColor 12%, transparent);
-  }
-
-  .et-rte-content {
-    display: block;
     flex: 1;
+    flex-direction: column;
     min-inline-size: 0;
-    padding-block: var(--et-form-field-control-padding-block);
-    padding-inline: var(--et-form-field-control-padding-inline);
-    min-block-size: var(--et-rich-text-editor-min-height);
-    outline: none;
     color: inherit;
-    caret-color: var(--et-theme-color-primary-solid, currentColor);
-    overflow-wrap: anywhere;
 
-    &:empty::before {
-      content: attr(data-placeholder);
-      color: color-mix(in srgb, currentColor 46%, transparent);
-      pointer-events: none;
+    .et-rte-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--et-rich-text-editor-toolbar-gap);
+      padding: var(--et-rich-text-editor-toolbar-padding);
+      padding-inline: calc(var(--et-form-field-control-padding-inline) - var(--et-rich-text-editor-toolbar-padding));
+      border-block-end: var(--et-form-field-control-border-width, 1px) solid
+        color-mix(in srgb, currentColor 12%, transparent);
+
+      /* et-icon-button defaults to a fully round shape; the toolbar wants a squarer button. */
+      .et-icon-button {
+        border-radius: var(--et-rich-text-editor-button-radius);
+      }
     }
 
-    > :first-child {
-      margin-block-start: 0;
+    .et-rte-toolbar-divider {
+      inline-size: 1px;
+      align-self: stretch;
+      margin-block: 4px;
+      margin-inline: 2px;
+      background: color-mix(in srgb, currentColor 12%, transparent);
     }
 
-    > :last-child {
-      margin-block-end: 0;
-    }
+    .et-rte-content {
+      display: block;
+      flex: 1;
+      min-inline-size: 0;
+      padding-block: var(--et-form-field-control-padding-block);
+      padding-inline: var(--et-form-field-control-padding-inline);
+      min-block-size: var(--et-rich-text-editor-min-height);
+      outline: none;
+      color: inherit;
+      caret-color: var(--et-theme-color-primary-solid, currentColor);
+      overflow-wrap: anywhere;
 
-    p {
-      margin-block: 0;
-    }
+      &:empty::before {
+        content: attr(data-placeholder);
+        color: color-mix(in srgb, currentColor 46%, transparent);
+        pointer-events: none;
+      }
 
-    p + p,
-    ul,
-    ol {
-      margin-block-start: var(--et-rich-text-editor-content-gap);
-    }
+      > :first-child {
+        margin-block-start: 0;
+      }
 
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
-      margin-block: 0;
-      font-weight: 700;
-      line-height: 1.25;
-    }
+      > :last-child {
+        margin-block-end: 0;
+      }
 
-    :is(h1, h2, h3, h4, h5, h6) + *,
-    * + :is(h1, h2, h3, h4, h5, h6) {
-      margin-block-start: var(--et-rich-text-editor-content-gap);
-    }
+      p {
+        margin-block: 0;
+      }
 
-    h1 {
-      font-size: 2.4rem;
-    }
+      p + p,
+      ul,
+      ol {
+        margin-block-start: var(--et-rich-text-editor-content-gap);
+      }
 
-    h2 {
-      font-size: 2rem;
-    }
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        margin-block: 0;
+        font-weight: 700;
+        line-height: 1.25;
+      }
 
-    h3 {
-      font-size: 1.6rem;
-    }
+      :is(h1, h2, h3, h4, h5, h6) + *,
+      * + :is(h1, h2, h3, h4, h5, h6) {
+        margin-block-start: var(--et-rich-text-editor-content-gap);
+      }
 
-    ul,
-    ol {
-      margin-block-end: 0;
-      padding-inline-start: 1.5em;
-      list-style-position: outside;
-    }
+      h1 {
+        font-size: 2.4rem;
+      }
 
-    ul {
-      list-style-type: disc;
-    }
+      h2 {
+        font-size: 2rem;
+      }
 
-    ol {
-      list-style-type: decimal;
-    }
+      h3 {
+        font-size: 1.6rem;
+      }
 
-    li {
-      margin-block: 0;
-    }
+      ul,
+      ol {
+        margin-block-end: 0;
+        padding-inline-start: 1.5em;
+        list-style-position: outside;
+      }
 
-    li::marker {
-      color: color-mix(in srgb, currentColor 60%, transparent);
-    }
+      ul {
+        list-style-type: disc;
+      }
 
-    a {
-      color: var(--et-theme-color-primary-solid, currentColor);
-      text-decoration: underline;
+      ol {
+        list-style-type: decimal;
+      }
+
+      li {
+        margin-block: 0;
+      }
+
+      li::marker {
+        color: color-mix(in srgb, currentColor 60%, transparent);
+      }
+
+      a {
+        color: var(--et-theme-color-primary-solid, currentColor);
+        text-decoration: underline;
+      }
     }
   }
 }

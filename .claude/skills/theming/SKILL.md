@@ -99,6 +99,14 @@ the interactive element itself, never a wrapper).
   fallback (`var(--et-surface-border-solid, rgb(255 255 255 / 0.1))`) so
   components degrade in theme-less setups. `injectErrorTheme()` however is a
   hard requirement — form-field and menu already assume it.
+- **Cascade layers, not `:where()`, are what make Tailwind utilities override
+  component CSS.** Every component CSS file is wrapped in `@layer components { … }`
+  — keep doing so in new/edited files. Component styles are injected unlayered
+  otherwise, which beats Tailwind's `@layer utilities` by layer precedence, so a
+  consumer would need `!important`; specificity (and therefore `:where()`) never
+  enters into it across layers. Use `:where()` only to keep a component's own
+  config modifiers at single-class specificity. Full explanation in the "Cascade
+  layers" note in `CLAUDE.md`.
 
 ## Reference implementations
 

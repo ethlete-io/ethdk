@@ -1,505 +1,507 @@
-.et-overlay {
-  --et-overlay-padding-inline: 16px;
-  --et-overlay-padding-block: 16px;
+@layer components {
+  .et-overlay {
+    --et-overlay-padding-inline: 16px;
+    --et-overlay-padding-block: 16px;
 
-  --et-overlay-header-padding-block-end: 16px;
-  --et-overlay-body-padding-block: 0;
-  --et-overlay-footer-padding-block-start: 16px;
+    --et-overlay-header-padding-block-end: 16px;
+    --et-overlay-body-padding-block: 0;
+    --et-overlay-footer-padding-block-start: 16px;
 
-  --et-overlay-body-divider-color: #565656;
+    --et-overlay-body-divider-color: #565656;
 
-  --et-overlay-body-min-block-size: 100px;
+    --et-overlay-body-min-block-size: 100px;
 
-  --_et-overlay-drag-handle-inline-size: 32px;
-  --_et-overlay-drag-handle-block-size: 4px;
-  --_et-overlay-drag-handle-block-margin: 22px;
-  --_et-overlay-drag-handle-color: #565656;
-  --_et-overlay-drag-handle-radius: 5px;
+    --_et-overlay-drag-handle-inline-size: 32px;
+    --_et-overlay-drag-handle-block-size: 4px;
+    --_et-overlay-drag-handle-block-margin: 22px;
+    --_et-overlay-drag-handle-color: #565656;
+    --_et-overlay-drag-handle-radius: 5px;
 
-  position: relative;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr);
-  overflow: hidden;
-  pointer-events: all;
-  outline: none;
-  box-sizing: border-box;
-
-  > :nth-child(2) {
-    overflow: auto;
-    border-radius: inherit;
-
-    &:not(.et-overlay-main) {
-      display: grid;
-    }
-
-    &:not(.et-overlay-main):has(.et-overlay-router-outlet-host) {
-      grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: minmax(0, 1fr);
-    }
-  }
-
-  &.et-overlay--anchored,
-  &.et-overlay--centered {
-    overflow: visible;
-    background: transparent;
+    position: relative;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    overflow: hidden;
+    pointer-events: all;
+    outline: none;
+    box-sizing: border-box;
 
     > :nth-child(2) {
-      display: block;
+      overflow: auto;
+      border-radius: inherit;
+
+      &:not(.et-overlay-main) {
+        display: grid;
+      }
+
+      &:not(.et-overlay-main):has(.et-overlay-router-outlet-host) {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+      }
+    }
+
+    &.et-overlay--anchored,
+    &.et-overlay--centered {
+      overflow: visible;
+      background: transparent;
+
+      > :nth-child(2) {
+        display: block;
+        overflow: visible;
+      }
+    }
+
+    &:has(> .et-overlay-arrow) {
+      overflow: visible;
+    }
+
+    &.et-overlay--bottom-sheet .et-overlay-container-drag-handle {
+      grid-template-rows: auto minmax(0, 1fr);
+      display: flex;
+    }
+
+    &:has(.et-overlay-main) {
       overflow: visible;
     }
   }
 
-  &:has(> .et-overlay-arrow) {
-    overflow: visible;
-  }
-
-  &.et-overlay--bottom-sheet .et-overlay-container-drag-handle {
-    grid-template-rows: auto minmax(0, 1fr);
-    display: flex;
-  }
-
-  &:has(.et-overlay-main) {
-    overflow: visible;
-  }
-}
-
-.et-overlay-arrow {
-  --_et-overlay-arrow-size: 14px;
-  --_et-overlay-arrow-overlap: calc(
-    var(--_et-overlay-arrow-size) / 2 + var(--_et-overlay-arrow-pane-border-width, 0px)
-  );
-  --_et-overlay-arrow-border-width: var(--_et-overlay-arrow-pane-border-width, 1px);
-  /* priority: explicit override → measured pane border → surface theme → static fallback,
+  .et-overlay-arrow {
+    --_et-overlay-arrow-size: 14px;
+    --_et-overlay-arrow-overlap: calc(
+      var(--_et-overlay-arrow-size) / 2 + var(--_et-overlay-arrow-pane-border-width, 0px)
+    );
+    --_et-overlay-arrow-border-width: var(--_et-overlay-arrow-pane-border-width, 1px);
+    /* priority: explicit override → measured pane border → surface theme → static fallback,
      so any anchored overlay (menu, tooltip, toggletip, or a bare arrow overlay) gets a
      themed arrow border without repeating this per component */
-  --_et-overlay-arrow-border-color: var(
-    --et-overlay-arrow-border,
-    var(--_et-overlay-arrow-pane-border-color, var(--et-surface-border-solid, rgb(255 255 255 / 0.1)))
-  );
-  --_et-overlay-arrow-clip: calc(
-    var(--_et-overlay-arrow-size) - var(--_et-overlay-arrow-overlap) - 2 * var(--_et-overlay-arrow-border-width)
-  );
+    --_et-overlay-arrow-border-color: var(
+      --et-overlay-arrow-border,
+      var(--_et-overlay-arrow-pane-border-color, var(--et-surface-border-solid, rgb(255 255 255 / 0.1)))
+    );
+    --_et-overlay-arrow-clip: calc(
+      var(--_et-overlay-arrow-size) - var(--_et-overlay-arrow-overlap) - 2 * var(--_et-overlay-arrow-border-width)
+    );
 
-  position: absolute;
-  z-index: 1;
-  inline-size: var(--_et-overlay-arrow-size);
-  block-size: var(--_et-overlay-arrow-size);
-  transform: var(--et-floating-arrow-translate, translate3d(0, 0, 0));
-  visibility: hidden;
-  background-color: var(
-    --et-overlay-arrow-background,
-    var(--et-surface-background-solid, var(--et-surface-2, rgb(32 32 32)))
-  );
-  pointer-events: none;
-
-  &::before {
-    content: '';
     position: absolute;
-    inset: 0;
-    box-sizing: border-box;
-    visibility: visible;
-    border-radius: 2px;
-    border: 0 solid var(--_et-overlay-arrow-border-color);
-    background-color: inherit;
-    box-shadow: var(--et-overlay-arrow-shadow, none);
-    transform: rotate(45deg);
-  }
-}
+    z-index: 1;
+    inline-size: var(--_et-overlay-arrow-size);
+    block-size: var(--_et-overlay-arrow-size);
+    transform: var(--et-floating-arrow-translate, translate3d(0, 0, 0));
+    visibility: hidden;
+    background-color: var(
+      --et-overlay-arrow-background,
+      var(--et-surface-background-solid, var(--et-surface-2, rgb(32 32 32)))
+    );
+    pointer-events: none;
 
-/* the always-visible ::before punches through an ancestor's visibility: hidden,
-   so it must be re-hidden explicitly while the pane waits for its enter animation */
-.et-force-invisible .et-overlay-arrow::before {
-  visibility: hidden;
-}
-
-[data-overlay-placement^='top'] > .et-overlay-arrow {
-  bottom: calc(var(--_et-overlay-arrow-overlap) * -1);
-  left: 0;
-  clip-path: inset(var(--_et-overlay-arrow-clip) -100% -100% -100%);
-
-  &::before {
-    border-right-width: var(--_et-overlay-arrow-border-width);
-    border-bottom-width: var(--_et-overlay-arrow-border-width);
-  }
-}
-
-[data-overlay-placement^='right'] > .et-overlay-arrow {
-  left: calc(var(--_et-overlay-arrow-overlap) * -1);
-  top: 0;
-  clip-path: inset(-100% var(--_et-overlay-arrow-clip) -100% -100%);
-
-  &::before {
-    border-bottom-width: var(--_et-overlay-arrow-border-width);
-    border-left-width: var(--_et-overlay-arrow-border-width);
-  }
-}
-
-[data-overlay-placement^='bottom'] > .et-overlay-arrow {
-  top: calc(var(--_et-overlay-arrow-overlap) * -1);
-  left: 0;
-  clip-path: inset(-100% -100% var(--_et-overlay-arrow-clip) -100%);
-
-  &::before {
-    border-top-width: var(--_et-overlay-arrow-border-width);
-    border-left-width: var(--_et-overlay-arrow-border-width);
-  }
-}
-
-[data-overlay-placement^='left'] > .et-overlay-arrow {
-  right: calc(var(--_et-overlay-arrow-overlap) * -1);
-  top: 0;
-  clip-path: inset(-100% -100% -100% var(--_et-overlay-arrow-clip));
-
-  &::before {
-    border-top-width: var(--_et-overlay-arrow-border-width);
-    border-right-width: var(--_et-overlay-arrow-border-width);
-  }
-}
-
-.et-overlay-main {
-  display: grid;
-  grid-template-rows: minmax(0, 1fr);
-  overflow: auto;
-
-  &:has(.et-overlay-header):has(.et-overlay-body):has(.et-overlay-footer) {
-    grid-template-rows: auto minmax(var(--et-overlay-body-min-block-size), 1fr) auto;
-  }
-
-  &:has(.et-overlay-header):has(.et-overlay-body) {
-    grid-template-rows: auto minmax(var(--et-overlay-body-min-block-size), 1fr);
-  }
-
-  &:has(.et-overlay-body):has(.et-overlay-footer) {
-    grid-template-rows: minmax(var(--et-overlay-body-min-block-size), 1fr) auto;
-  }
-
-  &:not(:has(.et-overlay-footer)) {
-    grid-template-rows: minmax(var(--et-overlay-body-min-block-size), 1fr) auto;
-  }
-}
-
-.et-overlay-container-drag-handle {
-  block-size: var(--_et-overlay-drag-handle-block-size);
-  margin-block: var(--_et-overlay-drag-handle-block-margin);
-  display: none;
-  justify-content: center;
-
-  &::before {
-    content: '';
-    position: static;
-    inline-size: var(--_et-overlay-drag-handle-inline-size);
-    block-size: var(--_et-overlay-drag-handle-block-size);
-    background-color: var(--_et-overlay-drag-handle-color);
-    border-radius: var(--_et-overlay-drag-handle-radius);
-  }
-}
-
-.et-overlay-body {
-  display: grid;
-  overflow: auto;
-  padding-inline: var(--et-overlay-padding-inline);
-  padding-block: var(--et-overlay-body-padding-block);
-  grid-template-columns: minmax(0, 1fr);
-  grid-auto-rows: minmax(0, 1fr);
-
-  &.et-overlay-body--enable-divider-animations {
-    transition: border-color 300ms var(--ease-1);
-  }
-
-  &.et-overlay-body--render-dividers {
-    .et-overlay-main:has(.et-overlay-header) & {
-      border-block-start: 1px solid var(--et-overlay-body-divider-color);
-    }
-
-    .et-overlay-main:has(.et-overlay-footer) & {
-      border-block-end: 1px solid var(--et-overlay-body-divider-color);
-    }
-
-    &.et-overlay-body--dynamic-dividers {
-      border-color: var(--et-overlay-body-divider-color);
-
-      &.et-scrollable-body--is-at-start {
-        border-block-start-color: transparent;
-      }
-
-      &.et-scrollable-body--is-at-end {
-        border-block-end-color: transparent;
-      }
-    }
-  }
-
-  .et-overlay-body-container {
-    position: relative;
-    min-block-size: min-content;
-
-    .et-overlay-body-start-element,
-    .et-overlay-body-end-element {
+    &::before {
+      content: '';
       position: absolute;
-      block-size: 1px;
-      pointer-events: none;
-    }
-
-    .et-overlay-body-start-element {
-      inset-inline: 1px;
-      inset-block-start: 1px;
-    }
-
-    .et-overlay-body-end-element {
-      inset-inline: 1px;
-      inset-block-end: 1px;
+      inset: 0;
+      box-sizing: border-box;
+      visibility: visible;
+      border-radius: 2px;
+      border: 0 solid var(--_et-overlay-arrow-border-color);
+      background-color: inherit;
+      box-shadow: var(--et-overlay-arrow-shadow, none);
+      transform: rotate(45deg);
     }
   }
-}
 
-.et-overlay-header {
-  padding-block-start: var(--et-overlay-padding-block);
-  padding-inline: var(--et-overlay-padding-inline);
-  padding-block-end: var(--et-overlay-header-padding-block-end);
-}
-
-.et-overlay-footer {
-  padding-block-end: var(--et-overlay-padding-block);
-  padding-inline: var(--et-overlay-padding-inline);
-  padding-block-start: var(--et-overlay-footer-padding-block-start);
-}
-
-.et-overlay.et-with-default-animation {
-  &::after {
-    content: '';
-    position: absolute;
-    background-color: inherit;
+  /* the always-visible ::before punches through an ancestor's visibility: hidden,
+   so it must be re-hidden explicitly while the pane waits for its enter animation */
+  .et-force-invisible .et-overlay-arrow::before {
+    visibility: hidden;
   }
 
-  &.et-overlay--full-screen-dialog {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      transform: translate(var(--origin-translate-x, 0), var(--origin-translate-y, 0))
-        scale(var(--origin-scale-x, 0), var(--origin-scale-y, 0)) !important;
-      border-radius: min(250px, calc(var(--origin-width, 0px) / 2), calc(var(--origin-height, 0px) / 2));
-      opacity: 0;
+  [data-overlay-placement^='top'] > .et-overlay-arrow {
+    bottom: calc(var(--_et-overlay-arrow-overlap) * -1);
+    left: 0;
+    clip-path: inset(var(--_et-overlay-arrow-clip) -100% -100% -100%);
+
+    &::before {
+      border-right-width: var(--_et-overlay-arrow-border-width);
+      border-bottom-width: var(--_et-overlay-arrow-border-width);
+    }
+  }
+
+  [data-overlay-placement^='right'] > .et-overlay-arrow {
+    left: calc(var(--_et-overlay-arrow-overlap) * -1);
+    top: 0;
+    clip-path: inset(-100% var(--_et-overlay-arrow-clip) -100% -100%);
+
+    &::before {
+      border-bottom-width: var(--_et-overlay-arrow-border-width);
+      border-left-width: var(--_et-overlay-arrow-border-width);
+    }
+  }
+
+  [data-overlay-placement^='bottom'] > .et-overlay-arrow {
+    top: calc(var(--_et-overlay-arrow-overlap) * -1);
+    left: 0;
+    clip-path: inset(-100% -100% var(--_et-overlay-arrow-clip) -100%);
+
+    &::before {
+      border-top-width: var(--_et-overlay-arrow-border-width);
+      border-left-width: var(--_et-overlay-arrow-border-width);
+    }
+  }
+
+  [data-overlay-placement^='left'] > .et-overlay-arrow {
+    right: calc(var(--_et-overlay-arrow-overlap) * -1);
+    top: 0;
+    clip-path: inset(-100% -100% -100% var(--_et-overlay-arrow-clip));
+
+    &::before {
+      border-top-width: var(--_et-overlay-arrow-border-width);
+      border-right-width: var(--_et-overlay-arrow-border-width);
+    }
+  }
+
+  .et-overlay-main {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    overflow: auto;
+
+    &:has(.et-overlay-header):has(.et-overlay-body):has(.et-overlay-footer) {
+      grid-template-rows: auto minmax(var(--et-overlay-body-min-block-size), 1fr) auto;
     }
 
-    &.et-animation-enter-active {
-      transition:
-        transform 400ms var(--ease-out-5),
-        border-radius 400ms var(--ease-out-5),
-        opacity 150ms linear;
+    &:has(.et-overlay-header):has(.et-overlay-body) {
+      grid-template-rows: auto minmax(var(--et-overlay-body-min-block-size), 1fr);
+    }
 
-      @supports (transition-timing-function: linear(0, 1)) {
-        transition:
-          transform 400ms var(--ease-spring-1),
-          border-radius 400ms var(--ease-spring-1),
-          opacity 150ms linear;
+    &:has(.et-overlay-body):has(.et-overlay-footer) {
+      grid-template-rows: minmax(var(--et-overlay-body-min-block-size), 1fr) auto;
+    }
+
+    &:not(:has(.et-overlay-footer)) {
+      grid-template-rows: minmax(var(--et-overlay-body-min-block-size), 1fr) auto;
+    }
+  }
+
+  .et-overlay-container-drag-handle {
+    block-size: var(--_et-overlay-drag-handle-block-size);
+    margin-block: var(--_et-overlay-drag-handle-block-margin);
+    display: none;
+    justify-content: center;
+
+    &::before {
+      content: '';
+      position: static;
+      inline-size: var(--_et-overlay-drag-handle-inline-size);
+      block-size: var(--_et-overlay-drag-handle-block-size);
+      background-color: var(--_et-overlay-drag-handle-color);
+      border-radius: var(--_et-overlay-drag-handle-radius);
+    }
+  }
+
+  .et-overlay-body {
+    display: grid;
+    overflow: auto;
+    padding-inline: var(--et-overlay-padding-inline);
+    padding-block: var(--et-overlay-body-padding-block);
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: minmax(0, 1fr);
+
+    &.et-overlay-body--enable-divider-animations {
+      transition: border-color 300ms var(--ease-1);
+    }
+
+    &.et-overlay-body--render-dividers {
+      .et-overlay-main:has(.et-overlay-header) & {
+        border-block-start: 1px solid var(--et-overlay-body-divider-color);
+      }
+
+      .et-overlay-main:has(.et-overlay-footer) & {
+        border-block-end: 1px solid var(--et-overlay-body-divider-color);
+      }
+
+      &.et-overlay-body--dynamic-dividers {
+        border-color: var(--et-overlay-body-divider-color);
+
+        &.et-scrollable-body--is-at-start {
+          border-block-start-color: transparent;
+        }
+
+        &.et-scrollable-body--is-at-end {
+          border-block-end-color: transparent;
+        }
       }
     }
 
-    &.et-animation-leave-active {
-      transition:
-        transform 300ms var(--ease-in-out-5),
-        border-radius 300ms var(--ease-in-out-5),
-        opacity 150ms linear 100ms;
+    .et-overlay-body-container {
+      position: relative;
+      min-block-size: min-content;
+
+      .et-overlay-body-start-element,
+      .et-overlay-body-end-element {
+        position: absolute;
+        block-size: 1px;
+        pointer-events: none;
+      }
+
+      .et-overlay-body-start-element {
+        inset-inline: 1px;
+        inset-block-start: 1px;
+      }
+
+      .et-overlay-body-end-element {
+        inset-inline: 1px;
+        inset-block-end: 1px;
+      }
+    }
+  }
+
+  .et-overlay-header {
+    padding-block-start: var(--et-overlay-padding-block);
+    padding-inline: var(--et-overlay-padding-inline);
+    padding-block-end: var(--et-overlay-header-padding-block-end);
+  }
+
+  .et-overlay-footer {
+    padding-block-end: var(--et-overlay-padding-block);
+    padding-inline: var(--et-overlay-padding-inline);
+    padding-block-start: var(--et-overlay-footer-padding-block-start);
+  }
+
+  .et-overlay.et-with-default-animation {
+    &::after {
+      content: '';
+      position: absolute;
+      background-color: inherit;
     }
 
-    &.et-overlay--full-screen-dialog--reduced-animation {
+    &.et-overlay--full-screen-dialog {
+      &.et-animation-enter-from,
+      &.et-animation-leave-to {
+        transform: translate(var(--origin-translate-x, 0), var(--origin-translate-y, 0))
+          scale(var(--origin-scale-x, 0), var(--origin-scale-y, 0)) !important;
+        border-radius: min(250px, calc(var(--origin-width, 0px) / 2), calc(var(--origin-height, 0px) / 2));
+        opacity: 0;
+      }
+
       &.et-animation-enter-active {
         transition:
-          transform 300ms var(--ease-out-5),
-          border-radius 300ms var(--ease-out-5),
+          transform 400ms var(--ease-out-5),
+          border-radius 400ms var(--ease-out-5),
           opacity 150ms linear;
 
         @supports (transition-timing-function: linear(0, 1)) {
           transition:
+            transform 400ms var(--ease-spring-1),
+            border-radius 400ms var(--ease-spring-1),
+            opacity 150ms linear;
+        }
+      }
+
+      &.et-animation-leave-active {
+        transition:
+          transform 300ms var(--ease-in-out-5),
+          border-radius 300ms var(--ease-in-out-5),
+          opacity 150ms linear 100ms;
+      }
+
+      &.et-overlay--full-screen-dialog--reduced-animation {
+        &.et-animation-enter-active {
+          transition:
+            transform 300ms var(--ease-out-5),
+            border-radius 300ms var(--ease-out-5),
+            opacity 150ms linear;
+
+          @supports (transition-timing-function: linear(0, 1)) {
+            transition:
+              transform 300ms var(--ease-spring-2),
+              opacity 300ms var(--ease-out-5),
+              border-radius 300ms var(--ease-spring-2);
+          }
+        }
+
+        &.et-animation-leave-active {
+          transition:
+            transform 150ms var(--ease-in-5),
+            border-radius 150ms var(--ease-in-5),
+            opacity 150ms var(--ease-in-5);
+        }
+      }
+    }
+
+    &.et-overlay--bottom-sheet {
+      &.et-animation-enter-from,
+      &.et-animation-leave-to {
+        transform: translateY(100%) !important;
+      }
+
+      &.et-animation-enter-active {
+        transition: transform 300ms var(--ease-out-5);
+
+        @supports (transition-timing-function: linear(0, 1)) {
+          transition: transform 300ms var(--ease-spring-1);
+        }
+      }
+
+      &.et-animation-leave-active {
+        transition: transform 150ms var(--ease-in-5);
+      }
+
+      &::after {
+        inset-inline: 0;
+        inset-block-end: -50px;
+        block-size: 50px;
+      }
+    }
+
+    &.et-overlay--top-sheet {
+      &.et-animation-enter-from,
+      &.et-animation-leave-to {
+        transform: translateY(-100%) !important;
+      }
+
+      &.et-animation-enter-active {
+        transition: transform 300ms var(--ease-out-5);
+
+        @supports (transition-timing-function: linear(0, 1)) {
+          transition: transform 300ms var(--ease-spring-1);
+        }
+      }
+
+      &.et-animation-leave-active {
+        transition: transform 150ms var(--ease-in-5);
+      }
+
+      &::after {
+        inset-inline: 0;
+        inset-block-start: -50px;
+        block-size: 50px;
+      }
+    }
+
+    &.et-overlay--left-sheet {
+      &.et-animation-enter-from,
+      &.et-animation-leave-to {
+        transform: translateX(-100%) !important;
+      }
+
+      &.et-animation-enter-active {
+        transition: transform 300ms var(--ease-out-5);
+
+        @supports (transition-timing-function: linear(0, 1)) {
+          transition: transform 300ms var(--ease-spring-1);
+        }
+      }
+
+      &.et-animation-leave-active {
+        transition: transform 150ms var(--ease-in-5);
+      }
+
+      &::after {
+        inset-inline-start: -50px;
+        inset-block: 0;
+        inline-size: 50px;
+      }
+    }
+
+    &.et-overlay--right-sheet {
+      &.et-animation-enter-from,
+      &.et-animation-leave-to {
+        transform: translateX(100%) !important;
+      }
+
+      &.et-animation-enter-active {
+        transition: transform 300ms var(--ease-out-5);
+
+        @supports (transition-timing-function: linear(0, 1)) {
+          transition: transform 300ms var(--ease-spring-1);
+        }
+      }
+
+      &.et-animation-leave-active {
+        transition: transform 150ms var(--ease-in-5);
+      }
+
+      &::after {
+        inset-inline-end: -50px;
+        inset-block: 0;
+        inline-size: 50px;
+      }
+    }
+
+    &.et-overlay--dialog {
+      &.et-animation-enter-from {
+        opacity: 0 !important;
+        transform: scale(0.85) !important;
+      }
+
+      &.et-animation-leave-to {
+        opacity: 0 !important;
+        transform: scale(0.7) !important;
+      }
+
+      &.et-animation-enter-active {
+        transition:
+          transform 300ms var(--ease-out-5),
+          opacity 300ms var(--ease-out-5);
+
+        @supports (transition-timing-function: linear(0, 1)) {
+          transition:
             transform 300ms var(--ease-spring-2),
-            opacity 300ms var(--ease-out-5),
-            border-radius 300ms var(--ease-spring-2);
+            opacity 300ms var(--ease-out-5);
+        }
+      }
+
+      &.et-animation-leave-active {
+        transition:
+          transform 150ms var(--ease-out-5),
+          opacity 150ms var(--ease-out-5);
+      }
+    }
+
+    &.et-overlay--anchored-dialog {
+      &.et-animation-enter-from,
+      &.et-animation-leave-to {
+        /* composes the floating-ui anchor position with the origin-based enter/leave transform */
+        transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
+          translate(var(--origin-translate-x, 0), var(--origin-translate-y, 0))
+          scale(var(--origin-scale-x, 0.85), var(--origin-scale-y, 0.85)) !important;
+        opacity: 0;
+      }
+
+      &.et-animation-enter-active {
+        transition:
+          transform 300ms var(--ease-out-5),
+          opacity 150ms linear;
+
+        @supports (transition-timing-function: linear(0, 1)) {
+          transition:
+            transform 300ms var(--ease-spring-1),
+            opacity 150ms linear;
         }
       }
 
       &.et-animation-leave-active {
         transition:
           transform 150ms var(--ease-in-5),
-          border-radius 150ms var(--ease-in-5),
-          opacity 150ms var(--ease-in-5);
-      }
-    }
-  }
-
-  &.et-overlay--bottom-sheet {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      transform: translateY(100%) !important;
-    }
-
-    &.et-animation-enter-active {
-      transition: transform 300ms var(--ease-out-5);
-
-      @supports (transition-timing-function: linear(0, 1)) {
-        transition: transform 300ms var(--ease-spring-1);
-      }
-    }
-
-    &.et-animation-leave-active {
-      transition: transform 150ms var(--ease-in-5);
-    }
-
-    &::after {
-      inset-inline: 0;
-      inset-block-end: -50px;
-      block-size: 50px;
-    }
-  }
-
-  &.et-overlay--top-sheet {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      transform: translateY(-100%) !important;
-    }
-
-    &.et-animation-enter-active {
-      transition: transform 300ms var(--ease-out-5);
-
-      @supports (transition-timing-function: linear(0, 1)) {
-        transition: transform 300ms var(--ease-spring-1);
-      }
-    }
-
-    &.et-animation-leave-active {
-      transition: transform 150ms var(--ease-in-5);
-    }
-
-    &::after {
-      inset-inline: 0;
-      inset-block-start: -50px;
-      block-size: 50px;
-    }
-  }
-
-  &.et-overlay--left-sheet {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      transform: translateX(-100%) !important;
-    }
-
-    &.et-animation-enter-active {
-      transition: transform 300ms var(--ease-out-5);
-
-      @supports (transition-timing-function: linear(0, 1)) {
-        transition: transform 300ms var(--ease-spring-1);
-      }
-    }
-
-    &.et-animation-leave-active {
-      transition: transform 150ms var(--ease-in-5);
-    }
-
-    &::after {
-      inset-inline-start: -50px;
-      inset-block: 0;
-      inline-size: 50px;
-    }
-  }
-
-  &.et-overlay--right-sheet {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      transform: translateX(100%) !important;
-    }
-
-    &.et-animation-enter-active {
-      transition: transform 300ms var(--ease-out-5);
-
-      @supports (transition-timing-function: linear(0, 1)) {
-        transition: transform 300ms var(--ease-spring-1);
-      }
-    }
-
-    &.et-animation-leave-active {
-      transition: transform 150ms var(--ease-in-5);
-    }
-
-    &::after {
-      inset-inline-end: -50px;
-      inset-block: 0;
-      inline-size: 50px;
-    }
-  }
-
-  &.et-overlay--dialog {
-    &.et-animation-enter-from {
-      opacity: 0 !important;
-      transform: scale(0.85) !important;
-    }
-
-    &.et-animation-leave-to {
-      opacity: 0 !important;
-      transform: scale(0.7) !important;
-    }
-
-    &.et-animation-enter-active {
-      transition:
-        transform 300ms var(--ease-out-5),
-        opacity 300ms var(--ease-out-5);
-
-      @supports (transition-timing-function: linear(0, 1)) {
-        transition:
-          transform 300ms var(--ease-spring-2),
-          opacity 300ms var(--ease-out-5);
-      }
-    }
-
-    &.et-animation-leave-active {
-      transition:
-        transform 150ms var(--ease-out-5),
-        opacity 150ms var(--ease-out-5);
-    }
-  }
-
-  &.et-overlay--anchored-dialog {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      /* composes the floating-ui anchor position with the origin-based enter/leave transform */
-      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
-        translate(var(--origin-translate-x, 0), var(--origin-translate-y, 0))
-        scale(var(--origin-scale-x, 0.85), var(--origin-scale-y, 0.85)) !important;
-      opacity: 0;
-    }
-
-    &.et-animation-enter-active {
-      transition:
-        transform 300ms var(--ease-out-5),
-        opacity 150ms linear;
-
-      @supports (transition-timing-function: linear(0, 1)) {
-        transition:
-          transform 300ms var(--ease-spring-1),
           opacity 150ms linear;
       }
     }
+  }
 
-    &.et-animation-leave-active {
-      transition:
-        transform 150ms var(--ease-in-5),
-        opacity 150ms linear;
+  .et-overlay-runtime-backdrop {
+    --et-overlay-backdrop-color: rgb(0 0 0 / 0.32);
+
+    background-color: var(--et-overlay-backdrop-color);
+    opacity: 0;
+    transition: opacity 200ms linear;
+
+    &.et-overlay-backdrop--visible {
+      opacity: 1;
     }
   }
-}
 
-.et-overlay-runtime-backdrop {
-  --et-overlay-backdrop-color: rgb(0 0 0 / 0.32);
-
-  background-color: var(--et-overlay-backdrop-color);
-  opacity: 0;
-  transition: opacity 200ms linear;
-
-  &.et-overlay-backdrop--visible {
-    opacity: 1;
+  .et-overlay-backdrop--hidden {
+    display: none !important;
   }
-}
 
-.et-overlay-backdrop--hidden {
-  display: none !important;
-}
-
-.et-force-invisible {
-  visibility: hidden !important;
+  .et-force-invisible {
+    visibility: hidden !important;
+  }
 }

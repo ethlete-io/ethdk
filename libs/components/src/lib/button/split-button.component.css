@@ -1,70 +1,72 @@
-@property --et-split-button-divider-color {
-  syntax: '*';
-  inherits: true;
-}
+@layer components {
+  @property --et-split-button-divider-color {
+    syntax: '*';
+    inherits: true;
+  }
 
-.et-split-button {
-  display: inline-flex;
-  align-items: stretch;
+  .et-split-button {
+    display: inline-flex;
+    align-items: stretch;
 
-  .et-split-button-action,
-  .et-split-button-trigger {
-    position: relative;
+    .et-split-button-action,
+    .et-split-button-trigger {
+      position: relative;
 
-    &:hover,
-    &:focus-visible {
-      z-index: 1;
+      &:hover,
+      &:focus-visible {
+        z-index: 1;
+      }
     }
-  }
 
-  .et-split-button-action {
-    border-start-end-radius: 0;
-    border-end-end-radius: 0;
-  }
+    .et-split-button-action {
+      border-start-end-radius: 0;
+      border-end-end-radius: 0;
+    }
 
-  .et-split-button-trigger {
-    /* icon buttons carry a fixed per-size height that would beat the group's
+    .et-split-button-trigger {
+      /* icon buttons carry a fixed per-size height that would beat the group's
        align-items: stretch — let the action segment dictate the height instead */
-    height: auto;
-    border-start-start-radius: 0;
-    border-end-start-radius: 0;
-    border-start-end-radius: var(--et-button-border-radius);
-    border-end-end-radius: var(--et-button-border-radius);
+      height: auto;
+      border-start-start-radius: 0;
+      border-end-start-radius: 0;
+      border-start-end-radius: var(--et-button-border-radius);
+      border-end-end-radius: var(--et-button-border-radius);
 
-    /* icon buttons are fully round and don't carry the per-size radius scale —
+      /* icon buttons are fully round and don't carry the per-size radius scale —
        mirror the surface button's values so both segments share the outer radius */
-    &:where([data-size='xs']) {
-      --et-button-border-radius: 0.3rem;
+      &:where([data-size='xs']) {
+        --et-button-border-radius: 0.3rem;
+      }
+
+      &:where([data-size='sm']),
+      &:where([data-size='md']) {
+        --et-button-border-radius: 0.4rem;
+      }
+
+      &:where([data-size='lg']) {
+        --et-button-border-radius: 0.6rem;
+      }
+
+      &:where([data-size='xl']) {
+        --et-button-border-radius: 0.8rem;
+      }
     }
 
-    &:where([data-size='sm']),
-    &:where([data-size='md']) {
-      --et-button-border-radius: 0.4rem;
+    /* filled/tonal/transparent: the trigger's inline-start border doubles as the divider */
+    .et-split-button-trigger:not([data-variant='outline']) {
+      border-inline-start: var(--et-button-border-width, 0.1rem) solid
+        var(--et-split-button-divider-color, color-mix(in srgb, currentColor 32%, transparent));
     }
 
-    &:where([data-size='lg']) {
-      --et-button-border-radius: 0.6rem;
+    /* outline: both segments bring their own border — overlap them so the shared edge stays single-width */
+    .et-split-button-trigger:where([data-variant='outline']) {
+      margin-inline-start: calc(var(--et-button-border-width, 0.1rem) * -1);
     }
 
-    &:where([data-size='xl']) {
-      --et-button-border-radius: 0.8rem;
-    }
-  }
-
-  /* filled/tonal/transparent: the trigger's inline-start border doubles as the divider */
-  .et-split-button-trigger:not([data-variant='outline']) {
-    border-inline-start: var(--et-button-border-width, 0.1rem) solid
-      var(--et-split-button-divider-color, color-mix(in srgb, currentColor 32%, transparent));
-  }
-
-  /* outline: both segments bring their own border — overlap them so the shared edge stays single-width */
-  .et-split-button-trigger:where([data-variant='outline']) {
-    margin-inline-start: calc(var(--et-button-border-width, 0.1rem) * -1);
-  }
-
-  /* the surface button keeps filled fully opaque while disabled — mirror that for icon-button
+    /* the surface button keeps filled fully opaque while disabled — mirror that for icon-button
      triggers so a disabled filled split button doesn't fade only on one side */
-  .et-icon-button.et-split-button-trigger:where([data-variant='filled']):where([disabled], [aria-disabled='true']) {
-    opacity: 1;
+    .et-icon-button.et-split-button-trigger:where([data-variant='filled']):where([disabled], [aria-disabled='true']) {
+      opacity: 1;
+    }
   }
 }

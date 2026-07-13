@@ -1,212 +1,214 @@
-@property --et-notification-border-radius {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 4px;
-}
-
-@property --et-notification-padding {
-  syntax: '*';
-  inherits: false;
-  initial-value: 12px 12px 12px 14px;
-}
-
-@property --et-notification-min-width {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 300px;
-}
-
-@property --et-notification-max-width {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 420px;
-}
-
-@property --et-notification-shadow {
-  syntax: '*';
-  inherits: false;
-  initial-value:
-    0 4px 16px rgb(0 0 0 / 10%),
-    0 0 0 1px rgb(0 0 0 / 5%);
-}
-
-@property --et-notification-border-width {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 4px;
-}
-
-@property --et-notification-font-size {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 14px;
-}
-
-@property --et-notification-line-height {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 20px;
-}
-
-@property --et-notification-gap {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 8px;
-}
-
-@property --et-notification-title-font-weight {
-  syntax: '<number>';
-  inherits: false;
-  initial-value: 600;
-}
-
-@property --et-notification-message-font-size {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 12px;
-}
-
-@property --et-notification-message-line-height {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 16px;
-}
-
-@property --et-notification-message-opacity {
-  syntax: '<number>';
-  inherits: false;
-  initial-value: 0.65;
-}
-
-@property --et-notification-progress-bar-height {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 3px;
-}
-
-.et-notification {
-  display: block;
-  pointer-events: all;
-  background: var(--et-surface-background-solid, #fff);
-  color: var(--et-surface-color-solid, #111);
-  border-radius: var(--et-notification-border-radius);
-  padding: var(--et-notification-padding);
-  box-shadow: var(--et-notification-shadow);
-  min-width: var(--et-notification-min-width);
-  max-width: var(--et-notification-max-width);
-  border-left: var(--et-notification-border-width) solid var(--et-theme-color-primary-solid, #d1d5db);
-  font-family: inherit;
-  font-size: var(--et-notification-font-size);
-  line-height: var(--et-notification-line-height);
-
-  &.et-animation-enter-from {
-    opacity: 0;
-    transform: translateX(1rem);
+@layer components {
+  @property --et-notification-border-radius {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 4px;
   }
 
-  &.et-animation-enter-active {
-    transition:
-      opacity 200ms ease,
-      transform 200ms ease;
+  @property --et-notification-padding {
+    syntax: '*';
+    inherits: false;
+    initial-value: 12px 12px 12px 14px;
   }
 
-  &.et-animation-leave-active {
-    transition:
-      opacity 200ms ease,
-      transform 200ms ease;
+  @property --et-notification-min-width {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 300px;
   }
 
-  &.et-animation-leave-to {
-    opacity: 0;
-    transform: translateX(1rem);
+  @property --et-notification-max-width {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 420px;
   }
-}
 
-/* start positions: slide in/out from the left */
-.et-notification-stack[data-position='bottom-start'] .et-notification,
-.et-notification-stack[data-position='top-start'] .et-notification {
-  &.et-animation-enter-from,
-  &.et-animation-leave-to {
-    transform: translateX(-1rem);
+  @property --et-notification-shadow {
+    syntax: '*';
+    inherits: false;
+    initial-value:
+      0 4px 16px rgb(0 0 0 / 10%),
+      0 0 0 1px rgb(0 0 0 / 5%);
   }
-}
 
-/* bottom-center: slide in/out upward from below */
-.et-notification-stack[data-position='bottom-center'] .et-notification {
-  &.et-animation-enter-from,
-  &.et-animation-leave-to {
-    transform: translateY(1rem);
+  @property --et-notification-border-width {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 4px;
   }
-}
 
-/* top-center: slide in/out downward from above */
-.et-notification-stack[data-position='top-center'] .et-notification {
-  &.et-animation-enter-from,
-  &.et-animation-leave-to {
-    transform: translateY(-1rem);
+  @property --et-notification-font-size {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 14px;
   }
-}
 
-.et-notification-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--et-notification-gap);
-}
-
-.et-notification-spinner {
-  flex-shrink: 0;
-  --et-spinner-color: var(--et-theme-color-primary-solid, currentColor);
-}
-
-.et-notification-title {
-  flex: 1;
-  font-weight: var(--et-notification-title-font-weight);
-  font-size: var(--et-notification-font-size);
-  line-height: var(--et-notification-line-height);
-}
-
-.et-notification-dismiss-btn {
-  flex-shrink: 0;
-  opacity: 0.4;
-  transition: opacity 120ms ease;
-
-  &:hover {
-    opacity: 0.8;
+  @property --et-notification-line-height {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 20px;
   }
-}
 
-.et-notification-message {
-  margin: 0.4rem 0 0;
-  color: var(--et-surface-color-muted-solid, inherit);
-  opacity: var(--et-notification-message-opacity);
-  font-size: var(--et-notification-message-font-size);
-  line-height: var(--et-notification-message-line-height);
-}
+  @property --et-notification-gap {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 8px;
+  }
 
-.et-notification-progress-bar {
-  margin-top: 0.8rem;
-  color: var(--et-theme-color-primary-solid, currentColor);
-  --et-progress-bar-height: var(--et-notification-progress-bar-height);
-}
+  @property --et-notification-title-font-weight {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 600;
+  }
 
-.et-notification-footer {
-  margin-top: 0.8rem;
-}
+  @property --et-notification-message-font-size {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 12px;
+  }
 
-@media (prefers-reduced-motion: reduce) {
+  @property --et-notification-message-line-height {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 16px;
+  }
+
+  @property --et-notification-message-opacity {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 0.65;
+  }
+
+  @property --et-notification-progress-bar-height {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 3px;
+  }
+
   .et-notification {
+    display: block;
+    pointer-events: all;
+    background: var(--et-surface-background-solid, #fff);
+    color: var(--et-surface-color-solid, #111);
+    border-radius: var(--et-notification-border-radius);
+    padding: var(--et-notification-padding);
+    box-shadow: var(--et-notification-shadow);
+    min-width: var(--et-notification-min-width);
+    max-width: var(--et-notification-max-width);
+    border-left: var(--et-notification-border-width) solid var(--et-theme-color-primary-solid, #d1d5db);
+    font-family: inherit;
+    font-size: var(--et-notification-font-size);
+    line-height: var(--et-notification-line-height);
+
     &.et-animation-enter-from {
-      transform: none;
+      opacity: 0;
+      transform: translateX(1rem);
     }
 
-    &.et-animation-enter-active,
+    &.et-animation-enter-active {
+      transition:
+        opacity 200ms ease,
+        transform 200ms ease;
+    }
+
     &.et-animation-leave-active {
-      transition-duration: 0ms;
+      transition:
+        opacity 200ms ease,
+        transform 200ms ease;
     }
 
     &.et-animation-leave-to {
-      transform: none;
+      opacity: 0;
+      transform: translateX(1rem);
+    }
+  }
+
+  /* start positions: slide in/out from the left */
+  .et-notification-stack[data-position='bottom-start'] .et-notification,
+  .et-notification-stack[data-position='top-start'] .et-notification {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translateX(-1rem);
+    }
+  }
+
+  /* bottom-center: slide in/out upward from below */
+  .et-notification-stack[data-position='bottom-center'] .et-notification {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translateY(1rem);
+    }
+  }
+
+  /* top-center: slide in/out downward from above */
+  .et-notification-stack[data-position='top-center'] .et-notification {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translateY(-1rem);
+    }
+  }
+
+  .et-notification-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--et-notification-gap);
+  }
+
+  .et-notification-spinner {
+    flex-shrink: 0;
+    --et-spinner-color: var(--et-theme-color-primary-solid, currentColor);
+  }
+
+  .et-notification-title {
+    flex: 1;
+    font-weight: var(--et-notification-title-font-weight);
+    font-size: var(--et-notification-font-size);
+    line-height: var(--et-notification-line-height);
+  }
+
+  .et-notification-dismiss-btn {
+    flex-shrink: 0;
+    opacity: 0.4;
+    transition: opacity 120ms ease;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+
+  .et-notification-message {
+    margin: 0.4rem 0 0;
+    color: var(--et-surface-color-muted-solid, inherit);
+    opacity: var(--et-notification-message-opacity);
+    font-size: var(--et-notification-message-font-size);
+    line-height: var(--et-notification-message-line-height);
+  }
+
+  .et-notification-progress-bar {
+    margin-top: 0.8rem;
+    color: var(--et-theme-color-primary-solid, currentColor);
+    --et-progress-bar-height: var(--et-notification-progress-bar-height);
+  }
+
+  .et-notification-footer {
+    margin-top: 0.8rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-notification {
+      &.et-animation-enter-from {
+        transform: none;
+      }
+
+      &.et-animation-enter-active,
+      &.et-animation-leave-active {
+        transition-duration: 0ms;
+      }
+
+      &.et-animation-leave-to {
+        transform: none;
+      }
     }
   }
 }

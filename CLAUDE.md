@@ -36,6 +36,33 @@ Component styles are plain CSS (global `et-`-prefixed classes,
 use Tailwind in component source.** Tailwind utility classes are allowed **only in
 story files** (`*.stories.ts` and `stories/`), for demo layout.
 
+#### Cascade layers: every component CSS file is wrapped in `@layer components`
+
+**All component CSS in `libs/components` is wrapped in `@layer components { … }`,
+and new/edited files must keep doing so** (put the entire file inside one such
+block). This is what lets consumers override component styles with a Tailwind
+utility — `flex`, `p-4`, etc. — without `!important`.
+
+Why: component CSS is injected via `ViewEncapsulation.None` as global `<style>`
+tags. If it were **unlayered**, it would beat Tailwind v4 utilities (which live in
+`@layer utilities`) **regardless of specificity** — layer precedence is resolved
+before specificity, so a consumer was forced to escalate to `flex!`. `:where()`
+does **not** fix this: lowering specificity is irrelevant across layers (an
+unlayered `:where(.et-button)` still beats a layered `.flex`). Wrapping in
+`@layer components` does fix it, because Tailwind v4 pre-declares
+`@layer theme, base, components, utilities`, so `components` sorts before
+`utilities` and utilities win. (Consequence: any consumer rule that is unlayered
+or in a later layer now wins over component styles by default — that is the
+intended, well-behaved-library direction.)
+
+`:where()` has a **separate** job: **flattening internal specificity** so a
+component's own config modifiers (`[data-size]`, `[data-variant]`, `[disabled]`)
+stay at the same single-class weight as the base rule, resolved by source order —
+see the `&:where([data-size='…'])` / `&:where([disabled])` pattern in
+`libs/components/src/lib/button/*.component.css`. Interaction states (`:hover`,
+`:focus-visible`, `:active`) are deliberately left bare so they escalate and win.
+`:where()` is orthogonal to the layer wrap, not a substitute for it.
+
 All colors in component CSS must come from the **surface theming** and **color
 theming** token systems (`--et-surface-*-solid`, `--et-theme-color-*`) — never
 hardcode colors. Read the **`theming`** skill (`.claude/skills/theming/`) before

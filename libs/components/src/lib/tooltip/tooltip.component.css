@@ -1,174 +1,180 @@
-@property --et-tooltip-font-size {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 13px;
-}
-
-@property --et-tooltip-line-height {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 18px;
-}
-
-@property --et-tooltip-font-weight {
-  syntax: '<number>';
-  inherits: false;
-  initial-value: 500;
-}
-
-@property --et-tooltip-letter-spacing {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: -0.13px;
-}
-
-@property --et-tooltip-padding-inline {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 14px;
-}
-
-@property --et-tooltip-padding-block {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 12px;
-}
-
-.et-overlay.et-overlay--tooltip {
-  overflow: visible;
-  pointer-events: none;
-  background: transparent;
-  box-shadow: none;
-}
-
-.et-overlay--tooltip > :nth-child(2) {
-  display: block;
-  overflow: visible;
-}
-
-.et-tooltip {
-  --_et-tooltip-background: var(--et-surface-2, rgb(32 32 32));
-  --_et-tooltip-color: var(--et-color-main-contrast, rgb(244 244 245));
-  --_et-tooltip-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
-  --_et-tooltip-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
-  --_et-tooltip-radius: 16px;
-  --_et-tooltip-max-width: min(34ch, calc(100vw - 24px));
-
-  position: relative;
-  display: block;
-  inline-size: max-content;
-  max-inline-size: var(--_et-tooltip-max-width);
-  pointer-events: none;
-  user-select: none;
-  color: var(--_et-tooltip-color);
-  font-family: var(--et-font-family, inherit);
-  font-size: var(--et-tooltip-font-size);
-  font-weight: var(--et-tooltip-font-weight);
-  line-height: var(--et-tooltip-line-height);
-  letter-spacing: var(--et-tooltip-letter-spacing);
-}
-
-.et-tooltip__surface {
-  position: relative;
-  z-index: 1;
-  display: block;
-  max-inline-size: var(--_et-tooltip-max-width);
-  padding: calc(var(--et-tooltip-padding-block) + 2px) calc(var(--et-tooltip-padding-inline) + 2px);
-  border-radius: var(--_et-tooltip-radius);
-  border: 1px solid var(--_et-tooltip-border);
-  background: var(--et-surface-background-solid, var(--_et-tooltip-background));
-  color: var(--et-surface-color-solid, var(--_et-tooltip-color));
-  box-shadow: var(--_et-tooltip-shadow);
-}
-
-.et-tooltip__content {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  gap: 6px;
-
-  :where(p) {
-    margin: 0;
-    opacity: 0.88;
+@layer components {
+  @property --et-tooltip-font-size {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 13px;
   }
 
-  :where(a) {
-    color: inherit;
+  @property --et-tooltip-line-height {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 18px;
   }
 
-  :where(strong) {
+  @property --et-tooltip-font-weight {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 500;
+  }
+
+  @property --et-tooltip-letter-spacing {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: -0.13px;
+  }
+
+  @property --et-tooltip-padding-inline {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 14px;
+  }
+
+  @property --et-tooltip-padding-block {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 12px;
+  }
+
+  .et-overlay.et-overlay--tooltip {
+    overflow: visible;
+    pointer-events: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .et-overlay--tooltip > :nth-child(2) {
     display: block;
-    font-size: 14px;
-    font-weight: 700;
-    line-height: 18px;
-    letter-spacing: -0.02em;
-    opacity: 1;
-  }
-}
-
-.et-tooltip__text {
-  margin: 0;
-}
-
-.et-overlay.et-with-default-animation.et-overlay--tooltip {
-  &.et-animation-enter-from,
-  &.et-animation-leave-to {
-    opacity: 0;
+    overflow: visible;
   }
 
-  &.et-animation-enter-active {
-    transition:
-      transform 200ms ease,
-      opacity 200ms ease;
+  .et-tooltip {
+    --_et-tooltip-background: var(--et-surface-2, rgb(32 32 32));
+    --_et-tooltip-color: var(--et-color-main-contrast, rgb(244 244 245));
+    --_et-tooltip-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    --_et-tooltip-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
+    --_et-tooltip-radius: 16px;
+    --_et-tooltip-max-width: min(34ch, calc(100vw - 24px));
+
+    position: relative;
+    display: block;
+    inline-size: max-content;
+    max-inline-size: var(--_et-tooltip-max-width);
+    pointer-events: none;
+    user-select: none;
+    color: var(--_et-tooltip-color);
+    font-family: var(--et-font-family, inherit);
+    font-size: var(--et-tooltip-font-size);
+    font-weight: var(--et-tooltip-font-weight);
+    line-height: var(--et-tooltip-line-height);
+    letter-spacing: var(--et-tooltip-letter-spacing);
   }
 
-  &.et-animation-leave-active {
-    transition:
-      transform 140ms ease,
-      opacity 140ms ease;
+  .et-tooltip__surface {
+    position: relative;
+    z-index: 1;
+    display: block;
+    max-inline-size: var(--_et-tooltip-max-width);
+    padding: calc(var(--et-tooltip-padding-block) + 2px) calc(var(--et-tooltip-padding-inline) + 2px);
+    border-radius: var(--_et-tooltip-radius);
+    border: 1px solid var(--_et-tooltip-border);
+    background: var(--et-surface-background-solid, var(--_et-tooltip-background));
+    color: var(--et-surface-color-solid, var(--_et-tooltip-color));
+    box-shadow: var(--_et-tooltip-shadow);
   }
-}
 
-.et-overlay--tooltip[data-overlay-placement^='top'] {
-  &.et-animation-enter-from,
-  &.et-animation-leave-to {
-    transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) translateY(0.45rem) !important;
-  }
-}
+  .et-tooltip__content {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: 6px;
 
-.et-overlay--tooltip[data-overlay-placement^='right'] {
-  &.et-animation-enter-from,
-  &.et-animation-leave-to {
-    transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) translateX(-0.45rem) !important;
-  }
-}
+    :where(p) {
+      margin: 0;
+      opacity: 0.88;
+    }
 
-.et-overlay--tooltip[data-overlay-placement^='bottom'] {
-  &.et-animation-enter-from,
-  &.et-animation-leave-to {
-    transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) translateY(-0.45rem) !important;
-  }
-}
+    :where(a) {
+      color: inherit;
+    }
 
-.et-overlay--tooltip[data-overlay-placement^='left'] {
-  &.et-animation-enter-from,
-  &.et-animation-leave-to {
-    transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) translateX(0.45rem) !important;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .et-overlay.et-with-default-animation.et-overlay--tooltip {
-    &.et-animation-enter-active,
-    &.et-animation-leave-active {
-      transition-duration: 0ms;
+    :where(strong) {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 18px;
+      letter-spacing: -0.02em;
+      opacity: 1;
     }
   }
 
-  .et-overlay--tooltip[data-overlay-placement] {
+  .et-tooltip__text {
+    margin: 0;
+  }
+
+  .et-overlay.et-with-default-animation.et-overlay--tooltip {
     &.et-animation-enter-from,
     &.et-animation-leave-to {
-      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) !important;
+      opacity: 0;
+    }
+
+    &.et-animation-enter-active {
+      transition:
+        transform 200ms ease,
+        opacity 200ms ease;
+    }
+
+    &.et-animation-leave-active {
+      transition:
+        transform 140ms ease,
+        opacity 140ms ease;
+    }
+  }
+
+  .et-overlay--tooltip[data-overlay-placement^='top'] {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
+        translateY(0.45rem) !important;
+    }
+  }
+
+  .et-overlay--tooltip[data-overlay-placement^='right'] {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
+        translateX(-0.45rem) !important;
+    }
+  }
+
+  .et-overlay--tooltip[data-overlay-placement^='bottom'] {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
+        translateY(-0.45rem) !important;
+    }
+  }
+
+  .et-overlay--tooltip[data-overlay-placement^='left'] {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
+        translateX(0.45rem) !important;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-overlay.et-with-default-animation.et-overlay--tooltip {
+      &.et-animation-enter-active,
+      &.et-animation-leave-active {
+        transition-duration: 0ms;
+      }
+    }
+
+    .et-overlay--tooltip[data-overlay-placement] {
+      &.et-animation-enter-from,
+      &.et-animation-leave-to {
+        transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) !important;
+      }
     }
   }
 }

@@ -10,6 +10,25 @@ The active Angular UI library of the Ethlete SDK — overlays, menus, buttons, f
 Components take `color` / `surface` inputs, but the theme **names** are registered by your app (via the [surface/color theming providers](/core/theming)), not shipped by the SDK. Wherever these guides use names like `color="brand"` or `danger`, those are the themes this repo's Storybook registers — substitute your own. Semantic behavior (e.g. destructive menu items, form errors) resolves themes by `type` (like `type: 'error'`), so register one theme per semantic type you use.
 :::
 
+## Overriding component styles
+
+Component styles ship inside the `components` CSS cascade layer (`@layer components`).
+Tailwind v4 orders that layer before `utilities`, so **you can override layout,
+spacing and sizing with plain utility classes — no `!important` needed**:
+
+```html
+<button class="flex w-full" et-button>Full width</button>
+```
+
+The same holds for your own CSS: any rule that is unlayered or in a later layer
+wins over component styles by default. If your app customizes its cascade layer
+order, make sure `components` sorts before your utilities layer (the default
+Tailwind v4 order — `theme, base, components, utilities` — already does).
+
+For fine-grained, semantic customization, prefer each component's `--et-*` custom
+property tokens (documented per component, e.g. [Button](/components/button)) and
+the [surface/color theming](/core/theming) systems over ad-hoc overrides.
+
 ## Interactive demos
 
 Every component ships with Storybook stories — the primary place to explore rendered components:

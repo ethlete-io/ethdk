@@ -1,11 +1,13 @@
-.et-focus-ring {
-  --_et-focus-ring-offset: 3px;
-  --_et-focus-ring-width: 2px;
-  --_et-focus-ring-color: var(--et-theme-color-primary-solid, currentColor);
-  outline: var(--_et-focus-ring-width) solid transparent;
-  outline-offset: var(--_et-focus-ring-offset);
-}
+@layer components {
+  .et-focus-ring {
+    --_et-focus-ring-offset: 3px;
+    --_et-focus-ring-width: 2px;
+    --_et-focus-ring-color: var(--et-theme-color-primary-solid, currentColor);
+    outline: var(--_et-focus-ring-width) solid transparent;
+    outline-offset: var(--_et-focus-ring-offset);
+  }
 
-.et-focus-ring:focus-visible {
-  outline-color: var(--_et-focus-ring-color);
+  .et-focus-ring:focus-visible {
+    outline-color: var(--_et-focus-ring-color);
+  }
 }

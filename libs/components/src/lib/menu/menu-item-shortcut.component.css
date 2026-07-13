@@ -1,8 +1,10 @@
-.et-menu-item-shortcut {
-  display: inline-flex;
-  align-items: center;
-  color: var(--_et-menu-muted-color, var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55)));
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.04em;
+@layer components {
+  .et-menu-item-shortcut {
+    display: inline-flex;
+    align-items: center;
+    color: var(--_et-menu-muted-color, var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55)));
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+  }
 }
