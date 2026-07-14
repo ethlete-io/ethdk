@@ -58,10 +58,7 @@
       border-block-end: var(--et-form-field-control-border-width, 1px) solid
         color-mix(in srgb, currentColor 12%, transparent);
 
-      /* et-icon-button defaults to a fully round shape; the toolbar wants a squarer button. */
-      .et-icon-button {
-        border-radius: var(--et-rich-text-editor-button-radius);
-      }
+      --et-icon-button-border-radius: var(--et-rich-text-editor-button-radius);
     }
 
     .et-rte-toolbar-divider {
@@ -162,6 +159,14 @@
       a {
         color: var(--et-theme-color-primary-solid, currentColor);
         text-decoration: underline;
+      }
+
+      code {
+        padding: 0.1em 0.3em;
+        border-radius: 4px;
+        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 14%, transparent);
+        font-family: var(--et-font-family-mono, ui-monospace, monospace);
+        font-size: 0.9em;
       }
 
       .et-rte-token {

@@ -178,6 +178,7 @@ const reduceSupportPresentation = ({
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-control-type]': 'formFieldDir.controlType()',
     '[attr.data-error]': 'displaysError() || null',
+    '[attr.data-readonly]': 'formFieldDir.usesTextFieldShell() && formFieldDir.isReadonly() ? "" : null',
     '[attr.data-appearance]': 'formFieldDir.usesTextFieldShell() ? appearance() : null',
     '[attr.data-fill]': 'formFieldDir.usesTextFieldShell() ? fill() : null',
     '[attr.data-label-floated]': 'hasFloatingTextLabel() && formFieldDir.shouldFloatLabel() ? "" : null',

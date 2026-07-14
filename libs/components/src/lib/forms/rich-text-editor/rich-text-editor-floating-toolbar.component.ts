@@ -1,8 +1,22 @@
-import { Component, effect, inject, input, untracked, ViewEncapsulation } from '@angular/core';
+import { Component, computed, effect, inject, input, untracked, ViewEncapsulation } from '@angular/core';
 import { COLOR_PROVIDER, ProvideColorDirective, ProvideSurfaceDirective, SURFACE_PROVIDER } from '@ethlete/core';
 import { IconButtonComponent } from '../../button/icon-button.component';
-import { BOLD_ICON, IconDirective, ITALIC_ICON, LINK_ICON, provideIcons, STRIKETHROUGH_ICON } from '../../icon';
+import {
+  BOLD_ICON,
+  CODE_ICON,
+  IconDirective,
+  ITALIC_ICON,
+  LINK_ICON,
+  provideIcons,
+  STRIKETHROUGH_ICON,
+  UNDERLINE_ICON,
+} from '../../icon';
 import { RichTextEditorDirective } from './headless/rich-text-editor.directive';
+import {
+  RICH_TEXT_EDITOR_INLINE_TOOLS,
+  RICH_TEXT_EDITOR_TOOL_BUTTONS,
+  RICH_TEXT_EDITOR_TOOLS,
+} from './rich-text-editor-tools';
 
 @Component({
   selector: 'et-rich-text-editor-floating-toolbar',
@@ -10,7 +24,7 @@ import { RichTextEditorDirective } from './headless/rich-text-editor.directive';
   styleUrl: './rich-text-editor-floating-toolbar.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [IconButtonComponent, IconDirective],
-  providers: [provideIcons(BOLD_ICON, ITALIC_ICON, STRIKETHROUGH_ICON, LINK_ICON)],
+  providers: [provideIcons(BOLD_ICON, ITALIC_ICON, UNDERLINE_ICON, STRIKETHROUGH_ICON, CODE_ICON, LINK_ICON)],
   hostDirectives: [ProvideColorDirective, ProvideSurfaceDirective],
   host: {
     class: 'et-rte-floating-toolbar',
@@ -28,6 +42,16 @@ export class RichTextEditorFloatingToolbarComponent {
 
   /** The editor whose selection this toolbar formats (passed in — the toolbar is detached from the DOM). */
   public editor = input.required<RichTextEditorDirective>();
+
+  protected readonly TOOLS = RICH_TEXT_EDITOR_TOOLS;
+  protected readonly TOOL_BUTTONS = RICH_TEXT_EDITOR_TOOL_BUTTONS;
+
+  /** The inline marks from the editor's configured tools — headings/lists stay in the static toolbar. */
+  protected inlineTools = computed(() =>
+    this.editor()
+      .resolvedTools()
+      .filter((tool) => RICH_TEXT_EDITOR_INLINE_TOOLS.includes(tool)),
+  );
 
   constructor() {
     // Detached overlay pane: re-sync color and surface context instead of cascading through the DOM,

@@ -69,10 +69,7 @@
     color: var(--et-surface-color-solid, var(--et-color-main-contrast, rgb(244 244 245)));
     box-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
 
-    /* et-icon-button defaults to a fully round shape; the toolbar wants a squarer button. */
-    .et-icon-button {
-      border-radius: var(--et-rich-text-editor-button-radius, 4px);
-    }
+    --et-icon-button-border-radius: var(--et-rich-text-editor-button-radius, 4px);
 
     .et-rte-toolbar-divider {
       inline-size: 1px;

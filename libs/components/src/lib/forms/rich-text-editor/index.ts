@@ -3,6 +3,7 @@ export * from './rich-text-editor-floating-toolbar.component';
 export * from './rich-text-editor-token-codec.token';
 export * from './rich-text-editor-token-popup.component';
 export * from './rich-text-editor-token-providers';
+export * from './rich-text-editor-tools';
 export * from './rich-text-editor-trigger';
 export * from './rich-text-editor-trigger-with-query';
 export * from './rich-text-editor-triggers.imports';

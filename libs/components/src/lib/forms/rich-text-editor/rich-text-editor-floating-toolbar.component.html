@@ -1,57 +1,21 @@
-<button
-  [pressed]="editor().boldActive()"
-  (mousedown)="$event.preventDefault()"
-  (click)="editor().toggleBold()"
-  mutedUntilPressed
-  et-icon-button
-  size="xs"
-  type="button"
-  tabindex="-1"
-  aria-label="Bold"
->
-  <i etIcon="et-bold"></i>
-</button>
+@for (tool of inlineTools(); track tool; let first = $first) {
+  @if (tool === TOOLS.LINK && !first) {
+    <span class="et-rte-toolbar-divider" aria-hidden="true"></span>
+  }
 
-<button
-  [pressed]="editor().italicActive()"
-  (mousedown)="$event.preventDefault()"
-  (click)="editor().toggleItalic()"
-  mutedUntilPressed
-  et-icon-button
-  size="xs"
-  type="button"
-  tabindex="-1"
-  aria-label="Italic"
->
-  <i etIcon="et-italic"></i>
-</button>
-
-<button
-  [pressed]="editor().strikeActive()"
-  (mousedown)="$event.preventDefault()"
-  (click)="editor().toggleStrikethrough()"
-  mutedUntilPressed
-  et-icon-button
-  size="xs"
-  type="button"
-  tabindex="-1"
-  aria-label="Strikethrough"
->
-  <i etIcon="et-strikethrough"></i>
-</button>
-
-<span class="et-rte-toolbar-divider" aria-hidden="true"></span>
-
-<button
-  [pressed]="editor().linkActive()"
-  (mousedown)="$event.preventDefault()"
-  (click)="editor().promptForLink()"
-  mutedUntilPressed
-  et-icon-button
-  size="xs"
-  type="button"
-  tabindex="-1"
-  aria-label="Link"
->
-  <i [allowHardcodedColor]="true" etIcon="et-link"></i>
-</button>
+  @if (TOOL_BUTTONS[tool]; as def) {
+    <button
+      [pressed]="def.isActive(editor())"
+      [attr.aria-label]="def.label"
+      (mousedown)="$event.preventDefault()"
+      (click)="def.run(editor())"
+      mutedUntilPressed
+      et-icon-button
+      size="sm"
+      type="button"
+      tabindex="-1"
+    >
+      <i [allowHardcodedColor]="def.allowHardcodedColor ?? false" [etIcon]="def.icon"></i>
+    </button>
+  }
+}

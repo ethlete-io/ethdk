@@ -46,6 +46,13 @@ export type OverlayRuntimeAnchoredPosition = {
   autoHide?: boolean;
   autoCloseIfReferenceHidden?: boolean;
   mirrorWidth?: boolean;
+  /**
+   * Clipping element(s) the pane must stay within when flipping/shifting, instead of the default
+   * viewport (`clippingAncestors`). Use it to keep an anchored pane inside a specific region — e.g.
+   * a rich-text editor's content area, so its selection toolbar flips below rather than covering the
+   * static toolbar above.
+   */
+  boundary?: Element | Element[];
 };
 
 export type OverlayRuntimePositionStrategy =

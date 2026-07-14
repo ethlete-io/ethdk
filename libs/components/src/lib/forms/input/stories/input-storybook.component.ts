@@ -1,5 +1,5 @@
 import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
-import { disabled, form, FormField, required } from '@angular/forms/signals';
+import { disabled, form, FormField, readonly, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import {
   FORM_FIELD_APPEARANCES,
@@ -56,6 +56,7 @@ export class FormFieldInputStorybookComponent {
   public hint = input('');
   public value = input('');
   public disabled = input(false);
+  public readonly = input(false);
   public required = input(false);
   public showPrefix = input(false);
   public showSuffix = input(false);
@@ -65,6 +66,7 @@ export class FormFieldInputStorybookComponent {
 
   public demoForm = form(this.formModel, (s) => {
     disabled(s, () => this.disabled());
+    readonly(s.value, () => this.readonly());
     required(s.value, { when: () => this.required(), message: 'This field is required' });
   });
 }

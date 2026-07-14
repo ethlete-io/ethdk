@@ -196,6 +196,12 @@ export const htmlToMarkdown = (html: string): string => {
   md = md.replace(/<img[^>]+alt="([^"]*)"[^>]*src="([^"]*)"[^>]*\/?>/gi, '![$1]($2)');
   md = md.replace(/<img[^>]+src="([^"]*)"[^>]*\/?>/gi, '![]($1)');
 
+  // Underline has no Markdown form — preserve it as raw <u> so it round-trips. Extract it now (its
+  // inner markup is already converted above) so the block passes below don't strip the tag; the
+  // placeholder is restored after the final tag-strip.
+  const underlines: string[] = [];
+  md = md.replace(/<u[^>]*>([\s\S]*?)<\/u>/gi, (_, inner: string) => makePlaceholder('U', underlines.push(inner) - 1));
+
   // Block quotes
   md = md.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (_, content: string) => {
     return (
@@ -260,5 +266,6 @@ export const htmlToMarkdown = (html: string): string => {
 
   return unescapeHtml(stripTags(md))
     .replace(/\n{3,}/g, '\n\n')
-    .trim();
+    .trim()
+    .replace(placeholderRe('U'), (_, i) => `<u>${underlines[+i] ?? ''}</u>`);
 };

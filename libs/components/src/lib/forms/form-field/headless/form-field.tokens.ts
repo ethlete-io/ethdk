@@ -21,6 +21,7 @@ export type FormFieldControl = {
   name: Signal<string>;
   required?: Signal<boolean>;
   disabled?: Signal<boolean>;
+  readonly?: Signal<boolean>;
   effectiveDisabled?: Signal<boolean>;
   describedBy: WritableSignal<string | null>;
   controlType: Signal<FormFieldControlType>;

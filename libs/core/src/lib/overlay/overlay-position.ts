@@ -145,6 +145,7 @@ export const createAnchoredPositionCleanup = (
       flip({
         fallbackPlacements: strategy.fallbackPlacements ?? undefined,
         fallbackAxisSideDirection: 'start',
+        boundary: strategy.boundary,
       }),
     );
 
@@ -154,6 +155,7 @@ export const createAnchoredPositionCleanup = (
           crossAxis: typeof strategy.shift === 'object' ? (strategy.shift.crossAxis ?? false) : false,
           limiter: limitShift(),
           padding: strategy.viewportPadding ?? 8,
+          boundary: strategy.boundary,
         }),
       );
     }

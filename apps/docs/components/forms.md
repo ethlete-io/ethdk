@@ -61,6 +61,8 @@ Only `fill: 'filled'` paints a surface behind the control, so only a filled fiel
 
 `et-input` supports `type: 'text' | 'email' | 'password' | 'tel' | 'url' | 'search'`, `placeholder`, `autocomplete`, `textAlign`, and the shared control state (`disabled`, `readonly`, `invalid`, `required`, …). There is no textarea — multi-line content is the rich text editor's job.
 
+A **read-only** text field (set `readonly` in the field schema) keeps its normal box but drops every interactive affordance — no hover/focus border change, default cursor, full-contrast value — so it reads as view-only content. This is distinct from **disabled**, which stays dimmed.
+
 ## Checkbox & switch — `et-choice-field`
 
 Boolean controls pair with a label inside `et-choice-field` (instead of `et-form-field`):
@@ -114,7 +116,7 @@ Checkbox options and radios accept an `et-description` child for secondary text,
 
 ## Rich text editor
 
-`et-rich-text-editor` is a Markdown-valued editor built on `contenteditable` (no ProseMirror dependency): the `value` model is **Markdown**, converted to/from HTML internally. It ships a static toolbar (bold, italic, strikethrough, H1–H3, lists, links) plus a floating toolbar over the active selection, and uses the same field shell as text inputs:
+`et-rich-text-editor` is a Markdown-valued editor built on `contenteditable` (no ProseMirror dependency): the `value` model is **Markdown**, converted to/from HTML internally. It ships a static toolbar (block-style menu, bold, italic, strikethrough, lists, links) plus a floating toolbar over the active selection, and uses the same field shell as text inputs:
 
 ```html
 <et-form-field>
@@ -126,6 +128,29 @@ Checkbox options and radios accept an `et-description` child for secondary text,
 The editable region is a `role="textbox" aria-multiline="true"` with full invalid/described-by wiring.
 
 <StoryEmbed id="components-forms-rich-text-editor--default" height="420px" />
+
+### Choosing which tools appear
+
+The toolbar is data-driven. Pass a `tools` input with an ordered list of tokens to pick and order
+the controls; `'divider'` renders a separator and `'heading'` renders the block-style menu
+(Normal / Heading 1–3). Omit `tools` for the full default toolbar.
+
+```html
+<et-rich-text-editor
+  [formField]="demoForm.report"
+  [tools]="['heading', 'divider', 'bold', 'italic', 'strike', 'divider', 'link']"
+/>
+```
+
+To set the default for many editors at once, provide `provideRichTextEditorTools(...)` (a
+per-instance `tools` input still wins). The selection (floating) toolbar automatically shows the
+inline subset of the configured tools.
+
+```ts
+import { provideRichTextEditorTools } from '@ethlete/components';
+
+providers: [provideRichTextEditorTools(['heading', 'divider', 'bold', 'italic', 'link'])];
+```
 
 ### Building blocks (`#`/`@`/… triggers)
 

@@ -13,7 +13,7 @@
     background: var(--et-theme-color-primary);
     color: var(--et-theme-color-ink-solid);
     border: none;
-    border-radius: 9999px;
+    border-radius: var(--et-icon-button-border-radius, 9999px);
     padding: 0;
     font-size: var(--et-button-font-size);
     cursor: var(--et-button-cursor);

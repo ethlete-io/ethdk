@@ -4,6 +4,7 @@ import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { htmlToMarkdown } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 import { RICH_TEXT_EDITOR_TOKEN_CODEC } from '../rich-text-editor-token-codec.token';
+import { injectRichTextEditorTools, RichTextEditorTool } from '../rich-text-editor-tools';
 import { HeadingTag, injectRichTextEditorDom, provideRichTextEditorDom } from './internals/rich-text-editor-dom';
 import { RichTextEditorTokenCodec } from './internals/rich-text-editor-token';
 
@@ -15,6 +16,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
+  private toolsConfig = injectRichTextEditorTools();
 
   /** @internal */
   public editorDom = injectRichTextEditorDom();
@@ -30,6 +32,13 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   public required = input(false);
   public name = input('');
   public placeholder = input('');
+
+  /** Which formatting tools the toolbar renders, and in what order. Falls back to the value from
+   *  `provideRichTextEditorTools` (or the full default set). */
+  public tools = input<readonly RichTextEditorTool[] | null>(null);
+
+  /** Resolved toolbar tools: the `tools` input if set, otherwise the provided/default config. */
+  public resolvedTools = computed(() => this.tools() ?? this.toolsConfig.tools);
 
   /**
    * @internal Codec that (de)serializes `{{type:id}}` token chips. Installed by
@@ -51,6 +60,8 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   public boldActive = signal(false);
   public italicActive = signal(false);
   public strikeActive = signal(false);
+  public underlineActive = signal(false);
+  public codeActive = signal(false);
   public unorderedListActive = signal(false);
   public orderedListActive = signal(false);
   public linkActive = signal(false);
@@ -95,6 +106,8 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     this.boldActive.set(states?.bold ?? false);
     this.italicActive.set(states?.italic ?? false);
     this.strikeActive.set(states?.strike ?? false);
+    this.underlineActive.set(states?.underline ?? false);
+    this.codeActive.set(states?.code ?? false);
     this.unorderedListActive.set(states?.unorderedList ?? false);
     this.orderedListActive.set(states?.orderedList ?? false);
     this.linkActive.set(states?.link ?? false);
@@ -113,6 +126,14 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     this.runCommand(() => this.editorDom.toggleInline('del'));
   }
 
+  public toggleUnderline() {
+    this.runCommand(() => this.editorDom.toggleInline('u'));
+  }
+
+  public toggleInlineCode() {
+    this.runCommand(() => this.editorDom.toggleInline('code'));
+  }
+
   public toggleUnorderedList() {
     this.runCommand(() => this.editorDom.toggleList('ul'));
   }
@@ -123,6 +144,20 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
   public toggleHeading(level: number) {
     this.runCommand(() => this.editorDom.toggleHeading(`h${level}` as HeadingTag));
+  }
+
+  public setHeading(level: number | null) {
+    const current = this.headingLevel();
+
+    if (level === current) return;
+
+    // `toggleHeading` re-levels a heading to any other level, and turns a heading back into a
+    // paragraph only when handed its own level — which is exactly the "make it normal" case.
+    const tagLevel = level ?? current;
+
+    if (tagLevel === null) return;
+
+    this.runCommand(() => this.editorDom.toggleHeading(`h${tagLevel}` as HeadingTag));
   }
 
   public setLink(href: string) {

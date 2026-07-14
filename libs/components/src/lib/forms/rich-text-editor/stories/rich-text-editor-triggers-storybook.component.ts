@@ -60,7 +60,11 @@ export const DEMO_TRIGGERS: RichTextEditorTrigger[] = [
 @Component({
   selector: 'et-sb-rich-text-editor-triggers',
   template: `
-    <div class="flex max-w-md flex-col gap-4 p-8 font-sans" etProvideColor="brand">
+    <div
+      class="flex max-w-2xl flex-col gap-4 p-8 font-sans"
+      style="--et-rich-text-editor-min-height: 220px"
+      etProvideColor="brand"
+    >
       <et-form-field>
         <et-label>Message</et-label>
         <et-rich-text-editor
@@ -99,7 +103,11 @@ export class RichTextEditorTriggersStorybookComponent {
 @Component({
   selector: 'et-sb-rich-text-editor-token-display',
   template: `
-    <div class="flex max-w-md flex-col gap-4 p-8 font-sans" etProvideColor="brand">
+    <div
+      class="flex max-w-2xl flex-col gap-4 p-8 font-sans"
+      style="--et-rich-text-editor-min-height: 220px"
+      etProvideColor="brand"
+    >
       <et-form-field>
         <et-label>Stored message (read-only)</et-label>
         <et-rich-text-editor [formField]="demoForm.value" />

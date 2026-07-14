@@ -160,6 +160,9 @@ export class RichTextEditorFloatingToolbarDirective {
       placement: 'top',
       fallbackPlacements: ['bottom'],
       offset: 8,
+      // stay within the editor's content area so a selection near the top flips the toolbar below
+      // the caret instead of covering the static toolbar above it
+      boundary: this.editor.editorDom.root() ?? undefined,
       autoCloseIfReferenceHidden: true,
     };
   }

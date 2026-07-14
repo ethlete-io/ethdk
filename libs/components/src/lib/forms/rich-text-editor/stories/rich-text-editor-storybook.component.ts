@@ -1,6 +1,6 @@
 import { JsonPipe } from '@angular/common';
 import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
-import { disabled, form, FormField, required } from '@angular/forms/signals';
+import { disabled, form, FormField, readonly, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import {
   FORM_FIELD_APPEARANCES,
@@ -18,7 +18,11 @@ import { RICH_TEXT_EDITOR_IMPORTS } from '../rich-text-editor.imports';
 @Component({
   selector: 'et-sb-form-field-rich-text-editor',
   template: `
-    <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
+    <div
+      [etProvideColor]="color()"
+      class="flex max-w-2xl flex-col gap-4 p-8 font-sans"
+      style="--et-rich-text-editor-min-height: 220px"
+    >
       <et-form-field [appearance]="appearance()" [fill]="fill()" [size]="size()" [labelMode]="labelMode()">
         <et-label>{{ label() }}</et-label>
         <et-rich-text-editor [formField]="demoForm.value" [placeholder]="placeholder()" />
@@ -45,6 +49,7 @@ export class FormFieldRichTextEditorStorybookComponent {
   public hint = input('');
   public value = input('');
   public disabled = input(false);
+  public readonly = input(false);
   public required = input(false);
   public color = input('brand');
 
@@ -52,6 +57,7 @@ export class FormFieldRichTextEditorStorybookComponent {
 
   public demoForm = form(this.formModel, (s) => {
     disabled(s, () => this.disabled());
+    readonly(s.value, () => this.readonly());
     required(s.value, { when: () => this.required(), message: 'This field is required' });
   });
 }

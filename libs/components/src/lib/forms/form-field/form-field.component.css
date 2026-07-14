@@ -412,24 +412,37 @@
         white-space: nowrap;
       }
 
-      &:where(:hover:not(:has(.et-color-interactive-exclude:hover))) .et-form-field-control-frame {
+      &:where(:hover:not([data-readonly]):not(:has(.et-color-interactive-exclude:hover))) .et-form-field-control-frame {
         border-color: var(--et-surface-interaction-hover-solid, currentColor);
       }
 
-      &:where(:hover:not(:has(.et-color-interactive-exclude:hover))) .et-form-field-label-area,
-      &:where(:hover:not(:has(.et-color-interactive-exclude:hover))) .et-form-field-affix {
+      &:where(:hover:not([data-readonly]):not(:has(.et-color-interactive-exclude:hover))) .et-form-field-label-area,
+      &:where(:hover:not([data-readonly]):not(:has(.et-color-interactive-exclude:hover))) .et-form-field-affix {
         color: var(--et-surface-color-solid, currentColor);
         opacity: 1;
       }
 
-      &:where(:has(:focus-visible)) .et-form-field-control-frame {
+      &:where(:has(:focus-visible):not([data-readonly])) .et-form-field-control-frame {
         border-color: var(--et-theme-color-primary-solid);
       }
 
-      &:where(:has(:focus-visible)) .et-form-field-label-area,
-      &:where(:has(:focus-visible)) .et-form-field-affix {
+      &:where(:has(:focus-visible):not([data-readonly])) .et-form-field-label-area,
+      &:where(:has(:focus-visible):not([data-readonly])) .et-form-field-affix {
         color: var(--et-surface-color-solid, currentColor);
         opacity: 1;
+      }
+
+      &[data-readonly] {
+        .et-form-field-control-frame {
+          cursor: default;
+        }
+
+        .et-form-field-control,
+        input,
+        textarea,
+        [contenteditable] {
+          cursor: default;
+        }
       }
 
       &[data-error] .et-form-field-control-frame {

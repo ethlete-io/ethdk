@@ -160,6 +160,13 @@ describe('htmlToMarkdown', () => {
     expect(htmlToMarkdown('<code>snippet</code>')).toBe('`snippet`');
   });
 
+  it('preserves underline as raw <u> (no Markdown form)', () => {
+    expect(htmlToMarkdown('<p><u>under</u></p>')).toBe('<u>under</u>');
+    // round-trips through both directions, keeping inner Markdown marks
+    expect(htmlToMarkdown('<p>a <u><strong>b</strong></u> c</p>')).toBe('a <u>**b**</u> c');
+    expect(markdownToHtml('a <u>**b**</u> c')).toBe('<p>a <u><strong>b</strong></u> c</p>');
+  });
+
   it('converts code blocks with language', () => {
     const input = '<pre><code class="language-typescript">const x = 1;</code></pre>';
     expect(htmlToMarkdown(input)).toBe('```typescript\nconst x = 1;\n```');

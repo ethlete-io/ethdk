@@ -2,7 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { inject, signal } from '@angular/core';
 import { createProvider, injectRenderer } from '@ethlete/core';
 
-export type InlineTag = 'strong' | 'em' | 'del';
+export type InlineTag = 'strong' | 'em' | 'del' | 'u' | 'code';
 export type ListTag = 'ul' | 'ol';
 export type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
@@ -17,6 +17,8 @@ export type RichTextMarkStates = {
   bold: boolean;
   italic: boolean;
   strike: boolean;
+  underline: boolean;
+  code: boolean;
   unorderedList: boolean;
   orderedList: boolean;
   link: boolean;
@@ -565,6 +567,8 @@ const richTextEditorDomFactory = () => {
       bold: !!closestWithin(node, 'strong'),
       italic: !!closestWithin(node, 'em'),
       strike: !!closestWithin(node, 'del'),
+      underline: !!closestWithin(node, 'u'),
+      code: !!closestWithin(node, 'code'),
       unorderedList: !!closestWithin(node, 'ul'),
       orderedList: !!closestWithin(node, 'ol'),
       link: !!closestWithin(node, 'a'),
