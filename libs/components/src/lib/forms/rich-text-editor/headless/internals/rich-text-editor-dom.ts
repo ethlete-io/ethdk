@@ -7,6 +7,10 @@ export type ListTag = 'ul' | 'ol';
 export type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
 const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6';
+/** Block-level containers that can be re-tagged as a heading in place. An inline element sitting
+ *  directly under the root (e.g. bare `<strong>` before any paragraph exists) is NOT one — it must
+ *  be wrapped by the heading, not turned into it (which would drop the inline mark). */
+const BLOCK_SELECTOR = 'p, div, blockquote, pre, li, figure, section, article';
 
 export type EditableSelection = {
   selection: Selection;
@@ -541,17 +545,23 @@ const richTextEditorDomFactory = () => {
   // restored selection after a cross-block wrap starts at (wrapper, 0). Marks *below* such an
   // anchor (a <strong> inside the <em> wrapper) are invisible to an ancestor walk, so descend to
   // the deepest node at the selection's start position first.
-  const resolveStartNode = (range: Range): Node => {
-    let node: Node = range.startContainer;
-    let offset = range.startOffset;
+  // Descend from a range boundary (container + offset) to the leaf node it actually points at, so
+  // callers see the innermost text/element rather than a block container. Essential for mark
+  // detection when the range wraps a whole block (e.g. selectNodeContents(<h2>) whose child is a
+  // <strong>) — the raw container is the block, but the marked content is a descendant.
+  const resolveBoundaryNode = (container: Node, offset: number): Node => {
+    let node: Node = container;
+    let o = offset;
 
     while (node.nodeType === Node.ELEMENT_NODE && node.childNodes.length > 0) {
-      node = node.childNodes[Math.min(offset, node.childNodes.length - 1)] as Node;
-      offset = 0;
+      node = node.childNodes[Math.min(o, node.childNodes.length - 1)] as Node;
+      o = 0;
     }
 
     return node;
   };
+
+  const resolveStartNode = (range: Range): Node => resolveBoundaryNode(range.startContainer, range.startOffset);
 
   const markStates = (): RichTextMarkStates | null => {
     const editable = getSelection();
@@ -695,7 +705,11 @@ const richTextEditorDomFactory = () => {
     }
 
     const { range } = editable;
-    const fullyMarked = !!closestWithin(range.startContainer, tag) && !!closestWithin(range.endContainer, tag);
+    // Resolve to the leaf boundary nodes so a range that wraps a whole block (its child carrying the
+    // mark) is still detected as marked — otherwise the first toggle wrongly re-adds the mark.
+    const startLeaf = resolveBoundaryNode(range.startContainer, range.startOffset);
+    const endLeaf = resolveBoundaryNode(range.endContainer, range.endOffset);
+    const fullyMarked = !!closestWithin(startLeaf, tag) && !!closestWithin(endLeaf, tag);
 
     if (fullyMarked) {
       unwrapInline(range, tag);
@@ -845,14 +859,15 @@ const richTextEditorDomFactory = () => {
         return;
       }
 
-      if (block instanceof HTMLElement) {
+      if (block instanceof HTMLElement && block.matches(BLOCK_SELECTOR)) {
         produced.push(replaceBlockTag(block, tag));
 
         return;
       }
 
-      // A bare text node (or <br>) sitting directly under the root has no wrapping block — move it
-      // into a fresh heading in the same position.
+      // A bare text node, <br>, or bare inline element (e.g. <strong> before any paragraph exists)
+      // sitting directly under the root has no wrapping block — move it into a fresh heading in the
+      // same position, preserving its inline markup.
       const heading = renderer.createElement(tag);
       const ref = block.nextSibling;
 

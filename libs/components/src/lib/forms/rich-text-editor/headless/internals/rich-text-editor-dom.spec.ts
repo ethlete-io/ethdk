@@ -321,6 +321,32 @@ describe('RichTextEditorDom', () => {
     });
   });
 
+  describe('toggleHeading', () => {
+    it('wraps bare inline content in the heading, preserving the mark, and a single toggle still removes it', () => {
+      // bold-then-heading on unwrapped text: the <strong> must be moved INTO the <h2>, not
+      // re-tagged into it (which dropped the mark), and the mark stays detectable so one toggle removes it
+      const { root, dom } = setup('<strong>hello</strong>');
+      const strong = root.firstChild as Node;
+      select(strong.firstChild as Node, 0, strong.firstChild as Node, 5);
+
+      dom.toggleHeading('h2');
+      expect(root.innerHTML).toBe('<h2><strong>hello</strong></h2>');
+
+      // toggleHeading left the selection on the heading's contents (block-level range); a single
+      // toggleInline must still detect the nested mark and remove it
+      dom.toggleInline('strong');
+      expect(root.innerHTML).toBe('<h2>hello</h2>');
+    });
+
+    it('re-tags an existing paragraph in place, keeping its inline children', () => {
+      const { root, dom } = setup('<p>a <strong>b</strong> c</p>');
+      selectByTextOffsets(root, 0, 5);
+
+      dom.toggleHeading('h2');
+      expect(root.innerHTML).toBe('<h2>a <strong>b</strong> c</h2>');
+    });
+  });
+
   describe('toggleList', () => {
     it('wraps the covered paragraphs into a list', () => {
       const { root, dom } = setup('<p>one</p><p>two</p>');
