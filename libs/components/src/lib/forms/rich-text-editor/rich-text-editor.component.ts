@@ -37,6 +37,21 @@ import {
   RICH_TEXT_EDITOR_TOOLS,
 } from './rich-text-editor-tools';
 
+/** Caret-navigation / deletion keys that should drop any pending stored-mark toggle. */
+const NAVIGATION_KEYS = new Set([
+  'ArrowLeft',
+  'ArrowRight',
+  'ArrowUp',
+  'ArrowDown',
+  'Home',
+  'End',
+  'PageUp',
+  'PageDown',
+  'Escape',
+  'Delete',
+  'Backspace',
+]);
+
 @Component({
   selector: 'et-rich-text-editor',
   templateUrl: './rich-text-editor.component.html',
@@ -136,10 +151,13 @@ export class RichTextEditorComponent {
     queueMicrotask(() => this.dir.activate());
   }
 
-  protected interceptBackspaceKey(event: KeyboardEvent) {
-    if (event.key !== 'Backspace') return;
+  protected interceptEditorKeydown(event: KeyboardEvent) {
+    // moving the caret (or deleting) without typing abandons a pending stored-mark toggle
+    if (NAVIGATION_KEYS.has(event.key)) {
+      this.dir.clearPendingMarks();
+    }
 
-    if (this.dir.handleBackspace()) {
+    if (event.key === 'Backspace' && this.dir.handleBackspace()) {
       event.preventDefault();
     }
   }
@@ -159,6 +177,12 @@ export class RichTextEditorComponent {
       case 'formatStrikeThrough':
         event.preventDefault();
         this.dir.toggleStrikethrough();
+        break;
+      case 'insertText':
+        // apply any pending stored marks to the typed text (collapsed-caret formatting toggle)
+        if (event.data !== null && this.dir.consumePendingInsert(event.data)) {
+          event.preventDefault();
+        }
         break;
     }
   }

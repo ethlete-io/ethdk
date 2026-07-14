@@ -992,12 +992,109 @@ const richTextEditorDomFactory = () => {
     return false;
   };
 
+  // The inline mark elements a caret can sit inside; used for the collapsed-caret "stored marks" flow.
+  const inlineMarkTags = new Set<string>(['STRONG', 'EM', 'DEL', 'U', 'CODE']);
+
+  /** The inline mark tags wrapping the collapsed caret (innermost-first). */
+  const activeInlineTags = (): InlineTag[] => {
+    const editable = getSelection();
+    const el = root();
+
+    if (!editable || !el) return [];
+
+    const tags: InlineTag[] = [];
+    const start = editable.range.startContainer;
+    let node: HTMLElement | null = start.nodeType === Node.ELEMENT_NODE ? (start as HTMLElement) : start.parentElement;
+
+    while (node && node !== el) {
+      if (inlineMarkTags.has(node.tagName)) tags.push(node.tagName.toLowerCase() as InlineTag);
+      node = node.parentElement;
+    }
+
+    return tags;
+  };
+
+  /** Splits every inline-mark ancestor at the collapsed caret so it ends up outside all of them. */
+  const splitInlineAncestorsAtCaret = (range: Range) => {
+    const el = root();
+
+    if (!el) return;
+
+    let guard = 0;
+
+    while (guard++ < 32) {
+      const start = range.startContainer;
+      let mark: HTMLElement | null =
+        start.nodeType === Node.ELEMENT_NODE ? (start as HTMLElement) : start.parentElement;
+
+      while (mark && mark !== el && !inlineMarkTags.has(mark.tagName)) mark = mark.parentElement;
+
+      if (!mark || mark === el || !inlineMarkTags.has(mark.tagName)) return;
+
+      // Move the content after the caret (within this mark) into a same-tag clone placed after it.
+      const tail = doc.createRange();
+      tail.setStart(range.startContainer, range.startOffset);
+      tail.setEnd(mark, mark.childNodes.length);
+      const frag = tail.extractContents();
+
+      if ((frag.textContent ?? '').length > 0) {
+        const clone = mark.cloneNode(false) as HTMLElement;
+        while (frag.firstChild) renderer.appendChild(clone, frag.firstChild);
+        renderer.insertBefore(mark.parentNode as Node, clone, mark.nextSibling);
+      }
+
+      range.setStartAfter(mark);
+      range.collapse(true);
+    }
+  };
+
+  /**
+   * Inserts `text` at the collapsed caret carrying exactly `tags` as inline marks — breaking out of
+   * whatever marks currently wrap the caret first. Drives "stored marks": toggling a mark with no
+   * selection changes what the next typed text is wrapped in.
+   */
+  const insertInlineText = (text: string, tags: InlineTag[]) => {
+    const editable = getSelection();
+    const el = root();
+
+    if (!editable || !el || !editable.range.collapsed) return;
+
+    const range = editable.range;
+
+    splitInlineAncestorsAtCaret(range);
+
+    let content: Node = renderer.createText(text);
+
+    for (const tag of tags) {
+      const wrapper = renderer.createElement(tag) as HTMLElement;
+      renderer.appendChild(wrapper, content);
+      content = wrapper;
+    }
+
+    range.insertNode(content);
+
+    // Caret to the end of the inserted text (inside the innermost mark when there is one) so native
+    // typing continues in the right formatting context.
+    let deepest: Node = content;
+    while (deepest.firstChild) deepest = deepest.firstChild;
+    const caret = doc.createRange();
+    caret.setStart(deepest, (deepest.textContent ?? '').length);
+    caret.collapse(true);
+    const selection = doc.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(caret);
+
+    pruneEmptyInline();
+  };
+
   return {
     root,
     getSelection,
     closestWithin,
     markStates,
+    activeInlineTags,
     toggleInline,
+    insertInlineText,
     toggleList,
     toggleHeading,
     applyLink,

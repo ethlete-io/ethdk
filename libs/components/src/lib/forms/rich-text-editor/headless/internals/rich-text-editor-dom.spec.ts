@@ -72,6 +72,47 @@ describe('RichTextEditorDom', () => {
     }
   };
 
+  describe('insertInlineText (stored marks)', () => {
+    it('breaks out of a mark at a collapsed caret so the inserted text is unformatted', () => {
+      const { root, dom } = setup('<strong>abc</strong>');
+      const strong = root.firstChild as HTMLElement;
+      const text = strong.firstChild as Node;
+      select(text, 3, text, 3); // collapsed caret at the end, inside <strong>
+
+      dom.insertInlineText('x', []);
+
+      expect(root.innerHTML).toBe('<strong>abc</strong>x');
+    });
+
+    it('splits a mark and inserts unformatted text mid-word', () => {
+      const { root, dom } = setup('<strong>abcd</strong>');
+      const text = (root.firstChild as HTMLElement).firstChild as Node;
+      select(text, 2, text, 2);
+
+      dom.insertInlineText('X', []);
+
+      expect(root.innerHTML).toBe('<strong>ab</strong>X<strong>cd</strong>');
+    });
+
+    it('wraps inserted text in the given marks at a plain collapsed caret', () => {
+      const { root, dom } = setup('hi');
+      const text = root.firstChild as Node;
+      select(text, 2, text, 2);
+
+      dom.insertInlineText('Q', ['strong']);
+
+      expect(root.innerHTML).toBe('hi<strong>Q</strong>');
+    });
+
+    it('reports the inline marks wrapping the caret', () => {
+      const { root, dom } = setup('<strong><em>x</em></strong>');
+      const text = (root.querySelector('em') as HTMLElement).firstChild as Node;
+      select(text, 1, text, 1);
+
+      expect(dom.activeInlineTags().sort()).toEqual(['em', 'strong']);
+    });
+  });
+
   describe('toggleInline', () => {
     it('wraps a plain selection in the tag', () => {
       const { root, dom } = setup('hello world');

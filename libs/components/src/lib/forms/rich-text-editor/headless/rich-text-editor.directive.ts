@@ -5,7 +5,12 @@ import { htmlToMarkdown } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 import { RICH_TEXT_EDITOR_TOKEN_CODEC } from '../rich-text-editor-token-codec.token';
 import { injectRichTextEditorTools, RichTextEditorTool } from '../rich-text-editor-tools';
-import { HeadingTag, injectRichTextEditorDom, provideRichTextEditorDom } from './internals/rich-text-editor-dom';
+import {
+  HeadingTag,
+  injectRichTextEditorDom,
+  InlineTag,
+  provideRichTextEditorDom,
+} from './internals/rich-text-editor-dom';
 import { RichTextEditorTokenCodec } from './internals/rich-text-editor-token';
 
 @Directive({
@@ -25,7 +30,6 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   public touched = model(false);
   public disabled = input(false);
   public readonly = input(false);
-  // eslint-disable-next-line ethlete/no-native-html-input-name -- form-field hidden state deliberately mirrors the native attribute
   public hidden = input(false);
   public invalid = input(false);
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
@@ -68,6 +72,12 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
   public headingLevel = signal<number | null>(null);
 
+  /**
+   * @internal Inline marks queued for the next typed text while the selection is collapsed ("stored
+   * marks"). `null` means "follow the caret"; a list means the next input is wrapped in exactly these.
+   */
+  public pendingMarks = signal<InlineTag[] | null>(null);
+
   /** @internal */
   public lastEmittedMarkdown: string | null = null;
 
@@ -101,6 +111,17 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   }
 
   public refreshActiveMarks() {
+    // While a stored-mark toggle is pending, keep the toolbar showing that pending state rather than
+    // the caret's actual marks (the pending set is cleared on navigation or once consumed by typing).
+    const pending = this.pendingMarks();
+
+    if (pending !== null) {
+      this.reflectMarks(pending);
+      this.headingLevel.set(this.editorDom.markStates()?.heading ?? null);
+
+      return;
+    }
+
     const states = this.editorDom.markStates();
 
     this.boldActive.set(states?.bold ?? false);
@@ -115,23 +136,41 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   }
 
   public toggleBold() {
-    this.runCommand(() => this.editorDom.toggleInline('strong'));
+    this.toggleMark('strong');
   }
 
   public toggleItalic() {
-    this.runCommand(() => this.editorDom.toggleInline('em'));
+    this.toggleMark('em');
   }
 
   public toggleStrikethrough() {
-    this.runCommand(() => this.editorDom.toggleInline('del'));
+    this.toggleMark('del');
   }
 
   public toggleUnderline() {
-    this.runCommand(() => this.editorDom.toggleInline('u'));
+    this.toggleMark('u');
   }
 
   public toggleInlineCode() {
-    this.runCommand(() => this.editorDom.toggleInline('code'));
+    this.toggleMark('code');
+  }
+
+  public consumePendingInsert(text: string) {
+    const pending = this.pendingMarks();
+
+    if (pending === null) return false;
+
+    this.pendingMarks.set(null);
+    this.runCommand(() => this.editorDom.insertInlineText(text, pending));
+
+    return true;
+  }
+
+  public clearPendingMarks() {
+    if (this.pendingMarks() !== null) {
+      this.pendingMarks.set(null);
+      this.refreshActiveMarks();
+    }
   }
 
   public toggleUnorderedList() {
@@ -227,6 +266,33 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     }
 
     return clone.innerHTML.replace(/<div>/gi, '<p>').replace(/<\/div>/gi, '</p>');
+  }
+
+  private toggleMark(tag: InlineTag) {
+    if (this.disabled() || this.readonly()) return;
+
+    const selection = this.editorDom.getSelection();
+
+    if (selection && !selection.range.collapsed) {
+      this.pendingMarks.set(null);
+      this.runCommand(() => this.editorDom.toggleInline(tag));
+
+      return;
+    }
+
+    const base = this.pendingMarks() ?? this.editorDom.activeInlineTags();
+    const next = base.includes(tag) ? base.filter((mark) => mark !== tag) : [...base, tag];
+
+    this.pendingMarks.set(next);
+    this.reflectMarks(next);
+  }
+
+  private reflectMarks(tags: InlineTag[]) {
+    this.boldActive.set(tags.includes('strong'));
+    this.italicActive.set(tags.includes('em'));
+    this.strikeActive.set(tags.includes('del'));
+    this.underlineActive.set(tags.includes('u'));
+    this.codeActive.set(tags.includes('code'));
   }
 
   private runCommand(command: () => void) {
