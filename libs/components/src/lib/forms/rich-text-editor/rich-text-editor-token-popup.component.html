@@ -1,0 +1,46 @@
+<!-- reloading over existing results: a top progress bar keeps the loading cue out of layout, so
+     the list height never changes while re-fetching. Kept mounted and faded via `--visible` so it
+     animates in/out instead of popping. -->
+<et-progress-bar
+  [class.et-rte-token-popup-progress--visible]="loading() && items().length > 0"
+  class="et-rte-token-popup-progress"
+  indeterminate
+/>
+
+@if (error(); as err) {
+  <p [etProvideColor]="errorColorTheme" class="et-rte-token-popup-error" role="alert">{{ err }}</p>
+}
+
+<div #body class="et-rte-token-popup-body">
+  @if (items().length === 0) {
+    @if (!error()) {
+      <!-- loading and empty share one fixed-height box so the transition between them doesn't resize -->
+      <div class="et-rte-token-popup-placeholder">
+        @if (loading()) {
+          <et-spinner diameter="18" />
+        } @else {
+          {{ emptyLabel() }}
+        }
+      </div>
+    }
+  } @else {
+    @for (item of items(); track item.id; let i = $index) {
+      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -- combobox/listbox: focus stays in the editor and keyboard is driven via aria-activedescendant; rows are pointer affordances only -->
+      <div
+        [id]="listboxId() + '-option-' + i"
+        [attr.aria-selected]="i === activeIndex()"
+        [attr.aria-disabled]="item.disabled || null"
+        [attr.data-active]="i === activeIndex() ? '' : null"
+        (click)="!item.disabled && selectItem.emit(item)"
+        (pointerenter)="activateItem.emit(i)"
+        class="et-rte-token-popup-option"
+        role="option"
+      >
+        <span class="et-rte-token-popup-option-label">{{ item.label }}</span>
+        @if (item.description) {
+          <span class="et-rte-token-popup-option-description">{{ item.description }}</span>
+        }
+      </div>
+    }
+  }
+</div>

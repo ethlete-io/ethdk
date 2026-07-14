@@ -29,6 +29,18 @@
     initial-value: 8px;
   }
 
+  @property --et-rich-text-editor-token-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
+  @property --et-rich-text-editor-token-padding-inline {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
   et-rich-text-editor {
     display: flex;
     flex: 1;
@@ -150,6 +162,18 @@
       a {
         color: var(--et-theme-color-primary-solid, currentColor);
         text-decoration: underline;
+      }
+
+      .et-rte-token {
+        display: inline;
+        padding-inline: var(--et-rich-text-editor-token-padding-inline);
+        border-radius: var(--et-rich-text-editor-token-radius);
+        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 14%, transparent);
+        color: inherit;
+        font-weight: 500;
+        white-space: nowrap;
+        user-select: all;
+        cursor: default;
       }
     }
   }

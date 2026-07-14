@@ -117,7 +117,11 @@ export class RichTextEditorComponent {
 
     if (!el) return;
 
-    el.innerHTML = markdownToHtml(markdown);
+    const codec = this.dir.tokenCodec();
+    const html = markdownToHtml(markdown);
+
+    el.innerHTML = codec ? codec.render(html) : html;
+    codec?.hydrate(el);
     this.dir.lastEmittedMarkdown = markdown;
   }
 }

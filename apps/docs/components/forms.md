@@ -125,6 +125,106 @@ The editable region is a `role="textbox" aria-multiline="true"` with full invali
 
 <StoryEmbed id="components-forms-rich-text-editor--default" height="420px" />
 
+### Building blocks (`#`/`@`/… triggers)
+
+Opt in to Slack-style autocomplete by adding the `etRichTextEditorTriggers` directive and passing
+domain-specific triggers. Typing a trigger character at a word boundary opens a caret-anchored
+popup; picking an item inserts an atomic **token chip**. The whole feature (detection, popup,
+async sources) lives in a separate directive, so editors that don't use it tree-shake it away —
+spread `RICH_TEXT_EDITOR_TRIGGERS_IMPORTS` **in addition to** `RICH_TEXT_EDITOR_IMPORTS`.
+
+```ts
+import {
+  createRichTextEditorTrigger,
+  RICH_TEXT_EDITOR_IMPORTS,
+  RICH_TEXT_EDITOR_TRIGGERS_IMPORTS,
+} from '@ethlete/components';
+
+const MERGE_FIELDS = [
+  { id: 'firstName', label: 'First name' },
+  { id: 'lastName', label: 'Last name' },
+];
+
+triggers = [
+  // static list
+  createRichTextEditorTrigger({
+    char: '#',
+    type: 'block',
+    items: MERGE_FIELDS,
+    resolveItem: (id) => MERGE_FIELDS.find((f) => f.id === id) ?? null,
+  }),
+  // search-as-you-type (Promise or Observable)
+  createRichTextEditorTrigger({
+    char: '@',
+    type: 'mention',
+    items: (query) => this.userService.search(query),
+    resolveItem: (id) => this.userService.byId(id),
+  }),
+];
+```
+
+```html
+<et-rich-text-editor [triggers]="triggers" [formField]="form.body" etRichTextEditorTriggers />
+```
+
+A picked item is stored in the Markdown value as <code v-pre>{{type:id}}</code> (e.g. <code v-pre>{{block:firstName}}</code>) and
+rendered as a labelled chip. Chip labels are resolved from `resolveItem` at render time (the raw
+id shows if there's no resolver), so they never go stale. The trigger character is never consumed:
+it stays as literal text and the popup only opens at a word boundary — so `user@domain` in an
+email never triggers, and pressing <kbd>Escape</kbd> dismisses the popup so you can keep typing the
+literal character.
+
+| `RichTextEditorTrigger` field | Type                                                 | Default | Notes                                                                                              |
+| ----------------------------- | ---------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------- |
+| `char`                        | `string`                                             | —       | Character that opens the popup (unique per editor).                                                |
+| `type`                        | `string`                                             | —       | Namespaces the token (<code v-pre>{{type:id}}</code>); must match `[a-z][a-z0-9-]*` and be unique. |
+| `items`                       | array \| `(query) => items \| Promise \| Observable` | —       | Static arrays are filtered client-side; function sources own their filtering.                      |
+| `resolveItem`                 | `(id) => item \| null \| Promise \| Observable`      | —       | Resolves a stored id to a chip label; omit to show the raw id.                                     |
+| `allowSpaces`                 | `boolean`                                            | `false` | Keep the popup open when the query contains spaces.                                                |
+| `minQueryLength`              | `number`                                             | `0`     | Minimum query length before items are requested.                                                   |
+| `debounceTime`                | `number`                                             | `150`   | Debounce (ms) applied to async function sources.                                                   |
+
+Item ids must match `[A-Za-z0-9._:-]+` so the <code v-pre>{{type:id}}</code> token round-trips through Markdown
+untouched (a dev-mode error is thrown otherwise). To render stored token values as chips in a
+read-only/display context **without** the interactive picker, provide
+`provideRichTextEditorTokenRendering(triggers)` on that component instead of the directive.
+
+#### Backing a trigger with `@ethlete/query`
+
+For a [query](/query/queries)-backed trigger, use `createRichTextEditorTriggerWithQuery` — it owns
+the search signal (writing the typed text so the query re-executes), maps the response to items, and
+surfaces a query failure as the popup's error state. (`@ethlete/components` intentionally depends on
+`@ethlete/query`, as `@ethlete/cdk` does; the factory is tree-shaken when unused.)
+
+Like a [query stack](/query/stacks), pass the `queryCreator` plus a reactive `args` builder — the
+query is created **once** and re-executes as the user types (the factory owns the search signal and
+the `withArgs` feature, so you never write them):
+
+```ts
+import { createRichTextEditorTriggerWithQuery } from '@ethlete/components';
+
+class Example {
+  triggers = [
+    createRichTextEditorTriggerWithQuery({
+      char: '@',
+      type: 'mention',
+      queryCreator: searchUsers,
+      // reactive: reading `search()` re-executes the query; return null to skip a request
+      args: (search) => (search() ? { queryParams: { q: search() } } : null),
+      toItems: (res) => res.items.map((u) => ({ id: u.id, label: u.name })),
+      resolveItem: (id) => this.userById(id),
+    }),
+  ];
+}
+```
+
+Call the factory from a field initializer or constructor (an injection context), the same place
+you'd create a query or a query stack. Returning `null` from `args` (e.g. for an empty query) skips
+the request, so the popup shows no results without hitting the backend. For a source other than a
+query, use the generic `createRichTextEditorTrigger` with an `Observable`/`Promise` `items` function.
+
+<StoryEmbed id="components-forms-rich-text-editor-triggers--default" height="460px" />
+
 ## Validation & accessibility
 
 The field chrome handles error display and aria wiring uniformly:
@@ -146,7 +246,7 @@ Every control family declares public design tokens; override them in your CSS sc
 | `et-radio-group` / `et-radio`                       | `--et-radio-group-*` (gap, label/error/hint sizes, support), `--et-radio-size`, `-dot-size`, `-border-width`, `-transition-duration`, `-opacity-disabled`, `-gap`                                                                                                                                |
 | `et-checkbox-group` / `et-checkbox-option`          | `--et-checkbox-group-*` (gap, label/error/hint sizes, support), `--et-checkbox-option-size`, `-border-width`, `-border-radius`, `-transition-duration`, `-opacity-disabled`, `-gap`                                                                                                              |
 | `et-segmented-button-group` / `et-segmented-button` | `--et-segmented-button-group-*` (gap, label/error/hint sizes, support, `-track-padding`, `-track-radius`), `--et-segmented-button-padding-x` / `-padding-y`, `-border-radius`, `-transition-duration`, `-opacity-disabled`                                                                       |
-| `et-rich-text-editor`                               | `--et-rich-text-editor-toolbar-gap`, `-toolbar-padding`, `-button-radius`, `-min-height`, `-content-gap`                                                                                                                                                                                         |
+| `et-rich-text-editor`                               | `--et-rich-text-editor-toolbar-gap`, `-toolbar-padding`, `-button-radius`, `-min-height`, `-content-gap`, `-token-radius`, `-token-padding-inline`                                                                                                                                               |
 
 All colors resolve through the [surface/color theme systems](/core/theming) (the error state forces the theme registered with `type: 'error'`).
 

@@ -3,7 +3,9 @@ import { computed, DestroyRef, Directive, inject, input, model, signal } from '@
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { htmlToMarkdown } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
+import { RICH_TEXT_EDITOR_TOKEN_CODEC } from '../rich-text-editor-token-codec.token';
 import { HeadingTag, injectRichTextEditorDom, provideRichTextEditorDom } from './internals/rich-text-editor-dom';
+import { RichTextEditorTokenCodec } from './internals/rich-text-editor-token';
 
 @Directive({
   selector: '[etRichTextEditor]',
@@ -28,6 +30,13 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   public required = input(false);
   public name = input('');
   public placeholder = input('');
+
+  /**
+   * @internal Codec that (de)serializes `{{type:id}}` token chips. Installed by
+   * `[etRichTextEditorTriggers]` or a render-only provider; `null` when the building-block
+   * feature isn't used, in which case token markdown is treated as plain text.
+   */
+  public tokenCodec = signal<RichTextEditorTokenCodec | null>(inject(RICH_TEXT_EDITOR_TOKEN_CODEC, { optional: true }));
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
   public hasValue = computed(() => this.value().trim().length > 0);
@@ -163,6 +172,10 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
   private serializeCleanHtml(root: HTMLElement) {
     const clone = root.cloneNode(true) as HTMLElement;
+
+    // Turn atomic token chips back into their `{{type:id}}` markdown form before the standard
+    // HTML→markdown pass strips unknown tags (chips would otherwise be flattened to their label).
+    this.tokenCodec()?.serialize(clone);
 
     let removed = true;
 

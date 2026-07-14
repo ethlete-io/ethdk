@@ -41,6 +41,27 @@ All fields are `null` while no element is bound.
 
 `injectViewportSize()` → `Signal<ElementSize>` for the viewport, preferring `visualViewport` over `window` resize events.
 
+## Animated block size
+
+`injectAnimatedBlockSize(config)` smoothly animates an element's `block-size` as its content changes size — a list filtering, a loading state resolving, an error line appearing. Set it up once in an injection context; it observes the content element(s) and animates the host from its previous height to its new natural height (used by `et-menu` and the rich text editor's trigger popup).
+
+```ts
+injectAnimatedBlockSize({
+  observe: this.bodyElement, // content whose size drives the animation
+  resizingClass: 'my-panel--resizing', // toggled on the host while animating (e.g. to `overflow: clip`)
+});
+```
+
+| Option          | Default           | Description                                                                                   |
+| --------------- | ----------------- | --------------------------------------------------------------------------------------------- |
+| `observe`       | — (required)      | Content element binding(s) whose size changes drive the animation. **Not** the animated host. |
+| `host`          | host `ElementRef` | The element whose `block-size` is animated.                                                   |
+| `duration`      | `160`             | Animation duration in ms.                                                                     |
+| `easing`        | `'ease'`          | Animation easing.                                                                             |
+| `resizingClass` | —                 | Class toggled on the host while animating.                                                    |
+
+Observe the content (children), not the host — observing the animated host would feed the animation back into itself. The baseline height is captured on the first render, so the initial layout never plays as a grow-from-0; an interrupting change continues from the current animated height; and it respects `prefers-reduced-motion`.
+
 ## Intersection
 
 `signalElementIntersection(el, options?)` / `signalHostElementIntersection(options?)` → `Signal<IntersectionObserverEntryWithDetails[]>`. Options are `IntersectionObserverInit` plus `root` (any element binding) and `enabled` (a `Signal<boolean>`, default enabled). Each entry is the native `IntersectionObserverEntry` enriched with `isAbove` / `isBelow` / `isLeft` / `isRight` / `isVisible`, and an initial entry is seeded synchronously so you don't wait for the first observer callback.

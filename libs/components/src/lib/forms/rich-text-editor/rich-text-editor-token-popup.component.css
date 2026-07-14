@@ -1,0 +1,175 @@
+@layer components {
+  .et-overlay.et-rte-token-popup-overlay {
+    overflow: visible;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 10px;
+  }
+
+  /* open / close: fade + a small slide toward the caret (same treatment as et-menu). The overlay
+     runtime toggles the enter/leave classes and sets --et-overlay-anchored-x/y for positioning. */
+  .et-overlay.et-with-default-animation.et-rte-token-popup-overlay {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      opacity: 0;
+    }
+
+    &.et-animation-enter-active {
+      transition:
+        transform 140ms ease,
+        opacity 140ms ease;
+    }
+
+    &.et-animation-leave-active {
+      transition:
+        transform 100ms ease,
+        opacity 100ms ease;
+    }
+  }
+
+  .et-rte-token-popup-overlay[data-overlay-placement^='top'] {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) translateY(0.3rem) !important;
+    }
+  }
+
+  .et-rte-token-popup-overlay[data-overlay-placement^='bottom'] {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
+        translateY(-0.3rem) !important;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-overlay.et-with-default-animation.et-rte-token-popup-overlay {
+      &.et-animation-enter-active,
+      &.et-animation-leave-active {
+        transition-duration: 0ms;
+      }
+    }
+
+    .et-rte-token-popup-overlay[data-overlay-placement] {
+      &.et-animation-enter-from,
+      &.et-animation-leave-to {
+        transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) !important;
+      }
+    }
+  }
+
+  .et-rte-token-popup {
+    --_et-rte-popup-background: var(--et-surface-background-solid, var(--et-surface-2, rgb(38 38 38)));
+    --_et-rte-popup-color: var(--et-surface-color-solid, var(--et-color-main-contrast, rgb(244 244 245)));
+    --_et-rte-popup-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    --_et-rte-popup-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
+    --_et-rte-popup-radius: 10px;
+    --_et-rte-popup-option-radius: 6px;
+    --_et-rte-popup-max-block-size: 260px;
+    --_et-rte-popup-muted-color: var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55));
+    --_et-rte-popup-option-active-background: color-mix(
+      in srgb,
+      var(--et-surface-interaction-solid, rgb(255 255 255)) 12%,
+      transparent
+    );
+
+    position: relative;
+    display: block;
+    min-inline-size: 180px;
+    max-inline-size: min(320px, calc(100vw - 24px));
+    border-radius: 10px;
+    border: 1px solid var(--_et-rte-popup-border);
+    background: var(--_et-rte-popup-background);
+    color: var(--_et-rte-popup-color);
+    font-family: var(--et-font-family, inherit);
+    font-size: 14px;
+    box-shadow: var(--_et-rte-popup-shadow);
+    outline: none;
+    overflow: hidden;
+
+    &.et-rte-token-popup--resizing {
+      overflow: clip;
+    }
+
+    /* out of flow: the re-fetch cue sits on the top edge and never changes the list height. Kept
+       mounted and faded via `--visible` so it eases in/out instead of popping. */
+    .et-rte-token-popup-progress {
+      position: absolute;
+      inset-block-start: 0;
+      inset-inline: 0;
+      z-index: 1;
+      --et-progress-bar-height: 1.5px;
+      --et-progress-bar-border-radius: 0;
+      --et-progress-bar-indicator-color: var(--et-theme-color-primary-solid, currentColor);
+      --et-progress-bar-track-color: transparent;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 160ms ease;
+    }
+
+    .et-rte-token-popup-progress--visible {
+      opacity: 1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .et-rte-token-popup-progress {
+        transition-duration: 0ms;
+      }
+    }
+
+    .et-rte-token-popup-error {
+      margin: 6px 8px 0;
+      font-size: 12px;
+      color: var(--et-theme-color-primary-solid, rgb(248 113 113));
+    }
+
+    .et-rte-token-popup-body {
+      max-block-size: var(--_et-rte-popup-max-block-size);
+      padding: 6px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .et-rte-token-popup-option {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
+      min-block-size: 36px;
+      padding: 6px 10px;
+      border-radius: var(--_et-rte-popup-option-radius);
+      cursor: pointer;
+      transition: background 120ms ease;
+
+      &[data-active] {
+        background: var(--_et-rte-popup-option-active-background);
+      }
+
+      &[aria-disabled='true'] {
+        opacity: 0.4;
+        cursor: default;
+      }
+    }
+
+    .et-rte-token-popup-option-label {
+      line-height: 1.3;
+    }
+
+    .et-rte-token-popup-option-description {
+      font-size: 12px;
+      line-height: 1.2;
+      color: var(--_et-rte-popup-muted-color);
+    }
+
+    /* one fixed-height box shared by the first-load spinner and the empty label, so switching
+       between them never resizes the panel */
+    .et-rte-token-popup-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-block-size: 52px;
+      font-size: 13px;
+      color: var(--_et-rte-popup-muted-color);
+    }
+  }
+}

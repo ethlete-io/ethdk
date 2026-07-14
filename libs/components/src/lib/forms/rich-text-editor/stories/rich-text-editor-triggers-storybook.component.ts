@@ -1,0 +1,122 @@
+import { Component, linkedSignal, ViewEncapsulation } from '@angular/core';
+import { form, FormField } from '@angular/forms/signals';
+import { ProvideColorDirective } from '@ethlete/core';
+import { delay, Observable, of, throwError } from 'rxjs';
+import { FORM_FIELD_IMPORTS } from '../../form-field';
+import {
+  createRichTextEditorTrigger,
+  RichTextEditorTrigger,
+  RichTextEditorTriggerItem,
+} from '../rich-text-editor-trigger';
+import { provideRichTextEditorTokenRendering } from '../rich-text-editor-token-providers';
+import { RICH_TEXT_EDITOR_TRIGGERS_IMPORTS } from '../rich-text-editor-triggers.imports';
+import { RICH_TEXT_EDITOR_IMPORTS } from '../rich-text-editor.imports';
+
+const MERGE_FIELDS: RichTextEditorTriggerItem[] = [
+  { id: 'firstName', label: 'First name' },
+  { id: 'lastName', label: 'Last name' },
+  { id: 'company', label: 'Company' },
+  { id: 'email', label: 'Email address' },
+];
+
+const USERS: RichTextEditorTriggerItem[] = [
+  { id: 'jane', label: 'Jane Doe', description: 'Product' },
+  { id: 'john', label: 'John Smith', description: 'Engineering' },
+  { id: 'amir', label: 'Amir Khan', description: 'Design' },
+  { id: 'lena', label: 'Lena Roth', description: 'Support' },
+];
+
+const findById = (items: RichTextEditorTriggerItem[], id: string) => items.find((item) => item.id === id) ?? null;
+
+/** Simulates a search-as-you-type backend for the `@` mention trigger. */
+const searchUsers = (query: string): Observable<RichTextEditorTriggerItem[]> => {
+  const needle = query.toLowerCase();
+
+  return of(USERS.filter((user) => user.label.toLowerCase().includes(needle))).pipe(delay(350));
+};
+
+export const DEMO_TRIGGERS: RichTextEditorTrigger[] = [
+  createRichTextEditorTrigger({
+    char: '#',
+    type: 'block',
+    items: MERGE_FIELDS,
+    resolveItem: (id) => findById(MERGE_FIELDS, id),
+  }),
+  createRichTextEditorTrigger({
+    char: '@',
+    type: 'mention',
+    items: searchUsers,
+    resolveItem: (id) => findById(USERS, id),
+    debounceTime: 200,
+  }),
+  createRichTextEditorTrigger({
+    char: '$',
+    type: 'link',
+    // demonstrates the error state — the source always fails
+    items: () => throwError(() => new Error('Could not load links')).pipe(delay(300)),
+  }),
+];
+
+@Component({
+  selector: 'et-sb-rich-text-editor-triggers',
+  template: `
+    <div class="flex max-w-md flex-col gap-4 p-8 font-sans" etProvideColor="brand">
+      <et-form-field>
+        <et-label>Message</et-label>
+        <et-rich-text-editor
+          [triggers]="TRIGGERS"
+          [formField]="demoForm.value"
+          etRichTextEditorTriggers
+          placeholder="Type # for a building block or @ to mention someone…"
+        />
+        <et-hint
+          >Type <b>#</b> for merge fields, <b>@</b> to mention a teammate, <b>$</b> to see the error state.</et-hint
+        >
+      </et-form-field>
+
+      <pre class="rounded bg-black/5 p-3 text-xs whitespace-pre-wrap">{{
+        demoForm.value().value() || '(empty value)'
+      }}</pre>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [
+    ...FORM_FIELD_IMPORTS,
+    ...RICH_TEXT_EDITOR_IMPORTS,
+    ...RICH_TEXT_EDITOR_TRIGGERS_IMPORTS,
+    FormField,
+    ProvideColorDirective,
+  ],
+})
+export class RichTextEditorTriggersStorybookComponent {
+  protected readonly TRIGGERS = DEMO_TRIGGERS;
+
+  private formModel = linkedSignal(() => ({ value: '' }));
+
+  public demoForm = form(this.formModel);
+}
+
+@Component({
+  selector: 'et-sb-rich-text-editor-token-display',
+  template: `
+    <div class="flex max-w-md flex-col gap-4 p-8 font-sans" etProvideColor="brand">
+      <et-form-field>
+        <et-label>Stored message (read-only)</et-label>
+        <et-rich-text-editor [formField]="demoForm.value" readonly />
+      </et-form-field>
+
+      <pre class="rounded bg-black/5 p-3 text-xs whitespace-pre-wrap">{{ demoForm.value().value() }}</pre>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...FORM_FIELD_IMPORTS, ...RICH_TEXT_EDITOR_IMPORTS, FormField, ProvideColorDirective],
+  // render stored {{type:id}} tokens as labelled chips without the interactive picker
+  providers: [provideRichTextEditorTokenRendering(DEMO_TRIGGERS)],
+})
+export class RichTextEditorTokenDisplayStorybookComponent {
+  private formModel = linkedSignal(() => ({
+    value: 'Hi {{block:firstName}}, thanks for the update — I have looped in {{mention:jane}} from Product.',
+  }));
+
+  public demoForm = form(this.formModel);
+}
