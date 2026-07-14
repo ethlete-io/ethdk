@@ -9,8 +9,14 @@ import {
   RichTextEditorTriggerItem,
 } from '../rich-text-editor-trigger';
 import { provideRichTextEditorTokenRendering } from '../rich-text-editor-token-providers';
+import { DEFAULT_RICH_TEXT_EDITOR_TOOLS, RichTextEditorTool } from '../rich-text-editor-tools';
 import { RICH_TEXT_EDITOR_TRIGGERS_IMPORTS } from '../rich-text-editor-triggers.imports';
 import { RICH_TEXT_EDITOR_IMPORTS } from '../rich-text-editor.imports';
+import { provideRichTextEditorAlignmentTool } from '../tools/rich-text-editor-align.provider';
+import { provideRichTextEditorTableTool } from '../tools/rich-text-editor-table.provider';
+
+/** The default tools plus the opt-in alignment + table tools, for the triggers demo. */
+const TOOLS_WITH_EXTRAS: RichTextEditorTool[] = [...DEFAULT_RICH_TEXT_EDITOR_TOOLS, 'divider', 'align', 'table'];
 
 const MERGE_FIELDS: RichTextEditorTriggerItem[] = [
   { id: 'firstName', label: 'First name' },
@@ -69,6 +75,7 @@ export const DEMO_TRIGGERS: RichTextEditorTrigger[] = [
         <et-label>Message</et-label>
         <et-rich-text-editor
           [triggers]="TRIGGERS"
+          [tools]="TOOLS"
           [formField]="demoForm.value"
           etRichTextEditorTriggers
           placeholder="Type # for a building block or @ to mention someone…"
@@ -91,9 +98,11 @@ export const DEMO_TRIGGERS: RichTextEditorTrigger[] = [
     FormField,
     ProvideColorDirective,
   ],
+  providers: [provideRichTextEditorTableTool(), provideRichTextEditorAlignmentTool()],
 })
 export class RichTextEditorTriggersStorybookComponent {
   protected readonly TRIGGERS = DEMO_TRIGGERS;
+  protected readonly TOOLS = TOOLS_WITH_EXTRAS;
 
   private formModel = linkedSignal(() => ({ value: '' }));
 

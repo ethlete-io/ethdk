@@ -1,3 +1,4 @@
+export * from './align-icons';
 export * from './arrow-out-up-right-icon';
 export * from './arrow-right-icon';
 export * from './bold-icon';
@@ -24,6 +25,7 @@ export * from './pencil-icon';
 export * from './plus-icon';
 export * from './rotate-right-icon';
 export * from './strikethrough-icon';
+export * from './table-icon';
 export * from './times-icon';
 export * from './triangle-exclamation-icon';
 export * from './underline-icon';

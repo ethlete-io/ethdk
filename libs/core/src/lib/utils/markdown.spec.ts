@@ -85,6 +85,14 @@ describe('markdownToHtml', () => {
     expect(markdownToHtml(input)).toBe('<ol><li>first</li><li>second</li><li>third</li></ol>');
   });
 
+  it('converts nested lists (two spaces per level)', () => {
+    expect(markdownToHtml('- one\n  - two\n  - three\n- four')).toBe(
+      '<ul><li>one<ul><li>two</li><li>three</li></ul></li><li>four</li></ul>',
+    );
+    // a nested list of the other type
+    expect(markdownToHtml('- a\n  1. b')).toBe('<ul><li>a<ol><li>b</li></ol></li></ul>');
+  });
+
   it('wraps plain text in paragraphs', () => {
     expect(markdownToHtml('hello world')).toBe('<p>hello world</p>');
   });
@@ -167,6 +175,16 @@ describe('htmlToMarkdown', () => {
     expect(markdownToHtml('a <u>**b**</u> c')).toBe('<p>a <u><strong>b</strong></u> c</p>');
   });
 
+  it('preserves aligned blocks as raw native HTML (no Markdown form)', () => {
+    const aligned = '<p style="text-align: center">Centered</p>';
+    expect(htmlToMarkdown(aligned)).toBe(aligned);
+    expect(markdownToHtml(aligned)).toBe(aligned);
+    // an aligned heading round-trips too, and a normal paragraph beside it stays Markdown
+    expect(htmlToMarkdown('<h2 style="text-align: right">Title</h2><p>body</p>')).toBe(
+      '<h2 style="text-align: right">Title</h2>\n\nbody',
+    );
+  });
+
   it('converts code blocks with language', () => {
     const input = '<pre><code class="language-typescript">const x = 1;</code></pre>';
     expect(htmlToMarkdown(input)).toBe('```typescript\nconst x = 1;\n```');
@@ -204,6 +222,16 @@ describe('htmlToMarkdown', () => {
   it('converts ordered lists', () => {
     const input = '<ol><li>first</li><li>second</li></ol>';
     expect(htmlToMarkdown(input)).toBe('1. first\n2. second');
+  });
+
+  it('serializes nested lists with two-space indentation', () => {
+    const input = '<ul><li>one<ul><li>two</li><li>three</li></ul></li><li>four</li></ul>';
+    expect(htmlToMarkdown(input)).toBe('- one\n  - two\n  - three\n- four');
+  });
+
+  it('round-trips a nested list through both directions', () => {
+    const md = '- one\n  - two\n    - three\n- four';
+    expect(htmlToMarkdown(markdownToHtml(md))).toBe(md);
   });
 
   it('converts paragraphs', () => {

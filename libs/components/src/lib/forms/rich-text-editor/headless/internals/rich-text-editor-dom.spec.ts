@@ -362,6 +362,40 @@ describe('RichTextEditorDom', () => {
     });
   });
 
+  describe('codeExit', () => {
+    it('moves the caret out of inline code on ArrowRight at its end', () => {
+      const { root, dom } = setup('<code>ab</code>');
+      const text = root.querySelector('code')?.firstChild as Node;
+      select(text, 2, text, 2); // collapsed at end, inside <code>
+
+      expect(dom.codeExit('ArrowRight')).toBe(true);
+      // caret now sits outside the code, in a following text node
+      const range = doc.getSelection()!.getRangeAt(0);
+      expect(dom.closestWithin(range.startContainer, 'code')).toBeNull();
+    });
+
+    it('is a no-op when the caret is not at a code boundary', () => {
+      const { root, dom } = setup('<code>abc</code>');
+      const text = root.querySelector('code')?.firstChild as Node;
+      select(text, 1, text, 1); // middle of the code
+
+      expect(dom.codeExit('ArrowRight')).toBe(false);
+    });
+  });
+
+  describe('toggleInline across table cells', () => {
+    it('wraps each cell within itself instead of tearing the table apart', () => {
+      const { root, dom } = setup('<table><tbody><tr><td>a</td><td>b</td></tr></tbody></table>');
+      selectByTextOffsets(root, 0, 2); // across both cells
+
+      dom.toggleInline('strong');
+
+      expect(root.innerHTML).toBe(
+        '<table><tbody><tr><td><strong>a</strong></td><td><strong>b</strong></td></tr></tbody></table>',
+      );
+    });
+  });
+
   describe('toggleHeading', () => {
     it('wraps bare inline content in the heading, preserving the mark, and a single toggle still removes it', () => {
       // bold-then-heading on unwrapped text: the <strong> must be moved INTO the <h2>, not
@@ -377,6 +411,16 @@ describe('RichTextEditorDom', () => {
       // toggleInline must still detect the nested mark and remove it
       dom.toggleInline('strong');
       expect(root.innerHTML).toBe('<h2>hello</h2>');
+    });
+
+    it('is a no-op when the caret is inside a table (never wraps the table in a heading)', () => {
+      const { root, dom } = setup('<table><tbody><tr><td>x</td></tr></tbody></table>');
+      const cellText = root.querySelector('td')?.firstChild as Node;
+      select(cellText, 0, cellText, 1);
+
+      dom.toggleHeading('h2');
+
+      expect(root.innerHTML).toBe('<table><tbody><tr><td>x</td></tr></tbody></table>');
     });
 
     it('re-tags an existing paragraph in place, keeping its inline children', () => {

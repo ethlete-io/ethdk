@@ -196,9 +196,9 @@ const richTextEditorDomFactory = () => {
   const blockSlices = (range: Range): Range[] => {
     const el = root();
     // Boundaries resolving to no block are root-level inline flow — the root is their block, so
-    // two null boundaries count as the same block just like two boundaries in the same <li>/<p>.
-    const startBlock = closestWithin(range.startContainer, 'li, p');
-    const endBlock = closestWithin(range.endContainer, 'li, p');
+    // two null boundaries count as the same block just like two boundaries in the same <li>/<p>/cell.
+    const startBlock = closestWithin(range.startContainer, 'li, p, td, th');
+    const endBlock = closestWithin(range.endContainer, 'li, p, td, th');
 
     if (!el || startBlock === endBlock) {
       return [range];
@@ -217,6 +217,18 @@ const richTextEditorDomFactory = () => {
             leaves.push(item);
           }
         });
+      } else if (child instanceof HTMLTableElement) {
+        // a selection spanning table cells must wrap each cell's content within that cell — never
+        // across cell boundaries, which would tear the table apart
+        for (const section of child.children) {
+          if (!(section instanceof HTMLTableSectionElement)) continue;
+
+          for (const tr of section.children) {
+            if (!(tr instanceof HTMLTableRowElement)) continue;
+
+            for (const cell of tr.cells) if (range.intersectsNode(cell)) leaves.push(cell);
+          }
+        }
       } else {
         leaves.push(child);
       }
@@ -461,6 +473,13 @@ const richTextEditorDomFactory = () => {
     const parent = list?.parentNode;
 
     if (!list || !parent) {
+      return;
+    }
+
+    // A nested item steps out one level at a time; only a top-level item leaves the list entirely.
+    if (list.parentElement instanceof HTMLElement && list.parentElement.tagName === 'LI') {
+      outdentListItem();
+
       return;
     }
 
@@ -758,7 +777,14 @@ const richTextEditorDomFactory = () => {
       return;
     }
 
-    const blocks = blocksInRange(editable.range);
+    const rawBlocks = blocksInRange(editable.range);
+    // A list can't wrap a table — a caret inside one makes the command a no-op.
+    const blocks = rawBlocks.filter((block) => !(block instanceof HTMLElement && block.tagName === 'TABLE'));
+
+    if (rawBlocks.length > 0 && blocks.length === 0) {
+      return;
+    }
+
     const list = renderer.createElement(listTag);
 
     // An empty editor has no blocks to wrap — start a fresh list with one empty item instead.
@@ -828,7 +854,14 @@ const richTextEditorDomFactory = () => {
       return;
     }
 
-    const blocks = blocksInRange(editable.range);
+    const rawBlocks = blocksInRange(editable.range);
+    // Headings can't wrap a table (and wrapping the whole table would style every cell) — a caret
+    // inside one makes the heading a no-op, matching how it leaves lists untouched.
+    const blocks = rawBlocks.filter((block) => !(block instanceof HTMLElement && block.tagName === 'TABLE'));
+
+    if (rawBlocks.length > 0 && blocks.length === 0) {
+      return;
+    }
 
     // An empty editor has no block to convert — start a fresh heading with an empty line box so
     // the caret has somewhere to land, mirroring toggleList's empty-editor branch.
@@ -986,10 +1019,57 @@ const richTextEditorDomFactory = () => {
     const paragraph = closestWithin(node, 'p');
 
     if (paragraph && isBlockEmpty(paragraph)) {
+      // an empty first line sitting directly above a table can't merge upward — remove it and drop
+      // the caret into the table so an unneeded exit line can be deleted
+      const next = paragraph.nextElementSibling;
+
+      if (!paragraph.previousElementSibling && next instanceof HTMLTableElement) {
+        const el = root();
+        let cell: HTMLTableCellElement | null = null;
+
+        for (const section of next.children) {
+          if (section instanceof HTMLTableSectionElement) {
+            for (const tr of section.children) {
+              if (tr instanceof HTMLTableRowElement && tr.cells[0]) {
+                cell = tr.cells[0];
+                break;
+              }
+            }
+          }
+
+          if (cell) break;
+        }
+
+        if (el) renderer.removeChild(el, paragraph);
+        if (cell) collapseInto(cell, 0);
+
+        return true;
+      }
+
       return mergeParagraphIntoPreviousList(paragraph);
     }
 
     return false;
+  };
+
+  /** Enter on an empty list item steps it out one nesting level (or leaves the list at the top),
+   *  instead of inserting another empty item. Returns `true` when handled. */
+  const handleEnter = () => {
+    const editable = getSelection();
+
+    if (!editable || !editable.range.collapsed) {
+      return false;
+    }
+
+    const li = closestWithin(editable.range.startContainer, 'li');
+
+    if (!li || !isBlockEmpty(li)) {
+      return false;
+    }
+
+    exitListItem(li);
+
+    return true;
   };
 
   // The inline mark elements a caret can sit inside; used for the collapsed-caret "stored marks" flow.
@@ -1087,6 +1167,284 @@ const richTextEditorDomFactory = () => {
     pruneEmptyInline();
   };
 
+  const listItemAtCaret = (): HTMLElement | null => {
+    const editable = getSelection();
+
+    return editable ? closestWithin(editable.range.startContainer, 'li') : null;
+  };
+
+  /** Tab in a list: nest the current item into a sublist under the previous item. No-op for the
+   *  first item (nothing to nest under). Returns `true` when handled. */
+  const indentListItem = () => {
+    const editable = getSelection();
+    const li = listItemAtCaret();
+
+    if (!editable || !li) return false;
+
+    const prev = li.previousElementSibling;
+
+    if (!(prev instanceof HTMLElement) || prev.tagName !== 'LI') return false;
+
+    const listTag = (li.parentElement?.tagName.toLowerCase() ?? 'ul') as ListTag;
+    const last = prev.lastElementChild;
+    let sublist: HTMLElement;
+
+    if (last instanceof HTMLElement && (last.tagName === 'UL' || last.tagName === 'OL')) {
+      sublist = last;
+    } else {
+      sublist = renderer.createElement(listTag);
+      renderer.appendChild(prev, sublist);
+    }
+
+    const { startContainer, startOffset } = editable.range;
+    renderer.appendChild(sublist, li);
+    collapseInto(startContainer, startOffset);
+
+    return true;
+  };
+
+  /** Shift+Tab in a list: lift the current item out one nesting level. No-op at the top level.
+   *  Returns `true` when handled. */
+  const outdentListItem = () => {
+    const editable = getSelection();
+    const li = listItemAtCaret();
+
+    if (!editable || !li) return false;
+
+    const sublist = li.parentElement;
+    const parentLi = sublist?.parentElement;
+
+    if (!(parentLi instanceof HTMLElement) || parentLi.tagName !== 'LI') return false;
+
+    const outerList = parentLi.parentElement;
+
+    if (!outerList) return false;
+
+    const { startContainer, startOffset } = editable.range;
+    renderer.insertBefore(outerList, li, parentLi.nextSibling);
+
+    if (sublist && sublist.childElementCount === 0 && sublist.parentElement) {
+      renderer.removeChild(sublist.parentElement, sublist);
+    }
+
+    collapseInto(startContainer, startOffset);
+
+    return true;
+  };
+
+  /**
+   * ArrowRight at the end of an inline `<code>` span (or ArrowLeft at its start) steps the caret
+   * just outside the code element, so continuing to type isn't code. Returns `true` when handled.
+   */
+  const codeExit = (key: string) => {
+    if (key !== 'ArrowRight' && key !== 'ArrowLeft') return false;
+
+    const editable = getSelection();
+
+    if (!editable || !editable.range.collapsed) return false;
+
+    const { range } = editable;
+    const code = closestWithin(range.startContainer, 'code');
+
+    // inline code only — leave fenced code blocks (`<pre><code>`) alone
+    if (!code || closestWithin(range.startContainer, 'pre')) return false;
+
+    const emptyToward = (side: 'start' | 'end') => {
+      const r = doc.createRange();
+      r.selectNodeContents(code);
+      if (side === 'end') r.setStart(range.startContainer, range.startOffset);
+      else r.setEnd(range.startContainer, range.startOffset);
+
+      return r.toString().length === 0;
+    };
+
+    let target: Node;
+    let offset: number;
+
+    // Just moving the caret past the code's boundary doesn't stick — the browser snaps it back
+    // inside. Land it in a real text node outside the code instead, inserting a zero-width-space
+    // node when there's nothing adjacent (stripped on serialize).
+    if (key === 'ArrowRight' && emptyToward('end')) {
+      const next = code.nextSibling;
+
+      if (next && next.nodeType === Node.TEXT_NODE) {
+        target = next;
+        offset = 0;
+      } else {
+        target = renderer.createText('\u200b');
+        renderer.insertBefore(code.parentNode as Node, target, code.nextSibling);
+        offset = 1;
+      }
+    } else if (key === 'ArrowLeft' && emptyToward('start')) {
+      const previous = code.previousSibling;
+
+      if (previous && previous.nodeType === Node.TEXT_NODE) {
+        target = previous;
+        offset = previous.textContent?.length ?? 0;
+      } else {
+        target = renderer.createText('\u200b');
+        renderer.insertBefore(code.parentNode as Node, target, code);
+        offset = 0;
+      }
+    } else {
+      return false;
+    }
+
+    const caret = doc.createRange();
+    caret.setStart(target, offset);
+    caret.collapse(true);
+    const selection = doc.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(caret);
+
+    return true;
+  };
+
+  /**
+   * Moves the caret out of a root-level table when an arrow key would otherwise strand it at the
+   * table's edge (a contenteditable quirk). Steps into the adjacent block, creating an empty
+   * paragraph when the table sits flush against the top/bottom of the editor. Returns `true` when it
+   * handled the key (the caller must then prevent the default).
+   */
+  const tableExit = (key: string) => {
+    const el = root();
+    const editable = getSelection();
+
+    if (!el || !editable || !editable.range.collapsed) return false;
+
+    const { range } = editable;
+    let cell: HTMLElement | null =
+      range.startContainer instanceof HTMLElement ? range.startContainer : range.startContainer.parentElement;
+
+    while (cell && cell !== el && !(cell instanceof HTMLTableCellElement)) cell = cell.parentElement;
+
+    if (!(cell instanceof HTMLTableCellElement)) return false;
+
+    const row = cell.parentElement;
+    const table = row?.parentElement?.parentElement;
+
+    if (!(row instanceof HTMLTableRowElement) || !(table instanceof HTMLTableElement) || table.parentElement !== el) {
+      return false;
+    }
+
+    const rows: HTMLTableRowElement[] = [];
+    for (const section of table.children) {
+      if (section instanceof HTMLTableSectionElement) {
+        for (const r of section.children) if (r instanceof HTMLTableRowElement) rows.push(r);
+      }
+    }
+
+    const firstRow = rows[0] === row;
+    const lastRow = rows[rows.length - 1] === row;
+    const firstCell = row.cells[0] === cell;
+    const lastCell = row.cells[row.cells.length - 1] === cell;
+
+    const atCellStart = () => {
+      const r = doc.createRange();
+      r.selectNodeContents(cell);
+      r.setEnd(range.startContainer, range.startOffset);
+
+      return r.toString().length === 0;
+    };
+    const atCellEnd = () => {
+      const r = doc.createRange();
+      r.selectNodeContents(cell);
+      r.setStart(range.startContainer, range.startOffset);
+
+      return r.toString().length === 0;
+    };
+
+    let edge: 'before' | 'after' | null = null;
+
+    if (key === 'ArrowUp' && firstRow) edge = 'before';
+    else if (key === 'ArrowDown' && lastRow) edge = 'after';
+    else if (key === 'ArrowLeft' && firstRow && firstCell && atCellStart()) edge = 'before';
+    else if (key === 'ArrowRight' && lastRow && lastCell && atCellEnd()) edge = 'after';
+
+    if (!edge) return false;
+
+    const sibling = edge === 'before' ? table.previousElementSibling : table.nextElementSibling;
+    let target = sibling instanceof HTMLElement ? sibling : null;
+
+    if (!target) {
+      target = renderer.createElement('p');
+      renderer.appendChild(target, renderer.createElement('br'));
+      renderer.insertBefore(el, target, edge === 'before' ? table : table.nextSibling);
+    }
+
+    const caret = doc.createRange();
+    caret.selectNodeContents(target);
+    caret.collapse(edge === 'before' ? false : true);
+    const selection = doc.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(caret);
+
+    return true;
+  };
+
+  /**
+   * Moves the caret INTO an adjacent root-level table (its first/last cell) when an arrow key from a
+   * neighbouring block would otherwise strand it at the table's edge. Returns `true` when handled.
+   */
+  const tableEnter = (key: string) => {
+    const el = root();
+    const editable = getSelection();
+
+    if (!el || !editable || !editable.range.collapsed) return false;
+
+    const { range } = editable;
+    let block: Node | null = range.startContainer;
+
+    while (block && block.parentNode !== el) block = block.parentNode;
+
+    if (!block || block instanceof HTMLTableElement) return false;
+
+    const atEdge = (side: 'start' | 'end') => {
+      const r = doc.createRange();
+      r.selectNodeContents(block as Node);
+      if (side === 'start') r.setEnd(range.startContainer, range.startOffset);
+      else r.setStart(range.startContainer, range.startOffset);
+
+      return r.toString().length === 0;
+    };
+
+    const elementSibling = (from: Node, dir: 'next' | 'prev'): Element | null => {
+      let sib = dir === 'next' ? from.nextSibling : from.previousSibling;
+      while (sib && sib.nodeType !== Node.ELEMENT_NODE) sib = dir === 'next' ? sib.nextSibling : sib.previousSibling;
+
+      return sib instanceof Element ? sib : null;
+    };
+
+    let table: Element | null = null;
+    let edge: 'first' | 'last' = 'first';
+
+    if ((key === 'ArrowDown' || key === 'ArrowRight') && atEdge('end')) {
+      table = elementSibling(block, 'next');
+      edge = 'first';
+    } else if ((key === 'ArrowUp' || key === 'ArrowLeft') && atEdge('start')) {
+      table = elementSibling(block, 'prev');
+      edge = 'last';
+    }
+
+    if (!(table instanceof HTMLTableElement)) return false;
+
+    const rows: HTMLTableRowElement[] = [];
+    for (const section of table.children) {
+      if (section instanceof HTMLTableSectionElement) {
+        for (const r of section.children) if (r instanceof HTMLTableRowElement) rows.push(r);
+      }
+    }
+
+    const targetRow = edge === 'first' ? rows[0] : rows[rows.length - 1];
+    const cell = targetRow?.cells[edge === 'first' ? 0 : targetRow.cells.length - 1];
+
+    if (!cell) return false;
+
+    collapseInto(cell, 0);
+
+    return true;
+  };
+
   return {
     root,
     getSelection,
@@ -1095,12 +1453,18 @@ const richTextEditorDomFactory = () => {
     activeInlineTags,
     toggleInline,
     insertInlineText,
+    codeExit,
+    indentListItem,
+    outdentListItem,
+    tableExit,
+    tableEnter,
     toggleList,
     toggleHeading,
     applyLink,
     removeLink,
     insertToken,
     handleBackspace,
+    handleEnter,
   };
 };
 

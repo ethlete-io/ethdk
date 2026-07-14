@@ -45,10 +45,126 @@ const processInline = (text: string): string => {
   return text.replace(placeholderRe('IC'), (_, i) => inlineCodes[+i] ?? '');
 };
 
+// --- Nested list helpers (regex can't match balanced nesting, so these scan by tag depth) ---
+
+/** The first top-level `<ul>`/`<ol>` in `html`, matched with balanced nesting. */
+const findList = (html: string): { start: number; end: number; ordered: boolean; inner: string } | null => {
+  const open = /<(ul|ol)\b[^>]*>/i.exec(html);
+
+  if (!open) return null;
+
+  const innerStart = open.index + open[0].length;
+  const tag = /<(\/?)(?:ul|ol)\b[^>]*>/gi;
+  tag.lastIndex = innerStart;
+
+  let depth = 1;
+  let match: RegExpExecArray | null;
+
+  while ((match = tag.exec(html))) {
+    depth += match[1] ? -1 : 1;
+
+    if (depth === 0) {
+      return {
+        start: open.index,
+        end: tag.lastIndex,
+        ordered: open[1]!.toLowerCase() === 'ol',
+        inner: html.slice(innerStart, match.index),
+      };
+    }
+  }
+
+  return null;
+};
+
+/** The inner HTML of each direct `<li>` child of a list's inner HTML (balanced over nested lists). */
+const findListItems = (inner: string): string[] => {
+  const items: string[] = [];
+  const tag = /<(\/?)li\b[^>]*>/gi;
+
+  let depth = 0;
+  let start = -1;
+  let match: RegExpExecArray | null;
+
+  while ((match = tag.exec(inner))) {
+    if (match[1]) {
+      depth--;
+      if (depth === 0 && start >= 0) {
+        items.push(inner.slice(start, match.index));
+        start = -1;
+      }
+    } else {
+      if (depth === 0) start = match.index + match[0].length;
+      depth++;
+    }
+  }
+
+  return items;
+};
+
+/** Serializes a list's inner HTML to Markdown, indenting nested lists two spaces per level. */
+const listToMarkdown = (inner: string, ordered: boolean, depth: number): string => {
+  const indent = '  '.repeat(depth);
+  let n = 1;
+
+  return findListItems(inner)
+    .map((itemInner) => {
+      let content = itemInner;
+      let nestedMarkdown = '';
+
+      for (let nested = findList(content); nested; nested = findList(content)) {
+        nestedMarkdown += `\n${listToMarkdown(nested.inner, nested.ordered, depth + 1)}`;
+        content = content.slice(0, nested.start) + content.slice(nested.end);
+      }
+
+      const marker = ordered ? `${n++}. ` : '- ';
+
+      return `${indent}${marker}${stripTags(content).trim()}${nestedMarkdown}`;
+    })
+    .join('\n');
+};
+
+type ParsedListLine = { indent: number; ordered: boolean; text: string };
+
+/** Parses list lines into (indent-level, ordered, text) — two leading spaces per nesting level. */
+const parseListLines = (lines: string[]): ParsedListLine[] =>
+  lines
+    .map((line): ParsedListLine | null => {
+      const match = /^(\s*)([-*+]|\d+\.)\s+(.*)$/.exec(line);
+
+      return match
+        ? { indent: Math.floor((match[1] ?? '').length / 2), ordered: /\d/.test(match[2] ?? ''), text: match[3] ?? '' }
+        : null;
+    })
+    .filter((line): line is ParsedListLine => line !== null);
+
+/** Builds nested `<ul>`/`<ol>` HTML from parsed list lines starting at `start`, for one indent level. */
+const buildListHtml = (lines: ParsedListLine[], start: number, baseIndent: number): { html: string; next: number } => {
+  const ordered = lines[start]?.ordered ?? false;
+  let items = '';
+  let i = start;
+
+  while (i < lines.length && (lines[i]?.indent ?? -1) === baseIndent) {
+    let item = processInline(lines[i]!.text);
+    i++;
+
+    if (i < lines.length && (lines[i]?.indent ?? -1) > baseIndent) {
+      const nested = buildListHtml(lines, i, lines[i]!.indent);
+      item += nested.html;
+      i = nested.next;
+    }
+
+    items += `<li>${item}</li>`;
+  }
+
+  const tag = ordered ? 'ol' : 'ul';
+
+  return { html: `<${tag}>${items}</${tag}>`, next: i };
+};
+
 /**
  * Converts a markdown string to HTML.
  * Covers headings, bold, italic, strikethrough, inline code, fenced code blocks,
- * links, images, block quotes, unordered/ordered lists, tables, horizontal rules, and paragraphs.
+ * links, images, block quotes, unordered/ordered (and nested) lists, tables, horizontal rules, and paragraphs.
  */
 export const markdownToHtml = (markdown: string): string => {
   if (!markdown) return '';
@@ -75,6 +191,10 @@ export const markdownToHtml = (markdown: string): string => {
       if (!trimmed) return '';
 
       if (isPlaceholder('CODE', trimmed)) return trimmed;
+
+      // Aligned block: text-align has no Markdown form, so it round-trips as raw native HTML — pass
+      // it through verbatim instead of re-wrapping it in a plain paragraph.
+      if (/^<(?:p|h[1-6]|div)\b[^>]*\bstyle=["'][^"']*text-align/i.test(trimmed)) return trimmed;
 
       // Heading
       const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
@@ -115,24 +235,13 @@ export const markdownToHtml = (markdown: string): string => {
         return `<blockquote>${processInline(content)}</blockquote>`;
       }
 
-      // Unordered list
-      if (/^[-*+]\s/.test(trimmed)) {
-        const items = trimmed
-          .split('\n')
-          .filter((l) => /^[-*+]\s/.test(l))
-          .map((l) => `<li>${processInline(l.replace(/^[-*+]\s+/, '').trim())}</li>`)
-          .join('');
-        return `<ul>${items}</ul>`;
-      }
+      // List (unordered/ordered, with indentation-based nesting)
+      if (/^([-*+]|\d+\.)\s/.test(trimmed)) {
+        const lines = parseListLines(trimmed.split('\n'));
 
-      // Ordered list
-      if (/^\d+\.\s/.test(trimmed)) {
-        const items = trimmed
-          .split('\n')
-          .filter((l) => /^\d+\.\s/.test(l))
-          .map((l) => `<li>${processInline(l.replace(/^\d+\.\s+/, '').trim())}</li>`)
-          .join('');
-        return `<ol>${items}</ol>`;
+        if (lines.length > 0) {
+          return buildListHtml(lines, 0, lines[0]!.indent).html;
+        }
       }
 
       // Paragraph — single newlines within a block become <br>
@@ -156,6 +265,14 @@ export const htmlToMarkdown = (html: string): string => {
   if (!html) return '';
 
   let md = html;
+
+  // Aligned blocks: text-align has no Markdown form, so preserve them verbatim as native HTML (their
+  // inner markup stays HTML) and round-trip via a placeholder — extracted before the block passes
+  // below rewrite them, restored after the final tag-strip.
+  const alignedBlocks: string[] = [];
+  md = md.replace(/<(p|h[1-6]|div)\b[^>]*\bstyle="[^"]*text-align[^"]*"[^>]*>[\s\S]*?<\/\1>/gi, (match) =>
+    makePlaceholder('ALIGN', alignedBlocks.push(match) - 1),
+  );
 
   // Code blocks — process before inline code
   md = md.replace(
@@ -213,23 +330,10 @@ export const htmlToMarkdown = (html: string): string => {
     );
   });
 
-  // Lists
-  md = md.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (_, content: string) => {
-    return (
-      '\n' +
-      content.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (_m: string, item: string) => `- ${stripTags(item).trim()}\n`)
-    );
-  });
-  md = md.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (_, content: string) => {
-    let n = 1;
-    return (
-      '\n' +
-      content.replace(
-        /<li[^>]*>([\s\S]*?)<\/li>/gi,
-        (_m: string, item: string) => `${n++}. ${stripTags(item).trim()}\n`,
-      )
-    );
-  });
+  // Lists — replace each top-level list with its recursively-serialized Markdown (handles nesting).
+  for (let list = findList(md); list; list = findList(md)) {
+    md = `${md.slice(0, list.start)}\n${listToMarkdown(list.inner, list.ordered, 0)}\n${md.slice(list.end)}`;
+  }
 
   // Tables
   md = md.replace(/<table[^>]*>([\s\S]*?)<\/table>/gi, (_, tableContent: string) => {
@@ -264,8 +368,10 @@ export const htmlToMarkdown = (html: string): string => {
   md = md.replace(/<br\s*\/?>/gi, '\n');
   md = md.replace(/<hr\s*\/?>/gi, '\n---\n');
 
-  return unescapeHtml(stripTags(md))
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
-    .replace(placeholderRe('U'), (_, i) => `<u>${underlines[+i] ?? ''}</u>`);
+  md = unescapeHtml(stripTags(md)).replace(placeholderRe('U'), (_, i) => `<u>${underlines[+i] ?? ''}</u>`);
+  // aligned blocks are block-level, so pad with blank lines before collapsing so they survive as
+  // their own Markdown block
+  md = md.replace(placeholderRe('ALIGN'), (_, i) => `\n\n${alignedBlocks[+i] ?? ''}\n\n`);
+
+  return md.replace(/\n{3,}/g, '\n\n').trim();
 };

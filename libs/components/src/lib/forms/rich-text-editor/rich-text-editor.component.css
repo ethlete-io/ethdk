@@ -140,11 +140,41 @@
         list-style-position: outside;
       }
 
+      /* marker style cycles by nesting depth (Slack-style): disc → circle → square, and
+         decimal → lower-alpha → lower-roman */
       ul {
         list-style-type: disc;
       }
 
+      ul ul,
+      ul ul ul ul ul {
+        list-style-type: circle;
+      }
+
+      ul ul ul,
+      ul ul ul ul ul ul {
+        list-style-type: square;
+      }
+
+      ul ul ul ul {
+        list-style-type: disc;
+      }
+
       ol {
+        list-style-type: decimal;
+      }
+
+      ol ol,
+      ol ol ol ol ol {
+        list-style-type: lower-alpha;
+      }
+
+      ol ol ol,
+      ol ol ol ol ol ol {
+        list-style-type: lower-roman;
+      }
+
+      ol ol ol ol {
         list-style-type: decimal;
       }
 
@@ -167,6 +197,24 @@
         background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 14%, transparent);
         font-family: var(--et-font-family-mono, ui-monospace, monospace);
         font-size: 0.9em;
+      }
+
+      table {
+        border-collapse: collapse;
+        inline-size: 100%;
+        margin-block: var(--et-rich-text-editor-content-gap);
+      }
+
+      :is(th, td) {
+        padding: 6px 8px;
+        border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.15));
+        text-align: start;
+        vertical-align: top;
+      }
+
+      th {
+        font-weight: 700;
+        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
       }
 
       .et-rte-token {

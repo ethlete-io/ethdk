@@ -1,4 +1,4 @@
-import { DOCUMENT } from '@angular/common';
+import { DOCUMENT, NgComponentOutlet } from '@angular/common';
 import {
   afterNextRender,
   Component,
@@ -33,8 +33,10 @@ import { MENU_IMPORTS } from '../../menu';
 import { RichTextEditorDirective, RichTextEditorFloatingToolbarDirective } from './headless';
 import {
   RICH_TEXT_EDITOR_HEADING_OPTIONS,
+  RICH_TEXT_EDITOR_TOOL,
   RICH_TEXT_EDITOR_TOOL_BUTTONS,
   RICH_TEXT_EDITOR_TOOLS,
+  RichTextEditorToolDefinition,
 } from './rich-text-editor-tools';
 
 /** Caret-navigation / deletion keys that should drop any pending stored-mark toggle. */
@@ -57,7 +59,7 @@ const NAVIGATION_KEYS = new Set([
   templateUrl: './rich-text-editor.component.html',
   styleUrl: './rich-text-editor.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [...BUTTON_IMPORTS, IconDirective, ...MENU_IMPORTS],
+  imports: [...BUTTON_IMPORTS, IconDirective, ...MENU_IMPORTS, NgComponentOutlet],
   providers: [
     provideIcons(
       BOLD_ICON,
@@ -105,8 +107,22 @@ export class RichTextEditorComponent {
   protected editable = viewChild.required<ElementRef<HTMLElement>>('editable');
 
   protected readonly TOOLS = RICH_TEXT_EDITOR_TOOLS;
-  protected readonly TOOL_BUTTONS = RICH_TEXT_EDITOR_TOOL_BUTTONS;
   protected readonly HEADING_OPTIONS = RICH_TEXT_EDITOR_HEADING_OPTIONS;
+
+  private registeredTools = inject(RICH_TEXT_EDITOR_TOOL, { optional: true }) ?? [];
+
+  /** Every renderable tool by token: the static base buttons plus any opt-in tools provided via DI. */
+  protected toolDefs = computed(() => {
+    const defs = new Map<string, RichTextEditorToolDefinition>();
+
+    for (const [token, button] of Object.entries(RICH_TEXT_EDITOR_TOOL_BUTTONS)) {
+      if (button) defs.set(token, { token, ...button });
+    }
+
+    for (const def of this.registeredTools) defs.set(def.token, def);
+
+    return defs;
+  });
 
   /** The current block style option (used for the heading-menu trigger icon + label). */
   private currentHeading = computed(() =>
@@ -155,6 +171,46 @@ export class RichTextEditorComponent {
     // moving the caret (or deleting) without typing abandons a pending stored-mark toggle
     if (NAVIGATION_KEYS.has(event.key)) {
       this.dir.clearPendingMarks();
+    }
+
+    // Tab / Shift+Tab nest / un-nest the current list item (falls through to default focus move
+    // when the caret isn't in a list)
+    if (event.key === 'Tab') {
+      const handled = event.shiftKey ? this.dir.editorDom.outdentListItem() : this.dir.editorDom.indentListItem();
+
+      if (handled) {
+        event.preventDefault();
+        this.dir.syncFromDom();
+      }
+
+      return;
+    }
+
+    // Enter on an empty list item steps out of the list one level at a time
+    if (event.key === 'Enter' && this.dir.editorDom.handleEnter()) {
+      event.preventDefault();
+      this.dir.syncFromDom();
+
+      return;
+    }
+
+    // step the caret cleanly across table boundaries instead of stranding it at the table's edge
+    if (
+      event.key.startsWith('Arrow') &&
+      (this.dir.editorDom.tableExit(event.key) || this.dir.editorDom.tableEnter(event.key))
+    ) {
+      event.preventDefault();
+      this.dir.syncFromDom();
+
+      return;
+    }
+
+    // step out of an inline code span so the next typed text isn't code (caret move only, no edit)
+    if (event.key.startsWith('Arrow') && this.dir.editorDom.codeExit(event.key)) {
+      event.preventDefault();
+      this.dir.refreshActiveMarks();
+
+      return;
     }
 
     if (event.key === 'Backspace' && this.dir.handleBackspace()) {

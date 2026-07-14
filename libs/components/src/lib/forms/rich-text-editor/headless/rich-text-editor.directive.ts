@@ -30,6 +30,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   public touched = model(false);
   public disabled = input(false);
   public readonly = input(false);
+  // eslint-disable-next-line ethlete/no-native-html-input-name -- form-field hidden state deliberately mirrors the native attribute
   public hidden = input(false);
   public invalid = input(false);
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
@@ -265,7 +266,13 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
       });
     }
 
-    return clone.innerHTML.replace(/<div>/gi, '<p>').replace(/<\/div>/gi, '</p>');
+    return (
+      clone.innerHTML
+        .replace(/<div>/gi, '<p>')
+        .replace(/<\/div>/gi, '</p>')
+        // drop zero-width spaces used transiently to park the caret outside an inline mark (code exit)
+        .replace(/\u200b/g, '')
+    );
   }
 
   private toggleMark(tag: InlineTag) {

@@ -33,20 +33,24 @@
         </div>
       }
       @default {
-        @if (TOOL_BUTTONS[tool]; as def) {
-          <button
-            [pressed]="def.isActive(dir)"
-            [disabled]="dir.disabled() || dir.readonly()"
-            [attr.aria-label]="def.label"
-            (mousedown)="$event.preventDefault()"
-            (click)="def.run(dir)"
-            mutedUntilPressed
-            et-icon-button
-            size="sm"
-            type="button"
-          >
-            <i [allowHardcodedColor]="def.allowHardcodedColor ?? false" [etIcon]="def.icon"></i>
-          </button>
+        @if (toolDefs().get(tool); as def) {
+          @if (def.control; as control) {
+            <ng-container [ngComponentOutlet]="control" [ngComponentOutletInputs]="{ editor: dir }" />
+          } @else {
+            <button
+              [pressed]="def.isActive?.(dir) ?? false"
+              [disabled]="dir.disabled() || dir.readonly()"
+              [attr.aria-label]="def.label"
+              (mousedown)="$event.preventDefault()"
+              (click)="def.run?.(dir)"
+              mutedUntilPressed
+              et-icon-button
+              size="sm"
+              type="button"
+            >
+              <i [allowHardcodedColor]="def.allowHardcodedColor ?? false" [etIcon]="def.icon ?? ''"></i>
+            </button>
+          }
         }
       }
     }

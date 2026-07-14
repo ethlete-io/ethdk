@@ -1,3 +1,4 @@
+import { InjectionToken, Type } from '@angular/core';
 import { createStaticRootProvider } from '@ethlete/core';
 import { RichTextEditorDirective } from './headless/rich-text-editor.directive';
 
@@ -13,13 +14,20 @@ export const RICH_TEXT_EDITOR_TOOLS = {
   STRIKE: 'strike',
   CODE: 'code',
   HEADING: 'heading',
+  ALIGN: 'align',
   BULLETED_LIST: 'bulletedList',
   NUMBERED_LIST: 'numberedList',
   LINK: 'link',
+  TABLE: 'table',
   DIVIDER: 'divider',
 } as const;
 
-export type RichTextEditorTool = (typeof RICH_TEXT_EDITOR_TOOLS)[keyof typeof RICH_TEXT_EDITOR_TOOLS];
+/**
+ * A toolbar tool token. The `align` and `table` tools are opt-in — they only render when their
+ * provider (`provideRichTextEditorAlignmentTool` / `provideRichTextEditorTableTool`) is present, so
+ * their code tree-shakes away otherwise. `(string & {})` keeps the union open for custom tools.
+ */
+export type RichTextEditorTool = (typeof RICH_TEXT_EDITOR_TOOLS)[keyof typeof RICH_TEXT_EDITOR_TOOLS] | (string & {});
 
 /** The default toolbar: the block-style menu first, then inline marks, lists and links. */
 export const DEFAULT_RICH_TEXT_EDITOR_TOOLS: readonly RichTextEditorTool[] = [
@@ -123,3 +131,24 @@ export const RICH_TEXT_EDITOR_HEADING_OPTIONS: readonly { level: number | null; 
   { level: 2, label: 'Heading 2', icon: 'et-heading-2' },
   { level: 3, label: 'Heading 3', icon: 'et-heading-3' },
 ];
+
+/**
+ * A tool contributed to the toolbar via DI. Base tools are the static {@link RICH_TEXT_EDITOR_TOOL_BUTTONS};
+ * opt-in tools (table, alignment, or app-defined ones) register a definition through
+ * {@link RICH_TEXT_EDITOR_TOOL} so their code only ships when provided. A tool renders either as a
+ * toggle button (`icon` + `isActive`/`run`) or as a custom `control` component (given an `editor` input).
+ */
+export type RichTextEditorToolDefinition = {
+  /** The `tools` token this definition renders for (e.g. `'table'`). */
+  token: string;
+  label: string;
+  icon?: string;
+  allowHardcodedColor?: boolean;
+  isActive?: (editor: RichTextEditorDirective) => boolean;
+  run?: (editor: RichTextEditorDirective) => void;
+  /** Custom control rendered instead of a toggle button; it receives the editor as an `editor` input. */
+  control?: Type<unknown>;
+};
+
+/** Multi-provider token opt-in tools register their {@link RichTextEditorToolDefinition} into. */
+export const RICH_TEXT_EDITOR_TOOL = new InjectionToken<RichTextEditorToolDefinition[]>('RichTextEditorTool');

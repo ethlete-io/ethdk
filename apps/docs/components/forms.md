@@ -116,7 +116,7 @@ Checkbox options and radios accept an `et-description` child for secondary text,
 
 ## Rich text editor
 
-`et-rich-text-editor` is a Markdown-valued editor built on `contenteditable` (no ProseMirror dependency): the `value` model is **Markdown**, converted to/from HTML internally. It ships a static toolbar (block-style menu, bold, italic, strikethrough, lists, links) plus a floating toolbar over the active selection, and uses the same field shell as text inputs:
+`et-rich-text-editor` is a Markdown-valued editor built on `contenteditable` (no ProseMirror dependency): the `value` model is **Markdown**, converted to/from HTML internally. It ships a static toolbar (block-style menu, bold, italic, underline, strikethrough, inline code, lists, links) plus a floating toolbar over the active selection, and uses the same field shell as text inputs:
 
 ```html
 <et-form-field>
@@ -125,15 +125,17 @@ Checkbox options and radios accept an `et-description` child for secondary text,
 </et-form-field>
 ```
 
-The editable region is a `role="textbox" aria-multiline="true"` with full invalid/described-by wiring.
+The editable region is a `role="textbox" aria-multiline="true"` with full invalid/described-by wiring. In a list, **Tab** / **Shift+Tab** nest and un-nest the current item (marker style cycles by depth), and **Enter** / **Backspace** on an empty item step out one level at a time.
 
 <StoryEmbed id="components-forms-rich-text-editor--default" height="420px" />
 
 ### Choosing which tools appear
 
 The toolbar is data-driven. Pass a `tools` input with an ordered list of tokens to pick and order
-the controls; `'divider'` renders a separator and `'heading'` renders the block-style menu
-(Normal / Heading 1–3). Omit `tools` for the full default toolbar.
+the controls. Tokens: `'bold'`, `'italic'`, `'underline'`, `'strike'`, `'code'` (inline code),
+`'heading'` (the Normal / Heading 1–3 menu), `'bulletedList'`, `'numberedList'`, `'link'`, plus the
+opt-in `'align'` and `'table'` (see below). `'divider'` renders a separator. Omit `tools` for the
+full default toolbar.
 
 ```html
 <et-rich-text-editor
@@ -151,6 +153,32 @@ import { provideRichTextEditorTools } from '@ethlete/components';
 
 providers: [provideRichTextEditorTools(['heading', 'divider', 'bold', 'italic', 'link'])];
 ```
+
+Underline and inline code round-trip through the Markdown value (underline as native `<u>`, since
+Markdown has no underline syntax).
+
+### Opt-in tools: tables and alignment
+
+The heavier tools are opt-in so their code (and UI) tree-shakes away when unused. Add the provider
+and include its token in `tools`:
+
+```ts
+import { provideRichTextEditorTableTool, provideRichTextEditorAlignmentTool } from '@ethlete/components';
+
+providers: [provideRichTextEditorTableTool(), provideRichTextEditorAlignmentTool()];
+```
+
+```html
+<et-rich-text-editor [formField]="demoForm.report" [tools]="['heading', 'divider', 'align', 'table']" />
+```
+
+- **`'table'`** — a grid-size picker inserts a table; when the caret is inside one, the menu offers
+  insert/delete row and column and delete table. Tables round-trip as GFM pipe tables.
+- **`'align'`** — a block-alignment menu (left / center / right / justify), also usable inside table
+  cells. Alignment persists as a native `text-align` style (Markdown has no alignment syntax).
+
+To register your own tool, provide a `RichTextEditorToolDefinition` (a toggle button, or a custom
+control component) through the `RICH_TEXT_EDITOR_TOOL` multi-provider token.
 
 ### Building blocks (`#`/`@`/… triggers)
 

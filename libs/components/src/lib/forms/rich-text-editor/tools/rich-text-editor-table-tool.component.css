@@ -1,0 +1,42 @@
+@layer components {
+  .et-rte-table-tool {
+    display: contents;
+  }
+
+  .et-rte-table-picker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 4px;
+  }
+
+  .et-rte-table-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 3px;
+  }
+
+  .et-rte-table-picker-cell {
+    inline-size: 16px;
+    block-size: 16px;
+    padding: 0;
+    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.2));
+    border-radius: 2px;
+    background: transparent;
+    cursor: pointer;
+    transition:
+      background 80ms ease,
+      border-color 80ms ease;
+  }
+
+  .et-rte-table-picker-cell--active {
+    border-color: var(--et-theme-color-primary-solid, currentColor);
+    background: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 35%, transparent);
+  }
+
+  .et-rte-table-picker-label {
+    font-size: 12px;
+    color: var(--et-surface-color-muted-solid, currentColor);
+  }
+}
