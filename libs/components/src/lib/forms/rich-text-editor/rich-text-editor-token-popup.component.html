@@ -7,13 +7,36 @@
   indeterminate
 />
 
+<!-- re-fetch failed while results are still on screen: annotate above the list without disturbing it -->
 @if (error(); as err) {
-  <p [etProvideColor]="errorColorTheme" class="et-rte-token-popup-error" role="alert">{{ err }}</p>
+  @if (items().length > 0) {
+    <p [etProvideColor]="errorColorTheme" class="et-rte-token-popup-error" role="alert">{{ err }}</p>
+  }
 }
 
 <div #body class="et-rte-token-popup-body">
   @if (items().length === 0) {
-    @if (!error()) {
+    @if (error(); as err) {
+      <!-- nothing to show and the source failed: a centered, self-contained error state so the panel
+           doesn't read as an empty box with a stray line of text -->
+      <div
+        [etProvideColor]="errorColorTheme"
+        class="et-rte-token-popup-state et-rte-token-popup-state--error"
+        role="alert"
+      >
+        <svg class="et-rte-token-popup-state-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M12 8.5v4.5M12 16.5h.01M10.3 3.86 1.82 18.5A2 2 0 0 0 3.53 21.5h16.94a2 2 0 0 0 1.71-3L13.7 3.86a2 2 0 0 0-3.4 0Z"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <span class="et-rte-token-popup-state-label">{{ err }}</span>
+      </div>
+    } @else {
       <!-- loading and empty share one fixed-height box so the transition between them doesn't resize -->
       <div class="et-rte-token-popup-placeholder">
         @if (loading()) {

@@ -222,10 +222,12 @@ export class FormFieldComponent {
       return null;
     }
 
+    const paintsElevatedFill = this.formFieldDir.usesTextFieldShell() && this.fill() === FORM_FIELD_FILLS.FILLED;
+
     return resolveSurfaceByElevation(
       themes,
       parentSurfaceProvider.surfaceType() ?? 'dark',
-      parentSurfaceProvider.elevation() + 1,
+      parentSurfaceProvider.elevation() + (paintsElevatedFill ? 1 : 0),
     );
   });
 

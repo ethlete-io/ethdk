@@ -1,5 +1,5 @@
 import { Component, linkedSignal, ViewEncapsulation } from '@angular/core';
-import { form, FormField } from '@angular/forms/signals';
+import { form, FormField, readonly } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import { delay, Observable, of, throwError } from 'rxjs';
 import { FORM_FIELD_IMPORTS } from '../../form-field';
@@ -102,7 +102,7 @@ export class RichTextEditorTriggersStorybookComponent {
     <div class="flex max-w-md flex-col gap-4 p-8 font-sans" etProvideColor="brand">
       <et-form-field>
         <et-label>Stored message (read-only)</et-label>
-        <et-rich-text-editor [formField]="demoForm.value" readonly />
+        <et-rich-text-editor [formField]="demoForm.value" />
       </et-form-field>
 
       <pre class="rounded bg-black/5 p-3 text-xs whitespace-pre-wrap">{{ demoForm.value().value() }}</pre>
@@ -118,5 +118,8 @@ export class RichTextEditorTokenDisplayStorybookComponent {
     value: 'Hi {{block:firstName}}, thanks for the update — I have looped in {{mention:jane}} from Product.',
   }));
 
-  public demoForm = form(this.formModel);
+  // read-only is owned by the form field state (signal forms), not an attribute on the control
+  public demoForm = form(this.formModel, (s) => {
+    readonly(s.value);
+  });
 }

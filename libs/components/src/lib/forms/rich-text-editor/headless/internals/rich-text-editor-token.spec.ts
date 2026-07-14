@@ -3,7 +3,13 @@ import { TestBed } from '@angular/core/testing';
 import { htmlToMarkdown, markdownToHtml } from '@ethlete/core';
 import '../../../../../test-helpers';
 import { RichTextEditorTrigger } from '../../rich-text-editor-trigger';
-import { buildChipHtml, createRichTextEditorTokenCodec, tokenMarkdown } from './rich-text-editor-token';
+import {
+  buildChipHtml,
+  createRichTextEditorTokenCodec,
+  TOKEN_LABEL_CLASS,
+  TOKEN_PREFIX_CLASS,
+  tokenMarkdown,
+} from './rich-text-editor-token';
 
 describe('rich text editor token codec', () => {
   let doc: Document;
@@ -34,6 +40,13 @@ describe('rich text editor token codec', () => {
     expect(html).toContain('data-token-id="firstName"');
     expect(html).toContain('>Block firstName</span>');
     expect(html).toContain('contenteditable="false"');
+  });
+
+  it('shows the trigger char as a prefix span ahead of the label', () => {
+    const html = codec.render('{{block:firstName}}');
+
+    expect(html).toContain(`<span class="${TOKEN_PREFIX_CLASS}">#</span>`);
+    expect(html).toContain(`<span class="${TOKEN_LABEL_CLASS}">Block firstName</span>`);
   });
 
   it('falls back to the raw id when no label resolves', () => {

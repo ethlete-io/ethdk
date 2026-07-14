@@ -1,7 +1,7 @@
 <button
-  [pressed]="dir.boldActive()"
+  [pressed]="editor().boldActive()"
   (mousedown)="$event.preventDefault()"
-  (click)="dir.toggleBold()"
+  (click)="editor().toggleBold()"
   mutedUntilPressed
   et-icon-button
   size="xs"
@@ -13,9 +13,9 @@
 </button>
 
 <button
-  [pressed]="dir.italicActive()"
+  [pressed]="editor().italicActive()"
   (mousedown)="$event.preventDefault()"
-  (click)="dir.toggleItalic()"
+  (click)="editor().toggleItalic()"
   mutedUntilPressed
   et-icon-button
   size="xs"
@@ -27,9 +27,9 @@
 </button>
 
 <button
-  [pressed]="dir.strikeActive()"
+  [pressed]="editor().strikeActive()"
   (mousedown)="$event.preventDefault()"
-  (click)="dir.toggleStrikethrough()"
+  (click)="editor().toggleStrikethrough()"
   mutedUntilPressed
   et-icon-button
   size="xs"
@@ -43,9 +43,9 @@
 <span class="et-rte-toolbar-divider" aria-hidden="true"></span>
 
 <button
-  [pressed]="dir.linkActive()"
+  [pressed]="editor().linkActive()"
   (mousedown)="$event.preventDefault()"
-  (click)="dir.promptForLink()"
+  (click)="editor().promptForLink()"
   mutedUntilPressed
   et-icon-button
   size="xs"

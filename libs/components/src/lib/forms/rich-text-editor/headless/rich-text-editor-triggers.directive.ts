@@ -28,6 +28,8 @@ import {
   TOKEN_CHIP_CLASS,
   TOKEN_ID_ATTR,
   TOKEN_ID_RE,
+  TOKEN_LABEL_CLASS,
+  TOKEN_PREFIX_CLASS,
   TOKEN_TYPE_ATTR,
   TOKEN_TYPE_RE,
 } from './internals/rich-text-editor-token';
@@ -286,7 +288,7 @@ export class RichTextEditorTriggersDirective {
     selection?.removeAllRanges();
     selection?.addRange(range);
 
-    this.editor.insertAtomicToken(this.buildChip(type, item));
+    this.editor.insertAtomicToken(this.buildChip(match.trigger, item));
     // Trailing space so the caret escapes the chip and the next word doesn't hug it.
     this.editor.editorDom.insertToken(this.renderer.createText(' '));
     this.editor.syncFromDom();
@@ -295,15 +297,29 @@ export class RichTextEditorTriggersDirective {
     this.close();
   }
 
-  private buildChip(type: string, item: RichTextEditorTriggerItem): HTMLElement {
+  private buildChip(trigger: RichTextEditorTrigger, item: RichTextEditorTriggerItem): HTMLElement {
     const chip = this.renderer.createElement('span') as HTMLElement;
 
     this.renderer.addClass(chip, TOKEN_CHIP_CLASS);
     this.renderer.setAttribute(chip, TOKEN_CHIP_ATTR, '');
-    this.renderer.setAttribute(chip, TOKEN_TYPE_ATTR, type);
+    this.renderer.setAttribute(chip, TOKEN_TYPE_ATTR, trigger.type);
     this.renderer.setAttribute(chip, TOKEN_ID_ATTR, item.id);
     this.renderer.setAttribute(chip, 'contenteditable', 'false');
-    this.renderer.appendChild(chip, this.renderer.createText(item.label));
+
+    // keep the trigger char (e.g. `@`, `#`) visible ahead of the label, matching `buildChipHtml`
+    if (trigger.char) {
+      const prefixEl = this.renderer.createElement('span') as HTMLElement;
+
+      this.renderer.addClass(prefixEl, TOKEN_PREFIX_CLASS);
+      this.renderer.appendChild(prefixEl, this.renderer.createText(trigger.char));
+      this.renderer.appendChild(chip, prefixEl);
+    }
+
+    const labelEl = this.renderer.createElement('span') as HTMLElement;
+
+    this.renderer.addClass(labelEl, TOKEN_LABEL_CLASS);
+    this.renderer.appendChild(labelEl, this.renderer.createText(item.label));
+    this.renderer.appendChild(chip, labelEl);
 
     return chip;
   }

@@ -57,6 +57,8 @@ Field shell variants (as `data-*`-reflected inputs on `et-form-field`):
 | `labelMode`  | `'static' \| 'inline' \| 'floating-inside' \| 'floating-outside'` | `'static'`      |
 | `size`       | `'sm' \| 'md' \| 'lg'`                                            | `'md'`          |
 
+Only `fill: 'filled'` paints a surface behind the control, so only a filled field raises the surface elevation for its contents (and for overlays anchored inside it, such as the rich text editor's autocomplete). A `transparent` field stays flush with its parent surface.
+
 `et-input` supports `type: 'text' | 'email' | 'password' | 'tel' | 'url' | 'search'`, `placeholder`, `autocomplete`, `textAlign`, and the shared control state (`disabled`, `readonly`, `invalid`, `required`, …). There is no textarea — multi-line content is the rich text editor's job.
 
 ## Checkbox & switch — `et-choice-field`

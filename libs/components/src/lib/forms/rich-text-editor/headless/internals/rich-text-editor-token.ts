@@ -6,6 +6,9 @@ export const TOKEN_CHIP_CLASS = 'et-rte-token';
 export const TOKEN_CHIP_ATTR = 'data-et-token';
 export const TOKEN_TYPE_ATTR = 'data-token-type';
 export const TOKEN_ID_ATTR = 'data-token-id';
+/** Inner spans of a chip: the (de-emphasized) trigger char and the resolved label. */
+export const TOKEN_PREFIX_CLASS = 'et-rte-token-prefix';
+export const TOKEN_LABEL_CLASS = 'et-rte-token-label';
 
 /** A token `type` must be a lowercase, Markdown-inert slug. */
 export const TOKEN_TYPE_RE = /^[a-z][a-z0-9-]*$/;
@@ -15,8 +18,8 @@ export const TOKEN_ID_RE = /^[A-Za-z0-9._:-]+$/;
 /** Matches a serialized token in the Markdown value / rendered HTML. */
 const TOKEN_MARKDOWN_RE = /\{\{([a-z][a-z0-9-]*):([A-Za-z0-9._:-]+)\}\}/g;
 
-/** The type, id and label needed to render a token chip. */
-export type RichTextEditorTokenChip = { type: string; id: string; label: string };
+/** The type, id and label needed to render a token chip, plus the optional trigger char to show. */
+export type RichTextEditorTokenChip = { type: string; id: string; label: string; prefix?: string };
 
 const escapeHtml = (value: string) =>
   value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -25,9 +28,11 @@ const escapeHtml = (value: string) =>
 export const tokenMarkdown = (type: string, id: string) => `{{${type}:${id}}}`;
 
 /** Builds the chip HTML string used when rendering a stored value into the editor. */
-export const buildChipHtml = ({ type, id, label }: RichTextEditorTokenChip) =>
+export const buildChipHtml = ({ type, id, label, prefix }: RichTextEditorTokenChip) =>
   `<span class="${TOKEN_CHIP_CLASS}" ${TOKEN_CHIP_ATTR} ${TOKEN_TYPE_ATTR}="${escapeHtml(type)}" ` +
-  `${TOKEN_ID_ATTR}="${escapeHtml(id)}" contenteditable="false">${escapeHtml(label)}</span>`;
+  `${TOKEN_ID_ATTR}="${escapeHtml(id)}" contenteditable="false">` +
+  (prefix ? `<span class="${TOKEN_PREFIX_CLASS}">${escapeHtml(prefix)}</span>` : '') +
+  `<span class="${TOKEN_LABEL_CLASS}">${escapeHtml(label)}</span></span>`;
 
 const isPromiseLike = <T>(value: unknown): value is Promise<T> =>
   !!value && typeof (value as Promise<T>).then === 'function';
@@ -84,7 +89,7 @@ export const createRichTextEditorTokenCodec = (
     html.replace(TOKEN_MARKDOWN_RE, (_match, ...groups: string[]) => {
       const [type = '', id = ''] = groups;
 
-      return buildChipHtml({ type, id, label: resolveSyncLabel(type, id) ?? id });
+      return buildChipHtml({ type, id, label: resolveSyncLabel(type, id) ?? id, prefix: triggerFor(type)?.char ?? '' });
     });
 
   const hydrate = (root: HTMLElement) => {
@@ -98,7 +103,14 @@ export const createRichTextEditorTokenCodec = (
 
       const resolved = resolver(id);
       const apply = (item: RichTextEditorTriggerItem | null) => {
-        if (item && chip.isConnected) chip.textContent = item.label;
+        if (!item || !chip.isConnected) return;
+
+        // Patch only the label span so the trigger-char prefix stays intact.
+        // eslint-disable-next-line ethlete/no-dom-query -- structured chip, label span has no other hook
+        const labelEl = chip.querySelector<HTMLElement>(`.${TOKEN_LABEL_CLASS}`);
+
+        if (labelEl) labelEl.textContent = item.label;
+        else chip.textContent = item.label;
       };
 
       if (isPromiseLike<RichTextEditorTriggerItem | null>(resolved)) {

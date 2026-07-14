@@ -1,27 +1,75 @@
 @layer components {
-  et-rich-text-editor-floating-toolbar {
-    position: fixed;
-    inset-block-start: 0;
-    inset-inline-start: 0;
-    z-index: 10;
+  .et-overlay.et-rte-floating-toolbar-overlay {
+    overflow: visible;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 10px;
+  }
+
+  /* open / close: fade + a small slide toward the selection (same treatment as the token popup).
+     The overlay runtime toggles the enter/leave classes and sets --et-overlay-anchored-x/y. */
+  .et-overlay.et-with-default-animation.et-rte-floating-toolbar-overlay {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      opacity: 0;
+    }
+
+    &.et-animation-enter-active {
+      transition:
+        transform 140ms ease,
+        opacity 140ms ease;
+    }
+
+    &.et-animation-leave-active {
+      transition:
+        transform 100ms ease,
+        opacity 100ms ease;
+    }
+  }
+
+  .et-rte-floating-toolbar-overlay[data-overlay-placement^='top'] {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) translateY(0.3rem) !important;
+    }
+  }
+
+  .et-rte-floating-toolbar-overlay[data-overlay-placement^='bottom'] {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
+        translateY(-0.3rem) !important;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-overlay.et-with-default-animation.et-rte-floating-toolbar-overlay {
+      &.et-animation-enter-active,
+      &.et-animation-leave-active {
+        transition-duration: 0ms;
+      }
+    }
+
+    .et-rte-floating-toolbar-overlay[data-overlay-placement] {
+      &.et-animation-enter-from,
+      &.et-animation-leave-to {
+        transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) !important;
+      }
+    }
+  }
+
+  .et-rte-floating-toolbar {
     display: flex;
     align-items: center;
     gap: var(--et-rich-text-editor-toolbar-gap, 2px);
     padding: var(--et-rich-text-editor-toolbar-padding, 4px);
     border-radius: 10px;
-    border: 1px solid rgb(255 255 255 / 0.1);
-    background: var(--et-surface-background-solid, var(--et-surface-2, rgb(32 32 32)));
-    color: var(--et-color-main-contrast, rgb(244 244 245));
+    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    background: var(--et-surface-background-solid, var(--et-surface-2, rgb(38 38 38)));
+    color: var(--et-surface-color-solid, var(--et-color-main-contrast, rgb(244 244 245)));
     box-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
-    scale: 0.96;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition:
-      opacity 120ms var(--ease-out-5, ease),
-      scale 120ms var(--ease-out-5, ease),
-      visibility 120ms var(--ease-out-5, ease);
 
+    /* et-icon-button defaults to a fully round shape; the toolbar wants a squarer button. */
     .et-icon-button {
       border-radius: var(--et-rich-text-editor-button-radius, 4px);
     }
@@ -33,12 +81,5 @@
       margin-inline: 2px;
       background: color-mix(in srgb, currentColor 20%, transparent);
     }
-  }
-
-  et-rich-text-editor-floating-toolbar.et-rte-floating-toolbar--visible {
-    scale: 1;
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
   }
 }

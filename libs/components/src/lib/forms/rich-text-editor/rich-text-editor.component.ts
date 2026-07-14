@@ -17,15 +17,14 @@ import {
   provideIcons,
   STRIKETHROUGH_ICON,
 } from '../../icon';
-import { RichTextEditorDirective } from './headless';
-import { RichTextEditorFloatingToolbarComponent } from './rich-text-editor-floating-toolbar.component';
+import { RichTextEditorDirective, RichTextEditorFloatingToolbarDirective } from './headless';
 
 @Component({
   selector: 'et-rich-text-editor',
   templateUrl: './rich-text-editor.component.html',
   styleUrl: './rich-text-editor.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [IconButtonComponent, IconDirective, RichTextEditorFloatingToolbarComponent],
+  imports: [IconButtonComponent, IconDirective],
   providers: [
     provideIcons(
       BOLD_ICON,
@@ -45,6 +44,7 @@ import { RichTextEditorFloatingToolbarComponent } from './rich-text-editor-float
       inputs: ['value', 'disabled', 'readonly', 'hidden', 'invalid', 'errors', 'required', 'name', 'placeholder'],
       outputs: ['valueChange', 'touchedChange'],
     },
+    RichTextEditorFloatingToolbarDirective,
   ],
   host: {
     class: 'et-rich-text-editor',

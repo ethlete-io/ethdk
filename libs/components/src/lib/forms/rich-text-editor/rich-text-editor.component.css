@@ -165,15 +165,23 @@
       }
 
       .et-rte-token {
+        --_et-rte-token-accent: var(--et-theme-color-primary-solid, var(--et-surface-interaction-solid, currentColor));
+
         display: inline;
         padding-inline: var(--et-rich-text-editor-token-padding-inline);
         border-radius: var(--et-rich-text-editor-token-radius);
-        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 14%, transparent);
-        color: inherit;
+        background: color-mix(in srgb, var(--_et-rte-token-accent) 22%, transparent);
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--_et-rte-token-accent) 45%, transparent);
+        color: var(--et-theme-color-ink-solid, inherit);
         font-weight: 500;
         white-space: nowrap;
         user-select: all;
         cursor: default;
+      }
+
+      .et-rte-token-prefix {
+        margin-inline-end: 1px;
+        opacity: 0.65;
       }
     }
   }
