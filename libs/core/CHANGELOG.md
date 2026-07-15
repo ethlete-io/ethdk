@@ -1,5 +1,45 @@
 # @ethlete/core
 
+## 5.0.0-next.27
+
+### Minor Changes
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`1d7aaca`](https://github.com/ethlete-io/ethdk/commit/1d7aacaec10f3d3d7278733ebf5d834e8a89b1f7) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `injectAnimatedBlockSize` — a core util that smoothly animates an element's `block-size` as its
+  content resizes (baseline captured on first render so the initial layout never plays as a
+  grow-from-0, interruption-safe, respects `prefers-reduced-motion`). `et-menu` and the rich text
+  editor's trigger popup now share it, giving a more consistent, smoother resize.
+
+- [`c829986`](https://github.com/ethlete-io/ethdk/commit/c82998628a487effe34d2061811f3cee0fa4f7bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Add clipboard utilities: `copyToClipboard(text)` writes text to the clipboard (async Clipboard API with an `execCommand('copy')` fallback) and resolves to a success boolean, `readFromClipboard()` resolves to the clipboard text or `null`. Both are SSR-safe and never throw.
+
+- [`c829986`](https://github.com/ethlete-io/ethdk/commit/c82998628a487effe34d2061811f3cee0fa4f7bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Markdown: GFM table column alignment round-trips — `markdownToHtml` applies `:---` / `:---:` / `---:` separators as `text-align` on every cell of the column, and `htmlToMarkdown` serializes the header cells' `text-align` back into the separator line.
+
+- [`c829986`](https://github.com/ethlete-io/ethdk/commit/c82998628a487effe34d2061811f3cee0fa4f7bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Markdown: `markdownToHtml` now escapes raw HTML in text (only the deliberate `<u>` / aligned-block passthroughs render, with aligned blocks reduced to a safe inline vocabulary) and rejects script-running URL schemes in links/images. Round-trip fixes and additions:
+  - Soft line breaks (`<br>`) survive in paragraphs and block quotes, and degrade to a space in table cells and list items instead of being dropped.
+  - Whitespace-flanked delimiters stay literal (`2 * 3 * 4` is no longer italicized), and `_emphasis_` is now supported without firing inside snake_case words.
+  - `<div>` boundaries in converted HTML act as paragraph boundaries.
+
+### Patch Changes
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`c68d2b2`](https://github.com/ethlete-io/ethdk/commit/c68d2b2e2e64316bb67bf58ec16d3aad9bd84f34) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: added an opt-in **alignment** tool. Provide `provideRichTextEditorAlignmentTool()` and include `'align'` in the editor's `tools` to get a block-alignment menu (left / center / right / justify) that also works inside table cells. The button reflects the caret's current alignment live. Alignment has no Markdown form, so it persists as a native `text-align` style and round-trips as raw HTML.
+
+  `@ethlete/core`: `markdownToHtml`/`htmlToMarkdown` now round-trip block elements carrying a `text-align` style (preserved verbatim as native HTML).
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`af660e3`](https://github.com/ethlete-io/ethdk/commit/af660e346204d18ad39cc700c8698bb897fba339) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: added **inline code** and **underline** formatting tools (in the static and selection toolbars, and the default toolbar). Inline code round-trips as `` `code` ``; underline is preserved as native `<u>` since Markdown has no underline form.
+
+  `@ethlete/core`: `htmlToMarkdown`/`markdownToHtml` now round-trip `<u>` (underline) instead of dropping it.
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`c68d2b2`](https://github.com/ethlete-io/ethdk/commit/c68d2b2e2e64316bb67bf58ec16d3aad9bd84f34) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: list items can now be nested. **Tab** nests the current item under the previous one, **Shift+Tab** lifts it out one level, and **Enter**/**Backspace** on an empty item step out one level at a time (leaving the list entirely only at the top level). Marker styles cycle by depth (disc → circle → square, and decimal → lower-alpha → lower-roman).
+
+  `@ethlete/core`: `markdownToHtml`/`htmlToMarkdown` now round-trip **nested** lists (two-space indentation per level), instead of flattening them.
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`af660e3`](https://github.com/ethlete-io/ethdk/commit/af660e346204d18ad39cc700c8698bb897fba339) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: the toolbar is now configurable. A new `tools` input takes an ordered list of tool tokens (`'bold' | 'italic' | 'strike' | 'heading' | 'bulletedList' | 'numberedList' | 'link' | 'divider'`), and `provideRichTextEditorTools(...)` sets the default for a scope. The block style is now picked from a `heading` menu (Normal / Heading 1–3) shown first in the toolbar, and toolbar buttons are larger and squarer.
+
+  Form field: read-only text controls (`et-input`, `et-rich-text-editor`) now keep their normal box but drop all interactive affordances — no hover/focus border change, default cursor — so read-only reads as view-only content, distinct from disabled.
+
+  Icon button: added an `--et-icon-button-border-radius` custom property so an ancestor context (e.g. a toolbar) can square off the otherwise fully-round button.
+
+  Overlay (`@ethlete/core`): anchored overlay positions accept an optional `boundary`, so an anchored pane (e.g. the editor's selection toolbar) can be kept inside a region and flip instead of overflowing it.
+
 ## 5.0.0-next.26
 
 ### Minor Changes
