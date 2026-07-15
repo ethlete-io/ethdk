@@ -78,7 +78,7 @@ describe('RichTextEditorDirective', () => {
         dir.toggleOrderedList();
         dir.toggleHeading(1);
         dir.toggleHeading(2);
-        dir.setLink('https://example.com');
+        dir.applyLink('https://example.com');
       }).not.toThrow();
     });
 

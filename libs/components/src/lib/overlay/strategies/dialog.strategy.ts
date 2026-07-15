@@ -1,4 +1,4 @@
-import { createRootProvider, createStaticRootProvider } from '@ethlete/core';
+import { createRootProvider, createStaticRootProvider , randomId} from '@ethlete/core';
 import { mergeOverlayBreakpointConfigs } from './overlay-strategy-config-merger';
 import { OverlayBreakpointConfig, OverlayStrategy, OverlayStrategyBreakpoint } from './overlay-strategy.types';
 
@@ -24,7 +24,7 @@ export const [provideDialogStrategy, injectDialogStrategy] = createRootProvider(
       const cfg = mergeOverlayBreakpointConfigs(defaults, config);
 
       return {
-        id: crypto.randomUUID(),
+        id: randomId(),
         config: cfg,
         onBeforeEnter: (context) => context.lifecycle.enter(),
         onBeforeLeave: (context) => context.lifecycle.leave(),

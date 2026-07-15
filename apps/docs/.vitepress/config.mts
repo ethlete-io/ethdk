@@ -188,6 +188,7 @@ export default defineConfig({
           text: 'Forms',
           items: [
             { text: 'Forms', link: '/components/forms' },
+            { text: 'Rich text editor', link: '/components/rich-text-editor' },
             { text: 'Dropzone', link: '/components/dropzone' },
           ],
         },

@@ -278,7 +278,7 @@
       min-inline-size: 0;
     }
 
-    &:where([data-control-type='text-input'], [data-control-type='rich-text']) {
+    &:where([data-text-shell]) {
       &[data-label-mode='static'] {
         .et-form-field-shell {
           padding-block-start: calc(var(--et-form-field-label-font-size) * 1.2 + var(--et-form-field-gap));
@@ -343,11 +343,11 @@
 
       &[data-label-mode='floating-inside'],
       &[data-label-mode='floating-outside'] {
-        .et-input-native::placeholder {
+        :is(.et-input-native, .et-number-input-native, .et-textarea-native)::placeholder {
           transition: color 150ms ease;
         }
 
-        &:not([data-label-floated]) .et-input-native::placeholder {
+        &:not([data-label-floated]) :is(.et-input-native, .et-number-input-native, .et-textarea-native)::placeholder {
           color: transparent;
         }
       }
@@ -508,6 +508,65 @@
 
       .et-form-field-control-slot {
         align-items: stretch;
+      }
+
+      /* The frame has no padding of its own (the editor's toolbar/content bring theirs), so the
+         inline label needs its own inset, must not center across the editor's full height, and
+         must not keep the negative block margin that is sized to cancel the regular frame padding
+         (here it would push the box-appearance divider outside the frame). */
+      &[data-label-mode='inline'] .et-form-field-label-area--inline {
+        align-items: flex-start;
+        margin-block: 0;
+        padding-block-start: var(--et-form-field-control-padding-block);
+        padding-inline-start: var(--et-form-field-control-padding-inline);
+      }
+
+      /* The editor brings its own inline padding after the divider — only cancel the control-area gap. */
+      &[data-appearance='box'][data-label-mode='inline'] .et-form-field-label-area--inline {
+        margin-inline-end: calc(var(--et-form-field-control-affix-gap) * -1);
+      }
+    }
+
+    /* The textarea is the only multi-line control that keeps the regular frame
+       padding, so labels/affixes must anchor to the FIRST text line instead of
+       the field's vertical center. Affixes and the inline label share the
+       frame's font metrics, so top-aligning them lines their text up with the
+       textarea's first line. */
+    &:where([data-control-type='textarea']) {
+      .et-form-field-control-frame {
+        align-items: stretch;
+      }
+
+      .et-form-field-control-area,
+      .et-form-field-control-slot {
+        align-items: stretch;
+      }
+
+      .et-form-field-affix {
+        align-items: flex-start;
+      }
+
+      /* Un-floated floating label centers on the first line box; the floated
+         rules above win on specificity (or don't match :not), so the float
+         animation is untouched. */
+      &:not([data-label-floated]) .et-form-field-label-area--floating {
+        inset-block-start: calc(
+          (var(--et-form-field-control-font-size) * var(--et-form-field-control-line-height)) / 2
+        );
+      }
+
+      /* floating-inside pads the control area at the top — shift the un-floated
+         label down by the same amount so it stays on the first text line. */
+      &[data-label-mode='floating-inside']:not([data-label-floated]) .et-form-field-label-area--floating {
+        inset-block-start: calc(
+          var(--_et-form-field-float-inside-extra-padding) +
+            (var(--et-form-field-control-font-size) * var(--et-form-field-control-line-height)) / 2
+        );
+      }
+
+      &[data-label-mode='inline'] .et-form-field-label-area--inline {
+        align-items: flex-start;
+        padding-block-start: var(--et-form-field-control-padding-block);
       }
     }
 

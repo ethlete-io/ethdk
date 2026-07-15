@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { DestroyRef, Directive, effect, inject, inputBinding, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { createComponentId, injectRenderer, OverlayRuntimeAnchoredPosition } from '@ethlete/core';
+import { createComponentId, injectHasTouchInput, injectRenderer, OverlayRuntimeAnchoredPosition } from '@ethlete/core';
 import { VirtualElement } from '@floating-ui/dom';
 import { take, tap } from 'rxjs';
 import { OverlayConfig } from '../../../overlay/overlay-config';
@@ -9,6 +9,7 @@ import { injectOverlayManager } from '../../../overlay/overlay-manager';
 import { OverlayRef } from '../../../overlay/overlay-ref';
 import { OverlayStrategy, OverlayStrategyBreakpoint } from '../../../overlay/strategies';
 import { RichTextEditorFloatingToolbarComponent } from '../rich-text-editor-floating-toolbar.component';
+import { rangeTextBoundingRect } from './internals/rich-text-editor-dom';
 import { RichTextEditorDirective } from './rich-text-editor.directive';
 
 @Directive({
@@ -20,6 +21,10 @@ export class RichTextEditorFloatingToolbarDirective {
   private renderer = injectRenderer();
   private overlayManager = injectOverlayManager();
   private destroyRef = inject(DestroyRef);
+  /** On touch devices the platform shows its own selection menu (Copy/Paste/…) over the selection,
+   *  which this toolbar would fight and hide behind; the always-visible static toolbar covers
+   *  formatting there instead, so the floating toolbar is a pointer-device-only enhancement. */
+  private hasTouchInput = injectHasTouchInput();
 
   private overlayId = createComponentId('et-rte-floating-toolbar');
   private overlayRef = signal<OverlayRef<RichTextEditorFloatingToolbarComponent, unknown> | null>(null);
@@ -28,6 +33,11 @@ export class RichTextEditorFloatingToolbarDirective {
   private pointerSelectingInContent = false;
 
   constructor() {
+    // close if the input modality flips to touch while the toolbar is open
+    effect(() => {
+      if (this.hasTouchInput()) this.hide();
+    });
+
     effect((onCleanup) => {
       const root = this.editor.editorDom.root();
 
@@ -48,6 +58,8 @@ export class RichTextEditorFloatingToolbarDirective {
   }
 
   private selectableRange(): Range | null {
+    if (this.hasTouchInput()) return null;
+
     const range = this.editor.editorDom.getSelection()?.range ?? null;
     const usable =
       !!range && !range.collapsed && this.editor.focused() && !this.editor.disabled() && !this.editor.readonly();
@@ -150,7 +162,7 @@ export class RichTextEditorFloatingToolbarDirective {
 
   private buildAnchoredPosition(): OverlayRuntimeAnchoredPosition {
     const referenceElement: VirtualElement = {
-      getBoundingClientRect: () => this.activeRange?.getBoundingClientRect() ?? new DOMRect(),
+      getBoundingClientRect: () => (this.activeRange ? rangeTextBoundingRect(this.activeRange) : new DOMRect()),
       contextElement: this.editor.editorDom.root() ?? undefined,
     };
 

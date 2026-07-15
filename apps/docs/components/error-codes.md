@@ -23,21 +23,22 @@ Two kinds of checks produce these errors:
 
 Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU_ERROR_CODES`, `OVERLAY_ERROR_CODES`) if you need to match on them programmatically.
 
-| Range     | Domain       | Guide                                    |
-| --------- | ------------ | ---------------------------------------- |
-| 1200–1299 | Overlay      | [Overlays](/components/overlays)         |
-| 1300–1399 | Menu         | [Menu](/components/menu)                 |
-| 1400–1499 | Tooltip      | [Tooltip](/components/tooltip)           |
-| 1500–1599 | Toggletip    | [Toggletip](/components/toggletip)       |
-| 1600–1699 | Stream       | [Stream](/components/stream)             |
-| 1700–1799 | Notification | [Notification](/components/notification) |
-| 1800–1899 | Icon         | [Icon](/components/icon)                 |
-| 1900–1999 | Grid         | [Grid](/components/grid)                 |
-| 2000–2099 | Tabs         | [Tabs](/components/tabs)                 |
-| 2100–2199 | Scrollable   | [Scrollable](/components/scrollable)     |
-| 2200–2299 | Form field   | [Forms](/components/forms)               |
-| 2300–2399 | Split button | [Button](/components/button)             |
-| 2400–2499 | Dropzone     | [Dropzone](/components/dropzone)         |
+| Range     | Domain           | Guide                                            |
+| --------- | ---------------- | ------------------------------------------------ |
+| 1200–1299 | Overlay          | [Overlays](/components/overlays)                 |
+| 1300–1399 | Menu             | [Menu](/components/menu)                         |
+| 1400–1499 | Tooltip          | [Tooltip](/components/tooltip)                   |
+| 1500–1599 | Toggletip        | [Toggletip](/components/toggletip)               |
+| 1600–1699 | Stream           | [Stream](/components/stream)                     |
+| 1700–1799 | Notification     | [Notification](/components/notification)         |
+| 1800–1899 | Icon             | [Icon](/components/icon)                         |
+| 1900–1999 | Grid             | [Grid](/components/grid)                         |
+| 2000–2099 | Tabs             | [Tabs](/components/tabs)                         |
+| 2100–2199 | Scrollable       | [Scrollable](/components/scrollable)             |
+| 2200–2299 | Form field       | [Forms](/components/forms)                       |
+| 2300–2399 | Split button     | [Button](/components/button)                     |
+| 2400–2499 | Dropzone         | [Dropzone](/components/dropzone)                 |
+| 2500–2599 | Rich text editor | [Rich text editor](/components/rich-text-editor) |
 
 ::: info Codes below 1200
 Codes `0`–`1001` belong to `@ethlete/query` (query features, auth, web sockets), not to this library.
@@ -175,3 +176,15 @@ All dropzone checks run in dev mode only.
 | `ET2400` | The `upload` input is not a valid config (missing `queryCreator` or `selectValue`).  | Create the config via `createDropzoneUpload({ queryCreator, selectValue, ... })`.    |
 | `ET2401` | The control was initialized with a value but the config has no `resolveExisting`.    | Add a `resolveExisting` function so existing values can be displayed.                |
 | `ET2402` | The control value shape doesn't match the mode (array in single mode or vice versa). | Set `multiple` to match the value shape, or write a value matching the current mode. |
+
+## Rich text editor (ET25xx)
+
+All rich text editor checks run in dev mode only, and cover the opt-in `etRichTextEditorTriggers` building blocks.
+
+| Code     | Cause                                                                   | Fix                                                                               |
+| -------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `ET2500` | Two triggers share the same `char`.                                     | Give each trigger a unique trigger character.                                     |
+| `ET2501` | Two triggers share the same `type`.                                     | Give each trigger a unique type.                                                  |
+| `ET2502` | A trigger `type` is malformed.                                          | Match `[a-z][a-z0-9-]*` so the <code v-pre>{{type:id}}</code> token round-trips through Markdown.  |
+| `ET2503` | An item `id` is malformed.                                              | Match `[A-Za-z0-9._:-]+` so the <code v-pre>{{type:id}}</code> token round-trips through Markdown. |
+| `ET2504` | `etRichTextEditorTriggers` is on an element without `etRichTextEditor`. | Place it on the editor element (e.g. `<et-rich-text-editor>`).                    |

@@ -1,4 +1,4 @@
-import { computed, DestroyRef, Directive, inject, input, model, signal } from '@angular/core';
+import { computed, DestroyRef, Directive, ElementRef, inject, input, model, signal } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 import { INPUT_TEXT_ALIGNMENTS, InputTextAlignment } from '../input.types';
@@ -51,9 +51,24 @@ export class InputDirective implements FormValueControl<string>, FormFieldContro
   /** @internal */
   public focusTarget = signal<HTMLElement | null>(null);
 
+  /**
+   * The native input element this directive controls. Set automatically when the
+   * directive is placed on an `<input>` element; otherwise the hosting component
+   * registers it. Integrations (e.g. input masking) attach through this signal.
+   */
+  public nativeControl = signal<HTMLInputElement | null>(null);
+
   constructor() {
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
+
+    const hostRef = inject<ElementRef<HTMLElement | null>>(ElementRef);
+    const hostElement = hostRef.nativeElement;
+
+    if (hostElement?.tagName === 'INPUT') {
+      this.nativeControl.set(hostElement as HTMLInputElement);
+      this.focusTarget.set(hostElement);
+    }
   }
 
   public activate() {

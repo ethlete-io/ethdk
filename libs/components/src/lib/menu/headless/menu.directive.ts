@@ -13,7 +13,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { OverlayRuntimeAnchoredPosition, RuntimeError, nextFrame } from '@ethlete/core';
+import { OverlayRuntimeAnchoredPosition, RuntimeError, nextFrame , randomId} from '@ethlete/core';
 import { OffsetOptions, Padding, Placement, VirtualElement } from '@floating-ui/dom';
 import { fromEvent, take, tap } from 'rxjs';
 import { OverlayConfig } from '../../overlay/overlay-config';
@@ -756,7 +756,7 @@ export class MenuDirective {
     const anchoredPosition = this.buildVirtualAnchoredPosition(point);
 
     const strategy: OverlayStrategy = {
-      id: crypto.randomUUID(),
+      id: randomId(),
       config: {
         containerClass,
         positionStrategy: () => anchoredPosition,

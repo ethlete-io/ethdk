@@ -294,8 +294,10 @@ export class RichTextEditorTriggersDirective {
     selection?.addRange(range);
 
     this.editor.insertAtomicToken(this.buildChip(match.trigger, item));
-    // Trailing space so the caret escapes the chip and the next word doesn't hug it.
-    this.editor.editorDom.insertToken(this.renderer.createText(' '));
+    // Trailing space so the caret escapes the chip and the next word doesn't hug it. Must be a
+    // no-break space: a plain space at the end of a line is CSS-collapsed and Chrome drops it from
+    // the text node on the next keystroke. Serialization normalizes it back to a plain space.
+    this.editor.editorDom.insertToken(this.renderer.createText('\u00a0'));
     this.editor.syncFromDom();
 
     this.activeMatch.set(null);

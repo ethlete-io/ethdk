@@ -92,6 +92,22 @@ const processInline = (text: string): string => {
     return makePlaceholder('IC', idx);
   });
 
+  // "Open in new tab" links round-trip as raw HTML because Markdown has no `target` syntax. Extract
+  // them before the raw-HTML escape below, keeping only a safe href, `target="_blank"` and a forced
+  // `rel="noopener noreferrer"` (any other attribute — including event handlers — is dropped); their
+  // inner markup is processed recursively. Anything else that looks like raw HTML is still escaped.
+  const newTabLinks: string[] = [];
+  text = text.replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, (full, attrs: string, inner: string) => {
+    const href = /\bhref\s*=\s*"([^"]*)"/i.exec(attrs)?.[1];
+    const newTab = /\btarget\s*=\s*"_blank"/i.test(attrs);
+
+    if (!newTab || !href || !isSafeUrl(href)) return full;
+
+    const anchor = `<a href="${href}" target="_blank" rel="noopener noreferrer">${processInline(inner)}</a>`;
+
+    return makePlaceholder('NTLINK', newTabLinks.push(anchor) - 1);
+  });
+
   // Raw HTML in Markdown text is escaped, not rendered — the editor writes this HTML straight
   // into the DOM via innerHTML, so anything else would let a crafted value inject markup. `<u>`
   // is the one deliberate exception: underline has no Markdown form and round-trips as raw <u>.
@@ -115,7 +131,9 @@ const processInline = (text: string): string => {
     isSafeUrl(href) ? `<a href="${href}">${label}</a>` : match,
   );
 
-  return text.replace(placeholderRe('IC'), (_, i) => inlineCodes[+i] ?? '');
+  return text
+    .replace(placeholderRe('IC'), (_, i) => inlineCodes[+i] ?? '')
+    .replace(placeholderRe('NTLINK'), (_, i) => newTabLinks[+i] ?? '');
 };
 
 // --- Nested list helpers (regex can't match balanced nesting, so these scan by tag depth) ---
@@ -396,8 +414,21 @@ export const htmlToMarkdown = (html: string): string => {
   // Inline code
   md = md.replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, (_, code: string) => `\`${unescapeHtml(code)}\``);
 
-  // Links and images
-  md = md.replace(/<a[^>]+href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, '[$2]($1)');
+  // Links and images. A link with `target="_blank"` has no Markdown form, so it round-trips as raw
+  // HTML (keeping only href + target + rel) via a placeholder — like underline below; ordinary links
+  // become `[text](url)`.
+  const newTabLinks: string[] = [];
+  md = md.replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, (_, attrs: string, inner: string) => {
+    const href = /\bhref\s*=\s*"([^"]*)"/i.exec(attrs)?.[1] ?? '';
+
+    if (/\btarget\s*=\s*"_blank"/i.test(attrs) && href) {
+      const anchor = `<a href="${href}" target="_blank" rel="noopener noreferrer">${inner}</a>`;
+
+      return makePlaceholder('NTLINK', newTabLinks.push(anchor) - 1);
+    }
+
+    return href ? `[${inner}](${href})` : inner;
+  });
   md = md.replace(/<img[^>]+src="([^"]*)"[^>]*alt="([^"]*)"[^>]*\/?>/gi, '![$2]($1)');
   md = md.replace(/<img[^>]+alt="([^"]*)"[^>]*src="([^"]*)"[^>]*\/?>/gi, '![$1]($2)');
   md = md.replace(/<img[^>]+src="([^"]*)"[^>]*\/?>/gi, '![]($1)');
@@ -474,6 +505,8 @@ export const htmlToMarkdown = (html: string): string => {
   md = md.replace(/<hr\s*\/?>/gi, '\n---\n');
 
   md = unescapeHtml(stripTags(md)).replace(placeholderRe('U'), (_, i) => `<u>${underlines[+i] ?? ''}</u>`);
+  // new-tab links survive the tag-strip as raw HTML (restored after it, like underline)
+  md = md.replace(placeholderRe('NTLINK'), (_, i) => newTabLinks[+i] ?? '');
   // aligned blocks are block-level, so pad with blank lines before collapsing so they survive as
   // their own Markdown block
   md = md.replace(placeholderRe('ALIGN'), (_, i) => `\n\n${alignedBlocks[+i] ?? ''}\n\n`);

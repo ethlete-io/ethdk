@@ -1,5 +1,6 @@
 export * from './checkbox';
 export * from './choice-field';
+export * from './color-input';
 export * from './description';
 export * from './dropzone';
 export * from './form-field';
@@ -8,3 +9,4 @@ export * from './multi-language-rich-text-editor';
 export * from './rich-text-editor';
 export * from './selection-list';
 export * from './switch';
+export * from './textarea';

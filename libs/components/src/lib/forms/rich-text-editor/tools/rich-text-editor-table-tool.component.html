@@ -1,4 +1,4 @@
-<div #menu="etMenu" etMenu>
+<div [autoFocus]="!hasTouchInput()" etMenu>
   <button
     [disabled]="disabled()"
     (mousedown)="$event.preventDefault(); refreshContext()"
@@ -15,7 +15,12 @@
   <ng-template etMenuSurface>
     <et-menu>
       @if (context()) {
-        <button (click)="addRow('above')" et-menu-item type="button">Insert row above</button>
+        @if (canAddHeaderRow()) {
+          <button (click)="addHeaderRow()" et-menu-item type="button">Insert header row</button>
+        }
+        @if (!inHeaderRow()) {
+          <button (click)="addRow('above')" et-menu-item type="button">Insert row above</button>
+        }
         <button (click)="addRow('below')" et-menu-item type="button">Insert row below</button>
         <button (click)="addColumn('left')" et-menu-item type="button">Insert column left</button>
         <button (click)="addColumn('right')" et-menu-item type="button">Insert column right</button>
@@ -24,7 +29,12 @@
         <button (click)="removeTable()" et-menu-item type="button" variant="destructive">Delete table</button>
       } @else {
         <div class="et-rte-table-picker">
-          <div (pointerleave)="hover(-1, -1)" class="et-rte-table-picker-grid">
+          <div
+            (pointerleave)="hover(-1, -1)"
+            (pointerdown)="beginSwipeSelection($event)"
+            (pointerup)="commitSwipeSelection($event)"
+            class="et-rte-table-picker-grid"
+          >
             @for (row of pickerRows; track row) {
               @for (col of pickerCols; track col) {
                 <button
@@ -32,7 +42,7 @@
                   [attr.aria-label]="row + 1 + ' by ' + (col + 1)"
                   (pointerenter)="hover(row, col)"
                   (mousedown)="$event.preventDefault()"
-                  (click)="insert(row, col); menu.closeAll()"
+                  (click)="insertFromCell(row, col)"
                   class="et-rte-table-picker-cell"
                   type="button"
                 ></button>

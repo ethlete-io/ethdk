@@ -73,3 +73,11 @@ Gotchas that will waste your time if you forget them:
 State plainly what you drove and observed (collapsed→open→collapsed, tab switch,
 etc.) and whether it matched the expected behavior. Keep the throwaway script in
 the scratchpad, not the repo.
+
+## Real mobile engines
+
+Headless Chromium above is the default and covers most changes. For a change
+that's specifically about touch behavior, mobile viewport/layout, or a
+Safari/Chrome-mobile quirk, drive the story on an iOS Simulator or Android
+emulator instead — see the **`verify-in-mobile-emulator`** skill (it detects
+whether the tooling is installed and documents setup if not).

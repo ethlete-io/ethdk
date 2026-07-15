@@ -1,0 +1,88 @@
+@layer components {
+  @property --et-rich-text-editor-link-editor-width {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 288px;
+  }
+
+  @property --et-rich-text-editor-link-editor-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-rich-text-editor-link-editor-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-rich-text-editor-link-editor-padding {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 14px;
+  }
+
+  /* The surface lives on the overlay pane (like every anchored-dialog): the content then inherits the
+     radius via the overlay's `:nth-child(2) { border-radius: inherit }` rule, and the arrow reads the
+     pane's background so it matches. */
+  .et-overlay.et-rte-link-editor-overlay {
+    background: var(--et-surface-background-solid, var(--et-surface-2, rgb(30 30 30)));
+    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.24);
+  }
+
+  /* Anchored popover (>= md): a compact, fully-rounded card pointing at the selection. */
+  .et-overlay.et-rte-link-editor-overlay.et-overlay--anchored-dialog {
+    inline-size: var(--et-rich-text-editor-link-editor-width);
+    max-inline-size: calc(100vw - 32px);
+    border-radius: var(--et-rich-text-editor-link-editor-radius);
+  }
+
+  /* Top sheet (< md): full-width, pinned above the on-screen keyboard, only the bottom corners round. */
+  .et-overlay.et-rte-link-editor-overlay.et-overlay--top-sheet {
+    border-end-start-radius: var(--et-rich-text-editor-link-editor-radius);
+    border-end-end-radius: var(--et-rich-text-editor-link-editor-radius);
+  }
+
+  .et-rte-link-editor {
+    display: flex;
+    flex-direction: column;
+    gap: var(--et-rich-text-editor-link-editor-gap);
+    inline-size: 100%;
+    box-sizing: border-box;
+    padding: var(--et-rich-text-editor-link-editor-padding);
+    color: var(--et-surface-color-solid, currentColor);
+  }
+
+  .et-rte-link-editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-block-end: 2px;
+  }
+
+  .et-rte-link-editor-title {
+    font-weight: 600;
+    font-size: 1.4rem;
+  }
+
+  /* Roomier, touch-sized layout for the top sheet. */
+  .et-overlay--top-sheet .et-rte-link-editor {
+    gap: 16px;
+    padding: 16px;
+    padding-block-end: max(16px, env(safe-area-inset-bottom));
+  }
+
+  .et-overlay--top-sheet .et-rte-link-editor-title {
+    font-size: 1.6rem;
+  }
+
+  .et-rte-link-editor-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+}

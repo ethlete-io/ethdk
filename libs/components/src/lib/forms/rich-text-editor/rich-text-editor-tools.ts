@@ -154,6 +154,14 @@ export type RichTextEditorToolDefinition = {
   isDisabled?: (editor: RichTextEditorDirective) => boolean;
   /** Custom control rendered instead of a toggle button; it receives the editor as an `editor` input. */
   control?: Type<unknown>;
+  /**
+   * Intercepts a keydown inside the editor content before the editor's own handling (but after
+   * list Tab/Enter handling). Runs for every provided tool — even when its `token` is not in the
+   * visible toolbar, since it acts on content, not the button (e.g. table caret navigation must
+   * work whenever the value can contain a table). Return `true` when the event was handled — the
+   * editor then calls `preventDefault()` and syncs its value from the DOM.
+   */
+  keydown?: (editor: RichTextEditorDirective, event: KeyboardEvent) => boolean;
 };
 
 /** Multi-provider token opt-in tools register their {@link RichTextEditorToolDefinition} into. */

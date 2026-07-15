@@ -60,6 +60,24 @@ describe('markdownToHtml', () => {
     expect(markdownToHtml('[text](https://example.com)')).toBe('<p><a href="https://example.com">text</a></p>');
   });
 
+  it('renders a new-tab link (raw anchor) with forced rel', () => {
+    expect(markdownToHtml('<a href="https://example.com" target="_blank" rel="noopener noreferrer">shop</a>')).toBe(
+      '<p><a href="https://example.com" target="_blank" rel="noopener noreferrer">shop</a></p>',
+    );
+  });
+
+  it('processes inner markup of a new-tab link', () => {
+    expect(markdownToHtml('<a href="https://example.com" target="_blank">**shop**</a>')).toBe(
+      '<p><a href="https://example.com" target="_blank" rel="noopener noreferrer"><strong>shop</strong></a></p>',
+    );
+  });
+
+  it('drops a new-tab link with an unsafe href (escaped as text)', () => {
+    expect(markdownToHtml('<a href="javascript:alert(1)" target="_blank">x</a>')).toBe(
+      '<p>&lt;a href=&quot;javascript:alert(1)&quot; target=&quot;_blank&quot;&gt;x&lt;/a&gt;</p>',
+    );
+  });
+
   it('converts images', () => {
     expect(markdownToHtml('![alt text](https://example.com/img.png)')).toBe(
       '<p><img src="https://example.com/img.png" alt="alt text"></p>',
@@ -248,6 +266,17 @@ describe('htmlToMarkdown', () => {
 
   it('converts links', () => {
     expect(htmlToMarkdown('<a href="https://example.com">text</a>')).toBe('[text](https://example.com)');
+  });
+
+  it('preserves a new-tab link as raw HTML', () => {
+    expect(htmlToMarkdown('<a href="https://example.com" target="_blank" rel="noopener noreferrer">shop</a>')).toBe(
+      '<a href="https://example.com" target="_blank" rel="noopener noreferrer">shop</a>',
+    );
+  });
+
+  it('round-trips a new-tab link through both directions', () => {
+    const md = '<a href="https://example.com" target="_blank" rel="noopener noreferrer">shop</a>';
+    expect(htmlToMarkdown(markdownToHtml(md))).toBe(md);
   });
 
   it('converts images', () => {

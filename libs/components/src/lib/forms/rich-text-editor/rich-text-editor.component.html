@@ -5,7 +5,7 @@
         <span class="et-rte-toolbar-divider" aria-hidden="true"></span>
       }
       @case (TOOLS.HEADING) {
-        <div etMenu>
+        <div [autoFocus]="!hasTouchInput()" etMenu>
           <button
             [disabled]="dir.disabled() || dir.readonly() || dir.headingToolDisabled()"
             [attr.aria-label]="'Text style: ' + currentHeadingLabel()"
@@ -21,7 +21,11 @@
 
           <ng-template etMenuSurface>
             <et-menu>
-              <et-menu-radio-group [value]="dir.headingLevel()" (valueChange)="selectHeading($event)">
+              <et-menu-radio-group
+                [value]="dir.headingLevel()"
+                (valueChange)="selectHeading($event)"
+                (mousedown)="$event.preventDefault()"
+              >
                 @for (option of HEADING_OPTIONS; track option.label) {
                   <et-menu-radio-item [value]="option.level" [closeOnActivate]="true" [icon]="option.icon">
                     {{ option.label }}

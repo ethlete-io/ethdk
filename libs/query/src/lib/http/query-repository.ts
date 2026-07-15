@@ -1,3 +1,4 @@
+import { randomId } from '@ethlete/core';
 import { HttpClient, HttpErrorResponse, HttpEventType } from '@angular/common/http';
 import { DestroyRef, ErrorHandler, Injector } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
@@ -119,7 +120,7 @@ export type CreateQueryRepositoryConfig = CreateQueryClientConfigOptions & {
   dependencies: QueryRepositoryDependencies;
 };
 
-const generateUuid = () => crypto.randomUUID();
+const generateUuid = () => randomId();
 
 export const createQueryRepository = (config: CreateQueryRepositoryConfig): QueryRepository => {
   const cache = new Map<QueryKey, DestroyListenerMapItem>();

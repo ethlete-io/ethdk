@@ -1,0 +1,33 @@
+@layer components {
+  et-textarea {
+    display: block;
+    flex: 1;
+    min-inline-size: 0;
+    color: inherit;
+
+    .et-textarea-native {
+      display: block;
+      inline-size: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      font: inherit;
+      color: inherit;
+      caret-color: var(--et-theme-color-primary-solid, currentColor);
+      padding: 0;
+      min-width: 0;
+
+      &::placeholder {
+        color: color-mix(in srgb, currentColor 46%, transparent);
+      }
+
+      &[data-resize='none'] {
+        resize: none;
+      }
+
+      &[data-resize='vertical'] {
+        resize: vertical;
+      }
+    }
+  }
+}

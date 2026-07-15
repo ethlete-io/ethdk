@@ -1,4 +1,4 @@
-<div etMenu>
+<div [autoFocus]="!hasTouchInput()" etMenu>
   <button
     [disabled]="disabled()"
     (mousedown)="$event.preventDefault()"
@@ -14,7 +14,7 @@
 
   <ng-template etMenuSurface>
     <et-menu>
-      <et-menu-radio-group [value]="current()" (valueChange)="select($event)">
+      <et-menu-radio-group [value]="current()" (valueChange)="select($event)" (mousedown)="$event.preventDefault()">
         @for (option of OPTIONS; track option.value) {
           <et-menu-radio-item [value]="option.value" [closeOnActivate]="true" [icon]="option.icon">
             {{ option.label }}

@@ -1,0 +1,49 @@
+<div class="et-rte-link-editor-header">
+  <span class="et-rte-link-editor-title">{{ title() }}</span>
+  <button
+    (click)="dismiss.emit()"
+    et-icon-button
+    size="sm"
+    type="button"
+    variant="transparent"
+    mutedUntilPressed
+    aria-label="Close"
+  >
+    <i etIcon="et-times"></i>
+  </button>
+</div>
+
+<et-form-field size="sm">
+  <et-label>Text</et-label>
+  <et-input
+    [value]="textValue()"
+    (valueChange)="textValue.set($event)"
+    (keydown.enter)="save()"
+    placeholder="Link text"
+  />
+</et-form-field>
+
+<et-form-field size="sm">
+  <et-label>URL</et-label>
+  <et-input
+    [value]="urlValue()"
+    (valueChange)="urlValue.set($event)"
+    (keydown.enter)="save()"
+    type="url"
+    placeholder="https://…"
+  />
+</et-form-field>
+
+<et-choice-field size="sm">
+  <et-checkbox [checked]="newTabValue()" (checkedChange)="newTabValue.set($event)" />
+  <et-label>Open in new tab</et-label>
+</et-choice-field>
+
+<div class="et-rte-link-editor-actions">
+  @if (exists()) {
+    <button (click)="removeLink.emit()" et-text-button size="sm" type="button">Remove</button>
+  }
+  <button [disabled]="!urlValue().trim()" (click)="save()" et-button size="sm" type="button">
+    {{ exists() ? 'Update' : 'Add' }}
+  </button>
+</div>

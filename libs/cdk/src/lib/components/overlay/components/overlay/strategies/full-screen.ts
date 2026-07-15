@@ -1,6 +1,6 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { ApplicationRef, DOCUMENT, EnvironmentInjector, inject } from '@angular/core';
-import { createRootProvider, createStaticRootProvider, injectRenderer } from '@ethlete/core';
+import { createRootProvider, createStaticRootProvider, injectRenderer , randomId} from '@ethlete/core';
 import {
   abortFullscreenAnimation,
   cleanupFullscreenAnimation,
@@ -51,7 +51,7 @@ export const [provideFullscreenDialogStrategy, injectFullscreenDialogStrategy] =
       let animationState: FullscreenAnimationState | null = null;
 
       return {
-        id: crypto.randomUUID(),
+        id: randomId(),
         config: cfg,
 
         onBeforeEnter: <T, R>(context: OverlayStrategyContext<T, R>) => {

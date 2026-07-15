@@ -1,0 +1,19 @@
+<textarea
+  #nativeTextarea
+  [value]="textareaDir.value()"
+  [disabled]="textareaDir.disabled()"
+  [readOnly]="textareaDir.readonly()"
+  [required]="textareaDir.required()"
+  [placeholder]="textareaDir.placeholder()"
+  [autocomplete]="textareaDir.autocomplete()"
+  [rows]="textareaDir.rows()"
+  [attr.name]="textareaDir.name() || null"
+  [attr.aria-invalid]="textareaDir.shouldDisplayError() || null"
+  [attr.aria-describedby]="textareaDir.describedById() || null"
+  [attr.aria-labelledby]="textareaDir.labelId() || null"
+  [attr.data-resize]="textareaDir.effectiveResize()"
+  (input)="syncNativeValue($event)"
+  (focus)="textareaDir.focused.set(true)"
+  (blur)="textareaDir.focused.set(false); textareaDir.touched.set(true)"
+  class="et-textarea-native"
+></textarea>

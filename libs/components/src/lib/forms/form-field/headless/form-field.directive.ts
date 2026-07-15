@@ -67,6 +67,9 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
   public usesTextFieldShell = computed(
     () =>
       this.controlType() === FORM_FIELD_CONTROL_TYPES.TEXT_INPUT ||
+      this.controlType() === FORM_FIELD_CONTROL_TYPES.NUMBER_INPUT ||
+      this.controlType() === FORM_FIELD_CONTROL_TYPES.COLOR_INPUT ||
+      this.controlType() === FORM_FIELD_CONTROL_TYPES.TEXTAREA ||
       this.controlType() === FORM_FIELD_CONTROL_TYPES.RICH_TEXT,
   );
 

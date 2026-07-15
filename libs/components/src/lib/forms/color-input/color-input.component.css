@@ -1,0 +1,58 @@
+@layer components {
+  @property --et-color-input-swatch-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 20px;
+  }
+
+  @property --et-color-input-swatch-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
+  et-color-input {
+    position: relative;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 8px;
+    min-inline-size: 0;
+    color: inherit;
+    cursor: pointer;
+
+    .et-color-input-swatch {
+      inline-size: var(--et-color-input-swatch-size);
+      block-size: var(--et-color-input-swatch-size);
+      border-radius: var(--et-color-input-swatch-radius);
+      border: 1px solid var(--et-surface-border-solid, currentColor);
+      flex: none;
+    }
+
+    .et-color-input-value {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .et-color-input-native {
+      position: absolute;
+      inset: 0;
+      inline-size: 100%;
+      block-size: 100%;
+      opacity: 0;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+
+      &:disabled {
+        cursor: default;
+      }
+    }
+
+    &:has(.et-color-input-native:focus-visible) .et-color-input-swatch {
+      outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+      outline-offset: 2px;
+    }
+  }
+}

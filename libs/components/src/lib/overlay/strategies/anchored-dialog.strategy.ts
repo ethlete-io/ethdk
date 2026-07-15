@@ -1,4 +1,4 @@
-import { createRootProvider, createStaticRootProvider, forceReflow, injectRenderer, nextFrame } from '@ethlete/core';
+import { createRootProvider, createStaticRootProvider, forceReflow, injectRenderer, nextFrame , randomId} from '@ethlete/core';
 import { AnchoredPositionOptions, buildAnchoredRuntimePositionStrategy } from './anchored.strategy';
 import { getOriginCoordinatesAndDimensions } from './overlay-origin';
 import { mergeOverlayBreakpointConfigs } from './overlay-strategy-config-merger';
@@ -71,7 +71,7 @@ export const [provideAnchoredDialogStrategy, injectAnchoredDialogStrategy] = cre
       };
 
       return {
-        id: crypto.randomUUID(),
+        id: randomId(),
         config: cfg,
 
         onBeforeEnter: (context) => {

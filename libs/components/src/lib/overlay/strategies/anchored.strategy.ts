@@ -1,4 +1,4 @@
-import { OverlayRuntimePositionStrategy, OverlayRuntimeShiftOptions } from '@ethlete/core';
+import { OverlayRuntimePositionStrategy, OverlayRuntimeShiftOptions , randomId} from '@ethlete/core';
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 import { OverlayBreakpointConfig, OverlayStrategy, OverlayStrategyBreakpoint } from './overlay-strategy.types';
 
@@ -84,7 +84,7 @@ export const anchoredOverlayStrategy = (
 ): (() => OverlayStrategyBreakpoint[]) => {
   return () => {
     const strategy: OverlayStrategy = {
-      id: crypto.randomUUID(),
+      id: randomId(),
       config: buildAnchoredConfig(options),
     };
 
@@ -97,7 +97,7 @@ export const centeredOverlayStrategy = (
 ): (() => OverlayStrategyBreakpoint[]) => {
   return () => {
     const strategy: OverlayStrategy = {
-      id: crypto.randomUUID(),
+      id: randomId(),
       config: {
         containerClass: options.containerClass,
         hostClass: options.hostClass,

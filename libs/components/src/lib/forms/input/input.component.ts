@@ -40,7 +40,10 @@ export class InputComponent {
 
   constructor() {
     afterNextRender(() => {
-      this.inputDir.focusTarget.set(this.nativeInput()?.nativeElement ?? null);
+      const nativeInput = this.nativeInput()?.nativeElement ?? null;
+
+      this.inputDir.focusTarget.set(nativeInput);
+      this.inputDir.nativeControl.set(nativeInput);
     });
   }
 

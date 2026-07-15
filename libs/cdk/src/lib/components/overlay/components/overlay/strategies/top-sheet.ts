@@ -1,6 +1,6 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { inject } from '@angular/core';
-import { createRootProvider, createStaticRootProvider } from '@ethlete/core';
+import { createRootProvider, createStaticRootProvider , randomId} from '@ethlete/core';
 import {
   DragToDismissRef,
   enableDragToDismiss,
@@ -57,7 +57,7 @@ export const [provideTopSheetStrategy, injectTopSheetStrategy] = createRootProvi
       };
 
       return {
-        id: crypto.randomUUID(),
+        id: randomId(),
         config: cfg,
         onBeforeEnter: (context) => context.containerInstance.animatedLifecycle.enter(),
         onAfterEnter: (ctx) => attachDragToDismiss(ctx),

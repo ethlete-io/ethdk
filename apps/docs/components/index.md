@@ -56,7 +56,8 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 
 ### Forms
 
-- [Forms](/components/forms) — signal-forms-native input, checkbox, switch, selection lists and a (multi-language) rich text editor with shared field chrome.
+- [Forms](/components/forms) — signal-forms-native text/number/textarea/color inputs, checkbox, switch and selection lists with shared field chrome.
+- [Rich text editor](/components/rich-text-editor) — Markdown-valued `contenteditable` editor with a data-driven toolbar, tables, `#`/`@` trigger tokens and a multi-language variant.
 - [Dropzone](/components/dropzone) — file-upload form control with a built-in @ethlete/query upload workflow, previews, progress and retry.
 
 ### Layout & structure

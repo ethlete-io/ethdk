@@ -1,6 +1,6 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { inject } from '@angular/core';
-import { createRootProvider, createStaticRootProvider } from '@ethlete/core';
+import { createRootProvider, createStaticRootProvider , randomId} from '@ethlete/core';
 import {
   mergeOverlayBreakpointConfigs,
   OverlayBreakpointConfig,
@@ -33,7 +33,7 @@ export const [provideDialogStrategy, injectDialogStrategy] = createRootProvider(
       const cfg = mergeOverlayBreakpointConfigs(defaults, config);
 
       return {
-        id: crypto.randomUUID(),
+        id: randomId(),
         config: cfg,
         onBeforeEnter: (context) => context.containerInstance.animatedLifecycle.enter(),
         onBeforeLeave: (context) => context.containerInstance.animatedLifecycle.leave(),

@@ -1,0 +1,17 @@
+<span [style.background-color]="colorInputDir.resolvedColor()" class="et-color-input-swatch" aria-hidden="true"></span>
+<span class="et-color-input-value">{{ colorInputDir.value() ?? '' }}</span>
+<input
+  #nativeInput
+  [value]="colorInputDir.resolvedColor()"
+  [disabled]="colorInputDir.disabled()"
+  [required]="colorInputDir.required()"
+  [attr.name]="colorInputDir.name() || null"
+  [attr.aria-invalid]="colorInputDir.shouldDisplayError() || null"
+  [attr.aria-describedby]="colorInputDir.describedById() || null"
+  [attr.aria-labelledby]="colorInputDir.labelId() || null"
+  (input)="syncNativeValue($event)"
+  (focus)="colorInputDir.focused.set(true)"
+  (blur)="colorInputDir.focused.set(false); colorInputDir.touched.set(true)"
+  class="et-color-input-native"
+  type="color"
+/>

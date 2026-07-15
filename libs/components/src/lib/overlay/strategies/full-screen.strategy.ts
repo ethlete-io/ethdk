@@ -1,5 +1,5 @@
 import { ApplicationRef, DOCUMENT, EnvironmentInjector, inject } from '@angular/core';
-import { createRootProvider, createStaticRootProvider, injectRenderer } from '@ethlete/core';
+import { createRootProvider, createStaticRootProvider, injectRenderer , randomId} from '@ethlete/core';
 import {
   FullscreenAnimationDeps,
   FullscreenAnimationState,
@@ -43,7 +43,7 @@ export const [provideFullscreenDialogStrategy, injectFullscreenDialogStrategy] =
       let animationState: FullscreenAnimationState | null = null;
 
       return {
-        id: crypto.randomUUID(),
+        id: randomId(),
         config: cfg,
 
         onBeforeEnter: (context) => {

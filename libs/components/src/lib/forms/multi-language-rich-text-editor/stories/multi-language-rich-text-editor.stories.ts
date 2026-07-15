@@ -2,7 +2,7 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { FormFieldMultiLanguageRichTextEditorStorybookComponent } from './multi-language-rich-text-editor-storybook.component';
 
 export default {
-  title: 'Components/Forms/Multi Language Rich Text Editor',
+  title: 'Components/Forms/Rich Text Editor/Multi Language',
   component: FormFieldMultiLanguageRichTextEditorStorybookComponent,
   decorators: [moduleMetadata({ imports: [FormFieldMultiLanguageRichTextEditorStorybookComponent] })],
   argTypes: {

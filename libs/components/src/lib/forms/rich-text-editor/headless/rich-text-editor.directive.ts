@@ -108,6 +108,17 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   /** @internal */
   public lastEmittedMarkdown: string | null = null;
 
+  /**
+   * @internal Opens the link editor popover, registered by `[etRichTextEditorLinkEditor]` (mounted by
+   * the default `et-rich-text-editor`). `null` for a bare `[etRichTextEditor]` with no popover, where
+   * {@link promptForLink} falls back to a native prompt.
+   */
+  public openLinkEditor = signal<(() => void) | null>(null);
+
+  /** @internal Whether the link editor popover is currently open. Kept so the mobile docked toolbar
+   *  stays visible through the link flow (focus is temporarily inside the popover). */
+  public linkEditorOpen = signal(false);
+
   constructor() {
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
@@ -261,17 +272,32 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     this.runCommand(() => this.editorDom.toggleHeading(`h${tagLevel}` as HeadingTag));
   }
 
-  public setLink(href: string) {
+  /** Applies (or, with an empty `href`, removes) a link on the current selection. `newTab` sets
+   *  `target="_blank"` + `rel="noopener noreferrer"`; `text` overrides the visible label. */
+  public applyLink(href: string, options: { newTab?: boolean; text?: string | null } = {}) {
     const url = href.trim();
 
-    this.runCommand(() => (url ? this.editorDom.applyLink(url) : this.editorDom.removeLink()));
+    this.runCommand(() => (url ? this.editorDom.applyLink(url, options) : this.editorDom.removeLink()));
+  }
+
+  public removeLink() {
+    this.runCommand(() => this.editorDom.removeLink());
   }
 
   public promptForLink() {
     if (this.disabled() || this.readonly()) return;
 
+    const open = this.openLinkEditor();
+
+    if (open) {
+      open();
+
+      return;
+    }
+
+    // Fallback for a bare [etRichTextEditor] with no link-editor popover mounted.
     if (this.linkActive()) {
-      this.setLink('');
+      this.removeLink();
 
       return;
     }
@@ -280,7 +306,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
     if (url === null || url === undefined) return;
 
-    this.setLink(url);
+    this.applyLink(url);
   }
 
   public handleBackspace() {
@@ -368,6 +394,9 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   private toggleMark(tag: InlineTag) {
     if (this.disabled() || this.readonly()) return;
 
+    // a tap on the (docked) toolbar can move focus off the editor on touch; restore the selection
+    this.editorDom.restoreSelection();
+
     const selection = this.editorDom.getSelection();
 
     if (selection && !selection.range.collapsed) {
@@ -394,6 +423,9 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
   private runCommand(command: () => void) {
     if (this.disabled() || this.readonly() || !this.editorDom.root()) return;
+
+    // restore the pre-tap selection when a toolbar interaction moved focus off the editor
+    this.editorDom.restoreSelection();
 
     command();
     this.syncFromDom();

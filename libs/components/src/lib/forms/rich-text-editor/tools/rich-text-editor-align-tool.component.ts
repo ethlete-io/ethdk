@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { Component, computed, inject, input, signal, ViewEncapsulation } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { injectRenderer } from '@ethlete/core';
+import { injectHasTouchInput, injectRenderer } from '@ethlete/core';
 import { fromEvent, tap } from 'rxjs';
 import { BUTTON_IMPORTS } from '../../../button';
 import {
@@ -36,6 +36,8 @@ export type TextAlign = (typeof TEXT_ALIGNS)[number];
 export class RichTextEditorAlignToolComponent {
   private renderer = injectRenderer();
   private document = inject(DOCUMENT);
+  /** On touch, open the menu without stealing focus so the keyboard (and docked toolbar) stay put. */
+  protected hasTouchInput = injectHasTouchInput();
 
   public editor = input.required<RichTextEditorDirective>();
 

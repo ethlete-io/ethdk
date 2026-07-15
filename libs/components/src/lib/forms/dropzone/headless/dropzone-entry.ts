@@ -1,3 +1,4 @@
+import { randomId } from '@ethlete/core';
 import { computed, Signal } from '@angular/core';
 import { AnyNewQuery, QueryArgs, QueryErrorResponse, RequestArgs } from '@ethlete/query';
 import { AnyDropzoneUploadConfig, DropzoneExistingFileInfo } from './dropzone-upload';
@@ -82,7 +83,7 @@ export const createFileDropzoneEntry = <TValue>(
   });
 
   return {
-    id: crypto.randomUUID(),
+    id: randomId(),
     source: { type: 'file', file },
     name: computed(() => file.name),
     size: computed(() => file.size),
@@ -114,7 +115,7 @@ export const createExistingDropzoneEntry = <TValue>(
   const info = computed<DropzoneExistingFileInfo>(() => upload().resolveExisting?.(value) ?? {});
 
   return {
-    id: crypto.randomUUID(),
+    id: randomId(),
     source: { type: 'existing', value },
     name: computed(() => info().name ?? String(value)),
     size: computed(() => info().size ?? null),

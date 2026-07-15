@@ -1,4 +1,5 @@
 import { HttpErrorResponse, HttpEvent, HttpEventType, HttpInterceptorFn, HttpResponse } from '@angular/common/http';
+import { randomId } from '@ethlete/core';
 import { concat, interval, mergeMap, of, take, throwError } from 'rxjs';
 
 export const MOCK_UPLOAD_BASE_URL = 'https://dropzone.demo';
@@ -59,7 +60,7 @@ export const mockUploadInterceptor: HttpInterceptorFn = (request, next) => {
         return of<HttpEvent<unknown>>(
           new HttpResponse({
             body: {
-              uuid: crypto.randomUUID(),
+              uuid: randomId(),
               name: file?.name ?? 'unknown',
             },
           }),

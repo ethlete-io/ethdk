@@ -1,6 +1,6 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { inject } from '@angular/core';
-import { createRootProvider, createStaticRootProvider, forceReflow, injectRenderer, nextFrame } from '@ethlete/core';
+import { createRootProvider, createStaticRootProvider, forceReflow, injectRenderer, nextFrame , randomId} from '@ethlete/core';
 import { filter, take } from 'rxjs';
 import {
   getOriginCoordinatesAndDimensions,
@@ -72,7 +72,7 @@ export const [provideAnchoredDialogStrategy, injectAnchoredDialogStrategy] = cre
       const cfg = mergeOverlayBreakpointConfigs(defaults, config);
 
       return {
-        id: crypto.randomUUID(),
+        id: randomId(),
         config: cfg,
 
         onBeforeEnter: <T, R>(context: OverlayStrategyContext<T, R>) => {

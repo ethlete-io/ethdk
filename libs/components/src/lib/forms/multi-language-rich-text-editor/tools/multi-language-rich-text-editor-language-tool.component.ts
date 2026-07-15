@@ -1,4 +1,5 @@
 import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
+import { injectHasTouchInput } from '@ethlete/core';
 import { CHECK_ICON, provideIcons } from '../../../icon';
 import { MENU_IMPORTS } from '../../../menu';
 import { RichTextEditorDirective } from '../../rich-text-editor';
@@ -15,6 +16,9 @@ import { MultiLanguageRichTextEditorDirective } from '../headless/multi-language
 })
 export class MultiLanguageRichTextEditorLanguageToolComponent {
   private wrapper = inject(MultiLanguageRichTextEditorDirective, { optional: true });
+  /** On touch, open the menu without stealing focus so the keyboard (and docked toolbar) stay put. */
+  protected hasTouchInput = injectHasTouchInput();
+
   public editor = input.required<RichTextEditorDirective>();
 
   protected languages = computed(() => this.wrapper?.languages() ?? []);

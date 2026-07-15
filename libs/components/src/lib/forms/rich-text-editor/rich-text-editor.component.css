@@ -61,6 +61,53 @@
       --et-icon-button-border-radius: var(--et-rich-text-editor-button-radius);
     }
 
+    /* On touch the toolbar is a full-width bar fixed above the on-screen keyboard (the OS selection
+       menu owns the top). It never sits at the top: it's hidden until the editor is active, then
+       fades/slides in rather than popping. `inset-block-end` is driven by JS from `visualViewport`
+       and deliberately has NO transition — it must track the viewport instantly as the page scrolls
+       (a transition would make it lag a frame behind the keyboard). */
+    &.et-rich-text-editor--touch .et-rte-toolbar {
+      position: fixed;
+      inset-inline: 0;
+      inset-block-end: var(--_et-rte-keyboard-inset, 0px);
+      z-index: 60;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      /* scroll the tools horizontally when they overflow, without triggering browser back-swipe */
+      overscroll-behavior-x: contain;
+      -webkit-overflow-scrolling: touch;
+      padding-inline: 8px;
+      padding-block: 6px;
+      background: var(--et-surface-background-solid, var(--et-surface-2, rgb(24 24 24)));
+      border-block-end: none;
+      border-block-start: var(--et-form-field-control-border-width, 1px) solid
+        color-mix(in srgb, currentColor 12%, transparent);
+      box-shadow: 0 -6px 20px rgb(0 0 0 / 0.24);
+      scrollbar-width: none;
+      opacity: 0;
+      transform: translateY(100%);
+      pointer-events: none;
+      transition:
+        opacity 160ms var(--ease-out-5, ease),
+        transform 260ms var(--ease-out-5, ease);
+    }
+
+    &.et-rich-text-editor--touch .et-rte-toolbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    &.et-rich-text-editor--touch.et-rich-text-editor--docked-toolbar .et-rte-toolbar {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      &.et-rich-text-editor--touch .et-rte-toolbar {
+        transition-duration: 0ms;
+      }
+    }
+
     .et-rte-toolbar-divider {
       inline-size: 1px;
       align-self: stretch;

@@ -1,10 +1,18 @@
-import { Component, computed, input, signal, ViewEncapsulation } from '@angular/core';
-import { injectRenderer } from '@ethlete/core';
+import { Component, computed, input, signal, viewChild, ViewEncapsulation } from '@angular/core';
+import { injectHasTouchInput, injectRenderer } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../../../button';
 import { IconDirective, provideIcons, TABLE_ICON } from '../../../icon';
-import { MENU_IMPORTS } from '../../../menu';
+import { MENU_IMPORTS, MenuDirective } from '../../../menu';
 import { RichTextEditorDirective } from '../headless/rich-text-editor.directive';
-import { cellAt, createTableOps, findTableContext, firstTableCell, TableContext } from './rich-text-editor-table.util';
+import {
+  cellAt,
+  createTableOps,
+  findTableContext,
+  firstTableCell,
+  hasHeaderRow,
+  isHeaderRow,
+  TableContext,
+} from './rich-text-editor-table.util';
 
 const PICKER_ROWS = 6;
 const PICKER_COLS = 8;
@@ -25,8 +33,12 @@ const PICKER_COLS = 8;
 })
 export class RichTextEditorTableToolComponent {
   private renderer = injectRenderer();
+  /** On touch, open the menu without stealing focus so the keyboard (and docked toolbar) stay put. */
+  protected hasTouchInput = injectHasTouchInput();
 
   public editor = input.required<RichTextEditorDirective>();
+
+  protected menu = viewChild.required(MenuDirective);
 
   private ops = createTableOps(this.renderer);
 
@@ -42,6 +54,23 @@ export class RichTextEditorTableToolComponent {
   /** Table context at the caret, recomputed when the menu opens (via `refreshContext`). */
   protected context = signal<TableContext | null>(null);
 
+  /** Set when a touch/pen release already inserted, so the synthetic click after a tap doesn't insert twice. */
+  private insertedByPointer = false;
+
+  /** "Insert header row" only shows when the table lost its header (the picker always creates one). */
+  protected canAddHeaderRow = computed(() => {
+    const ctx = this.context();
+
+    return !!ctx && !hasHeaderRow(ctx.table);
+  });
+
+  /** "Insert row above" makes no sense from inside the header row — nothing goes above the header. */
+  protected inHeaderRow = computed(() => {
+    const ctx = this.context();
+
+    return !!ctx && isHeaderRow(ctx);
+  });
+
   protected disabled = computed(() => this.editor().disabled() || this.editor().readonly());
 
   protected refreshContext() {
@@ -55,7 +84,48 @@ export class RichTextEditorTableToolComponent {
     this.hoverCols.set(col + 1);
   }
 
-  protected insert(row: number, col: number) {
+  /**
+   * Touch implicitly captures the pointer on the cell it went down on, which would stop
+   * `pointerenter` from reaching the other cells — release it so a swipe extends the selection.
+   */
+  protected beginSwipeSelection(event: PointerEvent) {
+    this.insertedByPointer = false;
+
+    if (event.target instanceof Element && event.target.hasPointerCapture(event.pointerId)) {
+      event.target.releasePointerCapture(event.pointerId);
+    }
+  }
+
+  /**
+   * Commits a touch/pen selection where the finger lifts. A swipe's down and up targets differ,
+   * so no cell ever gets the click event — the grid's pointerup is the only commit signal.
+   * Mouse keeps committing via the cell's click.
+   */
+  protected commitSwipeSelection(event: PointerEvent) {
+    if (event.pointerType === 'mouse') return;
+
+    const rows = this.hoverRows();
+    const cols = this.hoverCols();
+
+    if (!rows || !cols) return;
+
+    this.insertedByPointer = true;
+    this.insert(rows - 1, cols - 1);
+    this.menu().closeAll();
+  }
+
+  protected insertFromCell(row: number, col: number) {
+    if (this.insertedByPointer) {
+      this.insertedByPointer = false;
+
+      return;
+    }
+
+    this.insert(row, col);
+    this.menu().closeAll();
+  }
+
+  public insert(row: number, col: number) {
     const editor = this.editor();
     const root = editor.editorDom.root();
 
@@ -82,6 +152,10 @@ export class RichTextEditorTableToolComponent {
 
   protected addRow(position: 'above' | 'below') {
     this.mutate((ctx) => this.ops.insertRow(ctx, position));
+  }
+
+  protected addHeaderRow() {
+    this.mutate((ctx) => this.ops.insertHeaderRow(ctx));
   }
 
   protected addColumn(position: 'left' | 'right') {

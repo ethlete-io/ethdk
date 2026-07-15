@@ -94,23 +94,23 @@ export class OverlayContainerComponent {
       if (!this.renderArrow()) return;
 
       const host = this.elementRef.nativeElement;
-      const style = getComputedStyle(host);
+      const pane = this.resolveArrowPaneElement(host);
+      const style = getComputedStyle(pane);
       const props: Record<string, string> = {};
       const borderWidth = parseFloat(style.borderTopWidth) || 0;
 
       const background = style.backgroundColor;
-      const hostPaintsPane = !!background && background !== 'transparent' && background !== 'rgba(0, 0, 0, 0)';
+      const panePaints = !!background && background !== 'transparent' && background !== 'rgba(0, 0, 0, 0)';
 
-      if (hostPaintsPane) {
-        // the host itself is the visible pane (custom panelClass, dialog): the arrow must
-        // continue its background and match its border exactly — including no border at all
-        // when the pane has none, so a 0px width is forwarded rather than left to the fallback
+      if (panePaints) {
+        // continue the pane's background and match its border exactly — including no border at
+        // all when the pane has none, so a 0px width is forwarded rather than left to the fallback
         props['--_et-overlay-arrow-pane-background'] = background;
         props['--_et-overlay-arrow-pane-border-width'] = `${borderWidth}px`;
         props['--_et-overlay-arrow-pane-border-color'] = borderWidth ? style.borderTopColor : 'transparent';
       } else if (borderWidth) {
-        // transparent host: background/border live on an inner element (tooltip/toggletip/menu)
-        // and the surface-token fallback fills the rest — only forward a real host border
+        // no painted pane found: only forward a real border and let the surface-token fallback
+        // fill the background
         props['--_et-overlay-arrow-pane-border-width'] = `${borderWidth}px`;
         props['--_et-overlay-arrow-pane-border-color'] = style.borderTopColor;
       }
@@ -152,5 +152,32 @@ export class OverlayContainerComponent {
     });
 
     this.destroyRef.onDestroy(() => this.contentComponentRef()?.destroy());
+  }
+
+  /**
+   * The element the arrow should visually continue: the container host when it paints the pane
+   * itself (custom panelClass, dialog), otherwise the first painted element in the rendered
+   * content (menu/tooltip/toggletip paint a nested element, potentially at a higher elevation).
+   */
+  private resolveArrowPaneElement(host: HTMLElement): HTMLElement {
+    const isPainted = (el: HTMLElement) => {
+      const background = getComputedStyle(el).backgroundColor;
+      return !!background && background !== 'transparent' && background !== 'rgba(0, 0, 0, 0)';
+    };
+
+    if (isPainted(host)) return host;
+
+    const content = this.contentComponentRef()?.location.nativeElement as HTMLElement | undefined;
+    if (!content) return host;
+    if (isPainted(content)) return content;
+
+    // the painted pane varies per overlay kind (.et-menu, .et-tooltip__surface, …) with no
+    // shared hook, so scan the rendered content for the first element that actually paints
+    // eslint-disable-next-line ethlete/no-dom-query -- one-off measurement in afterNextRender; no stable directive hook across overlay kinds
+    for (const el of Array.from(content.querySelectorAll<HTMLElement>('*'))) {
+      if (isPainted(el)) return el;
+    }
+
+    return host;
   }
 }

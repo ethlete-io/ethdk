@@ -1,4 +1,4 @@
-<div etMenu>
+<div [autoFocus]="!hasTouchInput()" etMenu>
   <button
     [disabled]="disabled()"
     [attr.aria-label]="'Language: ' + activeLabel()"
@@ -13,7 +13,7 @@
 
   <ng-template etMenuSurface>
     <et-menu>
-      <et-menu-radio-group [value]="activeCode()" (valueChange)="select($event)">
+      <et-menu-radio-group [value]="activeCode()" (valueChange)="select($event)" (mousedown)="$event.preventDefault()">
         @for (language of languages(); track language.code) {
           <et-menu-radio-item [value]="language.code" [icon]="activeIcon(language.code)" [closeOnActivate]="true">
             <span class="et-ml-rte-lang-item">

@@ -3,15 +3,17 @@ import {
   afterNextRender,
   Component,
   computed,
+  DestroyRef,
   effect,
   ElementRef,
   inject,
+  signal,
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { markdownToHtml } from '@ethlete/core';
-import { fromEvent, tap } from 'rxjs';
+import { injectHasTouchInput, injectRenderer, markdownToHtml } from '@ethlete/core';
+import { fromEvent, merge, tap } from 'rxjs';
 import { BUTTON_IMPORTS } from '../../button';
 import {
   BOLD_ICON,
@@ -30,7 +32,11 @@ import {
   UNDERLINE_ICON,
 } from '../../icon';
 import { MENU_IMPORTS } from '../../menu';
-import { RichTextEditorDirective, RichTextEditorFloatingToolbarDirective } from './headless';
+import {
+  RichTextEditorDirective,
+  RichTextEditorFloatingToolbarDirective,
+  RichTextEditorLinkEditorDirective,
+} from './headless';
 import {
   RICH_TEXT_EDITOR_HEADING_OPTIONS,
   RICH_TEXT_EDITOR_TOOL,
@@ -95,9 +101,15 @@ const NAVIGATION_KEYS = new Set([
       outputs: ['valueChange', 'touchedChange'],
     },
     RichTextEditorFloatingToolbarDirective,
+    RichTextEditorLinkEditorDirective,
   ],
   host: {
     class: 'et-rich-text-editor',
+    // on touch the toolbar is hidden until the editor is active, then docks above the keyboard (the
+    // OS selection menu owns the top, so a top toolbar there is unreachable) — it never sits at the
+    // top or shuffles around
+    '[class.et-rich-text-editor--touch]': 'hasTouchInput()',
+    '[class.et-rich-text-editor--docked-toolbar]': 'dockedToolbar()',
     '(click)': 'dir.activate()',
   },
 })
@@ -105,6 +117,12 @@ export class RichTextEditorComponent {
   protected dir = inject(RichTextEditorDirective);
 
   private document = inject(DOCUMENT);
+  private destroyRef = inject(DestroyRef);
+  private renderer = injectRenderer();
+  private host = inject<ElementRef<HTMLElement>>(ElementRef);
+  /** Touch devices: menus open without stealing focus (keeps the keyboard up so the docked toolbar
+   *  stays put) and the toolbar docks above the keyboard. */
+  protected hasTouchInput = injectHasTouchInput();
   protected editable = viewChild.required<ElementRef<HTMLElement>>('editable');
 
   protected readonly TOOLS = RICH_TEXT_EDITOR_TOOLS;
@@ -133,7 +151,18 @@ export class RichTextEditorComponent {
   protected currentHeadingLabel = computed(() => this.currentHeading()?.label ?? 'Normal');
   protected currentHeadingIcon = computed(() => this.currentHeading()?.icon ?? 'et-paragraph');
 
+  /** Keeps the docked toolbar up briefly after a blur so opening a menu/link editor from it (which
+   *  moves focus into an overlay) doesn't collapse the bar mid-interaction. */
+  private editingActive = signal(false);
+  private blurGraceTimer: ReturnType<Window['setTimeout']> | null = null;
+
+  /** Dock the toolbar above the keyboard only on touch while editing. */
+  protected dockedToolbar = computed(() => this.hasTouchInput() && this.editingActive());
+
   constructor() {
+    this.trackKeyboardInset();
+    this.trackEditingActive();
+
     afterNextRender(() => {
       this.dir.editorDom.root.set(this.editable().nativeElement ?? null);
       this.renderExternalValue();
@@ -196,15 +225,15 @@ export class RichTextEditorComponent {
       return;
     }
 
-    // step the caret cleanly across table boundaries instead of stranding it at the table's edge
-    if (
-      event.key.startsWith('Arrow') &&
-      (this.dir.editorDom.tableExit(event.key) || this.dir.editorDom.tableEnter(event.key))
-    ) {
-      event.preventDefault();
-      this.dir.syncFromDom();
+    // opt-in tools can intercept keys for content they own (e.g. the table tool steps the caret
+    // cleanly across table boundaries instead of stranding it at the table's edge)
+    for (const tool of this.registeredTools) {
+      if (tool.keydown?.(this.dir, event)) {
+        event.preventDefault();
+        this.dir.syncFromDom();
 
-      return;
+        return;
+      }
     }
 
     // step out of an inline code span so the next typed text isn't code (caret move only, no edit)
@@ -277,5 +306,62 @@ export class RichTextEditorComponent {
     el.innerHTML = codec ? codec.render(html) : html;
     codec?.hydrate(el);
     this.dir.lastEmittedMarkdown = markdown;
+  }
+
+  /** Track the visual viewport so the docked (fixed) toolbar sits right above the on-screen keyboard.
+   *  The gap from the layout-viewport bottom up to the keyboard top is
+   *  `innerHeight - visualViewport.height - visualViewport.offsetTop` — the `offsetTop` term is what
+   *  keeps it glued while the page scrolls (on mobile the visual viewport pans and the URL bar
+   *  shows/hides). We must therefore react to BOTH `resize` and `scroll`.
+   *
+   *  Performance: the CSS var is written straight to the host element, outside Angular — no signal,
+   *  so no change detection fires per scroll frame (that was what made scrolling feel sluggish). The
+   *  position has no CSS transition, so it tracks the viewport instantly instead of lagging behind. */
+  private trackKeyboardInset() {
+    const view = this.document.defaultView;
+    const viewport = view?.visualViewport;
+
+    if (!view || !viewport) return;
+
+    const host = this.host.nativeElement;
+    const update = () => {
+      const inset = Math.max(0, view.innerHeight - viewport.height - viewport.offsetTop);
+      // set the CSS var directly via the renderer (not a signal) so scroll/resize don't schedule
+      // change detection each frame — that per-frame CD was what made scrolling feel sluggish
+      this.renderer.setCssProperty(host, '--_et-rte-keyboard-inset', `${inset}px`);
+    };
+
+    update();
+
+    merge(fromEvent(viewport, 'resize'), fromEvent(viewport, 'scroll'))
+      .pipe(
+        tap(() => update()),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  /** `editingActive` follows the editor's focus, but lingers ~400ms after a blur so a menu/link
+   *  editor opened from the docked toolbar (which takes focus into an overlay) keeps the bar up. */
+  private trackEditingActive() {
+    effect(() => {
+      // stay "active" while the editor is focused OR the link editor popover (part of the same
+      // editing flow) is open — the popover borrows focus, but the toolbar should hold its place
+      const active = this.dir.focused() || this.dir.linkEditorOpen();
+
+      if (active) {
+        if (this.blurGraceTimer !== null) this.document.defaultView?.clearTimeout(this.blurGraceTimer);
+        this.blurGraceTimer = null;
+        this.editingActive.set(true);
+
+        return;
+      }
+
+      this.blurGraceTimer = this.document.defaultView?.setTimeout(() => this.editingActive.set(false), 400) ?? null;
+    });
+
+    this.destroyRef.onDestroy(() => {
+      if (this.blurGraceTimer !== null) this.document.defaultView?.clearTimeout(this.blurGraceTimer);
+    });
   }
 }

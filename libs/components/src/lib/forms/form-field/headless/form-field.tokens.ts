@@ -3,6 +3,9 @@ import { ValidationError } from '@angular/forms/signals';
 
 export const FORM_FIELD_CONTROL_TYPES = {
   TEXT_INPUT: 'text-input',
+  NUMBER_INPUT: 'number-input',
+  COLOR_INPUT: 'color-input',
+  TEXTAREA: 'textarea',
   RICH_TEXT: 'rich-text',
   CHECKBOX: 'checkbox',
   RADIO: 'radio',

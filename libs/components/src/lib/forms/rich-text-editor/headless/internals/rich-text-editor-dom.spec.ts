@@ -549,7 +549,21 @@ describe('RichTextEditorDom', () => {
 
       dom.applyLink('https://example.com');
 
-      expect(root.innerHTML).toBe('<a href="https://example.com">hello</a>');
+      // a link that ends the line gets a trailing space so the caret can continue after it — a
+      // no-break one, since a plain space at line end is CSS-collapsed and Chrome drops it from
+      // the text node on the next keystroke
+      expect(root.innerHTML).toBe('<a href="https://example.com">hello</a>&nbsp;');
+    });
+
+    it('does not add a trailing space when the link is mid-line', () => {
+      const { root, dom } = setup('one two three');
+      const text = root.firstChild as Node;
+      // select "two"
+      select(text, 4, text, 7);
+
+      dom.applyLink('https://example.com');
+
+      expect(root.innerHTML).toBe('one <a href="https://example.com">two</a> three');
     });
 
     it('updates the href when the caret is already in a link', () => {
@@ -585,7 +599,7 @@ describe('RichTextEditorDom', () => {
 
       dom.applyLink('dddddd');
 
-      expect(root.innerHTML).toBe('<a href="dddddd">test link</a>');
+      expect(root.innerHTML).toBe('<a href="dddddd">test link</a>&nbsp;');
     });
   });
 

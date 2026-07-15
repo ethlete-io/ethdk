@@ -1,0 +1,22 @@
+<input
+  #nativeInput
+  [value]="numberInputDir.value() ?? ''"
+  [disabled]="numberInputDir.disabled()"
+  [readOnly]="numberInputDir.readonly()"
+  [required]="numberInputDir.required()"
+  [placeholder]="numberInputDir.placeholder()"
+  [autocomplete]="numberInputDir.autocomplete()"
+  [attr.min]="numberInputDir.min() ?? null"
+  [attr.max]="numberInputDir.max() ?? null"
+  [attr.step]="numberInputDir.step() ?? null"
+  [attr.name]="numberInputDir.name() || null"
+  [attr.aria-invalid]="numberInputDir.shouldDisplayError() || null"
+  [attr.aria-describedby]="numberInputDir.describedById() || null"
+  [attr.aria-labelledby]="numberInputDir.labelId() || null"
+  [attr.data-text-align]="numberInputDir.textAlign()"
+  (input)="syncNativeValue($event)"
+  (focus)="numberInputDir.focused.set(true)"
+  (blur)="numberInputDir.focused.set(false); numberInputDir.touched.set(true)"
+  class="et-number-input-native"
+  type="number"
+/>
