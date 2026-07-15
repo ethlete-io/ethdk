@@ -39,3 +39,11 @@ features:
     details: Release tooling for Changesets-based repos — the `et release` command.
     link: /cli/
 ---
+
+## Using these docs with LLMs
+
+This site follows the [llms.txt convention](https://llmstxt.org). Point your tool at:
+
+- [`/llms.txt`](/llms.txt) — an index of every page with links to raw markdown versions
+- [`/llms-full.txt`](/llms-full.txt) — the entire documentation in a single file
+- Append `.md` to any page URL (e.g. `/components/button.md`) to get that page as raw markdown

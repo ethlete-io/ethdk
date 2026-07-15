@@ -49,7 +49,15 @@ export class RichTextEditorAlignToolComponent {
   /** Alignment of the caret's block/cell — kept live so the trigger icon and menu stay in sync. */
   protected current = signal<TextAlign>('left');
   protected currentIcon = computed(() => this.OPTIONS.find((o) => o.value === this.current())?.icon ?? 'et-align-left');
-  protected disabled = computed(() => this.editor().disabled() || this.editor().readonly());
+  /** Also locked inside lists: `text-align` on a list has no Markdown form and would not survive
+   *  serialization, so the tool disables there instead of silently losing the alignment. */
+  protected disabled = computed(
+    () =>
+      this.editor().disabled() ||
+      this.editor().readonly() ||
+      this.editor().unorderedListActive() ||
+      this.editor().orderedListActive(),
+  );
 
   constructor() {
     // track the caret's alignment as it moves so the button reflects it without needing a click
@@ -94,23 +102,52 @@ export class RichTextEditorAlignToolComponent {
   }
 
   /**
-   * The elements alignment applies to: table cells the selection touches (so alignment works inside
-   * tables), otherwise the root-level blocks. Read-only — returns `null` when the selection is over
+   * The elements alignment applies to: inside a table, the full columns the selection touches
+   * (GFM table alignment is per column — the serializer reads it from the header cells, so a
+   * single aligned cell would not survive), otherwise the root-level blocks. Lists are skipped —
+   * their alignment has no Markdown form. Read-only — returns `null` when the selection is over
    * loose top-level text with no block to align (see {@link wrapLooseContent}).
    */
   private targetBlocks(root: HTMLElement, range: Range): HTMLElement[] | null {
     // eslint-disable-next-line ethlete/no-dom-query -- cells carry no unique hook; an atomic tag query is simplest
     const cells = [...root.querySelectorAll<HTMLElement>('th, td')].filter((cell) => range.intersectsNode(cell));
 
-    if (cells.length > 0) return cells;
+    if (cells.length > 0) return this.expandToColumns(cells);
 
     const blocks: HTMLElement[] = [];
 
     for (const child of root.children) {
-      if (child instanceof HTMLElement && range.intersectsNode(child)) blocks.push(child);
+      if (child instanceof HTMLElement && range.intersectsNode(child)) {
+        if (child.tagName === 'UL' || child.tagName === 'OL') continue;
+
+        blocks.push(child);
+      }
     }
 
     return blocks.length > 0 ? blocks : null;
+  }
+
+  /** Every cell of the columns the given cells belong to, so alignment applies column-wide. */
+  private expandToColumns(cells: HTMLElement[]): HTMLElement[] {
+    const out = new Set<HTMLElement>();
+
+    for (const cell of cells) {
+      if (!(cell instanceof HTMLTableCellElement)) continue;
+
+      let table: HTMLElement | null = cell;
+
+      while (table && !(table instanceof HTMLTableElement)) table = table.parentElement;
+
+      if (!(table instanceof HTMLTableElement)) continue;
+
+      for (const row of table.rows) {
+        const columnCell = row.cells[cell.cellIndex];
+
+        if (columnCell) out.add(columnCell);
+      }
+    }
+
+    return [...out];
   }
 
   /** Wraps the loose top-level nodes the selection touches in a paragraph (the editor doesn't wrap

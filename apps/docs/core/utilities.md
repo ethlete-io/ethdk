@@ -54,9 +54,14 @@ Subscribe to host-element events from an injection context, cleaned up on destro
 - **Cookies** — `getCookie`, `setCookie`, `hasCookie`, `deleteCookie`, `getDomain`. `setCookie` defaults: 30-day expiry (`null` → session cookie), `path: '/'`, `sameSite: 'lax'`, domain derived from the hostname. All SSR-safe (no-ops without `document`).
 - **Session memory** — `createSessionMemory({ key, parse, serialize })` returns a typed `{ read, write, remove }` store over `sessionStorage`; every operation is guarded, so failures (SSR, quota, parse errors) return `null`/`false` instead of throwing. `createAutoSessionMemoryKey({ element, prefix })` derives a stable key from an element's DOM path — how components persist per-instance UI state across reloads.
 
+## Clipboard
+
+- `copyToClipboard(text)` — write text to the clipboard, resolving to `true` or `false` instead of throwing. Uses the async Clipboard API and falls back to a hidden-textarea `execCommand('copy')` when that is blocked (missing permission, insecure context). Focus is restored to the previously focused element after the fallback. SSR-safe.
+- `readFromClipboard()` — read text from the clipboard, resolving to the text or `null` when the Clipboard API is unavailable or reading is blocked.
+
 ## Text & data
 
-- `markdownToHtml(markdown)` / `htmlToMarkdown(html)` — the dependency-free converters behind the [pipes](/core/directives-pipes#pipes), covering the common Markdown feature set including GFM tables and fenced code blocks.
+- `markdownToHtml(markdown)` / `htmlToMarkdown(html)` — the dependency-free converters behind the [pipes](/core/directives-pipes#pipes), covering the common Markdown feature set including GFM tables and fenced code blocks. `markdownToHtml` escapes raw HTML in the Markdown text (so its output is safe to bind as HTML) and refuses script-running URL schemes in links and images.
 - `clone(value)` — deep clone (objects, arrays, Map/Set, Date, RegExp, typed arrays).
 - `equal(a, b)` — deep structural equality; used as the `equal` function for many of the SDK's computed signals.
 - `getObjectProperty(obj, 'a.b[2].c')` — nested property access by path; `isObject` / `isArray` type guards.

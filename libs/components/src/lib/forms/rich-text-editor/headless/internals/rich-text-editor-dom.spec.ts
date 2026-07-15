@@ -423,6 +423,18 @@ describe('RichTextEditorDom', () => {
       expect(root.innerHTML).toBe('<table><tbody><tr><td>x</td></tr></tbody></table>');
     });
 
+    it('keeps the block alignment when re-tagging between paragraph and heading', () => {
+      const { root, dom } = setup('<p style="text-align: center">middle</p>');
+      const text = (root.firstChild as HTMLElement).firstChild as Node;
+      select(text, 0, text, 0);
+
+      dom.toggleHeading('h2');
+      expect(root.innerHTML).toBe('<h2 style="text-align: center;">middle</h2>');
+
+      dom.toggleHeading('h2');
+      expect(root.innerHTML).toBe('<p style="text-align: center;">middle</p>');
+    });
+
     it('re-tags an existing paragraph in place, keeping its inline children', () => {
       const { root, dom } = setup('<p>a <strong>b</strong> c</p>');
       selectByTextOffsets(root, 0, 5);
@@ -507,6 +519,17 @@ describe('RichTextEditorDom', () => {
       dom.toggleList('ul');
 
       expect(root.innerHTML).toBe('<ul><li>one</li><li>two</li></ul>');
+    });
+
+    it('is a no-op when the caret is inside a table (never nests the table in a list)', () => {
+      const html = '<table><tbody><tr><td>cell</td></tr></tbody></table>';
+      const { root, dom } = setup(html);
+      const cellText = (root.querySelector('td') as HTMLElement).firstChild as Node;
+      select(cellText, 1, cellText, 1);
+
+      dom.toggleList('ul');
+
+      expect(root.innerHTML).toBe(html);
     });
 
     it('marks the list state active after starting a list in an empty editor', () => {
@@ -641,6 +664,271 @@ describe('RichTextEditorDom', () => {
 
       expect(dom.markStates()?.bold).toBe(true);
       expect(dom.markStates()?.italic).toBe(false);
+    });
+
+    it('reports whether the caret sits inside a table cell', () => {
+      const { root, dom } = setup('<p>out</p><table><tbody><tr><td>in</td></tr></tbody></table>');
+      const cellText = (root.querySelector('td') as HTMLElement).firstChild as Node;
+
+      select(cellText, 1, cellText, 1);
+      expect(dom.markStates()?.tableCell).toBe(true);
+
+      const paragraphText = (root.firstChild as HTMLElement).firstChild as Node;
+
+      select(paragraphText, 1, paragraphText, 1);
+      expect(dom.markStates()?.tableCell).toBe(false);
+    });
+  });
+
+  describe('handleEnter on a heading', () => {
+    it('starts a paragraph after the heading when the caret is at its end', () => {
+      const { root, dom } = setup('<h2>title</h2>');
+      const text = (root.firstChild as HTMLElement).firstChild as Node;
+      select(text, 5, text, 5);
+
+      expect(dom.handleEnter()).toBe(true);
+      expect(root.innerHTML).toBe('<h2>title</h2><p><br></p>');
+
+      const range = doc.getSelection()?.getRangeAt(0);
+      expect(dom.closestWithin(range?.startContainer ?? null, 'p')).not.toBeNull();
+    });
+
+    it('inserts an empty paragraph above when the caret is at the heading start', () => {
+      const { root, dom } = setup('<h2>title</h2>');
+      const text = (root.firstChild as HTMLElement).firstChild as Node;
+      select(text, 0, text, 0);
+
+      expect(dom.handleEnter()).toBe(true);
+      expect(root.innerHTML).toBe('<p><br></p><h2>title</h2>');
+    });
+
+    it('lets the browser split the heading on a mid-heading Enter', () => {
+      const { root, dom } = setup('<h2>title</h2>');
+      const text = (root.firstChild as HTMLElement).firstChild as Node;
+      select(text, 2, text, 2);
+
+      expect(dom.handleEnter()).toBe(false);
+      expect(root.innerHTML).toBe('<h2>title</h2>');
+    });
+
+    it('treats the end of a marked run inside the heading as the heading end', () => {
+      const { root, dom } = setup('<h2>a <strong>b</strong></h2>');
+      const strongText = (root.querySelector('strong') as HTMLElement).firstChild as Node;
+      select(strongText, 1, strongText, 1);
+
+      expect(dom.handleEnter()).toBe(true);
+      expect(root.innerHTML).toBe('<h2>a <strong>b</strong></h2><p><br></p>');
+    });
+  });
+
+  describe('applyBlockAutoformat', () => {
+    const noneReserved = () => false;
+
+    const caretAtEndOf = (node: Node) => {
+      const text = node.textContent ?? '';
+      select(node, text.length, node, text.length);
+    };
+
+    it('converts "- " at a line start into a bulleted list', () => {
+      const { root, dom } = setup('<p>-</p>');
+      caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
+
+      expect(dom.applyBlockAutoformat(noneReserved)).toBe(true);
+      expect(root.innerHTML).toBe('<ul><li><br></li></ul>');
+    });
+
+    it('converts "1. " into a numbered list', () => {
+      const { root, dom } = setup('<p>1.</p>');
+      caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
+
+      expect(dom.applyBlockAutoformat(noneReserved)).toBe(true);
+      expect(root.innerHTML).toBe('<ol><li><br></li></ol>');
+    });
+
+    it('converts "## " into a heading of that level', () => {
+      const { root, dom } = setup('<p>##</p>');
+      caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
+
+      expect(dom.applyBlockAutoformat(noneReserved)).toBe(true);
+      expect(root.innerHTML).toBe('<h2><br></h2>');
+    });
+
+    it('keeps existing text after the prefix as the converted block content', () => {
+      const { root, dom } = setup('<p>-hello</p>');
+      const text = (root.firstChild as HTMLElement).firstChild as Node;
+      select(text, 1, text, 1); // caret right after the '-'
+
+      expect(dom.applyBlockAutoformat(noneReserved)).toBe(true);
+      expect(root.innerHTML).toBe('<ul><li>hello</li></ul>');
+    });
+
+    it('converts the loose first line of an empty editor', () => {
+      const { root, dom } = setup('-');
+      caretAtEndOf(root.firstChild as Node);
+
+      expect(dom.applyBlockAutoformat(noneReserved)).toBe(true);
+      expect(root.innerHTML).toBe('<ul><li><br></li></ul>');
+    });
+
+    it('converts a browser-created div line (Chrome inserts divs on Enter)', () => {
+      const { root, dom } = setup('first line<div>-</div>');
+      caretAtEndOf((root.querySelector('div') as HTMLElement).firstChild as Node);
+
+      expect(dom.applyBlockAutoformat(noneReserved)).toBe(true);
+      expect(root.innerHTML).toBe('first line<ul><li><br></li></ul>');
+    });
+
+    it('does not fire mid-line', () => {
+      const { root, dom } = setup('<p>a #</p>');
+      caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
+
+      expect(dom.applyBlockAutoformat(noneReserved)).toBe(false);
+      expect(root.innerHTML).toBe('<p>a #</p>');
+    });
+
+    it('does not fire for a reserved trigger char', () => {
+      const { root, dom } = setup('<p>#</p>');
+      caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
+
+      expect(dom.applyBlockAutoformat((char) => char === '#')).toBe(false);
+      expect(root.innerHTML).toBe('<p>#</p>');
+    });
+
+    it('does not fire inside a list item or table cell', () => {
+      const inList = setup('<ul><li>-</li></ul>');
+      caretAtEndOf(inList.root.querySelector('li')?.firstChild as Node);
+      expect(inList.dom.applyBlockAutoformat(noneReserved)).toBe(false);
+
+      const inCell = setup('<table><tbody><tr><td>#</td></tr></tbody></table>');
+      caretAtEndOf(inCell.root.querySelector('td')?.firstChild as Node);
+      expect(inCell.dom.applyBlockAutoformat(noneReserved)).toBe(false);
+    });
+  });
+
+  describe('applyInlineAutoformat', () => {
+    const noneReserved = () => false;
+
+    const caretAtEndOf = (node: Node) => {
+      const text = node.textContent ?? '';
+      select(node, text.length, node, text.length);
+    };
+
+    it('converts **bold** when the closing star is typed', () => {
+      const { root, dom } = setup('<p>see **bold*</p>');
+      caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
+
+      expect(dom.applyInlineAutoformat('*', noneReserved)).toBe(true);
+      expect(root.innerHTML.replace(/\u200b/g, '')).toBe('<p>see <strong>bold</strong></p>');
+    });
+
+    it('does not convert *italic yet* while it may still become bold', () => {
+      const { root, dom } = setup('<p>**bold</p>');
+      caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
+
+      // first closing star: `**bold*` — must wait for the second one
+      expect(dom.applyInlineAutoformat('*', noneReserved)).toBe(false);
+    });
+
+    it('converts *italic*, `code` and ~~strike~~', () => {
+      const em = setup('<p>an *i</p>');
+      caretAtEndOf((em.root.firstChild as HTMLElement).firstChild as Node);
+      expect(em.dom.applyInlineAutoformat('*', noneReserved)).toBe(true);
+      expect(em.root.innerHTML.replace(/\u200b/g, '')).toBe('<p>an <em>i</em></p>');
+
+      const code = setup('<p>`x</p>');
+      caretAtEndOf((code.root.firstChild as HTMLElement).firstChild as Node);
+      expect(code.dom.applyInlineAutoformat('`', noneReserved)).toBe(true);
+      expect(code.root.innerHTML.replace(/\u200b/g, '')).toBe('<p><code>x</code></p>');
+
+      const del = setup('<p>~~s~</p>');
+      caretAtEndOf((del.root.firstChild as HTMLElement).firstChild as Node);
+      expect(del.dom.applyInlineAutoformat('~', noneReserved)).toBe(true);
+      expect(del.root.innerHTML.replace(/\u200b/g, '')).toBe('<p><del>s</del></p>');
+    });
+
+    it('places the caret after the mark so typing continues unformatted', () => {
+      const { root, dom } = setup('<p>*i</p>');
+      caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
+
+      dom.applyInlineAutoformat('*', noneReserved);
+
+      const range = doc.getSelection()?.getRangeAt(0);
+
+      expect(range?.collapsed).toBe(true);
+      expect(dom.closestWithin(range?.startContainer ?? null, 'em')).toBeNull();
+      expect(root.querySelector('em')).not.toBeNull();
+    });
+
+    it('does not fire inside a word for underscores', () => {
+      const { dom, root } = setup('<p>snake_case</p>');
+      caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
+
+      expect(dom.applyInlineAutoformat('_', noneReserved)).toBe(false);
+    });
+
+    it('does not fire for a reserved char or inside code', () => {
+      const reserved = setup('<p>*i</p>');
+      caretAtEndOf((reserved.root.firstChild as HTMLElement).firstChild as Node);
+      expect(reserved.dom.applyInlineAutoformat('*', (char) => char === '*')).toBe(false);
+
+      const inCode = setup('<p><code>a *b</code></p>');
+      caretAtEndOf(inCode.root.querySelector('code')?.firstChild as Node);
+      expect(inCode.dom.applyInlineAutoformat('*', noneReserved)).toBe(false);
+    });
+  });
+
+  describe('insertNormalizedHtml', () => {
+    it('splices a single paragraph inline into the caret block', () => {
+      const { root, dom } = setup('<p>ab</p>');
+      const text = (root.firstChild as HTMLElement).firstChild as Node;
+      select(text, 1, text, 1);
+
+      dom.insertNormalizedHtml('<p>X <strong>y</strong></p>');
+
+      expect(root.innerHTML).toBe('<p>aX <strong>y</strong>b</p>');
+    });
+
+    it('replaces a non-collapsed selection with the pasted content', () => {
+      const { root, dom } = setup('<p>hello</p>');
+      const text = (root.firstChild as HTMLElement).firstChild as Node;
+      select(text, 1, text, 4);
+
+      dom.insertNormalizedHtml('<p>X</p>');
+
+      expect(root.innerHTML).toBe('<p>hXo</p>');
+    });
+
+    it('inserts multi-block content after the caret block instead of nesting it', () => {
+      const { root, dom } = setup('<p>ab</p><p>cd</p>');
+      const text = (root.firstChild as HTMLElement).firstChild as Node;
+      select(text, 2, text, 2);
+
+      dom.insertNormalizedHtml('<p>one</p><ul><li>two</li></ul>');
+
+      expect(root.innerHTML).toBe('<p>ab</p><p>one</p><ul><li>two</li></ul><p>cd</p>');
+    });
+
+    it('appends blocks to an empty editor', () => {
+      const { root, dom } = setup('');
+      select(root, 0, root, 0);
+
+      dom.insertNormalizedHtml('<h2>title</h2><p>body</p>');
+
+      expect(root.innerHTML).toBe('<h2>title</h2><p>body</p>');
+    });
+
+    it('places the caret at the end of the inserted content', () => {
+      const { root, dom } = setup('<p>ab</p>');
+      const text = (root.firstChild as HTMLElement).firstChild as Node;
+      select(text, 1, text, 1);
+
+      dom.insertNormalizedHtml('<p>XY</p>');
+
+      const range = doc.getSelection()?.getRangeAt(0);
+
+      expect(range?.collapsed).toBe(true);
+      expect(range?.startContainer.textContent).toBe('aXYb');
+      expect(range?.startOffset).toBe(3);
     });
   });
 });

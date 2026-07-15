@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
 import '../../../test-helpers';
 import { CheckboxComponent } from '../checkbox';
+import { InputDirective } from '../input/headless';
 import { FormFieldComponent } from './form-field.component';
 import { LabelDirective } from './headless';
 
@@ -103,5 +104,47 @@ describe('FormFieldComponent', () => {
     const labelArea = fixture.nativeElement.querySelector('.et-form-field-label-area') as HTMLElement | null;
 
     expect(labelArea?.textContent?.trim()).toBe('Accept terms');
+  });
+});
+
+@Component({
+  template: `
+    <et-form-field>
+      <et-label>Name</et-label>
+      <input [disabled]="disabled()" etInput />
+    </et-form-field>
+  `,
+  imports: [FormFieldComponent, InputDirective, LabelDirective],
+})
+class InputFormFieldTestHost {
+  public disabled = signal(false);
+}
+
+describe('FormFieldComponent disabled state', () => {
+  let fixture: ComponentFixture<InputFormFieldTestHost>;
+
+  beforeEach(() => {
+    ensureResizeObserverMock();
+
+    TestBed.configureTestingModule({
+      imports: [InputFormFieldTestHost],
+      providers: [provideColorThemes([...TEST_COLOR_THEMES])],
+    });
+    fixture = TestBed.createComponent(InputFormFieldTestHost);
+    fixture.detectChanges();
+  });
+
+  // The disabled treatment is driven by the registered control's state (data-disabled), NOT by
+  // :has(:disabled) — a composite control (e.g. the rich text editor) legitimately disables
+  // individual toolbar buttons while fully enabled, and :has would dim the whole field over it.
+  it('sets data-disabled from the registered control, not from arbitrary disabled descendants', () => {
+    const field = fixture.nativeElement.querySelector('et-form-field') as HTMLElement;
+
+    expect(field.hasAttribute('data-disabled')).toBe(false);
+
+    fixture.componentInstance.disabled.set(true);
+    fixture.detectChanges();
+
+    expect(field.hasAttribute('data-disabled')).toBe(true);
   });
 });

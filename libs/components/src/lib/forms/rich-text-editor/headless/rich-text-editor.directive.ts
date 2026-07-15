@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { computed, DestroyRef, Directive, inject, input, model, signal } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { htmlToMarkdown } from '@ethlete/core';
+import { htmlToMarkdown, markdownToHtml } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 import { RICH_TEXT_EDITOR_TOKEN_CODEC } from '../rich-text-editor-token-codec.token';
 import { injectRichTextEditorTools, RichTextEditorTool } from '../rich-text-editor-tools';
@@ -30,7 +30,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   public touched = model(false);
   public disabled = input(false);
   public readonly = input(false);
-  // eslint-disable-next-line ethlete/no-native-html-input-name -- form-field hidden state deliberately mirrors the native attribute
+  // eslint-disable-next-line ethlete/no-native-html-input-name
   public hidden = input(false);
   public invalid = input(false);
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
@@ -41,6 +41,11 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   /** Which formatting tools the toolbar renders, and in what order. Falls back to the value from
    *  `provideRichTextEditorTools` (or the full default set). */
   public tools = input<readonly RichTextEditorTool[] | null>(null);
+
+  /** Markdown autoformat while typing: `- `, `1. ` and `# `–`### ` at a line start convert into
+   *  lists/headings, and closing `**bold**`, `*italic*`, `` `code` ``, `~~strike~~`, `__`/`_` runs
+   *  convert into their marks. Registered token-trigger characters never autoformat. */
+  public autoformat = input(true);
 
   /** Resolved toolbar tools: the `tools` input if set, otherwise the provided/default config. */
   public resolvedTools = computed(() => this.tools() ?? this.toolsConfig.tools);
@@ -73,11 +78,32 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
   public headingLevel = signal<number | null>(null);
 
+  /** Whether the selection sits inside a table cell. Block tools (heading menu, lists) disable
+   *  themselves on it — a GFM table cell can only hold single-line inline content, so block
+   *  markup inside one would not survive serialization. */
+  public inTableCell = signal(false);
+
+  /** The heading (block-style) tool is unavailable where a heading can't apply: inside table
+   *  cells (no GFM form) and inside list items (a heading would not survive list serialization). */
+  public headingToolDisabled = computed(
+    () => this.inTableCell() || this.unorderedListActive() || this.orderedListActive(),
+  );
+
   /**
    * @internal Inline marks queued for the next typed text while the selection is collapsed ("stored
    * marks"). `null` means "follow the caret"; a list means the next input is wrapped in exactly these.
    */
   public pendingMarks = signal<InlineTag[] | null>(null);
+
+  /**
+   * @internal Characters claimed by the token-trigger system (set by `[etRichTextEditorTriggers]`).
+   * Autoformat rules keyed on these characters never fire, so a `#` trigger keeps opening its
+   * autocomplete instead of becoming a heading.
+   */
+  public autoformatReservedChars = signal<readonly string[]>([]);
+
+  /** @internal `true` while a token-trigger popup run is active — suspends all autoformat. */
+  public autoformatSuppressed = signal(false);
 
   /** @internal */
   public lastEmittedMarkdown: string | null = null;
@@ -117,8 +143,11 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     const pending = this.pendingMarks();
 
     if (pending !== null) {
+      const states = this.editorDom.markStates();
+
       this.reflectMarks(pending);
-      this.headingLevel.set(this.editorDom.markStates()?.heading ?? null);
+      this.headingLevel.set(states?.heading ?? null);
+      this.inTableCell.set(states?.tableCell ?? false);
 
       return;
     }
@@ -134,6 +163,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     this.orderedListActive.set(states?.orderedList ?? false);
     this.linkActive.set(states?.link ?? false);
     this.headingLevel.set(states?.heading ?? null);
+    this.inTableCell.set(states?.tableCell ?? false);
   }
 
   public toggleBold() {
@@ -154,6 +184,37 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
   public toggleInlineCode() {
     this.toggleMark('code');
+  }
+
+  /**
+   * Runs markdown autoformat for a single typed character (called from `beforeinput`): a space may
+   * convert a line-start prefix into a list/heading, a delimiter char may close an inline run into
+   * its mark. Returns `true` when the character was consumed by a conversion.
+   */
+  public handleAutoformat(data: string) {
+    if (
+      !this.autoformat() ||
+      this.autoformatSuppressed() ||
+      this.disabled() ||
+      this.readonly() ||
+      !this.editorDom.root()
+    ) {
+      return false;
+    }
+
+    const reserved = new Set(this.autoformatReservedChars());
+    const isReserved = (char: string) => reserved.has(char);
+
+    const handled =
+      data === ' '
+        ? this.editorDom.applyBlockAutoformat(isReserved)
+        : data.length === 1 && '*_~`'.includes(data)
+          ? this.editorDom.applyInlineAutoformat(data, isReserved)
+          : false;
+
+    if (handled) this.syncFromDom();
+
+    return handled;
   }
 
   public consumePendingInsert(text: string) {
@@ -234,10 +295,39 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     return handled;
   }
 
-  /**
-   * @internal Extension seam for the follow-up `@`/`#` autocomplete: inserts an atomic inline
-   * node (a mention/placeholder token) at the caret, then re-syncs.
-   */
+  public pasteHtml(html: string) {
+    if (this.disabled() || this.readonly() || !this.editorDom.root()) return false;
+
+    this.clearPendingMarks();
+
+    // DOMParser yields an inert document: clipboard scripts never run and images never load
+    // while the foreign markup is being reduced.
+    const body = new DOMParser().parseFromString(html, 'text/html').body;
+
+    // eslint-disable-next-line ethlete/no-dom-query -- clipboard HTML (e.g. from Word) embeds <style> blocks whose CSS text would survive the tag-strip as plain text
+    body.querySelectorAll('style, script, noscript, meta, link, title').forEach((junk) => junk.remove());
+
+    const codec = this.tokenCodec();
+
+    codec?.serialize(body);
+
+    const markdown = htmlToMarkdown(body.innerHTML);
+
+    if (!markdown) return false;
+
+    const normalized = markdownToHtml(markdown);
+
+    this.editorDom.insertNormalizedHtml(codec ? codec.render(normalized) : normalized);
+
+    const root = this.editorDom.root();
+
+    if (codec && root) codec.hydrate(root);
+
+    this.syncFromDom();
+
+    return true;
+  }
+
   public insertAtomicToken(node: Node) {
     if (this.disabled() || this.readonly() || !this.editorDom.root()) return;
 

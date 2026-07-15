@@ -1,4 +1,5 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { Component, input, ViewEncapsulation } from '@angular/core';
+import { IconDirective } from '../icon';
 import { MENU_SELECTION_ITEM_KIND, MenuItemDirective, MenuSelectionItemDirective } from './headless';
 
 @Component({
@@ -6,6 +7,7 @@ import { MENU_SELECTION_ITEM_KIND, MenuItemDirective, MenuSelectionItemDirective
   templateUrl: './menu-selection-item.component.html',
   styleUrl: './menu-selection-item.component.css',
   encapsulation: ViewEncapsulation.None,
+  imports: [IconDirective],
   providers: [{ provide: MENU_SELECTION_ITEM_KIND, useValue: 'checkbox' }],
   hostDirectives: [
     {
@@ -21,6 +23,9 @@ import { MENU_SELECTION_ITEM_KIND, MenuItemDirective, MenuSelectionItemDirective
   ],
   host: {
     class: 'et-menu-item et-menu-selection-item et-menu-checkbox-item',
+    '[class.et-menu-selection-item--has-icon]': '!!icon()',
   },
 })
-export class MenuCheckboxItemComponent {}
+export class MenuCheckboxItemComponent {
+  public icon = input<string | null>(null);
+}

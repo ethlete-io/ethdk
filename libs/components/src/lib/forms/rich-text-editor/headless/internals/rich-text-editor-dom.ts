@@ -28,6 +28,9 @@ export type RichTextMarkStates = {
   link: boolean;
   /** Heading level of the block the selection starts in, or `null` when it is not a heading. */
   heading: number | null;
+  /** Whether the selection starts inside a table cell — where block tools (headings, lists) have
+   *  no GFM representation and are disabled. */
+  tableCell: boolean;
 };
 
 const richTextEditorDomFactory = () => {
@@ -602,6 +605,7 @@ const richTextEditorDomFactory = () => {
       orderedList: !!closestWithin(node, 'ol'),
       link: !!closestWithin(node, 'a'),
       heading: headingEl ? Number(headingEl.tagName[1]) : null,
+      tableCell: !!closestWithin(node, 'td, th'),
     };
   };
 
@@ -837,6 +841,11 @@ const richTextEditorDomFactory = () => {
   const replaceBlockTag = (block: HTMLElement, tag: HeadingTag | 'p'): HTMLElement => {
     const replacement = renderer.createElement(tag);
 
+    // alignment survives the re-tag — it's the one style the editor persists on blocks
+    if (block.style.textAlign) {
+      renderer.setStyle(replacement, { textAlign: block.style.textAlign });
+    }
+
     while (block.firstChild) {
       renderer.appendChild(replacement, block.firstChild);
     }
@@ -1000,6 +1009,217 @@ const richTextEditorDomFactory = () => {
     selection.addRange(range);
   };
 
+  /**
+   * Markdown block autoformat: typing a space right after a line-start markdown prefix converts the
+   * block — `-`/`*`/`+` into a bulleted list, `1.` into a numbered list, `#`–`###` into a heading.
+   * Only fires when the prefix is the entire line before the caret, and never inside contexts the
+   * block tools don't apply to (list items, table cells, code, headings). `isReserved` marks
+   * characters claimed by the token-trigger system — a reserved prefix never converts, so e.g. a
+   * `#` trigger keeps opening its autocomplete instead of becoming a heading.
+   * Returns `true` when it converted (the caller must then swallow the typed space).
+   */
+  const applyBlockAutoformat = (isReserved: (char: string) => boolean) => {
+    const editable = getSelection();
+    const el = root();
+
+    if (!el || !editable || !editable.range.collapsed) return false;
+
+    const { range } = editable;
+
+    if (closestWithin(range.startContainer, `li, td, th, pre, code, ${HEADING_SELECTOR}`)) return false;
+
+    // The line starts at the caret's paragraph — a browser-created <div> line counts too (Chrome
+    // inserts <div>s on Enter; the serializer maps them to paragraphs) — or at the editor root for
+    // the loose first line a contenteditable holds before any block exists.
+    const container = closestWithin(range.startContainer, 'p, div') ?? el;
+    const probe = doc.createRange();
+
+    probe.selectNodeContents(container);
+    probe.setEnd(range.startContainer, range.startOffset);
+
+    const prefix = probe.toString();
+
+    let action: (() => void) | null = null;
+
+    if (/^[-*+]$/.test(prefix) && !isReserved(prefix)) {
+      action = () => toggleList('ul');
+    } else if (/^\d{1,9}\.$/.test(prefix) && !isReserved(prefix[0] ?? '')) {
+      action = () => toggleList('ol');
+    } else if (/^#{1,3}$/.test(prefix) && !isReserved('#')) {
+      action = () => toggleHeading(`h${prefix.length}` as HeadingTag);
+    }
+
+    if (!action) return false;
+
+    probe.deleteContents();
+    el.normalize();
+    collapseInto(container === el ? el : container, 0);
+    action();
+
+    // The consumed prefix usually leaves the converted block empty — give it a line box and a
+    // clean collapsed caret so typing continues inside it.
+    const editableAfter = getSelection();
+    // descend from the restored selection's boundary (e.g. the <ul> after toggleList) to the leaf
+    const landed = editableAfter
+      ? closestWithin(resolveStartNode(editableAfter.range), `li, ${HEADING_SELECTOR}`)
+      : null;
+
+    if (landed && isBlockEmpty(landed)) {
+      if (collectDescendants(landed, 'br').length === 0) {
+        renderer.appendChild(landed, renderer.createElement('br'));
+      }
+
+      collapseInto(landed, 0);
+    }
+
+    return true;
+  };
+
+  /** The inline autoformat rules: markdown delimiter runs completed by the typed closing char.
+   *  Longer delimiters come first so `**` wins over `*` (and `__` over `_`). */
+  const inlineAutoformatRules: { char: string; tag: InlineTag; re: RegExp }[] = [
+    { char: '*', tag: 'strong', re: /\*\*([^\s*](?:[^*]*[^\s*])?)\*\*$/ },
+    { char: '*', tag: 'em', re: /(?<!\*)\*([^\s*](?:[^*]*[^\s*])?)\*$/ },
+    { char: '~', tag: 'del', re: /~~([^\s~](?:[^~]*[^\s~])?)~~$/ },
+    { char: '`', tag: 'code', re: /`([^`]+)`$/ },
+    { char: '_', tag: 'strong', re: /(?<![\w_])__([^\s_](?:[^_]*[^\s_])?)__$/ },
+    { char: '_', tag: 'em', re: /(?<![\w_])_([^\s_](?:[^_]*[^\s_])?)_$/ },
+  ];
+
+  /**
+   * Markdown inline autoformat: typing the closing delimiter of `**bold**`, `*italic*`,
+   * `` `code` ``, `~~strike~~`, `__bold__` or `_italic_` converts the run into its mark, with the
+   * caret placed after the mark so typing continues unformatted. The whole run must live in the
+   * caret's text node (marks already applied inside it keep it from matching — a v1 limit).
+   * `typed` is the char about to be inserted; returns `true` when it consumed it.
+   */
+  const applyInlineAutoformat = (typed: string, isReserved: (char: string) => boolean) => {
+    const editable = getSelection();
+    const el = root();
+
+    if (!el || !editable || !editable.range.collapsed) return false;
+
+    const { range } = editable;
+    const node = range.startContainer;
+
+    if (!(node instanceof Text)) return false;
+
+    // backticks & co. are literal inside code spans/blocks
+    if (closestWithin(node, 'code, pre')) return false;
+
+    const text = (node.textContent ?? '').slice(0, range.startOffset) + typed;
+
+    for (const rule of inlineAutoformatRules) {
+      if (rule.char !== typed || isReserved(rule.char)) continue;
+
+      const match = rule.re.exec(text);
+
+      if (!match) continue;
+
+      const inner = match[1] ?? '';
+      const start = match.index;
+
+      node.deleteData(start, range.startOffset - start);
+
+      const mark = renderer.createElement(rule.tag) as HTMLElement;
+
+      renderer.appendChild(mark, renderer.createText(inner));
+
+      const insertAt = doc.createRange();
+
+      insertAt.setStart(node, start);
+      insertAt.collapse(true);
+      insertAt.insertNode(mark);
+
+      // Land the caret in a real text node after the mark (a zero-width space when nothing
+      // follows — stripped on serialize), mirroring codeExit: a bare element boundary doesn't
+      // stick and the browser would snap the caret back inside the mark.
+      let target = mark.nextSibling;
+      let offset = 0;
+
+      if (!(target instanceof Text) || target.length === 0) {
+        target = renderer.createText('\u200b');
+        renderer.insertBefore(mark.parentNode as Node, target, mark.nextSibling);
+        offset = 1;
+      }
+
+      collapseInto(target, offset);
+
+      return true;
+    }
+
+    return false;
+  };
+
+  /**
+   * Inserts already-normalized editor HTML at the selection (replacing it). Content that is a
+   * single paragraph (or bare inline flow) is spliced into the caret's block; multi-block content
+   * is inserted as root-level blocks after the caret's block — the surrounding block is not split.
+   */
+  const insertNormalizedHtml = (html: string) => {
+    const editable = getSelection();
+    const el = root();
+
+    if (!editable || !el) return;
+
+    const template = renderer.createElement('template') as HTMLTemplateElement;
+    template.innerHTML = html;
+
+    // a lone paragraph opens up into its inline children so it flows into the caret's block
+    const only = template.content.childNodes.length === 1 ? template.content.firstChild : null;
+
+    if (only instanceof HTMLElement && only.tagName === 'P') {
+      only.replaceWith(...only.childNodes);
+    }
+
+    const nodes = Array.from(template.content.childNodes);
+
+    if (nodes.length === 0) return;
+
+    const { range } = editable;
+    range.deleteContents();
+
+    const isBlock = (node: Node) =>
+      node instanceof HTMLElement && !node.matches('a, strong, em, del, u, code, span, br, img');
+
+    if (nodes.some(isBlock)) {
+      // block content goes to the root level, after the block holding the caret
+      let anchor: Node | null = range.startContainer;
+
+      while (anchor && anchor !== el && anchor.parentNode !== el) anchor = anchor.parentNode;
+
+      let ref: Node | null = anchor && anchor !== el ? anchor.nextSibling : null;
+
+      nodes.forEach((node) => {
+        renderer.insertBefore(el, node, ref);
+        ref = node.nextSibling;
+      });
+
+      const last = nodes[nodes.length - 1];
+
+      if (last) {
+        const caret = doc.createRange();
+        caret.selectNodeContents(last);
+        caret.collapse(false);
+        const selection = doc.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(caret);
+      }
+    } else {
+      nodes.forEach((node) => {
+        range.insertNode(node);
+        range.setStartAfter(node);
+        range.collapse(true);
+      });
+
+      const selection = doc.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    }
+
+    el.normalize();
+  };
+
   const handleBackspace = () => {
     const editable = getSelection();
 
@@ -1052,8 +1272,57 @@ const richTextEditorDomFactory = () => {
     return false;
   };
 
+  /** Enter at the edge of a root-level heading starts a plain paragraph instead of letting the
+   *  browser continue the heading: at the end, an empty paragraph follows and receives the caret;
+   *  at the start, an empty paragraph is inserted above and the heading keeps the caret.
+   *  Mid-heading Enter stays native (splitting into two headings, like every editor). */
+  const headingEnter = () => {
+    const editable = getSelection();
+    const el = root();
+
+    if (!editable || !el || !editable.range.collapsed) {
+      return false;
+    }
+
+    const { range } = editable;
+    const heading = closestWithin(range.startContainer, HEADING_SELECTOR);
+
+    if (!heading || heading.parentElement !== el || isBlockEmpty(heading)) {
+      return false;
+    }
+
+    const textToward = (side: 'start' | 'end') => {
+      const probe = doc.createRange();
+      probe.selectNodeContents(heading);
+
+      if (side === 'end') probe.setStart(range.startContainer, range.startOffset);
+      else probe.setEnd(range.startContainer, range.startOffset);
+
+      return probe.toString().length;
+    };
+
+    const paragraph = renderer.createElement('p');
+    renderer.appendChild(paragraph, renderer.createElement('br'));
+
+    if (textToward('end') === 0) {
+      renderer.insertBefore(el, paragraph, heading.nextSibling);
+      collapseInto(paragraph, 0);
+
+      return true;
+    }
+
+    if (textToward('start') === 0) {
+      renderer.insertBefore(el, paragraph, heading);
+
+      return true;
+    }
+
+    return false;
+  };
+
   /** Enter on an empty list item steps it out one nesting level (or leaves the list at the top),
-   *  instead of inserting another empty item. Returns `true` when handled. */
+   *  instead of inserting another empty item; Enter at a heading's edge starts a paragraph.
+   *  Returns `true` when handled. */
   const handleEnter = () => {
     const editable = getSelection();
 
@@ -1063,13 +1332,13 @@ const richTextEditorDomFactory = () => {
 
     const li = closestWithin(editable.range.startContainer, 'li');
 
-    if (!li || !isBlockEmpty(li)) {
-      return false;
+    if (li && isBlockEmpty(li)) {
+      exitListItem(li);
+
+      return true;
     }
 
-    exitListItem(li);
-
-    return true;
+    return headingEnter();
   };
 
   // The inline mark elements a caret can sit inside; used for the collapsed-caret "stored marks" flow.
@@ -1463,6 +1732,9 @@ const richTextEditorDomFactory = () => {
     applyLink,
     removeLink,
     insertToken,
+    insertNormalizedHtml,
+    applyBlockAutoformat,
+    applyInlineAutoformat,
     handleBackspace,
     handleEnter,
   };

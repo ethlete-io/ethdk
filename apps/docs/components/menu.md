@@ -98,6 +98,12 @@ Radio (single) and checkbox (multi) items work with `[(value)]` on their group o
 
 Activation follows menu conventions: <kbd>Enter</kbd> selects and dismisses, <kbd>Space</kbd> and pointer clicks toggle while keeping the menu open for multi-pick. Checkbox items also support `indeterminate`.
 
+Both item kinds take an optional `icon` input (a `provideIcons`-registered icon name). The icon renders in place of the radio dot / checkmark, and the checked state shows through the icon taking the accent color instead — used by e.g. the rich text editor's alignment and text-style menus:
+
+```html
+<et-menu-radio-item value="left" icon="et-align-left">Align left</et-menu-radio-item>
+```
+
 Groups and standalone items carry the usual signal-forms surface alongside `[(value)]` / `[formField]`: `disabled`, `invalid`, `errors`, `required`, `name` and a `touched` model (groups additionally take `multiple`). The underlying headless directives are `etMenuSelectionGroup` and `etMenuSelectionItem` if you're building custom selection rows.
 
 <StoryEmbed id="components-menu-with-selection--default" height="440px" />

@@ -87,4 +87,89 @@ describe('RichTextEditorDirective', () => {
       expect(dir.headingLevel()).toBeNull();
     });
   });
+
+  describe('pasteHtml', () => {
+    let fixture: ComponentFixture<StandaloneEditorTestHost>;
+    let dir: RichTextEditorDirective;
+    let editable: HTMLElement;
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({ imports: [StandaloneEditorTestHost] });
+      fixture = TestBed.createComponent(StandaloneEditorTestHost);
+      fixture.detectChanges();
+      dir = (fixture.debugElement.children[0] as DebugElement).injector.get(RichTextEditorDirective);
+
+      editable = document.createElement('div');
+      editable.contentEditable = 'true';
+      document.body.appendChild(editable);
+      dir.editorDom.root.set(editable);
+
+      const range = document.createRange();
+      range.setStart(editable, 0);
+      range.collapse(true);
+      const selection = document.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    });
+
+    afterEach(() => {
+      editable.remove();
+      document.getSelection()?.removeAllRanges();
+    });
+
+    it('reduces foreign markup to the editor schema and syncs the value', () => {
+      const handled = dir.pasteHtml('<div style="color: red"><span class="x">hello <b>world</b></span></div>');
+
+      expect(handled).toBe(true);
+      expect(dir.value()).toBe('hello **world**');
+      expect(editable.innerHTML).not.toContain('style=');
+      expect(editable.innerHTML).toContain('<strong>world</strong>');
+    });
+
+    it('drops style and script elements including their text content', () => {
+      dir.pasteHtml('<style>.x { color: red; }</style><script>evil()</script><p>hi</p>');
+
+      expect(dir.value()).toBe('hi');
+      expect(editable.textContent).not.toContain('color: red');
+    });
+
+    it('returns false when the clipboard html has no meaningful content', () => {
+      expect(dir.pasteHtml('<div>   </div>')).toBe(false);
+      expect(dir.value()).toBe('');
+    });
+
+    it('does nothing without an editable element', () => {
+      dir.editorDom.root.set(null);
+
+      expect(dir.pasteHtml('<p>hi</p>')).toBe(false);
+      expect(dir.value()).toBe('');
+    });
+
+    it('locks the heading tool inside lists and table cells, but not in plain paragraphs', () => {
+      editable.innerHTML = '<p>plain</p><ul><li>item</li></ul><table><tbody><tr><td>cell</td></tr></tbody></table>';
+
+      const caretIn = (selector: string) => {
+        const target = editable.querySelector(selector)?.firstChild;
+
+        if (!target) throw new Error(`no text node for ${selector}`);
+
+        const range = document.createRange();
+        range.setStart(target, 1);
+        range.collapse(true);
+        const selection = document.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+        dir.refreshActiveMarks();
+      };
+
+      caretIn('p');
+      expect(dir.headingToolDisabled()).toBe(false);
+
+      caretIn('li');
+      expect(dir.headingToolDisabled()).toBe(true);
+
+      caretIn('td');
+      expect(dir.headingToolDisabled()).toBe(true);
+    });
+  });
 });

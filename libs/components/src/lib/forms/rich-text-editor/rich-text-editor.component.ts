@@ -90,6 +90,7 @@ const NAVIGATION_KEYS = new Set([
         'name',
         'placeholder',
         'tools',
+        'autoformat',
       ],
       outputs: ['valueChange', 'touchedChange'],
     },
@@ -186,8 +187,9 @@ export class RichTextEditorComponent {
       return;
     }
 
-    // Enter on an empty list item steps out of the list one level at a time
-    if (event.key === 'Enter' && this.dir.editorDom.handleEnter()) {
+    // Enter on an empty list item steps out of the list one level at a time; Enter at a heading's
+    // edge starts a plain paragraph. Shift+Enter stays native (soft line break).
+    if (event.key === 'Enter' && !event.shiftKey && this.dir.editorDom.handleEnter()) {
       event.preventDefault();
       this.dir.syncFromDom();
 
@@ -218,6 +220,16 @@ export class RichTextEditorComponent {
     }
   }
 
+  protected interceptPaste(event: ClipboardEvent) {
+    const html = event.clipboardData?.getData('text/html');
+
+    // a plain-text paste is already schema-safe — the browser inserts it as text
+    if (!html) return;
+
+    event.preventDefault();
+    this.dir.pasteHtml(html);
+  }
+
   protected interceptFormattingCommand(event: InputEvent) {
     // Keep keyboard shortcuts (Ctrl/Cmd+B, …) running through our Selection/Range commands
     // instead of the browser's deprecated execCommand-backed formatting.
@@ -234,7 +246,18 @@ export class RichTextEditorComponent {
         event.preventDefault();
         this.dir.toggleStrikethrough();
         break;
+      case 'formatUnderline':
+        event.preventDefault();
+        this.dir.toggleUnderline();
+        break;
       case 'insertText':
+        // markdown autoformat: a space may convert a line-start prefix (`- `, `1. `, `# `), a
+        // delimiter may close an inline run (`**bold**`, `` `code` ``, …) into its mark
+        if (event.data !== null && this.dir.handleAutoformat(event.data)) {
+          event.preventDefault();
+          break;
+        }
+
         // apply any pending stored marks to the typed text (collapsed-caret formatting toggle)
         if (event.data !== null && this.dir.consumePendingInsert(event.data)) {
           event.preventDefault();

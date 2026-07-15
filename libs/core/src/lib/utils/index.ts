@@ -1,4 +1,5 @@
 export * from './angular';
+export * from './clipboard';
 export * from './comparison';
 export * from './cookie';
 export * from './i18n';

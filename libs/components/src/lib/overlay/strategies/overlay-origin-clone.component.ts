@@ -10,6 +10,8 @@ import { AnimatedLifecycleDirective } from '@ethlete/core';
   host: {
     class: 'et-overlay-origin-clone',
     inert: 'true',
+    // Forces a component ID distinct from the identical @ethlete/cdk twin (NG0912).
+    'data-et-components': '',
   },
 })
 export class OverlayOriginCloneComponent {

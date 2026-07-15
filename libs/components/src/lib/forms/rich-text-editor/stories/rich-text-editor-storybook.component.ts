@@ -13,6 +13,9 @@ import {
   FormFieldLabelMode,
   FormFieldSize,
 } from '../../form-field';
+import { provideRichTextEditorAlignmentTool } from '../tools/rich-text-editor-align.provider';
+import { provideRichTextEditorTableTool } from '../tools/rich-text-editor-table.provider';
+import { RichTextEditorTool } from '../rich-text-editor-tools';
 import { RICH_TEXT_EDITOR_IMPORTS } from '../rich-text-editor.imports';
 
 @Component({
@@ -25,7 +28,7 @@ import { RICH_TEXT_EDITOR_IMPORTS } from '../rich-text-editor.imports';
     >
       <et-form-field [appearance]="appearance()" [fill]="fill()" [size]="size()" [labelMode]="labelMode()">
         <et-label>{{ label() }}</et-label>
-        <et-rich-text-editor [formField]="demoForm.value" [placeholder]="placeholder()" />
+        <et-rich-text-editor [formField]="demoForm.value" [placeholder]="placeholder()" [tools]="tools()" />
         @if (hint()) {
           <et-hint>{{ hint() }}</et-hint>
         }
@@ -38,8 +41,12 @@ import { RICH_TEXT_EDITOR_IMPORTS } from '../rich-text-editor.imports';
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [...FORM_FIELD_IMPORTS, ...RICH_TEXT_EDITOR_IMPORTS, FormField, ProvideColorDirective, JsonPipe],
+  providers: [provideRichTextEditorTableTool(), provideRichTextEditorAlignmentTool()],
 })
 export class FormFieldRichTextEditorStorybookComponent {
+  /** `null` renders the default toolbar; stories opt into the table/alignment tools via this. */
+  public tools = input<readonly RichTextEditorTool[] | null>(null);
+
   public appearance = input<FormFieldAppearance>(FORM_FIELD_APPEARANCES.BOX);
   public fill = input<FormFieldFill>(FORM_FIELD_FILLS.TRANSPARENT);
   public size = input<FormFieldSize>(FORM_FIELD_SIZES.MD);

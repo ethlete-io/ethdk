@@ -13,6 +13,8 @@ import { OVERLAY_ROUTER_OUTLET_TOKEN } from './overlay-router-outlet.component';
   imports: [NgTemplateOutlet],
   host: {
     class: 'et-overlay-shared-route-template-outlet-host',
+    // Forces a component ID distinct from the identical @ethlete/cdk twin (NG0912).
+    'data-et-components': '',
   },
   styles: `
     .et-overlay-shared-route-template-outlet-host {

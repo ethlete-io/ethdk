@@ -62,6 +62,8 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
 
   public isReadonly = computed(() => this.registeredControl()?.readonly?.() ?? false);
 
+  public isDisabled = computed(() => this.registeredControl()?.disabled?.() ?? false);
+
   public usesTextFieldShell = computed(
     () =>
       this.controlType() === FORM_FIELD_CONTROL_TYPES.TEXT_INPUT ||

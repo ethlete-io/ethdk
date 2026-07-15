@@ -58,7 +58,29 @@
       opacity: 1;
     }
 
+    &.et-menu-selection-item--has-icon {
+      .et-menu-item-check {
+        color: currentColor;
+        transition: color 120ms ease;
+      }
+
+      .et-menu-item-check::before {
+        content: none;
+      }
+
+      .et-menu-item-check i {
+        inline-size: 100%;
+        block-size: 100%;
+      }
+
+      &[aria-checked='true'] .et-menu-item-check,
+      &[aria-checked='mixed'] .et-menu-item-check {
+        color: var(--et-theme-color-primary-solid, currentColor);
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
+      .et-menu-item-check,
       .et-menu-item-check::before {
         transition-duration: 0ms;
       }

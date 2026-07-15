@@ -77,6 +77,8 @@ export type RichTextEditorToolButton = {
   label: string;
   isActive: (editor: RichTextEditorDirective) => boolean;
   run: (editor: RichTextEditorDirective) => void;
+  /** Disables the button in contexts where the tool cannot apply (e.g. lists inside a table cell). */
+  isDisabled?: (editor: RichTextEditorDirective) => boolean;
   /** Link keeps its brand color, so its icon opts out of the neutral icon recolor. */
   allowHardcodedColor?: boolean;
 };
@@ -108,12 +110,14 @@ export const RICH_TEXT_EDITOR_TOOL_BUTTONS: Partial<Record<RichTextEditorTool, R
     label: 'Bulleted list',
     isActive: (e) => e.unorderedListActive(),
     run: (e) => e.toggleUnorderedList(),
+    isDisabled: (e) => e.inTableCell(),
   },
   numberedList: {
     icon: 'et-list-numbered',
     label: 'Numbered list',
     isActive: (e) => e.orderedListActive(),
     run: (e) => e.toggleOrderedList(),
+    isDisabled: (e) => e.inTableCell(),
   },
   link: {
     icon: 'et-link',
@@ -146,6 +150,8 @@ export type RichTextEditorToolDefinition = {
   allowHardcodedColor?: boolean;
   isActive?: (editor: RichTextEditorDirective) => boolean;
   run?: (editor: RichTextEditorDirective) => void;
+  /** Disables the button in contexts where the tool cannot apply (e.g. lists inside a table cell). */
+  isDisabled?: (editor: RichTextEditorDirective) => boolean;
   /** Custom control rendered instead of a toggle button; it receives the editor as an `editor` input. */
   control?: Type<unknown>;
 };

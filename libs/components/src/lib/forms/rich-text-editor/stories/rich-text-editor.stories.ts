@@ -43,3 +43,24 @@ export const WithMarkdown: Story = {
       '# Main heading\n\nA short intro with **bold**, *italic* and ~~strikethrough~~.\n\n## A subheading\n\n- First item\n- Second item\n\nA [link](https://example.com) too.',
   },
 };
+
+export const WithTableAndAlignment: Story = {
+  args: {
+    tools: [
+      'heading',
+      'divider',
+      'bold',
+      'italic',
+      'underline',
+      'strike',
+      'divider',
+      'bulletedList',
+      'numberedList',
+      'divider',
+      'align',
+      'table',
+    ],
+    value:
+      '<h2 style="text-align: center">Standings</h2>\n\n| Team | Points |\n| --- | --- |\n| Berlin | 42 |\n| Hamburg | 39 |\n\n<p style="text-align: right">A right-aligned paragraph after the table.</p>',
+  },
+};

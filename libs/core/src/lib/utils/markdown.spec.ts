@@ -130,6 +130,57 @@ describe('markdownToHtml', () => {
       '<table><thead><tr><th>Col</th></tr></thead><tbody><tr><td><strong>bold</strong></td></tr></tbody></table>',
     );
   });
+
+  it('applies GFM column alignment from the separator line to every cell', () => {
+    const input = '| A | B | C |\n| :--- | :---: | ---: |\n| a | b | c |';
+    expect(markdownToHtml(input)).toBe(
+      '<table><thead><tr><th style="text-align: left">A</th><th style="text-align: center">B</th><th style="text-align: right">C</th></tr></thead>' +
+        '<tbody><tr><td style="text-align: left">a</td><td style="text-align: center">b</td><td style="text-align: right">c</td></tr></tbody></table>',
+    );
+  });
+
+  it('converts single-underscore emphasis but not inside a word', () => {
+    expect(markdownToHtml('some _emphasis_ here')).toBe('<p>some <em>emphasis</em> here</p>');
+    expect(markdownToHtml('a snake_case_name stays literal')).toBe('<p>a snake_case_name stays literal</p>');
+  });
+
+  it('leaves whitespace-flanked delimiters as literal text', () => {
+    expect(markdownToHtml('2 * 3 * 4')).toBe('<p>2 * 3 * 4</p>');
+    expect(markdownToHtml('a ** b ** c')).toBe('<p>a ** b ** c</p>');
+    expect(markdownToHtml('a ~~ b ~~ c')).toBe('<p>a ~~ b ~~ c</p>');
+  });
+
+  it('escapes raw html instead of rendering it', () => {
+    expect(markdownToHtml('hello <img src=x onerror=alert(1)> world')).toBe(
+      '<p>hello &lt;img src=x onerror=alert(1)&gt; world</p>',
+    );
+    expect(markdownToHtml('a <b important thing')).toBe('<p>a &lt;b important thing</p>');
+  });
+
+  it('does not double-escape entities already present in the markdown', () => {
+    expect(markdownToHtml('a &amp; b')).toBe('<p>a &amp; b</p>');
+  });
+
+  it('keeps links and images with script-running url schemes as literal text', () => {
+    expect(markdownToHtml('[click](javascript:alert(1))')).toBe('<p>[click](javascript:alert(1))</p>');
+    expect(markdownToHtml('[click](java\tscript:alert(1))')).toBe('<p>[click](java\tscript:alert(1))</p>');
+    expect(markdownToHtml('![x](javascript:alert(1))')).toBe('<p>![x](javascript:alert(1))</p>');
+  });
+
+  it('strips foreign attributes and unsafe tags from an aligned block', () => {
+    expect(markdownToHtml('<p style="text-align: center" onmouseover="alert(1)">hi <script>x</script></p>')).toBe(
+      '<p style="text-align: center">hi x</p>',
+    );
+    expect(
+      markdownToHtml(
+        '<p style="text-align: right"><strong onclick="x()">b</strong> <a href="javascript:y()">l</a></p>',
+      ),
+    ).toBe('<p style="text-align: right"><strong>b</strong> <a>l</a></p>');
+  });
+
+  it('converts multi-line block quotes with inline formatting per line', () => {
+    expect(markdownToHtml('> **a**\n> b')).toBe('<blockquote><strong>a</strong><br>b</blockquote>');
+  });
 });
 
 describe('htmlToMarkdown', () => {
@@ -260,5 +311,47 @@ describe('htmlToMarkdown', () => {
   it('converts a table without thead (first row becomes header)', () => {
     const input = '<table><tr><th>Name</th><th>Age</th></tr><tr><td>Alice</td><td>30</td></tr></table>';
     expect(htmlToMarkdown(input)).toBe('| Name | Age |\n| --- | --- |\n| Alice | 30 |');
+  });
+
+  it('serializes column alignment from the header cells into the GFM separator', () => {
+    const input =
+      '<table><thead><tr><th style="text-align: center">A</th><th>B</th><th style="text-align: right">C</th></tr></thead>' +
+      '<tbody><tr><td style="text-align: center">a</td><td>b</td><td style="text-align: right">c</td></tr></tbody></table>';
+    expect(htmlToMarkdown(input)).toBe('| A | B | C |\n| :---: | --- | ---: |\n| a | b | c |');
+  });
+
+  it('round-trips table column alignment through both directions', () => {
+    const md = '| A | B |\n| :---: | ---: |\n| a | b |';
+    expect(htmlToMarkdown(markdownToHtml(md))).toBe(md);
+  });
+
+  it('keeps br line breaks inside paragraphs and block quotes', () => {
+    expect(htmlToMarkdown('<p>line a<br>line b</p>')).toBe('line a\nline b');
+    expect(htmlToMarkdown('<blockquote>line a<br>line b</blockquote>')).toBe('> line a\n> line b');
+  });
+
+  it('degrades a br inside a table cell or list item to a space', () => {
+    expect(htmlToMarkdown('<table><tr><th>H</th></tr><tr><td>a<br>b</td></tr></table>')).toBe(
+      '| H |\n| --- |\n| a b |',
+    );
+    expect(htmlToMarkdown('<ul><li>a<br>b</li></ul>')).toBe('- a b');
+  });
+
+  it('round-trips a soft line break through both directions', () => {
+    expect(htmlToMarkdown(markdownToHtml('line a\nline b'))).toBe('line a\nline b');
+  });
+
+  it('round-trips a multi-line block quote through both directions', () => {
+    expect(htmlToMarkdown(markdownToHtml('> line one\n> line two'))).toBe('> line one\n> line two');
+  });
+
+  it('treats div boundaries as paragraph boundaries (clipboard html)', () => {
+    expect(htmlToMarkdown('<div>first</div><div>second</div>')).toBe('first\n\nsecond');
+    expect(htmlToMarkdown('<div><span>a</span></div><p>b</p>')).toBe('a\n\nb');
+  });
+
+  it('round-trips literal angle brackets typed by the user', () => {
+    // the editor serializes typed `<` as markdown text; re-rendering must not treat it as a tag
+    expect(htmlToMarkdown(markdownToHtml('a < b and c <b not a tag'))).toBe('a < b and c <b not a tag');
   });
 });

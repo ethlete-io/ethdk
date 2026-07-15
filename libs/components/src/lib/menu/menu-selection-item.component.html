@@ -1,4 +1,8 @@
-<span class="et-menu-item-check" aria-hidden="true"></span>
+<span class="et-menu-item-check" aria-hidden="true">
+  @if (icon(); as itemIcon) {
+    <i [etIcon]="itemIcon"></i>
+  }
+</span>
 
 <span class="et-menu-item-content">
   <ng-content />

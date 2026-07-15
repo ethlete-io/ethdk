@@ -4,6 +4,7 @@ import { By } from '@angular/platform-browser';
 import { FormField, form } from '@angular/forms/signals';
 import { provideColorThemes } from '@ethlete/core';
 import '../../test-helpers';
+import { PENCIL_ICON, provideIcons } from '../icon';
 import { MenuDirective } from './headless';
 import { MENU_IMPORTS } from './menu.imports';
 
@@ -53,7 +54,7 @@ const TEST_COLOR_THEMES = [
         <et-menu>
           <et-menu-radio-group [formField]="demoForm.sortBy" class="radio-group">
             <et-menu-group-label>Sort by</et-menu-group-label>
-            <et-menu-radio-item class="radio-name" value="name">Name</et-menu-radio-item>
+            <et-menu-radio-item class="radio-name" value="name" icon="et-pencil">Name</et-menu-radio-item>
             <et-menu-radio-item class="radio-date" value="date">Date</et-menu-radio-item>
           </et-menu-radio-group>
 
@@ -73,6 +74,7 @@ const TEST_COLOR_THEMES = [
     </div>
   `,
   imports: [...MENU_IMPORTS, FormField],
+  providers: [provideIcons(PENCIL_ICON)],
 })
 class MenuSelectionGroupsTestHost {
   public formModel = linkedSignal(() => ({
@@ -168,6 +170,20 @@ describe('Menu selection groups with signal forms', () => {
     expect(query('.check-size').getAttribute('aria-checked')).toBe('true');
     expect(query('.check-kind').getAttribute('aria-checked')).toBe('false');
     expect(query('.standalone').getAttribute('aria-checked')).toBe('false');
+  });
+
+  it('renders an icon in place of the radio indicator when one is set', async () => {
+    await openMenu();
+
+    const withIcon = query('.radio-name');
+
+    expect(withIcon.classList.contains('et-menu-selection-item--has-icon')).toBe(true);
+    expect(withIcon.querySelector('.et-menu-item-check i')).not.toBeNull();
+
+    const plain = query('.radio-date');
+
+    expect(plain.classList.contains('et-menu-selection-item--has-icon')).toBe(false);
+    expect(plain.querySelector('.et-menu-item-check i')).toBeNull();
   });
 
   it('labels the groups through et-menu-group-label', async () => {

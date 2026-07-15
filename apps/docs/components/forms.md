@@ -125,7 +125,18 @@ Checkbox options and radios accept an `et-description` child for secondary text,
 </et-form-field>
 ```
 
-The editable region is a `role="textbox" aria-multiline="true"` with full invalid/described-by wiring. In a list, **Tab** / **Shift+Tab** nest and un-nest the current item (marker style cycles by depth), and **Enter** / **Backspace** on an empty item step out one level at a time.
+The editable region is a `role="textbox" aria-multiline="true"` with full invalid/described-by wiring. In a list, **Tab** / **Shift+Tab** nest and un-nest the current item (marker style cycles by depth), and **Enter** / **Backspace** on an empty item step out one level at a time. **Enter** at the start or end of a heading begins a plain paragraph instead of continuing the heading (mid-heading it splits, as everywhere else); **Shift+Enter** is always a soft line break.
+
+Pasted HTML is normalized into the editor's own schema before it is inserted: the clipboard markup is reduced through the Markdown pipeline, so foreign tags, inline styles, classes and scripts never enter the editor — only formatting the editor itself can produce survives (token chips copied from an editor keep their identity). Plain-text pastes stay literal text.
+
+### Markdown autoformat while typing
+
+Typing Markdown converts live (disable with `[autoformat]="false"`):
+
+- **Blocks** — a space after a line-start prefix converts the line: `-` / `*` / `+` start a bulleted list, `1.` a numbered list, `#`–`###` a heading of that level. Only when the prefix is the entire line so far, and never inside list items, table cells or code.
+- **Inline** — typing the closing delimiter converts the run and leaves the caret _outside_ the mark: `**bold**`, `*italic*`, `` `code` ``, `~~strike~~`, `__bold__`, `_italic_` (underscores never fire inside a word, so `snake_case` stays literal).
+
+Autoformat is token-aware: characters registered as [trigger characters](#building-blocks-triggers) are reserved — with a `#` trigger configured, `# ` opens the autocomplete instead of becoming a heading — and all autoformat is suspended while a trigger popup is open.
 
 <StoryEmbed id="components-forms-rich-text-editor--default" height="420px" />
 
@@ -173,9 +184,16 @@ providers: [provideRichTextEditorTableTool(), provideRichTextEditorAlignmentTool
 ```
 
 - **`'table'`** — a grid-size picker inserts a table; when the caret is inside one, the menu offers
-  insert/delete row and column and delete table. Tables round-trip as GFM pipe tables.
-- **`'align'`** — a block-alignment menu (left / center / right / justify), also usable inside table
-  cells. Alignment persists as a native `text-align` style (Markdown has no alignment syntax).
+  insert/delete row and column and delete table. Tables round-trip as GFM pipe tables — a cell can
+  only hold inline content, so the block tools (heading menu, lists) disable themselves while the
+  caret is in a cell. The heading menu likewise disables inside list items (a heading has no
+  serialized form there). Block alignment survives switching between paragraph and heading.
+- **`'align'`** — a block-alignment menu (left / center / right / justify). Block alignment persists
+  as a native `text-align` style (Markdown has no block-alignment syntax). Inside a table it applies
+  to the whole column and persists as GFM column alignment (`:---`, `:---:`, `---:`). It disables
+  inside lists, where alignment has no serialized form.
+
+<StoryEmbed id="components-forms-rich-text-editor--with-table-and-alignment" height="440px" />
 
 To register your own tool, provide a `RichTextEditorToolDefinition` (a toggle button, or a custom
 control component) through the `RICH_TEXT_EDITOR_TOOL` multi-provider token.

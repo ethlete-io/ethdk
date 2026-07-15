@@ -1,6 +1,23 @@
 const escapeHtml = (str: string): string =>
   str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+/** Escapes HTML-special characters but leaves existing entity references intact — for input that
+ *  may already contain entities (e.g. Markdown serialized from the editor's DOM, where `&` is
+ *  stored as `&amp;`), where plain escaping would double-escape them. */
+const escapeHtmlPreservingEntities = (str: string): string =>
+  str
+    .replace(/&(?![a-z]+;|#\d+;|#x[0-9a-f]+;)/gi, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
+/** Rejects URL schemes that execute script when navigated. Whitespace/control characters are
+ *  stripped before checking — browsers ignore them inside URLs, so `java\tscript:` would
+ *  otherwise slip through. */
+const isSafeUrl = (url: string): boolean =>
+  // eslint-disable-next-line no-control-regex -- stripping control characters is the point: browsers ignore them inside URLs
+  !/^(javascript|data|vbscript):/i.test(url.replace(/[\s\u0000-\u001f]/g, ''));
+
 const unescapeHtml = (str: string): string =>
   str
     .replace(/&amp;/g, '&')
@@ -20,9 +37,53 @@ const parseTableRow = (line: string): string[] =>
 
 const isTableSeparatorLine = (line: string): boolean => /^\|?(\s*:?-+:?\s*\|)+\s*$/.test(line);
 
+type TableAlign = 'left' | 'center' | 'right' | null;
+
+/** Column alignments from a GFM separator line: `:---` left, `:---:` center, `---:` right. */
+const parseSeparatorAligns = (line: string): TableAlign[] =>
+  parseTableRow(line).map((cell) => {
+    const left = cell.startsWith(':');
+    const right = cell.endsWith(':');
+
+    return left && right ? 'center' : right ? 'right' : left ? 'left' : null;
+  });
+
+/** The GFM separator token for a column alignment. */
+const separatorFor = (align: TableAlign): string =>
+  align === 'center' ? ':---:' : align === 'right' ? '---:' : align === 'left' ? ':---' : '---';
+
+const alignStyle = (align: TableAlign): string => (align ? ` style="text-align: ${align}"` : '');
+
 const makePlaceholder = (kind: string, idx: number) => `\u{E000}${kind}${idx}\u{E001}`;
 const placeholderRe = (kind: string) => new RegExp(`\u{E000}${kind}(\\d+)\u{E001}`, 'gu');
 const isPlaceholder = (kind: string, str: string) => new RegExp(`^\u{E000}${kind}\\d+\u{E001}$`, 'u').test(str);
+
+/** Tags allowed to survive inside an aligned block's raw-HTML passthrough. */
+const SAFE_INLINE_TAGS = new Set(['strong', 'em', 'b', 'i', 'del', 's', 'u', 'code', 'br']);
+
+/** Reduces raw inline HTML to the editor's own vocabulary: allowed tags lose all their attributes
+ *  (`<a>` keeps a safe `href`), everything else — including any event-handler attribute — is
+ *  dropped, and the remaining text is escaped. */
+const sanitizeInlineHtml = (html: string): string => {
+  const kept: string[] = [];
+
+  const stashed = html.replace(/<\s*(\/?)\s*([a-z][a-z0-9]*)\b[^>]*>/gi, (full, closing: string, tag: string) => {
+    const name = tag.toLowerCase();
+
+    if (name === 'a') {
+      const href = closing ? null : /\bhref\s*=\s*"([^"]*)"/i.exec(full)?.[1];
+      const anchor = closing ? '</a>' : href && isSafeUrl(href) ? `<a href="${href}">` : '<a>';
+
+      return makePlaceholder('TAG', kept.push(anchor) - 1);
+    }
+
+    if (!SAFE_INLINE_TAGS.has(name)) return '';
+
+    return makePlaceholder('TAG', kept.push(closing ? `</${name}>` : `<${name}>`) - 1);
+  });
+
+  return escapeHtmlPreservingEntities(stashed).replace(placeholderRe('TAG'), (_, i) => kept[+i] ?? '');
+};
 
 const processInline = (text: string): string => {
   const inlineCodes: string[] = [];
@@ -31,16 +92,28 @@ const processInline = (text: string): string => {
     return makePlaceholder('IC', idx);
   });
 
-  // Bold + italic — *** before ** before *
-  text = text.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  text = text.replace(/__(.+?)__/g, '<strong>$1</strong>');
-  text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
-  text = text.replace(/~~(.+?)~~/g, '<del>$1</del>');
+  // Raw HTML in Markdown text is escaped, not rendered — the editor writes this HTML straight
+  // into the DOM via innerHTML, so anything else would let a crafted value inject markup. `<u>`
+  // is the one deliberate exception: underline has no Markdown form and round-trips as raw <u>.
+  text = escapeHtmlPreservingEntities(text).replace(/&lt;(\/?)u&gt;/gi, '<$1u>');
 
-  // Images before links (order matters)
-  text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
-  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+  // Bold + italic — *** before ** before *. A delimiter flanking whitespace doesn't open/close a
+  // run (CommonMark's flanking rule), so literal asterisks as in `2 * 3 * 4` stay text.
+  text = text.replace(/\*\*\*([^\s*](?:.*?[^\s*])?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  text = text.replace(/\*\*([^\s*](?:.*?[^\s*])?)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/__([^\s_](?:.*?[^\s_])?)__/g, '<strong>$1</strong>');
+  text = text.replace(/\*([^\s*](?:.*?[^\s*])?)\*/g, '<em>$1</em>');
+  // Single-underscore emphasis must not fire inside a word (snake_case identifiers).
+  text = text.replace(/(?<![\w*_])_([^\s_](?:.*?[^\s_])?)_(?![\w_])/g, '<em>$1</em>');
+  text = text.replace(/~~([^\s~](?:.*?[^\s~])?)~~/g, '<del>$1</del>');
+
+  // Images before links (order matters); URLs with script-running schemes stay literal text
+  text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt: string, src: string) =>
+    isSafeUrl(src) ? `<img src="${src}" alt="${alt}">` : match,
+  );
+  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, label: string, href: string) =>
+    isSafeUrl(href) ? `<a href="${href}">${label}</a>` : match,
+  );
 
   return text.replace(placeholderRe('IC'), (_, i) => inlineCodes[+i] ?? '');
 };
@@ -118,7 +191,8 @@ const listToMarkdown = (inner: string, ordered: boolean, depth: number): string 
 
       const marker = ordered ? `${n++}. ` : '- ';
 
-      return `${indent}${marker}${stripTags(content).trim()}${nestedMarkdown}`;
+      // list items are single-line in this serializer, so a <br> degrades to a space
+      return `${indent}${marker}${stripTags(content.replace(/<br\s*\/?>/gi, ' ')).trim()}${nestedMarkdown}`;
     })
     .join('\n');
 };
@@ -192,9 +266,20 @@ export const markdownToHtml = (markdown: string): string => {
 
       if (isPlaceholder('CODE', trimmed)) return trimmed;
 
-      // Aligned block: text-align has no Markdown form, so it round-trips as raw native HTML — pass
-      // it through verbatim instead of re-wrapping it in a plain paragraph.
-      if (/^<(?:p|h[1-6]|div)\b[^>]*\bstyle=["'][^"']*text-align/i.test(trimmed)) return trimmed;
+      // Aligned block: text-align has no Markdown form, so it round-trips as raw native HTML.
+      // Rebuild it instead of passing it through verbatim: only the alignment survives on the tag
+      // (no other attributes, e.g. event handlers) and the inner markup is reduced to the editor's
+      // own inline vocabulary.
+      const aligned = /^<(p|h[1-6]|div)\b[^>]*\bstyle=["'][^"']*text-align:\s*([a-z]+)[^>]*>([\s\S]*)<\/\1>$/i.exec(
+        trimmed,
+      );
+
+      if (aligned) {
+        const tag = (aligned[1] ?? 'p').toLowerCase();
+        const align = (aligned[2] ?? 'left').toLowerCase();
+
+        return `<${tag} style="text-align: ${align}">${sanitizeInlineHtml(aligned[3] ?? '')}</${tag}>`;
+      }
 
       // Heading
       const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
@@ -206,11 +291,14 @@ export const markdownToHtml = (markdown: string): string => {
       // Horizontal rule
       if (/^(---|\*\*\*|___)\s*$/.test(trimmed)) return '<hr>';
 
-      // Table (GFM)
+      // Table (GFM) — column alignment from the separator line lands as text-align on every cell
       const tableLines = trimmed.split('\n');
       if (tableLines.length >= 2 && /\|/.test(tableLines[0] ?? '') && isTableSeparatorLine(tableLines[1] ?? '')) {
+        const aligns = parseSeparatorAligns(tableLines[1] ?? '');
         const headers = parseTableRow(tableLines[0] ?? '');
-        const thead = `<thead><tr>${headers.map((h) => `<th>${processInline(h)}</th>`).join('')}</tr></thead>`;
+        const thead = `<thead><tr>${headers
+          .map((h, i) => `<th${alignStyle(aligns[i] ?? null)}>${processInline(h)}</th>`)
+          .join('')}</tr></thead>`;
         const bodyRows = tableLines.slice(2);
         const tbody =
           bodyRows.length > 0
@@ -218,7 +306,7 @@ export const markdownToHtml = (markdown: string): string => {
                 .map(
                   (row) =>
                     `<tr>${parseTableRow(row)
-                      .map((cell) => `<td>${processInline(cell)}</td>`)
+                      .map((cell, i) => `<td${alignStyle(aligns[i] ?? null)}>${processInline(cell)}</td>`)
                       .join('')}</tr>`,
                 )
                 .join('')}</tbody>`
@@ -226,13 +314,14 @@ export const markdownToHtml = (markdown: string): string => {
         return `<table>${thead}${tbody}</table>`;
       }
 
-      // Blockquote
+      // Blockquote — each line runs through the inline pass on its own (processInline escapes raw
+      // HTML, so joining first would escape the <br> separators too)
       if (/^> /.test(trimmed)) {
         const content = trimmed
           .split('\n')
-          .map((l) => l.replace(/^>\s?/, ''))
+          .map((l) => processInline(l.replace(/^>\s?/, '')))
           .join('<br>');
-        return `<blockquote>${processInline(content)}</blockquote>`;
+        return `<blockquote>${content}</blockquote>`;
       }
 
       // List (unordered/ordered, with indentation-based nesting)
@@ -319,10 +408,10 @@ export const htmlToMarkdown = (html: string): string => {
   const underlines: string[] = [];
   md = md.replace(/<u[^>]*>([\s\S]*?)<\/u>/gi, (_, inner: string) => makePlaceholder('U', underlines.push(inner) - 1));
 
-  // Block quotes
+  // Block quotes — <br> line breaks become one quoted line each (stripTags would swallow them)
   md = md.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (_, content: string) => {
     return (
-      stripTags(content)
+      stripTags(content.replace(/<br\s*\/?>/gi, '\n'))
         .trim()
         .split('\n')
         .map((line) => `> ${line.trim()}`)
@@ -337,20 +426,29 @@ export const htmlToMarkdown = (html: string): string => {
 
   // Tables
   md = md.replace(/<table[^>]*>([\s\S]*?)<\/table>/gi, (_, tableContent: string) => {
+    // GFM cells are single-line, so a <br> inside one degrades to a space (not silently dropped)
     const extractCells = (row: string) =>
-      [...row.matchAll(/<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/gi)].map((m) => stripTags(m[1] ?? '').trim());
+      [...row.matchAll(/<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/gi)].map((m) =>
+        stripTags((m[1] ?? '').replace(/<br\s*\/?>/gi, ' ')).trim(),
+      );
+
+    // GFM alignment is per column, read from the header cells' text-align styles
+    const extractAligns = (row: string): TableAlign[] =>
+      [...row.matchAll(/<t[hd]([^>]*)>/gi)].map((m) => {
+        const align = /text-align:\s*(left|center|right)/i.exec(m[1] ?? '')?.[1]?.toLowerCase();
+
+        return (align as TableAlign) ?? null;
+      });
 
     const theadMatch = tableContent.match(/<thead[^>]*>([\s\S]*?)<\/thead>/i);
     const firstTrMatch = tableContent.match(/<tr[^>]*>([\s\S]*?)<\/tr>/i);
-    const headerCells = theadMatch
-      ? extractCells(theadMatch[1] ?? '')
-      : firstTrMatch
-        ? extractCells(firstTrMatch[1] ?? '')
-        : [];
+    const headerRow = theadMatch?.[1] ?? firstTrMatch?.[1] ?? '';
+    const headerCells = headerRow ? extractCells(headerRow) : [];
 
     if (headerCells.length === 0) return '';
 
-    const separator = headerCells.map(() => '---').join(' | ');
+    const aligns = extractAligns(headerRow);
+    const separator = headerCells.map((_cell, i) => separatorFor(aligns[i] ?? null)).join(' | ');
     const bodySource = theadMatch
       ? tableContent.replace(theadMatch[0], '')
       : tableContent.replace(firstTrMatch?.[0] ?? '', '');
@@ -363,8 +461,15 @@ export const htmlToMarkdown = (html: string): string => {
     return `\n${lines.join('\n')}\n`;
   });
 
-  // Block elements
-  md = md.replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, (_, content: string) => `\n${stripTags(content).trim()}\n`);
+  // Block elements — a <br> inside a paragraph is a soft line break; turn it into a newline before
+  // the tag-strip removes it, so it round-trips (a single newline within a block renders as <br>)
+  md = md.replace(
+    /<p[^>]*>([\s\S]*?)<\/p>/gi,
+    (_, content: string) => `\n${stripTags(content.replace(/<br\s*\/?>/gi, '\n')).trim()}\n`,
+  );
+  // A <div> boundary acts as a paragraph boundary — clipboard HTML commonly uses divs as
+  // paragraphs, and silently stripping them would merge adjacent blocks into one.
+  md = md.replace(/<\/div\s*>/gi, '\n\n').replace(/<div[^>]*>/gi, '\n\n');
   md = md.replace(/<br\s*\/?>/gi, '\n');
   md = md.replace(/<hr\s*\/?>/gi, '\n---\n');
 

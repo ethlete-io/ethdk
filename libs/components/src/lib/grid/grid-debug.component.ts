@@ -1,5 +1,6 @@
 import { Component, DestroyRef, ViewEncapsulation, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { copyToClipboard } from '@ethlete/core';
 import { timer } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { GridComponent } from './grid.component';
@@ -208,9 +209,7 @@ export class GridDebugComponent {
       issues,
     };
 
-    navigator.clipboard.writeText(JSON.stringify(snapshot, null, 2)).catch(() => {
-      /* clipboard unavailable in this context */
-    });
+    copyToClipboard(JSON.stringify(snapshot, null, 2));
 
     this.copied.set(true);
     timer(2000)

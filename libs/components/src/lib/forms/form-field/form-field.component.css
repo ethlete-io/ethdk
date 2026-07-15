@@ -458,7 +458,11 @@
         opacity: 1;
       }
 
-      &:has(:disabled) {
+      /* Driven by the registered control's disabled state (data-disabled), NOT :has(:disabled) —
+         a composite control like the rich text editor legitimately disables individual toolbar
+         buttons while fully enabled, and :has(:disabled) would dim (and pointer-events-kill) the
+         whole field over it. */
+      &[data-disabled] {
         .et-form-field-control-frame {
           opacity: var(--et-form-field-control-disabled-opacity);
           pointer-events: none;
@@ -569,7 +573,7 @@
       }
     }
 
-    &:has(:disabled) .et-form-field-hint {
+    &[data-disabled] .et-form-field-hint {
       color: var(--et-surface-interaction-disabled-solid, currentColor);
     }
 

@@ -16,7 +16,7 @@
     <et-menu>
       <et-menu-radio-group [value]="current()" (valueChange)="select($event)">
         @for (option of OPTIONS; track option.value) {
-          <et-menu-radio-item [value]="option.value" [closeOnActivate]="true">
+          <et-menu-radio-item [value]="option.value" [closeOnActivate]="true" [icon]="option.icon">
             {{ option.label }}
           </et-menu-radio-item>
         }

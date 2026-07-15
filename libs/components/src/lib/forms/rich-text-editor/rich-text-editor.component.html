@@ -7,7 +7,7 @@
       @case (TOOLS.HEADING) {
         <div etMenu>
           <button
-            [disabled]="dir.disabled() || dir.readonly()"
+            [disabled]="dir.disabled() || dir.readonly() || dir.headingToolDisabled()"
             [attr.aria-label]="'Text style: ' + currentHeadingLabel()"
             (mousedown)="$event.preventDefault()"
             etMenuTrigger
@@ -23,7 +23,7 @@
             <et-menu>
               <et-menu-radio-group [value]="dir.headingLevel()" (valueChange)="selectHeading($event)">
                 @for (option of HEADING_OPTIONS; track option.label) {
-                  <et-menu-radio-item [value]="option.level" [closeOnActivate]="true">
+                  <et-menu-radio-item [value]="option.level" [closeOnActivate]="true" [icon]="option.icon">
                     {{ option.label }}
                   </et-menu-radio-item>
                 }
@@ -39,7 +39,7 @@
           } @else {
             <button
               [pressed]="def.isActive?.(dir) ?? false"
-              [disabled]="dir.disabled() || dir.readonly()"
+              [disabled]="dir.disabled() || dir.readonly() || (def.isDisabled?.(dir) ?? false)"
               [attr.aria-label]="def.label"
               (mousedown)="$event.preventDefault()"
               (click)="def.run?.(dir)"
@@ -70,6 +70,7 @@
   (input)="syncValueFromDom()"
   (beforeinput)="interceptFormattingCommand($event)"
   (keydown)="interceptEditorKeydown($event)"
+  (paste)="interceptPaste($event)"
   (pointerdown)="dir.clearPendingMarks()"
   (focus)="dir.focused.set(true)"
   (blur)="dir.focused.set(false); dir.touched.set(true)"
