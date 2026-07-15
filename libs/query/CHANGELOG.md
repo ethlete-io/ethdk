@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 6.0.0-next.14
+
+### Patch Changes
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`b5655a9`](https://github.com/ethlete-io/ethdk/commit/b5655a9124b2ffc4d6982ca20be360b227a37107) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query cache: a cached request now correctly becomes stale once its freshness
+  window (from `cache-control` / `expires`) elapses, so `execute({ allowCache: true })`
+  refetches instead of serving the cached response forever.
+
 ## 6.0.0-next.13
 
 ### Patch Changes

@@ -1,5 +1,85 @@
 # Changelog
 
+## 1.0.0-next.21
+
+### Minor Changes
+
+- [`c829986`](https://github.com/ethlete-io/ethdk/commit/c82998628a487effe34d2061811f3cee0fa4f7bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Menu: `et-menu-radio-item` and `et-menu-checkbox-item` take an optional `icon` input that renders a registered icon in place of the radio dot / checkmark (the checked state shows through the icon's accent color). The rich text editor's alignment and text-style menus now use icons this way.
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`1d7aaca`](https://github.com/ethlete-io/ethdk/commit/1d7aacaec10f3d3d7278733ebf5d834e8a89b1f7) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: add opt-in, tree-shakeable building-block autocomplete. Add the
+  `etRichTextEditorTriggers` directive (with `RICH_TEXT_EDITOR_TRIGGERS_IMPORTS`) and pass triggers
+  built with `createRichTextEditorTrigger` — typing a trigger char (e.g. `#`, `@`) opens a
+  caret-anchored, menu-styled popup, and picking an item inserts an atomic `{{type:id}}` token chip.
+  Item sources can be static, `Promise`, or `Observable`. Use `provideRichTextEditorTokenRendering(...)`
+  to render stored token values as chips in read-only contexts, or `createRichTextEditorTriggerWithQuery(...)`
+  to back a trigger with an `@ethlete/query` query (results, loading and error wired automatically).
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`c68d2b2`](https://github.com/ethlete-io/ethdk/commit/c68d2b2e2e64316bb67bf58ec16d3aad9bd84f34) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: added an opt-in **alignment** tool. Provide `provideRichTextEditorAlignmentTool()` and include `'align'` in the editor's `tools` to get a block-alignment menu (left / center / right / justify) that also works inside table cells. The button reflects the caret's current alignment live. Alignment has no Markdown form, so it persists as a native `text-align` style and round-trips as raw HTML.
+
+  `@ethlete/core`: `markdownToHtml`/`htmlToMarkdown` now round-trip block elements carrying a `text-align` style (preserved verbatim as native HTML).
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`af660e3`](https://github.com/ethlete-io/ethdk/commit/af660e346204d18ad39cc700c8698bb897fba339) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: added **inline code** and **underline** formatting tools (in the static and selection toolbars, and the default toolbar). Inline code round-trips as `` `code` ``; underline is preserved as native `<u>` since Markdown has no underline form.
+
+  `@ethlete/core`: `htmlToMarkdown`/`markdownToHtml` now round-trip `<u>` (underline) instead of dropping it.
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`c68d2b2`](https://github.com/ethlete-io/ethdk/commit/c68d2b2e2e64316bb67bf58ec16d3aad9bd84f34) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: list items can now be nested. **Tab** nests the current item under the previous one, **Shift+Tab** lifts it out one level, and **Enter**/**Backspace** on an empty item step out one level at a time (leaving the list entirely only at the top level). Marker styles cycle by depth (disc → circle → square, and decimal → lower-alpha → lower-roman).
+
+  `@ethlete/core`: `markdownToHtml`/`htmlToMarkdown` now round-trip **nested** lists (two-space indentation per level), instead of flattening them.
+
+- [`c829986`](https://github.com/ethlete-io/ethdk/commit/c82998628a487effe34d2061811f3cee0fa4f7bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Rich text editor: Markdown autoformat while typing (opt out with `autoformat=false`). Line-start prefixes convert on space — `-`/`*`/`+` into a bulleted list, `1.` into a numbered list, `#`–`###` into a heading — and closing an inline run (`**bold**`, `*italic*`, `` `code` ``, `~~strike~~`, `__`/`_`) converts it into its mark with the caret placed after it. Autoformat is token-aware: registered trigger characters are reserved (a `#` trigger keeps opening its autocomplete instead of becoming a heading) and conversion is suspended while a trigger popup is open.
+
+- [`c829986`](https://github.com/ethlete-io/ethdk/commit/c82998628a487effe34d2061811f3cee0fa4f7bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Rich text editor: pasted HTML is now normalized into the editor's own schema (foreign tags, inline styles, classes and scripts never enter the editable DOM; token chips keep their identity), and pressing Enter at the edge of a heading starts a plain paragraph instead of continuing the heading. Shift+Enter always stays a soft line break.
+
+- [`c829986`](https://github.com/ethlete-io/ethdk/commit/c82998628a487effe34d2061811f3cee0fa4f7bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Rich text editor: the heading menu and list buttons now disable themselves while the caret is inside a table cell (a GFM table cell can only hold inline content, so block markup there would not survive serialization), instead of silently doing nothing. Custom tools can opt into the same behavior via the new `isDisabled` callback on `RichTextEditorToolDefinition`. The Cmd/Ctrl+U shortcut now runs through the editor's own underline command like the other formatting shortcuts.
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`c68d2b2`](https://github.com/ethlete-io/ethdk/commit/c68d2b2e2e64316bb67bf58ec16d3aad9bd84f34) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: added an opt-in **table** tool. Provide `provideRichTextEditorTableTool()` and include `'table'` in the editor's `tools` to get a toolbar control that inserts a table via a grid-size picker and edits it (insert/delete rows and columns, delete table) when the caret is inside one. Tables round-trip as GFM pipe tables. The tool and its DOM operations are only referenced from the provider, so they tree-shake away when not used.
+
+  Toolbar tools are now extensible: register a `RichTextEditorToolDefinition` (a toggle button or a custom control component) via the `RICH_TEXT_EDITOR_TOOL` multi-provider token.
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`af660e3`](https://github.com/ethlete-io/ethdk/commit/af660e346204d18ad39cc700c8698bb897fba339) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: the toolbar is now configurable. A new `tools` input takes an ordered list of tool tokens (`'bold' | 'italic' | 'strike' | 'heading' | 'bulletedList' | 'numberedList' | 'link' | 'divider'`), and `provideRichTextEditorTools(...)` sets the default for a scope. The block style is now picked from a `heading` menu (Normal / Heading 1–3) shown first in the toolbar, and toolbar buttons are larger and squarer.
+
+  Form field: read-only text controls (`et-input`, `et-rich-text-editor`) now keep their normal box but drop all interactive affordances — no hover/focus border change, default cursor — so read-only reads as view-only content, distinct from disabled.
+
+  Icon button: added an `--et-icon-button-border-radius` custom property so an ancestor context (e.g. a toolbar) can square off the otherwise fully-round button.
+
+  Overlay (`@ethlete/core`): anchored overlay positions accept an optional `boundary`, so an anchored pane (e.g. the editor's selection toolbar) can be kept inside a region and flip instead of overflowing it.
+
+### Patch Changes
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`1d7aaca`](https://github.com/ethlete-io/ethdk/commit/1d7aacaec10f3d3d7278733ebf5d834e8a89b1f7) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `injectAnimatedBlockSize` — a core util that smoothly animates an element's `block-size` as its
+  content resizes (baseline captured on first render so the initial layout never plays as a
+  grow-from-0, interruption-safe, respects `prefers-reduced-motion`). `et-menu` and the rich text
+  editor's trigger popup now share it, giving a more consistent, smoother resize.
+
+- [`c829986`](https://github.com/ethlete-io/ethdk/commit/c82998628a487effe34d2061811f3cee0fa4f7bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Form field: the disabled treatment (dimmed frame, blocked pointer events, hint color) is now driven by the registered control's disabled state via a `data-disabled` host attribute instead of `:has(:disabled)` — a composite control like the rich text editor can disable individual toolbar buttons without the whole field being dimmed and made unclickable.
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`7e4c883`](https://github.com/ethlete-io/ethdk/commit/7e4c8832493b8c8b505efd80acfa147d90bc9523) Thanks [@github-actions](https://github.com/apps/github-actions)! - Form field: only a `filled` field raises the surface elevation for its contents — a `transparent` field now stays flush with its parent surface instead of bumping elevation without a painted background.
+
+  Rich text editor: the autocomplete popup no longer renders one elevation too high (it now matches menus), and its "source failed" error state is a centered icon-and-message panel instead of a stray line in an empty box.
+
+  Rich text editor: token chips (merge fields, mentions) now render as a tonal accent pill with a hairline ring — and keep their trigger char (`@`, `#`, …) visible as a de-emphasized prefix — so they read clearly as distinct entities in the prose, instead of a faint neutral highlight.
+
+  Rich text editor: the selection formatting toolbar now mounts through the overlay system (like the autocomplete popup) instead of a manually-positioned fixed element — so it shares the same anchoring, stacking, theming, and enter/leave animation.
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`d362747`](https://github.com/ethlete-io/ethdk/commit/d3627470bddd16a6b76577ac8d3dc43d9d7fdd2e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay: the anchored arrow now matches the pane it points at — it paints the
+  pane's actual background and mirrors its border (including no border when the
+  pane has none), instead of re-deriving a color from surface tokens that could
+  diverge from a custom `panelClass` or themed pane.
+
+- [`c829986`](https://github.com/ethlete-io/ethdk/commit/c82998628a487effe34d2061811f3cee0fa4f7bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Overlay: apps using both `@ethlete/components` and `@ethlete/cdk` no longer log `NG0912` component ID collision warnings on bootstrap.
+
+- [`c829986`](https://github.com/ethlete-io/ethdk/commit/c82998628a487effe34d2061811f3cee0fa4f7bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Rich text editor: the alignment tool now applies to the whole table column (GFM alignment is per column, so a single aligned cell would not survive serialization) and disables itself inside lists, where alignment has no serialized form. Lists swept up by a cross-block selection are skipped instead of receiving a lost `text-align`.
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`bf72655`](https://github.com/ethlete-io/ethdk/commit/bf7265505ecaf77f2bc239fd945f763655af5b82) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: toggling an inline format (bold, italic, underline, strike, code) with **no selection** now works as expected — it sets a pending "stored mark" so the next typed text picks up (or drops) that formatting, instead of doing nothing. The pending state shows in the toolbar and is cleared when you move the caret.
+
+- [`c829986`](https://github.com/ethlete-io/ethdk/commit/c82998628a487effe34d2061811f3cee0fa4f7bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Rich text editor: block alignment is no longer lost when re-tagging between paragraph and heading, and the heading menu now disables itself inside list items (where a heading has no serialized form), matching the table-cell behavior.
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`e06f250`](https://github.com/ethlete-io/ethdk/commit/e06f250aec6997bf34dacef00e8cdcb9ce1d8819) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: fixed formatting a selection then applying a heading dropping the inline mark (e.g. bold text turned into a heading lost its `<strong>`), and a follow-up fix so the first toggle-off click after a block-level command actually removes the mark instead of no-op-ing.
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`c68d2b2`](https://github.com/ethlete-io/ethdk/commit/c68d2b2e2e64316bb67bf58ec16d3aad9bd84f34) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: pressing ArrowRight at the end of an inline code span (or ArrowLeft at its start) now steps the caret outside the code, so continuing to type isn't code.
+
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`c68d2b2`](https://github.com/ethlete-io/ethdk/commit/c68d2b2e2e64316bb67bf58ec16d3aad9bd84f34) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: table editing polish — arrow keys now step the caret cleanly across table edges (into the nearest cell when entering, onto a real line when exiting, adding one only when the table is flush against the editor's top/bottom) instead of stranding it at the table border; an empty line directly above a table can be removed with Backspace; and applying an inline format across multiple selected cells now wraps each cell's content within its own cell instead of tearing the table apart.
+
 ## 1.0.0-next.20
 
 ### Major Changes
