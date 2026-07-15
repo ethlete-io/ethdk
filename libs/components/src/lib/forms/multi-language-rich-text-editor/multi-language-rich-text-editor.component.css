@@ -1,0 +1,8 @@
+@layer components {
+  .et-multi-language-rich-text-editor {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+}

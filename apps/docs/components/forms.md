@@ -18,14 +18,15 @@ protected demoForm = form(this.formModel, (s) => {
 
 Each control family ships its own imports array — combine the field shell with the controls you use:
 
-| Array                      | Contains                                                                  |
-| -------------------------- | ------------------------------------------------------------------------- |
-| `FORM_FIELD_IMPORTS`       | `et-form-field`, `et-label`, `et-hint`, `etInputPrefix` / `etInputSuffix` |
-| `INPUT_IMPORTS`            | `et-input`                                                                |
-| `CHECKBOX_IMPORTS`         | `et-checkbox`                                                             |
-| `SWITCH_IMPORTS`           | `et-switch`                                                               |
-| `CHOICE_FIELD_IMPORTS`     | `et-choice-field` + label/hint chrome                                     |
-| `RICH_TEXT_EDITOR_IMPORTS` | `et-rich-text-editor`                                                     |
+| Array                                     | Contains                                                                  |
+| ----------------------------------------- | ------------------------------------------------------------------------- |
+| `FORM_FIELD_IMPORTS`                      | `et-form-field`, `et-label`, `et-hint`, `etInputPrefix` / `etInputSuffix` |
+| `INPUT_IMPORTS`                           | `et-input`                                                                |
+| `CHECKBOX_IMPORTS`                        | `et-checkbox`                                                             |
+| `SWITCH_IMPORTS`                          | `et-switch`                                                               |
+| `CHOICE_FIELD_IMPORTS`                    | `et-choice-field` + label/hint chrome                                     |
+| `RICH_TEXT_EDITOR_IMPORTS`                | `et-rich-text-editor`                                                     |
+| `MULTI_LANGUAGE_RICH_TEXT_EDITOR_IMPORTS` | `et-multi-language-rich-text-editor`                                      |
 
 ```ts
 import { FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
@@ -298,6 +299,57 @@ query, use the generic `createRichTextEditorTrigger` with an `Observable`/`Promi
 
 <StoryEmbed id="components-forms-rich-text-editor-triggers--default" height="460px" />
 
+## Multi-language rich text editor
+
+`et-multi-language-rich-text-editor` wraps the editor above to author the same content in several
+languages. Its value is a **`Record<languageCode, markdown>`** (one form field holds every
+translation), and a switcher in the toolbar changes which language you edit. The language list is
+consumer-provided — nothing is hard-wired — so pass a required `languages` array:
+
+```html
+<et-form-field>
+  <et-label>Description</et-label>
+  <et-multi-language-rich-text-editor
+    [formField]="demoForm.translations"
+    [languages]="[
+      { code: 'en', label: 'English' },
+      { code: 'de', label: 'Deutsch' },
+      { code: 'fr', label: 'Français' },
+    ]"
+  />
+</et-form-field>
+```
+
+```ts
+// the field value groups all translations
+demoForm.translations().value(); // { en: '# Hello', de: '# Hallo', fr: '' }
+```
+
+Each language `{ code, label, icon? }` maps its Markdown under `code`; the first language is active
+initially. It embeds a plain `et-rich-text-editor`, so `tools`, `autoformat`, `placeholder` and the
+field chrome all work the same — the switcher tool is prepended to the toolbar automatically.
+
+**Seeing which languages still need content.** The toolbar switcher shows the active language code
+with a badge dot while any language is empty. Opening it marks the active language with a leading
+check and shows a trailing status dot per language — solid when it has content, hollow while it is
+still empty. Emptiness is "trimmed Markdown is blank", so it reflects real content, not just edits.
+Translations stored under a code not in `languages` are preserved untouched (never dropped) and
+don't affect the status counts.
+
+<StoryEmbed id="components-forms-multi-language-rich-text-editor--with-existing-translations" height="420px" />
+
+**Requiring translations.** To make specific languages mandatory, add the exported `requiredLanguages`
+validator to your `form()` schema — a missing translation then surfaces as a normal form-field error,
+the same channel every other control uses:
+
+```ts
+import { requiredLanguages } from '@ethlete/components';
+
+demoForm = form(this.model, (s) => {
+  requiredLanguages(s.translations, { codes: ['en', 'de'] });
+});
+```
+
 ## Validation & accessibility
 
 The field chrome handles error display and aria wiring uniformly:
@@ -320,6 +372,7 @@ Every control family declares public design tokens; override them in your CSS sc
 | `et-checkbox-group` / `et-checkbox-option`          | `--et-checkbox-group-*` (gap, label/error/hint sizes, support), `--et-checkbox-option-size`, `-border-width`, `-border-radius`, `-transition-duration`, `-opacity-disabled`, `-gap`                                                                                                              |
 | `et-segmented-button-group` / `et-segmented-button` | `--et-segmented-button-group-*` (gap, label/error/hint sizes, support, `-track-padding`, `-track-radius`), `--et-segmented-button-padding-x` / `-padding-y`, `-border-radius`, `-transition-duration`, `-opacity-disabled`                                                                       |
 | `et-rich-text-editor`                               | `--et-rich-text-editor-toolbar-gap`, `-toolbar-padding`, `-button-radius`, `-min-height`, `-content-gap`, `-token-radius`, `-token-padding-inline`                                                                                                                                               |
+| `et-multi-language-rich-text-editor`                | `--et-multi-language-rich-text-editor-badge-size` (plus every `et-rich-text-editor` token, inherited by the embedded editor)                                                                                                                                                                     |
 
 All colors resolve through the [surface/color theme systems](/core/theming) (the error state forces the theme registered with `type: 'error'`).
 

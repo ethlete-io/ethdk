@@ -1,0 +1,102 @@
+@layer components {
+  @property --et-multi-language-rich-text-editor-badge-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 7px;
+  }
+
+  @property --et-multi-language-rich-text-editor-dot-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  .et-ml-rte-lang-tool {
+    display: contents;
+  }
+
+  /* Each menu row: label on the left, a content-status dot on the right. The leading check (menu
+     icon slot) marks the active language; this dot is a separate axis — has content vs still empty. */
+  .et-ml-rte-lang-item {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-inline-size: 0;
+  }
+
+  .et-ml-rte-lang-dot {
+    flex: none;
+    box-sizing: border-box;
+    inline-size: var(--et-multi-language-rich-text-editor-dot-size);
+    block-size: var(--et-multi-language-rich-text-editor-dot-size);
+    border-radius: 50%;
+    /* empty: a hollow ring in a muted neutral — reads as "not filled in yet" */
+    border: 1.5px solid var(--et-surface-color-muted-solid, color-mix(in srgb, currentColor 40%, transparent));
+    background: transparent;
+  }
+
+  .et-ml-rte-lang-dot--filled {
+    /* has content: a solid accent dot */
+    border-color: var(--et-theme-color-primary-solid, var(--et-surface-color-solid, currentColor));
+    background: var(--et-theme-color-primary-solid, var(--et-surface-color-solid, currentColor));
+  }
+
+  /* A square, neutral toolbar control that mirrors the icon buttons beside it (same size, same
+     muted-until-pressed surface-interaction tint) — it just shows the active language code instead
+     of an icon. A badge dot appears while any language is still empty. */
+  .et-ml-rte-lang-trigger {
+    display: inline-flex;
+    position: relative;
+    align-items: center;
+    justify-content: center;
+    inline-size: 3.1rem;
+    block-size: 3.1rem;
+    border: none;
+    border-radius: var(--et-rich-text-editor-button-radius, 4px);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    line-height: 1;
+    cursor: pointer;
+    appearance: none;
+    transition: background 120ms ease;
+  }
+
+  .et-ml-rte-lang-trigger:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+  }
+
+  .et-ml-rte-lang-trigger:focus-visible {
+    background: color-mix(in srgb, var(--et-surface-interaction-solid) 16%, transparent);
+  }
+
+  .et-ml-rte-lang-trigger:active:not(:disabled) {
+    background: color-mix(in srgb, var(--et-surface-interaction-solid) 20%, transparent);
+  }
+
+  .et-ml-rte-lang-trigger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .et-ml-rte-lang-trigger-code {
+    font-size: 1.3rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  /* "Some language still needs content" — a small accent dot in the corner, mirroring the warning
+     icons inside the menu. */
+  .et-ml-rte-lang-trigger--flagged::after {
+    content: '';
+    position: absolute;
+    inset-block-start: 4px;
+    inset-inline-end: 4px;
+    inline-size: var(--et-multi-language-rich-text-editor-badge-size);
+    block-size: var(--et-multi-language-rich-text-editor-badge-size);
+    border-radius: 50%;
+    background: var(--et-theme-color-primary-solid, var(--et-surface-interaction-solid, currentColor));
+  }
+}

@@ -1,0 +1,13 @@
+<et-rich-text-editor
+  [value]="dir.activeMarkdown()"
+  [disabled]="dir.disabled()"
+  [readonly]="dir.readonly()"
+  [invalid]="dir.invalid()"
+  [errors]="dir.errors()"
+  [required]="dir.required()"
+  [placeholder]="placeholder()"
+  [tools]="innerTools()"
+  [autoformat]="autoformat()"
+  (valueChange)="dir.writeActiveMarkdown($event)"
+  (touchedChange)="dir.touched.set($event)"
+/>

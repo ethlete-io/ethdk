@@ -1,0 +1,32 @@
+<div etMenu>
+  <button
+    [disabled]="disabled()"
+    [attr.aria-label]="'Language: ' + activeLabel()"
+    [class.et-ml-rte-lang-trigger--flagged]="missingCount() > 0"
+    (mousedown)="$event.preventDefault()"
+    class="et-ml-rte-lang-trigger"
+    etMenuTrigger
+    type="button"
+  >
+    <span class="et-ml-rte-lang-trigger-code">{{ activeCode() }}</span>
+  </button>
+
+  <ng-template etMenuSurface>
+    <et-menu>
+      <et-menu-radio-group [value]="activeCode()" (valueChange)="select($event)">
+        @for (language of languages(); track language.code) {
+          <et-menu-radio-item [value]="language.code" [icon]="activeIcon(language.code)" [closeOnActivate]="true">
+            <span class="et-ml-rte-lang-item">
+              <span class="et-ml-rte-lang-item-label">{{ language.label }}</span>
+              <span
+                [class.et-ml-rte-lang-dot--filled]="isFilled(language.code)"
+                [attr.aria-label]="isFilled(language.code) ? 'has content' : 'empty'"
+                class="et-ml-rte-lang-dot"
+              ></span>
+            </span>
+          </et-menu-radio-item>
+        }
+      </et-menu-radio-group>
+    </et-menu>
+  </ng-template>
+</div>

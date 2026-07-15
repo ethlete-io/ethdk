@@ -4,6 +4,7 @@ export * from './description';
 export * from './dropzone';
 export * from './form-field';
 export * from './input';
+export * from './multi-language-rich-text-editor';
 export * from './rich-text-editor';
 export * from './selection-list';
 export * from './switch';
