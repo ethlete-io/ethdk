@@ -23,6 +23,8 @@ import { OverlayMainDirective } from '../overlay-main.directive';
   hostDirectives: [OverlayMainDirective],
   host: {
     class: 'et-overlay-sidebar-page-host',
+    // Forces a component ID distinct from the identical @ethlete/cdk twin (NG0912).
+    'data-et-components': '',
   },
 })
 export class OverlaySidebarPageComponent {
