@@ -403,6 +403,10 @@ const recommendedTemplate = {
     '@angular-eslint/template/no-any': 'error',
     // Prefer plain attribute over unnecessary property binding for static strings: etIcon="foo" not [etIcon]="'foo'"
     '@angular-eslint/template/prefer-static-string-properties': 'error',
+    // Prefer plain attribute over unnecessary property binding for static booleans: isReadonly not [isReadonly]="true"
+    // (warn + suggestion-only: the rewrite is only safe when the input has a booleanAttribute transform,
+    // which a template rule cannot verify)
+    'ethlete/prefer-static-boolean-properties': 'warn',
   },
 };
 

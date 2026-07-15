@@ -159,6 +159,24 @@ export class WidgetComponent {
 }
 ```
 
+## Angular templates
+
+The only custom rule that runs on `**/*.html` files (via `recommendedTemplate`) instead of TypeScript. It complements `@angular-eslint/template/prefer-static-string-properties`, which covers the string-literal case.
+
+| Rule                               | What it enforces                                                                                                                      | Fix | Default |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `prefer-static-boolean-properties` | No property bindings for static booleans (`[isReadonly]="true"` / `"false"`) — use a static attribute when the input coerces booleans |     | warn    |
+
+The rewrite is only equivalent when the input declares a `booleanAttribute` transform — otherwise a static attribute passes the _string_ `'true'` / `'false'` instead of a boolean. A template rule has no type information to verify that, so the fix is offered as an editor **suggestion** (💡) rather than applied by `--fix`, and the severity stays at `warn`. Keep the binding for inputs that take a plain boolean without a transform.
+
+```html
+<!-- ❌ static booleans bound as expressions -->
+<my-cmp [isReadonly]="true" [showHeader]="false" />
+
+<!-- ✅ static attributes (input uses booleanAttribute) -->
+<my-cmp isReadonly showHeader="false" />
+```
+
 ## DOM, platform & `@ethlete/core`
 
 These rules steer code away from raw browser and Angular platform APIs toward the reactive utilities in `@ethlete/core`.

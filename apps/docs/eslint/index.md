@@ -1,6 +1,6 @@
 # @ethlete/eslint-plugin
 
-Custom ESLint rules and shareable flat configs that enforce the Ethlete Angular styleguide — 49 custom rules covering signals vs RxJS usage, class member accessibility, Angular component metadata, input/output naming, DOM/platform access and TypeScript style. Most rules ship with an auto-fixer, so `eslint --fix` (or `nx lint --fix`) does the bulk of the work.
+Custom ESLint rules and shareable flat configs that enforce the Ethlete Angular styleguide — 50 custom rules covering signals vs RxJS usage, class member accessibility, Angular component metadata, templates, input/output naming, DOM/platform access and TypeScript style. Most rules ship with an auto-fixer, so `eslint --fix` (or `nx lint --fix`) does the bulk of the work.
 
 ```bash
 yarn add --dev @ethlete/eslint-plugin
@@ -27,7 +27,7 @@ export default [
 | Config                | Applies to     | Contents                                                                                                       |
 | --------------------- | -------------- | -------------------------------------------------------------------------------------------------------------- |
 | `recommendedTs`       | `**/*.ts`      | All custom `ethlete/*` rules plus the baseline TypeScript/JavaScript rules below                               |
-| `recommendedTemplate` | `**/*.html`    | Angular template rules (`@angular-eslint/template/*`)                                                          |
+| `recommendedTemplate` | `**/*.html`    | Angular template rules (`@angular-eslint/template/*` and `ethlete/prefer-static-boolean-properties`)           |
 | _(spec relaxation)_   | `**/*.spec.ts` | Turns off `@typescript-eslint/no-non-null-assertion` — non-null assertions are common and intentional in tests |
 
 The `ethlete` plugin itself is pre-wired into the configs — you don't need a `plugins:` entry for it.
@@ -76,7 +76,7 @@ Besides the [custom `ethlete/*` rules](/eslint/rules), `recommendedTs` configure
 - **Restricted globals**: direct `document` / `window` access — use `inject(DOCUMENT)` or a dedicated injection token.
 - **Angular outputs**: no `on` prefix (`@angular-eslint/no-output-on-prefix`), no native DOM event names (`@angular-eslint/no-output-native`).
 
-`recommendedTemplate` adds two template rules: no `$any()` (`@angular-eslint/template/no-any`) and prefer plain attributes over property bindings for static strings (`@angular-eslint/template/prefer-static-string-properties`, e.g. `etIcon="foo"` instead of `[etIcon]="'foo'"`).
+`recommendedTemplate` adds three template rules: no `$any()` (`@angular-eslint/template/no-any`), prefer plain attributes over property bindings for static strings (`@angular-eslint/template/prefer-static-string-properties`, e.g. `etIcon="foo"` instead of `[etIcon]="'foo'"`), and the same for static booleans (the custom [`ethlete/prefer-static-boolean-properties`](/eslint/rules#angular-templates), e.g. `isReadonly` instead of `[isReadonly]="true"` — suggestion-only, since it is only safe for inputs with a `booleanAttribute` transform).
 
 ## Fixing violations
 

@@ -669,3 +669,66 @@ test('no-locale-id: injectLocale from @ethlete/core is valid', () => {
   const msgs = lint(`import { injectLocale } from '@ethlete/core'; const l = injectLocale();`);
   expect(ruleIds(msgs)).not.toContain('ethlete/no-locale-id');
 });
+
+// ── recommendedTemplate ───────────────────────────────────────────────────────
+
+const templateParser = require('@angular-eslint/template-parser');
+const angularTemplatePlugin = require('@angular-eslint/eslint-plugin-template');
+
+/**
+ * Returns all messages from linting `code` as an Angular HTML template with the
+ * recommended template config. Registers the `@angular-eslint/template` plugin
+ * and parser alongside the pre-wired `ethlete` plugin (mirrors what a consumer
+ * base config provides).
+ *
+ * @param {string} code
+ */
+const lintTemplate = (code) => {
+  const linter = new Linter({ configType: 'flat' });
+  return linter.verify(
+    code,
+    [
+      {
+        ...plugin.configs.recommendedTemplate,
+        plugins: {
+          ...plugin.configs.recommendedTemplate.plugins,
+          '@angular-eslint/template': angularTemplatePlugin,
+        },
+        languageOptions: {
+          parser: templateParser,
+        },
+      },
+    ],
+    { filename: 'test.html' },
+  );
+};
+
+test('template/no-any: $any() in a template is flagged', () => {
+  const msgs = lintTemplate(`<div>{{ $any(user).name }}</div>`);
+  expect(ruleIds(msgs)).toContain('@angular-eslint/template/no-any');
+});
+
+test('template/prefer-static-string-properties: static string binding is flagged', () => {
+  const msgs = lintTemplate(`<my-cmp [mode]="'compact'" />`);
+  expect(ruleIds(msgs)).toContain('@angular-eslint/template/prefer-static-string-properties');
+});
+
+test('prefer-static-boolean-properties: static true binding is flagged', () => {
+  const msgs = lintTemplate(`<my-cmp [isReadonly]="true" />`);
+  expect(ruleIds(msgs)).toContain('ethlete/prefer-static-boolean-properties');
+});
+
+test('prefer-static-boolean-properties: static false binding is flagged', () => {
+  const msgs = lintTemplate(`<my-cmp [isReadonly]="false" />`);
+  expect(ruleIds(msgs)).toContain('ethlete/prefer-static-boolean-properties');
+});
+
+test('prefer-static-boolean-properties: dynamic binding is valid', () => {
+  const msgs = lintTemplate(`<my-cmp [isReadonly]="isReadonly()" />`);
+  expect(ruleIds(msgs)).not.toContain('ethlete/prefer-static-boolean-properties');
+});
+
+test('prefer-static-boolean-properties: bare attribute is valid', () => {
+  const msgs = lintTemplate(`<my-cmp isReadonly />`);
+  expect(ruleIds(msgs)).not.toContain('ethlete/prefer-static-boolean-properties');
+});

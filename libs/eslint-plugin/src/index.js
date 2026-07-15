@@ -50,6 +50,7 @@ const preferConciseAngularStyleMetadata = require('./rules/prefer-concise-angula
 const noTypedInjectedElementRef = require('./rules/no-typed-injected-element-ref');
 const noNativeHtmlInputName = require('./rules/no-native-html-input-name');
 const preferPresentTenseOutput = require('./rules/prefer-present-tense-output');
+const preferStaticBooleanProperties = require('./rules/prefer-static-boolean-properties');
 const { recommendedTs, recommendedTemplate, recommendedSpec } = require('./configs/recommended');
 
 /** @type {import('eslint').ESLint.Plugin} */
@@ -108,6 +109,7 @@ const plugin = {
     'no-typed-injected-element-ref': noTypedInjectedElementRef,
     'no-native-html-input-name': noNativeHtmlInputName,
     'prefer-present-tense-output': preferPresentTenseOutput,
+    'prefer-static-boolean-properties': preferStaticBooleanProperties,
   },
 };
 
@@ -121,6 +123,7 @@ const recommendedTsWithPlugin = {
 /** @type {import('eslint').Linter.Config} */
 const recommendedTemplateWithPlugin = {
   ...recommendedTemplate,
+  plugins: { ethlete: plugin },
 };
 
 const configs = {
