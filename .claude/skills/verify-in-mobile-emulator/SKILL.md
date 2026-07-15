@@ -8,8 +8,69 @@ description: Open a Storybook story on an iOS Simulator (iPhone) or Android emul
 `verify-in-storybook` (headless Chromium) is the default and is enough for most
 changes. Reach for a **real mobile engine** only when the change is specifically
 about touch behavior, mobile viewport/layout, or a Safari/Chrome-mobile quirk
-(e.g. the RTE docked/floating mobile toolbar, touch swipe on table headers,
-`env(safe-area-inset-*)`, iOS momentum scroll, `-webkit-` behaviors).
+(e.g. touch swipe on table headers, `env(safe-area-inset-*)`, iOS momentum
+scroll, `-webkit-` behaviors).
+
+## ⚠️ By default the emulator reports `(pointer: fine)` — touch-gated UI stays in desktop mode
+
+**Root cause:** the Android emulator (and iOS Simulator) are driven by your
+**host mouse**, so the browser reports `(pointer: fine)` + `(hover: hover)` and
+`(pointer: coarse)` = **false** — even though `navigator.maxTouchPoints` is 5.
+Anything gated on `injectHasTouchInput()` (`(pointer: coarse)`, `media-queries.ts`)
+or `injectCanHover()` renders in its **desktop** form: in this repo that's the
+**RTE docked/floating mobile toolbar** (`rich-text-editor.component.ts`
+`dockedToolbar`/`--touch`), the align/table tools, and floating-toolbar
+suppression. Verify with the probe at the end of the Android section.
+
+Two ways to get the real touch experience — pick by what you're testing:
+
+### Option A (simplest) — Playwright device emulation, headless, no emulator
+
+Best for pure `(pointer: coarse)`/`(hover)`-gated **rendering**. Correctly sets
+both features:
+
+```js
+import pw from '<repo>/node_modules/playwright/index.js';
+const { chromium, devices } = pw;
+const browser = await chromium.launch();
+const ctx = await browser.newContext({ ...devices['Pixel 7'] }); // isMobile+hasTouch → pointer:coarse, hover:none
+const page = await ctx.newPage();
+await page.goto('http://localhost:4400/iframe.html?id=<story-id>&viewMode=story', { waitUntil: 'domcontentloaded' });
+// tap (not click) to fire touch events: await (await page.$('[contenteditable="true"]')).tap();
+```
+
+Sanity-check `matchMedia('(pointer: coarse)').matches` (→ `true`) and, for the
+RTE, `.et-rich-text-editor--touch`.
+
+### Option B — force coarse pointer *on the real emulator* via CDP
+
+Use when you specifically want the **real Android Chrome engine + soft keyboard +
+real touch** *and* the touch-gated rendering. Connect to the on-device Chrome over
+the `adb`-forwarded debug port and apply device-metrics/touch overrides.
+`Emulation.setEmulatedMedia` alone does **nothing** here — you need
+`setDeviceMetricsOverride({mobile:true})` **plus** `setTouchEmulationEnabled`,
+applied live (no reload; the RTE's `matchMedia` listener reacts):
+
+```bash
+adb forward tcp:9222 localabstract:chrome_devtools_remote   # story already open in emulator Chrome
+```
+```js
+const browser = await chromium.connectOverCDP('http://localhost:9222');
+const ctx = browser.contexts()[0];
+const page = ctx.pages().find(p => p.url().includes('iframe.html'));
+const cdp = await ctx.newCDPSession(page);
+await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+await cdp.send('Emulation.setDeviceMetricsOverride', { width: 412, height: 915, deviceScaleFactor: 2.6, mobile: true });
+// now (pointer: coarse) === true and .et-rich-text-editor--touch appears; click the editor to show the docked toolbar
+```
+
+Then screenshot the device (`adb exec-out screencap -p > …`) — the docked toolbar
+renders on the actual emulator screen with the native keyboard.
+
+**Rule of thumb:** pointer/hover *rendering* only → Option A. Real
+touch-*gesture* behavior (swipe/momentum/native scroll), the soft keyboard, or a
+genuine Safari/Chrome-mobile engine quirk → the emulator (Option B for
+touch-gated bits).
 
 Emulators are **optional dev tooling** and are not installed by default on this
 machine. Always run the detection step first. If the tooling is missing, either
