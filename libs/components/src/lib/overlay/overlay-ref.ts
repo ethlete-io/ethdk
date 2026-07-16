@@ -1,5 +1,10 @@
 import { InjectionToken, TemplateRef, signal } from '@angular/core';
-import { OverlayRuntimeCloseSource, OverlayRuntimePositionStrategy, OverlayRuntimeRef } from '@ethlete/core';
+import {
+  OverlayRuntimeCloseEvent,
+  OverlayRuntimeCloseSource,
+  OverlayRuntimePositionStrategy,
+  OverlayRuntimeRef,
+} from '@ethlete/core';
 import { Observable, Subject, take, tap } from 'rxjs';
 import { OverlayConfig } from './overlay-config';
 
@@ -13,6 +18,7 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
   const afterOpened$ = new Subject<void>();
   const beforeClosed$ = new Subject<TResult | undefined>();
   const afterClosed$ = new Subject<TResult | undefined>();
+  const afterClosedEvent$ = new Subject<OverlayRuntimeCloseEvent<TResult | undefined>>();
 
   const componentInstance = () => {
     if (_componentInstanceOverride) {
@@ -60,6 +66,13 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
     return afterClosed$.asObservable();
   };
 
+  /** Like `afterClosed`, but also reports how the close was initiated (`escape`,
+   *  `outside-pointer`, `api`, …) — e.g. to restore focus on an explicit dismiss without
+   *  stealing it from whatever an outside-pointer close was aimed at. */
+  const afterClosedEvent = (): Observable<OverlayRuntimeCloseEvent<TResult | undefined>> => {
+    return afterClosedEvent$.asObservable();
+  };
+
   const attachRuntime = (runtimeRef: OverlayRuntimeRef<TComponent, TResult>) => {
     _runtimeRef = runtimeRef;
     id = runtimeRef.id;
@@ -93,6 +106,8 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
         tap((event) => {
           afterClosed$.next(event.result);
           afterClosed$.complete();
+          afterClosedEvent$.next(event);
+          afterClosedEvent$.complete();
         }),
       )
       .subscribe();
@@ -120,6 +135,7 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
     afterOpened,
     beforeClosed,
     afterClosed,
+    afterClosedEvent,
     attachRuntime,
   };
 };

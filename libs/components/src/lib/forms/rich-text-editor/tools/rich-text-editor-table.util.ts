@@ -274,6 +274,16 @@ export const createTableNav = (renderer: EditorRenderer) => {
 
     if (!edge) return false;
 
+    stepOut(table, edge);
+
+    return true;
+  };
+
+  /** Moves the caret out of `table` (a root-level block — both callers verify that) into the
+   *  adjacent block, creating an empty paragraph when the table starts/ends the document. */
+  const stepOut = (table: HTMLTableElement, edge: 'before' | 'after') => {
+    const el = table.parentElement as HTMLElement;
+    const doc = el.ownerDocument;
     const sibling = edge === 'before' ? table.previousElementSibling : table.nextElementSibling;
     let target = sibling instanceof HTMLElement ? sibling : null;
 
@@ -292,6 +302,32 @@ export const createTableNav = (renderer: EditorRenderer) => {
 
     selection?.removeAllRanges();
     selection?.addRange(caret);
+  };
+
+  /** Tab / Shift+Tab cell navigation: next/previous cell in row-major order; from the table's
+   *  last/first cell it steps OUT to the adjacent block (like the arrow-key `exit`), so Tab still
+   *  offers a keyboard escape route out of the editor's table instead of trapping the caret. */
+  const tab = (dom: RichTextEditorDom, event: KeyboardEvent) => {
+    if (event.key !== 'Tab') return false;
+
+    const el = dom.root();
+    const editable = dom.getSelection();
+
+    if (!el || !editable) return false;
+
+    const ctx = findTableContext(el, editable.range.startContainer);
+
+    if (!ctx || ctx.table.parentElement !== el) return false;
+
+    const cells = allRows(ctx.table).flatMap((row) => [...row.cells]);
+    const index = cells.indexOf(ctx.cell);
+    const target = cells[index + (event.shiftKey ? -1 : 1)] ?? null;
+
+    if (target) {
+      collapseInto(target, 0);
+    } else {
+      stepOut(ctx.table, event.shiftKey ? 'before' : 'after');
+    }
 
     return true;
   };
@@ -354,5 +390,5 @@ export const createTableNav = (renderer: EditorRenderer) => {
     return true;
   };
 
-  return { exit, enter };
+  return { exit, enter, tab };
 };

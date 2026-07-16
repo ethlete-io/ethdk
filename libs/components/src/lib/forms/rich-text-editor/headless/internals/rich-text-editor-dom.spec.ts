@@ -104,6 +104,28 @@ describe('RichTextEditorDom', () => {
       expect(root.innerHTML).toBe('hi<strong>Q</strong>');
     });
 
+    it('inserts a line-ending space as nbsp so the next keystroke cannot collapse it away', () => {
+      // A plain trailing space at line end is CSS-collapsed and Chrome drops it on the next
+      // keystroke, snapping the caret back inside the mark — the toggle-off would silently undo.
+      const { root, dom } = setup('one <strong>two</strong>');
+      const text = (root.querySelector('strong') as HTMLElement).firstChild as Node;
+      select(text, 3, text, 3); // collapsed caret at the end, inside <strong>
+
+      dom.insertInlineText(' ', []);
+
+      expect(root.innerHTML).toBe('one <strong>two</strong>&nbsp;');
+    });
+
+    it('keeps a mid-line inserted space as a plain space', () => {
+      const { root, dom } = setup('<strong>two</strong>rest');
+      const text = (root.querySelector('strong') as HTMLElement).firstChild as Node;
+      select(text, 3, text, 3);
+
+      dom.insertInlineText(' ', []);
+
+      expect(root.innerHTML).toBe('<strong>two</strong> rest');
+    });
+
     it('reports the inline marks wrapping the caret', () => {
       const { root, dom } = setup('<strong><em>x</em></strong>');
       const text = (root.querySelector('em') as HTMLElement).firstChild as Node;

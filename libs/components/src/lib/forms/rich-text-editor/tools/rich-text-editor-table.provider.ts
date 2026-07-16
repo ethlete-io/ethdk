@@ -6,10 +6,11 @@ import { createTableNav } from './rich-text-editor-table.util';
 
 /**
  * Registers the opt-in `'table'` tool (insert via a grid-size picker, plus row/column editing) and
- * the arrow-key caret navigation across table boundaries. Add to a component/route's providers and
- * include `'table'` in the editor's `tools`. Because the tool component and all table DOM
- * operations (including the caret navigation) are only referenced from here, they tree-shake away
- * for editors that don't provide it.
+ * the caret navigation across table boundaries: arrow keys step in/out at the table's edges, and
+ * Tab/Shift+Tab move between cells (stepping out past the first/last cell). Add to a
+ * component/route's providers and include `'table'` in the editor's `tools`. Because the tool
+ * component and all table DOM operations (including the caret navigation) are only referenced from
+ * here, they tree-shake away for editors that don't provide it.
  */
 export const provideRichTextEditorTableTool = (): Provider => ({
   provide: RICH_TEXT_EDITOR_TOOL,
@@ -20,7 +21,10 @@ export const provideRichTextEditorTableTool = (): Provider => ({
       token: 'table',
       label: 'Table',
       control: RichTextEditorTableToolComponent,
-      keydown: (editor, event) => nav.exit(editor.editorDom, event.key) || nav.enter(editor.editorDom, event.key),
+      keydown: (editor, event) =>
+        nav.tab(editor.editorDom, event) ||
+        nav.exit(editor.editorDom, event.key) ||
+        nav.enter(editor.editorDom, event.key),
     };
   },
   multi: true,

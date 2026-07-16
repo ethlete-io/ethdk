@@ -58,6 +58,9 @@ The `OverlayRef` is returned by `open` and injectable inside the overlay via the
 
 - `close(result?)` — close with an optional typed result
 - `afterOpened()`, `beforeClosed()`, `afterClosed()` — one-shot observables
+- `afterClosedEvent()` — like `afterClosed()`, but the emitted event also carries `source`
+  (`'api' | 'escape' | 'outside-pointer' | 'drag' | 'reference-detached'`) — e.g. to restore focus
+  on an explicit dismiss without stealing it from whatever an outside-pointer close was aimed at
 - `componentInstance()` — the content component instance
 - `updatePositionStrategy(strategy)` — reposition without remounting
 - `id`, `config`, `elements` (`paneElement` / `hostElement` / `backdropElement`) — identity and DOM access

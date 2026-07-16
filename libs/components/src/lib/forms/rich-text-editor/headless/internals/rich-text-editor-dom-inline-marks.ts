@@ -456,10 +456,22 @@ export const createRichTextEditorInlineMarks = (core: RichTextEditorDomCore) => 
 
     range.insertNode(content);
 
-    // Caret to the end of the inserted text (inside the innermost mark when there is one) so native
-    // typing continues in the right formatting context.
     let deepest: Node = content;
     while (deepest.firstChild) deepest = deepest.firstChild;
+
+    // A plain trailing space at the end of a line is CSS-collapsed, and Chrome removes it from the
+    // text node on the next keystroke — the caret would snap back inside the very mark it just
+    // escaped, silently undoing the toggle (same trap as collapseAfterInline). Use a no-break
+    // space there; serialization normalizes it back to a plain space.
+    const next = content.nextSibling;
+    const endsLine = !next || (next instanceof Text && next.data.length === 0);
+
+    if (endsLine && deepest instanceof Text && deepest.data.endsWith(' ')) {
+      deepest.data = deepest.data.replace(/ +$/, (spaces) => '\u00a0'.repeat(spaces.length));
+    }
+
+    // Caret to the end of the inserted text (inside the innermost mark when there is one) so native
+    // typing continues in the right formatting context.
     const caret = doc.createRange();
     caret.setStart(deepest, (deepest.textContent ?? '').length);
     caret.collapse(true);

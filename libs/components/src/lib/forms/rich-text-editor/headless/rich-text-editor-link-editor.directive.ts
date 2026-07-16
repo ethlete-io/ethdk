@@ -80,7 +80,7 @@ export class RichTextEditorLinkEditorDirective {
         inputBinding('exists', () => info.exists),
         outputBinding<RichTextEditorLinkEditorValue>('saveLink', (value) => this.apply(value)),
         outputBinding<void>('removeLink', () => this.remove()),
-        outputBinding<void>('dismiss', () => this.close()),
+        outputBinding<void>('dismiss', () => this.dismiss()),
       ],
       // Responsive: on phones (< md) an anchored popover would be cramped against the on-screen
       // keyboard and the native selection menu, so use a top sheet (pinned above the keyboard). On
@@ -113,14 +113,20 @@ export class RichTextEditorLinkEditorDirective {
     this.editor.linkEditorOpen.set(true);
 
     ref
-      .afterClosed()
+      .afterClosedEvent()
       .pipe(
         take(1),
         takeUntilDestroyed(this.destroyRef),
-        tap(() => {
+        tap((event) => {
           this.editor.linkEditorOpen.set(false);
 
           if (this.overlayRef() === ref) this.overlayRef.set(null);
+
+          // Escape is an explicit "back to the editor" — hand focus back (restoreFocus is off).
+          // An outside-pointer close is aimed at something else; don't steal its focus.
+          if (event.source === 'escape') {
+            queueMicrotask(() => this.editor.activate());
+          }
         }),
       )
       .subscribe();
@@ -136,6 +142,12 @@ export class RichTextEditorLinkEditorDirective {
   private remove() {
     this.restoreSelection();
     this.editor.removeLink();
+    this.close();
+    queueMicrotask(() => this.editor.activate());
+  }
+
+  /** The popover's own close button — an explicit dismiss, so focus goes back to the editor. */
+  private dismiss() {
     this.close();
     queueMicrotask(() => this.editor.activate());
   }

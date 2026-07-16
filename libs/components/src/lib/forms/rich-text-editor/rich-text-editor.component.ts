@@ -260,17 +260,18 @@ export class RichTextEditorComponent {
       this.dir.clearPendingMarks();
     }
 
-    // Tab / Shift+Tab nest / un-nest the current list item (falls through to default focus move
-    // when the caret isn't in a list)
+    // Tab / Shift+Tab nest / un-nest the current list item. Outside a list this falls through to
+    // the tool keydown hooks below (the table tool moves between cells) and only then to the
+    // default focus move.
     if (event.key === 'Tab') {
       const handled = event.shiftKey ? this.dir.editorDom.outdentListItem() : this.dir.editorDom.indentListItem();
 
       if (handled) {
         event.preventDefault();
         this.dir.syncFromDom();
-      }
 
-      return;
+        return;
+      }
     }
 
     // Enter on an empty list item steps out of the list one level at a time; Enter at a heading's
@@ -387,11 +388,11 @@ export class RichTextEditorComponent {
     this.dir.lastEmittedMarkdown = markdown;
   }
 
-  /** Track the visual viewport so the docked (fixed) toolbar sits right above the on-screen keyboard.
-   *  The gap from the layout-viewport bottom up to the keyboard top is
-   *  `innerHeight - visualViewport.height - visualViewport.offsetTop` — the `offsetTop` term is what
-   *  keeps it glued while the page scrolls (on mobile the visual viewport pans and the URL bar
-   *  shows/hides). We must therefore react to BOTH `resize` and `scroll`.
+  /** Track the visual viewport so the docked (fixed) toolbar sits right above the on-screen
+   *  keyboard: the inset is the gap from where `position: fixed; bottom: 0` actually renders (a
+   *  measured probe — see below) down past the keyboard's top edge
+   *  (`visualViewport.offsetTop + height`). Reacting to BOTH `resize` and `scroll` keeps it glued
+   *  while the page scrolls (the visual viewport pans, the URL bar shows/hides).
    *
    *  Performance: the CSS var is written straight to the host element, outside Angular — no signal,
    *  so no change detection fires per scroll frame (that was what made scrolling feel sluggish). The
@@ -403,8 +404,55 @@ export class RichTextEditorComponent {
     if (!view || !viewport) return;
 
     const host = this.host.nativeElement;
+
+    // In a same-origin iframe (Storybook, docs story embeds) the frame's own visualViewport never
+    // reflects the soft keyboard — only the top window's does. Track the top viewport plus the
+    // frame's position to compute how much of THIS frame the keyboard covers. A cross-origin
+    // parent exposes neither (`frameElement` is null / viewport access throws), so those frames
+    // keep the local metrics — the status quo of not seeing the keyboard at all.
+    let frameElement: Element | null = null;
+    let topViewport: VisualViewport | null = null;
+
+    try {
+      // no instanceof here — frameElement belongs to the PARENT document's realm, so it is never
+      // an instance of this window's HTMLElement constructor
+      frameElement = view.frameElement;
+      topViewport = frameElement ? (view.top?.visualViewport ?? null) : null;
+    } catch {
+      frameElement = null;
+      topViewport = null;
+    }
+
+    // Where "position: fixed; bottom: 0" actually lands is NOT derivable from window/visualViewport
+    // on iOS: with the soft keyboard open (and focus zoom active), WebKit positions fixed elements
+    // against an internal rect that tracks the visual viewport and is clamped to the document — its
+    // bottom sits well below where `innerHeight` says. Measure it with a zero-size fixed probe
+    // instead of assuming layout-viewport math; on engines without the quirk the probe bottom IS
+    // `innerHeight`, so this degenerates to the plain `innerHeight - height - offsetTop`.
+    const probe = this.renderer.createElement('div') as HTMLElement;
+    this.renderer.setCssProperties(probe, {
+      position: 'fixed',
+      'inset-block-end': '0',
+      'inline-size': '0',
+      'block-size': '0',
+      visibility: 'hidden',
+    });
+    this.renderer.appendChild(this.document.body, probe);
+    this.destroyRef.onDestroy(() => probe.remove());
+
     const update = () => {
-      const inset = Math.max(0, view.innerHeight - viewport.height - viewport.offsetTop);
+      const fixedBottom = probe.getBoundingClientRect().bottom;
+      let keyboardTop: number;
+
+      if (frameElement && topViewport) {
+        // keyboard overlap of this frame, in the frame's own client coordinates
+        const covered = frameElement.getBoundingClientRect().bottom - (topViewport.offsetTop + topViewport.height);
+        keyboardTop = view.innerHeight - Math.max(0, covered);
+      } else {
+        keyboardTop = viewport.offsetTop + viewport.height;
+      }
+
+      const inset = Math.max(0, fixedBottom - keyboardTop);
       // set the CSS var directly via the renderer (not a signal) so scroll/resize don't schedule
       // change detection each frame — that per-frame CD was what made scrolling feel sluggish
       this.renderer.setCssProperty(host, '--_et-rte-keyboard-inset', `${inset}px`);
@@ -412,7 +460,9 @@ export class RichTextEditorComponent {
 
     update();
 
-    merge(fromEvent(viewport, 'resize'), fromEvent(viewport, 'scroll'))
+    const viewports = topViewport ? [viewport, topViewport] : [viewport];
+
+    merge(...viewports.flatMap((v) => [fromEvent(v, 'resize'), fromEvent(v, 'scroll')]))
       .pipe(
         tap(() => update()),
         takeUntilDestroyed(this.destroyRef),

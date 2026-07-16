@@ -101,6 +101,9 @@ providers: [provideRichTextEditorTableTool(), provideRichTextEditorAlignmentTool
   only hold inline content, so the block tools (heading menu, lists) disable themselves while the
   caret is in a cell. The heading menu likewise disables inside list items (a heading has no
   serialized form there). Block alignment survives switching between paragraph and heading.
+  Inside a table, <kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> move to the next/previous cell; past the
+  last (or before the first) cell the caret steps out of the table, and the arrow keys step
+  in/out across the table's edges — so the keyboard never gets trapped in a table.
 - **`'align'`** — a block-alignment menu (left / center / right / justify). Block alignment persists
   as a native `text-align` style (Markdown has no block-alignment syntax). Inside a table it applies
   to the whole column and persists as GFM column alignment (`:---`, `:---:`, `---:`). It disables
