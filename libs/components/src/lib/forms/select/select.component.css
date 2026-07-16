@@ -1,0 +1,171 @@
+@layer components {
+  @property --et-select-arrow-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 16px;
+  }
+
+  et-select {
+    display: block;
+    flex: 1;
+    min-inline-size: 0;
+    color: inherit;
+
+    .et-select-trigger {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      inline-size: 100%;
+      outline: none;
+      color: inherit;
+      min-inline-size: 0;
+      text-align: start;
+      cursor: pointer;
+      user-select: none;
+
+      &[data-disabled] {
+        cursor: not-allowed;
+      }
+
+      /* the content wraps (chips, inline search) — the chevron stays outside this flow,
+         pinned to the field's end */
+      .et-select-trigger-content {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        flex: 1;
+        min-inline-size: 0;
+
+        /* single select with a custom value template: value display and query input occupy
+           the same cell — the input overlays it and typing hides the template, so the input
+           never wraps onto a second line */
+        &.et-select-trigger-content--stacked {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr);
+
+          > * {
+            grid-area: 1 / 1;
+          }
+
+          /* while the rich value is displayed under the input, a blinking caret over it
+             (inside a flag, mid-markup) reads as broken — it reappears with the first
+             typed character, when the input's own text takes over */
+          &:has(.et-select-value-custom) input[etselectsearch] {
+            caret-color: transparent;
+          }
+        }
+      }
+
+      input[etselectsearch] {
+        flex: 1 1 60px;
+        min-inline-size: 60px;
+        border: none;
+        outline: none;
+        background: transparent;
+        font: inherit;
+        color: inherit;
+        padding: 0;
+        caret-color: var(--et-theme-color-primary-solid, currentColor);
+        cursor: text;
+
+        &::placeholder {
+          color: color-mix(in srgb, currentColor 46%, transparent);
+        }
+
+        &:disabled {
+          cursor: not-allowed;
+        }
+      }
+
+      /* an inline search shares the line with the value label — the label shrinks to its
+         content so the caret sits right after it */
+      &:has(input[etselectsearch]) .et-select-value {
+        flex: 0 1 auto;
+      }
+    }
+
+    .et-select-value {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-inline-size: 0;
+
+      &[data-placeholder] {
+        color: color-mix(in srgb, currentColor 46%, transparent);
+      }
+    }
+
+    .et-select-value-custom {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      min-inline-size: 0;
+    }
+
+    /* with an inline search input the custom value shares the line with it, and the input's
+       placeholder stays quiet while a value is displayed */
+    .et-select-trigger-content:has(input[etselectsearch]) .et-select-value-custom {
+      flex: 0 1 auto;
+    }
+
+    .et-select-trigger-content:has(.et-select-value-custom) input[etselectsearch]::placeholder {
+      color: transparent;
+    }
+
+    /* chips join the trigger's own wrapping flex flow (so an inline search input flows
+       after the last chip, tag-input style) */
+    .et-select-chips {
+      display: contents;
+    }
+
+    .et-select-clear {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+      inline-size: var(--et-select-arrow-size);
+      block-size: var(--et-select-arrow-size);
+      color: var(--et-surface-color-muted-solid, currentColor);
+      border: none;
+      background: transparent;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      appearance: none;
+
+      &:hover {
+        color: var(--et-surface-color-solid, currentColor);
+      }
+
+      .et-icon {
+        inline-size: calc(var(--et-select-arrow-size) - 4px);
+        block-size: calc(var(--et-select-arrow-size) - 4px);
+      }
+    }
+
+    .et-select-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+      inline-size: var(--et-select-arrow-size);
+      block-size: var(--et-select-arrow-size);
+      color: var(--et-surface-color-muted-solid, currentColor);
+      border: none;
+      background: transparent;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      appearance: none;
+
+      .et-icon {
+        inline-size: 100%;
+        block-size: 100%;
+        /* the registered chevron icon points up natively — this select always points down */
+        rotate: 180deg;
+      }
+    }
+  }
+}

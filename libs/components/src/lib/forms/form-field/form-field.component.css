@@ -347,7 +347,16 @@
           transition: color 150ms ease;
         }
 
+        /* the select renders its placeholder as a span, not a native ::placeholder */
+        .et-select-value[data-placeholder] {
+          transition: color 150ms ease;
+        }
+
         &:not([data-label-floated]) :is(.et-input-native, .et-number-input-native, .et-textarea-native)::placeholder {
+          color: transparent;
+        }
+
+        &:not([data-label-floated]) .et-select-value[data-placeholder] {
           color: transparent;
         }
       }

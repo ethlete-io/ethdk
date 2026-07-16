@@ -1,0 +1,154 @@
+import { DestroyRef, Directive, ElementRef, afterNextRender, computed, inject, input, signal } from '@angular/core';
+import { RuntimeError, createComponentId } from '@ethlete/core';
+import { SELECT_ERROR_CODES } from '../select-errors';
+import { SelectDirective } from './select.directive';
+
+/**
+ * Placeholder an option's value resolves to while its required `value` input has not been
+ * bound yet (projected content whose view has not rendered). Never matches a consumer value,
+ * so unbound options simply cannot be selected until their bindings run.
+ */
+const UNBOUND_VALUE = Symbol('et-select-option-unbound');
+
+@Directive({
+  selector: '[etSelectOption]',
+  exportAs: 'etSelectOption',
+  host: {
+    role: 'option',
+    '[attr.aria-selected]': 'selected()',
+    '[attr.aria-disabled]': 'disabled() || null',
+    '[attr.data-selected]': 'selected() || null',
+    '[attr.data-active]': 'active() || null',
+    '[attr.data-filtered]': 'filteredOut() || null',
+    '(click)': 'handleClick($event)',
+    '(mousedown)': 'handleMousedown($event)',
+    '(pointerenter)': 'handlePointerEnter($event)',
+  },
+})
+export class SelectOptionDirective {
+  private select = inject(SelectDirective, { optional: true });
+  public elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private destroyRef = inject(DestroyRef);
+
+  public value = input.required<unknown>();
+  /** Display label. Falls back to the element's text content rendered on first paint. */
+  public labelInput = input('', { alias: 'label' });
+  public disabled = input(false);
+
+  private optionId = signal(createComponentId('et-select-option'));
+  private textLabel = signal('');
+
+  public label = computed(() => this.labelInput() || this.textLabel());
+  public checked = signal(false);
+
+  // the required `value` input throws until its binding executes — which never happens for
+  // projected options whose view is not rendered (a lazy, closed surface). Reading through
+  // this computed keeps registry-wide reads (value↔checked sync, label cache) crash-free.
+  private boundValue = computed(() => {
+    try {
+      return this.value();
+    } catch {
+      return UNBOUND_VALUE;
+    }
+  });
+
+  // derived from the select's value instead of `checked` (which the registry sync effect only
+  // writes after the first render) — the overlay's fresh option instances must paint their
+  // selected state correctly on the very first frame of the enter animation
+  public selected = computed(() => {
+    const value = this.boundValue();
+
+    if (value === UNBOUND_VALUE || !this.select) {
+      return this.checked();
+    }
+
+    const current = this.select.value();
+
+    return Array.isArray(current) ? current.includes(value) : current === value;
+  });
+
+  private listItem = {
+    value: this.boundValue,
+    checked: this.checked,
+    disabled: this.disabled,
+    elementRef: this.elementRef,
+    id: this.optionId.asReadonly(),
+    label: this.label,
+  };
+  public active = computed(() => this.select?.activeItem() === this.listItem);
+
+  /** With internal filtering, true while the option does not match the search query. Hide it via CSS. */
+  public filteredOut = computed(() => {
+    const select = this.select;
+
+    if (!select || select.filterMode() !== 'internal') {
+      return false;
+    }
+
+    // panelFilterQuery, not the live query: the filter freezes while the panel animates out
+    const query = select.panelFilterQuery();
+
+    return !!query && !this.label().toLowerCase().includes(query);
+  });
+
+  constructor() {
+    const element = this.elementRef.nativeElement;
+
+    if (!element.id) {
+      element.id = this.optionId();
+    }
+
+    const select = this.select;
+
+    if (select) {
+      select.selection.registerItem(this.listItem);
+
+      this.destroyRef.onDestroy(() => {
+        if (select.activeItem() === this.listItem) {
+          select.activeItem.set(null);
+        }
+
+        select.selection.unregisterItem(this.listItem);
+      });
+    }
+
+    afterNextRender(() => {
+      this.textLabel.set(element.textContent?.trim() ?? '');
+    });
+
+    if (ngDevMode) {
+      afterNextRender(() => {
+        if (!this.select) {
+          throw new RuntimeError(
+            SELECT_ERROR_CODES.OPTION_OUTSIDE_SELECT,
+            '[SelectOptionDirective] etSelectOption must be placed inside an [etSelect] element.',
+          );
+        }
+      });
+    }
+  }
+
+  protected handleClick(event: MouseEvent) {
+    if (this.disabled()) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      return;
+    }
+
+    this.select?.commitOption(this.listItem);
+  }
+
+  protected handleMousedown(event: MouseEvent) {
+    // DOM focus stays on the trigger — options only ever hold virtual focus
+    event.preventDefault();
+  }
+
+  protected handlePointerEnter(event: PointerEvent) {
+    if (event.pointerType === 'touch' || this.disabled()) {
+      return;
+    }
+
+    this.select?.setActiveItem(this.listItem, { scroll: false });
+  }
+}

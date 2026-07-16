@@ -1,0 +1,116 @@
+@layer components {
+  @property --et-select-panel-max-height {
+    syntax: '<length-percentage>';
+    inherits: false;
+    initial-value: 40vh;
+  }
+
+  @property --et-select-panel-padding {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 6px;
+  }
+
+  .et-overlay.et-with-default-animation.et-overlay--select {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      opacity: 0;
+    }
+
+    &.et-animation-enter-active {
+      transition:
+        transform 140ms ease,
+        opacity 140ms ease;
+    }
+
+    &.et-animation-leave-active {
+      transition:
+        transform 100ms ease,
+        opacity 100ms ease;
+    }
+  }
+
+  .et-overlay--select[data-overlay-placement^='top'] {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) translateY(0.3rem) !important;
+    }
+  }
+
+  .et-overlay--select[data-overlay-placement^='bottom'] {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
+        translateY(-0.3rem) !important;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-overlay.et-with-default-animation.et-overlay--select {
+      &.et-animation-enter-active,
+      &.et-animation-leave-active {
+        transition-duration: 0ms;
+      }
+    }
+  }
+
+  .et-select-panel {
+    display: block;
+    box-sizing: border-box;
+    max-inline-size: min(400px, calc(100vw - 24px));
+    max-block-size: var(--et-select-panel-max-height);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--et-select-panel-padding);
+
+    /* applied while the block size animates after a content change (filtering, async
+       options arriving), so content outside the animated size stays hidden */
+    &.et-select-panel--resizing {
+      overflow: clip;
+    }
+    border-radius: 10px;
+    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    background: var(--et-surface-background-solid, rgb(32 32 32));
+    color: var(--et-surface-color-solid, rgb(244 244 245));
+    box-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
+
+    .et-select-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-block-size: var(--et-select-option-height, 36px);
+      padding-inline: var(--et-select-option-padding-inline, 10px);
+      font-size: var(--et-select-option-font-size, 14px);
+      color: var(--et-surface-color-muted-solid, currentColor);
+
+      &.et-select-state--error {
+        color: var(--et-theme-color-primary-solid, currentColor);
+      }
+    }
+
+    .et-select-load-more {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      inline-size: 100%;
+      min-block-size: var(--et-select-option-height, 36px);
+      border: none;
+      border-radius: var(--et-select-option-border-radius, 6px);
+      background: transparent;
+      font: inherit;
+      font-size: var(--et-select-option-font-size, 14px);
+      color: var(--et-theme-color-ink-solid, currentColor);
+      cursor: pointer;
+      appearance: none;
+
+      &:hover {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 12%, transparent);
+      }
+
+      &:active {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 20%, transparent);
+      }
+    }
+  }
+}

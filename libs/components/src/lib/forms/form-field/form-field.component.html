@@ -1,5 +1,5 @@
 <div class="et-form-field-shell">
-  <div (mousedown)="handleFramePointerDown($event)" class="et-form-field-control-frame">
+  <div #controlFrame (mousedown)="handleFramePointerDown($event)" class="et-form-field-control-frame">
     <div #prefixEl class="et-form-field-affix et-form-field-prefix">
       <ng-content select="[etInputPrefix]" />
     </div>

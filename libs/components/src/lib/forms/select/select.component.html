@@ -1,0 +1,111 @@
+<!-- a div, not a <button>: chips carry remove buttons and buttons cannot nest.
+     The trigger directive manages tabindex/aria-disabled for non-button hosts. -->
+<div class="et-select-trigger" etSelectTrigger>
+  <div [class.et-select-trigger-content--stacked]="stackedValue()" class="et-select-trigger-content">
+    @if (select.registeredValueTemplate(); as valueTemplate) {
+      @if (showCustomValue()) {
+        <div class="et-select-value-custom">
+          <ng-template [ngTemplateOutlet]="valueTemplate.templateRef" [ngTemplateOutletContext]="valueContext()" />
+        </div>
+      }
+    } @else if (select.multiple() && select.selectedEntries().length) {
+      <!-- display: contents — the chips share the trigger's wrapping flex flow with the
+           inline search input, tag-input style -->
+      <div class="et-select-chips">
+        @for (entry of select.selectedEntries(); track entry.value) {
+          <et-chip
+            [disabled]="select.disabled() || select.readonly()"
+            (remove)="select.deselectValue(entry.value)"
+            removable
+          >
+            {{ entry.label }}
+          </et-chip>
+        }
+      </div>
+    }
+
+    @if (showValueLabel()) {
+      <span [attr.data-placeholder]="!select.hasValue() || null" class="et-select-value">
+        {{ select.displayValue() ?? select.placeholder() }}
+      </span>
+    }
+
+    <!-- combobox pattern: the search input sits inline in the field, not in the panel -->
+    <ng-content select="input[etSelectSearch]" />
+  </div>
+
+  @if (showClear()) {
+    <!-- pointer-only, out of the tab order — keyboard users clear via Backspace / erasing -->
+    <button
+      [attr.aria-label]="clearLabel()"
+      (click)="handleClearClick($event)"
+      class="et-select-clear"
+      tabindex="-1"
+      type="button"
+    >
+      <i etIcon="et-times"></i>
+    </button>
+  }
+
+  <!-- pointer-only affordance (keyboard users close via Escape) — kept out of the tab order -->
+  <button
+    [disabled]="select.disabled()"
+    (click)="handleArrowClick($event)"
+    class="et-select-arrow"
+    aria-hidden="true"
+    tabindex="-1"
+    type="button"
+  >
+    <i etIcon="et-chevron"></i>
+  </button>
+</div>
+
+<ng-template #optionContent>
+  <ng-content />
+</ng-template>
+
+@if (!select.isMounted()) {
+  <!-- keeps the projected options rendered (and their bindings live) while the panel is
+       closed, so the trigger can resolve a preselected value's label and closed typeahead
+       works — the same template moves into the overlay while it is open -->
+  <div class="et-select-detached-options" aria-hidden="true" hidden>
+    <ng-template [ngTemplateOutlet]="optionContent" />
+  </div>
+}
+
+<ng-template etSelectSurface>
+  <et-select-panel>
+    <ng-template [ngTemplateOutlet]="optionContent" />
+
+    @if (select.loading()) {
+      @if (select.registeredLoadingTemplate(); as loadingTemplate) {
+        <ng-template [ngTemplateOutlet]="loadingTemplate.templateRef" />
+      } @else {
+        <div class="et-select-state et-select-state--loading">
+          <et-spinner class="et-select-state-spinner" diameter="16" strokeWidth="2" />
+          Loading…
+        </div>
+      }
+    } @else if (select.error(); as error) {
+      @if (select.registeredErrorTemplate(); as errorTemplate) {
+        <ng-template [ngTemplateOutlet]="errorTemplate.templateRef" [ngTemplateOutletContext]="{ $implicit: error }" />
+      } @else {
+        <div [etProvideColor]="errorColorTheme" class="et-select-state et-select-state--error" role="alert">
+          {{ error }}
+        </div>
+      }
+    } @else if (!select.visibleItems().length) {
+      @if (select.registeredEmptyTemplate(); as emptyTemplate) {
+        <ng-template [ngTemplateOutlet]="emptyTemplate.templateRef" />
+      } @else {
+        <div class="et-select-state et-select-state--empty">No results</div>
+      }
+    }
+
+    @if (select.hasMoreItems() && !select.loading()) {
+      <button (click)="select.requestLoadMore()" class="et-select-load-more" tabindex="-1" type="button">
+        {{ loadMoreLabel() }}
+      </button>
+    }
+  </et-select-panel>
+</ng-template>

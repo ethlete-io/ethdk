@@ -1,4 +1,5 @@
 import { ElementRef, InjectionToken, Signal, WritableSignal } from '@angular/core';
+import { SelectionState } from './internals/selection-state';
 
 export const SELECTION_LIST_TOKEN = new InjectionToken<SelectionListDirectiveBase>('SELECTION_LIST_TOKEN');
 
@@ -9,6 +10,8 @@ export type SelectionListItem<TValue = unknown> = {
   checked: WritableSignal<boolean>;
   disabled: Signal<boolean>;
   elementRef: ElementRef<HTMLElement>;
+  id?: Signal<string>;
+  label?: Signal<string>;
 };
 
 export type SelectionListDirectiveBase<TValue = unknown> = {
@@ -17,13 +20,7 @@ export type SelectionListDirectiveBase<TValue = unknown> = {
   disabled: Signal<boolean>;
   required: Signal<boolean>;
   name: Signal<string>;
-  items: Signal<SelectionListItem<TValue>[]>;
-  allSelected: Signal<boolean>;
-  someSelected: Signal<boolean>;
-  registerItem(item: SelectionListItem<TValue>): void;
-  unregisterItem(item: SelectionListItem<TValue>): void;
-  select(item: SelectionListItem<TValue>): void;
+  selection: SelectionState<TValue, SelectionListItem<TValue>>;
   focusItem(item: SelectionListItem<TValue>): void;
   markTouched(): void;
-  toggleAll(): void;
 };

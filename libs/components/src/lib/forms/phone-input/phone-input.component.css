@@ -1,0 +1,103 @@
+@layer components {
+  et-phone-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-inline-size: 0;
+    color: inherit;
+
+    .et-phone-input-country-trigger {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border: none;
+      outline: none;
+      background: transparent;
+      font: inherit;
+      color: inherit;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      appearance: none;
+      white-space: nowrap;
+
+      &:disabled {
+        cursor: not-allowed;
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+    }
+
+    .et-phone-input-dial-code {
+      color: var(--et-surface-color-muted-solid, currentColor);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .et-phone-input-field {
+      flex: 1;
+      min-inline-size: 0;
+      border: none;
+      outline: none;
+      background: transparent;
+      font: inherit;
+      color: inherit;
+      padding: 0;
+      caret-color: var(--et-theme-color-primary-solid, currentColor);
+      font-variant-numeric: tabular-nums;
+
+      &::placeholder {
+        color: color-mix(in srgb, currentColor 46%, transparent);
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  /* panel content of the country picker (rendered in the overlay pane) */
+  .et-phone-input-country-search {
+    position: sticky;
+    inset-block-start: calc(var(--et-select-panel-padding, 6px) * -1);
+    margin-block-start: calc(var(--et-select-panel-padding, 6px) * -1);
+    margin-inline: calc(var(--et-select-panel-padding, 6px) * -1);
+    margin-block-end: var(--et-select-panel-padding, 6px);
+    padding: var(--et-select-panel-padding, 6px);
+    background: var(--et-surface-background-solid, rgb(32 32 32));
+    border-block-end: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    z-index: 1;
+
+    input[etselectsearch] {
+      inline-size: 100%;
+      box-sizing: border-box;
+      border: none;
+      outline: none;
+      background: transparent;
+      font: inherit;
+      color: inherit;
+      padding: 4px 6px;
+      caret-color: var(--et-theme-color-primary-solid, currentColor);
+
+      &::placeholder {
+        color: color-mix(in srgb, currentColor 46%, transparent);
+      }
+    }
+  }
+
+  .et-phone-input-option-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .et-phone-input-option-dial {
+    color: var(--et-surface-color-muted-solid, currentColor);
+    font-variant-numeric: tabular-nums;
+  }
+}

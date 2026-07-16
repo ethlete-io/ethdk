@@ -1,4 +1,5 @@
 export * from './lib/button';
+export * from './lib/chip';
 export * from './lib/focus-ring';
 export * from './lib/forms';
 export * from './lib/grid';

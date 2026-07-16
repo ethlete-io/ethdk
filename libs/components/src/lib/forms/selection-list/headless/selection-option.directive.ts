@@ -51,7 +51,7 @@ export class SelectionOptionDirective {
       return 0;
     }
 
-    const items = this.list.items();
+    const items = this.list.selection.items();
     const checkedItem = items.find((i) => i.checked());
 
     if (checkedItem) {
@@ -64,8 +64,8 @@ export class SelectionOptionDirective {
   constructor() {
     if (this.list) {
       const list = this.list;
-      list.registerItem(this.listItem);
-      this.destroyRef.onDestroy(() => list.unregisterItem(this.listItem));
+      list.selection.registerItem(this.listItem);
+      this.destroyRef.onDestroy(() => list.selection.unregisterItem(this.listItem));
     }
   }
 
@@ -75,7 +75,7 @@ export class SelectionOptionDirective {
     }
 
     if (this.list) {
-      this.list.select(this.listItem);
+      this.list.selection.select(this.listItem);
     } else {
       this.checked.update((v) => !v);
     }
@@ -94,7 +94,7 @@ export class SelectionOptionDirective {
       return;
     }
 
-    const items = this.list.items();
+    const items = this.list.selection.items();
     const currentIndex = items.indexOf(this.listItem);
     let nextIndex = (currentIndex + 1) % items.length;
 
@@ -106,7 +106,7 @@ export class SelectionOptionDirective {
 
     if (nextItem && !nextItem.disabled()) {
       if (!this.list.multiple()) {
-        this.list.select(nextItem);
+        this.list.selection.select(nextItem);
       }
 
       this.list.focusItem(nextItem);
@@ -120,7 +120,7 @@ export class SelectionOptionDirective {
       return;
     }
 
-    const items = this.list.items();
+    const items = this.list.selection.items();
     const currentIndex = items.indexOf(this.listItem);
     let prevIndex = (currentIndex - 1 + items.length) % items.length;
 
@@ -132,7 +132,7 @@ export class SelectionOptionDirective {
 
     if (prevItem && !prevItem.disabled()) {
       if (!this.list.multiple()) {
-        this.list.select(prevItem);
+        this.list.selection.select(prevItem);
       }
 
       this.list.focusItem(prevItem);

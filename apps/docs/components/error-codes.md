@@ -25,6 +25,8 @@ Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU
 
 | Range     | Domain           | Guide                                            |
 | --------- | ---------------- | ------------------------------------------------ |
+| 1000–1099 | Select           | [Select](/components/select)                     |
+| 1100–1199 | Chip             | [Chip](/components/chip)                         |
 | 1200–1299 | Overlay          | [Overlays](/components/overlays)                 |
 | 1300–1399 | Menu             | [Menu](/components/menu)                         |
 | 1400–1499 | Tooltip          | [Tooltip](/components/tooltip)                   |
@@ -39,10 +41,41 @@ Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU
 | 2300–2399 | Split button     | [Button](/components/button)                     |
 | 2400–2499 | Dropzone         | [Dropzone](/components/dropzone)                 |
 | 2500–2599 | Rich text editor | [Rich text editor](/components/rich-text-editor) |
+| 2700–2799 | Tag input        | [Forms](/components/forms)                       |
+| 2800–2899 | Phone input      | [Forms](/components/forms)                       |
 
-::: info Codes below 1200
-Codes `0`–`1001` belong to `@ethlete/query` (query features, auth, web sockets), not to this library.
+::: info Codes below 1000
+Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web sockets). `ET1000`/`ET1001` therefore exist in both packages — the bracketed source in the message (`[SelectDirective]` vs. a query feature) tells them apart.
 :::
+
+## Select (ET10xx)
+
+| Code     | Cause                                                                            | Fix                                                           |
+| -------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `ET1000` | An `[etSelect]` element has no trigger.                                          | Add an element with `etSelectTrigger` inside the select root. |
+| `ET1001` | An `[etSelect]` element has no surface template.                                 | Add `<ng-template etSelectSurface>` inside the select root.   |
+| `ET1002` | `etSelectTrigger` is not inside an `[etSelect]` element.                         | Move the trigger inside the select root.                      |
+| `ET1003` | `etSelectSurface` is not inside an `[etSelect]` element.                         | Move the surface template inside the select root.             |
+| `ET1004` | `etSelectListbox` is not rendered inside the surface of an `[etSelect]` element. | Move the listbox inside the surface template.                 |
+| `ET1005` | `etSelectOption` is not inside an `[etSelect]` element.                          | Move the option inside the select root.                       |
+
+## Tag input (ET27xx)
+
+| Code     | Cause                                                      | Fix                                       |
+| -------- | ---------------------------------------------------------- | ----------------------------------------- |
+| `ET2700` | `etTagInputField` is not inside an `[etTagInput]` element. | Move the field inside the tag input root. |
+
+## Phone input (ET28xx)
+
+| Code     | Cause                                                          | Fix                                         |
+| -------- | -------------------------------------------------------------- | ------------------------------------------- |
+| `ET2800` | `etPhoneInputField` is not inside an `[etPhoneInput]` element. | Move the field inside the phone input root. |
+
+## Chip (ET11xx)
+
+| Code     | Cause                                               | Fix                                           |
+| -------- | --------------------------------------------------- | --------------------------------------------- |
+| `ET1100` | `etChipRemove` is not inside an `[etChip]` element. | Move the remove control inside the chip host. |
 
 ## Overlay (ET12xx)
 
@@ -181,10 +214,10 @@ All dropzone checks run in dev mode only.
 
 All rich text editor checks run in dev mode only, and cover the opt-in `etRichTextEditorTriggers` building blocks.
 
-| Code     | Cause                                                                   | Fix                                                                               |
-| -------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `ET2500` | Two triggers share the same `char`.                                     | Give each trigger a unique trigger character.                                     |
-| `ET2501` | Two triggers share the same `type`.                                     | Give each trigger a unique type.                                                  |
+| Code     | Cause                                                                   | Fix                                                                                                |
+| -------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `ET2500` | Two triggers share the same `char`.                                     | Give each trigger a unique trigger character.                                                      |
+| `ET2501` | Two triggers share the same `type`.                                     | Give each trigger a unique type.                                                                   |
 | `ET2502` | A trigger `type` is malformed.                                          | Match `[a-z][a-z0-9-]*` so the <code v-pre>{{type:id}}</code> token round-trips through Markdown.  |
 | `ET2503` | An item `id` is malformed.                                              | Match `[A-Za-z0-9._:-]+` so the <code v-pre>{{type:id}}</code> token round-trips through Markdown. |
-| `ET2504` | `etRichTextEditorTriggers` is on an element without `etRichTextEditor`. | Place it on the editor element (e.g. `<et-rich-text-editor>`).                    |
+| `ET2504` | `etRichTextEditorTriggers` is on an element without `etRichTextEditor`. | Place it on the editor element (e.g. `<et-rich-text-editor>`).                                     |

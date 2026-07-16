@@ -19,6 +19,9 @@ let fakeLifecycle = createFakeLifecycle();
 @Component({ template: 'plain overlay' })
 class PlainOverlayComponent {}
 
+@Component({ template: '<button type="button">focusable content</button>' })
+class FocusableOverlayComponent {}
+
 @Component({ template: 'animated overlay' })
 class AnimatedOverlayComponent {
   animatedLifecycle = signal(fakeLifecycle);
@@ -123,6 +126,38 @@ describe('overlay runtime', () => {
 
     expect(fakeLifecycle.leave).toHaveBeenCalledOnce();
     expect(ref.state()).toBe('closed');
+  });
+
+  it('keeps DOM focus on the trigger across open and close with autoFocus and restoreFocus off', async () => {
+    // the combobox pattern (select family): the panel opens non-modally while focus
+    // stays on the trigger and options only ever receive virtual focus
+    const trigger = document.createElement('button');
+    document.body.appendChild(trigger);
+    trigger.focus();
+
+    const ref = mount(
+      {
+        modal: false,
+        hasBackdrop: false,
+        autoFocus: false,
+        restoreFocus: false,
+        positionStrategy: { kind: 'anchored', referenceElement: trigger },
+      },
+      FocusableOverlayComponent,
+    );
+
+    await flushFrames();
+
+    expect(ref.state()).toBe('mounted');
+    expect(document.activeElement).toBe(trigger);
+
+    ref.close();
+    await flushFrames();
+
+    expect(ref.state()).toBe('closed');
+    expect(document.activeElement).toBe(trigger);
+
+    trigger.remove();
   });
 
   it('tears down synchronously without a leave animation when the reference detaches', async () => {

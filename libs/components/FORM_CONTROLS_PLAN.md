@@ -27,15 +27,15 @@ Decisions baked into this plan (do not re-litigate without a reason):
 | Textarea                        | 1     | M    | shipped | none needed                 |
 | Number input                    | 1     | S    | shipped | shares `forms/input` (none) |
 | Color input                     | 1     | S    | shipped | none needed                 |
-| Selection groundwork            | 2     | S    | planned | —                           |
-| Chip                            | 2     | S    | planned | claim at impl. time         |
-| Select — slice 1 (single)       | 3     | L    | planned | 1000–1099 (allocated)       |
-| Select — slice 2 (multi)        | 3     | M    | planned | 1000–1099                   |
-| Select — slice 3 (search/async) | 3     | M    | planned | 1000–1099                   |
-| Rating                          | 4     | M    | planned | claim at impl. time         |
-| OTP / PIN input                 | 4     | M    | planned | claim at impl. time         |
-| Tag input                       | 5     | M    | planned | claim at impl. time         |
-| Phone input                     | 5     | M    | planned | claim at impl. time         |
+| Selection groundwork            | 2     | S    | shipped | —                           |
+| Chip                            | 2     | S    | shipped | 1100–1199                   |
+| Select — slice 1 (single)       | 3     | L    | shipped | 1000–1099                   |
+| Select — slice 2 (multi)        | 3     | M    | shipped | 1000–1099                   |
+| Select — slice 3 (search/async) | 3     | M    | shipped | 1000–1099                   |
+| Rating                          | 4     | M    | shipped | none needed                 |
+| OTP / PIN input                 | 4     | M    | shipped | none needed                 |
+| Tag input                       | 5     | M    | shipped | 2700–2799                   |
+| Phone input                     | 5     | M    | shipped | 2800–2899                   |
 | Calendar                        | 6     | L    | planned | claim at impl. time         |
 | Date input                      | 6     | M    | planned | shares `date-time` block    |
 | Date range input                | 7     | M    | planned | shares `date-time` block    |
@@ -159,41 +159,40 @@ prop/value pairs; new text-shell control types must be added to
 
 ---
 
-## Phase 2 — Select groundwork
+## Phase 2 — Select groundwork — done
 
 Three small refactors + one new domain unlock the whole selection family. Do the
 extraction first and alone: it is the highest-risk step and the existing
 radio/checkbox/segmented specs are the safety net.
 
-1. **Extract `createSelectionState<T>()`** from `SelectionListDirective`
-   (`forms/selection-list/headless/selection-list.directive.ts`). The directive
-   couples (a) item registry + value↔items sync + select/toggleAll logic,
-   (b) `FormFieldControl` registration, and (c) a roving-tabindex focus model.
-   (a) and (b) are exactly what the select needs; (c) is wrong for the combobox
-   ARIA pattern (focus stays on the trigger/input, options get _virtual_ focus via
-   `aria-activedescendant`). Extract (a) into an internal factory
-   (`headless/internals/selection-state.ts`); `SelectionListDirective` becomes a
-   thin wrapper (state + form-field registration + roving focus). Existing groups
-   must be behaviorally untouched.
-2. **Widen `SelectionListItem`** (`selection-list.tokens.ts`) with optional
-   `id: Signal<string>` (for `aria-activedescendant`) and `label: Signal<string>`
-   (for typeahead + chip/trigger display).
-3. **Lift `createMenuTypeahead`** (`menu/headless/internals/menu-typeahead.ts`) to a
-   shared internal — it is domain-free already; re-export from menu for compat.
-4. **Overlay focus spike:** confirm the anchored non-modal strategy can open
-   _without_ moving DOM focus off the trigger (`autoFocus: false` +
-   `restoreFocus` must not fight the trigger). If not honored on the anchored
-   path, land a small overlay fix before select slice 1.
+1. ~~**Extract `createSelectionState<T>()`**~~ Done —
+   `forms/selection-list/headless/internals/selection-state.ts`. Note for select:
+   the `no-member-alias` / `no-trivial-wrapper-method` lint rules forbid a
+   directive from re-exposing the state's members one-by-one, so the state object
+   is exposed **as a whole** (`SelectionListDirective.selection`, also on the
+   `SELECTION_LIST_TOKEN` contract) and consumers call `list.selection.select(...)`.
+   Do the same in `SelectDirective`.
+2. ~~**Widen `SelectionListItem`**~~ Done — optional `id` / `label` signals.
+3. ~~**Lift `createMenuTypeahead`**~~ Done — now `createTypeahead` in
+   `lib/internals/typeahead.ts` (lib-private shared internals folder;
+   `menu/headless/internals/menu-typeahead.ts` re-exports the old names).
+4. ~~**Overlay focus spike**~~ Done — the anchored non-modal path honors
+   `autoFocus: false` (no focus move on open; focus trap only mounts for modal
+   overlays) and `restoreFocus: false` leaves focus alone on close. No core fix
+   needed; pinned by a regression spec in `overlay-runtime.spec.ts` ("keeps DOM
+   focus on the trigger…"). Select slice 1 mounts like the menu does
+   (`mode: 'non-modal'`, `hasBackdrop: false`, `autoFocus: false`,
+   `restoreFocus: false`).
 
-### Chip — new top-level domain `lib/chip/` (S)
+### Chip — new top-level domain `lib/chip/` (S) — done
 
 Usable outside forms (hence top-level). Consumed by the select multi trigger and
-the tag input.
+the tag input. Error block 1100–1199 claimed (`ET1100` = remove outside chip).
 
 ```
 lib/chip/
   headless/chip.directive.ts         [etChip]        disabled, removable, remove output, Backspace/Delete
-  headless/chip-remove.directive.ts  [etChipRemove]  remove button wiring + aria-label
+  headless/chip-remove.directive.ts  [etChipRemove]  remove button wiring + aria-label, tabindex -1
   chip.component.ts/.html/.css       et-chip         tokens --et-chip-*
   chip.imports.ts / stories/ / index.ts
 ```
@@ -276,19 +275,82 @@ is the supported path for large lists.
 
 ### Slices
 
-1. **Slice 1 (L):** single select end-to-end — trigger, listbox, options,
-   keyboard + typeahead, a11y, `et-select`, form-field integration.
-2. **Slice 2 (M):** multi-select + chips in trigger + `SelectValueDirective`.
-3. **Slice 3 (M):** search directive (internal + external filtering), async
-   states, `selectOptionsFromQuery`, load-more.
+1. ~~**Slice 1 (L):** single select end-to-end — trigger, listbox, options,
+   keyboard + typeahead, a11y, `et-select`, form-field integration.~~ Shipped.
+2. ~~**Slice 2 (M):** multi-select + chips in trigger + `SelectValueDirective`.~~
+   Shipped. The Tier 3 trigger became a `role="combobox"` div (chips carry
+   remove buttons — buttons cannot nest); `SelectTriggerDirective` manages
+   `tabindex`/`aria-disabled` for non-button hosts. `createSelectionState`'s
+   value↔checked sync now tracks each item's value signal — late-binding
+   projected options were silently ignored before (pre-filled multi rendered
+   no chips).
+3. ~~**Slice 3 (M):** search directive (internal + external filtering), async
+   states, `selectOptionsFromQuery`, load-more.~~ Shipped. Deviations from the
+   sketch above: no `connect(select)` on `selectOptionsFromQuery` — wiring is
+   explicit template bindings (`[loading]`, `(queryChange)` → `setQuery`);
+   `queryChange` emits **undebounced** (internal filtering must react per
+   keystroke) and the factory owns the debounce instead. Escape handling moved
+   fully into the select (`closeOnEscape: false` + own document listener) so
+   the first Escape can clear the query — the runtime's capture-phase handler
+   would close before the search ever saw the key. Internal filtering hides
+   options via `data-filtered` (headless consumers style it themselves).
+   The search input renders **inline in the trigger** (combobox pattern; after
+   the chips in multi mode) and takes over the combobox ARIA + tab stop from
+   the trigger — which meant also owning the outside-pointer close
+   (`closeOnOutsidePointer: false` + own capture listener): a pointerdown
+   inside the field/anchor must not close the panel. Multi commits toggle by
+   value arithmetic (never `selection.select`, which drops values without a
+   registered option — custom values, externally filtered options) and clear
+   the query when adding. Relevant for the tag input (phase 5): the
+   `et-select` multi+search+`allowCustomValues` combination now IS the
+   documented tag-input-with-suggestions composition.
 
 Each slice ships stories + docs + changeset on its own.
+
+**Slice 1 learnings (bind slices 2–3):**
+
+- **Projected options in an unrendered surface template never execute their
+  bindings** (reading the required `value` input throws NG0950 and one such read
+  inside an effect aborts the whole app's render pass). Two consequences, both in
+  place: `SelectOptionDirective` reads `value` through a guarded computed that
+  yields an internal unbound sentinel, and `et-select` renders the projected
+  content inside a hidden `aria-hidden` container while closed (same
+  `#optionContent` template swaps into the overlay when open) so labels,
+  `disabled` bindings and closed typeahead work — including preselected values
+  before first open. A `labelCache` on the directive covers value→label display
+  across the swap and for headless (fully lazy) compositions after first open.
+- **No `SELECT_TOKEN`:** sub-directives inject `SelectDirective` directly (menu
+  precedent); `select.tokens.ts` only carries the `SelectItem` type.
+- The runtime's own escape/outside-pointer handling is used as planned (no menu-
+  style self-owned listeners); `open` syncs on `beforeClosed()` so aria state
+  flips before the leave animation. Panel enter/leave animations live in
+  `select-panel.component.css` under `.et-overlay--select` (menu pattern).
+- The panel anchors to the form field's control frame — exposed as
+  `controlFrameElement` on the form-field contract (set by the form-field
+  component) — so `mirrorWidth` matches the visible box, not the inner button.
+- `et-select-panel` is a real Tier 3 piece (listbox role + overlay theme
+  re-sync via `AutoSurfaceDirective` + color provider sync, like `et-menu`);
+  slice 3's async-state panels render inside it. Sync in the **constructor**,
+  not an effect — an effect flushes one render too late and the panel paints
+  its first frame in the wrong theme. `syncWithProvider` resolves through
+  passive providers via `ProvideColorDirective.resolvedColor` (added for this).
+- **Never hide overlay-pane content with `visibility`**: the runtime keeps the
+  pane `visibility: hidden` while positioning, and a child's explicit
+  `visibility: visible` punches through that and paints alone before the panel
+  appears (the select check did — now hidden via `opacity`).
 
 ---
 
 ## Phase 4 — Small independents (parallel with phase 3)
 
-### Rating — `forms/rating/` (M)
+### Rating — `forms/rating/` (M) — done
+
+Shipped as planned (radio-group-style form chrome: own `FormFieldDirective` host +
+`provideFormSupport`, label/hint projected). `max` is typed `number | undefined`
+because signal forms **reserves `max`/`min` on value controls** — a schema
+`max(...)` validator binds straight into the input (gotcha for slider, phase 8).
+No error block needed (no structural requirements). `STAR_ICON` added to the icon
+registry.
 
 - `RatingDirective [etRating]` — `FormValueControl<number | null>`; inputs `max`
   (default 5), `allowHalf` (default false), `readonly` + standard set.
@@ -298,7 +360,13 @@ Each slice ships stories + docs + changeset on its own.
 - Tier 3: icons via `lib/icon`, half fill via `clip-path`/gradient; icon
   customizable through an `ng-template` slot; tokens `--et-rating-icon-size/-gap`.
 
-### OTP / PIN input — `forms/otp-input/` (M)
+### OTP / PIN input — `forms/otp-input/` (M) — done
+
+Shipped as planned, with one simplification: **the caret is pinned to the end**
+(append/delete-at-end editing) instead of tracking `selectionStart` — no native
+selection synchronization over invisible text, and the synthetic caret segment is
+derived purely from `value.length`. Risk #8 stands: SMS autofill must be verified
+on real iOS/Android when first used in an app.
 
 - DOM strategy: **one real native input** (visually transparent,
   `autocomplete="one-time-code"`, `inputmode` per charset) stretched over
@@ -313,7 +381,11 @@ Each slice ships stories + docs + changeset on its own.
 
 ## Phase 5 — Select compositions
 
-### Tag input — `forms/tag-input/` (M)
+### Tag input — `forms/tag-input/` (M) — done
+
+Shipped as planned (text-field shell via `usesTextFieldShell`, chips reused,
+error block 2700 claimed). Separator contract: multi-character entries are key
+names, single characters commit as typed and split pastes (plus newlines).
 
 ```
 forms/tag-input/
@@ -336,7 +408,19 @@ forms/tag-input/
   - `allowCustomValues` + `etSelectSearch` (its Tier 3 already renders chips).
     A story demonstrates each.
 
-### Phone input — `forms/phone-input/` (M)
+### Phone input — `forms/phone-input/` (M) — done
+
+Shipped as planned — and it proved the select-composes-inside-a-control
+milestone: the country picker is a headless `[etSelect]` composition living in
+the phone input's own template, with a `{ provide: FORM_FIELD_TOKEN, useValue:
+null }` **viewProviders barrier** so the inner select doesn't register itself as
+the surrounding form field's control (the host-directive `PhoneInputDirective`
+still reaches the outer token — viewProviders don't apply to the host element).
+`SelectDirective` gained `mirrorPanelWidth` (off here — a flag-button anchor
+would force a tiny panel) and the panel a general max-inline-size. Country
+dropdown search renders in the panel (headless placement works as designed).
+`country` is a linkedSignal deriving from the value's dial code with
+manual-pick-survives-shared-dials semantics (+1 US/CA).
 
 ```
 forms/phone-input/

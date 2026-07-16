@@ -1,0 +1,9 @@
+<span class="et-chip-label">
+  <ng-content />
+</span>
+
+@if (chip.removable()) {
+  <button class="et-chip-remove-button" etChipRemove>
+    <i etIcon="et-times"></i>
+  </button>
+}

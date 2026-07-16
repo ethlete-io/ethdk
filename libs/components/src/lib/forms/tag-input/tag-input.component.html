@@ -1,0 +1,9 @@
+<div class="et-tag-input-row">
+  @for (tag of tagInput.value(); track $index) {
+    <et-chip [disabled]="tagInput.disabled() || tagInput.readonly()" (remove)="tagInput.removeAt($index)" removable>
+      {{ tag }}
+    </et-chip>
+  }
+
+  <input class="et-tag-input-field" etTagInputField type="text" />
+</div>

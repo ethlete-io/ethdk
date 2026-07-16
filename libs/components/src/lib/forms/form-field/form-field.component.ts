@@ -206,6 +206,7 @@ export class FormFieldComponent {
 
   protected errorContent = viewChild<ElementRef<HTMLElement>>('errorContent');
   protected hintContent = viewChild<ElementRef<HTMLElement>>('hintContent');
+  private controlFrame = viewChild<ElementRef<HTMLElement>>('controlFrame');
   public prefixEl = viewChild<ElementRef<HTMLElement>>('prefixEl');
   protected errorAnimatable = viewChild<AnimatableDirective>('errorAnimatable');
   protected hintAnimatable = viewChild<AnimatableDirective>('hintAnimatable');
@@ -326,6 +327,10 @@ export class FormFieldComponent {
   });
 
   constructor() {
+    effect(() => {
+      this.formFieldDir.controlFrameElement.set(this.controlFrame()?.nativeElement ?? null);
+    });
+
     toObservable(this.errorAnimatable)
       .pipe(
         switchMap((animatable) => {

@@ -25,6 +25,7 @@ export * from './paragraph-icon';
 export * from './pencil-icon';
 export * from './plus-icon';
 export * from './rotate-right-icon';
+export * from './star-icon';
 export * from './strikethrough-icon';
 export * from './table-icon';
 export * from './times-icon';

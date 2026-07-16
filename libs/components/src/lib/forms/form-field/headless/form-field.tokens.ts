@@ -7,11 +7,16 @@ export const FORM_FIELD_CONTROL_TYPES = {
   COLOR_INPUT: 'color-input',
   TEXTAREA: 'textarea',
   RICH_TEXT: 'rich-text',
+  SELECT: 'select',
   CHECKBOX: 'checkbox',
   RADIO: 'radio',
   SWITCH: 'switch',
   SEGMENTED_BUTTON: 'segmented-button',
   SELECTION_LIST: 'selection-list',
+  RATING: 'rating',
+  OTP_INPUT: 'otp-input',
+  TAG_INPUT: 'tag-input',
+  PHONE_INPUT: 'phone-input',
   DROPZONE: 'dropzone',
 } as const;
 
@@ -46,6 +51,8 @@ export type FormFieldDirectiveBase = {
   registeredControl: WritableSignal<FormFieldControl | null>;
   registeredHint: WritableSignal<HintComponentBase | null>;
   registeredLabel: WritableSignal<LabelDirectiveBase | null>;
+  /** The field's visible control frame — the box overlay-based controls anchor their panels to. */
+  controlFrameElement: WritableSignal<HTMLElement | null>;
   activate(): void;
 };
 

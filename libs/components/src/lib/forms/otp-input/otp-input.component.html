@@ -1,0 +1,82 @@
+<ng-content />
+
+<div class="et-otp-input-field">
+  <div class="et-otp-input-segments" aria-hidden="true">
+    @for (index of segmentIndexes(); track index) {
+      <div
+        [attr.data-caret]="(otp.focused() && otp.caretIndex() === index) || null"
+        [attr.data-filled]="otp.segmentChars()[index] !== null || null"
+        class="et-otp-input-segment"
+      >
+        @if (otp.segmentChars()[index]; as char) {
+          <span class="et-otp-input-segment-char">{{ char }}</span>
+        } @else if (otp.focused() && otp.caretIndex() === index) {
+          <span class="et-otp-input-caret"></span>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- one real input stretched invisibly over the segments: reliable SMS autofill
+       (autocomplete="one-time-code") and native paste for free -->
+  <input
+    #nativeInput
+    [attr.aria-describedby]="otp.describedById() || null"
+    [attr.aria-invalid]="otp.shouldDisplayError() || null"
+    [attr.aria-labelledby]="otp.labelId() || null"
+    [attr.inputmode]="otp.inputMode()"
+    [attr.maxlength]="otp.length()"
+    [attr.name]="otp.name() || null"
+    [disabled]="otp.disabled()"
+    [readOnly]="otp.readonly()"
+    [required]="otp.required()"
+    [value]="otp.value()"
+    (blur)="otp.handleNativeBlur()"
+    (focus)="otp.handleNativeFocus()"
+    (input)="otp.handleNativeInput()"
+    (keyup)="otp.handleNativeSelectionEvent()"
+    (mouseup)="otp.handleNativeSelectionEvent()"
+    class="et-otp-input-native"
+    autocapitalize="off"
+    autocomplete="one-time-code"
+    spellcheck="false"
+    type="text"
+  />
+</div>
+
+@if (support.shouldRenderSupport()) {
+  <div [style.block-size.px]="support.supportHeight()" class="et-otp-input-support">
+    <div class="et-otp-input-support-stack">
+      @if (support.shouldRenderError()) {
+        <div
+          #errorContent
+          #errorAnimatable="etAnimatable"
+          [attr.aria-atomic]="support.errorActive() ? 'true' : null"
+          [attr.aria-hidden]="!support.errorActive() ? 'true' : null"
+          [attr.aria-live]="support.errorActive() ? 'polite' : null"
+          [attr.data-active]="support.errorActive() || null"
+          [etProvideColor]="support.errorColorTheme"
+          class="et-otp-input-support-content et-otp-input-errors"
+          etAnimatable
+        >
+          @for (error of support.visibleErrors(); track $index) {
+            <et-form-error [error]="error" />
+          }
+        </div>
+      }
+
+      @if (support.shouldRenderHint()) {
+        <div
+          #hintContent
+          #hintAnimatable="etAnimatable"
+          [attr.aria-hidden]="!support.hintActive() ? 'true' : null"
+          [attr.data-active]="support.hintActive() || null"
+          class="et-otp-input-support-content et-otp-input-hint"
+          etAnimatable
+        >
+          <ng-content select="et-hint" />
+        </div>
+      }
+    </div>
+  </div>
+}

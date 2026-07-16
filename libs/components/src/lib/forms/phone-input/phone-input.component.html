@@ -1,0 +1,31 @@
+<!-- headless select composition: compact flag trigger, searchable country panel -->
+<div
+  [mirrorPanelWidth]="false"
+  [value]="phone.country()"
+  (valueChange)="handleCountryChange($event)"
+  class="et-phone-input-country"
+  etSelect
+>
+  <button [disabled]="phone.disabled()" class="et-phone-input-country-trigger" etSelectTrigger type="button">
+    <span class="et-phone-input-country-flag" aria-hidden="true">{{ activeFlag() }}</span>
+    <span class="et-phone-input-dial-code">+{{ phone.dialCode() }}</span>
+  </button>
+
+  <ng-template etSelectSurface>
+    <et-select-panel>
+      <div class="et-phone-input-country-search">
+        <input etSelectSearch placeholder="Search countries" />
+      </div>
+
+      @for (country of countries(); track country.iso2) {
+        <et-select-option [label]="country.name" [value]="country.iso2">
+          <span aria-hidden="true">{{ country.flag }}</span>
+          <span class="et-phone-input-option-name">{{ country.name }}</span>
+          <span class="et-phone-input-option-dial">+{{ country.dialCode }}</span>
+        </et-select-option>
+      }
+    </et-select-panel>
+  </ng-template>
+</div>
+
+<input class="et-phone-input-field" etPhoneInputField />

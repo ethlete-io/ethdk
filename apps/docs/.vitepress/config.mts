@@ -180,6 +180,7 @@ export default defineConfig({
           text: 'Elements',
           items: [
             { text: 'Button', link: '/components/button' },
+            { text: 'Chip', link: '/components/chip' },
             { text: 'Icon', link: '/components/icon' },
             { text: 'Loaders', link: '/components/loader' },
           ],
@@ -188,6 +189,7 @@ export default defineConfig({
           text: 'Forms',
           items: [
             { text: 'Forms', link: '/components/forms' },
+            { text: 'Select', link: '/components/select' },
             { text: 'Rich text editor', link: '/components/rich-text-editor' },
             { text: 'Dropzone', link: '/components/dropzone' },
           ],

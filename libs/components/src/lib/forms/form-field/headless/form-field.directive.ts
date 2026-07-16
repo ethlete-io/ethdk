@@ -26,6 +26,9 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
   /** @internal */
   public registeredLabel = signal<LabelDirectiveBase | null>(null);
 
+  /** Set by the form-field component; read by overlay-based controls (e.g. the select) as their anchor. */
+  public controlFrameElement = signal<HTMLElement | null>(null);
+
   private readonly FALLBACK_ID = `ff-${uniqueIdCounter++}`;
 
   public errorId = computed(() => {
@@ -70,7 +73,10 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
       this.controlType() === FORM_FIELD_CONTROL_TYPES.NUMBER_INPUT ||
       this.controlType() === FORM_FIELD_CONTROL_TYPES.COLOR_INPUT ||
       this.controlType() === FORM_FIELD_CONTROL_TYPES.TEXTAREA ||
-      this.controlType() === FORM_FIELD_CONTROL_TYPES.RICH_TEXT,
+      this.controlType() === FORM_FIELD_CONTROL_TYPES.RICH_TEXT ||
+      this.controlType() === FORM_FIELD_CONTROL_TYPES.SELECT ||
+      this.controlType() === FORM_FIELD_CONTROL_TYPES.TAG_INPUT ||
+      this.controlType() === FORM_FIELD_CONTROL_TYPES.PHONE_INPUT,
   );
 
   public shouldFloatLabel = computed(() => this.focused() || this.hasValue());

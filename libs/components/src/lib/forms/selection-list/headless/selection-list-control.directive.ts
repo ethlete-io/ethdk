@@ -16,8 +16,8 @@ import { SELECTION_LIST_TOKEN } from './selection-list.tokens';
 export class SelectionListControlDirective {
   public list = inject(SELECTION_LIST_TOKEN);
 
-  public checked = computed(() => this.list.allSelected());
-  public indeterminate = computed(() => this.list.someSelected());
+  public checked = computed(() => this.list.selection.allSelected());
+  public indeterminate = computed(() => this.list.selection.someSelected());
 
   public labelId = signal(`et-selection-list-control-label-${uniqueControlLabelId++}`);
 
@@ -34,7 +34,7 @@ export class SelectionListControlDirective {
       return;
     }
 
-    this.list.toggleAll();
+    this.list.selection.toggleAll();
   }
 }
 

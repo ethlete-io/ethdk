@@ -1,0 +1,204 @@
+@layer components {
+  @property --et-rating-icon-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 24px;
+  }
+
+  @property --et-rating-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
+  @property --et-rating-label-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 13px;
+  }
+
+  @property --et-rating-support-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 180ms;
+  }
+
+  @property --et-rating-support-offset {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
+  @property --et-rating-error-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-rating-hint-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  et-rating {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 6px;
+    color: var(--et-surface-color-solid, currentColor);
+    outline: none;
+
+    > et-label {
+      font-size: var(--et-rating-label-font-size);
+      font-weight: 500;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      color: var(--et-surface-color-muted-solid, currentColor);
+      user-select: none;
+    }
+
+    &:focus-visible .et-rating-icons {
+      outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    .et-rating-icons {
+      position: relative;
+      display: grid;
+      inline-size: fit-content;
+      cursor: pointer;
+      /* vertical page scrolling stays native; horizontal swipes rate */
+      touch-action: pan-y;
+    }
+
+    .et-rating-row {
+      display: flex;
+      align-items: center;
+      gap: var(--et-rating-gap);
+      grid-area: 1 / 1;
+    }
+
+    .et-rating-row--fill {
+      /* one clip width = one continuous fill motion (displayValue icons + crossed gaps) */
+      --_et-rating-fill-width: calc(
+        var(--_et-rating-fill-icons, 0) * var(--et-rating-icon-size) + var(--_et-rating-fill-gaps, 0) *
+          var(--et-rating-gap)
+      );
+
+      pointer-events: none;
+      clip-path: inset(0 calc(100% - var(--_et-rating-fill-width)) 0 0);
+    }
+
+    &[data-disabled],
+    &[data-readonly] {
+      .et-rating-icons {
+        cursor: default;
+      }
+    }
+
+    &[data-disabled] {
+      opacity: 0.4;
+    }
+
+    .et-rating-icon {
+      position: relative;
+      display: flex;
+      inline-size: var(--et-rating-icon-size);
+      block-size: var(--et-rating-icon-size);
+      user-select: none;
+
+      .et-icon {
+        inline-size: 100%;
+        block-size: 100%;
+      }
+    }
+
+    .et-rating-icon-base {
+      color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 32%, transparent);
+    }
+
+    .et-rating-icon-fill {
+      color: var(--et-theme-color-primary-solid, currentColor);
+    }
+
+    /* custom icon templates render per-step — expose the state for their own styling */
+    .et-rating-icon[data-state] {
+      color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 32%, transparent);
+
+      &[data-state='full'],
+      &[data-state='half'] {
+        color: var(--et-theme-color-primary-solid, currentColor);
+      }
+    }
+
+    .et-rating-support {
+      overflow: clip;
+      block-size: 0;
+    }
+
+    .et-rating-support-stack {
+      position: relative;
+      display: grid;
+    }
+
+    .et-rating-support-content {
+      grid-area: 1 / 1;
+      min-inline-size: 0;
+      opacity: 0;
+      transform: translateY(0);
+
+      &[data-active] {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .et-rating-errors {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding-block-start: 4px;
+      font-size: var(--et-rating-error-font-size);
+      color: var(--et-theme-color-primary-solid, currentColor);
+    }
+
+    .et-rating-hint {
+      padding-block-start: 4px;
+      font-size: var(--et-rating-hint-font-size);
+      color: var(--et-surface-color-muted-solid, currentColor);
+
+      &:empty {
+        display: none;
+      }
+    }
+
+    &[data-can-animate] {
+      .et-rating-support {
+        transition: block-size var(--et-rating-support-duration) ease;
+      }
+
+      .et-rating-support-content {
+        transition:
+          opacity var(--et-rating-support-duration) ease,
+          transform var(--et-rating-support-duration) ease;
+
+        @starting-style {
+          &[data-active] {
+            opacity: 0;
+            transform: translateY(calc(var(--et-rating-support-offset) * -1));
+          }
+        }
+      }
+
+      .et-rating-row--fill {
+        transition: clip-path 160ms ease;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      --et-rating-support-duration: 1ms;
+      --et-rating-support-offset: 0px;
+    }
+  }
+}

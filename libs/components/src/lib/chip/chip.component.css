@@ -1,0 +1,106 @@
+@layer components {
+  @property --et-chip-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
+  @property --et-chip-padding-inline {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 10px;
+  }
+
+  @property --et-chip-min-block-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 24px;
+  }
+
+  @property --et-chip-border-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 999px;
+  }
+
+  @property --et-chip-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-chip-remove-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 16px;
+  }
+
+  @property --et-chip-opacity-disabled {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 0.4;
+  }
+
+  .et-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--et-chip-gap);
+    padding-inline: var(--et-chip-padding-inline);
+    min-block-size: var(--et-chip-min-block-size);
+    border-radius: var(--et-chip-border-radius);
+    font-size: var(--et-chip-font-size);
+    line-height: 1.4;
+    max-inline-size: 100%;
+    box-sizing: border-box;
+    background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 14%, transparent);
+    color: var(--et-surface-color-solid, currentColor);
+    user-select: none;
+
+    &:where([data-disabled]) {
+      opacity: var(--et-chip-opacity-disabled);
+      pointer-events: none;
+    }
+
+    &:where([data-removable]) {
+      padding-inline-end: calc(var(--et-chip-padding-inline) / 2);
+    }
+
+    .et-chip-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-inline-size: 0;
+    }
+
+    .et-chip-remove-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+      inline-size: var(--et-chip-remove-size);
+      block-size: var(--et-chip-remove-size);
+      border-radius: 50%;
+      border: none;
+      padding: 0;
+      margin: 0;
+      background: transparent;
+      color: var(--et-surface-color-muted-solid, currentColor);
+      cursor: pointer;
+      appearance: none;
+
+      &:hover {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 20%, transparent);
+        color: var(--et-surface-color-solid, currentColor);
+      }
+
+      &:active {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 28%, transparent);
+      }
+
+      .et-icon {
+        inline-size: calc(var(--et-chip-remove-size) - 6px);
+        block-size: calc(var(--et-chip-remove-size) - 6px);
+      }
+    }
+  }
+}

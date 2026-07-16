@@ -54,7 +54,7 @@ describe('SelectionListDirective', () => {
 
     it('should register options', () => {
       const listDir = (fixture.debugElement.children[0] as DebugElement).injector.get(SelectionListDirective);
-      expect(listDir.items().length).toBe(3);
+      expect(listDir.selection.items().length).toBe(3);
     });
 
     it('should select an option on click', () => {

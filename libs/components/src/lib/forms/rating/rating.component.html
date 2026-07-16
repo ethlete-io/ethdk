@@ -1,0 +1,84 @@
+<ng-content />
+
+<!-- pointer-only by design: keyboard interaction lives on the slider host (APG slider
+     pattern) and the icons are presentational for assistive tech -->
+<div
+  [style.--_et-rating-fill-icons]="fillIcons()"
+  [style.--_et-rating-fill-gaps]="fillGaps()"
+  (pointercancel)="handlePointerCancel($event)"
+  (pointerdown)="handlePointerDown($event)"
+  (pointermove)="handlePointerMove($event)"
+  (pointerup)="handlePointerUp($event)"
+  class="et-rating-icons"
+>
+  @if (rating.registeredIconTemplate(); as iconTemplate) {
+    <!-- custom icons render per-step with their state — the continuous sweep only applies
+         to the default two-layer star rendering -->
+    <div class="et-rating-row" aria-hidden="true">
+      @for (index of iconIndexes(); track index) {
+        <span
+          #baseIcon
+          [attr.data-state]="rating.iconState(index)"
+          (click)="handleIconClick(index, $event)"
+          class="et-rating-icon"
+        >
+          <ng-template [ngTemplateOutlet]="iconTemplate.templateRef" [ngTemplateOutletContext]="iconContext(index)" />
+        </span>
+      }
+    </div>
+  } @else {
+    <div class="et-rating-row" aria-hidden="true">
+      @for (index of iconIndexes(); track index) {
+        <span #baseIcon (click)="handleIconClick(index, $event)" class="et-rating-icon">
+          <i class="et-rating-icon-base" etIcon="et-star"></i>
+        </span>
+      }
+    </div>
+
+    <!-- overlay clipped to one continuous width — the fill animates as a single motion -->
+    <div class="et-rating-row et-rating-row--fill" aria-hidden="true">
+      @for (index of iconIndexes(); track index) {
+        <span class="et-rating-icon">
+          <i class="et-rating-icon-fill" etIcon="et-star"></i>
+        </span>
+      }
+    </div>
+  }
+</div>
+
+@if (support.shouldRenderSupport()) {
+  <div [style.block-size.px]="support.supportHeight()" class="et-rating-support">
+    <div class="et-rating-support-stack">
+      @if (support.shouldRenderError()) {
+        <div
+          #errorContent
+          #errorAnimatable="etAnimatable"
+          [attr.aria-atomic]="support.errorActive() ? 'true' : null"
+          [attr.aria-hidden]="!support.errorActive() ? 'true' : null"
+          [attr.aria-live]="support.errorActive() ? 'polite' : null"
+          [attr.data-active]="support.errorActive() || null"
+          [etProvideColor]="support.errorColorTheme"
+          class="et-rating-support-content et-rating-errors"
+          etAnimatable
+        >
+          @for (error of support.visibleErrors(); track $index) {
+            <et-form-error [error]="error" />
+          }
+        </div>
+      }
+
+      @if (support.shouldRenderHint()) {
+        <div
+          #hintContent
+          #hintAnimatable="etAnimatable"
+          [attr.aria-hidden]="!support.hintActive() ? 'true' : null"
+          [attr.data-active]="support.hintActive() || null"
+          class="et-rating-support-content et-rating-hint"
+          etAnimatable
+        >
+          <ng-content select="et-hint" />
+        </div>
+      }
+    </div>
+  </div>
+}

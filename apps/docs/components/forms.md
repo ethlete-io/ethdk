@@ -28,6 +28,10 @@ Each control family ships its own imports array — combine the field shell with
 | `CHECKBOX_IMPORTS`     | `et-checkbox`                                                             |
 | `SWITCH_IMPORTS`       | `et-switch`                                                               |
 | `CHOICE_FIELD_IMPORTS` | `et-choice-field` + label/hint chrome                                     |
+| `RATING_IMPORTS`       | `et-rating`                                                               |
+| `OTP_INPUT_IMPORTS`    | `et-otp-input`                                                            |
+| `TAG_INPUT_IMPORTS`    | `et-tag-input`                                                            |
+| `PHONE_INPUT_IMPORTS`  | `et-phone-input`                                                          |
 
 ```ts
 import { FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
@@ -125,6 +129,95 @@ Boolean controls pair with a label inside `et-choice-field` (instead of `et-form
 - `et-switch` — `role="switch"`, `checked` model, no indeterminate.
 - Both toggle on click and <kbd>Space</kbd>, and mark themselves touched on blur.
 - `et-choice-field` accepts `size: 'sm' | 'md' | 'lg'` (default `'md'`), scaling the control and label together.
+
+## Rating — `et-rating`
+
+A star rating implementing the slider pattern (`role="slider"`, one keyboard stop). Value is `number | null` — `null` means no rating.
+
+```html
+<et-rating [formField]="demoForm.stars" [max]="5" [allowHalf]="true">
+  <et-label>Rating</et-label>
+  <et-hint>Optional</et-hint>
+</et-rating>
+```
+
+<StoryEmbed id="components-forms-rating--default" height="220px" />
+
+| Input       | Type                  | Default | Description                                                                              |
+| ----------- | --------------------- | ------- | ---------------------------------------------------------------------------------------- |
+| `max`       | `number \| undefined` | `5`     | Number of steps. Reserved by signal forms — a schema `max(...)` validator binds into it. |
+| `allowHalf` | `boolean`             | `false` | Half-star steps for pointer, keyboard and rendering.                                     |
+| `readonly`  | `boolean`             | `false` | Display-only (still focusable, e.g. for review averages).                                |
+
+Interaction: hovering previews without committing, clicking commits (clicking the current value **clears** to `null`), and **dragging/swiping across the stars** (mouse or touch) previews continuously and commits on release — vertical page scrolling stays untouched (`touch-action: pan-y`). Arrows step by `1` (or `0.5`), <kbd>Home</kbd>/<kbd>End</kbd> jump to first/last step, <kbd>Backspace</kbd>/<kbd>Delete</kbd> clear — arrowing below the first step also clears. The host exposes `aria-valuemin="0"`/`aria-valuemax`/`aria-valuenow` and an `aria-valuetext` like `3.5 of 5`.
+
+The default stars fill as **one continuous motion** — a single clipped overlay row sweeps across the icons with the theme's primary color. Custom icons via an `ng-template[etRatingIcon]` (context: the state `'full' | 'half' | 'empty'` and the 1-based `index`) render per-step instead and don't take part in the sweep. Tokens: `--et-rating-icon-size` (`24px`), `--et-rating-gap` (`4px`).
+
+## OTP / PIN input — `et-otp-input`
+
+Segmented one-time-code entry backed by **one real native input** stretched invisibly over the segments — that single input is what makes iOS/Android SMS autofill (`autocomplete="one-time-code"`) and native paste reliable. Value is the raw string.
+
+```html
+<et-otp-input [formField]="demoForm.code" [length]="6" (completed)="verify($event)">
+  <et-label>Verification code</et-label>
+</et-otp-input>
+```
+
+<StoryEmbed id="components-forms-otp-input--default" height="240px" />
+
+| Input     | Type                                    | Default     | Description                                                           |
+| --------- | --------------------------------------- | ----------- | --------------------------------------------------------------------- |
+| `length`  | `number`                                | `6`         | Number of characters/segments.                                        |
+| `charset` | `'numeric' \| 'alphanumeric' \| RegExp` | `'numeric'` | Accepted characters — everything else is stripped (pastes included).  |
+| `masked`  | `boolean`                               | `false`     | Renders dots instead of characters (PIN entry); the value stays real. |
+
+The `completed` output emits the value each time it reaches the full length. Pastes strip separators (`123-456` → `123456`) and truncate. Editing is append/delete-at-end (the caret is pinned to the end), with the active segment marked visually. Tokens: `--et-otp-input-segment-size` (`44px`), `--et-otp-input-segment-gap` (`8px`), `--et-otp-input-segment-radius` (`8px`).
+
+::: warning Verify autofill on real devices
+SMS autofill behavior cannot be emulated headlessly — test `one-time-code` flows on real iOS Safari and Android Chrome.
+:::
+
+## Tag input — `et-tag-input`
+
+Free-text tags as removable [chips](/components/chip) with an inline text field, inside the regular `et-form-field` shell. Value is `string[]`. For tags **with suggestions**, use the [select](/components/select) instead (`multiple` + `etSelectSearch` + `allowCustomValues`).
+
+```html
+<et-form-field>
+  <et-label>Tags</et-label>
+  <et-tag-input [formField]="demoForm.tags" placeholder="Add a tag…" />
+</et-form-field>
+```
+
+<StoryEmbed id="components-forms-tag-input--default" height="220px" />
+
+| Input             | Type                              | Default          | Description                                                                                                               |
+| ----------------- | --------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `separators`      | `string[]`                        | `['Enter', ',']` | What commits the pending text: multi-character entries are key names, single characters commit as typed and split pastes. |
+| `allowDuplicates` | `boolean`                         | `false`          | Rejected duplicates keep the text in the field for editing.                                                               |
+| `normalizeTag`    | `(raw: string) => string \| null` | trim             | Maps raw text to the stored tag — return `null` to reject.                                                                |
+| `maxTags`         | `number \| undefined`             | `undefined`      | Further adds are ignored once reached.                                                                                    |
+
+Pending text also commits on blur; <kbd>Backspace</kbd> on the empty field removes the last tag; pastes split on separator characters and newlines. The chips are pointer-removable (`×`, out of the tab order) — see the [chip](/components/chip) guide.
+
+## Phone input — `et-phone-input`
+
+A tel input with a searchable country picker (the [select](/components/select) headless core composed inside the control). Value is a normalized `+<dialCode><national digits>` string. **Zero dependencies**: only ISO codes + dial codes ship — country names come from `Intl.DisplayNames`, flags from regional-indicator emoji.
+
+```html
+<et-form-field>
+  <et-label>Phone number</et-label>
+  <et-phone-input [formField]="demoForm.phone" [preferredCountries]="['de', 'at', 'ch']" defaultCountry="de" />
+</et-form-field>
+```
+
+<StoryEmbed id="components-forms-phone-input--default" height="220px" />
+
+| Input                | Type       | Default | Description                                            |
+| -------------------- | ---------- | ------- | ------------------------------------------------------ |
+| `defaultCountry`     | `string`   | `'us'`  | ISO alpha-2 country used while the value carries none. |
+| `preferredCountries` | `string[]` | `[]`    | Listed on top of the country dropdown.                 |
+
+Typing national digits builds the `+dial` value; typing or pasting a full `+…` number re-derives the country by longest dial-code match — but a manually picked country survives shared dial codes (`+1` stays Canada if you chose Canada). Switching countries keeps the national number. The display groups digits in threes while unfocused (**cosmetic only** — not per-country metadata formatting; validate on the backend/schema, with `isPlausible` as a cheap length-window helper).
 
 ## Selection lists
 

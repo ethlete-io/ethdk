@@ -1,0 +1,4 @@
+// codes 2800-2899
+export const PHONE_INPUT_ERROR_CODES = {
+  FIELD_OUTSIDE_PHONE_INPUT: 2800,
+} as const;

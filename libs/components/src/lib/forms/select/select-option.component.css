@@ -1,0 +1,100 @@
+@layer components {
+  @property --et-select-option-height {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 36px;
+  }
+
+  @property --et-select-option-padding-inline {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 10px;
+  }
+
+  @property --et-select-option-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  @property --et-select-option-border-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 6px;
+  }
+
+  @property --et-select-option-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 14px;
+  }
+
+  @property --et-select-option-check-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 16px;
+  }
+
+  .et-select-option {
+    &[data-filtered] {
+      display: none;
+    }
+
+    display: flex;
+    align-items: center;
+    gap: var(--et-select-option-gap);
+    min-block-size: var(--et-select-option-height);
+    padding-inline: var(--et-select-option-padding-inline);
+    border-radius: var(--et-select-option-border-radius);
+    font-size: var(--et-select-option-font-size);
+    cursor: pointer;
+    user-select: none;
+
+    &:where([data-active]) {
+      background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 12%, transparent);
+    }
+
+    &:active {
+      background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 20%, transparent);
+    }
+
+    &:where([aria-disabled='true']) {
+      opacity: 0.4;
+      cursor: not-allowed;
+
+      &:active {
+        background: transparent;
+      }
+    }
+
+    .et-select-option-check {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+      inline-size: var(--et-select-option-check-size);
+      block-size: var(--et-select-option-check-size);
+      color: var(--et-theme-color-primary-solid, currentColor);
+      /* hidden via opacity, NOT visibility — an explicit `visibility: visible` would punch
+         through the pane's positioning phase (`visibility: hidden`) and paint the check
+         before the panel itself becomes visible */
+      opacity: 0;
+
+      .et-icon {
+        inline-size: 100%;
+        block-size: 100%;
+      }
+    }
+
+    &:where([data-selected]) .et-select-option-check {
+      opacity: 1;
+    }
+
+    .et-select-option-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-inline-size: 0;
+    }
+  }
+}
