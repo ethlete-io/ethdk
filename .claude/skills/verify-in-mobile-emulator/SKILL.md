@@ -72,10 +72,13 @@ touch-*gesture* behavior (swipe/momentum/native scroll), the soft keyboard, or a
 genuine Safari/Chrome-mobile engine quirk → the emulator (Option B for
 touch-gated bits).
 
-Emulators are **optional dev tooling** and are not installed by default on this
-machine. Always run the detection step first. If the tooling is missing, either
-follow the setup section (with the user's go-ahead — these are large, slow
-installs) or fall back to `verify-in-storybook`.
+Emulators are **optional dev tooling** and may not be installed. Always run the
+detection step first, and **use the variant matching the host OS** (`uname` —
+`Darwin` vs `Linux`): the iOS Simulator exists **only on macOS**; the Android
+emulator works on both, but install paths and required launch flags differ per
+OS (see the Android section). If the tooling is missing, either follow the setup
+section (with the user's go-ahead — these are large, slow installs) or fall back
+to `verify-in-storybook`.
 
 ## 0. Storybook must be running on :4400
 
@@ -93,7 +96,7 @@ npm run storybook   # nx run playground:storybook --no-open, serves on :4400
 
 For a **physical device** on your LAN (not needed for emulators) bind all
 interfaces instead: `nx run playground:storybook --no-open -c network` (host
-`0.0.0.0`), then use your Mac's LAN IP in the URL.
+`0.0.0.0`), then use the host machine's LAN IP in the URL.
 
 Get the story id exactly as in `verify-in-storybook` step 2 (from
 `http://localhost:4400/index.json`). The URL you'll open on the device is the
@@ -105,7 +108,11 @@ http://localhost:4400/iframe.html?id=<story-id>&viewMode=story
 
 ---
 
-## iOS Simulator (iPhone)
+## iOS Simulator (iPhone) — macOS only
+
+On a Linux host, skip this section entirely (there is no iOS Simulator for
+Linux); use the Android emulator, or Playwright WebKit for a rough
+engine-only approximation.
 
 ### Detect
 
@@ -188,13 +195,18 @@ xcrun simctl io booted screenshot /path/in/scratchpad/ios-story.png
 
 ### Detect
 
-Needs the Android SDK (`adb` + `emulator`, plus at least one AVD). This is set up
-on this machine via `brew` (SDK at `/usr/local/share/android-commandlinetools`,
-env in `~/.zshrc`, a `pixel` AVD) — the detect below confirms it; the Setup
-section is the fallback if it ever isn't.
+Needs the Android SDK (`adb` + `emulator`, plus at least one AVD). Known setups
+by machine — both use a `pixel` AVD and have env vars in `~/.zshrc`:
+
+- **macOS**: installed via `brew`, SDK at `/usr/local/share/android-commandlinetools`
+- **Linux (Fedora)**: SDK at `~/Android/Sdk` (the standard Linux location)
+
+The detect below tries both; the Setup section is the fallback if neither hits.
 
 ```bash
-export ANDROID_HOME=${ANDROID_HOME:-/usr/local/share/android-commandlinetools}
+for d in "$ANDROID_HOME" "$HOME/Android/Sdk" /usr/local/share/android-commandlinetools; do
+  [ -n "$d" ] && [ -x "$d/emulator/emulator" ] && export ANDROID_HOME=$d && break
+done
 "$ANDROID_HOME/platform-tools/adb" version 2>/dev/null | head -1
 "$ANDROID_HOME/emulator/emulator" -list-avds 2>/dev/null   # want at least one AVD (e.g. `pixel`)
 ```
@@ -203,41 +215,75 @@ export ANDROID_HOME=${ANDROID_HOME:-/usr/local/share/android-commandlinetools}
 
 Easiest is **Android Studio** (bundles the SDK, an emulator, and the AVD
 Manager GUI): install it, then in *More Actions → Virtual Device Manager* create
-a Pixel-class AVD. CLI-only path (this is what's set up on this machine — SDK
-lives at `/usr/local/share/android-commandlinetools`):
+a Pixel-class AVD. CLI-only paths per OS below. In both cases the ABI **must
+match the host arch** (`uname -m`): `x86_64` vs `arm64-v8a`.
+
+**macOS (brew):**
 
 ```bash
 # 1. Command-line tools + a JDK (sdkmanager needs Java; brew's temurin pkg
 #    needs YOUR sudo password, so the user must run that one).
 brew install --cask android-commandlinetools
 brew install --cask temurin        # run by the user — the .pkg installer prompts for sudo
-
-# 2. Point env at the brew SDK (also append to ~/.zshrc for new shells).
 export ANDROID_HOME=/usr/local/share/android-commandlinetools
+```
+
+**Linux:** grab the "command line tools only" zip from
+developer.android.com/studio (a `commandlinetools-linux-*.zip` from
+`dl.google.com/android/repository/`), and check KVM — without it the emulator
+is unusably slow:
+
+```bash
+# 1. Tools + prerequisites (any JDK 17+ works; Fedora ships one).
+java -version                          # missing → sudo dnf install java-latest-openjdk
+[ -r /dev/kvm ] && [ -w /dev/kvm ] && echo "KVM OK" || echo "no /dev/kvm access — add user to kvm group"
+mkdir -p ~/Android/Sdk/cmdline-tools
+unzip -q commandlinetools-linux-*.zip && mv cmdline-tools ~/Android/Sdk/cmdline-tools/latest
+export ANDROID_HOME=$HOME/Android/Sdk
+```
+
+**Both OSes, then:**
+
+```bash
+# 2. Env (also append to ~/.zshrc for new shells).
 export ANDROID_SDK_ROOT=$ANDROID_HOME
 export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
 
-# 3. Install packages. ABI MUST match the Mac's arch: x86_64 on Intel,
-#    arm64-v8a on Apple Silicon — check with `uname -m` first. (This is an
-#    Intel machine → x86_64.) `yes |` auto-accepts the SDK licenses.
-yes | sdkmanager "platform-tools" "emulator" "system-images;android-34;google_apis;x86_64"
+# 3. Install packages (`yes |` auto-accepts the SDK licenses; ABI per uname -m).
+yes | sdkmanager "platform-tools" "emulator" "system-images;android-35;google_apis;x86_64"
 
 # 4. Create the AVD (echo no = don't add a custom hardware profile).
-echo no | avdmanager create avd -n pixel -k "system-images;android-34;google_apis;x86_64" -d pixel
+echo no | avdmanager create avd -n pixel -k "system-images;android-35;google_apis;x86_64" -d pixel
+
+# 5. Sanity-check hardware acceleration (HVF on macOS, KVM on Linux).
+emulator -accel-check   # want "... is installed and usable."
 ```
 
 ### Launch a story
 
 **Networking gotcha:** inside the Android emulator, `localhost` is the *emulator
-itself*, not your Mac. The host loopback is reachable at the special alias
+itself*, not the host. The host loopback is reachable at the special alias
 **`10.0.2.2`**. So rewrite the host in the URL — `10.0.2.2:4400` — even though
-Storybook is bound to localhost on the Mac (the alias maps through regardless).
+Storybook is bound to localhost on the host (the alias maps through regardless).
+
+**Linux launch flags — both are required on the Fedora machine** (add them to
+the `emulator` command below; harmless elsewhere, macOS doesn't need them):
+
+- **`-gpu host`** — the emulator's bundled SwiftShader software renderer
+  segfaults on this glibc/Mesa combo. Symptom: the emulator process exits with
+  code 0 and **no error in its own log** right after "Emulator is performing a
+  full startup", `adb devices` never lists it, and `coredumpctl` shows a
+  SIGSEGV in `gles_swiftshader/libGLESv2.so`. `-gpu host` renders on the real
+  GPU instead (needs working GL drivers; headless `-no-window` works too).
+- **`-feature -ModemSimulator`** — without it QEMU dies immediately with
+  `Unable to connect character device modem: address resolution failed for ::1:<port>`.
 
 Boot the AVD, then wait for `sys.boot_completed` (a bare `wait-for-device`
 returns too early — the UI isn't up yet; cold boot is ~90s):
 
 ```bash
 emulator -avd pixel -no-snapshot -netdelay none -netspeed full -no-boot-anim &  # run in background
+# Linux: emulator -avd pixel -no-snapshot -no-boot-anim -gpu host -feature -ModemSimulator &
 adb wait-for-device
 until [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 1 ]; do sleep 5; done
 adb shell am start -a android.intent.action.VIEW \
