@@ -1,4 +1,4 @@
-# Style Guide v0.17.0
+# Style Guide v0.18.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -53,7 +53,7 @@ Run `npx nx lint <project> --fix` — the rules below are enforced (and mostly a
 | No body in `subscribe()`; no `subscribe` in `pipe()`; no RxJS in `effect()`/`computed()`                                          | `ethlete/no-subscribe-with-body`, `ethlete/no-subscribe-in-pipe`, `ethlete/no-rxjs-in-effect`                                                                                                                       |
 | `ViewEncapsulation.None`                                                                                                          | `ethlete/require-view-encapsulation-none`                                                                                                                                                                           |
 | No legacy lifecycle hooks; no legacy Angular decorators (`@HostBinding`, `@Input`, …)                                             | `no-restricted-syntax`, `ethlete/no-legacy-angular-decorators`                                                                                                                                                      |
-| No `@Injectable`; no route guards; no resolvers                                                                                   | `no-restricted-syntax`                                                                                                                                                                                              |
+| No `@Injectable` / `@Service`; no route guards; no resolvers                                                                      | `no-restricted-syntax`                                                                                                                                                                                              |
 | Outputs: no `on` prefix, no native event names, present-tense naming (`playerSelect`, not `playerSelected`)                       | `@angular-eslint/no-output-on-prefix`, `@angular-eslint/no-output-native`, `ethlete/prefer-present-tense-output`                                                                                                    |
 | Inputs/models not named after a global HTML attribute (`title`, `id`, `hidden`, `role`, …) — collides with the host element       | `ethlete/no-native-html-input-name`                                                                                                                                                                                 |
 | No logic in pipe `transform`                                                                                                      | `ethlete/no-pipe-logic`                                                                                                                                                                                             |
@@ -121,11 +121,11 @@ toObservable(page)
 
 ## Angular patterns
 
-Lint covers the mechanical Angular rules (`ViewEncapsulation.None`, no legacy hooks/decorators, no native DOM/`window`, output naming, class-member + decorator-metadata order, no `@Injectable` / guards / resolvers). The judgment calls:
+Lint covers the mechanical Angular rules (`ViewEncapsulation.None`, no legacy hooks/decorators, no native DOM/`window`, output naming, class-member + decorator-metadata order, no `@Injectable` / `@Service` / guards / resolvers). The judgment calls:
 
 - **No function calls in template value bindings except signal reads** — a method in a binding re-runs every change-detection cycle. Move it into a `computed()` and bind that. Event bindings (`(click)="save()"`) are fine.
 - **Prefer the `constructor`** (runs in the injection context) over `ngOnInit` / `ngOnDestroy`: `afterNextRender()` for first-render work, `inject(DestroyRef).onDestroy(...)` for cleanup.
-- **Prefer utility functions + provider factories over services** — `createProvider` / `createRootProvider` and the `injectX()` helper pattern from `@ethlete/core`, not an `@Injectable`.
+- **Prefer utility functions + provider factories over services** — `createProvider` / `createRootProvider` and the `injectX()` helper pattern from `@ethlete/core`, not an `@Injectable` (or its Angular 22 `@Service` shorthand).
 - **Most directives can be plain functions.** Move the logic into a function so it's reusable without applying a directive; keep a directive only when a host element genuinely needs it. Avoid common input/output names that clash with the host component.
 - **Pipes carry no logic** — put it in a utility function called from a `computed()`; most pipes can be replaced by a `computed` outright.
 - **Components**: inline template/styles for small components, external `.html` / `.css` files for complex ones.

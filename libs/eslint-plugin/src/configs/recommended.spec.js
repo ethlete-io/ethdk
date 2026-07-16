@@ -256,11 +256,21 @@ test('no-restricted-syntax: # private field is flagged', () => {
   expect(msgs.some((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('#'))).toBe(true);
 });
 
-// ── no-restricted-syntax: @Injectable ─────────────────────────────────────────
+// ── no-restricted-syntax: @Injectable / @Service ──────────────────────────────
 
 test('no-restricted-syntax: @Injectable decorator is flagged', () => {
   const msgs = lint(`@Injectable({ providedIn: 'root' })\nclass MyService {}`);
   expect(msgs.some((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('Injectable'))).toBe(true);
+});
+
+test('no-restricted-syntax: @Service decorator is flagged', () => {
+  const msgs = lint(`@Service()\nclass MyService {}`);
+  expect(msgs.some((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('Service'))).toBe(true);
+});
+
+test('no-restricted-syntax: bare @Service decorator is flagged', () => {
+  const msgs = lint(`@Service\nclass MyService {}`);
+  expect(msgs.some((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('Service'))).toBe(true);
 });
 
 // ── no-restricted-syntax: barrel import ───────────────────────────────────────

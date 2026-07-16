@@ -8,7 +8,7 @@ description: How to build Angular pieces in this repo the Ethlete way — templa
 Lint covers the mechanical Angular rules (`ViewEncapsulation.None`, `inject()` not
 constructor injection, no legacy lifecycle hooks / legacy decorators, no native
 DOM/`window`, output naming, class-member + decorator-metadata order, no
-`@Injectable` / guards / resolvers, no logic in pipes). The judgment calls:
+`@Injectable` / `@Service` / guards / resolvers, no logic in pipes). The judgment calls:
 
 ## Templates
 
@@ -32,8 +32,8 @@ DOM/`window`, output naming, class-member + decorator-metadata order, no
 
 - **Services → utility functions + provider factories.** Use `createProvider` /
   `createRootProvider` and the `injectX()` helper pattern from `@ethlete/core`
-  rather than an `@Injectable`. (`@Injectable` is lint-banned; choosing a function
-  over a service at all is the judgment.)
+  rather than an `@Injectable` or `@Service`. (Both decorators are lint-banned;
+  choosing a function over a service at all is the judgment.)
 - **Directives → plain functions where possible.** With signal APIs, move the core
   logic into a function so it's reusable without applying a directive; keep a
   directive only when a host element genuinely needs it. Avoid common input/output

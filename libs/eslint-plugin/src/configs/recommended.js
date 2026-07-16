@@ -169,10 +169,12 @@ const recommendedTs = {
         message:
           'No legacy Angular lifecycle hooks. Use afterNextRender, inject(DestroyRef).onDestroy, or constructor-based effects instead.',
       },
-      // No @Injectable — use createRootProvider / createProvider from @ethlete/core
+      // No @Injectable / @Service — use createRootProvider / createProvider from @ethlete/core
       {
-        selector: "Decorator[expression.callee.name='Injectable'], Decorator[expression.name='Injectable']",
-        message: 'No @Injectable services. Use createRootProvider / createProvider from @ethlete/core instead.',
+        selector:
+          'Decorator[expression.callee.name=/^(Injectable|Service)$/], Decorator[expression.name=/^(Injectable|Service)$/]',
+        message:
+          'No @Injectable / @Service services. Use createRootProvider / createProvider from @ethlete/core instead.',
       },
       // No route guards — handle access control inside the component itself
       {
