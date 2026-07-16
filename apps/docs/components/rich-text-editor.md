@@ -266,8 +266,16 @@ demoForm = form(this.model, (s) => {
 The editable region is a `role="textbox" aria-multiline="true"` and inherits the field shell's
 `aria-describedby` / `aria-labelledby` / `*`-marker wiring, so errors and hints work exactly as they
 do for [text fields](/components/forms#validation-accessibility). Toolbar buttons expose their
-pressed state; the floating toolbar is a pointer-only enhancement and never removes an action that
+pressed state — buttons that open a menu or popover (block style, alignment, table, link) also show
+it while their popover is open (announced via `aria-expanded`, not `aria-pressed`, for the menu
+triggers). The floating toolbar is a pointer-only enhancement and never removes an action that
 isn't also reachable from the always-visible static toolbar.
+
+The toolbar follows the [ARIA toolbar pattern](https://www.w3.org/WAI/ARIA/apg/patterns/toolbar/):
+it is a single tab stop. Tab moves focus into it (onto the last-used button),
+<kbd>ArrowLeft</kbd>/<kbd>ArrowRight</kbd> move between buttons (wrapping at the ends,
+<kbd>Home</kbd>/<kbd>End</kbd> jump to the first/last), and pressing Tab again moves on to the
+editor content instead of stepping through every button.
 
 ## Theming
 

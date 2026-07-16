@@ -47,7 +47,7 @@ All flavors share the headless `ButtonDirective` (`[etButton]`):
 
 - `disabled` and `loading` both make the button **inactive**: native `disabled` on `<button>`, `tabindex="-1"` on `<a>`, plus `aria-disabled`.
 - `loading` additionally overlays a size-matched spinner (`aria-busy`) on top of the hidden label.
-- `pressed` (surface / icon / window-control buttons) marks toggle state — `aria-pressed` is emitted by default, and the visual **variant swaps** while pressed (e.g. `filled` ↔ `outline`) so the toggle reads at a glance. The `emitAriaPressed` opt-out is only bindable on the raw headless `[etButton]`, not on the styled flavors.
+- `pressed` (surface / icon / window-control buttons) marks toggle state — `aria-pressed` is emitted by default, and the visual **variant swaps** while pressed (e.g. `filled` ↔ `outline`) so the toggle reads at a glance. The `emitAriaPressed` opt-out is bindable on the raw headless `[etButton]` and on icon buttons (for pressed-styled triggers that already announce state via `aria-expanded`), but not on the other styled flavors.
 - `mutedUntilPressed` (surface / icon buttons) keeps the button neutral until pressed, only then adopting its color theme — useful for toolbars.
 - `type` defaults to `'button'`, so forms don't submit accidentally.
 

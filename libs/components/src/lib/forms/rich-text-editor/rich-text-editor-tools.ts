@@ -122,7 +122,8 @@ export const RICH_TEXT_EDITOR_TOOL_BUTTONS: Partial<Record<RichTextEditorTool, R
   link: {
     icon: 'et-link',
     label: 'Link',
-    isActive: (e) => e.linkActive(),
+    // Also pressed while the link editor popover is open, matching the menu-trigger tools.
+    isActive: (e) => e.linkActive() || e.linkEditorOpen(),
     run: (e) => e.promptForLink(),
     allowHardcodedColor: true,
   },

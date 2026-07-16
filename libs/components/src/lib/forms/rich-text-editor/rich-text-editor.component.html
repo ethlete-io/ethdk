@@ -1,13 +1,23 @@
-<div class="et-rte-toolbar" role="toolbar" aria-label="Text formatting">
+<!-- eslint-disable-next-line @angular-eslint/template/interactive-supports-focus -- ARIA toolbar pattern: the container only relays keys/focus for its roving tab stop; the buttons inside are the focusable controls -->
+<div
+  #toolbar
+  (keydown)="handleToolbarKeydown($event)"
+  (focusin)="handleToolbarFocusIn($event)"
+  class="et-rte-toolbar"
+  role="toolbar"
+  aria-label="Text formatting"
+>
   @for (tool of dir.resolvedTools(); track $index) {
     @switch (tool) {
       @case (TOOLS.DIVIDER) {
         <span class="et-rte-toolbar-divider" aria-hidden="true"></span>
       }
       @case (TOOLS.HEADING) {
-        <div [autoFocus]="!hasTouchInput()" etMenu>
+        <div #headingMenu="etMenu" [autoFocus]="!hasTouchInput()" etMenu>
           <button
             [disabled]="dir.disabled() || dir.readonly() || dir.headingToolDisabled()"
+            [pressed]="headingMenu.open()"
+            [emitAriaPressed]="false"
             [attr.aria-label]="'Text style: ' + currentHeadingLabel()"
             (mousedown)="$event.preventDefault()"
             etMenuTrigger

@@ -116,7 +116,8 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   public openLinkEditor = signal<(() => void) | null>(null);
 
   /** @internal Whether the link editor popover is currently open. Kept so the mobile docked toolbar
-   *  stays visible through the link flow (focus is temporarily inside the popover). */
+   *  stays visible through the link flow (focus is temporarily inside the popover) and so the link
+   *  toolbar button shows its pressed state while the popover is open. */
   public linkEditorOpen = signal(false);
 
   constructor() {

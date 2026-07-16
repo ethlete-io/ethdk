@@ -1,6 +1,8 @@
-<div [autoFocus]="!hasTouchInput()" etMenu>
+<div #alignMenu="etMenu" [autoFocus]="!hasTouchInput()" etMenu>
   <button
     [disabled]="disabled()"
+    [pressed]="alignMenu.open()"
+    [emitAriaPressed]="false"
     (mousedown)="$event.preventDefault()"
     etMenuTrigger
     et-icon-button
