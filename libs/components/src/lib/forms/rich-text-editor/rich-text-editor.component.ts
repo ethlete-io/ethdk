@@ -440,7 +440,9 @@ export class RichTextEditorComponent {
     this.renderer.appendChild(this.document.body, probe);
     this.destroyRef.onDestroy(() => probe.remove());
 
-    const update = () => {
+    let lastApplied = -1;
+
+    const apply = () => {
       const fixedBottom = probe.getBoundingClientRect().bottom;
       let keyboardTop: number;
 
@@ -453,18 +455,61 @@ export class RichTextEditorComponent {
       }
 
       const inset = Math.max(0, fixedBottom - keyboardTop);
+
+      if (inset === lastApplied) return false;
+
+      lastApplied = inset;
       // set the CSS var directly via the renderer (not a signal) so scroll/resize don't schedule
       // change detection each frame — that per-frame CD was what made scrolling feel sluggish
       this.renderer.setCssProperty(host, '--_et-rte-keyboard-inset', `${inset}px`);
+
+      return true;
     };
 
-    update();
+    // iOS moves its fixed-position rect ASYNCHRONOUSLY while scrolling with the keyboard open (and
+    // fires few or no visualViewport events mid-scroll, including when the scroll itself dismisses
+    // the keyboard) — a single synchronous re-measure per event reads a stale probe rect and the
+    // toolbar drifts under the keyboard. So each event kicks a rAF loop that keeps re-measuring
+    // until the inset has been stable for a few frames, then stops — continuous tracking while
+    // anything moves, zero per-frame work at rest.
+    let rafId: number | null = null;
+    let quietFrames = 0;
+
+    const settle = () => {
+      quietFrames = apply() ? 0 : quietFrames + 1;
+      // ~10 quiet frames (≈160ms) so the loop outlasts the keyboard show/hide animation even when
+      // iOS fires its last viewport event before the animation finishes
+      rafId = quietFrames < 10 ? view.requestAnimationFrame(settle) : null;
+    };
+
+    const kick = () => {
+      quietFrames = 0;
+      apply();
+      rafId ??= view.requestAnimationFrame(settle);
+    };
+
+    kick();
+    this.destroyRef.onDestroy(() => {
+      if (rafId !== null) view.cancelAnimationFrame(rafId);
+    });
 
     const viewports = topViewport ? [viewport, topViewport] : [viewport];
+    // window scroll too: a root scroll pans the keyboard-tracking fixed rect without necessarily
+    // firing any visualViewport event (top window as well when embedded in an iframe)
+    const scrollTargets: (Window | VisualViewport)[] = [...viewports, view];
 
-    merge(...viewports.flatMap((v) => [fromEvent(v, 'resize'), fromEvent(v, 'scroll')]))
+    try {
+      if (frameElement && view.top) scrollTargets.push(view.top);
+    } catch {
+      // cross-origin top — its scrolls are invisible to us; the frame keeps local tracking
+    }
+
+    merge(
+      ...viewports.map((v) => fromEvent(v, 'resize')),
+      ...scrollTargets.map((t) => fromEvent(t, 'scroll', { passive: true })),
+    )
       .pipe(
-        tap(() => update()),
+        tap(() => kick()),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
