@@ -146,6 +146,16 @@ readable — to see the zoom itself, open the bare story via `sim-open` and tap.
 - **`sim-type` goes through the real keyboard pipeline** — German autocorrect
   and auto-capitalization will mangle literal strings („dvh" → „Doch"). Fine for
   triggering keyboard behavior; don't assert on the exact text.
+- **idb input can flip the sim into stylus/hardware-input mode** — after
+  `sim-swipe` (and sometimes repeated `sim-tap`), iOS starts treating input as a
+  stylus/hardware pointer and the soft keyboard stays **minimized** (only the
+  „Fertig" accessory bar, no keys) — persisting across device reboots, with
+  `ConnectHardwareKeyboard` prefs correctly 0. The runtime toggle that clears it
+  is GUI-only: on the Mac, Simulator menu **I/O → Keyboard → Toggle Software
+  Keyboard (⌘K)** (System Events automation needs an Accessibility grant, so it
+  can't be scripted over SSH). The same applies to the Android emulator with
+  CDP-dispatched touches — prefer `adb shell input touchscreen tap/swipe`
+  (explicit source) and reboot the AVD to clear a stuck state.
 - **WebDriver send-keys is a no-op on iOS** (real device *and* sim): the call
   succeeds, the field stays empty, no keyboard. Apple limitation — use JS to set
   values in WebDriver mode, or idb for real typing.

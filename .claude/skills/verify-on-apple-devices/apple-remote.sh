@@ -110,6 +110,11 @@ case ${1:-help} in
     mac "export PATH=/usr/local/bin:\$PATH; ~/Library/Python/*/bin/idb ui tap $2 $3 --udid $UDID 2>/dev/null"
     ;;
 
+  sim-swipe) # <x1> <y1> <x2> <y2> [duration-s] — real touch swipe (device points), e.g. to scroll
+    UDID=$(mac 'xcrun simctl list devices booted' | grep -oE '[0-9A-F-]{36}' | head -1)
+    mac "export PATH=/usr/local/bin:\$PATH; ~/Library/Python/*/bin/idb ui swipe --duration ${6:-0.3} $2 $3 $4 $5 --udid $UDID 2>/dev/null"
+    ;;
+
   sim-type) # <text> — types on the open soft keyboard (tap a field first via sim-tap)
     UDID=$(mac 'xcrun simctl list devices booted' | grep -oE '[0-9A-F-]{36}' | head -1)
     TEXT=$(printf %q "$2")
