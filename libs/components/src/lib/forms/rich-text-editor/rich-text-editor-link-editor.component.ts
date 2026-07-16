@@ -91,4 +91,11 @@ export class RichTextEditorLinkEditorComponent {
 
     this.saveLink.emit({ href, text: this.textValue().trim(), newTab: this.newTabValue() });
   }
+
+  /** Applying re-focuses the editor before the browser processes the Enter keydown's default
+   *  action, which would then insert a line break into the editor — so the default is prevented. */
+  protected saveOnEnter(event: Event) {
+    event.preventDefault();
+    this.save();
+  }
 }

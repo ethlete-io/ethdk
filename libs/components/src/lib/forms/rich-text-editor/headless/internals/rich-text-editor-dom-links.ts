@@ -16,6 +16,31 @@ export const createRichTextEditorLinks = (core: RichTextEditorDomCore) => {
     collectDescendants,
   } = core;
 
+  /**
+   * Shrinks a selection to exclude leading/trailing whitespace (a word selection often includes the
+   * trailing space) so that whitespace stays outside the created anchor. The link editor trims the
+   * label it emits, which would otherwise mismatch the untrimmed selection and delete the space
+   * along with it.
+   */
+  const trimSelectionEdges = (range: Range) => {
+    const text = range.toString();
+
+    // an all-whitespace selection stays as-is (trimming from both ends would invert the range)
+    if (!text.trim()) return;
+
+    const leading = text.length - text.trimStart().length;
+    const trailing = text.length - text.trimEnd().length;
+    const { startContainer, startOffset, endContainer, endOffset } = range;
+
+    if (leading && startContainer instanceof Text && startOffset + leading <= startContainer.length) {
+      range.setStart(startContainer, startOffset + leading);
+    }
+
+    if (trailing && endContainer instanceof Text && endOffset - trailing >= 0) {
+      range.setEnd(endContainer, endOffset - trailing);
+    }
+  };
+
   /** `_blank` links get a forced `rel="noopener noreferrer"`; clearing new-tab removes both. */
   const applyTargetRel = (anchor: HTMLElement, newTab: boolean) => {
     if (newTab) {
@@ -82,6 +107,10 @@ export const createRichTextEditorLinks = (core: RichTextEditorDomCore) => {
     const anchor = renderer.createElement('a') as HTMLElement;
     renderer.setAttribute(anchor, 'href', href);
     applyTargetRel(anchor, newTab);
+
+    if (!editable.range.collapsed) {
+      trimSelectionEdges(editable.range);
+    }
 
     const selectionText = editable.range.collapsed ? '' : editable.range.toString();
     const label = (text ?? selectionText).trim() || href;

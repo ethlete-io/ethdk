@@ -18,7 +18,7 @@
   <et-input
     [value]="textValue()"
     (valueChange)="textValue.set($event)"
-    (keydown.enter)="save()"
+    (keydown.enter)="saveOnEnter($event)"
     placeholder="Link text"
   />
 </et-form-field>
@@ -28,7 +28,7 @@
   <et-input
     [value]="urlValue()"
     (valueChange)="urlValue.set($event)"
-    (keydown.enter)="save()"
+    (keydown.enter)="saveOnEnter($event)"
     type="url"
     placeholder="https://…"
   />

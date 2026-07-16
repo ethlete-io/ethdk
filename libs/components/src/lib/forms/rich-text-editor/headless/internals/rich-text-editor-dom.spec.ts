@@ -566,6 +566,27 @@ describe('RichTextEditorDom', () => {
       expect(root.innerHTML).toBe('one <a href="https://example.com">two</a> three');
     });
 
+    it('keeps whitespace at the selection edges outside the anchor', () => {
+      const { root, dom } = setup('hello world');
+      const text = root.firstChild as Node;
+      // select "hello " — a word selection often includes the trailing space
+      select(text, 0, text, 6);
+
+      dom.applyLink('https://example.com');
+
+      expect(root.innerHTML).toBe('<a href="https://example.com">hello</a> world');
+    });
+
+    it('keeps whitespace outside the anchor when the popover provides a trimmed label', () => {
+      const { root, dom } = setup('hello world');
+      const text = root.firstChild as Node;
+      select(text, 0, text, 6); // "hello " — the link editor trims the label it emits
+
+      dom.applyLink('https://example.com', { text: 'hello' });
+
+      expect(root.innerHTML).toBe('<a href="https://example.com">hello</a> world');
+    });
+
     it('updates the href when the caret is already in a link', () => {
       const { root, dom } = setup('<a href="https://old.com">hello</a>');
       const anchor = root.firstChild as Node;
