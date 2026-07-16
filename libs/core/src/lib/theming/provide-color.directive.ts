@@ -38,6 +38,7 @@ export class ProvideColorDirective {
   private themes = injectColorThemes({ optional: true });
   private prefix = injectColorThemesPrefix({ optional: true });
   private injector = inject(Injector);
+  private parentProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
 
   private currentProviderSync: EffectRef | null = null;
   private forcedColor = signal<ForcedColorState>(FORCED_COLOR_UNSET);
@@ -54,6 +55,24 @@ export class ProvideColorDirective {
     }
 
     return this.color();
+  });
+
+  /**
+   * The color that actually applies at this provider's location: its own effective color, or —
+   * when this provider is passive (no input, nothing forced) — the nearest ancestor provider's.
+   * Mirrors the CSS cascade, which falls through a provider's `-color--inherited` scope class;
+   * consumers that re-apply context across detached DOM (overlay panes) must use this instead
+   * of `effectiveColor` or a passive in-between provider (e.g. a form field's) erases the theme.
+   */
+  resolvedColor = computed((): RegisteredColorThemeName | ColorTheme | null | undefined => {
+    const own = this.effectiveColor();
+    const ownName = typeof own === 'object' && own !== null ? own.name : own;
+
+    if (ownName) {
+      return own;
+    }
+
+    return this.parentProvider?.resolvedColor();
   });
 
   colorName = computed(() => {
@@ -84,7 +103,7 @@ export class ProvideColorDirective {
 
     runInInjectionContext(this.injector, () => {
       this.currentProviderSync = effect(() => {
-        const provideColor = provider.effectiveColor();
+        const provideColor = provider.resolvedColor();
 
         untracked(() => {
           if (provideColor === undefined) {

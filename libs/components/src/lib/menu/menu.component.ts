@@ -5,7 +5,6 @@ import {
   computed,
   effect,
   inject,
-  untracked,
   viewChild,
 } from '@angular/core';
 import {
@@ -51,16 +50,12 @@ export class MenuComponent {
   constructor() {
     // the panel renders inside a detached overlay pane, so color context from the
     // trigger location has to be re-applied here instead of cascading via the DOM
-    // (the surface context is handled the same way by AutoSurfaceDirective)
-    effect(() => {
-      const contextColorProvider = this.contextColorProvider;
-
-      untracked(() => {
-        if (contextColorProvider) {
-          this.ownColorProvider.syncWithProvider(contextColorProvider);
-        }
-      });
-    });
+    // (the surface context is handled the same way by AutoSurfaceDirective). Synced
+    // in the constructor so the theme is applied before the first painted frame of
+    // the enter animation — an effect would flush one render too late.
+    if (this.contextColorProvider) {
+      this.ownColorProvider.syncWithProvider(this.contextColorProvider);
+    }
 
     // lets the search input reference the error line rendered below it via aria-describedby
     effect(() => {
