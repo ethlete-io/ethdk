@@ -1,7 +1,6 @@
 import { afterNextRender, DestroyRef, effect, ElementRef, inject, untracked } from '@angular/core';
 import { injectRenderer } from '../providers/renderer';
 import { buildElementSignal, firstElementSignal, SignalElementBindingType } from './element';
-import { signalElementDimensions } from './element-dimensions';
 import { injectPrefersReducedMotion } from './media-queries';
 
 export type AnimatedBlockSizeConfig = {
@@ -26,9 +25,15 @@ export type AnimatedBlockSizeConfig = {
  * element(s) and animates the host from its previous height to its new natural height.
  *
  * Robustness notes: the baseline height is captured on the first render (via `afterNextRender`) and
- * the effect only animates after that, so the initial layout settling never plays as a grow-from-0.
+ * only later changes animate, so the initial layout settling never plays as a grow-from-0.
  * A change that interrupts an in-flight animation continues from the current animated height, and
  * zero/pre-layout measurements are ignored. Respects `prefers-reduced-motion`.
+ *
+ * The animation starts synchronously inside the `ResizeObserver` callback — it runs after layout
+ * but **before paint**, so the host never paints a frame at its new natural size. Routing the
+ * resize through a signal + effect instead would apply the animation one change-detection cycle
+ * (= one painted frame) late: a growing panel would flash at its final size, snap back, and only
+ * then animate.
  */
 export const injectAnimatedBlockSize = (config: AnimatedBlockSizeConfig): void => {
   const hostBinding = config.host ?? inject(ElementRef);
@@ -38,7 +43,7 @@ export const injectAnimatedBlockSize = (config: AnimatedBlockSizeConfig): void =
 
   const hostSignal = firstElementSignal(buildElementSignal(hostBinding));
   const observeTargets = Array.isArray(config.observe) ? config.observe : [config.observe];
-  const dimensionSignals = observeTargets.map((target) => signalElementDimensions(target));
+  const observedElements = observeTargets.map((target) => firstElementSignal(buildElementSignal(target)));
 
   const duration = config.duration ?? 160;
   const easing = config.easing ?? 'ease';
@@ -91,6 +96,27 @@ export const injectAnimatedBlockSize = (config: AnimatedBlockSizeConfig): void =
     animation = nextAnimation;
   };
 
+  // no zone/signal indirection — see the pre-paint timing note in the doc comment above
+  const observer = new ResizeObserver(() => {
+    if (!ready) return;
+
+    run();
+  });
+
+  effect(() => {
+    const elements = observedElements.map((element) => element().currentElement);
+
+    untracked(() => {
+      observer.disconnect();
+
+      for (const element of elements) {
+        if (element) {
+          observer.observe(element);
+        }
+      }
+    });
+  });
+
   // Capture the settled height of the first render as the baseline, then only animate later changes.
   afterNextRender(() => {
     const host = hostElement();
@@ -99,14 +125,8 @@ export const injectAnimatedBlockSize = (config: AnimatedBlockSizeConfig): void =
     ready = true;
   });
 
-  effect(() => {
-    // track every observed element's size
-    dimensionSignals.forEach((dimensions) => dimensions());
-
-    if (!ready) return;
-
-    untracked(() => run());
+  destroyRef.onDestroy(() => {
+    observer.disconnect();
+    animation?.cancel();
   });
-
-  destroyRef.onDestroy(() => animation?.cancel());
 };
