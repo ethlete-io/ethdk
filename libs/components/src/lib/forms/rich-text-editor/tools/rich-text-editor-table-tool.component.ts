@@ -1,4 +1,4 @@
-import { Component, computed, input, signal, viewChild, ViewEncapsulation } from '@angular/core';
+import { Component, computed, ElementRef, input, signal, viewChild, ViewEncapsulation } from '@angular/core';
 import { injectHasTouchInput, injectRenderer } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../../../button';
 import { IconDirective, provideIcons, TABLE_ICON } from '../../../icon';
@@ -16,6 +16,15 @@ import {
 
 const PICKER_ROWS = 6;
 const PICKER_COLS = 8;
+
+const PICKER_KEY_STEPS: Record<string, { row: number; col: number }> = {
+  ArrowUp: { row: -1, col: 0 },
+  ArrowDown: { row: 1, col: 0 },
+  ArrowLeft: { row: 0, col: -1 },
+  ArrowRight: { row: 0, col: 1 },
+};
+
+const clampToPicker = (value: number, max: number) => Math.max(0, Math.min(value, max));
 
 /**
  * The opt-in table tool's toolbar control: a menu that shows a grid-size picker to insert a table,
@@ -39,6 +48,7 @@ export class RichTextEditorTableToolComponent {
   public editor = input.required<RichTextEditorDirective>();
 
   protected menu = viewChild.required(MenuDirective);
+  protected pickerGrid = viewChild<ElementRef<HTMLElement>>('pickerGrid');
 
   private ops = createTableOps(this.renderer);
 
@@ -82,6 +92,56 @@ export class RichTextEditorTableToolComponent {
   protected hover(row: number, col: number) {
     this.hoverRows.set(row + 1);
     this.hoverCols.set(col + 1);
+  }
+
+  /**
+   * Arrow-key support for the size picker — it has no menu items, so the menu's own keyboard
+   * navigation has nothing to drive. The menu opens with the panel focused; the first arrow steps
+   * onto the 1×1 cell and further arrows move through the grid, with Enter/Space committing via the
+   * focused cell's native click. Listens on the `et-menu` element (= the panel) so the initial
+   * panel-targeted keydown is caught alongside the bubbling cell ones.
+   */
+  protected handlePickerKeydown(event: KeyboardEvent) {
+    // caret inside a table: the menu shows regular items, which the menu navigates itself
+    if (this.context()) return;
+
+    const grid = this.pickerGrid()?.nativeElement;
+
+    if (!grid) return;
+
+    // A focused cell isn't a menu item and doesn't target the panel, so the menu's own
+    // Escape/Tab handling never sees its keydowns — mirror it (panel-targeted ones still work).
+    if (event.target instanceof Element && grid.contains(event.target)) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.menu().closeLevel('escape');
+
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        this.menu().closeAll('tab');
+
+        return;
+      }
+    }
+
+    const step = PICKER_KEY_STEPS[event.key];
+
+    if (!step) return;
+
+    // eslint-disable-next-line ethlete/no-dom-query -- cells carry no unique hook; an atomic class query is simplest
+    const cells = Array.from(grid.querySelectorAll<HTMLButtonElement>('.et-rte-table-picker-cell'));
+    const focused = cells.indexOf(event.target as HTMLButtonElement);
+    const row = focused === -1 ? 0 : clampToPicker(Math.floor(focused / PICKER_COLS) + step.row, PICKER_ROWS - 1);
+    const col = focused === -1 ? 0 : clampToPicker((focused % PICKER_COLS) + step.col, PICKER_COLS - 1);
+    const cell = cells[row * PICKER_COLS + col];
+
+    if (!cell) return;
+
+    event.preventDefault();
+    cell.focus();
+    this.hover(row, col);
   }
 
   /**

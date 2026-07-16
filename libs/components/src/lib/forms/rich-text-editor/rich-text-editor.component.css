@@ -59,6 +59,13 @@
         color-mix(in srgb, currentColor 12%, transparent);
 
       --et-icon-button-border-radius: var(--et-rich-text-editor-button-radius);
+
+      /* dense toolbar: the default outward ring offset (3px) reaches past the toolbar padding (4px)
+         and gap (2px), stacking the ring on the field border and neighboring buttons — pull it onto
+         the button edge instead */
+      .et-icon-button {
+        --_et-focus-ring-offset: -1px;
+      }
     }
 
     /* On touch the toolbar is a full-width bar fixed above the on-screen keyboard (the OS selection

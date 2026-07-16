@@ -92,8 +92,9 @@ providers: [provideRichTextEditorTableTool(), provideRichTextEditorAlignmentTool
 <et-rich-text-editor [formField]="demoForm.report" [tools]="['heading', 'divider', 'align', 'table']" />
 ```
 
-- **`'table'`** — a grid-size picker inserts a table (on touch, swipe across the grid to size it);
-  when the caret is inside one, the menu offers insert/delete row and column and delete table. When
+- **`'table'`** — a grid-size picker inserts a table (on touch, swipe across the grid to size it;
+  with a keyboard, the arrow keys size the grid and <kbd>Enter</kbd> inserts); when the caret is
+  inside one, the menu offers insert/delete row and column and delete table. When
   the header row has been deleted, the menu offers **Insert header row** instead of leaving the
   table headerless (a GFM pipe table always has a header, so on round-trip the first body row would
   be promoted into one). Tables round-trip as GFM pipe tables — a cell can

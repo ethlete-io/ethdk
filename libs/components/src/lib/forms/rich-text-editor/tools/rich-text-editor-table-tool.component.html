@@ -15,7 +15,7 @@
   </button>
 
   <ng-template etMenuSurface>
-    <et-menu>
+    <et-menu (keydown)="handlePickerKeydown($event)">
       @if (context()) {
         @if (canAddHeaderRow()) {
           <button (click)="addHeaderRow()" et-menu-item type="button">Insert header row</button>
@@ -32,6 +32,7 @@
       } @else {
         <div class="et-rte-table-picker">
           <div
+            #pickerGrid
             (pointerleave)="hover(-1, -1)"
             (pointerdown)="beginSwipeSelection($event)"
             (pointerup)="commitSwipeSelection($event)"
