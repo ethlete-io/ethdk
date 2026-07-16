@@ -111,8 +111,9 @@ http://localhost:4400/iframe.html?id=<story-id>&viewMode=story
 ## iOS Simulator (iPhone) — macOS only
 
 On a Linux host, skip this section entirely (there is no iOS Simulator for
-Linux); use the Android emulator, or Playwright WebKit for a rough
-engine-only approximation.
+Linux); use the Android emulator, Playwright WebKit for a rough engine-only
+approximation — or drive the team Mac's simulators and the real iPad over LAN
+via the **`verify-on-apple-devices`** skill.
 
 ### Detect
 
