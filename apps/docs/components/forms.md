@@ -18,21 +18,22 @@ protected demoForm = form(this.formModel, (s) => {
 
 Each control family ships its own imports array — combine the field shell with the controls you use:
 
-| Array                  | Contains                                                                  |
-| ---------------------- | ------------------------------------------------------------------------- |
-| `FORM_FIELD_IMPORTS`   | `et-form-field`, `et-label`, `et-hint`, `etInputPrefix` / `etInputSuffix` |
-| `INPUT_IMPORTS`        | `et-input`                                                                |
-| `NUMBER_INPUT_IMPORTS` | `et-number-input`                                                         |
-| `TEXTAREA_IMPORTS`     | `et-textarea`                                                             |
-| `COLOR_INPUT_IMPORTS`  | `et-color-input`                                                          |
-| `CHECKBOX_IMPORTS`     | `et-checkbox`                                                             |
-| `SWITCH_IMPORTS`       | `et-switch`                                                               |
-| `CHOICE_FIELD_IMPORTS` | `et-choice-field` + label/hint chrome                                     |
-| `RATING_IMPORTS`       | `et-rating`                                                               |
-| `OTP_INPUT_IMPORTS`    | `et-otp-input`                                                            |
-| `TAG_INPUT_IMPORTS`    | `et-tag-input`                                                            |
-| `PHONE_INPUT_IMPORTS`  | `et-phone-input`                                                          |
-| `DATE_INPUT_IMPORTS`   | `et-date-input`                                                           |
+| Array                      | Contains                                                                  |
+| -------------------------- | ------------------------------------------------------------------------- |
+| `FORM_FIELD_IMPORTS`       | `et-form-field`, `et-label`, `et-hint`, `etInputPrefix` / `etInputSuffix` |
+| `INPUT_IMPORTS`            | `et-input`                                                                |
+| `NUMBER_INPUT_IMPORTS`     | `et-number-input`                                                         |
+| `TEXTAREA_IMPORTS`         | `et-textarea`                                                             |
+| `COLOR_INPUT_IMPORTS`      | `et-color-input`                                                          |
+| `CHECKBOX_IMPORTS`         | `et-checkbox`                                                             |
+| `SWITCH_IMPORTS`           | `et-switch`                                                               |
+| `CHOICE_FIELD_IMPORTS`     | `et-choice-field` + label/hint chrome                                     |
+| `RATING_IMPORTS`           | `et-rating`                                                               |
+| `OTP_INPUT_IMPORTS`        | `et-otp-input`                                                            |
+| `TAG_INPUT_IMPORTS`        | `et-tag-input`                                                            |
+| `PHONE_INPUT_IMPORTS`      | `et-phone-input`                                                          |
+| `DATE_INPUT_IMPORTS`       | `et-date-input`                                                           |
+| `DATE_RANGE_INPUT_IMPORTS` | `et-date-range-input`                                                     |
 
 ```ts
 import { FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
@@ -265,6 +266,33 @@ providers: [provideDateFormat('yyyy-MM-dd'), provideDateLocale(de)];
 ```
 
 `date-fns` (v4) is a peer dependency of the date controls: `yarn add date-fns`.
+
+## Date range input — `et-date-range-input`
+
+One registered form control containing two text inputs (start – end) that share a single range-mode [calendar](/components/calendar) picker. The value shape is `{ start: string | null; end: string | null }` in `valueFormat`; each side commits exactly like the single date input (strict `displayFormat` parse on blur/Enter, per-side `startParseError` / `endParseError` signals, unparseable text stays visible).
+
+```html
+<et-form-field>
+  <et-label>Date range</et-label>
+  <et-date-range-input [formField]="demoForm.range" valueFormat="yyyy-MM-dd" />
+</et-form-field>
+```
+
+Options mirror the date input (`valueFormat`, `displayFormat`, `locale`, `minDate`/`maxDate`/`dateFilter`, `pickerOpen`), with `startPlaceholder`/`endPlaceholder` and per-field `startAriaLabel`/`endAriaLabel` (defaults `'Start date'`/`'End date'`; the host is a `role="group"` labelled by the field label). In the picker, the first click starts the range and a completed range closes it; a partial pick keeps it open.
+
+**Validation:** signal forms attaches child-path errors (e.g. `required(s.range.start)`) to the sub-fields — they flip the control's invalid state, but their messages don't reach the field's single error area. Validate on the range path for messages you want displayed:
+
+```ts
+validate(s.range, ({ value }) => {
+  const { start, end } = value();
+
+  return start !== null && end !== null && start > end
+    ? { kind: 'range-order', message: 'The start date must be before the end date' }
+    : null;
+});
+```
+
+Try it live in Storybook: `Components/Forms/Date Range Input`.
 
 ## Selection lists
 

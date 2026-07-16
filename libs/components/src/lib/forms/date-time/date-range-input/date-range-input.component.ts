@@ -1,19 +1,19 @@
 import { Component, ViewEncapsulation, inject, input } from '@angular/core';
-import { CALENDAR_ICON, IconDirective, provideIcons } from '../../../icon';
 import { CALENDAR_IMPORTS } from '../../../calendar';
+import { CALENDAR_ICON, IconDirective, provideIcons } from '../../../icon';
 import { DatePickerPanelComponent } from '../date-picker-panel.component';
 import { DatePickerSurfaceDirective } from '../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../picker/date-picker-trigger.directive';
-import { DateInputDirective, DateInputFieldDirective } from './headless';
+import { DateRangeInputDirective, DateRangeInputFieldDirective } from './headless';
 
 @Component({
-  selector: 'et-date-input',
-  templateUrl: './date-input.component.html',
-  styleUrl: './date-input.component.css',
+  selector: 'et-date-range-input',
+  templateUrl: './date-range-input.component.html',
+  styleUrl: './date-range-input.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [
     ...CALENDAR_IMPORTS,
-    DateInputFieldDirective,
+    DateRangeInputFieldDirective,
     DatePickerSurfaceDirective,
     DatePickerTriggerDirective,
     DatePickerPanelComponent,
@@ -22,7 +22,7 @@ import { DateInputDirective, DateInputFieldDirective } from './headless';
   providers: [provideIcons(CALENDAR_ICON)],
   hostDirectives: [
     {
-      directive: DateInputDirective,
+      directive: DateRangeInputDirective,
       inputs: [
         'value',
         'touched',
@@ -32,7 +32,8 @@ import { DateInputDirective, DateInputFieldDirective } from './headless';
         'errors',
         'required',
         'name',
-        'placeholder',
+        'startPlaceholder',
+        'endPlaceholder',
         'valueFormat',
         'displayFormat',
         'locale',
@@ -45,11 +46,15 @@ import { DateInputDirective, DateInputFieldDirective } from './headless';
     },
   ],
   host: {
-    class: 'et-date-input',
+    class: 'et-date-range-input',
+    role: 'group',
+    '[attr.aria-labelledby]': 'rangeInput.labelId()',
   },
 })
-export class DateInputComponent {
-  protected dateInput = inject(DateInputDirective);
+export class DateRangeInputComponent {
+  protected rangeInput = inject(DateRangeInputDirective);
 
+  public startAriaLabel = input('Start date');
+  public endAriaLabel = input('End date');
   public pickerTriggerLabel = input('Open calendar');
 }

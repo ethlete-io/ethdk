@@ -77,7 +77,8 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
       this.controlType() === FORM_FIELD_CONTROL_TYPES.SELECT ||
       this.controlType() === FORM_FIELD_CONTROL_TYPES.TAG_INPUT ||
       this.controlType() === FORM_FIELD_CONTROL_TYPES.PHONE_INPUT ||
-      this.controlType() === FORM_FIELD_CONTROL_TYPES.DATE_INPUT,
+      this.controlType() === FORM_FIELD_CONTROL_TYPES.DATE_INPUT ||
+      this.controlType() === FORM_FIELD_CONTROL_TYPES.DATE_RANGE_INPUT,
   );
 
   public shouldFloatLabel = computed(() => this.focused() || this.hasValue());

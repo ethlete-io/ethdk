@@ -1,0 +1,23 @@
+<input [attr.aria-label]="startAriaLabel()" class="et-date-range-input-field" etDateRangeInputField side="start" />
+
+<span class="et-date-range-input-separator" aria-hidden="true">–</span>
+
+<input [attr.aria-label]="endAriaLabel()" class="et-date-range-input-field" etDateRangeInputField side="end" />
+
+<button [attr.aria-label]="pickerTriggerLabel()" class="et-date-range-input-picker-trigger" etDatePickerTrigger>
+  <i etIcon="et-calendar"></i>
+</button>
+
+<ng-template etDatePickerSurface>
+  <et-date-picker-panel>
+    <et-calendar
+      [rangeValue]="rangeInput.calendarRange()"
+      [min]="rangeInput.minDate()"
+      [max]="rangeInput.maxDate()"
+      [dateFilter]="rangeInput.dateFilter()"
+      [locale]="rangeInput.effectiveLocale()"
+      (rangeValueChange)="rangeInput.selectCalendarRange($event)"
+      mode="range"
+    />
+  </et-date-picker-panel>
+</ng-template>

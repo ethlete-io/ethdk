@@ -1,10 +1,10 @@
 import { ApplicationRef, Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../../test-helpers';
+import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
+import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { DateInputFieldDirective } from './date-input-field.directive';
 import { DateInputDirective } from './date-input.directive';
-import { DatePickerSurfaceDirective } from './date-picker-surface.directive';
-import { DatePickerTriggerDirective } from './date-picker-trigger.directive';
 
 @Component({
   template: `

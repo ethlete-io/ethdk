@@ -1,33 +1,33 @@
 import { DestroyRef, Directive, TemplateRef, afterNextRender, inject } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
-import { DATE_INPUT_ERROR_CODES } from '../date-input-errors';
-import { DateInputDirective, DatePickerSurfaceContext } from './date-input.directive';
+import { DATE_INPUT_ERROR_CODES } from '../date-input/date-input-errors';
+import { DATE_PICKER_HOST, DatePickerSurfaceContext } from './date-picker-host';
 
-/** The template rendered inside the date input's picker overlay pane. */
+/** The template rendered inside a date control's picker overlay pane. */
 @Directive({
   selector: 'ng-template[etDatePickerSurface]',
   exportAs: 'etDatePickerSurface',
 })
 export class DatePickerSurfaceDirective {
-  private dateInput = inject(DateInputDirective, { optional: true });
+  private host = inject(DATE_PICKER_HOST, { optional: true });
   public templateRef = inject<TemplateRef<DatePickerSurfaceContext>>(TemplateRef);
   private destroyRef = inject(DestroyRef);
 
   constructor() {
-    this.dateInput?.registeredSurface.set(this);
+    this.host?.registeredSurface.set(this);
 
     this.destroyRef.onDestroy(() => {
-      if (this.dateInput?.registeredSurface() === this) {
-        this.dateInput.registeredSurface.set(null);
+      if (this.host?.registeredSurface() === this) {
+        this.host.registeredSurface.set(null);
       }
     });
 
     if (ngDevMode) {
       afterNextRender(() => {
-        if (!this.dateInput) {
+        if (!this.host) {
           throw new RuntimeError(
             DATE_INPUT_ERROR_CODES.SURFACE_OUTSIDE_DATE_INPUT,
-            '[DatePickerSurfaceDirective] etDatePickerSurface must be placed inside an [etDateInput] element.',
+            '[DatePickerSurfaceDirective] etDatePickerSurface must be placed inside a date picker host ([etDateInput] or [etDateRangeInput]).',
           );
         }
       });

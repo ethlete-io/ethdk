@@ -38,7 +38,7 @@ Decisions baked into this plan (do not re-litigate without a reason):
 | Phone input                     | 5     | M    | shipped | 2800–2899                   |
 | Calendar                        | 6     | L    | shipped | 2900–2999                   |
 | Date input                      | 6     | M    | shipped | 3000–3099                   |
-| Date range input                | 7     | M    | planned | shares `date-time` block    |
+| Date range input                | 7     | M    | shipped | 3010–3019 (shared block)    |
 | Time picker + time input        | 7     | M+S  | planned | shares `date-time` block    |
 | Date-time input                 | 7     | M    | planned | shares `date-time` block    |
 | Slider (incl. range)            | 8     | L    | planned | claim at impl. time         |
@@ -573,6 +573,36 @@ dateInput, close }`), so headless consumers can host anything; the Tier 3
   `{ start: string | null; end: string | null }`. **Spike first:** how signal-forms
   validation errors map per sub-field inside a single form-field error area, and
   whether form-field `focused`/`hasValue` computeds tolerate two native inputs.
+
+  **Done. Spike answers** (empirical, Angular 22.0.5): binding
+  `[formField]="form.range"` to an object field — child-path validators
+  (`required(s.range.start)`) DO flip the control's `invalid` input (child
+  invalidity bubbles), but their **messages do not reach the control's
+  `errors` input**; only errors attached to the range node itself arrive.
+  Consumers wanting messages in the single error area must validate on the
+  range path (`validate(s.range, …)` returning a plain `{ kind, message }` —
+  there is **no `customError` factory** in this build). Two native inputs in
+  one text shell are a non-issue: `focused`/`hasValue` are control-provided
+  (`focusedSide() !== null || pickerOpen()`).
+
+  **Implementation learnings:**
+  - The picker pieces generalized cleanly: `DATE_PICKER_HOST` token
+    (`forms/date-time/picker/`) implemented by both date controls, shared
+    `etDatePickerTrigger`/`etDatePickerSurface`, and the whole overlay
+    machinery extracted to `internals/date-picker-overlay.ts`
+    (`createDatePickerOverlay`) — the date input directive lost ~150 lines.
+  - Barrel care: the picker exports live ONLY in the `date-time` root barrel —
+    re-exporting them from both input barrels would make the star-exports
+    ambiguous and TypeScript silently drops ambiguous `export *` names.
+  - The field's `side` input is not readable in the constructor — fields
+    register with the parent inside an `effect` keyed on `side()`.
+  - Range-picker close semantics: partial pick (start only) keeps the overlay
+    open; a completed range closes it. Note the calendar's own semantics make
+    a first click COMPLETE the range when a start is already committed (typed)
+    — same-day ranges are legal, `{ start: X, end: X }`.
+  - No auto-swap when start > end — that's consumer validation territory (the
+    story demonstrates the range-order validator).
+
 - **`et-time-picker`** (M) — inline-capable column-list UI (hours / minutes /
   optional seconds derived from format), `minuteStep` (default 5), roving focus per
   column, scroll-snap + type-to-jump. Model: `Date | null` (time-of-day on a Date).

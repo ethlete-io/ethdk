@@ -23,28 +23,28 @@ Two kinds of checks produce these errors:
 
 Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU_ERROR_CODES`, `OVERLAY_ERROR_CODES`) if you need to match on them programmatically.
 
-| Range     | Domain           | Guide                                            |
-| --------- | ---------------- | ------------------------------------------------ |
-| 1000–1099 | Select           | [Select](/components/select)                     |
-| 1100–1199 | Chip             | [Chip](/components/chip)                         |
-| 1200–1299 | Overlay          | [Overlays](/components/overlays)                 |
-| 1300–1399 | Menu             | [Menu](/components/menu)                         |
-| 1400–1499 | Tooltip          | [Tooltip](/components/tooltip)                   |
-| 1500–1599 | Toggletip        | [Toggletip](/components/toggletip)               |
-| 1600–1699 | Stream           | [Stream](/components/stream)                     |
-| 1700–1799 | Notification     | [Notification](/components/notification)         |
-| 1800–1899 | Icon             | [Icon](/components/icon)                         |
-| 1900–1999 | Grid             | [Grid](/components/grid)                         |
-| 2000–2099 | Tabs             | [Tabs](/components/tabs)                         |
-| 2100–2199 | Scrollable       | [Scrollable](/components/scrollable)             |
-| 2200–2299 | Form field       | [Forms](/components/forms)                       |
-| 2300–2399 | Split button     | [Button](/components/button)                     |
-| 2400–2499 | Dropzone         | [Dropzone](/components/dropzone)                 |
-| 2500–2599 | Rich text editor | [Rich text editor](/components/rich-text-editor) |
-| 2700–2799 | Tag input        | [Forms](/components/forms)                       |
-| 2800–2899 | Phone input      | [Forms](/components/forms)                       |
-| 2900–2999 | Calendar         | [Calendar](/components/calendar)                 |
-| 3000–3099 | Date input       | [Forms](/components/forms)                       |
+| Range     | Domain             | Guide                                            |
+| --------- | ------------------ | ------------------------------------------------ |
+| 1000–1099 | Select             | [Select](/components/select)                     |
+| 1100–1199 | Chip               | [Chip](/components/chip)                         |
+| 1200–1299 | Overlay            | [Overlays](/components/overlays)                 |
+| 1300–1399 | Menu               | [Menu](/components/menu)                         |
+| 1400–1499 | Tooltip            | [Tooltip](/components/tooltip)                   |
+| 1500–1599 | Toggletip          | [Toggletip](/components/toggletip)               |
+| 1600–1699 | Stream             | [Stream](/components/stream)                     |
+| 1700–1799 | Notification       | [Notification](/components/notification)         |
+| 1800–1899 | Icon               | [Icon](/components/icon)                         |
+| 1900–1999 | Grid               | [Grid](/components/grid)                         |
+| 2000–2099 | Tabs               | [Tabs](/components/tabs)                         |
+| 2100–2199 | Scrollable         | [Scrollable](/components/scrollable)             |
+| 2200–2299 | Form field         | [Forms](/components/forms)                       |
+| 2300–2399 | Split button       | [Button](/components/button)                     |
+| 2400–2499 | Dropzone           | [Dropzone](/components/dropzone)                 |
+| 2500–2599 | Rich text editor   | [Rich text editor](/components/rich-text-editor) |
+| 2700–2799 | Tag input          | [Forms](/components/forms)                       |
+| 2800–2899 | Phone input        | [Forms](/components/forms)                       |
+| 2900–2999 | Calendar           | [Calendar](/components/calendar)                 |
+| 3000–3099 | Date & time inputs | [Forms](/components/forms)                       |
 
 ::: info Codes below 1000
 Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web sockets). `ET1000`/`ET1001` therefore exist in both packages — the bracketed source in the message (`[SelectDirective]` vs. a query feature) tells them apart.
@@ -80,14 +80,17 @@ Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web so
 | `ET2900` | `etCalendarGrid` is not inside an `[etCalendar]` element. | Move the grid inside the calendar root. |
 | `ET2901` | `etCalendarCell` is not inside an `[etCalendar]` element. | Move the cell inside the calendar root. |
 
-## Date input (ET30xx)
+## Date & time inputs (ET30xx)
 
-| Code     | Cause                                                            | Fix                                                                 |
-| -------- | ---------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `ET3000` | `etDateInputField` is not inside an `[etDateInput]` element.     | Move the field inside the date input root.                          |
-| `ET3001` | `etDatePickerTrigger` is not inside an `[etDateInput]` element.  | Move the trigger inside the date input root.                        |
-| `ET3002` | `etDatePickerSurface` is not inside an `[etDateInput]` element.  | Move the surface template inside the date input root.               |
-| `ET3003` | The picker was opened without an `etDatePickerSurface` template. | Add `<ng-template etDatePickerSurface>` inside the date input root. |
+The date input and the date range input share this block (the picker trigger/surface pieces work with either host).
+
+| Code     | Cause                                                                  | Fix                                                              |
+| -------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `ET3000` | `etDateInputField` is not inside an `[etDateInput]` element.           | Move the field inside the date input root.                       |
+| `ET3001` | `etDatePickerTrigger` is not inside a date picker host.                | Move the trigger inside `[etDateInput]` / `[etDateRangeInput]`.  |
+| `ET3002` | `etDatePickerSurface` is not inside a date picker host.                | Move the surface template inside the host element.               |
+| `ET3003` | The picker was opened without an `etDatePickerSurface` template.       | Add `<ng-template etDatePickerSurface>` inside the host element. |
+| `ET3010` | `etDateRangeInputField` is not inside an `[etDateRangeInput]` element. | Move the field inside the date range input root.                 |
 
 ## Chip (ET11xx)
 

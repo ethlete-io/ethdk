@@ -177,7 +177,7 @@ To avoid collisions, each component domain owns a fixed numeric range:
 | 2700 – 2799 | Tag input                       |
 | 2800 – 2899 | Phone input                     |
 | 2900 – 2999 | Calendar                        |
-| 3000 – 3099 | Date input                      |
+| 3000 – 3099 | Date & time inputs              |
 
 Add new domains by claiming the next free hundred block (next free: **3100**
 onward). The 1100 block was pre-allocated for a standalone combobox that never
