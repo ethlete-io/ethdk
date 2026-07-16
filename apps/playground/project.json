@@ -83,7 +83,8 @@
         "configDir": "apps/playground/.storybook",
         "browserTarget": "playground:build-storybook",
         "compodoc": false,
-        "styles": ["libs/cdk/src/lib/styles/index.css", "apps/playground/src/styles/storybook.css"]
+        "styles": ["libs/cdk/src/lib/styles/index.css", "apps/playground/src/styles/storybook.css"],
+        "open": false
       },
       "configurations": {
         "ci": {
