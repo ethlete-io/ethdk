@@ -78,7 +78,15 @@ export class SelectSearchDirective {
 
       // single select: the input displays the selected value's label until the user edits —
       // unless a custom value template owns the display (an input cannot render rich HTML)
-      if (select && !select.multiple() && !select.registeredValueTemplate() && !query && !this.edited()) {
+      // or the input lives in the panel rather than the field
+      if (
+        select &&
+        !select.multiple() &&
+        !select.registeredValueTemplate() &&
+        !query &&
+        !this.edited() &&
+        this.isInlineInTrigger()
+      ) {
         text = select.displayValue() ?? '';
       }
 
@@ -121,7 +129,12 @@ export class SelectSearchDirective {
 
   /** @internal Selects a displayed value label on open, so typing replaces it (single select). */
   public handleOpened() {
-    if (this.edited() || this.select?.multiple() || this.select?.registeredValueTemplate()) {
+    if (
+      this.edited() ||
+      this.select?.multiple() ||
+      this.select?.registeredValueTemplate() ||
+      !this.isInlineInTrigger()
+    ) {
       return;
     }
 
@@ -149,9 +162,16 @@ export class SelectSearchDirective {
 
     // single select: the input doubles as the value display, so the user erasing all of
     // its text clears the selection (Escape/close clears revert the display instead — they
-    // don't go through this handler). With a custom value template the input is a pure
-    // query box and clearing it must not deselect.
-    if (!value && select && !select.multiple() && !select.registeredValueTemplate() && select.hasValue()) {
+    // don't go through this handler). With a custom value template — or a panel-hosted
+    // search — the input is a pure query box and clearing it must not deselect.
+    if (
+      !value &&
+      select &&
+      !select.multiple() &&
+      !select.registeredValueTemplate() &&
+      select.hasValue() &&
+      this.isInlineInTrigger()
+    ) {
       select.deselectValue(select.value());
     }
 
@@ -197,5 +217,14 @@ export class SelectSearchDirective {
     if (!this.select?.open()) {
       this.select?.touched.set(true);
     }
+  }
+
+  // the input doubles as the value display only while it sits inline in the trigger (the
+  // combobox-in-field pattern) — a search rendered inside the panel instead (e.g. the phone
+  // input's country picker) is a pure query box and always shows its placeholder
+  private isInlineInTrigger() {
+    const trigger = this.select?.registeredTrigger()?.elementRef.nativeElement;
+
+    return !!trigger && trigger.contains(this.elementRef.nativeElement);
   }
 }

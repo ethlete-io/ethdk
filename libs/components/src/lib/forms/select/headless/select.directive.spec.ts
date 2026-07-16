@@ -160,6 +160,25 @@ class SearchSelectTestHost {
   loadMoreCount = 0;
 }
 
+@Component({
+  template: `
+    <div [value]="value()" (valueChange)="value.set($event)" etSelect>
+      <button etSelectTrigger type="button">Open</button>
+      <ng-template etSelectSurface>
+        <et-select-panel>
+          <input etSelectSearch placeholder="Search" />
+          <div etSelectOption value="apple">Apple</div>
+          <div etSelectOption value="banana">Banana</div>
+        </et-select-panel>
+      </ng-template>
+    </div>
+  `,
+  imports: [SELECT_IMPORTS],
+})
+class PanelSearchTestHost {
+  value = signal<unknown>('apple');
+}
+
 const flushFrames = () =>
   new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
@@ -790,6 +809,54 @@ describe('SelectDirective (search)', () => {
 
     expect(activeOption()?.textContent?.trim()).toBe('Cherry');
     expect(activeOption()?.getAttribute('data-active-source')).toBe('keyboard');
+  });
+});
+
+describe('SelectDirective (panel-hosted search)', () => {
+  let fixture: ComponentFixture<PanelSearchTestHost>;
+  let select: SelectDirective;
+
+  const tick = () => TestBed.inject(ApplicationRef).tick();
+  const pane = () => Array.from(document.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane')).at(-1) ?? null;
+  const searchInput = () => pane()?.querySelector<HTMLInputElement>('input[etselectsearch]') ?? null;
+
+  beforeEach(() => {
+    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
+
+    TestBed.configureTestingModule({
+      imports: [PanelSearchTestHost],
+      providers: [provideColorThemes(TEST_COLOR_THEMES)],
+    });
+    fixture = TestBed.createComponent(PanelSearchTestHost);
+    fixture.detectChanges();
+    select = fixture.debugElement.children[0]!.injector.get(SelectDirective);
+  });
+
+  afterEach(async () => {
+    select.hide();
+    tick();
+    await flushFrames();
+  });
+
+  it('is a pure query box — never displays the selected value, erasing does not deselect', async () => {
+    fixture.nativeElement.querySelector('button').click();
+    tick();
+    await flushFrames();
+    tick();
+
+    const input = searchInput()!;
+
+    // a trigger-inline search would show "Apple" here (value display); the panel search must not
+    expect(input.value).toBe('');
+
+    input.value = 'ban';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    tick();
+    input.value = '';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    tick();
+
+    expect(fixture.componentInstance.value()).toBe('apple');
   });
 });
 

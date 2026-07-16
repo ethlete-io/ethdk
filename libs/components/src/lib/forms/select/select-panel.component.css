@@ -72,6 +72,9 @@
     border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
     background: var(--et-surface-background-solid, rgb(32 32 32));
     color: var(--et-surface-color-solid, rgb(244 244 245));
+    /* base font size for panel content beyond the options themselves (custom search inputs
+       etc.) — the detached pane would otherwise inherit the root font size (10px here) */
+    font-size: var(--et-select-option-font-size, 14px);
     box-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
 
     /* left-aligned like the options themselves; the error text mirrors the menu's

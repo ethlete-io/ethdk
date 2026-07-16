@@ -97,6 +97,8 @@ The Tier 3 component wires `[etSelect]` + `[etSelectTrigger]` + `ng-template[etS
 
 <StoryEmbed id="components-forms-select--searchable" height="420px" />
 
+In a headless composition, `etSelectSearch` can also live inside the surface template (in the panel) — there it acts as a pure query box that always shows its placeholder, like the [menu](/components/menu)'s search (the phone input's country picker works this way).
+
 Opt into search by projecting an `<input etSelectSearch />` — it renders **inline in the field** (combobox pattern): in multi mode it flows after the chips, tag-input style; in single mode **the input doubles as the value display** — it shows the selected label, which gets text-selected on open so typing replaces it, and is restored when the panel closes. The input becomes the field's tab stop and takes over the combobox ARIA from the trigger. Typing opens the panel; with the default `filterMode="internal"` it hides non-matching options (case-insensitive label match), and when nothing matches the panel shows an empty row (override with `ng-template[etSelectEmpty]`). The first <kbd>Escape</kbd> clears the query, the second closes the panel; the query also clears when the panel closes or a multi commit adds a value. Clicking into the input never closes the panel — the chevron toggles it. The panel animates its block size when content changes while open (filtering, async results).
 
 ### Async options

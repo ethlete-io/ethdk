@@ -77,10 +77,8 @@
     inset-block-start: calc(var(--et-select-panel-padding, 6px) * -1);
     margin-block-start: calc(var(--et-select-panel-padding, 6px) * -1);
     margin-inline: calc(var(--et-select-panel-padding, 6px) * -1);
-    margin-block-end: var(--et-select-panel-padding, 6px);
-    padding: 8px;
+    padding: var(--et-select-panel-padding, 6px);
     background: var(--et-surface-background-solid, rgb(32 32 32));
-    border-block-end: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
     z-index: 1;
 
     /* mirrors the menu's search field (input[etmenusearch] in menu.component.css) */
