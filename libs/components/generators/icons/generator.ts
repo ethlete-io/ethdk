@@ -221,6 +221,8 @@ function generateIconsFile(
 import type { IconDefinition } from '@ethlete/components';
 `;
 
+  // Deliberately no aggregate "all icons" export: importing one would register every icon
+  // and defeat tree shaking. Icons are meant to be imported and provided individually.
   const consts = icons
     .map(
       (icon) =>
@@ -232,11 +234,7 @@ import type { IconDefinition } from '@ethlete/components';
     )
     .join('\n\n');
 
-  const aggregate = `export const GENERATED_ICONS = [\n${icons
-    .map((icon) => `  ${constName(icon.name, icon.variant)},`)
-    .join('\n')}\n] as const;`;
-
-  return `${header}\n${consts}\n\n${aggregate}\n`;
+  return `${header}\n${consts}\n`;
 }
 
 function generateTypesFile(icons: ResolvedIcon[], schema: GeneratorSchema): string {
