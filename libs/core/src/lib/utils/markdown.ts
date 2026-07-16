@@ -54,6 +54,18 @@ const separatorFor = (align: TableAlign): string =>
 
 const alignStyle = (align: TableAlign): string => (align ? ` style="text-align: ${align}"` : '');
 
+/** Wraps `content` in an emphasis `marker`, hoisting boundary whitespace outside the delimiters —
+ *  CommonMark emphasis must not face whitespace on the inside (`** fett**` doesn't parse), and
+ *  `&nbsp;` counts as whitespace there too. Whitespace-only content stays unwrapped. */
+const emphasize = (marker: string, content: string): string => {
+  const lead = /^(?:\s|&nbsp;)+/i.exec(content)?.[0] ?? '';
+  const rest = content.slice(lead.length);
+  const trail = /(?:\s|&nbsp;)+$/i.exec(rest)?.[0] ?? '';
+  const core = rest.slice(0, rest.length - trail.length);
+
+  return core ? `${lead}${marker}${core}${marker}${trail}` : content;
+};
+
 const makePlaceholder = (kind: string, idx: number) => `\u{E000}${kind}${idx}\u{E001}`;
 const placeholderRe = (kind: string) => new RegExp(`\u{E000}${kind}(\\d+)\u{E001}`, 'gu');
 const isPlaceholder = (kind: string, str: string) => new RegExp(`^\u{E000}${kind}\\d+\u{E001}$`, 'u').test(str);
@@ -404,12 +416,13 @@ export const htmlToMarkdown = (html: string): string => {
     );
   }
 
-  // Bold + italic (combined before individual)
-  md = md.replace(/<strong[^>]*><em[^>]*>([\s\S]*?)<\/em><\/strong>/gi, '***$1***');
-  md = md.replace(/<em[^>]*><strong[^>]*>([\s\S]*?)<\/strong><\/em>/gi, '***$1***');
-  md = md.replace(/<(strong|b)[^>]*>([\s\S]*?)<\/\1>/gi, '**$2**');
-  md = md.replace(/<(em|i)[^>]*>([\s\S]*?)<\/\1>/gi, '*$2*');
-  md = md.replace(/<(del|s|strike)[^>]*>([\s\S]*?)<\/\1>/gi, '~~$2~~');
+  // Bold + italic (combined before individual). Boundary whitespace is hoisted out of the
+  // delimiters (emphasize) — `<strong> x</strong>` must become ` **x**`, not the invalid `** x**`.
+  md = md.replace(/<strong[^>]*><em[^>]*>([\s\S]*?)<\/em><\/strong>/gi, (_, c: string) => emphasize('***', c));
+  md = md.replace(/<em[^>]*><strong[^>]*>([\s\S]*?)<\/strong><\/em>/gi, (_, c: string) => emphasize('***', c));
+  md = md.replace(/<(strong|b)[^>]*>([\s\S]*?)<\/\1>/gi, (_, _tag, c: string) => emphasize('**', c));
+  md = md.replace(/<(em|i)[^>]*>([\s\S]*?)<\/\1>/gi, (_, _tag, c: string) => emphasize('*', c));
+  md = md.replace(/<(del|s|strike)[^>]*>([\s\S]*?)<\/\1>/gi, (_, _tag, c: string) => emphasize('~~', c));
 
   // Inline code
   md = md.replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, (_, code: string) => `\`${unescapeHtml(code)}\``);

@@ -233,6 +233,16 @@ describe('htmlToMarkdown', () => {
     expect(htmlToMarkdown('<s>struck</s>')).toBe('~~struck~~');
   });
 
+  it('hoists boundary whitespace out of emphasis delimiters (invalid CommonMark otherwise)', () => {
+    expect(htmlToMarkdown('<p>test<strong> fett</strong></p>')).toBe('test **fett**');
+    expect(htmlToMarkdown('<p><strong>fett </strong>rest</p>')).toBe('**fett** rest');
+    expect(htmlToMarkdown('<p>a<em> kursiv </em>b</p>')).toBe('a *kursiv* b');
+    expect(htmlToMarkdown('<p>a<del>&nbsp;weg</del></p>')).toBe('a ~~weg~~');
+    expect(htmlToMarkdown('<p>a<strong><em> both</em></strong></p>')).toBe('a ***both***');
+    // whitespace-only content has no markdown form — stays unwrapped
+    expect(htmlToMarkdown('<p>a<strong> </strong>b</p>')).toBe('a b');
+  });
+
   it('converts inline code', () => {
     expect(htmlToMarkdown('<code>snippet</code>')).toBe('`snippet`');
   });
