@@ -310,6 +310,15 @@ adb exec-out screencap -p > /path/in/scratchpad/android-story.png
 
 ---
 
+## Keep the emulator running between tests
+
+Cold boot is the expensive part (~90s); everything after (`am start`, CDP,
+screenshots, taps) is seconds. While iterating on a change, **leave the emulator
+(and any `adb forward`) up between rounds** — re-firing the VIEW intent on a
+running emulator is instant, and Chrome keeps its state (first-run dialogs
+already dismissed). Only `adb emu kill` when the whole verification session is
+done — or leave it to the user, who may want to poke at the result themselves.
+
 ## Report
 
 State which engine you drove (iOS Safari / Android Chrome), the device/viewport,

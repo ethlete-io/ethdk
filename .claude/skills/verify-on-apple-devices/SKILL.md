@@ -31,6 +31,29 @@ skill, for genuine iOS Safari behavior.
 Run `apple-remote.sh detect` first — it verifies Mac reachability, simulators,
 the paired iPad, and that Storybook is reachable *from* the Mac.
 
+## Timing expectations — waiting is a bug, not a virtue
+
+Every command here is snappy once the simulator is up: `detect`, `sim-shot`,
+`sim-tap`, `sim-type`, `ipad-open`, `ipad-js` all finish in **< 10s**. The only
+legitimately slow operations are the *first* `sim-open`/`sim-probe` after a
+shutdown (cold boot, ~60s, bounded — the script fails loudly after that) and
+`ipad-start` (~15s for tunnel + session). **If anything else takes more than
+~30s, something is wrong — stop waiting and diagnose** (is Simulator.app
+running? `simctl list devices booted`? is the tunnel up?). Never wrap these
+commands in your own open-ended retry/wait loops; the script owns its (bounded)
+waits, and stacking waiting on top of waiting is how sessions hang for minutes
+on a dead simulator. `sim-open`/`sim-probe` on an already-booted device is ~2s
+(fast path) — repeat them freely instead of holding state in your head.
+
+**Keep everything open between test rounds.** The taxes are all in setup (cold
+boot ~60s, `ipad-start` ~15s), so don't pay them per test: leave the simulator
+booted, the tunnel + WebDriver session alive, and the Android emulator running
+while you iterate. `sim-stop`/`ipad-end` are **end-of-session cleanup**, not a
+per-test step. The one forced exception: real-input mode (`sim-tap`/`sim-type`)
+can't coexist with an active WebDriver session, so `ipad-end` before tapping —
+but the simulator itself stays booted across that switch, and restarting just
+the session afterwards is the cheap part.
+
 ## Command overview
 
 | Command | What it does |
@@ -50,6 +73,20 @@ the paired iPad, and that Storybook is reachable *from* the Mac.
 | `ipad-tap <css>` / `ipad-type <css> <text>` | WebDriver element click / send-keys (see limits!) |
 | `ipad-shot <out.png> [css]` | **Element** screenshot (default `html`) |
 | `ipad-end` | Delete session, kill tunnel + remote safaridriver |
+
+**`ipad-start` intentionally leaves Safari on a blank white page** — a WebDriver
+session always opens `about:blank`. That white screen is the success state, not a
+hang: immediately follow up with `ipad-open <story-id>` (and don't wait for any
+further output from `ipad-start`; run it synchronously, it returns when the
+session is up). While a session is active, Safari's chrome (status bar, address
+bar) is tinted **orange** — that's iOS's automation indicator, not a page style
+leaking through; ignore it when judging screenshots.
+
+If `ipad-start` fails with `The Safari instance is already paired with another
+WebDriver session`, a previous session is still registered. **Try `ipad-open`
+first** — the stored session often still works and pairing errors just mean the
+new session was redundant. Only if `ipad-open` also errors, run `ipad-end` and
+then retry `ipad-start`.
 
 ## The two modes — and why they don't mix
 
@@ -95,9 +132,17 @@ readable — to see the zoom itself, open the bare story via `sim-open` and tap.
 - **Soft keyboard needs the hardware keyboard detached.** Fresh Simulator.app
   connects the Mac keyboard → tapping an input shows only the „Fertig" accessory
   bar, no keys, **and visualViewport does not shrink**. Fix: `sim-keyboard on`
-  (writes the pref, kills sims), then boot again. First keyboard open shows a
-  one-time QuickPath intro — dismiss via its „Weiter" button (`sim-tap`, read
-  coords from a screenshot).
+  (kills sims; boot again after). It writes **both** the legacy global
+  `ConnectHardwareKeyboard` pref and the per-device
+  `DevicePreferences.<UDID>.ConnectHardwareKeyboard` key — modern Simulator
+  only honors the per-device one, which is why the global-only write used to
+  silently do nothing. First keyboard open shows a one-time QuickPath intro —
+  dismiss via its „Weiter" button (`sim-tap`, read coords from a screenshot).
+- **`simctl list` saying „Booted" does NOT mean there's a window.** After
+  `killall Simulator` the device can boot headless: `openurl` succeeds,
+  screenshots come back black, and nothing is visible on the Mac.
+  `sim-open`/`sim-probe` now launch Simulator.app themselves, but if you ever
+  see black screenshots, check `pgrep -x Simulator` before anything else.
 - **`sim-type` goes through the real keyboard pipeline** — German autocorrect
   and auto-capitalization will mangle literal strings („dvh" → „Doch"). Fine for
   triggering keyboard behavior; don't assert on the exact text.

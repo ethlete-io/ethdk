@@ -33,6 +33,25 @@ wd() { # <method> <path> [json-body]  → WebDriver call against the tunnel
 
 sid() { cat "$SID_FILE"; }
 
+sim_boot() { # <device-name> — launch Simulator.app (UI!), boot, and wait for SpringBoard.
+  # simctl alone boots headless (black framebuffer, blank keyboard area, no window on
+  # the Mac) and openurl right after bootstatus times out — SpringBoard isn't up yet.
+  # Fast path: device already booted + Simulator.app running → return in ~2s.
+  if mac 'xcrun simctl list devices booted | grep -q "(Booted)" && pgrep -xq Simulator'; then return 0; fi
+  echo "booting $1 (cold boot can take ~60s; anything past that is an error, not patience)…" >&2
+  mac "open -g \"\$(xcode-select -p)/Applications/Simulator.app\"; xcrun simctl boot \"$1\" 2>/dev/null || true; xcrun simctl bootstatus booted" >/dev/null
+  # bounded SpringBoard wait — 20×3s max, then fail loudly instead of hanging forever
+  mac 'for i in $(seq 1 20); do
+         xcrun simctl spawn booted launchctl print system 2>/dev/null | grep -q com.apple.SpringBoard && exit 0
+         sleep 3
+       done
+       echo "SpringBoard did not come up within 60s" >&2; exit 1'
+}
+
+sim_udid() { # <device-name> → UDID of that available device
+  mac 'xcrun simctl list devices available' | grep -F "$1 (" | grep -oE '[0-9A-F-]{36}' | head -1
+}
+
 find_el() { # <css-selector> → element id
   local body
   body=$(python3 -c 'import json,sys; print(json.dumps({"using": "css selector", "value": sys.argv[1]}))' "$1")
@@ -67,17 +86,16 @@ case ${1:-help} in
     echo "storybook from mac: $(mac "curl -s -o /dev/null -w '%{http_code}' http://$(pc_ip):4400/" || echo unreachable)"
     ;;
 
-  sim-open) # <story-id-or-url> [device-name] — boots sim if needed, opens URL
-    DEVICE=${3:-iPhone 16}
-    mac "xcrun simctl boot \"$DEVICE\" 2>/dev/null || true; xcrun simctl bootstatus booted" >/dev/null
+  sim-open) # <story-id-or-url> [device-name] — boots sim (with UI) if needed, opens URL
+    sim_boot "${3:-iPhone 16}"
     mac "xcrun simctl openurl booted '$(story_url "$2")'"
     echo "opened on simulator: $(story_url "$2")"
     ;;
 
-  sim-probe) # <story-id> — open story wrapped in the live viewport HUD (assets/viewport-probe.html);
+  sim-probe) # <story-id> [device-name] — open story wrapped in the live viewport HUD (assets/viewport-probe.html);
              # use with sim-tap/sim-type, read metrics off sim-shot (works without a WebDriver session)
     URL="http://$(pc_ip):4400/assets/viewport-probe.html?story=$2"
-    mac "xcrun simctl boot 'iPhone 16' 2>/dev/null || true; xcrun simctl bootstatus booted" >/dev/null
+    sim_boot "${3:-iPhone 16}"
     mac "xcrun simctl openurl booted '$URL'"
     echo "opened probe: $URL"
     ;;
@@ -98,10 +116,15 @@ case ${1:-help} in
     mac "export PATH=/usr/local/bin:\$PATH; ~/Library/Python/*/bin/idb ui text $TEXT --udid $UDID 2>/dev/null"
     ;;
 
-  sim-keyboard) # on|off — detach the hardware keyboard so the soft keyboard shows (restarts sims)
-    [ "$2" = on ] && V=false || V=true
-    mac "defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool $V; xcrun simctl shutdown booted 2>/dev/null; killall Simulator 2>/dev/null || true"
-    echo "soft keyboard $2 (hardware keyboard $([ "$2" = on ] && echo detached || echo attached)); re-run sim-open"
+  sim-keyboard) # on|off [device-name] — detach the hardware keyboard so the soft keyboard shows (restarts sims)
+    # Modern Simulator reads the per-device DevicePreferences key, NOT the legacy global
+    # ConnectHardwareKeyboard — writing only the global one silently does nothing.
+    [ "$2" = on ] && V=false && D=0 || { V=true; D=1; }
+    DEVICE=${3:-iPhone 16}
+    UDID=$(sim_udid "$DEVICE")
+    [ -n "$UDID" ] || { echo "no available device named '$DEVICE'" >&2; exit 1; }
+    mac "defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool $V; defaults write com.apple.iphonesimulator DevicePreferences -dict-add '$UDID' '{ConnectHardwareKeyboard = $D;}'; xcrun simctl shutdown booted 2>/dev/null; killall Simulator 2>/dev/null || true"
+    echo "soft keyboard $2 for $DEVICE ($UDID); re-run sim-open / sim-probe"
     ;;
 
   sim-stop)
@@ -123,6 +146,21 @@ case ${1:-help} in
     [ "${2:-}" = sim ] && CAPS='{"browserName":"safari","platformName":"ios","safari:useSimulator":true}'
     RESP=$(wd POST /session "{\"capabilities\":{\"alwaysMatch\":$CAPS}}")
     SID=$(echo "$RESP" | python3 -c "import json,sys; print(json.load(sys.stdin)['value'].get('sessionId',''))" 2>/dev/null || true)
+    if [ -z "$SID" ] && echo "$RESP" | grep -q "already paired"; then
+      # stale pairing from a dead session: drop it and restart the driver, then retry once
+      [ -f "$SID_FILE" ] && wd DELETE "/session/$(sid)" >/dev/null 2>&1 && rm -f "$SID_FILE"
+      pkill -f "ssh.*-L $DRIVER_PORT:localhost:$DRIVER_PORT" 2>/dev/null || true
+      mac 'pkill -x safaridriver 2>/dev/null || true'
+      ssh -f -T -o BatchMode=yes -o ExitOnForwardFailure=yes \
+        -L "$DRIVER_PORT:localhost:$DRIVER_PORT" "$MAC_HOST" \
+        "/usr/bin/safaridriver --port $DRIVER_PORT"
+      for _ in $(seq 1 10); do
+        curl -sf "http://localhost:$DRIVER_PORT/status" >/dev/null 2>&1 && break
+        sleep 1
+      done
+      RESP=$(wd POST /session "{\"capabilities\":{\"alwaysMatch\":$CAPS}}")
+      SID=$(echo "$RESP" | python3 -c "import json,sys; print(json.load(sys.stdin)['value'].get('sessionId',''))" 2>/dev/null || true)
+    fi
     if [ -z "$SID" ]; then echo "session failed: $RESP" >&2; exit 1; fi
     echo "$SID" > "$SID_FILE"
     echo "$RESP" | python3 -c "import json,sys; c=json.load(sys.stdin)['value']['capabilities']; print(c.get('safari:deviceName'), c.get('browserVersion'))"
