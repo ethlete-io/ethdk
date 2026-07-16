@@ -36,8 +36,11 @@ sid() { cat "$SID_FILE"; }
 sim_boot() { # <device-name> — launch Simulator.app (UI!), boot, and wait for SpringBoard.
   # simctl alone boots headless (black framebuffer, blank keyboard area, no window on
   # the Mac) and openurl right after bootstatus times out — SpringBoard isn't up yet.
-  # Fast path: device already booted + Simulator.app running → return in ~2s.
-  if mac 'xcrun simctl list devices booted | grep -q "(Booted)" && pgrep -xq Simulator'; then return 0; fi
+  # Fast path: THIS device already booted + Simulator.app running → return in ~2s. (Checking for
+  # any-booted is not enough: after `killall Simulator`, reopening the app auto-boots its
+  # last-used device, which may be a different model.)
+  if mac "xcrun simctl list devices booted | grep -qF \"$1 (\" && pgrep -xq Simulator"; then return 0; fi
+  mac 'xcrun simctl shutdown booted 2>/dev/null || true'   # a different auto-booted device would win all `booted` commands
   echo "booting $1 (cold boot can take ~60s; anything past that is an error, not patience)…" >&2
   mac "open -g \"\$(xcode-select -p)/Applications/Simulator.app\"; xcrun simctl boot \"$1\" 2>/dev/null || true; xcrun simctl bootstatus booted" >/dev/null
   # bounded SpringBoard wait — 20×3s max, then fail loudly instead of hanging forever
@@ -119,6 +122,15 @@ case ${1:-help} in
     UDID=$(mac 'xcrun simctl list devices booted' | grep -oE '[0-9A-F-]{36}' | head -1)
     TEXT=$(printf %q "$2")
     mac "export PATH=/usr/local/bin:\$PATH; ~/Library/Python/*/bin/idb ui text $TEXT --udid $UDID 2>/dev/null"
+    ;;
+
+  sim-keyboard-reset) # [device-name] — bring back soft-keyboard keys hidden by sim-type's HID keyboard events.
+    # `idb ui text` registers as a hardware keyboard; iOS then hides the keys (only the „Fertig"
+    # accessory bar shows). That state lives in the RUNNING Simulator.app process — it survives
+    # device reboots and pref writes, and dies only with the app. Restart it + reboot the device.
+    mac 'killall Simulator 2>/dev/null || true; xcrun simctl shutdown booted 2>/dev/null || true'
+    sim_boot "${2:-iPhone 16}"
+    echo "keyboard reset for ${2:-iPhone 16} — reopen your URL (sim-open/sim-probe) and tap a field"
     ;;
 
   sim-keyboard) # on|off [device-name] — detach the hardware keyboard so the soft keyboard shows (restarts sims)

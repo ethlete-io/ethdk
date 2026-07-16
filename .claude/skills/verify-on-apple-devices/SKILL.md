@@ -64,7 +64,9 @@ the session afterwards is the cheap part.
 | `sim-shot <out.png>` | Full-device screenshot (shows keyboard, browser chrome) |
 | `sim-tap <x> <y>` | Real touch tap via idb, device points |
 | `sim-type <text>` | Type on the open soft keyboard via idb |
+| `sim-swipe <x1> <y1> <x2> <y2> [dur]` | Real touch swipe via idb (device points), e.g. to scroll |
 | `sim-keyboard on\|off` | Detach/attach hardware keyboard (see keyboard section) |
+| `sim-keyboard-reset [device]` | Restore soft keys hidden by `sim-type` (restarts Simulator.app) |
 | `sim-stop` | Shut down booted simulators |
 | `ipad-start [sim]` | SSH tunnel + safaridriver + WebDriver session (real iPad, or booted sim with `sim`) |
 | `ipad-open <story-id>` | Navigate the session to a story |
@@ -146,16 +148,21 @@ readable — to see the zoom itself, open the bare story via `sim-open` and tap.
 - **`sim-type` goes through the real keyboard pipeline** — German autocorrect
   and auto-capitalization will mangle literal strings („dvh" → „Doch"). Fine for
   triggering keyboard behavior; don't assert on the exact text.
-- **idb input can flip the sim into stylus/hardware-input mode** — after
-  `sim-swipe` (and sometimes repeated `sim-tap`), iOS starts treating input as a
-  stylus/hardware pointer and the soft keyboard stays **minimized** (only the
-  „Fertig" accessory bar, no keys) — persisting across device reboots, with
-  `ConnectHardwareKeyboard` prefs correctly 0. The runtime toggle that clears it
-  is GUI-only: on the Mac, Simulator menu **I/O → Keyboard → Toggle Software
-  Keyboard (⌘K)** (System Events automation needs an Accessibility grant, so it
-  can't be scripted over SSH). The same applies to the Android emulator with
-  CDP-dispatched touches — prefer `adb shell input touchscreen tap/swipe`
-  (explicit source) and reboot the AVD to clear a stuck state.
+- **`sim-type` hides the soft keys — `sim-tap`/`sim-swipe` are safe.** `idb ui
+  text` sends HID *keyboard* events, so iOS treats it as a connected hardware
+  keyboard and hides the keys (only the „Fertig" accessory bar remains). That
+  state lives in the **running Simulator.app process**: it survives device
+  reboots and pref rewrites, and dies only with the app. Fix without touching
+  the Mac: **`sim-keyboard-reset`** (restarts Simulator.app + reboots the
+  device, ~60s). Taps and swipes go through the digitizer and do NOT trigger
+  this. On the Android emulator the analogue is CDP-dispatched input — prefer
+  `adb shell input touchscreen tap/swipe` (explicit source) and reboot the AVD
+  to clear a stuck state.
+- **`killall Simulator` also shuts the booted device down**, and reopening the
+  app auto-boots its *last-used* device — possibly a different model, which then
+  wins every `booted`-targeting command. `sim_boot`'s fast path checks for the
+  *requested* device and shuts down strays, but be aware when scripting
+  manually.
 - **WebDriver send-keys is a no-op on iOS** (real device *and* sim): the call
   succeeds, the field stays empty, no keyboard. Apple limitation — use JS to set
   values in WebDriver mode, or idb for real typing.
