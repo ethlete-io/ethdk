@@ -109,6 +109,13 @@
       pointer-events: auto;
     }
 
+    /* iOS Safari zooms the whole page when a focused editable's font-size is below 16px — floor
+       it there on touch devices (1em = the inherited size, so larger fonts pass through; on
+       desktop nothing changes). */
+    &.et-rich-text-editor--touch .et-rte-content {
+      font-size: max(1em, 16px);
+    }
+
     @media (prefers-reduced-motion: reduce) {
       &.et-rich-text-editor--touch .et-rte-toolbar {
         transition-duration: 0ms;
