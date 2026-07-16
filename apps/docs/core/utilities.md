@@ -56,8 +56,8 @@ Subscribe to host-element events from an injection context, cleaned up on destro
 
 ## Clipboard
 
-- `copyToClipboard(text)` — write text to the clipboard, resolving to `true` or `false` instead of throwing. Uses the async Clipboard API and falls back to a hidden-textarea `execCommand('copy')` when that is blocked (missing permission, insecure context). Focus is restored to the previously focused element after the fallback. SSR-safe.
-- `readFromClipboard()` — read text from the clipboard, resolving to the text or `null` when the Clipboard API is unavailable or reading is blocked.
+- `copyToClipboard(text)` — write text to the clipboard, returning a cold `Observable<boolean>` that emits `true` or `false` once and completes instead of erroring. The copy runs on subscribe. Uses the async Clipboard API and falls back to a hidden-textarea `execCommand('copy')` when that is blocked (missing permission, insecure context). Focus is restored to the previously focused element after the fallback. SSR-safe.
+- `readFromClipboard()` — read text from the clipboard, returning a cold `Observable<string | null>` that emits the text — or `null` when the Clipboard API is unavailable or reading is blocked — once and completes. The read runs on subscribe.
 
 ## Text & data
 

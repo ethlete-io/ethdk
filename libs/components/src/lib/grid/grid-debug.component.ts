@@ -209,7 +209,9 @@ export class GridDebugComponent {
       issues,
     };
 
-    copyToClipboard(JSON.stringify(snapshot, null, 2));
+    copyToClipboard(JSON.stringify(snapshot, null, 2))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe();
 
     this.copied.set(true);
     timer(2000)

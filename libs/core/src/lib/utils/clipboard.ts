@@ -1,31 +1,30 @@
-export const copyToClipboard = async (text: string): Promise<boolean> => {
-  if (typeof navigator === 'undefined' || typeof document === 'undefined') {
-    return false;
-  }
+import { Observable, catchError, defer, from, map, of } from 'rxjs';
 
-  if (navigator.clipboard) {
-    try {
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch {
-      // The async Clipboard API can be blocked (missing permission, insecure context) — try the legacy path.
+export const copyToClipboard = (text: string): Observable<boolean> =>
+  defer(() => {
+    if (typeof navigator === 'undefined' || typeof document === 'undefined') {
+      return of(false);
     }
-  }
 
-  return copyToClipboardViaExecCommand(text);
-};
+    if (navigator.clipboard) {
+      return from(navigator.clipboard.writeText(text)).pipe(
+        map(() => true),
+        // The async Clipboard API can be blocked (missing permission, insecure context) — try the legacy path.
+        catchError(() => of(copyToClipboardViaExecCommand(text))),
+      );
+    }
 
-export const readFromClipboard = async (): Promise<string | null> => {
-  if (typeof navigator === 'undefined' || !navigator.clipboard) {
-    return null;
-  }
+    return of(copyToClipboardViaExecCommand(text));
+  });
 
-  try {
-    return await navigator.clipboard.readText();
-  } catch {
-    return null;
-  }
-};
+export const readFromClipboard = (): Observable<string | null> =>
+  defer(() => {
+    if (typeof navigator === 'undefined' || !navigator.clipboard) {
+      return of(null);
+    }
+
+    return from(navigator.clipboard.readText()).pipe(catchError(() => of(null)));
+  });
 
 const copyToClipboardViaExecCommand = (text: string) => {
   const previouslyFocusedElement = document.activeElement;
