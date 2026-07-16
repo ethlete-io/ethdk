@@ -477,9 +477,10 @@ export class RichTextEditorComponent {
 
     const settle = () => {
       quietFrames = apply() ? 0 : quietFrames + 1;
-      // ~10 quiet frames (≈160ms) so the loop outlasts the keyboard show/hide animation even when
-      // iOS fires its last viewport event before the animation finishes
-      rafId = quietFrames < 10 ? view.requestAnimationFrame(settle) : null;
+      // ~30 quiet frames (≈500ms) so the loop outlasts the keyboard show/hide animation — iOS can
+      // fire its last viewport event right at the animation's start while the fixed-position rect
+      // keeps moving until the end
+      rafId = quietFrames < 30 ? view.requestAnimationFrame(settle) : null;
     };
 
     const kick = () => {
