@@ -233,6 +233,18 @@ export const matchCountryByDialCode = (digits: string): PhoneCountry | null => {
   return match;
 };
 
+/** Countries where a leading `0` is part of the international number (e.g. Italian landlines). */
+const TRUNK_ZERO_KEPT = new Set(['it', 'sm']);
+
+/**
+ * Strips the national trunk prefix `0` (`'0171…'` → `'171…'`) — in most countries it replaces
+ * the dial code in national notation and is never part of the international number. Countries
+ * that keep their leading `0` are exempt. A `00…` international prefix must be handled before
+ * calling this.
+ */
+export const stripTrunkZero = (nationalDigits: string, iso2: string) =>
+  nationalDigits.startsWith('0') && !TRUNK_ZERO_KEPT.has(iso2) ? nationalDigits.slice(1) : nationalDigits;
+
 /** Regional-indicator emoji for an ISO alpha-2 code (`'de'` → 🇩🇪). */
 export const phoneCountryFlag = (iso2: string) =>
   String.fromCodePoint(...Array.from(iso2.toUpperCase()).map((char) => 0x1f1a5 + char.charCodeAt(0)));

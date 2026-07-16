@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, computed, inject } from '@angular/core';
 import { ColorInteractiveDirective, injectLocale } from '@ethlete/core';
 import { SELECT_IMPORTS } from '../select';
@@ -6,6 +7,7 @@ import {
   PHONE_COUNTRIES,
   PhoneInputDirective,
   PhoneInputFieldDirective,
+  PhoneInputFlagContext,
   phoneCountryFlag,
   phoneCountryName,
 } from './headless';
@@ -15,7 +17,7 @@ import {
   templateUrl: './phone-input.component.html',
   styleUrl: './phone-input.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [...SELECT_IMPORTS, PhoneInputFieldDirective],
+  imports: [...SELECT_IMPORTS, PhoneInputFieldDirective, NgTemplateOutlet],
   // the country picker is a full [etSelect] composition living INSIDE this control — the
   // barrier stops it from registering itself as the surrounding form field's control
   viewProviders: [{ provide: FORM_FIELD_TOKEN, useValue: null }],
@@ -66,6 +68,14 @@ export class PhoneInputComponent {
   });
 
   protected activeFlag = computed(() => phoneCountryFlag(this.phone.country()));
+
+  protected activeFlagContext = computed<PhoneInputFlagContext>(() => {
+    const iso2 = this.phone.country();
+
+    return {
+      $implicit: { iso2, dialCode: this.phone.dialCode(), flag: phoneCountryFlag(iso2) },
+    };
+  });
 
   protected handleCountryChange(value: unknown) {
     if (typeof value === 'string') {

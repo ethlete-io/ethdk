@@ -11,12 +11,14 @@
     } @else if (select.multiple() && select.selectedEntries().length) {
       <!-- display: contents — the chips share the trigger's wrapping flex flow with the
            inline search input, tag-input style -->
+      <!-- readonly is not disabled: the chips keep their normal look, they just lose the
+           remove affordance -->
       <div class="et-select-chips">
         @for (entry of select.selectedEntries(); track entry.value) {
           <et-chip
-            [disabled]="select.disabled() || select.readonly()"
+            [disabled]="select.disabled()"
+            [removable]="!select.readonly() && !select.disabled()"
             (remove)="select.deselectValue(entry.value)"
-            removable
           >
             {{ entry.label }}
           </et-chip>
@@ -33,6 +35,11 @@
     <!-- combobox pattern: the search input sits inline in the field, not in the panel -->
     <ng-content select="input[etSelectSearch]" />
   </div>
+
+  <!-- async option state, surfaced in the field itself (mirrors the menu's search spinner) -->
+  @if (select.loading()) {
+    <et-spinner class="et-select-trigger-spinner" diameter="16" strokeWidth="2" />
+  }
 
   @if (showClear()) {
     <!-- pointer-only, out of the tab order — keyboard users clear via Backspace / erasing -->
@@ -104,7 +111,17 @@
 
     @if (select.hasMoreItems() && !select.loading()) {
       <button (click)="select.requestLoadMore()" class="et-select-load-more" tabindex="-1" type="button">
+        <i class="et-select-load-more-icon" etIcon="et-chevron" aria-hidden="true"></i>
         {{ loadMoreLabel() }}
+      </button>
+    }
+
+    @if (select.allowAddNew() && !select.loading()) {
+      <!-- pointer-only, like the load-more control — keyboard users reach the same flow
+           through the consumer's own UI (e.g. a button next to the field) -->
+      <button (click)="select.requestAddNew()" class="et-select-add-new" tabindex="-1" type="button">
+        <i class="et-select-add-new-icon" etIcon="et-plus" aria-hidden="true"></i>
+        {{ addNewLabel() }}
       </button>
     }
   </et-select-panel>

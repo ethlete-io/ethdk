@@ -84,10 +84,33 @@ describe('PhoneInputDirective', () => {
   });
 
   it('normalizes typed national digits into +dial value', () => {
-    type('0170 123');
+    type('170 123');
 
-    expect(fixture.componentInstance.value()).toBe('+490170123');
-    expect(phone.nationalNumber()).toBe('0170123');
+    expect(fixture.componentInstance.value()).toBe('+49170123');
+    expect(phone.nationalNumber()).toBe('170123');
+  });
+
+  it('strips the national trunk 0 ("0170…" means +49170…)', () => {
+    type('0170 1234567');
+
+    expect(fixture.componentInstance.value()).toBe('+491701234567');
+    expect(phone.nationalNumber()).toBe('1701234567');
+  });
+
+  it('keeps the leading 0 for countries where it is part of the number', () => {
+    phone.selectCountry('it');
+    fixture.detectChanges();
+    type('06 6981');
+
+    expect(fixture.componentInstance.value()).toBe('+39066981');
+    expect(phone.nationalNumber()).toBe('066981');
+  });
+
+  it('treats the 00 international call prefix like +', () => {
+    type('0033 1 23 45 67 89');
+
+    expect(phone.country()).toBe('fr');
+    expect(fixture.componentInstance.value()).toBe('+33123456789');
   });
 
   it('re-derives the country from a pasted international number', () => {

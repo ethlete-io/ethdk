@@ -19,6 +19,7 @@ const UNBOUND_VALUE = Symbol('et-select-option-unbound');
     '[attr.aria-disabled]': 'disabled() || null',
     '[attr.data-selected]': 'selected() || null',
     '[attr.data-active]': 'active() || null',
+    '[attr.data-active-source]': 'activeSource()',
     '[attr.data-filtered]': 'filteredOut() || null',
     '(click)': 'handleClick($event)',
     '(mousedown)': 'handleMousedown($event)',
@@ -76,6 +77,7 @@ export class SelectOptionDirective {
     label: this.label,
   };
   public active = computed(() => this.select?.activeItem() === this.listItem);
+  protected activeSource = computed(() => (this.active() ? (this.select?.activeItemSource() ?? null) : null));
 
   /** With internal filtering, true while the option does not match the search query. Hide it via CSS. */
   public filteredOut = computed(() => {
@@ -149,6 +151,6 @@ export class SelectOptionDirective {
       return;
     }
 
-    this.select?.setActiveItem(this.listItem, { scroll: false });
+    this.select?.setActiveItem(this.listItem, { scroll: false, source: 'pointer' });
   }
 }

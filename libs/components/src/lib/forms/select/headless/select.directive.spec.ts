@@ -70,6 +70,7 @@ class SelectTestHost {
     <et-select
       [value]="value()"
       [multiple]="true"
+      [readonly]="readonly()"
       (valueChange)="value.set($event)"
       class="select"
       placeholder="Pick fruits"
@@ -83,6 +84,7 @@ class SelectTestHost {
 })
 class MultiSelectTestHost {
   value = signal<unknown>([]);
+  readonly = signal(false);
 }
 
 @Component({
@@ -125,6 +127,7 @@ class SearchableCustomValueTestHost {
     <et-select
       [value]="value()"
       [allowCustomValues]="allowCustom()"
+      [allowAddNew]="allowAddNew()"
       [multiple]="multiple()"
       [loading]="loading()"
       [error]="error()"
@@ -132,6 +135,7 @@ class SearchableCustomValueTestHost {
       (valueChange)="value.set($event)"
       (queryChange)="queries.push($event)"
       (loadMoreRequested)="loadMoreCount = loadMoreCount + 1"
+      (addNewRequested)="addNewQueries.push($event)"
       class="select"
       placeholder="Pick a fruit"
     >
@@ -146,11 +150,13 @@ class SearchableCustomValueTestHost {
 class SearchSelectTestHost {
   value = signal<unknown>(null);
   allowCustom = signal(false);
+  allowAddNew = signal(false);
   multiple = signal(false);
   loading = signal(false);
   error = signal<string | null>(null);
   hasMore = signal(false);
   queries: string[] = [];
+  addNewQueries: string[] = [];
   loadMoreCount = 0;
 }
 
@@ -428,6 +434,17 @@ describe('SelectDirective (multiple)', () => {
   it('shows the placeholder while nothing is selected', () => {
     expect(trigger.querySelector('.et-select-value')?.textContent?.trim()).toBe('Pick fruits');
     expect(trigger.querySelectorAll('et-chip').length).toBe(0);
+  });
+
+  it('renders readonly chips without the remove affordance and without the disabled look', () => {
+    fixture.componentInstance.value.set(['apple']);
+    fixture.componentInstance.readonly.set(true);
+    fixture.detectChanges();
+
+    const chip = trigger.querySelector<HTMLElement>('et-chip')!;
+
+    expect(chip.querySelector('.et-chip-remove-button')).toBeNull();
+    expect(chip.hasAttribute('data-disabled')).toBe(false);
   });
 });
 
@@ -738,6 +755,41 @@ describe('SelectDirective (search)', () => {
     tick();
 
     expect(fixture.componentInstance.loadMoreCount).toBe(1);
+  });
+
+  it('emits addNewRequested with the current query from the add-new row and closes', async () => {
+    fixture.componentInstance.allowAddNew.set(true);
+    fixture.detectChanges();
+
+    await openSelect();
+
+    typeQuery('drag');
+
+    pane()!.querySelector<HTMLElement>('.et-select-add-new')!.click();
+    tick();
+
+    expect(fixture.componentInstance.addNewQueries).toEqual(['drag']);
+    expect(select.open()).toBe(false);
+  });
+
+  it('marks pointer-set virtual focus as such (the highlight only paints while hovered)', async () => {
+    await openSelect();
+
+    // initial virtual focus comes from the open logic — keyboard-grade, always highlighted
+    expect(activeOption()?.getAttribute('data-active-source')).toBe('keyboard');
+
+    const banana = visibleOptions()[1]!;
+
+    banana.dispatchEvent(new PointerEvent('pointerenter', { bubbles: false }));
+    tick();
+
+    expect(activeOption()?.textContent?.trim()).toBe('Banana');
+    expect(activeOption()?.getAttribute('data-active-source')).toBe('pointer');
+
+    keydownOnSearch('ArrowDown');
+
+    expect(activeOption()?.textContent?.trim()).toBe('Cherry');
+    expect(activeOption()?.getAttribute('data-active-source')).toBe('keyboard');
   });
 });
 

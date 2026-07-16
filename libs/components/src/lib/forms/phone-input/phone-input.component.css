@@ -33,6 +33,11 @@
       }
     }
 
+    .et-phone-input-country-flag {
+      display: inline-flex;
+      align-items: center;
+    }
+
     .et-phone-input-dial-code {
       color: var(--et-surface-color-muted-solid, currentColor);
       font-variant-numeric: tabular-nums;
@@ -61,43 +66,86 @@
   }
 
   /* panel content of the country picker (rendered in the overlay pane) */
+  .et-phone-input-country-panel {
+    /* a fixed width — with content-derived sizing, filtering would resize the panel
+       horizontally on every keystroke (the widest visible item keeps changing) */
+    inline-size: min(320px, calc(100vw - 24px));
+  }
+
   .et-phone-input-country-search {
     position: sticky;
     inset-block-start: calc(var(--et-select-panel-padding, 6px) * -1);
     margin-block-start: calc(var(--et-select-panel-padding, 6px) * -1);
     margin-inline: calc(var(--et-select-panel-padding, 6px) * -1);
     margin-block-end: var(--et-select-panel-padding, 6px);
-    padding: var(--et-select-panel-padding, 6px);
+    padding: 8px;
     background: var(--et-surface-background-solid, rgb(32 32 32));
     border-block-end: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
     z-index: 1;
 
+    /* mirrors the menu's search field (input[etmenusearch] in menu.component.css) */
     input[etselectsearch] {
       inline-size: 100%;
+      block-size: 36px;
       box-sizing: border-box;
-      border: none;
-      outline: none;
-      background: transparent;
-      font: inherit;
+      padding-inline: 10px;
+      border-radius: 6px;
+      border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+      background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 6%, transparent);
       color: inherit;
-      padding: 4px 6px;
+      font: inherit;
+      outline: none;
       caret-color: var(--et-theme-color-primary-solid, currentColor);
+      transition:
+        border-color 120ms ease,
+        background 120ms ease;
+
+      &:focus-visible {
+        border-color: var(--et-theme-color-primary-solid, rgb(255 255 255 / 0.3));
+      }
 
       &::placeholder {
-        color: color-mix(in srgb, currentColor 46%, transparent);
+        color: var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55));
       }
     }
   }
 
+  /* the projected option content (flag, name, dial code) shares the option's label slot —
+     lay it out as a flex row so the pieces get breathing room */
+  .et-phone-input-country-panel .et-select-option-label {
+    display: flex;
+    align-items: center;
+    gap: var(--et-select-option-gap, 8px);
+    flex: 1;
+    min-inline-size: 0;
+  }
+
+  .et-phone-input-option-flag {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .et-phone-input-option-name {
     flex: 1;
+    min-inline-size: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .et-phone-input-option-dial {
+    flex: none;
     color: var(--et-surface-color-muted-solid, currentColor);
     font-variant-numeric: tabular-nums;
+  }
+
+  /* light default sizing for custom flag art (etPhoneInputFlag) */
+  .et-phone-input-country-flag :is(img, svg),
+  .et-phone-input-option-flag :is(img, svg) {
+    display: block;
+    inline-size: 20px;
+    block-size: auto;
   }
 }

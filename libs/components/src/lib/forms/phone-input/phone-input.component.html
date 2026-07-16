@@ -7,22 +7,42 @@
   etSelect
 >
   <button [disabled]="phone.disabled()" class="et-phone-input-country-trigger" etSelectTrigger type="button">
-    <span class="et-phone-input-country-flag" aria-hidden="true">{{ activeFlag() }}</span>
+    <span class="et-phone-input-country-flag" aria-hidden="true">
+      @if (phone.registeredFlagTemplate(); as flagTemplate) {
+        <ng-template [ngTemplateOutlet]="flagTemplate.templateRef" [ngTemplateOutletContext]="activeFlagContext()" />
+      } @else {
+        {{ activeFlag() }}
+      }
+    </span>
     <span class="et-phone-input-dial-code">+{{ phone.dialCode() }}</span>
   </button>
 
-  <ng-template etSelectSurface>
-    <et-select-panel>
+  <ng-template etSelectSurface let-select>
+    <et-select-panel class="et-phone-input-country-panel">
       <div class="et-phone-input-country-search">
         <input etSelectSearch placeholder="Search countries" />
       </div>
 
+      <!-- the label carries the dial code too, so searching by "+49" / "49" works -->
       @for (country of countries(); track country.iso2) {
-        <et-select-option [label]="country.name" [value]="country.iso2">
-          <span aria-hidden="true">{{ country.flag }}</span>
+        <et-select-option [label]="country.name + ' +' + country.dialCode" [value]="country.iso2">
+          <span class="et-phone-input-option-flag" aria-hidden="true">
+            @if (phone.registeredFlagTemplate(); as flagTemplate) {
+              <ng-template
+                [ngTemplateOutlet]="flagTemplate.templateRef"
+                [ngTemplateOutletContext]="{ $implicit: country }"
+              />
+            } @else {
+              {{ country.flag }}
+            }
+          </span>
           <span class="et-phone-input-option-name">{{ country.name }}</span>
           <span class="et-phone-input-option-dial">+{{ country.dialCode }}</span>
         </et-select-option>
+      }
+
+      @if (!select.visibleItems().length) {
+        <div class="et-select-state et-select-state--empty">No countries found</div>
       }
     </et-select-panel>
   </ng-template>

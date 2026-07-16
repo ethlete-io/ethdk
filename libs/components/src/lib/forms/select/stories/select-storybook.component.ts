@@ -235,6 +235,82 @@ export class FormFieldSelectCountryStorybookComponent {
   }
 }
 
+@Component({
+  selector: 'et-sb-form-field-select-add-new',
+  template: `
+    <div class="flex max-w-md flex-col gap-4 p-8 font-sans" etProvideColor="brand">
+      <et-form-field>
+        <et-label>Project</et-label>
+        <et-select
+          [formField]="demoForm.value"
+          [allowAddNew]="true"
+          (addNewRequested)="createProject($event)"
+          addNewLabel="Create a new project"
+          placeholder="Pick a project"
+        >
+          <input etSelectSearch placeholder="Search projects" />
+          @for (project of projects(); track project) {
+            <et-select-option [value]="project">{{ project }}</et-select-option>
+          }
+        </et-select>
+        <et-hint>The add-new row emits the current query — here it creates and selects the option</et-hint>
+      </et-form-field>
+
+      <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...FORM_FIELD_IMPORTS, ...SELECT_IMPORTS, FormField, JsonPipe, ProvideColorDirective],
+})
+export class FormFieldSelectAddNewStorybookComponent {
+  protected projects = signal(['Website relaunch', 'Mobile app', 'Design system']);
+
+  private formModel = linkedSignal(() => ({ value: null as string | null }));
+  public demoForm = form(this.formModel);
+
+  protected createProject(query: string) {
+    // a real app would open a creation dialog here — the emitted query prefills it
+    const name = query || `Project ${this.projects().length + 1}`;
+
+    if (!this.projects().includes(name)) {
+      this.projects.update((projects) => [...projects, name]);
+    }
+
+    this.formModel.set({ value: name });
+  }
+}
+
+@Component({
+  selector: 'et-sb-form-field-select-many-options',
+  template: `
+    <div class="flex max-w-md flex-col gap-4 p-8 font-sans" etProvideColor="brand">
+      <et-form-field>
+        <et-label>Item</et-label>
+        <et-select [formField]="demoForm.value" placeholder="Pick an item">
+          <input etSelectSearch placeholder="Search 2000 items" />
+          @for (item of ITEMS; track item.value) {
+            <et-select-option [value]="item.value">{{ item.label }}</et-select-option>
+          }
+        </et-select>
+        <et-hint>2000 rendered options — offscreen ones skip layout/paint via content-visibility</et-hint>
+      </et-form-field>
+
+      <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...FORM_FIELD_IMPORTS, ...SELECT_IMPORTS, FormField, JsonPipe, ProvideColorDirective],
+})
+export class FormFieldSelectManyOptionsStorybookComponent {
+  protected readonly ITEMS = Array.from({ length: 2000 }, (_, index) => ({
+    value: `item-${index + 1}`,
+    label: `Item ${index + 1} — ${FRUIT_OPTIONS[index % FRUIT_OPTIONS.length]!.label}`,
+  }));
+
+  private formModel = linkedSignal(() => ({ value: null as string | null }));
+  public demoForm = form(this.formModel);
+}
+
 const COUNTRY_OPTIONS = [
   { iso: 'br', name: 'Brazil', flag: '🇧🇷' },
   { iso: 'de', name: 'Germany', flag: '🇩🇪' },

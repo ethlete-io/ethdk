@@ -74,10 +74,11 @@
     color: var(--et-surface-color-solid, rgb(244 244 245));
     box-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
 
+    /* left-aligned like the options themselves; the error text mirrors the menu's
+       .et-menu-search-error styling */
     .et-select-state {
       display: flex;
       align-items: center;
-      justify-content: center;
       gap: 8px;
       min-block-size: var(--et-select-option-height, 36px);
       padding-inline: var(--et-select-option-padding-inline, 10px);
@@ -85,24 +86,43 @@
       color: var(--et-surface-color-muted-solid, currentColor);
 
       &.et-select-state--error {
-        color: var(--et-theme-color-primary-solid, currentColor);
+        font-size: 12px;
+        /* the element carries the error color theme via etProvideColor */
+        color: var(--et-theme-color-primary-solid, rgb(248 113 113));
       }
     }
 
-    .et-select-load-more {
+    /* action rows (load more, add new): left-aligned with the options but visually
+       distinct — accent ink color, a leading icon and a full-bleed separator on top */
+    .et-select-load-more,
+    .et-select-add-new {
+      position: relative;
       display: flex;
       align-items: center;
-      justify-content: center;
+      gap: var(--et-select-option-gap, 8px);
       inline-size: 100%;
       min-block-size: var(--et-select-option-height, 36px);
+      margin-block-start: 7px;
+      padding-inline: var(--et-select-option-padding-inline, 10px);
       border: none;
       border-radius: var(--et-select-option-border-radius, 6px);
       background: transparent;
       font: inherit;
       font-size: var(--et-select-option-font-size, 14px);
+      text-align: start;
       color: var(--et-theme-color-ink-solid, currentColor);
       cursor: pointer;
       appearance: none;
+      transition: background 120ms ease;
+
+      &::before {
+        content: '';
+        position: absolute;
+        inset-inline: calc(var(--et-select-panel-padding, 6px) * -1);
+        inset-block-start: -4px;
+        block-size: 1px;
+        background: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+      }
 
       &:hover {
         background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 12%, transparent);
@@ -111,6 +131,26 @@
       &:active {
         background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 20%, transparent);
       }
+
+      .et-icon {
+        flex: none;
+        inline-size: 16px;
+        block-size: 16px;
+      }
+    }
+
+    /* adjacent action rows share the first row's separator */
+    .et-select-load-more + .et-select-add-new {
+      margin-block-start: 2px;
+
+      &::before {
+        content: none;
+      }
+    }
+
+    .et-select-load-more-icon {
+      /* the registered chevron icon points up natively — load-more points down */
+      rotate: 180deg;
     }
   }
 }

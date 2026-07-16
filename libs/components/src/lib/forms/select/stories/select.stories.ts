@@ -1,7 +1,9 @@
 import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 import {
+  FormFieldSelectAddNewStorybookComponent,
   FormFieldSelectAsyncStorybookComponent,
   FormFieldSelectCountryStorybookComponent,
+  FormFieldSelectManyOptionsStorybookComponent,
   FormFieldSelectStorybookComponent,
 } from './select-storybook.component';
 
@@ -87,4 +89,14 @@ export const AsyncOptions: StoryObj<FormFieldSelectAsyncStorybookComponent> = {
 export const CountryWithFlags: StoryObj<FormFieldSelectCountryStorybookComponent> = {
   decorators: [moduleMetadata({ imports: [FormFieldSelectCountryStorybookComponent] })],
   render: () => ({ template: `<et-sb-form-field-select-country />` }),
+};
+
+export const AddNewOption: StoryObj<FormFieldSelectAddNewStorybookComponent> = {
+  decorators: [moduleMetadata({ imports: [FormFieldSelectAddNewStorybookComponent] })],
+  render: () => ({ template: `<et-sb-form-field-select-add-new />` }),
+};
+
+export const ManyOptions: StoryObj<FormFieldSelectManyOptionsStorybookComponent> = {
+  decorators: [moduleMetadata({ imports: [FormFieldSelectManyOptionsStorybookComponent] })],
+  render: () => ({ template: `<et-sb-form-field-select-many-options />` }),
 };

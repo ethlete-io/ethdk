@@ -18,6 +18,7 @@ import { SelectDirective } from './select.directive';
     '[attr.aria-labelledby]': 'labelledBy()',
     '[attr.aria-disabled]': 'select?.disabled() || null',
     '[attr.data-disabled]': 'select?.disabled() || null',
+    '[attr.data-readonly]': 'select?.readonly() || null',
     '[attr.tabindex]': 'tabIndex()',
     '[attr.data-select-open]': 'isOpen() || null',
     '(click)': 'handleClick()',

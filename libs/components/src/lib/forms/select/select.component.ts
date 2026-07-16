@@ -2,7 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
 import { ColorInteractiveDirective, ProvideColorDirective, injectErrorTheme } from '@ethlete/core';
 import { ChipComponent } from '../../chip';
-import { CHEVRON_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../icon';
+import { CHEVRON_ICON, IconDirective, PLUS_ICON, TIMES_ICON, provideIcons } from '../../icon';
 import { SpinnerComponent } from '../../loader';
 import { SelectDirective, SelectSurfaceDirective, SelectTriggerDirective, SelectValueContext } from './headless';
 import { SelectPanelComponent } from './select-panel.component';
@@ -22,7 +22,7 @@ import { SelectPanelComponent } from './select-panel.component';
     SpinnerComponent,
     ProvideColorDirective,
   ],
-  providers: [provideIcons(CHEVRON_ICON, TIMES_ICON)],
+  providers: [provideIcons(CHEVRON_ICON, TIMES_ICON, PLUS_ICON)],
   hostDirectives: [
     {
       directive: SelectDirective,
@@ -40,11 +40,12 @@ import { SelectPanelComponent } from './select-panel.component';
         'name',
         'filterMode',
         'allowCustomValues',
+        'allowAddNew',
         'loading',
         'error',
         'hasMoreItems',
       ],
-      outputs: ['valueChange', 'touchedChange', 'openChange', 'queryChange', 'loadMoreRequested'],
+      outputs: ['valueChange', 'touchedChange', 'openChange', 'queryChange', 'loadMoreRequested', 'addNewRequested'],
     },
     ColorInteractiveDirective,
   ],
@@ -57,6 +58,7 @@ export class SelectComponent {
   protected errorColorTheme = injectErrorTheme();
 
   public loadMoreLabel = input('Load more');
+  public addNewLabel = input('Add new');
   /** Shows a clear (×) control while a value is selected. */
   public clearable = input(true);
   public clearLabel = input('Clear');

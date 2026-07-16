@@ -27,6 +27,10 @@
         cursor: not-allowed;
       }
 
+      &[data-readonly] {
+        cursor: default;
+      }
+
       /* the content wraps (chips, inline search) — the chevron stays outside this flow,
          pinned to the field's end */
       .et-select-trigger-content {
@@ -118,6 +122,12 @@
        after the last chip, tag-input style) */
     .et-select-chips {
       display: contents;
+    }
+
+    /* async option loading, surfaced in the field (mirrors the menu's search spinner) */
+    .et-select-trigger-spinner {
+      flex: none;
+      color: var(--et-surface-color-muted-solid, currentColor);
     }
 
     .et-select-clear {

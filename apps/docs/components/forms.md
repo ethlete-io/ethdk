@@ -217,7 +217,17 @@ A tel input with a searchable country picker (the [select](/components/select) h
 | `defaultCountry`     | `string`   | `'us'`  | ISO alpha-2 country used while the value carries none. |
 | `preferredCountries` | `string[]` | `[]`    | Listed on top of the country dropdown.                 |
 
-Typing national digits builds the `+dial` value; typing or pasting a full `+…` number re-derives the country by longest dial-code match — but a manually picked country survives shared dial codes (`+1` stays Canada if you chose Canada). Switching countries keeps the national number. The display groups digits in threes while unfocused (**cosmetic only** — not per-country metadata formatting; validate on the backend/schema, with `isPlausible` as a cheap length-window helper).
+Typing national digits builds the `+dial` value; a national trunk `0` is stripped (`0171…` with Germany active → `+49171…` — except for countries like Italy where the `0` is part of the number), and the `00` international call prefix works like `+` (`0049…` → `+49…`). Typing or pasting a full `+…` number re-derives the country by longest dial-code match — but a manually picked country survives shared dial codes (`+1` stays Canada if you chose Canada). Switching countries keeps the national number. The display groups digits in threes while unfocused (**cosmetic only** — not per-country metadata formatting; validate on the backend/schema, with `isPlausible` as a cheap length-window helper).
+
+The country dropdown searches names **and** dial codes (`49` or `+49` finds Germany) and shows an empty row when nothing matches. Replace the emoji flags (trigger and option list) with custom art by projecting an `ng-template[etPhoneInputFlag]` — it receives the country (`iso2`, `dialCode`, and the default emoji `flag`) as context:
+
+```html
+<et-phone-input [formField]="demoForm.phone">
+  <ng-template etPhoneInputFlag let-country>
+    <img [src]="'/flags/' + country.iso2 + '.svg'" alt="" />
+  </ng-template>
+</et-phone-input>
+```
 
 ## Selection lists
 

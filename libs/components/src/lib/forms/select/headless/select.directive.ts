@@ -14,10 +14,10 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { RuntimeError, nextFrame } from '@ethlete/core';
-import { fromEvent, take, tap } from 'rxjs';
+import { EMPTY, fromEvent, switchMap, take, tap } from 'rxjs';
 import { sortByDomOrder } from '../../../internals/dom-order';
 import { createTypeahead } from '../../../internals/typeahead';
 import { OverlayConfig } from '../../../overlay/overlay-config';
@@ -47,6 +47,10 @@ export const SELECT_FILTER_MODES = {
 
 export type SelectFilterMode = (typeof SELECT_FILTER_MODES)[keyof typeof SELECT_FILTER_MODES];
 
+// interactive elements inside the form field frame (affix buttons etc.) own their clicks —
+// a frame click only opens the select when it lands on none of these
+const INTERACTIVE_TAGS = ['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA'];
+
 @Directive({
   selector: '[etSelect]',
   exportAs: 'etSelect',
@@ -75,6 +79,8 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   public filterMode = input<SelectFilterMode>(SELECT_FILTER_MODES.INTERNAL);
   /** Enter with a search query that matches no option commits the raw query string as the value. */
   public allowCustomValues = input(false);
+  /** Renders an "Add new" row in `et-select`'s panel — clicking it emits `addNewRequested`. */
+  public allowAddNew = input(false);
   /** Async option state — rendered by `et-select` as a loading row inside the panel. */
   public loading = input(false);
   /** Async option state — rendered by `et-select` as an error row inside the panel. */
@@ -86,6 +92,8 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
   public queryChange = output<string>();
   public loadMoreRequested = output<void>();
+  /** The user picked the "Add new" row (`allowAddNew`). Emits the current search query for prefilling. */
+  public addNewRequested = output<string>();
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
 
@@ -125,6 +133,13 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   public overlayRef = signal<OverlayRef<OverlayTemplateHostComponent, unknown> | null>(null);
   /** @internal The option that holds virtual focus while the listbox is open. */
   public activeItem = signal<SelectItem | null>(null);
+  /**
+   * @internal How the current active item was set. A pointer-set highlight only paints while
+   * the pointer is actually over the option (mirrors the menu, where leaving the list drops
+   * the highlight) — a keyboard-set one must stay visible without hover, because options
+   * only ever hold virtual focus.
+   */
+  public activeItemSource = signal<'keyboard' | 'pointer'>('keyboard');
 
   public selection = createSelectionState<unknown, SelectItem>({
     value: this.value,
@@ -312,6 +327,17 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
       });
     });
 
+    // inside a form field the visible box is the field's control frame, which extends beyond
+    // the trigger (padding, prefix/suffix areas) — a click anywhere on it should open the
+    // panel like a click on the trigger itself, instead of only focusing the control
+    toObservable(computed(() => this.formField?.controlFrameElement() ?? null))
+      .pipe(
+        switchMap((frame) => (frame ? fromEvent<MouseEvent>(frame, 'click') : EMPTY)),
+        tap((event) => this.handleFrameClick(event)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
     this.destroyRef.onDestroy(() => {
       this.typeahead.destroy();
       this.detachInteractionListeners();
@@ -414,6 +440,20 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     this.loadMoreRequested.emit();
   }
 
+  /**
+   * Emits `addNewRequested` with the current search query and closes the panel — wired to
+   * the panel's "Add new" row (`allowAddNew`). The consumer reacts by e.g. opening a
+   * creation dialog and, once the new option exists, setting it as the value.
+   */
+  public requestAddNew() {
+    if (this.disabled() || this.readonly()) {
+      return;
+    }
+
+    this.addNewRequested.emit(this.query().trim());
+    this.hide();
+  }
+
   /** Deselects a selected option (multi select) — e.g. from a chip's remove button. */
   public deselectOption(item: SelectItem) {
     if (item.disabled() || !item.checked()) {
@@ -461,8 +501,9 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   }
 
   /** @internal */
-  public setActiveItem(item: SelectItem, options?: { scroll?: boolean }) {
+  public setActiveItem(item: SelectItem, options?: { scroll?: boolean; source?: 'keyboard' | 'pointer' }) {
     this.activeItem.set(item);
+    this.activeItemSource.set(options?.source ?? 'keyboard');
 
     if (options?.scroll !== false) {
       item.elementRef.nativeElement.scrollIntoView?.({ block: 'nearest' });
@@ -691,6 +732,42 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   // button — anchor (and width-mirror) the panel to the frame so it lines up with the field
   private resolveAnchorElement() {
     return this.formField?.controlFrameElement() ?? this.registeredTrigger()?.elementRef.nativeElement;
+  }
+
+  private handleFrameClick(event: MouseEvent) {
+    const target = event.target;
+    const frame = event.currentTarget;
+
+    if (!(target instanceof HTMLElement) || !(frame instanceof HTMLElement) || this.disabled() || this.readonly()) {
+      return;
+    }
+
+    // the trigger (and everything inside it — chips, clear, chevron, inline search) already
+    // handles its own clicks; clicks on (or inside) interactive affix content keep their
+    // own behavior too
+    if (this.registeredTrigger()?.elementRef.nativeElement.contains(target)) {
+      return;
+    }
+
+    for (let element: HTMLElement | null = target; element && element !== frame; element = element.parentElement) {
+      if (INTERACTIVE_TAGS.includes(element.tagName) || element.isContentEditable) {
+        return;
+      }
+    }
+
+    const search = this.registeredSearch();
+
+    if (search) {
+      // same contract as a trigger click: the field click focuses the inline search input
+      // and opens — only the chevron toggles closed
+      this.show();
+      search.focus();
+
+      return;
+    }
+
+    this.registeredTrigger()?.elementRef.nativeElement.focus({ preventScroll: true });
+    this.toggle();
   }
 
   private mountOverlay() {

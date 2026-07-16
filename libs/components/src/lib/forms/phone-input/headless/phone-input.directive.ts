@@ -1,8 +1,9 @@
 import { DestroyRef, Directive, computed, inject, input, linkedSignal, model, signal } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
-import { PHONE_COUNTRIES, matchCountryByDialCode } from './phone-countries';
+import { PHONE_COUNTRIES, matchCountryByDialCode, stripTrunkZero } from './phone-countries';
 import { PhoneInputFieldDirective } from './phone-input-field.directive';
+import { PhoneInputFlagDirective } from './phone-input-flag.directive';
 
 const onlyDigits = (raw: string) => raw.replace(/\D/g, '');
 
@@ -41,6 +42,8 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
 
   /** @internal */
   public registeredField = signal<PhoneInputFieldDirective | null>(null);
+  /** @internal Replaces the emoji flags in the trigger and the option list. */
+  public registeredFlagTemplate = signal<PhoneInputFlagDirective | null>(null);
 
   public interactive = computed(() => !this.disabled() && !this.readonly());
 
@@ -117,23 +120,26 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
   }
 
   /**
-   * @internal Wired to the tel field. Raw text starting with `+` re-derives the country by
-   * longest dial-code match; anything else is national digits for the active country.
+   * @internal Wired to the tel field. Raw text starting with `+` (or the `00` international
+   * call prefix) re-derives the country by longest dial-code match; anything else is national
+   * digits for the active country, with a national trunk `0` stripped where applicable
+   * (`0171…` with Germany active → `+49171…`).
    */
   public setNationalInput(raw: string) {
     const trimmed = raw.trim();
+    const digits = onlyDigits(trimmed);
 
-    if (trimmed.startsWith('+')) {
-      const digits = onlyDigits(trimmed);
+    if (trimmed.startsWith('+') || digits.startsWith('00')) {
+      const international = digits.startsWith('00') ? digits.slice(2) : digits;
 
-      this.value.set(digits ? `+${digits}` : '');
+      this.value.set(international ? `+${international}` : '');
 
       return;
     }
 
-    const digits = onlyDigits(trimmed);
+    const national = stripTrunkZero(digits, this.country());
 
-    this.value.set(digits ? `+${this.dialCode()}${digits}` : '');
+    this.value.set(national ? `+${this.dialCode()}${national}` : '');
   }
 
   private dialCodeOf(iso2: string) {

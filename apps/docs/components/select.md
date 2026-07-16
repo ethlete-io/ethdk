@@ -33,14 +33,16 @@ On `et-select` (forwarded from the headless `[etSelect]` directive), plus the st
 | `multiple`          | `boolean`                            | `false`      | Multi-select: `value` is an array, options toggle (the panel stays open) and the trigger renders removable chips.                                           |
 | `filterMode`        | `'none' \| 'internal' \| 'external'` | `'internal'` | How a search query filters: `internal` hides non-matching options, `external` leaves the option list to you (react to `queryChange`), `none` never filters. |
 | `allowCustomValues` | `boolean`                            | `false`      | Enter with a query that matches no option commits the raw string as the value.                                                                              |
-| `loading`           | `boolean`                            | `false`      | Shows a loading row in the panel (override with `ng-template[etSelectLoading]`).                                                                            |
+| `allowAddNew`       | `boolean`                            | `false`      | Renders an "Add new" action row at the end of the panel that emits `addNewRequested` (label via `addNewLabel`).                                             |
+| `loading`           | `boolean`                            | `false`      | Shows a spinner in the field and a loading row in the panel (override the row with `ng-template[etSelectLoading]`).                                         |
 | `error`             | `string \| null`                     | `null`       | Shows an error row in the panel (override with `ng-template[etSelectError]`, error text as context).                                                        |
 | `hasMoreItems`      | `boolean`                            | `false`      | Shows a load-more control emitting `loadMoreRequested` (label via `loadMoreLabel`).                                                                         |
 
-| Output              | Payload  | Emitted when                                |
-| ------------------- | -------- | ------------------------------------------- |
-| `queryChange`       | `string` | The search query changes (every keystroke). |
-| `loadMoreRequested` | `void`   | The load-more control is activated.         |
+| Output              | Payload  | Emitted when                                                                              |
+| ------------------- | -------- | ----------------------------------------------------------------------------------------- |
+| `queryChange`       | `string` | The search query changes (every keystroke).                                               |
+| `loadMoreRequested` | `void`   | The load-more control is activated.                                                       |
+| `addNewRequested`   | `string` | The add-new row is picked; the payload is the current search query (prefill your dialog). |
 
 On `et-select-option`:
 
@@ -56,7 +58,7 @@ The trigger resolves the selected value's label from the options — including a
 
 <StoryEmbed id="components-forms-select--multiple" height="420px" />
 
-With `multiple`, each selected value renders as a removable chip in the trigger; a chip's remove button (or Backspace/Delete on a chip) deselects that value without opening the panel, and the chips row wraps, growing the field. Committing an option toggles it and keeps the panel open — Escape, Tab or clicking outside close it.
+With `multiple`, each selected value renders as a removable chip in the trigger; a chip's remove button (or Backspace/Delete on a chip) deselects that value without opening the panel, and the chips row wraps, growing the field. Committing an option toggles it and keeps the panel open — Escape, Tab or clicking outside close it. While `readonly`, the chips keep their normal (non-disabled) look but drop the remove button; while `disabled`, they render dimmed without it.
 
 ### Custom trigger value
 
@@ -132,6 +134,27 @@ The factory debounces the query (`debounceTime`, default 300ms), skips requests 
 
 With `allowCustomValues`, <kbd>Enter</kbd> on a query that matches no option commits the raw string — in multi mode it becomes a chip and the search clears, covering tag-input-style flows.
 
+Prefer this over [`et-tag-input`](/components/forms#tag-input-—-et-tag-input) whenever suggestions/autocomplete are involved: the tag input is the plain free-text variant (separators, paste splitting, `maxTags`) with no option list, while a multi custom-value select is the same UX **plus** options.
+
+### Adding new options
+
+With `allowAddNew`, the panel ends in a distinct "Add new" action row (label via `addNewLabel`). Picking it emits `(addNewRequested)` with the current search query and closes the panel — open a creation dialog (or create inline), then set the new value yourself:
+
+```html
+<et-select [formField]="form.project" (addNewRequested)="openCreateProjectDialog($event)" allowAddNew>
+  <input etSelectSearch placeholder="Search projects" />
+  @for (project of projects(); track project.id) {
+  <et-select-option [value]="project.id">{{ project.name }}</et-select-option>
+  }
+</et-select>
+```
+
+Unlike `allowCustomValues` (which commits the raw query string directly), the add-new flow leaves creating the value entirely to you — use it when new entries need real backing data. See the `AddNewOption` story for a working example.
+
+## Large option lists
+
+Options render with `content-visibility: auto`, so offscreen rows skip layout and paint entirely — a panel with a few thousand projected options stays responsive while scrolling and filtering (see the `ManyOptions` story with 2000 options). Angular still creates every option instance, so for very large or unbounded datasets prefer the [async options](#async-options) pattern: filter server-side via `filterMode="external"` and page with `hasMoreItems`/`loadMoreRequested` instead of rendering everything.
+
 ## Keyboard interaction
 
 Focus stays on the trigger the whole time; options receive _virtual_ focus, exposed via `aria-activedescendant`.
@@ -145,7 +168,7 @@ Focus stays on the trigger the whole time; options receive _virtual_ focus, expo
 | <kbd>Tab</kbd>                            | Moves focus on                                                        | Closes, focus moves on                                               |
 | Printable characters                      | Commits the first matching option directly (like a native `<select>`) | Moves virtual focus to the first match                               |
 
-Clicking the trigger toggles the panel; clicking outside or on the trigger while open closes it.
+Clicking anywhere on the form field's control frame — not just the trigger — opens the panel (the frame is the visual "input box", so all of it is clickable); clicking outside while open closes it. Hovering an option moves virtual focus to it, and the pointer highlight clears when the pointer leaves the list (like in the [menu](/components/menu)) — a keyboard-set highlight stays visible without hover.
 
 ## Accessibility
 
