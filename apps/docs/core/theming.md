@@ -31,7 +31,7 @@ yarn nx g @ethlete/core:tailwind-4-color-theme --themesPath=src/themes.ts
 yarn nx g @ethlete/core:tailwind-4-surface-theme --themesPath=src/surface-themes.ts
 ```
 
-Each generator emits a `.css` file (import it in your global styles) and a `.d.ts` that registers your theme names with TypeScript — so `etProvideColor` / `etProvideSurface` autocomplete them. Re-run the generator whenever the theme files change. The generators validate the definitions: exactly one `isDefault` color theme, one default surface per `type`, and no duplicate semantic `type`s.
+Each generator emits a `.css` file (import it in your global styles; default `generated-tailwind-themes.css` / `generated-tailwind-surface-themes.css` under `src/styles/`) and a `.d.ts` next to it that registers your theme names with TypeScript — so `etProvideColor` / `etProvideSurface` autocomplete them. Re-run the generator whenever the theme files change — no need to remember the options you used: the header comment of each generated file contains the exact command to regenerate it. The generators validate the definitions: exactly one `isDefault` color theme, one default surface per `type`, and no duplicate semantic `type`s.
 
 Both provider factories and generators accept a custom prefix (default `'et'`); the provider `prefix` argument must match the generator's `runtimePrefix`.
 
