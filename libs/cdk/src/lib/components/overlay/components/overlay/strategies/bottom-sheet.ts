@@ -1,6 +1,6 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { inject } from '@angular/core';
-import { createRootProvider, createStaticRootProvider , randomId} from '@ethlete/core';
+import { createRootProvider, createStaticRootProvider, randomId } from '@ethlete/core';
 import {
   DragToDismissRef,
   enableDragToDismiss,

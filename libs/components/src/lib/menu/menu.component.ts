@@ -1,12 +1,4 @@
-import {
-  Component,
-  ElementRef,
-  ViewEncapsulation,
-  computed,
-  effect,
-  inject,
-  viewChild,
-} from '@angular/core';
+import { Component, ElementRef, ViewEncapsulation, computed, effect, inject, viewChild } from '@angular/core';
 import {
   AutoSurfaceDirective,
   COLOR_PROVIDER,

@@ -1,4 +1,4 @@
-import { createRootProvider, createStaticRootProvider , randomId} from '@ethlete/core';
+import { createRootProvider, createStaticRootProvider, randomId } from '@ethlete/core';
 import { mergeOverlayBreakpointConfigs } from './overlay-strategy-config-merger';
 import { OverlayBreakpointConfig, OverlayStrategy, OverlayStrategyBreakpoint } from './overlay-strategy.types';
 

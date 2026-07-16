@@ -1,6 +1,13 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { inject } from '@angular/core';
-import { createRootProvider, createStaticRootProvider, forceReflow, injectRenderer, nextFrame , randomId} from '@ethlete/core';
+import {
+  createRootProvider,
+  createStaticRootProvider,
+  forceReflow,
+  injectRenderer,
+  nextFrame,
+  randomId,
+} from '@ethlete/core';
 import { filter, take } from 'rxjs';
 import {
   getOriginCoordinatesAndDimensions,

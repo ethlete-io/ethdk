@@ -14,7 +14,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { injectPrefersReducedMotion, RuntimeError, signalHostElementDimensions , randomId} from '@ethlete/core';
+import { injectPrefersReducedMotion, RuntimeError, signalHostElementDimensions, randomId } from '@ethlete/core';
 import { filter, switchMap, tap, timer } from 'rxjs';
 import { GRID_ERROR_CODES } from '../grid-errors';
 import { injectGridConfig } from './grid-config';

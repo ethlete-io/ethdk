@@ -1,6 +1,6 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { ApplicationRef, DOCUMENT, EnvironmentInjector, inject } from '@angular/core';
-import { createRootProvider, createStaticRootProvider, injectRenderer , randomId} from '@ethlete/core';
+import { createRootProvider, createStaticRootProvider, injectRenderer, randomId } from '@ethlete/core';
 import {
   abortFullscreenAnimation,
   cleanupFullscreenAnimation,

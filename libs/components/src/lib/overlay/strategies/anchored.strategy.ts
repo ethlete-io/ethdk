@@ -1,4 +1,4 @@
-import { OverlayRuntimePositionStrategy, OverlayRuntimeShiftOptions , randomId} from '@ethlete/core';
+import { OverlayRuntimePositionStrategy, OverlayRuntimeShiftOptions, randomId } from '@ethlete/core';
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 import { OverlayBreakpointConfig, OverlayStrategy, OverlayStrategyBreakpoint } from './overlay-strategy.types';
 
