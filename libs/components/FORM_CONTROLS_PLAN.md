@@ -36,8 +36,8 @@ Decisions baked into this plan (do not re-litigate without a reason):
 | OTP / PIN input                 | 4     | M    | shipped | none needed                 |
 | Tag input                       | 5     | M    | shipped | 2700–2799                   |
 | Phone input                     | 5     | M    | shipped | 2800–2899                   |
-| Calendar                        | 6     | L    | planned | claim at impl. time         |
-| Date input                      | 6     | M    | planned | shares `date-time` block    |
+| Calendar                        | 6     | L    | shipped | 2900–2999                   |
+| Date input                      | 6     | M    | shipped | 3000–3099                   |
 | Date range input                | 7     | M    | planned | shares `date-time` block    |
 | Time picker + time input        | 7     | M+S  | planned | shares `date-time` block    |
 | Date-time input                 | 7     | M    | planned | shares `date-time` block    |
@@ -459,9 +459,42 @@ directives. This keeps the calendar reusable and format-agnostic.
   `internals/date-value.ts`: pure `parseDateValue` / `formatDateValue`
   (date-fns `parse`/`format`/`isValid`).
 
-### Calendar — new top-level domain `lib/calendar/` (L)
+**Phase 6 shipped.** Foundation learnings: date-fns 4.1.0 was already a root
+dependency — only the peer-dep declaration was new. `parseDateValue` is strict
+for free (date-fns `parse` rejects leftover characters, bad ranges and partial
+matches). The styleguide's `max-params` (2) forced options objects on all pure
+date helpers (`parseDateValue(value, { format, locale, referenceDate })`).
+`injectDateLocale` must be imported from `date-time-formats` **directly**, not
+the `forms/date-time` barrel — the barrel re-exports the date input, which
+imports the calendar, which needs the token: barrel import = cycle.
+
+### Calendar — new top-level domain `lib/calendar/` (L) — done
 
 Top-level because it is usable inline, outside forms.
+
+Shipped as planned, plus a `calendar-cell.directive.ts` ([etCalendarCell] on
+each day `<button>`) the plan didn't name explicitly — it mirrors the
+`CalendarCell` flags as `data-*` attributes and pulls DOM focus along while
+`grid.focusIsInside()` (focusin/focusout tracked on the grid), which is what
+keeps the roving tabindex from stealing focus on unrelated renders. Learnings:
+
+- **`focusedDate` is a linkedSignal over `visibleMonth`**: keeps its value while
+  the month still contains it, re-anchors to the selection (or preserves the
+  day-of-month) when the month changes. Manual `.set()` after a same-tick
+  `activeMonth.set()` wins over the recomputation — that ordering makes
+  cross-month arrow navigation one atomic move.
+- **Range band position is computed in TS, not CSS**: cells carry
+  `band: 'start' | 'middle' | 'end' | null` (committed range, else hover/focus
+  preview interval). Pure-CSS half-banding of endpoints fails across week rows
+  (`:has(+ …)` can't see the next row) and can't know whether a lone start has
+  a continuation. Semantic flags (`inRange`, `inHoverPreview`) stay separate
+  from the presentational one.
+- Enter/Space selection is left entirely to the **native button activation** of
+  the focused cell — handling them in the grid keydown would double-fire.
+- Disabled cells stay focusable (`aria-disabled`, no native `disabled`) per the
+  ARIA grid pattern; `selectDate` guards.
+- Month rows vary 4–6 weeks; the date-picker overlay animates the height change
+  via `injectAnimatedBlockSize` in the panel (same pattern as the select panel).
 
 ```
 lib/calendar/
@@ -490,7 +523,7 @@ lib/calendar/
 - `et-calendar` Tier 3: header (month/year label, prev/next buttons), tokens
   `--et-calendar-cell-size` etc., range highlight styling included from the start.
 
-### Date input — `forms/date-time/date-input/` (M)
+### Date input — `forms/date-time/date-input/` (M) — done
 
 - `DateInputDirective` — `FormValueControl<string | null>`; inputs: standard set +
   `valueFormat` (defaults to token), `displayFormat` (locale-aware, e.g. `'P'`),
@@ -501,6 +534,34 @@ lib/calendar/
 - Picker: `pickerOpen` model + a self-registering `DatePickerTriggerDirective` for
   the suffix calendar button; overlay hosts `et-calendar` in single mode; selecting
   writes `format(date, valueFormat)`.
+
+Shipped as planned, with deviations worth remembering:
+
+- **`min`/`max` are signal-forms-reserved on value controls** (the slider note
+  struck early): the inputs are `minDate`/`maxDate` on `[etDateInput]`; the
+  calendar (not a value control) keeps `min`/`max`.
+- The picker overlay is the **select's interaction model minus the search
+  ownership**: `closeOnEscape: true` (runtime handles it — no query to clear
+  first), `closeOnOutsidePointer: false` + own capture-phase pointerdown
+  listener that excepts pane and anchor, so the trigger click toggles instead
+  of close-and-reopen. `beforeClosed` → `pickerOpen` sync, `afterClosed` →
+  refocus the field unless closed by an outside pointer.
+- Surface = `<ng-template etDatePickerSurface>` (context `{ $implicit,
+dateInput, close }`), so headless consumers can host anything; the Tier 3
+  provides `et-date-picker-panel` (color-context constructor sync +
+  animated block size, shared at `forms/date-time/` for the phase-7 range
+  input) wrapping `et-calendar`.
+- Field display: the effect owns `element.value` **only while unfocused**
+  (`parseError ? inputText : displayValue`); the Enter handler rewrites in
+  place after a successful commit since the effect won't run while focused.
+- `hasValue` includes uncommitted `inputText`, so the floating label stays
+  floated over unparseable text. `parseError` counts into
+  `shouldDisplayError` once touched.
+- No shipped "validator helper" beyond the `parseError` signal — a schema
+  helper can't reach directive state cleanly; documented as wiring
+  `parseError` into schema validation instead.
+- `autoFocus: 'first-tabbable'` moves focus into the pane (dialog pattern —
+  `OverlayConfig.autoFocus` takes a target string, not `true`).
 
 ---
 

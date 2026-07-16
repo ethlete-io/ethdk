@@ -43,6 +43,8 @@ Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU
 | 2500–2599 | Rich text editor | [Rich text editor](/components/rich-text-editor) |
 | 2700–2799 | Tag input        | [Forms](/components/forms)                       |
 | 2800–2899 | Phone input      | [Forms](/components/forms)                       |
+| 2900–2999 | Calendar         | [Calendar](/components/calendar)                 |
+| 3000–3099 | Date input       | [Forms](/components/forms)                       |
 
 ::: info Codes below 1000
 Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web sockets). `ET1000`/`ET1001` therefore exist in both packages — the bracketed source in the message (`[SelectDirective]` vs. a query feature) tells them apart.
@@ -70,6 +72,22 @@ Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web so
 | Code     | Cause                                                          | Fix                                         |
 | -------- | -------------------------------------------------------------- | ------------------------------------------- |
 | `ET2800` | `etPhoneInputField` is not inside an `[etPhoneInput]` element. | Move the field inside the phone input root. |
+
+## Calendar (ET29xx)
+
+| Code     | Cause                                                     | Fix                                     |
+| -------- | --------------------------------------------------------- | --------------------------------------- |
+| `ET2900` | `etCalendarGrid` is not inside an `[etCalendar]` element. | Move the grid inside the calendar root. |
+| `ET2901` | `etCalendarCell` is not inside an `[etCalendar]` element. | Move the cell inside the calendar root. |
+
+## Date input (ET30xx)
+
+| Code     | Cause                                                            | Fix                                                                 |
+| -------- | ---------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `ET3000` | `etDateInputField` is not inside an `[etDateInput]` element.     | Move the field inside the date input root.                          |
+| `ET3001` | `etDatePickerTrigger` is not inside an `[etDateInput]` element.  | Move the trigger inside the date input root.                        |
+| `ET3002` | `etDatePickerSurface` is not inside an `[etDateInput]` element.  | Move the surface template inside the date input root.               |
+| `ET3003` | The picker was opened without an `etDatePickerSurface` template. | Add `<ng-template etDatePickerSurface>` inside the date input root. |
 
 ## Chip (ET11xx)
 

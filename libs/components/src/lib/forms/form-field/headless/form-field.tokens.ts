@@ -17,6 +17,7 @@ export const FORM_FIELD_CONTROL_TYPES = {
   OTP_INPUT: 'otp-input',
   TAG_INPUT: 'tag-input',
   PHONE_INPUT: 'phone-input',
+  DATE_INPUT: 'date-input',
   DROPZONE: 'dropzone',
 } as const;
 

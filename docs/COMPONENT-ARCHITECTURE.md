@@ -174,8 +174,12 @@ To avoid collisions, each component domain owns a fixed numeric range:
 | 2400 – 2499 | Dropzone                        |
 | 2500 – 2599 | Rich text editor                |
 | 2600 – 2699 | Multi-language rich text editor |
+| 2700 – 2799 | Tag input                       |
+| 2800 – 2899 | Phone input                     |
+| 2900 – 2999 | Calendar                        |
+| 3000 – 3099 | Date input                      |
 
-Add new domains by claiming the next free hundred block (next free: **2900**
+Add new domains by claiming the next free hundred block (next free: **3100**
 onward). The 1100 block was pre-allocated for a standalone combobox that never
 shipped — the unified select covers it and owns 1000 – 1099 — so the chip domain
 reclaimed it.

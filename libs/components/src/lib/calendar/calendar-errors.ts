@@ -1,0 +1,5 @@
+// codes 2900-2999
+export const CALENDAR_ERROR_CODES = {
+  GRID_OUTSIDE_CALENDAR: 2900,
+  CELL_OUTSIDE_CALENDAR: 2901,
+} as const;

@@ -1,0 +1,61 @@
+@layer components {
+  .et-overlay.et-with-default-animation.et-overlay--date-picker {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      opacity: 0;
+    }
+
+    &.et-animation-enter-active {
+      transition:
+        transform 140ms ease,
+        opacity 140ms ease;
+    }
+
+    &.et-animation-leave-active {
+      transition:
+        transform 100ms ease,
+        opacity 100ms ease;
+    }
+  }
+
+  .et-overlay--date-picker[data-overlay-placement^='top'] {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) translateY(0.3rem) !important;
+    }
+  }
+
+  .et-overlay--date-picker[data-overlay-placement^='bottom'] {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
+        translateY(-0.3rem) !important;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-overlay.et-with-default-animation.et-overlay--date-picker {
+      &.et-animation-enter-active,
+      &.et-animation-leave-active {
+        transition-duration: 0ms;
+      }
+    }
+  }
+
+  .et-date-picker-panel {
+    display: block;
+    box-sizing: border-box;
+    max-inline-size: calc(100vw - 24px);
+    overflow: hidden;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    background: var(--et-surface-background-solid, rgb(32 32 32));
+    color: var(--et-surface-color-solid, rgb(244 244 245));
+    box-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
+
+    &.et-date-picker-panel--resizing {
+      overflow: clip;
+    }
+  }
+}

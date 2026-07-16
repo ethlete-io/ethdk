@@ -1,0 +1,18 @@
+<input class="et-date-input-field" etDateInputField />
+
+<button [attr.aria-label]="pickerTriggerLabel()" class="et-date-input-picker-trigger" etDatePickerTrigger>
+  <i etIcon="et-calendar"></i>
+</button>
+
+<ng-template etDatePickerSurface>
+  <et-date-picker-panel>
+    <et-calendar
+      [value]="dateInput.date()"
+      [min]="dateInput.minDate()"
+      [max]="dateInput.maxDate()"
+      [dateFilter]="dateInput.dateFilter()"
+      [locale]="dateInput.effectiveLocale()"
+      (valueChange)="dateInput.selectDate($event)"
+    />
+  </et-date-picker-panel>
+</ng-template>

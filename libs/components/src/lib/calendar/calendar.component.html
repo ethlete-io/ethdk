@@ -1,0 +1,45 @@
+<div class="et-calendar-header">
+  <button
+    [disabled]="!calendar.canGoPrev()"
+    [attr.aria-label]="previousMonthLabel()"
+    (click)="calendar.previousMonth()"
+    class="et-calendar-nav-button et-calendar-nav-button--previous"
+    et-icon-button
+    size="sm"
+    type="button"
+  >
+    <i etIcon="et-chevron"></i>
+  </button>
+
+  <span class="et-calendar-header-label" aria-live="polite">{{ calendar.visibleMonthLabel() }}</span>
+
+  <button
+    [disabled]="!calendar.canGoNext()"
+    [attr.aria-label]="nextMonthLabel()"
+    (click)="calendar.nextMonth()"
+    class="et-calendar-nav-button et-calendar-nav-button--next"
+    et-icon-button
+    size="sm"
+    type="button"
+  >
+    <i etIcon="et-chevron"></i>
+  </button>
+</div>
+
+<div class="et-calendar-grid" etCalendarGrid>
+  <div class="et-calendar-weekdays" role="row">
+    @for (weekday of calendar.weekdays(); track weekday.long) {
+      <span [attr.aria-label]="weekday.long" class="et-calendar-weekday" role="columnheader">{{ weekday.short }}</span>
+    }
+  </div>
+
+  @for (week of calendar.weeks(); track $index) {
+    <div class="et-calendar-week" role="row">
+      @for (cell of week; track cell.date.getTime()) {
+        <button [cell]="cell" class="et-calendar-cell" etCalendarCell type="button">
+          <span class="et-calendar-cell-content">{{ cell.dayOfMonth }}</span>
+        </button>
+      }
+    </div>
+  }
+</div>

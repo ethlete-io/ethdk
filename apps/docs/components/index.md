@@ -51,6 +51,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 ### Elements
 
 - [Button](/components/button) — surface, text, icon, FAB and window-control buttons with loading and pressed states.
+- [Calendar](/components/calendar) — inline month calendar with single and range selection, min/max bounds and full keyboard grid navigation.
 - [Chip](/components/chip) — compact pill for a value, tag or filter with an optional remove button.
 - [Icon](/components/icon) — tree-shakeable inline-SVG icons via `provideIcons()` and `[etIcon]`.
 - [Loaders](/components/loader) — spinner, progress bar and brand loader.

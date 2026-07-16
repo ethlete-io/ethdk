@@ -32,6 +32,7 @@ Each control family ships its own imports array — combine the field shell with
 | `OTP_INPUT_IMPORTS`    | `et-otp-input`                                                            |
 | `TAG_INPUT_IMPORTS`    | `et-tag-input`                                                            |
 | `PHONE_INPUT_IMPORTS`  | `et-phone-input`                                                          |
+| `DATE_INPUT_IMPORTS`   | `et-date-input`                                                           |
 
 ```ts
 import { FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
@@ -92,7 +93,7 @@ Multi-line plain text with **autosize on by default**: the field grows with its 
 </et-form-field>
 ```
 
-<StoryEmbed id="components-forms-textarea--default" height="360px" />
+Try it live in Storybook: `Components/Forms/Textarea`.
 
 ## Color input
 
@@ -107,7 +108,7 @@ Multi-line plain text with **autosize on by default**: the field grows with its 
 
 Design tokens: `--et-color-input-swatch-size` (default `20px`), `--et-color-input-swatch-radius` (default `4px`).
 
-<StoryEmbed id="components-forms-color-input--default" height="320px" />
+Try it live in Storybook: `Components/Forms/Color Input`.
 
 ## Checkbox & switch — `et-choice-field`
 
@@ -163,7 +164,7 @@ Segmented one-time-code entry backed by **one real native input** stretched invi
 </et-otp-input>
 ```
 
-<StoryEmbed id="components-forms-otp-input--default" height="240px" />
+Try it live in Storybook: `Components/Forms/OTP Input`.
 
 | Input     | Type                                    | Default     | Description                                                           |
 | --------- | --------------------------------------- | ----------- | --------------------------------------------------------------------- |
@@ -188,7 +189,7 @@ Free-text tags as removable [chips](/components/chip) with an inline text field,
 </et-form-field>
 ```
 
-<StoryEmbed id="components-forms-tag-input--default" height="220px" />
+Try it live in Storybook: `Components/Forms/Tag Input`.
 
 | Input             | Type                              | Default          | Description                                                                                                               |
 | ----------------- | --------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------- |
@@ -229,6 +230,42 @@ The country dropdown searches names **and** dial codes (`49` or `+49` finds Germ
 </et-phone-input>
 ```
 
+## Date input — `et-date-input`
+
+A date form control with a **string value** in a configurable wire format, combining typed entry with an anchored [calendar](/components/calendar) picker. String↔`Date` conversion happens only in the control — the calendar itself operates on `Date` objects.
+
+```html
+<et-form-field>
+  <et-label>Date</et-label>
+  <et-date-input [formField]="demoForm.date" valueFormat="yyyy-MM-dd" />
+</et-form-field>
+```
+
+<StoryEmbed id="components-forms-date-input--default" height="560px" />
+
+| Input                 | Type                                | Default             | Description                                                                  |
+| --------------------- | ----------------------------------- | ------------------- | ---------------------------------------------------------------------------- |
+| `valueFormat`         | `string`                            | `DATE_FORMAT` token | date-fns format of the string value (token default: ISO 8601 with offset).   |
+| `displayFormat`       | `string`                            | `'P'`               | date-fns format shown in and parsed from the field (locale-aware).           |
+| `locale`              | `Locale \| null` (date-fns)         | `DATE_LOCALE` token | Display/parse locale.                                                        |
+| `minDate` / `maxDate` | `Date \| null`                      | `null`              | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms). |
+| `dateFilter`          | `((date: Date) => boolean) \| null` | `null`              | Forwarded to the picker calendar.                                            |
+| `pickerOpen`          | `boolean` (model)                   | `false`             | The picker overlay's open state.                                             |
+| `pickerTriggerLabel`  | `string`                            | `'Open calendar'`   | `aria-label` of the suffix calendar button.                                  |
+
+Typed text is parsed **strictly** against `displayFormat` on blur/Enter. Unparseable text stays visible in the field, the `parseError` signal (on the `[etDateInput]` directive) turns on and the value stays `null` — wire it into your schema validation, or rely on the built-in error display (`parseError` counts into the field's error state once touched). Alt+ArrowDown also opens the picker; picking a day writes `format(date, valueFormat)` and closes it.
+
+The wire defaults come from injectable tokens so an app can set them once:
+
+```ts
+import { provideDateFormat, provideDateLocale } from '@ethlete/components';
+import { de } from 'date-fns/locale';
+
+providers: [provideDateFormat('yyyy-MM-dd'), provideDateLocale(de)];
+```
+
+`date-fns` (v4) is a peer dependency of the date controls: `yarn add date-fns`.
+
 ## Selection lists
 
 Three group flavors over one selection engine — options are projected children, keyboard navigation is roving-tabindex with wrapping arrows:
@@ -255,7 +292,7 @@ Three group flavors over one selection engine — options are projected children
 
 Checkbox options and radios accept an `et-description` child for secondary text, and the headless layer offers a tri-state "select all" control (`[etSelectionListControl]`).
 
-<StoryEmbed id="components-forms-selection-list-segmented-button-group--default" height="280px" />
+Try the three group flavors live in Storybook: `Components/Forms/Selection List`.
 
 ## Validation & accessibility
 

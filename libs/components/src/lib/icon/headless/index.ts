@@ -2,6 +2,7 @@ export * from './align-icons';
 export * from './arrow-out-up-right-icon';
 export * from './arrow-right-icon';
 export * from './bold-icon';
+export * from './calendar-icon';
 export * from './check-icon';
 export * from './chevron-icon';
 export * from './clipboard-check-icon';

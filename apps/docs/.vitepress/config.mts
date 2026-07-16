@@ -180,6 +180,7 @@ export default defineConfig({
           text: 'Elements',
           items: [
             { text: 'Button', link: '/components/button' },
+            { text: 'Calendar', link: '/components/calendar' },
             { text: 'Chip', link: '/components/chip' },
             { text: 'Icon', link: '/components/icon' },
             { text: 'Loaders', link: '/components/loader' },
