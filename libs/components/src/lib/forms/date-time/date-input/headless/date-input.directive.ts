@@ -108,10 +108,11 @@ export class DateInputDirective implements FormValueControl<string | null>, Form
     surface: this.registeredSurface,
     anchor: () => this.resolveAnchorElement(),
     context: () => ({ $implicit: this, close: () => this.closePicker() }),
-    onAfterClosed: (byOutsidePointer) => {
+    onAfterClosed: ({ byOutsidePointer, fromBottomSheet }) => {
       // focus fell to <body> with the pane's removal — hand it back to the field,
-      // except for outside closes (the user deliberately went elsewhere)
-      if (!byOutsidePointer && this.document.activeElement === this.document.body) {
+      // except for outside closes (the user deliberately went elsewhere) and
+      // bottom-sheet closes (refocusing would pop the soft keyboard)
+      if (!byOutsidePointer && !fromBottomSheet && this.document.activeElement === this.document.body) {
         this.activate();
       }
     },

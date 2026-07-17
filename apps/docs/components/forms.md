@@ -257,6 +257,8 @@ A date form control with a **string value** in a configurable wire format, combi
 
 Typed text is parsed **strictly** against `displayFormat` on blur/Enter. Unparseable text stays visible in the field, the `parseError` signal (on the `[etDateInput]` directive) turns on and the value stays `null` — wire it into your schema validation, or rely on the built-in error display (`parseError` counts into the field's error state once touched). Alt+ArrowDown also opens the picker; picking a day writes `format(date, valueFormat)` and closes it.
 
+On viewports below the `md` breakpoint (768px) the picker opens as a **bottom sheet** (backdrop, drag-to-dismiss, touch-sized cells) instead of an anchored panel — this applies to all date & time picker overlays (date, date range, time).
+
 The wire defaults come from injectable tokens so an app can set them once:
 
 ```ts
@@ -315,7 +317,7 @@ A time form control with a **string value** in a configurable wire format (defau
 | `pickerOpen`                | `boolean` (model)           | `false`              | The picker overlay's open state.                                    |
 | `pickerTriggerLabel`        | `string`                    | `'Open time picker'` | `aria-label` of the suffix clock button.                            |
 
-Typed text is parsed against `displayFormat` first, then **leniently**: bare digit runs (`930` → 09:30, `0930`, `93015`), loose separators (`9.30`, `9 30`) and meridiem suffixes (`930pm`, `9 a.m.`) all commit, and 24-hour entry is accepted even under a 12-hour display format. Unparseable text behaves exactly like the date input (`parseError` signal, value stays `null`). Alt+ArrowDown opens the picker; picking parts writes `format(time, valueFormat)` and — unlike the calendar picker — **keeps the overlay open**, since a time takes one pick per column.
+Typed text is parsed against `displayFormat` first, then **leniently**: bare digit runs (`930` → 09:30, `0930`, `93015`), loose separators (`9.30`, `9 30`) and meridiem suffixes (`930pm`, `9 a.m.`) all commit, and 24-hour entry is accepted even under a 12-hour display format. Unparseable text behaves exactly like the date input (`parseError` signal, value stays `null`). Alt+ArrowDown opens the picker; picking parts writes `format(time, valueFormat)` and — unlike the calendar picker — **keeps the overlay open**, since a time takes one pick per column. Below the `md` breakpoint the picker opens as a bottom sheet, like the date pickers.
 
 The wire defaults share the date tokens (`provideTimeFormat('HH:mm:ss')`, `provideDateLocale(de)`).
 

@@ -58,4 +58,49 @@
       overflow: clip;
     }
   }
+
+  /* below the md breakpoint the picker mounts as a bottom sheet: the panel becomes
+     the full-width sheet surface, draws its own drag handle (the runtime's sits
+     outside the panel background) and centers the hosted picker */
+  .et-overlay.et-date-picker-sheet {
+    /* touch-sized calendar cells / time options — the tokens inherit into the content */
+    --et-calendar-cell-size: 44px;
+    --et-time-picker-option-size: 44px;
+
+    border-radius: 16px 16px 0 0;
+
+    .et-overlay-container-drag-handle {
+      display: none;
+    }
+
+    .et-date-picker-panel {
+      max-inline-size: none;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      padding-block: 8px max(16px, env(safe-area-inset-bottom));
+
+      &::before {
+        content: '';
+        display: block;
+        inline-size: 32px;
+        block-size: 4px;
+        margin-inline: auto;
+        margin-block-end: 12px;
+        border-radius: 999px;
+        background: var(--et-surface-border-solid, rgb(255 255 255 / 0.2));
+      }
+    }
+
+    .et-date-picker-panel-body {
+      display: grid;
+      justify-content: center;
+    }
+
+    /* months span 4–6 week rows — reserve the 6-row height (plus the 32px weekday
+       row) so the sheet's top edge never jumps on month navigation */
+    .et-calendar-grid {
+      min-block-size: calc(32px + 6 * var(--et-calendar-cell-size));
+    }
+  }
 }

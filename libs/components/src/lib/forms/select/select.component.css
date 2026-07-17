@@ -22,6 +22,8 @@
       text-align: start;
       cursor: pointer;
       user-select: none;
+      /* no double-tap-zoom wait on touch — the panel opens on the first tap */
+      touch-action: manipulation;
 
       &[data-disabled] {
         cursor: not-allowed;

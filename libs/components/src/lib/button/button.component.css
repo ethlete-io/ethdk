@@ -22,6 +22,8 @@
     appearance: none;
     box-sizing: border-box;
     user-select: none;
+    /* no double-tap-zoom wait on touch — taps activate immediately */
+    touch-action: manipulation;
     line-height: var(--et-button-line-height);
     white-space: nowrap;
 
