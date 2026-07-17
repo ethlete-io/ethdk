@@ -22,27 +22,27 @@ Decisions baked into this plan (do not re-litigate without a reason):
 
 ## Status
 
-| Control                         | Phase | Size | Status  | Error block                 |
-| ------------------------------- | ----- | ---- | ------- | --------------------------- |
-| Textarea                        | 1     | M    | shipped | none needed                 |
-| Number input                    | 1     | S    | shipped | shares `forms/input` (none) |
-| Color input                     | 1     | S    | shipped | none needed                 |
-| Selection groundwork            | 2     | S    | shipped | —                           |
-| Chip                            | 2     | S    | shipped | 1100–1199                   |
-| Select — slice 1 (single)       | 3     | L    | shipped | 1000–1099                   |
-| Select — slice 2 (multi)        | 3     | M    | shipped | 1000–1099                   |
-| Select — slice 3 (search/async) | 3     | M    | shipped | 1000–1099                   |
-| Rating                          | 4     | M    | shipped | none needed                 |
-| OTP / PIN input                 | 4     | M    | shipped | none needed                 |
-| Tag input                       | 5     | M    | shipped | 2700–2799                   |
-| Phone input                     | 5     | M    | shipped | 2800–2899                   |
-| Calendar                        | 6     | L    | shipped | 2900–2999                   |
-| Date input                      | 6     | M    | shipped | 3000–3099                   |
-| Date range input                | 7     | M    | shipped | 3010–3019 (shared block)    |
-| Time picker + time input        | 7     | M+S  | shipped | 3020–3029 + 3030–3039       |
-| Date-time input                 | 7     | M    | planned | shares `date-time` block    |
-| Slider (incl. range)            | 8     | L    | planned | claim at impl. time         |
-| Masked input                    | 8     | L    | planned | claim at impl. time         |
+| Control                         | Phase | Size | Status  | Error block                  |
+| ------------------------------- | ----- | ---- | ------- | ---------------------------- |
+| Textarea                        | 1     | M    | shipped | none needed                  |
+| Number input                    | 1     | S    | shipped | shares `forms/input` (none)  |
+| Color input                     | 1     | S    | shipped | none needed                  |
+| Selection groundwork            | 2     | S    | shipped | —                            |
+| Chip                            | 2     | S    | shipped | 1100–1199                    |
+| Select — slice 1 (single)       | 3     | L    | shipped | 1000–1099                    |
+| Select — slice 2 (multi)        | 3     | M    | shipped | 1000–1099                    |
+| Select — slice 3 (search/async) | 3     | M    | shipped | 1000–1099                    |
+| Rating                          | 4     | M    | shipped | none needed                  |
+| OTP / PIN input                 | 4     | M    | shipped | none needed                  |
+| Tag input                       | 5     | M    | shipped | 2700–2799                    |
+| Phone input                     | 5     | M    | shipped | 2800–2899                    |
+| Calendar                        | 6     | L    | shipped | 2900–2999                    |
+| Date input                      | 6     | M    | shipped | 3000–3099                    |
+| Date range input                | 7     | M    | shipped | 3010–3019 (shared block)     |
+| Time picker + time input        | 7     | M+S  | shipped | 3020–3029 + 3030–3039        |
+| Date-time input                 | 7     | M    | planned | shares `date-time` block     |
+| Slider (incl. range)            | 8     | L    | planned | claim at impl. time          |
+| Masked input                    | 8     | L    | planned | claim at impl. time          |
 | Cascader (generic)              | 9     | L    | planned | 3100–3199 (claim at impl.)   |
 | Password input                  | 9     | S    | planned | shares `forms/input` (none)  |
 | Number stepper                  | 9     | S    | planned | shares `forms/input` (none)  |
@@ -83,16 +83,16 @@ in the docs table.
 
 ## Phase plan
 
-| Phase | Contents                                                                                        | Size | Dependencies                       |
-| ----- | ----------------------------------------------------------------------------------------------- | ---- | ---------------------------------- |
-| 1     | Quick wins: textarea, number input, color input, masking prep                                   | M    | none                               |
-| 2     | Select groundwork: selection-state extraction, typeahead lift, overlay focus spike, chip domain | S+S  | none — highest-risk refactor first |
-| 3     | Unified select, three shippable slices                                                          | XL   | phase 2                            |
-| 4     | Rating, OTP input                                                                               | M    | none — parallel with 3             |
-| 5     | Tag input, phone input                                                                          | L    | phase 3                            |
-| 6     | Date foundation: date-fns peer dep, format tokens, calendar, date input                         | L–XL | none (independent of select)       |
-| 7     | Date/time completion: range input, time picker/input, date-time input                           | L    | phase 6                            |
-| 8     | Slider (range from day one), masked input                                                       | XL   | slider: none; masked: phase 1 prep |
+| Phase | Contents                                                                                              | Size | Dependencies                                        |
+| ----- | ----------------------------------------------------------------------------------------------------- | ---- | --------------------------------------------------- |
+| 1     | Quick wins: textarea, number input, color input, masking prep                                         | M    | none                                                |
+| 2     | Select groundwork: selection-state extraction, typeahead lift, overlay focus spike, chip domain       | S+S  | none — highest-risk refactor first                  |
+| 3     | Unified select, three shippable slices                                                                | XL   | phase 2                                             |
+| 4     | Rating, OTP input                                                                                     | M    | none — parallel with 3                              |
+| 5     | Tag input, phone input                                                                                | L    | phase 3                                             |
+| 6     | Date foundation: date-fns peer dep, format tokens, calendar, date input                               | L–XL | none (independent of select)                        |
+| 7     | Date/time completion: range input, time picker/input, date-time input                                 | L    | phase 6                                             |
+| 8     | Slider (range from day one), masked input                                                             | XL   | slider: none; masked: phase 1 prep                  |
 | 9     | Post-plan additions: cascader (generic), password, number stepper, chip group, autocomplete, duration | L    | cascader/chip-group: phase 2–3; duration: phase 6–7 |
 
 ---
@@ -748,11 +748,11 @@ select's sibling (a value control with an anchored overlay), so it lives in
   parent checkboxes (select-all-descendants) is a documented **follow-up**, not v1 —
   the value/aria/perf surface it adds is its own slice.
 - Three-tier: `[etCascader]` root (state, data-source, overlay, `FormFieldControl`)
-  + column/node/trigger/surface sub-directives + `et-cascader` Tier 3 (columns,
-  breadcrumb trigger, clear). Pure tree/data-source engine in `internals/`
-  (unit-tested, framework-of-forms-agnostic — liftable if a non-form navigation use
-  ever appears). Error block **3100–3199** (claim in the arch table at impl. time;
-  it is the current next-free block).
+  - column/node/trigger/surface sub-directives + `et-cascader` Tier 3 (columns,
+    breadcrumb trigger, clear). Pure tree/data-source engine in `internals/`
+    (unit-tested, framework-of-forms-agnostic — liftable if a non-form navigation use
+    ever appears). Error block **3100–3199** (claim in the arch table at impl. time;
+    it is the current next-free block).
 
 ### Password input — `forms/input/` sibling (S)
 
