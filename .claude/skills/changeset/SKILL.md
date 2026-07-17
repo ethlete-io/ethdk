@@ -99,6 +99,38 @@ wants to know what changed for them, nothing more. If you've written more than
 - Keep it to what shipped — no root-cause analysis, no "verified in Storybook",
   no internal file paths, no rationale the reader doesn't need.
 
+## Editing and consolidating unreleased changesets
+
+A changeset is **unreleased** until its name appears in the `changesets` array of
+`.changeset/pre.json`. Those unreleased `.md` files are safe to edit, rename,
+merge, or delete — nothing has consumed them yet. Entries already listed in
+`pre.json` are **locked** (already versioned/published in prerelease); never edit
+or delete those files, and never hand-edit `pre.json` — dropping an entry
+re-publishes its file with the wrong bump.
+
+Find the unreleased ones by diffing the `.md` filenames against that array:
+
+```bash
+comm -23 \
+  <(ls .changeset/*.md | xargs -n1 basename | grep -v '^README.md$' | sed 's/\.md$//' | sort) \
+  <(python3 -c "import json;[print(c) for c in json.load(open('.changeset/pre.json'))['changesets']]" | sort)
+```
+
+When you touch these, actively keep them tidy — they are the next release's
+changelog:
+
+- **Consolidate overlaps.** If several unreleased changesets describe the same
+  shipped feature or successive iterations of it (e.g. slices of one new
+  component, or repeated fixes to the same area), merge them into one entry —
+  fewer, coherent changelog lines beat a fragmented list. Keep genuinely distinct
+  fixes as separate files.
+- **Keep them concise.** Hold every unreleased note to the same brevity bar as
+  writing a fresh one (see **Writing the note**): one sentence for simple changes,
+  one line per bullet for multi-part ones, no walls of text or mid-sentence hard
+  line-wraps. Trim verbose notes down when you pass by them.
+- After merging/trimming, re-run the diff above (and `npx changeset status`) to
+  confirm the frontmatter still parses and the set is what you expect.
+
 ## Verify
 
 After writing, sanity-check the frontmatter parses: package names are quoted,
