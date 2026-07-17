@@ -1,4 +1,4 @@
-import { Directive, afterNextRender, inject, signal } from '@angular/core';
+import { Directive, ElementRef, afterNextRender, inject, signal } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { CALENDAR_ERROR_CODES } from '../calendar-errors';
 import { CalendarDirective } from './calendar.directive';
@@ -22,6 +22,7 @@ import { CalendarDirective } from './calendar.directive';
 })
 export class CalendarGridDirective {
   protected calendar = inject(CalendarDirective, { optional: true });
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   /** @internal */
   public focusIsInside = signal(false);
@@ -46,6 +47,16 @@ export class CalendarGridDirective {
       return;
     }
 
-    this.focusIsInside.set(false);
+    // a cell removal during month re-render also lands here (focus falls to body
+    // before the new roving target pulls it back in the same tick) — settle the
+    // tick first, then decide based on where focus actually ended up
+    queueMicrotask(() => {
+      const element = this.elementRef.nativeElement;
+      const active = element.ownerDocument.activeElement;
+
+      if (!(active instanceof Node) || !element.contains(active)) {
+        this.focusIsInside.set(false);
+      }
+    });
   }
 }

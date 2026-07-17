@@ -95,8 +95,18 @@ export class TimePickerColumnDirective {
       return;
     }
 
-    this.focusIsInside.set(false);
-    this.typeahead.reset();
+    // the focused option can be removed mid-interaction (an off-step selection
+    // leaving the list) with focus falling to body before the roving target pulls
+    // it back — settle the tick first, then decide based on where focus ended up
+    queueMicrotask(() => {
+      const element = this.elementRef.nativeElement;
+      const active = element.ownerDocument.activeElement;
+
+      if (!(active instanceof Node) || !element.contains(active)) {
+        this.focusIsInside.set(false);
+        this.typeahead.reset();
+      }
+    });
   }
 
   /**
