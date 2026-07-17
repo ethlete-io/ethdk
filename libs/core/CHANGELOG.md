@@ -1,5 +1,23 @@
 # @ethlete/core
 
+## 5.0.0-next.28
+
+### Minor Changes
+
+- [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`9431073`](https://github.com/ethlete-io/ethdk/commit/9431073bb693aa10bbb84d5196597cb2c4b7463f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlays and menus now open on insecure origins (plain-HTTP pages on a LAN IP, not just `localhost`/HTTPS). Id generation used `crypto.randomUUID()`, which is `undefined` outside a secure context, so opening any dialog, sheet, anchored overlay or menu threw and only the backdrop appeared. A new `randomId()` helper in `@ethlete/core` uses `crypto.randomUUID()` when available and falls back to `getRandomValues` otherwise.
+
+- [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`9431073`](https://github.com/ethlete-io/ethdk/commit/9431073bb693aa10bbb84d5196597cb2c4b7463f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: the link flow is now a responsive popover (arrow-anchored on wider screens, a keyboard-pinned top sheet on touch) to edit a link's text and URL, with an open-in-new-tab toggle — replacing the browser `prompt()`. New-tab links persist through the Markdown value as raw HTML (`<a target="_blank" rel="noopener noreferrer">`); ordinary links stay `[text](url)`. `htmlToMarkdown` / `markdownToHtml` in `@ethlete/core` now round-trip `target="_blank"` anchors (sanitized href + forced `rel`). After applying a link the caret moves just past it, with a trailing space added when the link ends the line.
+
+### Patch Changes
+
+- [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`49591f4`](https://github.com/ethlete-io/ethdk/commit/49591f4e529552fde07ef88b9754bf7c0cd91a3b) Thanks [@github-actions](https://github.com/apps/github-actions)! - `injectAnimatedBlockSize`: growing panels (menu, select) no longer flash at their final size for one frame before the resize animation plays — the animation now starts inside the `ResizeObserver` callback, before the browser paints the new layout.
+
+- [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`d262f59`](https://github.com/ethlete-io/ethdk/commit/d262f596a4f0e3dda315447d0173cba301237c01) Thanks [@github-actions](https://github.com/apps/github-actions)! - `htmlToMarkdown`: boundary whitespace inside bold/italic/strikethrough now serializes outside the delimiters (`<strong> x</strong>` → ` **x**` instead of the invalid `** x**`).
+
+- [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`00b7c33`](https://github.com/ethlete-io/ethdk/commit/00b7c337e5ae0ac1bfc7186237b1ac2879eb018d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Theming: overlay panes (menu, select) now resolve their color context through passive providers and apply it before the first painted frame.
+  - `ProvideColorDirective` gains `resolvedColor` — the color that actually applies at the provider's location, falling through passive providers like the CSS cascade does. `syncWithProvider` uses it, so a passive in-between provider (e.g. a form field's) no longer erases the theme inside a detached overlay pane.
+  - The menu and select panels install the context sync during construction instead of in an effect, eliminating a wrong-theme flash during the enter animation.
+
 ## 5.0.0-next.27
 
 ### Minor Changes

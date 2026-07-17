@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0-next.13
+
+### Minor Changes
+
+- [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`5a43c83`](https://github.com/ethlete-io/ethdk/commit/5a43c8347a98a815562d1bb0f59bc0db1d765262) Thanks [@github-actions](https://github.com/apps/github-actions)! - Recommended config: the `@Injectable` ban now also flags Angular 22's `@Service` decorator — use `createProvider` / `createRootProvider` from `@ethlete/core` instead.
+
+- [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`9be3738`](https://github.com/ethlete-io/ethdk/commit/9be3738e18ef1837841c79131127fa42406a3e92) Thanks [@github-actions](https://github.com/apps/github-actions)! - New template rule `ethlete/prefer-static-boolean-properties` (in `recommendedTemplate` as `warn`): flags property bindings of static booleans like `[isReadonly]="true"` and suggests the static-attribute form (`isReadonly` / `isReadonly="false"`). Suggestion-only, since the rewrite is only safe for inputs with a `booleanAttribute` transform.
+
 ## 1.0.0-next.12
 
 ### Minor Changes
