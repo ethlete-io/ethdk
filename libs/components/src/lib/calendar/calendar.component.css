@@ -40,6 +40,19 @@
       grid-template-columns: repeat(7, var(--et-calendar-cell-size));
     }
 
+    /* re-created per month (keyed @for) — navigation slides the new rows in from
+       the travel direction; the attribute is unset on first render, so opening
+       the calendar itself does not animate */
+    .et-calendar-weeks {
+      &:where([data-nav='forward']) {
+        animation: et-calendar-weeks-in-forward 200ms ease;
+      }
+
+      &:where([data-nav='backward']) {
+        animation: et-calendar-weeks-in-backward 200ms ease;
+      }
+    }
+
     .et-calendar-weekday {
       display: inline-flex;
       align-items: center;
@@ -62,6 +75,8 @@
       font-size: 13px;
       color: var(--et-surface-color-solid);
       cursor: pointer;
+      /* no double-tap-zoom wait on touch — taps select immediately */
+      touch-action: manipulation;
 
       /* range band behind the day circles */
       &::before {
@@ -147,6 +162,26 @@
           text-decoration: line-through;
         }
       }
+    }
+  }
+
+  @keyframes et-calendar-weeks-in-forward {
+    from {
+      opacity: 0;
+      transform: translateX(14px);
+    }
+  }
+
+  @keyframes et-calendar-weeks-in-backward {
+    from {
+      opacity: 0;
+      transform: translateX(-14px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-calendar .et-calendar-weeks {
+      animation: none;
     }
   }
 }

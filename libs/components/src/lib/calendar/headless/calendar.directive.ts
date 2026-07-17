@@ -103,6 +103,9 @@ export class CalendarDirective {
 
   public visibleMonth = computed(() => startOfMonth(this.activeMonth() ?? this.anchorDate()));
 
+  /** Value identity of the visible month, for template keying. */
+  public visibleMonthKey = computed(() => this.visibleMonth().getTime());
+
   /**
    * Roving-tabindex target. Re-anchors when the visible month changes without
    * containing it (keeping the day of month across month navigation).
@@ -128,6 +131,18 @@ export class CalendarDirective {
 
   /** Range-preview endpoint while the pointer is over the grid. */
   public hoveredDate = signal<Date | null>(null);
+
+  /** Chronological direction of the last month change — drives month-transition styling. */
+  public navigationDirection = linkedSignal<Date, 'forward' | 'backward' | null>({
+    source: () => this.visibleMonth(),
+    computation: (month, previous) => {
+      if (previous === undefined || previous.source.getTime() === month.getTime()) {
+        return previous?.value ?? null;
+      }
+
+      return isBefore(previous.source, month) ? 'forward' : 'backward';
+    },
+  });
 
   public weekdays = computed<CalendarWeekday[]>(() => {
     const locale = this.effectiveLocale();

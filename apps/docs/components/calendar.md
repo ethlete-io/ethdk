@@ -60,6 +60,8 @@ The first click starts the range, a later-or-equal second click completes it, an
 
 Moving focus past a month boundary navigates the calendar along with it.
 
+Month navigation (buttons or keyboard) slides the new grid in from the travel direction; the animation is skipped under `prefers-reduced-motion`. For custom transitions the headless directive exposes `navigationDirection` (`'forward' | 'backward' | null`) and `visibleMonthKey` (a stable per-month key for `@for` tracking).
+
 ## Headless usage
 
 `[etCalendar]` owns all state; `[etCalendarGrid]` (the keyboard + focus scope) and `[etCalendarCell]` (one per day button, fed a `CalendarCell` from `calendar.weeks()`) render however you like:

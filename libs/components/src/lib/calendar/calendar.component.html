@@ -33,12 +33,17 @@
     }
   </div>
 
-  @for (week of calendar.weeks(); track $index) {
-    <div class="et-calendar-week" role="row">
-      @for (cell of week; track cell.date.getTime()) {
-        <button [cell]="cell" class="et-calendar-cell" etCalendarCell type="button">
-          <span class="et-calendar-cell-content">{{ cell.dayOfMonth }}</span>
-        </button>
+  <!-- keyed per month so navigation re-creates the rows and runs the slide-in -->
+  @for (monthKey of [calendar.visibleMonthKey()]; track monthKey) {
+    <div [attr.data-nav]="calendar.navigationDirection()" class="et-calendar-weeks" role="rowgroup">
+      @for (week of calendar.weeks(); track $index) {
+        <div class="et-calendar-week" role="row">
+          @for (cell of week; track cell.date.getTime()) {
+            <button [cell]="cell" class="et-calendar-cell" etCalendarCell type="button">
+              <span class="et-calendar-cell-content">{{ cell.dayOfMonth }}</span>
+            </button>
+          }
+        </div>
       }
     </div>
   }
