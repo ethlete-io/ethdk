@@ -268,10 +268,17 @@
   }
 
   .et-overlay.et-with-default-animation {
+    /* Filler strip that hides the sheet's spring overshoot: it hangs just past the docked
+     edge (see the per-direction insets below) and must paint the same color as the sheet's
+     surface so the momentary gap never reveals the page behind it. Source it from the surface
+     token — which the container always forces onto the host by elevation — rather than
+     `inherit`, because most sheet content (e.g. a date picker) paints its background on a nested
+     element, leaving the host transparent; `inherit` would then paint nothing and the overshoot
+     shows through. `inherit` stays as the fallback for overlays opened without surface themes. */
     &::after {
       content: '';
       position: absolute;
-      background-color: inherit;
+      background-color: var(--et-surface-background-solid, inherit);
     }
 
     &.et-overlay--full-screen-dialog {
