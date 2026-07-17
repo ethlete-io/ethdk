@@ -19,6 +19,7 @@ export const FORM_FIELD_CONTROL_TYPES = {
   PHONE_INPUT: 'phone-input',
   DATE_INPUT: 'date-input',
   DATE_RANGE_INPUT: 'date-range-input',
+  TIME_INPUT: 'time-input',
   DROPZONE: 'dropzone',
 } as const;
 

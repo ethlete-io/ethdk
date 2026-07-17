@@ -1,0 +1,18 @@
+<input class="et-time-input-field" etTimeInputField />
+
+<button [attr.aria-label]="pickerTriggerLabel()" class="et-time-input-picker-trigger" etDatePickerTrigger>
+  <i etIcon="et-clock"></i>
+</button>
+
+<ng-template etDatePickerSurface>
+  <et-date-picker-panel>
+    <et-time-picker
+      [value]="timeInput.time()"
+      [format]="timeInput.displayFormat()"
+      [locale]="timeInput.effectiveLocale()"
+      [minuteStep]="minuteStep()"
+      [secondStep]="secondStep()"
+      (valueChange)="timeInput.selectTime($event)"
+    />
+  </et-date-picker-panel>
+</ng-template>

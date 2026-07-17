@@ -55,6 +55,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 - [Chip](/components/chip) — compact pill for a value, tag or filter with an optional remove button.
 - [Icon](/components/icon) — tree-shakeable inline-SVG icons via `provideIcons()` and `[etIcon]`.
 - [Loaders](/components/loader) — spinner, progress bar and brand loader.
+- [Time picker](/components/time-picker) — inline column-list time picker with a format-derived layout (12/24h, seconds) and per-column keyboard selection.
 
 ### Forms
 

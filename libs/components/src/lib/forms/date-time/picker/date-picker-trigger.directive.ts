@@ -34,7 +34,7 @@ export class DatePickerTriggerDirective {
         if (!this.host) {
           throw new RuntimeError(
             DATE_INPUT_ERROR_CODES.TRIGGER_OUTSIDE_DATE_INPUT,
-            '[DatePickerTriggerDirective] etDatePickerTrigger must be placed inside a date picker host ([etDateInput] or [etDateRangeInput]).',
+            '[DatePickerTriggerDirective] etDatePickerTrigger must be placed inside a date picker host ([etDateInput], [etDateRangeInput] or [etTimeInput]).',
           );
         }
       });

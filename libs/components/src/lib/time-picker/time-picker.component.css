@@ -1,0 +1,73 @@
+@layer components {
+  @property --et-time-picker-column-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 224px;
+  }
+
+  @property --et-time-picker-option-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 36px;
+  }
+
+  .et-time-picker {
+    display: inline-flex;
+    gap: 4px;
+    user-select: none;
+
+    .et-time-picker-column {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      block-size: var(--et-time-picker-column-size);
+      /* room for the first/last option to reach the scrollport center */
+      padding-block: calc((var(--et-time-picker-column-size) - var(--et-time-picker-option-size)) / 2);
+      overflow-y: auto;
+      scroll-snap-type: y proximity;
+      scrollbar-width: none;
+      mask-image: linear-gradient(transparent, black 18%, black 82%, transparent);
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+    }
+
+    .et-time-picker-option {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+      scroll-snap-align: center;
+      min-inline-size: 52px;
+      block-size: var(--et-time-picker-option-size);
+      padding-inline: 8px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      font: inherit;
+      font-size: 14px;
+      font-variant-numeric: tabular-nums;
+      color: var(--et-surface-color-solid);
+      cursor: pointer;
+      transition:
+        background-color 150ms ease,
+        color 150ms ease;
+
+      &:hover {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--et-theme-color-primary-solid);
+        outline-offset: -2px;
+      }
+
+      &:where([data-selected]) {
+        background: var(--et-theme-color-primary-solid);
+        color: var(--et-theme-color-on-primary);
+        font-weight: 600;
+      }
+    }
+  }
+}

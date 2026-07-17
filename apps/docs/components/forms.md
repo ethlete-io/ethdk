@@ -34,6 +34,7 @@ Each control family ships its own imports array — combine the field shell with
 | `PHONE_INPUT_IMPORTS`      | `et-phone-input`                                                          |
 | `DATE_INPUT_IMPORTS`       | `et-date-input`                                                           |
 | `DATE_RANGE_INPUT_IMPORTS` | `et-date-range-input`                                                     |
+| `TIME_INPUT_IMPORTS`       | `et-time-input`                                                           |
 
 ```ts
 import { FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
@@ -293,6 +294,32 @@ validate(s.range, ({ value }) => {
 ```
 
 Try it live in Storybook: `Components/Forms/Date Range Input`.
+
+## Time input — `et-time-input`
+
+A time form control with a **string value** in a configurable wire format (default `HH:mm`), combining lenient typed entry with an anchored [time picker](/components/time-picker) overlay. String↔`Date` conversion happens only in the control — the picker itself operates on `Date` objects.
+
+```html
+<et-form-field>
+  <et-label>Time</et-label>
+  <et-time-input [formField]="demoForm.time" />
+</et-form-field>
+```
+
+| Input                       | Type                        | Default              | Description                                                         |
+| --------------------------- | --------------------------- | -------------------- | ------------------------------------------------------------------- |
+| `valueFormat`               | `string`                    | `TIME_FORMAT` token  | date-fns format of the string value (token default: `HH:mm`).       |
+| `displayFormat`             | `string`                    | `'p'`                | date-fns format shown in and parsed from the field (locale-aware).  |
+| `locale`                    | `Locale \| null` (date-fns) | `DATE_LOCALE` token  | Display/parse locale (also decides the picker's 12/24-hour layout). |
+| `minuteStep` / `secondStep` | `number`                    | `5` / `1`            | Forwarded to the picker columns.                                    |
+| `pickerOpen`                | `boolean` (model)           | `false`              | The picker overlay's open state.                                    |
+| `pickerTriggerLabel`        | `string`                    | `'Open time picker'` | `aria-label` of the suffix clock button.                            |
+
+Typed text is parsed against `displayFormat` first, then **leniently**: bare digit runs (`930` → 09:30, `0930`, `93015`), loose separators (`9.30`, `9 30`) and meridiem suffixes (`930pm`, `9 a.m.`) all commit, and 24-hour entry is accepted even under a 12-hour display format. Unparseable text behaves exactly like the date input (`parseError` signal, value stays `null`). Alt+ArrowDown opens the picker; picking parts writes `format(time, valueFormat)` and — unlike the calendar picker — **keeps the overlay open**, since a time takes one pick per column.
+
+The wire defaults share the date tokens (`provideTimeFormat('HH:mm:ss')`, `provideDateLocale(de)`).
+
+Try it live in Storybook: `Components/Forms/Time Input`.
 
 ## Selection lists
 

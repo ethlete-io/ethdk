@@ -39,7 +39,7 @@ Decisions baked into this plan (do not re-litigate without a reason):
 | Calendar                        | 6     | L    | shipped | 2900–2999                   |
 | Date input                      | 6     | M    | shipped | 3000–3099                   |
 | Date range input                | 7     | M    | shipped | 3010–3019 (shared block)    |
-| Time picker + time input        | 7     | M+S  | planned | shares `date-time` block    |
+| Time picker + time input        | 7     | M+S  | shipped | 3020–3029 + 3030–3039       |
 | Date-time input                 | 7     | M    | planned | shares `date-time` block    |
 | Slider (incl. range)            | 8     | L    | planned | claim at impl. time         |
 | Masked input                    | 8     | L    | planned | claim at impl. time         |
@@ -603,11 +603,37 @@ dateInput, close }`), so headless consumers can host anything; the Tier 3
   - No auto-swap when start > end — that's consumer validation territory (the
     story demonstrates the range-order validator).
 
-- **`et-time-picker`** (M) — inline-capable column-list UI (hours / minutes /
+- ~~**`et-time-picker`** (M) — inline-capable column-list UI (hours / minutes /
   optional seconds derived from format), `minuteStep` (default 5), roving focus per
-  column, scroll-snap + type-to-jump. Model: `Date | null` (time-of-day on a Date).
-- **`et-time-input`** (S) — `FormValueControl<string | null>`, `HH:mm` default;
-  lenient typed parse (`930` → `09:30`) + time-picker overlay.
+  column, scroll-snap + type-to-jump. Model: `Date | null` (time-of-day on a Date).~~
+  Shipped as **top-level `lib/time-picker/`** (calendar precedent: inline-capable,
+  `Date`-only), error codes 3020/3021 inside the shared date-time block.
+  Learnings:
+  - **Column layout derives from the format via a probe render** (`format` a
+    date with hour 13 / second 57 and inspect the output), NOT a token scan —
+    localized tokens (`p`, `pp`) expand per locale and contain no literal
+    `h`/`s`. `deriveTimeFormatSpec` in `headless/internals/time-format.ts`.
+  - Columns are selection-follows-focus listboxes (roving tabindex per column,
+    wrapping arrows, `createTypeahead` type-to-jump). 12h hour column uses
+    internal values 0–11 (label `12,1…11`); period column is `0/1` and hour
+    picks map through the current period.
+  - While `value` is null the columns anchor to "now" snapped to the steps; the
+    **first pick completes that anchor** into a full value. An off-step
+    committed minute/second is spliced into its column so selection stays
+    visible.
+  - Centering uses a manual `scrollTo` on the column (never `scrollIntoView`,
+    which also scrolls the overlay pane/page); first call instant, later ones
+    smooth. Options `focus({ preventScroll: true })` for the same reason.
+- ~~**`et-time-input`** (S) — `FormValueControl<string | null>`, `HH:mm` default;
+  lenient typed parse (`930` → `09:30`) + time-picker overlay.~~ Shipped at
+  `forms/date-time/time-input/` (error code 3030): a near-clone of the date
+  input reusing `DATE_PICKER_HOST` + `createDatePickerOverlay` + the shared
+  trigger/surface directives unchanged. Deviations from the date input:
+  `displayFormat` defaults to `'p'`; commit parses strict-then-lenient
+  (`parseTimeText` — digit runs, loose separators, meridiem suffixes, 24h entry
+  accepted under a 12h display format); `selectTime` does **not** close the
+  picker (one pick per column). date-fns `parse` zeroes units below the
+  smallest parsed one (verified), so `HH:mm` values carry no stray seconds.
 - **`et-date-time-input`** (M) — single input, combined display format; overlay
   hosts calendar + time picker (side-by-side desktop, tabbed in bottom sheet).
 

@@ -82,15 +82,18 @@ Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web so
 
 ## Date & time inputs (ET30xx)
 
-The date input and the date range input share this block (the picker trigger/surface pieces work with either host).
+The date input, date range input, [time picker](/components/time-picker) and time input share this block (the picker trigger/surface pieces work with any of the input hosts).
 
-| Code     | Cause                                                                  | Fix                                                              |
-| -------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `ET3000` | `etDateInputField` is not inside an `[etDateInput]` element.           | Move the field inside the date input root.                       |
-| `ET3001` | `etDatePickerTrigger` is not inside a date picker host.                | Move the trigger inside `[etDateInput]` / `[etDateRangeInput]`.  |
-| `ET3002` | `etDatePickerSurface` is not inside a date picker host.                | Move the surface template inside the host element.               |
-| `ET3003` | The picker was opened without an `etDatePickerSurface` template.       | Add `<ng-template etDatePickerSurface>` inside the host element. |
-| `ET3010` | `etDateRangeInputField` is not inside an `[etDateRangeInput]` element. | Move the field inside the date range input root.                 |
+| Code     | Cause                                                                  | Fix                                                                               |
+| -------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `ET3000` | `etDateInputField` is not inside an `[etDateInput]` element.           | Move the field inside the date input root.                                        |
+| `ET3001` | `etDatePickerTrigger` is not inside a date picker host.                | Move the trigger inside `[etDateInput]` / `[etDateRangeInput]` / `[etTimeInput]`. |
+| `ET3002` | `etDatePickerSurface` is not inside a date picker host.                | Move the surface template inside the host element.                                |
+| `ET3003` | The picker was opened without an `etDatePickerSurface` template.       | Add `<ng-template etDatePickerSurface>` inside the host element.                  |
+| `ET3010` | `etDateRangeInputField` is not inside an `[etDateRangeInput]` element. | Move the field inside the date range input root.                                  |
+| `ET3020` | `etTimePickerColumn` is not inside an `[etTimePicker]` element.        | Move the column inside the time picker root.                                      |
+| `ET3021` | `etTimePickerOption` is not inside an `[etTimePickerColumn]` element.  | Move the option inside a column.                                                  |
+| `ET3030` | `etTimeInputField` is not inside an `[etTimeInput]` element.           | Move the field inside the time input root.                                        |
 
 ## Chip (ET11xx)
 

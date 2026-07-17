@@ -27,7 +27,7 @@ export class DatePickerSurfaceDirective {
         if (!this.host) {
           throw new RuntimeError(
             DATE_INPUT_ERROR_CODES.SURFACE_OUTSIDE_DATE_INPUT,
-            '[DatePickerSurfaceDirective] etDatePickerSurface must be placed inside a date picker host ([etDateInput] or [etDateRangeInput]).',
+            '[DatePickerSurfaceDirective] etDatePickerSurface must be placed inside a date picker host ([etDateInput], [etDateRangeInput] or [etTimeInput]).',
           );
         }
       });

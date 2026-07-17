@@ -6,6 +6,7 @@ export * from './calendar-icon';
 export * from './check-icon';
 export * from './chevron-icon';
 export * from './clipboard-check-icon';
+export * from './clock-icon';
 export * from './code-icon';
 export * from './file-icon';
 export * from './floppy-disk-icon';

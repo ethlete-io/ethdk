@@ -1,0 +1,7 @@
+@for (column of timePicker.columns(); track column.unit) {
+  <div [column]="column" class="et-time-picker-column" etTimePickerColumn>
+    @for (option of column.options; track option.value) {
+      <button [option]="option" class="et-time-picker-option" etTimePickerOption>{{ option.label }}</button>
+    }
+  </div>
+}

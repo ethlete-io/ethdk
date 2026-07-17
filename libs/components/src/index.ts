@@ -12,5 +12,6 @@ export * from './lib/overlay';
 export * from './lib/scrollable';
 export * from './lib/stream';
 export * from './lib/tabs';
+export * from './lib/time-picker';
 export * from './lib/toggletip';
 export * from './lib/tooltip';

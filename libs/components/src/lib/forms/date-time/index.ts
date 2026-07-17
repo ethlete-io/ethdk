@@ -3,3 +3,4 @@ export * from './date-picker-panel.component';
 export * from './date-range-input';
 export * from './date-time-formats';
 export * from './picker';
+export * from './time-input';
