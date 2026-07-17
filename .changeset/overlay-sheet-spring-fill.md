@@ -2,4 +2,4 @@
 '@ethlete/components': patch
 ---
 
-Overlay sheets: the filler strip that hides the sheet's spring-overshoot now paints from the surface token (`--et-surface-background-solid`) instead of `inherit`. Sheets whose background is painted on nested content (e.g. a date picker) left the container host transparent, so during the enter-spring overshoot the momentary gap at the docked edge revealed the page background. It now paints the matching surface color.
+Overlay sheets: fix the black gap that appeared at the docked edge while a sheet sprang into view. The enter spring overshoots slightly past the docked edge, and the filler meant to cover that gap was an `::after` strip positioned just outside the host — which sheets clip away with their `overflow: hidden` (kept for the rounded corners), so nothing painted and the page background showed through (most visible with sheets whose surface is painted on nested content, e.g. the date picker). The filler is now a solid offset `box-shadow` in the surface color, which is not clipped by the host's own overflow and needs no change to the corner clipping.
