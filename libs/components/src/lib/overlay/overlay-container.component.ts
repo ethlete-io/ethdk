@@ -91,10 +91,27 @@ export class OverlayContainerComponent {
     this.rootBoundary.override.set(this.elementRef.nativeElement);
 
     afterNextRender(() => {
+      const host = this.elementRef.nativeElement;
+
+      // A sheet's enter spring briefly overshoots past its docked edge; a box-shadow fills the gap
+      // (see the CSS). Its color must match the sheet's *actually painted* surface, which can live
+      // on nested content one elevation above the host's own forced surface — so measure the
+      // painted pane rather than trusting the host's --et-surface-background-solid token, which
+      // would be a shade off. Falls back to the token (CSS default) when nothing paints.
+      if (host.classList.contains('et-with-default-animation') && this.isSheetHost(host)) {
+        const sheetPane = this.resolvePaintedPaneElement(host);
+        const sheetBackground = getComputedStyle(sheetPane).backgroundColor;
+        const sheetPaints =
+          !!sheetBackground && sheetBackground !== 'transparent' && sheetBackground !== 'rgba(0, 0, 0, 0)';
+
+        if (sheetPaints) {
+          this.renderer.setCssProperties(host, { '--_et-overlay-overshoot-fill': sheetBackground });
+        }
+      }
+
       if (!this.renderArrow()) return;
 
-      const host = this.elementRef.nativeElement;
-      const pane = this.resolveArrowPaneElement(host);
+      const pane = this.resolvePaintedPaneElement(host);
       const style = getComputedStyle(pane);
       const props: Record<string, string> = {};
       const borderWidth = parseFloat(style.borderTopWidth) || 0;
@@ -155,11 +172,21 @@ export class OverlayContainerComponent {
   }
 
   /**
-   * The element the arrow should visually continue: the container host when it paints the pane
-   * itself (custom panelClass, dialog), otherwise the first painted element in the rendered
-   * content (menu/tooltip/toggletip paint a nested element, potentially at a higher elevation).
+   * The element whose surface the container should visually continue (for the arrow's background
+   * and the sheet overshoot filler): the host itself when it paints the pane (custom panelClass,
+   * dialog), otherwise the first painted element in the rendered content (menu/tooltip/date-picker
+   * paint a nested element, potentially at a higher elevation than the host's forced surface).
    */
-  private resolveArrowPaneElement(host: HTMLElement): HTMLElement {
+  private isSheetHost(host: HTMLElement) {
+    return (
+      host.classList.contains('et-overlay--bottom-sheet') ||
+      host.classList.contains('et-overlay--top-sheet') ||
+      host.classList.contains('et-overlay--left-sheet') ||
+      host.classList.contains('et-overlay--right-sheet')
+    );
+  }
+
+  private resolvePaintedPaneElement(host: HTMLElement): HTMLElement {
     const isPainted = (el: HTMLElement) => {
       const background = getComputedStyle(el).backgroundColor;
       return !!background && background !== 'transparent' && background !== 'rgba(0, 0, 0, 0)';
