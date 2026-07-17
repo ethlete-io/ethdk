@@ -2,7 +2,7 @@
   @property --et-time-picker-column-size {
     syntax: '<length>';
     inherits: true;
-    initial-value: 224px;
+    initial-value: 240px;
   }
 
   @property --et-time-picker-option-size {
@@ -13,7 +13,7 @@
 
   .et-time-picker {
     display: inline-flex;
-    gap: 4px;
+    gap: 8px;
     user-select: none;
 
     .et-time-picker-column {
@@ -26,10 +26,19 @@
       overflow-y: auto;
       scroll-snap-type: y proximity;
       scrollbar-width: none;
-      mask-image: linear-gradient(transparent, black 18%, black 82%, transparent);
+      /* with the 240px column and 36px options, the row cut by each edge stays
+         ~2/3 visible and fades out exactly across that visible part — the
+         half-faded numbers are the scrollability cue */
+      mask-image: linear-gradient(transparent, black 10%, black 90%, transparent);
 
       &::-webkit-scrollbar {
         display: none;
+      }
+
+      /* the mask fades the separator out toward the column ends with the options */
+      & + .et-time-picker-column {
+        border-inline-start: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.08));
+        padding-inline-start: 8px;
       }
     }
 
@@ -48,25 +57,40 @@
       font: inherit;
       font-size: 14px;
       font-variant-numeric: tabular-nums;
-      color: var(--et-surface-color-solid);
+      color: var(--et-surface-color-muted-solid);
       cursor: pointer;
+      /* keep column panning, drop the double-tap-zoom wait */
+      touch-action: pan-y;
       transition:
         background-color 150ms ease,
         color 150ms ease;
 
-      &:hover {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
-      }
-
-      &:focus-visible {
-        outline: 2px solid var(--et-theme-color-primary-solid);
-        outline-offset: -2px;
+      /* the roving target ("now" while empty) reads as the current position */
+      &:where([data-focused]) {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid) 8%, transparent);
+        color: var(--et-surface-color-solid);
       }
 
       &:where([data-selected]) {
         background: var(--et-theme-color-primary-solid);
         color: var(--et-theme-color-on-primary);
         font-weight: 600;
+      }
+
+      &:hover {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+        color: var(--et-surface-color-solid);
+      }
+
+      /* hovering the selected option keeps its filled state */
+      &:hover:where([data-selected]) {
+        background: var(--et-theme-color-primary-solid);
+        color: var(--et-theme-color-on-primary);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--et-theme-color-primary-solid);
+        outline-offset: -2px;
       }
     }
   }

@@ -29,6 +29,7 @@
     }
 
     .et-date-input-picker-trigger {
+      position: relative;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -40,6 +41,16 @@
       margin: 0;
       cursor: pointer;
       appearance: none;
+      /* no double-tap-zoom wait on touch — the picker opens on the first tap */
+      touch-action: manipulation;
+
+      /* invisible hit-area extension — the icon-sized box alone is far below
+         a comfortable tap target */
+      &::after {
+        content: '';
+        position: absolute;
+        inset: -14px;
+      }
 
       .et-icon {
         inline-size: 16px;

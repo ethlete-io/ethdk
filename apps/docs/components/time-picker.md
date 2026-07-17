@@ -79,7 +79,7 @@ Selection colors come from the nearest [color theme](/core/theming) (`--et-theme
 
 | Token                          | Default | Purpose                              |
 | ------------------------------ | ------- | ------------------------------------ |
-| `--et-time-picker-column-size` | `224px` | Block size of the scrollable columns |
+| `--et-time-picker-column-size` | `240px` | Block size of the scrollable columns |
 | `--et-time-picker-option-size` | `36px`  | Block size of one option             |
 
 ## Error codes
