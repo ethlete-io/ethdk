@@ -1,0 +1,192 @@
+@layer components {
+  et-date-time-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-inline-size: 0;
+    color: inherit;
+
+    .et-date-time-input-field {
+      flex: 1;
+      min-inline-size: 0;
+      border: none;
+      outline: none;
+      background: transparent;
+      font: inherit;
+      color: inherit;
+      padding: 0;
+      caret-color: var(--et-theme-color-primary-solid, currentColor);
+      font-variant-numeric: tabular-nums;
+
+      &::placeholder {
+        color: color-mix(in srgb, currentColor 46%, transparent);
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+      }
+    }
+
+    .et-date-time-input-picker-trigger {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--et-surface-color-muted-solid, currentColor);
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      appearance: none;
+      /* no double-tap-zoom wait on touch — the picker opens on the first tap */
+      touch-action: manipulation;
+
+      /* invisible hit-area extension — the icon-sized box alone is far below
+         a comfortable tap target */
+      &::after {
+        content: '';
+        position: absolute;
+        inset: -14px;
+      }
+
+      .et-icon {
+        inline-size: 16px;
+      }
+
+      &:hover {
+        color: var(--et-surface-color-solid, currentColor);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+        color: var(--et-surface-color-subtle-solid, currentColor);
+      }
+    }
+  }
+
+  /* the picker panel renders inside a detached overlay pane, not the host */
+  .et-date-time-input-panel {
+    /* desktop (anchored panel): calendar and time picker side by side, no tabs */
+    .et-date-time-input-panel-tabs {
+      display: none;
+    }
+
+    /* top-anchored row: the calendar alone defines the height */
+    .et-date-time-input-panel-panes {
+      display: flex;
+      align-items: start;
+      gap: 12px;
+    }
+
+    /* stretch wrapper that absorbs the time picker's animated block-size
+       (etDateTimeInputPanes): while the animation makes the time picker
+       taller than the row, the overflow stays out of layout — the panel body
+       snaps once and the panel's own resize animation runs in sync, instead
+       of chasing a frame-by-frame moving target */
+    .et-date-time-input-panel-time-pane {
+      align-self: stretch;
+      display: flex;
+    }
+
+    .et-time-picker {
+      align-items: center;
+      border-inline-start: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.08));
+      padding-inline-start: 12px;
+    }
+  }
+
+  /* below the md breakpoint the picker mounts as a bottom sheet: one pane at a
+     time, switched by the tab bar */
+  .et-overlay.et-date-picker-sheet .et-date-time-input-panel {
+    .et-date-time-input-panel-tabs {
+      display: block;
+      margin-block-end: 12px;
+
+      /* full-width segmented track, tabs sharing it equally */
+      .et-segmented-button-group-buttons {
+        display: flex;
+        align-self: stretch;
+      }
+
+      et-segmented-button {
+        flex: 1;
+      }
+    }
+
+    /* both panes stacked in one grid cell: the sheet keeps the taller pane's
+       height across tab switches instead of resizing */
+    .et-date-time-input-panel-panes {
+      display: grid;
+      justify-content: center;
+      justify-items: center;
+      align-items: center;
+
+      > et-calendar,
+      > .et-date-time-input-panel-time-pane {
+        grid-area: 1 / 1;
+      }
+    }
+
+    .et-date-time-input-panel-time-pane {
+      align-self: center;
+      align-items: center;
+    }
+
+    .et-time-picker {
+      border-inline-start: none;
+      padding-inline-start: 0;
+      /* touch-sized columns fitting the sheet's reserved calendar height */
+      --et-time-picker-column-size: 300px;
+    }
+
+    .et-date-time-input-panel-panes[data-active-pane='date'] > .et-date-time-input-panel-time-pane {
+      visibility: hidden;
+    }
+
+    .et-date-time-input-panel-panes[data-active-pane='time'] > et-calendar {
+      visibility: hidden;
+    }
+
+    /* the incoming pane slides in from the travel direction, like the
+       calendar's month navigation; `data-nav` is unset on open, so the first
+       render does not animate. The selector stops matching while a pane is
+       inactive, which restarts the animation on every re-activation. */
+    .et-date-time-input-panel-panes[data-nav='forward'][data-active-pane='time'] > .et-date-time-input-panel-time-pane {
+      animation: et-date-time-input-pane-in-forward 200ms ease;
+    }
+
+    .et-date-time-input-panel-panes[data-nav='backward'][data-active-pane='date'] > et-calendar {
+      animation: et-date-time-input-pane-in-backward 200ms ease;
+    }
+  }
+
+  @keyframes et-date-time-input-pane-in-forward {
+    from {
+      opacity: 0;
+      transform: translateX(14px);
+    }
+  }
+
+  @keyframes et-date-time-input-pane-in-backward {
+    from {
+      opacity: 0;
+      transform: translateX(-14px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-date-time-input-panel-panes > et-calendar,
+    .et-date-time-input-panel-panes > .et-date-time-input-panel-time-pane {
+      animation: none;
+    }
+  }
+}

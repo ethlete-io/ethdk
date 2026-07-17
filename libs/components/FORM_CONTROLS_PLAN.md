@@ -40,7 +40,7 @@ Decisions baked into this plan (do not re-litigate without a reason):
 | Date input                      | 6     | M    | shipped | 3000–3099                    |
 | Date range input                | 7     | M    | shipped | 3010–3019 (shared block)     |
 | Time picker + time input        | 7     | M+S  | shipped | 3020–3029 + 3030–3039        |
-| Date-time input                 | 7     | M    | planned | shares `date-time` block     |
+| Date-time input                 | 7     | M    | shipped | 3040–3049 (shared block)     |
 | Slider (incl. range)            | 8     | L    | planned | claim at impl. time          |
 | Masked input                    | 8     | L    | planned | claim at impl. time          |
 | Cascader (generic)              | 9     | L    | planned | 3100–3199 (claim at impl.)   |
@@ -642,8 +642,61 @@ dateInput, close }`), so headless consumers can host anything; the Tier 3
   accepted under a 12h display format); `selectTime` does **not** close the
   picker (one pick per column). date-fns `parse` zeroes units below the
   smallest parsed one (verified), so `HH:mm` values carry no stray seconds.
-- **`et-date-time-input`** (M) — single input, combined display format; overlay
-  hosts calendar + time picker (side-by-side desktop, tabbed in bottom sheet).
+- ~~**`et-date-time-input`** (M) — single input, combined display format; overlay
+  hosts calendar + time picker (side-by-side desktop, tabbed in bottom sheet).~~
+  Shipped at `forms/date-time/date-time-input/` (error code 3040), completing
+  phase 7. Another `DATE_PICKER_HOST` + `createDatePickerOverlay` reuse — the
+  shared trigger/surface directives needed zero changes. Learnings:
+  - `displayFormat` defaults to `'Pp'` and is passed straight to the time
+    picker's `format` — `deriveTimeFormatSpec`'s probe date (2000-01-01) was
+    chosen to contain no `13`/`57` digit pairs, so a **combined** format probes
+    correctly too.
+  - Typed entry is strict-then-lenient via `parseDateTimeText`: strict against
+    the combined format, else split at every `[,\s]+` boundary (date part
+    strict against the locale's `'P'`, time part through the time input's
+    `parseTimeText` with the parsed date as `referenceDate` — parse fills
+    higher units from it, so no manual merge), else bare date at midnight.
+  - Picker picks **merge**: `selectDate` keeps the committed time of day,
+    `selectTime` keeps the committed day (or the pick's own day). Neither
+    closes the overlay — there is no "complete" moment like the range input's
+    second click.
+  - A first day pick on an empty value must **complete with the time picker's
+    `anchorTime`** (now, snapped — what the columns visibly show focused), not
+    the headless midnight default — otherwise the columns jump from the
+    anchored time to 12:00 AM. `anchorTime` became public on
+    `TimePickerDirective` for this, and it now zeroes units without a column
+    (no invisible seconds in completed values).
+  - The bottom-sheet tab bar is a full-width `et-segmented-button-group`
+    (self-contained form chrome — it hosts its own `FormFieldDirective`, so no
+    `FORM_FIELD_TOKEN` barrier is needed inside the panel), hidden outside
+    `.et-date-picker-sheet`. The `activePane` signal lives on the Tier 3
+    component (outside the surface template), resetting to `'date'` on open.
+  - In the sheet the two panes are **stacked in one grid cell** with the
+    inactive one `visibility: hidden` (never `display: none`) — the sheet
+    keeps the taller pane's height across tab switches instead of resizing,
+    and picker state stays alive.
+  - Tab switches slide the incoming pane in from the travel direction (the
+    calendar month-nav pattern: 200ms, 14px, `data-nav` unset on open so
+    opening never animates). Since the panes persist, the trick is that the
+    animation selector includes `[data-active-pane]` — it stops matching while
+    a pane is inactive, so re-activation re-applies the `animation` and
+    restarts it without any keyed re-creation.
+  - Desktop month navigation resizes the panel smoothly
+    (`injectAnimatedBlockSize` in the panel) but everything **inside** is at
+    its final layout instantly — the stretched time picker's centered columns
+    jumped. `etDateTimeInputPanes` (internal directive on the pane row) fixes
+    this with a **transform compensation**: on a calendar resize it slides the
+    columns from their old visual position to the new one
+    (`translateY((oldHeight − newHeight) / 2) → 0`, same 160ms/ease, same
+    resize-observer batch). Deliberately NOT a second animated `block-size` on
+    the time picker: that worked on grow (the taller calendar drives the row)
+    but on shrink the animating time picker became the row's tallest item and
+    fed every frame back into the panel body — the panel's resize observer
+    kept restarting 160ms animations toward a moving target and settled long
+    after the columns (nor does wrapping help: a stretched flex item still
+    contributes its _content's_ hypothetical size to the row). Transforms stay
+    out of layout, so the body snaps once and both animations run in lockstep.
+    The row is `align-items: start` so the calendar stays top-anchored.
 
 ---
 

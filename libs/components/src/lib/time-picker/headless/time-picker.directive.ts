@@ -63,9 +63,10 @@ export class TimePickerDirective {
   /**
    * The value, or "now" snapped to the steps — the time the columns anchor
    * their roving focus and initial scroll position to, and the base a first
-   * part pick completes into a full value.
+   * part pick completes into a full value. Units without a column are zeroed
+   * so a completed anchor never carries an invisible seconds part.
    */
-  private anchorTime = computed<Date>(() => {
+  public anchorTime = computed<Date>(() => {
     const value = this.value();
 
     if (value !== null) {
@@ -73,7 +74,9 @@ export class TimePickerDirective {
     }
 
     const snappedMinute = this.now.getMinutes() - (this.now.getMinutes() % this.minuteStep());
-    const snappedSecond = this.now.getSeconds() - (this.now.getSeconds() % this.secondStep());
+    const snappedSecond = this.formatSpec().showSeconds
+      ? this.now.getSeconds() - (this.now.getSeconds() % this.secondStep())
+      : 0;
 
     return setMilliseconds(
       setSeconds(setMinutes(setHours(startOfDay(this.now), this.now.getHours()), snappedMinute), snappedSecond),

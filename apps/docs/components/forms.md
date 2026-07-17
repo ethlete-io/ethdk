@@ -35,6 +35,7 @@ Each control family ships its own imports array — combine the field shell with
 | `DATE_INPUT_IMPORTS`       | `et-date-input`                                                           |
 | `DATE_RANGE_INPUT_IMPORTS` | `et-date-range-input`                                                     |
 | `TIME_INPUT_IMPORTS`       | `et-time-input`                                                           |
+| `DATE_TIME_INPUT_IMPORTS`  | `et-date-time-input`                                                      |
 
 ```ts
 import { FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
@@ -322,6 +323,35 @@ Typed text is parsed against `displayFormat` first, then **leniently**: bare dig
 The wire defaults share the date tokens (`provideTimeFormat('HH:mm:ss')`, `provideDateLocale(de)`).
 
 Try it live in Storybook: `Components/Forms/Time Input`.
+
+## Date-time input — `et-date-time-input`
+
+A combined date & time form control with a **string value** in a configurable wire format (default: the `DATE_FORMAT` token, ISO 8601 with offset — it already carries the time). One field, one combined display format; the anchored picker overlay hosts a [calendar](/components/calendar) and a [time picker](/components/time-picker) **side by side** and stays open across picks (pick a day, then a time). Below the `md` breakpoint the picker opens as a bottom sheet with **Date / Time tabs** switching between the two panes.
+
+```html
+<et-form-field>
+  <et-label>Kick-off</et-label>
+  <et-date-time-input [formField]="demoForm.kickOff" />
+</et-form-field>
+```
+
+| Input                           | Type                                | Default                     | Description                                                                  |
+| ------------------------------- | ----------------------------------- | --------------------------- | ---------------------------------------------------------------------------- |
+| `valueFormat`                   | `string`                            | `DATE_FORMAT` token         | date-fns format of the string value (token default: ISO 8601 with offset).   |
+| `displayFormat`                 | `string`                            | `'Pp'`                      | Combined date-fns format shown in and parsed from the field (locale-aware).  |
+| `locale`                        | `Locale \| null` (date-fns)         | `DATE_LOCALE` token         | Display/parse locale (also decides the time picker's 12/24-hour layout).     |
+| `minDate` / `maxDate`           | `Date \| null`                      | `null`                      | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms). |
+| `dateFilter`                    | `((date: Date) => boolean) \| null` | `null`                      | Forwarded to the picker calendar.                                            |
+| `minuteStep` / `secondStep`     | `number`                            | `5` / `1`                   | Forwarded to the time picker columns.                                        |
+| `pickerOpen`                    | `boolean` (model)                   | `false`                     | The picker overlay's open state.                                             |
+| `pickerTriggerLabel`            | `string`                            | `'Open date & time picker'` | `aria-label` of the suffix calendar button.                                  |
+| `dateTabLabel` / `timeTabLabel` | `string`                            | `'Date'` / `'Time'`         | Labels of the pane tabs in the bottom sheet.                                 |
+
+Typed text is parsed **strictly** against `displayFormat` first, then leniently: the entry split into a date and a time at any separator (the date against the locale's short `P` format, the time with the time input's lenient rules — `7/16/2026 930pm` commits), and a **bare date commits at midnight**. Unparseable text behaves exactly like the date input (`parseError` signal, value stays `null`).
+
+In the picker, selections **merge**: picking a day keeps the committed time of day, picking a time keeps the committed day — and neither closes the overlay (close it via Escape, an outside click or the trigger). While the value is still empty, `et-date-time-input` completes a first day pick with the time the picker's columns visibly anchor to (now, snapped to the steps); the headless `selectDate` defaults to midnight. Alt+ArrowDown opens the picker from the field.
+
+Try it live in Storybook: `Components/Forms/Date Time Input`.
 
 ## Selection lists
 

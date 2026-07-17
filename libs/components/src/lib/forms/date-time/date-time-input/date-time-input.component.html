@@ -1,0 +1,45 @@
+<input class="et-date-time-input-field" etDateTimeInputField />
+
+<button [attr.aria-label]="pickerTriggerLabel()" class="et-date-time-input-picker-trigger" etDatePickerTrigger>
+  <i etIcon="et-calendar"></i>
+</button>
+
+<ng-template etDatePickerSurface>
+  <et-date-picker-panel>
+    <div class="et-date-time-input-panel">
+      <div class="et-date-time-input-panel-tabs">
+        <et-segmented-button-group [value]="activePane()" (valueChange)="setActivePane($event)">
+          <et-segmented-button value="date">{{ dateTabLabel() }}</et-segmented-button>
+          <et-segmented-button value="time">{{ timeTabLabel() }}</et-segmented-button>
+        </et-segmented-button-group>
+      </div>
+
+      <div
+        [attr.data-active-pane]="activePane()"
+        [attr.data-nav]="paneNav()"
+        class="et-date-time-input-panel-panes"
+        etDateTimeInputPanes
+      >
+        <et-calendar
+          [value]="dateTimeInput.dateTime()"
+          [min]="dateTimeInput.minDate()"
+          [max]="dateTimeInput.maxDate()"
+          [dateFilter]="dateTimeInput.dateFilter()"
+          [locale]="dateTimeInput.effectiveLocale()"
+          (valueChange)="completeDatePick($event, timePicker)"
+        />
+        <div class="et-date-time-input-panel-time-pane">
+          <et-time-picker
+            #timePicker="etTimePicker"
+            [value]="dateTimeInput.dateTime()"
+            [format]="dateTimeInput.displayFormat()"
+            [locale]="dateTimeInput.effectiveLocale()"
+            [minuteStep]="minuteStep()"
+            [secondStep]="secondStep()"
+            (valueChange)="dateTimeInput.selectTime($event)"
+          />
+        </div>
+      </div>
+    </div>
+  </et-date-picker-panel>
+</ng-template>
