@@ -43,6 +43,13 @@ Decisions baked into this plan (do not re-litigate without a reason):
 | Date-time input                 | 7     | M    | planned | shares `date-time` block    |
 | Slider (incl. range)            | 8     | L    | planned | claim at impl. time         |
 | Masked input                    | 8     | L    | planned | claim at impl. time         |
+| Cascader (generic)              | 9     | L    | planned | 3100–3199 (claim at impl.)   |
+| Password input                  | 9     | S    | planned | shares `forms/input` (none)  |
+| Number stepper                  | 9     | S    | planned | shares `forms/input` (none)  |
+| Filter / choice chip group      | 9     | S–M  | planned | shares `chip` 1100 / none    |
+| Autocomplete                    | 9     | M    | planned | claim at impl. (likely none) |
+| Duration input                  | 9     | M    | planned | shares `date-time` block     |
+| Select option grouping          | 9     | S    | backlog | shares `select` 1000–1099    |
 
 Error-code note: the allocation table in `docs/COMPONENT-ARCHITECTURE.md` is in
 sync (2500–2599 rich-text-editor, 2600–2699 multi-language-rich-text-editor). The
@@ -86,6 +93,7 @@ in the docs table.
 | 6     | Date foundation: date-fns peer dep, format tokens, calendar, date input                         | L–XL | none (independent of select)       |
 | 7     | Date/time completion: range input, time picker/input, date-time input                           | L    | phase 6                            |
 | 8     | Slider (range from day one), masked input                                                       | XL   | slider: none; masked: phase 1 prep |
+| 9     | Post-plan additions: cascader (generic), password, number stepper, chip group, autocomplete, duration | L    | cascader/chip-group: phase 2–3; duration: phase 6–7 |
 
 ---
 
@@ -693,11 +701,143 @@ forms/masked-input/
 
 ---
 
+## Phase 9 — Post-plan additions
+
+Additive controls scoped **after** the phase 1–8 set, greenlit in planning. The
+**cascader** is the marquee item: real hierarchical entity selection (the recurring
+"find one match inside competition → stage → tournament → match" problem) is
+**browse-driven, not search-driven** — flat async search with breadcrumb rows does
+not cut it, so a proper drill-down control is warranted. Everything else fills an
+acknowledged gap. Same global conventions and definition-of-done as every prior
+phase; these are unordered relative to each other — pull whichever a real app need
+prioritizes.
+
+### Cascader — `forms/cascader/` (L) — the generic hierarchy control
+
+**Deliberately generic — not a competitions widget.** Driven by an abstract
+hierarchical data source, it serves any nested taxonomy (competition → stage →
+tournament → match, org → team → player, category trees). Conceptually the
+select's sibling (a value control with an anchored overlay), so it lives in
+`forms/` next to `select/` and reuses the same overlay + state-template machinery.
+
+- **Data-source contract (this is what keeps it generic + lazy):**
+  `CascaderDataSource<T>` with `loadChildren(parent: CascaderNode<T> | null)`
+  returning children of a node (root when `null`) — sync array **or**
+  `Promise`/`Observable`, so static trees and per-level async both work (each level
+  loads on demand — you never fetch all matches up front). Node shape
+  `{ value: T; label; isLeaf?; hasChildren?; disabled? }`. A
+  `cascaderFromQuery(...)` convenience mirrors `selectOptionsFromQuery` for
+  `@ethlete/query`-backed levels (tree-shakeable, zero new dep).
+- **Value contract:** `FormValueControl<T | null>` = the selected **leaf** value.
+  The full chosen chain is exposed as computeds/outputs: `path`
+  (`CascaderNode<T>[]`) and `pathValue` (`T[]`). `selectableLevels: 'leaf' | 'any'`
+  (default `leaf`) allows committing an intermediate node.
+- **Two navigation surfaces from one headless core:** Miller columns (side-by-side
+  panels, desktop) and a single-column drill with back-nav in the bottom sheet —
+  the overlay breakpoint convention gives the desktop/sheet swap for free. Roving
+  focus per column; ArrowRight descends into the active node, ArrowLeft ascends,
+  ArrowUp/Down move within a column; ARIA tree pattern (`role="tree"`/`treeitem`
+  with `aria-level`/`aria-expanded`). Per-column loading/empty/error render through
+  the select's state-template directive pattern.
+- **Optional search augment** (`input[etCascaderSearch]`): queries a flat search
+  source and, on pick, **expands the overlay to that node's path** — browse is
+  primary, search is the accelerator for people who already know the leaf. This is
+  the both-worlds answer to the match-finding pain, but the control is fully usable
+  without it.
+- **v1 scope:** single-select, leaf or any-level. Multi-select with indeterminate
+  parent checkboxes (select-all-descendants) is a documented **follow-up**, not v1 —
+  the value/aria/perf surface it adds is its own slice.
+- Three-tier: `[etCascader]` root (state, data-source, overlay, `FormFieldControl`)
+  + column/node/trigger/surface sub-directives + `et-cascader` Tier 3 (columns,
+  breadcrumb trigger, clear). Pure tree/data-source engine in `internals/`
+  (unit-tested, framework-of-forms-agnostic — liftable if a non-form navigation use
+  ever appears). Error block **3100–3199** (claim in the arch table at impl. time;
+  it is the current next-free block).
+
+### Password input — `forms/input/` sibling (S)
+
+`type="password"` is already a valid `InputDirective` type, but there is no control
+with the affordances people expect. Own directive pair in the existing input domain
+(shares 100% of the visual layer, like number input).
+
+- `PasswordInputDirective [etPasswordInput]` — `FormValueControl<string>`, standard
+  input set; toggles the native `type` between `password`/`text` via a reveal
+  control.
+- Tier 3 `et-password-input`: reuses `input.component.css`; suffix reveal button
+  (eye icon, `aria-pressed`, `aria-label`), opt-in caps-lock warning (keydown
+  `getModifierState('CapsLock')`), opt-in strength meter as a projected slot
+  (`ng-template[etPasswordStrength]`) fed a 0–4 score from a **pure zero-dep
+  heuristic** (length + character-class diversity — explicitly **not** zxcvbn, which
+  is a dependency). New `FORM_FIELD_CONTROL_TYPES` entry; no new error block.
+
+### Number stepper — `forms/input/` (S)
+
+The phase-1 deferral ("custom steppers can become a form-field suffix partial
+later") comes due. Either a `stepper` flag on `et-number-input` that renders +/−
+affordances in the form-field suffix, or a thin `NumberStepperDirective` decorating
+the number input.
+
+- Increment/decrement by `step`, clamp to `min`/`max`, press-and-hold auto-repeat,
+  ARIA `spinbutton` semantics on the field. Reuses the number input's value
+  contract (`number | null`) verbatim; no new error block.
+
+### Filter / choice chip group — `lib/chip/` composition, maybe `et-chip-group` (S–M)
+
+Selectable chips as a first-class selection surface (filter bars, tag pickers).
+`createSelectionState<T>()` (phase 2) + the existing `chip` domain do the work.
+
+- `FormValueControl<T | T[]>`; single or `multiple`; roving focus across chips
+  (chips are not individual tab stops); `role="listbox"`/`option` (or radio group)
+  semantics. **Ship as a documented composition first**; promote to an
+  `et-chip-group` Tier 3 only if the wiring proves repetitive across apps. Reuses
+  the chip 1100 block if it needs codes at all.
+
+### Autocomplete — `forms/autocomplete/` (M) — resolve vs. select first
+
+Free-text-**value** typeahead: the model value **is** the typed string and
+suggestions merely fill it — distinct from `select`, where the value is a chosen
+option from a constrained set. Use cases: address lines, free search boxes, loose
+tag hints.
+
+- **Decision gate before building:** confirm the single-select
+  `select` + `allowCustomValues` + `etSelectSearch` composition (which already
+  commits custom strings) can't cover it cleanly. If it can → document the
+  composition, ship nothing new. If the "value tracks free text continuously,
+  suggestions never constrain, no chosen-option identity" contract is awkward on
+  select → a thin `[etAutocomplete]` layered on `et-input` + an anchored option
+  panel (menu/select overlay reuse). Default assumption: composition-doc unless
+  proven necessary.
+
+### Duration input — `forms/date-time/duration-input/` (M)
+
+On-brand for a sports SDK (split times, race durations, effort windows).
+
+- `FormValueControl<number | null>` = **total elapsed time in a base unit**
+  (milliseconds — sub-second sports timing), **not** a `Date`. This respects the
+  phase-6 boundary rule (the calendar/time system is `Date`-only for clock times; a
+  duration is a distinct scalar quantity, so it does not go through
+  `parseDateValue`). Lives in the `date-time` folder for locality but owns its value
+  contract.
+- Configurable segment layout via a duration format (`hh:mm:ss.SSS`, `mm:ss`,
+  `h m`); lenient typed parse per layout (`130` → `1:30` under `mm:ss`); OTP-style
+  segment auto-advance. Shares the `date-time` block or needs none.
+
+### Select option grouping — additive to `select` (S, backlog)
+
+Independently useful even now that the cascader owns hierarchy **navigation**:
+grouped listbox section headers for flat selects (`[etSelectOptionGroup]` with a
+label, `role="group"` + `aria-labelledby`). No longer tied to the match-finding
+problem (the cascader solves that) — kept on the backlog as a cheap, broadly useful
+nicety, not blocking anything.
+
+---
+
 ## Docs plan
 
 New VitePress pages as domains ship: `apps/docs/components/select.md`,
-`calendar.md`, `date-time.md`, `slider.md` (+ sidebar entries). Smaller controls
-(textarea, number, color, rating, OTP, tag, phone, masked) extend
+`calendar.md`, `date-time.md`, `slider.md`, `cascader.md` (+ sidebar entries).
+Smaller controls (textarea, number, color, rating, OTP, tag, phone, masked,
+password, number stepper, chip group, autocomplete, duration) extend
 `apps/docs/components/forms.md`. `error-codes.md` updated with every block claim.
 Docs and changeset land **with** each control, not as follow-ups.
 
