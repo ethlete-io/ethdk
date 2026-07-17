@@ -1,6 +1,6 @@
 # Icon
 
-Inline-SVG icons rendered by the `[etIcon]` attribute directive — no icon font, no component wrapper. Icons are tree-shakeable constants registered per component (or once at the app root) via `provideIcons()`.
+Inline-SVG icons rendered by the `[etIcon]` attribute directive — no icon font, no component wrapper. Icons are tree-shakeable constants registered per component (or once at the app root) via `provideIcons()`, and the built-in set can be swapped app-wide with [`provideIconOverrides()`](#overriding-the-built-in-icons).
 
 ```ts
 import { CHEVRON_ICON, ICON_IMPORTS, TIMES_ICON, provideIcons } from '@ethlete/components';
@@ -60,6 +60,28 @@ It reads a config file (default `src/icons.json`) listing the icons you use:
 and writes two files: the `IconDefinition` constants (default `src/generated/et-icons.ts`) — import and pass the ones each component needs to `provideIcons()` individually, so unused icons stay tree-shakeable — and a `.d.ts` that augments `EthleteIconNameRegistry` / `EthleteIconVariantRegistry` so `etIcon` names and variants are string-literal typed. Each SVG is normalized on the way in — `width/height="100%"`, `fill="currentColor"`, license comments stripped — so the output passes the dev-mode validation above.
 
 The `source` option defaults to `'auto'`, which detects Font Awesome (pro, then free) in `node_modules`; any package with a `svgs/<variant>/<name>.svg` layout works when named explicitly. Paths are configurable via `--configPath` / `--outputPath` / `--typesOutputPath`. Re-run the generator whenever the config changes — missing icons warn and are skipped rather than failing the run. No need to remember the options you used: the header comment of both generated files (`et-icons.ts` and `et-icon-registry.d.ts`) contains the exact command to regenerate them.
+
+## Overriding the built-in icons
+
+Every SDK component self-registers the built-in `et-*` icons it renders (the select chevron, the picker calendar/clock, close buttons, …). To swap those for your own set — e.g. your Font Awesome icons from the [generator above](#generating-icons) — provide `provideIconOverrides()` **once** at the app root:
+
+```ts
+import { provideIconOverrides } from '@ethlete/components';
+import { ET_CHEVRON, ET_TIMES } from './generated/et-icons';
+
+bootstrapApplication(AppComponent, {
+  providers: [
+    // Your et-chevron / et-times now render everywhere the SDK uses them.
+    provideIconOverrides({ name: 'et-chevron', data: ET_CHEVRON.data }, { name: 'et-times', data: ET_TIMES.data }),
+  ],
+});
+```
+
+- `name` autocompletes to the built-in set (`ET_BUILT_IN_ICON_NAMES` / the `EtBuiltInIconName` type) — you don't have to guess which names the SDK renders. Any other string still type-checks, for registering brand-new icons.
+- Overrides are matched by `name` (and `variant`) and merged **on top of** each component's own `provideIcons()` — so you only list the icons you want to change; everything else keeps its built-in default.
+- Because it's a separate provider, an app-root override reaches into components that self-register the same name — a plain root `provideIcons()` can't, since the component's own registration shadows it.
+- Registering a name that no built-in uses simply makes that icon available to every `[etIcon]` under the same injector. Provide it lower in the tree (e.g. on a feature component) to scope the override to a subtree instead of the whole app.
+- The same dev-mode SVG validation applies to override data.
 
 ## Accessibility
 

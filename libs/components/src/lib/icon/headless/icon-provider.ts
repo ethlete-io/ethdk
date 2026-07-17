@@ -47,7 +47,13 @@ export const iconRegistryKey = (name: string, variant?: string | null) => (varia
 
 export const ICONS_TOKEN = new InjectionToken<Record<string, IconDefinition>>('ET_ICONS_TOKEN');
 
-export const provideIcons = (...icons: IconDefinition[]) => {
+/**
+ * Application-level icon overrides, merged on top of the icons a component self-registers
+ * via {@link provideIcons}. See {@link provideIconOverrides}.
+ */
+export const ICON_OVERRIDES_TOKEN = new InjectionToken<Record<string, IconDefinition>>('ET_ICON_OVERRIDES_TOKEN');
+
+const buildIconMap = (source: string, icons: IconDefinition[]) => {
   const map: Record<string, IconDefinition> = {};
 
   for (const def of icons) {
@@ -56,7 +62,7 @@ export const provideIcons = (...icons: IconDefinition[]) => {
     if (map[key]) {
       throw new RuntimeError(
         ICON_ERROR_CODES.DUPLICATE_ICON_NAME,
-        `[provideIcons] Icon with name "${def.name}"${
+        `[${source}] Icon with name "${def.name}"${
           def.variant ? ` and variant "${def.variant}"` : ''
         } already exists. Please provide unique icon name/variant combinations.`,
       );
@@ -65,8 +71,98 @@ export const provideIcons = (...icons: IconDefinition[]) => {
     map[key] = def;
   }
 
-  return {
-    provide: ICONS_TOKEN,
-    useValue: map,
-  };
+  return map;
 };
+
+export const provideIcons = (...icons: IconDefinition[]) => ({
+  provide: ICONS_TOKEN,
+  useValue: buildIconMap('provideIcons', icons),
+});
+
+/**
+ * Canonical list of the icon names the SDK ships built-in and renders from its own
+ * components (select chevron, picker calendar/clock, close buttons, rich-text tools, …).
+ * It's the set you can target with {@link provideIconOverrides} to swap the default artwork.
+ *
+ * Keep this in sync when adding or removing a built-in `et-*` icon under
+ * `libs/components/src/lib/icon/headless/`.
+ */
+export const ET_BUILT_IN_ICON_NAMES = [
+  'et-align-center',
+  'et-align-justify',
+  'et-align-left',
+  'et-align-right',
+  'et-arrow-out-up-right',
+  'et-arrow-right',
+  'et-bold',
+  'et-calendar',
+  'et-check',
+  'et-chevron',
+  'et-clipboard-check',
+  'et-clock',
+  'et-code',
+  'et-file',
+  'et-floppy-disk',
+  'et-focus-frame',
+  'et-grid-2x2',
+  'et-heading-1',
+  'et-heading-2',
+  'et-heading-3',
+  'et-italic',
+  'et-link',
+  'et-list-bulleted',
+  'et-list-numbered',
+  'et-lock',
+  'et-paragraph',
+  'et-pencil',
+  'et-plus',
+  'et-rotate-right',
+  'et-star',
+  'et-strikethrough',
+  'et-table',
+  'et-times',
+  'et-triangle-exclamation',
+  'et-underline',
+  'et-upload',
+] as const;
+
+/** Union of the SDK's built-in icon names — see {@link ET_BUILT_IN_ICON_NAMES}. */
+export type EtBuiltInIconName = (typeof ET_BUILT_IN_ICON_NAMES)[number];
+
+/**
+ * An icon passed to {@link provideIconOverrides}. Identical to {@link IconDefinition}, but
+ * `name` autocompletes to the built-in {@link EtBuiltInIconName} set (the icons worth
+ * overriding) while still accepting any other string for registering brand-new names.
+ */
+export type IconOverride = Omit<IconDefinition, 'name'> & {
+  // `string & {}` keeps the literal suggestions from collapsing to plain `string`.
+  name: EtBuiltInIconName | (string & {});
+};
+
+/**
+ * Overrides the SDK's built-in icons app-wide (or for a subtree). Provide it once in your
+ * application providers with icons whose `name`/`variant` match the built-ins you want to
+ * replace — e.g. your own Font Awesome set generated via the `@ethlete/components:icons`
+ * generator — and every component that renders that icon picks up your version, without
+ * touching the component's own `provideIcons()` registration.
+ *
+ * `name` autocompletes to the built-in {@link ET_BUILT_IN_ICON_NAMES} set, so you don't have
+ * to guess which names exist; passing any other string registers a brand-new icon.
+ *
+ * Overrides are keyed by name/variant and merged *on top of* the component-level registry,
+ * so unlisted icons keep their built-in defaults.
+ *
+ * ```ts
+ * // app.config.ts
+ * providers: [
+ *   provideIconOverrides(
+ *     { name: 'et-chevron', data: myChevronSvg },
+ *     { name: 'et-times', data: myTimesSvg },
+ *   ),
+ * ],
+ * ```
+ */
+export const provideIconOverrides = (...icons: IconOverride[]) => ({
+  provide: ICON_OVERRIDES_TOKEN,
+  useValue: buildIconMap('provideIconOverrides', icons),
+});

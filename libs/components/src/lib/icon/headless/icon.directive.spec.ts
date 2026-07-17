@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
-import { provideIcons } from './icon-provider';
+import * as iconExports from './index';
+import { ET_BUILT_IN_ICON_NAMES, IconDefinition, provideIconOverrides, provideIcons } from './icon-provider';
 import { IconDirective } from './icon.directive';
 
 const VALID_ICON = {
@@ -99,6 +100,80 @@ describe('IconDirective', () => {
     it('throws when the same name/variant pair is registered twice', () => {
       const solid = { name: 'shield', variant: 'solid', data: VALID_ICON.data };
       expect(() => provideIcons(solid, { ...solid })).toThrow();
+    });
+  });
+
+  describe('provideIconOverrides', () => {
+    // Distinct viewBox lets a test tell which icon `data` actually rendered.
+    const OVERRIDE_TEST = {
+      name: 'et-test',
+      data: `<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 99 99"><path d="M0 0" stroke="currentColor"/></svg>`,
+    };
+    const ADDED_ICON = {
+      name: 'et-added',
+      data: `<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 77 77"><path d="M0 0" stroke="currentColor"/></svg>`,
+    };
+
+    // Self-registers its icons at the component injector, mirroring how real components do it.
+    @Component({
+      template: `<span [etIcon]="name"></span>`,
+      imports: [IconDirective],
+      providers: [provideIcons(VALID_ICON, VALID_ICON_2)],
+    })
+    class SelfRegisteringHost {
+      name = 'et-test';
+    }
+
+    const render = (name: string) => {
+      const fixture = TestBed.createComponent(SelfRegisteringHost);
+      fixture.componentInstance.name = name;
+      fixture.detectChanges();
+      return fixture.nativeElement.querySelector('span').querySelector('svg') as SVGSVGElement | null;
+    };
+
+    it('lets a root override win over a component self-registered icon of the same name', () => {
+      TestBed.configureTestingModule({
+        imports: [SelfRegisteringHost],
+        providers: [provideIconOverrides(OVERRIDE_TEST)],
+      });
+      expect(render('et-test')?.getAttribute('viewBox')).toBe('0 0 99 99');
+    });
+
+    it('leaves non-overridden names on their component default', () => {
+      TestBed.configureTestingModule({
+        imports: [SelfRegisteringHost],
+        providers: [provideIconOverrides(OVERRIDE_TEST)],
+      });
+      expect(render('et-test-2')?.getAttribute('viewBox')).toBe('0 0 24 24');
+    });
+
+    it('makes a brand-new override name resolvable from the directive', () => {
+      TestBed.configureTestingModule({
+        imports: [SelfRegisteringHost],
+        providers: [provideIconOverrides(ADDED_ICON)],
+      });
+      expect(render('et-added')?.getAttribute('viewBox')).toBe('0 0 77 77');
+    });
+
+    it('throws when two overrides share the same name/variant', () => {
+      expect(() => provideIconOverrides(OVERRIDE_TEST, { ...OVERRIDE_TEST })).toThrow();
+    });
+  });
+
+  describe('ET_BUILT_IN_ICON_NAMES', () => {
+    it('matches the names of every shipped built-in icon constant (drift guard)', () => {
+      const isIconDefinition = (value: unknown): value is IconDefinition =>
+        !!value &&
+        typeof value === 'object' &&
+        typeof (value as IconDefinition).name === 'string' &&
+        typeof (value as IconDefinition).data === 'string';
+
+      const shipped = Object.values(iconExports)
+        .filter(isIconDefinition)
+        .map((icon) => icon.name)
+        .filter((name) => name.startsWith('et-'));
+
+      expect([...new Set(shipped)].sort()).toEqual([...ET_BUILT_IN_ICON_NAMES].sort());
     });
   });
 

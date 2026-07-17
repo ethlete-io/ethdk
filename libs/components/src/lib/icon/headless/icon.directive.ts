@@ -4,6 +4,7 @@ import { RuntimeError } from '@ethlete/core';
 import { ICON_ERROR_CODES } from './icon-errors';
 import {
   DEFAULT_ICON_VARIANT,
+  ICON_OVERRIDES_TOKEN,
   iconRegistryKey,
   ICONS_TOKEN,
   RegisteredIconName,
@@ -31,6 +32,7 @@ const SVG_COLOR_ATTRIBUTES = ['fill', 'stroke', 'stop-color', 'stop-opacity'];
 })
 export class IconDirective {
   private icons = inject(ICONS_TOKEN, { optional: true });
+  private iconOverrides = inject(ICON_OVERRIDES_TOKEN, { optional: true });
   private sanitizer = inject(DomSanitizer);
 
   public iconNameToUse: InputSignal<RegisteredIconName> = input.required<RegisteredIconName>({ alias: 'etIcon' });
@@ -39,8 +41,12 @@ export class IconDirective {
 
   public allowHardcodedColor = input(false, { transform: booleanAttribute });
 
+  // App-level overrides win over the icons a component self-registers, keyed by name/variant.
+  // Names absent from the override map keep their built-in default.
+  private registry = this.icons || this.iconOverrides ? { ...this.icons, ...this.iconOverrides } : null;
+
   private resolvedIcon = computed(() => {
-    if (!this.icons) {
+    if (!this.registry) {
       return null;
     }
 
@@ -54,7 +60,7 @@ export class IconDirective {
       : [iconRegistryKey(name), iconRegistryKey(name, DEFAULT_ICON_VARIANT)];
 
     for (const key of candidateKeys) {
-      const icon = this.icons[key];
+      const icon = this.registry[key];
 
       if (icon) {
         return icon;
@@ -65,7 +71,7 @@ export class IconDirective {
       ICON_ERROR_CODES.ICON_NOT_FOUND,
       `[IconDirective] Icon "${name}"${
         variant ? ` (variant "${variant}")` : ''
-      } not found. Available icons: ${Object.keys(this.icons).join(', ')}.`,
+      } not found. Available icons: ${Object.keys(this.registry).join(', ')}.`,
     );
   });
 
@@ -127,7 +133,7 @@ export class IconDirective {
   });
 
   constructor() {
-    if (!this.icons) {
+    if (!this.registry) {
       throw new RuntimeError(
         ICON_ERROR_CODES.NO_ICONS_PROVIDED,
         '[IconDirective] No icons provided. Register icons via provideIcons() in the component or application providers.',
