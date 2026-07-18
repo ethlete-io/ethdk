@@ -2,6 +2,7 @@
   et-duration-input {
     display: flex;
     align-items: center;
+    gap: 8px;
     flex: 1;
     min-inline-size: 0;
     color: inherit;
@@ -24,6 +25,28 @@
 
       &:disabled {
         cursor: not-allowed;
+      }
+    }
+    .et-duration-input-clear {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+      border: none;
+      background: transparent;
+      color: var(--et-surface-color-muted-solid, currentColor);
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      appearance: none;
+
+      .et-icon {
+        inline-size: 16px;
+        block-size: 16px;
+      }
+
+      &:hover {
+        color: var(--et-surface-color-solid, currentColor);
       }
     }
   }

@@ -19,6 +19,7 @@ import { DATE_INPUT_IMPORTS } from '../date-input.imports';
           [valueFormat]="valueFormat()"
           [displayFormat]="displayFormat()"
           [locale]="localeObject()"
+          [mask]="mask()"
           [minDate]="minDate()"
           [maxDate]="maxDate()"
         />
@@ -40,6 +41,7 @@ export class DateInputStorybookComponent {
   public value = input<string | null>(null);
   public valueFormat = input<string | undefined>(undefined);
   public displayFormat = input('P');
+  public mask = input(false);
   public locale = input<'default' | 'de'>('default');
   public constrained = input(false);
   public disabled = input(false);

@@ -1,11 +1,24 @@
 import { DOCUMENT } from '@angular/common';
-import { DestroyRef, Directive, ElementRef, Signal, computed, inject, input, model, signal } from '@angular/core';
+import {
+  DestroyRef,
+  Directive,
+  ElementRef,
+  Signal,
+  booleanAttribute,
+  computed,
+  effect,
+  inject,
+  input,
+  model,
+  signal,
+} from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { Locale } from 'date-fns';
 import { FORM_FIELD_TOKEN, FormFieldControl, FormFieldControlType } from '../../form-field/headless';
 import { injectDateLocale } from '../date-time-formats';
 import { DatePickerHost, DatePickerSurfaceBase, DatePickerTriggerBase } from '../picker/date-picker-host';
 import { createDatePickerOverlay } from './date-picker-overlay';
+import { maskPatternFromDisplayFormat } from './display-format-mask';
 
 /** The registered text field a date-picker input focuses and anchors to. */
 export type DatePickerInputFieldBase = { focus(): void; elementRef: ElementRef<HTMLInputElement> };
@@ -32,6 +45,17 @@ export abstract class DatePickerInputDirective
   protected abstract defaultValueFormat: string;
   /** The form-field control-type tag (date-input / time-input / date-time-input). */
   public abstract controlType: Signal<FormFieldControlType>;
+  /** date-fns format shown in (and parsed from) the field — declared per control (locale-aware defaults). */
+  public abstract displayFormat: Signal<string>;
+  /** The committed value rendered in `displayFormat` — computed per control from its own value conversion. */
+  public abstract displayValue: Signal<string>;
+
+  /**
+   * @internal Commits typed field text: empty clears, a successful parse writes
+   * the value, anything else keeps the raw text and raises `parseError`. The
+   * parse rules (strict vs lenient) are the subclasses'.
+   */
+  public abstract commitInput(raw: string): void;
 
   /** The wire value in `valueFormat`, or `null` while empty/unparseable. */
   public value = model<string | null>(null);
@@ -47,6 +71,16 @@ export abstract class DatePickerInputDirective
   /** date-fns format of the string value. Defaults to the control's format token. */
   public valueFormat = input<string | undefined>(undefined);
   public locale = input<Locale | null>(null);
+
+  /**
+   * Opt-in typing mask: when `displayFormat` is fixed-width numeric (`dd.MM.yyyy`,
+   * `HH:mm`), typing gets guide placeholders (`__.__.____`), auto-inserted
+   * separators, and paste filtering. Formats the mask cannot represent — locale
+   * formats like the defaults `P`/`p`/`Pp`, variable-width or text tokens — are
+   * refused and typing stays unmasked. Commit parsing is identical either way:
+   * the lenient blur/Enter parsers stay authoritative.
+   */
+  public mask = input(false, { transform: booleanAttribute });
 
   public pickerOpen = model(false);
 
@@ -74,6 +108,9 @@ export abstract class DatePickerInputDirective
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
 
+  /** The `[etInputMask]` pattern derived from `displayFormat` — `null` while `mask` is off or the format is refused. */
+  public maskPattern = computed(() => (this.mask() ? maskPatternFromDisplayFormat(this.displayFormat()) : null));
+
   private overlay = createDatePickerOverlay({
     interactive: this.interactive,
     pickerOpen: this.pickerOpen,
@@ -95,6 +132,17 @@ export abstract class DatePickerInputDirective
 
     this.formField?.registerControl(this);
     destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
+
+    if (ngDevMode) {
+      // a refused format silently behaving like `mask: false` would be a head-scratcher
+      effect(() => {
+        if (this.mask() && this.maskPattern() === null) {
+          console.warn(
+            `[et-${this.controlType()}] displayFormat "${this.displayFormat()}" is not fixed-width numeric, so no typing mask can be derived — the mask input is ignored.`,
+          );
+        }
+      });
+    }
   }
 
   public activate() {
@@ -103,6 +151,25 @@ export abstract class DatePickerInputDirective
     }
 
     this.registeredField()?.focus();
+  }
+
+  /** Clears the value and any uncommitted field text — wired to the styled inputs' clear button. */
+  public clearValue() {
+    if (!this.interactive()) {
+      return;
+    }
+
+    this.value.set(null);
+    this.inputText.set('');
+    this.parseError.set(false);
+
+    // the field only mirrors state while unfocused (mid-typing rewrites would fight the
+    // caret) — a clear happens while focused, so reset the element text directly
+    const field = this.registeredField();
+
+    if (field) {
+      field.elementRef.nativeElement.value = '';
+    }
   }
 
   public openPicker() {

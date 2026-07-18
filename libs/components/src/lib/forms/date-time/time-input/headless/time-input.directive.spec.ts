@@ -1,6 +1,7 @@
 import { ApplicationRef, Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../../test-helpers';
+import { InputMaskDirective } from '../../../masked-input/headless';
 import { TimePickerColumnDirective } from '../../../../time-picker/headless/time-picker-column.directive';
 import { TimePickerOptionDirective } from '../../../../time-picker/headless/time-picker-option.directive';
 import { TimePickerDirective } from '../../../../time-picker/headless/time-picker.directive';
@@ -234,5 +235,55 @@ describe('TimeInputDirective', () => {
     tick();
 
     expect(timeInput.pickerOpen()).toBe(false);
+  });
+});
+
+@Component({
+  template: `
+    <div #timeInput="etTimeInput" [(value)]="value" displayFormat="HH:mm" etTimeInput mask>
+      <input [etInputMask]="timeInput.maskPattern()" etTimeInputField maskValueMode="masked" placeholderChar="_" />
+    </div>
+  `,
+  imports: [TimeInputDirective, TimeInputFieldDirective, InputMaskDirective],
+})
+class MaskedTimeInputTestHost {
+  value = signal<string | null>(null);
+}
+
+describe('TimeInputDirective with the opt-in typing mask', () => {
+  it('derives the pattern from the display format, shapes typing and commits on blur', async () => {
+    TestBed.configureTestingModule({ imports: [MaskedTimeInputTestHost] });
+
+    const fixture = TestBed.createComponent(MaskedTimeInputTestHost);
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const timeInput = fixture.debugElement.children[0]!.injector.get(TimeInputDirective);
+    const field = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+
+    expect(timeInput.maskPattern()).toBe('00:00');
+
+    field.focus();
+    field.dispatchEvent(new FocusEvent('focus'));
+    await fixture.whenStable();
+
+    for (const char of '0930') {
+      const caret = field.selectionStart ?? field.value.length;
+
+      field.value = field.value.slice(0, caret) + char + field.value.slice(caret);
+      field.setSelectionRange(caret + 1, caret + 1);
+      field.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+      await fixture.whenStable();
+    }
+
+    expect(field.value).toBe('09:30');
+
+    field.blur();
+    field.dispatchEvent(new Event('blur'));
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.value()).toBe('09:30');
+    expect(timeInput.parseError()).toBe(false);
   });
 });

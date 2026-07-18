@@ -1,6 +1,7 @@
-import { Component, ViewEncapsulation, inject, input } from '@angular/core';
-import { CLOCK_ICON, IconDirective, provideIcons } from '../../../icon';
+import { Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
+import { CLOCK_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../../icon';
 import { TIME_PICKER_IMPORTS } from '../../../time-picker';
+import { InputMaskDirective } from '../../masked-input/headless';
 import { DatePickerPanelComponent } from '../date-picker-panel.component';
 import { DatePickerSurfaceDirective } from '../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../picker/date-picker-trigger.directive';
@@ -18,8 +19,9 @@ import { TimeInputDirective, TimeInputFieldDirective } from './headless';
     DatePickerTriggerDirective,
     DatePickerPanelComponent,
     IconDirective,
+    InputMaskDirective,
   ],
-  providers: [provideIcons(CLOCK_ICON)],
+  providers: [provideIcons(CLOCK_ICON, TIMES_ICON)],
   hostDirectives: [
     {
       directive: TimeInputDirective,
@@ -37,6 +39,7 @@ import { TimeInputDirective, TimeInputFieldDirective } from './headless';
         'valueFormat',
         'displayFormat',
         'locale',
+        'mask',
         'pickerOpen',
       ],
       outputs: ['valueChange', 'touchedChange', 'pickerOpenChange'],
@@ -52,4 +55,22 @@ export class TimeInputComponent {
   public pickerTriggerLabel = input('Open time picker');
   public minuteStep = input(5);
   public secondStep = input(1);
+  /** Shows a clear (×) control while a value or pending text is set and the field is in use. */
+  public clearable = input(true);
+  public clearLabel = input('Clear');
+
+  // only while the field is in use — mirrors the select's clear affordance
+  protected showClear = computed(
+    () =>
+      this.clearable() &&
+      this.timeInput.hasValue() &&
+      (this.timeInput.focused() || this.timeInput.pickerOpen()) &&
+      this.timeInput.interactive(),
+  );
+
+  protected handleClearClick(event: Event) {
+    // clearing must not bubble into the form field's frame-click handling
+    event.stopPropagation();
+    this.timeInput.clearValue();
+  }
 }

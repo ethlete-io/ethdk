@@ -1,6 +1,7 @@
 import { ApplicationRef, Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../../test-helpers';
+import { InputMaskDirective } from '../../../masked-input/headless';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { DateInputFieldDirective } from './date-input-field.directive';
@@ -118,6 +119,35 @@ describe('DateInputDirective', () => {
     expect(dateInput.hasValue()).toBe(false);
   });
 
+  it('clearValue() resets value, pending text and the field element while focused', () => {
+    typeAndBlur('07/16/2026');
+    field.focus();
+    field.value = 'not a date';
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    tick();
+
+    dateInput.clearValue();
+    tick();
+
+    expect(host.value()).toBeNull();
+    expect(dateInput.inputText()).toBe('');
+    expect(dateInput.parseError()).toBe(false);
+    expect(dateInput.hasValue()).toBe(false);
+    // the field only mirrors state while unfocused — the clear resets it directly
+    expect(field.value).toBe('');
+  });
+
+  it('clearValue() is a no-op while readonly or disabled', () => {
+    typeAndBlur('07/16/2026');
+    host.disabled.set(true);
+    fixture.detectChanges();
+
+    dateInput.clearValue();
+    tick();
+
+    expect(host.value()).toBe('2026-07-16');
+  });
+
   it('displays a prefilled value in the display format', async () => {
     host.value.set('2026-12-24');
     tick();
@@ -177,5 +207,209 @@ describe('DateInputDirective', () => {
     tick();
 
     expect(dateInput.pickerOpen()).toBe(false);
+  });
+});
+
+@Component({
+  template: `
+    <div
+      #dateInput="etDateInput"
+      [(value)]="value"
+      [mask]="mask()"
+      [displayFormat]="displayFormat()"
+      valueFormat="yyyy-MM-dd"
+      etDateInput
+    >
+      <input [etInputMask]="dateInput.maskPattern()" etDateInputField maskValueMode="masked" placeholderChar="_" />
+    </div>
+  `,
+  imports: [DateInputDirective, DateInputFieldDirective, InputMaskDirective],
+})
+class MaskedDateInputTestHost {
+  value = signal<string | null>(null);
+  mask = signal(true);
+  displayFormat = signal('dd.MM.yyyy');
+}
+
+describe('DateInputDirective with the opt-in typing mask', () => {
+  let fixture: ComponentFixture<MaskedDateInputTestHost>;
+  let host: MaskedDateInputTestHost;
+  let dateInput: DateInputDirective;
+  let field: HTMLInputElement;
+
+  const focus = async () => {
+    field.focus();
+    field.dispatchEvent(new FocusEvent('focus'));
+    await fixture.whenStable();
+  };
+
+  const blur = async () => {
+    field.blur();
+    field.dispatchEvent(new Event('blur'));
+    await fixture.whenStable();
+  };
+
+  const edit = async (mutate: (el: HTMLInputElement) => void, inputType: string) => {
+    mutate(field);
+    field.dispatchEvent(new InputEvent('input', { bubbles: true, inputType }));
+    await fixture.whenStable();
+  };
+
+  const type = async (text: string) => {
+    for (const char of text) {
+      await edit((el) => {
+        const caret = el.selectionStart ?? el.value.length;
+
+        el.value = el.value.slice(0, caret) + char + el.value.slice(caret);
+        el.setSelectionRange(caret + 1, caret + 1);
+      }, 'insertText');
+    }
+  };
+
+  const paste = (text: string) =>
+    edit((el) => {
+      el.value = text;
+      el.setSelectionRange(text.length, text.length);
+    }, 'insertFromPaste');
+
+  beforeEach(async () => {
+    TestBed.configureTestingModule({ imports: [MaskedDateInputTestHost] });
+    fixture = TestBed.createComponent(MaskedDateInputTestHost);
+    host = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    dateInput = fixture.debugElement.children[0]!.injector.get(DateInputDirective);
+    field = fixture.nativeElement.querySelector('input');
+  });
+
+  it('derives the pattern from the display format and refuses non-fixed-width formats', () => {
+    expect(dateInput.maskPattern()).toBe('00.00.0000');
+
+    host.displayFormat.set('P');
+    fixture.detectChanges();
+    expect(dateInput.maskPattern()).toBeNull();
+
+    host.mask.set(false);
+    host.displayFormat.set('dd.MM.yyyy');
+    fixture.detectChanges();
+    expect(dateInput.maskPattern()).toBeNull();
+  });
+
+  it('shapes typing with guide placeholders and auto-inserted separators, then commits on blur', async () => {
+    await focus();
+    await type('1807');
+
+    expect(field.value).toBe('18.07.____');
+    // masked typing must feed hasValue like native typing (the clear button depends on it)
+    expect(dateInput.inputText()).toBe('18.07.');
+    expect(dateInput.hasValue()).toBe(true);
+
+    await type('2026');
+
+    expect(field.value).toBe('18.07.2026');
+
+    await blur();
+
+    expect(host.value()).toBe('2026-07-18');
+    expect(dateInput.parseError()).toBe(false);
+    expect(field.value).toBe('18.07.2026');
+  });
+
+  it('commits the shaped text without guide placeholders — a partial entry is a parse error, not guide noise', async () => {
+    await focus();
+    await type('1807');
+    await blur();
+
+    expect(host.value()).toBeNull();
+    expect(dateInput.parseError()).toBe(true);
+    // the kept text is the display-shaped entry, not `18.07.____`
+    expect(dateInput.inputText()).toBe('18.07.');
+    expect(field.value).toBe('18.07.');
+  });
+
+  it('shows the full guide on focusing an empty field and removes it again on blur', async () => {
+    await focus();
+
+    expect(field.value).toBe('__.__.____');
+
+    await blur();
+
+    expect(host.value()).toBeNull();
+    expect(dateInput.parseError()).toBe(false);
+    expect(field.value).toBe('');
+  });
+
+  it('keeps a committed value visible when focused and clears it via delete-all + blur', async () => {
+    host.value.set('2026-07-18');
+    await fixture.whenStable();
+
+    expect(field.value).toBe('18.07.2026');
+
+    await focus();
+
+    expect(field.value).toBe('18.07.2026');
+
+    await edit((el) => {
+      el.value = '';
+      el.setSelectionRange(0, 0);
+    }, 'deleteContentBackward');
+
+    expect(field.value).toBe('__.__.____');
+
+    await blur();
+
+    expect(host.value()).toBeNull();
+    expect(field.value).toBe('');
+  });
+
+  it('filters pasted text down to the mask shape', async () => {
+    await focus();
+    await paste('18/07/2026');
+
+    expect(field.value).toBe('18.07.2026');
+
+    await blur();
+
+    expect(host.value()).toBe('2026-07-18');
+  });
+
+  it('drops a paste with no maskable content entirely', async () => {
+    await focus();
+    await paste('not a date');
+
+    expect(field.value).toBe('__.__.____');
+
+    await blur();
+
+    expect(host.value()).toBeNull();
+    expect(dateInput.parseError()).toBe(false);
+  });
+
+  it('commits on Enter and keeps the reformatted text in place', async () => {
+    await focus();
+    await type('18072026');
+    field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await fixture.whenStable();
+
+    expect(host.value()).toBe('2026-07-18');
+    expect(field.value).toBe('18.07.2026');
+  });
+
+  it('falls back to native, unmasked typing while the pattern is refused', async () => {
+    host.displayFormat.set('P');
+    await fixture.whenStable();
+
+    await focus();
+    await edit((el) => {
+      el.value = '07/16/2026';
+    }, 'insertText');
+
+    // no mask: arbitrary text stays, native input sync tracks it
+    expect(field.value).toBe('07/16/2026');
+    expect(dateInput.inputText()).toBe('07/16/2026');
+
+    await blur();
+
+    expect(host.value()).toBe('2026-07-16');
   });
 });

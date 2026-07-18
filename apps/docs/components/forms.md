@@ -141,6 +141,8 @@ Try it live in Storybook: `Components/Forms/Color Input`.
 
 Masking is a directive layered onto the existing text input, not a separate control — place `etInputMask` on the `et-input` (or a headless `input[etInput]`). The native element always shows the masked text; the **form value stays raw by default** (`maskValueMode: 'raw' | 'masked'`).
 
+<StoryEmbed id="components-forms-masked-input--default" height="320px" />
+
 ```html
 <et-form-field>
   <et-label>Date of birth</et-label>
@@ -148,7 +150,7 @@ Masking is a directive layered onto the existing text input, not a separate cont
 </et-form-field>
 ```
 
-The mask is either a **pattern string** — `0` digit, `9` optional digit, `a` letter, `*` alphanumeric, `\` escapes the next character, everything else is a literal — or a `MaskSpec` object. Three factories ship:
+The mask is either a **pattern string** — `0` digit, `9` optional digit, `a` letter, `*` alphanumeric, `\` escapes the next character, everything else is a literal — or a `MaskSpec` object. Binding `null` disables the mask entirely (native input handling stays in charge), so a mask can be applied conditionally. Three factories ship:
 
 | Factory                       | Behavior                                                                                                                                                                                                                                                    |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -157,6 +159,10 @@ The mask is either a **pattern string** — `0` digit, `9` optional digit, `a` l
 | `createCardMask()`            | Digit-only, grouped by four, capped at 19 digits.                                                                                                                                                                                                           |
 
 Typing behavior: literals render eagerly and the caret glides past them onto the next slot; backspacing over a literal deletes the content character before it; pastes are filtered through the mask (`31.12.2024` fills `00-00-0000`). With `placeholderChar` set (pattern masks only), unfilled slots render as a guide (`31-1_-____`) while the field is focused. IME composition (CJK, dead keys) is left alone mid-composition and reconciled on `compositionend`, so the candidate window is never torn down. Custom masks implement `MaskSpec` (`toRaw`/`toDisplay` plus optional caret metadata) — see the type's docs.
+
+The directive exposes two signals (via `exportAs: 'etInputMask'`): `rawValue()` — the unmasked text regardless of `maskValueMode` — and `complete()` — whether every required slot is filled (`0`/`a`/`*` required, `9` optional; `null` for masks that don't track completeness, like the factories). Wire `complete()` into schema validation to require fully-filled masks.
+
+**Custom hosts**: the mask attaches to `et-input` out of the box, but any text control can host it by providing `INPUT_MASK_HOST` on itself (`{ provide: INPUT_MASK_HOST, useExisting: MyFieldDirective }`) — the contract is a `value` model, a `focused` signal, a `nativeControl` element signal and a `suppressNativeSync()` hook (the mask takes over value-sync), plus an optional `resumeNativeSync()` for hosts whose mask can toggle back to `null`. The [date](#date-input-—-et-date-input), [time](#time-input-—-et-time-input) and [date-time](#date-time-input-—-et-date-time-input) inputs host a mask this way behind their opt-in `mask` input.
 
 Try it live in Storybook: `Components/Forms/Masked input`.
 
@@ -179,6 +185,7 @@ Boolean controls pair with a label inside `et-choice-field` (instead of `et-form
 - `et-checkbox` — `role="checkbox"`, `checked` + `indeterminate` models (`aria-checked="mixed"` when indeterminate; toggling an indeterminate checkbox resolves to checked).
 - `et-switch` — `role="switch"`, `checked` model, no indeterminate.
 - Both toggle on click and <kbd>Space</kbd>, and mark themselves touched on blur.
+- Both honor `readonly` (e.g. from a `readonly(...)` schema): the control keeps its normal look and stays focusable (`aria-readonly`), it just cannot be toggled — distinct from the dimmed `disabled` state.
 - `et-choice-field` accepts `size: 'sm' | 'md' | 'lg'` (default `'md'`), scaling the control and label together.
 
 ## Rating — `et-rating`
@@ -230,7 +237,7 @@ SMS autofill behavior cannot be emulated headlessly — test `one-time-code` flo
 
 ## Tag input — `et-tag-input`
 
-Free-text tags as removable [chips](/components/chip) with an inline text field, inside the regular `et-form-field` shell. Value is `string[]`. For tags **with suggestions**, use the [select](/components/select) instead (`multiple` + `etSelectSearch` + `allowCustomValues`).
+Free-text tags as removable [chips](/components/chip) with an inline text field, inside the regular `et-form-field` shell. Value is `string[]`. For tags **with suggestions**, use the [select](/components/select) instead (`multiple` + `etSelectSearch` + `allowCustomValues`) — its custom-value mode covers the full tag-input ergonomics on top of an option list: a "Create …" row, separator commit (`customValueSeparators`), paste splitting, commit-on-close (`commitCustomValueOnClose`), `normalizeCustomValue` and `maxSelection`. The tag input remains the deliberately minimal variant for pure free-text entry with no panel at all.
 
 ```html
 <et-form-field>
@@ -263,11 +270,11 @@ A tel input with a searchable country picker (the [select](/components/select) h
 
 <StoryEmbed id="components-forms-phone-input--default" height="220px" />
 
-| Input                | Type       | Default              | Description                                            |
-| -------------------- | ---------- | -------------------- | ------------------------------------------------------ |
-| `defaultCountry`     | `string`   | `'us'`               | ISO alpha-2 country used while the value carries none. |
-| `preferredCountries` | `string[]` | `[]`                 | Listed on top of the country dropdown.                 |
-| `countryLabel`       | `string`   | `'Select country'`   | `aria-label` of the flag/dial-code country trigger.    |
+| Input                | Type       | Default            | Description                                            |
+| -------------------- | ---------- | ------------------ | ------------------------------------------------------ |
+| `defaultCountry`     | `string`   | `'us'`             | ISO alpha-2 country used while the value carries none. |
+| `preferredCountries` | `string[]` | `[]`               | Listed on top of the country dropdown.                 |
+| `countryLabel`       | `string`   | `'Select country'` | `aria-label` of the flag/dial-code country trigger.    |
 
 Typing national digits builds the `+dial` value; a national trunk `0` is stripped (`0171…` with Germany active → `+49171…` — except for countries like Italy where the `0` is part of the number), and the `00` international call prefix works like `+` (`0049…` → `+49…`). Typing or pasting a full `+…` number re-derives the country by longest dial-code match — but a manually picked country survives shared dial codes (`+1` stays Canada if you chose Canada). Switching countries keeps the national number. The display groups digits in threes while unfocused (**cosmetic only** — not per-country metadata formatting; validate on the backend/schema, with `isPlausible` as a cheap length-window helper).
 
@@ -294,20 +301,28 @@ A date form control with a **string value** in a configurable wire format, combi
 
 <StoryEmbed id="components-forms-date-input--default" height="560px" />
 
-| Input                 | Type                                | Default             | Description                                                                  |
-| --------------------- | ----------------------------------- | ------------------- | ---------------------------------------------------------------------------- |
-| `valueFormat`         | `string`                            | `DATE_FORMAT` token | date-fns format of the string value (token default: ISO 8601 with offset).   |
-| `displayFormat`       | `string`                            | `'P'`               | date-fns format shown in and parsed from the field (locale-aware).           |
-| `locale`              | `Locale \| null` (date-fns)         | `DATE_LOCALE` token | Display/parse locale.                                                        |
-| `minDate` / `maxDate` | `Date \| null`                      | `null`              | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms). |
-| `dateFilter`          | `((date: Date) => boolean) \| null` | `null`              | Forwarded to the picker calendar.                                            |
-| `pickerOpen`          | `boolean` (model)                   | `false`                   | The picker overlay's open state.                                             |
-| `pickerTriggerLabel`  | `string`                            | `'Open calendar'`         | `aria-label` of the suffix calendar button.                                  |
-| `parseErrorMessage`   | `string`                            | `'Please enter a valid date'` | Message shown below the field when typed text can't be parsed.           |
+| Input                 | Type                                | Default                       | Description                                                                  |
+| --------------------- | ----------------------------------- | ----------------------------- | ---------------------------------------------------------------------------- |
+| `valueFormat`         | `string`                            | `DATE_FORMAT` token           | date-fns format of the string value (token default: ISO 8601 with offset).   |
+| `displayFormat`       | `string`                            | `'P'`                         | date-fns format shown in and parsed from the field (locale-aware).           |
+| `locale`              | `Locale \| null` (date-fns)         | `DATE_LOCALE` token           | Display/parse locale.                                                        |
+| `minDate` / `maxDate` | `Date \| null`                      | `null`                        | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms). |
+| `dateFilter`          | `((date: Date) => boolean) \| null` | `null`                        | Forwarded to the picker calendar.                                            |
+| `pickerOpen`          | `boolean` (model)                   | `false`                       | The picker overlay's open state.                                             |
+| `pickerTriggerLabel`  | `string`                            | `'Open calendar'`             | `aria-label` of the suffix calendar button.                                  |
+| `parseErrorMessage`   | `string`                            | `'Please enter a valid date'` | Message shown below the field when typed text can't be parsed.               |
+| `clearable`           | `boolean`                           | `true`                        | Clear (×) button while the focused field has a value (label: `clearLabel`).  |
+| `mask`                | `boolean`                           | `false`                       | Opt-in typing mask derived from a fixed-width numeric `displayFormat`.       |
 
 Typed text is parsed **strictly** against `displayFormat` on blur/Enter. Unparseable text stays visible in the field, the `parseError` signal (on the `[etDateInput]` directive) turns on and the value is cleared to `null` — wire it into your schema validation, or rely on the built-in error display: once the field is touched, a parse error is announced as a real message (`parseErrorMessage`) with matching `aria-invalid`/`aria-describedby`. Alt+ArrowDown also opens the picker; picking a day writes `format(date, valueFormat)` and closes it. The picker overlay is a named `role="dialog"`.
 
+**Opt-in typing mask**: with `mask` set, a fixed-width numeric `displayFormat` (`dd.MM.yyyy`, `MM/dd/yyyy`, …) drives a live [input mask](#masked-input-—-etinputmask) — guide placeholders (`__.__.____`) while focused, auto-inserted separators, filtered pastes, and a numeric soft keyboard (`inputmode="numeric"`). The mask only shapes typing; committing still goes through the same blur/Enter parse, so behavior like clearing on empty text is unchanged. Formats the mask cannot represent — locale formats like the default `P`/`p`/`Pp`, variable-width tokens (`d.M.yyyy`), text tokens (`MMM`, am/pm markers) — are refused with a dev-mode warning and typing stays unmasked. The same input ships on the time and date-time inputs; the duration input deliberately has none (see below).
+
+<StoryEmbed id="components-forms-date-input--masked" height="360px" />
+
 On viewports below the `md` breakpoint (768px) the picker opens as a **bottom sheet** (backdrop, drag-to-dismiss, touch-sized cells) instead of an anchored panel — this applies to all date & time picker overlays (date, date range, time).
+
+While the focused field holds a value (or pending text), a pointer-only **clear (×) button** renders before the picker trigger — one click resets the value, text and parse state, mirroring the [select](/components/select)'s clear affordance. Disable it with `clearable="false"`; the accessible name comes from `clearLabel`. The same affordance ships on the time, date-time, duration and [phone](#phone-input-—-et-phone-input) inputs (keyboard users clear by erasing the text).
 
 The wire defaults come from injectable tokens so an app can set them once:
 
@@ -358,14 +373,15 @@ A time form control with a **string value** in a configurable wire format (defau
 </et-form-field>
 ```
 
-| Input                       | Type                        | Default              | Description                                                         |
-| --------------------------- | --------------------------- | -------------------- | ------------------------------------------------------------------- |
-| `valueFormat`               | `string`                    | `TIME_FORMAT` token  | date-fns format of the string value (token default: `HH:mm`).       |
-| `displayFormat`             | `string`                    | `'p'`                | date-fns format shown in and parsed from the field (locale-aware).  |
-| `locale`                    | `Locale \| null` (date-fns) | `DATE_LOCALE` token  | Display/parse locale (also decides the picker's 12/24-hour layout). |
-| `minuteStep` / `secondStep` | `number`                    | `5` / `1`            | Forwarded to the picker columns.                                    |
-| `pickerOpen`                | `boolean` (model)           | `false`              | The picker overlay's open state.                                    |
-| `pickerTriggerLabel`        | `string`                    | `'Open time picker'` | `aria-label` of the suffix clock button.                            |
+| Input                       | Type                        | Default              | Description                                                                                                               |
+| --------------------------- | --------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `valueFormat`               | `string`                    | `TIME_FORMAT` token  | date-fns format of the string value (token default: `HH:mm`).                                                             |
+| `displayFormat`             | `string`                    | `'p'`                | date-fns format shown in and parsed from the field (locale-aware).                                                        |
+| `locale`                    | `Locale \| null` (date-fns) | `DATE_LOCALE` token  | Display/parse locale (also decides the picker's 12/24-hour layout).                                                       |
+| `minuteStep` / `secondStep` | `number`                    | `5` / `1`            | Forwarded to the picker columns.                                                                                          |
+| `pickerOpen`                | `boolean` (model)           | `false`              | The picker overlay's open state.                                                                                          |
+| `pickerTriggerLabel`        | `string`                    | `'Open time picker'` | `aria-label` of the suffix clock button.                                                                                  |
+| `mask`                      | `boolean`                   | `false`              | Opt-in typing mask — see the [date input](#date-input-—-et-date-input); needs a fixed-width `displayFormat` like `HH:mm`. |
 
 Typed text is parsed against `displayFormat` first, then **leniently**: bare digit runs (`930` → 09:30, `0930`, `93015`), loose separators (`9.30`, `9 30`) and meridiem suffixes (`930pm`, `9 a.m.`) all commit, and 24-hour entry is accepted even under a 12-hour display format. Unparseable text behaves exactly like the date input (`parseError` signal, value stays `null`). Alt+ArrowDown opens the picker; picking parts writes `format(time, valueFormat)` and — unlike the calendar picker — **keeps the overlay open**, since a time takes one pick per column. Below the `md` breakpoint the picker opens as a bottom sheet, like the date pickers.
 
@@ -384,17 +400,18 @@ A combined date & time form control with a **string value** in a configurable wi
 </et-form-field>
 ```
 
-| Input                           | Type                                | Default                     | Description                                                                  |
-| ------------------------------- | ----------------------------------- | --------------------------- | ---------------------------------------------------------------------------- |
-| `valueFormat`                   | `string`                            | `DATE_FORMAT` token         | date-fns format of the string value (token default: ISO 8601 with offset).   |
-| `displayFormat`                 | `string`                            | `'Pp'`                      | Combined date-fns format shown in and parsed from the field (locale-aware).  |
-| `locale`                        | `Locale \| null` (date-fns)         | `DATE_LOCALE` token         | Display/parse locale (also decides the time picker's 12/24-hour layout).     |
-| `minDate` / `maxDate`           | `Date \| null`                      | `null`                      | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms). |
-| `dateFilter`                    | `((date: Date) => boolean) \| null` | `null`                      | Forwarded to the picker calendar.                                            |
-| `minuteStep` / `secondStep`     | `number`                            | `5` / `1`                   | Forwarded to the time picker columns.                                        |
-| `pickerOpen`                    | `boolean` (model)                   | `false`                     | The picker overlay's open state.                                             |
-| `pickerTriggerLabel`            | `string`                            | `'Open date & time picker'` | `aria-label` of the suffix calendar button.                                  |
-| `dateTabLabel` / `timeTabLabel` | `string`                            | `'Date'` / `'Time'`         | Labels of the pane tabs in the bottom sheet.                                 |
+| Input                           | Type                                | Default                     | Description                                                                                                                          |
+| ------------------------------- | ----------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `valueFormat`                   | `string`                            | `DATE_FORMAT` token         | date-fns format of the string value (token default: ISO 8601 with offset).                                                           |
+| `displayFormat`                 | `string`                            | `'Pp'`                      | Combined date-fns format shown in and parsed from the field (locale-aware).                                                          |
+| `locale`                        | `Locale \| null` (date-fns)         | `DATE_LOCALE` token         | Display/parse locale (also decides the time picker's 12/24-hour layout).                                                             |
+| `minDate` / `maxDate`           | `Date \| null`                      | `null`                      | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms).                                                         |
+| `dateFilter`                    | `((date: Date) => boolean) \| null` | `null`                      | Forwarded to the picker calendar.                                                                                                    |
+| `minuteStep` / `secondStep`     | `number`                            | `5` / `1`                   | Forwarded to the time picker columns.                                                                                                |
+| `pickerOpen`                    | `boolean` (model)                   | `false`                     | The picker overlay's open state.                                                                                                     |
+| `pickerTriggerLabel`            | `string`                            | `'Open date & time picker'` | `aria-label` of the suffix calendar button.                                                                                          |
+| `dateTabLabel` / `timeTabLabel` | `string`                            | `'Date'` / `'Time'`         | Labels of the pane tabs in the bottom sheet.                                                                                         |
+| `mask`                          | `boolean`                           | `false`                     | Opt-in typing mask — see the [date input](#date-input-—-et-date-input); needs a fixed-width `displayFormat` like `dd.MM.yyyy HH:mm`. |
 
 Typed text is parsed **strictly** against `displayFormat` first, then leniently: the entry split into a date and a time at any separator (the date against the locale's short `P` format, the time with the time input's lenient rules — `7/16/2026 930pm` commits), and a **bare date commits at midnight**. Unparseable text behaves exactly like the date input (`parseError` signal, value stays `null`).
 
@@ -420,6 +437,8 @@ A duration form control whose value is a **total elapsed time in milliseconds** 
 
 The format is any arrangement of unit-token runs and separators: `mm:ss`, `hh:mm:ss`, `hh:mm:ss.SSS`, `h m`. Typed text commits on blur/Enter with a **lenient parse**: a bare digit run fills from the smallest unit up (`130` → `01:30`, `90` → `01:30` under `mm:ss`), and separator entry maps left-to-right (`1:30`, `1:02:03`). Milliseconds are literal and need the decimal separator (`1:30.500`). Unparseable text is kept visible with a `parseError` (value stays `null`), exactly like the date/time inputs. The largest unit is unbounded (`100:00` is a valid `mm:ss` value); validation of any upper bound belongs to the schema.
 
+Unlike the date/time inputs, the duration input has **no opt-in typing mask** — and that's deliberate: its first segment is unbounded, so a fixed slot layout would block valid entries (`100:00`), and its lenient parse fills from the _smallest_ unit up (`130` → `01:30`) while a mask fills slots left-to-right (`130` → `13:0…`), silently changing what an established entry habit means.
+
 Try it live in Storybook: `Components/Forms/Duration Input`.
 
 ## Selection lists
@@ -444,6 +463,7 @@ Three group flavors over one selection engine — options are projected children
 
 - The group label is a projected `et-label` — it renders the `*` marker when the group is `required` and wires `aria-labelledby`. A plain `<span class="et-<group>-label">` also works for text-only labels.
 - All three groups accept `size: 'sm' | 'md' | 'lg'` (default `'md'`), matching the `et-form-field` size scale.
+- All three groups honor `readonly`: options keep their normal focusable look, arrow keys still move focus (without the radio pattern's select-while-roving), but nothing can be (de)selected — distinct from the dimmed `disabled` state.
 - The segmented button group renders its options on a tonal track; the filled active pill animates between options on selection.
 
 Checkbox options and radios accept an `et-description` child for secondary text, and the headless layer offers a tri-state "select all" control (`[etSelectionListControl]`).
@@ -460,6 +480,47 @@ The field chrome handles error display and aria wiring uniformly:
 - Selection groups use correct roles for their mode: a single-select group is a `radiogroup` of `radio`s; a multi-select checkbox group is a `role="group"` of `role="checkbox"` items (and the tri-state select-all is a `checkbox`, not an `option`).
 - A schema-`hidden` field (signal-forms `hidden`) removes the whole `et-form-field` from layout and the accessibility tree.
 - Dev mode throws an actionable error ([`ET2200`](/components/error-codes#form-field-et22xx)) if an `et-form-field` contains no control.
+
+### Server-side violations
+
+`@ethlete/query` ships a bridge that maps an API error response's violation list onto a signal form, so backend validation surfaces on the exact fields it belongs to. Return `mapViolationsToFormErrors` from a `submit()` action — mapped violations render in each field's error region like any other validation error, and signal forms clears them automatically when the user edits the field:
+
+```ts
+import { submit } from '@angular/forms/signals';
+import { executeUntilSettled, mapViolationsToFormErrors } from '@ethlete/query';
+
+protected async save() {
+  await submit(this.form, async (field) => {
+    const snapshot = await executeUntilSettled(this.createUserQuery, { args: { body: field().value() } });
+    const error = snapshot.error();
+
+    if (!error) return;
+
+    return mapViolationsToFormErrors({ fieldTree: field, error });
+  });
+}
+```
+
+Violation property paths (e.g. `items[2].name`) resolve against the form's field tree; anything that doesn't match a field becomes a form-level error on the submitted field, and a failure without violations degrades to a form-level error built from the normalized message — a failed submit never disappears silently. The mapping options (`rewritePath`, `onUnmappedViolation`) and accepted error shapes are documented in the [query error guide](/query/errors#mapping-violations-onto-signal-forms).
+
+### Custom error messages
+
+`et-form-error` renders each error's `message` verbatim; a validator without a `message` renders an empty row. To centralize or localize error texts, provide a resolver — it sees every `ValidationError` (including the bridge's `etServerViolation` kind) and returns the text to show, or `null` to fall back to the error's own message:
+
+```ts
+import { provideFormErrorMessageResolver } from '@ethlete/components';
+
+provideFormErrorMessageResolver((error) => {
+  switch (error.kind) {
+    case 'required':
+      return 'This field is required';
+    case 'minLength':
+      return 'Too short';
+    default:
+      return null;
+  }
+});
+```
 
 ## Theming
 

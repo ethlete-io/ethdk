@@ -72,6 +72,25 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
     this.registeredField()?.focus();
   }
 
+  /** Clears the value and any uncommitted field text — wired to the styled input's clear button. */
+  public clearValue() {
+    if (this.disabled() || this.readonly()) {
+      return;
+    }
+
+    this.value.set(null);
+    this.inputText.set('');
+    this.parseError.set(false);
+
+    // the field only mirrors state while unfocused (mid-typing rewrites would fight the
+    // caret) — a clear happens while focused, so reset the element text directly
+    const field = this.registeredField();
+
+    if (field) {
+      field.elementRef.nativeElement.value = '';
+    }
+  }
+
   /** Parses typed text and commits the resulting value (or flags a parse error). */
   public commitInput(rawValue: string) {
     if (this.disabled() || this.readonly()) {

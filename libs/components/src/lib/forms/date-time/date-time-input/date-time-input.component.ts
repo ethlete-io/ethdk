@@ -1,8 +1,9 @@
-import { Component, ViewEncapsulation, effect, inject, input, signal } from '@angular/core';
+import { Component, ViewEncapsulation, computed, effect, inject, input, signal } from '@angular/core';
 import { setHours, setMinutes, setSeconds } from 'date-fns';
 import { CALENDAR_IMPORTS } from '../../../calendar';
-import { CALENDAR_ICON, IconDirective, provideIcons } from '../../../icon';
+import { CALENDAR_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../../icon';
 import { TIME_PICKER_IMPORTS, TimePickerDirective } from '../../../time-picker';
+import { InputMaskDirective } from '../../masked-input/headless';
 import { SegmentedButtonComponent, SegmentedButtonGroupComponent } from '../../selection-list/segmented-button-group';
 import { DatePickerPanelComponent } from '../date-picker-panel.component';
 import { DatePickerSurfaceDirective } from '../picker/date-picker-surface.directive';
@@ -26,8 +27,9 @@ import { DateTimeInputDirective, DateTimeInputFieldDirective } from './headless'
     SegmentedButtonGroupComponent,
     SegmentedButtonComponent,
     IconDirective,
+    InputMaskDirective,
   ],
-  providers: [provideIcons(CALENDAR_ICON)],
+  providers: [provideIcons(CALENDAR_ICON, TIMES_ICON)],
   hostDirectives: [
     {
       directive: DateTimeInputDirective,
@@ -45,6 +47,7 @@ import { DateTimeInputDirective, DateTimeInputFieldDirective } from './headless'
         'valueFormat',
         'displayFormat',
         'locale',
+        'mask',
         'minDate',
         'maxDate',
         'dateFilter',
@@ -66,6 +69,18 @@ export class DateTimeInputComponent {
   /** Labels of the pane tabs shown when the picker mounts as a bottom sheet. */
   public dateTabLabel = input('Date');
   public timeTabLabel = input('Time');
+  /** Shows a clear (×) control while a value or pending text is set and the field is in use. */
+  public clearable = input(true);
+  public clearLabel = input('Clear');
+
+  // only while the field is in use — mirrors the select's clear affordance
+  protected showClear = computed(
+    () =>
+      this.clearable() &&
+      this.dateTimeInput.hasValue() &&
+      (this.dateTimeInput.focused() || this.dateTimeInput.pickerOpen()) &&
+      this.dateTimeInput.interactive(),
+  );
 
   /** Which pane the bottom-sheet tabs show (both panes render side by side on desktop). */
   protected activePane = signal<'date' | 'time'>('date');
@@ -85,6 +100,12 @@ export class DateTimeInputComponent {
         this.paneNav.set(null);
       }
     });
+  }
+
+  protected handleClearClick(event: Event) {
+    // clearing must not bubble into the form field's frame-click handling
+    event.stopPropagation();
+    this.dateTimeInput.clearValue();
   }
 
   protected setActivePane(pane: unknown) {

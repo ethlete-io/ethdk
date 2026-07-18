@@ -1,4 +1,26 @@
-<input class="et-date-input-field" etDateInputField />
+<input
+  [etInputMask]="dateInput.maskPattern()"
+  class="et-date-input-field"
+  etDateInputField
+  maskValueMode="masked"
+  placeholderChar="_"
+/>
+
+@if (showClear()) {
+  <!-- pointer-only, out of the tab order — keyboard users clear by erasing the text.
+       mousedown is prevented so the field keeps focus (its blur would unmount this
+       button before the click could land) -->
+  <button
+    [attr.aria-label]="clearLabel()"
+    (click)="handleClearClick($event)"
+    (mousedown)="$event.preventDefault()"
+    class="et-date-input-clear"
+    tabindex="-1"
+    type="button"
+  >
+    <i etIcon="et-times"></i>
+  </button>
+}
 
 <button [attr.aria-label]="pickerTriggerLabel()" class="et-date-input-picker-trigger" etDatePickerTrigger>
   <i etIcon="et-calendar"></i>

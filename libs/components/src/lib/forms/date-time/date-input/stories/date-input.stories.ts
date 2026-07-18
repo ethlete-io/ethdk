@@ -12,6 +12,7 @@ export default {
     value: { control: 'text' },
     valueFormat: { control: 'text' },
     displayFormat: { control: 'text' },
+    mask: { control: 'boolean' },
     locale: { control: 'select', options: ['default', 'de'] },
     constrained: { control: 'boolean' },
     disabled: { control: 'boolean' },
@@ -26,6 +27,7 @@ export default {
     value: null,
     valueFormat: 'yyyy-MM-dd',
     displayFormat: 'P',
+    mask: false,
     locale: 'default',
     constrained: false,
     disabled: false,
@@ -49,4 +51,13 @@ export const German: Story = {
 
 export const Constrained: Story = {
   args: { constrained: true, hint: 'Only dates from a week ago up to 60 days ahead' },
+};
+
+export const Masked: Story = {
+  args: {
+    mask: true,
+    displayFormat: 'dd.MM.yyyy',
+    placeholder: 'tt.mm.jjjj',
+    hint: 'Typing is guided by the fixed-width display format — separators insert themselves',
+  },
 };
