@@ -7,6 +7,11 @@ export type SelectItem<TValue = unknown> = {
   elementRef: ElementRef<HTMLElement>;
   id: Signal<string>;
   label: Signal<string>;
+  /**
+   * True for a select's own "Create …" row (`customValueOption`) — excluded from
+   * `customValueCandidate`'s duplicate check so the row does not hide itself.
+   */
+  custom?: Signal<boolean>;
 };
 
 export type SelectSelectedEntry = {

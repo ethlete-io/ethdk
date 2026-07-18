@@ -2,6 +2,8 @@
 
 Long-running plan for the missing form controls in `@ethlete/components`. This file
 is the tracking artifact: update the status table and check off work as it lands.
+The follow-up round (convergence, ecosystem gaps, consistency debt) is tracked in
+`FORMS_OPPORTUNITIES_PLAN.md`.
 
 Decisions baked into this plan (do not re-litigate without a reason):
 
@@ -22,34 +24,34 @@ Decisions baked into this plan (do not re-litigate without a reason):
 
 ## Status
 
-| Control                         | Phase | Size | Status  | Error block                  |
-| ------------------------------- | ----- | ---- | ------- | ---------------------------- |
-| Textarea                        | 1     | M    | shipped | none needed                  |
-| Number input                    | 1     | S    | shipped | shares `forms/input` (none)  |
-| Color input                     | 1     | S    | shipped | none needed                  |
-| Selection groundwork            | 2     | S    | shipped | —                            |
-| Chip                            | 2     | S    | shipped | 1100–1199                    |
-| Select — slice 1 (single)       | 3     | L    | shipped | 1000–1099                    |
-| Select — slice 2 (multi)        | 3     | M    | shipped | 1000–1099                    |
-| Select — slice 3 (search/async) | 3     | M    | shipped | 1000–1099                    |
-| Rating                          | 4     | M    | shipped | none needed                  |
-| OTP / PIN input                 | 4     | M    | shipped | none needed                  |
-| Tag input                       | 5     | M    | shipped | 2700–2799                    |
-| Phone input                     | 5     | M    | shipped | 2800–2899                    |
-| Calendar                        | 6     | L    | shipped | 2900–2999                    |
-| Date input                      | 6     | M    | shipped | 3000–3099                    |
-| Date range input                | 7     | M    | shipped | 3010–3019 (shared block)     |
-| Time picker + time input        | 7     | M+S  | shipped | 3020–3029 + 3030–3039        |
-| Date-time input                 | 7     | M    | shipped | 3040–3049 (shared block)     |
-| Slider (incl. range)            | 8     | L    | shipped | 3100–3199                    |
-| Masked input                    | 8     | L    | shipped | 3200–3299                    |
-| Cascader (generic)              | 9     | L    | shipped | 3300–3399                    |
-| Password input                  | 9     | S    | shipped | shares `forms/input` (none)  |
-| Number stepper                  | 9     | S    | shipped | shares `forms/input` (none)  |
-| Filter / choice chip group      | 9     | S–M  | planned | shares `chip` 1100 / none    |
-| Autocomplete                    | 9     | M    | planned | claim at impl. (likely none) |
-| Duration input                  | 9     | M    | shipped | 3050 (shared date-time)      |
-| Select option grouping          | 9     | S    | shipped | 1009 (select block)          |
+| Control                         | Phase | Size | Status     | Error block                     |
+| ------------------------------- | ----- | ---- | ---------- | ------------------------------- |
+| Textarea                        | 1     | M    | shipped    | none needed                     |
+| Number input                    | 1     | S    | shipped    | shares `forms/input` (none)     |
+| Color input                     | 1     | S    | shipped    | none needed                     |
+| Selection groundwork            | 2     | S    | shipped    | —                               |
+| Chip                            | 2     | S    | shipped    | 1100–1199                       |
+| Select — slice 1 (single)       | 3     | L    | shipped    | 1000–1099                       |
+| Select — slice 2 (multi)        | 3     | M    | shipped    | 1000–1099                       |
+| Select — slice 3 (search/async) | 3     | M    | shipped    | 1000–1099                       |
+| Rating                          | 4     | M    | shipped    | none needed                     |
+| OTP / PIN input                 | 4     | M    | shipped    | none needed                     |
+| Tag input                       | 5     | M    | shipped    | 2700–2799                       |
+| Phone input                     | 5     | M    | shipped    | 2800–2899                       |
+| Calendar                        | 6     | L    | shipped    | 2900–2999                       |
+| Date input                      | 6     | M    | shipped    | 3000–3099                       |
+| Date range input                | 7     | M    | shipped    | 3010–3019 (shared block)        |
+| Time picker + time input        | 7     | M+S  | shipped    | 3020–3029 + 3030–3039           |
+| Date-time input                 | 7     | M    | shipped    | 3040–3049 (shared block)        |
+| Slider (incl. range)            | 8     | L    | shipped    | 3100–3199                       |
+| Masked input                    | 8     | L    | shipped    | 3200–3299                       |
+| Cascader (generic)              | 9     | L    | shipped    | 3300–3399                       |
+| Password input                  | 9     | S    | shipped    | shares `forms/input` (none)     |
+| Number stepper                  | 9     | S    | shipped    | shares `forms/input` (none)     |
+| Filter / choice chip group      | 9     | S–M  | planned    | shares `chip` 1100 / none       |
+| Autocomplete                    | 9     | M    | superseded | select custom-value convergence |
+| Duration input                  | 9     | M    | shipped    | 3050 (shared date-time)         |
+| Select option grouping          | 9     | S    | shipped    | 1009 (select block)             |
 
 Error-code note: the allocation table in `docs/COMPONENT-ARCHITECTURE.md` is in
 sync (2500–2599 rich-text-editor, 2600–2699 multi-language-rich-text-editor). The
@@ -850,24 +852,21 @@ error }`; `openPath` is the drilled chain (`openPath[i]` = parent of column
     frame — janky; (2) keeping Back in flex flow and collapsing its `max-inline-size`
     — that property **doesn't transition reliably** (measured: it jumped `0→63px` in
     one frame, so the title jumped then crossfaded). Final design — header always
-    present (fixed height; matches the option rows: same height + shared 20px inset):
-    - **Back is an absolute overlay** at the leading edge (never in flow, never
-      affects the title's layout); it fades + slides in via opacity/transform. The
-      title slot is `pointer-events: none` (display-only, full width) so clicks reach
-      the Back button underneath.
-    - **Title indent** (clearing the Back space) is a **`transform: translateX`** on a
-      shift wrapper (`data-back` on the header → `translateX(var(--et-cascader-back-slot,
+    present (fixed height; matches the option rows: same height + shared 20px inset): - **Back is an absolute overlay** at the leading edge (never in flow, never
+    affects the title's layout); it fades + slides in via opacity/transform. The
+    title slot is `pointer-events: none` (display-only, full width) so clicks reach
+    the Back button underneath. - **Title indent** (clearing the Back space) is a **`transform: translateX`** on a
+    shift wrapper (`data-back` on the header → `translateX(var(--et-cascader-back-slot,
 4em))`, `em` not `rem` since the app root font can be 10px). Transforms
-      transition smoothly, so the title glides between flush (root) and indented
-      (drilled) instead of jumping.
-    - **Title text change** cross-slides, keyed by depth (`animate.enter` /
-      `animate.leave`; direction from `data-nav` on the persistent slot so the leaving
-      title, kept mounted by `animate.leave`, reads it too). **Two modes** via
-      `titleAnimation` / `data-anim`: a directional slide for deeper level changes
-      (Back stable), but a **crossfade** when crossing the root boundary (Back
-      appears/disappears) — there the shift-wrapper transform already moves the title,
-      so a second competing transform would look jumpy. At the root the title shows
-      the `placeholder`.
+    transition smoothly, so the title glides between flush (root) and indented
+    (drilled) instead of jumping. - **Title text change** cross-slides, keyed by depth (`animate.enter` /
+    `animate.leave`; direction from `data-nav` on the persistent slot so the leaving
+    title, kept mounted by `animate.leave`, reads it too). **Two modes** via
+    `titleAnimation` / `data-anim`: a directional slide for deeper level changes
+    (Back stable), but a **crossfade** when crossing the root boundary (Back
+    appears/disappears) — there the shift-wrapper transform already moves the title,
+    so a second competing transform would look jumpy. At the root the title shows
+    the `placeholder`.
   - Bottom-sheet rows are enlarged for touch (`--et-cascader-node-height: 52px`,
     16px label) — the token is `inherits: true` so the sheet scope can override it.
     A column showing
@@ -960,7 +959,12 @@ Buttons are out of the tab order (native arrow keys already step), labels via
 (400ms delay / 75ms interval, pointer capture, cleanup on destroy), and
 `MINUS_ICON` joined the registry.
 
-### Filter / choice chip group — `lib/chip/` composition, maybe `et-chip-group` (S–M)
+### Filter / choice chip group — `lib/chip/` composition, maybe `et-chip-group` (S–M) — done
+
+> **Shipped (2026-07) as the composition**: `etSelectionList` +
+> `etSelectionOption` on `et-chip`, selected-state chip styling, story +
+> chip.md docs — see `FORMS_OPPORTUNITIES_PLAN.md` item 3. No Tier 3 component
+> unless the wiring proves repetitive across apps.
 
 Selectable chips as a first-class selection surface (filter bars, tag pickers).
 `createSelectionState<T>()` (phase 2) + the existing `chip` domain do the work.
@@ -971,7 +975,15 @@ Selectable chips as a first-class selection surface (filter bars, tag pickers).
   `et-chip-group` Tier 3 only if the wiring proves repetitive across apps. Reuses
   the chip 1100 block if it needs codes at all.
 
-### Autocomplete — `forms/autocomplete/` (M) — resolve vs. select first
+### Autocomplete — `forms/autocomplete/` (M) — superseded
+
+> **Resolved (2026-07): the decision gate closed in favor of the composition.**
+> The select's custom-value mode gained the missing ergonomics ("Create …" row
+> reachable while options match, `customValueSeparators`, paste splitting,
+> `commitCustomValueOnClose`, `normalizeCustomValue`, `maxSelection`, public
+> `commitCustomValue`) — see `FORMS_OPPORTUNITIES_PLAN.md` item 2 and the
+> Custom values section in `apps/docs/components/select.md`. No standalone
+> `[etAutocomplete]` ships; the original spec below is kept for context.
 
 Free-text-**value** typeahead: the model value **is** the typed string and
 suggestions merely fill it — distinct from `select`, where the value is a chosen

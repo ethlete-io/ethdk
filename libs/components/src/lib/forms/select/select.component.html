@@ -84,6 +84,22 @@
   <et-select-panel>
     <ng-template [ngTemplateOutlet]="optionContent" />
 
+    <!-- a real option (not an action row like add-new): it takes part in virtual focus, so
+         Enter commits it and it is keyboard-reachable while options still match the query.
+         Its label is the candidate itself — that is what commits and what the label cache
+         stores; the "Create" prefix is display-only. -->
+    @if (select.customValueCandidate(); as candidate) {
+      <et-select-option
+        [value]="candidate"
+        [label]="candidate"
+        [customValueOption]="true"
+        class="et-select-create-option"
+      >
+        <i class="et-select-create-option-icon" etIcon="et-plus" aria-hidden="true"></i>
+        {{ createLabel() }} “{{ candidate }}”
+      </et-select-option>
+    }
+
     <!-- state rows and action buttons are NOT options — projected outside the listbox element
          (display: contents, so they still flow within the scrolling panel) -->
     <div class="et-select-panel-extras" etSelectPanelExtras>

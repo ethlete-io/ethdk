@@ -37,6 +37,12 @@ export class SelectOptionDirective {
   /** Display label. Falls back to the element's text content rendered on first paint. */
   public labelInput = input('', { alias: 'label' });
   public disabled = input(false);
+  /**
+   * Marks the option as the select's "Create …" row for the current `customValueCandidate` —
+   * it is excluded from the candidate's duplicate-label check (it would otherwise hide
+   * itself, since its label *is* the candidate).
+   */
+  public customValueOption = input(false);
 
   private optionId = signal(createComponentId('et-select-option'));
   private textLabel = signal('');
@@ -77,6 +83,7 @@ export class SelectOptionDirective {
     elementRef: this.elementRef,
     id: this.optionId.asReadonly(),
     label: this.label,
+    custom: this.customValueOption,
   };
   public active = computed(() => this.select?.activeItem() === this.listItem);
   protected activeSource = computed(() => (this.active() ? (this.select?.activeItemSource() ?? null) : null));

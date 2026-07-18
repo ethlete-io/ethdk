@@ -108,5 +108,28 @@
       white-space: nowrap;
       min-inline-size: 0;
     }
+
+    /* the select's own "Create …" row: a real option (virtual focus, Enter commit), but
+       visually an action like add-new — accent ink and a leading plus icon in place of
+       the check slot (a create row is never in the selected state) */
+    &.et-select-create-option {
+      color: var(--et-theme-color-ink-solid, currentColor);
+
+      .et-select-option-check {
+        display: none;
+      }
+
+      .et-select-option-label {
+        display: flex;
+        align-items: center;
+        gap: var(--et-select-option-gap);
+      }
+
+      .et-select-create-option-icon {
+        flex: none;
+        inline-size: var(--et-select-option-check-size);
+        block-size: var(--et-select-option-check-size);
+      }
+    }
   }
 }

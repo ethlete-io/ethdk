@@ -23,6 +23,9 @@ export default {
     multiple: { control: 'boolean' },
     withSearch: { control: 'boolean' },
     allowCustomValues: { control: 'boolean' },
+    customValueSeparators: { control: 'object' },
+    commitCustomValueOnClose: { control: 'boolean' },
+    maxSelection: { control: 'number' },
     disabled: { control: 'boolean' },
     readonly: { control: 'boolean' },
     required: { control: 'boolean' },
@@ -40,6 +43,8 @@ export default {
     multiple: false,
     withSearch: false,
     allowCustomValues: false,
+    customValueSeparators: [],
+    commitCustomValueOnClose: false,
     disabled: false,
     readonly: false,
     required: false,
@@ -75,9 +80,24 @@ export const CustomValues: Story = {
   args: {
     withSearch: true,
     allowCustomValues: true,
+    customValueSeparators: [','],
+    commitCustomValueOnClose: true,
     multiple: true,
     label: 'Tags',
     placeholder: 'Pick or create tags',
+    hint: 'Comma commits while typing, pastes split on commas/newlines, pending text commits on close',
+  },
+};
+
+export const MaxSelection: Story = {
+  args: {
+    withSearch: true,
+    allowCustomValues: true,
+    multiple: true,
+    maxSelection: 3,
+    label: 'Tags',
+    placeholder: 'Pick or create up to 3 tags',
+    hint: 'At 3 selected values the search input locks — remove a chip to free a slot',
   },
 };
 

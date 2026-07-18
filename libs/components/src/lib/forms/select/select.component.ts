@@ -5,6 +5,7 @@ import { ChipComponent } from '../../chip';
 import { CHEVRON_ICON, IconDirective, PLUS_ICON, TIMES_ICON, provideIcons } from '../../icon';
 import { SpinnerComponent } from '../../loader';
 import { SelectDirective, SelectSurfaceDirective, SelectTriggerDirective, SelectValueContext } from './headless';
+import { SelectOptionComponent } from './select-option.component';
 import { SelectPanelComponent } from './select-panel.component';
 
 @Component({
@@ -16,6 +17,7 @@ import { SelectPanelComponent } from './select-panel.component';
     SelectTriggerDirective,
     SelectSurfaceDirective,
     SelectPanelComponent,
+    SelectOptionComponent,
     IconDirective,
     NgTemplateOutlet,
     ChipComponent,
@@ -40,6 +42,10 @@ import { SelectPanelComponent } from './select-panel.component';
         'name',
         'filterMode',
         'allowCustomValues',
+        'customValueSeparators',
+        'normalizeCustomValue',
+        'commitCustomValueOnClose',
+        'maxSelection',
         'allowAddNew',
         'loading',
         'error',
@@ -59,6 +65,8 @@ export class SelectComponent {
 
   public loadMoreLabel = input('Load more');
   public addNewLabel = input('Add new');
+  /** Leading text of the "Create …" row rendered for `customValueCandidate`. */
+  public createLabel = input('Create');
   /** Shows a clear (×) control while a value is selected. */
   public clearable = input(true);
   public clearLabel = input('Clear');

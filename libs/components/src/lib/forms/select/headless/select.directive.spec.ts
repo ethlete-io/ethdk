@@ -127,6 +127,10 @@ class SearchableCustomValueTestHost {
     <et-select
       [value]="value()"
       [allowCustomValues]="allowCustom()"
+      [customValueSeparators]="separators()"
+      [normalizeCustomValue]="normalize()"
+      [commitCustomValueOnClose]="commitOnClose()"
+      [maxSelection]="maxSelection()"
       [allowAddNew]="allowAddNew()"
       [multiple]="multiple()"
       [loading]="loading()"
@@ -150,6 +154,14 @@ class SearchableCustomValueTestHost {
 class SearchSelectTestHost {
   value = signal<unknown>(null);
   allowCustom = signal(false);
+  separators = signal<string[]>([',']);
+  normalize = signal<(raw: string) => string | null>((raw) => {
+    const trimmed = raw.trim();
+
+    return trimmed.length ? trimmed : null;
+  });
+  commitOnClose = signal(false);
+  maxSelection = signal<number | undefined>(undefined);
   allowAddNew = signal(false);
   multiple = signal(false);
   loading = signal(false);
@@ -616,7 +628,10 @@ describe('SelectDirective (search)', () => {
     await openSelect();
 
     typeQuery('kiwi');
-    expect(visibleOptions().length).toBe(0);
+    // no regular option matches — only the "Create …" row remains, holding virtual focus
+    expect(visibleOptions().length).toBe(1);
+    expect(visibleOptions()[0]!.classList.contains('et-select-create-option')).toBe(true);
+    expect(activeOption()).toBe(visibleOptions()[0]);
 
     keydownOnSearch('Enter');
     await flushFrames();
@@ -625,6 +640,200 @@ describe('SelectDirective (search)', () => {
     expect(fixture.componentInstance.value()).toBe('kiwi');
     expect(select.open()).toBe(false);
     expect(select.displayValue()).toBe('kiwi');
+  });
+
+  it('offers the "Create …" row while options still match and commits it via arrow keys', async () => {
+    fixture.componentInstance.allowCustom.set(true);
+    fixture.componentInstance.multiple.set(true);
+    fixture.detectChanges();
+
+    await openSelect();
+
+    // "app" matches Apple — previously Enter could only ever commit the option
+    typeQuery('app');
+
+    const visible = visibleOptions();
+
+    expect(visible.length).toBe(2);
+    expect(visible[0]!.textContent).toContain('Apple');
+    expect(visible[1]!.classList.contains('et-select-create-option')).toBe(true);
+    expect(visible[1]!.textContent).toContain('app');
+
+    // default virtual focus stays on the real option — Enter would pick Apple
+    expect(activeOption()).toBe(visible[0]);
+
+    keydownOnSearch('ArrowDown');
+    expect(activeOption()).toBe(visible[1]);
+
+    keydownOnSearch('Enter');
+    tick();
+
+    expect(fixture.componentInstance.value()).toEqual(['app']);
+    // the committed value is its own label, resolved through the label cache
+    expect(select.displayValue()).toBe('app');
+  });
+
+  it('hides the "Create …" row for duplicate labels and existing selections', async () => {
+    fixture.componentInstance.allowCustom.set(true);
+    fixture.componentInstance.multiple.set(true);
+    fixture.detectChanges();
+
+    await openSelect();
+
+    // exact label match (case-insensitive) — creating "apple" beside Apple is a duplicate
+    typeQuery('apple');
+    expect(visibleOptions().length).toBe(1);
+    expect(visibleOptions()[0]!.classList.contains('et-select-create-option')).toBe(false);
+
+    // an already-selected custom value must not be offered again
+    typeQuery('kiwi');
+    keydownOnSearch('Enter');
+    tick();
+    expect(fixture.componentInstance.value()).toEqual(['kiwi']);
+
+    typeQuery('kiwi');
+    expect(visibleOptions().length).toBe(0);
+  });
+
+  it('commits custom values on separator characters while typing', async () => {
+    fixture.componentInstance.allowCustom.set(true);
+    fixture.componentInstance.multiple.set(true);
+    fixture.detectChanges();
+
+    await openSelect();
+
+    typeQuery('kiwi,');
+    expect(fixture.componentInstance.value()).toEqual(['kiwi']);
+    expect(searchInput()!.value).toBe('');
+    expect(select.query()).toBe('');
+
+    // a rejected commit (duplicate) keeps the pending text minus the separator for editing
+    typeQuery('kiwi,');
+    expect(fixture.componentInstance.value()).toEqual(['kiwi']);
+    expect(searchInput()!.value).toBe('kiwi');
+    expect(select.query()).toBe('kiwi');
+  });
+
+  it('splits pasted text on separators and newlines into custom values', async () => {
+    fixture.componentInstance.allowCustom.set(true);
+    fixture.componentInstance.multiple.set(true);
+    fixture.detectChanges();
+
+    await openSelect();
+
+    // jsdom has no DataTransfer — fake the clipboardData surface
+    const event = new Event('paste', { bubbles: true, cancelable: true });
+
+    Object.defineProperty(event, 'clipboardData', { value: { getData: () => 'kiwi, mango\nkiwi' } });
+    searchInput()!.dispatchEvent(event);
+    tick();
+
+    // split on the comma and the newline, trimmed by the normalizer, duplicate dropped
+    expect(fixture.componentInstance.value()).toEqual(['kiwi', 'mango']);
+  });
+
+  it('commits the pending query when the panel closes with commitCustomValueOnClose', async () => {
+    fixture.componentInstance.allowCustom.set(true);
+    fixture.componentInstance.commitOnClose.set(true);
+    fixture.componentInstance.multiple.set(true);
+    fixture.detectChanges();
+
+    await openSelect();
+
+    typeQuery('kiwi');
+    select.hide();
+    tick();
+    await flushFrames();
+
+    expect(fixture.componentInstance.value()).toEqual(['kiwi']);
+
+    // Escape clears the query before the close — it must never commit
+    await openSelect();
+    typeQuery('mango');
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    tick();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    tick();
+    await flushFrames();
+
+    expect(fixture.componentInstance.value()).toEqual(['kiwi']);
+  });
+
+  it('does not re-commit the leftover query over a picked option on close', async () => {
+    fixture.componentInstance.allowCustom.set(true);
+    fixture.componentInstance.commitOnClose.set(true);
+    fixture.detectChanges();
+
+    await openSelect();
+
+    // "ban" filters to Banana; Enter picks the option — the close must not turn the
+    // leftover "ban" query into a custom value overwriting it
+    typeQuery('ban');
+    keydownOnSearch('Enter');
+    tick();
+    await flushFrames();
+
+    expect(fixture.componentInstance.value()).toBe('banana');
+    expect(select.open()).toBe(false);
+  });
+
+  it('enforces maxSelection and locks the search input while full', async () => {
+    fixture.componentInstance.allowCustom.set(true);
+    fixture.componentInstance.multiple.set(true);
+    fixture.componentInstance.maxSelection.set(2);
+    fixture.detectChanges();
+
+    await openSelect();
+
+    typeQuery('kiwi');
+    keydownOnSearch('Enter');
+    tick();
+    typeQuery('mango');
+    keydownOnSearch('Enter');
+    tick();
+
+    expect(fixture.componentInstance.value()).toEqual(['kiwi', 'mango']);
+    expect(select.isFull()).toBe(true);
+    expect(searchInput()!.readOnly).toBe(true);
+
+    // both the custom path and the option path reject further adds
+    expect(select.commitCustomValue('papaya')).toBe(false);
+    visibleOptions()[0]?.click();
+    tick();
+    expect(fixture.componentInstance.value()).toEqual(['kiwi', 'mango']);
+
+    // deselecting frees a slot and unlocks the input
+    select.deselectValue('kiwi');
+    tick();
+    expect(select.isFull()).toBe(false);
+    expect(searchInput()!.readOnly).toBe(false);
+  });
+
+  it('runs custom values through the normalizeCustomValue hook', async () => {
+    fixture.componentInstance.allowCustom.set(true);
+    fixture.componentInstance.multiple.set(true);
+    fixture.componentInstance.normalize.set((raw: string) => {
+      const tag = raw.trim().toLowerCase();
+
+      return tag.startsWith('x') ? null : tag;
+    });
+    fixture.detectChanges();
+
+    await openSelect();
+
+    typeQuery('  KiWi  ');
+    keydownOnSearch('Enter');
+    tick();
+
+    expect(fixture.componentInstance.value()).toEqual(['kiwi']);
+
+    // rejected by the hook — no create row, Enter commits nothing
+    typeQuery('xyz');
+    expect(visibleOptions().length).toBe(0);
+    keydownOnSearch('Enter');
+    tick();
+
+    expect(fixture.componentInstance.value()).toEqual(['kiwi']);
   });
 
   it('keeps committed custom values when an option is picked afterwards', async () => {

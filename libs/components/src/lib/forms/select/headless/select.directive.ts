@@ -50,6 +50,12 @@ export const SELECT_FILTER_MODES = {
 
 export type SelectFilterMode = (typeof SELECT_FILTER_MODES)[keyof typeof SELECT_FILTER_MODES];
 
+const defaultNormalizeCustomValue = (raw: string) => {
+  const trimmed = raw.trim();
+
+  return trimmed.length ? trimmed : null;
+};
+
 @Directive({
   selector: '[etSelect]',
   exportAs: 'etSelect',
@@ -77,6 +83,20 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   public filterMode = input<SelectFilterMode>(SELECT_FILTER_MODES.INTERNAL);
   /** Enter with a search query that matches no option commits the raw query string as the value. */
   public allowCustomValues = input(false);
+  /**
+   * Single characters that commit the pending search query as a custom value the moment they
+   * are typed (e.g. `[',']`), and split pasted text in multi mode. Only with `allowCustomValues`.
+   */
+  public customValueSeparators = input<string[]>([]);
+  /** Maps raw text to the stored custom value — return `null` to reject. Defaults to trimming. */
+  public normalizeCustomValue = input<(raw: string) => string | null>(defaultNormalizeCustomValue);
+  /**
+   * Commits a pending search query as a custom value when the panel closes (Tab, outside
+   * click) instead of discarding it. An Escape close never commits — it clears the query first.
+   */
+  public commitCustomValueOnClose = input(false);
+  /** Maximum number of selected values (multi select) — further adds are ignored. */
+  public maxSelection = input<number | undefined>(undefined);
   /** Renders an "Add new" row in `et-select`'s panel — clicking it emits `addNewRequested`. */
   public allowAddNew = input(false);
   /** Async option state — rendered by `et-select` as a loading row inside the panel. */
@@ -252,6 +272,53 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
   public enabledItems = computed(() => this.visibleItems().filter((item) => !item.disabled()));
   public selectedItems = computed(() => this.sortedItems().filter((item) => item.checked()));
+
+  /** True once `maxSelection` is reached (multi select) — further adds are ignored. */
+  public isFull = computed(() => {
+    const maxSelection = this.maxSelection();
+
+    if (maxSelection === undefined || !this.multiple()) {
+      return false;
+    }
+
+    const value = this.value();
+
+    return Array.isArray(value) && value.length >= maxSelection;
+  });
+
+  /**
+   * The normalized custom value the current search query would commit, or `null` when there
+   * is nothing to commit: custom values are off, the query is empty/rejected, the value is
+   * already selected, a visible option carries the same label, or the selection is full.
+   * `et-select` renders this as a "Create …" listbox row (a real option, so it takes part in
+   * virtual focus) — headless consumers render their own row, marked with `customValueOption`
+   * so it is excluded from the duplicate check here.
+   */
+  public customValueCandidate = computed(() => {
+    if (!this.allowCustomValues() || this.disabled() || this.readonly() || this.isFull()) {
+      return null;
+    }
+
+    const candidate = this.normalizeCustomValue()(this.query());
+
+    if (candidate === null) {
+      return null;
+    }
+
+    const value = this.value();
+    const values = Array.isArray(value) ? value : value === null || value === undefined ? [] : [value];
+
+    if (values.includes(candidate)) {
+      return null;
+    }
+
+    const loweredCandidate = candidate.toLowerCase();
+    const duplicatesOption = this.visibleItems().some(
+      (item) => !item.custom?.() && item.label().toLowerCase() === loweredCandidate,
+    );
+
+    return duplicatesOption ? null : candidate;
+  });
 
   // options render lazily inside the surface template, so a value's label must survive
   // the options unmounting for the trigger to keep displaying it while closed
@@ -451,6 +518,10 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
       const values = Array.isArray(current) ? current : [];
       const adding = !values.includes(itemValue);
 
+      if (adding && this.isFull()) {
+        return;
+      }
+
       this.value.set(adding ? [...values, itemValue] : values.filter((candidate) => candidate !== itemValue));
 
       // adding while searching: clear the query so the full list is back for the next pick
@@ -460,6 +531,9 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
       }
     } else {
       this.selection.select(item);
+      // cleared before the close so a `commitCustomValueOnClose` close cannot re-commit
+      // the leftover query over the just-picked option
+      this.registeredSearch()?.clear();
       this.hide();
     }
   }
@@ -484,6 +558,8 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     }
 
     this.addNewRequested.emit(this.query().trim());
+    // the query was handed off — it must not double as a custom value when the close commits
+    this.registeredSearch()?.clear();
     this.hide();
   }
 
@@ -623,6 +699,21 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     }
   }
 
+  /**
+   * Commits raw text as a custom value: normalized via `normalizeCustomValue`, appended in
+   * multi mode (duplicates and adds beyond `maxSelection` are rejected), set and closed in
+   * single mode. Returns whether the value was committed.
+   */
+  public commitCustomValue(raw: string) {
+    const committed = this.applyCustomValue(raw);
+
+    if (committed && !this.multiple()) {
+      this.hide();
+    }
+
+    return committed;
+  }
+
   private handleClosedKeydown(event: KeyboardEvent) {
     const searchFocused = this.registeredSearch()?.isFocused() ?? false;
 
@@ -673,38 +764,44 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
       return;
     }
 
-    const query = this.query().trim();
-
-    if (this.allowCustomValues() && query) {
-      this.commitCustomValue(query);
-
+    if (this.allowCustomValues() && this.commitCustomValue(this.query())) {
       return;
     }
 
     this.hide();
   }
 
-  private commitCustomValue(rawValue: string) {
-    if (this.disabled() || this.readonly()) {
-      return;
+  // the value write shared by `commitCustomValue` and the close-time commit — the latter
+  // must not call `hide()` while the panel is already closing
+  private applyCustomValue(raw: string) {
+    if (this.disabled() || this.readonly() || this.isFull()) {
+      return false;
     }
 
-    // the raw string is its own label — cache it so the trigger can display it
-    this.labelCache.update((cache) => new Map(cache).set(rawValue, rawValue));
+    const value = this.normalizeCustomValue()(raw);
+
+    if (value === null) {
+      return false;
+    }
+
+    // the string is its own label — cache it so the trigger can display it
+    this.labelCache.update((cache) => new Map(cache).set(value, value));
 
     if (this.multiple()) {
       const current = this.value();
       const values = Array.isArray(current) ? current : [];
 
-      if (!values.includes(rawValue)) {
-        this.value.set([...values, rawValue]);
+      if (values.includes(value)) {
+        return false;
       }
 
+      this.value.set([...values, value]);
       this.registeredSearch()?.clear();
     } else {
-      this.value.set(rawValue);
-      this.hide();
+      this.value.set(value);
     }
+
+    return true;
   }
 
   private commitOptionWhileClosed(item: SelectItem) {
@@ -836,6 +933,12 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
   private handlePanelBeforeClosed() {
     this.activeItem.set(null);
+
+    // pending text becomes a value instead of being discarded (tag-input's commit-on-blur).
+    // An Escape close never reaches this with a query — Escape clears it first.
+    if (this.allowCustomValues() && this.commitCustomValueOnClose()) {
+      this.applyCustomValue(this.query());
+    }
 
     // a stale query would silently keep filtering the next open — cleared at close-start so the
     // trigger's value display is correct during the leave animation

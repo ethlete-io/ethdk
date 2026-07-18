@@ -38,9 +38,10 @@ import { SelectDirective } from './select.directive';
     '[attr.aria-describedby]': 'select?.describedBy() || null',
     '[attr.aria-labelledby]': 'select?.labelId() || null',
     '[disabled]': 'select?.disabled() || false',
-    '[readOnly]': 'select?.readonly() || false',
+    '[readOnly]': 'select?.readonly() || isFull()',
     '(input)': 'handleInput()',
     '(keydown)': 'handleKeydown($event)',
+    '(paste)': 'handlePaste($event)',
     '(focus)': 'handleFocus()',
     '(blur)': 'handleBlur()',
   },
@@ -59,6 +60,8 @@ export class SelectSearchDirective {
   protected expanded = computed(() => this.select?.open() ?? false);
   protected controls = computed(() => (this.select?.open() ? this.select.listboxId() : null));
   protected activeDescendant = computed(() => (this.select?.open() ? this.select.activeId() : null));
+  // a full selection locks the input like the tag-input field — values leave via chips/Backspace
+  protected isFull = computed(() => this.select?.isFull() ?? false);
 
   constructor() {
     registerSingleton(this.select?.registeredSearch, this);
@@ -149,6 +152,28 @@ export class SelectSearchDirective {
     const value = this.elementRef.nativeElement.value;
     const select = this.select;
 
+    // typing a custom-value separator commits the text before it (tag-input parity)
+    if (select?.allowCustomValues()) {
+      const lastChar = value.at(-1);
+
+      if (lastChar !== undefined && select.customValueSeparators().includes(lastChar)) {
+        const pending = value.slice(0, -1);
+
+        this.edited.set(true);
+        this.elementRef.nativeElement.value = pending;
+        this.query.set(pending);
+        select.queryChange.emit(pending);
+
+        // a rejected commit (duplicate, normalized away) keeps the pending text for editing —
+        // with the panel open so the user sees why (e.g. the already-selected option)
+        if (!pending || !select.commitCustomValue(pending)) {
+          select.show();
+        }
+
+        return;
+      }
+    }
+
     this.edited.set(true);
     this.query.set(value);
     select?.queryChange.emit(value);
@@ -197,6 +222,37 @@ export class SelectSearchDirective {
     // printable keys, Home/End and ArrowLeft/Right stay native input editing
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Enter' || event.key === 'Tab') {
       this.select?.handleTriggerKeydown(event);
+    }
+  }
+
+  protected handlePaste(event: ClipboardEvent) {
+    const select = this.select;
+    const text = event.clipboardData?.getData('text/plain');
+
+    // splitting only makes sense where several values can land — multi mode with custom values
+    if (!select || !text || !select.allowCustomValues() || !select.multiple()) {
+      return;
+    }
+
+    const separators = select.customValueSeparators();
+
+    if (!separators.length && !text.includes('\n')) {
+      return;
+    }
+
+    const pattern = new RegExp(
+      `[\\n${separators.map((separator) => separator.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('')}]`,
+    );
+    const parts = text.split(pattern);
+
+    if (parts.length < 2) {
+      return;
+    }
+
+    event.preventDefault();
+
+    for (const part of parts) {
+      select.commitCustomValue(part);
     }
   }
 

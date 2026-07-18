@@ -1,5 +1,5 @@
 import { Component, ViewEncapsulation } from '@angular/core';
-import { CHECK_ICON, IconDirective, provideIcons } from '../../icon';
+import { CHECK_ICON, IconDirective, PLUS_ICON, provideIcons } from '../../icon';
 import { SelectOptionDirective } from './headless';
 
 @Component({
@@ -8,11 +8,13 @@ import { SelectOptionDirective } from './headless';
   styleUrl: './select-option.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [IconDirective],
-  providers: [provideIcons(CHECK_ICON)],
+  // PLUS is used by the "Create …" flavor of the option (`et-select`'s custom value row) —
+  // provideIcons shadows the parent registry entirely, so the option must carry it itself
+  providers: [provideIcons(CHECK_ICON, PLUS_ICON)],
   hostDirectives: [
     {
       directive: SelectOptionDirective,
-      inputs: ['value', 'label', 'disabled'],
+      inputs: ['value', 'label', 'disabled', 'customValueOption'],
     },
   ],
   host: {

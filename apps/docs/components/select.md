@@ -134,9 +134,18 @@ The factory debounces the query (`debounceTime`, default 300ms), skips requests 
 
 ### Custom values
 
-With `allowCustomValues`, <kbd>Enter</kbd> on a query that matches no option commits the raw string — in multi mode it becomes a chip and the search clears, covering tag-input-style flows.
+<StoryEmbed id="components-forms-select--custom-values" height="420px" />
 
-Prefer this over [`et-tag-input`](/components/forms#tag-input-—-et-tag-input) whenever suggestions/autocomplete are involved: the tag input is the plain free-text variant (separators, paste splitting, `maxTags`) with no option list, while a multi custom-value select is the same UX **plus** options.
+With `allowCustomValues`, the query becomes committable as a value of its own. Whenever the (normalized) query is neither an existing selection nor an exact label match of a visible option, the panel ends in a **"Create …" row** — a real listbox option, so it takes part in virtual focus: it holds <kbd>Enter</kbd> when nothing else matches, and stays one <kbd>ArrowDown</kbd> away while options still match (you can create `java` even while `javascript` is listed). In multi mode a committed custom value becomes a chip and the search clears; in single mode it becomes the value and the panel closes. The row's leading text is configurable via `createLabel`; headless compositions render their own row bound to `customValueCandidate()` and mark it with `customValueOption` (or call the public `commitCustomValue(raw)` imperatively).
+
+The tag-input ergonomics are available on top:
+
+- **`customValueSeparators`** — single characters (e.g. `[',']`) that commit the pending text the moment they are typed, and split pasted text on separators/newlines into several values (multi mode).
+- **`commitCustomValueOnClose`** — pending text commits instead of being discarded when the panel closes via <kbd>Tab</kbd> or an outside click (an <kbd>Escape</kbd> close never commits — it clears the query first).
+- **`normalizeCustomValue`** — maps raw text to the stored value, return `null` to reject; defaults to trimming.
+- **`maxSelection`** — caps the number of selected values (multi mode); at the cap the search input locks (like the tag input's `maxTags`) until a chip is removed. Applies to option picks too.
+
+Prefer this over [`et-tag-input`](/components/forms#tag-input-—-et-tag-input) whenever suggestions/autocomplete are involved — it is a superset of the tag input's behavior with an option list on top. The tag input remains the deliberately minimal variant for pure free-text entry with no panel at all.
 
 ### Adding new options
 
