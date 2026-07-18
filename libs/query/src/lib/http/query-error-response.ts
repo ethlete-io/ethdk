@@ -26,6 +26,10 @@ export type QueryErrorResponseItem = {
   message: string;
 };
 
+export const isQueryErrorResponse = (error: unknown): error is QueryErrorResponse => {
+  return typeof error === 'object' && error !== null && 'raw' in error && 'retryState' in error && 'isList' in error;
+};
+
 export const createQueryErrorResponse = (error: unknown): QueryErrorResponse => {
   let err = error instanceof HttpErrorResponse ? error : null;
 

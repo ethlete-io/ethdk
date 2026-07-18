@@ -6,6 +6,39 @@ Failed requests resolve to a **`QueryErrorResponse`** on [`query.error()`](/quer
 
 The normalizer understands class-validator errors, Symfony violation lists/list errors, `{ message }`, `{ detail }`, plain strings and string arrays — so templates can render error messages without caring about the backend flavor.
 
+## Mapping violations onto signal forms
+
+When a mutation fails with a violation list (Symfony-style `{ violations: [{ propertyPath, message }] }`), `mapViolationsToFormErrors` turns it into signal-forms validation errors, resolved against your form's field tree — return its result from a [`submit()`](https://angular.dev/guide/forms) action and each violation lands on the field its `propertyPath` names:
+
+```ts
+import { form, submit } from '@angular/forms/signals';
+import { executeUntilSettled, mapViolationsToFormErrors } from '@ethlete/query';
+
+createUserQuery = createUser(); // a createPostQuery creator, see the HTTP guide
+
+protected form = form(signal({ name: '', email: '' }));
+
+protected async save() {
+  await submit(this.form, async (field) => {
+    const snapshot = await executeUntilSettled(this.createUserQuery, { args: { body: field().value() } });
+    const error = snapshot.error();
+
+    if (!error) return;
+
+    return mapViolationsToFormErrors({ fieldTree: field, error });
+  });
+}
+```
+
+- **`executeUntilSettled(query, executeArgs?)`** executes the query and resolves with a settled [snapshot](/query/queries#the-query-object) once the execution completes — the snapshot is frozen to that execution, so a later one can't swap the `response()` / `error()` you read.
+- **`mapViolationsToFormErrors({ fieldTree, error, rewritePath?, onUnmappedViolation? })`** accepts the error in any shape it may reach you: a `QueryErrorResponse`, a raw `HttpErrorResponse`, an error body, or a plain violation array (there's also a standalone `extractFormViolations(error)` if you only need the list). Each violation's `propertyPath` — dot and bracket notation, e.g. `items[2].name` — is resolved against `fieldTree`:
+  - **Resolved** → an error with `kind: 'etServerViolation'`, the violation's `message`, and the matched field. Signal forms shows it on that field and clears it when the field is edited.
+  - **Unresolved** (no matching field, or a `null` path) → a form-level error on the submitted field by default; pass `onUnmappedViolation` to replace it (return `null` to drop the violation).
+  - **Path mismatch between API payload and form model?** `rewritePath: (path, violation) => string | null` rewrites paths before resolution.
+- A failure **without** violations (e.g. a plain 500) degrades to form-level errors with `kind: 'etServerError'` built from the normalized message — so a failed submit is never silently treated as success.
+
+The [forms guide](/components/forms#server-side-violations) shows the rendering side, including the `provideFormErrorMessageResolver` hook for centralizing/localizing error texts by `kind`.
+
 ## Retries
 
 The default retry policy (`shouldRetryRequest`) retries up to **3 times** with a delay of `1s + 1s × attempt` (capped at 5s):
