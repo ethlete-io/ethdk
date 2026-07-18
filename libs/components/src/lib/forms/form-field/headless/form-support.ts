@@ -1,4 +1,4 @@
-import { computed, effect, ElementRef, inject, signal, untracked } from '@angular/core';
+import { computed, effect, ElementRef, inject, Signal, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
   AnimatableDirective,
@@ -177,3 +177,28 @@ const formSupportFactory = () => {
 export const [provideFormSupport, injectFormSupport] = createProvider(formSupportFactory, {
   name: 'FormSupport',
 });
+
+export type FormSupport = ReturnType<typeof formSupportFactory>;
+
+/**
+ * Forwards a component's support-region view children into its `FormSupport`. The `viewChild`
+ * queries themselves must stay as class fields (`NG8110` — the compiler only accepts them in
+ * direct field initializers); this owns the wiring so the mapping lives in one place. Call
+ * from the constructor (needs an injection context for the effect).
+ */
+export const wireFormSupport = (
+  support: FormSupport,
+  refs: {
+    errorContent: Signal<ElementRef<HTMLElement> | undefined>;
+    hintContent: Signal<ElementRef<HTMLElement> | undefined>;
+    errorAnimatable: Signal<AnimatableDirective | undefined>;
+    hintAnimatable: Signal<AnimatableDirective | undefined>;
+  },
+) => {
+  effect(() => {
+    support.errorContent.set(refs.errorContent());
+    support.hintContent.set(refs.hintContent());
+    support.errorAnimatable.set(refs.errorAnimatable());
+    support.hintAnimatable.set(refs.hintAnimatable());
+  });
+};

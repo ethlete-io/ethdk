@@ -1,4 +1,4 @@
-import { Component, effect, ElementRef, input, viewChild, ViewEncapsulation } from '@angular/core';
+import { Component, ElementRef, input, viewChild, ViewEncapsulation } from '@angular/core';
 import {
   AnimatableDirective,
   ColorInteractiveContainerDirective,
@@ -8,7 +8,7 @@ import {
 } from '@ethlete/core';
 import { FormErrorComponent } from '../form-field/form-error.component';
 import { FORM_FIELD_SIZES, FormFieldSize } from '../form-field/form-field.variants';
-import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../form-field/headless';
+import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../form-field/headless';
 
 @Component({
   selector: 'et-choice-field',
@@ -41,11 +41,11 @@ export class ChoiceFieldComponent {
   public canAnimate = createCanAnimateSignal();
 
   constructor() {
-    effect(() => {
-      this.support.errorContent.set(this.errorContentRef());
-      this.support.hintContent.set(this.hintContentRef());
-      this.support.errorAnimatable.set(this.errorAnimatableRef());
-      this.support.hintAnimatable.set(this.hintAnimatableRef());
+    wireFormSupport(this.support, {
+      errorContent: this.errorContentRef,
+      hintContent: this.hintContentRef,
+      errorAnimatable: this.errorAnimatableRef,
+      hintAnimatable: this.hintAnimatableRef,
     });
   }
 }

@@ -38,12 +38,11 @@ Severity legend: **bug** (wrong behavior) · **a11y** (accessibility) ·
 >     host base. Verified all three open/close/commit.
 >   - the **panel-surface** cleanup is now `injectOverlaySurfaceContext()`, and the
 >     **singleton-registration** cleanup is now `registerSingleton()` (~18 sites).
->
-> Still open:
->
-> - **#2** (form-support wiring) — the only unimplemented item: Angular's compiler
->   (`NG8110`) forbids `viewChild()` outside a direct class-field initializer, so the
->   view-child queries can't move into a helper. Not fixable as specified.
+> - **#2** (form-support wiring) — resolved via partial extraction: `NG8110`
+>   forbids moving the `viewChild()` queries into a helper, but only constrains
+>   the query declarations, not the wiring. The queries stay as class fields and
+>   the effect body lives once in `wireFormSupport(support, refs)`
+>   (`form-field/headless/form-support.ts`), used by all 9 components.
 >
 > Items marked _(verified)_ were confirmed against the code during the review.
 

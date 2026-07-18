@@ -2,7 +2,6 @@ import {
   afterNextRender,
   Component,
   computed,
-  effect,
   ElementRef,
   inject,
   Injector,
@@ -31,7 +30,7 @@ import {
 } from '../../icon/headless';
 import { ProgressBarComponent } from '../../loader/progress-bar/progress-bar.component';
 import { FormErrorComponent } from '../form-field/form-error.component';
-import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../form-field/headless';
+import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../form-field/headless';
 import { DropzoneEntry, DROPZONE_ENTRY_STATUSES, formatFileSize } from './headless/dropzone-entry';
 import { DropzoneDirective } from './headless/dropzone.directive';
 
@@ -130,11 +129,11 @@ export class DropzoneComponent {
   protected readonly FORMAT_FILE_SIZE = formatFileSize;
 
   constructor() {
-    effect(() => {
-      this.support.errorContent.set(this.errorContentRef());
-      this.support.hintContent.set(this.hintContentRef());
-      this.support.errorAnimatable.set(this.errorAnimatableRef());
-      this.support.hintAnimatable.set(this.hintAnimatableRef());
+    wireFormSupport(this.support, {
+      errorContent: this.errorContentRef,
+      hintContent: this.hintContentRef,
+      errorAnimatable: this.errorAnimatableRef,
+      hintAnimatable: this.hintAnimatableRef,
     });
 
     afterNextRender(() => {

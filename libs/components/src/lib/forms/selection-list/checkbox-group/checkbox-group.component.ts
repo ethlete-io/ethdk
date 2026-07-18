@@ -1,8 +1,8 @@
-import { Component, effect, ElementRef, input, viewChild, ViewEncapsulation } from '@angular/core';
+import { Component, ElementRef, input, viewChild, ViewEncapsulation } from '@angular/core';
 import { AnimatableDirective, createCanAnimateSignal, ProvideColorDirective } from '@ethlete/core';
 import { FormErrorComponent } from '../../form-field/form-error.component';
 import { FORM_FIELD_SIZES, FormFieldSize } from '../../form-field/form-field.variants';
-import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../../form-field/headless';
+import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../../form-field/headless';
 import { SELECTION_LIST_MULTIPLE, SelectionListDirective } from '../headless';
 
 @Component({
@@ -16,7 +16,7 @@ import { SELECTION_LIST_MULTIPLE, SelectionListDirective } from '../headless';
     FormFieldDirective,
     {
       directive: SelectionListDirective,
-      inputs: ['value', 'touched', 'disabled', 'invalid', 'errors', 'required', 'name'],
+      inputs: ['value', 'touched', 'disabled', 'readonly', 'invalid', 'errors', 'required', 'name'],
       outputs: ['valueChange', 'touchedChange'],
     },
     { directive: ProvideColorDirective, inputs: ['etProvideColor:color'] },
@@ -38,11 +38,11 @@ export class CheckboxGroupComponent {
   public canAnimate = createCanAnimateSignal();
 
   constructor() {
-    effect(() => {
-      this.support.errorContent.set(this.errorContentRef());
-      this.support.hintContent.set(this.hintContentRef());
-      this.support.errorAnimatable.set(this.errorAnimatableRef());
-      this.support.hintAnimatable.set(this.hintAnimatableRef());
+    wireFormSupport(this.support, {
+      errorContent: this.errorContentRef,
+      hintContent: this.hintContentRef,
+      errorAnimatable: this.errorAnimatableRef,
+      hintAnimatable: this.hintAnimatableRef,
     });
   }
 }

@@ -1,8 +1,8 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, ElementRef, ViewEncapsulation, effect, inject, viewChild } from '@angular/core';
+import { Component, ElementRef, ViewEncapsulation, inject, viewChild } from '@angular/core';
 import { AnimatableDirective, ProvideColorDirective, createCanAnimateSignal } from '@ethlete/core';
 import { FormErrorComponent } from '../form-field/form-error.component';
-import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../form-field/headless';
+import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../form-field/headless';
 import { SliderDirective, SliderThumbDirective, SliderThumbLabelContext, SliderTrackDirective } from './headless';
 
 @Component({
@@ -60,11 +60,11 @@ export class SliderComponent {
   public canAnimate = createCanAnimateSignal();
 
   constructor() {
-    effect(() => {
-      this.support.errorContent.set(this.errorContentRef());
-      this.support.hintContent.set(this.hintContentRef());
-      this.support.errorAnimatable.set(this.errorAnimatableRef());
-      this.support.hintAnimatable.set(this.hintAnimatableRef());
+    wireFormSupport(this.support, {
+      errorContent: this.errorContentRef,
+      hintContent: this.hintContentRef,
+      errorAnimatable: this.errorAnimatableRef,
+      hintAnimatable: this.hintAnimatableRef,
     });
   }
 

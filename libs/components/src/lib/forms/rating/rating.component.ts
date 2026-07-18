@@ -1,18 +1,9 @@
-import {
-  Component,
-  ElementRef,
-  ViewEncapsulation,
-  computed,
-  effect,
-  inject,
-  viewChild,
-  viewChildren,
-} from '@angular/core';
+import { Component, ElementRef, ViewEncapsulation, computed, inject, viewChild, viewChildren } from '@angular/core';
 import { AnimatableDirective, ProvideColorDirective, createCanAnimateSignal } from '@ethlete/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { STAR_ICON, IconDirective, provideIcons } from '../../icon';
 import { FormErrorComponent } from '../form-field/form-error.component';
-import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../form-field/headless';
+import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../form-field/headless';
 import { RatingDirective, RatingIconContext } from './headless';
 
 @Component({
@@ -60,11 +51,11 @@ export class RatingComponent {
   private pointerCommitted = false;
 
   constructor() {
-    effect(() => {
-      this.support.errorContent.set(this.errorContentRef());
-      this.support.hintContent.set(this.hintContentRef());
-      this.support.errorAnimatable.set(this.errorAnimatableRef());
-      this.support.hintAnimatable.set(this.hintAnimatableRef());
+    wireFormSupport(this.support, {
+      errorContent: this.errorContentRef,
+      hintContent: this.hintContentRef,
+      errorAnimatable: this.errorAnimatableRef,
+      hintAnimatable: this.hintAnimatableRef,
     });
   }
 
