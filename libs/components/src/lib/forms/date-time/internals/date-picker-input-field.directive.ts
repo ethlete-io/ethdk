@@ -21,8 +21,10 @@ import { DatePickerInputDirective } from './date-picker-input.directive';
     '[attr.aria-invalid]': 'pickerInput?.shouldDisplayError() || null',
     '[attr.aria-describedby]': 'pickerInput?.describedBy() || null',
     '[attr.aria-labelledby]': 'pickerInput?.labelId() || null',
-    '[disabled]': 'pickerInput?.disabled() || false',
-    '[readOnly]': 'pickerInput?.readonly() || false',
+    // attr bindings, not [disabled]/[readOnly]: this base has no selector, so the template
+    // checker can't tie the host to an <input> and rejects the property forms (NG8002)
+    '[attr.disabled]': 'pickerInput?.disabled() ? "" : null',
+    '[attr.readonly]': 'pickerInput?.readonly() ? "" : null',
     '(input)': 'handleInput()',
     '(focus)': 'handleFocus()',
     '(blur)': 'handleBlur()',
