@@ -1,12 +1,6 @@
 import { Component, DestroyRef, ElementRef, ViewEncapsulation, inject, viewChild } from '@angular/core';
-import {
-  AutoSurfaceDirective,
-  COLOR_PROVIDER,
-  ProvideColorDirective,
-  createComponentId,
-  injectAnimatedBlockSize,
-  injectObserveBreakpoint,
-} from '@ethlete/core';
+import { AutoSurfaceDirective, ProvideColorDirective, createComponentId, injectObserveBreakpoint } from '@ethlete/core';
+import { injectOverlaySurfaceContext } from '../form-field/headless';
 import { CascaderDirective } from './headless';
 
 /**
@@ -37,8 +31,6 @@ import { CascaderDirective } from './headless';
 })
 export class CascaderPanelComponent {
   private cascader = inject(CascaderDirective, { optional: true });
-  private ownColorProvider = inject(ProvideColorDirective);
-  private contextColorProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
   private hostRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   /**
@@ -66,14 +58,7 @@ export class CascaderPanelComponent {
       }
     });
 
-    if (this.contextColorProvider) {
-      this.ownColorProvider.syncWithProvider(this.contextColorProvider);
-    }
-
-    injectAnimatedBlockSize({
-      observe: [this.panelBody],
-      resizingClass: 'et-cascader-panel--resizing',
-    });
+    injectOverlaySurfaceContext({ panelBody: this.panelBody, resizingClass: 'et-cascader-panel--resizing' });
   }
 
   protected handleFocusIn() {

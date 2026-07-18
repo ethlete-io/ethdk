@@ -5,5 +5,6 @@ export * from './form-support';
 export * from './anchored-panel-controller';
 export * from './interactive-element';
 export * from './label.directive';
+export * from './overlay-surface-context';
 export * from './support-presentation';
 export * from './text-field-control.directive';
