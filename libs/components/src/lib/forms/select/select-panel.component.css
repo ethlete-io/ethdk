@@ -55,17 +55,30 @@
   }
 
   .et-select-panel {
-    display: block;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
     box-sizing: border-box;
     max-inline-size: min(400px, calc(100vw - 24px));
     max-block-size: var(--et-select-panel-max-height);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    padding: var(--et-select-panel-padding);
+    /* the host paints the chrome and clips; scrolling lives on the inner scroller — a
+       scroller's own background is dragged along by macOS rubber-band overscroll (it is
+       painted into the scrolling contents layer), which would expose the page behind the
+       panel while the border stays put */
+    overflow: hidden;
+    /* re-published as an inheriting alias: the registered token is `inherits: false`, so the
+       scroller below could not read a value a consumer sets on the panel element */
+    --_et-select-panel-padding: var(--et-select-panel-padding);
+
+    .et-select-panel-scroller {
+      box-sizing: border-box;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: var(--_et-select-panel-padding);
+    }
 
     /* applied while the block size animates after a content change (filtering, async
        options arriving), so content outside the animated size stays hidden */
-    &.et-select-panel--resizing {
+    &.et-select-panel--resizing .et-select-panel-scroller {
       overflow: clip;
     }
     border-radius: 10px;
