@@ -934,6 +934,16 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
     switch (event.key) {
       case 'ArrowDown': {
         event.preventDefault();
+
+        // moving below the last result cycles back to the search input (mirrors ArrowUp
+        // above the first one)
+        if (index === this.searchState().results.length - 1 && search) {
+          this.focusedSearchIndex.set(-1);
+          search.focus();
+
+          return;
+        }
+
         this.focusSearchOption(index + 1);
 
         return;

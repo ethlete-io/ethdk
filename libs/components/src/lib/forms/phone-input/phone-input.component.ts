@@ -99,6 +99,9 @@ export class PhoneInputComponent {
   protected handleCountryChange(value: unknown) {
     if (typeof value === 'string') {
       this.phone.selectCountry(value);
+      // a picked prefix hands focus to the number field (the natural next step is typing the
+      // number) — done before the picker closes, so its close refocus leaves it there
+      this.phone.activate();
     }
   }
 }

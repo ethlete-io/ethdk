@@ -64,13 +64,27 @@ export class CascaderNodeDirective<T = unknown> {
     // pull DOM focus along with roving focus, but only while the user is navigating inside
     // the panel — otherwise an unrelated render would steal focus back into the tree. The
     // focus pulse re-runs this after the panel settles (the opening click re-focuses the trigger).
-    effect(() => {
-      this.cascader?.focusPulse();
+    // While the search input holds DOM focus, only an explicit pulse (ArrowDown from the
+    // input) may take it — a mere re-render, like the columns returning after the query was
+    // deleted, must not pull focus out of the input mid-typing.
+    let lastPulse: number | null = null;
 
-      if (this.focused() && this.cascader?.focusInside()) {
-        this.elementRef.nativeElement.focus({ preventScroll: true });
-        this.elementRef.nativeElement.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    effect(() => {
+      const pulse = this.cascader?.focusPulse() ?? 0;
+      const pulsed = lastPulse !== null && pulse !== lastPulse;
+
+      lastPulse = pulse;
+
+      if (!this.focused() || !this.cascader?.focusInside()) {
+        return;
       }
+
+      if (!pulsed && this.cascader.registeredSearch()?.isFocused()) {
+        return;
+      }
+
+      this.elementRef.nativeElement.focus({ preventScroll: true });
+      this.elementRef.nativeElement.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
     });
 
     if (ngDevMode) {
