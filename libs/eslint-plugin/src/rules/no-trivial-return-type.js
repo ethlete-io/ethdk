@@ -11,6 +11,11 @@
  *
  * ALSO GOOD (non-trivial, keep it):
  *   const parse = (): Date => new Date(value)
+ *
+ * Self-referencing (recursive) functions are exempt: TypeScript cannot infer a
+ * return type that depends on itself (TS7023 under noImplicitAny), so the
+ * annotation is required there:
+ *   const walk = (node): boolean => node.ok && walk(node.next)
  */
 
 const TRIVIAL_TYPES = new Set([
@@ -70,6 +75,93 @@ const noTrivialReturnType = {
     };
 
     /**
+     * The names under which a function implementation can call itself: its own name
+     * (named function expression, or the variable an arrow is assigned to) and/or
+     * `this.<key>` for class/object methods and class-field arrows.
+     * @param {any} fn
+     */
+    const selfReferenceNames = (fn) => {
+      /** @type {{ kind: 'name' | 'this', name: string }[]} */
+      const names = [];
+
+      if (fn.id && fn.id.type === 'Identifier') {
+        names.push({ kind: 'name', name: fn.id.name });
+      }
+
+      const parent = fn.parent;
+
+      if (parent) {
+        if (
+          (parent.type === 'MethodDefinition' || parent.type === 'PropertyDefinition' || parent.type === 'Property') &&
+          !parent.computed &&
+          parent.key &&
+          parent.key.type === 'Identifier'
+        ) {
+          names.push({ kind: 'this', name: parent.key.name });
+        }
+
+        if (parent.type === 'VariableDeclarator' && parent.id && parent.id.type === 'Identifier') {
+          names.push({ kind: 'name', name: parent.id.name });
+        }
+      }
+
+      return names;
+    };
+
+    /**
+     * Whether the function body references the function itself (recursion) — there the
+     * annotation is required, since TypeScript cannot infer a self-dependent return type.
+     * @param {any} fn
+     */
+    const isSelfReferencing = (fn) => {
+      const names = selfReferenceNames(fn);
+
+      if (!names.length || !fn.body) {
+        return false;
+      }
+
+      const stack = [fn.body];
+
+      while (stack.length) {
+        const current = stack.pop();
+
+        if (!current || typeof current !== 'object') continue;
+
+        if (Array.isArray(current)) {
+          stack.push(...current);
+          continue;
+        }
+
+        if (typeof current.type !== 'string') continue;
+
+        for (const { kind, name } of names) {
+          if (kind === 'name' && current.type === 'Identifier' && current.name === name) {
+            return true;
+          }
+
+          if (
+            kind === 'this' &&
+            current.type === 'MemberExpression' &&
+            current.object.type === 'ThisExpression' &&
+            !current.computed &&
+            current.property.type === 'Identifier' &&
+            current.property.name === name
+          ) {
+            return true;
+          }
+        }
+
+        for (const key of Object.keys(current)) {
+          if (key === 'parent') continue;
+          const value = current[key];
+          if (value && typeof value === 'object') stack.push(value);
+        }
+      }
+
+      return false;
+    };
+
+    /**
      * @param {import('eslint').Rule.Node} node
      */
     const checkReturnType = (node) => {
@@ -81,6 +173,7 @@ const noTrivialReturnType = {
 
       const annotation = fn.returnType.typeAnnotation;
       if (!TRIVIAL_TYPES.has(annotation.type)) return;
+      if (isSelfReferencing(fn)) return;
 
       const label = TRIVIAL_LABELS[annotation.type] ?? annotation.type;
 
