@@ -113,7 +113,7 @@
           color 150ms ease;
       }
 
-      &:hover .et-calendar-cell-content {
+      &:where(:not([data-disabled])):hover .et-calendar-cell-content {
         background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
       }
 
@@ -134,10 +134,20 @@
         box-shadow: inset 0 0 0 1px var(--et-theme-color-ink-solid);
       }
 
-      /* the pending endpoint of a range preview (committed endpoints are selected and
-         get the filled circle) — a ring caps the band instead of a bare cut edge */
-      &:where([data-band='start'], [data-band='end']):where(:not([data-selected])) .et-calendar-cell-content {
-        box-shadow: inset 0 0 0 1.5px var(--et-theme-color-primary-solid);
+      /* the pending endpoint of a range preview — previewed as the same filled circle a
+         selected date gets, so the band is capped by a full rounded fill instead of a
+         bare cut edge */
+      &:where([data-band='start'], [data-band='end']):where(:not([data-selected])) {
+        color: var(--et-theme-color-on-primary);
+
+        .et-calendar-cell-content {
+          background: var(--et-theme-color-primary-solid);
+          font-weight: 600;
+        }
+      }
+
+      &:where([data-band='start'], [data-band='end']):where(:not([data-selected])):hover .et-calendar-cell-content {
+        background: var(--et-theme-color-primary-solid);
       }
 
       &:where([data-selected]) {

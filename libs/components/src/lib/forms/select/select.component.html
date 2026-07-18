@@ -36,8 +36,9 @@
     <ng-content select="input[etSelectSearch]" />
   </div>
 
-  <!-- async option state, surfaced in the field itself (mirrors the menu's search spinner) -->
-  @if (select.loading()) {
+  <!-- async option state, surfaced in the field itself (mirrors the menu's search spinner) —
+       only while the panel is closed; open, the panel's loading row is the single spinner -->
+  @if (select.loading() && !select.open()) {
     <et-spinner class="et-select-trigger-spinner" diameter="16" strokeWidth="2" />
   }
 
