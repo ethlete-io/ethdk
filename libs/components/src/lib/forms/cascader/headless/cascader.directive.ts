@@ -19,12 +19,10 @@ import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { RuntimeError, nextFrame } from '@ethlete/core';
 import { EMPTY, Subscription, catchError, fromEvent, switchMap, take, tap } from 'rxjs';
 import { createTypeahead } from '../../../internals/typeahead';
-import { OverlayConfig } from '../../../overlay/overlay-config';
-import { injectOverlayManager } from '../../../overlay/overlay-manager';
-import { OverlayRef } from '../../../overlay/overlay-ref';
-import { OverlayTemplateHostComponent } from '../../../overlay/overlay-template-host.component';
 import { anchoredOverlayStrategy, injectBottomSheetStrategy } from '../../../overlay/strategies';
 import {
+  AnchoredPanelOverlayRef,
+  createAnchoredPanelController,
   FORM_FIELD_CONTROL_TYPES,
   FORM_FIELD_TOKEN,
   FormFieldControl,
@@ -67,7 +65,6 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
-  private overlayManager = injectOverlayManager();
   private bottomSheetStrategy = injectBottomSheetStrategy();
 
   public value = model<T | null>(null);
@@ -115,8 +112,6 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
   public registeredTrigger = signal<CascaderTriggerLike | null>(null);
   /** @internal */
   public registeredSurface = signal<CascaderSurfaceLike | null>(null);
-  /** @internal */
-  public overlayRef = signal<OverlayRef<OverlayTemplateHostComponent, unknown> | null>(null);
   /** @internal The mounted tree panel's element id — the trigger points `aria-controls` at it. */
   public panelId = signal<string | null>(null);
 
@@ -149,7 +144,73 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
    */
   public focusPulse = signal(0);
 
+  /** @internal */
+  public overlayRef = signal<AnchoredPanelOverlayRef | null>(null);
   public isMounted = computed(() => this.overlayRef() !== null);
+
+  private panel = createAnchoredPanelController({
+    canOpen: computed(() => !this.disabled()),
+    open: this.open,
+    overlayRef: this.overlayRef,
+    surface: this.registeredSurface,
+    anchor: () => this.resolveAnchorElement(),
+    config: ({ origin }) => {
+      const context = { $implicit: this, cascader: this, close: () => this.hide() };
+
+      return {
+        bindings: [
+          inputBinding('template', () => this.registeredSurface()?.templateRef),
+          inputBinding('context', () => context),
+        ],
+        mode: 'non-modal',
+        autoFocus: false,
+        restoreFocus: false,
+        closeOnEscape: true,
+        closeOnOutsidePointer: false,
+        origin,
+        panelClass: 'et-cascader-overlay-pane',
+        strategies: () => [
+          {
+            strategy: this.bottomSheetStrategy.build({ hasBackdrop: true, containerClass: 'et-cascader-sheet' }),
+          },
+          ...anchoredOverlayStrategy({
+            containerClass: ['et-overlay--anchored', 'et-overlay--cascader'],
+            placement: 'bottom-start',
+            fallbackPlacements: ['top-start'],
+            offset: 4,
+            viewportPadding: 8,
+            autoResize: true,
+            shift: { crossAxis: true },
+            mirrorWidth: this.mirrorPanelWidth(),
+          })().map((entry) => ({ ...entry, breakpoint: 'md' as const })),
+        ],
+      };
+    },
+    onBeforeMount: () => {
+      this.resetBrowseState();
+
+      // a tree popup takes focus on open (menu pattern): mark focus as inside so the seeded
+      // roving node pulls DOM focus once it renders, and keyboard navigation works immediately
+      this.focusInside.set(true);
+
+      // the opening pointer click focuses the trigger one frame *after* the node's focus effect
+      // runs, stealing focus back — re-pull it onto the active node once everything has settled
+      nextFrame(() => {
+        if (this.overlayRef()) {
+          this.focusPulse.update((pulse) => pulse + 1);
+        }
+      });
+    },
+    onMounted: () => this.opened.emit(),
+    onAfterClosed: ({ byOutsidePointer }) => {
+      this.focusInside.set(false);
+      this.closed.emit();
+
+      if (!byOutsidePointer && this.document.activeElement === this.document.body) {
+        this.activate();
+      }
+    },
+  });
 
   private loadSubscriptions = new Map<number, Subscription>();
 
@@ -166,9 +227,6 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
    * Back bar's width animates, so a competing transform slide would look jumpy.
    */
   public titleAnimation = signal<'slide' | 'fade'>('slide');
-
-  private interactionListenersCleanup: (() => void) | null = null;
-  private closedByOutsidePointer = false;
 
   // type-to-search within the focused column (long columns can't be navigated by name otherwise);
   // the buffer resets when focus moves to a different column so queries don't leak across levels
@@ -237,29 +295,6 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
       )
       .subscribe();
 
-    effect(() => {
-      const disabled = this.disabled();
-      const shouldBeOpen = this.open();
-      const currentRef = this.overlayRef();
-
-      if (disabled) {
-        if (currentRef) untracked(() => currentRef.close());
-        if (shouldBeOpen) untracked(() => this.open.set(false));
-
-        return;
-      }
-
-      if (shouldBeOpen && !currentRef) {
-        untracked(() => this.mountOverlay());
-
-        return;
-      }
-
-      if (!shouldBeOpen && currentRef) {
-        untracked(() => currentRef.close());
-      }
-    });
-
     // a click anywhere on the field's control frame opens the panel, like on the trigger
     toObservable(computed(() => this.formField?.controlFrameElement() ?? null))
       .pipe(
@@ -272,7 +307,6 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
     this.destroyRef.onDestroy(() => {
       this.cancelLoads();
       this.typeahead.destroy();
-      this.overlayRef()?.close();
     });
 
     if (ngDevMode) {
@@ -306,7 +340,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
     if (this.open()) {
       this.open.set(false);
     } else {
-      this.overlayRef()?.close();
+      this.panel.close();
     }
   }
 
@@ -666,146 +700,6 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
 
     this.activate();
     this.toggle();
-  }
-
-  private mountOverlay() {
-    const surface = this.registeredSurface();
-
-    if (!surface) {
-      return;
-    }
-
-    this.resetBrowseState();
-
-    // a tree popup takes focus on open (menu pattern): mark focus as inside so the seeded
-    // roving node pulls DOM focus once it renders, and keyboard navigation works immediately
-    this.focusInside.set(true);
-
-    // the opening pointer click focuses the trigger one frame *after* the node's focus effect
-    // runs, stealing focus back — re-pull it onto the active node once everything has settled
-    nextFrame(() => {
-      if (this.overlayRef()) {
-        this.focusPulse.update((pulse) => pulse + 1);
-      }
-    });
-
-    const templateContext = {
-      $implicit: this,
-      cascader: this,
-      close: () => this.hide(),
-    };
-
-    const config: OverlayConfig = {
-      bindings: [inputBinding('template', () => surface.templateRef), inputBinding('context', () => templateContext)],
-      mode: 'non-modal',
-      autoFocus: false,
-      restoreFocus: false,
-      closeOnEscape: true,
-      closeOnOutsidePointer: false,
-      origin: this.resolveAnchorElement(),
-      panelClass: 'et-cascader-overlay-pane',
-      strategies: () => [
-        {
-          strategy: this.bottomSheetStrategy.build({ hasBackdrop: true, containerClass: 'et-cascader-sheet' }),
-        },
-        ...anchoredOverlayStrategy({
-          containerClass: ['et-overlay--anchored', 'et-overlay--cascader'],
-          placement: 'bottom-start',
-          fallbackPlacements: ['top-start'],
-          offset: 4,
-          viewportPadding: 8,
-          autoResize: true,
-          shift: { crossAxis: true },
-          mirrorWidth: this.mirrorPanelWidth(),
-        })().map((entry) => ({ ...entry, breakpoint: 'md' as const })),
-      ],
-    };
-
-    const overlayRef = this.overlayManager.open<OverlayTemplateHostComponent>(OverlayTemplateHostComponent, config);
-
-    this.overlayRef.set(overlayRef);
-    this.opened.emit();
-    this.attachInteractionListeners();
-
-    overlayRef
-      .beforeClosed()
-      .pipe(
-        take(1),
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => {
-          if (this.overlayRef() !== overlayRef) {
-            return;
-          }
-
-          this.detachInteractionListeners();
-
-          if (this.open()) {
-            this.open.set(false);
-          }
-        }),
-      )
-      .subscribe();
-
-    overlayRef
-      .afterClosed()
-      .pipe(
-        take(1),
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => {
-          if (this.overlayRef() !== overlayRef) {
-            return;
-          }
-
-          this.overlayRef.set(null);
-          this.focusInside.set(false);
-          this.closed.emit();
-
-          const closedByOutsidePointer = this.closedByOutsidePointer;
-
-          this.closedByOutsidePointer = false;
-
-          if (!closedByOutsidePointer && this.document.activeElement === this.document.body) {
-            this.activate();
-          }
-        }),
-      )
-      .subscribe();
-  }
-
-  private attachInteractionListeners() {
-    this.detachInteractionListeners();
-
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target;
-
-      if (!(target instanceof Node)) {
-        return;
-      }
-
-      const pane = this.overlayRef()?.elements?.paneElement;
-
-      if (pane?.contains(target)) {
-        return;
-      }
-
-      if (this.resolveAnchorElement()?.contains(target)) {
-        return;
-      }
-
-      this.closedByOutsidePointer = true;
-      this.hide();
-    };
-
-    const pointerdownSubscription = fromEvent<PointerEvent>(this.document, 'pointerdown', { capture: true }).subscribe(
-      onPointerDown,
-    );
-
-    this.interactionListenersCleanup = () => pointerdownSubscription.unsubscribe();
-  }
-
-  private detachInteractionListeners() {
-    this.interactionListenersCleanup?.();
-    this.interactionListenersCleanup = null;
   }
 }
 

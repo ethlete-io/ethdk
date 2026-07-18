@@ -17,15 +17,13 @@ import {
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { RuntimeError, nextFrame } from '@ethlete/core';
-import { EMPTY, fromEvent, switchMap, take, tap } from 'rxjs';
+import { EMPTY, fromEvent, switchMap, tap } from 'rxjs';
 import { sortByDomOrder } from '../../../internals/dom-order';
 import { createTypeahead } from '../../../internals/typeahead';
-import { OverlayConfig } from '../../../overlay/overlay-config';
-import { injectOverlayManager } from '../../../overlay/overlay-manager';
-import { OverlayRef } from '../../../overlay/overlay-ref';
-import { OverlayTemplateHostComponent } from '../../../overlay/overlay-template-host.component';
 import { anchoredOverlayStrategy } from '../../../overlay/strategies';
 import {
+  AnchoredPanelOverlayRef,
+  createAnchoredPanelController,
   FORM_FIELD_CONTROL_TYPES,
   FORM_FIELD_TOKEN,
   FormFieldControl,
@@ -63,7 +61,6 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
-  private overlayManager = injectOverlayManager();
 
   public value = model<unknown | unknown[] | null>(null);
   public touched = model(false);
@@ -129,8 +126,6 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   public registeredErrorTemplate = signal<SelectErrorDirective | null>(null);
   /** @internal */
   public registeredEmptyTemplate = signal<SelectEmptyDirective | null>(null);
-  /** @internal */
-  public overlayRef = signal<OverlayRef<OverlayTemplateHostComponent, unknown> | null>(null);
   /** @internal The option that holds virtual focus while the listbox is open. */
   public activeItem = signal<SelectItem | null>(null);
   /**
@@ -149,7 +144,64 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
   public activeId = computed(() => this.activeItem()?.id() ?? null);
   public listboxId = computed(() => this.registeredListbox()?.id ?? null);
+
+  /** @internal */
+  public overlayRef = signal<AnchoredPanelOverlayRef | null>(null);
   public isMounted = computed(() => this.overlayRef() !== null);
+
+  private panel = createAnchoredPanelController({
+    canOpen: computed(() => !this.disabled()),
+    open: this.open,
+    overlayRef: this.overlayRef,
+    surface: this.registeredSurface,
+    anchor: () => this.resolveAnchorElement(),
+    config: ({ origin }) => {
+      const context: SelectSurfaceContext = { $implicit: this, select: this, close: () => this.hide() };
+
+      return {
+        bindings: [
+          inputBinding('template', () => this.registeredSurface()?.templateRef),
+          inputBinding('context', () => context),
+        ],
+        mode: 'non-modal',
+        hasBackdrop: false,
+        // combobox pattern: DOM focus stays on the trigger (or moves into the search input),
+        // options only get virtual focus
+        autoFocus: false,
+        restoreFocus: false,
+        // both interactive closes are owned by the document-level listeners below: the first
+        // Escape only clears a search query, and a pointerdown inside the field (e.g. the
+        // inline search input) must not close — the runtime's handlers cannot know either
+        closeOnEscape: false,
+        closeOnOutsidePointer: false,
+        origin,
+        panelClass: 'et-select-overlay-pane',
+        // anchored at every breakpoint by design (the cascader swaps to a bottom sheet below `md`):
+        // a select is a single-column listbox that reads fine anchored to the field on mobile, while
+        // the cascader's multi-column drill genuinely needs the sheet's full-width column paging
+        strategies: anchoredOverlayStrategy({
+          containerClass: ['et-overlay--anchored', 'et-overlay--select'],
+          placement: 'bottom-start',
+          fallbackPlacements: ['top-start'],
+          offset: 4,
+          viewportPadding: 8,
+          autoResize: true,
+          shift: { crossAxis: true },
+          mirrorWidth: this.mirrorPanelWidth(),
+        }),
+      };
+    },
+    onMounted: (overlayRef) => this.handlePanelMounted(overlayRef),
+    onBeforeClosed: () => this.handlePanelBeforeClosed(),
+    onAfterClosed: ({ byOutsidePointer }) => {
+      // focus that sat inside the pane fell to <body> with the pane's removal — hand it
+      // back to the field, except for outside closes (the user deliberately went elsewhere)
+      if (!byOutsidePointer && this.document.activeElement === this.document.body) {
+        this.activate();
+      }
+    },
+    onDocumentKeydown: (event) => this.handlePanelKeydown(event),
+  });
 
   public sortedItems = computed(() => {
     const items = this.selection.items();
@@ -239,12 +291,6 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
   private typeahead = createTypeahead();
 
-  // Escape is handled here instead of by the overlay runtime: with a search input, the
-  // first Escape only clears the query — the runtime's own handler would close immediately
-  // (it runs during the capture phase, before the input ever sees the key)
-  private interactionListenersCleanup: (() => void) | null = null;
-  private closedByOutsidePointer = false;
-
   constructor() {
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
@@ -284,34 +330,6 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
           return next;
         });
       });
-    });
-
-    effect(() => {
-      const disabled = this.disabled();
-      const shouldBeOpen = this.open();
-      const currentRef = this.overlayRef();
-
-      if (disabled) {
-        if (currentRef) {
-          untracked(() => currentRef.close());
-        }
-
-        if (shouldBeOpen) {
-          untracked(() => this.open.set(false));
-        }
-
-        return;
-      }
-
-      if (shouldBeOpen && !currentRef) {
-        untracked(() => this.mountOverlay());
-
-        return;
-      }
-
-      if (!shouldBeOpen && currentRef) {
-        untracked(() => currentRef.close());
-      }
     });
 
     // a query change can filter the active option away (or, with external filtering,
@@ -357,8 +375,6 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
     this.destroyRef.onDestroy(() => {
       this.typeahead.destroy();
-      this.detachInteractionListeners();
-      this.overlayRef()?.close();
     });
 
     if (ngDevMode) {
@@ -392,7 +408,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     if (this.open()) {
       this.open.set(false);
     } else {
-      this.overlayRef()?.close();
+      this.panel.close();
     }
   }
 
@@ -787,55 +803,9 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     this.toggle();
   }
 
-  private mountOverlay() {
-    const surface = this.registeredSurface();
-
-    if (!surface) {
-      return;
-    }
-
-    const templateContext: SelectSurfaceContext = {
-      $implicit: this,
-      select: this,
-      close: () => this.hide(),
-    };
-
-    const config: OverlayConfig = {
-      bindings: [inputBinding('template', () => surface.templateRef), inputBinding('context', () => templateContext)],
-      mode: 'non-modal',
-      hasBackdrop: false,
-      // combobox pattern: DOM focus stays on the trigger (or moves into the search input),
-      // options only get virtual focus
-      autoFocus: false,
-      restoreFocus: false,
-      // both interactive closes are owned by the document-level listeners below: the first
-      // Escape only clears a search query, and a pointerdown inside the field (e.g. the
-      // inline search input) must not close — the runtime's handlers cannot know either
-      closeOnEscape: false,
-      closeOnOutsidePointer: false,
-      origin: this.resolveAnchorElement(),
-      panelClass: 'et-select-overlay-pane',
-      // anchored at every breakpoint by design (the cascader swaps to a bottom sheet below `md`):
-      // a select is a single-column listbox that reads fine anchored to the field on mobile, while
-      // the cascader's multi-column drill genuinely needs the sheet's full-width column paging
-      strategies: anchoredOverlayStrategy({
-        containerClass: ['et-overlay--anchored', 'et-overlay--select'],
-        placement: 'bottom-start',
-        fallbackPlacements: ['top-start'],
-        offset: 4,
-        viewportPadding: 8,
-        autoResize: true,
-        shift: { crossAxis: true },
-        mirrorWidth: this.mirrorPanelWidth(),
-      }),
-    };
-
-    const overlayRef = this.overlayManager.open<OverlayTemplateHostComponent>(OverlayTemplateHostComponent, config);
-
-    this.overlayRef.set(overlayRef);
-
-    // initial virtual focus: the selected option, else the first enabled one — unless a
-    // keydown right after opening (before this frame) already moved the active item
+  // initial virtual focus: the selected option, else the first enabled one — unless a keydown
+  // right after opening (before this frame) already moved the active item
+  private handlePanelMounted(overlayRef: AnchoredPanelOverlayRef) {
     nextFrame(() => {
       if (this.overlayRef() !== overlayRef) {
         return;
@@ -862,126 +832,38 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
         this.setActiveItem(target);
       }
     });
-
-    this.attachInteractionListeners();
-
-    // sync the open model as soon as any close begins so aria-expanded and the trigger
-    // state flip before the leave animation
-    overlayRef
-      .beforeClosed()
-      .pipe(
-        take(1),
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => {
-          if (this.overlayRef() !== overlayRef) {
-            return;
-          }
-
-          this.detachInteractionListeners();
-          this.activeItem.set(null);
-
-          if (this.open()) {
-            this.open.set(false);
-          }
-
-          // a stale query would silently keep filtering the next open — cleared at
-          // close-start so the trigger's value display is correct during the leave animation
-          const search = this.registeredSearch();
-
-          if (search && this.query()) {
-            search.clear();
-          }
-        }),
-      )
-      .subscribe();
-
-    overlayRef
-      .afterClosed()
-      .pipe(
-        take(1),
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => {
-          if (this.overlayRef() !== overlayRef) {
-            return;
-          }
-
-          this.overlayRef.set(null);
-
-          const closedByOutsidePointer = this.closedByOutsidePointer;
-
-          this.closedByOutsidePointer = false;
-
-          // focus that sat inside the pane fell to <body> with the pane's removal — hand it
-          // back to the field, except for outside closes (the user deliberately went elsewhere)
-          if (!closedByOutsidePointer && this.document.activeElement === this.document.body) {
-            this.activate();
-          }
-        }),
-      )
-      .subscribe();
   }
 
-  // Interactive closes are handled here instead of by the overlay runtime: the first Escape
-  // only clears a search query (the runtime's capture-phase handler would close before the
-  // input ever saw the key), and a pointerdown inside the field — the inline search input,
-  // the chips — must not close the panel at all.
-  private attachInteractionListeners() {
-    this.detachInteractionListeners();
+  private handlePanelBeforeClosed() {
+    this.activeItem.set(null);
 
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape' || event.defaultPrevented) {
-        return;
-      }
+    // a stale query would silently keep filtering the next open — cleared at close-start so the
+    // trigger's value display is correct during the leave animation
+    const search = this.registeredSearch();
 
-      event.preventDefault();
-
-      const search = this.registeredSearch();
-
-      if (search && this.query()) {
-        search.clear();
-
-        return;
-      }
-
-      this.hide();
-    };
-
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target;
-
-      if (!(target instanceof Node)) {
-        return;
-      }
-
-      const pane = this.overlayRef()?.elements?.paneElement;
-
-      if (pane?.contains(target)) {
-        return;
-      }
-
-      const anchor = this.resolveAnchorElement();
-
-      if (anchor?.contains(target)) {
-        return;
-      }
-
-      this.closedByOutsidePointer = true;
-      this.hide();
-    };
-
-    const keydownSubscription = fromEvent<KeyboardEvent>(this.document, 'keydown').subscribe(onKeyDown);
-    const pointerdownSubscription = fromEvent<PointerEvent>(this.document, 'pointerdown', { capture: true }).subscribe(
-      onPointerDown,
-    );
-
-    this.interactionListenersCleanup = () => {
-      keydownSubscription.unsubscribe();
-      pointerdownSubscription.unsubscribe();
-    };
+    if (search && this.query()) {
+      search.clear();
+    }
   }
 
-  private detachInteractionListeners() {
-    this.interactionListenersCleanup?.();
-    this.interactionListenersCleanup = null;
+  // Escape is handled here instead of by the overlay runtime: with a search input the first
+  // Escape only clears the query (the runtime's capture-phase handler would close before the
+  // input ever saw the key).
+  private handlePanelKeydown(event: KeyboardEvent) {
+    if (event.key !== 'Escape' || event.defaultPrevented) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const search = this.registeredSearch();
+
+    if (search && this.query()) {
+      search.clear();
+
+      return;
+    }
+
+    this.hide();
   }
 }
