@@ -396,10 +396,10 @@
       background: var(--et-theme-color-primary-solid, currentColor);
     }
 
-    /* checkmark: a rotated border L */
+    /* checkmark: a rotated border L — offsets center the rotated ink in the 12px padding box */
     [data-selected] > .et-cascader-check::after {
-      inset-inline-start: 3px;
-      inset-block-start: 0;
+      inset-inline-start: 4px;
+      inset-block-start: 1px;
       inline-size: 4px;
       block-size: 8px;
       border: solid var(--et-theme-color-on-primary, rgb(0 0 0));

@@ -342,6 +342,54 @@ describe('CascaderDirective', () => {
       expect(nodeByLabel('Euro')!.hasAttribute('data-indeterminate')).toBe(false);
     });
 
+    it('promotes an ancestor to selected once all its loaded descendants are checked', async () => {
+      await open();
+      nodeByLabel('Euro')!.click();
+      tick();
+      nodeByLabel('Group stage')!.click();
+      tick();
+      nodeByLabel('Group A')!.click();
+      tick();
+      nodeByLabel('Group B')!.click();
+      tick();
+
+      // every leaf under "Group stage" is checked — full check, not the dash
+      expect(nodeByLabel('Group stage')!.getAttribute('data-selected')).toBe('true');
+      expect(nodeByLabel('Group stage')!.hasAttribute('data-indeterminate')).toBe(false);
+
+      // "Euro" also holds the (unselected) "Knockout" branch — still just indeterminate
+      expect(nodeByLabel('Euro')!.getAttribute('data-indeterminate')).toBe('true');
+      expect(nodeByLabel('Euro')!.hasAttribute('data-selected')).toBe(false);
+
+      // the promotion is display-only — the value stays the exact leaves
+      expect(fixture.componentInstance.value()).toEqual(['euro-group-a', 'euro-group-b']);
+
+      // unchecking a leaf drops the ancestor back to the dash
+      nodeByLabel('Group A')!.click();
+      tick();
+
+      expect(nodeByLabel('Group stage')!.hasAttribute('data-selected')).toBe(false);
+      expect(nodeByLabel('Group stage')!.getAttribute('data-indeterminate')).toBe('true');
+    });
+
+    it('promotes a single-child ancestor and keeps the promotion after navigating away', async () => {
+      await open();
+      nodeByLabel('World Cup')!.click();
+      tick();
+      nodeByLabel('Final')!.click();
+      tick();
+
+      expect(nodeByLabel('World Cup')!.getAttribute('data-selected')).toBe('true');
+      expect(nodeByLabel('World Cup')!.hasAttribute('data-indeterminate')).toBe(false);
+
+      // drilling into another branch truncates the columns, but the loaded child lists are
+      // remembered — "World Cup" must not fall back to indeterminate
+      nodeByLabel('Euro')!.click();
+      tick();
+
+      expect(nodeByLabel('World Cup')!.getAttribute('data-selected')).toBe('true');
+    });
+
     it('joins the selected labels on the trigger', async () => {
       await open();
       nodeByLabel('Euro')!.click();

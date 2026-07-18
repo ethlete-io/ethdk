@@ -94,7 +94,7 @@ Call it from a field initializer / constructor (injection context) — the same 
 
 ## Multi-select
 
-With `multiple`, activating a node **toggles** its value instead of committing-and-closing — the form value is a `T[]`. Leaves toggle on click; branches still just drill (in `selectableLevels="any"` they toggle **and** drill). Every row gains a check square: selected nodes show a checkmark, and an unselected ancestor of a selection shows the **indeterminate dash**, so partial selections are visible from the root column. The trigger joins the selected labels (`Group A, Group B`), and the clear (×) control empties the whole selection:
+With `multiple`, activating a node **toggles** its value instead of committing-and-closing — the form value is a `T[]`. Leaves toggle on click; branches still just drill (in `selectableLevels="any"` they toggle **and** drill). Every row gains a check square: selected nodes show a checkmark, an ancestor of a **partial** selection shows the **indeterminate dash**, and an ancestor whose descendants are **all** selected promotes to the full checkmark — so selection progress is visible from the root column. The promotion is display-only (the form value stays the exact selected nodes) and covers subtrees the cascader has loaded; a lazy branch that was never drilled into can only show the dash, since its full child list is unknown. Disabled children don't block the promotion. The trigger joins the selected labels (`Group A, Group B`), and the clear (×) control empties the whole selection:
 
 <StoryEmbed id="components-forms-cascader--multiple" height="380px" />
 

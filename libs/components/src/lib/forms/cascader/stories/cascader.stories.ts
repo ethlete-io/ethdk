@@ -46,7 +46,10 @@ export const Search: Story = {
 };
 
 export const Multiple: Story = {
-  args: { multiple: true, hint: 'Leaf picks toggle — parents show the partial-selection dash' },
+  args: {
+    multiple: true,
+    hint: 'Leaf picks toggle — parents show the dash, or a full check once every child is picked',
+  },
 };
 
 export const MultipleWithSearch: Story = {

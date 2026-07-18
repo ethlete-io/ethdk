@@ -162,6 +162,14 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
    */
   public selectedPaths = signal<CascaderNode<T>[][]>([]);
 
+  /**
+   * Every child list loaded so far, keyed by parent (`null` = root). Unlike `columns`, entries
+   * survive navigating away — multi mode needs them to promote a branch to fully selected once
+   * all of its descendants are checked (a subtree that was never loaded stays indeterminate,
+   * since "all" can't be answered for it).
+   */
+  private knownChildren = signal<{ parent: CascaderNode<T> | null; children: CascaderNode<T>[] }[]>([]);
+
   /** The label of the current value, or `null` (show the placeholder). */
   public displayPath = computed(() => this.path().map((node) => node.label));
   public displayValue = computed(() => {
@@ -348,6 +356,14 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   constructor() {
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
+
+    // a swapped data source describes a different tree — drop the child lists learned from
+    // the old one so they can't promote branches of the new one to fully selected
+    effect(() => {
+      this.dataSource();
+
+      untracked(() => this.knownChildren.set([]));
+    });
 
     // clear the browse state whenever the value is externally reset to nothing, so a
     // reopened panel starts at the root instead of a stale branch — and in multi mode,
@@ -572,18 +588,19 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   }
 
   /**
-   * Whether a node is selected — on the committed chain in single mode, an exactly selected
-   * value in multi mode (ancestors show as indeterminate there instead).
+   * Whether a node is selected — on the committed chain in single mode; in multi mode an
+   * exactly selected value, or a branch whose loaded descendants are all selected (ancestors
+   * of a partial selection show as indeterminate instead).
    */
   public isSelected(node: CascaderNode<T>) {
     if (this.multiple()) {
-      return this.values().some((value) => this.compareWith()(value, node.value));
+      return this.isFullySelected(node, []);
     }
 
     return this.path().some((selected) => this.compareWith()(selected.value, node.value));
   }
 
-  /** Multi mode: whether an unselected node has a selected descendant (the dash state). */
+  /** Multi mode: whether a node that isn't (fully) selected has a selected descendant (the dash state). */
   public isIndeterminate(node: CascaderNode<T>) {
     if (!this.multiple() || this.isSelected(node)) {
       return false;
@@ -958,6 +975,28 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
     }
   }
 
+  // exactly selected, or a branch whose known children are all fully selected. Disabled children
+  // are skipped — they can't be toggled, so requiring them would lock the branch out of the full
+  // state. `visited` breaks recursion on a (malformed) cyclic source.
+  private isFullySelected(node: CascaderNode<T>, visited: CascaderNode<T>[]): boolean {
+    const compareWith = this.compareWith();
+
+    if (this.values().some((value) => compareWith(value, node.value))) {
+      return true;
+    }
+
+    if (!canHaveChildren(node) || visited.some((seen) => compareWith(seen.value, node.value))) {
+      return false;
+    }
+
+    const children = this.knownChildren().find((entry) =>
+      nodesEqual({ a: entry.parent, b: node, compareWith }),
+    )?.children;
+    const selectable = children?.filter((child) => !child.disabled) ?? [];
+
+    return selectable.length > 0 && selectable.every((child) => this.isFullySelected(child, [...visited, node]));
+  }
+
   private focusColumnNode(columnIndex: number, targetIndex: number) {
     const nodes = this.columns()[columnIndex]?.nodes ?? [];
     const clamped = Math.max(0, Math.min(nodes.length - 1, targetIndex));
@@ -1070,6 +1109,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
         tap({
           next: (nodes) => {
             this.setColumn(columnIndex, { parent, status: 'loaded', nodes, error: null });
+            this.rememberChildren(parent, nodes);
 
             // once the root column arrives, seed roving focus so keyboard navigation has a target
             if (columnIndex === 0 && !this.focusedNode() && nodes[0]) {
@@ -1084,6 +1124,17 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
       .subscribe();
 
     this.loadSubscriptions.set(columnIndex, subscription);
+  }
+
+  private rememberChildren(parent: CascaderNode<T> | null, children: CascaderNode<T>[]) {
+    const compareWith = this.compareWith();
+
+    this.knownChildren.update((entries) => [
+      ...entries.filter((entry) =>
+        parent === null ? entry.parent !== null : !nodesEqual({ a: entry.parent, b: parent, compareWith }),
+      ),
+      { parent, children },
+    ]);
   }
 
   private setColumn(columnIndex: number, state: CascaderColumnState<T>) {
