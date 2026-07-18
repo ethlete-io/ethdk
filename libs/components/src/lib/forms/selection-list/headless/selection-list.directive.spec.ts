@@ -32,6 +32,21 @@ class MultiSelectTestHost {
   value = signal<string[]>([]);
 }
 
+@Component({
+  template: `
+    <div [value]="value()" [readonly]="readonly()" (valueChange)="value.set($event)" etSelectionList>
+      <div etSelectionOption value="a"></div>
+      <div etSelectionOption value="b"></div>
+      <div etSelectionOption value="c"></div>
+    </div>
+  `,
+  imports: [SelectionListDirective, SelectionOptionDirective],
+})
+class ReadonlySelectTestHost {
+  value = signal<string | null>('a');
+  readonly = signal(true);
+}
+
 describe('SelectionListDirective', () => {
   describe('single select', () => {
     let fixture: ComponentFixture<SingleSelectTestHost>;
@@ -104,6 +119,52 @@ describe('SelectionListDirective', () => {
       options[0].click();
       fixture.detectChanges();
       expect(fixture.componentInstance.value()).toEqual([]);
+    });
+  });
+
+  describe('readonly', () => {
+    let fixture: ComponentFixture<ReadonlySelectTestHost>;
+    let options: NodeListOf<HTMLElement>;
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({ imports: [ReadonlySelectTestHost] });
+      fixture = TestBed.createComponent(ReadonlySelectTestHost);
+      fixture.detectChanges();
+      options = fixture.nativeElement.querySelectorAll('[etSelectionOption]');
+    });
+
+    it('reflects readonly on the radiogroup and blocks selection', () => {
+      const listEl = fixture.nativeElement.querySelector('[etSelectionList]');
+
+      expect(listEl.getAttribute('aria-readonly')).toBe('true');
+      expect(listEl.getAttribute('data-readonly')).toBe('true');
+      // options keep their normal focusable, non-dimmed state
+      expect(options[0]!.getAttribute('aria-disabled')).toBeNull();
+      expect(options[0]!.getAttribute('data-readonly')).toBe('true');
+
+      options[1]!.click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.value()).toBe('a');
+    });
+
+    it('moves focus with arrows without selecting (radio pattern pauses while readonly)', () => {
+      options[0]!.focus();
+      options[0]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      fixture.detectChanges();
+
+      expect(document.activeElement).toBe(options[1]);
+      expect(fixture.componentInstance.value()).toBe('a');
+    });
+
+    it('selects again once readonly is lifted', () => {
+      fixture.componentInstance.readonly.set(false);
+      fixture.detectChanges();
+
+      options[1]!.click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.value()).toBe('b');
     });
   });
 });

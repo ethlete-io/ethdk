@@ -1,4 +1,4 @@
-import { Component, DebugElement } from '@angular/core';
+import { Component, DebugElement, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../test-helpers';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
@@ -20,6 +20,14 @@ class CheckboxInFormFieldTestHost {}
   imports: [CheckboxDirective],
 })
 class StandaloneCheckboxTestHost {}
+
+@Component({
+  template: `<div [readonly]="readonly()" etCheckbox></div>`,
+  imports: [CheckboxDirective],
+})
+class ReadonlyCheckboxTestHost {
+  readonly = signal(true);
+}
 
 describe('CheckboxDirective', () => {
   describe('inside form field', () => {
@@ -113,6 +121,45 @@ describe('CheckboxDirective', () => {
     it('should have tabindex 0 when not disabled', () => {
       const checkboxEl = fixture.nativeElement.querySelector('[etCheckbox]');
       expect(checkboxEl.getAttribute('tabindex')).toBe('0');
+    });
+  });
+
+  describe('readonly', () => {
+    let fixture: ComponentFixture<ReadonlyCheckboxTestHost>;
+    let checkboxEl: HTMLElement;
+    let checkboxDir: CheckboxDirective;
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({ imports: [ReadonlyCheckboxTestHost] });
+      fixture = TestBed.createComponent(ReadonlyCheckboxTestHost);
+      fixture.detectChanges();
+      checkboxEl = fixture.nativeElement.querySelector('[etCheckbox]');
+      checkboxDir = (fixture.debugElement.children[0] as DebugElement).injector.get(CheckboxDirective);
+    });
+
+    it('blocks toggling but stays focusable with the normal look', () => {
+      expect(checkboxEl.getAttribute('aria-readonly')).toBe('true');
+      expect(checkboxEl.getAttribute('data-readonly')).toBe('true');
+      // focusable and not dimmed — view-only, unlike disabled
+      expect(checkboxEl.getAttribute('tabindex')).toBe('0');
+      expect(checkboxEl.getAttribute('aria-disabled')).toBeNull();
+
+      checkboxEl.click();
+      fixture.detectChanges();
+
+      expect(checkboxDir.checked()).toBe(false);
+    });
+
+    it('toggles again once readonly is lifted', () => {
+      fixture.componentInstance.readonly.set(false);
+      fixture.detectChanges();
+
+      expect(checkboxEl.getAttribute('aria-readonly')).toBeNull();
+
+      checkboxEl.click();
+      fixture.detectChanges();
+
+      expect(checkboxDir.checked()).toBe(true);
     });
   });
 });

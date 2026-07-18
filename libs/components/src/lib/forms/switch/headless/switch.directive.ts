@@ -9,6 +9,8 @@ import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '..
     '[attr.aria-checked]': 'checked()',
     '[attr.aria-invalid]': 'shouldDisplayError() || null',
     '[attr.aria-disabled]': 'disabled() || null',
+    '[attr.aria-readonly]': 'readonly() || null',
+    '[attr.data-readonly]': 'readonly() || null',
     '[attr.aria-required]': 'required() || null',
     '[attr.aria-describedby]': 'describedBy() || null',
     '[attr.aria-labelledby]': 'labelId() || null',
@@ -26,6 +28,8 @@ export class SwitchDirective implements FormFieldControl {
   public checked = model(false);
   public touched = model(false);
   public disabled = input(false);
+  /** View-only: keeps the normal look and focusability but blocks toggling (unlike `disabled`). */
+  public readonly = input(false);
   public invalid = input(false);
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   public required = input(false);
@@ -44,7 +48,7 @@ export class SwitchDirective implements FormFieldControl {
   }
 
   public toggle() {
-    if (this.disabled()) {
+    if (this.disabled() || this.readonly()) {
       return;
     }
 
@@ -54,6 +58,7 @@ export class SwitchDirective implements FormFieldControl {
   public activate() {
     if (this.disabled()) return;
 
+    // readonly stays focusable (view-only), it just cannot toggle
     this.toggle();
     this.el.nativeElement.focus();
   }

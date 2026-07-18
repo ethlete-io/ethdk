@@ -9,6 +9,7 @@ export default {
     label: { control: 'text' },
     hint: { control: 'text' },
     disabled: { control: 'boolean' },
+    readonly: { control: 'boolean' },
     required: { control: 'boolean' },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
@@ -17,6 +18,7 @@ export default {
     label: 'Favorite color',
     hint: '',
     disabled: false,
+    readonly: false,
     required: false,
     color: 'brand',
     size: 'md',
@@ -26,3 +28,7 @@ export default {
 type Story = StoryObj<RadioGroupStorybookComponent>;
 
 export const Default: Story = {};
+
+export const Readonly: Story = {
+  args: { readonly: true },
+};

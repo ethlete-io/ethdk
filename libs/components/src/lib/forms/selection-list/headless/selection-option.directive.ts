@@ -3,6 +3,14 @@ import { SELECTION_LIST_TOKEN } from './selection-list.tokens';
 
 let uniqueOptionLabelId = 0;
 
+/**
+ * Placeholder an option's value resolves to while its required `value` input has not been
+ * bound yet (e.g. a directive-composed option whose bindings run after registration, like
+ * the filter-chip composition). Never matches a consumer value, so unbound options simply
+ * cannot be selected until their bindings run — mirrors the select option.
+ */
+const UNBOUND_VALUE = Symbol('et-selection-option-unbound');
+
 @Directive({
   selector: '[etSelectionOption]',
   host: {
@@ -12,6 +20,10 @@ let uniqueOptionLabelId = 0;
     // relying on name-from-contents would fold the description into the accessible name
     '[attr.aria-labelledby]': 'labelId()',
     '[attr.aria-disabled]': 'effectiveDisabled() || null',
+    // only in multi mode: role=checkbox supports aria-readonly, role=radio does not — the
+    // single-select case reflects it on the radiogroup host instead
+    '[attr.aria-readonly]': '(role() === "checkbox" && effectiveReadonly()) || null',
+    '[attr.data-readonly]': 'effectiveReadonly() || null',
     '[attr.tabindex]': 'tabindex()',
     '(click)': 'select()',
     '(keydown.space)': 'select(); $event.preventDefault()',
@@ -33,14 +45,25 @@ export class SelectionOptionDirective {
   public disabled = input(false);
 
   public effectiveDisabled = computed(() => this.disabled() || (this.list?.disabled() ?? false));
+  public effectiveReadonly = computed(() => this.list?.readonly() ?? false);
   // multi-select lives in a `role="group"`, where `option` is invalid ARIA (it's listbox-only) —
   // a checkbox pairs correctly with `group` + `aria-checked`; single-select stays a radio.
   public role = computed(() => (this.list?.multiple() ? 'checkbox' : 'radio'));
 
   public labelId = signal(`et-selection-option-label-${uniqueOptionLabelId++}`);
 
+  // reading through this computed keeps registry-wide reads (value↔checked sync) crash-free
+  // while the required `value` input has not executed its binding yet
+  private boundValue = computed(() => {
+    try {
+      return this.value();
+    } catch {
+      return UNBOUND_VALUE;
+    }
+  });
+
   private listItem = {
-    value: this.value,
+    value: this.boundValue,
     checked: this.checked,
     disabled: this.effectiveDisabled,
     elementRef: this.el,
@@ -74,7 +97,7 @@ export class SelectionOptionDirective {
   }
 
   public select() {
-    if (this.effectiveDisabled()) {
+    if (this.effectiveDisabled() || this.effectiveReadonly()) {
       return;
     }
 
@@ -109,7 +132,8 @@ export class SelectionOptionDirective {
     const nextItem = items[nextIndex];
 
     if (nextItem && !nextItem.disabled()) {
-      if (!this.list.multiple()) {
+      // radio pattern selects while roving — readonly only moves focus
+      if (!this.list.multiple() && !this.effectiveReadonly()) {
         this.list.selection.select(nextItem);
       }
 
@@ -135,7 +159,8 @@ export class SelectionOptionDirective {
     const prevItem = items[prevIndex];
 
     if (prevItem && !prevItem.disabled()) {
-      if (!this.list.multiple()) {
+      // radio pattern selects while roving — readonly only moves focus
+      if (!this.list.multiple() && !this.effectiveReadonly()) {
         this.list.selection.select(prevItem);
       }
 

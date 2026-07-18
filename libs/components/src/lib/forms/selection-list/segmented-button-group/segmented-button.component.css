@@ -38,6 +38,12 @@
     padding: var(--et-segmented-button-padding-y) var(--et-segmented-button-padding-x);
     border-radius: var(--et-segmented-button-border-radius);
     cursor: pointer;
+
+    /* view-only: keeps the normal look, drops the interactive affordance (distinct from
+       the dimmed disabled state) */
+    &[data-readonly] {
+      cursor: default;
+    }
     outline: none;
     background: transparent;
     color: var(--et-surface-color-muted-solid, currentColor);
@@ -62,7 +68,7 @@
       cursor: default;
     }
 
-    &:hover:not([aria-disabled='true']):not([aria-checked='true']) {
+    &:hover:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']) {
       color: var(--et-surface-color-solid, currentColor);
       background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 10%, transparent);
     }
@@ -72,7 +78,7 @@
       outline-offset: 1px;
     }
 
-    &:active:not([aria-disabled='true']) {
+    &:active:not([aria-disabled='true']):not([data-readonly]) {
       transform: scale(0.97);
     }
 

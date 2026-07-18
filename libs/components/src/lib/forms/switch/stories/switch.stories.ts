@@ -7,15 +7,21 @@ export default {
   decorators: [moduleMetadata({ imports: [FormFieldSwitchStorybookComponent] })],
   argTypes: {
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
+    readonly: { control: 'boolean' },
   },
   args: {
     size: 'md',
+    readonly: false,
   },
 } as Meta<FormFieldSwitchStorybookComponent>;
 
 type Story = StoryObj<FormFieldSwitchStorybookComponent>;
 
 export const Default: Story = {};
+
+export const Readonly: Story = {
+  args: { readonly: true },
+};
 
 export const Disabled: StoryObj<SwitchDisabledStorybookComponent> = {
   render: () => ({

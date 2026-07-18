@@ -1,5 +1,5 @@
 import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
-import { disabled, form, FormField, required } from '@angular/forms/signals';
+import { disabled, form, FormField, readonly, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import { CHOICE_FIELD_IMPORTS } from '../../choice-field';
 import { CHECKBOX_IMPORTS } from '../checkbox.imports';
@@ -32,6 +32,7 @@ export class FormFieldCheckboxStorybookComponent {
   public color = input('brand');
   public hint = input('');
   public disabled = input(false);
+  public readonly = input(false);
   public required = input(false);
 
   private formModel = linkedSignal(() => ({
@@ -41,6 +42,7 @@ export class FormFieldCheckboxStorybookComponent {
 
   public demoForm = form(this.formModel, (s) => {
     disabled(s, () => this.disabled());
+    readonly(s, () => this.readonly());
     required(s.acceptTerms, { when: () => this.required(), message: 'You must accept the terms' });
     required(s.acceptTermsChecked, { when: () => this.required(), message: 'You must accept the terms' });
   });

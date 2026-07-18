@@ -19,6 +19,10 @@ import {
     '[attr.aria-describedby]': 'describedBy() || null',
     '[attr.aria-labelledby]': 'labelId() || null',
     '[attr.data-disabled]': 'disabled() || null',
+    // aria-readonly is only valid on radiogroup, not on group — the multi case reflects it
+    // per option instead (role=checkbox supports it)
+    '[attr.aria-readonly]': '!multiple() && readonly() || null',
+    '[attr.data-readonly]': 'readonly() || null',
   },
 })
 export class SelectionListDirective implements SelectionListDirectiveBase, FormFieldControl {
@@ -30,6 +34,8 @@ export class SelectionListDirective implements SelectionListDirectiveBase, FormF
   public touched = model(false);
   public multipleInput = input(false, { alias: 'multiple' });
   public disabled = input(false);
+  /** View-only: options keep their normal look and focusability but cannot be (de)selected. */
+  public readonly = input(false);
   public invalid = input(false);
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   public required = input(false);
@@ -71,7 +77,10 @@ export class SelectionListDirective implements SelectionListDirectiveBase, FormF
     const firstItem = this.selection.items().find((i) => !i.disabled());
 
     if (firstItem) {
-      this.selection.select(firstItem);
+      if (!this.readonly()) {
+        this.selection.select(firstItem);
+      }
+
       this.focusItem(firstItem);
     }
   }

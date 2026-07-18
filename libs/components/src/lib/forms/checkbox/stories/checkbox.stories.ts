@@ -9,12 +9,14 @@ export default {
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
     hint: { control: 'text' },
     disabled: { control: 'boolean' },
+    readonly: { control: 'boolean' },
     required: { control: 'boolean' },
   },
   args: {
     color: 'brand',
     hint: '',
     disabled: false,
+    readonly: false,
     required: false,
   },
 } as Meta<FormFieldCheckboxStorybookComponent>;
@@ -22,3 +24,7 @@ export default {
 type Story = StoryObj<FormFieldCheckboxStorybookComponent>;
 
 export const Default: Story = {};
+
+export const Readonly: Story = {
+  args: { readonly: true, hint: 'View-only: normal look, focusable, cannot be toggled' },
+};

@@ -9,6 +9,7 @@ import { SELECTION_LIST_TOKEN } from './selection-list.tokens';
     '[attr.role]': '"checkbox"',
     '[attr.aria-checked]': 'ariaChecked()',
     '[attr.aria-disabled]': 'list.disabled() || null',
+    '[attr.aria-readonly]': 'list.readonly() || null',
     '[attr.tabindex]': 'list.disabled() ? -1 : 0',
     '(click)': 'toggle()',
     '(keydown.space)': 'toggle(); $event.preventDefault()',
@@ -30,7 +31,7 @@ export class SelectionListControlDirective {
   });
 
   public toggle() {
-    if (this.list.disabled()) {
+    if (this.list.disabled() || this.list.readonly()) {
       return;
     }
 

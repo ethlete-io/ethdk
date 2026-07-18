@@ -40,6 +40,12 @@
     align-items: flex-start;
     gap: var(--et-radio-gap);
     cursor: pointer;
+
+    /* view-only: keeps the normal look, drops the interactive affordance (distinct from
+       the dimmed disabled state) */
+    &[data-readonly] {
+      cursor: default;
+    }
     outline: none;
     user-select: none;
 
@@ -76,7 +82,7 @@
       color: var(--et-surface-color-solid, currentColor);
     }
 
-    &:hover:not([aria-disabled='true']):not([aria-checked='true']) .et-radio-circle {
+    &:hover:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']) .et-radio-circle {
       border-color: var(--_et-control-border, var(--et-surface-interaction-hover-solid, currentColor));
       background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
     }
@@ -87,7 +93,7 @@
       outline-offset: 2px;
     }
 
-    &:active:not([aria-disabled='true']) .et-radio-circle {
+    &:active:not([aria-disabled='true']):not([data-readonly]) .et-radio-circle {
       transform: scale(0.92);
     }
 

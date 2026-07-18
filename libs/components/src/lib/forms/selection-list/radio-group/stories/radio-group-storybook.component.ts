@@ -1,5 +1,5 @@
 import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
-import { disabled, form, FormField, required } from '@angular/forms/signals';
+import { disabled, form, FormField, readonly, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import { FormFieldSize, HintComponent, LabelDirective } from '../../../form-field';
 import { RadioGroupComponent } from '../radio-group.component';
@@ -28,6 +28,7 @@ export class RadioGroupStorybookComponent {
   public label = input('Favorite color');
   public hint = input('');
   public disabled = input(false);
+  public readonly = input(false);
   public required = input(false);
   public color = input('brand');
   public size = input<FormFieldSize>('md');
@@ -42,6 +43,7 @@ export class RadioGroupStorybookComponent {
 
   public demoForm = form(this.formModel, (s) => {
     disabled(s, () => this.disabled());
+    readonly(s, () => this.readonly());
     required(s.color, { when: () => this.required(), message: 'Please select a color' });
   });
 }

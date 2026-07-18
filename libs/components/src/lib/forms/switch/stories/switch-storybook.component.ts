@@ -1,5 +1,5 @@
 import { Component, computed, input, signal, ViewEncapsulation } from '@angular/core';
-import { form, FormField, required } from '@angular/forms/signals';
+import { form, FormField, readonly, required } from '@angular/forms/signals';
 import { CHOICE_FIELD_IMPORTS } from '../../choice-field';
 import { FormFieldSize } from '../../form-field';
 import { SWITCH_IMPORTS } from '../switch.imports';
@@ -33,6 +33,7 @@ import { SWITCH_IMPORTS } from '../switch.imports';
 })
 export class FormFieldSwitchStorybookComponent {
   public size = input<FormFieldSize>('md');
+  public readonly = input(false);
 
   private formModel = signal({
     notifications: true,
@@ -41,6 +42,7 @@ export class FormFieldSwitchStorybookComponent {
   });
 
   public demoForm = form(this.formModel, (s) => {
+    readonly(s, () => this.readonly());
     required(s.acceptTerms, { message: 'You must accept the terms' });
   });
 

@@ -16,6 +16,7 @@ export type SelectionListDirectiveBase<TValue = unknown> = {
   value: WritableSignal<TValue | TValue[] | null>;
   multiple: Signal<boolean>;
   disabled: Signal<boolean>;
+  readonly: Signal<boolean>;
   required: Signal<boolean>;
   name: Signal<string>;
   selection: SelectionState<TValue, SelectionListItem<TValue>>;
