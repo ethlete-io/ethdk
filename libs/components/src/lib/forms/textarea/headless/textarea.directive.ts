@@ -1,18 +1,7 @@
-import {
-  computed,
-  DestroyRef,
-  Directive,
-  effect,
-  ElementRef,
-  inject,
-  input,
-  model,
-  signal,
-  untracked,
-} from '@angular/core';
-import { FormValueControl, ValidationError } from '@angular/forms/signals';
+import { computed, Directive, effect, ElementRef, inject, input, model, signal, untracked } from '@angular/core';
+import { FormValueControl } from '@angular/forms/signals';
 import { injectRenderer, signalElementDimensions } from '@ethlete/core';
-import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
+import { FORM_FIELD_CONTROL_TYPES, TextFieldControlDirective } from '../../form-field/headless';
 import { AutosizeBounds, computeAutosizeBlockSize, readTextareaStyleMetrics } from './internals/textarea-autosize';
 
 export const TEXTAREA_RESIZE_MODES = {
@@ -25,21 +14,10 @@ export type TextareaResizeMode = (typeof TEXTAREA_RESIZE_MODES)[keyof typeof TEX
 @Directive({
   selector: '[etTextarea]',
 })
-export class TextareaDirective implements FormValueControl<string>, FormFieldControl {
-  private formField = inject(FORM_FIELD_TOKEN, { optional: true });
-  private destroyRef = inject(DestroyRef);
+export class TextareaDirective extends TextFieldControlDirective implements FormValueControl<string> {
   private renderer = injectRenderer();
 
   public value = model('');
-  public touched = model(false);
-  public disabled = input(false);
-  public readonly = input(false);
-  // eslint-disable-next-line ethlete/no-native-html-input-name -- form-field hidden state deliberately mirrors the native attribute
-  public hidden = input(false);
-  public invalid = input(false);
-  public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
-  public required = input(false);
-  public name = input('');
 
   public placeholder = input('');
   public autocomplete = input('');
@@ -50,19 +28,10 @@ export class TextareaDirective implements FormValueControl<string>, FormFieldCon
   /** Only applied when `autosize` is off; an autosizing textarea is never manually resizable. */
   public resize = input<TextareaResizeMode>(TEXTAREA_RESIZE_MODES.VERTICAL);
 
-  public shouldDisplayError = computed(() => this.touched() && this.invalid());
   public hasValue = computed(() => this.value().length > 0);
-
-  public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.TEXTAREA);
-  public focused = signal(false);
-
-  public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
 
   public effectiveResize = computed(() => (this.autosize() ? TEXTAREA_RESIZE_MODES.NONE : this.resize()));
-
-  /** @internal */
-  public focusTarget = signal<HTMLElement | null>(null);
 
   /**
    * The native textarea element this directive controls. Set automatically when
@@ -74,8 +43,7 @@ export class TextareaDirective implements FormValueControl<string>, FormFieldCon
   private nativeControlDimensions = signalElementDimensions(this.nativeControl);
 
   constructor() {
-    this.formField?.registerControl(this);
-    this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
+    super();
 
     const hostRef = inject<ElementRef<HTMLElement | null>>(ElementRef);
     const hostElement = hostRef.nativeElement;
@@ -110,12 +78,6 @@ export class TextareaDirective implements FormValueControl<string>, FormFieldCon
 
       untracked(() => this.resizeToFit(textarea, { bounds, value }));
     });
-  }
-
-  public activate() {
-    if (this.disabled()) return;
-
-    this.focusTarget()?.focus();
   }
 
   private resizeToFit(textarea: HTMLTextAreaElement, { bounds, value }: { bounds: AutosizeBounds; value: string }) {

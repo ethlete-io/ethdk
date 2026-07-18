@@ -4,3 +4,4 @@ export * from './form-field.tokens';
 export * from './form-support';
 export * from './interactive-element';
 export * from './label.directive';
+export * from './text-field-control.directive';
