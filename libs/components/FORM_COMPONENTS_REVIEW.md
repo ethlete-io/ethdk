@@ -15,26 +15,28 @@ Severity legend: **bug** (wrong behavior) · **a11y** (accessibility) ·
 **perf** · **cleanup** (dead code / duplication).
 
 > **Status (implemented):** every **bug**, **a11y**, **consistency**, and
-> localized **cleanup** finding below has been fixed, plus cross-cutting themes
-> **#5** (dead pass-through inputs) and **#1** (the input/number/password/color/
-> textarea directives now extend a shared `TextFieldControlDirective` base).
+> localized **cleanup** finding below has been fixed, plus cross-cutting themes:
 >
-> Still open — and, on closer inspection, **not** the mechanical extractions this
-> review implied:
+> - **#5** (dead pass-through inputs) — `hidden` wired through the form-field;
+>   the identity `describedById` wrappers removed, binding `describedBy` directly.
+> - **#1** (form-control wiring) — input/number/password/color/textarea now extend
+>   a shared `TextFieldControlDirective` base (inherited-input forwarding verified).
+> - **#4** (hint/error state machine) — one shared `reduceSupportPresentation`
+>   (`support-presentation.ts`) now drives both the text-field shell and
+>   `injectFormSupport`; the HINT→ERROR transition was verified in Storybook.
 >
-> - **#2** (form-support wiring) — attempted and reverted: Angular's compiler
->   (`NG8110`) forbids `viewChild()` outside a direct class-field initializer, so
->   the queries can't move into a helper.
+> Still open:
+>
+> - **#2** (form-support wiring) — reverted: Angular's compiler (`NG8110`) forbids
+>   `viewChild()` outside a direct class-field initializer, so the queries can't
+>   move into a helper.
 > - **#3** (anchored-panel controller — subsumes the date-picker-input-host,
->   panel-surface, and singleton-registration cleanups) — `select` and `cascader`
->   diverge intentionally (bottom-sheet vs anchored, tree vs listbox focus), so a
->   shared controller is a behavioral unification, not a copy-paste extraction.
-> - **#4** (hint/error state machine) — the two encoders differ: the text-field
->   shell tracks `renderedState` + slide directions, `form-support` tracks neither.
->   Unifying means choosing one behavior and re-verifying transitions across ~11
->   components.
->
-> These three are best done as dedicated, individually-verified efforts.
+>   panel-surface, and singleton-registration cleanups). Two independent parts,
+>   both deferred as dedicated efforts: (a) a `select`/`cascader` controller is a
+>   *behavioral unification* (they diverge intentionally — bottom-sheet vs
+>   anchored, tree vs listbox), and (b) a date-picker-input base gives only modest
+>   savings now that `createDatePickerOverlay` is already shared, while adding
+>   override/typing friction and touching fiddly overlay-focus code.
 >
 > Items marked _(verified)_ were confirmed against the code during the review.
 
