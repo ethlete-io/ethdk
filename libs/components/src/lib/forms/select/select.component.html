@@ -84,45 +84,52 @@
   <et-select-panel>
     <ng-template [ngTemplateOutlet]="optionContent" />
 
-    @if (select.loading()) {
-      @if (select.registeredLoadingTemplate(); as loadingTemplate) {
-        <ng-template [ngTemplateOutlet]="loadingTemplate.templateRef" />
-      } @else {
-        <div class="et-select-state et-select-state--loading">
-          <et-spinner class="et-select-state-spinner" diameter="16" strokeWidth="2" />
-          Loading…
-        </div>
+    <!-- state rows and action buttons are NOT options — projected outside the listbox element
+         (display: contents, so they still flow within the scrolling panel) -->
+    <div class="et-select-panel-extras" etSelectPanelExtras>
+      @if (select.loading()) {
+        @if (select.registeredLoadingTemplate(); as loadingTemplate) {
+          <ng-template [ngTemplateOutlet]="loadingTemplate.templateRef" />
+        } @else {
+          <div class="et-select-state et-select-state--loading">
+            <et-spinner class="et-select-state-spinner" diameter="16" strokeWidth="2" />
+            Loading…
+          </div>
+        }
+      } @else if (select.error(); as error) {
+        @if (select.registeredErrorTemplate(); as errorTemplate) {
+          <ng-template
+            [ngTemplateOutlet]="errorTemplate.templateRef"
+            [ngTemplateOutletContext]="{ $implicit: error }"
+          />
+        } @else {
+          <div [etProvideColor]="errorColorTheme" class="et-select-state et-select-state--error" role="alert">
+            {{ error }}
+          </div>
+        }
+      } @else if (!select.visibleItems().length) {
+        @if (select.registeredEmptyTemplate(); as emptyTemplate) {
+          <ng-template [ngTemplateOutlet]="emptyTemplate.templateRef" />
+        } @else {
+          <div class="et-select-state et-select-state--empty">No results</div>
+        }
       }
-    } @else if (select.error(); as error) {
-      @if (select.registeredErrorTemplate(); as errorTemplate) {
-        <ng-template [ngTemplateOutlet]="errorTemplate.templateRef" [ngTemplateOutletContext]="{ $implicit: error }" />
-      } @else {
-        <div [etProvideColor]="errorColorTheme" class="et-select-state et-select-state--error" role="alert">
-          {{ error }}
-        </div>
-      }
-    } @else if (!select.visibleItems().length) {
-      @if (select.registeredEmptyTemplate(); as emptyTemplate) {
-        <ng-template [ngTemplateOutlet]="emptyTemplate.templateRef" />
-      } @else {
-        <div class="et-select-state et-select-state--empty">No results</div>
-      }
-    }
 
-    @if (select.hasMoreItems() && !select.loading()) {
-      <button (click)="select.requestLoadMore()" class="et-select-load-more" tabindex="-1" type="button">
-        <i class="et-select-load-more-icon" etIcon="et-chevron" aria-hidden="true"></i>
-        {{ loadMoreLabel() }}
-      </button>
-    }
+      @if (select.hasMoreItems() && !select.loading()) {
+        <button (click)="select.requestLoadMore()" class="et-select-load-more" tabindex="-1" type="button">
+          <i class="et-select-load-more-icon" etIcon="et-chevron" aria-hidden="true"></i>
+          {{ loadMoreLabel() }}
+        </button>
+      }
 
-    @if (select.allowAddNew() && !select.loading()) {
-      <!-- pointer-only, like the load-more control — keyboard users reach the same flow
-           through the consumer's own UI (e.g. a button next to the field) -->
-      <button (click)="select.requestAddNew()" class="et-select-add-new" tabindex="-1" type="button">
-        <i class="et-select-add-new-icon" etIcon="et-plus" aria-hidden="true"></i>
-        {{ addNewLabel() }}
-      </button>
-    }
+      @if (select.allowAddNew() && !select.loading()) {
+        <!-- pointer-only, like the load-more control — keyboard users reach the same flow
+             through the consumer's own UI (e.g. a button next to the field) -->
+        <button (click)="select.requestAddNew()" class="et-select-add-new" tabindex="-1" type="button">
+          <i class="et-select-add-new-icon" etIcon="et-plus" aria-hidden="true"></i>
+          {{ addNewLabel() }}
+        </button>
+      }
+    </div>
   </et-select-panel>
 </ng-template>

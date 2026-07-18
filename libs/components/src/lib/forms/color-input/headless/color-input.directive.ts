@@ -24,6 +24,13 @@ export class ColorInputDirective implements FormValueControl<string | null>, For
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
   public hasValue = computed(() => this.value() !== null);
 
+  /**
+   * `<input type="color">` ignores the native `readonly` attribute (spec), so the surface gates
+   * interaction on this instead — the component blocks the picker-opening events while it's false,
+   * and the value sync no-ops as a backstop.
+   */
+  public interactive = computed(() => !this.disabled() && !this.readonly());
+
   /** The color the native input currently paints — `#000000` until a value is picked. */
   public resolvedColor = computed(() => this.value() ?? '#000000');
 
@@ -32,8 +39,6 @@ export class ColorInputDirective implements FormValueControl<string | null>, For
   public focused = signal(false);
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-
-  public describedById = computed(() => this.describedBy());
 
   /** @internal */
   public focusTarget = signal<HTMLElement | null>(null);
@@ -66,6 +71,10 @@ export class ColorInputDirective implements FormValueControl<string | null>, For
 
   /** @internal */
   public syncFromNativeInput(inputElement: HTMLInputElement) {
+    if (!this.interactive()) {
+      return;
+    }
+
     this.value.set(inputElement.value || null);
   }
 }

@@ -25,7 +25,12 @@ import { injectOverlayManager } from '../../../overlay/overlay-manager';
 import { OverlayRef } from '../../../overlay/overlay-ref';
 import { OverlayTemplateHostComponent } from '../../../overlay/overlay-template-host.component';
 import { anchoredOverlayStrategy } from '../../../overlay/strategies';
-import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
+import {
+  FORM_FIELD_CONTROL_TYPES,
+  FORM_FIELD_TOKEN,
+  FormFieldControl,
+  isInteractiveElement,
+} from '../../form-field/headless';
 import { createSelectionState } from '../../selection-list/headless/internals/selection-state';
 import { SELECT_ERROR_CODES } from '../select-errors';
 import { SelectListboxDirective } from './select-listbox.directive';
@@ -46,10 +51,6 @@ export const SELECT_FILTER_MODES = {
 } as const;
 
 export type SelectFilterMode = (typeof SELECT_FILTER_MODES)[keyof typeof SELECT_FILTER_MODES];
-
-// interactive elements inside the form field frame (affix buttons etc.) own their clicks —
-// a frame click only opens the select when it lands on none of these
-const INTERACTIVE_TAGS = ['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA'];
 
 @Directive({
   selector: '[etSelect]',
@@ -111,7 +112,6 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   public focused = computed(() => this.triggerFocused() || this.open());
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-  public describedById = computed(() => this.describedBy());
 
   /** @internal */
   public registeredTrigger = signal<SelectTriggerDirective | null>(null);
@@ -249,19 +249,36 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
 
+    // cache labels only for the *selected* values (so the trigger can still show them once the
+    // option unmounts in a lazy/async list) and prune everything else — the old version wrote
+    // every option ever registered and never pruned, so an `external` filter churning through
+    // thousands of options grew the map without bound
     effect(() => {
-      const entries = this.selection.items().map((item) => [item.value(), item.label()] as const);
+      const value = this.value();
+      const selectedValues = Array.isArray(value) ? value : value === null || value === undefined ? [] : [value];
+      const items = this.selection.items();
+
+      // tracked read: a selected option's label may resolve after it registers
+      const liveLabels = new Map<unknown, string>();
+
+      for (const item of items) {
+        const itemValue = item.value();
+
+        if (selectedValues.includes(itemValue)) {
+          liveLabels.set(itemValue, item.label());
+        }
+      }
 
       untracked(() => {
-        if (!entries.length) {
-          return;
-        }
-
         this.labelCache.update((cache) => {
-          const next = new Map(cache);
+          const next = new Map<unknown, string>();
 
-          for (const [value, label] of entries) {
-            next.set(value, label);
+          for (const selectedValue of selectedValues) {
+            const label = liveLabels.get(selectedValue) ?? cache.get(selectedValue);
+
+            if (label !== undefined) {
+              next.set(selectedValue, label);
+            }
           }
 
           return next;
@@ -750,7 +767,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     }
 
     for (let element: HTMLElement | null = target; element && element !== frame; element = element.parentElement) {
-      if (INTERACTIVE_TAGS.includes(element.tagName) || element.isContentEditable) {
+      if (isInteractiveElement(element)) {
         return;
       }
     }
@@ -798,6 +815,9 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
       closeOnOutsidePointer: false,
       origin: this.resolveAnchorElement(),
       panelClass: 'et-select-overlay-pane',
+      // anchored at every breakpoint by design (the cascader swaps to a bottom sheet below `md`):
+      // a select is a single-column listbox that reads fine anchored to the field on mobile, while
+      // the cascader's multi-column drill genuinely needs the sheet's full-width column paging
       strategies: anchoredOverlayStrategy({
         containerClass: ['et-overlay--anchored', 'et-overlay--select'],
         placement: 'bottom-start',

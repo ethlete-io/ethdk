@@ -27,6 +27,20 @@ export type CascaderDataSource<T> = {
   loadChildren(
     parent: CascaderNode<T> | null,
   ): CascaderNode<T>[] | Promise<CascaderNode<T>[]> | Observable<CascaderNode<T>[]>;
+
+  /**
+   * Optionally resolves the ancestor chain (root → committed node) for a value, so the trigger
+   * can show its breadcrumb when the value is set **programmatically** (a form patch/restore)
+   * rather than picked in the panel. Return `null` (or an empty array) when the value has no
+   * resolvable path. Without this hook an externally-set value commits fine but shows the
+   * placeholder until the user re-opens and re-picks — the cascader can't reverse a value into
+   * a path itself, because `loadChildren` is lazy and per-level (walking every branch to find
+   * one value could fire an unbounded number of loads). For a static tree the implementation is
+   * a trivial depth-first search; for an async source, resolve it however the backend allows.
+   */
+  resolvePath?(
+    value: T,
+  ): CascaderNode<T>[] | null | Promise<CascaderNode<T>[] | null> | Observable<CascaderNode<T>[] | null>;
 };
 
 /** Whether a node can be drilled into — false for explicit leaves and `hasChildren: false`. */
@@ -62,6 +76,25 @@ export const indexOfNode = <T>(options: {
 export const toChildrenObservable = <T>(
   result: CascaderNode<T>[] | Promise<CascaderNode<T>[]> | Observable<CascaderNode<T>[]>,
 ): Observable<CascaderNode<T>[]> => {
+  if (Array.isArray(result)) {
+    return of(result);
+  }
+
+  if (isObservable(result)) {
+    return result;
+  }
+
+  return from(result);
+};
+
+/** Normalizes a `resolvePath` result (array | null | Promise | Observable) into an Observable. */
+export const toPathObservable = <T>(
+  result: CascaderNode<T>[] | null | Promise<CascaderNode<T>[] | null> | Observable<CascaderNode<T>[] | null>,
+): Observable<CascaderNode<T>[] | null> => {
+  if (result === null) {
+    return of(null);
+  }
+
   if (Array.isArray(result)) {
     return of(result);
   }

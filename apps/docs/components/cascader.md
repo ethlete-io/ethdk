@@ -39,6 +39,20 @@ protected competitions: CascaderDataSource<string> = {
 
 A column shows a loading state while its level resolves, an empty state when a branch has no children, and an error row with a **Retry** control when `loadChildren` rejects or errors (`toErrorMessage` maps the failure to text).
 
+### Resolving a programmatic value — `resolvePath`
+
+The cascader can't reverse a lazy tree on its own, so when the value is set **programmatically** (a form patch/restore) rather than picked in the panel, the trigger shows the placeholder until you re-open and re-pick — unless the data source implements the optional `resolvePath(value)`:
+
+```ts
+protected competitions: CascaderDataSource<string> = {
+  loadChildren: (parent) => this.api.children(parent?.value ?? null),
+  // return the root→node chain for a value (array | null | Promise | Observable)
+  resolvePath: (value) => this.api.pathTo(value),
+};
+```
+
+It returns the ancestor chain (root → committed node) so the trigger can render the breadcrumb. Return `null` (or an empty array) when the value has no resolvable path. For a static tree it's a trivial depth-first search; for an async source, resolve it however your backend allows.
+
 ## Options
 
 On `et-cascader` (forwarded from the headless `[etCascader]` directive):
@@ -91,7 +105,7 @@ On wider viewports the levels render as **Miller columns** side by side. On smal
 
 ## Accessibility
 
-- The trigger is a `role="combobox"` with `aria-haspopup="tree"` and `aria-expanded`; the panel is a `role="tree"` of `role="group"` columns and `role="treeitem"` nodes carrying `aria-level`, `aria-selected`, and `aria-expanded` on branches.
+- The trigger is a `role="combobox"` with `aria-haspopup="tree"`, `aria-expanded`, and `aria-controls` pointing at the open tree panel; the panel is a `role="tree"` of `role="group"` columns and `role="treeitem"` nodes carrying `aria-level`, `aria-selected`, and `aria-expanded` on branches.
 - The panel takes focus on open. Roving tabindex keeps exactly one node tabbable.
 
 | Key             | Action                                    |
@@ -100,6 +114,7 @@ On wider viewports the levels render as **Miller columns** side by side. On smal
 | Arrow Right     | Drill into the focused branch             |
 | Arrow Left      | Return to the parent column               |
 | Home / End      | First / last node of the column           |
+| Type a name     | Jump to the first matching node in column |
 | Enter / Space   | Select the focused node (commit or drill) |
 
 ## Theming

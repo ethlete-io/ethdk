@@ -132,7 +132,6 @@ export class DropzoneDirective<TValue = unknown>
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.DROPZONE);
 
-  public describedById = computed(() => this.describedBy());
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
 
   /** @internal */

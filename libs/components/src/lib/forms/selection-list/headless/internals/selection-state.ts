@@ -1,4 +1,4 @@
-import { Signal, WritableSignal, computed, effect, signal, untracked } from '@angular/core';
+import { DestroyRef, Signal, WritableSignal, computed, effect, inject, signal, untracked } from '@angular/core';
 
 export type SelectionStateItem<TValue = unknown> = {
   value: Signal<TValue>;
@@ -10,6 +10,14 @@ export type SelectionStateConfig<TValue = unknown> = {
   value: WritableSignal<TValue | TValue[] | null>;
   multiple: Signal<boolean>;
   disabled: Signal<boolean>;
+  /**
+   * When `true`, unregistering a *checked* item recomputes `value` from the remaining checked
+   * items, so destroying a selected option (e.g. `@for` churn) doesn't strand its value in the
+   * model. Off by default — the select family keeps values whose option isn't currently rendered
+   * (async/filtered lists), so it must not prune. Selection-list groups render every option, so
+   * a removed option is genuinely gone and opts in.
+   */
+  pruneValueOnUnregister?: boolean;
 };
 
 export type SelectionState<TValue = unknown, TItem extends SelectionStateItem<TValue> = SelectionStateItem<TValue>> = {
@@ -35,8 +43,24 @@ export const createSelectionState = <
 ): SelectionState<TValue, TItem> => {
   const items = signal<TItem[]>([]);
 
+  // when the whole owner (list, form) tears down, every item unregisters in a cascade — pruning
+  // then would clobber the form value to empty. This flag flips synchronously during teardown, and
+  // the prune below runs in a microtask, so a genuine teardown is always seen as destroyed by then
+  // (order-independent of whether parent or child destroy hooks fire first).
+  let destroyed = false;
+
+  inject(DestroyRef).onDestroy(() => {
+    destroyed = true;
+  });
+
+  // `toggleAll` can only ever mutate enabled items, so the select-all tri-state must be
+  // computed over that same set. Evaluating `every`/`length` over all items (incl. disabled)
+  // meant a single disabled-and-unchecked item pinned `allSelected` to false forever, leaving
+  // the select-all control stuck showing "mixed" that no click could clear.
+  const togglableItems = computed(() => items().filter((item) => !item.disabled()));
+
   const allSelected = computed(() => {
-    const list = items();
+    const list = togglableItems();
 
     if (list.length === 0) {
       return false;
@@ -46,7 +70,7 @@ export const createSelectionState = <
   });
 
   const someSelected = computed(() => {
-    const list = items();
+    const list = togglableItems();
 
     if (list.length === 0) {
       return false;
@@ -90,7 +114,29 @@ export const createSelectionState = <
   };
 
   const unregisterItem = (item: TItem) => {
+    const wasChecked = item.checked();
+
     items.update((list) => list.filter((i) => i !== item));
+
+    if (!config.pruneValueOnUnregister || !wasChecked) {
+      return;
+    }
+
+    // defer to a microtask so a full teardown (which unregisters every item) is skipped via the
+    // `destroyed` guard, while a single-option removal (@for churn, owner still alive) reconciles
+    queueMicrotask(() => {
+      if (destroyed) {
+        return;
+      }
+
+      const remainingChecked = items().filter((i) => i.checked());
+
+      if (config.multiple()) {
+        config.value.set(remainingChecked.map((i) => i.value()));
+      } else {
+        config.value.set(remainingChecked[0]?.value() ?? null);
+      }
+    });
   };
 
   const select = (item: TItem) => {

@@ -12,7 +12,7 @@ import { TagInputDirective } from './tag-input.directive';
     '[attr.placeholder]': 'tagInput?.placeholder() || null',
     '[attr.aria-required]': 'tagInput?.required() || null',
     '[attr.aria-invalid]': 'tagInput?.shouldDisplayError() || null',
-    '[attr.aria-describedby]': 'tagInput?.describedById() || null',
+    '[attr.aria-describedby]': 'tagInput?.describedBy() || null',
     '[attr.aria-labelledby]': 'tagInput?.labelId() || null',
     '[disabled]': 'tagInput?.disabled() || false',
     '[readOnly]': 'tagInput?.readonly() || isFull()',

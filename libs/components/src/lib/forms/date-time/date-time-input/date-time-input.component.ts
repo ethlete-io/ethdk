@@ -41,6 +41,7 @@ import { DateTimeInputDirective, DateTimeInputFieldDirective } from './headless'
         'required',
         'name',
         'placeholder',
+        'parseErrorMessage',
         'valueFormat',
         'displayFormat',
         'locale',

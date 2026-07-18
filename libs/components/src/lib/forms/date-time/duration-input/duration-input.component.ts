@@ -20,6 +20,7 @@ import { DurationInputDirective, DurationInputFieldDirective } from './headless'
         'required',
         'name',
         'placeholder',
+        'parseErrorMessage',
         'durationFormat',
       ],
       outputs: ['valueChange', 'touchedChange'],

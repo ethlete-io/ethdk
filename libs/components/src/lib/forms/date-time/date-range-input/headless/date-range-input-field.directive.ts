@@ -17,7 +17,7 @@ import { DateRangeInputDirective, DateRangeSide } from './date-range-input.direc
     '[attr.placeholder]': 'placeholder() || null',
     '[attr.aria-required]': 'rangeInput?.required() || null',
     '[attr.aria-invalid]': 'rangeInput?.shouldDisplayError() || null',
-    '[attr.aria-describedby]': 'rangeInput?.describedById() || null',
+    '[attr.aria-describedby]': 'rangeInput?.describedBy() || null',
     '[disabled]': 'rangeInput?.disabled() || false',
     '[readOnly]': 'rangeInput?.readonly() || false',
     '(input)': 'handleInput()',

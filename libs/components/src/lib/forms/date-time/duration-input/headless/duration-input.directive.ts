@@ -29,6 +29,9 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
   public name = input('');
   public placeholder = input('');
 
+  /** Message the form field shows when typed text can't be parsed as a duration. */
+  public parseErrorMessage = input('Please enter a valid duration');
+
   /** The segment layout: `h`/`m`/`s`/`S` token runs plus separators. @default `'mm:ss'` */
   public durationFormat = input('mm:ss');
 
@@ -52,7 +55,6 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.DURATION_INPUT);
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-  public describedById = computed(() => this.describedBy());
 
   /** @internal */
   public registeredField = signal<DurationInputFieldDirective | null>(null);
@@ -91,6 +93,12 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
 
     if (parsed === null) {
       this.parseError.set(true);
+
+      // drop the now-stale value so the wire model can't disagree with the unparseable
+      // text on screen — mirrors date/time/date-time, which all null on a bad commit
+      if (this.value() !== null) {
+        this.value.set(null);
+      }
 
       return;
     }

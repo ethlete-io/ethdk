@@ -39,11 +39,17 @@ export type FormFieldControl = {
   required?: Signal<boolean>;
   disabled?: Signal<boolean>;
   readonly?: Signal<boolean>;
+  /** Signal-forms `hidden` status — when true the whole field is visually removed. */
+  hidden?: Signal<boolean>;
   effectiveDisabled?: Signal<boolean>;
   describedBy: WritableSignal<string | null>;
   controlType: Signal<FormFieldControlType>;
   focused?: Signal<boolean>;
   hasValue?: Signal<boolean>;
+  /** True while the committed text can't be parsed (date/time/duration typed entry). */
+  parseError?: Signal<boolean>;
+  /** User-facing message shown when `parseError` is set and there is no validation error. */
+  parseErrorMessage?: Signal<string>;
   activate(): void;
 };
 

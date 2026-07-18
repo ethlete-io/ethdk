@@ -21,7 +21,7 @@ const PAGE_STEP_MULTIPLIER = 10;
     '[attr.aria-valuenow]': 'value()',
     '[attr.aria-label]': 'label() || null',
     '[attr.aria-labelledby]': 'label() ? null : slider?.labelId()',
-    '[attr.aria-describedby]': 'slider?.describedById()',
+    '[attr.aria-describedby]': 'slider?.describedBy()',
     '[attr.aria-disabled]': 'slider?.disabled() || null',
     '[attr.aria-readonly]': 'slider?.readonly() || null',
     '[attr.aria-invalid]': 'slider?.shouldDisplayError() || null',

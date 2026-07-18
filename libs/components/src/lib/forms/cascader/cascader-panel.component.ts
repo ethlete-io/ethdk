@@ -1,8 +1,9 @@
-import { Component, ElementRef, ViewEncapsulation, inject, viewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, ViewEncapsulation, inject, viewChild } from '@angular/core';
 import {
   AutoSurfaceDirective,
   COLOR_PROVIDER,
   ProvideColorDirective,
+  createComponentId,
   injectAnimatedBlockSize,
   injectObserveBreakpoint,
 } from '@ethlete/core';
@@ -25,6 +26,9 @@ import { CascaderDirective } from './headless';
   hostDirectives: [ProvideColorDirective, AutoSurfaceDirective],
   host: {
     class: 'et-cascader-panel',
+    // a "columnar tree": each level is a sibling `role="group"` related by `aria-level`, not by
+    // `aria-owns` back to its parent node. This is a deliberate deviation from a strict single-root
+    // tree — the column layout is the whole point — and node keyboard nav bridges the levels.
     role: 'tree',
     '[attr.data-sheet]': 'isSheet() || null',
     '(focusin)': 'handleFocusIn()',
@@ -46,6 +50,22 @@ export class CascaderPanelComponent {
   private panelBody = viewChild<ElementRef<HTMLElement>>('panelBody');
 
   constructor() {
+    // give the tree a stable id and hand it to the cascader so the trigger's `aria-controls`
+    // resolves to a real element (the overlay pane itself is never assigned an id)
+    const element = this.hostRef.nativeElement;
+
+    if (!element.id) {
+      element.id = createComponentId('et-cascader-tree');
+    }
+
+    this.cascader?.panelId.set(element.id);
+
+    inject(DestroyRef).onDestroy(() => {
+      if (this.cascader?.panelId() === element.id) {
+        this.cascader.panelId.set(null);
+      }
+    });
+
     if (this.contextColorProvider) {
       this.ownColorProvider.syncWithProvider(this.contextColorProvider);
     }

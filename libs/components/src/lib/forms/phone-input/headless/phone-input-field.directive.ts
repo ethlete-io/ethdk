@@ -14,7 +14,7 @@ import { PhoneInputDirective } from './phone-input.directive';
     '[attr.placeholder]': 'phoneInput?.placeholder() || null',
     '[attr.aria-required]': 'phoneInput?.required() || null',
     '[attr.aria-invalid]': 'phoneInput?.shouldDisplayError() || null',
-    '[attr.aria-describedby]': 'phoneInput?.describedById() || null',
+    '[attr.aria-describedby]': 'phoneInput?.describedBy() || null',
     '[attr.aria-labelledby]': 'phoneInput?.labelId() || null',
     '[disabled]': 'phoneInput?.disabled() || false',
     '[readOnly]': 'phoneInput?.readonly() || false',

@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, ViewEncapsulation, computed, inject } from '@angular/core';
+import { Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
 import { ColorInteractiveDirective, injectLocale } from '@ethlete/core';
 import { SELECT_IMPORTS } from '../select';
 import { FORM_FIELD_TOKEN } from '../form-field/headless';
@@ -48,6 +48,9 @@ import {
 export class PhoneInputComponent {
   protected phone = inject(PhoneInputDirective);
   private locale = injectLocale();
+
+  /** Accessible name of the country-picker trigger — its only visible content is the flag + dial code. */
+  public countryLabel = input('Select country');
 
   protected countries = computed(() => {
     const locale = this.locale.currentLocale();

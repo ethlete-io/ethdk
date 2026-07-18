@@ -101,7 +101,7 @@ The password sibling of `et-input` with the affordances people expect. The form 
 </et-form-field>
 ```
 
-- **Reveal toggle** (on by default, `revealable`): an eye button switching the native `type` between `password`/`text`, exposed as `aria-pressed` with a stable accessible name (`revealLabel`, default `'Show password'`). The revealed state is also a two-way `revealed` model.
+- **Reveal toggle** (on by default, `revealable`): an eye button switching the native `type` between `password`/`text`, exposed as `aria-pressed`. Its accessible name is state-aware — `revealLabel` (default `'Show password'`) while hidden, `hideLabel` (default `'Hide password'`) while shown. The revealed state is also a two-way `revealed` model.
 - **Caps Lock warning** (opt-in, `capsLockWarning`): a `role="status"` warning icon while the field is focused and Caps Lock is on, with `capsLockLabel` (default `'Caps Lock is on'`) as screen-reader text.
 - **Strength score**: the directive exposes `strength` — a 0–4 typing-feedback score from a pure length + character-class heuristic (deliberately not a zxcvbn-style security estimate). Grab it via the `etPasswordInput` export and render any meter you like next to the field (see the `Strength Meter` story).
 
@@ -124,7 +124,7 @@ Try it live in Storybook: `Components/Forms/Textarea`.
 
 ## Color input
 
-`et-color-input` wraps the native color picker: a swatch plus the picked hex value, with the real `input[type=color]` stretched invisibly over it so clicking anywhere opens the platform picker. The form value is `'#rrggbb' | null` — `null` until something is picked (the swatch shows black).
+`et-color-input` wraps the native color picker: a swatch plus the picked hex value, with the real `input[type=color]` stretched invisibly over it so clicking anywhere opens the platform picker. The form value is `'#rrggbb' | null` — `null` until something is picked (the swatch shows black). `[readonly]` is honored (the native `<input type="color">` ignores the attribute, so the control blocks the picker-opening interactions itself while keeping the field focusable).
 
 ```html
 <et-form-field>
@@ -156,7 +156,7 @@ The mask is either a **pattern string** — `0` digit, `9` optional digit, `a` l
 | `createIbanMask()`            | Uppercases and groups by four; charset/length only — structural validation belongs to the schema/backend.                                                                                                                                                   |
 | `createCardMask()`            | Digit-only, grouped by four, capped at 19 digits.                                                                                                                                                                                                           |
 
-Typing behavior: literals render eagerly and the caret glides past them onto the next slot; backspacing over a literal deletes the content character before it; pastes are filtered through the mask (`31.12.2024` fills `00-00-0000`). With `placeholderChar` set (pattern masks only), unfilled slots render as a guide (`31-1_-____`) while the field is focused. Custom masks implement `MaskSpec` (`toRaw`/`toDisplay` plus optional caret metadata) — see the type's docs.
+Typing behavior: literals render eagerly and the caret glides past them onto the next slot; backspacing over a literal deletes the content character before it; pastes are filtered through the mask (`31.12.2024` fills `00-00-0000`). With `placeholderChar` set (pattern masks only), unfilled slots render as a guide (`31-1_-____`) while the field is focused. IME composition (CJK, dead keys) is left alone mid-composition and reconciled on `compositionend`, so the candidate window is never torn down. Custom masks implement `MaskSpec` (`toRaw`/`toDisplay` plus optional caret metadata) — see the type's docs.
 
 Try it live in Storybook: `Components/Forms/Masked input`.
 
@@ -263,10 +263,11 @@ A tel input with a searchable country picker (the [select](/components/select) h
 
 <StoryEmbed id="components-forms-phone-input--default" height="220px" />
 
-| Input                | Type       | Default | Description                                            |
-| -------------------- | ---------- | ------- | ------------------------------------------------------ |
-| `defaultCountry`     | `string`   | `'us'`  | ISO alpha-2 country used while the value carries none. |
-| `preferredCountries` | `string[]` | `[]`    | Listed on top of the country dropdown.                 |
+| Input                | Type       | Default              | Description                                            |
+| -------------------- | ---------- | -------------------- | ------------------------------------------------------ |
+| `defaultCountry`     | `string`   | `'us'`               | ISO alpha-2 country used while the value carries none. |
+| `preferredCountries` | `string[]` | `[]`                 | Listed on top of the country dropdown.                 |
+| `countryLabel`       | `string`   | `'Select country'`   | `aria-label` of the flag/dial-code country trigger.    |
 
 Typing national digits builds the `+dial` value; a national trunk `0` is stripped (`0171…` with Germany active → `+49171…` — except for countries like Italy where the `0` is part of the number), and the `00` international call prefix works like `+` (`0049…` → `+49…`). Typing or pasting a full `+…` number re-derives the country by longest dial-code match — but a manually picked country survives shared dial codes (`+1` stays Canada if you chose Canada). Switching countries keeps the national number. The display groups digits in threes while unfocused (**cosmetic only** — not per-country metadata formatting; validate on the backend/schema, with `isPlausible` as a cheap length-window helper).
 
@@ -300,10 +301,11 @@ A date form control with a **string value** in a configurable wire format, combi
 | `locale`              | `Locale \| null` (date-fns)         | `DATE_LOCALE` token | Display/parse locale.                                                        |
 | `minDate` / `maxDate` | `Date \| null`                      | `null`              | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms). |
 | `dateFilter`          | `((date: Date) => boolean) \| null` | `null`              | Forwarded to the picker calendar.                                            |
-| `pickerOpen`          | `boolean` (model)                   | `false`             | The picker overlay's open state.                                             |
-| `pickerTriggerLabel`  | `string`                            | `'Open calendar'`   | `aria-label` of the suffix calendar button.                                  |
+| `pickerOpen`          | `boolean` (model)                   | `false`                   | The picker overlay's open state.                                             |
+| `pickerTriggerLabel`  | `string`                            | `'Open calendar'`         | `aria-label` of the suffix calendar button.                                  |
+| `parseErrorMessage`   | `string`                            | `'Please enter a valid date'` | Message shown below the field when typed text can't be parsed.           |
 
-Typed text is parsed **strictly** against `displayFormat` on blur/Enter. Unparseable text stays visible in the field, the `parseError` signal (on the `[etDateInput]` directive) turns on and the value stays `null` — wire it into your schema validation, or rely on the built-in error display (`parseError` counts into the field's error state once touched). Alt+ArrowDown also opens the picker; picking a day writes `format(date, valueFormat)` and closes it.
+Typed text is parsed **strictly** against `displayFormat` on blur/Enter. Unparseable text stays visible in the field, the `parseError` signal (on the `[etDateInput]` directive) turns on and the value is cleared to `null` — wire it into your schema validation, or rely on the built-in error display: once the field is touched, a parse error is announced as a real message (`parseErrorMessage`) with matching `aria-invalid`/`aria-describedby`. Alt+ArrowDown also opens the picker; picking a day writes `format(date, valueFormat)` and closes it. The picker overlay is a named `role="dialog"`.
 
 On viewports below the `md` breakpoint (768px) the picker opens as a **bottom sheet** (backdrop, drag-to-dismiss, touch-sized cells) instead of an anchored panel — this applies to all date & time picker overlays (date, date range, time).
 
@@ -453,7 +455,10 @@ Try the three group flavors live in Storybook: `Components/Forms/Selection List`
 The field chrome handles error display and aria wiring uniformly:
 
 - Errors show once a control is **touched and invalid** — each signal-forms `ValidationError` renders as an `et-form-error` in the support region (`aria-live="polite"`), replacing the hint with an animated transition. While erroring, the field forces the app's error color theme (the theme registered with `type: 'error'`).
+- A **parse error** (unparseable typed text in the date/time/date-time/duration inputs) is surfaced the same way once touched: its `parseErrorMessage` renders as an error, with matching `aria-invalid` and `aria-describedby` — no more silent invalid state.
 - `aria-describedby` on the control automatically points at the active error (or hint), `aria-labelledby` at the `et-label`; the label renders a `*` marker when the control is `required`.
+- Selection groups use correct roles for their mode: a single-select group is a `radiogroup` of `radio`s; a multi-select checkbox group is a `role="group"` of `role="checkbox"` items (and the tri-state select-all is a `checkbox`, not an `option`).
+- A schema-`hidden` field (signal-forms `hidden`) removes the whole `et-form-field` from layout and the accessibility tree.
 - Dev mode throws an actionable error ([`ET2200`](/components/error-codes#form-field-et22xx)) if an `et-form-field` contains no control.
 
 ## Theming

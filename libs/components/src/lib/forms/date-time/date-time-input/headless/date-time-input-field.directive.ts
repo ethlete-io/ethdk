@@ -17,7 +17,7 @@ import { DateTimeInputDirective } from './date-time-input.directive';
     '[attr.placeholder]': 'dateTimeInput?.placeholder() || null',
     '[attr.aria-required]': 'dateTimeInput?.required() || null',
     '[attr.aria-invalid]': 'dateTimeInput?.shouldDisplayError() || null',
-    '[attr.aria-describedby]': 'dateTimeInput?.describedById() || null',
+    '[attr.aria-describedby]': 'dateTimeInput?.describedBy() || null',
     '[attr.aria-labelledby]': 'dateTimeInput?.labelId() || null',
     '[disabled]': 'dateTimeInput?.disabled() || false',
     '[readOnly]': 'dateTimeInput?.readonly() || false',

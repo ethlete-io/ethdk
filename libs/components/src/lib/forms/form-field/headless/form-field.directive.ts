@@ -52,10 +52,18 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
       return false;
     }
 
-    return ctrl.touched() && ctrl.invalid();
+    // a committed-but-unparseable value is an error too — otherwise the native input reads
+    // `aria-invalid` (it gates on the control's parse error) while the field shows no message
+    return ctrl.touched() && (ctrl.invalid() || (ctrl.parseError?.() ?? false));
   });
 
   public errors = computed(() => this.registeredControl()?.errors() ?? []);
+
+  /** Whether the registered control is currently reporting an unparseable committed value. */
+  public parseError = computed(() => this.registeredControl()?.parseError?.() ?? false);
+
+  /** The control's parse-error message (shown when there's a parse error but no validation error). */
+  public parseErrorMessage = computed(() => this.registeredControl()?.parseErrorMessage?.() ?? null);
 
   public controlType = computed(() => this.registeredControl()?.controlType() ?? FORM_FIELD_CONTROL_TYPES.TEXT_INPUT);
 
@@ -66,6 +74,9 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
   public isReadonly = computed(() => this.registeredControl()?.readonly?.() ?? false);
 
   public isDisabled = computed(() => this.registeredControl()?.disabled?.() ?? false);
+
+  /** Whether the control reports itself hidden (signal-forms schema) — hides the whole field. */
+  public isHidden = computed(() => this.registeredControl()?.hidden?.() ?? false);
 
   public usesTextFieldShell = computed(
     () =>
@@ -89,7 +100,7 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
   public shouldFloatLabel = computed(() => this.focused() || this.hasValue());
 
   public describedById = computed(() => {
-    if (this.shouldDisplayError() && this.errors().length > 0) {
+    if (this.shouldDisplayError() && (this.errors().length > 0 || this.parseError())) {
       return this.errorId();
     }
 

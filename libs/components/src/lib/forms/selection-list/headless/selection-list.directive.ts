@@ -16,7 +16,7 @@ import {
     '[attr.role]': 'role()',
     '[attr.aria-invalid]': 'shouldDisplayError() || null',
     '[attr.aria-required]': 'required() || null',
-    '[attr.aria-describedby]': 'describedById() || null',
+    '[attr.aria-describedby]': 'describedBy() || null',
     '[attr.aria-labelledby]': 'labelId() || null',
     '[attr.data-disabled]': 'disabled() || null',
   },
@@ -41,6 +41,9 @@ export class SelectionListDirective implements SelectionListDirectiveBase, FormF
     value: this.value,
     multiple: this.multiple,
     disabled: this.disabled,
+    // every option is rendered, so a destroyed checked option is genuinely gone — drop its
+    // stranded value from the model (the select family renders lazily and must not prune)
+    pruneValueOnUnregister: true,
   });
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
@@ -49,7 +52,6 @@ export class SelectionListDirective implements SelectionListDirectiveBase, FormF
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.SELECTION_LIST);
 
-  public describedById = computed(() => this.describedBy());
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
 
   constructor() {

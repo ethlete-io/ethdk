@@ -42,6 +42,9 @@ export class TimeInputDirective implements FormValueControl<string | null>, Form
   public name = input('');
   public placeholder = input('');
 
+  /** Message the form field shows when typed text can't be parsed as a time. */
+  public parseErrorMessage = input('Please enter a valid time');
+
   /** date-fns format of the string value. Defaults to the `TIME_FORMAT` token. */
   public valueFormat = input<string | undefined>(undefined);
   /** date-fns format shown in (and parsed from) the field. Locale-aware by default. */
@@ -103,7 +106,6 @@ export class TimeInputDirective implements FormValueControl<string | null>, Form
   public shouldDisplayError = computed(() => this.touched() && (this.invalid() || this.parseError()));
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-  public describedById = computed(() => this.describedBy());
 
   private overlay = createDatePickerOverlay({
     interactive: this.interactive,

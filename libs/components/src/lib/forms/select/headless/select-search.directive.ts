@@ -35,7 +35,7 @@ import { SelectDirective } from './select.directive';
     '[attr.aria-activedescendant]': 'activeDescendant()',
     '[attr.aria-required]': 'select?.required() || null',
     '[attr.aria-invalid]': 'select?.shouldDisplayError() || null',
-    '[attr.aria-describedby]': 'select?.describedById() || null',
+    '[attr.aria-describedby]': 'select?.describedBy() || null',
     '[attr.aria-labelledby]': 'select?.labelId() || null',
     '[disabled]': 'select?.disabled() || false',
     '[readOnly]': 'select?.readonly() || false',

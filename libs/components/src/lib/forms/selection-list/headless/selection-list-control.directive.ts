@@ -1,10 +1,12 @@
-import { computed, Directive, inject, signal } from '@angular/core';
+import { computed, Directive, inject } from '@angular/core';
 import { SELECTION_LIST_TOKEN } from './selection-list.tokens';
 
 @Directive({
   selector: '[etSelectionListControl]',
   host: {
-    '[attr.role]': '"option"',
+    // a checkbox, not an option: `option` is listbox-only and has no mixed state (it uses
+    // `aria-selected`), whereas the select-all genuinely needs `aria-checked="mixed"`
+    '[attr.role]': '"checkbox"',
     '[attr.aria-checked]': 'ariaChecked()',
     '[attr.aria-disabled]': 'list.disabled() || null',
     '[attr.tabindex]': 'list.disabled() ? -1 : 0',
@@ -18,8 +20,6 @@ export class SelectionListControlDirective {
 
   public checked = computed(() => this.list.selection.allSelected());
   public indeterminate = computed(() => this.list.selection.someSelected());
-
-  public labelId = signal(`et-selection-list-control-label-${uniqueControlLabelId++}`);
 
   public ariaChecked = computed(() => {
     if (this.indeterminate()) {
@@ -37,5 +37,3 @@ export class SelectionListControlDirective {
     this.list.selection.toggleAll();
   }
 }
-
-let uniqueControlLabelId = 0;

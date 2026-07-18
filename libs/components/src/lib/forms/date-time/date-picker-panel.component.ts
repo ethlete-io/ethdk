@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewEncapsulation, inject, viewChild } from '@angular/core';
+import { Component, ElementRef, ViewEncapsulation, inject, input, viewChild } from '@angular/core';
 import { AutoSurfaceDirective, COLOR_PROVIDER, ProvideColorDirective, injectAnimatedBlockSize } from '@ethlete/core';
 
 @Component({
@@ -11,13 +11,19 @@ import { AutoSurfaceDirective, COLOR_PROVIDER, ProvideColorDirective, injectAnim
   styleUrl: './date-picker-panel.component.css',
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [ProvideColorDirective, AutoSurfaceDirective],
+  // the trigger promises `aria-haspopup="dialog"`, so the mounted pane must actually be a named
+  // dialog — without this SR users land in an unnamed generic container
   host: {
     class: 'et-date-picker-panel',
+    role: 'dialog',
+    '[attr.aria-label]': 'dialogLabel()',
   },
 })
 export class DatePickerPanelComponent {
   private ownColorProvider = inject(ProvideColorDirective);
   private contextColorProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
+  /** Accessible name of the picker dialog — set per control (date / time / range / date-time). */
+  public dialogLabel = input('Choose a date');
 
   // observed instead of the host: the host's used size is overridden by the resize
   // animation itself, so observing it directly would feed the animation back

@@ -14,7 +14,7 @@ import { SelectDirective } from './select.directive';
     '[attr.aria-activedescendant]': 'activeDescendant()',
     '[attr.aria-required]': 'hasSearch() ? null : select?.required() || null',
     '[attr.aria-invalid]': 'hasSearch() ? null : select?.shouldDisplayError() || null',
-    '[attr.aria-describedby]': 'hasSearch() ? null : select?.describedById() || null',
+    '[attr.aria-describedby]': 'hasSearch() ? null : select?.describedBy() || null',
     '[attr.aria-labelledby]': 'labelledBy()',
     '[attr.aria-disabled]': 'select?.disabled() || null',
     '[attr.data-disabled]': 'select?.disabled() || null',

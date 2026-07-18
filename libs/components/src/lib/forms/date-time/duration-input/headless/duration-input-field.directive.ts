@@ -17,7 +17,7 @@ import { DurationInputDirective } from './duration-input.directive';
     '[attr.placeholder]': 'durationInput?.placeholder() || null',
     '[attr.aria-required]': 'durationInput?.required() || null',
     '[attr.aria-invalid]': 'durationInput?.shouldDisplayError() || null',
-    '[attr.aria-describedby]': 'durationInput?.describedById() || null',
+    '[attr.aria-describedby]': 'durationInput?.describedBy() || null',
     '[attr.aria-labelledby]': 'durationInput?.labelId() || null',
     '[disabled]': 'durationInput?.disabled() || false',
     '[readOnly]': 'durationInput?.readonly() || false',

@@ -33,6 +33,7 @@ import { TimeInputDirective, TimeInputFieldDirective } from './headless';
         'required',
         'name',
         'placeholder',
+        'parseErrorMessage',
         'valueFormat',
         'displayFormat',
         'locale',

@@ -14,9 +14,18 @@ Severity legend: **bug** (wrong behavior) · **a11y** (accessibility) ·
 **consistency** (sibling controls diverge) · **dx** (API/authoring ergonomics) ·
 **perf** · **cleanup** (dead code / duplication).
 
-> Nothing here has been changed yet — this is a backlog. Items marked
-> _(verified)_ were confirmed against the code during the review; the rest were
-> reported by the review pass and are worth a quick confirm before fixing.
+> **Status (implemented):** every **bug**, **a11y**, **consistency**, and
+> localized **cleanup** finding below has been fixed, plus cross-cutting theme #5
+> (dead pass-through inputs). What remains are the large architectural extractions
+> — cross-cutting themes **#1** (form-control wiring base), **#3** (anchored-panel
+> controller, which also subsumes the date-picker-input-host, panel-surface, and
+> singleton-registration cleanups), and **#4** (hint/error state machine). Theme
+> **#2** (form-support wiring) was attempted and reverted: Angular's compiler
+> (`NG8110`) forbids `viewChild()` outside a direct class-field initializer, so the
+> queries can't move into a helper. These are best done incrementally, one control
+> at a time, behind the green test suite — see the sequencing note at the end.
+>
+> Items marked _(verified)_ were confirmed against the code during the review.
 
 ---
 

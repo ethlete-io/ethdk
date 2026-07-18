@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import {
   afterNextRender,
   Component,
@@ -10,7 +11,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ColorInteractiveDirective } from '@ethlete/core';
-import { Subscription, tap, timer } from 'rxjs';
+import { fromEvent, merge, Subscription, takeUntil, tap, timer } from 'rxjs';
 import { IconDirective, MINUS_ICON, PLUS_ICON, provideIcons } from '../../icon';
 import { NumberInputDirective } from './headless';
 
@@ -56,6 +57,7 @@ const STEPPER_REPEAT_INTERVAL = 75;
 export class NumberInputComponent {
   protected numberInputDir = inject(NumberInputDirective);
   private destroyRef = inject(DestroyRef);
+  private document = inject(DOCUMENT);
 
   /** Renders −/+ stepper buttons with press-and-hold auto-repeat. */
   public stepper = input(false);
@@ -97,10 +99,17 @@ export class NumberInputComponent {
     this.numberInputDir.stepBy(direction);
     this.stopStepRepeat();
 
+    // stop on any pointer release anywhere, not just on the button: if `setPointerCapture`
+    // above threw (test envs, some browsers) and the pointer lifts off the button, the button
+    // never sees `pointerup`/`pointercancel` — without this document-level stop the timer would
+    // run until the component is destroyed
+    const release$ = merge(fromEvent(this.document, 'pointerup'), fromEvent(this.document, 'pointercancel'));
+
     // one immediate step above, then repeat after the hold delay and accelerate
     this.repeatSub = timer(STEPPER_REPEAT_DELAY, STEPPER_REPEAT_INTERVAL)
       .pipe(
         tap(() => this.numberInputDir.stepBy(direction)),
+        takeUntil(release$),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();

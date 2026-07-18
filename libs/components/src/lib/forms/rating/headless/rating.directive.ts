@@ -21,7 +21,7 @@ export type RatingIconState = 'full' | 'half' | 'empty';
     '[attr.aria-required]': 'required() || null',
     '[attr.aria-invalid]': 'shouldDisplayError() || null',
     '[attr.aria-labelledby]': 'labelId()',
-    '[attr.aria-describedby]': 'describedById()',
+    '[attr.aria-describedby]': 'describedBy()',
     '[attr.data-disabled]': 'disabled() || null',
     '[attr.data-readonly]': 'readonly() || null',
     '(keydown)': 'handleKeydown($event)',
@@ -71,7 +71,6 @@ export class RatingDirective implements FormValueControl<number | null>, FormFie
   public focused = signal(false);
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-  public describedById = computed(() => this.describedBy());
 
   /** @internal */
   public registeredIconTemplate = signal<RatingIconDirective | null>(null);

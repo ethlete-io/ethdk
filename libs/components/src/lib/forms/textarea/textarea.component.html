@@ -9,7 +9,7 @@
   [rows]="textareaDir.rows()"
   [attr.name]="textareaDir.name() || null"
   [attr.aria-invalid]="textareaDir.shouldDisplayError() || null"
-  [attr.aria-describedby]="textareaDir.describedById() || null"
+  [attr.aria-describedby]="textareaDir.describedBy() || null"
   [attr.aria-labelledby]="textareaDir.labelId() || null"
   [attr.data-resize]="textareaDir.effectiveResize()"
   (input)="syncNativeValue($event)"

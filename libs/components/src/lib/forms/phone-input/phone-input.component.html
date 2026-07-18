@@ -6,7 +6,13 @@
   class="et-phone-input-country"
   etSelect
 >
-  <button [disabled]="phone.disabled()" class="et-phone-input-country-trigger" etSelectTrigger type="button">
+  <button
+    [attr.aria-label]="countryLabel()"
+    [disabled]="phone.disabled()"
+    class="et-phone-input-country-trigger"
+    etSelectTrigger
+    type="button"
+  >
     <span class="et-phone-input-country-flag" aria-hidden="true">
       @if (phone.registeredFlagTemplate(); as flagTemplate) {
         <ng-template [ngTemplateOutlet]="flagTemplate.templateRef" [ngTemplateOutletContext]="activeFlagContext()" />

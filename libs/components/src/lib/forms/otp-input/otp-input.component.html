@@ -21,7 +21,7 @@
        (autocomplete="one-time-code") and native paste for free -->
   <input
     #nativeInput
-    [attr.aria-describedby]="otp.describedById() || null"
+    [attr.aria-describedby]="otp.describedBy() || null"
     [attr.aria-invalid]="otp.shouldDisplayError() || null"
     [attr.aria-labelledby]="otp.labelId() || null"
     [attr.inputmode]="otp.inputMode()"

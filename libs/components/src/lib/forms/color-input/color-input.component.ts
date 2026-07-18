@@ -37,4 +37,21 @@ export class ColorInputComponent {
   public syncNativeValue(event: Event) {
     this.colorInputDir.syncFromNativeInput(event.target as HTMLInputElement);
   }
+
+  /**
+   * `<input type="color">` ignores `readonly`, so we stop the events that open the OS picker
+   * (pointer + Enter/Space) while the control is read-only — keeping it focusable but inert,
+   * like every sibling control honors `readonly`.
+   */
+  protected blockWhenReadonly(event: Event) {
+    if (this.colorInputDir.interactive()) {
+      return;
+    }
+
+    if (event instanceof KeyboardEvent && event.key !== 'Enter' && event.key !== ' ') {
+      return;
+    }
+
+    event.preventDefault();
+  }
 }

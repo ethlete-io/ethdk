@@ -8,7 +8,9 @@ let uniqueOptionLabelId = 0;
   host: {
     '[attr.role]': 'role()',
     '[attr.aria-checked]': 'checked()',
-    '[attr.aria-selected]': 'checked()',
+    // name from the label span only — a projected <et-description> lives in the host too, so
+    // relying on name-from-contents would fold the description into the accessible name
+    '[attr.aria-labelledby]': 'labelId()',
     '[attr.aria-disabled]': 'effectiveDisabled() || null',
     '[attr.tabindex]': 'tabindex()',
     '(click)': 'select()',
@@ -31,7 +33,9 @@ export class SelectionOptionDirective {
   public disabled = input(false);
 
   public effectiveDisabled = computed(() => this.disabled() || (this.list?.disabled() ?? false));
-  public role = computed(() => (this.list?.multiple() ? 'option' : 'radio'));
+  // multi-select lives in a `role="group"`, where `option` is invalid ARIA (it's listbox-only) —
+  // a checkbox pairs correctly with `group` + `aria-checked`; single-select stays a radio.
+  public role = computed(() => (this.list?.multiple() ? 'checkbox' : 'radio'));
 
   public labelId = signal(`et-selection-option-label-${uniqueOptionLabelId++}`);
 

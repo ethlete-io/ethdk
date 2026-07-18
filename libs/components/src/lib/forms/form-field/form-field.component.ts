@@ -37,7 +37,7 @@ import {
   FormFieldLabelMode,
   FormFieldSize,
 } from './form-field.variants';
-import { FormFieldDirective } from './headless';
+import { FormFieldDirective, isInteractiveElement } from './headless';
 
 const SUPPORT_CONTENT_STATE = {
   NONE: 'none',
@@ -175,6 +175,9 @@ const reduceSupportPresentation = ({
   ],
   host: {
     class: 'et-form-field',
+    // a signal-forms schema-hidden control removes the whole field (inline style beats the
+    // component's own `display`); the field also drops out of the a11y tree, as `hidden` intends
+    '[style.display]': 'formFieldDir.isHidden() ? "none" : null',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-control-type]': 'formFieldDir.controlType()',
     '[attr.data-error]': 'displaysError() || null',
@@ -236,8 +239,23 @@ export class FormFieldComponent {
 
   public canAnimate = createCanAnimateSignal();
 
+  // real validation errors, or — when the control only has an unparseable committed value — a
+  // synthetic one carrying its parse message, so a parse error renders like any other error
+  // (red styling + a message + aria-describedby) instead of a silent `aria-invalid`
+  public effectiveErrors = computed<readonly ValidationError.WithOptionalFieldTree[]>(() => {
+    const errors = this.formFieldDir.errors();
+
+    if (errors.length > 0) {
+      return errors;
+    }
+
+    const parseMessage = this.formFieldDir.parseError() ? this.formFieldDir.parseErrorMessage() : null;
+
+    return parseMessage ? [{ kind: 'etParseError', message: parseMessage }] : [];
+  });
+
   public semanticSupportState = computed<SupportContentState>(() => {
-    if (this.formFieldDir.shouldDisplayError() && this.formFieldDir.errors().length > 0) {
+    if (this.formFieldDir.shouldDisplayError() && this.effectiveErrors().length > 0) {
       return SUPPORT_CONTENT_STATE.ERROR;
     }
 
@@ -389,7 +407,7 @@ export class FormFieldComponent {
 
     effect(() => {
       const semanticSupportState = this.semanticSupportState();
-      const errors = this.formFieldDir.errors();
+      const errors = this.effectiveErrors();
       const errorContent = this.errorContent()?.nativeElement;
       const currentErrorColor = errorContent ? getComputedStyle(errorContent).color : null;
 
@@ -437,17 +455,7 @@ export class FormFieldComponent {
       return;
     }
 
-    const target = event.target as HTMLElement;
-    const tagName = target.tagName;
-
-    if (
-      target.isContentEditable ||
-      tagName === 'INPUT' ||
-      tagName === 'TEXTAREA' ||
-      tagName === 'SELECT' ||
-      tagName === 'BUTTON' ||
-      tagName === 'A'
-    ) {
+    if (isInteractiveElement(event.target as HTMLElement)) {
       return;
     }
 

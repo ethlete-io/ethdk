@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { DestroyRef, Directive, Signal, computed, inject, input, model, signal } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { Locale } from 'date-fns';
+import { Locale, startOfDay } from 'date-fns';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../../form-field/headless';
 import { injectDateFormat, injectDateLocale } from '../../date-time-formats';
 import { createDatePickerOverlay } from '../../internals/date-picker-overlay';
@@ -54,6 +54,9 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
   public name = input('');
   public startPlaceholder = input('');
   public endPlaceholder = input('');
+
+  /** Message the form field shows when either side's typed text can't be parsed as a date. */
+  public parseErrorMessage = input('Please enter a valid date range');
 
   /** date-fns format of the string values. Defaults to the `DATE_FORMAT` token. */
   public valueFormat = input<string | undefined>(undefined);
@@ -111,7 +114,6 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
   public shouldDisplayError = computed(() => this.touched() && (this.invalid() || this.parseError()));
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-  public describedById = computed(() => this.describedBy());
 
   private overlay = createDatePickerOverlay({
     interactive: this.interactive,
@@ -205,7 +207,13 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
       return;
     }
 
-    const parsed = parseDateValue(raw, { format: this.displayFormat(), locale: this.effectiveLocale() });
+    // reference midnight so a date-only `displayFormat` doesn't fold the current wall-clock
+    // time into a time-bearing `valueFormat` — see the note in date-input's `commitInput`.
+    const parsed = parseDateValue(raw, {
+      format: this.displayFormat(),
+      locale: this.effectiveLocale(),
+      referenceDate: startOfDay(new Date()),
+    });
 
     if (parsed === null) {
       state.inputText.set(raw);

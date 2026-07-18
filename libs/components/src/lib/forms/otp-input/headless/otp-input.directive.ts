@@ -44,7 +44,6 @@ export class OtpInputDirective implements FormValueControl<string>, FormFieldCon
   public focused = signal(false);
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-  public describedById = computed(() => this.describedBy());
 
   /**
    * The native input this directive controls. Auto-initialized when the directive sits on
@@ -126,7 +125,10 @@ export class OtpInputDirective implements FormValueControl<string>, FormFieldCon
     element.setSelectionRange(sanitized.length, sanitized.length);
     this.value.set(sanitized);
 
-    if (sanitized.length === this.length() && previous.length < this.length()) {
+    // emit whenever a *different* full-length code lands — not just when growing from incomplete,
+    // or replacing one complete code with another (select-all + paste, autofill over a filled
+    // field) would silently never re-complete
+    if (sanitized.length === this.length() && sanitized !== previous) {
       this.completed.emit(sanitized);
     }
   }

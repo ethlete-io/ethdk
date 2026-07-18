@@ -18,12 +18,18 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { RuntimeError, nextFrame } from '@ethlete/core';
 import { EMPTY, Subscription, catchError, fromEvent, switchMap, take, tap } from 'rxjs';
+import { createTypeahead } from '../../../internals/typeahead';
 import { OverlayConfig } from '../../../overlay/overlay-config';
 import { injectOverlayManager } from '../../../overlay/overlay-manager';
 import { OverlayRef } from '../../../overlay/overlay-ref';
 import { OverlayTemplateHostComponent } from '../../../overlay/overlay-template-host.component';
 import { anchoredOverlayStrategy, injectBottomSheetStrategy } from '../../../overlay/strategies';
-import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
+import {
+  FORM_FIELD_CONTROL_TYPES,
+  FORM_FIELD_TOKEN,
+  FormFieldControl,
+  isInteractiveElement,
+} from '../../form-field/headless';
 import { CASCADER_ERROR_CODES } from '../cascader-errors';
 import { CascaderColumnState } from './cascader.tokens';
 import {
@@ -35,6 +41,7 @@ import {
   indexOfNode,
   nodesEqual,
   toChildrenObservable,
+  toPathObservable,
 } from './internals/cascader-tree';
 
 export const CASCADER_SELECTABLE_LEVELS = {
@@ -103,7 +110,6 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
   public focused = computed(() => this.triggerFocused() || this.open());
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-  public describedById = computed(() => this.describedBy());
 
   /** @internal */
   public registeredTrigger = signal<CascaderTriggerLike | null>(null);
@@ -111,6 +117,8 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
   public registeredSurface = signal<CascaderSurfaceLike | null>(null);
   /** @internal */
   public overlayRef = signal<OverlayRef<OverlayTemplateHostComponent, unknown> | null>(null);
+  /** @internal The mounted tree panel's element id — the trigger points `aria-controls` at it. */
+  public panelId = signal<string | null>(null);
 
   /** The columns currently shown — column 0 is the root, each subsequent one a drilled level. */
   public columns = signal<CascaderColumnState<T>[]>([]);
@@ -162,6 +170,11 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
   private interactionListenersCleanup: (() => void) | null = null;
   private closedByOutsidePointer = false;
 
+  // type-to-search within the focused column (long columns can't be navigated by name otherwise);
+  // the buffer resets when focus moves to a different column so queries don't leak across levels
+  private typeahead = createTypeahead();
+  private typeaheadColumn = -1;
+
   constructor() {
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
@@ -177,6 +190,52 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
         }
       });
     });
+
+    // rebuild the breadcrumb when the value is set from outside (form patch/restore): `commit()`
+    // already sets `path` alongside the value, so an internal commit's path ends at the value and
+    // is skipped here. Only a value the panel didn't pick reaches `resolvePath` — an optional
+    // data-source hook, since the cascader can't reverse a lazy tree on its own.
+    toObservable(this.value)
+      .pipe(
+        switchMap((value) => {
+          if (value === null || value === undefined) {
+            return EMPTY;
+          }
+
+          const compareWith = this.compareWith();
+          const currentPath = this.path();
+          const last = currentPath[currentPath.length - 1];
+
+          // the committed path already ends at this value — nothing to resolve
+          if (last && compareWith(last.value, value)) {
+            return EMPTY;
+          }
+
+          const resolvePath = this.dataSource()?.resolvePath;
+
+          if (!resolvePath) {
+            return EMPTY;
+          }
+
+          return toPathObservable(resolvePath(value)).pipe(
+            tap((resolved) => {
+              // a later value change / clear superseded this (async) resolve — drop it
+              const currentValue = this.value();
+
+              if (currentValue === null || currentValue === undefined || !compareWith(currentValue, value)) {
+                return;
+              }
+
+              if (resolved && resolved.length && compareWith(resolved[resolved.length - 1]!.value, value)) {
+                this.path.set(resolved);
+              }
+            }),
+            catchError(() => EMPTY),
+          );
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
 
     effect(() => {
       const disabled = this.disabled();
@@ -212,6 +271,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
 
     this.destroyRef.onDestroy(() => {
       this.cancelLoads();
+      this.typeahead.destroy();
       this.overlayRef()?.close();
     });
 
@@ -380,6 +440,22 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
         return;
       }
     }
+
+    // type-to-search the focused column by node label (mirrors the select's typeahead)
+    if (event.key.length === 1) {
+      if (columnIndex !== this.typeaheadColumn) {
+        this.typeahead.reset();
+        this.typeaheadColumn = columnIndex;
+      }
+
+      const query = this.typeahead.append(event.key);
+      const match = nodes.find((candidate) => !candidate.disabled && candidate.label.toLowerCase().startsWith(query));
+
+      if (match) {
+        event.preventDefault();
+        this.focusNode(match, columnIndex);
+      }
+    }
   }
 
   /** Collapses the deepest column and moves focus back to its parent — the sheet's back-nav. */
@@ -422,6 +498,12 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
   private focusFirstOfColumn(columnIndex: number) {
     // the column may still be loading — retry on the next frame until it has nodes
     const attempt = (remaining: number) => {
+      // the panel was closed/unmounted while the column was loading — stop, or we'd pull focus
+      // into a node that is animating away
+      if (!this.isMounted()) {
+        return;
+      }
+
       const nodes = this.columns()[columnIndex]?.nodes ?? [];
 
       if (nodes[0]) {
@@ -577,7 +659,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
     }
 
     for (let element: HTMLElement | null = target; element && element !== frame; element = element.parentElement) {
-      if (['BUTTON', 'A', 'INPUT', 'TEXTAREA'].includes(element.tagName)) {
+      if (isInteractiveElement(element)) {
         return;
       }
     }

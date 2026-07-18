@@ -10,7 +10,7 @@ import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '..
     '[attr.aria-invalid]': 'shouldDisplayError() || null',
     '[attr.aria-disabled]': 'disabled() || null',
     '[attr.aria-required]': 'required() || null',
-    '[attr.aria-describedby]': 'describedById() || null',
+    '[attr.aria-describedby]': 'describedBy() || null',
     '[attr.aria-labelledby]': 'labelId() || null',
     '[attr.tabindex]': 'disabled() ? -1 : 0',
     '(click)': 'toggle()',
@@ -37,7 +37,6 @@ export class SwitchDirective implements FormFieldControl {
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.SWITCH);
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-  public describedById = computed(() => this.describedBy());
 
   constructor() {
     this.formField?.registerControl(this);

@@ -48,7 +48,6 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
   public focused = signal(false);
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-  public describedById = computed(() => this.describedBy());
 
   /** @internal */
   public registeredField = signal<TagInputFieldDirective | null>(null);

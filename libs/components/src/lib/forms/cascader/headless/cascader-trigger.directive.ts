@@ -17,7 +17,7 @@ import { CascaderDirective } from './cascader.directive';
     '[attr.aria-required]': 'cascader?.required() || null',
     '[attr.aria-invalid]': 'cascader?.shouldDisplayError() || null',
     '[attr.aria-labelledby]': 'cascader?.labelId()',
-    '[attr.aria-describedby]': 'cascader?.describedById()',
+    '[attr.aria-describedby]': 'cascader?.describedBy()',
     '[attr.tabindex]': 'isNativeButton ? null : cascader?.disabled() ? -1 : 0',
     '[attr.data-disabled]': 'cascader?.disabled() || null',
     '(click)': 'handleClick()',
@@ -34,9 +34,9 @@ export class CascaderTriggerDirective {
   public readonly id: string;
   public readonly isNativeButton: boolean;
 
-  protected controlledId = computed(() =>
-    this.cascader?.open() ? (this.cascader.overlayRef()?.elements?.paneElement?.id ?? null) : null,
-  );
+  // point at the tree panel's own stable id (the overlay runtime never ids the pane element, so
+  // reading `paneElement.id` yielded an empty `aria-controls` the whole time the panel was open)
+  protected controlledId = computed(() => (this.cascader?.open() ? this.cascader.panelId() : null));
 
   constructor() {
     const element = this.elementRef.nativeElement;

@@ -10,8 +10,6 @@ export type SelectionListItem<TValue = unknown> = {
   checked: WritableSignal<boolean>;
   disabled: Signal<boolean>;
   elementRef: ElementRef<HTMLElement>;
-  id?: Signal<string>;
-  label?: Signal<string>;
 };
 
 export type SelectionListDirectiveBase<TValue = unknown> = {

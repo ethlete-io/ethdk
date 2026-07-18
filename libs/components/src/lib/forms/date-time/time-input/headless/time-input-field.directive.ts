@@ -17,7 +17,7 @@ import { TimeInputDirective } from './time-input.directive';
     '[attr.placeholder]': 'timeInput?.placeholder() || null',
     '[attr.aria-required]': 'timeInput?.required() || null',
     '[attr.aria-invalid]': 'timeInput?.shouldDisplayError() || null',
-    '[attr.aria-describedby]': 'timeInput?.describedById() || null',
+    '[attr.aria-describedby]': 'timeInput?.describedBy() || null',
     '[attr.aria-labelledby]': 'timeInput?.labelId() || null',
     '[disabled]': 'timeInput?.disabled() || false',
     '[readOnly]': 'timeInput?.readonly() || false',

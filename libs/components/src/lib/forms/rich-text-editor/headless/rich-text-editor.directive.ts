@@ -65,7 +65,6 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   public focused = signal(false);
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-  public describedById = computed(() => this.describedBy());
 
   public boldActive = signal(false);
   public italicActive = signal(false);

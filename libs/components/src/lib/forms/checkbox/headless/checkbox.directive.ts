@@ -10,12 +10,13 @@ import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '..
     '[attr.aria-invalid]': 'shouldDisplayError() || null',
     '[attr.aria-disabled]': 'disabled() || null',
     '[attr.aria-required]': 'required() || null',
-    '[attr.aria-describedby]': 'describedById() || null',
+    '[attr.aria-describedby]': 'describedBy() || null',
     '[attr.aria-labelledby]': 'labelId() || null',
     '[attr.tabindex]': 'disabled() ? -1 : 0',
     '(click)': 'toggle()',
-    '(keydown.space)': '$event.preventDefault()',
-    '(keyup.space)': 'toggle()',
+    // toggle on keydown.space to match switch and the selection options (one activation phase
+    // across the family), preventing the default page scroll
+    '(keydown.space)': 'toggle(); $event.preventDefault()',
     '(blur)': 'touched.set(true)',
   },
 })
@@ -47,8 +48,6 @@ export class CheckboxDirective implements FormCheckboxControl, FormFieldControl 
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.CHECKBOX);
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-
-  public describedById = computed(() => this.describedBy());
 
   constructor() {
     this.formField?.registerControl(this);

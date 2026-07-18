@@ -34,6 +34,7 @@ import { DateRangeInputDirective, DateRangeInputFieldDirective } from './headles
         'name',
         'startPlaceholder',
         'endPlaceholder',
+        'parseErrorMessage',
         'valueFormat',
         'displayFormat',
         'locale',

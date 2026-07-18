@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { DestroyRef, Directive, computed, inject, input, model, signal } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { Locale } from 'date-fns';
+import { Locale, startOfDay } from 'date-fns';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../../form-field/headless';
 import { injectDateFormat, injectDateLocale } from '../../date-time-formats';
 import { createDatePickerOverlay } from '../../internals/date-picker-overlay';
@@ -40,6 +40,9 @@ export class DateInputDirective implements FormValueControl<string | null>, Form
   public required = input(false);
   public name = input('');
   public placeholder = input('');
+
+  /** Message the form field shows when typed text can't be parsed as a date. */
+  public parseErrorMessage = input('Please enter a valid date');
 
   /** date-fns format of the string value. Defaults to the `DATE_FORMAT` token. */
   public valueFormat = input<string | undefined>(undefined);
@@ -100,7 +103,6 @@ export class DateInputDirective implements FormValueControl<string | null>, Form
   public shouldDisplayError = computed(() => this.touched() && (this.invalid() || this.parseError()));
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-  public describedById = computed(() => this.describedBy());
 
   private overlay = createDatePickerOverlay({
     interactive: this.interactive,
@@ -172,7 +174,15 @@ export class DateInputDirective implements FormValueControl<string | null>, Form
       return;
     }
 
-    const parsed = parseDateValue(raw, { format: this.displayFormat(), locale: this.effectiveLocale() });
+    // reference midnight, not `new Date()`: a date-only `displayFormat` leaves date-fns to
+    // fill H/M/S from the reference, so without this a typed day would carry the current
+    // wall-clock time into a time-bearing `valueFormat` while the same day picked in the
+    // calendar (startOfDay) would not — two entry paths, two wire values for one date.
+    const parsed = parseDateValue(raw, {
+      format: this.displayFormat(),
+      locale: this.effectiveLocale(),
+      referenceDate: startOfDay(new Date()),
+    });
 
     if (parsed === null) {
       this.inputText.set(raw);

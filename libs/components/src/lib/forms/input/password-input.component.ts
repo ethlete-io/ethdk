@@ -41,8 +41,11 @@ export class PasswordInputComponent {
   /** Whether the reveal (show/hide) toggle renders. */
   public revealable = input(true);
 
-  /** Accessible name of the reveal toggle — its pressed state carries the current mode. */
+  /** Accessible name of the reveal toggle while the value is hidden (the "show" action). */
   public revealLabel = input('Show password');
+
+  /** Accessible name of the reveal toggle while the value is shown (the "hide" action). */
+  public hideLabel = input('Hide password');
 
   /** Show a warning indicator while the field is focused and Caps Lock is on. */
   public capsLockWarning = input(false);

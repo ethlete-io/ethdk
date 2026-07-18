@@ -55,7 +55,7 @@ describe('InputDirective', () => {
         .injector.get(InputDirective);
 
       // describedBy is only set by the form field when there is an active error or hint
-      expect(inputDir.describedById()).toBeNull();
+      expect(inputDir.describedBy()).toBeNull();
     });
   });
 
@@ -80,7 +80,7 @@ describe('InputDirective', () => {
 
     it('should have null describedBy without parent', () => {
       const inputDir = (fixture.debugElement.children[0] as DebugElement).injector.get(InputDirective);
-      expect(inputDir.describedById()).toBeNull();
+      expect(inputDir.describedBy()).toBeNull();
     });
   });
 

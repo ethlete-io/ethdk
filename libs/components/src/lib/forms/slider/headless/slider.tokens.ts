@@ -29,7 +29,7 @@ export type SliderHostBase = {
   interactive: Signal<boolean>;
   shouldDisplayError: Signal<boolean>;
   labelId: Signal<string | null>;
-  describedById: Signal<string | null>;
+  describedBy: Signal<string | null>;
   /** The thumb currently being dragged via the track, or `null` — set by the track directive. */
   draggingThumbIndex: WritableSignal<number | null>;
   /** Current thumb values in thumb order — already clamped and snapped for display. */

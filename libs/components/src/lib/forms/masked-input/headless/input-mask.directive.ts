@@ -25,6 +25,8 @@ import { compilePatternMask } from './internals/pattern-mask';
   exportAs: 'etInputMask',
   host: {
     '(input)': 'handleInput($event)',
+    '(compositionstart)': 'composing = true',
+    '(compositionend)': 'handleCompositionEnd($event)',
   },
 })
 export class InputMaskDirective {
@@ -46,6 +48,13 @@ export class InputMaskDirective {
    */
   public placeholderChar = input<string | null>(null);
 
+  /**
+   * `true` between `compositionstart` and `compositionend`. Rewriting `value` +
+   * `setSelectionRange` on the intermediate `input` events cancels the IME candidate window
+   * mid-composition (CJK, dead keys), so reconciliation is deferred until composition ends.
+   */
+  protected composing = false;
+
   private spec = computed(() => {
     const mask = this.mask();
 
@@ -66,6 +75,10 @@ export class InputMaskDirective {
   private caret: number | null = null;
 
   constructor() {
+    // we own value-sync (raw/display split) in `handleInput` — stop the base input's native
+    // `(input)` handler from also writing the model and clobbering the masked value
+    this.inputDirective?.suppressNativeSync();
+
     if (ngDevMode) {
       afterNextRender(() => {
         if (!this.inputDirective) {
@@ -131,10 +144,35 @@ export class InputMaskDirective {
   }
 
   protected handleInput(event: Event) {
+    if (event.target !== this.inputDirective?.nativeControl()) {
+      return;
+    }
+
+    // an IME is mid-composition — reconcile once it settles (`compositionend`), not on every
+    // intermediate `input`, or the candidate window is torn down on the first keystroke
+    if (this.composing || (event as InputEvent).isComposing) {
+      return;
+    }
+
+    this.reconcile((event as InputEvent).inputType);
+  }
+
+  protected handleCompositionEnd(event: CompositionEvent) {
+    if (event.target !== this.inputDirective?.nativeControl()) {
+      return;
+    }
+
+    this.composing = false;
+
+    // `compositionend` carries the committed text; reconcile it now that the IME is done
+    this.reconcile((event as unknown as InputEvent).inputType);
+  }
+
+  private reconcile(inputType: string | undefined) {
     const inputDirective = this.inputDirective;
     const element = inputDirective?.nativeControl();
 
-    if (!inputDirective || !element || event.target !== element) {
+    if (!inputDirective || !element) {
       return;
     }
 
@@ -144,7 +182,7 @@ export class InputMaskDirective {
       previousRaw: this.committedRaw,
       text: element.value,
       caret: element.selectionStart ?? element.value.length,
-      inputType: (event as InputEvent).inputType,
+      inputType,
       // typing implies focus, so the guide display (when available) applies
       guide: true,
     });

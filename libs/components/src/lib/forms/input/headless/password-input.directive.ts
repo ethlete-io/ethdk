@@ -25,6 +25,10 @@ export class PasswordInputDirective implements FormValueControl<string>, FormFie
   public placeholder = input('');
   public autocomplete = input('current-password');
 
+  // No `textAlign` (unlike `InputDirective`/`NumberInputDirective`) on purpose: the reveal toggle
+  // and Caps-Lock warning occupy the trailing edge, so `text-align: end` would run the value under
+  // them. Passwords are conventionally start-aligned regardless — the omission is deliberate.
+
   /** Whether the value is currently shown as plain text. */
   public revealed = model(false);
 
@@ -48,8 +52,6 @@ export class PasswordInputDirective implements FormValueControl<string>, FormFie
   public focused = signal(false);
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-
-  public describedById = computed(() => this.describedBy());
 
   /** @internal */
   public focusTarget = signal<HTMLElement | null>(null);
@@ -86,8 +88,13 @@ export class PasswordInputDirective implements FormValueControl<string>, FormFie
     this.revealed.update((revealed) => !revealed);
   }
 
-  /** Feed keyboard events from the native input so `capsLockOn` stays current. */
-  public syncCapsLock(event: KeyboardEvent) {
+  /**
+   * Feed keyboard or pointer events from the native input so `capsLockOn` stays current.
+   * Pointer events matter for the focus case: clicking into an already-Caps-Lock-on field
+   * fires no keystroke, so the warning would otherwise not appear until the first key —
+   * `MouseEvent`/`PointerEvent` carry `getModifierState`, `FocusEvent` does not.
+   */
+  public syncCapsLock(event: KeyboardEvent | MouseEvent) {
     this.capsLockOn.set(event.getModifierState('CapsLock'));
   }
 }

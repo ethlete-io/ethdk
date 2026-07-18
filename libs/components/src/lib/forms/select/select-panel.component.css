@@ -77,6 +77,14 @@
     font-size: var(--et-select-option-font-size, 14px);
     box-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
 
+    /* the listbox wraps only the options, and the extras wrapper only the state/action rows —
+       both are structural (ARIA grouping); `display: contents` keeps every child in the panel's
+       own flow, so the layout is identical to when they were flat panel children */
+    .et-select-listbox,
+    .et-select-panel-extras {
+      display: contents;
+    }
+
     /* left-aligned like the options themselves; the error text mirrors the menu's
        .et-menu-search-error styling */
     .et-select-state {

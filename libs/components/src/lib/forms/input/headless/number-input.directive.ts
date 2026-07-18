@@ -39,8 +39,6 @@ export class NumberInputDirective implements FormValueControl<number | null>, Fo
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
 
-  public describedById = computed(() => this.describedBy());
-
   /** @internal */
   public focusTarget = signal<HTMLElement | null>(null);
 
@@ -105,6 +103,9 @@ export class NumberInputDirective implements FormValueControl<number | null>, Fo
 
     if (next !== this.value()) {
       this.value.set(next);
+      // stepping is a deliberate edit — mark touched so validation errors surface immediately,
+      // rather than staying hidden until a separate blur (typed entry already touches on blur)
+      this.touched.set(true);
     }
   }
 

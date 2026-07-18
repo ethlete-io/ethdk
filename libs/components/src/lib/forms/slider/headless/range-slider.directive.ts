@@ -47,7 +47,6 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.RANGE_SLIDER);
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-  public describedById = computed(() => this.describedBy());
 
   public draggingThumbIndex = signal<number | null>(null);
 

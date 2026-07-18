@@ -73,6 +73,11 @@ export class RatingComponent {
   }
 
   protected handlePointerDown(event: PointerEvent) {
+    // a fresh press must never inherit a stale commit flag from a prior sequence that ended
+    // without its trailing click (drag off-target, cancelled synthetic click) — otherwise the
+    // next legitimate click is swallowed once
+    this.pointerCommitted = false;
+
     if (!this.rating.interactive()) {
       return;
     }
@@ -114,6 +119,7 @@ export class RatingComponent {
   protected handlePointerCancel(event: PointerEvent) {
     void event;
     this.dragging = false;
+    this.pointerCommitted = false;
     this.rating.clearHover();
   }
 

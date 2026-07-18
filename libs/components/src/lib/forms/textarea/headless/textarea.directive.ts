@@ -59,8 +59,6 @@ export class TextareaDirective implements FormValueControl<string>, FormFieldCon
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
 
-  public describedById = computed(() => this.describedBy());
-
   public effectiveResize = computed(() => (this.autosize() ? TEXTAREA_RESIZE_MODES.NONE : this.resize()));
 
   /** @internal */
