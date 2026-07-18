@@ -83,6 +83,27 @@ describe('PhoneInputDirective', () => {
     expect(fixture.componentInstance.value()).toBe('');
   });
 
+  it('renders a clear control while the focused field has a value and clears on click', () => {
+    const clearButton = () => fixture.nativeElement.querySelector('.et-phone-input-clear') as HTMLButtonElement | null;
+
+    expect(clearButton()).toBeNull();
+
+    field.focus();
+    field.dispatchEvent(new Event('focus'));
+    type('170 123');
+
+    expect(clearButton()).not.toBeNull();
+
+    clearButton()!.click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.value()).toBe('');
+    expect(field.value).toBe('');
+    // the selected country survives the clear
+    expect(phone.country()).toBe('de');
+    expect(clearButton()).toBeNull();
+  });
+
   it('normalizes typed national digits into +dial value', () => {
     type('170 123');
 

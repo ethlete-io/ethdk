@@ -2,11 +2,11 @@ import { MaskSpec } from '../input-mask.types';
 
 type SlotClass = 'digit' | 'letter' | 'alnum';
 
-type PatternToken = { kind: 'slot'; slotClass: SlotClass } | { kind: 'literal'; char: string };
+type PatternToken = { kind: 'slot'; slotClass: SlotClass; required: boolean } | { kind: 'literal'; char: string };
 
 const SLOT_CLASSES: Record<string, SlotClass> = {
   // 0 = required digit, 9 = optional digit — both accept the same characters; the
-  // distinction only matters for completeness, which the lazy display model doesn't track
+  // distinction only matters for `isComplete` (the lazy display model ignores it)
   '0': 'digit',
   '9': 'digit',
   a: 'letter',
@@ -30,7 +30,7 @@ const parsePattern = (pattern: string): PatternToken[] => {
     } else if (char === '\\') {
       escaped = true;
     } else if (SLOT_CLASSES[char]) {
-      tokens.push({ kind: 'slot', slotClass: SLOT_CLASSES[char] });
+      tokens.push({ kind: 'slot', slotClass: SLOT_CLASSES[char], required: char !== '9' });
     } else {
       tokens.push({ kind: 'literal', char });
     }
@@ -111,10 +111,30 @@ export const compilePatternMask = (pattern: string, options: PatternMaskOptions 
     return display;
   };
 
+  // raw fills slots strictly left to right, so completeness is positional: consume one
+  // raw character per slot in pattern order — any required slot left unfilled fails
+  const isComplete = (raw: string) => {
+    let consumed = 0;
+
+    for (const token of tokens) {
+      if (token.kind !== 'slot') {
+        continue;
+      }
+
+      if (consumed < raw.length) {
+        consumed += 1;
+      } else if (token.required) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const placeholderChar = options.placeholderChar ?? null;
 
   if (!placeholderChar) {
-    return { toRaw, toDisplay };
+    return { toRaw, toDisplay, isComplete };
   }
 
   const toGuideDisplay = (raw: string) => {
@@ -135,5 +155,5 @@ export const compilePatternMask = (pattern: string, options: PatternMaskOptions 
     return display;
   };
 
-  return { toRaw, toDisplay, toGuideDisplay, placeholderChar };
+  return { toRaw, toDisplay, isComplete, toGuideDisplay, placeholderChar };
 };

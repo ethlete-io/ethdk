@@ -1,6 +1,7 @@
 import { computed, Directive, ElementRef, inject, input, model, signal } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES, TextFieldControlDirective } from '../../form-field/headless';
+import { INPUT_MASK_HOST } from '../../masked-input/headless/input-mask-host';
 import { INPUT_TEXT_ALIGNMENTS, InputTextAlignment } from '../input.types';
 
 export const INPUT_TYPES = {
@@ -16,6 +17,8 @@ type InputType = (typeof INPUT_TYPES)[keyof typeof INPUT_TYPES];
 
 @Directive({
   selector: '[etInput]',
+  // the built-in mask host — any [etInputMask] on the same element attaches through this
+  providers: [{ provide: INPUT_MASK_HOST, useExisting: InputDirective }],
   host: {
     '(input)': 'handleNativeInput($event)',
   },
@@ -59,6 +62,11 @@ export class InputDirective extends TextFieldControlDirective implements FormVal
   /** @internal Suppresses the built-in native `(input)` sync — see `nativeSyncSuppressed`. */
   public suppressNativeSync() {
     this.nativeSyncSuppressed = true;
+  }
+
+  /** @internal Restores the built-in native `(input)` sync — the mask calls this when set to `null`. */
+  public resumeNativeSync() {
+    this.nativeSyncSuppressed = false;
   }
 
   /**

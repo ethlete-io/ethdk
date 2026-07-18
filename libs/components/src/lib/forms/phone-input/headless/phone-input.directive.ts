@@ -106,6 +106,23 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
     this.registeredField()?.focus();
   }
 
+  /** Clears the number (the selected country stays) — wired to the styled input's clear button. */
+  public clearValue() {
+    if (!this.interactive()) {
+      return;
+    }
+
+    this.value.set('');
+
+    // the tel field shows raw digits while focused (blur reformats) — a clear happens
+    // while focused, so reset the element text directly
+    const field = this.registeredField();
+
+    if (field) {
+      field.elementRef.nativeElement.value = '';
+    }
+  }
+
   /** Switches the country, keeping the national number. */
   public selectCountry(iso2: string) {
     if (!this.interactive() || !PHONE_COUNTRIES.some((country) => country.iso2 === iso2)) {

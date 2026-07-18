@@ -103,4 +103,26 @@ describe('compilePatternMask', () => {
       expect(compilePatternMask('00-00').toGuideDisplay).toBeUndefined();
     });
   });
+
+  describe('isComplete', () => {
+    it('requires every 0/a/* slot to be filled', () => {
+      const date = compilePatternMask('00-00-0000');
+
+      expect(date.isComplete!('')).toBe(false);
+      expect(date.isComplete!('1204')).toBe(false);
+      expect(date.isComplete!('12042026')).toBe(true);
+    });
+
+    it('treats 9 slots as optional — positionally, in pattern order', () => {
+      // raw fills slots left to right: with `09`, one char fills the required slot
+      expect(compilePatternMask('09').isComplete!('1')).toBe(true);
+      // with `90`, one char lands in the optional slot, leaving the required one empty
+      expect(compilePatternMask('90').isComplete!('1')).toBe(false);
+      expect(compilePatternMask('90').isComplete!('12')).toBe(true);
+    });
+
+    it('ignores literals', () => {
+      expect(compilePatternMask('+\\9 000').isComplete!('123')).toBe(true);
+    });
+  });
 });

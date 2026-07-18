@@ -1,6 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
 import { ColorInteractiveDirective, injectLocale } from '@ethlete/core';
+import { IconDirective, TIMES_ICON, provideIcons } from '../../icon';
 import { SELECT_IMPORTS } from '../select';
 import { FORM_FIELD_TOKEN } from '../form-field/headless';
 import {
@@ -17,7 +18,8 @@ import {
   templateUrl: './phone-input.component.html',
   styleUrl: './phone-input.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [...SELECT_IMPORTS, PhoneInputFieldDirective, NgTemplateOutlet],
+  imports: [...SELECT_IMPORTS, PhoneInputFieldDirective, NgTemplateOutlet, IconDirective],
+  providers: [provideIcons(TIMES_ICON)],
   // the country picker is a full [etSelect] composition living INSIDE this control — the
   // barrier stops it from registering itself as the surrounding form field's control
   viewProviders: [{ provide: FORM_FIELD_TOKEN, useValue: null }],
@@ -51,6 +53,14 @@ export class PhoneInputComponent {
 
   /** Accessible name of the country-picker trigger — its only visible content is the flag + dial code. */
   public countryLabel = input('Select country');
+  /** Shows a clear (×) control while a number is set and the field is in use. */
+  public clearable = input(true);
+  public clearLabel = input('Clear');
+
+  // only while the field is in use — mirrors the select's clear affordance
+  protected showClear = computed(
+    () => this.clearable() && this.phone.hasValue() && this.phone.focused() && this.phone.interactive(),
+  );
 
   protected countries = computed(() => {
     const locale = this.locale.currentLocale();
@@ -79,6 +89,12 @@ export class PhoneInputComponent {
       $implicit: { iso2, dialCode: this.phone.dialCode(), flag: phoneCountryFlag(iso2) },
     };
   });
+
+  protected handleClearClick(event: Event) {
+    // clearing must not bubble into the form field's frame-click handling
+    event.stopPropagation();
+    this.phone.clearValue();
+  }
 
   protected handleCountryChange(value: unknown) {
     if (typeof value === 'string') {

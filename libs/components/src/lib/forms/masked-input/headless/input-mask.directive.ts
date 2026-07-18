@@ -9,16 +9,17 @@ import {
   untracked,
 } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
-import { InputDirective } from '../../input/headless';
 import { MASKED_INPUT_ERROR_CODES } from '../masked-input-errors';
+import { INPUT_MASK_HOST } from './input-mask-host';
 import { MASK_VALUE_MODES, MaskSpec, MaskValueMode } from './input-mask.types';
 import { advanceCaretPastLiterals, applyMaskEdit, caretForRawCount, renderMaskDisplay } from './internals/mask-engine';
 import { compilePatternMask } from './internals/pattern-mask';
 
 /**
  * Layers input masking onto an existing input control — place it on the same element
- * as `et-input` / `input[etInput]`. The native element always shows the masked text;
- * the form value stays raw by default (`maskValueMode`).
+ * as `et-input` / `input[etInput]`, or any control providing `INPUT_MASK_HOST`. The
+ * native element always shows the masked text; the form value stays raw by default
+ * (`maskValueMode`).
  */
 @Directive({
   selector: '[etInputMask]',
@@ -30,14 +31,16 @@ import { compilePatternMask } from './internals/pattern-mask';
   },
 })
 export class InputMaskDirective {
-  private inputDirective = inject(InputDirective, { optional: true });
+  private host = inject(INPUT_MASK_HOST, { optional: true });
 
   /**
    * The mask: a pattern string (`0` digit, `9` optional digit, `a` letter, `*`
    * alphanumeric, `\` escapes, anything else literal) or a `MaskSpec` object
-   * (see `createCurrencyMask` / `createIbanMask` / `createCardMask`).
+   * (see `createCurrencyMask` / `createIbanMask` / `createCardMask`). `null`
+   * disables the mask entirely — the host's own value-sync stays (or resumes)
+   * in charge, so a mask can be applied conditionally.
    */
-  public mask = input.required<string | MaskSpec>({ alias: 'etInputMask' });
+  public mask = input.required<string | MaskSpec | null>({ alias: 'etInputMask' });
 
   /** Whether the form value is the raw text (default) or the masked display text. */
   public maskValueMode = input<MaskValueMode>(MASK_VALUE_MODES.RAW);
@@ -58,11 +61,26 @@ export class InputMaskDirective {
   private spec = computed(() => {
     const mask = this.mask();
 
+    if (mask === null) {
+      return null;
+    }
+
     return typeof mask === 'string' ? compilePatternMask(mask, { placeholderChar: this.placeholderChar() }) : mask;
   });
 
-  /** The unmasked value, regardless of `maskValueMode`. */
-  public rawValue = computed(() => this.spec().toRaw(this.inputDirective?.value() ?? ''));
+  /** The unmasked value, regardless of `maskValueMode` (the value as-is while the mask is `null`). */
+  public rawValue = computed(() => {
+    const value = this.host?.value() ?? '';
+
+    return this.spec()?.toRaw(value) ?? value;
+  });
+
+  /**
+   * Whether the raw value fills every required slot — `true`/`false` for pattern masks
+   * (`0`/`a`/`*` required, `9` optional), `null` when the mask does not track completeness
+   * (the shipped factories, custom specs without `isComplete`, a `null` mask).
+   */
+  public complete = computed(() => this.spec()?.isComplete?.(this.rawValue()) ?? null);
 
   /**
    * The raw value as of the last reconciliation — `applyMaskEdit` needs the pre-edit
@@ -76,15 +94,22 @@ export class InputMaskDirective {
 
   constructor() {
     // we own value-sync (raw/display split) in `handleInput` — stop the base input's native
-    // `(input)` handler from also writing the model and clobbering the masked value
-    this.inputDirective?.suppressNativeSync();
+    // `(input)` handler from also writing the model and clobbering the masked value.
+    // Suppression tracks mask presence: a `null` mask leaves (or hands back) native sync
+    effect(() => {
+      if (this.spec()) {
+        this.host?.suppressNativeSync();
+      } else {
+        this.host?.resumeNativeSync?.();
+      }
+    });
 
     if (ngDevMode) {
       afterNextRender(() => {
-        if (!this.inputDirective) {
+        if (!this.host) {
           throw new RuntimeError(
             MASKED_INPUT_ERROR_CODES.MASK_OUTSIDE_INPUT,
-            'An [etInputMask] must be placed on an input control element (et-input or input[etInput]).',
+            'An [etInputMask] must be placed on an input control element (et-input / input[etInput]) or one that provides INPUT_MASK_HOST.',
           );
         }
       });
@@ -93,19 +118,19 @@ export class InputMaskDirective {
     // keep the model in its declared shape — this also normalizes programmatic
     // writes (a form reset with masked text, a consumer setting raw text, …)
     effect(() => {
-      const inputDirective = this.inputDirective;
+      const host = this.host;
+      const spec = this.spec();
 
-      if (!inputDirective) {
+      if (!host || !spec) {
         return;
       }
 
-      const spec = this.spec();
-      const value = inputDirective.value();
+      const value = host.value();
       const raw = spec.toRaw(value);
       const normalized = this.maskValueMode() === MASK_VALUE_MODES.MASKED ? spec.toDisplay(raw) : raw;
 
       if (normalized !== value) {
-        untracked(() => inputDirective.value.set(normalized));
+        untracked(() => host.value.set(normalized));
       }
     });
 
@@ -113,16 +138,16 @@ export class InputMaskDirective {
     // the hosting component's [value] binding writes the model (raw in raw mode)
     // straight into the element — the rewrite happens before paint, so it's invisible.
     afterRenderEffect(() => {
-      const inputDirective = this.inputDirective;
-      const element = inputDirective?.nativeControl();
+      const host = this.host;
+      const element = host?.nativeControl();
+      const spec = this.spec();
 
-      if (!inputDirective || !element) {
+      if (!host || !element || !spec) {
         return;
       }
 
-      const spec = this.spec();
       const raw = this.rawValue();
-      const focused = inputDirective.focused();
+      const focused = host.focused();
       const display = renderMaskDisplay({ spec, raw, guide: focused });
 
       this.committedRaw = raw;
@@ -144,7 +169,7 @@ export class InputMaskDirective {
   }
 
   protected handleInput(event: Event) {
-    if (event.target !== this.inputDirective?.nativeControl()) {
+    if (event.target !== this.host?.nativeControl()) {
       return;
     }
 
@@ -158,7 +183,7 @@ export class InputMaskDirective {
   }
 
   protected handleCompositionEnd(event: CompositionEvent) {
-    if (event.target !== this.inputDirective?.nativeControl()) {
+    if (event.target !== this.host?.nativeControl()) {
       return;
     }
 
@@ -169,14 +194,15 @@ export class InputMaskDirective {
   }
 
   private reconcile(inputType: string | undefined) {
-    const inputDirective = this.inputDirective;
-    const element = inputDirective?.nativeControl();
+    const host = this.host;
+    const element = host?.nativeControl();
+    // a `null` mask never reconciles — the host's own native sync is in charge
+    const spec = this.spec();
 
-    if (!inputDirective || !element) {
+    if (!host || !element || !spec) {
       return;
     }
 
-    const spec = this.spec();
     const result = applyMaskEdit({
       spec,
       previousRaw: this.committedRaw,
@@ -191,8 +217,6 @@ export class InputMaskDirective {
     this.caret = result.caret;
     element.value = result.display;
     element.setSelectionRange(result.caret, result.caret);
-    inputDirective.value.set(
-      this.maskValueMode() === MASK_VALUE_MODES.MASKED ? spec.toDisplay(result.raw) : result.raw,
-    );
+    host.value.set(this.maskValueMode() === MASK_VALUE_MODES.MASKED ? spec.toDisplay(result.raw) : result.raw);
   }
 }

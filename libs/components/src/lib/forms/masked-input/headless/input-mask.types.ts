@@ -16,6 +16,12 @@ export type MaskSpec = {
    * round-trip cleanly: `toRaw(toDisplay(raw)) === raw`.
    */
   toDisplay(raw: string): string;
+  /**
+   * Whether a raw value fills every required slot. Pattern-compiled masks implement it
+   * (`0`/`a`/`*` slots are required, `9` optional); spec objects may leave it out when
+   * completeness is not a meaningful concept (open-ended masks like currency).
+   */
+  isComplete?(raw: string): boolean;
   /** Optional focused-state display that renders unfilled slots (e.g. `12-__`). */
   toGuideDisplay?(raw: string): string;
   /** The character `toGuideDisplay` uses for unfilled slots — caret logic stops at it. */
