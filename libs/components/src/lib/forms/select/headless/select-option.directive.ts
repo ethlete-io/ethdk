@@ -1,6 +1,7 @@
 import { DestroyRef, Directive, ElementRef, afterNextRender, computed, inject, input, signal } from '@angular/core';
 import { RuntimeError, createComponentId } from '@ethlete/core';
 import { SELECT_ERROR_CODES } from '../select-errors';
+import { SelectOptionGroupDirective } from './select-option-group.directive';
 import { SelectDirective } from './select.directive';
 
 /**
@@ -28,6 +29,7 @@ const UNBOUND_VALUE = Symbol('et-select-option-unbound');
 })
 export class SelectOptionDirective {
   private select = inject(SelectDirective, { optional: true });
+  private group = inject(SelectOptionGroupDirective, { optional: true });
   public elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private destroyRef = inject(DestroyRef);
 
@@ -112,6 +114,15 @@ export class SelectOptionDirective {
 
         select.selection.unregisterItem(this.listItem);
       });
+    }
+
+    const group = this.group;
+
+    if (group) {
+      const groupItem = { filteredOut: () => this.filteredOut() };
+
+      group.registerOption(groupItem);
+      this.destroyRef.onDestroy(() => group.unregisterOption(groupItem));
     }
 
     afterNextRender(() => {

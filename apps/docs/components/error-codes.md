@@ -45,6 +45,9 @@ Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU
 | 2800–2899 | Phone input        | [Forms](/components/forms)                       |
 | 2900–2999 | Calendar           | [Calendar](/components/calendar)                 |
 | 3000–3099 | Date & time inputs | [Forms](/components/forms)                       |
+| 3100–3199 | Slider             | [Slider](/components/slider)                     |
+| 3200–3299 | Masked input       | [Forms](/components/forms)                       |
+| 3300–3399 | Cascader           | [Cascader](/components/cascader)                 |
 
 ::: info Codes below 1000
 Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web sockets). `ET1000`/`ET1001` therefore exist in both packages — the bracketed source in the message (`[SelectDirective]` vs. a query feature) tells them apart.
@@ -60,6 +63,7 @@ Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web so
 | `ET1003` | `etSelectSurface` is not inside an `[etSelect]` element.                         | Move the surface template inside the select root.             |
 | `ET1004` | `etSelectListbox` is not rendered inside the surface of an `[etSelect]` element. | Move the listbox inside the surface template.                 |
 | `ET1005` | `etSelectOption` is not inside an `[etSelect]` element.                          | Move the option inside the select root.                       |
+| `ET1009` | `etSelectOptionGroup` is not inside an `[etSelect]` element.                     | Move the option group inside the select root.                 |
 
 ## Tag input (ET27xx)
 
@@ -95,6 +99,34 @@ The date input, date range input, [time picker](/components/time-picker), time i
 | `ET3021` | `etTimePickerOption` is not inside an `[etTimePickerColumn]` element.  | Move the option inside a column.                                                                        |
 | `ET3030` | `etTimeInputField` is not inside an `[etTimeInput]` element.           | Move the field inside the time input root.                                                              |
 | `ET3040` | `etDateTimeInputField` is not inside an `[etDateTimeInput]` element.   | Move the field inside the date-time input root.                                                         |
+| `ET3050` | `etDurationInputField` is not inside an `[etDurationInput]` element.   | Move the field inside the duration input root.                                                          |
+
+## Slider (ET31xx)
+
+| Code     | Cause                                                                                                        | Fix                                                                                |
+| -------- | ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| `ET3100` | `etSliderThumb` is not inside an `[etSlider]` / `[etRangeSlider]` element.                                   | Move the thumb inside the slider root.                                             |
+| `ET3101` | `etSliderTrack` is not inside an `[etSlider]` / `[etRangeSlider]` element.                                   | Move the track inside the slider root.                                             |
+| `ET3102` | `ng-template[etSliderThumbLabel]` is not inside an `[etSlider]` / `[etRangeSlider]` element.                 | Move the label template inside the slider root.                                    |
+| `ET3103` | The slider has the wrong number of thumbs (`[etSlider]` expects exactly one, `[etRangeSlider]` exactly two). | Add/remove `etSliderThumb` elements, or switch between `etSlider`/`etRangeSlider`. |
+
+## Cascader (ET33xx)
+
+| Code     | Cause                                                                | Fix                                                               |
+| -------- | -------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `ET3300` | An `[etCascader]` element has no trigger.                            | Add an element with `etCascaderTrigger` inside the cascader root. |
+| `ET3301` | An `[etCascader]` element has no surface template.                   | Add `<ng-template etCascaderSurface>` inside the cascader root.   |
+| `ET3302` | The cascader was opened without a `[dataSource]`.                    | Bind a `CascaderDataSource` to the cascader.                      |
+| `ET3303` | `etCascaderTrigger` is not inside an `[etCascader]` element.         | Move the trigger inside the cascader root.                        |
+| `ET3304` | `etCascaderSurface` is not inside an `[etCascader]` element.         | Move the surface template inside the cascader root.               |
+| `ET3305` | `etCascaderColumn` is not rendered inside an `[etCascader]` element. | Move the column inside the cascader surface.                      |
+| `ET3306` | `etCascaderNode` is not rendered inside an `[etCascader]` element.   | Move the node inside a cascader column.                           |
+
+## Masked input (ET32xx)
+
+| Code     | Cause                                                    | Fix                                                                   |
+| -------- | -------------------------------------------------------- | --------------------------------------------------------------------- |
+| `ET3200` | `etInputMask` is not placed on an input control element. | Place the directive on the `et-input` (or `input[etInput]`) it masks. |
 
 ## Chip (ET11xx)
 

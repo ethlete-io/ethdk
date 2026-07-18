@@ -103,7 +103,7 @@ Opt into search by projecting an `<input etSelectSearch />` — it renders **inl
 
 ### Async options
 
-<StoryEmbed id="components-forms-select--async-options" height="420px" />
+Try it live in Storybook: `Components/Forms/Select` → `Async options`.
 
 With `filterMode="external"` the select never hides options itself — react to `(queryChange)`, drive your data source and render the options with an `@for`. Bind `loading`, `error` and `hasMoreItems` for the panel's async states. `selectOptionsFromQuery` wires an `@ethlete/query` query up in one call:
 
@@ -152,6 +152,27 @@ With `allowAddNew`, the panel ends in a distinct "Add new" action row (label via
 ```
 
 Unlike `allowCustomValues` (which commits the raw query string directly), the add-new flow leaves creating the value entirely to you — use it when new entries need real backing data. See the `AddNewOption` story for a working example.
+
+## Option groups
+
+Wrap options in `et-select-option-group` to render labelled sections in the listbox — filter bars, categorized lists. Grouping is purely presentational: options still register flat, so keyboard navigation and typeahead run across the whole list regardless of section.
+
+```html
+<et-select [formField]="form.player" filterMode="internal">
+  <input etSelectSearch placeholder="Search players" />
+  <et-select-option-group label="Forwards">
+    <et-select-option value="mbappe">Kylian Mbappé</et-select-option>
+    <et-select-option value="haaland">Erling Haaland</et-select-option>
+  </et-select-option-group>
+  <et-select-option-group label="Midfielders">
+    <et-select-option value="bellingham">Jude Bellingham</et-select-option>
+  </et-select-option-group>
+</et-select>
+```
+
+Each group is a `role="group"` with `aria-labelledby` pointing at its header. With `filterMode="internal"` a group **hides itself once all of its options are filtered out**, so search never leaves an empty section header behind. The design token `--et-select-option-group-label-font-size` (default `12px`) sizes the header. For custom markup, the headless `[etSelectOptionGroup]` directive works the same way — set `label` (used for `aria-label` when no header element registers) around your projected `[etSelectOption]`s.
+
+<StoryEmbed id="components-forms-select-option-group--default" height="360px" />
 
 ## Large option lists
 

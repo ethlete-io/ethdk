@@ -178,8 +178,11 @@ To avoid collisions, each component domain owns a fixed numeric range:
 | 2800 – 2899 | Phone input                     |
 | 2900 – 2999 | Calendar                        |
 | 3000 – 3099 | Date & time inputs              |
+| 3100 – 3199 | Slider                          |
+| 3200 – 3299 | Masked input                    |
+| 3300 – 3399 | Cascader                        |
 
-Add new domains by claiming the next free hundred block (next free: **3100**
+Add new domains by claiming the next free hundred block (next free: **3400**
 onward). The 1100 block was pre-allocated for a standalone combobox that never
 shipped — the unified select covers it and owns 1000 – 1099 — so the chip domain
 reclaimed it.

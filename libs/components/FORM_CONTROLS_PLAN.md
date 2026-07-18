@@ -41,15 +41,15 @@ Decisions baked into this plan (do not re-litigate without a reason):
 | Date range input                | 7     | M    | shipped | 3010–3019 (shared block)     |
 | Time picker + time input        | 7     | M+S  | shipped | 3020–3029 + 3030–3039        |
 | Date-time input                 | 7     | M    | shipped | 3040–3049 (shared block)     |
-| Slider (incl. range)            | 8     | L    | planned | claim at impl. time          |
-| Masked input                    | 8     | L    | planned | claim at impl. time          |
-| Cascader (generic)              | 9     | L    | planned | 3100–3199 (claim at impl.)   |
-| Password input                  | 9     | S    | planned | shares `forms/input` (none)  |
-| Number stepper                  | 9     | S    | planned | shares `forms/input` (none)  |
+| Slider (incl. range)            | 8     | L    | shipped | 3100–3199                    |
+| Masked input                    | 8     | L    | shipped | 3200–3299                    |
+| Cascader (generic)              | 9     | L    | shipped | 3300–3399                    |
+| Password input                  | 9     | S    | shipped | shares `forms/input` (none)  |
+| Number stepper                  | 9     | S    | shipped | shares `forms/input` (none)  |
 | Filter / choice chip group      | 9     | S–M  | planned | shares `chip` 1100 / none    |
 | Autocomplete                    | 9     | M    | planned | claim at impl. (likely none) |
-| Duration input                  | 9     | M    | planned | shares `date-time` block     |
-| Select option grouping          | 9     | S    | backlog | shares `select` 1000–1099    |
+| Duration input                  | 9     | M    | shipped | 3050 (shared date-time)      |
+| Select option grouping          | 9     | S    | shipped | 1009 (select block)          |
 
 Error-code note: the allocation table in `docs/COMPONENT-ARCHITECTURE.md` is in
 sync (2500–2599 rich-text-editor, 2600–2699 multi-language-rich-text-editor). The
@@ -702,55 +702,82 @@ dateInput, close }`), so headless consumers can host anything; the Tier 3
 
 ## Phase 8 — Interaction-heavy independents
 
-### Slider — `forms/slider/` (L)
+### Slider — `forms/slider/` (L) — done
 
-```
-forms/slider/
-  headless/
-    slider.directive.ts          [etSlider]       FormValueControl<number>
-    range-slider.directive.ts    [etRangeSlider]  FormValueControl<[number, number]>
-    slider-thumb.directive.ts    self-registers with whichever parent exists
-    internals/slider-engine.ts   pure math: value↔percent, step snap, clamp, nearest-thumb
-  slider.component.* / range-slider.component.*
-  slider-errors.ts / slider.imports.ts / stories/ / index.ts
-```
+Shipped as planned (error block 3100–3199 claimed — the then-next-free block;
+the cascader claims 3200+ at its impl. time). Structure as sketched, plus an
+`[etSliderTrack]` directive the sketch didn't name (the pointer surface: its
+rect maps clientX → value, pointer capture lives there, thumbs sit inside it so
+their pointerdowns bubble up) and an `ng-template[etSliderThumbLabel]` slot
+directive (rating-icon pattern). Learnings:
 
-- Shared pure engine, two thin directives (two distinct value shapes — same
-  reasoning as number vs text input). Inputs: `min`, `max`, `step`, `disabled`;
-  range adds `minDistance`.
-- Pointer Events + `setPointerCapture` (replaces the cdk mouse/touch RxJS tangle);
-  track click moves the nearest thumb.
-- A11y: each thumb `role="slider"` with `aria-valuemin/max/now/text`; in range mode
-  each thumb's bounds reflect the other; arrows ±step, PageUp/Down ±10×step,
-  Home/End. **RTL in v1** (logical positioning + direction-aware keys). Vertical
-  orientation and tick labels deferred.
-- Tier 3: track/fill/thumb with private `--_et-slider-*` vars set from JS; optional
-  thumb value label via `ng-template` slot (cdk `thumb-content-template`
-  equivalent). Implements `FormFieldControl` (label/error wiring) like
-  switch/checkbox, but has no text-box chrome.
+- **Two parents sharing sub-directives = a `SLIDER_TOKEN` contract**
+  (`SliderHostBase`), provided via `useExisting` by both `[etSlider]` and
+  `[etRangeSlider]` — thumb/track/label inject the token, so keyboard (thumb)
+  and pointer (track) logic is written once. Thumb index = registration order.
+- **The `min`/`max` reservation bit exactly as predicted** (rating note): the
+  single slider keeps `min`/`max` (`number | undefined` — schema `min()`/`max()`
+  validators bind straight in); the range slider's tuple value type forces
+  renames → `minValue`/`maxValue` (`FormValueControl<[number, number]>` types
+  the reserved inputs as the tuple).
+- **RTL centering trap:** `inset-inline-start: P%` + `translateX(-50%)` breaks
+  in RTL (logical inset, physical transform). Position thumbs with
+  `inset-inline-start: calc(P * 1% - size/2)` (no transform) — bound as a
+  unitless `--_et-slider-thumb-position` var. Direction-independent centering
+  (the value bubble above the thumb) can safely use physical `left: 50%` +
+  `translate: -50%`.
+- Keyboard: ArrowLeft/Right follow the _visual_ direction
+  (`getComputedStyle(el).direction` at keydown time); Up/Down/PageUp/PageDown
+  stay direction-agnostic; Home/End commit through the same clamp as everything
+  else, so range constraints apply for free.
+- Track-click transitions: thumb/fill get a 120ms transition that is disabled
+  via host `[data-dragging]` while a live drag runs (drags must track the
+  pointer 1:1). `data-dragging` also z-lifts the active range thumb over its
+  coincident sibling.
+- Range commits go through snap → sibling constraint (`minDistance`) → snap;
+  display normalizes reversed/off-grid consumer tuples without writing back.
+  Each thumb's aria bounds shrink to the sibling ± `minDistance`.
+- jsdom pointer specs: dispatch `MouseEvent`s typed `pointerdown`/`pointermove`
+  (jsdom has no `PointerEvent`); `setPointerCapture` is try/catch-guarded
+  (rating precedent); mock `track.getBoundingClientRect` directly.
 
-### Masked input — `forms/masked-input/` (L)
+### Masked input — `forms/masked-input/` (L) — done
 
-```
-forms/masked-input/
-  headless/
-    input-mask.directive.ts      [etInputMask] — layers onto the existing et-input
-    internals/mask-engine.ts     pure: applyMask(prevMasked, rawInput, caret, spec)
-    internals/masks.ts           grammar: 0=digit, 9=opt digit, a=letter, *=alnum, \ escapes
-  masks/currency-mask.ts / iban-mask.ts / card-mask.ts
-  masked-input-errors.ts / masked-input.imports.ts / stories/ / index.ts
-```
+Shipped as planned (error block 3200–3299; layered on `et-input` via the phase-1
+`nativeControl` signal; API `mask: string | MaskSpec` aliased to `etInputMask`,
+`maskValueMode` default `'raw'`, `placeholderChar` for a focused-state guide).
+**Phase 8 complete.** Learnings:
 
-- **Layered on `et-input`, not a new control:** injects `InputDirective`, attaches
-  via the public `nativeControl` signal (phase 1 prep), intercepts
-  input/paste/keydown, writes through.
-- API: `mask: string | MaskSpec`, `maskValueMode: 'raw' | 'masked'` (default
-  `'raw'` — form value is unmasked), `placeholderChar`.
-- Caret handling: engine computes caret from a diff of (old masked, new raw, caret
-  before input) — the engine is pure functions with exhaustive unit tests (the real
-  cost of this control). Grammar is deliberately small; IMask-level dynamic blocks
-  are out of scope. Currency preset (grouping, decimals, prefix/suffix) covers
-  locale-formatted numbers the native `et-number-input` can't.
+- **`MaskSpec` became functional, not declarative:** `{ toRaw(text), toDisplay(raw),
+toGuideDisplay?, placeholderChar?, caretAnchor? }`. Pattern strings compile to
+  one (`internals/pattern-mask.ts`); the currency preset is just another spec —
+  one engine serves both. All caret math derives generically from `toRaw` on
+  prefixes (count raw chars before the caret in the typed text; find that count
+  in the new display) — no per-mask caret code.
+- **The et-input `[value]` binding fights a raw-mode mask** (it writes the raw
+  model into the element every keystroke, destroying the masked text + caret).
+  Resolution: an `afterRenderEffect` re-asserts `element.value = display` (and the
+  caret) after every render — same frame, before paint, so it's invisible. A
+  separate normalization `effect` keeps the model in its declared shape, which
+  also canonicalizes programmatic/form writes in either direction.
+- **Never read the model for `previousRaw` at event time** — listener ordering
+  (mask directive vs `et-input`'s own `(input)` handler) is not deterministic, so
+  the directive tracks `committedRaw` as a plain field updated by its own handler
+  and the render enforcement.
+- Deletion over a literal is detected as "edit left `toRaw` unchanged"
+  (`InputEvent.inputType` distinguishes backward/forward) and converted into
+  deleting the adjacent content char. Literals render eagerly (`12` → `12-`) and
+  the caret glides past them on insertion only.
+- **`caretAnchor: 'end'` needs no from-end scan:** the start-based
+  smallest-index-with-raw-count scan, capped at `raw.length`, handles grouped
+  numbers correctly _and_ keeps the caret before a suffix; a genuine from-end
+  scan overshoots on mid-string deletions (found by reasoning, then pinned by
+  spec + Playwright).
+- Grammar stays small as planned (0/9/a/\* + escapes; no dynamic blocks). A
+  slot-class-matching literal (digit literal before digit slots) must be skipped
+  positionally in `toRaw`, not greedily consumed.
+- Composition/IME events are untested — revisit if a real app hits Android IME
+  issues.
 
 ---
 
@@ -765,7 +792,101 @@ acknowledged gap. Same global conventions and definition-of-done as every prior
 phase; these are unordered relative to each other — pull whichever a real app need
 prioritizes.
 
-### Cascader — `forms/cascader/` (L) — the generic hierarchy control
+### Cascader — `forms/cascader/` (L) — the generic hierarchy control — done
+
+Shipped. **v1 deviations from the sketch below, and implementation learnings:**
+
+- **Nodes are NOT self-registering.** Unlike the select (consumer-projected
+  options that register via DI), cascader nodes come from the async data source
+  and are rendered by the Tier 3 (or a headless consumer) via `@for`. The root
+  directive owns _all_ state (columns, focus, selection, load orchestration);
+  `[etCascaderNode]` is a thin binding taking a `[node]` input — the calendar-cell
+  pattern, not the select-option pattern. No node registry, no DOM-order sorting.
+- **Column/load model:** `columns()` is an array of `{ parent, status, nodes,
+error }`; `openPath` is the drilled chain (`openPath[i]` = parent of column
+  `i+1`). Drilling truncates deeper columns + their in-flight loads and appends a
+  new loading column. `loadColumn` normalizes array/Promise/Observable via a pure
+  `toChildrenObservable` and handles errors with `tap({error})` + `catchError`
+  (the styleguide bans a subscribe body).
+- **Reopening restores the committed branch:** `resetBrowseState` re-opens the
+  path to the current value so the panel lands where it left off. Seed the roving
+  `focusedNode` to the committed root (or, for an empty value, let the root load
+  seed the first node) **before** loading — an end-of-reset `focusedNode.set` was
+  overwriting the load's seed (caught only by the Playwright keyboard check, since
+  jsdom focus is forgiving).
+- **Focus into the panel:** a tree popup takes focus on open (menu pattern), but
+  the opening pointer click focuses the trigger _one frame after_ the node's focus
+  effect runs and steals it back. Fixed with a `focusPulse` signal bumped in
+  `nextFrame` after mount that the node's focus `effect` depends on, so it
+  re-pulls DOM focus once everything settles. `focusInside` (focusin/focusout on
+  the panel) gates the roving DOM moves so unrelated renders don't yank focus.
+- **Sheet detection** uses `injectObserveBreakpoint({ max: 'sm' })` (the reactive
+  signal — `injectBreakpointIsMatched` returns a plain boolean), matching the
+  overlay's own `md` breakpoint swap; no DOM/pane class probing.
+- **Bottom-sheet polish (post-first-cut):** the sheet reuses the date-picker
+  sheet treatment — the panel becomes the full-width surface (drops its
+  floating-card border/radius/shadow, draws its own drag handle, safe-area
+  padding), and the sheet renders **one full-width column keyed by `sheetDisplayIndex`**.
+  - **Navigation animation is mode-specific:** the sheet slides the visible column
+    in from the travel direction (`navigationDirection` → `data-nav` → the calendar
+    month-nav keyframe pattern; unset on open). Desktop Miller columns do NOT
+    slide (the fixed side-by-side layout has no such motion, and back would
+    re-animate a column that didn't move) — a newly _drilled_ column just fades in
+    (`data-nav='forward'` only, on the freshly created deepest element); back
+    animates nothing. Scoped via `.et-cascader-columns[data-sheet]` vs `:not([data-sheet])`.
+  - The `translateX` slide needs `overflow-x: clip` on the scroll containers
+    (computes to `hidden` alongside `overflow-y: auto`) — otherwise the transient
+    transform spawns a horizontal scrollbar.
+  - **Sheet is a FIXED-height box, not content-driven.** Content-driven animated
+    height in the sheet was a mess: the loader collapsed it, then each level
+    (different item counts) resized it — height ping-pong. The fix is the standard
+    mobile drill pattern: a fixed-height flex `.et-cascader-sheet-body`
+    (`min(60vh, 480px)`) holds the header + the column area; the header is
+    `flex: none` and the columns `flex: 1` scroll internally — the panel height is
+    **completely constant** (never changes on drill, back, level size, or loading).
+  - **Persistent nav-bar header, animated with transforms only (never layout).**
+    Two earlier attempts failed: (1) animating the whole header's height in/out
+    (`animate.enter/leave` collapsing `block-size`) reflowed the column list every
+    frame — janky; (2) keeping Back in flex flow and collapsing its `max-inline-size`
+    — that property **doesn't transition reliably** (measured: it jumped `0→63px` in
+    one frame, so the title jumped then crossfaded). Final design — header always
+    present (fixed height; matches the option rows: same height + shared 20px inset):
+    - **Back is an absolute overlay** at the leading edge (never in flow, never
+      affects the title's layout); it fades + slides in via opacity/transform. The
+      title slot is `pointer-events: none` (display-only, full width) so clicks reach
+      the Back button underneath.
+    - **Title indent** (clearing the Back space) is a **`transform: translateX`** on a
+      shift wrapper (`data-back` on the header → `translateX(var(--et-cascader-back-slot,
+4em))`, `em` not `rem` since the app root font can be 10px). Transforms
+      transition smoothly, so the title glides between flush (root) and indented
+      (drilled) instead of jumping.
+    - **Title text change** cross-slides, keyed by depth (`animate.enter` /
+      `animate.leave`; direction from `data-nav` on the persistent slot so the leaving
+      title, kept mounted by `animate.leave`, reads it too). **Two modes** via
+      `titleAnimation` / `data-anim`: a directional slide for deeper level changes
+      (Back stable), but a **crossfade** when crossing the root boundary (Back
+      appears/disappears) — there the shift-wrapper transform already moves the title,
+      so a second competing transform would look jumpy. At the root the title shows
+      the `placeholder`.
+  - Bottom-sheet rows are enlarged for touch (`--et-cascader-node-height: 52px`,
+    16px label) — the token is `inherits: true` so the sheet scope can override it.
+    A column showing
+    only a loading / empty / error state centers it in the tall fixed area
+    (`:has(.et-cascader-state)`). Desktop keeps the content-driven
+    `injectAnimatedBlockSize` (height = max of visible columns; grows smoothly,
+    never collapses).
+  - Chevrons: base icon points up, so trigger arrow `rotate 180` (down),
+    node/branch `rotate 90` (right, "drill in"), back `rotate -90` (left).
+  - Sheet Back and per-column Retry use the library `[et-text-button]`, not
+    bespoke buttons.
+- **Deferred to follow-ups (documented):** the **search augment**
+  (`etCascaderSearch`) and the **`cascaderFromQuery`** convenience. The data-source
+  contract already accepts an `Observable`, so query-backed levels work today by
+  wiring one manually. Per-column state uses default inline rows (loading / empty /
+  error+retry) rather than projectable state-template directives — a cheap future
+  addition if overrides are wanted. Multi-select stays a separate slice as planned.
+
+Original design sketch (kept as the spec of record):
 
 **Deliberately generic — not a competitions widget.** Driven by an abstract
 hierarchical data source, it serves any nested taxonomy (competition → stage →
@@ -804,35 +925,40 @@ select's sibling (a value control with an anchored overlay), so it lives in
   - column/node/trigger/surface sub-directives + `et-cascader` Tier 3 (columns,
     breadcrumb trigger, clear). Pure tree/data-source engine in `internals/`
     (unit-tested, framework-of-forms-agnostic — liftable if a non-form navigation use
-    ever appears). Error block **3100–3199** (claim in the arch table at impl. time;
-    it is the current next-free block).
+    ever appears). Error block: claim the next free hundred block in the arch table
+    at impl. time (3100 went to the slider, 3200 to the masked input; 3300 is next).
 
-### Password input — `forms/input/` sibling (S)
+### Password input — `forms/input/` sibling (S) — done
 
-`type="password"` is already a valid `InputDirective` type, but there is no control
-with the affordances people expect. Own directive pair in the existing input domain
-(shares 100% of the visual layer, like number input).
+Shipped as planned (own directive pair in the input domain, control type
+`password-input` added to `usesTextFieldShell`, reveal toggle with `aria-pressed`
+and a stable label, opt-in caps-lock warning via `getModifierState('CapsLock')`
+on keydown/keyup, 0–4 strength score from the pure length + character-class
+heuristic in `headless/internals/password-strength.ts`). Deviations:
 
-- `PasswordInputDirective [etPasswordInput]` — `FormValueControl<string>`, standard
-  input set; toggles the native `type` between `password`/`text` via a reveal
-  control.
-- Tier 3 `et-password-input`: reuses `input.component.css`; suffix reveal button
-  (eye icon, `aria-pressed`, `aria-label`), opt-in caps-lock warning (keydown
-  `getModifierState('CapsLock')`), opt-in strength meter as a projected slot
-  (`ng-template[etPasswordStrength]`) fed a 0–4 score from a **pure zero-dep
-  heuristic** (length + character-class diversity — explicitly **not** zxcvbn, which
-  is a dependency). New `FORM_FIELD_CONTROL_TYPES` entry; no new error block.
+- **No `ng-template[etPasswordStrength]` slot.** The control lives inside the
+  form-field text shell — a meter rendered inside the control frame would sit in
+  the field box. Instead the directive exposes `strength` as a computed
+  (`exportAs: 'etPasswordInput'`), and consumers render their own meter wherever
+  it belongs (`#pw="etPasswordInput"` … `pw.strength()` — the story demonstrates
+  it). Simpler and strictly more flexible.
+- `EYE_ICON` / `EYE_SLASH_ICON` added to the built-in icon registry.
+- `autocomplete` defaults to `'current-password'` (docs point registration forms
+  at `'new-password'`).
 
-### Number stepper — `forms/input/` (S)
+### Number stepper — `forms/input/` (S) — done
 
-The phase-1 deferral ("custom steppers can become a form-field suffix partial
-later") comes due. Either a `stepper` flag on `et-number-input` that renders +/−
-affordances in the form-field suffix, or a thin `NumberStepperDirective` decorating
-the number input.
-
-- Increment/decrement by `step`, clamp to `min`/`max`, press-and-hold auto-repeat,
-  ARIA `spinbutton` semantics on the field. Reuses the number input's value
-  contract (`number | null`) verbatim; no new error block.
+Shipped as a **`stepper` flag on `et-number-input`** (the plan's first option) —
+the buttons must render inside the control component anyway, because a control
+cannot project into `et-form-field`'s suffix slot from within the field. Headless
+gains `NumberInputDirective.stepBy(direction)` + `canStepUp`/`canStepDown`;
+stepping is **manual math, not native `stepUp()`** (deterministic in jsdom, no
+step-mismatch exceptions; float noise stripped via decimal-precision rounding,
+an empty value steps from 0, clamped to `min`/`max` — no step-grid snapping).
+Buttons are out of the tab order (native arrow keys already step), labels via
+`incrementLabel`/`decrementLabel` inputs, press-and-hold auto-repeat
+(400ms delay / 75ms interval, pointer capture, cleanup on destroy), and
+`MINUS_ICON` joined the registry.
 
 ### Filter / choice chip group — `lib/chip/` composition, maybe `et-chip-group` (S–M)
 
@@ -861,27 +987,50 @@ tag hints.
   panel (menu/select overlay reuse). Default assumption: composition-doc unless
   proven necessary.
 
-### Duration input — `forms/date-time/duration-input/` (M)
+### Duration input — `forms/date-time/duration-input/` (M) — done
 
-On-brand for a sports SDK (split times, race durations, effort windows).
+Shipped as planned: `FormValueControl<number | null>` = total elapsed **milliseconds**
+(not a `Date` — stays out of `parseDateValue`), configurable `durationFormat`
+segment layout, lenient parse (`130` → `1:30`). Error code 3050 in the shared
+date-time block. Deviations / learnings:
 
-- `FormValueControl<number | null>` = **total elapsed time in a base unit**
-  (milliseconds — sub-second sports timing), **not** a `Date`. This respects the
-  phase-6 boundary rule (the calendar/time system is `Date`-only for clock times; a
-  duration is a distinct scalar quantity, so it does not go through
-  `parseDateValue`). Lives in the `date-time` folder for locality but owns its value
-  contract.
-- Configurable segment layout via a duration format (`hh:mm:ss.SSS`, `mm:ss`,
-  `h m`); lenient typed parse per layout (`130` → `1:30` under `mm:ss`); OTP-style
-  segment auto-advance. Shares the `date-time` block or needs none.
+- **No OTP-style live segment auto-advance.** It conflicts with the lenient
+  right-consume rule (`130` → `1:30` needs right-alignment; live left-to-right
+  auto-advance would read `13` as minutes). Resolved the same way the time input
+  does: free text entry, strict-then-lenient parse + reformat on blur/Enter. One
+  proven pattern, no caret-management complexity.
+- **Pure engine** (`internals/duration-format.ts`): `deriveDurationFormatSpec`
+  tokenizes the format into `{ unit, width }[]` + separators; `formatDuration`
+  splits ms largest→smallest (first unit unbounded, rest wrap naturally);
+  `parseDuration` handles both separator entry (groups map left-to-right onto the
+  **trailing** segments, so `2:03` under `hh:mm:ss` = 2m3s) and a single digit run
+  (consumed from the right, smallest unit first, leftovers piled on the largest).
+- **Milliseconds are literal and need the decimal separator** (`1:30.500`). A
+  compact run like `130` under `mm:ss.SSS` is dominated by the wide trailing `SSS`
+  segment (right-consume) — a known quirk; millis layouts want explicit separators,
+  documented as such. `S`-segment values are plain integers (date-fns `SSS`
+  semantics: `.5` = 5ms), not fractional seconds.
 
-### Select option grouping — additive to `select` (S, backlog)
+### Select option grouping — additive to `select` (S) — done
 
-Independently useful even now that the cascader owns hierarchy **navigation**:
-grouped listbox section headers for flat selects (`[etSelectOptionGroup]` with a
-label, `role="group"` + `aria-labelledby`). No longer tied to the match-finding
-problem (the cascader solves that) — kept on the backlog as a cheap, broadly useful
-nicety, not blocking anything.
+Shipped as planned: `et-select-option-group` / `[etSelectOptionGroup]` with a
+`label`, `role="group"` + `aria-labelledby` to a rendered header. Error code 1009
+in the select block. Learnings:
+
+- **Grouping is purely presentational** — options still register flat with the
+  select (`createSelectionState`), so keyboard nav, typeahead, and the
+  active-descendant/DOM-order machinery are untouched. Confirmed by a spec
+  asserting `visibleItems` stays flat across groups.
+- **`contentChildren` does not cross the host-directive boundary.** The first cut
+  had the group query its options via `contentChildren(SelectOptionDirective)`,
+  but as a `hostDirective` of `et-select-option-group` it saw zero projected
+  options, so "hide when all filtered" never fired. Switched to option→group
+  **self-registration** (the option injects the optional group and registers a
+  `{ filteredOut }` view) — works for both the Tier 3 and the headless directive,
+  and keeps the group reactive to each option's `filteredOut` computed.
+- The group's `hidden` binding drives off `hasVisibleOptions` (true when empty or
+  any option is unfiltered), so under `filterMode="internal"` a section header
+  never lingers over an empty group.
 
 ---
 

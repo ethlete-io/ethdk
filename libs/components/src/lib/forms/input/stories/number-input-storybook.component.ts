@@ -29,6 +29,7 @@ import { NUMBER_INPUT_IMPORTS } from '../input.imports';
           [min]="min()"
           [max]="max()"
           [step]="step()"
+          [stepper]="stepper()"
           [placeholder]="placeholder()"
         />
         @if (showSuffix()) {
@@ -62,6 +63,7 @@ export class FormFieldNumberInputStorybookComponent {
   public min = input<number | null>(null);
   public max = input<number | null>(null);
   public step = input<number | null>(null);
+  public stepper = input(false);
   public disabled = input(false);
   public readonly = input(false);
   public required = input(false);

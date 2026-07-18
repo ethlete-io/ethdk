@@ -3,7 +3,7 @@
 Signal-forms-native form controls: text, number, textarea and color inputs, checkbox, switch and selection lists, plus the shared field chrome (labels, hints, errors, affixes) that wires accessibility for you. For formatted content see the [rich text editor](/components/rich-text-editor) guide, and for file uploads the [dropzone](/components/dropzone) guide.
 
 ::: info Signal forms only
-These controls implement Angular's [signal forms](https://angular.dev/guide/forms) contracts (`FormValueControl` / `FormCheckboxControl`) and bind via `[formField]` from `@angular/forms/signals`. There is no `ngModel`/`ControlValueAccessor` layer — the classic stack (and specialized date/number/masked inputs) lives only in the legacy `@ethlete/cdk`. Two-way `[(value)]` / `[(checked)]` also works for simple cases.
+These controls implement Angular's [signal forms](https://angular.dev/guide/forms) contracts (`FormValueControl` / `FormCheckboxControl`) and bind via `[formField]` from `@angular/forms/signals`. There is no `ngModel`/`ControlValueAccessor` layer — the classic stack lives only in the legacy `@ethlete/cdk`. Two-way `[(value)]` / `[(checked)]` also works for simple cases.
 :::
 
 ```ts
@@ -23,8 +23,10 @@ Each control family ships its own imports array — combine the field shell with
 | `FORM_FIELD_IMPORTS`       | `et-form-field`, `et-label`, `et-hint`, `etInputPrefix` / `etInputSuffix` |
 | `INPUT_IMPORTS`            | `et-input`                                                                |
 | `NUMBER_INPUT_IMPORTS`     | `et-number-input`                                                         |
+| `PASSWORD_INPUT_IMPORTS`   | `et-password-input`                                                       |
 | `TEXTAREA_IMPORTS`         | `et-textarea`                                                             |
 | `COLOR_INPUT_IMPORTS`      | `et-color-input`                                                          |
+| `MASKED_INPUT_IMPORTS`     | `etInputMask` (layers onto `et-input`)                                    |
 | `CHECKBOX_IMPORTS`         | `et-checkbox`                                                             |
 | `SWITCH_IMPORTS`           | `et-switch`                                                               |
 | `CHOICE_FIELD_IMPORTS`     | `et-choice-field` + label/hint chrome                                     |
@@ -36,6 +38,7 @@ Each control family ships its own imports array — combine the field shell with
 | `DATE_RANGE_INPUT_IMPORTS` | `et-date-range-input`                                                     |
 | `TIME_INPUT_IMPORTS`       | `et-time-input`                                                           |
 | `DATE_TIME_INPUT_IMPORTS`  | `et-date-time-input`                                                      |
+| `DURATION_INPUT_IMPORTS`   | `et-duration-input`                                                       |
 
 ```ts
 import { FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
@@ -85,6 +88,27 @@ A **read-only** text field (set `readonly` in the field schema) keeps its normal
 </et-form-field>
 ```
 
+Set `stepper` to render −/+ buttons with press-and-hold auto-repeat: each press changes the value by `step` (an empty value starts from `0`), clamped to `min`/`max`, and the exhausted button disables at a bound. The buttons stay out of the tab order (the native input already steps with the arrow keys) and take `incrementLabel` / `decrementLabel` for their accessible names (defaults `'Increment'` / `'Decrement'`). Design token: `--et-number-input-stepper-size` (default `16px`).
+
+## Password input — `et-password-input`
+
+The password sibling of `et-input` with the affordances people expect. The form value is a plain `string`; `autocomplete` defaults to `'current-password'` (set `'new-password'` on registration forms).
+
+```html
+<et-form-field>
+  <et-label>Password</et-label>
+  <et-password-input #pw="etPasswordInput" [formField]="demoForm.password" [capsLockWarning]="true" />
+</et-form-field>
+```
+
+- **Reveal toggle** (on by default, `revealable`): an eye button switching the native `type` between `password`/`text`, exposed as `aria-pressed` with a stable accessible name (`revealLabel`, default `'Show password'`). The revealed state is also a two-way `revealed` model.
+- **Caps Lock warning** (opt-in, `capsLockWarning`): a `role="status"` warning icon while the field is focused and Caps Lock is on, with `capsLockLabel` (default `'Caps Lock is on'`) as screen-reader text.
+- **Strength score**: the directive exposes `strength` — a 0–4 typing-feedback score from a pure length + character-class heuristic (deliberately not a zxcvbn-style security estimate). Grab it via the `etPasswordInput` export and render any meter you like next to the field (see the `Strength Meter` story).
+
+Design token: `--et-password-input-reveal-size` (default `16px`).
+
+Try it live in Storybook: `Components/Forms/Password Input`.
+
 ## Textarea — `et-textarea`
 
 Multi-line plain text with **autosize on by default**: the field grows with its content and shrinks back, clamped by `minRows` (defaults to `rows`, default 3) and `maxRows` (unbounded when unset). Beyond `maxRows` the content scrolls. With `autosize` off the native resize handle takes over, controlled by `resize: 'none' | 'vertical'` (an autosizing textarea is never manually resizable).
@@ -112,6 +136,29 @@ Try it live in Storybook: `Components/Forms/Textarea`.
 Design tokens: `--et-color-input-swatch-size` (default `20px`), `--et-color-input-swatch-radius` (default `4px`).
 
 Try it live in Storybook: `Components/Forms/Color Input`.
+
+## Masked input — `[etInputMask]`
+
+Masking is a directive layered onto the existing text input, not a separate control — place `etInputMask` on the `et-input` (or a headless `input[etInput]`). The native element always shows the masked text; the **form value stays raw by default** (`maskValueMode: 'raw' | 'masked'`).
+
+```html
+<et-form-field>
+  <et-label>Date of birth</et-label>
+  <et-input [formField]="demoForm.birthday" etInputMask="00-00-0000" />
+</et-form-field>
+```
+
+The mask is either a **pattern string** — `0` digit, `9` optional digit, `a` letter, `*` alphanumeric, `\` escapes the next character, everything else is a literal — or a `MaskSpec` object. Three factories ship:
+
+| Factory                       | Behavior                                                                                                                                                                                                                                                    |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createCurrencyMask(options)` | Right-growing grouped number (`1.234.567,89`), configurable `decimalSeparator` (`','`), `groupSeparator` (`'.'`), `decimals` (`2`), `prefix`/`suffix`, `allowNegative` (`false`). Raw value is the ungrouped amount using the configured decimal separator. |
+| `createIbanMask()`            | Uppercases and groups by four; charset/length only — structural validation belongs to the schema/backend.                                                                                                                                                   |
+| `createCardMask()`            | Digit-only, grouped by four, capped at 19 digits.                                                                                                                                                                                                           |
+
+Typing behavior: literals render eagerly and the caret glides past them onto the next slot; backspacing over a literal deletes the content character before it; pastes are filtered through the mask (`31.12.2024` fills `00-00-0000`). With `placeholderChar` set (pattern masks only), unfilled slots render as a guide (`31-1_-____`) while the field is focused. Custom masks implement `MaskSpec` (`toRaw`/`toDisplay` plus optional caret metadata) — see the type's docs.
+
+Try it live in Storybook: `Components/Forms/Masked input`.
 
 ## Checkbox & switch — `et-choice-field`
 
@@ -353,6 +400,26 @@ In the picker, selections **merge**: picking a day keeps the committed time of d
 
 Try it live in Storybook: `Components/Forms/Date Time Input`.
 
+## Duration input — `et-duration-input`
+
+A duration form control whose value is a **total elapsed time in milliseconds** (`number | null`) — not a `Date`. A duration is a distinct scalar quantity (split times, race durations, effort windows), so it stays out of the calendar/time `Date` system and owns its own value contract.
+
+```html
+<et-form-field>
+  <et-label>Lap time</et-label>
+  <et-duration-input [formField]="demoForm.lap" durationFormat="mm:ss" />
+</et-form-field>
+```
+
+| Input            | Type     | Default   | Description                                                        |
+| ---------------- | -------- | --------- | ------------------------------------------------------------------ |
+| `durationFormat` | `string` | `'mm:ss'` | Segment layout — runs of `h`/`m`/`s`/`S` (millis) plus separators. |
+| `placeholder`    | `string` | `''`      | Shown on the empty field.                                          |
+
+The format is any arrangement of unit-token runs and separators: `mm:ss`, `hh:mm:ss`, `hh:mm:ss.SSS`, `h m`. Typed text commits on blur/Enter with a **lenient parse**: a bare digit run fills from the smallest unit up (`130` → `01:30`, `90` → `01:30` under `mm:ss`), and separator entry maps left-to-right (`1:30`, `1:02:03`). Milliseconds are literal and need the decimal separator (`1:30.500`). Unparseable text is kept visible with a `parseError` (value stays `null`), exactly like the date/time inputs. The largest unit is unbounded (`100:00` is a valid `mm:ss` value); validation of any upper bound belongs to the schema.
+
+Try it live in Storybook: `Components/Forms/Duration Input`.
+
 ## Selection lists
 
 Three group flavors over one selection engine — options are projected children, keyboard navigation is roving-tabindex with wrapping arrows:
@@ -407,4 +474,4 @@ All colors resolve through the [surface/color theme systems](/core/theming) (the
 
 ## Error codes
 
-An `et-form-field` without a control throws [`ET2200`](/components/error-codes#form-field-et22xx) in dev mode.
+An `et-form-field` without a control throws [`ET2200`](/components/error-codes#form-field-et22xx) in dev mode, and an `[etInputMask]` placed outside an input control throws [`ET3200`](/components/error-codes#masked-input-et32xx).

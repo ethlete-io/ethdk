@@ -191,7 +191,9 @@ export default defineConfig({
           text: 'Forms',
           items: [
             { text: 'Forms', link: '/components/forms' },
+            { text: 'Cascader', link: '/components/cascader' },
             { text: 'Select', link: '/components/select' },
+            { text: 'Slider', link: '/components/slider' },
             { text: 'Rich text editor', link: '/components/rich-text-editor' },
             { text: 'Dropzone', link: '/components/dropzone' },
           ],

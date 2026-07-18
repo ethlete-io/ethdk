@@ -1,0 +1,28 @@
+@layer components {
+  @property --et-select-option-group-label-font-size {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 12px;
+  }
+
+  et-select-option-group {
+    display: block;
+
+    /* separate adjacent groups with a hairline above all but the first */
+    & + et-select-option-group .et-select-option-group-label {
+      margin-block-start: 4px;
+      padding-block-start: 8px;
+      border-block-start: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    }
+
+    .et-select-option-group-label {
+      padding: 6px 10px 2px;
+      font-size: var(--et-select-option-group-label-font-size);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--et-surface-color-muted-solid, currentColor);
+      user-select: none;
+    }
+  }
+}

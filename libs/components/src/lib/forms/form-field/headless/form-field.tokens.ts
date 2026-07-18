@@ -4,16 +4,20 @@ import { ValidationError } from '@angular/forms/signals';
 export const FORM_FIELD_CONTROL_TYPES = {
   TEXT_INPUT: 'text-input',
   NUMBER_INPUT: 'number-input',
+  PASSWORD_INPUT: 'password-input',
   COLOR_INPUT: 'color-input',
   TEXTAREA: 'textarea',
   RICH_TEXT: 'rich-text',
   SELECT: 'select',
+  CASCADER: 'cascader',
   CHECKBOX: 'checkbox',
   RADIO: 'radio',
   SWITCH: 'switch',
   SEGMENTED_BUTTON: 'segmented-button',
   SELECTION_LIST: 'selection-list',
   RATING: 'rating',
+  SLIDER: 'slider',
+  RANGE_SLIDER: 'range-slider',
   OTP_INPUT: 'otp-input',
   TAG_INPUT: 'tag-input',
   PHONE_INPUT: 'phone-input',
@@ -21,6 +25,7 @@ export const FORM_FIELD_CONTROL_TYPES = {
   DATE_RANGE_INPUT: 'date-range-input',
   TIME_INPUT: 'time-input',
   DATE_TIME_INPUT: 'date-time-input',
+  DURATION_INPUT: 'duration-input',
   DROPZONE: 'dropzone',
 } as const;
 

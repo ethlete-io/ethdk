@@ -1,0 +1,231 @@
+@layer components {
+  /* shares the --et-slider-* token set with et-slider — identical @property redeclarations are legal */
+  @property --et-slider-track-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
+  @property --et-slider-thumb-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 18px;
+  }
+
+  @property --et-slider-label-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 13px;
+  }
+
+  @property --et-slider-thumb-value-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-slider-support-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 180ms;
+  }
+
+  @property --et-slider-support-offset {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
+  @property --et-slider-error-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-slider-hint-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  et-range-slider {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: var(--et-surface-color-solid, currentColor);
+
+    > et-label {
+      font-size: var(--et-slider-label-font-size);
+      font-weight: 500;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      color: var(--et-surface-color-muted-solid, currentColor);
+      user-select: none;
+    }
+
+    .et-range-slider-interaction {
+      position: relative;
+      display: flex;
+      align-items: center;
+      block-size: max(28px, var(--et-slider-thumb-size));
+      /* thumbs overhang the rail by half their size at the extremes — keep them inside the box */
+      margin-inline: calc(var(--et-slider-thumb-size) / 2);
+      cursor: pointer;
+    }
+
+    .et-range-slider-rail {
+      inline-size: 100%;
+      block-size: var(--et-slider-track-size);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 32%, transparent);
+    }
+
+    .et-range-slider-fill {
+      position: absolute;
+      inset-block-start: 50%;
+      translate: 0 -50%;
+      inset-inline-start: calc(var(--_et-slider-fill-start, 0) * 1%);
+      inline-size: calc((var(--_et-slider-fill-end, 0) - var(--_et-slider-fill-start, 0)) * 1%);
+      block-size: var(--et-slider-track-size);
+      border-radius: 999px;
+      background: var(--et-theme-color-primary-solid, currentColor);
+      pointer-events: none;
+    }
+
+    .et-range-slider-thumb {
+      position: absolute;
+      inset-block-start: 50%;
+      translate: 0 -50%;
+      inset-inline-start: calc(var(--_et-slider-thumb-position, 0) * 1% - var(--et-slider-thumb-size) / 2);
+      inline-size: var(--et-slider-thumb-size);
+      block-size: var(--et-slider-thumb-size);
+      border-radius: 50%;
+      background: var(--et-theme-color-primary-solid, currentColor);
+      box-shadow: 0 1px 4px rgb(0 0 0 / 0.25);
+      outline: none;
+      touch-action: pan-y;
+
+      &:focus-visible {
+        outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+        outline-offset: 2px;
+      }
+
+      /* the actively dragged thumb paints over its sibling when they meet */
+      &[data-dragging] {
+        z-index: 1;
+      }
+    }
+
+    .et-range-slider-thumb-value {
+      position: absolute;
+      /* physical centering is direction-safe — 50% of the thumb is 50% in both directions */
+      left: 50%;
+      bottom: calc(100% + 8px);
+      translate: -50% 0;
+      inline-size: max-content;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--et-surface-background-solid, currentColor);
+      border: 1px solid var(--et-surface-border-solid, transparent);
+      font-size: var(--et-slider-thumb-value-font-size);
+      line-height: 1.4;
+      color: var(--et-surface-color-solid, currentColor);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    &[data-disabled],
+    &[data-readonly] {
+      .et-range-slider-interaction {
+        cursor: default;
+      }
+    }
+
+    &[data-disabled] {
+      opacity: 0.4;
+    }
+
+    .et-range-slider-support {
+      overflow: clip;
+      block-size: 0;
+    }
+
+    .et-range-slider-support-stack {
+      position: relative;
+      display: grid;
+    }
+
+    .et-range-slider-support-content {
+      grid-area: 1 / 1;
+      min-inline-size: 0;
+      opacity: 0;
+      transform: translateY(0);
+
+      &[data-active] {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .et-range-slider-errors {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding-block-start: 4px;
+      font-size: var(--et-slider-error-font-size);
+      color: var(--et-theme-color-primary-solid, currentColor);
+    }
+
+    .et-range-slider-hint {
+      padding-block-start: 4px;
+      font-size: var(--et-slider-hint-font-size);
+      color: var(--et-surface-color-muted-solid, currentColor);
+
+      &:empty {
+        display: none;
+      }
+    }
+
+    &[data-can-animate] {
+      .et-range-slider-support {
+        transition: block-size var(--et-slider-support-duration) ease;
+      }
+
+      .et-range-slider-support-content {
+        transition:
+          opacity var(--et-slider-support-duration) ease,
+          transform var(--et-slider-support-duration) ease;
+
+        @starting-style {
+          &[data-active] {
+            opacity: 0;
+            transform: translateY(calc(var(--et-slider-support-offset) * -1));
+          }
+        }
+      }
+
+      /* track clicks glide the thumb; live drags follow the pointer directly */
+      &:not([data-dragging]) {
+        .et-range-slider-thumb {
+          transition: inset-inline-start 120ms ease;
+        }
+
+        .et-range-slider-fill {
+          transition:
+            inset-inline-start 120ms ease,
+            inline-size 120ms ease;
+        }
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      --et-slider-support-duration: 1ms;
+      --et-slider-support-offset: 0px;
+
+      .et-range-slider-thumb,
+      .et-range-slider-fill {
+        transition: none;
+      }
+    }
+  }
+}

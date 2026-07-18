@@ -20,3 +20,32 @@
   class="et-number-input-native"
   type="number"
 />
+
+@if (stepper()) {
+  <div class="et-number-input-stepper">
+    <button
+      [attr.aria-label]="decrementLabel()"
+      [disabled]="!numberInputDir.canStepDown()"
+      (pointerdown)="startStepRepeat($event, -1)"
+      (pointerup)="stopStepRepeat()"
+      (pointercancel)="stopStepRepeat()"
+      class="et-number-input-stepper-button"
+      type="button"
+      tabindex="-1"
+    >
+      <i aria-hidden="true" etIcon="et-minus"></i>
+    </button>
+    <button
+      [attr.aria-label]="incrementLabel()"
+      [disabled]="!numberInputDir.canStepUp()"
+      (pointerdown)="startStepRepeat($event, 1)"
+      (pointerup)="stopStepRepeat()"
+      (pointercancel)="stopStepRepeat()"
+      class="et-number-input-stepper-button"
+      type="button"
+      tabindex="-1"
+    >
+      <i aria-hidden="true" etIcon="et-plus"></i>
+    </button>
+  </div>
+}

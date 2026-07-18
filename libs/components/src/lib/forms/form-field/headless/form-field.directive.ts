@@ -71,16 +71,19 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
     () =>
       this.controlType() === FORM_FIELD_CONTROL_TYPES.TEXT_INPUT ||
       this.controlType() === FORM_FIELD_CONTROL_TYPES.NUMBER_INPUT ||
+      this.controlType() === FORM_FIELD_CONTROL_TYPES.PASSWORD_INPUT ||
       this.controlType() === FORM_FIELD_CONTROL_TYPES.COLOR_INPUT ||
       this.controlType() === FORM_FIELD_CONTROL_TYPES.TEXTAREA ||
       this.controlType() === FORM_FIELD_CONTROL_TYPES.RICH_TEXT ||
       this.controlType() === FORM_FIELD_CONTROL_TYPES.SELECT ||
+      this.controlType() === FORM_FIELD_CONTROL_TYPES.CASCADER ||
       this.controlType() === FORM_FIELD_CONTROL_TYPES.TAG_INPUT ||
       this.controlType() === FORM_FIELD_CONTROL_TYPES.PHONE_INPUT ||
       this.controlType() === FORM_FIELD_CONTROL_TYPES.DATE_INPUT ||
       this.controlType() === FORM_FIELD_CONTROL_TYPES.DATE_RANGE_INPUT ||
       this.controlType() === FORM_FIELD_CONTROL_TYPES.TIME_INPUT ||
-      this.controlType() === FORM_FIELD_CONTROL_TYPES.DATE_TIME_INPUT,
+      this.controlType() === FORM_FIELD_CONTROL_TYPES.DATE_TIME_INPUT ||
+      this.controlType() === FORM_FIELD_CONTROL_TYPES.DURATION_INPUT,
   );
 
   public shouldFloatLabel = computed(() => this.focused() || this.hasValue());

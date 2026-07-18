@@ -1,0 +1,462 @@
+@layer components {
+  @property --et-cascader-column-inline-size {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 220px;
+  }
+
+  @property --et-cascader-panel-max-block-size {
+    syntax: '<length-percentage>';
+    inherits: false;
+    initial-value: 320px;
+  }
+
+  @property --et-cascader-node-height {
+    syntax: '<length>';
+    /* inherits so an ancestor scope (e.g. the bottom sheet) can enlarge the rows */
+    inherits: true;
+    initial-value: 36px;
+  }
+
+  .et-overlay.et-with-default-animation.et-overlay--cascader {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      opacity: 0;
+    }
+
+    &.et-animation-enter-active {
+      transition:
+        transform 140ms ease,
+        opacity 140ms ease;
+    }
+
+    &.et-animation-leave-active {
+      transition:
+        transform 100ms ease,
+        opacity 100ms ease;
+    }
+  }
+
+  .et-overlay--cascader[data-overlay-placement^='top'] {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) translateY(0.3rem) !important;
+    }
+  }
+
+  .et-overlay--cascader[data-overlay-placement^='bottom'] {
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
+        translateY(-0.3rem) !important;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-overlay.et-with-default-animation.et-overlay--cascader {
+      &.et-animation-enter-active,
+      &.et-animation-leave-active {
+        transition-duration: 0ms;
+      }
+    }
+  }
+
+  .et-cascader-panel {
+    display: block;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    background: var(--et-surface-background-solid, rgb(32 32 32));
+    color: var(--et-surface-color-solid, rgb(244 244 245));
+    font-size: 14px;
+    box-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
+    overflow: hidden;
+
+    &.et-cascader-panel--resizing {
+      overflow: clip;
+    }
+
+    /* persistent nav bar: fixed height, always present — nothing here animates its layout, so
+       the column list never reflows. Matches the option rows (same height; the Back chevron —
+       text button has no padding — lines up with the option label inset). */
+    .et-cascader-sheet-header {
+      position: relative;
+      display: flex;
+      align-items: center;
+      flex: none;
+      box-sizing: border-box;
+      block-size: var(--et-cascader-node-height);
+      padding-block: 4px;
+      /* column padding (6px) + node padding-inline (14px) = the option label inset */
+      padding-inline: 20px;
+      border-block-end: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    }
+
+    /* Back is an absolute overlay at the leading edge — it never affects the title's layout, so
+       the title's shift is a pure transform (below) instead of a flex reflow that jumps. It just
+       fades + slides in when there is a level to return to. */
+    .et-cascader-back {
+      position: absolute;
+      inset-block: 0;
+      inset-inline-start: 20px;
+      display: inline-flex;
+      align-items: center;
+      transition:
+        opacity 180ms ease,
+        transform 180ms ease;
+
+      &.et-cascader-back--hidden {
+        opacity: 0;
+        transform: translateX(-6px);
+        pointer-events: none;
+      }
+    }
+
+    .et-cascader-back-icon {
+      /* chevron points up natively — rotate counter-clockwise to point left ("back") */
+      rotate: -90deg;
+    }
+
+    .et-cascader-sheet-title-slot {
+      position: relative;
+      flex: 1;
+      min-inline-size: 0;
+      align-self: stretch;
+      overflow: hidden;
+      /* the slot spans the full width and paints over the absolute Back button; the title is
+         display-only, so let clicks pass through to Back underneath */
+      pointer-events: none;
+    }
+
+    /* the title shifts right to clear Back via transform (transitions reliably, unlike a flex
+       width change which jumps); at the root it sits flush-left, aligned with the option labels */
+    .et-cascader-sheet-title-shift {
+      position: absolute;
+      inset: 0;
+      transform: translateX(0);
+      transition: transform 180ms ease;
+    }
+
+    .et-cascader-sheet-header[data-back] .et-cascader-sheet-title-shift {
+      /* em (font-relative), not rem — the app root font can be tiny (10px here) */
+      transform: translateX(var(--et-cascader-back-slot, 4em));
+    }
+
+    .et-cascader-sheet-title {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      font-weight: 600;
+      color: var(--et-surface-color-solid, currentColor);
+    }
+
+    /* 'slide' (deeper level changes, Back bar stable): directional cross-slide. Direction comes
+       from the persistent slot, so the leaving title (kept mounted by animate.leave, still a
+       child of the slot) reads the current travel direction too. */
+    .et-cascader-sheet-title-slot[data-anim='slide'][data-nav='forward'] .et-cascader-sheet-title--enter {
+      animation: et-cascader-title-enter-forward 200ms ease;
+    }
+
+    .et-cascader-sheet-title-slot[data-anim='slide'][data-nav='backward'] .et-cascader-sheet-title--enter {
+      animation: et-cascader-title-enter-backward 200ms ease;
+    }
+
+    .et-cascader-sheet-title-slot[data-anim='slide'][data-nav='forward'] .et-cascader-sheet-title--leave {
+      animation: et-cascader-title-leave-forward 180ms ease forwards;
+    }
+
+    .et-cascader-sheet-title-slot[data-anim='slide'][data-nav='backward'] .et-cascader-sheet-title--leave {
+      animation: et-cascader-title-leave-backward 180ms ease forwards;
+    }
+
+    /* 'fade' (root boundary, Back bar appears/disappears): the title already shifts horizontally
+       as the Back bar's width animates, so just crossfade — no competing transform slide */
+    .et-cascader-sheet-title-slot[data-anim='fade'] .et-cascader-sheet-title--enter {
+      animation: et-cascader-title-fade-in 180ms ease;
+    }
+
+    .et-cascader-sheet-title-slot[data-anim='fade'] .et-cascader-sheet-title--leave {
+      animation: et-cascader-title-fade-out 180ms ease forwards;
+    }
+
+    .et-cascader-columns {
+      display: flex;
+      max-block-size: var(--et-cascader-panel-max-block-size);
+
+      /* drill mode: one full-width column at a time, flexing to fill the fixed-height sheet
+         body — the sheet never resizes as levels (or the loading spinner, or the Back bar
+         appearing) change; the column scrolls internally and slides within the area */
+      &[data-sheet] {
+        display: block;
+        flex: 1;
+        min-block-size: 0;
+        max-block-size: none;
+        overflow-y: auto;
+        overflow-x: clip;
+        overscroll-behavior: contain;
+
+        .et-cascader-column {
+          inline-size: 100%;
+          block-size: 100%;
+          max-block-size: none;
+          overflow: visible;
+          border-inline-end: none;
+        }
+
+        /* a column showing only a loading / empty / error state centers it in the tall
+           fixed area instead of leaving a lonely top-left spinner */
+        .et-cascader-column:has(.et-cascader-state) {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+      }
+    }
+
+    /* fixed-height sheet body: header + column area share it, so toggling the Back bar
+       redistributes space instead of resizing the panel */
+    .et-cascader-sheet-body {
+      display: flex;
+      flex-direction: column;
+      block-size: min(60vh, 480px);
+    }
+
+    .et-cascader-column {
+      display: block;
+      flex: none;
+      inline-size: var(--et-cascader-column-inline-size);
+      max-block-size: var(--et-cascader-panel-max-block-size);
+      overflow-y: auto;
+      /* clip the X axis so the slide-in transform never spawns a horizontal scrollbar
+         (overflow-y: auto would otherwise compute overflow-x to auto) */
+      overflow-x: clip;
+      overscroll-behavior: contain;
+      padding: 6px;
+
+      &:not(:last-child) {
+        border-inline-end: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+      }
+    }
+
+    /* Sheet (one visible column): it slides in from the travel direction, both ways — the
+       calendar month-nav pattern (keyed re-creation re-fires the animation). */
+    .et-cascader-columns[data-sheet] .et-cascader-column {
+      &:where([data-nav='forward']) {
+        animation: et-cascader-column-in-forward 200ms ease;
+      }
+
+      &:where([data-nav='backward']) {
+        animation: et-cascader-column-in-backward 200ms ease;
+      }
+    }
+
+    /* Desktop (Miller columns, side by side): a horizontal slide implies motion the fixed
+       layout doesn't have, so a newly *drilled* column just fades in. Going back removes a
+       column and animates nothing (only forward carries a nav on a freshly created element). */
+    .et-cascader-columns:not([data-sheet]) .et-cascader-column:where([data-nav='forward']) {
+      animation: et-cascader-column-fade-in 180ms ease;
+    }
+
+    .et-cascader-node {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      inline-size: 100%;
+      min-block-size: var(--et-cascader-node-height);
+      padding-inline: 10px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      font: inherit;
+      text-align: start;
+      color: inherit;
+      cursor: pointer;
+      appearance: none;
+      outline: none;
+      transition: background 120ms ease;
+
+      &:hover {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 12%, transparent);
+      }
+
+      &:focus-visible,
+      &[data-focused] {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 16%, transparent);
+      }
+
+      &[data-expanded] {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 12%, transparent);
+      }
+
+      &[data-selected] {
+        color: var(--et-theme-color-ink-solid, currentColor);
+        font-weight: 500;
+      }
+
+      &[data-disabled] {
+        cursor: default;
+        opacity: 0.4;
+      }
+    }
+
+    .et-cascader-node-label {
+      flex: 1;
+      min-inline-size: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .et-cascader-node-chevron {
+      flex: none;
+      inline-size: 12px;
+      block-size: 12px;
+      color: var(--et-surface-color-muted-solid, currentColor);
+      /* chevron points up natively — rotate to point into the next column */
+      rotate: 90deg;
+    }
+
+    .et-cascader-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-block-size: var(--et-cascader-node-height);
+      padding: 12px 16px;
+      text-align: center;
+      color: var(--et-surface-color-muted-solid, currentColor);
+
+      &.et-cascader-state--error {
+        flex-direction: column;
+        gap: 10px;
+        font-size: 13px;
+        color: var(--et-theme-color-primary-solid, rgb(248 113 113));
+      }
+    }
+  }
+
+  /* header title cross-slide on a level change: new comes from the travel direction, old
+     leaves the opposite way (forward = advance left; backward = retreat right) */
+  @keyframes et-cascader-title-enter-forward {
+    from {
+      opacity: 0;
+      transform: translateX(12px);
+    }
+  }
+
+  @keyframes et-cascader-title-enter-backward {
+    from {
+      opacity: 0;
+      transform: translateX(-12px);
+    }
+  }
+
+  @keyframes et-cascader-title-leave-forward {
+    to {
+      opacity: 0;
+      transform: translateX(-12px);
+    }
+  }
+
+  @keyframes et-cascader-title-leave-backward {
+    to {
+      opacity: 0;
+      transform: translateX(12px);
+    }
+  }
+
+  /* root-boundary title change: crossfade only (the horizontal shift comes from the Back bar's
+     width animation, which slides the title's slot) */
+  @keyframes et-cascader-title-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes et-cascader-title-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes et-cascader-column-in-forward {
+    from {
+      opacity: 0;
+      transform: translateX(14px);
+    }
+  }
+
+  @keyframes et-cascader-column-in-backward {
+    from {
+      opacity: 0;
+      transform: translateX(-14px);
+    }
+  }
+
+  /* desktop: non-directional "new column materialized" — fade + a small settle */
+  @keyframes et-cascader-column-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+
+  /* below the md breakpoint the cascader mounts as a bottom sheet: the panel becomes the
+     full-width sheet surface (drops its floating-card chrome) and draws its own drag handle */
+  .et-overlay.et-cascader-sheet {
+    /* comfortable touch targets — the token inherits into the panel content */
+    --et-cascader-node-height: 52px;
+
+    border-radius: 16px 16px 0 0;
+
+    .et-overlay-container-drag-handle {
+      display: none;
+    }
+
+    /* roomier, more tappable rows on mobile */
+    .et-cascader-node {
+      font-size: 16px;
+      padding-inline: 14px;
+    }
+
+    .et-cascader-node-chevron {
+      inline-size: 14px;
+      block-size: 14px;
+    }
+
+    .et-cascader-panel {
+      max-inline-size: none;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      padding-block-end: max(8px, env(safe-area-inset-bottom));
+
+      &::before {
+        content: '';
+        display: block;
+        inline-size: 32px;
+        block-size: 4px;
+        margin-inline: auto;
+        margin-block: 8px 4px;
+        border-radius: 999px;
+        background: var(--et-surface-border-solid, rgb(255 255 255 / 0.2));
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-cascader-panel .et-cascader-column,
+    .et-cascader-panel .et-cascader-sheet-title {
+      animation: none;
+    }
+
+    .et-cascader-panel .et-cascader-back,
+    .et-cascader-panel .et-cascader-sheet-title-shift {
+      transition: none;
+    }
+  }
+}

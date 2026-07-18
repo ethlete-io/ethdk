@@ -1,7 +1,8 @@
-import { Component, DebugElement } from '@angular/core';
+import { Component, DebugElement, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../test-helpers';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
+import { NUMBER_INPUT_IMPORTS } from '../input.imports';
 import { NumberInputDirective } from './number-input.directive';
 
 @Component({
@@ -20,6 +21,28 @@ class NumberInputInFormFieldTestHost {}
   imports: [NumberInputDirective],
 })
 class StandaloneNumberInputTestHost {}
+
+@Component({
+  template: `
+    <et-number-input
+      [value]="value()"
+      [min]="min()"
+      [max]="max()"
+      [step]="step()"
+      [disabled]="disabled()"
+      [stepper]="true"
+      (valueChange)="value.set($event)"
+    />
+  `,
+  imports: [NUMBER_INPUT_IMPORTS],
+})
+class StepperTestHost {
+  value = signal<number | null>(null);
+  min = signal<number | undefined>(undefined);
+  max = signal<number | undefined>(undefined);
+  step = signal<number | null>(null);
+  disabled = signal(false);
+}
 
 describe('NumberInputDirective', () => {
   describe('inside form field', () => {
@@ -86,6 +109,109 @@ describe('NumberInputDirective', () => {
 
     it('should not display error when not touched', () => {
       expect(numberInputDir.shouldDisplayError()).toBe(false);
+    });
+  });
+
+  describe('stepper', () => {
+    let fixture: ComponentFixture<StepperTestHost>;
+
+    const buttons = () =>
+      Array.from(fixture.nativeElement.querySelectorAll<HTMLButtonElement>('.et-number-input-stepper-button'));
+
+    const press = (index: number) => {
+      const button = buttons()[index]!;
+
+      button.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+      button.dispatchEvent(new MouseEvent('pointerup', { bubbles: true }));
+      fixture.detectChanges();
+    };
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({ imports: [StepperTestHost] });
+      fixture = TestBed.createComponent(StepperTestHost);
+      fixture.detectChanges();
+    });
+
+    it('renders two out-of-tab-order stepper buttons', () => {
+      expect(buttons().length).toBe(2);
+      expect(buttons().every((button) => button.tabIndex === -1)).toBe(true);
+    });
+
+    it('steps up and down, starting an empty value from 0', () => {
+      press(1);
+      expect(fixture.componentInstance.value()).toBe(1);
+
+      press(1);
+      expect(fixture.componentInstance.value()).toBe(2);
+
+      press(0);
+      expect(fixture.componentInstance.value()).toBe(1);
+    });
+
+    it('clamps to the bounds and disables the exhausted button', () => {
+      fixture.componentInstance.max.set(2);
+      fixture.componentInstance.value.set(1);
+      fixture.detectChanges();
+
+      press(1);
+      expect(fixture.componentInstance.value()).toBe(2);
+
+      fixture.detectChanges();
+      expect(buttons()[1]!.disabled).toBe(true);
+
+      press(1);
+      expect(fixture.componentInstance.value()).toBe(2);
+
+      fixture.componentInstance.min.set(0);
+      fixture.componentInstance.value.set(0);
+      fixture.detectChanges();
+      expect(buttons()[0]!.disabled).toBe(true);
+    });
+
+    it('steps fractional values without float noise', () => {
+      fixture.componentInstance.step.set(0.1);
+      fixture.componentInstance.value.set(0.2);
+      fixture.detectChanges();
+
+      press(1);
+      expect(fixture.componentInstance.value()).toBe(0.3);
+    });
+
+    it('auto-repeats while held', () => {
+      vi.useFakeTimers();
+
+      try {
+        const button = buttons()[1]!;
+
+        button.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+        fixture.detectChanges();
+        expect(fixture.componentInstance.value()).toBe(1);
+
+        // first repeat at the 400ms hold delay, then every 75ms
+        vi.advanceTimersByTime(400);
+        fixture.detectChanges();
+        expect(fixture.componentInstance.value()).toBe(2);
+
+        vi.advanceTimersByTime(75 * 3);
+        fixture.detectChanges();
+        expect(fixture.componentInstance.value()).toBe(5);
+
+        button.dispatchEvent(new MouseEvent('pointerup', { bubbles: true }));
+        vi.advanceTimersByTime(1000);
+        fixture.detectChanges();
+        expect(fixture.componentInstance.value()).toBe(5);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('ignores stepping while disabled', () => {
+      fixture.componentInstance.disabled.set(true);
+      fixture.detectChanges();
+
+      press(1);
+      expect(fixture.componentInstance.value()).toBeNull();
+      expect(buttons().every((button) => button.disabled)).toBe(true);
     });
   });
 });

@@ -51,6 +51,24 @@ export class NumberInputDirective implements FormValueControl<number | null>, Fo
    */
   public nativeControl = signal<HTMLInputElement | null>(null);
 
+  /** Whether stepping up would change the value — `false` at the `max` bound or while non-interactive. */
+  public canStepUp = computed(() => {
+    if (this.disabled() || this.readonly()) return false;
+
+    const max = this.max();
+
+    return max === undefined || (this.value() ?? 0) < max;
+  });
+
+  /** Whether stepping down would change the value — `false` at the `min` bound or while non-interactive. */
+  public canStepDown = computed(() => {
+    if (this.disabled() || this.readonly()) return false;
+
+    const min = this.min();
+
+    return min === undefined || (this.value() ?? 0) > min;
+  });
+
   constructor() {
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
@@ -70,6 +88,26 @@ export class NumberInputDirective implements FormValueControl<number | null>, Fo
     this.focusTarget()?.focus();
   }
 
+  /** Steps the value by `step` (an empty value starts from `0`), clamped to `min`/`max`. */
+  public stepBy(direction: 1 | -1) {
+    if (this.disabled() || this.readonly()) return;
+
+    const step = this.step() ?? 1;
+    const current = this.value() ?? 0;
+    const precision = Math.max(decimalPrecisionOf(step), decimalPrecisionOf(current));
+    let next = Number((current + step * direction).toFixed(precision));
+
+    const min = this.min();
+    const max = this.max();
+
+    if (min !== undefined) next = Math.max(min, next);
+    if (max !== undefined) next = Math.min(max, next);
+
+    if (next !== this.value()) {
+      this.value.set(next);
+    }
+  }
+
   /** @internal */
   public syncFromNativeInput(inputElement: HTMLInputElement) {
     const parsed = inputElement.valueAsNumber;
@@ -77,3 +115,16 @@ export class NumberInputDirective implements FormValueControl<number | null>, Fo
     this.value.set(Number.isNaN(parsed) ? null : parsed);
   }
 }
+
+/** Decimal places needed to represent `value` exactly — strips float noise from step math. */
+const decimalPrecisionOf = (value: number) => {
+  const text = value.toString();
+
+  if (text.includes('e-')) {
+    return Number(text.split('e-')[1]);
+  }
+
+  const fraction = text.split('.')[1];
+
+  return fraction ? fraction.length : 0;
+};

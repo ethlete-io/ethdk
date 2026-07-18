@@ -1,0 +1,71 @@
+@layer components {
+  et-cascader {
+    display: block;
+    flex: 1;
+    min-inline-size: 0;
+    color: inherit;
+
+    .et-cascader-trigger {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      inline-size: 100%;
+      min-inline-size: 0;
+      cursor: pointer;
+      outline: none;
+    }
+
+    &[data-disabled] .et-cascader-trigger {
+      cursor: not-allowed;
+    }
+
+    .et-cascader-value {
+      flex: 1;
+      min-inline-size: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      color: inherit;
+
+      &[data-placeholder] {
+        color: color-mix(in srgb, currentColor 46%, transparent);
+      }
+    }
+
+    .et-cascader-clear,
+    .et-cascader-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+      inline-size: 20px;
+      block-size: 20px;
+      padding: 0;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--et-surface-color-muted-solid, currentColor);
+      cursor: pointer;
+      outline: none;
+
+      .et-icon {
+        inline-size: 14px;
+        block-size: 14px;
+      }
+
+      &:hover {
+        color: var(--et-surface-color-solid, currentColor);
+      }
+
+      &:disabled {
+        cursor: default;
+        color: inherit;
+      }
+    }
+
+    .et-cascader-arrow .et-icon {
+      /* the registered chevron points up; the trigger shows it pointing down */
+      rotate: 180deg;
+    }
+  }
+}

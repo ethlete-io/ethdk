@@ -17,6 +17,7 @@ export default {
     min: { control: 'number' },
     max: { control: 'number' },
     step: { control: 'number' },
+    stepper: { control: 'boolean' },
     disabled: { control: 'boolean' },
     required: { control: 'boolean' },
     showPrefix: { control: 'boolean' },
@@ -35,6 +36,7 @@ export default {
     min: null,
     max: null,
     step: null,
+    stepper: false,
     disabled: false,
     required: false,
     showPrefix: false,
@@ -46,3 +48,7 @@ export default {
 type Story = StoryObj<FormFieldNumberInputStorybookComponent>;
 
 export const Default: Story = {};
+
+export const Stepper: Story = {
+  args: { stepper: true, min: 0, max: 10, hint: 'Hold a button to auto-repeat' },
+};

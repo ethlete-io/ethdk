@@ -1,4 +1,5 @@
 export * from './select-listbox.directive';
+export * from './select-option-group.directive';
 export * from './select-option.directive';
 export * from './select-search.directive';
 export * from './select-state-templates.directive';

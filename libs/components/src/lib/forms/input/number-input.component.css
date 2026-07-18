@@ -1,9 +1,67 @@
 @layer components {
+  @property --et-number-input-stepper-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 16px;
+  }
+
   et-number-input {
     display: block;
     flex: 1;
     min-inline-size: 0;
     color: inherit;
+
+    &[data-stepper] {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .et-number-input-stepper {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      flex: none;
+    }
+
+    .et-number-input-stepper-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+      inline-size: calc(var(--et-number-input-stepper-size) + 8px);
+      block-size: calc(var(--et-number-input-stepper-size) + 8px);
+      padding: 0;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--et-surface-color-muted-solid, currentColor);
+      cursor: pointer;
+      outline: none;
+      /* the buttons are press-and-hold controls — never scroll instead */
+      touch-action: none;
+
+      .et-icon {
+        inline-size: var(--et-number-input-stepper-size);
+        block-size: var(--et-number-input-stepper-size);
+      }
+
+      &:hover {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 12%, transparent);
+        color: var(--et-surface-color-solid, currentColor);
+      }
+
+      &:active {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 20%, transparent);
+      }
+
+      &:disabled {
+        cursor: default;
+        background: transparent;
+        color: inherit;
+        opacity: 0.4;
+      }
+    }
 
     .et-number-input-native {
       display: block;

@@ -1,0 +1,137 @@
+<div class="et-cascader-trigger" etCascaderTrigger>
+  <span [attr.data-placeholder]="!cascader.hasValue() || null" class="et-cascader-value">
+    @if (cascader.displayValue(); as display) {
+      {{ display }}
+    } @else {
+      {{ cascader.placeholder() }}
+    }
+  </span>
+
+  @if (showClear()) {
+    <button
+      [attr.aria-label]="clearLabel()"
+      (click)="handleClearClick($event)"
+      class="et-cascader-clear"
+      tabindex="-1"
+      type="button"
+    >
+      <i etIcon="et-times"></i>
+    </button>
+  }
+
+  <button [disabled]="cascader.disabled()" class="et-cascader-arrow" aria-hidden="true" tabindex="-1" type="button">
+    <i etIcon="et-chevron"></i>
+  </button>
+</div>
+
+<ng-template etCascaderSurface>
+  <et-cascader-panel #panel>
+    @if (panel.isSheet()) {
+      <!-- the sheet body is a fixed-height flex column: the header (when present) and the
+           column area share it, so the Back bar appearing doesn't change the total sheet
+           height — the column area just flexes to fill, and the panel never resizes -->
+      <div class="et-cascader-sheet-body">
+        <!-- persistent nav bar (fixed height): only its contents animate, so nothing reflows
+             the column list. Back is an absolute overlay (no layout impact); the title slot's
+             shift wrapper translates to clear the Back space (transform = reliably smooth,
+             unlike a flex width transition), and the title cross-slides on level changes -->
+        <div [attr.data-back]="cascader.deepestColumnIndex() > 0 || null" class="et-cascader-sheet-header">
+          <button
+            [class.et-cascader-back--hidden]="cascader.deepestColumnIndex() === 0"
+            [attr.aria-hidden]="cascader.deepestColumnIndex() === 0 || null"
+            [attr.tabindex]="cascader.deepestColumnIndex() === 0 ? -1 : null"
+            (click)="cascader.goBack()"
+            class="et-cascader-back"
+            et-text-button
+            size="sm"
+            type="button"
+          >
+            <i class="et-cascader-back-icon" etIcon="et-chevron" aria-hidden="true"></i>
+            {{ backLabel() }}
+          </button>
+
+          <span
+            [attr.data-nav]="cascader.navigationDirection()"
+            [attr.data-anim]="cascader.titleAnimation()"
+            class="et-cascader-sheet-title-slot"
+          >
+            <!-- shifts right (transform) to make room for Back; the title fills it at the root -->
+            <span class="et-cascader-sheet-title-shift">
+              <!-- keyed by depth so a level change re-creates it: old title slides out in the
+                   travel direction, new one slides in (both absolutely positioned) -->
+              @for (titleKey of [cascader.deepestColumnIndex()]; track titleKey) {
+                @let titleParent = cascader.columns()[titleKey]?.parent;
+                <span
+                  class="et-cascader-sheet-title"
+                  animate.enter="et-cascader-sheet-title--enter"
+                  animate.leave="et-cascader-sheet-title--leave"
+                  >{{ titleParent?.label ?? cascader.placeholder() }}</span
+                >
+              }
+            </span>
+          </span>
+        </div>
+
+        <!-- one column at a time, keyed by depth so drilling / going back re-creates it and
+             re-fires the slide animation; it scrolls internally within the fixed body -->
+        <div class="et-cascader-columns" data-sheet>
+          @for (columnIndex of [cascader.deepestColumnIndex()]; track columnIndex) {
+            @let sheetColumn = cascader.columns()[columnIndex];
+            @if (sheetColumn) {
+              <ng-container
+                [ngTemplateOutlet]="columnBody"
+                [ngTemplateOutletContext]="{ $implicit: sheetColumn, columnIndex }"
+              />
+            }
+          }
+        </div>
+      </div>
+    } @else {
+      <div class="et-cascader-columns">
+        @for (column of cascader.columns(); track $index; let columnIndex = $index) {
+          <ng-container
+            [ngTemplateOutlet]="columnBody"
+            [ngTemplateOutletContext]="{ $implicit: column, columnIndex }"
+          />
+        }
+      </div>
+    }
+  </et-cascader-panel>
+</ng-template>
+
+<ng-template #columnBody let-column let-columnIndex="columnIndex">
+  <div
+    [etCascaderColumn]="columnIndex"
+    [attr.data-nav]="columnIndex === cascader.deepestColumnIndex() ? cascader.navigationDirection() : null"
+    class="et-cascader-column"
+  >
+    @switch (column.status) {
+      @case ('loading') {
+        <div class="et-cascader-state et-cascader-state--loading">
+          <et-spinner diameter="16" strokeWidth="2" />
+          Loading…
+        </div>
+      }
+      @case ('error') {
+        <div [etProvideColor]="errorColorTheme" class="et-cascader-state et-cascader-state--error" role="alert">
+          <span>{{ column.error }}</span>
+          <button (click)="cascader.retryColumn(columnIndex)" et-text-button size="sm" type="button">Retry</button>
+        </div>
+      }
+      @default {
+        @if (column.nodes.length) {
+          @for (node of column.nodes; track $index) {
+            <button [node]="node" [disabled]="node.disabled" class="et-cascader-node" etCascaderNode type="button">
+              <span class="et-cascader-node-label">{{ node.label }}</span>
+              @if (node.isLeaf !== true && node.hasChildren !== false) {
+                <i class="et-cascader-node-chevron" etIcon="et-chevron" aria-hidden="true"></i>
+              }
+            </button>
+          }
+        } @else {
+          <div class="et-cascader-state et-cascader-state--empty">No options</div>
+        }
+      }
+    }
+  </div>
+</ng-template>
