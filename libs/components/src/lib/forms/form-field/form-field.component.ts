@@ -37,129 +37,15 @@ import {
   FormFieldLabelMode,
   FormFieldSize,
 } from './form-field.variants';
-import { FormFieldDirective, isInteractiveElement } from './headless';
-
-const SUPPORT_CONTENT_STATE = {
-  NONE: 'none',
-  HINT: 'hint',
-  ERROR: 'error',
-} as const;
-
-type SupportContentState = (typeof SUPPORT_CONTENT_STATE)[keyof typeof SUPPORT_CONTENT_STATE];
-
-const SUPPORT_TRANSITION_DIRECTION = {
-  FROM_ABOVE: 'from-above',
-  FROM_BELOW: 'from-below',
-  TO_ABOVE: 'to-above',
-  TO_BELOW: 'to-below',
-} as const;
-
-type SupportTransitionDirection = (typeof SUPPORT_TRANSITION_DIRECTION)[keyof typeof SUPPORT_TRANSITION_DIRECTION];
-
-type SupportPresentationState = {
-  renderedState: SupportContentState;
-  leavingState: SupportContentState;
-  renderedErrors: readonly ValidationError.WithOptionalFieldTree[];
-  frozenErrorColor: string | null;
-  errorDirection: SupportTransitionDirection;
-  hintDirection: SupportTransitionDirection;
-};
-
-type ReduceSupportPresentationInput = {
-  presentation: SupportPresentationState;
-  semanticSupportState: SupportContentState;
-  errors: readonly ValidationError.WithOptionalFieldTree[];
-  currentErrorColor: string | null;
-};
-
-const INITIAL_SUPPORT_PRESENTATION_STATE: SupportPresentationState = {
-  renderedState: SUPPORT_CONTENT_STATE.NONE,
-  leavingState: SUPPORT_CONTENT_STATE.NONE,
-  renderedErrors: [],
-  frozenErrorColor: null,
-  errorDirection: SUPPORT_TRANSITION_DIRECTION.FROM_BELOW,
-  hintDirection: SUPPORT_TRANSITION_DIRECTION.FROM_ABOVE,
-};
-
-const supportPresentationIncludesState = ({
-  presentation,
-  state,
-}: {
-  presentation: SupportPresentationState;
-  state: SupportContentState;
-}) => {
-  return presentation.renderedState === state || presentation.leavingState === state;
-};
-
-const reduceSupportPresentation = ({
-  presentation,
-  semanticSupportState,
-  errors,
-  currentErrorColor,
-}: ReduceSupportPresentationInput) => {
-  if (semanticSupportState === SUPPORT_CONTENT_STATE.ERROR) {
-    const hasHintPresentation = supportPresentationIncludesState({
-      presentation,
-      state: SUPPORT_CONTENT_STATE.HINT,
-    });
-
-    return {
-      ...presentation,
-      renderedState: SUPPORT_CONTENT_STATE.ERROR,
-      leavingState: hasHintPresentation ? SUPPORT_CONTENT_STATE.HINT : SUPPORT_CONTENT_STATE.NONE,
-      renderedErrors: errors,
-      frozenErrorColor: null,
-      errorDirection: SUPPORT_TRANSITION_DIRECTION.FROM_BELOW,
-      hintDirection: hasHintPresentation ? SUPPORT_TRANSITION_DIRECTION.TO_ABOVE : presentation.hintDirection,
-    };
-  }
-
-  if (semanticSupportState === SUPPORT_CONTENT_STATE.HINT) {
-    const hasErrorPresentation = supportPresentationIncludesState({
-      presentation,
-      state: SUPPORT_CONTENT_STATE.ERROR,
-    });
-
-    return {
-      ...presentation,
-      renderedState: SUPPORT_CONTENT_STATE.HINT,
-      leavingState: hasErrorPresentation ? SUPPORT_CONTENT_STATE.ERROR : SUPPORT_CONTENT_STATE.NONE,
-      renderedErrors: hasErrorPresentation ? presentation.renderedErrors : [],
-      frozenErrorColor: hasErrorPresentation ? (presentation.frozenErrorColor ?? currentErrorColor) : null,
-      errorDirection: hasErrorPresentation ? SUPPORT_TRANSITION_DIRECTION.TO_BELOW : presentation.errorDirection,
-      hintDirection: hasErrorPresentation ? SUPPORT_TRANSITION_DIRECTION.FROM_ABOVE : presentation.hintDirection,
-    };
-  }
-
-  const nextLeavingState = supportPresentationIncludesState({
-    presentation,
-    state: SUPPORT_CONTENT_STATE.ERROR,
-  })
-    ? SUPPORT_CONTENT_STATE.ERROR
-    : supportPresentationIncludesState({
-          presentation,
-          state: SUPPORT_CONTENT_STATE.HINT,
-        })
-      ? SUPPORT_CONTENT_STATE.HINT
-      : SUPPORT_CONTENT_STATE.NONE;
-
-  return {
-    ...presentation,
-    renderedState: SUPPORT_CONTENT_STATE.NONE,
-    leavingState: nextLeavingState,
-    renderedErrors: nextLeavingState === SUPPORT_CONTENT_STATE.ERROR ? presentation.renderedErrors : [],
-    frozenErrorColor:
-      nextLeavingState === SUPPORT_CONTENT_STATE.ERROR ? (presentation.frozenErrorColor ?? currentErrorColor) : null,
-    errorDirection:
-      nextLeavingState === SUPPORT_CONTENT_STATE.ERROR
-        ? SUPPORT_TRANSITION_DIRECTION.TO_BELOW
-        : presentation.errorDirection,
-    hintDirection:
-      nextLeavingState === SUPPORT_CONTENT_STATE.HINT
-        ? SUPPORT_TRANSITION_DIRECTION.TO_ABOVE
-        : presentation.hintDirection,
-  };
-};
+import {
+  FormFieldDirective,
+  INITIAL_SUPPORT_PRESENTATION_STATE,
+  isInteractiveElement,
+  reduceSupportPresentation,
+  SUPPORT_CONTENT_STATE,
+  SupportContentState,
+  SupportPresentationState,
+} from './headless';
 
 @Component({
   selector: 'et-form-field',

@@ -1,6 +1,5 @@
 import { computed, effect, ElementRef, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { ValidationError } from '@angular/forms/signals';
 import {
   AnimatableDirective,
   createProvider,
@@ -10,14 +9,12 @@ import {
 } from '@ethlete/core';
 import { EMPTY, filter, switchMap, tap } from 'rxjs';
 import { FormFieldDirective } from './form-field.directive';
-
-const SUPPORT_CONTENT_STATE = {
-  NONE: 'none',
-  HINT: 'hint',
-  ERROR: 'error',
-} as const;
-
-type SupportContentState = (typeof SUPPORT_CONTENT_STATE)[keyof typeof SUPPORT_CONTENT_STATE];
+import {
+  INITIAL_SUPPORT_PRESENTATION_STATE,
+  reduceSupportPresentation,
+  SUPPORT_CONTENT_STATE,
+  SupportContentState,
+} from './support-presentation';
 
 const formSupportFactory = () => {
   const provideColor = inject(ProvideColorDirective, { optional: true });
@@ -46,30 +43,29 @@ const formSupportFactory = () => {
 
   const displaysError = computed(() => semanticSupportState() === SUPPORT_CONTENT_STATE.ERROR);
 
-  const supportState = signal<{
-    renderedErrors: readonly ValidationError.WithOptionalFieldTree[];
-    leavingState: SupportContentState;
-    frozenErrorColor: string | null;
-  }>({ renderedErrors: [], leavingState: SUPPORT_CONTENT_STATE.NONE, frozenErrorColor: null });
+  // the enter/leave/frozen-color state machine is shared with the text-field shell — see
+  // `support-presentation.ts`. This holds only the presentation state; the derived render flags
+  // below read it alongside the live `semanticSupportState`.
+  const supportPresentation = signal(INITIAL_SUPPORT_PRESENTATION_STATE);
 
   const shouldRenderSupport = computed(() => {
     return (
       semanticSupportState() !== SUPPORT_CONTENT_STATE.NONE ||
-      supportState().leavingState !== SUPPORT_CONTENT_STATE.NONE
+      supportPresentation().leavingState !== SUPPORT_CONTENT_STATE.NONE
     );
   });
 
   const shouldRenderError = computed(() => {
     return (
       semanticSupportState() === SUPPORT_CONTENT_STATE.ERROR ||
-      supportState().leavingState === SUPPORT_CONTENT_STATE.ERROR
+      supportPresentation().leavingState === SUPPORT_CONTENT_STATE.ERROR
     );
   });
 
   const shouldRenderHint = computed(() => {
     return (
       semanticSupportState() === SUPPORT_CONTENT_STATE.HINT ||
-      supportState().leavingState === SUPPORT_CONTENT_STATE.HINT
+      supportPresentation().leavingState === SUPPORT_CONTENT_STATE.HINT
     );
   });
 
@@ -81,7 +77,7 @@ const formSupportFactory = () => {
       return formFieldDir.errors();
     }
 
-    return supportState().renderedErrors;
+    return supportPresentation().renderedErrors;
   });
 
   const supportHeight = computed(() => {
@@ -100,13 +96,13 @@ const formSupportFactory = () => {
       switchMap((animatable) => (animatable ? animatable.animationEnd$ : EMPTY)),
       filter(() => {
         return (
-          supportState().leavingState === SUPPORT_CONTENT_STATE.ERROR &&
+          supportPresentation().leavingState === SUPPORT_CONTENT_STATE.ERROR &&
           semanticSupportState() !== SUPPORT_CONTENT_STATE.ERROR
         );
       }),
       tap(() => {
-        supportState.update((s) => ({
-          ...s,
+        supportPresentation.update((presentation) => ({
+          ...presentation,
           leavingState: SUPPORT_CONTENT_STATE.NONE,
           renderedErrors: [],
           frozenErrorColor: null,
@@ -121,12 +117,12 @@ const formSupportFactory = () => {
       switchMap((animatable) => (animatable ? animatable.animationEnd$ : EMPTY)),
       filter(() => {
         return (
-          supportState().leavingState === SUPPORT_CONTENT_STATE.HINT &&
+          supportPresentation().leavingState === SUPPORT_CONTENT_STATE.HINT &&
           semanticSupportState() !== SUPPORT_CONTENT_STATE.HINT
         );
       }),
       tap(() => {
-        supportState.update((s) => ({ ...s, leavingState: SUPPORT_CONTENT_STATE.NONE }));
+        supportPresentation.update((presentation) => ({ ...presentation, leavingState: SUPPORT_CONTENT_STATE.NONE }));
       }),
       takeUntilDestroyed(),
     )
@@ -138,39 +134,9 @@ const formSupportFactory = () => {
     const errorEl = errorContent()?.nativeElement;
     const currentErrorColor = errorEl ? getComputedStyle(errorEl).color : null;
 
-    supportState.update((s) => {
-      if (state === SUPPORT_CONTENT_STATE.ERROR) {
-        return {
-          renderedErrors: errors,
-          leavingState:
-            s.leavingState === SUPPORT_CONTENT_STATE.HINT ? SUPPORT_CONTENT_STATE.HINT : SUPPORT_CONTENT_STATE.NONE,
-          frozenErrorColor: null,
-        };
-      }
-
-      if (state === SUPPORT_CONTENT_STATE.HINT) {
-        const hasErrors = s.renderedErrors.length > 0;
-
-        return {
-          renderedErrors: hasErrors ? s.renderedErrors : [],
-          leavingState: hasErrors ? SUPPORT_CONTENT_STATE.ERROR : SUPPORT_CONTENT_STATE.NONE,
-          frozenErrorColor: hasErrors ? (s.frozenErrorColor ?? currentErrorColor) : null,
-        };
-      }
-
-      const leaving =
-        s.renderedErrors.length > 0
-          ? SUPPORT_CONTENT_STATE.ERROR
-          : formFieldDir.registeredHint()
-            ? SUPPORT_CONTENT_STATE.HINT
-            : SUPPORT_CONTENT_STATE.NONE;
-
-      return {
-        renderedErrors: s.renderedErrors,
-        leavingState: leaving,
-        frozenErrorColor: leaving === SUPPORT_CONTENT_STATE.ERROR ? (s.frozenErrorColor ?? currentErrorColor) : null,
-      };
-    });
+    supportPresentation.update((presentation) =>
+      reduceSupportPresentation({ presentation, semanticSupportState: state, errors, currentErrorColor }),
+    );
   });
 
   effect(() => {
