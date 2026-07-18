@@ -61,6 +61,42 @@
       pointer-events: none;
     }
 
+    /* filter-chip composition: `etSelectionOption` on the chip contributes the
+       role/aria-checked/tabindex — these states make the chip read as selectable.
+       Selected uses the tonal color mechanic (see button), so the fill follows the
+       nearest color theme. */
+    &:where([role='checkbox'], [role='radio']) {
+      cursor: pointer;
+      transition:
+        background 120ms ease,
+        color 120ms ease;
+
+      &:hover:not([aria-checked='true']):not([data-readonly]) {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 22%, transparent);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+        outline-offset: 1px;
+      }
+
+      &:where([data-readonly]) {
+        cursor: default;
+      }
+    }
+
+    /* tonal fill via color-mix over the solid token — the opacity-aware
+       --et-theme-color-primary mechanic needs per-element token re-resolution
+       ([etColorInteractive]), which a plain chip does not carry */
+    &:where([aria-checked='true']) {
+      background: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 16%, transparent);
+      color: var(--et-theme-color-ink-solid, currentColor);
+
+      &:hover:not([data-readonly]) {
+        background: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 24%, transparent);
+      }
+    }
+
     &:where([data-removable]) {
       padding-inline-end: calc(var(--et-chip-padding-inline) / 2);
     }

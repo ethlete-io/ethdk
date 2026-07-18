@@ -37,6 +37,22 @@ The chip never removes itself from the DOM — removal is a request. Handle `rem
 
 Long labels are truncated with an ellipsis; the chip never exceeds its container's inline size.
 
+## Filter chips (selection composition)
+
+Selectable chips — filter bars, tag pickers — are a **composition**, not a dedicated component: put the selection-list headless directives on plain chips. `etSelectionList` is the signal-forms control (single or `multiple`), `etSelectionOption` turns each chip into an option with roving focus and the correct `radio`/`checkbox` semantics; the chip styles its selected state (a color-theme tonal fill) off the resulting `aria-checked`.
+
+```html
+<div [formField]="form.categories" [multiple]="true" class="flex flex-wrap gap-2" etSelectionList>
+  @for (category of categories(); track category) {
+  <et-chip [value]="category" etSelectionOption>{{ category }}</et-chip>
+  }
+</div>
+```
+
+<StoryEmbed id="components-chip--filter-chips" height="320px" />
+
+Everything the [selection lists](/components/forms#selection-lists) document applies: value is an array with `multiple` and a single value otherwise, arrow keys rove across chips (selecting as they move in single mode), <kbd>Space</kbd>/<kbd>Enter</kbd> toggles, `readonly` keeps the chips focusable but blocks changes. Don't combine `removable` with `etSelectionOption` on the same chip — a filter chip toggles, it doesn't remove.
+
 ## Headless usage
 
 For custom chip markup, compose the directives directly — `[etChip]` owns the state and keyboard handling, `[etChipRemove]` wires any element (ideally a `<button>`) as the remove control:

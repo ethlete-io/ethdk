@@ -1,5 +1,5 @@
 import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
-import { ChipStorybookComponent } from './chip-storybook.component';
+import { ChipStorybookComponent, FilterChipsStorybookComponent } from './chip-storybook.component';
 
 export default {
   title: 'Components/Chip',
@@ -22,4 +22,14 @@ export const NotRemovable: Story = {
 
 export const Disabled: Story = {
   args: { disabled: true },
+};
+
+export const FilterChips: StoryObj<FilterChipsStorybookComponent> = {
+  decorators: [moduleMetadata({ imports: [FilterChipsStorybookComponent] })],
+  render: (args) => ({
+    props: args,
+    template: `<et-sb-filter-chips [readonly]="readonly" />`,
+  }),
+  argTypes: { readonly: { control: 'boolean' } },
+  args: { readonly: false },
 };
