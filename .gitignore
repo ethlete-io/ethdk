@@ -62,6 +62,7 @@ Thumbs.db
 
 **/.vitepress/cache/**
 .claude/worktrees
+.claude/handoffs
 .nx/polygraph
 .nx/self-healing
 .nx/migrate-runs
