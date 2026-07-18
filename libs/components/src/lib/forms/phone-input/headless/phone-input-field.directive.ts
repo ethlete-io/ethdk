@@ -1,4 +1,5 @@
-import { DestroyRef, Directive, ElementRef, afterNextRender, effect, inject } from '@angular/core';
+import { Directive, ElementRef, afterNextRender, effect, inject } from '@angular/core';
+import { registerSingleton } from '../../form-field/headless';
 import { RuntimeError } from '@ethlete/core';
 import { PHONE_INPUT_ERROR_CODES } from '../phone-input-errors';
 import { PhoneInputDirective } from './phone-input.directive';
@@ -26,16 +27,9 @@ import { PhoneInputDirective } from './phone-input.directive';
 export class PhoneInputFieldDirective {
   protected phoneInput = inject(PhoneInputDirective, { optional: true });
   public elementRef = inject<ElementRef<HTMLInputElement>>(ElementRef);
-  private destroyRef = inject(DestroyRef);
 
   constructor() {
-    this.phoneInput?.registeredField.set(this);
-
-    this.destroyRef.onDestroy(() => {
-      if (this.phoneInput?.registeredField() === this) {
-        this.phoneInput.registeredField.set(null);
-      }
-    });
+    registerSingleton(this.phoneInput?.registeredField, this);
 
     // the element shows raw digits while editing and the grouped form otherwise —
     // rewriting the value mid-typing would fight the caret

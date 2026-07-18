@@ -1,4 +1,5 @@
-import { DestroyRef, Directive, TemplateRef, afterNextRender, inject } from '@angular/core';
+import { Directive, TemplateRef, afterNextRender, inject } from '@angular/core';
+import { registerSingleton } from '../../form-field/headless';
 import { RuntimeError } from '@ethlete/core';
 import { CASCADER_ERROR_CODES } from '../cascader-errors';
 import { CascaderDirective, CascaderSurfaceContext } from './cascader.directive';
@@ -10,16 +11,9 @@ import { CascaderDirective, CascaderSurfaceContext } from './cascader.directive'
 export class CascaderSurfaceDirective {
   private cascader = inject(CascaderDirective, { optional: true });
   public templateRef = inject<TemplateRef<CascaderSurfaceContext>>(TemplateRef);
-  private destroyRef = inject(DestroyRef);
 
   constructor() {
-    this.cascader?.registeredSurface.set(this);
-
-    this.destroyRef.onDestroy(() => {
-      if (this.cascader?.registeredSurface() === this) {
-        this.cascader.registeredSurface.set(null);
-      }
-    });
+    registerSingleton(this.cascader?.registeredSurface, this);
 
     if (ngDevMode) {
       afterNextRender(() => {

@@ -1,4 +1,5 @@
-import { DestroyRef, Directive, ElementRef, afterNextRender, inject } from '@angular/core';
+import { Directive, ElementRef, afterNextRender, inject } from '@angular/core';
+import { registerSingleton } from '../../form-field/headless';
 import { RuntimeError } from '@ethlete/core';
 import { DATE_INPUT_ERROR_CODES } from '../date-input/date-input-errors';
 import { DATE_PICKER_HOST } from './date-picker-host';
@@ -18,16 +19,9 @@ import { DATE_PICKER_HOST } from './date-picker-host';
 export class DatePickerTriggerDirective {
   protected host = inject(DATE_PICKER_HOST, { optional: true });
   public elementRef = inject<ElementRef<HTMLButtonElement>>(ElementRef);
-  private destroyRef = inject(DestroyRef);
 
   constructor() {
-    this.host?.registeredTrigger.set(this);
-
-    this.destroyRef.onDestroy(() => {
-      if (this.host?.registeredTrigger() === this) {
-        this.host.registeredTrigger.set(null);
-      }
-    });
+    registerSingleton(this.host?.registeredTrigger, this);
 
     if (ngDevMode) {
       afterNextRender(() => {

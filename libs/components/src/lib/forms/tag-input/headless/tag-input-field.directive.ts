@@ -1,4 +1,5 @@
-import { DestroyRef, Directive, ElementRef, afterNextRender, computed, inject } from '@angular/core';
+import { Directive, ElementRef, afterNextRender, computed, inject } from '@angular/core';
+import { registerSingleton } from '../../form-field/headless';
 import { RuntimeError } from '@ethlete/core';
 import { TAG_INPUT_ERROR_CODES } from '../tag-input-errors';
 import { TagInputDirective } from './tag-input.directive';
@@ -26,18 +27,11 @@ import { TagInputDirective } from './tag-input.directive';
 export class TagInputFieldDirective {
   protected tagInput = inject(TagInputDirective, { optional: true });
   public elementRef = inject<ElementRef<HTMLInputElement>>(ElementRef);
-  private destroyRef = inject(DestroyRef);
 
   protected isFull = computed(() => this.tagInput?.isFull() ?? false);
 
   constructor() {
-    this.tagInput?.registeredField.set(this);
-
-    this.destroyRef.onDestroy(() => {
-      if (this.tagInput?.registeredField() === this) {
-        this.tagInput.registeredField.set(null);
-      }
-    });
+    registerSingleton(this.tagInput?.registeredField, this);
 
     if (ngDevMode) {
       afterNextRender(() => {

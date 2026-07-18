@@ -1,4 +1,5 @@
-import { DestroyRef, Directive, TemplateRef, afterNextRender, inject } from '@angular/core';
+import { Directive, TemplateRef, afterNextRender, inject } from '@angular/core';
+import { registerSingleton } from '../../form-field/headless';
 import { RuntimeError } from '@ethlete/core';
 import { DATE_INPUT_ERROR_CODES } from '../date-input/date-input-errors';
 import { DATE_PICKER_HOST, DatePickerSurfaceContext } from './date-picker-host';
@@ -11,16 +12,9 @@ import { DATE_PICKER_HOST, DatePickerSurfaceContext } from './date-picker-host';
 export class DatePickerSurfaceDirective {
   private host = inject(DATE_PICKER_HOST, { optional: true });
   public templateRef = inject<TemplateRef<DatePickerSurfaceContext>>(TemplateRef);
-  private destroyRef = inject(DestroyRef);
 
   constructor() {
-    this.host?.registeredSurface.set(this);
-
-    this.destroyRef.onDestroy(() => {
-      if (this.host?.registeredSurface() === this) {
-        this.host.registeredSurface.set(null);
-      }
-    });
+    registerSingleton(this.host?.registeredSurface, this);
 
     if (ngDevMode) {
       afterNextRender(() => {

@@ -1,4 +1,5 @@
-import { DestroyRef, Directive, TemplateRef, afterNextRender, inject } from '@angular/core';
+import { Directive, TemplateRef, afterNextRender, inject } from '@angular/core';
+import { registerSingleton } from '../../form-field/headless';
 import { RuntimeError } from '@ethlete/core';
 import { SELECT_ERROR_CODES } from '../select-errors';
 import { SelectDirective } from './select.directive';
@@ -16,16 +17,9 @@ export type SelectSurfaceContext = {
 export class SelectSurfaceDirective {
   private select = inject(SelectDirective, { optional: true });
   public templateRef = inject<TemplateRef<SelectSurfaceContext>>(TemplateRef);
-  private destroyRef = inject(DestroyRef);
 
   constructor() {
-    this.select?.registeredSurface.set(this);
-
-    this.destroyRef.onDestroy(() => {
-      if (this.select?.registeredSurface() === this) {
-        this.select.registeredSurface.set(null);
-      }
-    });
+    registerSingleton(this.select?.registeredSurface, this);
 
     if (ngDevMode) {
       afterNextRender(() => {

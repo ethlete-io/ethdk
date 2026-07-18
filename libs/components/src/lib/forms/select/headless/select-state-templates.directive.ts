@@ -1,4 +1,5 @@
-import { DestroyRef, Directive, TemplateRef, afterNextRender, inject } from '@angular/core';
+import { Directive, TemplateRef, afterNextRender, inject } from '@angular/core';
+import { registerSingleton } from '../../form-field/headless';
 import { RuntimeError } from '@ethlete/core';
 import { SELECT_ERROR_CODES } from '../select-errors';
 import { SelectDirective } from './select.directive';
@@ -21,16 +22,9 @@ const assertInsideSelect = (select: SelectDirective | null, directiveName: strin
 export class SelectLoadingDirective {
   private select = inject(SelectDirective, { optional: true });
   public templateRef = inject<TemplateRef<unknown>>(TemplateRef);
-  private destroyRef = inject(DestroyRef);
 
   constructor() {
-    this.select?.registeredLoadingTemplate.set(this);
-
-    this.destroyRef.onDestroy(() => {
-      if (this.select?.registeredLoadingTemplate() === this) {
-        this.select.registeredLoadingTemplate.set(null);
-      }
-    });
+    registerSingleton(this.select?.registeredLoadingTemplate, this);
 
     assertInsideSelect(this.select, 'SelectLoadingDirective');
   }
@@ -45,16 +39,9 @@ export type SelectErrorContext = {
 export class SelectErrorDirective {
   private select = inject(SelectDirective, { optional: true });
   public templateRef = inject<TemplateRef<SelectErrorContext>>(TemplateRef);
-  private destroyRef = inject(DestroyRef);
 
   constructor() {
-    this.select?.registeredErrorTemplate.set(this);
-
-    this.destroyRef.onDestroy(() => {
-      if (this.select?.registeredErrorTemplate() === this) {
-        this.select.registeredErrorTemplate.set(null);
-      }
-    });
+    registerSingleton(this.select?.registeredErrorTemplate, this);
 
     assertInsideSelect(this.select, 'SelectErrorDirective');
   }
@@ -65,16 +52,9 @@ export class SelectErrorDirective {
 export class SelectEmptyDirective {
   private select = inject(SelectDirective, { optional: true });
   public templateRef = inject<TemplateRef<unknown>>(TemplateRef);
-  private destroyRef = inject(DestroyRef);
 
   constructor() {
-    this.select?.registeredEmptyTemplate.set(this);
-
-    this.destroyRef.onDestroy(() => {
-      if (this.select?.registeredEmptyTemplate() === this) {
-        this.select.registeredEmptyTemplate.set(null);
-      }
-    });
+    registerSingleton(this.select?.registeredEmptyTemplate, this);
 
     assertInsideSelect(this.select, 'SelectEmptyDirective');
   }

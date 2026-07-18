@@ -1,4 +1,5 @@
-import { DestroyRef, Directive, ElementRef, afterNextRender, computed, inject } from '@angular/core';
+import { Directive, ElementRef, afterNextRender, computed, inject } from '@angular/core';
+import { registerSingleton } from '../../form-field/headless';
 import { RuntimeError, createComponentId } from '@ethlete/core';
 import { CASCADER_ERROR_CODES } from '../cascader-errors';
 import { CascaderDirective } from './cascader.directive';
@@ -29,7 +30,6 @@ import { CascaderDirective } from './cascader.directive';
 export class CascaderTriggerDirective {
   public cascader = inject(CascaderDirective, { optional: true });
   public elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private destroyRef = inject(DestroyRef);
 
   public readonly id: string;
   public readonly isNativeButton: boolean;
@@ -48,13 +48,7 @@ export class CascaderTriggerDirective {
     this.id = element.id;
     this.isNativeButton = element.tagName === 'BUTTON';
 
-    this.cascader?.registeredTrigger.set(this);
-
-    this.destroyRef.onDestroy(() => {
-      if (this.cascader?.registeredTrigger() === this) {
-        this.cascader.registeredTrigger.set(null);
-      }
-    });
+    registerSingleton(this.cascader?.registeredTrigger, this);
 
     if (ngDevMode) {
       afterNextRender(() => {

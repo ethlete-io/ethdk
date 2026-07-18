@@ -1,6 +1,5 @@
 import {
   DOCUMENT,
-  DestroyRef,
   Directive,
   ElementRef,
   afterNextRender,
@@ -11,6 +10,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { registerSingleton } from '../../form-field/headless';
 import { RuntimeError } from '@ethlete/core';
 import { SELECT_ERROR_CODES } from '../select-errors';
 import { SelectDirective } from './select.directive';
@@ -49,7 +49,6 @@ export class SelectSearchDirective {
   protected select = inject(SelectDirective, { optional: true });
   private document = inject(DOCUMENT);
   public elementRef = inject<ElementRef<HTMLInputElement>>(ElementRef);
-  private destroyRef = inject(DestroyRef);
 
   public query = model('');
 
@@ -62,13 +61,7 @@ export class SelectSearchDirective {
   protected activeDescendant = computed(() => (this.select?.open() ? this.select.activeId() : null));
 
   constructor() {
-    this.select?.registeredSearch.set(this);
-
-    this.destroyRef.onDestroy(() => {
-      if (this.select?.registeredSearch() === this) {
-        this.select.registeredSearch.set(null);
-      }
-    });
+    registerSingleton(this.select?.registeredSearch, this);
 
     effect(() => {
       const element = this.elementRef.nativeElement;

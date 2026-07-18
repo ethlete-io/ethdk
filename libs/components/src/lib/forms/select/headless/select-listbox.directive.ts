@@ -1,4 +1,5 @@
-import { DestroyRef, Directive, ElementRef, afterNextRender, computed, inject } from '@angular/core';
+import { Directive, ElementRef, afterNextRender, computed, inject } from '@angular/core';
+import { registerSingleton } from '../../form-field/headless';
 import { RuntimeError, createComponentId } from '@ethlete/core';
 import { SELECT_ERROR_CODES } from '../select-errors';
 import { SelectDirective } from './select.directive';
@@ -16,7 +17,6 @@ export class SelectListboxDirective {
   /** @internal */
   public select = inject(SelectDirective, { optional: true });
   public elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private destroyRef = inject(DestroyRef);
 
   public readonly id: string;
 
@@ -35,13 +35,7 @@ export class SelectListboxDirective {
 
     this.id = element.id;
 
-    this.select?.registeredListbox.set(this);
-
-    this.destroyRef.onDestroy(() => {
-      if (this.select?.registeredListbox() === this) {
-        this.select.registeredListbox.set(null);
-      }
-    });
+    registerSingleton(this.select?.registeredListbox, this);
 
     if (ngDevMode) {
       afterNextRender(() => {

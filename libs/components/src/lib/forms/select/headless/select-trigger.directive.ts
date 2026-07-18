@@ -1,4 +1,5 @@
-import { DestroyRef, Directive, ElementRef, afterNextRender, computed, inject } from '@angular/core';
+import { Directive, ElementRef, afterNextRender, computed, inject } from '@angular/core';
+import { registerSingleton } from '../../form-field/headless';
 import { RuntimeError, createComponentId } from '@ethlete/core';
 import { SELECT_ERROR_CODES } from '../select-errors';
 import { SelectDirective } from './select.directive';
@@ -31,7 +32,6 @@ export class SelectTriggerDirective {
   /** @internal */
   public select = inject(SelectDirective, { optional: true });
   public elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private destroyRef = inject(DestroyRef);
 
   // with an inline search input, the input is the combobox and the tab stop —
   // the trigger element becomes a plain container
@@ -75,13 +75,7 @@ export class SelectTriggerDirective {
       element.id = createComponentId('et-select-trigger');
     }
 
-    this.select?.registeredTrigger.set(this);
-
-    this.destroyRef.onDestroy(() => {
-      if (this.select?.registeredTrigger() === this) {
-        this.select.registeredTrigger.set(null);
-      }
-    });
+    registerSingleton(this.select?.registeredTrigger, this);
 
     if (ngDevMode) {
       afterNextRender(() => {

@@ -1,4 +1,5 @@
-import { DestroyRef, Directive, TemplateRef, afterNextRender, inject } from '@angular/core';
+import { Directive, TemplateRef, afterNextRender, inject } from '@angular/core';
+import { registerSingleton } from '../../form-field/headless';
 import { RuntimeError } from '@ethlete/core';
 import { SELECT_ERROR_CODES } from '../select-errors';
 import { SelectSelectedEntry } from './select.tokens';
@@ -26,16 +27,9 @@ export type SelectValueContext = {
 export class SelectValueDirective {
   private select = inject(SelectDirective, { optional: true });
   public templateRef = inject<TemplateRef<SelectValueContext>>(TemplateRef);
-  private destroyRef = inject(DestroyRef);
 
   constructor() {
-    this.select?.registeredValueTemplate.set(this);
-
-    this.destroyRef.onDestroy(() => {
-      if (this.select?.registeredValueTemplate() === this) {
-        this.select.registeredValueTemplate.set(null);
-      }
-    });
+    registerSingleton(this.select?.registeredValueTemplate, this);
 
     if (ngDevMode) {
       afterNextRender(() => {

@@ -1,4 +1,5 @@
-import { DestroyRef, Directive, TemplateRef, afterNextRender, inject } from '@angular/core';
+import { Directive, TemplateRef, afterNextRender, inject } from '@angular/core';
+import { registerSingleton } from '../../form-field/headless';
 import { RuntimeError } from '@ethlete/core';
 import { PHONE_INPUT_ERROR_CODES } from '../phone-input-errors';
 import { PhoneInputDirective } from './phone-input.directive';
@@ -32,16 +33,9 @@ export type PhoneInputFlagContext = {
 export class PhoneInputFlagDirective {
   private phoneInput = inject(PhoneInputDirective, { optional: true });
   public templateRef = inject<TemplateRef<PhoneInputFlagContext>>(TemplateRef);
-  private destroyRef = inject(DestroyRef);
 
   constructor() {
-    this.phoneInput?.registeredFlagTemplate.set(this);
-
-    this.destroyRef.onDestroy(() => {
-      if (this.phoneInput?.registeredFlagTemplate() === this) {
-        this.phoneInput.registeredFlagTemplate.set(null);
-      }
-    });
+    registerSingleton(this.phoneInput?.registeredFlagTemplate, this);
 
     if (ngDevMode) {
       afterNextRender(() => {

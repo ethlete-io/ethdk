@@ -1,4 +1,5 @@
-import { DestroyRef, Directive, ElementRef, afterNextRender, effect, inject } from '@angular/core';
+import { Directive, ElementRef, afterNextRender, effect, inject } from '@angular/core';
+import { registerSingleton } from '../../../form-field/headless';
 import { RuntimeError } from '@ethlete/core';
 import { DATE_INPUT_ERROR_CODES } from '../date-input-errors';
 import { DateInputDirective } from './date-input.directive';
@@ -30,16 +31,9 @@ import { DateInputDirective } from './date-input.directive';
 export class DateInputFieldDirective {
   protected dateInput = inject(DateInputDirective, { optional: true });
   public elementRef = inject<ElementRef<HTMLInputElement>>(ElementRef);
-  private destroyRef = inject(DestroyRef);
 
   constructor() {
-    this.dateInput?.registeredField.set(this);
-
-    this.destroyRef.onDestroy(() => {
-      if (this.dateInput?.registeredField() === this) {
-        this.dateInput.registeredField.set(null);
-      }
-    });
+    registerSingleton(this.dateInput?.registeredField, this);
 
     // while unfocused the element mirrors the committed value (or the kept
     // unparseable text); mid-typing rewrites would fight the caret
