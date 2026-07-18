@@ -12,6 +12,8 @@ export type AnchoredPanelSurfaceLike = { templateRef: unknown };
 export type AnchoredPanelCloseInfo = {
   /** A deliberate pointerdown outside the panel and anchor closed it. */
   byOutsidePointer: boolean;
+  /** The pane was presented as a bottom sheet (small viewport) when it closed. */
+  fromBottomSheet: boolean;
 };
 
 export type AnchoredPanelOverlayRef = OverlayRef<OverlayTemplateHostComponent, unknown>;
@@ -65,6 +67,7 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
 
   let interactionListenersCleanup: (() => void) | null = null;
   let closedByOutsidePointer = false;
+  let closedFromBottomSheet = false;
 
   const detachInteractionListeners = () => {
     interactionListenersCleanup?.();
@@ -141,6 +144,11 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
           }
 
           detachInteractionListeners();
+
+          // read while the pane still exists — afterClosed fires after its removal
+          closedFromBottomSheet =
+            currentRef.elements?.paneElement?.classList.contains('et-overlay--bottom-sheet') ?? false;
+
           options.onBeforeClosed?.();
 
           if (options.open()) {
@@ -162,9 +170,13 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
 
           overlayRef.set(null);
 
-          const info: AnchoredPanelCloseInfo = { byOutsidePointer: closedByOutsidePointer };
+          const info: AnchoredPanelCloseInfo = {
+            byOutsidePointer: closedByOutsidePointer,
+            fromBottomSheet: closedFromBottomSheet,
+          };
 
           closedByOutsidePointer = false;
+          closedFromBottomSheet = false;
           options.onAfterClosed?.(info);
         }),
       )
