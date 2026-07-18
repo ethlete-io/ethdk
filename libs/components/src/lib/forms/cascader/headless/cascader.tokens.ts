@@ -9,3 +9,12 @@ export type CascaderColumnState<T = unknown> = {
   /** Error text when `status` is `'error'`. */
   error: string | null;
 };
+
+/** The state of a flat search — `idle` while no query is active. */
+export type CascaderSearchState<T = unknown> = {
+  status: 'idle' | 'loading' | 'loaded' | 'error';
+  /** Matching paths (root → matching node chains) from the data source's `search`. */
+  results: CascaderNode<T>[][];
+  /** Error text when `status` is `'error'`. */
+  error: string | null;
+};

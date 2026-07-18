@@ -1,6 +1,6 @@
 # Cascader
 
-`et-cascader` selects a value from a **hierarchy** by browsing it level by level — competition → stage → tournament → match, org → team → player, any nested taxonomy. It is deliberately generic: an abstract data source feeds it, each level loads on demand, and it commits the chosen leaf (or, optionally, any node) as the form value. It is the [select](/components/select)'s sibling — a value control with an anchored overlay — for data that is **browsed, not searched**. Import `CASCADER_IMPORTS`.
+`et-cascader` selects a value from a **hierarchy** by browsing it level by level — competition → stage → tournament → match, org → team → player, any nested taxonomy. It is deliberately generic: an abstract data source feeds it, each level loads on demand, and it commits the chosen leaf (or, optionally, any node) as the form value. It is the [select](/components/select)'s sibling — a value control with an anchored overlay — for data that is **browsed rather than searched** (though a [flat search](#flat-search) augment can jump straight to a known node). Import `CASCADER_IMPORTS`.
 
 ```ts
 import { CASCADER_IMPORTS } from '@ethlete/components';
@@ -53,20 +53,73 @@ protected competitions: CascaderDataSource<string> = {
 
 It returns the ancestor chain (root → committed node) so the trigger can render the breadcrumb. Return `null` (or an empty array) when the value has no resolvable path. For a static tree it's a trivial depth-first search; for an async source, resolve it however your backend allows.
 
+## Flat search
+
+Browsing is the cascader's default mode, but a user who already knows the leaf they want shouldn't have to drill for it. Implement the optional `search(query)` hook on the data source and the panel gains a search input — typing swaps the columns for a **flat result list across all levels**, each result showing its full breadcrumb:
+
+<StoryEmbed id="components-forms-cascader--search" height="420px" />
+
+```ts
+protected competitions: CascaderDataSource<string> = {
+  loadChildren: (parent) => this.api.children(parent?.value ?? null),
+  // return the matching paths — root → matching node chains (array | Promise | Observable)
+  search: (query) => this.api.searchMatches(query),
+};
+```
+
+Like `resolvePath`, the hook lives on the data source because the tree is lazy — only the source can search branches that were never loaded. For a static tree it's a depth-first walk collecting matches; for an async source, a backend search endpoint. A failed search shows an error row with a **Retry** control (`toErrorMessage` maps the failure).
+
+Activating a result **commits the match and closes** — the trigger shows its full breadcrumb. If a match is a branch that can't be committed (leaf mode), activating it instead **jumps the columns to that branch** and clears the query, so browsing continues from there.
+
+The input takes focus when the panel opens, and typing anywhere in the tree routes into it (replacing the per-column typeahead). <kbd>ArrowDown</kbd> moves from the input into the results (or the tree while browsing), typing from a result returns to the input, and the first <kbd>Escape</kbd> clears the query — only a second one closes the panel. The default component labels the input via `searchPlaceholder` (default `Search`).
+
+## Query-backed levels — `cascaderFromQuery`
+
+For levels served by an [`@ethlete/query`](/query/) API, `cascaderFromQuery` builds the whole data source in one call — like [`selectOptionsFromQuery`](/components/select#async-options), but per level. Each level load runs its own query (levels load concurrently, e.g. when the panel re-opens onto a committed branch), with the client's dedup and caching coalescing repeats:
+
+```ts
+competitions = cascaderFromQuery({
+  queryCreator: getCompetitionChildren,
+  args: (parent) => ({ queryParams: { parent: parent?.value ?? null } }),
+  toNodes: (res) => res.items.map((item) => ({ value: item.id, label: item.name, isLeaf: item.isMatch })),
+  search: {
+    queryCreator: searchCompetitions,
+    args: (query) => ({ queryParams: { q: query } }),
+    toResults: (res) => res.matches.map((match) => match.path.map((p) => ({ value: p.id, label: p.name }))),
+  },
+});
+```
+
+Call it from a field initializer / constructor (injection context) — the same place you'd create a query — and bind the result to `[dataSource]`. `args` builds the request for a `parent` (the root when `null`; return `null` to skip and show the level as empty), `toNodes` maps the response to the level's nodes. The optional `search` block wires the [flat search](#flat-search) the same way (`toResults` maps to root → match path chains) and debounces requests (`debounceTime`, default 300ms; `minQueryLength`, default 1). A failed request surfaces as the column's (or the result list's) error row with **Retry** — the text comes from `toErrorMessage` (default: the response's first error message). A `resolvePath` implementation passes straight through to the data source.
+
+## Multi-select
+
+With `multiple`, activating a node **toggles** its value instead of committing-and-closing — the form value is a `T[]`. Leaves toggle on click; branches still just drill (in `selectableLevels="any"` they toggle **and** drill). Every row gains a check square: selected nodes show a checkmark, and an unselected ancestor of a selection shows the **indeterminate dash**, so partial selections are visible from the root column. The trigger joins the selected labels (`Group A, Group B`), and the clear (×) control empties the whole selection:
+
+<StoryEmbed id="components-forms-cascader--multiple" height="380px" />
+
+With a [flat search](#flat-search), activating a result toggles it and **keeps the result list and query alive**, so several hits of one search can be picked in a row:
+
+<StoryEmbed id="components-forms-cascader--multiple-with-search" height="420px" />
+
+Values set programmatically (a form patch/restore) display and mark their ancestors once the data source's [`resolvePath`](#resolving-a-programmatic-value-—-resolvepath) resolves their chains — one call per unknown value. The panel reports itself as an `aria-multiselectable` tree.
+
 ## Options
 
 On `et-cascader` (forwarded from the headless `[etCascader]` directive):
 
-| Input              | Type                            | Default  | Description                                                                                   |
-| ------------------ | ------------------------------- | -------- | --------------------------------------------------------------------------------------------- |
-| `dataSource`       | `CascaderDataSource<T> \| null` | `null`   | The hierarchy to browse (required to open).                                                   |
-| `selectableLevels` | `'leaf' \| 'any'`               | `'leaf'` | `'leaf'` commits only terminal nodes; `'any'` also commits intermediate branches (see below). |
-| `compareWith`      | `(a: T, b: T) => boolean`       | `===`    | Value equality — override when values are objects.                                            |
-| `toErrorMessage`   | `(error: unknown) => string`    | generic  | Maps a `loadChildren` failure to the column's error text.                                     |
-| `mirrorPanelWidth` | `boolean`                       | `false`  | Whether the panel matches the field width (off — columns size themselves).                    |
-| `placeholder`      | `string`                        | `''`     | Shown on the trigger until a value is committed.                                              |
+| Input               | Type                            | Default  | Description                                                                                                                                 |
+| ------------------- | ------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dataSource`        | `CascaderDataSource<T> \| null` | `null`   | The hierarchy to browse (required to open).                                                                                                 |
+| `multiple`          | `boolean`                       | `false`  | [Multi-select](#multi-select): activations toggle values, the form value is a `T[]`.                                                        |
+| `selectableLevels`  | `'leaf' \| 'any'`               | `'leaf'` | `'leaf'` commits only terminal nodes; `'any'` also commits intermediate branches (see below).                                               |
+| `compareWith`       | `(a: T, b: T) => boolean`       | `===`    | Value equality — override when values are objects.                                                                                          |
+| `toErrorMessage`    | `(error: unknown) => string`    | see note | Maps a `loadChildren` / `search` failure to the panel's error text. Default: an `Error`'s `message` verbatim, a generic fallback otherwise. |
+| `mirrorPanelWidth`  | `boolean`                       | `false`  | Whether the panel matches the field width (off — columns size themselves).                                                                  |
+| `placeholder`       | `string`                        | `''`     | Shown on the trigger until a value is committed.                                                                                            |
+| `searchPlaceholder` | `string`                        | `Search` | Placeholder of the panel's [flat search](#flat-search) input (rendered only when the data source has a `search` hook).                      |
 
-The `value` model is the selected node's `value` (`T | null`). The full chosen chain is exposed as `path` (`CascaderNode<T>[]`) and `pathValue` (`T[]`) computeds, and the trigger shows the breadcrumb (`Euro / Knockout stage / Final`).
+The `value` model is the selected node's `value` (`T | null`; a `T[]` with [`multiple`](#multi-select)). The full chosen chain is exposed as `path` (`CascaderNode<T>[]`) and `pathValue` (`T[]`) computeds, and the trigger shows the breadcrumb (`Euro / Knockout stage / Final`) — or the joined labels in multi mode.
 
 ## Selectable levels
 
@@ -103,6 +156,17 @@ On wider viewports the levels render as **Miller columns** side by side. On smal
 </div>
 ```
 
+For [flat search](#flat-search), place an `input[etCascaderSearch]` in the surface and render `cascader.searchState().results` while `cascader.isSearching()` — each result is a `[etCascaderSearchOption]` with its `[path]` (the root → match chain) and `[index]`:
+
+```html
+<input etCascaderSearch placeholder="Search" />
+@if (cascader.isSearching()) { @for (result of cascader.searchState().results; track $index) {
+<button [path]="result" [index]="$index" etCascaderSearchOption type="button">
+  @for (node of result; track $index) { {{ node.label }} }
+</button>
+} }
+```
+
 ## Accessibility
 
 - The trigger is a `role="combobox"` with `aria-haspopup="tree"`, `aria-expanded`, and `aria-controls` pointing at the open tree panel; the panel is a `role="tree"` of `role="group"` columns and `role="treeitem"` nodes carrying `aria-level`, `aria-selected`, and `aria-expanded` on branches.
@@ -117,6 +181,8 @@ On wider viewports the levels render as **Miller columns** side by side. On smal
 | Type a name     | Jump to the first matching node in column |
 | Enter / Space   | Select the focused node (commit or drill) |
 
+With a [flat search](#flat-search) active, the panel reports itself as a `role="listbox"` of `role="option"` results instead, typing routes into the search input (replacing the in-column jump), and Escape clears the query before it closes the panel.
+
 ## Theming
 
 Panel chrome uses the [surface theme](/core/theming); the selected chain and branch chevrons use the color theme's ink (`--et-theme-color-ink-solid`), and the error state resolves the app's `type: 'error'` theme. Public design tokens:
@@ -129,7 +195,7 @@ Panel chrome uses the [surface theme](/core/theming); the selected chain and bra
 
 ## Scope
 
-v1 is single-select, leaf-or-any-level. A flat **search augment** (jump straight to a known leaf) and a `cascaderFromQuery` convenience for [`@ethlete/query`](/query/)-backed levels are planned follow-ups; the data-source contract already accepts an `Observable`, so query-backed levels work today by wiring one yourself. Multi-select with indeterminate parents is a separate future slice.
+The cascader selects leaf-or-any-level, in [single or multi mode](#multi-select), with a [flat search](#flat-search) augment and a [`cascaderFromQuery`](#query-backed-levels-—-cascaderfromquery) convenience for query-backed levels.
 
 ## Error codes
 

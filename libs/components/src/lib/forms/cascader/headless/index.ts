@@ -1,5 +1,7 @@
 export * from './cascader-column.directive';
 export * from './cascader-node.directive';
+export * from './cascader-search-option.directive';
+export * from './cascader-search.directive';
 export * from './cascader-surface.directive';
 export * from './cascader-trigger.directive';
 export * from './cascader.directive';

@@ -4,6 +4,8 @@ import {
   CascaderColumnDirective,
   CascaderDirective,
   CascaderNodeDirective,
+  CascaderSearchDirective,
+  CascaderSearchOptionDirective,
   CascaderSurfaceDirective,
   CascaderTriggerDirective,
 } from './headless';
@@ -16,4 +18,6 @@ export const CASCADER_IMPORTS = [
   CascaderSurfaceDirective,
   CascaderColumnDirective,
   CascaderNodeDirective,
+  CascaderSearchDirective,
+  CascaderSearchOptionDirective,
 ] as const;

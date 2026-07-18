@@ -59,25 +59,72 @@ const asyncSource: CascaderDataSource<string> = {
     of(TREE[parent ? parent.value : 'root'] ?? []).pipe(delay(600)),
 };
 
+// flat search over the static tree: a depth-first walk collecting every matching path
+const searchTree = (query: string): CascaderNode<string>[][] => {
+  const results: CascaderNode<string>[][] = [];
+  const needle = query.toLowerCase();
+
+  const walk = (key: string, ancestors: CascaderNode<string>[]) => {
+    for (const node of TREE[key] ?? []) {
+      const path = [...ancestors, node];
+
+      if (node.label.toLowerCase().includes(needle)) {
+        results.push(path);
+      }
+
+      walk(node.value, path);
+    }
+  };
+
+  walk('root', []);
+
+  return results;
+};
+
+// the sync tree plus a `search` hook — its presence is what enables the panel's search input
+const searchableSource: CascaderDataSource<string> = {
+  loadChildren: syncSource.loadChildren,
+  search: (query) => of(searchTree(query)).pipe(delay(400)),
+};
+
 @Component({
   selector: 'et-sb-cascader',
   template: `
     <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
-      <et-form-field>
-        <et-label>{{ label() }}</et-label>
-        <et-cascader
-          [formField]="demoForm.value"
-          [dataSource]="resolvedSource()"
-          [selectableLevels]="selectableLevels()"
-          [toErrorMessage]="toErrorMessage"
-          [placeholder]="placeholder()"
-        />
-        @if (hint()) {
-          <et-hint>{{ hint() }}</et-hint>
-        }
-      </et-form-field>
+      @if (multiple()) {
+        <et-form-field>
+          <et-label>{{ label() }}</et-label>
+          <et-cascader
+            [formField]="multiForm.value"
+            [dataSource]="resolvedSource()"
+            [selectableLevels]="selectableLevels()"
+            [toErrorMessage]="toErrorMessage"
+            [placeholder]="placeholder()"
+            [multiple]="true"
+          />
+          @if (hint()) {
+            <et-hint>{{ hint() }}</et-hint>
+          }
+        </et-form-field>
 
-      <p class="text-sm opacity-60">Form value: "{{ demoForm.value().value() ?? 'null' }}"</p>
+        <p class="text-sm opacity-60">Form value: {{ multiFormValue() }}</p>
+      } @else {
+        <et-form-field>
+          <et-label>{{ label() }}</et-label>
+          <et-cascader
+            [formField]="demoForm.value"
+            [dataSource]="resolvedSource()"
+            [selectableLevels]="selectableLevels()"
+            [toErrorMessage]="toErrorMessage"
+            [placeholder]="placeholder()"
+          />
+          @if (hint()) {
+            <et-hint>{{ hint() }}</et-hint>
+          }
+        </et-form-field>
+
+        <p class="text-sm opacity-60">Form value: "{{ demoForm.value().value() ?? 'null' }}"</p>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -89,6 +136,10 @@ export class CascaderStorybookComponent {
   public placeholder = input('Browse competitions');
   public selectableLevels = input<CascaderSelectableLevels>('leaf');
   public async = input(false);
+  /** Adds a `search` hook to the data source, enabling the panel's flat search input. */
+  public searchable = input(false);
+  /** Multi-select: activations toggle values, parents show indeterminate states. */
+  public multiple = input(false);
   /** Fails the first load of each level and recovers on Retry — demonstrates the error state. */
   public errorMode = input(false);
   public value = input<string | null>(null);
@@ -112,13 +163,27 @@ export class CascaderStorybookComponent {
     },
   };
 
-  protected resolvedSource = computed<CascaderDataSource<string>>(() =>
-    this.errorMode() ? this.flakySource : this.async() ? asyncSource : syncSource,
-  );
+  protected resolvedSource = computed<CascaderDataSource<string>>(() => {
+    if (this.errorMode()) {
+      return this.flakySource;
+    }
+
+    if (this.searchable()) {
+      return searchableSource;
+    }
+
+    return this.async() ? asyncSource : syncSource;
+  });
 
   private formModel = linkedSignal(() => ({ value: this.value() }));
 
   public demoForm = form(this.formModel);
+
+  private multiFormModel = linkedSignal<{ value: string[] }>(() => ({ value: [] }));
+
+  public multiForm = form(this.multiFormModel);
+
+  protected multiFormValue = computed(() => JSON.stringify(this.multiForm.value().value()));
 
   protected toErrorMessage(error: unknown) {
     return error instanceof Error ? error.message : 'Failed to load';

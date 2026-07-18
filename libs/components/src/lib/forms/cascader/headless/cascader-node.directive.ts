@@ -21,6 +21,7 @@ import { canHaveChildren, nodesEqual } from './internals/cascader-tree';
     '[attr.aria-disabled]': 'node().disabled || null',
     '[attr.tabindex]': 'focused() ? 0 : -1',
     '[attr.data-selected]': 'selected() || null',
+    '[attr.data-indeterminate]': 'indeterminate() || null',
     '[attr.data-expanded]': 'expanded() || null',
     '[attr.data-focused]': 'focused() || null',
     '[attr.data-disabled]': 'node().disabled || null',
@@ -48,6 +49,7 @@ export class CascaderNodeDirective<T = unknown> {
 
   protected expandable = computed(() => canHaveChildren(this.node()));
   protected selected = computed(() => this.cascader?.isSelected(this.node()) ?? false);
+  protected indeterminate = computed(() => this.cascader?.isIndeterminate(this.node()) ?? false);
   protected expanded = computed(() => this.cascader?.isExpanded(this.node(), this.column.columnIndex()) ?? false);
 
   protected focused = computed(() =>

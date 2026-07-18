@@ -11,6 +11,8 @@ export default {
     placeholder: { control: 'text' },
     selectableLevels: { control: 'inline-radio', options: ['leaf', 'any'] },
     async: { control: 'boolean' },
+    searchable: { control: 'boolean' },
+    multiple: { control: 'boolean' },
     errorMode: { control: 'boolean' },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
   },
@@ -20,6 +22,8 @@ export default {
     placeholder: 'Browse competitions',
     selectableLevels: 'leaf',
     async: false,
+    searchable: false,
+    multiple: false,
     errorMode: false,
     color: 'brand',
   },
@@ -35,6 +39,18 @@ export const AnyLevel: Story = {
 
 export const AsyncLevels: Story = {
   args: { async: true, hint: 'Each level loads on demand' },
+};
+
+export const Search: Story = {
+  args: { searchable: true, hint: 'Type in the panel to search across all levels at once' },
+};
+
+export const Multiple: Story = {
+  args: { multiple: true, hint: 'Leaf picks toggle — parents show the partial-selection dash' },
+};
+
+export const MultipleWithSearch: Story = {
+  args: { multiple: true, searchable: true, hint: 'Toggle several results of one search' },
 };
 
 export const AsyncError: Story = {

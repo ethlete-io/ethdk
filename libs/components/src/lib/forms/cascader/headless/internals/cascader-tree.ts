@@ -41,6 +41,18 @@ export type CascaderDataSource<T> = {
   resolvePath?(
     value: T,
   ): CascaderNode<T>[] | null | Promise<CascaderNode<T>[] | null> | Observable<CascaderNode<T>[] | null>;
+
+  /**
+   * Optionally searches the whole hierarchy **flat** — across all levels at once, so a known
+   * leaf can be jumped to without drilling. Each result is the full ancestor chain (root →
+   * matching node). Providing this hook is what enables search: with it, a search input
+   * (`etCascaderSearch` / the default component's built-in one) filters the panel into a flat
+   * result list. It lives on the data source for the same reason `resolvePath` does — the tree
+   * is lazy and per-level, so only the source can search branches that were never loaded. For
+   * a static tree it's a depth-first walk collecting matches; for an async source, a backend
+   * search endpoint.
+   */
+  search?(query: string): CascaderNode<T>[][] | Promise<CascaderNode<T>[][]> | Observable<CascaderNode<T>[][]>;
 };
 
 /** Whether a node can be drilled into — false for explicit leaves and `hasChildren: false`. */
@@ -76,6 +88,21 @@ export const indexOfNode = <T>(options: {
 export const toChildrenObservable = <T>(
   result: CascaderNode<T>[] | Promise<CascaderNode<T>[]> | Observable<CascaderNode<T>[]>,
 ): Observable<CascaderNode<T>[]> => {
+  if (Array.isArray(result)) {
+    return of(result);
+  }
+
+  if (isObservable(result)) {
+    return result;
+  }
+
+  return from(result);
+};
+
+/** Normalizes a `search` result (array | Promise | Observable) into an Observable. */
+export const toSearchObservable = <T>(
+  result: CascaderNode<T>[][] | Promise<CascaderNode<T>[][]> | Observable<CascaderNode<T>[][]>,
+): Observable<CascaderNode<T>[][]> => {
   if (Array.isArray(result)) {
     return of(result);
   }

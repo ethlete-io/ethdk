@@ -8,7 +8,10 @@ import { CascaderPanelComponent } from './cascader-panel.component';
 import {
   CascaderColumnDirective,
   CascaderDirective,
+  CascaderNode,
   CascaderNodeDirective,
+  CascaderSearchDirective,
+  CascaderSearchOptionDirective,
   CascaderSurfaceDirective,
   CascaderTriggerDirective,
 } from './headless';
@@ -23,6 +26,8 @@ import {
     CascaderSurfaceDirective,
     CascaderColumnDirective,
     CascaderNodeDirective,
+    CascaderSearchDirective,
+    CascaderSearchOptionDirective,
     CascaderPanelComponent,
     IconDirective,
     NgTemplateOutlet,
@@ -39,6 +44,7 @@ import {
         'touched',
         'open',
         'dataSource',
+        'multiple',
         'selectableLevels',
         'compareWith',
         'toErrorMessage',
@@ -67,6 +73,8 @@ export class CascaderComponent {
   public clearable = input(true);
   public clearLabel = input('Clear');
   public backLabel = input('Back');
+  /** Placeholder of the panel's search input (shown when the data source has a `search` hook). */
+  public searchPlaceholder = input('Search');
 
   protected showClear = computed(
     () =>
@@ -81,5 +89,9 @@ export class CascaderComponent {
     event.stopPropagation();
     this.cascader.clearValue();
     this.cascader.activate();
+  }
+
+  protected resultDisabled(path: CascaderNode<unknown>[]) {
+    return path[path.length - 1]?.disabled ?? false;
   }
 }

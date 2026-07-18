@@ -121,6 +121,8 @@ The date input, date range input, [time picker](/components/time-picker), time i
 | `ET3304` | `etCascaderSurface` is not inside an `[etCascader]` element.         | Move the surface template inside the cascader root.               |
 | `ET3305` | `etCascaderColumn` is not rendered inside an `[etCascader]` element. | Move the column inside the cascader surface.                      |
 | `ET3306` | `etCascaderNode` is not rendered inside an `[etCascader]` element.   | Move the node inside a cascader column.                           |
+| `ET3307` | `etCascaderSearch` is not inside an `[etCascader]` element.          | Move the search input inside the cascader surface.                |
+| `ET3308` | `etCascaderSearchOption` is not inside an `[etCascader]` element.    | Move the search option inside the cascader surface.               |
 
 ## Masked input (ET32xx)
 

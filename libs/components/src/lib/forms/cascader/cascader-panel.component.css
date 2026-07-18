@@ -225,6 +225,58 @@
       block-size: min(60vh, 480px);
     }
 
+    .et-cascader-search {
+      padding: 6px;
+      border-block-end: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+
+      /* mirrors the menu's search field (input[etmenusearch] in menu.component.css) */
+      input[etcascadersearch] {
+        inline-size: 100%;
+        block-size: 36px;
+        box-sizing: border-box;
+        padding-inline: 10px;
+        border-radius: 6px;
+        border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+        background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 6%, transparent);
+        color: inherit;
+        font: inherit;
+        outline: none;
+        caret-color: var(--et-theme-color-primary-solid, currentColor);
+        transition:
+          border-color 120ms ease,
+          background 120ms ease;
+
+        &:focus-visible {
+          border-color: var(--et-theme-color-primary-solid, rgb(255 255 255 / 0.3));
+        }
+
+        &::placeholder {
+          color: var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55));
+        }
+      }
+    }
+
+    .et-cascader-results {
+      display: block;
+      box-sizing: border-box;
+      /* fixed width — with content-derived sizing, every keystroke would resize the panel
+         horizontally (the widest visible result keeps changing) */
+      inline-size: min(320px, calc(100vw - 24px));
+      max-block-size: var(--et-cascader-panel-max-block-size);
+      overflow-y: auto;
+      overflow-x: clip;
+      overscroll-behavior: contain;
+      padding: 6px;
+    }
+
+    /* sheet: the result list fills the fixed-height body like a drilled column */
+    .et-cascader-sheet-body .et-cascader-results {
+      flex: 1;
+      min-block-size: 0;
+      inline-size: 100%;
+      max-block-size: none;
+    }
+
     .et-cascader-column {
       display: block;
       flex: none;
@@ -261,7 +313,8 @@
       animation: et-cascader-column-fade-in 180ms ease;
     }
 
-    .et-cascader-node {
+    .et-cascader-node,
+    .et-cascader-search-option {
       display: flex;
       align-items: center;
       gap: 8px;
@@ -303,12 +356,66 @@
       }
     }
 
-    .et-cascader-node-label {
+    .et-cascader-node-label,
+    .et-cascader-search-option-label {
       flex: 1;
       min-inline-size: 0;
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
+    }
+
+    /* the ancestor part of a result's breadcrumb recedes so the matching node stands out */
+    .et-cascader-search-option-ancestor {
+      color: var(--et-surface-color-muted-solid, currentColor);
+    }
+
+    /* multi mode: a leading check square, driven by the row's data-selected / data-indeterminate */
+    .et-cascader-check {
+      position: relative;
+      flex: none;
+      inline-size: 16px;
+      block-size: 16px;
+      box-sizing: border-box;
+      border: 2px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.3));
+      border-radius: 4px;
+      transition:
+        background 120ms ease,
+        border-color 120ms ease;
+
+      &::after {
+        content: '';
+        position: absolute;
+        opacity: 0;
+      }
+    }
+
+    [data-selected] > .et-cascader-check,
+    [data-indeterminate] > .et-cascader-check {
+      border-color: var(--et-theme-color-primary-solid, currentColor);
+      background: var(--et-theme-color-primary-solid, currentColor);
+    }
+
+    /* checkmark: a rotated border L */
+    [data-selected] > .et-cascader-check::after {
+      inset-inline-start: 3px;
+      inset-block-start: 0;
+      inline-size: 4px;
+      block-size: 8px;
+      border: solid var(--et-theme-color-on-primary, rgb(0 0 0));
+      border-width: 0 2px 2px 0;
+      rotate: 45deg;
+      opacity: 1;
+    }
+
+    /* indeterminate: a centered dash */
+    [data-indeterminate] > .et-cascader-check::after {
+      inset-inline-start: 2px;
+      inset-block-start: 5px;
+      inline-size: 8px;
+      block-size: 2px;
+      background: var(--et-theme-color-on-primary, rgb(0 0 0));
+      opacity: 1;
     }
 
     .et-cascader-node-chevron {
@@ -418,9 +525,16 @@
     }
 
     /* roomier, more tappable rows on mobile */
-    .et-cascader-node {
+    .et-cascader-node,
+    .et-cascader-search-option {
       font-size: 16px;
       padding-inline: 14px;
+    }
+
+    /* 16px also keeps iOS Safari from zooming into the focused input */
+    .et-cascader-search input[etcascadersearch] {
+      block-size: 44px;
+      font-size: 16px;
     }
 
     .et-cascader-node-chevron {

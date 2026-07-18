@@ -17,7 +17,7 @@ import {
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { RuntimeError, nextFrame } from '@ethlete/core';
-import { EMPTY, Subscription, catchError, fromEvent, switchMap, take, tap } from 'rxjs';
+import { EMPTY, Subscription, catchError, fromEvent, merge, switchMap, take, tap } from 'rxjs';
 import { createTypeahead } from '../../../internals/typeahead';
 import { anchoredOverlayStrategy, injectBottomSheetStrategy } from '../../../overlay/strategies';
 import {
@@ -29,7 +29,7 @@ import {
   isInteractiveElement,
 } from '../../form-field/headless';
 import { CASCADER_ERROR_CODES } from '../cascader-errors';
-import { CascaderColumnState } from './cascader.tokens';
+import { CascaderColumnState, CascaderSearchState } from './cascader.tokens';
 import {
   CascaderCompareWith,
   CascaderDataSource,
@@ -40,6 +40,7 @@ import {
   nodesEqual,
   toChildrenObservable,
   toPathObservable,
+  toSearchObservable,
 } from './internals/cascader-tree';
 
 export const CASCADER_SELECTABLE_LEVELS = {
@@ -53,6 +54,12 @@ export type CascaderSelectableLevels = (typeof CASCADER_SELECTABLE_LEVELS)[keyof
 
 type CascaderSurfaceLike = { templateRef: unknown };
 type CascaderTriggerLike = { elementRef: { nativeElement: HTMLElement } };
+type CascaderSearchLike = {
+  clear(): void;
+  focus(options?: { select?: boolean }): void;
+  isFocused(): boolean;
+  appendCharacter(character: string): void;
+};
 
 @Directive({
   selector: '[etCascader]',
@@ -61,17 +68,20 @@ type CascaderTriggerLike = { elementRef: { nativeElement: HTMLElement } };
     '[attr.data-cascader-open]': 'open() || null',
   },
 })
-export class CascaderDirective<T = unknown> implements FormValueControl<T | null>, FormFieldControl {
+export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] | null>, FormFieldControl {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
   private bottomSheetStrategy = injectBottomSheetStrategy();
 
-  public value = model<T | null>(null);
+  /** The committed value: `T | null` in single mode, `T[]` with `multiple`. */
+  public value = model<T | T[] | null>(null);
   public touched = model(false);
   public open = model(false);
   public disabled = input(false);
   public readonly = input(false);
+  /** Multi-select: node activations toggle values instead of committing-and-closing. */
+  public multiple = input(false);
   public invalid = input(false);
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   public required = input(false);
@@ -87,8 +97,14 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
   /** Value equality — override when values are objects. */
   public compareWith = input<CascaderCompareWith<T>>(defaultCompareWith);
 
-  /** Turns a `loadChildren` failure into the per-column error text. */
-  public toErrorMessage = input<(error: unknown) => string>(() => 'Something went wrong');
+  /**
+   * Turns a `loadChildren` / `search` failure into the error text shown in the panel. The default
+   * shows an `Error`'s `message` verbatim (sources like `cascaderFromQuery` throw display-ready
+   * messages) and a generic fallback for anything else.
+   */
+  public toErrorMessage = input<(error: unknown) => string>(
+    (error) => (error instanceof Error && error.message) || 'Something went wrong',
+  );
 
   /** Whether the overlay panel mirrors the anchor's width (off — columns size themselves). */
   public mirrorPanelWidth = input(false);
@@ -97,7 +113,19 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
   public closed = output<void>();
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
-  public hasValue = computed(() => this.value() !== null && this.value() !== undefined);
+
+  /** The committed values, normalized to an array (one entry in single mode, empty for no value). */
+  public values = computed<T[]>(() => {
+    const value = this.value();
+
+    if (Array.isArray(value)) {
+      return value;
+    }
+
+    return value === null || value === undefined ? [] : [value];
+  });
+
+  public hasValue = computed(() => this.values().length > 0);
 
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.CASCADER);
@@ -112,6 +140,8 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
   public registeredTrigger = signal<CascaderTriggerLike | null>(null);
   /** @internal */
   public registeredSurface = signal<CascaderSurfaceLike | null>(null);
+  /** @internal */
+  public registeredSearch = signal<CascaderSearchLike | null>(null);
   /** @internal The mounted tree panel's element id — the trigger points `aria-controls` at it. */
   public panelId = signal<string | null>(null);
 
@@ -125,9 +155,35 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
   public path = signal<CascaderNode<T>[]>([]);
   public pathValue = computed(() => this.path().map((node) => node.value));
 
+  /**
+   * Multi mode: the known chain (root → selected node) per selected value — filled by in-panel
+   * toggles and, for programmatically set values, by the data source's `resolvePath`. A value
+   * whose chain is unknown yet has no entry here (its label can't be displayed until resolved).
+   */
+  public selectedPaths = signal<CascaderNode<T>[][]>([]);
+
   /** The label of the current value, or `null` (show the placeholder). */
   public displayPath = computed(() => this.path().map((node) => node.label));
   public displayValue = computed(() => {
+    if (this.multiple()) {
+      // one label per selected node (not the full breadcrumb — several would not scan)
+      const compareWith = this.compareWith();
+      const paths = this.selectedPaths();
+      const labels = this.values()
+        .map((value) => {
+          const chain = paths.find((path) => {
+            const last = path[path.length - 1];
+
+            return last !== undefined && compareWith(last.value, value);
+          });
+
+          return chain?.[chain.length - 1]?.label ?? (typeof value === 'string' ? value : null);
+        })
+        .filter((label): label is string => label !== null);
+
+      return labels.length ? labels.join(', ') : null;
+    }
+
     const labels = this.displayPath();
 
     return labels.length ? labels.join(' / ') : null;
@@ -148,6 +204,34 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
   public overlayRef = signal<AnchoredPanelOverlayRef | null>(null);
   public isMounted = computed(() => this.overlayRef() !== null);
 
+  /** Whether the data source supports flat search — the presence of its `search` hook. */
+  public canSearch = computed(() => !!this.dataSource()?.search);
+
+  /** The raw flat-search query, written by the registered search input. */
+  public searchQuery = signal('');
+
+  /** Whether a flat search is active — a non-blank query on a searchable source. */
+  public isSearching = computed(() => this.canSearch() && this.searchQuery().trim().length > 0);
+
+  /** The flat search's load state and matching paths (root → matching node chains). */
+  public searchState = signal<CascaderSearchState<T>>({ status: 'idle', results: [], error: null });
+
+  /** @internal Index of the search result holding roving focus — `-1` while the input has it. */
+  public focusedSearchIndex = signal(-1);
+
+  private searchRetry = signal(0);
+
+  private searchRequest = computed(() => {
+    const source = this.dataSource();
+    const search = source?.search;
+
+    if (!source || !search || !this.isSearching()) {
+      return null;
+    }
+
+    return { source, search, query: this.searchQuery().trim(), retry: this.searchRetry() };
+  });
+
   private panel = createAnchoredPanelController({
     canOpen: computed(() => !this.disabled()),
     open: this.open,
@@ -165,7 +249,9 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
         mode: 'non-modal',
         autoFocus: false,
         restoreFocus: false,
-        closeOnEscape: true,
+        // Escape is owned by handlePanelKeydown (clear the search query first, close second) —
+        // the runtime's capture-phase handler would close before the search input saw the key
+        closeOnEscape: false,
         closeOnOutsidePointer: false,
         origin,
         panelClass: 'et-cascader-overlay-pane',
@@ -196,12 +282,38 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
       // the opening pointer click focuses the trigger one frame *after* the node's focus effect
       // runs, stealing focus back — re-pull it onto the active node once everything has settled
       nextFrame(() => {
-        if (this.overlayRef()) {
-          this.focusPulse.update((pulse) => pulse + 1);
+        if (!this.overlayRef()) {
+          return;
         }
+
+        const search = this.registeredSearch();
+
+        if (!search) {
+          this.focusPulse.update((pulse) => pulse + 1);
+
+          return;
+        }
+
+        // with a search box the input takes initial focus (menu pattern): typing filters
+        // immediately, ArrowDown moves roving focus into the tree. The pane may not be
+        // focusable while its enter transition settles — retry until the focus sticks.
+        const attempt = (remaining: number) => {
+          if (!this.overlayRef()) {
+            return;
+          }
+
+          search.focus();
+
+          if (!search.isFocused() && remaining > 0) {
+            requestAnimationFrame(() => attempt(remaining - 1));
+          }
+        };
+
+        attempt(20);
       });
     },
     onMounted: () => this.opened.emit(),
+    onDocumentKeydown: (event) => this.handlePanelKeydown(event),
     onAfterClosed: ({ byOutsidePointer }) => {
       this.focusInside.set(false);
       this.closed.emit();
@@ -238,11 +350,29 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
 
     // clear the browse state whenever the value is externally reset to nothing, so a
-    // reopened panel starts at the root instead of a stale branch
+    // reopened panel starts at the root instead of a stale branch — and in multi mode,
+    // prune the known chains of values that were removed from outside
     effect(() => {
       const value = this.value();
 
       untracked(() => {
+        if (this.multiple()) {
+          const values = this.values();
+          const compareWith = this.compareWith();
+          const paths = this.selectedPaths();
+          const pruned = paths.filter((path) => {
+            const last = path[path.length - 1];
+
+            return last !== undefined && values.some((candidate) => compareWith(candidate, last.value));
+          });
+
+          if (pruned.length !== paths.length) {
+            this.selectedPaths.set(pruned);
+          }
+
+          return;
+        }
+
         if ((value === null || value === undefined) && this.path().length) {
           this.path.set([]);
         }
@@ -256,11 +386,56 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
     toObservable(this.value)
       .pipe(
         switchMap((value) => {
-          if (value === null || value === undefined) {
+          const compareWith = this.compareWith();
+          const resolvePath = this.dataSource()?.resolvePath;
+
+          // multi mode: resolve the chain of every value that wasn't picked in the panel
+          // (a form patch/restore), so labels and indeterminate parents work for them too
+          if (this.multiple()) {
+            const missing = this.values().filter(
+              (candidate) =>
+                !this.selectedPaths().some((path) => {
+                  const pathLast = path[path.length - 1];
+
+                  return pathLast !== undefined && compareWith(pathLast.value, candidate);
+                }),
+            );
+
+            if (!resolvePath || !missing.length) {
+              return EMPTY;
+            }
+
+            return merge(
+              ...missing.map((candidate) =>
+                toPathObservable(resolvePath(candidate)).pipe(
+                  tap((resolved) => {
+                    // the value may have been deselected while resolving — drop the late chain
+                    const stillSelected = this.values().some((current) => compareWith(current, candidate));
+                    const resolvedLast = resolved?.[resolved.length - 1];
+
+                    if (!stillSelected || !resolved || !resolvedLast || !compareWith(resolvedLast.value, candidate)) {
+                      return;
+                    }
+
+                    this.selectedPaths.update((paths) => [
+                      ...paths.filter((path) => {
+                        const pathLast = path[path.length - 1];
+
+                        return pathLast === undefined || !compareWith(pathLast.value, candidate);
+                      }),
+                      resolved,
+                    ]);
+                  }),
+                  catchError(() => EMPTY),
+                ),
+              ),
+            );
+          }
+
+          if (value === null || value === undefined || Array.isArray(value)) {
             return EMPTY;
           }
 
-          const compareWith = this.compareWith();
           const currentPath = this.path();
           const last = currentPath[currentPath.length - 1];
 
@@ -268,8 +443,6 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
           if (last && compareWith(last.value, value)) {
             return EMPTY;
           }
-
-          const resolvePath = this.dataSource()?.resolvePath;
 
           if (!resolvePath) {
             return EMPTY;
@@ -280,13 +453,51 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
               // a later value change / clear superseded this (async) resolve — drop it
               const currentValue = this.value();
 
-              if (currentValue === null || currentValue === undefined || !compareWith(currentValue, value)) {
+              if (
+                currentValue === null ||
+                currentValue === undefined ||
+                Array.isArray(currentValue) ||
+                !compareWith(currentValue, value)
+              ) {
                 return;
               }
 
               if (resolved && resolved.length && compareWith(resolved[resolved.length - 1]!.value, value)) {
                 this.path.set(resolved);
               }
+            }),
+            catchError(() => EMPTY),
+          );
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    // run the flat search as the (trimmed) query changes: switchMap cancels a stale in-flight
+    // search, and each emission of a live source refreshes the result list
+    toObservable(this.searchRequest)
+      .pipe(
+        switchMap((request) => {
+          if (!request) {
+            untracked(() => this.searchState.set({ status: 'idle', results: [], error: null }));
+
+            return EMPTY;
+          }
+
+          untracked(() => {
+            this.searchState.set({ status: 'loading', results: [], error: null });
+            this.focusedSearchIndex.set(-1);
+          });
+
+          // .call keeps the data source as `this` — sources may implement `search` as a method
+          return toSearchObservable(request.search.call(request.source, request.query)).pipe(
+            tap({
+              next: (results) => {
+                this.searchState.set({ status: 'loaded', results, error: null });
+                this.focusedSearchIndex.set(-1);
+              },
+              error: (error) =>
+                this.searchState.set({ status: 'error', results: [], error: this.toErrorMessage()(error) }),
             }),
             catchError(() => EMPTY),
           );
@@ -360,9 +571,29 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
     this.registeredTrigger()?.elementRef.nativeElement.focus({ preventScroll: true });
   }
 
-  /** Whether a node is on the committed selection chain. */
+  /**
+   * Whether a node is selected — on the committed chain in single mode, an exactly selected
+   * value in multi mode (ancestors show as indeterminate there instead).
+   */
   public isSelected(node: CascaderNode<T>) {
+    if (this.multiple()) {
+      return this.values().some((value) => this.compareWith()(value, node.value));
+    }
+
     return this.path().some((selected) => this.compareWith()(selected.value, node.value));
+  }
+
+  /** Multi mode: whether an unselected node has a selected descendant (the dash state). */
+  public isIndeterminate(node: CascaderNode<T>) {
+    if (!this.multiple() || this.isSelected(node)) {
+      return false;
+    }
+
+    const compareWith = this.compareWith();
+
+    return this.selectedPaths().some((path) =>
+      path.slice(0, -1).some((ancestor) => compareWith(ancestor.value, node.value)),
+    );
   }
 
   /** Whether a node is expanded (its children fill the next column). */
@@ -370,7 +601,11 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
     return nodesEqual({ a: this.openPath()[columnIndex] ?? null, b: node, compareWith: this.compareWith() });
   }
 
-  /** Activates a node from a pointer/keyboard interaction: drills into branches, commits leaves. */
+  /**
+   * Activates a node from a pointer/keyboard interaction: drills into branches, commits leaves.
+   * With `multiple`, activation toggles the node's value instead (and never closes) — branches
+   * still just drill in leaf mode, and toggle **and** drill in any-level mode.
+   */
   public activateNode(node: CascaderNode<T>, columnIndex: number) {
     if (this.disabled() || this.readonly() || node.disabled) {
       return;
@@ -378,17 +613,58 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
 
     this.focusNode(node, columnIndex);
 
+    const chain = [...this.openPath().slice(0, columnIndex), node];
+
     if (canHaveChildren(node)) {
       this.drillInto(node, columnIndex);
 
       if (this.selectableLevels() === CASCADER_SELECTABLE_LEVELS.ANY) {
-        this.commit({ node, columnIndex, close: false });
+        if (this.multiple()) {
+          this.toggleValue(chain);
+        } else {
+          this.commit({ node, columnIndex, close: false });
+        }
       }
 
       return;
     }
 
+    if (this.multiple()) {
+      this.toggleValue(chain);
+
+      return;
+    }
+
     this.commit({ node, columnIndex, close: true });
+  }
+
+  /** Multi mode: adds the chain's final node to the value, or removes it when already selected. */
+  public toggleValue(chain: CascaderNode<T>[]) {
+    const node = chain[chain.length - 1];
+
+    if (!node || this.disabled() || this.readonly()) {
+      return;
+    }
+
+    const compareWith = this.compareWith();
+    const values = this.values();
+    const selected = values.some((value) => compareWith(value, node.value));
+
+    if (selected) {
+      this.value.set(values.filter((value) => !compareWith(value, node.value)));
+      this.selectedPaths.update((paths) =>
+        paths.filter((path) => {
+          const last = path[path.length - 1];
+
+          return last === undefined || !compareWith(last.value, node.value);
+        }),
+      );
+
+      return;
+    }
+
+    this.value.set([...values, node.value]);
+    this.selectedPaths.update((paths) => [...paths, [...chain]]);
   }
 
   /** Clears the committed value (and its breadcrumb). */
@@ -397,8 +673,9 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
       return;
     }
 
-    this.value.set(null);
+    this.value.set(this.multiple() ? [] : null);
     this.path.set([]);
+    this.selectedPaths.set([]);
   }
 
   /** @internal Moves roving focus to a node without activating it. */
@@ -475,20 +752,32 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
       }
     }
 
+    if (event.key.length !== 1) {
+      return;
+    }
+
+    // with a search input registered, typing on a node routes into the flat search instead
+    const search = this.registeredSearch();
+
+    if (search) {
+      event.preventDefault();
+      search.appendCharacter(event.key);
+
+      return;
+    }
+
     // type-to-search the focused column by node label (mirrors the select's typeahead)
-    if (event.key.length === 1) {
-      if (columnIndex !== this.typeaheadColumn) {
-        this.typeahead.reset();
-        this.typeaheadColumn = columnIndex;
-      }
+    if (columnIndex !== this.typeaheadColumn) {
+      this.typeahead.reset();
+      this.typeaheadColumn = columnIndex;
+    }
 
-      const query = this.typeahead.append(event.key);
-      const match = nodes.find((candidate) => !candidate.disabled && candidate.label.toLowerCase().startsWith(query));
+    const query = this.typeahead.append(event.key);
+    const match = nodes.find((candidate) => !candidate.disabled && candidate.label.toLowerCase().startsWith(query));
 
-      if (match) {
-        event.preventDefault();
-        this.focusNode(match, columnIndex);
-      }
+    if (match) {
+      event.preventDefault();
+      this.focusNode(match, columnIndex);
     }
   }
 
@@ -516,6 +805,156 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
 
     if (column) {
       this.loadColumn(columnIndex, column.parent);
+    }
+  }
+
+  /** @internal Updates the flat-search query (written by the registered search input). */
+  public setSearchQuery(query: string) {
+    if (ngDevMode && query && !this.canSearch()) {
+      console.warn(
+        '[CascaderDirective] A search query was typed but the [dataSource] has no `search` hook, so the query is ignored. Implement `search(query)` on the data source to enable flat search.',
+      );
+    }
+
+    this.searchQuery.set(query);
+    this.focusedSearchIndex.set(-1);
+  }
+
+  /** Clears the flat-search query (and with it the result list — the columns return). */
+  public clearSearch() {
+    const search = this.registeredSearch();
+
+    if (search) {
+      // clear() empties the input element and routes back through setSearchQuery('')
+      search.clear();
+    } else {
+      this.searchQuery.set('');
+    }
+
+    this.focusedSearchIndex.set(-1);
+  }
+
+  /** Re-runs a failed search with the current query — wired to the panel's retry control. */
+  public retrySearch() {
+    this.searchRetry.update((count) => count + 1);
+  }
+
+  /** Activates a search result: commits selectable nodes, jumps the browse state to branch-only matches. */
+  public activateSearchResult(path: CascaderNode<T>[]) {
+    const node = path[path.length - 1];
+
+    if (!node || node.disabled || this.disabled() || this.readonly()) {
+      return;
+    }
+
+    // a branch match in leaf mode can't commit — re-root the columns onto it instead
+    if (canHaveChildren(node) && this.selectableLevels() !== CASCADER_SELECTABLE_LEVELS.ANY) {
+      this.browseToPath(path);
+      this.clearSearch();
+
+      return;
+    }
+
+    // multi mode: toggle the match and stay in the result list, so several hits of the same
+    // search can be picked without retyping
+    if (this.multiple()) {
+      this.toggleValue(path);
+
+      return;
+    }
+
+    // search is "jump straight to it": committing from a result always closes, including a
+    // branch commit in any-level mode (unlike a browse click, which stays open to drill)
+    this.path.set([...path]);
+    this.value.set(node.value);
+    this.hide();
+  }
+
+  /** @internal Enter in the search input activates the focused result, or the first enabled one. */
+  public activateFocusedSearchResult() {
+    const results = this.searchState().results;
+    const path =
+      results[this.focusedSearchIndex()] ?? results.find((candidate) => !candidate[candidate.length - 1]?.disabled);
+
+    if (path) {
+      this.activateSearchResult(path);
+    }
+  }
+
+  /** @internal ArrowDown/ArrowUp from the search input moves roving focus into the panel. */
+  public moveFocusFromSearch(direction: 1 | -1) {
+    if (this.isSearching()) {
+      const results = this.searchState().results;
+
+      if (results.length) {
+        this.focusedSearchIndex.set(direction === 1 ? 0 : results.length - 1);
+      }
+
+      return;
+    }
+
+    // browsing: hand DOM focus back to the roving tree node
+    this.focusPulse.update((pulse) => pulse + 1);
+  }
+
+  /** @internal Moves roving focus to a search result without activating it. */
+  public focusSearchOption(index: number) {
+    const results = this.searchState().results;
+
+    if (results.length) {
+      this.focusedSearchIndex.set(Math.max(0, Math.min(results.length - 1, index)));
+    }
+  }
+
+  /** @internal Routes a search result's keydown through the flat-list navigation model. */
+  public handleSearchOptionKeydown(event: KeyboardEvent, index: number) {
+    if (event.ctrlKey || event.metaKey || event.altKey) {
+      return;
+    }
+
+    const search = this.registeredSearch();
+
+    switch (event.key) {
+      case 'ArrowDown': {
+        event.preventDefault();
+        this.focusSearchOption(index + 1);
+
+        return;
+      }
+      case 'ArrowUp': {
+        event.preventDefault();
+
+        // moving above the first result returns focus to the search input
+        if (index === 0 && search) {
+          this.focusedSearchIndex.set(-1);
+          search.focus();
+
+          return;
+        }
+
+        this.focusSearchOption(index - 1);
+
+        return;
+      }
+      case 'Home': {
+        event.preventDefault();
+        this.focusSearchOption(0);
+
+        return;
+      }
+      case 'End': {
+        event.preventDefault();
+        this.focusSearchOption(this.searchState().results.length - 1);
+
+        return;
+      }
+    }
+
+    // typing continues the query — focus returns to the input and the character lands there
+    if (event.key.length === 1 && search) {
+      event.preventDefault();
+      this.focusedSearchIndex.set(-1);
+      search.appendCharacter(event.key);
     }
   }
 
@@ -552,6 +991,21 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
     };
 
     attempt(20);
+  }
+
+  /** Re-roots the browse state onto `path`, loading every column along it (its children get focus). */
+  private browseToPath(path: CascaderNode<T>[]) {
+    this.cancelLoads();
+    this.openPath.set([...path]);
+    this.columns.set([]);
+    this.navigationDirection.set(null);
+    this.focusedNode.set(null);
+
+    this.loadColumn(0, null);
+    path.forEach((node, index) => this.loadColumn(index + 1, node));
+
+    // land keyboard focus on the first child of the branch that was jumped to
+    this.focusFirstOfColumn(path.length);
   }
 
   private drillInto(node: CascaderNode<T>, columnIndex: number) {
@@ -650,18 +1104,44 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | null
     this.loadSubscriptions.clear();
   }
 
+  // Escape is handled here instead of by the overlay runtime: with a search input the first
+  // Escape only clears the query (the runtime's capture-phase handler would close before the
+  // input ever saw the key).
+  private handlePanelKeydown(event: KeyboardEvent) {
+    if (event.key !== 'Escape' || event.defaultPrevented) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const search = this.registeredSearch();
+
+    if (search && this.searchQuery()) {
+      this.clearSearch();
+      // the cleared result list may have held focus — hand it back to the input
+      search.focus();
+
+      return;
+    }
+
+    this.hide();
+  }
+
   private resetBrowseState() {
     this.cancelLoads();
     this.openPath.set([]);
     this.columns.set([]);
     this.focusedColumn.set(0);
+    // a query kept from the last open would filter the fresh panel — reset to browse mode
+    this.searchQuery.set('');
+    this.focusedSearchIndex.set(-1);
     // no slide animation for the columns present when the panel first opens
     this.navigationDirection.set(null);
 
     // seed focus to the committed root before loading — a set value re-opens where it left off,
     // and the guard in the root load skips its own seed. An empty value leaves focus null so the
-    // root load seeds it to the first node instead.
-    const committed = this.path();
+    // root load seeds it to the first node instead. Multi re-opens onto the first known chain.
+    const committed = this.multiple() ? (this.selectedPaths()[0] ?? []) : this.path();
 
     this.focusedNode.set(committed[0] ?? null);
 

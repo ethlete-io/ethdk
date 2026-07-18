@@ -1,4 +1,4 @@
-import { Component, DestroyRef, ElementRef, ViewEncapsulation, inject, viewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, ViewEncapsulation, computed, inject, viewChild } from '@angular/core';
 import { AutoSurfaceDirective, ProvideColorDirective, createComponentId, injectObserveBreakpoint } from '@ethlete/core';
 import { injectOverlaySurfaceContext } from '../form-field/headless';
 import { CascaderDirective } from './headless';
@@ -23,7 +23,10 @@ import { CascaderDirective } from './headless';
     // a "columnar tree": each level is a sibling `role="group"` related by `aria-level`, not by
     // `aria-owns` back to its parent node. This is a deliberate deviation from a strict single-root
     // tree — the column layout is the whole point — and node keyboard nav bridges the levels.
-    role: 'tree',
+    // While a flat search is active the columns are replaced by a flat result list, so the panel
+    // reports itself as the listbox owning those options instead.
+    '[attr.role]': 'role()',
+    '[attr.aria-multiselectable]': 'multiselectable()',
     '[attr.data-sheet]': 'isSheet() || null',
     '(focusin)': 'handleFocusIn()',
     '(focusout)': 'handleFocusOut($event)',
@@ -40,6 +43,9 @@ export class CascaderPanelComponent {
   public isSheet = injectObserveBreakpoint({ max: 'sm' });
 
   private panelBody = viewChild<ElementRef<HTMLElement>>('panelBody');
+
+  protected role = computed(() => (this.cascader?.isSearching() ? 'listbox' : 'tree'));
+  protected multiselectable = computed(() => (this.cascader?.multiple() ? 'true' : null));
 
   constructor() {
     // give the tree a stable id and hand it to the cascader so the trigger's `aria-controls`
