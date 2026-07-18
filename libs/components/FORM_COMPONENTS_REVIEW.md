@@ -15,15 +15,26 @@ Severity legend: **bug** (wrong behavior) · **a11y** (accessibility) ·
 **perf** · **cleanup** (dead code / duplication).
 
 > **Status (implemented):** every **bug**, **a11y**, **consistency**, and
-> localized **cleanup** finding below has been fixed, plus cross-cutting theme #5
-> (dead pass-through inputs). What remains are the large architectural extractions
-> — cross-cutting themes **#1** (form-control wiring base), **#3** (anchored-panel
-> controller, which also subsumes the date-picker-input-host, panel-surface, and
-> singleton-registration cleanups), and **#4** (hint/error state machine). Theme
-> **#2** (form-support wiring) was attempted and reverted: Angular's compiler
-> (`NG8110`) forbids `viewChild()` outside a direct class-field initializer, so the
-> queries can't move into a helper. These are best done incrementally, one control
-> at a time, behind the green test suite — see the sequencing note at the end.
+> localized **cleanup** finding below has been fixed, plus cross-cutting themes
+> **#5** (dead pass-through inputs) and **#1** (the input/number/password/color/
+> textarea directives now extend a shared `TextFieldControlDirective` base).
+>
+> Still open — and, on closer inspection, **not** the mechanical extractions this
+> review implied:
+>
+> - **#2** (form-support wiring) — attempted and reverted: Angular's compiler
+>   (`NG8110`) forbids `viewChild()` outside a direct class-field initializer, so
+>   the queries can't move into a helper.
+> - **#3** (anchored-panel controller — subsumes the date-picker-input-host,
+>   panel-surface, and singleton-registration cleanups) — `select` and `cascader`
+>   diverge intentionally (bottom-sheet vs anchored, tree vs listbox focus), so a
+>   shared controller is a behavioral unification, not a copy-paste extraction.
+> - **#4** (hint/error state machine) — the two encoders differ: the text-field
+>   shell tracks `renderedState` + slide directions, `form-support` tracks neither.
+>   Unifying means choosing one behavior and re-verifying transitions across ~11
+>   components.
+>
+> These three are best done as dedicated, individually-verified efforts.
 >
 > Items marked _(verified)_ were confirmed against the code during the review.
 
