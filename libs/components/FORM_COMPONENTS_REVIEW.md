@@ -24,19 +24,26 @@ Severity legend: **bug** (wrong behavior) · **a11y** (accessibility) ·
 > - **#4** (hint/error state machine) — one shared `reduceSupportPresentation`
 >   (`support-presentation.ts`) now drives both the text-field shell and
 >   `injectFormSupport`; the HINT→ERROR transition was verified in Storybook.
+> - **#3(a)** (anchored-panel controller) — `select` and `cascader` now share
+>   `createAnchoredPanelController` (the divergent bits — overlay config, mount/close
+>   focus, select's Escape-clears-query — are hooks). Open, Escape-close,
+>   outside-pointer close, focus restore, and drilling were verified in Storybook for
+>   both controls.
 >
 > Still open:
 >
 > - **#2** (form-support wiring) — reverted: Angular's compiler (`NG8110`) forbids
 >   `viewChild()` outside a direct class-field initializer, so the queries can't
 >   move into a helper.
-> - **#3** (anchored-panel controller — subsumes the date-picker-input-host,
->   panel-surface, and singleton-registration cleanups). Two independent parts,
->   both deferred as dedicated efforts: (a) a `select`/`cascader` controller is a
->   *behavioral unification* (they diverge intentionally — bottom-sheet vs
->   anchored, tree vs listbox), and (b) a date-picker-input base gives only modest
->   savings now that `createDatePickerOverlay` is already shared, while adding
->   override/typing friction and touching fiddly overlay-focus code.
+> - **#3(b)** (date-picker-input-host base) — modest savings now that
+>   `createDatePickerOverlay` is already shared, and a base class here adds
+>   override/typing friction (overriding `shouldDisplayError`/`activate`, threading a
+>   shared field type). Left as a dedicated effort. `createDatePickerOverlay` could
+>   optionally fold onto `createAnchoredPanelController` later (they're now close
+>   siblings) — a clean follow-up, but it touches the four date controls' overlay
+>   focus behavior, so it wants its own verification pass.
+> - The **panel-surface** and **singleton-registration** cleanups from #3 are
+>   likewise untouched.
 >
 > Items marked _(verified)_ were confirmed against the code during the review.
 
