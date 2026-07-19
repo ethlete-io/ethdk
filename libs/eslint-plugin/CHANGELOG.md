@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0-next.14
+
+### Patch Changes
+
+- [`423b30b`](https://github.com/ethlete-io/ethdk/commit/423b30ba4f368d7cee8c464ebd89b5df20d3934c) Thanks [@TomTomB](https://github.com/TomTomB)! - The `static` class member ban now excepts `ngTemplateContextGuard`, which Angular's template type checker requires to be static.
+
+- [`7ca77d4`](https://github.com/ethlete-io/ethdk/commit/7ca77d4a9e1dd3abad7237227c62643159719b74) Thanks [@TomTomB](https://github.com/TomTomB)! - `no-trivial-return-type`: self-referencing (recursive) functions keep their return type annotation — TypeScript cannot infer a return type that depends on itself (TS7023), so the fixer no longer strips it there.
+
 ## 1.0.0-next.13
 
 ### Minor Changes

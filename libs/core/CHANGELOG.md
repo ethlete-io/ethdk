@@ -1,5 +1,19 @@
 # @ethlete/core
 
+## 5.0.0-next.29
+
+### Minor Changes
+
+- [`2fca323`](https://github.com/ethlete-io/ethdk/commit/2fca323a6beac0299b8e0ec6724fffd4149ad7cd) Thanks [@TomTomB](https://github.com/TomTomB)! - `injectAnimatedBlockSize` can now animate the inline axis too via the new `axes` option (`['block' | 'inline']`, static or signal-based; default `['block']` as before). Used by the cascader panel to grow/shrink its width as columns drill in and out.
+
+- [`4b7cf51`](https://github.com/ethlete-io/ethdk/commit/4b7cf51a6f68cdaf364169945586fedc5621cad6) Thanks [@TomTomB](https://github.com/TomTomB)! - Theme generators: pick the default theme at generation time — `--defaultTheme=<name>` on `tailwind-4-color-theme` and `--defaultLightTheme=<name>` / `--defaultDarkTheme=<name>` on `tailwind-4-surface-theme` override any `isDefault` flags in the definitions, so apps sharing one theme definition set (e.g. in a monorepo) can each generate a different default.
+
+### Patch Changes
+
+- [`ddb3413`](https://github.com/ethlete-io/ethdk/commit/ddb3413c2673a4f2f513598a208f376b36b7535b) Thanks [@TomTomB](https://github.com/TomTomB)! - Grid items can now be moved with touch: `[etDragHandle]` sets `touch-action: none` on its host while enabled (the browser was claiming touch pointermoves for scrolling and cancelling the gesture), and read-only grids keep normal touch scrolling.
+
+- [`06377b6`](https://github.com/ethlete-io/ethdk/commit/06377b6312fd32c7d1f497816fa91a655bf72d19) Thanks [@TomTomB](https://github.com/TomTomB)! - Overlay: a color theme provided on the app root component (e.g. `ProvideColorDirective` via `hostDirectives` plus `forceColor()`) now propagates into overlays even when they are opened without a `viewContainerRef`, and updates reactively while the overlay is open.
+
 ## 5.0.0-next.28
 
 ### Minor Changes

@@ -1,5 +1,103 @@
 # Changelog
 
+## 1.0.0-next.23
+
+### Minor Changes
+
+- [`221c878`](https://github.com/ethlete-io/ethdk/commit/221c878d5f3e382ffed074bf93ab30afeda9d63f) Thanks [@TomTomB](https://github.com/TomTomB)! - Cascader: flat search across all levels. Implement the optional `search(query)` hook on the `CascaderDataSource` (returning root → match path chains) and the panel gains a search input that swaps the columns for a flat, breadcrumb-labelled result list — committing a match closes, while a branch-only match jumps the columns to it. New headless pieces `etCascaderSearch` and `etCascaderSearchOption`; `et-cascader` renders the input automatically (`searchPlaceholder` input) and Escape now clears an active query before closing the panel.
+
+- [`221c878`](https://github.com/ethlete-io/ethdk/commit/221c878d5f3e382ffed074bf93ab30afeda9d63f) Thanks [@TomTomB](https://github.com/TomTomB)! - Cascader: `cascaderFromQuery` builds a `CascaderDataSource` from `@ethlete/query` creators — per-level loads (concurrent, deduped/cached by the client), optional flat-search wiring with debounce and `minQueryLength`, and a `resolvePath` passthrough. The cascader's default `toErrorMessage` now shows an `Error`'s `message` verbatim (falling back to the generic text), so query failure messages surface without extra wiring.
+
+- [`221c878`](https://github.com/ethlete-io/ethdk/commit/221c878d5f3e382ffed074bf93ab30afeda9d63f) Thanks [@TomTomB](https://github.com/TomTomB)! - Cascader: multi-select via the new `multiple` input — activations toggle values (the form value becomes a `T[]`), the panel stays open, rows gain check squares, ancestors of a partial selection show an indeterminate dash and promote to a full checkmark once all their loaded descendants are selected. Search results toggle in place (keeping the result list), the trigger joins the selected labels, and programmatic values resolve their chains through `resolvePath`. The `value` model is now typed `T | T[] | null`.
+
+- [`f005c94`](https://github.com/ethlete-io/ethdk/commit/f005c944f7edf67842d0a3e635d7e35e8de44445) Thanks [@TomTomB](https://github.com/TomTomB)! - Cascader: new `et-cascader` / `[etCascader]` (`CASCADER_IMPORTS`) — a generic hierarchy value control that browses an abstract `CascaderDataSource<T>` level by level (sync array, `Promise` or `Observable`, each level lazy-loaded). Miller columns on desktop, single-column drill in a bottom sheet on mobile; `selectableLevels` (`'leaf'` | `'any'`), `path`/`pathValue` chain, per-column loading/empty/error states with retry, full ARIA tree keyboard navigation, and signal-forms integration. Error block `ET3300`–`ET3399`.
+
+  Deep hierarchies stay compact: the desktop panel shows at most `maxVisibleColumns` (default 3) columns side by side, showing the whole drilled trail as a breadcrumb row below the columns once it overflows. All drilled levels ride a sliding track, so collapsing into a crumb (and navigating back out of one) is a coordinated slide rather than a pop. Navigating back is non-destructive — a crumb click or Arrow Left past the window edge slides the column window without discarding the deeper drill. Headless: `visibleColumns()`, `breadcrumbPath()`, `visibleColumnStart()`, `showColumn()`.
+
+- [#3027](https://github.com/ethlete-io/ethdk/pull/3027) [`0a62001`](https://github.com/ethlete-io/ethdk/commit/0a6200181b706828bc8b228afb0743a269bd7e8e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Forms: add `et-date-time-input` (+ headless `[etDateTimeInput]`), a combined date & time control with a string wire value — one field with a combined display format (strict-then-lenient typed entry, bare dates commit at midnight) and a picker overlay hosting calendar and time picker side by side (Date/Time tabs in the bottom sheet). A first day pick in the picker also commits at midnight — never the current wall-clock time.
+
+- [`8bfe3ed`](https://github.com/ethlete-io/ethdk/commit/8bfe3ed805a760f13a5cef11125473b1342d747c) Thanks [@TomTomB](https://github.com/TomTomB)! - Date, time, date-time and date range inputs: new opt-in `mask` input. With a fixed-width numeric `displayFormat` (`dd.MM.yyyy`, `HH:mm`, …) typing gets guide placeholders (`__.__.____`), auto-inserted separators, paste filtering and a numeric soft keyboard; the lenient blur/Enter commit parsers stay authoritative. Formats a mask can't represent (locale formats like the default `P`/`p`, variable-width or text tokens) are refused with a dev-mode warning and typing stays unmasked. On the date range input each side is its own mask host, so the guide follows the focused field. The duration input deliberately gets no mask (unbounded first segment, right-anchored lenient entry). Supporting API: `[etInputMask]` now accepts `null` to disable the mask conditionally, and `InputMaskHost` grew an optional `resumeNativeSync()` for hosts whose mask can toggle off again.
+
+- [`f005c94`](https://github.com/ethlete-io/ethdk/commit/f005c944f7edf67842d0a3e635d7e35e8de44445) Thanks [@TomTomB](https://github.com/TomTomB)! - Duration input: new `et-duration-input` / `[etDurationInput]` (`DURATION_INPUT_IMPORTS`) — a duration control whose value is total elapsed **milliseconds** (`number | null`), kept out of the `Date` system. Configurable segment layout (`durationFormat`, e.g. `mm:ss`, `hh:mm:ss`, `hh:mm:ss.SSS`) with a lenient typed parse (`130` → `1:30`) committing on blur/Enter. Error code `ET3050` inside the shared date-time block.
+
+- [`4c6b6d0`](https://github.com/ethlete-io/ethdk/commit/4c6b6d000ba568d73c8b191c52fed3206b6a00a6) Thanks [@TomTomB](https://github.com/TomTomB)! - Chip: filter-chip support — `etSelectionList` + `etSelectionOption` compose directly onto `et-chip` for selectable chip groups (single or multiple), with a color-theme tonal selected state and hover/focus affordances. Selection options now tolerate late-bound `value` inputs (directive compositions no longer throw NG0950).
+
+- [`04ffa53`](https://github.com/ethlete-io/ethdk/commit/04ffa53bf3b65977bd4f87d312781faa93057d1f) Thanks [@TomTomB](https://github.com/TomTomB)! - Forms: fix bugs and accessibility issues across the form controls, and add a few
+  opt-in APIs.
+  - **Fixes:** select-all no longer sticks on "mixed" when a disabled option is
+    present; a cascader value set programmatically now shows its breadcrumb (via a
+    new optional `resolvePath` on the cascader data source); typed date/time/range
+    values no longer leak the current wall-clock time; duration/date/time null the
+    value on an unparseable commit; masked inputs no longer break IME composition;
+    standalone `input[etInput]` now syncs on keystroke; number steppers mark the
+    field touched and can't leak their auto-repeat timer; OTP re-emits `completed`
+    when a full code is replaced; color inputs honor `[readonly]`.
+  - **Accessibility:** multi-select options and the select-all control now use
+    `role="checkbox"` (not `option`); a parse error is announced with a real
+    message and `aria-describedby`; the date picker panel is a named
+    `role="dialog"`; the cascader trigger's `aria-controls` resolves; select
+    panels keep only options inside the listbox; the phone country trigger and
+    cascader columns gained accessible names/typeahead; a schema-`hidden` field is
+    now actually hidden; Caps-Lock detection also samples on focus.
+  - **New inputs:** `parseErrorMessage` (date/time/date-time/duration/range),
+    password `hideLabel`, phone `countryLabel`, date-picker-panel `dialogLabel`.
+  - **Note:** the checkbox now toggles on `keydown` Space (matching switch and the
+    selection options), and the select panel renders its listbox as an inner
+    element — restyle if you targeted the panel host as the listbox.
+
+- [`888ce8a`](https://github.com/ethlete-io/ethdk/commit/888ce8a504c7001f2fb50ae83302483d7148486a) Thanks [@TomTomB](https://github.com/TomTomB)! - Forms consistency: `readonly` and one-click clearing across more controls.
+  - Checkbox, switch and the three selection-list groups now honor `readonly` (e.g. from a `readonly(...)` schema): normal look, still focusable (`aria-readonly`), toggling/selecting blocked — arrows in a readonly radio group move focus without selecting.
+  - Date, time, date-time, duration and phone inputs render a clear (×) button while the focused field holds a value (`clearable`, default on; label via `clearLabel`), backed by a public `clearValue()` on their headless directives.
+
+- [`85d7332`](https://github.com/ethlete-io/ethdk/commit/85d73327be9a5fc2154c5a0f0f2defe25e657a55) Thanks [@TomTomB](https://github.com/TomTomB)! - Masked input: the mask now attaches through a public `INPUT_MASK_HOST` contract (provided by `et-input` out of the box), so custom field directives can host `[etInputMask]` too. Pattern masks additionally expose `complete()` on the directive (`0`/`a`/`*` slots required, `9` optional; `null` for masks without completeness) via a new optional `MaskSpec.isComplete`.
+
+- [`f005c94`](https://github.com/ethlete-io/ethdk/commit/f005c944f7edf67842d0a3e635d7e35e8de44445) Thanks [@TomTomB](https://github.com/TomTomB)! - Masked input: new `[etInputMask]` directive layering input masking onto `et-input` — pattern-string masks (`00-00-0000` style grammar) or `MaskSpec` objects, with `createCurrencyMask` / `createIbanMask` / `createCardMask` factories, raw-or-masked form values (`maskValueMode`, raw by default), focused-state guide placeholders (`placeholderChar`) and full caret handling (`MASKED_INPUT_IMPORTS`).
+
+- [`f005c94`](https://github.com/ethlete-io/ethdk/commit/f005c944f7edf67842d0a3e635d7e35e8de44445) Thanks [@TomTomB](https://github.com/TomTomB)! - Number input: new `stepper` input on `et-number-input` rendering −/+ buttons with press-and-hold auto-repeat, `min`/`max` clamping and bound-aware disabling; the headless `NumberInputDirective` gains `stepBy(direction)` / `canStepUp` / `canStepDown`. Adds the `et-minus` built-in icon.
+
+- [`f005c94`](https://github.com/ethlete-io/ethdk/commit/f005c944f7edf67842d0a3e635d7e35e8de44445) Thanks [@TomTomB](https://github.com/TomTomB)! - Password input: new `et-password-input` / `[etPasswordInput]` (`PASSWORD_INPUT_IMPORTS`) — reveal toggle (`revealed` model, `revealable`, `aria-pressed`), opt-in Caps Lock warning (`capsLockWarning`), and a `strength` signal (0–4 typing-feedback heuristic) for composing strength meters. Adds `et-eye` / `et-eye-slash` built-in icons.
+
+- [`36ac99d`](https://github.com/ethlete-io/ethdk/commit/36ac99db8ccf70597d2dda3e845effe4e0687ba9) Thanks [@TomTomB](https://github.com/TomTomB)! - Select: full tag-input ergonomics in custom-value mode (`allowCustomValues`).
+  - A "Create …" listbox row (label via `createLabel`) now offers the query as a custom value even while options still match — keyboard-reachable via virtual focus; headless compositions use `customValueCandidate()` + `customValueOption`.
+  - New inputs: `customValueSeparators` (characters that commit while typing and split pastes), `commitCustomValueOnClose` (pending text commits on Tab/outside-click close instead of being discarded), `normalizeCustomValue` (map/reject raw text), and `maxSelection` (caps multi selection and locks the search input while full, exposed as `isFull()`; unselected options render disabled while full — deselecting frees them again).
+  - `commitCustomValue(raw)` is now public for imperative commits.
+
+- [`f005c94`](https://github.com/ethlete-io/ethdk/commit/f005c944f7edf67842d0a3e635d7e35e8de44445) Thanks [@TomTomB](https://github.com/TomTomB)! - Select: new `et-select-option-group` / `[etSelectOptionGroup]` for labelled listbox sections. Grouping is presentational — options stay flat for keyboard navigation and typeahead — and a group hides itself once all its options are filtered out under `filterMode="internal"`. `role="group"` + `aria-labelledby`; token `--et-select-option-group-label-font-size`. Error code `ET1009`.
+
+- [`b61ad0f`](https://github.com/ethlete-io/ethdk/commit/b61ad0fbe61ed1b0e7e8cd98e8d673ae91f10ff1) Thanks [@TomTomB](https://github.com/TomTomB)! - Select: new `selectOptionsFromV2Query` feeds the async select from a legacy `V2QueryClient` query (or a `createLegacyQueryCreator` interop wrapper) — the `V2QueryClient` counterpart of `selectOptionsFromQuery`, returning the same signal bundle.
+
+- [`4f34f1f`](https://github.com/ethlete-io/ethdk/commit/4f34f1fa2ef1809f6b281d52fdc0f037923e88db) Thanks [@TomTomB](https://github.com/TomTomB)! - Select: new data-driven `options` input with built-in virtualization for large option lists.
+  - `options` takes `SelectOptionData[]` (`{ value, label, disabled? }`) — the select renders the rows itself and windows them, so only the rows near the viewport exist in the DOM (2000 options ≈ 15 rendered nodes). Internal filtering, keyboard navigation, typeahead and closed-panel label resolution work across the full data set.
+  - `etSelectOptionTemplate` customizes the row content of data-driven options, with the source entry (extra fields included) as template context.
+  - Headless: `etSelectViewport` marks the scroll container to window against, `etSelectVirtualOption` renders one windowed item, and `virtualizedItems()` / `virtualWindow` on `[etSelect]` expose the window state.
+  - Breaking for headless consumers of `SelectItem`: `elementRef` is now `element: Signal<HTMLElement | null>` (`null` for a data-driven option outside the rendered window).
+
+- [`a41491d`](https://github.com/ethlete-io/ethdk/commit/a41491db447152e69902020d19bfc30bccf3b01d) Thanks [@TomTomB](https://github.com/TomTomB)! - Server violations → signal-forms bridge:
+  - `@ethlete/query`: `mapViolationsToFormErrors({ fieldTree, error, rewritePath?, onUnmappedViolation? })` maps an API error's violation list onto a signal form's fields (unmapped violations become form-level errors, violation-free failures degrade to a form-level `etServerError`), plus `extractFormViolations(error)`, `executeUntilSettled(query, executeArgs?)` for awaiting one execution as a settled snapshot, and the `isQueryErrorResponse` guard.
+  - `@ethlete/components`: `provideFormErrorMessageResolver(resolver)` lets apps centralize/localize the text `et-form-error` renders by error `kind`; the error's own `message` stays the default.
+
+- [`f005c94`](https://github.com/ethlete-io/ethdk/commit/f005c944f7edf67842d0a3e635d7e35e8de44445) Thanks [@TomTomB](https://github.com/TomTomB)! - Slider: new `et-slider` (single value) and `et-range-slider` (`[start, end]` tuple with `minDistance`) form controls, plus the headless `[etSlider]` / `[etRangeSlider]` / `[etSliderTrack]` / `[etSliderThumb]` directives and an `ng-template[etSliderThumbLabel]` value-label slot. Pointer drag with capture, full ARIA slider keyboard model, RTL-aware, signal-forms integrated (`SLIDER_IMPORTS`).
+
+- [`53881a8`](https://github.com/ethlete-io/ethdk/commit/53881a84acf85f094baf50cf73e37fc88ac70461) Thanks [@TomTomB](https://github.com/TomTomB)! - Form field: new `wireFormSupport(support, refs)` helper owns the support-region view-child wiring for custom controls built on `injectFormSupport` (the built-in controls now use it).
+
+### Patch Changes
+
+- [`7c16ecf`](https://github.com/ethlete-io/ethdk/commit/7c16ecf4e8b74f228b3734f50146e8e669e61470) Thanks [@TomTomB](https://github.com/TomTomB)! - Calendar and select polish:
+  - Calendar: disabled days no longer react to hover, and the hovered endpoint of a range preview renders as a filled circle (like a selected date) instead of a half-filled band capped by a ring.
+  - Select: while the panel is open, async loading shows only the panel spinner instead of a second one in the field.
+
+- [`ddb3413`](https://github.com/ethlete-io/ethdk/commit/ddb3413c2673a4f2f513598a208f376b36b7535b) Thanks [@TomTomB](https://github.com/TomTomB)! - Grid: dragging (or keyboard-moving) an item downward onto other items now swaps them into the vacated space when they fit, instead of requiring the drag to clear the entire collider before anything repositions.
+
+- [`ddb3413`](https://github.com/ethlete-io/ethdk/commit/ddb3413c2673a4f2f513598a208f376b36b7535b) Thanks [@TomTomB](https://github.com/TomTomB)! - Grid items can now be moved with touch: `[etDragHandle]` sets `touch-action: none` on its host while enabled (the browser was claiming touch pointermoves for scrolling and cancelling the gesture), and read-only grids keep normal touch scrolling.
+
+- [`06377b6`](https://github.com/ethlete-io/ethdk/commit/06377b6312fd32c7d1f497816fa91a655bf72d19) Thanks [@TomTomB](https://github.com/TomTomB)! - Overlay: a color theme provided on the app root component (e.g. `ProvideColorDirective` via `hostDirectives` plus `forceColor()`) now propagates into overlays even when they are opened without a `viewContainerRef`, and updates reactively while the overlay is open.
+
+- [`f1841b7`](https://github.com/ethlete-io/ethdk/commit/f1841b7ec3a4f6e280c961d072a90fd2ceba75d7) Thanks [@TomTomB](https://github.com/TomTomB)! - Phone input: picking a country prefix now moves focus to the number field instead of back to the prefix toggle (closing the picker with Escape still refocuses the toggle).
+
+- [`57a5104`](https://github.com/ethlete-io/ethdk/commit/57a5104d3805824cf6b28725c5d9aae670af9626) Thanks [@TomTomB](https://github.com/TomTomB)! - Select: rubber-band overscroll (macOS) no longer drags the panel background along with the list, exposing the page behind the overlay — the panel chrome now sits on a non-scrolling element around an inner `.et-select-panel-scroller`.
+
+- [`fa0e118`](https://github.com/ethlete-io/ethdk/commit/fa0e1189f46a5359f5018fba15fbb405af646314) Thanks [@TomTomB](https://github.com/TomTomB)! - Select option checkmarks and menu radio/checkbox item indicators now render on the right (trailing) edge of their row instead of the left, so option labels align flush with the row start. Standalone form controls (checkbox, radio, switch, selection lists, cascader check squares) keep their leading position.
+
 ## 1.0.0-next.22
 
 ### Minor Changes

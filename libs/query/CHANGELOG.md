@@ -1,5 +1,13 @@
 # @ethlete/query
 
+## 6.0.0-next.16
+
+### Minor Changes
+
+- [`a41491d`](https://github.com/ethlete-io/ethdk/commit/a41491db447152e69902020d19bfc30bccf3b01d) Thanks [@TomTomB](https://github.com/TomTomB)! - Server violations → signal-forms bridge:
+  - `@ethlete/query`: `mapViolationsToFormErrors({ fieldTree, error, rewritePath?, onUnmappedViolation? })` maps an API error's violation list onto a signal form's fields (unmapped violations become form-level errors, violation-free failures degrade to a form-level `etServerError`), plus `extractFormViolations(error)`, `executeUntilSettled(query, executeArgs?)` for awaiting one execution as a settled snapshot, and the `isQueryErrorResponse` guard.
+  - `@ethlete/components`: `provideFormErrorMessageResolver(resolver)` lets apps centralize/localize the text `et-form-error` renders by error `kind`; the error's own `message` stays the default.
+
 ## 6.0.0-next.15
 
 ### Patch Changes
