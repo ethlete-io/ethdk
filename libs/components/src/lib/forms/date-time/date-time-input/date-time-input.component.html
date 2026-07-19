@@ -48,11 +48,10 @@
           [max]="dateTimeInput.maxDate()"
           [dateFilter]="dateTimeInput.dateFilter()"
           [locale]="dateTimeInput.effectiveLocale()"
-          (valueChange)="completeDatePick($event, timePicker)"
+          (valueChange)="dateTimeInput.selectDate($event)"
         />
         <div class="et-date-time-input-panel-time-pane">
           <et-time-picker
-            #timePicker="etTimePicker"
             [value]="dateTimeInput.dateTime()"
             [format]="dateTimeInput.displayFormat()"
             [locale]="dateTimeInput.effectiveLocale()"

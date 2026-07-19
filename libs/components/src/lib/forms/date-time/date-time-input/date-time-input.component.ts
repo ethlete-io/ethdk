@@ -1,8 +1,7 @@
 import { Component, ViewEncapsulation, computed, effect, inject, input, signal } from '@angular/core';
-import { setHours, setMinutes, setSeconds } from 'date-fns';
 import { CALENDAR_IMPORTS } from '../../../calendar';
 import { CALENDAR_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../../icon';
-import { TIME_PICKER_IMPORTS, TimePickerDirective } from '../../../time-picker';
+import { TIME_PICKER_IMPORTS } from '../../../time-picker';
 import { InputMaskDirective } from '../../masked-input/headless';
 import { SegmentedButtonComponent, SegmentedButtonGroupComponent } from '../../selection-list/segmented-button-group';
 import { DatePickerPanelComponent } from '../date-picker-panel.component';
@@ -117,24 +116,5 @@ export class DateTimeInputComponent {
 
     this.paneNav.set(next === 'time' ? 'forward' : 'backward');
     this.activePane.set(next);
-  }
-
-  /**
-   * A first pick completes the day with the time the picker's columns visibly
-   * anchor to (now, snapped to the steps) instead of the headless midnight
-   * default — the columns must not jump away from what they were showing.
-   */
-  protected completeDatePick(day: Date | null, timePicker: TimePickerDirective) {
-    if (day === null || this.dateTimeInput.dateTime() !== null) {
-      this.dateTimeInput.selectDate(day);
-
-      return;
-    }
-
-    const anchor = timePicker.anchorTime();
-
-    this.dateTimeInput.selectTime(
-      setSeconds(setMinutes(setHours(day, anchor.getHours()), anchor.getMinutes()), anchor.getSeconds()),
-    );
   }
 }
