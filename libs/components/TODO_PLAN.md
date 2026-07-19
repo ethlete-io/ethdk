@@ -328,7 +328,8 @@ date/time/date-time field directives already implement it.
       per-side parse errors). Rides the unreleased `date-input-guide-masks`
       changeset (note updated); forms.md date-range section extended.
 - [x] **Duration** (todo 19): closed as won't-do — deliberate exclusion
-      decided in `FORMS_OPPORTUNITIES_PLAN.md` and documented in forms.md:
+      decided in `FORMS_OPPORTUNITIES_PLAN.md` (since removed; see git
+      history) and documented in forms.md:
       the first segment is unbounded (`100:00`) so fixed slots would block
       valid entries, and the lenient parse is right-anchored (`130` → `01:30`)
       while a mask fills left-to-right, silently changing entry semantics.
@@ -337,8 +338,8 @@ date/time/date-time field directives already implement it.
       (`time-input-field.directive.ts` hosts it; template wires
       `[etInputMask]="timeInput.maskPattern()"`). Covered by the unreleased
       `date-input-guide-masks` changeset and the forms.md time-input table.
-- [x] Masks stay opt-in (decision baked into `FORMS_OPPORTUNITIES_PLAN.md` —
-      lenient parsers remain the default). forms.md masked-input +
+- [x] Masks stay opt-in (decision from `FORMS_OPPORTUNITIES_PLAN.md`, since
+      removed — lenient parsers remain the default). forms.md masked-input +
       date/time/date-time/date-range sections all reflect the final state.
 
 ## K. Date-time input: default time on date pick (S)
