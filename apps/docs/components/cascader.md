@@ -116,6 +116,7 @@ On `et-cascader` (forwarded from the headless `[etCascader]` directive):
 | `compareWith`       | `(a: T, b: T) => boolean`       | `===`    | Value equality — override when values are objects.                                                                                          |
 | `toErrorMessage`    | `(error: unknown) => string`    | see note | Maps a `loadChildren` / `search` failure to the panel's error text. Default: an `Error`'s `message` verbatim, a generic fallback otherwise. |
 | `mirrorPanelWidth`  | `boolean`                       | `false`  | Whether the panel matches the field width (off — columns size themselves).                                                                  |
+| `maxVisibleColumns` | `number`                        | `3`      | Columns shown side by side before older levels collapse into the [breadcrumb row](#deep-hierarchies) (min 1).                               |
 | `placeholder`       | `string`                        | `''`     | Shown on the trigger until a value is committed.                                                                                            |
 | `searchPlaceholder` | `string`                        | `Search` | Placeholder of the panel's [flat search](#flat-search) input (rendered only when the data source has a `search` hook).                      |
 
@@ -133,9 +134,23 @@ Point `dataSource.loadChildren` at a `Promise` or `Observable` and each column l
 
 <StoryEmbed id="components-forms-cascader--async-levels" height="380px" />
 
+## Deep hierarchies
+
+The desktop panel shows at most **`maxVisibleColumns`** (default `3`) columns side by side — without a cap, a six-level drill would grow the panel a column-width per level until it hits the viewport edge. Once the drill overflows the window, the **whole drilled trail** appears as a breadcrumb row below the columns (below, so appearing crumbs never shift the columns; the panel's animated height covers the row mounting). Crumbs whose levels are currently in view render at full strength; the muted ones are a click away:
+
+<StoryEmbed id="components-forms-cascader--deep-nesting" height="420px" />
+
+All drilled levels stay mounted on a sliding track, so a level collapsing into a crumb visibly slides out to the left together with the columns following it — and the reverse plays when navigating back. The collapse is purely visual; navigating back never discards the drill:
+
+- **Clicking a crumb** anchors the window at that level and focuses its node; the deeper columns stay drilled, and re-activating the still-expanded branch (or pressing Arrow Right on it) slides forward again without reloading. The crumb row itself mirrors the **drill**, not the window — sliding around never rebuilds it (levels hidden on either side keep their crumbs); it only updates when the drilled path actually changes.
+- **Arrow Left** past the window edge slides the window along with the roving focus.
+- Activating a **different** node in a revealed column truncates the deeper levels, exactly like it does inside the window.
+
+The bottom-sheet presentation is unaffected — it always drills one column at a time. Headless consumers get the same state as `visibleColumns()` (the windowed slice with absolute indices), `breadcrumbPath()` (the crumbs), `visibleColumnStart()`, and `showColumn(columnIndex)` (the crumb action).
+
 ## Desktop vs. mobile
 
-On wider viewports the levels render as **Miller columns** side by side. On small viewports the panel becomes a **bottom sheet that drills one column at a time**, with a back control to ascend — the overlay's breakpoint swap handles this automatically, so the same markup works on both.
+On wider viewports the levels render as **Miller columns** side by side (windowed after [`maxVisibleColumns`](#deep-hierarchies) levels). On small viewports the panel becomes a **bottom sheet that drills one column at a time**, with a back control to ascend — the overlay's breakpoint swap handles this automatically, so the same markup works on both.
 
 ## Headless usage
 
@@ -172,14 +187,14 @@ For [flat search](#flat-search), place an `input[etCascaderSearch]` in the surfa
 - The trigger is a `role="combobox"` with `aria-haspopup="tree"`, `aria-expanded`, and `aria-controls` pointing at the open tree panel; the panel is a `role="tree"` of `role="group"` columns and `role="treeitem"` nodes carrying `aria-level`, `aria-selected`, and `aria-expanded` on branches.
 - The panel takes focus on open. Roving tabindex keeps exactly one node tabbable.
 
-| Key             | Action                                    |
-| --------------- | ----------------------------------------- |
-| Arrow Up / Down | Move focus within the current column      |
-| Arrow Right     | Drill into the focused branch             |
-| Arrow Left      | Return to the parent column               |
-| Home / End      | First / last node of the column           |
-| Type a name     | Jump to the first matching node in column |
-| Enter / Space   | Select the focused node (commit or drill) |
+| Key             | Action                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------- |
+| Arrow Up / Down | Move focus within the current column                                                        |
+| Arrow Right     | Drill into the focused branch                                                               |
+| Arrow Left      | Return to the parent column (sliding a [collapsed level](#deep-hierarchies) back into view) |
+| Home / End      | First / last node of the column                                                             |
+| Type a name     | Jump to the first matching node in column                                                   |
+| Enter / Space   | Select the focused node (commit or drill)                                                   |
 
 With a [flat search](#flat-search) active, the panel reports itself as a `role="listbox"` of `role="option"` results instead, typing routes into the search input (replacing the in-column jump), and Escape clears the query before it closes the panel.
 

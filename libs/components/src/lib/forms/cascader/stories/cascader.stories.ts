@@ -12,6 +12,7 @@ export default {
     selectableLevels: { control: 'inline-radio', options: ['leaf', 'any'] },
     async: { control: 'boolean' },
     searchable: { control: 'boolean' },
+    deep: { control: 'boolean' },
     multiple: { control: 'boolean' },
     errorMode: { control: 'boolean' },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
@@ -23,6 +24,7 @@ export default {
     selectableLevels: 'leaf',
     async: false,
     searchable: false,
+    deep: false,
     multiple: false,
     errorMode: false,
     color: 'brand',
@@ -54,6 +56,14 @@ export const Multiple: Story = {
 
 export const MultipleWithSearch: Story = {
   args: { multiple: true, searchable: true, hint: 'Toggle several results of one search' },
+};
+
+export const DeepNesting: Story = {
+  args: {
+    deep: true,
+    placeholder: 'Browse players',
+    hint: 'Past three levels, older columns collapse into the breadcrumb row',
+  },
 };
 
 export const AsyncError: Story = {

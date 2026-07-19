@@ -46,14 +46,50 @@
     } @else if (cascader.isSearching()) {
       <ng-container [ngTemplateOutlet]="searchResults" />
     } @else {
-      <div class="et-cascader-columns">
-        @for (column of cascader.columns(); track $index; let columnIndex = $index) {
-          <ng-container
-            [ngTemplateOutlet]="columnBody"
-            [ngTemplateOutletContext]="{ $implicit: column, columnIndex }"
-          />
-        }
+      <div [style.--_et-cascader-visible-columns]="cascader.visibleColumns().length" class="et-cascader-columns">
+        <!-- every drilled level stays mounted on one translating track: a level collapsing
+             into a breadcrumb slides out to the left together with the columns following it,
+             and the reverse plays when a crumb brings it back — the viewport clips the rest -->
+        <div
+          [style.--_et-cascader-column-window-start]="cascader.visibleColumnStart()"
+          class="et-cascader-columns-track"
+        >
+          @for (column of cascader.columns(); track $index; let columnIndex = $index) {
+            <ng-container
+              [ngTemplateOutlet]="columnBody"
+              [ngTemplateOutletContext]="{ $implicit: column, columnIndex }"
+            />
+          }
+        </div>
       </div>
+
+      <!-- the full drilled trail, shown while any level is collapsed out of the window; below
+           the columns so mounting never shifts them (the panel's animated block size covers the
+           height change). A crumb click anchors the window at its level without truncating. -->
+      @if (cascader.breadcrumbPath().length) {
+        <div class="et-cascader-breadcrumbs">
+          @for (crumb of cascader.breadcrumbPath(); track $index; let last = $last) {
+            <span
+              class="et-cascader-crumb"
+              animate.enter="et-cascader-crumb--enter"
+              animate.leave="et-cascader-crumb--leave"
+            >
+              <button
+                [attr.title]="crumb.label"
+                [attr.data-current]="isCrumbCurrent($index) || null"
+                (click)="cascader.showColumn($index)"
+                class="et-cascader-breadcrumb"
+                type="button"
+              >
+                {{ crumb.label }}
+              </button>
+              @if (!last) {
+                <i class="et-cascader-breadcrumb-chevron" etIcon="et-chevron" aria-hidden="true"></i>
+              }
+            </span>
+          }
+        </div>
+      }
     }
   </et-cascader-panel>
 </ng-template>
@@ -169,6 +205,7 @@
   <div
     [etCascaderColumn]="columnIndex"
     [attr.data-nav]="columnIndex === cascader.deepestColumnIndex() ? cascader.navigationDirection() : null"
+    [class.et-cascader-column--offstage]="isColumnOffstage(columnIndex)"
     class="et-cascader-column"
   >
     @switch (column.status) {

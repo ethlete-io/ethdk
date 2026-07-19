@@ -4,7 +4,8 @@ Working plan for the items collected in `todo.md`. Every todo item is mapped to
 a work package below; the quick wins are batched so they can ship together.
 This file is the tracking artifact: check off work as it lands and update the
 status table. When a package ships, remove the corresponding lines from
-`todo.md`.
+`todo.md`. **All packages have shipped — `todo.md` is drained and deleted;
+this file remains as the record.**
 
 File paths were verified against the current code (2026-07-19); line numbers
 are approximate anchors, not gospel.
@@ -16,13 +17,13 @@ are approximate anchors, not gospel.
 | QW  | Quick wins batch (CSS/state gates)         | 1, 9, 15, 16, 23 | S    | shipped |
 | A   | Focus & keyboard fixes                     | 3, 11, 12        | S–M  | shipped |
 | B   | Cascader polish                            | 7, 13, 14        | M    | shipped |
-| C   | Cascader deep-nesting UX                   | 8                | L    | idea    |
+| C   | Cascader deep-nesting UX                   | 8                | L    | shipped |
 | D   | Grid drag: touch support + placement feel  | 4, 25            | M    | shipped |
 | E   | Overlay rendering fixes                    | 22               | S–M  | shipped |
 | F   | Overlay color-theme resolution bug         | 6                | M    | shipped |
 | G   | Theme generators: default-theme option     | 5                | M    | shipped |
 | H   | Select behavior: max selection, v2 adapter | 10, 20           | M    | shipped |
-| I   | Select virtual scroll                      | 21               | L    | open    |
+| I   | Select virtual scroll                      | 21               | L    | shipped |
 | J   | Masked modes: date range, duration, time   | 17, 19, 24       | M    | shipped |
 | K   | Date-time input default time on date pick  | 18               | S    | shipped |
 | L   | Selection indicators move to the right     | 2                | M    | shipped |
@@ -113,14 +114,50 @@ Three focus-management bugs, all in select/cascader headless directives.
       reads as an action; error text downsized to 12px matching select/menu.
       Both error sites (column + search results) share the fix.
 
-## C. Cascader deep-nesting UX (L)
+## C. Cascader deep-nesting UX (L) — shipped
 
 Todo 8: a cascader with ~6 levels needs testing and probably a UX answer
 before code: horizontal scrolling (tedious on desktop, could be helped by
 drag-scroll), or collapsing older sections into a breadcrumb/tab row after ~3
 columns. **Interaction model decided 2026-07-19: collapse older levels into a
 breadcrumb/tab row after ~3 columns** (user decision; horizontal scroll
-rejected). Implementation not yet scheduled — do after §I.
+rejected).
+
+- [x] **Column window + breadcrumb collapse** (todo 8). Headless
+      (`cascader.directive.ts`): `maxVisibleColumns` input (default 3, min 1),
+      raw `columnWindowStart` signal clamped by the `visibleColumnStart`
+      computed (columns load/truncate async, so the clamp must track the live
+      count), `visibleColumns()` (windowed slice with absolute indices),
+      `breadcrumbPath()` (the full drilled trail while any level is collapsed — the row mirrors the drill, never the window position; user correction 2026-07-19),
+      `showColumn(columnIndex)` (crumb action: focus the level's drilled node + focus pulse). **Navigation is non-destructive**: the window slides via
+      `revealColumn` inside `focusNode` (covers ArrowLeft past the edge for
+      free) and `drillInto` — including its already-expanded early return, so
+      re-activating a still-expanded branch slides forward without reloading.
+      Only activating a _different_ node truncates (pre-existing behavior).
+      `resetBrowseState`/`browseToPath` anchor the window at the deep end, so
+      re-opening a committed deep value shows crumbs immediately. Tier 3
+      (desktop browse view only; sheet drill mode unchanged): ALL columns stay
+      mounted on a translating flex track inside a clipped viewport
+      (`--_et-cascader-visible-columns` / `--_et-cascader-column-window-start`
+      style vars; `overflow: clip`, NOT `hidden` — scrollIntoView must never
+      desync the transform with a stray scrollLeft), so window slides are one
+      coordinated transform both ways (user feedback 2026-07-19: motion, not
+      pops). Off-window columns get `contain: size` so they don't inflate the
+      panel height; desktop columns switched to `box-sizing: border-box` and
+      the `--et-cascader-column-inline-size` @property to `inherits: true` so
+      the viewport calc and columns agree. Breadcrumb row sits BELOW the
+      columns (user feedback: mounting crumbs must not shift the columns;
+      panel's animated block size covers the height change) with
+      `inline-size: 0; min-inline-size: 100%` so long paths follow the
+      columns' width; muted crumbs with node-style `color-mix` tints and
+      animate.enter/leave slide-throughs. 7 specs
+      in `cascader.directive.spec.ts` (window, crumb slide, re-expand slide,
+      edge ArrowLeft, truncate-and-re-anchor, deep-value reopen, custom max).
+      Story `DeepNesting` (generated 6-level source); docs
+      `apps/docs/components/cascader.md` §"Deep hierarchies" + options row;
+      rides the pending `cascader` changeset (component unreleased). Column
+      virtualization via `createVirtualWindow` deliberately deferred — levels
+      are typically small; revisit if a real source needs it.
 
 ## D. Grid drag: touch + placement feel (M) — shipped
 

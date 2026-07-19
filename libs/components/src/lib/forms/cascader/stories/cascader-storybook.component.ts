@@ -87,6 +87,23 @@ const searchableSource: CascaderDataSource<string> = {
   search: (query) => of(searchTree(query)).pipe(delay(400)),
 };
 
+// a generated six-level hierarchy (region → … → player) for the deep-nesting story — deeper
+// than maxVisibleColumns, so older levels collapse into the breadcrumb row
+const DEEP_LEVEL_NAMES = ['Region', 'Country', 'League', 'Club', 'Team', 'Player'];
+
+const deepSource: CascaderDataSource<string> = {
+  loadChildren: (parent) => {
+    const depth = parent ? parent.value.split('/').length : 0;
+    const name = DEEP_LEVEL_NAMES[depth]!;
+
+    return Array.from({ length: 6 }, (_, index) => ({
+      value: parent ? `${parent.value}/${index}` : `${index}`,
+      label: `${name} ${index + 1}`,
+      isLeaf: depth === DEEP_LEVEL_NAMES.length - 1,
+    }));
+  },
+};
+
 @Component({
   selector: 'et-sb-cascader',
   template: `
@@ -138,6 +155,8 @@ export class CascaderStorybookComponent {
   public async = input(false);
   /** Adds a `search` hook to the data source, enabling the panel's flat search input. */
   public searchable = input(false);
+  /** Swaps in the generated six-level hierarchy to demo the breadcrumb collapse. */
+  public deep = input(false);
   /** Multi-select: activations toggle values, parents show indeterminate states. */
   public multiple = input(false);
   /** Fails the first load of each level and recovers on Retry — demonstrates the error state. */
@@ -166,6 +185,10 @@ export class CascaderStorybookComponent {
   protected resolvedSource = computed<CascaderDataSource<string>>(() => {
     if (this.errorMode()) {
       return this.flakySource;
+    }
+
+    if (this.deep()) {
+      return deepSource;
     }
 
     if (this.searchable()) {

@@ -49,6 +49,7 @@ import {
         'compareWith',
         'toErrorMessage',
         'mirrorPanelWidth',
+        'maxVisibleColumns',
         'placeholder',
         'disabled',
         'readonly',
@@ -93,5 +94,20 @@ export class CascaderComponent {
 
   protected resultDisabled(path: CascaderNode<unknown>[]) {
     return path[path.length - 1]?.disabled ?? false;
+  }
+
+  /**
+   * Whether a column sits outside the browse window. It stays mounted (the carousel track
+   * slides it out of the clipped viewport) but must not contribute its height to the panel.
+   */
+  protected isColumnOffstage(columnIndex: number) {
+    const start = this.cascader.visibleColumnStart();
+
+    return columnIndex < start || columnIndex >= start + this.cascader.maxVisibleColumns();
+  }
+
+  /** Whether a breadcrumb's column is currently inside the window (its level is on screen). */
+  protected isCrumbCurrent(columnIndex: number) {
+    return !this.isColumnOffstage(columnIndex);
   }
 }

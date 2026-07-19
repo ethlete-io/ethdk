@@ -81,6 +81,22 @@ const searchableSource: CascaderDataSource<string> = {
   search: (query) => searchTree(query),
 };
 
+// a generated six-level hierarchy, deeper than the default column window
+const DEEP_LEVEL_NAMES = ['Region', 'Country', 'League', 'Club', 'Team', 'Player'];
+
+const deepSource: CascaderDataSource<string> = {
+  loadChildren: (parent) => {
+    const depth = parent ? parent.value.split('/').length : 0;
+    const name = DEEP_LEVEL_NAMES[depth]!;
+
+    return Array.from({ length: 3 }, (_, index) => ({
+      value: parent ? `${parent.value}/${index}` : `${index}`,
+      label: `${name} ${index + 1}`,
+      isLeaf: depth === DEEP_LEVEL_NAMES.length - 1,
+    }));
+  },
+};
+
 @Component({
   template: `
     <et-cascader
@@ -89,6 +105,7 @@ const searchableSource: CascaderDataSource<string> = {
       [selectableLevels]="selectableLevels()"
       [disabled]="disabled()"
       [multiple]="multiple()"
+      [maxVisibleColumns]="maxVisibleColumns()"
       (valueChange)="value.set($event)"
       (touchedChange)="touched.set($event)"
       placeholder="Pick a match"
@@ -101,6 +118,7 @@ class CascaderTestHost {
   touched = signal(false);
   disabled = signal(false);
   multiple = signal(false);
+  maxVisibleColumns = signal(3);
   selectableLevels = signal<'leaf' | 'any'>('leaf');
   dataSource = signal<CascaderDataSource<string>>(syncSource);
 }
@@ -671,6 +689,155 @@ describe('CascaderDirective', () => {
 
       expect(results().length).toBe(0);
       expect(pane()?.querySelector('.et-cascader-results')?.textContent).toContain('No matches');
+    });
+  });
+
+  describe('deep nesting', () => {
+    const crumbs = () => Array.from(pane()?.querySelectorAll<HTMLElement>('.et-cascader-breadcrumb') ?? []);
+    const crumbLabels = () => crumbs().map((crumb) => crumb.textContent?.trim());
+    const offstage = (columnIndex: number) =>
+      columns()[columnIndex]?.classList.contains('et-cascader-column--offstage') ?? false;
+    const trackStyle = () => pane()?.querySelector<HTMLElement>('.et-cascader-columns-track')?.getAttribute('style');
+
+    const drillTo = (labels: string[]) => {
+      for (const label of labels) {
+        nodeByLabel(label)!.click();
+        tick();
+      }
+    };
+
+    beforeEach(async () => {
+      fixture.componentInstance.dataSource.set(deepSource);
+      fixture.detectChanges();
+      await open();
+    });
+
+    it('collapses older levels into breadcrumbs once the drill exceeds the window', async () => {
+      drillTo(['Region 1', 'Country 1', 'League 1']);
+
+      // four levels are drilled — all stay mounted on the track, the root slides offstage
+      expect(cascader.columns().length).toBe(4);
+      expect(columns().length).toBe(4);
+      expect(cascader.visibleColumnStart()).toBe(1);
+      // the row shows the FULL drilled trail, not just the levels hidden on the left
+      expect(crumbLabels()).toEqual(['Region 1', 'Country 1', 'League 1']);
+      expect([offstage(0), offstage(1), offstage(2), offstage(3)]).toEqual([true, false, false, false]);
+      expect(trackStyle()).toContain('--_et-cascader-column-window-start: 1');
+    });
+
+    it('slides the window back on a breadcrumb click without truncating the drill', async () => {
+      drillTo(['Region 1', 'Country 1', 'League 1']);
+
+      crumbs()[0]!.click();
+      tick();
+
+      expect(cascader.columns().length).toBe(4);
+      expect(cascader.visibleColumnStart()).toBe(0);
+      // the crumb row mirrors the drill, not the window — sliding back must not rebuild it
+      expect(crumbLabels()).toEqual(['Region 1', 'Country 1', 'League 1']);
+      expect(cascader.focusedNode()?.label).toBe('Region 1');
+      // the deepest column slid offstage instead of being truncated
+      expect([offstage(0), offstage(3)]).toEqual([false, true]);
+      expect(trackStyle()).toContain('--_et-cascader-column-window-start: 0');
+    });
+
+    it('slides forward again when the still-expanded branch is re-activated', async () => {
+      drillTo(['Region 1', 'Country 1', 'League 1']);
+      crumbs()[0]!.click();
+      tick();
+
+      // League 1 is still expanded — activating it reveals its children instead of reloading
+      nodeByLabel('League 1')!.click();
+      tick();
+
+      expect(cascader.columns().length).toBe(4);
+      expect(cascader.visibleColumnStart()).toBe(1);
+      expect(crumbLabels()).toEqual(['Region 1', 'Country 1', 'League 1']);
+      expect([offstage(0), offstage(3)]).toEqual([true, false]);
+    });
+
+    it('slides the window when ArrowLeft moves focus past its edge', async () => {
+      drillTo(['Region 1', 'Country 1', 'League 1']);
+
+      // Country 1 sits in the leftmost visible column — ArrowLeft targets the collapsed root
+      nodeByLabel('Country 1')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+      tick();
+
+      expect(cascader.focusedNode()?.label).toBe('Region 1');
+      expect(cascader.visibleColumnStart()).toBe(0);
+      expect(cascader.columns().length).toBe(4);
+      expect(offstage(0)).toBe(false);
+    });
+
+    it('truncates and re-anchors when a node in a revealed column is activated', async () => {
+      drillTo(['Region 1', 'Country 1', 'League 1']);
+      crumbs()[0]!.click();
+      tick();
+
+      nodeByLabel('Region 2')!.click();
+      tick();
+
+      expect(cascader.columns().length).toBe(2);
+      expect(cascader.visibleColumnStart()).toBe(0);
+      // the drill changed — now the crumb row updates (and empties, everything fits again)
+      expect(crumbs().length).toBe(0);
+      expect([offstage(0), offstage(1)]).toEqual([false, false]);
+    });
+
+    it('keeps every crumb clickable — each anchors the window at its own column', async () => {
+      drillTo(['Region 1', 'Country 1', 'League 1', 'Club 1', 'Team 1']);
+
+      // six columns: the row lists the whole drilled trail and never rebuilds on slides
+      expect(crumbLabels()).toEqual(['Region 1', 'Country 1', 'League 1', 'Club 1', 'Team 1']);
+
+      crumbs()[0]!.click();
+      tick();
+      expect(cascader.visibleColumnStart()).toBe(0);
+
+      crumbs()[2]!.click();
+      tick();
+      expect(cascader.visibleColumnStart()).toBe(2);
+
+      // the deepest crumbs clamp to the deep end of the window
+      crumbs()[4]!.click();
+      tick();
+      expect(cascader.visibleColumnStart()).toBe(3);
+      expect(cascader.focusedNode()?.label).toBe('Team 1');
+
+      crumbs()[1]!.click();
+      tick();
+      expect(cascader.visibleColumnStart()).toBe(1);
+      expect(cascader.focusedNode()?.label).toBe('Country 1');
+      // the drill never changed, so neither did the crumbs
+      expect(cascader.columns().length).toBe(6);
+      expect(crumbLabels()).toEqual(['Region 1', 'Country 1', 'League 1', 'Club 1', 'Team 1']);
+    });
+
+    it('re-opens a committed deep value with the window anchored at the deep end', async () => {
+      drillTo(['Region 1', 'Country 1', 'League 1', 'Club 1', 'Team 1', 'Player 1']);
+      await flushFrames();
+
+      expect(fixture.componentInstance.value()).toBe('0/0/0/0/0/0');
+      expect(cascader.open()).toBe(false);
+
+      await open();
+
+      expect(cascader.columns().length).toBe(6);
+      expect(cascader.visibleColumnStart()).toBe(3);
+      expect(crumbLabels()).toEqual(['Region 1', 'Country 1', 'League 1', 'Club 1', 'Team 1']);
+      expect(nodeByLabel('Player 1')!.getAttribute('data-selected')).toBe('true');
+    });
+
+    it('respects a custom maxVisibleColumns', async () => {
+      fixture.componentInstance.maxVisibleColumns.set(2);
+      fixture.detectChanges();
+
+      drillTo(['Region 1', 'Country 1']);
+
+      expect(cascader.columns().length).toBe(3);
+      expect(cascader.visibleColumnStart()).toBe(1);
+      expect(crumbLabels()).toEqual(['Region 1', 'Country 1']);
+      expect([offstage(0), offstage(1), offstage(2)]).toEqual([true, false, false]);
     });
   });
 

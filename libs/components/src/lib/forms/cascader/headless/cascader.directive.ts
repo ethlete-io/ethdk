@@ -109,6 +109,13 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   /** Whether the overlay panel mirrors the anchor's width (off — columns size themselves). */
   public mirrorPanelWidth = input(false);
 
+  /**
+   * How many columns the browse view shows side by side before older levels collapse into the
+   * breadcrumb row (min 1). Deep hierarchies would otherwise grow the panel a column-width per
+   * level until it hits the viewport edge.
+   */
+  public maxVisibleColumns = input(3, { transform: (value: number) => Math.max(1, Math.floor(value)) });
+
   public opened = output<void>();
   public closed = output<void>();
 
@@ -150,6 +157,39 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
 
   /** The chain of nodes drilled into — `openPath[i]` is the parent of column `i + 1`. */
   private openPath = signal<CascaderNode<T>[]>([]);
+
+  /**
+   * Raw left edge of the browse window, moved by `revealColumn`. Deliberately unclamped — columns
+   * load and truncate asynchronously, so the clamp lives in `visibleColumnStart` where it tracks
+   * the current column count instead of going stale.
+   */
+  private columnWindowStart = signal(0);
+
+  /** Index of the first column the browse view shows — everything before it is collapsed. */
+  public visibleColumnStart = computed(() => {
+    const overflow = Math.max(0, this.columns().length - this.maxVisibleColumns());
+
+    return Math.max(0, Math.min(overflow, this.columnWindowStart()));
+  });
+
+  /** The windowed slice of `columns` the browse view renders, with their absolute indices. */
+  public visibleColumns = computed(() => {
+    const start = this.visibleColumnStart();
+
+    return this.columns()
+      .slice(start, start + this.maxVisibleColumns())
+      .map((column, offset) => ({ column, columnIndex: start + offset }));
+  });
+
+  /**
+   * The breadcrumb row's entries: the FULL drilled trail, present whenever the drill overflows
+   * the window (empty otherwise). Deliberately independent of the window position — levels
+   * collapsed to the right (after sliding back) need their crumbs just as much as those on the
+   * left, and sliding around must never rebuild the row; only an actual drill change does.
+   */
+  public breadcrumbPath = computed(() =>
+    this.columns().length > this.maxVisibleColumns() ? [...this.openPath()] : [],
+  );
 
   /** The committed selection chain from root to the chosen node (for the breadcrumb trigger). */
   public path = signal<CascaderNode<T>[]>([]);
@@ -699,6 +739,28 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   public focusNode(node: CascaderNode<T>, columnIndex: number) {
     this.focusedNode.set(node);
     this.focusedColumn.set(columnIndex);
+    // focus in a collapsed column (ArrowLeft past the window edge) slides the window to it
+    this.revealColumn(columnIndex);
+  }
+
+  /**
+   * Slides the browse window to `columnIndex` and moves roving focus onto its drilled node — a
+   * breadcrumb activation. The window is anchored AT the column (not minimally revealed), so
+   * every crumb maps to a distinct view and stays clickable however the window was slid before.
+   * Purely navigational: no columns are truncated, so the deeper levels stay drilled until a
+   * node in the revealed column is activated.
+   */
+  public showColumn(columnIndex: number) {
+    this.columnWindowStart.set(columnIndex);
+
+    const node = this.openPath()[columnIndex] ?? this.columns()[columnIndex]?.nodes[0];
+
+    if (node) {
+      this.focusNode(node, columnIndex);
+    }
+
+    // pull DOM focus onto the node — the crumb keeps DOM focus otherwise while its column shows
+    this.focusPulse.update((pulse) => pulse + 1);
   }
 
   /** @internal Routes a node's keydown through the tree navigation model. */
@@ -1053,13 +1115,19 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
     this.loadColumn(0, null);
     path.forEach((node, index) => this.loadColumn(index + 1, node));
 
+    // anchor the browse window at the deep end of the jumped-to branch
+    this.columnWindowStart.set(path.length);
+
     // land keyboard focus on the first child of the branch that was jumped to
     this.focusFirstOfColumn(path.length);
   }
 
   private drillInto(node: CascaderNode<T>, columnIndex: number) {
-    // already expanded here — nothing to reload
+    // already expanded here — nothing to reload, but re-activating a branch whose children sit
+    // beyond the window edge (after a breadcrumb slid it back) must still bring them into view
     if (this.isExpanded(node, columnIndex)) {
+      this.revealColumn(columnIndex + 1);
+
       return;
     }
 
@@ -1070,6 +1138,19 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
     this.openPath.update((path) => [...path.slice(0, columnIndex), node]);
     this.truncateColumns(columnIndex + 1);
     this.loadColumn(columnIndex + 1, node);
+    this.revealColumn(columnIndex + 1);
+  }
+
+  /** Slides the browse window the minimal distance that brings `columnIndex` into view. */
+  private revealColumn(columnIndex: number) {
+    const start = this.visibleColumnStart();
+    const end = start + this.maxVisibleColumns() - 1;
+
+    if (columnIndex < start) {
+      this.columnWindowStart.set(columnIndex);
+    } else if (columnIndex > end) {
+      this.columnWindowStart.set(columnIndex - this.maxVisibleColumns() + 1);
+    }
   }
 
   private commit(options: { node: CascaderNode<T>; columnIndex: number; close: boolean }) {
@@ -1215,6 +1296,9 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
         this.loadColumn(index + 1, node);
       }
     });
+
+    // anchor the browse window at the deep end of the re-opened branch (clamped once loaded)
+    this.columnWindowStart.set(this.openPath().length);
   }
 
   private resolveAnchorElement() {
