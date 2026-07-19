@@ -132,6 +132,8 @@ users = selectOptionsFromQuery({
 
 The factory debounces the query (`debounceTime`, default 300ms), skips requests below `minQueryLength`, and maps failures to the error row's text (`toErrorMessage`). Pagination: derive `hasMore` from the response via `toHasMore` and grow your page size on `(loadMoreRequested)`. To preload options so the panel isn't empty on first open, let `args` return request args for the empty query (return `null` instead to require a query first).
 
+Apps still on the [legacy `V2QueryClient`](/query/legacy) use `selectOptionsFromV2Query` instead — same config shape and returned signal bundle, but `queryCreator` takes a legacy creator (from `client.get(...)` or a `createLegacyQueryCreator` interop wrapper) and `args` builds the `prepare()` arguments. Options stay rendered while the next request loads, matching the current-system adapter.
+
 ### Custom values
 
 <StoryEmbed id="components-forms-select--custom-values" height="420px" />
@@ -143,7 +145,7 @@ The tag-input ergonomics are available on top:
 - **`customValueSeparators`** — single characters (e.g. `[',']`) that commit the pending text the moment they are typed, and split pasted text on separators/newlines into several values (multi mode).
 - **`commitCustomValueOnClose`** — pending text commits instead of being discarded when the panel closes via <kbd>Tab</kbd> or an outside click (an <kbd>Escape</kbd> close never commits — it clears the query first).
 - **`normalizeCustomValue`** — maps raw text to the stored value, return `null` to reject; defaults to trimming.
-- **`maxSelection`** — caps the number of selected values (multi mode); at the cap the search input locks (like the tag input's `maxTags`) until a chip is removed. Applies to option picks too.
+- **`maxSelection`** — caps the number of selected values (multi mode); at the cap the search input locks (like the tag input's `maxTags`) and every still-unselected option renders disabled (skipped by keyboard navigation, like any disabled option) until a value is removed. Selected options stay enabled for deselection.
 
 Prefer this over [`et-tag-input`](/components/forms#tag-input-—-et-tag-input) whenever suggestions/autocomplete are involved — it is a superset of the tag input's behavior with an option list on top. The tag input remains the deliberately minimal variant for pure free-text entry with no panel at all.
 

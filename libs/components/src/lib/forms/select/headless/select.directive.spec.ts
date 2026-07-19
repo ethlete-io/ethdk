@@ -809,6 +809,39 @@ describe('SelectDirective (search)', () => {
     expect(searchInput()!.readOnly).toBe(false);
   });
 
+  it('renders unselected options as disabled while full and keeps the selected ones deselectable', async () => {
+    fixture.componentInstance.multiple.set(true);
+    fixture.componentInstance.maxSelection.set(2);
+    fixture.detectChanges();
+
+    await openSelect();
+
+    const optionByLabel = (label: string) => visibleOptions().find((el) => el.textContent?.trim() === label) ?? null;
+
+    optionByLabel('Apple')!.click();
+    tick();
+    optionByLabel('Banana')!.click();
+    tick();
+
+    expect(select.isFull()).toBe(true);
+    expect(optionByLabel('Cherry')!.getAttribute('aria-disabled')).toBe('true');
+    expect(optionByLabel('Apple')!.hasAttribute('aria-disabled')).toBe(false);
+
+    // clicking a full option is a no-op
+    optionByLabel('Cherry')!.click();
+    tick();
+    expect(fixture.componentInstance.value()).toEqual(['apple', 'banana']);
+
+    // keyboard navigation skips full options like any other disabled option
+    expect(select.enabledItems().length).toBe(2);
+
+    // deselecting re-enables the remaining options
+    optionByLabel('Apple')!.click();
+    tick();
+    expect(select.isFull()).toBe(false);
+    expect(optionByLabel('Cherry')!.hasAttribute('aria-disabled')).toBe(false);
+  });
+
   it('runs custom values through the normalizeCustomValue hook', async () => {
     fixture.componentInstance.allowCustom.set(true);
     fixture.componentInstance.multiple.set(true);

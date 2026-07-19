@@ -17,7 +17,7 @@ const UNBOUND_VALUE = Symbol('et-select-option-unbound');
   host: {
     role: 'option',
     '[attr.aria-selected]': 'selected()',
-    '[attr.aria-disabled]': 'disabled() || null',
+    '[attr.aria-disabled]': 'isDisabled() || null',
     '[attr.data-selected]': 'selected() || null',
     '[attr.data-active]': 'active() || null',
     '[attr.data-active-source]': 'activeSource()',
@@ -76,10 +76,24 @@ export class SelectOptionDirective {
     return Array.isArray(current) ? current.includes(value) : current === value;
   });
 
+  /**
+   * The option's effective interactivity: its own `disabled` input, or — once `maxSelection`
+   * is reached in multi mode — every still-unselected option, so the remaining choices read
+   * as unavailable instead of silently ignoring clicks. Selected options stay enabled for
+   * deselection; keyboard navigation skips full options like any other disabled option.
+   */
+  public isDisabled = computed(() => {
+    if (this.disabled()) {
+      return true;
+    }
+
+    return !!this.select && this.select.isFull() && !this.selected();
+  });
+
   private listItem = {
     value: this.boundValue,
     checked: this.checked,
-    disabled: this.disabled,
+    disabled: this.isDisabled,
     elementRef: this.elementRef,
     id: this.optionId.asReadonly(),
     label: this.label,
@@ -149,7 +163,7 @@ export class SelectOptionDirective {
   }
 
   protected handleClick(event: MouseEvent) {
-    if (this.disabled()) {
+    if (this.isDisabled()) {
       event.preventDefault();
       event.stopPropagation();
 
@@ -165,7 +179,7 @@ export class SelectOptionDirective {
   }
 
   protected handlePointerEnter(event: PointerEvent) {
-    if (event.pointerType === 'touch' || this.disabled()) {
+    if (event.pointerType === 'touch' || this.isDisabled()) {
       return;
     }
 
