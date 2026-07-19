@@ -162,7 +162,7 @@ Typing behavior: literals render eagerly and the caret glides past them onto the
 
 The directive exposes two signals (via `exportAs: 'etInputMask'`): `rawValue()` — the unmasked text regardless of `maskValueMode` — and `complete()` — whether every required slot is filled (`0`/`a`/`*` required, `9` optional; `null` for masks that don't track completeness, like the factories). Wire `complete()` into schema validation to require fully-filled masks.
 
-**Custom hosts**: the mask attaches to `et-input` out of the box, but any text control can host it by providing `INPUT_MASK_HOST` on itself (`{ provide: INPUT_MASK_HOST, useExisting: MyFieldDirective }`) — the contract is a `value` model, a `focused` signal, a `nativeControl` element signal and a `suppressNativeSync()` hook (the mask takes over value-sync), plus an optional `resumeNativeSync()` for hosts whose mask can toggle back to `null`. The [date](#date-input-—-et-date-input), [time](#time-input-—-et-time-input) and [date-time](#date-time-input-—-et-date-time-input) inputs host a mask this way behind their opt-in `mask` input.
+**Custom hosts**: the mask attaches to `et-input` out of the box, but any text control can host it by providing `INPUT_MASK_HOST` on itself (`{ provide: INPUT_MASK_HOST, useExisting: MyFieldDirective }`) — the contract is a `value` model, a `focused` signal, a `nativeControl` element signal and a `suppressNativeSync()` hook (the mask takes over value-sync), plus an optional `resumeNativeSync()` for hosts whose mask can toggle back to `null`. The [date](#date-input-—-et-date-input), [time](#time-input-—-et-time-input), [date-time](#date-time-input-—-et-date-time-input) and [date range](#date-range-input-—-et-date-range-input) inputs host a mask this way behind their opt-in `mask` input.
 
 Try it live in Storybook: `Components/Forms/Masked input`.
 
@@ -316,7 +316,7 @@ A date form control with a **string value** in a configurable wire format, combi
 
 Typed text is parsed **strictly** against `displayFormat` on blur/Enter. Unparseable text stays visible in the field, the `parseError` signal (on the `[etDateInput]` directive) turns on and the value is cleared to `null` — wire it into your schema validation, or rely on the built-in error display: once the field is touched, a parse error is announced as a real message (`parseErrorMessage`) with matching `aria-invalid`/`aria-describedby`. Alt+ArrowDown also opens the picker; picking a day writes `format(date, valueFormat)` and closes it. The picker overlay is a named `role="dialog"`.
 
-**Opt-in typing mask**: with `mask` set, a fixed-width numeric `displayFormat` (`dd.MM.yyyy`, `MM/dd/yyyy`, …) drives a live [input mask](#masked-input-—-etinputmask) — guide placeholders (`__.__.____`) while focused, auto-inserted separators, filtered pastes, and a numeric soft keyboard (`inputmode="numeric"`). The mask only shapes typing; committing still goes through the same blur/Enter parse, so behavior like clearing on empty text is unchanged. Formats the mask cannot represent — locale formats like the default `P`/`p`/`Pp`, variable-width tokens (`d.M.yyyy`), text tokens (`MMM`, am/pm markers) — are refused with a dev-mode warning and typing stays unmasked. The same input ships on the time and date-time inputs; the duration input deliberately has none (see below).
+**Opt-in typing mask**: with `mask` set, a fixed-width numeric `displayFormat` (`dd.MM.yyyy`, `MM/dd/yyyy`, …) drives a live [input mask](#masked-input-—-etinputmask) — guide placeholders (`__.__.____`) while focused, auto-inserted separators, filtered pastes, and a numeric soft keyboard (`inputmode="numeric"`). The mask only shapes typing; committing still goes through the same blur/Enter parse, so behavior like clearing on empty text is unchanged. Formats the mask cannot represent — locale formats like the default `P`/`p`/`Pp`, variable-width tokens (`d.M.yyyy`), text tokens (`MMM`, am/pm markers) — are refused with a dev-mode warning and typing stays unmasked. The same input ships on the time, date-time and date range inputs; the duration input deliberately has none (see below).
 
 <StoryEmbed id="components-forms-date-input--masked" height="360px" />
 
@@ -346,7 +346,9 @@ One registered form control containing two text inputs (start – end) that shar
 </et-form-field>
 ```
 
-Options mirror the date input (`valueFormat`, `displayFormat`, `locale`, `minDate`/`maxDate`/`dateFilter`, `pickerOpen`), with `startPlaceholder`/`endPlaceholder` and per-field `startAriaLabel`/`endAriaLabel` (defaults `'Start date'`/`'End date'`; the host is a `role="group"` labelled by the field label). In the picker, the first click starts the range and a completed range closes it; a partial pick keeps it open.
+Options mirror the date input (`valueFormat`, `displayFormat`, `locale`, `mask`, `minDate`/`maxDate`/`dateFilter`, `pickerOpen`), with `startPlaceholder`/`endPlaceholder` and per-field `startAriaLabel`/`endAriaLabel` (defaults `'Start date'`/`'End date'`; the host is a `role="group"` labelled by the field label). The [opt-in typing mask](#date-input-—-et-date-input) applies to both fields — each side is its own mask host, so the guide only shows on the focused side. In the picker, the first click starts the range and a completed range closes it; a partial pick keeps it open.
+
+<StoryEmbed id="components-forms-date-range-input--masked" height="360px" />
 
 **Validation:** signal forms attaches child-path errors (e.g. `required(s.range.start)`) to the sub-fields — they flip the control's invalid state, but their messages don't reach the field's single error area. Validate on the range path for messages you want displayed:
 
@@ -415,7 +417,7 @@ A combined date & time form control with a **string value** in a configurable wi
 
 Typed text is parsed **strictly** against `displayFormat` first, then leniently: the entry split into a date and a time at any separator (the date against the locale's short `P` format, the time with the time input's lenient rules — `7/16/2026 930pm` commits), and a **bare date commits at midnight**. Unparseable text behaves exactly like the date input (`parseError` signal, value stays `null`).
 
-In the picker, selections **merge**: picking a day keeps the committed time of day, picking a time keeps the committed day — and neither closes the overlay (close it via Escape, an outside click or the trigger). While the value is still empty, `et-date-time-input` completes a first day pick with the time the picker's columns visibly anchor to (now, snapped to the steps); the headless `selectDate` defaults to midnight. Alt+ArrowDown opens the picker from the field.
+In the picker, selections **merge**: picking a day keeps the committed time of day, picking a time keeps the committed day — and neither closes the overlay (close it via Escape, an outside click or the trigger). While the value is still empty, a first day pick commits the day **at midnight** (like a typed bare date) — the time never defaults to the current wall-clock time; a first time pick completes with today as the day. Alt+ArrowDown opens the picker from the field.
 
 Try it live in Storybook: `Components/Forms/Date Time Input`.
 

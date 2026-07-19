@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation, inject, input } from '@angular/core';
 import { CALENDAR_IMPORTS } from '../../../calendar';
 import { CALENDAR_ICON, IconDirective, provideIcons } from '../../../icon';
+import { InputMaskDirective } from '../../masked-input/headless';
 import { DatePickerPanelComponent } from '../date-picker-panel.component';
 import { DatePickerSurfaceDirective } from '../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../picker/date-picker-trigger.directive';
@@ -18,6 +19,7 @@ import { DateRangeInputDirective, DateRangeInputFieldDirective } from './headles
     DatePickerTriggerDirective,
     DatePickerPanelComponent,
     IconDirective,
+    InputMaskDirective,
   ],
   providers: [provideIcons(CALENDAR_ICON)],
   hostDirectives: [
@@ -38,6 +40,7 @@ import { DateRangeInputDirective, DateRangeInputFieldDirective } from './headles
         'valueFormat',
         'displayFormat',
         'locale',
+        'mask',
         'minDate',
         'maxDate',
         'dateFilter',

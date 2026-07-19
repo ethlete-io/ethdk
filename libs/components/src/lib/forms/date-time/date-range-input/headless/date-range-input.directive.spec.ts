@@ -1,6 +1,7 @@
 import { ApplicationRef, Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../../test-helpers';
+import { InputMaskDirective } from '../../../masked-input/headless';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { DateRangeInputFieldDirective } from './date-range-input-field.directive';
@@ -223,5 +224,202 @@ describe('DateRangeInputDirective', () => {
     tick();
 
     expect(rangeInput.pickerOpen()).toBe(false);
+  });
+});
+
+@Component({
+  template: `
+    <div
+      #rangeInput="etDateRangeInput"
+      [(value)]="value"
+      [mask]="mask()"
+      [displayFormat]="displayFormat()"
+      valueFormat="yyyy-MM-dd"
+      etDateRangeInput
+    >
+      <input
+        [etInputMask]="rangeInput.maskPattern()"
+        class="start"
+        etDateRangeInputField
+        maskValueMode="masked"
+        placeholderChar="_"
+        side="start"
+      />
+      <input
+        [etInputMask]="rangeInput.maskPattern()"
+        class="end"
+        etDateRangeInputField
+        maskValueMode="masked"
+        placeholderChar="_"
+        side="end"
+      />
+    </div>
+  `,
+  imports: [DateRangeInputDirective, DateRangeInputFieldDirective, InputMaskDirective],
+})
+class MaskedDateRangeInputTestHost {
+  value = signal<DateRangeValue>({ start: null, end: null });
+  mask = signal(true);
+  displayFormat = signal('dd.MM.yyyy');
+}
+
+describe('DateRangeInputDirective with the opt-in typing mask', () => {
+  let fixture: ComponentFixture<MaskedDateRangeInputTestHost>;
+  let host: MaskedDateRangeInputTestHost;
+  let rangeInput: DateRangeInputDirective;
+  let startField: HTMLInputElement;
+  let endField: HTMLInputElement;
+
+  const focus = async (field: HTMLInputElement) => {
+    field.focus();
+    field.dispatchEvent(new FocusEvent('focus'));
+    await fixture.whenStable();
+  };
+
+  const blur = async (field: HTMLInputElement) => {
+    field.blur();
+    field.dispatchEvent(new Event('blur'));
+    await fixture.whenStable();
+  };
+
+  const type = async (field: HTMLInputElement, text: string) => {
+    for (const char of text) {
+      const caret = field.selectionStart ?? field.value.length;
+
+      field.value = field.value.slice(0, caret) + char + field.value.slice(caret);
+      field.setSelectionRange(caret + 1, caret + 1);
+      field.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+      await fixture.whenStable();
+    }
+  };
+
+  beforeEach(async () => {
+    TestBed.configureTestingModule({ imports: [MaskedDateRangeInputTestHost] });
+    fixture = TestBed.createComponent(MaskedDateRangeInputTestHost);
+    host = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    rangeInput = fixture.debugElement.children[0]!.injector.get(DateRangeInputDirective);
+    startField = fixture.nativeElement.querySelector('.start');
+    endField = fixture.nativeElement.querySelector('.end');
+  });
+
+  it('derives the pattern from the display format and refuses non-fixed-width formats', () => {
+    expect(rangeInput.maskPattern()).toBe('00.00.0000');
+
+    host.displayFormat.set('P');
+    fixture.detectChanges();
+    expect(rangeInput.maskPattern()).toBeNull();
+
+    host.mask.set(false);
+    host.displayFormat.set('dd.MM.yyyy');
+    fixture.detectChanges();
+    expect(rangeInput.maskPattern()).toBeNull();
+  });
+
+  it('shapes typing per side with guide placeholders and commits on blur', async () => {
+    await focus(startField);
+
+    expect(startField.value).toBe('__.__.____');
+    // the other side stays untouched — each field is its own mask host
+    expect(endField.value).toBe('');
+
+    await type(startField, '0807');
+
+    expect(startField.value).toBe('08.07.____');
+    // masked typing must feed hasValue like native typing (the clear affordance depends on it)
+    expect(rangeInput.inputText('start')).toBe('08.07.');
+    expect(rangeInput.hasValue()).toBe(true);
+
+    await type(startField, '2026');
+    await blur(startField);
+
+    expect(host.value()).toEqual({ start: '2026-07-08', end: null });
+    expect(startField.value).toBe('08.07.2026');
+
+    await focus(endField);
+    await type(endField, '23072026');
+    await blur(endField);
+
+    expect(host.value()).toEqual({ start: '2026-07-08', end: '2026-07-23' });
+    expect(endField.value).toBe('23.07.2026');
+  });
+
+  it('commits the shaped text without guide placeholders — a partial entry is a parse error on its side only', async () => {
+    await focus(endField);
+    await type(endField, '2307');
+    await blur(endField);
+
+    expect(host.value()).toEqual({ start: null, end: null });
+    expect(rangeInput.endParseError()).toBe(true);
+    expect(rangeInput.startParseError()).toBe(false);
+    // the kept text is the display-shaped entry, not `23.07.____`
+    expect(rangeInput.inputText('end')).toBe('23.07.');
+    expect(endField.value).toBe('23.07.');
+  });
+
+  it('shows the guide only on the focused side and removes it again on blur', async () => {
+    await focus(startField);
+
+    expect(startField.value).toBe('__.__.____');
+    expect(endField.value).toBe('');
+
+    await blur(startField);
+
+    expect(host.value()).toEqual({ start: null, end: null });
+    expect(startField.value).toBe('');
+  });
+
+  it('keeps a committed range visible when masked and clears a side via delete-all + blur', async () => {
+    host.value.set({ start: '2026-07-08', end: '2026-07-23' });
+    await fixture.whenStable();
+
+    expect(startField.value).toBe('08.07.2026');
+    expect(endField.value).toBe('23.07.2026');
+
+    await focus(startField);
+
+    expect(startField.value).toBe('08.07.2026');
+
+    startField.value = '';
+    startField.setSelectionRange(0, 0);
+    startField.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'deleteContentBackward' }));
+    await fixture.whenStable();
+
+    expect(startField.value).toBe('__.__.____');
+
+    await blur(startField);
+
+    expect(host.value()).toEqual({ start: null, end: '2026-07-23' });
+    expect(startField.value).toBe('');
+    expect(endField.value).toBe('23.07.2026');
+  });
+
+  it('commits on Enter and keeps the reformatted text in place', async () => {
+    await focus(startField);
+    await type(startField, '08072026');
+    startField.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await fixture.whenStable();
+
+    expect(host.value().start).toBe('2026-07-08');
+    expect(startField.value).toBe('08.07.2026');
+  });
+
+  it('falls back to native, unmasked typing while the pattern is refused', async () => {
+    host.displayFormat.set('P');
+    await fixture.whenStable();
+
+    await focus(startField);
+    startField.value = '07/16/2026';
+    startField.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+    await fixture.whenStable();
+
+    // no mask: arbitrary text stays, native input sync tracks it
+    expect(startField.value).toBe('07/16/2026');
+    expect(rangeInput.inputText('start')).toBe('07/16/2026');
+
+    await blur(startField);
+
+    expect(host.value().start).toBe('2026-07-16');
   });
 });

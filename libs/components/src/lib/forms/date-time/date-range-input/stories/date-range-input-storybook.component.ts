@@ -20,6 +20,7 @@ import { DATE_RANGE_INPUT_IMPORTS } from '../date-range-input.imports';
           [valueFormat]="valueFormat()"
           [displayFormat]="displayFormat()"
           [locale]="localeObject()"
+          [mask]="mask()"
         />
         @if (hint()) {
           <et-hint>{{ hint() }}</et-hint>
@@ -41,6 +42,7 @@ export class DateRangeInputStorybookComponent {
   public end = input<string | null>(null);
   public valueFormat = input<string | undefined>('yyyy-MM-dd');
   public displayFormat = input('P');
+  public mask = input(false);
   public locale = input<'default' | 'de'>('default');
   public disabled = input(false);
   public readonly = input(false);

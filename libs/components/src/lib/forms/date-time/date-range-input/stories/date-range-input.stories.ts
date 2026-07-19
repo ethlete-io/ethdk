@@ -14,6 +14,7 @@ export default {
     end: { control: 'text' },
     valueFormat: { control: 'text' },
     displayFormat: { control: 'text' },
+    mask: { control: 'boolean' },
     locale: { control: 'select', options: ['default', 'de'] },
     disabled: { control: 'boolean' },
     readonly: { control: 'boolean' },
@@ -28,6 +29,7 @@ export default {
     end: null,
     valueFormat: 'yyyy-MM-dd',
     displayFormat: 'P',
+    mask: false,
     locale: 'default',
     disabled: false,
     readonly: false,
@@ -45,4 +47,14 @@ export const Prefilled: Story = {
 
 export const German: Story = {
   args: { locale: 'de', startPlaceholder: 'tt.mm.jjjj', endPlaceholder: 'tt.mm.jjjj' },
+};
+
+export const Masked: Story = {
+  args: {
+    mask: true,
+    displayFormat: 'dd.MM.yyyy',
+    startPlaceholder: 'tt.mm.jjjj',
+    endPlaceholder: 'tt.mm.jjjj',
+    hint: 'Typing is guided by the fixed-width display format — separators insert themselves',
+  },
 };

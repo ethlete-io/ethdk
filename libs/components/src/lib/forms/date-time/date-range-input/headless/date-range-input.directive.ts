@@ -1,11 +1,23 @@
 import { DOCUMENT } from '@angular/common';
-import { DestroyRef, Directive, Signal, computed, inject, input, model, signal } from '@angular/core';
+import {
+  DestroyRef,
+  Directive,
+  Signal,
+  booleanAttribute,
+  computed,
+  effect,
+  inject,
+  input,
+  model,
+  signal,
+} from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { Locale, startOfDay } from 'date-fns';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../../form-field/headless';
 import { injectDateFormat, injectDateLocale } from '../../date-time-formats';
 import { createDatePickerOverlay } from '../../internals/date-picker-overlay';
 import { formatDateValue, parseDateValue } from '../../internals/date-value';
+import { maskPatternFromDisplayFormat } from '../../internals/display-format-mask';
 import { DATE_PICKER_HOST, DatePickerHost } from '../../picker/date-picker-host';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
@@ -64,6 +76,16 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
   public displayFormat = input('P');
   public locale = input<Locale | null>(null);
 
+  /**
+   * Opt-in typing mask: when `displayFormat` is fixed-width numeric (`dd.MM.yyyy`),
+   * both fields get guide placeholders (`__.__.____`), auto-inserted separators,
+   * and paste filtering. Formats the mask cannot represent — locale formats like
+   * the default `P`, variable-width or text tokens — are refused and typing stays
+   * unmasked. Commit parsing is identical either way: the lenient blur/Enter
+   * parsers stay authoritative.
+   */
+  public mask = input(false, { transform: booleanAttribute });
+
   /** Forwarded to the picker calendar. (`min`/`max` are reserved by signal forms.) */
   public minDate = input<Date | null>(null);
   public maxDate = input<Date | null>(null);
@@ -115,6 +137,9 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
 
+  /** The `[etInputMask]` pattern derived from `displayFormat` — `null` while `mask` is off or the format is refused. */
+  public maskPattern = computed(() => (this.mask() ? maskPatternFromDisplayFormat(this.displayFormat()) : null));
+
   private overlay = createDatePickerOverlay({
     interactive: this.interactive,
     pickerOpen: this.pickerOpen,
@@ -134,6 +159,17 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
   constructor() {
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
+
+    if (ngDevMode) {
+      // a refused format silently behaving like `mask: false` would be a head-scratcher
+      effect(() => {
+        if (this.mask() && this.maskPattern() === null) {
+          console.warn(
+            `[et-${this.controlType()}] displayFormat "${this.displayFormat()}" is not fixed-width numeric, so no typing mask can be derived — the mask input is ignored.`,
+          );
+        }
+      });
+    }
   }
 
   public inputText(side: DateRangeSide) {

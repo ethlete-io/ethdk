@@ -1,8 +1,24 @@
-<input [attr.aria-label]="startAriaLabel()" class="et-date-range-input-field" etDateRangeInputField side="start" />
+<input
+  [attr.aria-label]="startAriaLabel()"
+  [etInputMask]="rangeInput.maskPattern()"
+  class="et-date-range-input-field"
+  etDateRangeInputField
+  maskValueMode="masked"
+  placeholderChar="_"
+  side="start"
+/>
 
 <span class="et-date-range-input-separator" aria-hidden="true">–</span>
 
-<input [attr.aria-label]="endAriaLabel()" class="et-date-range-input-field" etDateRangeInputField side="end" />
+<input
+  [attr.aria-label]="endAriaLabel()"
+  [etInputMask]="rangeInput.maskPattern()"
+  class="et-date-range-input-field"
+  etDateRangeInputField
+  maskValueMode="masked"
+  placeholderChar="_"
+  side="end"
+/>
 
 <button [attr.aria-label]="pickerTriggerLabel()" class="et-date-range-input-picker-trigger" etDatePickerTrigger>
   <i etIcon="et-calendar"></i>
