@@ -20,12 +20,12 @@ are approximate anchors, not gospel.
 | D   | Grid drag: touch support + placement feel  | 4, 25            | M    | shipped |
 | E   | Overlay rendering fixes                    | 22               | S–M  | shipped |
 | F   | Overlay color-theme resolution bug         | 6                | M    | shipped |
-| G   | Theme generators: default-theme option     | 5                | M    | open    |
+| G   | Theme generators: default-theme option     | 5                | M    | shipped |
 | H   | Select behavior: max selection, v2 adapter | 10, 20           | M    | shipped |
 | I   | Select virtual scroll                      | 21               | L    | open    |
 | J   | Masked modes: date range, duration, time   | 17, 19, 24       | M    | shipped |
 | K   | Date-time input default time on date pick  | 18               | S    | shipped |
-| L   | Selection indicators move to the right     | 2                | M    | open    |
+| L   | Selection indicators move to the right     | 2                | M    | shipped |
 
 Suggested order: QW → A → E/F (user-facing bugs) → B → D → H → J → K → L →
 G → I → C. C needs a design decision before any code.
@@ -183,15 +183,29 @@ component with `.forceColor()` doesn't propagate to overlays.
       the surface side (`parentSurfaceProvider ?? 'dark'`) has the same DI
       hole but its `'dark'` default is deliberate — left untouched.
 
-## G. Theme generators: default-theme option (M)
+## G. Theme generators: default-theme option (M) — shipped
 
-Todo 5: `libs/core/generators/tailwind-4-color-theme/generator.ts` and
-`tailwind-4-surface-theme/generator.ts` need a way to mark a specific theme as
-the default at generation time. Driving use case: a monorepo sharing one theme
-definition set while apps need different defaults. Design note: default
-selection likely belongs at the _consuming app's_ generation invocation (an
-option/flag), not in the shared theme definitions. Generator change → update
-theming docs + the `theming` skill if the output shape changes.
+Todo 5 — shipped as generation-time override options, per the design note
+(default selection lives at the consuming app's generation invocation, not in
+the shared definitions):
+
+- `tailwind-4-color-theme`: `--defaultTheme=<name>` makes the named theme the
+  sole default, overriding any `isDefault` flags (matches the name or its
+  CSS-safe form; unknown names error listing the available themes).
+- `tailwind-4-surface-theme`: `--defaultLightTheme` / `--defaultDarkTheme`
+  override per surface `type` only (a wrong-type name errors); the other
+  type keeps its definition flags.
+- With an override the definitions need no `isDefault` at all. The regenerate
+  command embedded in the generated file headers records the flags, so
+  re-running from the header reproduces the app's default.
+- Safe because the Tailwind-4 runtime never reads `isDefault` — the default is
+  purely a generated-CSS concern (`:root` / `.et-color--default` /
+  `--default-{light,dark}` selectors); only deprecated `legacy-theming.ts`
+  reads the flag at runtime.
+- Output shape unchanged → theming skill untouched; docs updated in
+  `apps/docs/core/theming.md` + both theming `.docs.mdx` `isDefault` rows.
+  8 new generator spec tests. Changeset `theme-generator-default-option`
+  (core, minor).
 
 ## H. Select behavior (M)
 
@@ -279,12 +293,22 @@ Verified in `components-forms-date-time-input--default` (commits
 `components-date-time-input` changeset (note updated); forms.md picker
 paragraph rewritten.
 
-## L. Selection indicators move to the right (M)
+## L. Selection indicators move to the right (M) — shipped
 
-Todo 2: checkmarks (select options), radio dots, checkboxes, switches and
-custom icons currently render on the left
-(`select-option.component.html/.css`, `choice-field.component.css`
-`.et-choice-field-control-slot`, plus the control CSS files). Moving them
-right is a visual-direction decision that touches every choice control at
-once — do it as one coherent pass, verify all affected stories, and screenshot
-before/after. Check RTL implications (logical properties, not physical).
+Todo 2 — shipped with a **narrower scope than the todo's wording**, per user
+decision mid-implementation: only the checkmark-style indicators in
+option/menu rows move right; standalone form controls stay left. Do not
+re-widen this.
+
+- MOVED right: select option check (`select-option.component.html/.css` —
+  check after the label, label gains `flex: 1`; phone-input country picker and
+  tag-input reuse `et-select-option` and follow for free; the create-option
+  row hides the check and is unaffected) and menu selection items
+  (`menu-selection-item.component.html` — check/icon after
+  `.et-menu-item-content`, which was already `flex: 1`).
+- STAYS left (implemented, then reverted on user feedback): choice field
+  (checkbox/switch + label), selection-list radio/checkbox rows, and the
+  cascader multi check squares.
+
+Verified headlessly with before/after screenshots; full suite green.
+Changeset `selection-indicators-trailing` (patch).
