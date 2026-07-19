@@ -229,6 +229,27 @@ export const resolveCollisions = (options: ResolveCollisionsOptions) => {
     }
   }
 
+  // Moving an item DOWN over others used to feel dead: colliders were pushed below the moved
+  // item and the closing compaction pulled the moved item straight back into its vacated
+  // origin, undoing the move until the drag had cleared the collider's full height. Instead,
+  // each direct collider first tries to escape UPWARD into the topmost space that fits it
+  // (typically the vacated origin) — the swap the gesture implies. Whatever finds no room
+  // above the moved item falls through to the push-down cascade below.
+  if (originPosition && movedEntry.position.row > originPosition.row) {
+    for (const collider of colliding) {
+      const highestFit = movedEntry.position.row - collider.position.rowSpan;
+
+      for (let row = 0; row <= highestFit; row++) {
+        const candidate = { ...collider.position, row };
+
+        if (!result.some((other) => other.id !== collider.id && itemsCollide(candidate, other.position))) {
+          collider.position = candidate;
+          break;
+        }
+      }
+    }
+  }
+
   // Sort non-moved items by row so we cascade downward
   const others = result.filter((e) => e.id !== movedId).sort((a, b) => a.position.row - b.position.row);
 

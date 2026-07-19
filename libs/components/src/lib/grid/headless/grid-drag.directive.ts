@@ -28,6 +28,10 @@ import {
     class: 'et-grid-drag',
     '[class.et-grid-drag--active]': '!grid?.readOnly() && dragHandle.isDragging()',
     '[attr.aria-grabbed]': '!grid?.readOnly() && dragHandle.isDragging()',
+    // Re-states the drag handle's touch-action lock with read-only awareness: a read-only grid
+    // is plain scrollable content. Must bind a concrete value in both states — this binding
+    // outranks the host directive's, and a null here clears the property instead of delegating.
+    '[style.touch-action]': "grid?.readOnly() ? 'auto' : 'none'",
   },
 })
 export class GridDragDirective {

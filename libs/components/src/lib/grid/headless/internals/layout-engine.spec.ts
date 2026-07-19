@@ -256,6 +256,100 @@ describe('layout-engine', () => {
 
       expect(item2?.position.row).toBe(0);
     });
+
+    describe('moving down over other items (escape upward)', () => {
+      it('lets a smaller collider escape into the vacated origin instead of undoing the move', () => {
+        // A tall item dragged down onto a shorter one below it: previously the short item was
+        // pushed down and compaction pulled the tall one straight back to its origin (no-op).
+        const entries: GridLayoutEntry[] = [
+          { id: 'tall', position: { col: 0, row: 2, colSpan: 4, rowSpan: 2 } },
+          { id: 'short', position: { col: 0, row: 2, colSpan: 4, rowSpan: 1 } },
+        ];
+
+        const result = resolveCollisions({
+          entries,
+          movedId: 'tall',
+          columns: 12,
+          originPosition: { col: 0, row: 0, colSpan: 4, rowSpan: 2 },
+        });
+
+        expect(result.find((e) => e.id === 'short')?.position).toEqual({ col: 0, row: 0, colSpan: 4, rowSpan: 1 });
+        expect(result.find((e) => e.id === 'tall')?.position).toEqual({ col: 0, row: 1, colSpan: 4, rowSpan: 2 });
+      });
+
+      it('resolves the dashboard scenario: a wide item dropped onto a row with two colliders', () => {
+        // The default-story layout (12 cols): chart-1 dragged down onto the text/chart-2 row.
+        const entries: GridLayoutEntry[] = [
+          { id: 'chart-1', position: { col: 0, row: 2, colSpan: 8, rowSpan: 2 } },
+          { id: 'table-1', position: { col: 8, row: 0, colSpan: 4, rowSpan: 2 } },
+          { id: 'text-1', position: { col: 0, row: 2, colSpan: 5, rowSpan: 2 } },
+          { id: 'chart-2', position: { col: 5, row: 2, colSpan: 7, rowSpan: 2 } },
+        ];
+
+        const result = resolveCollisions({
+          entries,
+          movedId: 'chart-1',
+          columns: 12,
+          originPosition: { col: 0, row: 0, colSpan: 8, rowSpan: 2 },
+        });
+
+        // text-1 escapes up into the vacated origin, chart-1 keeps the dropped row,
+        // chart-2 (blocked above by table-1) is pushed below.
+        expect(result.find((e) => e.id === 'text-1')?.position).toMatchObject({ col: 0, row: 0 });
+        expect(result.find((e) => e.id === 'chart-1')?.position).toMatchObject({ col: 0, row: 2 });
+        expect(result.find((e) => e.id === 'chart-2')?.position).toMatchObject({ col: 5, row: 4 });
+        expect(result.find((e) => e.id === 'table-1')?.position).toMatchObject({ col: 8, row: 0 });
+      });
+
+      it('still pushes down when nothing fits above the moved item', () => {
+        // Moved only one row down: the collider (rowSpan 2) has no room above row 1,
+        // so the previous push-down + compaction behavior applies unchanged.
+        const entries: GridLayoutEntry[] = [
+          { id: 'tall', position: { col: 0, row: 1, colSpan: 4, rowSpan: 2 } },
+          { id: 'other', position: { col: 0, row: 2, colSpan: 4, rowSpan: 2 } },
+        ];
+
+        const result = resolveCollisions({
+          entries,
+          movedId: 'tall',
+          columns: 12,
+          originPosition: { col: 0, row: 0, colSpan: 4, rowSpan: 2 },
+        });
+
+        expect(result.find((e) => e.id === 'tall')?.position.row).toBe(0);
+        expect(result.find((e) => e.id === 'other')?.position.row).toBe(2);
+      });
+
+      it('does not apply when moving up — colliders are pushed down into the vacated space', () => {
+        const entries: GridLayoutEntry[] = [
+          { id: 'moved', position: { col: 0, row: 0, colSpan: 4, rowSpan: 2 } },
+          { id: 'other', position: { col: 0, row: 0, colSpan: 4, rowSpan: 2 } },
+        ];
+
+        const result = resolveCollisions({
+          entries,
+          movedId: 'moved',
+          columns: 12,
+          originPosition: { col: 0, row: 2, colSpan: 4, rowSpan: 2 },
+        });
+
+        expect(result.find((e) => e.id === 'moved')?.position.row).toBe(0);
+        expect(result.find((e) => e.id === 'other')?.position.row).toBe(2);
+      });
+
+      it('does not apply without an origin (programmatic layout normalisation)', () => {
+        const entries: GridLayoutEntry[] = [
+          { id: 'a', position: { col: 0, row: 1, colSpan: 4, rowSpan: 1 } },
+          { id: 'b', position: { col: 0, row: 1, colSpan: 4, rowSpan: 1 } },
+        ];
+
+        const result = resolveCollisions({ entries, movedId: 'a', columns: 12 });
+
+        // plain push-down + compaction: a first, b below
+        expect(result.find((e) => e.id === 'a')?.position.row).toBe(0);
+        expect(result.find((e) => e.id === 'b')?.position.row).toBe(1);
+      });
+    });
   });
 
   describe('computeGridHeight', () => {

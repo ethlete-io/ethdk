@@ -34,6 +34,8 @@ import { DragHandleDirective } from '@ethlete/core';
 
 `isDragging` is exposed as a signal. On commit, the directive captures the pointer and emits a catch-up move in the same tick so the dragged element snaps to the pointer instead of trailing by the threshold. Only the primary button starts a gesture, and a new gesture is ignored while one is active. There is no built-in keyboard support — provide a keyboard path yourself where dragging changes state (the grid does).
 
+While enabled, the handle sets `touch-action: none` on its host so touch drags work — otherwise the browser would claim the pointermoves for scrolling and cancel the gesture. The flip side: touches on the handle can't scroll the page, so keep handles reasonably sized (or `disabled` when inactive — a disabled handle scrolls normally).
+
 ## Resize handles
 
 `ResizeHandlesComponent` (`<et-resize-handles>`) renders edge and corner grab handles over its **positioned parent** and emits resize gestures:

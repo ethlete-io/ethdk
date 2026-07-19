@@ -31,7 +31,7 @@ const TEST_ITEM: GridItemConfig = {
 @Component({
   imports: [GridDirective, GridItemComponent],
   template: `
-    <div [initialItems]="items" etGrid>
+    <div [initialItems]="items" [readOnly]="readOnly" etGrid>
       <et-grid-item [ariaLabel]="ariaLabel" itemId="test-item" />
     </div>
   `,
@@ -39,6 +39,7 @@ const TEST_ITEM: GridItemConfig = {
 class TestHostComponent {
   items: GridItemConfig[] = [TEST_ITEM];
   ariaLabel = 'My widget';
+  readOnly = false;
 }
 
 describe('GridItemComponent', () => {
@@ -103,6 +104,17 @@ describe('GridItemComponent', () => {
   it('is not being dragged by default', () => {
     fixture.detectChanges();
     expect(getItemDirective().isBeingDragged()).toBe(false);
+  });
+
+  it('locks touch-action while editable so touch drags are not claimed for scrolling', () => {
+    fixture.detectChanges();
+    expect(getItemEl().style.touchAction).toBe('none');
+  });
+
+  it('releases the touch-action lock when the grid is read-only', () => {
+    fixture.componentInstance.readOnly = true;
+    fixture.detectChanges();
+    expect(getItemEl().style.touchAction).toBe('auto');
   });
 
   it('has a valid current position once the grid has placed it', () => {

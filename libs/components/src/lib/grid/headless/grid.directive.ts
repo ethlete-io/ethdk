@@ -705,9 +705,12 @@ export class GridDirective {
     if (!item) return;
 
     const clamped = clampPosition({ position: newPosition, constraints: this.getConstraints(id), columns });
+    const originPosition = this.baseLayout().find((e) => e.id === id)?.position;
     const currentLayout = this.baseLayout().map((e) => (e.id === id ? { ...e, position: clamped } : e));
 
-    const resolved = resolveCollisions({ entries: currentLayout, movedId: id, columns });
+    // originPosition enables the swap/escape-upward heuristics — keyboard moves (Ctrl+Arrow)
+    // should displace neighbours exactly like the equivalent drag.
+    const resolved = resolveCollisions({ entries: currentLayout, movedId: id, columns, originPosition });
     this.updateLayoutForCurrentBreakpoint(resolved);
     this.updateItemLayout(id, clamped);
     this.emitLayoutChange();

@@ -117,6 +117,12 @@ const setupDragObservable = (
 
 @Directive({
   selector: '[etDragHandle]',
+  host: {
+    // Without this the browser claims touch pointermoves for scrolling and fires pointercancel,
+    // so a touch drag never gets past the commit threshold. Scrolling stays available while the
+    // handle is disabled.
+    '[style.touch-action]': "disabled() ? null : 'none'",
+  },
 })
 export class DragHandleDirective {
   private el = inject<ElementRef<HTMLElement>>(ElementRef);
