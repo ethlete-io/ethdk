@@ -1,5 +1,5 @@
 import { ElementRef, Signal, inject } from '@angular/core';
-import { COLOR_PROVIDER, ProvideColorDirective, injectAnimatedBlockSize } from '@ethlete/core';
+import { AnimatedSizeAxis, COLOR_PROVIDER, ProvideColorDirective, injectAnimatedBlockSize } from '@ethlete/core';
 
 /**
  * The surface plumbing every overlay panel (`et-select-panel`, `et-cascader-panel`,
@@ -12,6 +12,8 @@ import { COLOR_PROVIDER, ProvideColorDirective, injectAnimatedBlockSize } from '
 export const injectOverlaySurfaceContext = (options: {
   panelBody: Signal<ElementRef<HTMLElement> | undefined>;
   resizingClass: string;
+  /** Size axes the panel animates on content changes — see `injectAnimatedBlockSize`. */
+  axes?: AnimatedSizeAxis[] | Signal<AnimatedSizeAxis[]>;
 }) => {
   const ownColorProvider = inject(ProvideColorDirective);
   const contextColorProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
@@ -20,5 +22,5 @@ export const injectOverlaySurfaceContext = (options: {
     ownColorProvider.syncWithProvider(contextColorProvider);
   }
 
-  injectAnimatedBlockSize({ observe: [options.panelBody], resizingClass: options.resizingClass });
+  injectAnimatedBlockSize({ observe: [options.panelBody], resizingClass: options.resizingClass, axes: options.axes });
 };

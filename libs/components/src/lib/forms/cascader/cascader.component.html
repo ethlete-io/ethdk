@@ -125,8 +125,10 @@
         </div>
       }
       @case ('error') {
-        <div [etProvideColor]="errorColorTheme" class="et-cascader-state et-cascader-state--error" role="alert">
-          <span>{{ cascader.searchState().error }}</span>
+        <div class="et-cascader-state et-cascader-state--error" role="alert">
+          <span [etProvideColor]="errorColorTheme" class="et-cascader-state-error-message">{{
+            cascader.searchState().error
+          }}</span>
           <button (click)="cascader.retrySearch()" et-text-button size="sm" type="button">Retry</button>
         </div>
       }
@@ -177,8 +179,8 @@
         </div>
       }
       @case ('error') {
-        <div [etProvideColor]="errorColorTheme" class="et-cascader-state et-cascader-state--error" role="alert">
-          <span>{{ column.error }}</span>
+        <div class="et-cascader-state et-cascader-state--error" role="alert">
+          <span [etProvideColor]="errorColorTheme" class="et-cascader-state-error-message">{{ column.error }}</span>
           <button (click)="cascader.retryColumn(columnIndex)" et-text-button size="sm" type="button">Retry</button>
         </div>
       }

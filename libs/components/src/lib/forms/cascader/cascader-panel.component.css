@@ -76,6 +76,14 @@
       overflow: clip;
     }
 
+    /* Anchored presentation: the body is content-sized so the width animation can measure the
+       natural target width — a plain block child would just mirror the host's animated width
+       back into the ResizeObserver (feedback loop). The sheet stays full-width (its body must
+       follow the pane). */
+    &:not([data-sheet]) > .et-cascader-panel-body {
+      inline-size: max-content;
+    }
+
     /* persistent nav bar: fixed height, always present — nothing here animates its layout, so
        the column list never reflows. Matches the option rows (same height; the Back chevron —
        text button has no padding — lines up with the option label inset). */
@@ -306,11 +314,13 @@
       }
     }
 
-    /* Desktop (Miller columns, side by side): a horizontal slide implies motion the fixed
-       layout doesn't have, so a newly *drilled* column just fades in. Going back removes a
-       column and animates nothing (only forward carries a nav on a freshly created element). */
+    /* Desktop (Miller columns, side by side): the panel's width animation sweeps the trailing
+       edge outward when a column is drilled in (and back over it when one is removed), so the
+       new column fades in with a slight slide matching that growth direction. Going back removes
+       a column and relies on the edge sweep alone (only forward carries a nav on a freshly
+       created element). */
     .et-cascader-columns:not([data-sheet]) .et-cascader-column:where([data-nav='forward']) {
-      animation: et-cascader-column-fade-in 180ms ease;
+      animation: et-cascader-column-grow-in 180ms ease;
     }
 
     .et-cascader-node,
@@ -439,10 +449,16 @@
 
       &.et-cascader-state--error {
         flex-direction: column;
-        gap: 10px;
-        font-size: 13px;
-        color: var(--et-theme-color-primary-solid, rgb(248 113 113));
+        gap: 8px;
+        /* matches the select/menu error text size */
+        font-size: 12px;
       }
+    }
+
+    /* only the message is error-inked (the error theme scope sits on it) — the Retry button
+       keeps the ambient color scope so it reads as an action instead of more error text */
+    .et-cascader-state-error-message {
+      color: var(--et-theme-color-primary-solid, rgb(248 113 113));
     }
   }
 
@@ -504,11 +520,11 @@
     }
   }
 
-  /* desktop: non-directional "new column materialized" — fade + a small settle */
-  @keyframes et-cascader-column-fade-in {
+  /* desktop: a drilled-in column fades in sliding with the panel's outward growth */
+  @keyframes et-cascader-column-grow-in {
     from {
       opacity: 0;
-      transform: translateY(6px);
+      transform: translateX(-10px);
     }
   }
 

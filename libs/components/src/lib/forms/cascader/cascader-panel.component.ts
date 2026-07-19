@@ -1,5 +1,11 @@
 import { Component, DestroyRef, ElementRef, ViewEncapsulation, computed, inject, viewChild } from '@angular/core';
-import { AutoSurfaceDirective, ProvideColorDirective, createComponentId, injectObserveBreakpoint } from '@ethlete/core';
+import {
+  AnimatedSizeAxis,
+  AutoSurfaceDirective,
+  ProvideColorDirective,
+  createComponentId,
+  injectObserveBreakpoint,
+} from '@ethlete/core';
 import { injectOverlaySurfaceContext } from '../form-field/headless';
 import { CascaderDirective } from './headless';
 
@@ -64,7 +70,14 @@ export class CascaderPanelComponent {
       }
     });
 
-    injectOverlaySurfaceContext({ panelBody: this.panelBody, resizingClass: 'et-cascader-panel--resizing' });
+    // Desktop (anchored) presentation animates width too — columns drilling in/out and the
+    // search-mode swap grow/shrink the panel instead of jumping. The sheet is viewport-wide,
+    // so its width must keep following the pane (animating it would feed back into itself).
+    injectOverlaySurfaceContext({
+      panelBody: this.panelBody,
+      resizingClass: 'et-cascader-panel--resizing',
+      axes: computed((): AnimatedSizeAxis[] => (this.isSheet() ? ['block'] : ['block', 'inline'])),
+    });
   }
 
   protected handleFocusIn() {
