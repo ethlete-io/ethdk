@@ -2,6 +2,7 @@ import {
   DOCUMENT,
   DestroyRef,
   Directive,
+  WritableSignal,
   afterNextRender,
   computed,
   effect,
@@ -16,10 +17,11 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { RuntimeError, nextFrame } from '@ethlete/core';
+import { RuntimeError, createComponentId, nextFrame } from '@ethlete/core';
 import { EMPTY, fromEvent, switchMap, tap } from 'rxjs';
 import { sortByDomOrder } from '../../../internals/dom-order';
 import { createTypeahead } from '../../../internals/typeahead';
+import { createVirtualWindow } from '../../../internals/virtual-window';
 import { anchoredOverlayStrategy } from '../../../overlay/strategies';
 import {
   AnchoredPanelOverlayRef,
@@ -32,12 +34,14 @@ import {
 import { createSelectionState } from '../../selection-list/headless/internals/selection-state';
 import { SELECT_ERROR_CODES } from '../select-errors';
 import { SelectListboxDirective } from './select-listbox.directive';
+import { SelectOptionTemplateDirective } from './select-option-template.directive';
 import { SelectSearchDirective } from './select-search.directive';
 import { SelectEmptyDirective, SelectErrorDirective, SelectLoadingDirective } from './select-state-templates.directive';
 import { SelectSurfaceContext, SelectSurfaceDirective } from './select-surface.directive';
 import { SelectTriggerDirective } from './select-trigger.directive';
 import { SelectValueDirective } from './select-value.directive';
-import { SelectItem, SelectSelectedEntry } from './select.tokens';
+import { SelectViewportDirective } from './select-viewport.directive';
+import { SelectItem, SelectOptionData, SelectSelectedEntry } from './select.tokens';
 
 export const SELECT_FILTER_MODES = {
   /** The select never filters — a search input is purely informational for the consumer. */
@@ -79,6 +83,16 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   public required = input(false);
   public name = input('');
   public placeholder = input('');
+
+  /**
+   * Data-driven options: the select owns the option rows instead of the consumer projecting
+   * `et-select-option`s, and windows their rendering (virtualization) — only rows near the
+   * viewport exist in the DOM, so lists with thousands of entries stay cheap. Renders via
+   * `virtualizedItems()` between the `virtualWindow` block paddings; row content is the
+   * plain `label` or an `etSelectOptionTemplate`. Values must be unique. Can be combined
+   * with projected options (e.g. a pinned row), which render normally and are not windowed.
+   */
+  public options = input<readonly SelectOptionData[] | null>(null);
 
   public filterMode = input<SelectFilterMode>(SELECT_FILTER_MODES.INTERNAL);
   /** Enter with a search query that matches no option commits the raw query string as the value. */
@@ -146,6 +160,10 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   public registeredErrorTemplate = signal<SelectErrorDirective | null>(null);
   /** @internal */
   public registeredEmptyTemplate = signal<SelectEmptyDirective | null>(null);
+  /** @internal */
+  public registeredOptionTemplate = signal<SelectOptionTemplateDirective | null>(null);
+  /** @internal The scrollable viewport that data-driven rendering windows against. */
+  public registeredViewport = signal<SelectViewportDirective | null>(null);
   /** @internal The option that holds virtual focus while the listbox is open. */
   public activeItem = signal<SelectItem | null>(null);
   /**
@@ -223,19 +241,39 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     onDocumentKeydown: (event) => this.handlePanelKeydown(event),
   });
 
+  // the registered items created from the `options` input, in data order. Registered like
+  // projected options (value↔checked sync, labels, keyboard nav all work over the registry),
+  // but only the rows inside the virtual window are ever rendered.
+  private dataItems = signal<SelectItem[]>([]);
+  private dataItemRegistry = new Map<
+    unknown,
+    {
+      item: SelectItem;
+      label: WritableSignal<string>;
+      disabledInput: WritableSignal<boolean>;
+      element: WritableSignal<HTMLElement | null>;
+      data: WritableSignal<SelectOptionData>;
+    }
+  >();
+
   public sortedItems = computed(() => {
-    const items = this.selection.items();
+    const dataItems = this.dataItems();
+    const projectedItems = this.selection.items().filter((item) => !item.data);
 
     // re-evaluate when the panel mounts — that's when the options gain document positions
     this.isMounted();
 
     // detached options (closed select with projected content) have no meaningful document
-    // position, and comparing them yields arbitrary order — keep registration order instead
-    if (items.some((item) => !item.elementRef.nativeElement.isConnected)) {
-      return items;
+    // position, and comparing them yields arbitrary order — keep registration order instead.
+    // Data-driven items always keep their data order and sort before projected ones (which
+    // render after the windowed rows, e.g. the "Create …" row).
+    if (projectedItems.some((item) => !item.element()?.isConnected)) {
+      return dataItems.length ? [...dataItems, ...projectedItems] : projectedItems;
     }
 
-    return sortByDomOrder(items, (item) => item.elementRef.nativeElement);
+    const sortedProjected = sortByDomOrder(projectedItems, (item) => item.element() as HTMLElement);
+
+    return dataItems.length ? [...dataItems, ...sortedProjected] : sortedProjected;
   });
   /** The current search query (empty string when no search is registered). */
   public query = computed(() => this.registeredSearch()?.query() ?? '');
@@ -272,6 +310,38 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
   public enabledItems = computed(() => this.visibleItems().filter((item) => !item.disabled()));
   public selectedItems = computed(() => this.sortedItems().filter((item) => item.checked()));
+
+  /** @internal The query-visible slice of data-driven options — the virtual window renders these. */
+  public visibleDataItems = computed(() => this.visibleItems().filter((item) => !!item.data));
+
+  /**
+   * The window over the data-driven rows: `paddingTop()`/`paddingBottom()` stand in for the
+   * scroll height of everything outside `virtualizedItems()` — apply them as block paddings
+   * around the rendered rows.
+   */
+  public virtualWindow = createVirtualWindow({
+    // only meaningful with data-driven options — without them, don't track the viewport at all
+    container: computed(() => (this.options() ? (this.registeredViewport()?.elementRef.nativeElement ?? null) : null)),
+    itemCount: computed(() => this.visibleDataItems().length),
+    estimateItemHeight: 36,
+    overscan: 5,
+  });
+
+  /**
+   * The windowed slice of data-driven options to render — every visible one while no
+   * `etSelectViewport` is registered. Render with `etSelectVirtualOption` rows between the
+   * `virtualWindow` block paddings.
+   */
+  public virtualizedItems = computed(() => {
+    const items = this.visibleDataItems();
+    const { start, end } = this.virtualWindow.range();
+
+    return items.slice(start, end);
+  });
+
+  // the item whose row must align exactly once it renders: the estimate-based window scroll
+  // can land a few px off (scroller padding, row heights differing from the estimate)
+  private pendingActiveScrollItem: SelectItem | null = null;
 
   /** True once `maxSelection` is reached (multi select) — further adds are ignored. */
   public isFull = computed(() => {
@@ -361,6 +431,61 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   constructor() {
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
+
+    // reconcile the `options` data with the registered data items: reuse the item of a value
+    // that stays (labels/disabled update in place), register new ones, unregister removed ones
+    effect(() => {
+      const optionsData = this.options();
+
+      untracked(() => {
+        const registry = this.dataItemRegistry;
+        const nextItems: SelectItem[] = [];
+        const seenValues = new Set<unknown>();
+
+        for (const data of optionsData ?? []) {
+          // a duplicate value cannot be represented as a distinct choice — skip it
+          if (seenValues.has(data.value)) {
+            continue;
+          }
+
+          seenValues.add(data.value);
+
+          let entry = registry.get(data.value);
+
+          if (entry) {
+            entry.label.set(data.label);
+            entry.disabledInput.set(data.disabled ?? false);
+            entry.data.set(data);
+          } else {
+            entry = this.createDataItem(data);
+            registry.set(data.value, entry);
+            this.selection.registerItem(entry.item);
+          }
+
+          nextItems.push(entry.item);
+        }
+
+        for (const [value, entry] of registry) {
+          if (seenValues.has(value)) {
+            continue;
+          }
+
+          registry.delete(value);
+
+          if (this.activeItem() === entry.item) {
+            this.activeItem.set(null);
+          }
+
+          if (this.pendingActiveScrollItem === entry.item) {
+            this.pendingActiveScrollItem = null;
+          }
+
+          this.selection.unregisterItem(entry.item);
+        }
+
+        this.dataItems.set(nextItems);
+      });
+    });
 
     // cache labels only for the *selected* values (so the trigger can still show them once the
     // option unmounts in a lazy/async list) and prune everything else — the old version wrote
@@ -613,10 +738,59 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   public setActiveItem(item: SelectItem, options?: { scroll?: boolean; source?: 'keyboard' | 'pointer' }) {
     this.activeItem.set(item);
     this.activeItemSource.set(options?.source ?? 'keyboard');
+    this.pendingActiveScrollItem = null;
 
-    if (options?.scroll !== false) {
-      item.elementRef.nativeElement.scrollIntoView?.({ block: 'nearest' });
+    if (options?.scroll === false) {
+      return;
     }
+
+    const element = item.element();
+
+    if (element) {
+      element.scrollIntoView?.({ block: 'nearest' });
+
+      return;
+    }
+
+    // a data-driven option outside the rendered window — scroll its row into the window,
+    // which renders it (and with it the element `aria-activedescendant` points at)
+    const index = this.visibleDataItems().indexOf(item);
+
+    if (index !== -1) {
+      this.pendingActiveScrollItem = item;
+      this.virtualWindow.scrollToIndex(index);
+    }
+  }
+
+  /** @internal A rendered virtual row attaches its element to its item while it is windowed in. */
+  public attachVirtualOptionElement(item: SelectItem, element: HTMLElement) {
+    const entry = this.dataItemRegistry.get(item.value());
+
+    if (!entry || entry.item !== item) {
+      return;
+    }
+
+    entry.element.set(element);
+    // rows share one uniform height — any rendered one keeps the window's row height honest
+    this.virtualWindow.measureItem(element);
+
+    // the window scroll above was estimate-based and can land a few px short — align the
+    // real row exactly, once, now that it exists (never again on later window re-entries)
+    if (this.pendingActiveScrollItem === item) {
+      this.pendingActiveScrollItem = null;
+      element.scrollIntoView?.({ block: 'nearest' });
+    }
+  }
+
+  /** @internal */
+  public detachVirtualOptionElement(item: SelectItem, element: HTMLElement) {
+    const entry = this.dataItemRegistry.get(item.value());
+
+    if (!entry || entry.item !== item || entry.element() !== element) {
+      return;
+    }
+
+    entry.element.set(null);
   }
 
   /** @internal Keyboard input arrives on the trigger — DOM focus never enters the listbox. */
@@ -712,6 +886,33 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     }
 
     return committed;
+  }
+
+  private createDataItem(data: SelectOptionData) {
+    const label = signal(data.label);
+    const disabledInput = signal(data.disabled ?? false);
+    const element = signal<HTMLElement | null>(null);
+    const dataSignal = signal(data);
+
+    const selected = computed(() => {
+      const current = this.value();
+
+      return Array.isArray(current) ? current.includes(data.value) : current === data.value;
+    });
+
+    const item: SelectItem = {
+      value: signal(data.value).asReadonly(),
+      checked: signal(false),
+      // mirrors the projected option's behavior: once `maxSelection` is reached, the
+      // remaining unselected options read as unavailable
+      disabled: computed(() => disabledInput() || (this.isFull() && !selected())),
+      element: element.asReadonly(),
+      id: signal(createComponentId('et-select-option')).asReadonly(),
+      label: label.asReadonly(),
+      data: dataSignal.asReadonly(),
+    };
+
+    return { item, label, disabledInput, element, data: dataSignal };
   }
 
   private handleClosedKeydown(event: KeyboardEvent) {
@@ -933,6 +1134,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
   private handlePanelBeforeClosed() {
     this.activeItem.set(null);
+    this.pendingActiveScrollItem = null;
 
     // pending text becomes a value instead of being discarded (tag-input's commit-on-blur).
     // An Escape close never reaches this with a query — Escape clears it first.

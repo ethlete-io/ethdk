@@ -7,6 +7,7 @@ import { SpinnerComponent } from '../../loader';
 import { SelectDirective, SelectSurfaceDirective, SelectTriggerDirective, SelectValueContext } from './headless';
 import { SelectOptionComponent } from './select-option.component';
 import { SelectPanelComponent } from './select-panel.component';
+import { SelectVirtualOptionComponent } from './select-virtual-option.component';
 
 @Component({
   selector: 'et-select',
@@ -18,6 +19,7 @@ import { SelectPanelComponent } from './select-panel.component';
     SelectSurfaceDirective,
     SelectPanelComponent,
     SelectOptionComponent,
+    SelectVirtualOptionComponent,
     IconDirective,
     NgTemplateOutlet,
     ChipComponent,
@@ -40,6 +42,7 @@ import { SelectPanelComponent } from './select-panel.component';
         'errors',
         'required',
         'name',
+        'options',
         'filterMode',
         'allowCustomValues',
         'customValueSeparators',

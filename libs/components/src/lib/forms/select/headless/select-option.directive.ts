@@ -94,7 +94,7 @@ export class SelectOptionDirective {
     value: this.boundValue,
     checked: this.checked,
     disabled: this.isDisabled,
-    elementRef: this.elementRef,
+    element: signal(this.elementRef.nativeElement).asReadonly(),
     id: this.optionId.asReadonly(),
     label: this.label,
     custom: this.customValueOption,

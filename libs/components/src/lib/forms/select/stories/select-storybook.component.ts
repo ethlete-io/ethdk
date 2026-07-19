@@ -292,13 +292,10 @@ export class FormFieldSelectAddNewStorybookComponent {
     <div class="flex max-w-md flex-col gap-4 p-8 font-sans" etProvideColor="brand">
       <et-form-field>
         <et-label>Item</et-label>
-        <et-select [formField]="demoForm.value" placeholder="Pick an item">
+        <et-select [formField]="demoForm.value" [options]="ITEMS" placeholder="Pick an item">
           <input etSelectSearch placeholder="Search 2000 items" />
-          @for (item of ITEMS; track item.value) {
-            <et-select-option [value]="item.value">{{ item.label }}</et-select-option>
-          }
         </et-select>
-        <et-hint>2000 rendered options — offscreen ones skip layout/paint via content-visibility</et-hint>
+        <et-hint>2000 options via the data-driven API — only the rows near the viewport are in the DOM</et-hint>
       </et-form-field>
 
       <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
@@ -312,6 +309,56 @@ export class FormFieldSelectManyOptionsStorybookComponent {
     value: `item-${index + 1}`,
     label: `Item ${index + 1} — ${FRUIT_OPTIONS[index % FRUIT_OPTIONS.length]!.label}`,
   }));
+
+  private formModel = linkedSignal(() => ({ value: null as string | null }));
+  public demoForm = form(this.formModel);
+}
+
+const FIRST_NAMES = ['Alex', 'Chris', 'Dana', 'Eli', 'Femi', 'Ines', 'Jona', 'Kim', 'Lior', 'Mara'];
+const LAST_NAMES = ['Adler', 'Berg', 'Castro', 'Diaz', 'Egede', 'Fuchs', 'Grau', 'Haas', 'Ito', 'Juhl'];
+
+@Component({
+  selector: 'et-sb-form-field-select-option-template',
+  template: `
+    <div class="flex max-w-md flex-col gap-4 p-8 font-sans" etProvideColor="brand">
+      <et-form-field>
+        <et-label>Assignee</et-label>
+        <et-select [formField]="demoForm.value" [options]="USERS" placeholder="Pick a user">
+          <input etSelectSearch placeholder="Search 1000 users" />
+          <ng-template etSelectOptionTemplate let-user>
+            <span class="flex items-center gap-2 py-1">
+              <span class="flex size-6 flex-none items-center justify-center rounded-full bg-white/10 text-[10px]">
+                {{ user.initials }}
+              </span>
+              <span class="flex min-w-0 flex-col leading-tight">
+                <span class="truncate">{{ user.label }}</span>
+                <span class="truncate text-[11px] opacity-60">{{ user.email }}</span>
+              </span>
+            </span>
+          </ng-template>
+        </et-select>
+        <et-hint>Windowed rows render through etSelectOptionTemplate — extra option fields stay available</et-hint>
+      </et-form-field>
+
+      <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...FORM_FIELD_IMPORTS, ...SELECT_IMPORTS, FormField, JsonPipe, ProvideColorDirective],
+})
+export class FormFieldSelectOptionTemplateStorybookComponent {
+  protected readonly USERS = Array.from({ length: 1000 }, (_, index) => {
+    const firstName = FIRST_NAMES[index % FIRST_NAMES.length]!;
+    const lastName = LAST_NAMES[Math.floor(index / FIRST_NAMES.length) % LAST_NAMES.length]!;
+    const name = `${firstName} ${lastName}`;
+
+    return {
+      value: `user-${index + 1}`,
+      label: `${name} ${index + 1}`,
+      initials: `${firstName[0]}${lastName[0]}`,
+      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}.${index + 1}@example.com`,
+    };
+  });
 
   private formModel = linkedSignal(() => ({ value: null as string | null }));
   public demoForm = form(this.formModel);

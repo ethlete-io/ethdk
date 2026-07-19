@@ -25,18 +25,19 @@ import { SELECT_IMPORTS } from '@ethlete/components';
 
 On `et-select` (forwarded from the headless `[etSelect]` directive), plus the standard form-field contract set (`disabled`, `readonly`, `invalid`, `errors`, `required`, `name`, `touched`):
 
-| Input               | Type                                 | Default      | Description                                                                                                                                                 |
-| ------------------- | ------------------------------------ | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `value`             | `unknown \| unknown[] \| null`       | `null`       | The selected option's value. Two-way bindable.                                                                                                              |
-| `open`              | `boolean`                            | `false`      | Whether the panel is open. Two-way bindable.                                                                                                                |
-| `placeholder`       | `string`                             | `''`         | Shown in the trigger while nothing is selected.                                                                                                             |
-| `multiple`          | `boolean`                            | `false`      | Multi-select: `value` is an array, options toggle (the panel stays open) and the trigger renders removable chips.                                           |
-| `filterMode`        | `'none' \| 'internal' \| 'external'` | `'internal'` | How a search query filters: `internal` hides non-matching options, `external` leaves the option list to you (react to `queryChange`), `none` never filters. |
-| `allowCustomValues` | `boolean`                            | `false`      | Enter with a query that matches no option commits the raw string as the value.                                                                              |
-| `allowAddNew`       | `boolean`                            | `false`      | Renders an "Add new" action row at the end of the panel that emits `addNewRequested` (label via `addNewLabel`).                                             |
-| `loading`           | `boolean`                            | `false`      | Shows a spinner in the field and a loading row in the panel (override the row with `ng-template[etSelectLoading]`).                                         |
-| `error`             | `string \| null`                     | `null`       | Shows an error row in the panel (override with `ng-template[etSelectError]`, error text as context).                                                        |
-| `hasMoreItems`      | `boolean`                            | `false`      | Shows a load-more control emitting `loadMoreRequested` (label via `loadMoreLabel`).                                                                         |
+| Input               | Type                                 | Default      | Description                                                                                                                                                             |
+| ------------------- | ------------------------------------ | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `value`             | `unknown \| unknown[] \| null`       | `null`       | The selected option's value. Two-way bindable.                                                                                                                          |
+| `open`              | `boolean`                            | `false`      | Whether the panel is open. Two-way bindable.                                                                                                                            |
+| `placeholder`       | `string`                             | `''`         | Shown in the trigger while nothing is selected.                                                                                                                         |
+| `options`           | `SelectOptionData[] \| null`         | `null`       | Data-driven options (`{ value, label, disabled? }`) — the select renders and virtualizes the rows itself. See [large option lists](#large-option-lists-virtualization). |
+| `multiple`          | `boolean`                            | `false`      | Multi-select: `value` is an array, options toggle (the panel stays open) and the trigger renders removable chips.                                                       |
+| `filterMode`        | `'none' \| 'internal' \| 'external'` | `'internal'` | How a search query filters: `internal` hides non-matching options, `external` leaves the option list to you (react to `queryChange`), `none` never filters.             |
+| `allowCustomValues` | `boolean`                            | `false`      | Enter with a query that matches no option commits the raw string as the value.                                                                                          |
+| `allowAddNew`       | `boolean`                            | `false`      | Renders an "Add new" action row at the end of the panel that emits `addNewRequested` (label via `addNewLabel`).                                                         |
+| `loading`           | `boolean`                            | `false`      | Shows a spinner in the field and a loading row in the panel (override the row with `ng-template[etSelectLoading]`).                                                     |
+| `error`             | `string \| null`                     | `null`       | Shows an error row in the panel (override with `ng-template[etSelectError]`, error text as context).                                                                    |
+| `hasMoreItems`      | `boolean`                            | `false`      | Shows a load-more control emitting `loadMoreRequested` (label via `loadMoreLabel`).                                                                                     |
 
 | Output              | Payload  | Emitted when                                                                              |
 | ------------------- | -------- | ----------------------------------------------------------------------------------------- |
@@ -185,9 +186,36 @@ Each group is a `role="group"` with `aria-labelledby` pointing at its header. Wi
 
 <StoryEmbed id="components-forms-select-option-group--default" height="360px" />
 
-## Large option lists
+## Large option lists (virtualization)
 
-Options render with `content-visibility: auto`, so offscreen rows skip layout and paint entirely — a panel with a few thousand projected options stays responsive while scrolling and filtering (see the `ManyOptions` story with 2000 options). Angular still creates every option instance, so for very large or unbounded datasets prefer the [async options](#async-options) pattern: filter server-side via `filterMode="external"` and page with `hasMoreItems`/`loadMoreRequested` instead of rendering everything.
+For big client-side lists, pass the options as data instead of projecting `et-select-option`s — the select renders the rows itself and **virtualizes** them: only the rows near the panel's viewport exist in the DOM (2000 options ≈ 15 rendered nodes), with block paddings standing in for the rest of the scroll height. Keyboard navigation, typeahead, internal filtering and label resolution still work across the **full** data set, because every entry registers as an option — only the rendering is windowed.
+
+```html
+<et-select [formField]="form.item" [options]="items" placeholder="Pick an item">
+  <input etSelectSearch placeholder="Search 2000 items" />
+</et-select>
+```
+
+```ts
+items: SelectOptionData[] = hugeList.map((entry) => ({ value: entry.id, label: entry.name }));
+```
+
+Each entry is `{ value, label, disabled? }` (`SelectOptionData`); values must be unique. Extra fields on an entry are kept and handed to the row template. Rows render as the plain `label` by default — project an `ng-template[etSelectOptionTemplate]` to customize them, with the source entry as context (see the `OptionTemplate` story):
+
+```html
+<et-select [formField]="form.assignee" [options]="users">
+  <ng-template etSelectOptionTemplate let-user>
+    <span class="user-row">{{ user.label }} — {{ user.email }}</span>
+  </ng-template>
+</et-select>
+```
+
+Notes:
+
+- Rows are assumed to share one uniform height (the first rendered row is measured). Wildly varying row heights are not supported.
+- Data-driven options can be combined with projected `et-select-option`s (e.g. a pinned entry), which render normally after the windowed rows and are not virtualized. Option groups are presentational wrappers around _projected_ options and don't apply to the flat `options` data.
+- For unbounded/server-side datasets, the [async options](#async-options) pattern (`filterMode="external"` + `hasMoreItems`/`loadMoreRequested`) remains the right tool — `options` composes with it, since you control the array you bind.
+- Headless: mark your scroll container with `[etSelectViewport]`, render `select.virtualizedItems()` with `[etSelectVirtualOption]="item"` rows, and apply `select.virtualWindow.paddingTop()/paddingBottom()` as block paddings around them. Without a registered viewport, every visible option renders (no windowing). `SelectItem.element()` is `null` while a data-driven option is outside the rendered window.
 
 ## Keyboard interaction
 

@@ -113,13 +113,14 @@ Three focus-management bugs, all in select/cascader headless directives.
       reads as an action; error text downsized to 12px matching select/menu.
       Both error sites (column + search results) share the fix.
 
-## C. Cascader deep-nesting UX (L, idea — design first)
+## C. Cascader deep-nesting UX (L)
 
 Todo 8: a cascader with ~6 levels needs testing and probably a UX answer
 before code: horizontal scrolling (tedious on desktop, could be helped by
 drag-scroll), or collapsing older sections into a breadcrumb/tab row after ~3
-columns. **Decide the interaction model first**, then implement. Not
-scheduled until that decision exists.
+columns. **Interaction model decided 2026-07-19: collapse older levels into a
+breadcrumb/tab row after ~3 columns** (user decision; horizontal scroll
+rejected). Implementation not yet scheduled — do after §I.
 
 ## D. Grid drag: touch + placement feel (M) — shipped
 
@@ -238,14 +239,38 @@ the shared definitions):
       one flush). Changeset `select-v2-query-adapter` (minor); select.md
       async-options section extended.
 
-## I. Select virtual scroll (L)
+## I. Select virtual scroll (L) — shipped
 
-Todo 21: not a bug — no virtualization exists. The panel `@for`s over
-`select.visibleItems()` (`select.component.html` ~line 87); the 2000-item
-story renders all 2000 nodes. Real feature work: virtualization must play
-nice with roving focus/active descendant, option groups, search filtering,
-and custom option templates. Scope separately; consider whether cascader
-columns share the solution before committing to an approach.
+Todo 21. **Decided 2026-07-19: build true virtualization** (user decision;
+closing as covered-by-`content-visibility` was rejected).
+
+- [x] Data-driven `options` input (`SelectOptionData[]`) on `[etSelect]`/
+      `et-select`: entries register as select items (data order, one uniform
+      registry with projected options — projected sort after data rows), so
+      nav/typeahead/filtering/label-cache work over the full set; only
+      rendering is windowed. New internal `createVirtualWindow`
+      (`internals/virtual-window.ts`): uniform-row windowing over a scroll
+      container (`signalElementDimensions` + `fromEvent('scroll')`), range
+      clamped when the count shrinks mid-scroll (filter regression). Tier 2:
+      `etSelectViewport` (panel scroller registers itself), lean
+      `etSelectVirtualOption` row directive (adopts a select-owned item, no
+      registration), `etSelectOptionTemplate` (row content, source entry as
+      context). Tier 3: `et-select-virtual-option` reuses the option
+      stylesheet ON PURPOSE (styles must load without any `et-select-option`
+      instance). Exact active-row alignment via `pendingActiveScrollItem`:
+      estimate-based window scroll + one corrective `scrollIntoView` when the
+      row attaches (fixes selected-option-slightly-off-screen on open).
+      BREAKING for headless: `SelectItem.elementRef` → `element()` signal
+      (null off-window). Groups don't apply to flat data (documented).
+      Cascader columns can reuse `createVirtualWindow` later (§C). Specs:
+      `virtual-window.spec.ts` + `select-virtual-options.spec.ts` (jsdom
+      windows via the 400px viewport fallback). Stories: ManyOptions now
+      data-driven, new OptionTemplate (1000 templated users). Changeset
+      `select-virtual-options` (components minor); select.md "Large option
+      lists (virtualization)". Also: lint's static-member ban now excepts
+      `ngTemplateContextGuard` (Angular requires it static) — eslint-plugin
+      patch changeset `allow-static-template-context-guard`, styleguide
+      v0.18.1.
 
 ## J. Masked modes: date range, duration, time (M)
 

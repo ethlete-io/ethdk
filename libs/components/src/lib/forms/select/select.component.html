@@ -83,6 +83,22 @@
 
 <ng-template etSelectSurface>
   <et-select-panel>
+    @if (select.options()) {
+      <!-- data-driven mode: the select owns the option rows and windows their rendering —
+           only rows near the viewport exist in the DOM; the block paddings stand in for the
+           scroll height of everything outside the window -->
+      <div
+        [style.padding-block-start.px]="select.virtualWindow.paddingTop()"
+        [style.padding-block-end.px]="select.virtualWindow.paddingBottom()"
+        class="et-select-virtual-options"
+        role="none"
+      >
+        @for (item of select.virtualizedItems(); track item) {
+          <et-select-virtual-option [item]="item" />
+        }
+      </div>
+    }
+
     <ng-template [ngTemplateOutlet]="optionContent" />
 
     <!-- a real option (not an action row like add-new): it takes part in virtual focus, so
