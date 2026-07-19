@@ -139,9 +139,10 @@ const recommendedTs = {
         selector: 'FunctionExpression[async=true]',
         message: 'No async/await. Use RxJS for all async operations.',
       },
-      // No static class members
+      // No static class members — except ngTemplateContextGuard, which Angular's template
+      // type checker requires to be static (it types a structural directive's `let-` bindings)
       {
-        selector: 'MethodDefinition[static=true]',
+        selector: "MethodDefinition[static=true]:not([key.name='ngTemplateContextGuard'])",
         message: 'No static class members.',
       },
       {
