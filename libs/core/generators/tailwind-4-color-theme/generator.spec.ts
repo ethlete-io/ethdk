@@ -724,4 +724,97 @@ describe('tailwind-4-color-theme generator', () => {
     expect(content).toContain('.et-color--alt2 {');
     expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
+
+  describe('defaultTheme option', () => {
+    const TWO_THEMES = `
+    export const THEME1 = {
+      name: 'theme1',
+      isDefault: true,
+      primary: {
+        color: { default: '1 1 1', hover: '2 2 2', active: '3 3 3', disabled: '4 4 4' },
+        onColor: { default: '5 5 5' }
+      }
+    } as const;
+    export const THEME2 = {
+      name: 'theme2',
+      primary: {
+        color: { default: '6 6 6', hover: '7 7 7', active: '8 8 8', disabled: '9 9 9' },
+        onColor: { default: '10 10 10' }
+      }
+    } as const;
+    export const THEMES = [THEME1, THEME2];
+  `;
+
+    it('should override the isDefault flags from the definitions', async () => {
+      tree.write('src/themes.ts', TWO_THEMES);
+
+      await migrate(tree, {
+        themesPath: 'src/themes.ts',
+        outputPath: 'src/styles/tw.css',
+        defaultTheme: 'theme2',
+        skipFormat: true,
+      });
+
+      const content = tree.read('src/styles/tw.css', 'utf-8');
+      expect(content).toContain(':root, .et-color--default, .et-color--theme2 {');
+      expect(content).toContain('.et-color--theme1 {');
+      expect(content).not.toContain('.et-color--default, .et-color--theme1');
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+    });
+
+    it('should satisfy validation when the definitions mark no default at all', async () => {
+      const themesContent = `
+      export const THEME1 = {
+        name: 'theme1',
+        primary: {
+          color: { default: '1 1 1', hover: '2 2 2', active: '3 3 3', disabled: '4 4 4' },
+          onColor: { default: '5 5 5' }
+        }
+      } as const;
+      export const THEMES = [THEME1];
+    `;
+
+      tree.write('src/themes.ts', themesContent);
+
+      await migrate(tree, {
+        themesPath: 'src/themes.ts',
+        outputPath: 'src/styles/tw.css',
+        defaultTheme: 'theme1',
+        skipFormat: true,
+      });
+
+      const content = tree.read('src/styles/tw.css', 'utf-8');
+      expect(content).toContain(':root, .et-color--default, .et-color--theme1 {');
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+    });
+
+    it('should record the override in the regenerate command of the generated files', async () => {
+      tree.write('src/themes.ts', TWO_THEMES);
+
+      await migrate(tree, {
+        themesPath: 'src/themes.ts',
+        outputPath: 'src/styles/tw.css',
+        defaultTheme: 'theme2',
+        skipFormat: true,
+      });
+
+      expect(tree.read('src/styles/tw.css', 'utf-8')).toContain('--defaultTheme=theme2');
+      expect(tree.read('src/styles/tw.d.ts', 'utf-8')).toContain('--defaultTheme=theme2');
+    });
+
+    it('should error when the named theme does not exist', async () => {
+      tree.write('src/themes.ts', TWO_THEMES);
+
+      await migrate(tree, {
+        themesPath: 'src/themes.ts',
+        outputPath: 'src/styles/tw.css',
+        defaultTheme: 'nope',
+        skipFormat: true,
+      });
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('No theme named "nope"'));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('theme1, theme2'));
+      expect(tree.exists('src/styles/tw.css')).toBe(false);
+    });
+  });
 });

@@ -40,7 +40,11 @@ A surface theme is a named set of tokens for a complete UI layer. Unlike color t
   <tr>
     <td>`isDefault?`</td>
     <td>`boolean`</td>
-    <td>Applied when no explicit surface input is set</td>
+    <td>
+      Applied when no explicit surface input is set. The CSS generator's `--defaultLightTheme=<name>` /
+      `--defaultDarkTheme=<name>` options override these flags per surface type, so apps sharing one theme set can
+      each pick their own defaults at generation time.
+    </td>
   </tr>
   <tr>
     <td>`background`</td>

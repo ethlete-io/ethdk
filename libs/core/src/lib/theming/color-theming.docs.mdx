@@ -35,7 +35,10 @@ A color theme is a named set of color swatches. Components pull from it via CSS 
   <tr>
     <td>`isDefault?`</td>
     <td>`boolean`</td>
-    <td>Applied when no explicit color input is set on a component</td>
+    <td>
+      Applied when no explicit color input is set on a component. The CSS generator's `--defaultTheme=<name>` option
+      overrides these flags, so apps sharing one theme set can each pick their own default at generation time.
+    </td>
   </tr>
   <tr>
     <td>`primary`</td>

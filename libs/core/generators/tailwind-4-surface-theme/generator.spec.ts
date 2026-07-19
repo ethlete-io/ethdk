@@ -220,4 +220,122 @@ describe('tailwind-4-surface-theme generator', () => {
     expect(content).toContain('.custom-surface--default-light, .custom-surface--card {');
     expect(content).toContain('--custom-surface-background: 255 255 255;');
   });
+
+  describe('defaultLightTheme / defaultDarkTheme options', () => {
+    const TWO_PER_TYPE = `
+    export const CARD = {
+      name: 'card',
+      type: 'light',
+      elevation: 1,
+      isDefault: true,
+      background: '255 255 255',
+      color: '0 0 0',
+      colorMuted: '100 100 100',
+      colorSubtle: '200 200 200',
+      border: '220 220 220',
+    } as const;
+
+    export const PAPER = {
+      name: 'paper',
+      type: 'light',
+      elevation: 2,
+      background: '250 250 250',
+      color: '0 0 0',
+      colorMuted: '100 100 100',
+      colorSubtle: '200 200 200',
+      border: '220 220 220',
+    } as const;
+
+    export const SHEET = {
+      name: 'sheet',
+      type: 'dark',
+      elevation: 1,
+      isDefault: true,
+      background: '10 10 10',
+      color: '255 255 255',
+      colorMuted: '180 180 180',
+      colorSubtle: '80 80 80',
+      border: '40 40 40',
+    } as const;
+
+    export const PANEL = {
+      name: 'panel',
+      type: 'dark',
+      elevation: 2,
+      background: '20 20 20',
+      color: '255 255 255',
+      colorMuted: '180 180 180',
+      colorSubtle: '80 80 80',
+      border: '40 40 40',
+    } as const;
+
+    export const SURFACE_THEMES = [CARD, PAPER, SHEET, PANEL] satisfies SurfaceTheme[];
+  `;
+
+    it('should override the isDefault flag of the matching type only', async () => {
+      tree.write('src/surface-themes.ts', TWO_PER_TYPE);
+
+      await migrate(tree, {
+        themesPath: 'src/surface-themes.ts',
+        outputPath: 'src/styles/tw.css',
+        defaultDarkTheme: 'panel',
+        skipFormat: true,
+      });
+
+      const content = tree.read('src/styles/tw.css', 'utf-8');
+      // dark default moved to panel, light default untouched
+      expect(content).toContain('.et-surface--default-dark, .et-surface--panel {');
+      expect(content).toContain('.et-surface--default-light, .et-surface--card {');
+      expect(content).not.toContain('.et-surface--default-dark, .et-surface--sheet {');
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+    });
+
+    it('should allow overriding both types and record the flags in the regenerate command', async () => {
+      tree.write('src/surface-themes.ts', TWO_PER_TYPE);
+
+      await migrate(tree, {
+        themesPath: 'src/surface-themes.ts',
+        outputPath: 'src/styles/tw.css',
+        defaultLightTheme: 'paper',
+        defaultDarkTheme: 'panel',
+        skipFormat: true,
+      });
+
+      const content = tree.read('src/styles/tw.css', 'utf-8');
+      expect(content).toContain('.et-surface--default-light, .et-surface--paper {');
+      expect(content).toContain('.et-surface--default-dark, .et-surface--panel {');
+      expect(content).toContain('--defaultLightTheme=paper --defaultDarkTheme=panel');
+      expect(tree.read('src/styles/tw.d.ts', 'utf-8')).toContain('--defaultLightTheme=paper --defaultDarkTheme=panel');
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+    });
+
+    it('should error when the named theme has the wrong type', async () => {
+      tree.write('src/surface-themes.ts', TWO_PER_TYPE);
+
+      await migrate(tree, {
+        themesPath: 'src/surface-themes.ts',
+        outputPath: 'src/styles/tw.css',
+        defaultLightTheme: 'panel',
+        skipFormat: true,
+      });
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining(`has type 'dark'`));
+      expect(tree.exists('src/styles/tw.css')).toBe(false);
+    });
+
+    it('should error when the named theme does not exist', async () => {
+      tree.write('src/surface-themes.ts', TWO_PER_TYPE);
+
+      await migrate(tree, {
+        themesPath: 'src/surface-themes.ts',
+        outputPath: 'src/styles/tw.css',
+        defaultDarkTheme: 'nope',
+        skipFormat: true,
+      });
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('No surface theme named "nope"'));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('sheet, panel'));
+      expect(tree.exists('src/styles/tw.css')).toBe(false);
+    });
+  });
 });

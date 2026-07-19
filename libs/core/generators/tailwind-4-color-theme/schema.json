@@ -30,6 +30,10 @@
       "type": "string",
       "description": "Prefix for the runtime theme-swap mechanism: the CSS custom properties (--<runtimePrefix>-color-primary) and selectors (.<runtimePrefix>-color--<name>) that ProvideColorDirective (etProvideColor) toggles between. Defaults to the same value as 'prefix'. Set this separately when your Tailwind utility prefix needs to differ from your runtime theme-switching prefix (e.g. because '--color-primary' is already a documented public API elsewhere in your app)."
     },
+    "defaultTheme": {
+      "type": "string",
+      "description": "Name of the theme to use as the default, overriding any isDefault flags in the theme definitions. Use this when multiple apps share one theme definition set (e.g. in a monorepo) but each app needs a different default."
+    },
     "skipFormat": {
       "type": "boolean",
       "description": "Skip formatting files after generation",

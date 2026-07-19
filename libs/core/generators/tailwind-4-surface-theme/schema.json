@@ -30,6 +30,14 @@
       "type": "string",
       "description": "Prefix for the runtime theme-swap mechanism: the CSS custom properties (--<runtimePrefix>-surface-*) and selectors (.<runtimePrefix>-surface--<name>) that ProvideSurfaceDirective (etProvideSurface) toggles between. Defaults to the same value as 'prefix'. Set this separately when your Tailwind utility prefix needs to differ from your runtime theme-switching prefix."
     },
+    "defaultLightTheme": {
+      "type": "string",
+      "description": "Name of the 'light' surface theme to use as the default, overriding any isDefault flags on light themes in the definitions. Use this when multiple apps share one surface theme definition set (e.g. in a monorepo) but each app needs a different default."
+    },
+    "defaultDarkTheme": {
+      "type": "string",
+      "description": "Name of the 'dark' surface theme to use as the default, overriding any isDefault flags on dark themes in the definitions. Use this when multiple apps share one surface theme definition set (e.g. in a monorepo) but each app needs a different default."
+    },
     "skipFormat": {
       "type": "boolean",
       "description": "Skip formatting files after generation",
