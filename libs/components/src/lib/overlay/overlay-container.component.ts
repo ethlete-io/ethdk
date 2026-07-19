@@ -1,4 +1,5 @@
 import {
+  ApplicationRef,
   Binding,
   Component,
   ComponentRef,
@@ -28,6 +29,7 @@ import {
   injectSurfaceContextTracker,
   injectSurfaceThemes,
   provideBoundaryElement,
+  resolveAppRootColorProvider,
   resolveSurfaceByElevation,
 } from '@ethlete/core';
 import { tap } from 'rxjs';
@@ -52,6 +54,7 @@ export class OverlayContainerComponent {
   private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
   private destroyRef = inject(DestroyRef);
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private appRef = inject(ApplicationRef);
 
   protected overlayRef = inject(OVERLAY_REF);
   private surfaceThemes = injectSurfaceThemes({ optional: true });
@@ -70,8 +73,14 @@ export class OverlayContainerComponent {
   public contentComponentRef = signal<ComponentRef<object> | null>(null);
 
   constructor() {
-    if (this.parentColorProvider) {
-      this.ownColorProvider.syncWithProvider(this.parentColorProvider);
+    // The pane is detached DOM: element DI only reaches a color provider when the opener passed a
+    // viewContainerRef/injector. Without one, fall back to the provider on the bootstrapped root
+    // component (e.g. added via hostDirectives on the app component) so an app-wide forced color
+    // still propagates into overlays.
+    const contextColorProvider = this.parentColorProvider ?? resolveAppRootColorProvider(this.appRef);
+
+    if (contextColorProvider) {
+      this.ownColorProvider.syncWithProvider(contextColorProvider);
     }
 
     if (this.surfaceThemes) {

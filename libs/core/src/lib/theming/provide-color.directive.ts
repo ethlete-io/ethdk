@@ -1,4 +1,5 @@
 import {
+  ApplicationRef,
   computed,
   Directive,
   effect,
@@ -22,6 +23,27 @@ import {
 } from './color-theme.util';
 
 export const COLOR_PROVIDER = new InjectionToken<ProvideColorDirective>('ColorProvider');
+
+/**
+ * The color provider attached to a bootstrapped root component (e.g. `ProvideColorDirective` in
+ * the app component's `hostDirectives`), if any. Detached DOM such as overlay panes can't reach
+ * it through element DI, so overlay containers fall back to this when resolving the provider to
+ * `syncWithProvider()` — resolve at sync time, not at injection time, since root components only
+ * register with `ApplicationRef` once bootstrap completes.
+ *
+ * @internal
+ */
+export const resolveAppRootColorProvider = (appRef: ApplicationRef): ProvideColorDirective | null => {
+  for (const componentRef of appRef.components) {
+    const provider = componentRef.injector.get(COLOR_PROVIDER, null);
+
+    if (provider) {
+      return provider;
+    }
+  }
+
+  return null;
+};
 
 const FORCED_COLOR_UNSET = Symbol('FORCED_COLOR_UNSET');
 

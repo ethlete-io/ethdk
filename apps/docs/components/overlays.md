@@ -138,6 +138,10 @@ Also available: `transformingFullScreenDialogToDialogOverlayStrategy` and `trans
 
 Anchored strategies position relative to `config.origin` using floating-ui (`placement`, `fallbackPlacements`, `offset`, `shift`, `autoHide`, …). With `arrow: true` (the `anchoredDialogOverlayStrategy` default) the pane renders an arrow pointing at the origin. The arrow takes its background and border from the [surface theme](/core/theming) so it reads as part of the panel — overridable via `--et-overlay-arrow-background` / `--et-overlay-arrow-border` — and is the same arrow used by menus, tooltips and toggletips.
 
+## Color theme context
+
+Overlay panes render in detached DOM, so a [color theme](/core/theming) scope around the trigger doesn't reach them through CSS inheritance. The overlay container re-applies the context itself: it syncs with the nearest color provider reachable through `config.viewContainerRef` / `config.injector` (openers created with `createOverlayOpener` pass the calling component's `ViewContainerRef` automatically), and otherwise falls back to a color provider on the bootstrapped root component — e.g. `ProvideColorDirective` added via `hostDirectives` on the app component. The pane keeps following that provider while open, so forcing a different color on it re-themes already-open overlays too.
+
 ## Declarative overlays
 
 For template-driven popovers there's a headless directive set (`OVERLAY_IMPORTS`) that skips the manager entirely:
