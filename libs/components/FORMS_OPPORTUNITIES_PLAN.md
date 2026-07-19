@@ -195,8 +195,10 @@ unbounded (`100:00` under `mm:ss`), so any fixed slot layout blocks commits the
 parser accepts; and its lenient parse is right-anchored (`130` → `01:30`) while a
 mask fills left-to-right (`130` → `13:0_`), silently changing what typed digits
 mean. Documented in `forms.md`. The **date-range input** (two fields, own field
-directives) was also left out of this slice — add it later if asked; the shared
-field base doesn't cover it.
+directives) was initially left out of this slice; it has since adopted the mask
+too — each `etDateRangeInputField` side implements `INPUT_MASK_HOST` itself
+(the shared field base doesn't cover it), with `mask`/`maskPattern` on
+`DateRangeInputDirective`.
 
 Original notes:
 

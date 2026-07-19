@@ -15,16 +15,16 @@ are approximate anchors, not gospel.
 | --- | ------------------------------------------ | ---------------- | ---- | ------- |
 | QW  | Quick wins batch (CSS/state gates)         | 1, 9, 15, 16, 23 | S    | shipped |
 | A   | Focus & keyboard fixes                     | 3, 11, 12        | S–M  | shipped |
-| B   | Cascader polish                            | 7, 13, 14        | M    | open    |
+| B   | Cascader polish                            | 7, 13, 14        | M    | shipped |
 | C   | Cascader deep-nesting UX                   | 8                | L    | idea    |
-| D   | Grid drag: touch support + placement feel  | 4, 25            | M    | open    |
+| D   | Grid drag: touch support + placement feel  | 4, 25            | M    | shipped |
 | E   | Overlay rendering fixes                    | 22               | S–M  | shipped |
-| F   | Overlay color-theme resolution bug         | 6                | M    | open    |
+| F   | Overlay color-theme resolution bug         | 6                | M    | shipped |
 | G   | Theme generators: default-theme option     | 5                | M    | open    |
-| H   | Select behavior: max selection, v2 adapter | 10, 20           | M    | open    |
+| H   | Select behavior: max selection, v2 adapter | 10, 20           | M    | shipped |
 | I   | Select virtual scroll                      | 21               | L    | open    |
-| J   | Masked modes: date range, duration, time   | 17, 19, 24       | M    | open    |
-| K   | Date-time input default time on date pick  | 18               | S    | open    |
+| J   | Masked modes: date range, duration, time   | 17, 19, 24       | M    | shipped |
+| K   | Date-time input default time on date pick  | 18               | S    | shipped |
 | L   | Selection indicators move to the right     | 2                | M    | open    |
 
 Suggested order: QW → A → E/F (user-facing bugs) → B → D → H → J → K → L →
@@ -88,19 +88,30 @@ Three focus-management bugs, all in select/cascader headless directives.
 - [x] Keyboard-only verification in Storybook for all three (8 checks incl.
       Escape and ArrowDown-into-tree regressions); unit suite green.
 
-## B. Cascader polish (M)
+## B. Cascader polish (M) — shipped
 
-- [ ] **Directional section animations** (todo 7). In the non-bottom-sheet UI,
-      each added/removed column should grow/shrink in the logical navigation
-      direction. Build on the existing `--et-cascader-column-inline-size`
-      `@property` + transitions in `cascader/cascader-panel.component.css`.
-- [ ] **Search-mode resize animates** (todo 13). Entering search mode from an
-      existing multi-part selection resizes the overlay (width and height)
-      without animation. Tie into the same size-transition mechanism as the
-      column animations — likely one solution for both.
-- [ ] **Error UI improvements** (todo 14). Vague by design — audit the error
-      state in stories first, then scope. At minimum align it with the select
-      error presentation.
+- [x] **Directional section animations** (todo 7) + **search-mode resize
+      animates** (todo 13). One solution for both, as predicted: core's
+      `injectAnimatedBlockSize` gained an `axes` option (`'block' | 'inline'`,
+      static or signal) and the cascader panel opts into
+      `['block', 'inline']` outside sheet mode
+      (`cascader-panel.component.ts`), so drilling grows the panel's trailing
+      edge outward, going back sweeps it back in, and the columns ⇄ search
+      results swap animates width + height. Two prerequisites:
+      `.et-cascader-panel-body` is `inline-size: max-content` in the anchored
+      presentation (a block child would mirror the host's animated width back
+      into the ResizeObserver — feedback loop), and sheet mode stays
+      block-only (its width follows the pane). Desktop column entry is now a
+      directional slide (`et-cascader-column-grow-in`). Changeset
+      `animated-size-inline-axis` (core minor); cascader side rides the
+      pending cascader changesets. Docs: `axes` in
+      `apps/docs/core/element-signals.md`.
+- [x] **Error UI improvements** (todo 14). The error theme scope
+      (`etProvideColor`) sat on the whole state row, so the Retry text button
+      rendered as more red text. The scope now sits on the message span only
+      (`.et-cascader-state-error-message`) — Retry keeps the ambient color and
+      reads as an action; error text downsized to 12px matching select/menu.
+      Both error sites (column + search results) share the fix.
 
 ## C. Cascader deep-nesting UX (L, idea — design first)
 
@@ -110,25 +121,31 @@ drag-scroll), or collapsing older sections into a breadcrumb/tab row after ~3
 columns. **Decide the interaction model first**, then implement. Not
 scheduled until that decision exists.
 
-## D. Grid drag: touch + placement feel (M)
+## D. Grid drag: touch + placement feel (M) — shipped
 
-- [ ] **Touch drag** (todo 4). Resize works on touch because
-      `libs/core/src/lib/resize-handles/resize-handles.component.ts` sets
-      `touch-action: none`; the drag surface never does —
-      `grid/grid-item.component.ts` inline styles and
-      `libs/core/src/lib/drag-handle/drag-handle.directive.ts` set no
-      `touch-action`, so the browser swallows touch pointermoves for
-      scrolling. Set `touch-action: none` on the drag handle host (core fix —
-      benefits every consumer of the directive). Verify via the mobile
-      emulator skill.
-- [ ] **Repositioning feel** (todo 25). Dragging the top-left chart widget
-      down requires dragging past the smaller text widget before anything
-      moves — the collision/placement pass in
-      `grid/headless/internals/layout-engine.ts` (`resolveCollisions()`,
-      `compactLayout()`) doesn't consider a swap when the target column has
-      less occupied space. Investigate a midpoint-overlap or swap heuristic;
-      this is algorithm tuning, so lock in current behavior with layout-engine
-      specs first.
+- [x] **Touch drag** (todo 4). Root cause as suspected: no `touch-action` on
+      the drag surface, so the browser claimed touch pointermoves for
+      scrolling (pointercancel before the commit threshold).
+      `DragHandleDirective` now binds `touch-action: none` while enabled
+      (`drag-handle.directive.ts`), and `GridDragDirective` re-states it with
+      read-only awareness (`'auto'` when the grid is read-only, so static
+      dashboards still scroll). Gotcha: a `null` style binding on the outer
+      directive CLEARS the host directive's binding rather than delegating —
+      both states must bind concrete values. Verified via CDP touch events in
+      headless Chromium (drag commits a layout change; read-only grid
+      scrolls). Changeset `grid-touch-drag` (core + components patch); docs
+      note in `apps/docs/core/drag-resize.md`.
+- [x] **Repositioning feel** (todo 25). The dead zone: colliders were pushed
+      below the moved item and the closing compaction pulled the moved item
+      straight back into its vacated origin — a no-op until the drag cleared
+      the collider's full height. `resolveCollisions()` now has an
+      escape-upward pre-pass (layout-engine.ts): when an item moves DOWN,
+      each direct collider first tries the topmost free spot above the moved
+      item (typically the vacated origin) before falling through to
+      push-down. `moveItem()` passes `originPosition` so keyboard moves get
+      the same swap. Existing 154 grid specs locked current behavior and all
+      pass; 5 new layout-engine specs incl. the exact dashboard scenario.
+      Changeset `grid-drag-swap-feel`; grid.md interaction bullet updated.
 
 ## E. Overlay rendering fixes (S–M) — shipped
 
@@ -144,17 +161,27 @@ scheduled until that decision exists.
       registration). Resize animation, sticky phone search, keyboard
       scroll-into-view all re-verified. Changeset `select-panel-overscroll`.
 
-## F. Overlay color-theme resolution bug (M)
+## F. Overlay color-theme resolution bug (M) — shipped
 
 Todo 6: `ProvideColorDirective` added via `hostDirectives` on the app
 component with `.forceColor()` doesn't propagate to overlays.
-`overlay-container.component.ts` applies `ProvideColorDirective` itself and
-the cross-portal `syncWithProvider()` mechanism exists
-(`libs/core/src/lib/theming/provide-color.directive.ts`) — the bug is in how
-the overlay resolves _which_ provider to sync with (DI can't cross the portal
-boundary, which is exactly what sync is for). Reproduce in a story with a
-host-directive-provided forced color, then fix resolution. Touches
-`libs/core` — needs changesets for both `core` and `components` if both move.
+
+- [x] Root cause: `OverlayContainerComponent`'s `parentColorProvider` is
+      injected with `skipSelf`, but a pane mounted without
+      `config.viewContainerRef`/`config.injector` (e.g. opener created in a
+      service) has the environment injector as its DI parent — the app-root
+      element provider is unreachable, so no `syncWithProvider()` ran.
+      Fixed with a lazy fallback: `resolveAppRootColorProvider(appRef)`
+      (`libs/core/src/lib/theming/provide-color.directive.ts`, `@internal`)
+      looks up `COLOR_PROVIDER` on `ApplicationRef.components` injectors, and
+      the container syncs with `parentColorProvider ?? appRootProvider`
+      (`overlay-container.component.ts`). Covered by
+      `overlay-container.component.spec.ts` (bootstraps a real root via
+      `ApplicationRef.bootstrap`; DI-reachable provider still wins). Docs:
+      "Color theme context" section in `apps/docs/components/overlays.md`.
+      Changeset `overlay-app-root-color` (core + components, patch). Note:
+      the surface side (`parentSurfaceProvider ?? 'dark'`) has the same DI
+      hole but its `'dark'` default is deliberate — left untouched.
 
 ## G. Theme generators: default-theme option (M)
 
@@ -168,18 +195,34 @@ theming docs + the `theming` skill if the output shape changes.
 
 ## H. Select behavior (M)
 
-- [ ] **Max selection disables remaining options** (todo 20).
-      `select/headless/select.directive.ts` has `maxSelection` and an `isFull`
-      computed that silently ignores further adds. Surface it: unselected
-      options render disabled while full (`select-option.directive.ts` —
-      combine with the option's own `disabled` input, don't overwrite it).
-      Decide whether search/keyboard nav skips them (consistent with disabled
-      options today).
-- [ ] **Legacy v2 query adapter for async selects** (todo 10). The async
-      select speaks the current query system; provide an adapter for the
-      legacy v2 query client so older apps can adopt the new select. Read the
-      `query` skill first; home is probably alongside the existing adapter in
-      the select's query integration.
+- [x] **Max selection disables remaining options** (todo 20). New
+      `isDisabled` computed on `SelectOptionDirective` combines the option's
+      own `disabled` input with `select.isFull() && !selected()`; it drives
+      the host `aria-disabled` (existing CSS keys off it), the registered
+      list item's `disabled` (so keyboard nav/typeahead skip full options
+      like any disabled option), and the click/hover guards. Selected options
+      stay enabled for deselection. Spec added in
+      `select.directive.spec.ts`; verified in the
+      `components-forms-select--max-selection` story (composes with a
+      per-option `disabled` too). Rides the unreleased
+      `select-custom-values-convergence` changeset (note updated); select.md
+      `maxSelection` bullet updated.
+- [x] **Legacy v2 query adapter for async selects** (todo 10). New
+      `selectOptionsFromV2Query` in
+      `select/select-options-from-v2-query.ts` — the `V2QueryClient` twin of
+      `selectOptionsFromQuery`, returning the same
+      `SelectOptionsFromQuery<TOption>` signal bundle. Accepts both
+      `V2QueryCreator` and `createLegacyQueryCreator` interop wrappers
+      (`args` builds the `prepare()` args, so `mock`/`config` extras pass
+      through). Internally uses the legacy container idiom: `queryComputed`
+      re-prepares per debounced query and releases the previous instance;
+      two `queryStateSignal`s split live state (loading/error) from settled
+      state (`cacheResponse: true`) so previous options stay rendered while
+      the next request loads — mirroring the current system's `response()`.
+      Spec drives a real `V2QueryClient` in mock mode (note: each async hop
+      needs its own `TestBed.tick()` — `toObservable` effects don't chain in
+      one flush). Changeset `select-v2-query-adapter` (minor); select.md
+      async-options section extended.
 
 ## I. Select virtual scroll (L)
 
@@ -196,27 +239,45 @@ Todos 17, 19, 24. The mask host contract exists
 (`masked-input/headless/input-mask-host.ts`, `INPUT_MASK_HOST`) and
 date/time/date-time field directives already implement it.
 
-- [ ] **Date range** (todo 17): adopt in
-      `date-range-input/headless/date-range-input-field.directive.ts` — two
-      fields, each masked like the single date input.
-- [ ] **Duration** (todo 19): adopt in
-      `duration-input/headless/duration-input-field.directive.ts`.
-- [ ] **Time** (todo 24): `time-input-field.directive.ts` already implements
-      the host contract — first confirm what's actually missing (probably the
-      opt-in guide-mask preset, not the plumbing).
-- [ ] Masks stay opt-in (decision baked into `FORMS_OPPORTUNITIES_PLAN.md` —
-      lenient parsers remain the default). Docs: extend the masked-input
-      sections in `apps/docs/components/`.
+- [x] **Date range** (todo 17): `DateRangeInputDirective` gained the same
+      opt-in `mask` input + `maskPattern` computed (and dev warning) as the
+      single date input; `DateRangeInputFieldDirective` implements
+      `INPUT_MASK_HOST` per side (the shared `DatePickerInputFieldDirective`
+      base doesn't cover it) — `value` linkedSignal from the side's
+      parse-error/display state, `focused` from `focusedSide() === side`,
+      commits read the mask's value instead of element text. Both fields in
+      the component template carry `[etInputMask]="rangeInput.maskPattern()"`.
+      New `Masked` story + 7-spec block mirroring the date input's; verified
+      headlessly (guide per focused side, auto separators, paste filtering,
+      per-side parse errors). Rides the unreleased `date-input-guide-masks`
+      changeset (note updated); forms.md date-range section extended.
+- [x] **Duration** (todo 19): closed as won't-do — deliberate exclusion
+      decided in `FORMS_OPPORTUNITIES_PLAN.md` and documented in forms.md:
+      the first segment is unbounded (`100:00`) so fixed slots would block
+      valid entries, and the lenient parse is right-anchored (`130` → `01:30`)
+      while a mask fills left-to-right, silently changing entry semantics.
+- [x] **Time** (todo 24): nothing was missing — the opt-in `mask` shipped for
+      time (and date-time) with the guide-masks slice
+      (`time-input-field.directive.ts` hosts it; template wires
+      `[etInputMask]="timeInput.maskPattern()"`). Covered by the unreleased
+      `date-input-guide-masks` changeset and the forms.md time-input table.
+- [x] Masks stay opt-in (decision baked into `FORMS_OPPORTUNITIES_PLAN.md` —
+      lenient parsers remain the default). forms.md masked-input +
+      date/time/date-time/date-range sections all reflect the final state.
 
 ## K. Date-time input: default time on date pick (S)
 
-Todo 18: picking a date auto-selects the current wall-clock time.
-`date-time-input/headless/date-time-input.directive.ts` `selectDate()`
-defaults a null value to `startOfDay(day)` — so the observed behavior likely
-comes from the embedded time-picker's initial selection instead. Confirm the
-source, then decide the intended default (midnight vs. current time vs.
-leaving time empty until chosen) — this is a behavior decision worth a
-sentence in the docs either way.
+Todo 18 — shipped. Source confirmed: the headless `selectDate()` already
+committed midnight; the default component's `completeDatePick()` deliberately
+overrode a first pick with the time picker's "now"-anchored `anchorTime()`.
+Decision: midnight (matches the headless semantics, typed bare dates, and the
+todo's expectation). `completeDatePick` removed — the template calls
+`dateTimeInput.selectDate($event)` directly; the time columns follow the
+committed value (midnight) afterwards, so no anchor inconsistency remains.
+Verified in `components-forms-date-time-input--default` (commits
+`T00:00:00`, columns select 12/00/AM). Rides the unreleased
+`components-date-time-input` changeset (note updated); forms.md picker
+paragraph rewritten.
 
 ## L. Selection indicators move to the right (M)
 
