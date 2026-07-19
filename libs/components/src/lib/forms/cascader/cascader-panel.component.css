@@ -547,6 +547,11 @@
       padding-inline: 14px;
     }
 
+    /* aligned with the sheet header's content inset (20px), not the 6px desktop-card padding */
+    .et-cascader-search {
+      padding-inline: 20px;
+    }
+
     /* 16px also keeps iOS Safari from zooming into the focused input */
     .et-cascader-search input[etcascadersearch] {
       block-size: 44px;
