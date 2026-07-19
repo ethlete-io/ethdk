@@ -52,15 +52,16 @@ injectAnimatedBlockSize({
 });
 ```
 
-| Option          | Default           | Description                                                                                   |
-| --------------- | ----------------- | --------------------------------------------------------------------------------------------- |
-| `observe`       | — (required)      | Content element binding(s) whose size changes drive the animation. **Not** the animated host. |
-| `host`          | host `ElementRef` | The element whose `block-size` is animated.                                                   |
-| `duration`      | `160`             | Animation duration in ms.                                                                     |
-| `easing`        | `'ease'`          | Animation easing.                                                                             |
-| `resizingClass` | —                 | Class toggled on the host while animating.                                                    |
+| Option          | Default           | Description                                                                                              |
+| --------------- | ----------------- | -------------------------------------------------------------------------------------------------------- |
+| `observe`       | — (required)      | Content element binding(s) whose size changes drive the animation. **Not** the animated host.            |
+| `host`          | host `ElementRef` | The element whose size is animated.                                                                      |
+| `axes`          | `['block']`       | Axes to animate (`'block'` / `'inline'`), as an array or a signal — e.g. drop `inline` per presentation. |
+| `duration`      | `160`             | Animation duration in ms.                                                                                |
+| `easing`        | `'ease'`          | Animation easing.                                                                                        |
+| `resizingClass` | —                 | Class toggled on the host while animating.                                                               |
 
-Observe the content (children), not the host — observing the animated host would feed the animation back into itself. The baseline height is captured on the first render, so the initial layout never plays as a grow-from-0; an interrupting change continues from the current animated height; and it respects `prefers-reduced-motion`.
+Observe the content (children), not the host — observing the animated host would feed the animation back into itself. For the `inline` axis this also means the observed content must be content-sized (e.g. `inline-size: max-content`); a plain block-level child just mirrors the host's animated width back. The baseline size is captured on the first render, so the initial layout never plays as a grow-from-0; an interrupting change continues from the current animated size; and it respects `prefers-reduced-motion` (used with both axes by `et-cascader`'s panel, which grows/shrinks as columns drill in and out).
 
 ## Intersection
 
