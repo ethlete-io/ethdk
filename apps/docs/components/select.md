@@ -29,6 +29,8 @@ On `et-select` (forwarded from the headless `[etSelect]` directive), plus the st
 | ------------------- | ------------------------------------ | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `value`             | `unknown \| unknown[] \| null`       | `null`       | The selected option's value. Two-way bindable.                                                                                                                          |
 | `open`              | `boolean`                            | `false`      | Whether the panel is open. Two-way bindable.                                                                                                                            |
+| `mixed`             | `boolean`                            | `false`      | Presents an unresolved bulk-edit selection independently of `value`. Two-way bindable; a user commit or clear resolves it to `false`.                                   |
+| `mixedLabel`        | `string`                             | `'Mixed'`    | Value text shown while `mixed` is true.                                                                                                                                 |
 | `placeholder`       | `string`                             | `''`         | Shown in the trigger while nothing is selected.                                                                                                                         |
 | `options`           | `SelectOptionData[] \| null`         | `null`       | Data-driven options (`{ value, label, disabled? }`) — the select renders and virtualizes the rows itself. See [large option lists](#large-option-lists-virtualization). |
 | `multiple`          | `boolean`                            | `false`      | Multi-select: `value` is an array, options toggle (the panel stays open) and the trigger renders removable chips.                                                       |
@@ -39,11 +41,12 @@ On `et-select` (forwarded from the headless `[etSelect]` directive), plus the st
 | `error`             | `string \| null`                     | `null`       | Shows an error row in the panel (override with `ng-template[etSelectError]`, error text as context).                                                                    |
 | `hasMoreItems`      | `boolean`                            | `false`      | Shows a load-more control emitting `loadMore` (label via `loadMoreLabel`).                                                                                              |
 
-| Output        | Payload  | Emitted when                                                                              |
-| ------------- | -------- | ----------------------------------------------------------------------------------------- |
-| `queryChange` | `string` | The search query changes (every keystroke).                                               |
-| `loadMore`    | `void`   | The load-more control is activated.                                                       |
-| `addNew`      | `string` | The add-new row is picked; the payload is the current search query (prefill your dialog). |
+| Output        | Payload   | Emitted when                                                                              |
+| ------------- | --------- | ----------------------------------------------------------------------------------------- |
+| `mixedChange` | `boolean` | A user commit or clear resolves the controlled mixed state.                               |
+| `queryChange` | `string`  | The search query changes (every keystroke).                                               |
+| `loadMore`    | `void`    | The load-more control is activated.                                                       |
+| `addNew`      | `string`  | The add-new row is picked; the payload is the current search query (prefill your dialog). |
 
 On `et-select-option`:
 
@@ -61,9 +64,36 @@ The trigger resolves the selected value's label from the options — including a
 
 With `multiple`, each selected value renders as a removable chip in the trigger; a chip's remove button (or Backspace/Delete on a chip) deselects that value without opening the panel, and the chips row wraps, growing the field. Committing an option toggles it and keeps the panel open — Escape, Tab or clicking outside close it. While `readonly`, the chips keep their normal (non-disabled) look but drop the remove button; while `disabled`, they render dimmed without it.
 
+## Mixed values in bulk editors
+
+Try it live in Storybook: `Components/Forms/Select` → `Mixed` / `Mixed multiple`.
+
+Use `mixed` when one select edits several records whose current values differ. It is presentation state, not a sentinel form value: while mixed, the select shows `mixedLabel`, keeps the raw form value unchanged, hides selected chips, and does not mark any option as selected.
+
+```html
+<et-select
+  [(mixed)]="categoryIsMixed"
+  [formField]="form.category"
+  mixedLabel="Different values"
+  placeholder="Pick a category"
+>
+  @for (category of categories; track category.id) {
+  <et-select-option [value]="category.id">{{ category.name }}</et-select-option>
+  }
+</et-select>
+```
+
+Treat `mixed` as explicitly controlled state. Updating the raw form value from application code does not change it; set `categoryIsMixed` to `false` yourself when external data establishes one value. Setting it to `false` reveals whatever raw value is currently in the form.
+
+- Committing an option or custom value replaces the hidden raw value and resolves mixed. In multi mode, that first commit starts a new array containing the committed option; later commits use normal toggle behavior.
+- Clear writes `null` for single select or `[]` for multi-select and resolves mixed. Opening, searching, or cancelling leaves it unchanged; closing only resolves mixed when `commitCustomValueOnClose` successfully commits pending text.
+- `allowAddNew` only emits `addNew`; it neither writes a value nor resolves mixed. After creating the option, update the form value and set `mixed` to `false` explicitly.
+- Signal Forms validation continues to inspect the raw form value. The mixed presentation by itself does not satisfy `required` or otherwise override validation.
+- Listbox options use `aria-selected="false"` while mixed. They never expose `aria-selected="mixed"`, which is not a valid option state. The select host exposes `data-mixed` for consumer styling.
+
 ### Custom trigger value
 
-Replace the default label/chips display entirely by projecting an `ng-template[etSelectValue]` — it renders inside the trigger with the selected items as context:
+Replace the default label/chips display entirely by projecting an `ng-template[etSelectValue]` — it renders inside the trigger with the selected items as context. While `mixed` is true, `mixedLabel` takes precedence and the custom value template is not rendered:
 
 ```html
 <et-select [formField]="demoForm.fruits" multiple>

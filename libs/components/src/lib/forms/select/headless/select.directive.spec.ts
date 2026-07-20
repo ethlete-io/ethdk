@@ -1,5 +1,6 @@
 import { ApplicationRef, Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormField, form, required } from '@angular/forms/signals';
 import { provideColorThemes } from '@ethlete/core';
 import '../../../../test-helpers';
 import { SELECT_IMPORTS } from '../select.imports';
@@ -47,7 +48,10 @@ const TEST_COLOR_THEMES = [
     <et-select
       [value]="value()"
       [disabled]="disabled()"
+      [mixed]="mixed()"
+      [mixedLabel]="mixedLabel()"
       (valueChange)="value.set($event)"
+      (mixedChange)="mixed.set($event)"
       (touchedChange)="touched.set($event)"
       class="select"
       placeholder="Pick a fruit"
@@ -63,6 +67,25 @@ class SelectTestHost {
   value = signal<unknown>(null);
   touched = signal(false);
   disabled = signal(false);
+  mixed = signal(false);
+  mixedLabel = signal('Mixed');
+}
+
+@Component({
+  template: `
+    <et-select [formField]="demoForm.value" [mixed]="mixed()" placeholder="Pick a fruit">
+      <et-select-option value="apple">Apple</et-select-option>
+    </et-select>
+  `,
+  imports: [FormField, SELECT_IMPORTS],
+})
+class MixedRequiredTestHost {
+  model = signal<{ value: string | null }>({ value: null });
+  mixed = signal(true);
+
+  demoForm = form(this.model, (schema) => {
+    required(schema.value);
+  });
 }
 
 @Component({
@@ -71,7 +94,10 @@ class SelectTestHost {
       [value]="value()"
       [multiple]="true"
       [readonly]="readonly()"
+      [mixed]="mixed()"
+      [maxSelection]="maxSelection()"
       (valueChange)="value.set($event)"
+      (mixedChange)="mixed.set($event)"
       class="select"
       placeholder="Pick fruits"
     >
@@ -85,11 +111,20 @@ class SelectTestHost {
 class MultiSelectTestHost {
   value = signal<unknown>([]);
   readonly = signal(false);
+  mixed = signal(false);
+  maxSelection = signal<number | undefined>(undefined);
 }
 
 @Component({
   template: `
-    <et-select [value]="value()" (valueChange)="value.set($event)" class="select" placeholder="Pick a fruit">
+    <et-select
+      [value]="value()"
+      [mixed]="mixed()"
+      (valueChange)="value.set($event)"
+      (mixedChange)="mixed.set($event)"
+      class="select"
+      placeholder="Pick a fruit"
+    >
       <ng-template etSelectValue let-entries>
         <span class="custom-value">{{ entries.length ? '🍏 ' + entries[0].label : 'none' }}</span>
       </ng-template>
@@ -101,6 +136,7 @@ class MultiSelectTestHost {
 })
 class CustomValueTestHost {
   value = signal<unknown>('apple');
+  mixed = signal(false);
 }
 
 @Component({
@@ -133,10 +169,13 @@ class SearchableCustomValueTestHost {
       [maxSelection]="maxSelection()"
       [allowAddNew]="allowAddNew()"
       [multiple]="multiple()"
+      [mixed]="mixed()"
+      [mixedLabel]="mixedLabel()"
       [loading]="loading()"
       [error]="error()"
       [hasMoreItems]="hasMore()"
       (valueChange)="value.set($event)"
+      (mixedChange)="mixed.set($event)"
       (queryChange)="queries.push($event)"
       (loadMore)="loadMoreCount = loadMoreCount + 1"
       (addNew)="addNewQueries.push($event)"
@@ -164,6 +203,8 @@ class SearchSelectTestHost {
   maxSelection = signal<number | undefined>(undefined);
   allowAddNew = signal(false);
   multiple = signal(false);
+  mixed = signal(false);
+  mixedLabel = signal('Mixed');
   loading = signal(false);
   error = signal<string | null>(null);
   hasMore = signal(false);
@@ -224,7 +265,7 @@ describe('SelectDirective', () => {
     document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
 
     TestBed.configureTestingModule({
-      imports: [SelectTestHost],
+      imports: [SelectTestHost, MixedRequiredTestHost],
       providers: [provideColorThemes(TEST_COLOR_THEMES)],
     });
     fixture = TestBed.createComponent(SelectTestHost);
@@ -253,6 +294,77 @@ describe('SelectDirective', () => {
     fixture.detectChanges();
 
     expect(select.displayValue()).toBe('Banana');
+  });
+
+  it('masks the raw value, exposes an empty selection, and resolves a same-value commit', async () => {
+    fixture.componentInstance.value.set('banana');
+    fixture.componentInstance.mixed.set(true);
+    fixture.componentInstance.mixedLabel.set('Various fruits');
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement.querySelector('et-select') as HTMLElement;
+
+    expect(select.value()).toBe('banana');
+    expect(select.hasValue()).toBe(true);
+    expect(select.displayValue()).toBe('Various fruits');
+    expect(select.selectedEntries()).toEqual([]);
+    expect(root.getAttribute('data-mixed')).toBe('true');
+    expect(trigger.querySelector('.et-select-value')?.textContent?.trim()).toBe('Various fruits');
+
+    await openSelect();
+
+    expect(options().map((option) => option.getAttribute('aria-selected'))).toEqual(['false', 'false', 'false']);
+    expect(options().every((option) => !option.hasAttribute('aria-checked'))).toBe(true);
+    expect(activeOption()?.textContent?.trim()).toBe('Apple');
+
+    options()[1]!.click();
+    tick();
+
+    expect(fixture.componentInstance.value()).toBe('banana');
+    expect(fixture.componentInstance.mixed()).toBe(false);
+    expect(select.displayValue()).toBe('Banana');
+  });
+
+  it('keeps required validation on the raw value while mixed presents content', () => {
+    const requiredFixture = TestBed.createComponent(MixedRequiredTestHost);
+
+    requiredFixture.detectChanges();
+    tick();
+
+    expect(requiredFixture.componentInstance.demoForm.value().invalid()).toBe(true);
+
+    requiredFixture.componentInstance.model.set({ value: 'apple' });
+    requiredFixture.detectChanges();
+    tick();
+
+    expect(requiredFixture.componentInstance.demoForm.value().invalid()).toBe(false);
+  });
+
+  it('clears mixed to null but preserves mixed across external value writes', () => {
+    fixture.componentInstance.value.set('apple');
+    fixture.componentInstance.mixed.set(true);
+    fixture.detectChanges();
+
+    fixture.componentInstance.value.set('banana');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.mixed()).toBe(true);
+    expect(select.displayValue()).toBe('Mixed');
+
+    fixture.componentInstance.mixed.set(false);
+    fixture.detectChanges();
+
+    expect(select.displayValue()).toBe('Banana');
+    expect(select.selectedEntries().map((entry) => entry.value)).toEqual(['banana']);
+
+    fixture.componentInstance.mixed.set(true);
+    fixture.detectChanges();
+
+    select.clearValue();
+    tick();
+
+    expect(fixture.componentInstance.value()).toBeNull();
+    expect(fixture.componentInstance.mixed()).toBe(false);
   });
 
   it('opens on trigger click without moving focus off the trigger', async () => {
@@ -467,6 +579,75 @@ describe('SelectDirective (multiple)', () => {
     expect(trigger.querySelectorAll('et-chip').length).toBe(0);
   });
 
+  it('masks multi chips, replaces on first commit, then toggles and clears normally', async () => {
+    fixture.componentInstance.value.set(['banana', 'cherry']);
+    fixture.componentInstance.mixed.set(true);
+    fixture.detectChanges();
+
+    expect(select.value()).toEqual(['banana', 'cherry']);
+    expect(select.displayValue()).toBe('Mixed');
+    expect(trigger.querySelectorAll('et-chip').length).toBe(0);
+
+    await openSelect();
+
+    options()[0]!.click();
+    tick();
+
+    expect(fixture.componentInstance.value()).toEqual(['apple']);
+    expect(fixture.componentInstance.mixed()).toBe(false);
+    expect(select.open()).toBe(true);
+
+    options()[1]!.click();
+    tick();
+
+    expect(fixture.componentInstance.value()).toEqual(['apple', 'banana']);
+    fixture.componentInstance.mixed.set(true);
+    fixture.detectChanges();
+
+    select.clearValue();
+    tick();
+
+    expect(fixture.componentInstance.value()).toEqual([]);
+    expect(fixture.componentInstance.mixed()).toBe(false);
+  });
+
+  it('applies maxSelection to the effective mixed selection, including zero', async () => {
+    fixture.componentInstance.value.set(['apple', 'banana']);
+    fixture.componentInstance.mixed.set(true);
+    fixture.componentInstance.maxSelection.set(1);
+    fixture.detectChanges();
+
+    expect(select.isFull()).toBe(false);
+
+    await openSelect();
+
+    expect(options().every((option) => option.getAttribute('aria-disabled') !== 'true')).toBe(true);
+
+    options()[2]!.click();
+    tick();
+
+    expect(fixture.componentInstance.value()).toEqual(['cherry']);
+    expect(fixture.componentInstance.mixed()).toBe(false);
+    expect(select.isFull()).toBe(true);
+    expect(options()[0]!.getAttribute('aria-disabled')).toBe('true');
+    expect(options()[2]!.hasAttribute('aria-disabled')).toBe(false);
+
+    fixture.componentInstance.value.set(['apple', 'banana']);
+    fixture.componentInstance.mixed.set(true);
+    fixture.componentInstance.maxSelection.set(0);
+    fixture.detectChanges();
+
+    expect(select.isFull()).toBe(true);
+
+    expect(options().every((option) => option.getAttribute('aria-disabled') === 'true')).toBe(true);
+
+    options()[0]!.click();
+    tick();
+
+    expect(fixture.componentInstance.value()).toEqual(['apple', 'banana']);
+    expect(fixture.componentInstance.mixed()).toBe(true);
+  });
+
   it('renders readonly chips without the remove affordance and without the disabled look', () => {
     fixture.componentInstance.value.set(['apple']);
     fixture.componentInstance.readonly.set(true);
@@ -545,6 +726,64 @@ describe('SelectDirective (search)', () => {
 
     expect(document.activeElement).toBe(input);
     expect(input.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('selects the mixed label on open and restores it when Escape cancels search', async () => {
+    fixture.componentInstance.value.set('banana');
+    fixture.componentInstance.mixed.set(true);
+    fixture.componentInstance.mixedLabel.set('Various fruits');
+    fixture.detectChanges();
+
+    expect(searchInput()!.value).toBe('Various fruits');
+
+    await openSelect();
+
+    expect(searchInput()!.selectionStart).toBe(0);
+    expect(searchInput()!.selectionEnd).toBe('Various fruits'.length);
+
+    typeQuery('ap');
+
+    expect(fixture.componentInstance.mixed()).toBe(true);
+    expect(searchInput()!.value).toBe('ap');
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    tick();
+
+    expect(select.query()).toBe('');
+    expect(fixture.componentInstance.mixed()).toBe(true);
+    expect(fixture.componentInstance.value()).toBe('banana');
+    expect(searchInput()!.value).toBe('Various fruits');
+    expect(searchInput()!.selectionStart).toBe(0);
+    expect(searchInput()!.selectionEnd).toBe('Various fruits'.length);
+  });
+
+  it('exposes and clears mixed from search with the correct single and multi value shapes', async () => {
+    fixture.componentInstance.value.set('banana');
+    fixture.componentInstance.mixed.set(true);
+    fixture.detectChanges();
+
+    await openSelect();
+    typeQuery('');
+
+    expect(fixture.componentInstance.value()).toBeNull();
+    expect(fixture.componentInstance.mixed()).toBe(false);
+
+    fixture.componentInstance.multiple.set(true);
+    fixture.componentInstance.value.set(['apple', 'banana']);
+    fixture.componentInstance.mixed.set(true);
+    select.describedBy.set('search-hint');
+    fixture.detectChanges();
+
+    const mixedLabelId = fixture.nativeElement.querySelector<HTMLElement>('.et-select-value')?.id ?? '';
+
+    expect(mixedLabelId).not.toBe('');
+    expect(searchInput()!.getAttribute('aria-describedby')?.split(' ')).toEqual(['search-hint', mixedLabelId]);
+
+    searchInput()!.value = '';
+    keydownOnSearch('Backspace');
+
+    expect(fixture.componentInstance.value()).toEqual([]);
+    expect(fixture.componentInstance.mixed()).toBe(false);
   });
 
   it('opens the panel when the user starts typing', () => {
@@ -640,6 +879,38 @@ describe('SelectDirective (search)', () => {
     expect(fixture.componentInstance.value()).toBe('kiwi');
     expect(select.open()).toBe(false);
     expect(select.displayValue()).toBe('kiwi');
+  });
+
+  it('resolves mixed on custom commit but preserves it when add-new hands off the query', async () => {
+    fixture.componentInstance.value.set('banana');
+    fixture.componentInstance.mixed.set(true);
+    fixture.componentInstance.allowCustom.set(true);
+    fixture.detectChanges();
+
+    await openSelect();
+    typeQuery('kiwi');
+    keydownOnSearch('Enter');
+    await flushFrames();
+    tick();
+
+    expect(fixture.componentInstance.value()).toBe('kiwi');
+    expect(fixture.componentInstance.mixed()).toBe(false);
+
+    fixture.componentInstance.value.set('banana');
+    fixture.componentInstance.mixed.set(true);
+    fixture.componentInstance.allowCustom.set(false);
+    fixture.componentInstance.allowAddNew.set(true);
+    fixture.detectChanges();
+
+    await openSelect();
+    typeQuery('dragonfruit');
+
+    pane()!.querySelector<HTMLElement>('.et-select-add-new')!.click();
+    tick();
+
+    expect(fixture.componentInstance.addNewQueries).toEqual(['dragonfruit']);
+    expect(fixture.componentInstance.value()).toBe('banana');
+    expect(fixture.componentInstance.mixed()).toBe(true);
   });
 
   it('offers the "Create …" row while options still match and commits it via arrow keys', async () => {
@@ -1123,6 +1394,19 @@ describe('SelectDirective (custom value template)', () => {
 
     expect(trigger.querySelector('.custom-value')?.textContent?.trim()).toBe('🍏 Apple');
     expect(trigger.querySelector('.et-select-value')).toBeNull();
+  });
+
+  it('lets the mixed label override the custom value template', () => {
+    const fixture = TestBed.createComponent(CustomValueTestHost);
+
+    fixture.componentInstance.mixed.set(true);
+    fixture.detectChanges();
+    tick();
+
+    const trigger = fixture.nativeElement.querySelector('[role="combobox"]') as HTMLElement;
+
+    expect(trigger.querySelector('.custom-value')).toBeNull();
+    expect(trigger.querySelector('.et-select-value')?.textContent?.trim()).toBe('Mixed');
   });
 });
 

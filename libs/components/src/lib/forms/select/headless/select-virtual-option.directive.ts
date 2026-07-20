@@ -40,6 +40,10 @@ export class SelectVirtualOptionDirective {
     const value = this.item().value();
     const current = this.select?.value();
 
+    if (this.select?.mixed()) {
+      return false;
+    }
+
     return Array.isArray(current) ? current.includes(value) : current === value;
   });
 

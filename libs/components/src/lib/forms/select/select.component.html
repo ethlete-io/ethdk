@@ -2,7 +2,11 @@
      The trigger directive manages tabindex/aria-disabled for non-button hosts. -->
 <div class="et-select-trigger" etSelectTrigger>
   <div [class.et-select-trigger-content--stacked]="stackedValue()" class="et-select-trigger-content">
-    @if (select.registeredValueTemplate(); as valueTemplate) {
+    @if (select.mixed()) {
+      @if (showValueLabel()) {
+        <span [id]="mixedLabelId" class="et-select-value">{{ select.displayValue() }}</span>
+      }
+    } @else if (select.registeredValueTemplate(); as valueTemplate) {
       @if (showCustomValue()) {
         <div class="et-select-value-custom">
           <ng-template [ngTemplateOutlet]="valueTemplate.templateRef" [ngTemplateOutletContext]="valueContext()" />
@@ -26,7 +30,7 @@
       </div>
     }
 
-    @if (showValueLabel()) {
+    @if (!select.mixed() && showValueLabel()) {
       <span [attr.data-placeholder]="!select.hasValue() || null" class="et-select-value">
         {{ select.displayValue() ?? select.placeholder() }}
       </span>

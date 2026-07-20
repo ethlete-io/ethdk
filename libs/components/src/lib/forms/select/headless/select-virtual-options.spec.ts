@@ -55,7 +55,9 @@ const makeOptions = (count: number): SelectOptionData[] =>
       [value]="value()"
       [options]="options()"
       [multiple]="multiple()"
+      [mixed]="mixed()"
       (valueChange)="value.set($event)"
+      (mixedChange)="mixed.set($event)"
       class="select"
       placeholder="Pick an item"
     >
@@ -67,6 +69,7 @@ const makeOptions = (count: number): SelectOptionData[] =>
 class VirtualSelectTestHost {
   value = signal<unknown>(null);
   multiple = signal(false);
+  mixed = signal(false);
   options = signal<SelectOptionData[]>(makeOptions(200));
 }
 
@@ -199,6 +202,31 @@ describe('SelectDirective (data-driven options)', () => {
 
     expect(reopened.getAttribute('aria-selected')).toBe('true');
     expect(reopened.hasAttribute('data-selected')).toBe(true);
+  });
+
+  it('masks a data-driven raw value, clears virtual option selection, and resolves on commit', async () => {
+    fixture.componentInstance.value.set('item-150');
+    fixture.componentInstance.mixed.set(true);
+    fixture.detectChanges();
+    tick();
+
+    expect(select.value()).toBe('item-150');
+    expect(select.displayValue()).toBe('Mixed');
+
+    await openSelect();
+
+    const rendered = options();
+
+    expect(rendered.length).toBeGreaterThan(0);
+    expect(rendered.every((row) => row.getAttribute('aria-selected') === 'false')).toBe(true);
+    expect(select.activeItem()?.value()).toBe('item-1');
+
+    rendered[2]!.click();
+    tick();
+    await flushFrames();
+
+    expect(fixture.componentInstance.value()).toBe('item-3');
+    expect(fixture.componentInstance.mixed()).toBe(false);
   });
 
   it('filters data options with the internal filter mode', async () => {
