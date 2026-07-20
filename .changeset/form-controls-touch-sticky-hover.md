@@ -1,5 +1,6 @@
 ---
 '@ethlete/components': patch
+'@ethlete/core': patch
 ---
 
-Forms: hover styles on checkbox, checkbox option, radio, switch and segmented button no longer stick after tapping on touch devices (guarded by `@media (hover: hover)`).
+Hover styles across all interactive components (buttons, chips, form controls, selects, cascader, menu, tabs, calendar, time picker, notification) no longer stick after tapping on touch devices — including the `etColorInteractive`/`etSurfaceInteractive` hover token resolution (guarded by `@media (hover: hover)`).

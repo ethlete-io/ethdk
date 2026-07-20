@@ -91,8 +91,10 @@
       --_et-button-color: var(--et-theme-color-ink-solid);
       --_et-button-border-color: var(--et-theme-color-ink-solid);
 
-      &:hover {
-        --et-theme-color-primary-opacity: 0.08;
+      @media (hover: hover) {
+        &:hover {
+          --et-theme-color-primary-opacity: 0.08;
+        }
       }
 
       &:focus-visible {
@@ -110,8 +112,10 @@
       --_et-button-color: var(--et-theme-color-ink-solid);
       --_et-button-border-color: var(--et-theme-color-ink-solid);
 
-      &:hover {
-        --et-theme-color-primary-opacity: 0.08;
+      @media (hover: hover) {
+        &:hover {
+          --et-theme-color-primary-opacity: 0.08;
+        }
       }
 
       &:focus-visible {
@@ -135,8 +139,10 @@
       --_et-button-color: var(--et-theme-color-ink-solid);
       --_et-button-border-color: transparent;
 
-      &:hover {
-        --et-theme-color-primary-opacity: 0.24;
+      @media (hover: hover) {
+        &:hover {
+          --et-theme-color-primary-opacity: 0.24;
+        }
       }
 
       &:focus-visible {
@@ -154,8 +160,10 @@
       --_et-button-color: var(--et-theme-color-ink-solid);
       --_et-button-border-color: transparent;
 
-      &:hover {
-        --et-theme-color-primary-opacity: 0.08;
+      @media (hover: hover) {
+        &:hover {
+          --et-theme-color-primary-opacity: 0.08;
+        }
       }
 
       &:focus-visible {
@@ -173,8 +181,10 @@
       --_et-button-color: var(--et-theme-color-on-primary);
       --_et-button-border-color: transparent;
 
-      &:hover {
-        --et-theme-color-primary-opacity: 1;
+      @media (hover: hover) {
+        &:hover {
+          --et-theme-color-primary-opacity: 1;
+        }
       }
 
       &:focus-visible {
@@ -200,8 +210,10 @@
         --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 32%, transparent);
         --_et-button-border-color: transparent;
 
-        &:hover:not([disabled]):not([aria-disabled='true']) {
-          --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 40%, transparent);
+        @media (hover: hover) {
+          &:hover:not([disabled]):not([aria-disabled='true']) {
+            --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 40%, transparent);
+          }
         }
 
         &:focus-visible {
@@ -217,8 +229,10 @@
         --_et-button-background: transparent;
         --_et-button-border-color: var(--et-surface-interaction-solid);
 
-        &:hover:not([disabled]):not([aria-disabled='true']) {
-          --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+        @media (hover: hover) {
+          &:hover:not([disabled]):not([aria-disabled='true']) {
+            --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+          }
         }
 
         &:focus-visible {
@@ -234,8 +248,10 @@
         --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 16%, transparent);
         --_et-button-border-color: transparent;
 
-        &:hover:not([disabled]):not([aria-disabled='true']) {
-          --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 24%, transparent);
+        @media (hover: hover) {
+          &:hover:not([disabled]):not([aria-disabled='true']) {
+            --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 24%, transparent);
+          }
         }
 
         &:focus-visible {
@@ -251,8 +267,10 @@
         --_et-button-background: transparent;
         --_et-button-border-color: transparent;
 
-        &:hover:not([disabled]):not([aria-disabled='true']) {
-          --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+        @media (hover: hover) {
+          &:hover:not([disabled]):not([aria-disabled='true']) {
+            --_et-button-background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+          }
         }
 
         &:focus-visible {

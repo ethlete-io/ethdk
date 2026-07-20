@@ -423,17 +423,19 @@
 
       /* no hover feedback while readonly or disabled — the frame's pointer-events: none
          (disabled) doesn't stop the field host itself from matching :hover */
-      &:where(:hover:not([data-readonly]):not([data-disabled]):not(:has(.et-color-interactive-exclude:hover)))
-        .et-form-field-control-frame {
-        border-color: var(--et-surface-interaction-hover-solid, currentColor);
-      }
+      @media (hover: hover) {
+        &:where(:hover:not([data-readonly]):not([data-disabled]):not(:has(.et-color-interactive-exclude:hover)))
+          .et-form-field-control-frame {
+          border-color: var(--et-surface-interaction-hover-solid, currentColor);
+        }
 
-      &:where(:hover:not([data-readonly]):not([data-disabled]):not(:has(.et-color-interactive-exclude:hover)))
-        .et-form-field-label-area,
-      &:where(:hover:not([data-readonly]):not([data-disabled]):not(:has(.et-color-interactive-exclude:hover)))
-        .et-form-field-affix {
-        color: var(--et-surface-color-solid, currentColor);
-        opacity: 1;
+        &:where(:hover:not([data-readonly]):not([data-disabled]):not(:has(.et-color-interactive-exclude:hover)))
+          .et-form-field-label-area,
+        &:where(:hover:not([data-readonly]):not([data-disabled]):not(:has(.et-color-interactive-exclude:hover)))
+          .et-form-field-affix {
+          color: var(--et-surface-color-solid, currentColor);
+          opacity: 1;
+        }
       }
 
       &:where(:has(:focus-visible):not([data-readonly])) .et-form-field-control-frame {

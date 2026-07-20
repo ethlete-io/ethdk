@@ -77,8 +77,10 @@
       --et-theme-color-primary-opacity: 1;
       color: var(--et-theme-color-on-primary);
 
-      &:hover {
-        --et-theme-color-primary-opacity: 0.92;
+      @media (hover: hover) {
+        &:hover {
+          --et-theme-color-primary-opacity: 0.92;
+        }
       }
 
       &:focus-visible {
@@ -96,8 +98,10 @@
       --et-theme-color-primary-opacity: 0;
       border: var(--et-button-border-width, 0.1rem) solid var(--et-theme-color-ink-solid);
 
-      &:hover {
-        --et-theme-color-primary-opacity: 0.08;
+      @media (hover: hover) {
+        &:hover {
+          --et-theme-color-primary-opacity: 0.08;
+        }
       }
 
       &:focus-visible {
@@ -114,8 +118,10 @@
     &:where([data-variant='tonal']) {
       --et-theme-color-primary-opacity: 0.16;
 
-      &:hover {
-        --et-theme-color-primary-opacity: 0.24;
+      @media (hover: hover) {
+        &:hover {
+          --et-theme-color-primary-opacity: 0.24;
+        }
       }
 
       &:focus-visible {
@@ -132,8 +138,10 @@
     &:where([data-variant='transparent']) {
       --et-theme-color-primary-opacity: 0;
 
-      &:hover {
-        --et-theme-color-primary-opacity: 0.08;
+      @media (hover: hover) {
+        &:hover {
+          --et-theme-color-primary-opacity: 0.08;
+        }
       }
 
       &:focus-visible {
@@ -150,8 +158,10 @@
     &[data-pressed='true']:where([data-pressed-variant='transparent']) {
       --et-theme-color-primary-opacity: 0.16;
 
-      &:hover {
-        --et-theme-color-primary-opacity: 0.24;
+      @media (hover: hover) {
+        &:hover {
+          --et-theme-color-primary-opacity: 0.24;
+        }
       }
 
       &:focus-visible {
@@ -166,8 +176,10 @@
     &[data-pressed='true']:where([data-pressed-variant='tonal']) {
       --et-theme-color-primary-opacity: 0.16;
 
-      &:hover {
-        --et-theme-color-primary-opacity: 0.24;
+      @media (hover: hover) {
+        &:hover {
+          --et-theme-color-primary-opacity: 0.24;
+        }
       }
 
       &:focus-visible {
@@ -183,8 +195,10 @@
       --et-theme-color-primary-opacity: 1;
       color: var(--et-theme-color-on-primary);
 
-      &:hover {
-        --et-theme-color-primary-opacity: 0.92;
+      @media (hover: hover) {
+        &:hover {
+          --et-theme-color-primary-opacity: 0.92;
+        }
       }
 
       &:focus-visible {
@@ -211,8 +225,10 @@
       &:where([data-variant='filled']) {
         background: color-mix(in srgb, var(--et-surface-interaction-solid) 32%, transparent);
 
-        &:hover:not([disabled]):not([aria-disabled='true']) {
-          background: color-mix(in srgb, var(--et-surface-interaction-solid) 40%, transparent);
+        @media (hover: hover) {
+          &:hover:not([disabled]):not([aria-disabled='true']) {
+            background: color-mix(in srgb, var(--et-surface-interaction-solid) 40%, transparent);
+          }
         }
 
         &:focus-visible {
@@ -228,8 +244,10 @@
         background: transparent;
         border-color: var(--et-surface-interaction-solid);
 
-        &:hover:not([disabled]):not([aria-disabled='true']) {
-          background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+        @media (hover: hover) {
+          &:hover:not([disabled]):not([aria-disabled='true']) {
+            background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+          }
         }
 
         &:focus-visible {
@@ -244,8 +262,10 @@
       &:where([data-variant='tonal']) {
         background: color-mix(in srgb, var(--et-surface-interaction-solid) 16%, transparent);
 
-        &:hover:not([disabled]):not([aria-disabled='true']) {
-          background: color-mix(in srgb, var(--et-surface-interaction-solid) 24%, transparent);
+        @media (hover: hover) {
+          &:hover:not([disabled]):not([aria-disabled='true']) {
+            background: color-mix(in srgb, var(--et-surface-interaction-solid) 24%, transparent);
+          }
         }
 
         &:focus-visible {
@@ -260,8 +280,10 @@
       &:where([data-variant='transparent']) {
         background: transparent;
 
-        &:hover:not([disabled]):not([aria-disabled='true']) {
-          background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+        @media (hover: hover) {
+          &:hover:not([disabled]):not([aria-disabled='true']) {
+            background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+          }
         }
 
         &:focus-visible {

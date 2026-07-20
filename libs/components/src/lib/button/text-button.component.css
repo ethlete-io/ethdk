@@ -53,10 +53,12 @@
       --et-button-gap: 0.8rem;
     }
 
-    &:hover {
-      .et-text-button-contents::after {
-        opacity: 0.9;
-        transform: scaleX(1);
+    @media (hover: hover) {
+      &:hover {
+        .et-text-button-contents::after {
+          opacity: 0.9;
+          transform: scaleX(1);
+        }
       }
     }
 

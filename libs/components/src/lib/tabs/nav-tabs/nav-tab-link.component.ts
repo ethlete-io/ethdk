@@ -79,8 +79,10 @@ import { NavTabLinkDirective } from './headless/nav-tab-link.directive';
         transition: none;
       }
 
-      &.et-nav-tab-link--active:not(.et-tab-bar-trigger--just-activated):hover {
-        background: rgb(var(--et-color-primary, 0 0 0) / 0.08);
+      @media (hover: hover) {
+        &.et-nav-tab-link--active:not(.et-tab-bar-trigger--just-activated):hover {
+          background: rgb(var(--et-color-primary, 0 0 0) / 0.08);
+        }
       }
 
       &.et-nav-tab-link--active:not(.et-tab-bar-trigger--just-activated):focus-visible {

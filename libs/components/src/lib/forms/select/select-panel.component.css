@@ -148,8 +148,10 @@
         background: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
       }
 
-      &:hover {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 12%, transparent);
+      @media (hover: hover) {
+        &:hover {
+          background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 12%, transparent);
+        }
       }
 
       &:active {

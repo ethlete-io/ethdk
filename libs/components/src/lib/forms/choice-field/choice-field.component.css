@@ -105,8 +105,10 @@
 
     /* view-only controls keep the resting look — no hover/active brighten (matches the
        [data-readonly] gating inside checkbox/radio/switch) */
-    &:where(:has(.et-choice-field-control:hover)):where(:not(:has([data-readonly]))) .et-choice-field-label-area {
-      color: var(--et-surface-color-solid, currentColor);
+    @media (hover: hover) {
+      &:where(:has(.et-choice-field-control:hover)):where(:not(:has([data-readonly]))) .et-choice-field-label-area {
+        color: var(--et-surface-color-solid, currentColor);
+      }
     }
 
     &:where(:has(.et-choice-field-control:active)):where(:not(:has([data-readonly]))) .et-choice-field-label-area {

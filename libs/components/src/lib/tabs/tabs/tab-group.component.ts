@@ -260,8 +260,10 @@ import { TabComponent } from './tab.component';
         transition: none;
       }
 
-      &.et-tab-group__trigger--active:not(.et-tab-bar-trigger--just-activated):hover {
-        background: rgb(var(--et-color-primary, 0 0 0) / 0.08);
+      @media (hover: hover) {
+        &.et-tab-group__trigger--active:not(.et-tab-bar-trigger--just-activated):hover {
+          background: rgb(var(--et-color-primary, 0 0 0) / 0.08);
+        }
       }
 
       &.et-tab-group__trigger--active:not(.et-tab-bar-trigger--just-activated):focus-visible {

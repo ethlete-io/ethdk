@@ -77,15 +77,17 @@
         font-weight: 600;
       }
 
-      &:hover {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
-        color: var(--et-surface-color-solid);
-      }
+      @media (hover: hover) {
+        &:hover {
+          background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+          color: var(--et-surface-color-solid);
+        }
 
-      /* hovering the selected option keeps its filled state */
-      &:hover:where([data-selected]) {
-        background: var(--et-theme-color-primary-solid);
-        color: var(--et-theme-color-on-primary);
+        /* hovering the selected option keeps its filled state */
+        &:hover:where([data-selected]) {
+          background: var(--et-theme-color-primary-solid);
+          color: var(--et-theme-color-on-primary);
+        }
       }
 
       &:focus-visible {

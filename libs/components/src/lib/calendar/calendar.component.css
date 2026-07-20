@@ -113,8 +113,10 @@
           color 150ms ease;
       }
 
-      &:where(:not([data-disabled])):hover .et-calendar-cell-content {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+      @media (hover: hover) {
+        &:where(:not([data-disabled])):hover .et-calendar-cell-content {
+          background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+        }
       }
 
       &:focus-visible {
@@ -146,8 +148,10 @@
         }
       }
 
-      &:where([data-band='start'], [data-band='end']):where(:not([data-selected])):hover .et-calendar-cell-content {
-        background: var(--et-theme-color-primary-solid);
+      @media (hover: hover) {
+        &:where([data-band='start'], [data-band='end']):where(:not([data-selected])):hover .et-calendar-cell-content {
+          background: var(--et-theme-color-primary-solid);
+        }
       }
 
       &:where([data-selected]) {
@@ -159,8 +163,10 @@
         }
       }
 
-      &:where([data-selected]):hover .et-calendar-cell-content {
-        background: var(--et-theme-color-primary-solid);
+      @media (hover: hover) {
+        &:where([data-selected]):hover .et-calendar-cell-content {
+          background: var(--et-theme-color-primary-solid);
+        }
       }
 
       &:where([data-disabled]) {

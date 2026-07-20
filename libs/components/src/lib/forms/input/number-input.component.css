@@ -46,9 +46,11 @@
         block-size: var(--et-number-input-stepper-size);
       }
 
-      &:hover {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 12%, transparent);
-        color: var(--et-surface-color-solid, currentColor);
+      @media (hover: hover) {
+        &:hover {
+          background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 12%, transparent);
+          color: var(--et-surface-color-solid, currentColor);
+        }
       }
 
       &:active {

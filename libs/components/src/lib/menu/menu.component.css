@@ -213,9 +213,15 @@
       /* the roving focus is applied programmatically on mouse-open too, so :focus-visible (instead
        of [data-active] alone) keeps the highlight from appearing without a hover or keyboard
        interaction; a trigger whose submenu is open stays highlighted the whole time */
-      &[data-active]:where(:hover, :focus-visible),
+      &[data-active]:where(:focus-visible),
       &[data-menu-open] {
         background: var(--_et-menu-item-active-background);
+      }
+
+      @media (hover: hover) {
+        &[data-active]:where(:hover) {
+          background: var(--_et-menu-item-active-background);
+        }
       }
 
       &:active:not([aria-disabled='true']) {

@@ -29,8 +29,10 @@ import { GRID_TOKEN } from './headless/grid.tokens';
     et-grid-item-default-actions .et-grid-item-default-actions__remove {
       color: rgb(var(--et-surface-color-muted));
 
-      &:hover {
-        color: rgb(var(--et-surface-color));
+      @media (hover: hover) {
+        &:hover {
+          color: rgb(var(--et-surface-color));
+        }
       }
     }
   `,

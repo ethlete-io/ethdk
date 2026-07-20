@@ -12,9 +12,14 @@
     .et-split-button-trigger {
       position: relative;
 
-      &:hover,
       &:focus-visible {
         z-index: 1;
+      }
+
+      @media (hover: hover) {
+        &:hover {
+          z-index: 1;
+        }
       }
     }
 

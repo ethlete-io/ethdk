@@ -62,9 +62,11 @@
       --_et-window-control-button-icon-size: 1.8rem;
     }
 
-    &:hover {
-      --et-theme-color-primary-opacity: 0.14;
-      --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.14);
+    @media (hover: hover) {
+      &:hover {
+        --et-theme-color-primary-opacity: 0.14;
+        --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.14);
+      }
     }
 
     &:focus-visible {
@@ -82,9 +84,11 @@
       --et-theme-color-primary-opacity: 0.18;
       --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.18);
 
-      &:hover {
-        --et-theme-color-primary-opacity: 0.24;
-        --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.24);
+      @media (hover: hover) {
+        &:hover {
+          --et-theme-color-primary-opacity: 0.24;
+          --_et-window-control-button-fallback-background: rgba(255, 255, 255, 0.24);
+        }
       }
 
       &:focus-visible {
@@ -98,10 +102,16 @@
       }
     }
 
-    &:where([data-kind='close']):hover,
     &:where([data-kind='close']):focus-visible {
       background: rgba(232, 17, 35, 0.92);
       color: #ffffff;
+    }
+
+    @media (hover: hover) {
+      &:where([data-kind='close']):hover {
+        background: rgba(232, 17, 35, 0.92);
+        color: #ffffff;
+      }
     }
 
     &:where([data-kind='close']):active {

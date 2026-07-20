@@ -64,8 +64,10 @@
     transition: background 120ms ease;
   }
 
-  .et-ml-rte-lang-trigger:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+  @media (hover: hover) {
+    .et-ml-rte-lang-trigger:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+    }
   }
 
   .et-ml-rte-lang-trigger:focus-visible {

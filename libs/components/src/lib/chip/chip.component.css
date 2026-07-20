@@ -71,8 +71,10 @@
         background 120ms ease,
         color 120ms ease;
 
-      &:hover:not([aria-checked='true']):not([data-readonly]) {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 22%, transparent);
+      @media (hover: hover) {
+        &:hover:not([aria-checked='true']):not([data-readonly]) {
+          background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 22%, transparent);
+        }
       }
 
       &:focus-visible {
@@ -92,8 +94,10 @@
       background: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 16%, transparent);
       color: var(--et-theme-color-ink-solid, currentColor);
 
-      &:hover:not([data-readonly]) {
-        background: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 24%, transparent);
+      @media (hover: hover) {
+        &:hover:not([data-readonly]) {
+          background: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 24%, transparent);
+        }
       }
     }
 
@@ -124,9 +128,11 @@
       cursor: pointer;
       appearance: none;
 
-      &:hover {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 20%, transparent);
-        color: var(--et-surface-color-solid, currentColor);
+      @media (hover: hover) {
+        &:hover {
+          background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 20%, transparent);
+          color: var(--et-surface-color-solid, currentColor);
+        }
       }
 
       &:active {

@@ -61,9 +61,14 @@
     /* a pointer-set active option only highlights while actually hovered (leaving the list
        drops the highlight, like in the menu); a keyboard-set one stays visible without hover —
        options never hold DOM focus, so :focus-visible can't do this job here */
-    &:where([data-active][data-active-source='keyboard']),
-    &:where([data-active]:hover) {
+    &:where([data-active][data-active-source='keyboard']) {
       background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 12%, transparent);
+    }
+
+    @media (hover: hover) {
+      &:where([data-active]:hover) {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 12%, transparent);
+      }
     }
 
     &:active {

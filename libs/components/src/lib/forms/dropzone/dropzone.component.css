@@ -115,9 +115,11 @@
         border-color var(--et-dropzone-transition-duration) ease,
         background-color var(--et-dropzone-transition-duration) ease;
 
-      &:hover:not(:disabled) {
-        border-color: var(--et-surface-interaction-hover-solid, currentColor);
-        background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 6%, transparent);
+      @media (hover: hover) {
+        &:hover:not(:disabled) {
+          border-color: var(--et-surface-interaction-hover-solid, currentColor);
+          background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 6%, transparent);
+        }
       }
 
       &:disabled {

@@ -3,9 +3,12 @@
   --et-surface-interaction-solid: rgb(var(--et-surface-interaction-rgb));
 }
 
-:where(.et-surface-interactive:hover) {
-  --et-surface-interaction-rgb: var(--et-surface-interaction-hover, var(--et-surface-interaction));
-  --et-surface-interaction-solid: rgb(var(--et-surface-interaction-rgb));
+/* hover-capable pointers only — on touch, :hover sticks after a tap */
+@media (hover: hover) {
+  :where(.et-surface-interactive:hover) {
+    --et-surface-interaction-rgb: var(--et-surface-interaction-hover, var(--et-surface-interaction));
+    --et-surface-interaction-solid: rgb(var(--et-surface-interaction-rgb));
+  }
 }
 
 :where(.et-surface-interactive:focus-visible) {

@@ -53,8 +53,10 @@
         block-size: 14px;
       }
 
-      &:hover {
-        color: var(--et-surface-color-solid, currentColor);
+      @media (hover: hover) {
+        &:hover {
+          color: var(--et-surface-color-solid, currentColor);
+        }
       }
 
       &:disabled {

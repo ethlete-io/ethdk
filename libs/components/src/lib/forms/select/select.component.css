@@ -147,8 +147,10 @@
       cursor: pointer;
       appearance: none;
 
-      &:hover {
-        color: var(--et-surface-color-solid, currentColor);
+      @media (hover: hover) {
+        &:hover {
+          color: var(--et-surface-color-solid, currentColor);
+        }
       }
 
       .et-icon {

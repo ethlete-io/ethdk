@@ -55,8 +55,10 @@
     /* --- Filled (default) --- */
 
     &:where([data-variant='filled']) {
-      &:hover::after {
-        background: rgb(var(--et-theme-color-on-primary-rgb) / 0.08);
+      @media (hover: hover) {
+        &:hover::after {
+          background: rgb(var(--et-theme-color-on-primary-rgb) / 0.08);
+        }
       }
 
       &:focus-visible::after {
@@ -107,8 +109,10 @@
       --_et-fab-contents-gap: 1.2rem;
     }
 
-    &:hover {
-      --et-button-shadow: 0 0.6rem 1.2rem rgb(0 0 0 / 0.22), 0 0.2rem 0.4rem rgb(0 0 0 / 0.14);
+    @media (hover: hover) {
+      &:hover {
+        --et-button-shadow: 0 0.6rem 1.2rem rgb(0 0 0 / 0.22), 0 0.2rem 0.4rem rgb(0 0 0 / 0.14);
+      }
     }
 
     &:active {
@@ -139,9 +143,11 @@
         border-color: var(--et-theme-color-ink-solid);
       }
 
-      &:hover {
-        --et-theme-color-primary-opacity: 0.08;
-        --et-button-shadow: none;
+      @media (hover: hover) {
+        &:hover {
+          --et-theme-color-primary-opacity: 0.08;
+          --et-button-shadow: none;
+        }
       }
 
       &:focus-visible {
@@ -166,9 +172,11 @@
       background: var(--et-theme-color-primary);
       color: var(--et-theme-color-ink-solid);
 
-      &:hover {
-        --et-theme-color-primary-opacity: 0.24;
-        --et-button-shadow: none;
+      @media (hover: hover) {
+        &:hover {
+          --et-theme-color-primary-opacity: 0.24;
+          --et-button-shadow: none;
+        }
       }
 
       &:focus-visible {
@@ -193,9 +201,11 @@
       background: var(--et-theme-color-primary);
       color: var(--et-theme-color-ink-solid);
 
-      &:hover {
-        --et-theme-color-primary-opacity: 0.08;
-        --et-button-shadow: none;
+      @media (hover: hover) {
+        &:hover {
+          --et-theme-color-primary-opacity: 0.08;
+          --et-button-shadow: none;
+        }
       }
 
       &:focus-visible {

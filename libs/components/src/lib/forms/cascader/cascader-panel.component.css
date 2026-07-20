@@ -248,9 +248,11 @@
         background 120ms ease,
         color 120ms ease;
 
-      &:hover {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 12%, transparent);
-        color: var(--et-surface-color-solid, currentColor);
+      @media (hover: hover) {
+        &:hover {
+          background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 12%, transparent);
+          color: var(--et-surface-color-solid, currentColor);
+        }
       }
 
       &:focus-visible {
@@ -456,8 +458,10 @@
       outline: none;
       transition: background 120ms ease;
 
-      &:hover {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 12%, transparent);
+      @media (hover: hover) {
+        &:hover {
+          background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 12%, transparent);
+        }
       }
 
       &:focus-visible,
