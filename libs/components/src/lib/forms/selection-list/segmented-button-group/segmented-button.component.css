@@ -68,9 +68,12 @@
       cursor: default;
     }
 
-    &:hover:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']) {
-      color: var(--et-surface-color-solid, currentColor);
-      background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 10%, transparent);
+    /* hover-capable pointers only — on touch, :hover sticks after a tap */
+    @media (hover: hover) {
+      &:hover:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']) {
+        color: var(--et-surface-color-solid, currentColor);
+        background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 10%, transparent);
+      }
     }
 
     &:focus-visible {

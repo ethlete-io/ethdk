@@ -60,22 +60,27 @@
       border-radius: var(--et-checkbox-border-radius);
     }
 
-    &:hover:not([aria-disabled='true']):not([data-readonly]) .et-checkbox-box,
-    :where(et-choice-field:has(.et-choice-field-label-area:hover))
-      &:not([aria-disabled='true']):not([data-readonly])
-      .et-checkbox-box {
-      border-color: var(--et-surface-interaction-hover-solid, currentColor);
+    /* hover-capable pointers only — on touch, :hover sticks after a tap */
+    @media (hover: hover) {
+      &:hover:not([aria-disabled='true']):not([data-readonly]) .et-checkbox-box,
+      :where(et-choice-field:has(.et-choice-field-label-area:hover))
+        &:not([aria-disabled='true']):not([data-readonly])
+        .et-checkbox-box {
+        border-color: var(--et-surface-interaction-hover-solid, currentColor);
+      }
     }
 
     :where(et-choice-field[data-error]) &:not([aria-disabled='true']) .et-checkbox-box {
       border-color: var(--et-theme-color-primary-solid);
     }
 
-    :where(et-choice-field[data-error]) &:hover:not([aria-disabled='true']):not([data-readonly]) .et-checkbox-box,
-    :where(et-choice-field[data-error]:has(.et-choice-field-label-area:hover))
-      &:not([aria-disabled='true']):not([data-readonly])
-      .et-checkbox-box {
-      border-color: var(--et-theme-color-primary-solid);
+    @media (hover: hover) {
+      :where(et-choice-field[data-error]) &:hover:not([aria-disabled='true']):not([data-readonly]) .et-checkbox-box,
+      :where(et-choice-field[data-error]:has(.et-choice-field-label-area:hover))
+        &:not([aria-disabled='true']):not([data-readonly])
+        .et-checkbox-box {
+        border-color: var(--et-theme-color-primary-solid);
+      }
     }
 
     &:focus-visible:not([aria-checked='true']):not([aria-checked='mixed']) {
@@ -168,10 +173,12 @@
         stroke-dashoffset: 0;
       }
 
-      &:hover .et-checkbox-box,
-      :where(et-choice-field:has(.et-choice-field-label-area:hover)) & .et-checkbox-box {
-        background-color: var(--et-theme-color-primary-solid, currentColor);
-        border-color: var(--et-theme-color-primary-solid, currentColor);
+      @media (hover: hover) {
+        &:hover .et-checkbox-box,
+        :where(et-choice-field:has(.et-choice-field-label-area:hover)) & .et-checkbox-box {
+          background-color: var(--et-theme-color-primary-solid, currentColor);
+          border-color: var(--et-theme-color-primary-solid, currentColor);
+        }
       }
     }
 
@@ -189,10 +196,12 @@
         stroke-dashoffset: 0;
       }
 
-      &:hover .et-checkbox-box,
-      :where(et-choice-field:has(.et-choice-field-label-area:hover)) & .et-checkbox-box {
-        background-color: var(--et-theme-color-primary-solid, currentColor);
-        border-color: var(--et-theme-color-primary-solid, currentColor);
+      @media (hover: hover) {
+        &:hover .et-checkbox-box,
+        :where(et-choice-field:has(.et-choice-field-label-area:hover)) & .et-checkbox-box {
+          background-color: var(--et-theme-color-primary-solid, currentColor);
+          border-color: var(--et-theme-color-primary-solid, currentColor);
+        }
       }
     }
 

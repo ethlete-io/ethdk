@@ -86,9 +86,12 @@
       color: var(--et-surface-color-solid, currentColor);
     }
 
-    &:hover:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']) .et-checkbox-option-box {
-      border-color: var(--_et-control-border, var(--et-surface-interaction-hover-solid, currentColor));
-      background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
+    /* hover-capable pointers only — on touch, :hover sticks after a tap */
+    @media (hover: hover) {
+      &:hover:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']) .et-checkbox-option-box {
+        border-color: var(--_et-control-border, var(--et-surface-interaction-hover-solid, currentColor));
+        background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
+      }
     }
 
     &:focus-visible .et-checkbox-option-box {

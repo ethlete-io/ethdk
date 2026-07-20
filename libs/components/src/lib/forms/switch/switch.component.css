@@ -61,11 +61,14 @@
       background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 22%, transparent);
     }
 
-    &:hover:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']) .et-switch-track,
-    :where(et-choice-field:has(.et-choice-field-label-area:hover))
-      &:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true'])
-      .et-switch-track {
-      background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 30%, transparent);
+    /* hover-capable pointers only — on touch, :hover sticks after a tap */
+    @media (hover: hover) {
+      &:hover:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']) .et-switch-track,
+      :where(et-choice-field:has(.et-choice-field-label-area:hover))
+        &:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true'])
+        .et-switch-track {
+        background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 30%, transparent);
+      }
     }
 
     :where(et-choice-field[data-error]) &:not([aria-disabled='true']):not([aria-checked='true']) .et-switch-track {
@@ -89,11 +92,13 @@
       background-color: var(--et-surface-color-muted-solid, currentColor);
     }
 
-    &:hover:not([aria-disabled='true']):not([data-readonly]) .et-switch-thumb,
-    :where(et-choice-field:has(.et-choice-field-label-area:hover))
-      &:not([aria-disabled='true']):not([data-readonly])
-      .et-switch-thumb {
-      background-color: var(--et-surface-color-solid, currentColor);
+    @media (hover: hover) {
+      &:hover:not([aria-disabled='true']):not([data-readonly]) .et-switch-thumb,
+      :where(et-choice-field:has(.et-choice-field-label-area:hover))
+        &:not([aria-disabled='true']):not([data-readonly])
+        .et-switch-thumb {
+        background-color: var(--et-surface-color-solid, currentColor);
+      }
     }
 
     &:active:not([aria-disabled='true']):not([data-readonly]) .et-switch-thumb {
@@ -113,11 +118,13 @@
         background-color: var(--et-theme-color-on-primary-solid, white);
       }
 
-      &:hover:not([aria-disabled='true']):not([data-readonly]) .et-switch-thumb,
-      :where(et-choice-field:has(.et-choice-field-label-area:hover))
-        &:not([aria-disabled='true']):not([data-readonly])
-        .et-switch-thumb {
-        background-color: var(--et-theme-color-on-primary-solid, white);
+      @media (hover: hover) {
+        &:hover:not([aria-disabled='true']):not([data-readonly]) .et-switch-thumb,
+        :where(et-choice-field:has(.et-choice-field-label-area:hover))
+          &:not([aria-disabled='true']):not([data-readonly])
+          .et-switch-thumb {
+          background-color: var(--et-theme-color-on-primary-solid, white);
+        }
       }
 
       &:active:not([aria-disabled='true']):not([data-readonly]) .et-switch-thumb {

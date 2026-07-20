@@ -1,6 +1,6 @@
 import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
 import { disabled, form, FormField, required } from '@angular/forms/signals';
-import { ProvideColorDirective } from '@ethlete/core';
+import { ColorInteractiveDirective, ProvideColorDirective } from '@ethlete/core';
 import { FormFieldSize, HintComponent, LabelDirective } from '../../../form-field';
 import { SelectionListControlDirective } from '../../headless';
 import { CheckboxGroupComponent } from '../checkbox-group.component';
@@ -14,7 +14,7 @@ import { CheckboxOptionComponent } from '../checkbox-option.component';
         <et-label>{{ label() }}</et-label>
 
         @if (groupControl()) {
-          <div class="et-sb-select-all" etSelectionListControl>
+          <div class="et-sb-select-all" etColorInteractive etSelectionListControl>
             <span class="et-sb-select-all-box">
               <svg class="et-sb-select-all-check" viewBox="0 0 12 10" fill="none">
                 <path
@@ -49,6 +49,7 @@ import { CheckboxOptionComponent } from '../checkbox-option.component';
     HintComponent,
     LabelDirective,
     SelectionListControlDirective,
+    ColorInteractiveDirective,
   ],
   styles: `
     /* story-only styling for the headless select-all control, mirroring the option look */
@@ -67,11 +68,16 @@ import { CheckboxOptionComponent } from '../checkbox-option.component';
         block-size: var(--et-checkbox-option-size, 20px);
         border-radius: var(--et-checkbox-option-border-radius, 4px);
         border: var(--et-checkbox-option-border-width, 2px) solid var(--et-surface-border-solid, currentColor);
+        transition:
+          border-color var(--et-checkbox-option-transition-duration, 150ms) ease,
+          background-color var(--et-checkbox-option-transition-duration, 150ms) ease,
+          transform var(--et-checkbox-option-transition-duration, 150ms) ease;
 
         > * {
           grid-area: 1 / 1;
           opacity: 0;
           color: var(--et-theme-color-on-primary-solid, white);
+          transition: opacity var(--et-checkbox-option-transition-duration, 150ms) ease;
         }
       }
 
@@ -93,9 +99,34 @@ import { CheckboxOptionComponent } from '../checkbox-option.component';
         color: var(--et-surface-color-solid, currentColor);
       }
 
+      /* hover-capable pointers only — on touch, :hover sticks after a tap */
+      @media (hover: hover) {
+        &:hover:not([aria-checked='true']):not([aria-checked='mixed']):not([aria-disabled='true']):not(
+            [aria-readonly='true']
+          )
+          .et-sb-select-all-box {
+          border-color: var(--et-surface-interaction-hover-solid, currentColor);
+          background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
+        }
+      }
+
       &:focus-visible .et-sb-select-all-box {
         outline: 2px solid var(--et-theme-color-primary-solid);
         outline-offset: 2px;
+      }
+
+      &:active:not([aria-disabled='true']):not([aria-readonly='true']) .et-sb-select-all-box {
+        transform: scale(0.92);
+      }
+
+      &[aria-disabled='true'] {
+        opacity: var(--et-checkbox-option-opacity-disabled, 0.5);
+        pointer-events: none;
+        cursor: default;
+      }
+
+      &[aria-readonly='true'] {
+        cursor: default;
       }
 
       &[aria-checked='true'],
