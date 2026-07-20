@@ -138,8 +138,8 @@ class SearchableCustomValueTestHost {
       [hasMoreItems]="hasMore()"
       (valueChange)="value.set($event)"
       (queryChange)="queries.push($event)"
-      (loadMoreRequested)="loadMoreCount = loadMoreCount + 1"
-      (addNewRequested)="addNewQueries.push($event)"
+      (loadMore)="loadMoreCount = loadMoreCount + 1"
+      (addNew)="addNewQueries.push($event)"
       class="select"
       placeholder="Pick a fruit"
     >
@@ -1006,7 +1006,7 @@ describe('SelectDirective (search)', () => {
     expect(stateRow()?.classList.contains('et-select-state--empty')).toBe(true);
   });
 
-  it('emits loadMoreRequested from the load-more control', async () => {
+  it('emits loadMore from the load-more control', async () => {
     fixture.componentInstance.hasMore.set(true);
     fixture.detectChanges();
 
@@ -1018,7 +1018,7 @@ describe('SelectDirective (search)', () => {
     expect(fixture.componentInstance.loadMoreCount).toBe(1);
   });
 
-  it('emits addNewRequested with the current query from the add-new row and closes', async () => {
+  it('emits addNew with the current query from the add-new row and closes', async () => {
     fixture.componentInstance.allowAddNew.set(true);
     fixture.detectChanges();
 

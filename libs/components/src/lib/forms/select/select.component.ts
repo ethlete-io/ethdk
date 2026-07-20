@@ -54,7 +54,7 @@ import { SelectVirtualOptionComponent } from './select-virtual-option.component'
         'error',
         'hasMoreItems',
       ],
-      outputs: ['valueChange', 'touchedChange', 'openChange', 'queryChange', 'loadMoreRequested', 'addNewRequested'],
+      outputs: ['valueChange', 'touchedChange', 'openChange', 'queryChange', 'loadMore', 'addNew'],
     },
     ColorInteractiveDirective,
   ],

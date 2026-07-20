@@ -108,7 +108,7 @@ export class FormFieldSelectStorybookComponent {
           [error]="error()"
           [hasMoreItems]="hasMore()"
           (queryChange)="search($event)"
-          (loadMoreRequested)="loadMore()"
+          (loadMore)="loadMore()"
           filterMode="external"
           placeholder="Search for a user"
         >
@@ -250,7 +250,7 @@ export class FormFieldSelectCountryStorybookComponent {
         <et-select
           [formField]="demoForm.value"
           [allowAddNew]="true"
-          (addNewRequested)="createProject($event)"
+          (addNew)="createProject($event)"
           addNewLabel="Create a new project"
           placeholder="Pick a project"
         >

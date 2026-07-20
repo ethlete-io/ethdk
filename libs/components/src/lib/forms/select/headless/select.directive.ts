@@ -111,21 +111,21 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   public commitCustomValueOnClose = input(false);
   /** Maximum number of selected values (multi select) — further adds are ignored. */
   public maxSelection = input<number | undefined>(undefined);
-  /** Renders an "Add new" row in `et-select`'s panel — clicking it emits `addNewRequested`. */
+  /** Renders an "Add new" row in `et-select`'s panel — clicking it emits `addNew`. */
   public allowAddNew = input(false);
   /** Async option state — rendered by `et-select` as a loading row inside the panel. */
   public loading = input(false);
   /** Async option state — rendered by `et-select` as an error row inside the panel. */
   public error = input<string | null>(null);
-  /** Async option state — `et-select` renders a load-more control emitting `loadMoreRequested`. */
+  /** Async option state — `et-select` renders a load-more control emitting `loadMore`. */
   public hasMoreItems = input(false);
   /** Whether the panel mirrors the anchor's width. Off for compact triggers (e.g. a country picker). */
   public mirrorPanelWidth = input(true);
 
   public queryChange = output<string>();
-  public loadMoreRequested = output<void>();
+  public loadMore = output<void>();
   /** The user picked the "Add new" row (`allowAddNew`). Emits the current search query for prefilling. */
-  public addNewRequested = output<string>();
+  public addNew = output<string>();
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
 
@@ -663,17 +663,17 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     }
   }
 
-  /** @internal Emits `loadMoreRequested` — wired to the panel's load-more control. */
+  /** @internal Emits `loadMore` — wired to the panel's load-more control. */
   public requestLoadMore() {
     if (this.loading()) {
       return;
     }
 
-    this.loadMoreRequested.emit();
+    this.loadMore.emit();
   }
 
   /**
-   * Emits `addNewRequested` with the current search query and closes the panel — wired to
+   * Emits `addNew` with the current search query and closes the panel — wired to
    * the panel's "Add new" row (`allowAddNew`). The consumer reacts by e.g. opening a
    * creation dialog and, once the new option exists, setting it as the value.
    */
@@ -682,7 +682,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
       return;
     }
 
-    this.addNewRequested.emit(this.query().trim());
+    this.addNew.emit(this.query().trim());
     // the query was handed off — it must not double as a custom value when the close commits
     this.registeredSearch()?.clear();
     this.hide();

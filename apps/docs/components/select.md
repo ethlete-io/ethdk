@@ -34,16 +34,16 @@ On `et-select` (forwarded from the headless `[etSelect]` directive), plus the st
 | `multiple`          | `boolean`                            | `false`      | Multi-select: `value` is an array, options toggle (the panel stays open) and the trigger renders removable chips.                                                       |
 | `filterMode`        | `'none' \| 'internal' \| 'external'` | `'internal'` | How a search query filters: `internal` hides non-matching options, `external` leaves the option list to you (react to `queryChange`), `none` never filters.             |
 | `allowCustomValues` | `boolean`                            | `false`      | Enter with a query that matches no option commits the raw string as the value.                                                                                          |
-| `allowAddNew`       | `boolean`                            | `false`      | Renders an "Add new" action row at the end of the panel that emits `addNewRequested` (label via `addNewLabel`).                                                         |
+| `allowAddNew`       | `boolean`                            | `false`      | Renders an "Add new" action row at the end of the panel that emits `addNew` (label via `addNewLabel`).                                                                  |
 | `loading`           | `boolean`                            | `false`      | Shows a spinner in the field and a loading row in the panel (override the row with `ng-template[etSelectLoading]`).                                                     |
 | `error`             | `string \| null`                     | `null`       | Shows an error row in the panel (override with `ng-template[etSelectError]`, error text as context).                                                                    |
-| `hasMoreItems`      | `boolean`                            | `false`      | Shows a load-more control emitting `loadMoreRequested` (label via `loadMoreLabel`).                                                                                     |
+| `hasMoreItems`      | `boolean`                            | `false`      | Shows a load-more control emitting `loadMore` (label via `loadMoreLabel`).                                                                                              |
 
-| Output              | Payload  | Emitted when                                                                              |
-| ------------------- | -------- | ----------------------------------------------------------------------------------------- |
-| `queryChange`       | `string` | The search query changes (every keystroke).                                               |
-| `loadMoreRequested` | `void`   | The load-more control is activated.                                                       |
-| `addNewRequested`   | `string` | The add-new row is picked; the payload is the current search query (prefill your dialog). |
+| Output        | Payload  | Emitted when                                                                              |
+| ------------- | -------- | ----------------------------------------------------------------------------------------- |
+| `queryChange` | `string` | The search query changes (every keystroke).                                               |
+| `loadMore`    | `void`   | The load-more control is activated.                                                       |
+| `addNew`      | `string` | The add-new row is picked; the payload is the current search query (prefill your dialog). |
 
 On `et-select-option`:
 
@@ -111,8 +111,9 @@ With `filterMode="external"` the select never hides options itself — react to 
 ```ts
 users = selectOptionsFromQuery({
   queryCreator: searchUsers,
-  args: (query) => (query() ? { queryParams: { q: query() } } : null),
+  args: (query, page) => (query() ? { queryParams: { q: query(), page: page() } } : null),
   toOptions: (res) => res.items,
+  toHasMore: (res) => res.page < res.totalPages,
 });
 ```
 
@@ -121,7 +122,9 @@ users = selectOptionsFromQuery({
   [formField]="form.assignee"
   [loading]="users.loading()"
   [error]="users.error()"
+  [hasMoreItems]="users.hasMore()"
   (queryChange)="users.setQuery($event)"
+  (loadMore)="users.loadMore()"
   filterMode="external"
 >
   <input etSelectSearch placeholder="Search users" />
@@ -131,7 +134,7 @@ users = selectOptionsFromQuery({
 </et-select>
 ```
 
-The factory debounces the query (`debounceTime`, default 300ms), skips requests below `minQueryLength`, and maps failures to the error row's text (`toErrorMessage`). Pagination: derive `hasMore` from the response via `toHasMore` and grow your page size on `(loadMoreRequested)`. To preload options so the panel isn't empty on first open, let `args` return request args for the empty query (return `null` instead to require a query first).
+The factory debounces the query (`debounceTime`, default 300ms), skips requests below `minQueryLength`, and maps failures to the error row's text (`toErrorMessage`). **Pagination is built in:** `args` receives a `page` signal (starting at `initialPage`, default `1`) that resets on every query change and advances when you call `loadMore()`. Return only the current page's slice from `toOptions` — the factory appends each page to the accumulated `options`. Derive `hasMore` via `toHasMore` and wire `loadMore` to `(loadMore)`; it's a no-op while loading, when skipped, or once `hasMore` is false. To preload options so the panel isn't empty on first open, let `args` return request args for the empty query (return `null` instead to require a query first).
 
 Apps still on the [legacy `V2QueryClient`](/query/legacy) use `selectOptionsFromV2Query` instead — same config shape and returned signal bundle, but `queryCreator` takes a legacy creator (from `client.get(...)` or a `createLegacyQueryCreator` interop wrapper) and `args` builds the `prepare()` arguments. Options stay rendered while the next request loads, matching the current-system adapter.
 
@@ -152,10 +155,10 @@ Prefer this over [`et-tag-input`](/components/forms#tag-input-—-et-tag-input) 
 
 ### Adding new options
 
-With `allowAddNew`, the panel ends in a distinct "Add new" action row (label via `addNewLabel`). Picking it emits `(addNewRequested)` with the current search query and closes the panel — open a creation dialog (or create inline), then set the new value yourself:
+With `allowAddNew`, the panel ends in a distinct "Add new" action row (label via `addNewLabel`). Picking it emits `(addNew)` with the current search query and closes the panel — open a creation dialog (or create inline), then set the new value yourself:
 
 ```html
-<et-select [formField]="form.project" (addNewRequested)="openCreateProjectDialog($event)" allowAddNew>
+<et-select [formField]="form.project" (addNew)="openCreateProjectDialog($event)" allowAddNew>
   <input etSelectSearch placeholder="Search projects" />
   @for (project of projects(); track project.id) {
   <et-select-option [value]="project.id">{{ project.name }}</et-select-option>
@@ -214,7 +217,7 @@ Notes:
 
 - Rows are assumed to share one uniform height (the first rendered row is measured). Wildly varying row heights are not supported.
 - Data-driven options can be combined with projected `et-select-option`s (e.g. a pinned entry), which render normally after the windowed rows and are not virtualized. Option groups are presentational wrappers around _projected_ options and don't apply to the flat `options` data.
-- For unbounded/server-side datasets, the [async options](#async-options) pattern (`filterMode="external"` + `hasMoreItems`/`loadMoreRequested`) remains the right tool — `options` composes with it, since you control the array you bind.
+- For unbounded/server-side datasets, the [async options](#async-options) pattern (`filterMode="external"` + `hasMoreItems`/`loadMore`) remains the right tool — `options` composes with it, since you control the array you bind.
 - Headless: mark your scroll container with `[etSelectViewport]`, render `select.virtualizedItems()` with `[etSelectVirtualOption]="item"` rows, and apply `select.virtualWindow.paddingTop()/paddingBottom()` as block paddings around them. Without a registered viewport, every visible option renders (no windowing). `SelectItem.element()` is `null` while a data-driven option is outside the rendered window.
 
 ## Keyboard interaction

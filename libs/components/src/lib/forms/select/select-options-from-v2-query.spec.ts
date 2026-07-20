@@ -161,4 +161,92 @@ describe('selectOptionsFromV2Query', () => {
     await search(source, 'eu');
     expect(source.hasMore()).toBe(false);
   });
+
+  describe('pagination', () => {
+    const page1: Item[] = [
+      { id: 'a', name: 'A' },
+      { id: 'b', name: 'B' },
+    ];
+    const page2: Item[] = [
+      { id: 'c', name: 'C' },
+      { id: 'd', name: 'D' },
+    ];
+    const pagesByNumber: Record<number, Item[]> = { 1: page1, 2: page2 };
+
+    const createPagedSource = () => {
+      const client = new V2QueryClient({ baseRoute: 'https://api.example.com' });
+      // `page` is part of the request args so each page is a distinct query (not a cache hit).
+      const searchItems = client.get({
+        route: '/items',
+        types: {
+          args: def<{ queryParams: { q: string; page: number } }>(),
+          response: def<ItemsResponse>(),
+        },
+      });
+
+      return TestBed.runInInjectionContext(() =>
+        selectOptionsFromV2Query({
+          queryCreator: searchItems,
+          args: (query, page) => {
+            if (!query()) {
+              return null;
+            }
+
+            const items = pagesByNumber[page()] ?? [];
+
+            return {
+              queryParams: { q: query(), page: page() },
+              mock: { delay: 0, response: { items, hasMore: page() < 2 } },
+            };
+          },
+          toOptions: (response) => response.items,
+          toHasMore: (response) => response.hasMore,
+          debounceTime: 0,
+        }),
+      );
+    };
+
+    // loadMore isn't debounced — flush the query effect + mock timer like a search hop does.
+    const flush = async () => {
+      TestBed.tick();
+      await settle();
+      TestBed.tick();
+      await settle();
+    };
+
+    it('appends the next page on loadMore and resets on a new query', async () => {
+      const source = createPagedSource();
+
+      await search(source, 'eu');
+      expect(source.options()).toEqual(page1);
+      expect(source.hasMore()).toBe(true);
+
+      source.loadMore();
+      await flush();
+      expect(source.options()).toEqual([...page1, ...page2]);
+      expect(source.hasMore()).toBe(false);
+
+      // a fresh query drops the accumulated pages and starts from page 1 again
+      await search(source, 'euro');
+      expect(source.options()).toEqual(page1);
+      expect(source.hasMore()).toBe(true);
+    });
+
+    it('ignores loadMore once the last page is loaded', async () => {
+      const source = createPagedSource();
+
+      await search(source, 'eu');
+      // read options (as a rendered panel would) so page 1 is folded before advancing
+      expect(source.options()).toEqual(page1);
+      source.loadMore();
+      await flush();
+      expect(source.options()).toEqual([...page1, ...page2]);
+      expect(source.hasMore()).toBe(false);
+
+      // hasMore is false — this must not request a (non-existent) page 3
+      source.loadMore();
+      await flush();
+      expect(source.options()).toEqual([...page1, ...page2]);
+    });
+  });
 });

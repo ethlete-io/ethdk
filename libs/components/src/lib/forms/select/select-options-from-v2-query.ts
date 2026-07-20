@@ -1,4 +1,4 @@
-import { Signal, computed, signal } from '@angular/core';
+import { Signal, computed, effect, linkedSignal, signal, untracked } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import {
   AnyLegacyQuery,
@@ -34,14 +34,22 @@ export type SelectOptionsFromV2QueryConfig<TCreator extends AnyV2QueryCreator | 
    */
   queryCreator: TCreator;
   /**
-   * Builds the `prepare()` args from the debounced search query. Runs reactively (like
-   * `queryComputed`): reading `query()` re-executes as the user types. Return `null` to skip a
-   * request (e.g. for an empty query) — `options` is empty while skipped.
+   * Builds the `prepare()` args from the debounced search query and the current `page`. Runs
+   * reactively (like `queryComputed`): reading `query()` re-executes as the user types, and reading
+   * `page()` re-executes when `loadMore()` advances the page. Return `null` to skip a request
+   * (e.g. for an empty query) — `options` is empty while skipped.
+   *
+   * `page` starts at `initialPage` and resets there whenever the query changes; `loadMore()`
+   * increments it. Return only that page's slice from `toOptions` — the factory appends each
+   * page to the accumulated `options`.
    */
-  args: (query: Signal<string>) => V2PrepareArgsOf<TCreator> | null;
-  /** Maps a successful response to the option data your `@for` renders. */
+  args: (query: Signal<string>, page: Signal<number>) => V2PrepareArgsOf<TCreator> | null;
+  /**
+   * Maps a successful response to the option slice for the **current page**. The factory appends
+   * each page's slice to the accumulated `options` (and resets when the query changes).
+   */
   toOptions: (response: QueryDataOf<TCreator>) => TOption[];
-  /** Derives whether more pages exist from the response — drives the select's `hasMoreItems`. */
+  /** Derives whether more pages exist from the latest page's response — drives `hasMoreItems` and gates `loadMore()`. */
   toHasMore?: (response: QueryDataOf<TCreator>) => boolean;
   /** Turns a query failure into the select's error text. Defaults to the first error message. */
   toErrorMessage?: (error: RequestError) => string;
@@ -49,6 +57,8 @@ export type SelectOptionsFromV2QueryConfig<TCreator extends AnyV2QueryCreator | 
   minQueryLength?: number;
   /** Debounce applied to the query before it reaches `args`, in ms. @default 300 */
   debounceTime?: number;
+  /** The page `args` receives on first load and after each query change. @default 1 */
+  initialPage?: number;
 };
 
 const firstErrorMessage = (error: RequestError) => {
@@ -80,8 +90,9 @@ const firstErrorMessage = (error: RequestError) => {
  * ```ts
  * users = selectOptionsFromV2Query({
  *   queryCreator: searchUsers, // client.get({ route: '/users', types: { … } })
- *   args: (query) => (query() ? { queryParams: { q: query() } } : null),
+ *   args: (query, page) => (query() ? { queryParams: { q: query(), page: page() } } : null),
  *   toOptions: (res) => res.items,
+ *   toHasMore: (res) => res.page < res.totalPages,
  * });
  * ```
  *
@@ -90,7 +101,9 @@ const firstErrorMessage = (error: RequestError) => {
  *   [formField]="form.assignee"
  *   [loading]="users.loading()"
  *   [error]="users.error()"
+ *   [hasMoreItems]="users.hasMore()"
  *   (queryChange)="users.setQuery($event)"
+ *   (loadMore)="users.loadMore()"
  *   filterMode="external"
  * >
  *   <input etSelectSearch placeholder="Search users" />
@@ -102,6 +115,12 @@ const firstErrorMessage = (error: RequestError) => {
  *
  * Call it from a field initializer / constructor (injection context), the same place you'd use
  * `queryComputed` or a query container.
+ *
+ * Pagination is built in: `args` receives a `page` signal (starting at `initialPage`, default `1`)
+ * that resets on every query change and advances on `loadMore()`. Return only the current page's
+ * slice from `toOptions` — the factory appends each page to the accumulated `options`. Wire
+ * `hasMore` (via `toHasMore`) to `hasMoreItems` and `loadMore` to `(loadMore)`; `loadMore`
+ * is a no-op while loading, when skipped, or once `hasMore` is false.
  */
 export const selectOptionsFromV2Query = <TCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator, TOption>(
   config: SelectOptionsFromV2QueryConfig<TCreator, TOption>,
@@ -114,14 +133,23 @@ export const selectOptionsFromV2Query = <TCreator extends AnyV2QueryCreator | An
   const minQueryLength = config.minQueryLength ?? 0;
   const skipped = computed(() => debouncedQuery().trim().length < minQueryLength);
 
-  // `queryComputed` is the legacy container idiom: it re-prepares as the debounced query changes
-  // and aborts/releases the previous query instance (and the current one on destroy).
+  const initialPage = config.initialPage ?? 1;
+  // Resets to `initialPage` whenever the debounced query changes (so the next request starts a
+  // fresh page run), and `loadMore()` bumps it. Keyed off the debounced query — not the raw one —
+  // so the reset lands in the same tick the query re-prepares, never firing a spurious page.
+  const page = linkedSignal<string, number>({
+    source: debouncedQuery,
+    computation: () => initialPage,
+  });
+
+  // `queryComputed` is the legacy container idiom: it re-prepares as the debounced query or page
+  // changes and aborts/releases the previous query instance (and the current one on destroy).
   const query = queryComputed<AnyV2Query | AnyLegacyQuery | null>(() => {
     if (skipped()) {
       return null;
     }
 
-    const args = config.args(debouncedQuery);
+    const args = config.args(debouncedQuery, page);
 
     if (args === null) {
       return null;
@@ -137,15 +165,32 @@ export const selectOptionsFromV2Query = <TCreator extends AnyV2QueryCreator | An
 
   const toErrorMessage = config.toErrorMessage ?? firstErrorMessage;
 
-  const options = computed(() => {
-    const settled = settledState();
+  // Accumulate the per-page slices, indexed by page offset. `settledState` only holds the latest
+  // settled response, so this folds each new success into the slice for the page it was requested
+  // for (`page` read untracked: only a new settled state, never an in-flight page bump, appends).
+  // Slicing to `index` drops later pages, so a query change (page back to `initialPage`) resets to
+  // one page; a non-success settled state keeps the accumulated slices as-is. It's a `linkedSignal`
+  // (not a plain accumulator) so `options` recomputes synchronously on read.
+  const pageSlices = linkedSignal<ReturnType<typeof settledState>, TOption[][]>({
+    source: settledState,
+    computation: (settled, previous) => {
+      const index = untracked(page) - initialPage;
+      const slices = (previous?.value ?? []).slice(0, index);
 
-    if (skipped() || !isQueryStateSuccess(settled)) {
-      return [];
-    }
+      if (isQueryStateSuccess(settled)) {
+        slices[index] = config.toOptions(settled.response as QueryDataOf<TCreator>);
+      }
 
-    return config.toOptions(settled.response as QueryDataOf<TCreator>);
+      return slices;
+    },
   });
+
+  // A `linkedSignal` only folds while something observes it — so a page that settles while nothing
+  // renders `options` (e.g. the panel is closed) would be skipped, and a later page would fold over
+  // a stale `previous`. This keepalive makes the fold eager: it captures every settled page.
+  effect(() => void pageSlices());
+
+  const options = computed(() => (skipped() ? [] : pageSlices().flat()));
 
   const hasMore = computed(() => {
     const toHasMore = config.toHasMore;
@@ -169,5 +214,12 @@ export const selectOptionsFromV2Query = <TCreator extends AnyV2QueryCreator | An
     hasMore,
     query: debouncedQuery,
     setQuery: (value: string) => rawQuery.set(value),
+    loadMore: () => {
+      if (skipped() || isQueryStateLoading(state()) || !hasMore()) {
+        return;
+      }
+
+      page.update((current) => current + 1);
+    },
   };
 };
