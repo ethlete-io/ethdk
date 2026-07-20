@@ -31,6 +31,22 @@ skill, for genuine iOS Safari behavior.
 Run `apple-remote.sh detect` first — it verifies Mac reachability, simulators,
 the paired iPad, and that Storybook is reachable *from* the Mac.
 
+## Gate on `detect` before doing anything else
+
+Treat the `detect` output as a **go/no-go decision, not a formality**:
+
+- iPad line says `unavailable` → the real iPad is off/asleep/detached. Don't
+  try `ipad-start` anyway, and don't assume the simulators still work.
+- Simulator commands that blow past their budget (`sim-open` cold boot > ~60s
+  with no progress) mean the Mac side is not in a usable state — **stop, don't
+  keep waiting or retrying.**
+
+In either case, fall back to the **`verify-in-mobile-emulator`** skill (local
+Android emulator) for touch/mobile verification and tell the user the Apple
+path is currently unavailable — they need to wake/plug in the device or check
+the Mac. Only escalate back here when the behavior is genuinely
+Safari/WebKit-specific *and* `detect` is clean.
+
 ## Timing expectations — waiting is a bug, not a virtue
 
 Every command here is snappy once the simulator is up: `detect`, `sim-shot`,
