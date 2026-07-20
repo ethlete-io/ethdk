@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.0-next.24
+
+### Major Changes
+
+- [#3028](https://github.com/ethlete-io/ethdk/pull/3028) [`d2b47d7`](https://github.com/ethlete-io/ethdk/commit/d2b47d7b0017f957ba4bb442e421c017973a11b3) Thanks [@github-actions](https://github.com/apps/github-actions)! - Select: renamed the outputs `loadMoreRequested` → `loadMore` and `addNewRequested` → `addNew` (present-tense event names). Update your `(loadMoreRequested)` / `(addNewRequested)` bindings accordingly.
+
+  `selectOptionsFromQuery` and `selectOptionsFromV2Query` now handle load-more paging internally: `args` receives a `page` signal (starting at `initialPage`, default `1`) that resets on query change, the returned bundle exposes `loadMore()` to wire to `(loadMore)`, and each page's `toOptions` slice is appended to the accumulated `options`.
+
+### Patch Changes
+
+- [#3028](https://github.com/ethlete-io/ethdk/pull/3028) [`d8f50c5`](https://github.com/ethlete-io/ethdk/commit/d8f50c530b976390a8e655f3b1a4c0b9eaaae6ab) Thanks [@github-actions](https://github.com/apps/github-actions)! - Hover styles across all interactive components (buttons, chips, form controls, selects, cascader, menu, tabs, calendar, time picker, notification) no longer stick after tapping on touch devices — including the `etColorInteractive`/`etSurfaceInteractive` hover token resolution (guarded by `@media (hover: hover)`).
+
 ## 1.0.0-next.23
 
 ### Minor Changes
