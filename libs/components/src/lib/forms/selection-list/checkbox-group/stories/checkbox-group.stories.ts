@@ -12,6 +12,7 @@ export default {
     required: { control: 'boolean' },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
+    groupControl: { control: 'boolean' },
   },
   args: {
     label: 'Select toppings',
@@ -20,9 +21,17 @@ export default {
     required: false,
     color: 'brand',
     size: 'md',
+    groupControl: false,
   },
 } as Meta<CheckboxGroupStorybookComponent>;
 
 type Story = StoryObj<CheckboxGroupStorybookComponent>;
 
 export const Default: Story = {};
+
+export const GroupControl: Story = {
+  args: {
+    groupControl: true,
+    hint: 'The headless [etSelectionListControl] renders a tri-state select-all: unchecked, mixed, checked',
+  },
+};

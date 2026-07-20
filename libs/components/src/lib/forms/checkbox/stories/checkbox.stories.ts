@@ -11,6 +11,7 @@ export default {
     disabled: { control: 'boolean' },
     readonly: { control: 'boolean' },
     required: { control: 'boolean' },
+    indeterminate: { control: 'boolean' },
   },
   args: {
     color: 'brand',
@@ -18,6 +19,7 @@ export default {
     disabled: false,
     readonly: false,
     required: false,
+    indeterminate: false,
   },
 } as Meta<FormFieldCheckboxStorybookComponent>;
 
@@ -27,4 +29,8 @@ export const Default: Story = {};
 
 export const Readonly: Story = {
   args: { readonly: true, hint: 'View-only: normal look, focusable, cannot be toggled' },
+};
+
+export const Indeterminate: Story = {
+  args: { indeterminate: true, hint: 'Tri-state: toggling an indeterminate checkbox resolves it to checked' },
 };

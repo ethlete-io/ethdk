@@ -9,7 +9,7 @@ import { CHECKBOX_IMPORTS } from '../checkbox.imports';
   template: `
     <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
       <et-choice-field>
-        <et-checkbox [formField]="demoForm.acceptTerms" />
+        <et-checkbox [(indeterminate)]="indeterminateState" [formField]="demoForm.acceptTerms" />
         <et-label>I accept the terms and conditions</et-label>
         @if (hint()) {
           <et-hint>{{ hint() }}</et-hint>
@@ -34,6 +34,9 @@ export class FormFieldCheckboxStorybookComponent {
   public disabled = input(false);
   public readonly = input(false);
   public required = input(false);
+  public indeterminate = input(false);
+
+  public indeterminateState = linkedSignal(() => this.indeterminate());
 
   private formModel = linkedSignal(() => ({
     acceptTerms: false,
