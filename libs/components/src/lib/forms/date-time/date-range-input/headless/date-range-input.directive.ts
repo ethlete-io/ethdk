@@ -133,6 +133,8 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.DATE_RANGE_INPUT);
   public focused = computed(() => this.focusedSide() !== null || this.pickerOpen());
+  /** @internal Keeps the form field in its focused style while the picker overlay is open. */
+  public expanded = computed(() => this.pickerOpen());
 
   /** @internal */
   public registeredTrigger = signal<DatePickerTriggerDirective | null>(null);

@@ -45,6 +45,12 @@ export type FormFieldControl = {
   describedBy: WritableSignal<string | null>;
   controlType: Signal<FormFieldControlType>;
   focused?: Signal<boolean>;
+  /**
+   * True while the control's own popup (a date picker, select/cascader panel, …) is open. The
+   * field keeps its focused styling while set — focus itself has moved into the detached overlay,
+   * so `:focus-visible` no longer matches the field.
+   */
+  expanded?: Signal<boolean>;
   hasValue?: Signal<boolean>;
   /** True while the committed text can't be parsed (date/time/duration typed entry). */
   parseError?: Signal<boolean>;

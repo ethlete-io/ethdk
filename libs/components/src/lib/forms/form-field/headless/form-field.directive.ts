@@ -69,6 +69,9 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
 
   public focused = computed(() => this.registeredControl()?.focused?.() ?? false);
 
+  /** Whether the registered control's popup (picker/select/cascader panel) is open. */
+  public expanded = computed(() => this.registeredControl()?.expanded?.() ?? false);
+
   public hasValue = computed(() => this.registeredControl()?.hasValue?.() ?? false);
 
   public isReadonly = computed(() => this.registeredControl()?.readonly?.() ?? false);
@@ -97,7 +100,7 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
       this.controlType() === FORM_FIELD_CONTROL_TYPES.DURATION_INPUT,
   );
 
-  public shouldFloatLabel = computed(() => this.focused() || this.hasValue());
+  public shouldFloatLabel = computed(() => this.focused() || this.expanded() || this.hasValue());
 
   public describedById = computed(() => {
     if (this.shouldDisplayError() && (this.errors().length > 0 || this.parseError())) {

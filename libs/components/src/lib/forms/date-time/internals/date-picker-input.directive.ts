@@ -105,6 +105,8 @@ export abstract class DatePickerInputDirective
   public parseError = signal(false);
 
   public focused = signal(false);
+  /** @internal Keeps the form field in its focused style while the picker overlay is open. */
+  public expanded = computed(() => this.pickerOpen());
   public describedBy = signal<string | null>(null);
 
   /** @internal */

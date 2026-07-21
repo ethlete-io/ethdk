@@ -197,6 +197,9 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   public triggerFocused = signal(false);
   public focused = computed(() => this.triggerFocused() || this.open());
 
+  /** @internal Keeps the form field in its focused style while the panel is open. */
+  public expanded = computed(() => this.open());
+
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
 
   /** @internal */
