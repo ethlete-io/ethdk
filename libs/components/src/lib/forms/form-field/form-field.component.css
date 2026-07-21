@@ -443,14 +443,17 @@
       /* an open popup keeps the field in its focused look: focus has moved into the detached
          overlay, so `:focus-visible` no longer matches — `[data-expanded]` stands in for it */
       &:where(:has(:focus-visible):not([data-readonly])) .et-form-field-control-frame,
-      &:where([data-expanded]:not([data-readonly])) .et-form-field-control-frame {
+      &:where([data-expanded]:not([data-readonly])) .et-form-field-control-frame,
+      &:where([data-focused]:not([data-readonly])) .et-form-field-control-frame {
         border-color: var(--et-theme-color-primary-solid);
       }
 
       &:where(:has(:focus-visible):not([data-readonly])) .et-form-field-label-area,
       &:where(:has(:focus-visible):not([data-readonly])) .et-form-field-affix,
       &:where([data-expanded]:not([data-readonly])) .et-form-field-label-area,
-      &:where([data-expanded]:not([data-readonly])) .et-form-field-affix {
+      &:where([data-expanded]:not([data-readonly])) .et-form-field-affix,
+      &:where([data-focused]:not([data-readonly])) .et-form-field-label-area,
+      &:where([data-focused]:not([data-readonly])) .et-form-field-affix {
         color: var(--et-surface-color-solid, currentColor);
         opacity: 1;
       }

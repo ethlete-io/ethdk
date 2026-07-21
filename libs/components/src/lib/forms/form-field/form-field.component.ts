@@ -68,6 +68,10 @@ import {
     '[attr.data-control-type]': 'formFieldDir.controlType()',
     '[attr.data-error]': 'displaysError() || null',
     '[attr.data-expanded]': 'formFieldDir.usesTextFieldShell() && formFieldDir.expanded() ? "" : null',
+    // stands in for `:focus-visible` when the focused element is a non-editable trigger (a
+    // tabindex div opened by pointer never matches `:focus-visible`), keeping the focused frame
+    // and the clear affordance — both keyed on the control's `focused()` — in agreement
+    '[attr.data-focused]': 'formFieldDir.usesTextFieldShell() && formFieldDir.focused() ? "" : null',
     '[attr.data-readonly]': 'formFieldDir.usesTextFieldShell() && formFieldDir.isReadonly() ? "" : null',
     '[attr.data-disabled]': 'formFieldDir.usesTextFieldShell() && formFieldDir.isDisabled() ? "" : null',
     '[attr.data-appearance]': 'formFieldDir.usesTextFieldShell() ? appearance() : null',
