@@ -39,6 +39,43 @@ protected async save() {
 
 The [forms guide](/components/forms#server-side-violations) shows the rendering side, including the `provideFormErrorMessageResolver` hook for centralizing/localizing error texts by `kind`.
 
+### Validating against the server as the user types
+
+The `submit()` flow above maps violations at write time. To validate a field
+against the server **before** submit — uniqueness, cross-entity or server-clock
+checks — use `validateWithQuery`, the query-backed counterpart of Angular's
+[`validateAsync`](https://angular.dev/guide/forms). It runs your query through
+the query client (so auth, base route, caching and error normalization all
+apply, unlike a raw `httpResource`) and reuses `mapViolationsToFormErrors` to
+place each violation on its field:
+
+```ts
+import { schema, form } from '@angular/forms/signals';
+import { validateWithQuery } from '@ethlete/query';
+
+emailValidate = postEmailValidate(); // a createPostQuery creator, see the HTTP guide
+
+emailSchema = schema<{ email: string }>((p) => {
+  validateWithQuery(p, {
+    queryCreator: this.emailValidate,
+    args: (ctx) => ({ body: { ...ctx.value() } }),
+  });
+});
+
+protected form = form(signal({ email: '' }), this.emailSchema);
+```
+
+- **`queryCreator`** runs once and re-executes (debounced) as the field value
+  changes — only after the field's synchronous validators pass. Point `args` at
+  the field context: `(ctx) => ({ pathParams, body: { ...ctx.value() } })`.
+- A **`204` / success** reports no errors; a **`422` violation list** maps onto
+  the child fields by `propertyPath`; a **network / other error** degrades to a
+  non-swallowed form-level error — the same mapping as `mapViolationsToFormErrors`.
+- **`debounce`** (default `300` ms), **`when`** (gate the request) and
+  **`mapViolations`** (override the violation → error step) tune the behavior.
+- **On the legacy `V2QueryClient`?** Use **`validateWithV2Query`** — same
+  signature and behavior, for `V2Query` creators (`hubApiClient.post(...)`).
+
 ## Retries
 
 The default retry policy (`shouldRetryRequest`) retries up to **3 times** with a delay of `1s + 1s × attempt` (capped at 5s):

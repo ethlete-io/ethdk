@@ -23,6 +23,7 @@ export * from './query-snapshot';
 export * from './query-snapshot-utils';
 export * from './query-stack';
 export * from './query-state';
+export * from './validate-with-query';
 export * from './secure-query';
 export * from './secure-query-creator';
 export * from './secure-query-execute';

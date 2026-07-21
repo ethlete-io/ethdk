@@ -13,3 +13,4 @@ export * from './query-creator';
 export * from './query-store';
 export * from './request';
 export * from './utils';
+export * from './validate-with-v2-query';
