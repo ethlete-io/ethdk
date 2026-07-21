@@ -43,9 +43,9 @@ Every implementing control:
 
 ### Deliberate boundaries
 
-- **`et-checkbox` and `et-switch`** express this concept through the platform-named `indeterminate` input rather than `mixed`, with the native resolution behavior (activating an indeterminate control turns it on). Boolean tri-state is `indeterminate`, not `mixed` — the names differ because the platform's do.
-  - `et-checkbox` reflects it as `aria-checked="mixed"` (valid for `role="checkbox"`).
-  - `et-switch` **cannot**: ARIA defines `role="switch"` as strictly two-state, so `aria-checked="mixed"` is invalid. Its indeterminate state is therefore presentational only — the thumb parks mid-track behind a `data-indeterminate` attribute while `aria-checked` stays boolean, so assistive tech hears "off" until the first toggle resolves it to on. Prefer `et-checkbox` when the mixed state must be announced.
+- **`et-checkbox` and `et-switch`** express this concept through the platform-named `indeterminate` input rather than `mixed`, with the native resolution behavior (activating an indeterminate control turns it on). Boolean tri-state is `indeterminate`, not `mixed` — the names differ because the platform's do. Both render a first-class indeterminate state, resolved to `on` on the first toggle:
+  - `et-checkbox` shows the dash glyph and reflects `aria-checked="mixed"` (valid for `role="checkbox"`), so assistive tech announces the state.
+  - `et-switch` parks its thumb mid-track inside a dashed accent outline, exposed for styling via `data-indeterminate`. ARIA has no `aria-checked="mixed"` for `role="switch"` (it is strictly two-state), so `aria-checked` stays boolean: the state is conveyed visually but announced as "off" until the first toggle resolves it. Reach for `et-checkbox` when the indeterminate state itself must be announced.
 - **`et-otp-input`, `et-dropzone`, and the rich text editors** are not bulk-edit fields; they have no mixed state. `et-choice-field` is layout chrome — the control it wraps carries the state.
 - **`etInputMask`** decorates `et-input` and inherits its mixed behavior.
 
