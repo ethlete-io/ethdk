@@ -2,6 +2,7 @@ import {
   DOCUMENT,
   DestroyRef,
   Directive,
+  Signal,
   WritableSignal,
   afterNextRender,
   computed,
@@ -54,6 +55,17 @@ export const SELECT_FILTER_MODES = {
 
 export type SelectFilterMode = (typeof SELECT_FILTER_MODES)[keyof typeof SELECT_FILTER_MODES];
 
+/**
+ * The async option state a source (e.g. the bundle from `selectOptionsFromQuery`) pushes into a
+ * select via `[etSelectOptions]`. While one is set it overrides the `loading`/`error`/`hasMoreItems`
+ * inputs and forces `filterMode` to `external`. Structurally satisfied by `SelectOptionsFromQuery`.
+ */
+export type SelectAsyncOptions = {
+  loading: Signal<boolean>;
+  error: Signal<string | null>;
+  hasMore: Signal<boolean>;
+};
+
 const defaultNormalizeCustomValue = (raw: string) => {
   const trimmed = raw.trim();
 
@@ -99,7 +111,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
    */
   public options = input<readonly SelectOptionData[] | null>(null);
 
-  public filterMode = input<SelectFilterMode>(SELECT_FILTER_MODES.INTERNAL);
+  public filterModeInput = input<SelectFilterMode>(SELECT_FILTER_MODES.INTERNAL, { alias: 'filterMode' });
   /** Enter with a search query that matches no option commits the raw query string as the value. */
   public allowCustomValues = input(false);
   /**
@@ -119,11 +131,11 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   /** Renders an "Add new" row in `et-select`'s panel — clicking it emits `addNew`. */
   public allowAddNew = input(false);
   /** Async option state — rendered by `et-select` as a loading row inside the panel. */
-  public loading = input(false);
+  public loadingInput = input(false, { alias: 'loading' });
   /** Async option state — rendered by `et-select` as an error row inside the panel. */
-  public error = input<string | null>(null);
+  public errorInput = input<string | null>(null, { alias: 'error' });
   /** Async option state — `et-select` renders a load-more control emitting `loadMore`. */
-  public hasMoreItems = input(false);
+  public hasMoreItemsInput = input(false, { alias: 'hasMoreItems' });
   /** Whether the panel mirrors the anchor's width. Off for compact triggers (e.g. a country picker). */
   public mirrorPanelWidth = input(true);
   /**
@@ -143,6 +155,25 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
    * value selection.
    */
   public pickOption = output<unknown>();
+
+  /**
+   * An async option source pushed in by `[etSelectOptions]` (from `selectOptionsFromQuery` /
+   * `selectOptionsFromV2Query`). While set it overrides the `loading`/`error`/`hasMoreItems`
+   * inputs and forces `filterMode` to `external`. `null` when the select is wired manually.
+   * @internal
+   */
+  public asyncOptions = signal<SelectAsyncOptions | null>(null);
+
+  /** How a search query filters. Forced to `external` while an `[etSelectOptions]` source is set. */
+  public filterMode = computed<SelectFilterMode>(() =>
+    this.asyncOptions() ? SELECT_FILTER_MODES.EXTERNAL : this.filterModeInput(),
+  );
+  /** Async option state — rendered by `et-select` as a loading row. From `[etSelectOptions]` if set. */
+  public loading = computed(() => this.asyncOptions()?.loading() ?? this.loadingInput());
+  /** Async option state — rendered by `et-select` as an error row. From `[etSelectOptions]` if set. */
+  public error = computed(() => this.asyncOptions()?.error() ?? this.errorInput());
+  /** Async option state — drives the load-more control. From `[etSelectOptions]` if set. */
+  public hasMoreItems = computed(() => this.asyncOptions()?.hasMore() ?? this.hasMoreItemsInput());
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
 
@@ -244,7 +275,14 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
         // a select is a single-column listbox that reads fine anchored to the field on mobile, while
         // the cascader's multi-column drill genuinely needs the sheet's full-width column paging
         strategies: anchoredOverlayStrategy({
-          containerClass: ['et-overlay--anchored', 'et-overlay--select'],
+          containerClass: [
+            'et-overlay--anchored',
+            'et-overlay--select',
+            // when the panel does not mirror the field width the pane is content-sized, so the
+            // panel needs a max-inline-size guard; when it does mirror, the pane width already
+            // pins the panel to the field and any cap would make wide fields stop matching
+            ...(this.mirrorPanelWidth() ? [] : ['et-overlay--select-content-width']),
+          ],
           placement: 'bottom-start',
           fallbackPlacements: ['top-start'],
           offset: 4,

@@ -153,6 +153,19 @@ users = selectOptionsFromQuery({
 });
 ```
 
+Bind the returned bundle with the `[etSelectOptions]` directive and it wires everything for you — `loading`, `error`, `hasMoreItems`, `filterMode="external"`, and the `setQuery`/`loadMore` plumbing — so you only render the options:
+
+```html
+<et-select [formField]="form.assignee" [etSelectOptions]="users">
+  <input etSelectSearch placeholder="Search users" />
+  @for (user of users.options(); track user.id) {
+  <et-select-option [value]="user.id">{{ user.name }}</et-select-option>
+  }
+</et-select>
+```
+
+`[etSelectOptions]` accepts the bundle from either factory (both return the same shape), so the v2 adapter binds identically. Prefer it over wiring the inputs by hand; the explicit form below is equivalent and still supported when you need to intercept an individual binding:
+
 ```html
 <et-select
   [formField]="form.assignee"

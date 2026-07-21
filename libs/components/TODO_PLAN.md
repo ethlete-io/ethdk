@@ -23,7 +23,10 @@ Why: Upon pressing backspace in a filled single select with custom value templat
 
 ---
 
-Task: Add optional directive to selects with a eg. selectOptionsQuery binding that passes all data down to the individual select inputs() automatically
+Task: ✅ DONE — Add optional directive to selects with a eg. selectOptionsQuery binding that passes all data down to the individual select inputs() automatically
+(Shipped as `[etSelectOptions]` — bind the `selectOptionsFromQuery` / `selectOptionsFromV2Query` bundle
+once; the directive forwards loading/error/hasMoreItems, forces filterMode=external, and wires
+setQuery/loadMore from the select's outputs. Consumer still renders options. Docs + changeset + spec added.)
 
 To support: selectOptionsFromQuery, selectOptionsFromV2Query
 
@@ -46,7 +49,11 @@ given this: a select body has options that themself have etAutoSurface. Since th
 
 ---
 
-Task: popovers wont match their host form field in size from a certain point on
+Task: ✅ DONE — popovers wont match their host form field in size from a certain point on
+(The select panel carried a `max-inline-size: 400px` cap, so width-mirrored panels stopped
+matching fields wider than 400px. The cap is now scoped to compact `mirrorPanelWidth={false}`
+triggers via an `et-overlay--select-content-width` container class; mirrored panels are sized by
+the pane width alone. Changeset added; docs already described the mirroring behavior.)
 
 ![alt text](image.png)
 
