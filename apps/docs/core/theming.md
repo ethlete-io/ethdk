@@ -100,12 +100,12 @@ Inside a color scope these tokens resolve (the un-suffixed variant is opacity-aw
 
 ### Color directives
 
-| Directive                            | Selector                        | What it does                                                                                                                  |
-| ------------------------------------ | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `ProvideColorDirective`              | `[etProvideColor]`              | Sets the color theme for the subtree. Accepts a registered name **or** a full `ColorTheme` object.                            |
-| `ColorInteractiveDirective`          | `[etColorInteractive]`          | Re-resolves the color tokens per the host's own interaction state. Put it on the interactive element itself, never a wrapper. |
-| `ColorInteractiveContainerDirective` | `[etColorInteractiveContainer]` | Cascades hover/active state down to descendant `etColorInteractive` elements.                                                 |
-| `ColorInteractiveExcludeDirective`   | `[etColorInteractiveExclude]`   | Marks a descendant as not triggering an ancestor's interactive reaction.                                                      |
+| Directive                            | Selector                        | What it does                                                                                                                                                                                  |
+| ------------------------------------ | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ProvideColorDirective`              | `[etProvideColor]`              | Sets the color theme for the subtree. Accepts a registered name **or** a full `ColorTheme` object.                                                                                            |
+| `ColorInteractiveDirective`          | `[etColorInteractive]`          | Re-resolves the color tokens per the host's own interaction state. Put it on the interactive element itself, never a wrapper.                                                                 |
+| `ColorInteractiveContainerDirective` | `[etColorInteractiveContainer]` | Cascades hover/active state down to descendant `etColorInteractive` elements.                                                                                                                 |
+| `ColorInteractiveExcludeDirective`   | `[etColorInteractiveExclude]`   | Marks a descendant as not triggering an ancestor's interactive reaction.                                                                                                                      |
 | `ColorInteractiveHasFocusDirective`  | `[etColorInteractiveHasFocus]`  | Tints tokens to the **base** accent while the host contains a `:focus-visible` element — never on hover/active, and not the `-focus` variant (that is for an element that is itself focused). |
 
 ## Semantic themes
