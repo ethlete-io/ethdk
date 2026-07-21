@@ -87,13 +87,15 @@ export class SelectSearchDirective {
       const select = this.select;
       let text = query;
 
-      // single select: the input displays the selected value's label until the user edits —
-      // unless a custom value template owns the display (an input cannot render rich HTML)
-      // or the input lives in the panel rather than the field
+      // single select: the input displays the selected value's label until the user edits.
+      // A custom value template owns the resting display (an input cannot render rich HTML),
+      // but while the field is focused it becomes editable text here too — so Backspace edits
+      // the label instead of nuking the whole value (see `handleKeydown`). Panel-hosted search
+      // inputs stay pure query boxes.
       if (
         select &&
         !select.multiple() &&
-        (!select.registeredValueTemplate() || select.mixed()) &&
+        (!select.registeredValueTemplate() || select.mixed() || select.focused()) &&
         !query &&
         !this.edited() &&
         this.isInlineInTrigger()
@@ -140,16 +142,20 @@ export class SelectSearchDirective {
 
   /** @internal Selects a displayed value label on open, so typing replaces it (single select). */
   public handleOpened() {
-    if (
-      this.edited() ||
-      this.select?.multiple() ||
-      (this.select?.registeredValueTemplate() && !this.select.mixed()) ||
-      !this.isInlineInTrigger()
-    ) {
+    const select = this.select;
+
+    if (this.edited() || !select || select.multiple() || !this.isInlineInTrigger()) {
       return;
     }
 
     const element = this.elementRef.nativeElement;
+
+    // a custom value template kept the resting input empty (the rich display showed instead) —
+    // now in edit mode the input becomes the editable label, so write it before the display
+    // effect catches up so it can be selected for replace-on-type
+    if (select.registeredValueTemplate() && !select.mixed() && !element.value) {
+      element.value = select.displayValue() ?? '';
+    }
 
     if (element.value) {
       element.select();
@@ -214,18 +220,12 @@ export class SelectSearchDirective {
     this.query.set(value);
     select?.queryChange.emit(value);
 
-    // single select: the input doubles as the value display, so the user erasing all of
-    // its text clears the selection (Escape/close clears revert the display instead — they
-    // don't go through this handler). With a custom value template — or a panel-hosted
-    // search — the input is a pure query box and clearing it must not deselect.
-    if (
-      !value &&
-      select &&
-      !select.multiple() &&
-      (!select.registeredValueTemplate() || select.mixed()) &&
-      select.hasValue() &&
-      this.isInlineInTrigger()
-    ) {
+    // single select: the input doubles as the value display, so the user erasing all of its
+    // text clears the selection (Escape/close clears revert the display instead — they don't
+    // go through this handler). A custom value template shows the editable label here only
+    // while focused, so erasing it deselects the same way. A panel-hosted search input is a
+    // pure query box and clearing it must not deselect.
+    if (!value && select && !select.multiple() && select.hasValue() && this.isInlineInTrigger()) {
       if (select.mixed()) {
         select.clearValue();
       } else {

@@ -1,4 +1,5 @@
-Task: Add a one-shot (optionPicked) output to et-select
+Task: ✅ DONE — Add a one-shot (optionPicked) output to et-select
+(Shipped as `pickOnly` input + `optionPicked` output; forwarded on et-select; docs + changeset + specs added.)
 
 Repo: ethlete-sdk — libs/components/src/lib/forms/select/
 
@@ -13,7 +14,10 @@ What to do:
 
 ---
 
-Task: Enhance UX of single select with custom value template
+Task: ✅ DONE — Enhance UX of single select with custom value template
+(In a searchable single select the rich value template is now the resting display only; while
+focused the input shows the option's editable plain-text label — parity with a plain searchable
+single select, so Backspace edits visible text instead of nuking an empty-looking field.)
 
 Why: Upon pressing backspace in a filled single select with custom value template (so custom html inside the select field) the whole option gets deleted.
 
@@ -34,3 +38,14 @@ Task: Add the missing overlayCloseDismissChecker logic to the new components lib
 ---
 
 Task: An legacy v2 query adapter is needed for the dropzone component
+
+---
+
+Task: Logical DOM level auto elevation not working
+given this: a select body has options that themself have etAutoSurface. Since the injector will be the component injector the select is inside and not the one the select body (which in turn has a etAutoSurface) we will be off by 1 level
+
+---
+
+Task: popovers wont match their host form field in size from a certain point on
+
+![alt text](image.png)

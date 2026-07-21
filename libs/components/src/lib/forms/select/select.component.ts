@@ -55,8 +55,18 @@ import { SelectVirtualOptionComponent } from './select-virtual-option.component'
         'loading',
         'error',
         'hasMoreItems',
+        'pickOnly',
       ],
-      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'openChange', 'queryChange', 'loadMore', 'addNew'],
+      outputs: [
+        'valueChange',
+        'mixedChange',
+        'touchedChange',
+        'openChange',
+        'queryChange',
+        'loadMore',
+        'addNew',
+        'optionPicked',
+      ],
     },
     ColorInteractiveDirective,
   ],
@@ -127,7 +137,13 @@ export class SelectComponent {
       return false;
     }
 
-    return this.select.multiple() || !this.select.query();
+    if (this.select.multiple()) {
+      return true;
+    }
+
+    // single select: the rich template is the resting display — while the field is focused it
+    // gives way to the editable label text in the search input (see the search directive)
+    return !this.select.query() && !this.select.focused();
   });
 
   // single select with a custom value template + search: the value display and the query

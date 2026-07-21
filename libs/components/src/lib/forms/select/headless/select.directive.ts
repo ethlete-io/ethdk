@@ -126,11 +126,23 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   public hasMoreItems = input(false);
   /** Whether the panel mirrors the anchor's width. Off for compact triggers (e.g. a country picker). */
   public mirrorPanelWidth = input(true);
+  /**
+   * Fire-and-forget picker mode (single select): committing an option emits `optionPicked`
+   * without ever writing `value`, so the select stays empty and can feed an external list
+   * without the set-then-clear dance. No effect in multi select.
+   */
+  public pickOnly = input(false);
 
   public queryChange = output<string>();
   public loadMore = output<void>();
   /** The user picked the "Add new" row (`allowAddNew`). Emits the current search query for prefilling. */
   public addNew = output<string>();
+  /**
+   * Single select committed an option — carries the picked value. In `pickOnly` mode this is
+   * the only pick signal and `value` is never mutated; otherwise it fires alongside the normal
+   * value selection.
+   */
+  public optionPicked = output<unknown>();
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
 
@@ -704,7 +716,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
         this.registeredSearch()?.clear();
       }
     } else {
-      this.selection.select(item);
+      this.pickSingleOption(item);
       // cleared before the close so a `commitCustomValueOnClose` close cannot re-commit
       // the leftover query over the just-picked option
       this.registeredSearch()?.clear();
@@ -942,6 +954,16 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     return committed;
   }
 
+  // single-select commit: fire the pick command, then write the value unless the select is a
+  // fire-and-forget picker (`pickOnly`), in which case it stays valueless
+  private pickSingleOption(item: SelectItem) {
+    this.optionPicked.emit(item.value());
+
+    if (!this.pickOnly()) {
+      this.selection.select(item);
+    }
+  }
+
   /** Writes the first explicit choice over a mixed value without consulting raw checked state. */
   private commitMixedOption(item: SelectItem) {
     if (this.isFull()) {
@@ -1080,7 +1102,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
       return;
     }
 
-    this.selection.select(item);
+    this.pickSingleOption(item);
   }
 
   private findTypeaheadMatch(character: string) {

@@ -233,6 +233,27 @@ class PanelSearchTestHost {
   value = signal<unknown>('apple');
 }
 
+@Component({
+  template: `
+    <et-select
+      [value]="value()"
+      [pickOnly]="true"
+      (valueChange)="value.set($event)"
+      (optionPicked)="picked.push($event)"
+      class="select"
+      placeholder="Pick a fruit"
+    >
+      <et-select-option value="apple">Apple</et-select-option>
+      <et-select-option value="banana">Banana</et-select-option>
+    </et-select>
+  `,
+  imports: [SELECT_IMPORTS],
+})
+class PickOnlyTestHost {
+  value = signal<unknown>(null);
+  picked: unknown[] = [];
+}
+
 const flushFrames = () =>
   new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
@@ -1465,7 +1486,7 @@ describe('SelectDirective (searchable custom value)', () => {
     expect(searchInput().value).toBe('');
   });
 
-  it('hides the value template while typing and restores it after close', async () => {
+  it('hides the value template while editing and restores it on blur', async () => {
     select.show();
     tick();
     await flushFrames();
@@ -1481,16 +1502,33 @@ describe('SelectDirective (searchable custom value)', () => {
     await flushFrames();
     tick();
 
+    // the combobox keeps focus after the close — still edit mode, so the editable label
+    // (not the query) shows and the rich display stays hidden
+    expect(customValue()).toBeNull();
+    expect(searchInput().value).toBe('Germany');
+
+    // leaving the field settles the value: the rich template comes back, input goes empty
+    searchInput().dispatchEvent(new FocusEvent('blur'));
+    tick();
+
     expect(customValue()?.textContent?.trim()).toBe('🇩🇪 Germany');
     expect(searchInput().value).toBe('');
   });
 
-  it('Backspace on the empty query box deletes the selected value', () => {
+  it('edits the label text on Backspace while focused instead of nuking the value', () => {
+    // focusing enters edit mode: the rich display gives way to the editable label in the input
+    searchInput().dispatchEvent(new FocusEvent('focus'));
+    tick();
+
+    expect(searchInput().value).toBe('Germany');
+    expect(customValue()).toBeNull();
+
+    // Backspace now has text to delete — it removes a character (native), it does not wipe the
+    // whole option the way a lone Backspace on an empty box would
     searchInput().dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
     tick();
 
-    expect(fixture.componentInstance.value()).toBeNull();
-    expect(customValue()).toBeNull();
+    expect(fixture.componentInstance.value()).toBe('de');
   });
 
   it('renders a clear control while focused that clears the selection', () => {
@@ -1515,17 +1553,19 @@ describe('SelectDirective (searchable custom value)', () => {
     expect(select.open()).toBe(false);
   });
 
-  it('does not deselect when the query box is cleared', async () => {
+  it('deselects when the editable label is erased to empty while focused', async () => {
+    searchInput().dispatchEvent(new FocusEvent('focus'));
     select.show();
     tick();
     await flushFrames();
     tick();
 
+    // edit mode shows the editable label; erasing it clears the selection like a plain
+    // searchable single select (the rich display only owns the resting, blurred state)
     typeQuery('fr');
     typeQuery('');
 
-    expect(fixture.componentInstance.value()).toBe('de');
-    expect(customValue()?.textContent?.trim()).toBe('🇩🇪 Germany');
+    expect(fixture.componentInstance.value()).toBeNull();
   });
 });
 
@@ -1622,5 +1662,72 @@ describe('SelectDirective (multiple, contract)', () => {
       },
       emptyValue: () => [],
     };
+  });
+});
+
+describe('SelectDirective (pickOnly)', () => {
+  let fixture: ComponentFixture<PickOnlyTestHost>;
+  let select: SelectDirective;
+  let trigger: HTMLElement;
+
+  const tick = () => TestBed.inject(ApplicationRef).tick();
+  const pane = () => Array.from(document.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane')).at(-1) ?? null;
+  const options = () => Array.from(pane()?.querySelectorAll<HTMLElement>('[role="option"]') ?? []);
+
+  const openSelect = async () => {
+    trigger.click();
+    tick();
+    await flushFrames();
+    tick();
+  };
+
+  beforeEach(() => {
+    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
+
+    TestBed.configureTestingModule({
+      imports: [PickOnlyTestHost],
+      providers: [provideColorThemes(TEST_COLOR_THEMES)],
+    });
+    fixture = TestBed.createComponent(PickOnlyTestHost);
+    fixture.detectChanges();
+    select = fixture.debugElement.children[0]!.injector.get(SelectDirective);
+    trigger = fixture.nativeElement.querySelector('[role="combobox"]');
+  });
+
+  afterEach(async () => {
+    select.hide();
+    tick();
+    await flushFrames();
+  });
+
+  it('emits optionPicked without retaining the value and still closes', async () => {
+    await openSelect();
+
+    options()[1]!.click();
+    tick();
+    await flushFrames();
+    tick();
+
+    expect(fixture.componentInstance.picked).toEqual(['banana']);
+    expect(fixture.componentInstance.value()).toBeNull();
+    expect(select.hasValue()).toBe(false);
+    expect(select.open()).toBe(false);
+  });
+
+  it('re-emits on each pick without accumulating a selection', async () => {
+    await openSelect();
+    options()[0]!.click();
+    tick();
+    await flushFrames();
+    tick();
+
+    await openSelect();
+    options()[1]!.click();
+    tick();
+    await flushFrames();
+    tick();
+
+    expect(fixture.componentInstance.picked).toEqual(['apple', 'banana']);
+    expect(fixture.componentInstance.value()).toBeNull();
   });
 });
