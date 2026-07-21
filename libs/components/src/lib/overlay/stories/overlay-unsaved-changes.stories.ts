@@ -1,5 +1,6 @@
 import { Component, inject, signal, ViewEncapsulation } from '@angular/core';
 import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { tap } from 'rxjs';
 import { BUTTON_IMPORTS } from '../../button';
 import { injectOverlayManager } from '../overlay-manager';
 import { provideOverlay } from '../overlay.imports';
@@ -34,8 +35,9 @@ class ConfirmDiscardComponent {
       <label class="flex flex-col gap-1 text-small text-white/70">
         Title
         <input
+          #titleInput
           [value]="title()"
-          (input)="title.set($any($event.target).value)"
+          (input)="title.set(titleInput.value)"
           class="rounded border border-white/20 bg-transparent px-3 py-2 text-medium text-white outline-none focus:border-white/60"
           placeholder="Type to create unsaved changes…"
         />
@@ -101,7 +103,8 @@ class OverlayUnsavedChangesStorybookComponent {
     this.overlays
       .open<EditItemOverlayComponent, string>(EditItemOverlayComponent)
       .afterClosed()
-      .subscribe((result) => this.lastResult.set(result ?? '(dismissed)'));
+      .pipe(tap((result) => this.lastResult.set(result ?? '(dismissed)')))
+      .subscribe();
   }
 }
 
