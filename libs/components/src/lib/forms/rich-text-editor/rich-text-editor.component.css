@@ -131,6 +131,19 @@
     }
 
     .et-rte-content {
+      /* Rendered content is display, not the field's interactive chrome. The editor frame is an
+         `et-color-interactive--has-focus` ancestor that retints `--et-theme-color-*` on focus, and
+         content that reads the accent — token chips (outline + fill), links, the caret — would
+         otherwise pick that shift up. Re-anchor the accent tokens to their resting (base) values
+         here so content stays stable whether or not the editor is focused. This is the same
+         immunity the interactive toolbar buttons already get from carrying `et-color-interactive`
+         themselves; content can't (a chip must not react to its own hover), so it re-anchors once
+         at the root instead. */
+      --et-theme-color-primary-rgb: var(--et-color-primary);
+      --et-theme-color-primary-solid: rgb(var(--et-theme-color-primary-rgb));
+      --et-theme-color-ink-rgb: var(--et-color-primary-ink, var(--et-color-primary));
+      --et-theme-color-ink-solid: rgb(var(--et-theme-color-ink-rgb));
+
       display: block;
       flex: 1;
       min-inline-size: 0;
