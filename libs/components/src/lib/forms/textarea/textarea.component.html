@@ -5,7 +5,7 @@
   [readOnly]="textareaDir.readonly()"
   [required]="textareaDir.required()"
   [placeholder]="textareaDir.effectivePlaceholder()"
-  [autocomplete]="textareaDir.autocomplete()"
+  [attr.autocomplete]="textareaDir.autocomplete() || null"
   [rows]="textareaDir.rows()"
   [attr.name]="textareaDir.name() || null"
   [attr.aria-invalid]="textareaDir.shouldDisplayError() || null"

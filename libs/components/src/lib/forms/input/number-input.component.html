@@ -5,7 +5,7 @@
   [readOnly]="numberInputDir.readonly()"
   [required]="numberInputDir.required()"
   [placeholder]="numberInputDir.effectivePlaceholder()"
-  [autocomplete]="numberInputDir.autocomplete()"
+  [attr.autocomplete]="numberInputDir.autocomplete() || null"
   [attr.min]="numberInputDir.min() ?? null"
   [attr.max]="numberInputDir.max() ?? null"
   [attr.step]="numberInputDir.step() ?? null"

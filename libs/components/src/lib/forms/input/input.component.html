@@ -6,7 +6,7 @@
   [readOnly]="inputDir.readonly()"
   [required]="inputDir.required()"
   [placeholder]="inputDir.effectivePlaceholder()"
-  [autocomplete]="inputDir.autocomplete()"
+  [attr.autocomplete]="inputDir.autocomplete() || null"
   [attr.name]="inputDir.name() || null"
   [attr.aria-invalid]="inputDir.shouldDisplayError() || null"
   [attr.aria-describedby]="inputDir.describedBy() || null"
