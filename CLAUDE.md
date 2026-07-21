@@ -72,6 +72,20 @@ Theme **names** (`brand`, `danger`, `dark-elevated`, …) are registered by the
 consuming app — the SDK defines none. Don't hardcode name unions in types, docs,
 or examples; semantic colors resolve via theme `type` (e.g. `injectErrorTheme()`).
 
+## Dependencies
+
+This is a **Yarn 4 workspaces** monorepo (`packageManager: yarn@4.17.1`). After
+any dependency change — adding/removing a package, or when an `nx` task
+auto-syncs a lib's `package.json` `dependencies` (it prunes deps you stop
+importing) — you **must**:
+
+1. Run `yarn install` to update `yarn.lock`, then commit the lockfile alongside
+   the `package.json` change. A stale lockfile breaks CI.
+2. Re-run lint on the affected libs. The `@nx/dependency-checks` ESLint rule
+   (in each lib's `eslint.config.mjs`) validates that a lib's declared
+   `dependencies` match what its source actually imports — a mismatch is a lint
+   error, not just a warning.
+
 ## Releasing
 
 Every change to a published package needs a changeset. Use the **`changeset`**

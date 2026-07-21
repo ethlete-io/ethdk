@@ -4313,7 +4313,6 @@ __metadata:
     rxjs: 7.8.2
     typescript: 6.0.3
     vite: 8.0.13
-    vite-tsconfig-paths: ^6.1.1
   languageName: unknown
   linkType: soft
 
@@ -4365,7 +4364,6 @@ __metadata:
     "@ethlete/query": ^6.0.0-beta.8
     rxjs: 7.8.2
     vite: 8.0.13
-    vite-tsconfig-paths: ^6.1.1
   languageName: unknown
   linkType: soft
 
@@ -4387,7 +4385,6 @@ __metadata:
     ts-morph: 21.0.1
     typescript: 6.0.3
     vite: 8.0.13
-    vite-tsconfig-paths: ^6.1.1
   languageName: unknown
   linkType: soft
 
@@ -4420,7 +4417,6 @@ __metadata:
     socket.io-client: 4.8.3
     typescript: 6.0.3
     vite: 8.0.13
-    vite-tsconfig-paths: ^6.1.1
   languageName: unknown
   linkType: soft
 
