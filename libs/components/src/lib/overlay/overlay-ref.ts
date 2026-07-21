@@ -1,12 +1,16 @@
 import { InjectionToken, TemplateRef, signal } from '@angular/core';
 import {
   OverlayRuntimeCloseEvent,
+  OverlayRuntimeCloseGuard,
   OverlayRuntimeCloseSource,
   OverlayRuntimePositionStrategy,
   OverlayRuntimeRef,
 } from '@ethlete/core';
 import { Observable, Subject, take, tap } from 'rxjs';
 import { OverlayConfig } from './overlay-config';
+
+/** A synchronous veto for a pending overlay close — see {@link OverlayRuntimeCloseGuard}. */
+export type OverlayCloseGuard<TResult = unknown> = OverlayRuntimeCloseGuard<TResult | undefined>;
 
 export const createOverlayRef = <TComponent extends object, TResult = unknown>(config: OverlayConfig) => {
   let id = '';
@@ -19,6 +23,10 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
   const beforeClosed$ = new Subject<TResult | undefined>();
   const afterClosed$ = new Subject<TResult | undefined>();
   const afterClosedEvent$ = new Subject<OverlayRuntimeCloseEvent<TResult | undefined>>();
+  // Guards live here (not on the runtime ref directly) because the mounted component — where a guard
+  // is registered — is constructed before `attachRuntime` runs. A single aggregate guard is wired to
+  // the runtime ref on attach and reads this set live, so guards registered either side of attach work.
+  const closeGuards = new Set<OverlayCloseGuard<TResult>>();
 
   const componentInstance = () => {
     if (_componentInstanceOverride) {
@@ -49,6 +57,23 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
     _runtimeRef?.close(result, source);
   };
 
+  /**
+   * Register a synchronous veto for pending closes. Return `false` from the guard to keep the
+   * overlay open. An async decision (e.g. a confirm dialog) belongs in the guard's owner, which
+   * re-issues the close via {@link forceClose} once resolved. Returns an unregister function.
+   */
+  const registerCloseGuard = (guard: OverlayCloseGuard<TResult>): (() => void) => {
+    closeGuards.add(guard);
+
+    return () => closeGuards.delete(guard);
+  };
+
+  /** Close the overlay bypassing every registered close guard — used to commit a close a guard
+   *  previously vetoed (e.g. after an async confirm resolved). */
+  const forceClose = (source: OverlayRuntimeCloseSource = 'api', result?: TResult) => {
+    _runtimeRef?.forceClose(result, source);
+  };
+
   /** @internal Reroutes `componentInstance` to the content component when a container is mounted. */
   const attachComponentInstanceOverride = (getter: () => TComponent | null) => {
     _componentInstanceOverride = getter;
@@ -76,6 +101,17 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
   const attachRuntime = (runtimeRef: OverlayRuntimeRef<TComponent, TResult>) => {
     _runtimeRef = runtimeRef;
     id = runtimeRef.id;
+
+    // One aggregate guard, reading the live set — any single guard vetoing vetoes the close.
+    runtimeRef.registerCloseGuard((event) => {
+      for (const guard of closeGuards) {
+        if (!guard(event)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
 
     runtimeRef
       .afterOpened()
@@ -130,6 +166,8 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
     componentInstance,
     close,
     closeVia,
+    registerCloseGuard,
+    forceClose,
     updatePositionStrategy,
     attachComponentInstanceOverride,
     afterOpened,

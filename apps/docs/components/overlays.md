@@ -65,9 +65,50 @@ The `OverlayRef` is returned by `open` and injectable inside the overlay via the
   on an explicit dismiss without stealing it from whatever an outside-pointer close was aimed at
 - `componentInstance()` — the content component instance
 - `updatePositionStrategy(strategy)` — reposition without remounting
+- `registerCloseGuard(guard)` — veto pending closes synchronously (returns an unregister fn); `forceClose(source?, result?)` commits a close bypassing all guards. These are the low-level seam behind `createOverlayUnsavedChangesGuard` (below) — reach for that instead of wiring guards by hand
 - `id`, `config`, `elements` (`paneElement` / `hostElement` / `backdropElement`) — identity and DOM access
 
 The manager also exposes an `openOverlays` computed with every currently open ref.
+
+## Guarding against accidental dismissal
+
+An overlay that hosts a form should not silently throw away unsaved edits when the user clicks the backdrop, hits <kbd>Escape</kbd>, drags the sheet away, or a programmatic `close()` runs. `createOverlayUnsavedChangesGuard` (the overlay flavor of the [`unsavedChanges` family](/core/utilities#unsaved-changes)) handles exactly this: called from the overlay content component's injection context, it injects the current `OVERLAY_REF`, and while the watched form differs from its baseline it **vetoes** the close, runs your async `confirm`, and only re-issues the close if the user agrees.
+
+```ts
+import { createOverlayUnsavedChangesGuard, injectOverlayManager, OVERLAY_REF } from '@ethlete/components';
+import { form } from '@angular/forms/signals';
+
+@Component({
+  /* … */
+})
+export class EditItemOverlayComponent {
+  private overlays = injectOverlayManager();
+  private overlayRef = inject(OVERLAY_REF);
+
+  protected form = form(signal({ title: '', notes: '' }));
+
+  private guard = createOverlayUnsavedChangesGuard({
+    source: this.form, // a signal-forms FieldTree (also: Signal<FieldTree | null>, AbstractControl, WritableSignal)
+    confirm: () => this.overlays.open(ConfirmDiscardComponent).afterClosed(), // truthy = discard
+  });
+
+  protected save() {
+    // persist…, then re-baseline so the just-saved state no longer counts as unsaved
+    this.guard.refreshDefaultValue();
+    this.overlayRef.close(this.form().value());
+  }
+}
+```
+
+- **`source`** is a signal-forms `FieldTree` (first-class), a `Signal<FieldTree | null>` for late/async forms, an `AbstractControl`, or a plain `WritableSignal`. Changes are detected by a deep-equal snapshot against a baseline — editing a field and reverting it is clean again (unlike signal-forms' `dirty()`).
+- **`confirm`** is required per call site and runs **only** when there are actual changes. Return a boolean, `Promise`, or `Observable` — a truthy result allows the discard.
+- **`refreshDefaultValue()`** re-baselines to the current value; call it after a save that keeps the overlay open. **`restoreDefaultValue()`** reverts the form to the baseline.
+- **`dismissSources`** opts individual sources out (`{ outsidePointer, escape, closeCall, drag }`, all `true` by default). With `disableClose`, only a programmatic `close()` can reach the guard.
+- The guard auto-cleans up on injector destroy; call `guard.destroy()` to stop guarding earlier.
+
+For route-level protection (a form on a page rather than in an overlay) use [`createUnsavedChangesGuard`](/core/utilities#unsaved-changes) from `@ethlete/core`, which adds a `canDeactivate` bridge.
+
+<StoryEmbed id="components-overlay-unsaved-changes--default" height="520px" />
 
 ## Live demo
 

@@ -40,13 +40,16 @@ resolves the whole nested overlay tree via each pane's `origin`; wired into `anc
 
 ---
 
-Task: 📋 PLANNED — Add the missing overlayCloseDismissChecker logic to the new components lib overlay system
-(Scope expanded + API settled: enhanced `unsavedChanges` family instead of a 1:1 port —
-`createUnsavedChangesTracker` (core) / `createOverlayUnsavedChangesGuard` (components) /
-`createUnsavedChangesGuard` (port of `createNavigationDismissChecker`, incl. CanDeactivate bridge), with
-signal forms (`FieldTree`) as first-class value source. Plan in `.claude/handoffs/overlay-dismiss-checker.md`
-— resume with `/handoff resume overlay-dismiss-checker`. Prerequisite: the new overlay runtime has no veto
-seam, so a close guard must be added in `libs/core/src/lib/overlay/overlay-runtime-ref.ts` first.)
+Task: ✅ DONE — Add the missing overlayCloseDismissChecker logic to the new components lib overlay system
+(Shipped as the `unsavedChanges` family, not a 1:1 cdk port. Core: a close-veto seam on the overlay
+runtime (`registerCloseGuard`/`forceClose`, exposed on `OverlayRef` too; `reference-detached` always
+bypasses), plus `createUnsavedChangesTracker` (snapshot/deep-equal, signal-forms `FieldTree` first-class
++ `Signal<FieldTree|null>`/`AbstractControl`/`WritableSignal`, async confirm→Promise, refresh/restore)
+and `createUnsavedChangesGuard` (router flavor + `canDeactivate` bridge). Components:
+`createOverlayUnsavedChangesGuard` wires the tracker to close events (per-source opt-out, honors
+disableClose, auto-destroy). Specs (core seam + tracker all-sources + overlay guard e2e via the real
+runtime), Storybook story verified headlessly, docs (overlays.md, core/overlay-runtime.md,
+core/utilities.md), changesets (core + components) all added.)
 
 ---
 

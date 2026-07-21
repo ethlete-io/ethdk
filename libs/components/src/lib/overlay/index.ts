@@ -14,6 +14,7 @@ export * from './overlay-main.directive';
 export * from './overlay-manager';
 export * from './overlay-opener';
 export * from './overlay-ref';
+export * from './utils/overlay-unsaved-changes-guard';
 export * from './overlay-scroll-blocker';
 export * from './overlay-title.directive';
 export * from './overlay.imports';
