@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
+import { TabGroupDirective } from './headless/tab-group.directive';
+import { TAB_GROUP_TOKEN } from './headless/tab-group.tokens';
 import { TabComponent } from './tab.component';
 
 describe('TabComponent', () => {
@@ -7,7 +9,12 @@ describe('TabComponent', () => {
   let host: HTMLElement;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ imports: [TabComponent] });
+    // TabComponent is exercised in isolation here; provide a stub group so its
+    // dev-mode "must be placed inside <et-tab-group>" guard doesn't trip.
+    TestBed.configureTestingModule({
+      imports: [TabComponent],
+      providers: [{ provide: TAB_GROUP_TOKEN, useValue: {} as TabGroupDirective }],
+    });
     fixture = TestBed.createComponent(TabComponent);
     host = fixture.nativeElement;
   });

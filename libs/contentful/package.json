@@ -14,7 +14,6 @@
     "@ethlete/core": "^5.0.0-beta.11",
     "@ethlete/query": "^6.0.0-beta.8",
     "rxjs": "7.8.2",
-    "vite": "8.0.13",
-    "vite-tsconfig-paths": "^6.1.1"
+    "vite": "8.0.13"
   }
 }
