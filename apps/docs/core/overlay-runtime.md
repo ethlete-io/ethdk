@@ -54,16 +54,20 @@ The active strategy can be swapped on a live overlay via `ref.updatePositionStra
 
 `mount()` returns an `OverlayRuntimeRef`:
 
-| Member                             | Description                                                                                 |
-| ---------------------------------- | ------------------------------------------------------------------------------------------- |
-| `close(result?, source?)`          | Close with an optional result (`source` defaults to `'api'`).                               |
-| `state`                            | `Signal<'mounting' \| 'mounted' \| 'closing' \| 'closed'>`                                  |
-| `componentInstance`                | `Signal<TComponent \| null>`                                                                |
-| `beforeOpened()` / `afterOpened()` | Open lifecycle observables.                                                                 |
-| `beforeClosed()` / `afterClosed()` | Emit `{ result, source }` — `source` is `'api' \| 'escape' \| 'outside-pointer' \| 'drag'`. |
-| `elements`                         | The scaffold DOM (`rootElement`, `hostElement`, `backdropElement`, `paneElement`).          |
+| Member                             | Description                                                                                       |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `close(result?, source?)`          | Close with an optional result (`source` defaults to `'api'`). Runs registered close guards first. |
+| `forceClose(result?, source?)`     | Close bypassing every close guard — used by a guard's owner to commit a close it vetoed.          |
+| `registerCloseGuard(guard)`        | Register a synchronous veto `(event) => boolean` for pending closes; returns an unregister fn.    |
+| `state`                            | `Signal<'mounting' \| 'mounted' \| 'closing' \| 'closed'>`                                        |
+| `componentInstance`                | `Signal<TComponent \| null>`                                                                      |
+| `beforeOpened()` / `afterOpened()` | Open lifecycle observables.                                                                       |
+| `beforeClosed()` / `afterClosed()` | Emit `{ result, source }` — `source` is `'api' \| 'escape' \| 'outside-pointer' \| 'drag'`.       |
+| `elements`                         | The scaffold DOM (`rootElement`, `hostElement`, `backdropElement`, `paneElement`).                |
 
 Escape and outside-pointer closes only apply to the top-most overlay and are ignored until the enter transition has started — a click that opens an overlay can't immediately close it.
+
+**Close guards** are the veto seam behind unsaved-changes protection. Each registered guard runs synchronously before a close commits; if any returns `false`, the close is cancelled. A guard that needs an async decision (e.g. a confirm dialog) returns `false` to veto, then re-issues the close via `forceClose` once resolved. `reference-detached` closes (the anchor is gone) always bypass guards. `@ethlete/components` builds `createOverlayUnsavedChangesGuard` on this seam — see [Utilities › Unsaved changes](/core/utilities#unsaved-changes).
 
 For debugging, the runtime shares the [`et-overlay-debug` localStorage flag](/core/animations#debugging) with the animation system.
 

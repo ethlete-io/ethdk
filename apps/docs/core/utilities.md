@@ -49,6 +49,18 @@ Subscribe to host-element events from an injection context, cleaned up on destro
 - `getFormGroupValue(group)` — the group's value **including disabled controls**, empty values coalesced to `null`.
 - Validators (also grouped under the `Validators` const): `MustMatch(controlName, matchingControlName)` for password-repeat patterns, `IsEmail`, `IsArrayNotEmpty`, and `ValidateAtLeastOneRequired({ keys, checkFalse? })` for "at least one of these fields" groups. Each has a matching error-key const (`MUST_MATCH`, `IS_EMAIL`, …).
 
+## Unsaved changes {#unsaved-changes}
+
+Guard a form against accidentally discarding edits. Call these from an injection context.
+
+- **`createUnsavedChangesTracker({ source, confirm, defaultValue?, compareFn? })`** — the framework-agnostic core. It snapshots a baseline and exposes `hasChanges` (a `Signal<boolean>`), `runCheck()` (resolves `true` when clean or the user confirmed the discard), plus `refreshDefaultValue()` / `restoreDefaultValue()` and the `defaultValue` signal.
+  - `source` accepts a signal-forms **`FieldTree`** (first-class), a **`Signal<FieldTree | null>`** for late/async forms (the first non-null value auto-baselines), an **`AbstractControl`** (migration path, bridged via `controlValueSignal`), or a plain **`WritableSignal`**.
+  - Changes are a **deep-equal snapshot** against the baseline — editing then reverting a field is clean again, deliberately unlike signal-forms' `dirty()` ("was edited").
+  - `confirm` is **required per call site** and runs only when there are changes; return a boolean, `Promise`, or `Observable` (normalized to `Promise<boolean>`). It typically opens a confirm dialog.
+  - `refreshDefaultValue()` re-baselines to the current value — call it after a save that keeps the view open.
+- **`createUnsavedChangesGuard(config)`** — the router / manual flavor: the tracker above plus a **`canDeactivate()`** method (`CanDeactivateFn`-compatible) for Angular route guards.
+- For overlays, use **`createOverlayUnsavedChangesGuard`** from `@ethlete/components`, which wires the tracker to the overlay's close events automatically — see [Overlays › Guarding against accidental dismissal](/components/overlays#guarding-against-accidental-dismissal).
+
 ## Storage
 
 - **Cookies** — `getCookie`, `setCookie`, `hasCookie`, `deleteCookie`, `getDomain`. `setCookie` defaults: 30-day expiry (`null` → session cookie), `path: '/'`, `sameSite: 'lax'`, domain derived from the hostname. All SSR-safe (no-ops without `document`).

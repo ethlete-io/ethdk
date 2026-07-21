@@ -72,6 +72,14 @@ export type OverlayRuntimeCloseEvent<TResult = unknown> = {
   source: OverlayRuntimeCloseSource;
 };
 
+/**
+ * A synchronous veto for a pending close. Return `false` to cancel the close (the overlay stays
+ * open); return `true` to let it proceed. Registered via `overlayRef.registerCloseGuard`. An async
+ * decision (e.g. a confirm dialog) lives in the guard's owner, which re-issues the close through
+ * `overlayRef.forceClose` once resolved. `reference-detached` closes bypass all guards.
+ */
+export type OverlayRuntimeCloseGuard<TResult = unknown> = (event: OverlayRuntimeCloseEvent<TResult>) => boolean;
+
 export type OverlayRuntimeComponentBase = {
   animatedLifecycle?: Signal<AnimatedLifecycleDirective | undefined>;
 };

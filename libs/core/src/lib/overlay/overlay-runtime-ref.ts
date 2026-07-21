@@ -2,6 +2,7 @@ import { ComponentRef, signal } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import {
   OverlayRuntimeCloseEvent,
+  OverlayRuntimeCloseGuard,
   OverlayRuntimeCloseSource,
   OverlayRuntimeElements,
   OverlayRuntimeMountConfig,
@@ -25,6 +26,7 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
   const afterOpenedSubject = new Subject<void>();
   const beforeClosedSubject = new Subject<OverlayRuntimeCloseEvent<TResult>>();
   const afterClosedSubject = new Subject<OverlayRuntimeCloseEvent<TResult>>();
+  const closeGuards = new Set<OverlayRuntimeCloseGuard<TResult>>();
 
   return {
     id,
@@ -41,7 +43,33 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
         return;
       }
 
+      // `reference-detached` is a forced teardown (the anchor is gone) — never vetoable.
+      if (source !== 'reference-detached') {
+        for (const guard of closeGuards) {
+          if (!guard({ result, source })) {
+            return;
+          }
+        }
+      }
+
       requestClose(result, source);
+    },
+
+    /** Close bypassing every registered close guard — used by a guard's owner to commit a
+     *  close it previously vetoed (e.g. after an async confirm resolved). */
+    forceClose(result?: TResult, source: OverlayRuntimeCloseSource = 'api') {
+      if (_state() === 'closing' || _state() === 'closed') {
+        return;
+      }
+
+      requestClose(result, source);
+    },
+
+    /** Register a synchronous veto for pending closes. Returns an unregister function. */
+    registerCloseGuard(guard: OverlayRuntimeCloseGuard<TResult>): () => void {
+      closeGuards.add(guard);
+
+      return () => closeGuards.delete(guard);
     },
 
     beforeOpened(): Observable<void> {

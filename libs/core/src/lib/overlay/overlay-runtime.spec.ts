@@ -160,6 +160,74 @@ describe('overlay runtime', () => {
     trigger.remove();
   });
 
+  describe('close guards', () => {
+    it('vetoes a close when a guard returns false', async () => {
+      const ref = mount();
+      await flushFrames();
+      const guard = vi.fn(() => false);
+      ref.registerCloseGuard(guard);
+
+      ref.close('nope');
+
+      expect(guard).toHaveBeenCalledWith({ result: 'nope', source: 'api' });
+      expect(ref.state()).toBe('mounted');
+
+      ref.forceClose();
+    });
+
+    it('proceeds when every guard returns true', () => {
+      const ref = mount();
+      ref.registerCloseGuard(() => true);
+
+      ref.close();
+
+      expect(ref.state()).toBe('closed');
+    });
+
+    it('vetoes if any one of several guards returns false', async () => {
+      const ref = mount();
+      await flushFrames();
+      ref.registerCloseGuard(() => true);
+      ref.registerCloseGuard(() => false);
+
+      ref.close();
+
+      expect(ref.state()).toBe('mounted');
+      ref.forceClose();
+    });
+
+    it('forceClose bypasses guards', () => {
+      const ref = mount();
+      ref.registerCloseGuard(() => false);
+
+      ref.forceClose('forced', 'escape');
+
+      expect(ref.state()).toBe('closed');
+    });
+
+    it('reference-detached closes bypass guards', () => {
+      const ref = mount();
+      ref.registerCloseGuard(() => false);
+
+      ref.close(undefined, 'reference-detached');
+
+      expect(ref.state()).toBe('closed');
+    });
+
+    it('stops consulting a guard once it is unregistered', async () => {
+      const ref = mount();
+      await flushFrames();
+      const unregister = ref.registerCloseGuard(() => false);
+
+      ref.close();
+      expect(ref.state()).toBe('mounted');
+
+      unregister();
+      ref.close();
+      expect(ref.state()).toBe('closed');
+    });
+  });
+
   it('tears down synchronously without a leave animation when the reference detaches', async () => {
     const ref = mount({}, AnimatedOverlayComponent);
 
