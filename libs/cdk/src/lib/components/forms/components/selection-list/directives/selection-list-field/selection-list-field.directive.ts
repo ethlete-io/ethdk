@@ -24,7 +24,7 @@ export const SELECTION_LIST_FIELD = new InjectionToken<SelectionListFieldDirecti
   providers: [{ provide: SELECTION_LIST_FIELD, useExisting: SelectionListFieldDirective }],
   exportAs: 'etSelectionListField',
   host: {
-    class: 'et-selection-list-field',
+    class: 'et-selection-list-field et-legacy',
     '[class.et-selection-list-field--multiple]': 'multiple',
     role: 'listbox',
     '[attr.aria-multiselectable]': 'multiple',

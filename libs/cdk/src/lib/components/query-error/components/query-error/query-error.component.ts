@@ -9,7 +9,7 @@ import { QueryErrorItem } from '../../types';
   templateUrl: './query-error.component.html',
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-query-error-host',
+    class: 'et-query-error-host et-legacy',
   },
   imports: [NgClass],
   hostDirectives: [{ directive: QueryErrorDirective, inputs: ['error', 'query', 'language'] }],

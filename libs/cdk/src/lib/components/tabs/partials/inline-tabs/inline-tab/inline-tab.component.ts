@@ -28,7 +28,7 @@ export const TAB_GROUP = new InjectionToken<unknown>('TAB_GROUP');
   encapsulation: ViewEncapsulation.None,
   providers: [{ provide: TAB, useExisting: InlineTabComponent }],
   host: {
-    class: 'et-inline-tab',
+    class: 'et-inline-tab et-legacy',
   },
 })
 export class InlineTabComponent implements OnInit, OnChanges, OnDestroy {

@@ -4,7 +4,7 @@ import { ActiveTabUnderlineDirective } from '../../../utils';
 @Directive({
   selector: '[etInlineTabLabelWrapper]',
   host: {
-    class: 'et-inline-tab-label-wrapper',
+    class: 'et-inline-tab-label-wrapper et-legacy',
     '[attr.aria-disabled]': 'disabled ? "true" : null',
   },
   hostDirectives: [{ directive: ActiveTabUnderlineDirective, inputs: ['fitUnderlineToContent'] }],

@@ -31,7 +31,7 @@ import { OverlayRef } from '../overlay-ref';
   `,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-overlay',
+    class: 'et-overlay et-legacy',
     tabindex: '-1',
     '[attr.aria-modal]': '_config.ariaModal',
     '[id]': '_config.id',

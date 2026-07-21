@@ -4,7 +4,7 @@ import { injectTemplateRef } from '@ethlete/core';
 @Directive({
   selector: '[etBreadcrumbItemTemplate]',
   host: {
-    class: 'et-breadcrumb-item',
+    class: 'et-breadcrumb-item et-legacy',
   },
 })
 export class BreadcrumbItemTemplateDirective {

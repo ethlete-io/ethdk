@@ -40,7 +40,7 @@ type MasonryState = {
   styleUrls: ['./masonry.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-masonry',
+    class: 'et-masonry et-legacy',
   },
 })
 export class MasonryComponent implements AfterContentInit {

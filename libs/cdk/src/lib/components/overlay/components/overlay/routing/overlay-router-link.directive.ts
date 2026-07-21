@@ -15,7 +15,7 @@ export const OVERLAY_ROUTER_LINK_TOKEN = new InjectionToken<OverlayRouterLinkDir
     },
   ],
   host: {
-    class: 'et-overlay-router-link',
+    class: 'et-overlay-router-link et-legacy',
     type: 'button',
   },
 })

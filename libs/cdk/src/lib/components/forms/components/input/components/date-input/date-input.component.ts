@@ -11,7 +11,7 @@ import { DATE_INPUT_TOKEN, DateInputDirective } from '../../directives/date-inpu
   styleUrls: ['./date-input.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-date-input',
+    class: 'et-date-input et-legacy',
   },
   imports: [AsyncPipe, NativeInputRefDirective],
   hostDirectives: [

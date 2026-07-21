@@ -14,7 +14,7 @@ let uniqueId = 0;
     },
   ],
   host: {
-    class: 'et-menu-group-title',
+    class: 'et-menu-group-title et-legacy',
     role: 'presentation',
     '[id]': 'id',
   },

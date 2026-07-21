@@ -16,7 +16,7 @@ export const CAROUSEL_NEXT_BUTTON_TOKEN = new InjectionToken<CarouselNextButtonD
     },
   ],
   host: {
-    class: 'et-carousel-next-button',
+    class: 'et-carousel-next-button et-legacy',
   },
 })
 export class CarouselNextButtonDirective {

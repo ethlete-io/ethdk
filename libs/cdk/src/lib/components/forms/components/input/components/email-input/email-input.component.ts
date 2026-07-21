@@ -11,7 +11,7 @@ import { EMAIL_INPUT_TOKEN, EmailInputDirective } from '../../directives/email-i
   styleUrls: ['./email-input.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-email-input',
+    class: 'et-email-input et-legacy',
   },
   imports: [AsyncPipe, NativeInputRefDirective],
   hostDirectives: [EmailInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],

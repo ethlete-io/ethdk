@@ -9,7 +9,7 @@ import { ACCORDION_COMPONENT } from '../accordion';
   templateUrl: './accordion-group.component.html',
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-accordion-group',
+    class: 'et-accordion-group et-legacy',
   },
 })
 export class AccordionGroupComponent {

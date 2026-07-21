@@ -18,7 +18,7 @@ export const CAROUSEL_TOGGLE_AUTO_PLAY_BUTTON_TOKEN = new InjectionToken<Carouse
     },
   ],
   host: {
-    class: 'et-carousel-toggle-auto-play-button',
+    class: 'et-carousel-toggle-auto-play-button et-legacy',
   },
 })
 export class CarouselToggleAutoPlayButtonDirective {

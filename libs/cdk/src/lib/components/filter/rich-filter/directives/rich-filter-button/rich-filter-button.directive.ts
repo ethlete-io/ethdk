@@ -12,7 +12,7 @@ export const RICH_FILTER_BUTTON_TOKEN = new InjectionToken<RichFilterButtonDirec
     },
   ],
   host: {
-    class: 'et-rich-filter-button',
+    class: 'et-rich-filter-button et-legacy',
   },
 })
 export class RichFilterButtonDirective {

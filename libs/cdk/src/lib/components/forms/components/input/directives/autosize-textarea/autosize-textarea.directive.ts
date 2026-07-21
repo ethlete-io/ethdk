@@ -6,7 +6,7 @@ import { INPUT_TOKEN, InputDirective } from '../../../../directives/input';
 @Directive({
   selector: 'et-textarea-input[etAutosize]',
   host: {
-    class: 'et-textarea--autosize',
+    class: 'et-textarea--autosize et-legacy',
   },
 })
 export class AutosizeTextareaDirective {

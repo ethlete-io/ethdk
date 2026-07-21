@@ -5,7 +5,7 @@ import { Directive } from '@angular/core';
   // eslint-disable-next-line @angular-eslint/directive-selector
   selector: 'et-footer-cell, td[et-footer-cell]',
   host: {
-    class: 'et-footer-cell et-data-table__cell',
+    class: 'et-footer-cell et-data-table__cell et-legacy',
   },
 })
 export class FooterCellDirective extends CdkFooterCell {}

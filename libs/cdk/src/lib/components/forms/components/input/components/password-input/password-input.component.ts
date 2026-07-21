@@ -11,7 +11,7 @@ import { PASSWORD_INPUT_TOKEN, PasswordInputDirective } from '../../directives/p
   styleUrls: ['./password-input.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-password-input',
+    class: 'et-password-input et-legacy',
   },
   imports: [AsyncPipe, NativeInputRefDirective],
   hostDirectives: [PasswordInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],

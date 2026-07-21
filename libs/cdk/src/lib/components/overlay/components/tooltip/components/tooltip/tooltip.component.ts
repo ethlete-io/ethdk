@@ -19,7 +19,7 @@ export const TOOLTIP = new InjectionToken<TooltipComponent>('Tooltip');
   imports: [NgTemplateOutlet, AnimatedLifecycleDirective],
   hostDirectives: [ProvideColorDirective],
   host: {
-    class: 'et-tooltip',
+    class: 'et-tooltip et-legacy',
     'aria-hidden': 'true',
     '[class.et-with-default-animation]': '!_config.customAnimated',
     '[class]': '_config.containerClass',

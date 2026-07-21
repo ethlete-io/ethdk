@@ -67,7 +67,7 @@ const MIN_ITEMS_TO_RENDER = 3;
   styleUrl: './breadcrumb.component.scss',
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-breadcrumb',
+    class: 'et-breadcrumb et-legacy',
   },
 })
 export class BreadcrumbComponent {

@@ -5,7 +5,7 @@ import { Directive, OnDestroy, OnInit } from '@angular/core';
   selector: '[etInlineTabBodyHost]',
 
   host: {
-    class: 'et-inline-tab-body-host',
+    class: 'et-inline-tab-body-host et-legacy',
   },
 })
 export class InlineTabBodyHostDirective extends CdkPortalOutlet implements OnInit, OnDestroy {}

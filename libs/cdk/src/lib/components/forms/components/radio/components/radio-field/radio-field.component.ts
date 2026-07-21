@@ -13,7 +13,7 @@ import { RadioFieldDirective } from '../../directives/radio-field';
   styleUrls: ['./radio-field.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-form-field et-radio-field',
+    class: 'et-form-field et-radio-field et-legacy',
   },
   hostDirectives: [StaticFormFieldDirective, RadioFieldDirective],
 })

@@ -18,7 +18,7 @@ import { ErrorComponent } from '../../../error/components/error';
   `,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-form-field et-input-field',
+    class: 'et-form-field et-input-field et-legacy',
   },
   hostDirectives: [
     StaticFormFieldDirective,

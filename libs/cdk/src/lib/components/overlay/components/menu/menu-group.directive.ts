@@ -15,7 +15,7 @@ export const MENU_GROUP_TOKEN = new InjectionToken<MenuGroupDirective>('MENU_GRO
   ],
   host: {
     role: 'group',
-    class: 'et-menu-group',
+    class: 'et-menu-group et-legacy',
   },
 })
 export class MenuGroupDirective {

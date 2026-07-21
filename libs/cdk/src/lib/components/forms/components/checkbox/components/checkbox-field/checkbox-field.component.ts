@@ -19,7 +19,7 @@ import { CheckboxFieldDirective } from '../../directives/checkbox-field';
   styleUrls: ['./checkbox-field.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-form-field et-checkbox-field',
+    class: 'et-form-field et-checkbox-field et-legacy',
   },
   hostDirectives: [
     StaticFormFieldDirective,

@@ -11,7 +11,7 @@ import { COLOR_INPUT_TOKEN, ColorInputDirective } from '../../directives/color-i
   styleUrls: ['./color-input.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-color-input',
+    class: 'et-color-input et-legacy',
   },
   imports: [AsyncPipe, NativeInputRefDirective],
   hostDirectives: [ColorInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],

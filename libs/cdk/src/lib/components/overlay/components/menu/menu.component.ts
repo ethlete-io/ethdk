@@ -49,7 +49,7 @@ let uniqueId = 0;
   `,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-menu',
+    class: 'et-menu et-legacy',
     role: 'menu',
     '[id]': 'id',
     '[attr.aria-labelledby]': '_trigger.id',

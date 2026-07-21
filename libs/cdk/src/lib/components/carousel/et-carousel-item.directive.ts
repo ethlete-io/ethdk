@@ -14,7 +14,7 @@ export const CAROUSEL_ITEM_TOKEN = new InjectionToken<CarouselItemDirective>('CA
     },
   ],
   host: {
-    class: 'et-carousel-item',
+    class: 'et-carousel-item et-legacy',
   },
 })
 export class CarouselItemDirective {

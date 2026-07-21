@@ -9,7 +9,7 @@ import { SEARCH_INPUT_TOKEN } from '../../directives/search-input';
   styleUrls: ['./search-input-clear.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-search-input-clear',
+    class: 'et-search-input-clear et-legacy',
   },
   imports: [AsyncPipe],
 })

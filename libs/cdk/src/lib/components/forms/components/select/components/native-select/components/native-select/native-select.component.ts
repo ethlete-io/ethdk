@@ -10,7 +10,7 @@ import { NATIVE_SELECT_INPUT_TOKEN, NativeSelectInputDirective } from '../../dir
   templateUrl: './native-select.component.html',
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-native-select',
+    class: 'et-native-select et-legacy',
   },
   imports: [NativeInputRefDirective, NgTemplateOutlet, AsyncPipe],
   hostDirectives: [NativeSelectInputDirective, { directive: InputDirective, inputs: ['autocomplete'] }],

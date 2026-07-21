@@ -62,7 +62,7 @@ type InlineTabsBaseHeader = {
     NgStyle,
   ],
   host: {
-    class: 'et-inline-tabs',
+    class: 'et-inline-tabs et-legacy',
   },
 })
 export class InlineTabsComponent implements AfterContentInit, AfterContentChecked, OnDestroy {

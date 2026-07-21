@@ -29,7 +29,7 @@ export const MENU_TEMPLATE = new InjectionToken<TemplateRef<unknown>>('MENU_TEMP
   `,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-menu-container',
+    class: 'et-menu-container et-legacy',
   },
   imports: [AnimatedLifecycleDirective, NgTemplateOutlet],
   hostDirectives: [ProvideColorDirective],

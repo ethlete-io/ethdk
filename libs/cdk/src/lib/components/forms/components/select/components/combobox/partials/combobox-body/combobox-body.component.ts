@@ -32,7 +32,7 @@ export const COMBOBOX_BODY_TOKEN = new InjectionToken<ComboboxBodyComponent>('ET
   templateUrl: './combobox-body.component.html',
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-combobox-body et-with-default-animation',
+    class: 'et-combobox-body et-with-default-animation et-legacy',
     tabindex: '-1',
     '[attr.id]': 'id',
     role: 'listbox',

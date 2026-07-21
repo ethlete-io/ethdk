@@ -12,7 +12,7 @@ export const COMBOBOX_OPTION_TOKEN = new InjectionToken<ComboboxOptionComponent>
   templateUrl: './combobox-option.component.html',
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-combobox-option',
+    class: 'et-combobox-option et-legacy',
     '(mousedown)': '_ignoreBlur()',
     '(click)': '_selectOption()',
     '(mouseenter)': '_setActiveByHover()',

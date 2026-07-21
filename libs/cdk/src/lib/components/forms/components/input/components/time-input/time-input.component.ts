@@ -11,7 +11,7 @@ import { TIME_INPUT_TOKEN, TimeInputDirective } from '../../directives/time-inpu
   styleUrls: ['./time-input.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-time-input',
+    class: 'et-time-input et-legacy',
   },
   imports: [AsyncPipe, NativeInputRefDirective],
   hostDirectives: [

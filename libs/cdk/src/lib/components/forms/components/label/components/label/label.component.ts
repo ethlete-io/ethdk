@@ -24,7 +24,7 @@ let nextUniqueId = 0;
   imports: [AsyncPipe],
   providers: [{ provide: LABEL_TOKEN, useExisting: LabelComponent }],
   host: {
-    class: 'et-label',
+    class: 'et-label et-legacy',
   },
 })
 export class LabelComponent {

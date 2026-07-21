@@ -40,7 +40,7 @@ const BASE_STROKE_WIDTH = 10;
   styleUrls: ['./progress-spinner.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-progress-spinner',
+    class: 'et-progress-spinner et-legacy',
     role: 'progressbar',
     tabindex: '-1',
     '[class.et-circular-progress--indeterminate]': 'mode() === "indeterminate"',

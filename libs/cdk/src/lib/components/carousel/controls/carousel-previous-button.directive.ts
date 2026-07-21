@@ -18,7 +18,7 @@ export const CAROUSEL_PREVIOUS_BUTTON_TOKEN = new InjectionToken<CarouselPreviou
     },
   ],
   host: {
-    class: 'et-carousel-previous-button',
+    class: 'et-carousel-previous-button et-legacy',
   },
 })
 export class CarouselPreviousButtonDirective {

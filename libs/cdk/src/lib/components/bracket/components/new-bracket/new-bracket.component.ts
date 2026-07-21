@@ -39,7 +39,7 @@ import { BracketSwissColors, injectNewBracketConfig } from './new-bracket.config
   styleUrl: './new-bracket.component.scss',
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-new-bracket-host',
+    class: 'et-new-bracket-host et-legacy',
   },
   imports: [NgComponentOutlet],
 })

@@ -16,7 +16,7 @@ import { CAROUSEL_TOKEN, CarouselDirective } from './carousel.directive';
   styleUrl: './carousel.component.scss',
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-carousel-host',
+    class: 'et-carousel-host et-legacy',
   },
   hostDirectives: [
     {

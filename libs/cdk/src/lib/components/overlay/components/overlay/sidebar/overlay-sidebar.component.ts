@@ -18,7 +18,7 @@ import { SidebarOverlayService } from './sidebar-overlay';
   `,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-overlay-sidebar-host',
+    class: 'et-overlay-sidebar-host et-legacy',
   },
   imports: [NgTemplateOutlet],
 })

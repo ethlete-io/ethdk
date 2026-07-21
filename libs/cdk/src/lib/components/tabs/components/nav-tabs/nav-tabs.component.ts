@@ -25,7 +25,7 @@ import { ActiveTabUnderlineBarManager, ActiveTabUnderlineDirective, PaginatedTab
   encapsulation: ViewEncapsulation.None,
   imports: [ScrollableComponent],
   host: {
-    class: 'et-nav-tabs',
+    class: 'et-nav-tabs et-legacy',
     '[attr.role]': '_getRole()',
   },
   styles: `

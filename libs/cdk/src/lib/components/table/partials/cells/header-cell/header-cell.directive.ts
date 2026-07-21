@@ -5,7 +5,7 @@ import { Directive } from '@angular/core';
   // eslint-disable-next-line @angular-eslint/directive-selector
   selector: 'et-header-cell, th[et-header-cell]',
   host: {
-    class: 'et-header-cell et-data-table__header-cell',
+    class: 'et-header-cell et-data-table__header-cell et-legacy',
     role: 'columnheader',
   },
 })

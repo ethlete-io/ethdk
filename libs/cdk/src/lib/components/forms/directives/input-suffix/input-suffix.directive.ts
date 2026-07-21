@@ -6,7 +6,7 @@ export const INPUT_SUFFIX_TOKEN = new InjectionToken<InputSuffixDirective>('INPU
   selector: '[etInputSuffix]',
 
   host: {
-    class: 'et-input-suffix',
+    class: 'et-input-suffix et-legacy',
   },
   exportAs: 'etInputSuffix',
   providers: [

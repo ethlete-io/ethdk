@@ -21,7 +21,7 @@ export const TOGGLETIP = new InjectionToken<ToggletipComponent>('Toggletip');
   imports: [NgTemplateOutlet, AnimatedLifecycleDirective],
   hostDirectives: [ProvideColorDirective],
   host: {
-    class: 'et-toggletip',
+    class: 'et-toggletip et-legacy',
     'aria-hidden': 'true',
     '[class.et-with-default-animation]': '!_config.customAnimated',
     '[class]': '_config.containerClass',

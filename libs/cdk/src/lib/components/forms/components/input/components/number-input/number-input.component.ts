@@ -11,7 +11,7 @@ import { NUMBER_INPUT_TOKEN, NumberInputDirective } from '../../directives/numbe
   styleUrls: ['./number-input.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-number-input',
+    class: 'et-number-input et-legacy',
   },
   imports: [AsyncPipe, NativeInputRefDirective],
   hostDirectives: [

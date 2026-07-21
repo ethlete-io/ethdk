@@ -8,7 +8,7 @@ import { BracketRoundDirective } from '../../directives/bracket-round';
   styleUrls: ['./bracket-round-header.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-bracket-round-header',
+    class: 'et-bracket-round-header et-legacy',
   },
   imports: [AsyncPipe],
   hostDirectives: [BracketRoundDirective],

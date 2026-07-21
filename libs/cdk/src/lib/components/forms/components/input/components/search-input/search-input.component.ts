@@ -11,7 +11,7 @@ import { SEARCH_INPUT_TOKEN, SearchInputDirective } from '../../directives/searc
   styleUrls: ['./search-input.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-search-input',
+    class: 'et-search-input et-legacy',
   },
   imports: [AsyncPipe, NativeInputRefDirective],
   hostDirectives: [SearchInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],

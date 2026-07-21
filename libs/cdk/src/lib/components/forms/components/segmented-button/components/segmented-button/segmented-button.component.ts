@@ -11,7 +11,7 @@ import { SEGMENTED_BUTTON_GROUP_TOKEN } from '../../directives/segmented-button-
   styleUrls: ['./segmented-button.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-segmented-button',
+    class: 'et-segmented-button et-legacy',
   },
   imports: [AsyncPipe],
   hostDirectives: [

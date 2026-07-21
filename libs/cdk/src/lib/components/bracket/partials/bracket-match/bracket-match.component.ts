@@ -8,7 +8,7 @@ import { BracketMatchDirective } from '../../directives/bracket-match';
   styleUrls: ['./bracket-match.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-bracket-match',
+    class: 'et-bracket-match et-legacy',
   },
   imports: [AsyncPipe],
   hostDirectives: [BracketMatchDirective],

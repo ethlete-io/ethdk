@@ -20,7 +20,7 @@ export const SELECTION_LIST_OPTION = new InjectionToken<SelectionListOptionDirec
   providers: [{ provide: SELECTION_LIST_OPTION, useExisting: SelectionListOptionDirective }],
   exportAs: 'etSelectionListOption',
   host: {
-    class: 'et-selection-list-option',
+    class: 'et-selection-list-option et-legacy',
     '[class.et-selection-list-option--selected]': 'selected()',
     '[class.et-selection-list-option--disabled]': 'disabled || input.disabled',
     role: 'option',

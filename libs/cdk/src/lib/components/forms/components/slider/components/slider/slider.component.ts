@@ -80,7 +80,7 @@ const getPointerPositionOnPage = (event: MouseEvent | TouchEvent, id: number | n
   styleUrls: ['./slider.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-slider',
+    class: 'et-slider et-legacy',
     role: 'slider',
     '[id]': '_input.id',
   },

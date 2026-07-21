@@ -22,7 +22,7 @@ export const signalVisibilityChangeClasses = (cfg: {
   template: '<ng-content />',
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-rich-filter-host',
+    class: 'et-rich-filter-host et-legacy',
   },
   hostDirectives: [RichFilterTopDirective],
 })

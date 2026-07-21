@@ -11,7 +11,7 @@ import { TEL_INPUT_TOKEN, TelInputDirective } from '../../directives/tel-input';
   styleUrls: ['./tel-input.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-tel-input',
+    class: 'et-tel-input et-legacy',
   },
   imports: [AsyncPipe, NativeInputRefDirective],
   hostDirectives: [TelInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],

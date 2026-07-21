@@ -16,7 +16,7 @@ let _uniqueIdCounter = 0;
   styleUrls: ['./error.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-error',
+    class: 'et-error et-legacy',
   },
   imports: [AsyncPipe],
 })

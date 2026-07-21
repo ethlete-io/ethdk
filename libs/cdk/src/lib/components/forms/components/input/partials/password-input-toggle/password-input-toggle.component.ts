@@ -9,7 +9,7 @@ import { PASSWORD_INPUT_TOKEN } from '../../directives/password-input';
   styleUrls: ['./password-input-toggle.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-password-input-toggle',
+    class: 'et-password-input-toggle et-legacy',
   },
   imports: [AsyncPipe],
 })

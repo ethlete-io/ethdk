@@ -15,7 +15,7 @@ import { SelectBodyComponent } from '../../partials/select-body';
   styleUrls: ['./select.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-select',
+    class: 'et-select et-legacy',
   },
   imports: [AsyncPipe, IconDirective],
   hostDirectives: [

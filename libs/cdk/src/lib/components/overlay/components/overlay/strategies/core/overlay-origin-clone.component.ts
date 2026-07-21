@@ -7,7 +7,7 @@ import { AnimatedLifecycleDirective } from '@ethlete/core';
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [AnimatedLifecycleDirective],
   host: {
-    class: 'et-overlay-origin-clone',
+    class: 'et-overlay-origin-clone et-legacy',
     inert: 'true',
   },
   styleUrl: './overlay-origin-clone.component.scss',

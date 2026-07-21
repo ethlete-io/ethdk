@@ -22,7 +22,7 @@ import { OverlayRouterService } from './overlay-router';
   `,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-overlay-route-header-template-outlet-host',
+    class: 'et-overlay-route-header-template-outlet-host et-legacy',
   },
   styles: `
     .et-overlay-route-header-template-outlet-host {

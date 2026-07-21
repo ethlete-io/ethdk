@@ -10,7 +10,7 @@ import { TEXT_INPUT_TOKEN, TextInputDirective } from '../../directives/text-inpu
   styleUrls: ['./text-input.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-text-input',
+    class: 'et-text-input et-legacy',
   },
   imports: [AsyncPipe, NativeInputRefDirective],
   hostDirectives: [TextInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],

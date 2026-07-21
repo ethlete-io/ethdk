@@ -11,7 +11,7 @@ import { OVERLAY_ROUTER_OUTLET_TOKEN } from './overlay-router-outlet.component';
   `,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-overlay-shared-route-template-outlet-host',
+    class: 'et-overlay-shared-route-template-outlet-host et-legacy',
   },
   imports: [NgTemplateOutlet],
   styles: `

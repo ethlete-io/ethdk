@@ -54,7 +54,7 @@ let uniqueId = 0;
   ],
   host: {
     'aria-haspopup': 'menu',
-    class: 'et-menu-trigger',
+    class: 'et-menu-trigger et-legacy',
     '[id]': 'id',
   },
 })

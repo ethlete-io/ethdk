@@ -23,7 +23,7 @@ import {
   `,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-overlay-sidebar-page-host',
+    class: 'et-overlay-sidebar-page-host et-legacy',
   },
   imports: [OverlayHeaderDirective, OverlayBodyComponent, NgTemplateOutlet],
   hostDirectives: [OverlayMainDirective],

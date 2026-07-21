@@ -11,7 +11,7 @@ import { CHECKBOX_TOKEN, CheckboxDirective } from '../../directives/checkbox';
   styleUrls: ['./checkbox.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-checkbox',
+    class: 'et-checkbox et-legacy',
   },
   imports: [NgClass, AsyncPipe, NativeInputRefDirective],
   hostDirectives: [CheckboxDirective, { directive: InputDirective, inputs: ['autocomplete'] }],

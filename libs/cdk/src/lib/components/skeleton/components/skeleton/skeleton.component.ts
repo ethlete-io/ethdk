@@ -6,7 +6,7 @@ import { Component, ViewEncapsulation, booleanAttribute, input } from '@angular/
   styleUrls: ['skeleton.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-skeleton',
+    class: 'et-skeleton et-legacy',
     '[class.et-skeleton--animated]': 'animated()',
   },
 })

@@ -12,7 +12,7 @@ import { injectBreadcrumbManager } from '../../providers/breadcrumb-manager.prov
   `,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-breadcrumb-outlet',
+    class: 'et-breadcrumb-outlet et-legacy',
   },
   styles: `
     .et-breadcrumb-outlet {

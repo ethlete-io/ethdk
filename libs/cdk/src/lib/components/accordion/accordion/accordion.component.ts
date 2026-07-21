@@ -29,7 +29,7 @@ let accordionId = 0;
   providers: [{ provide: ACCORDION_COMPONENT, useExisting: AccordionComponent }, provideIcons(CHEVRON_ICON)],
   imports: [AccordionLabelDirective, PortalModule, IconDirective],
   host: {
-    class: 'et-accordion',
+    class: 'et-accordion et-legacy',
   },
 })
 export class AccordionComponent {

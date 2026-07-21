@@ -27,7 +27,7 @@ export type InlineTabBodyOriginState = 'left' | 'right';
   encapsulation: ViewEncapsulation.None,
   imports: [CdkScrollableModule, InlineTabBodyHostDirective],
   host: {
-    class: 'et-inline-tab-body',
+    class: 'et-inline-tab-body et-legacy',
   },
 })
 export class InlineTabBodyComponent implements OnInit, OnDestroy {

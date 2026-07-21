@@ -17,7 +17,7 @@ let nextUniqueId = 0;
 
   exportAs: 'etInput',
   host: {
-    class: 'et-input',
+    class: 'et-input et-legacy',
     '[attr.autocomplete]': 'null',
   },
   providers: [{ provide: INPUT_TOKEN, useExisting: InputDirective }],

@@ -15,7 +15,7 @@ import { QueryButtonDirective } from '../../directives/query-button';
   ],
   imports: [QueryDirective, AsyncPipe],
   host: {
-    class: 'et-query-button',
+    class: 'et-query-button et-legacy',
   },
 })
 export class QueryButtonComponent {

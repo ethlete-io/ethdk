@@ -8,7 +8,7 @@ let nextUniqueId = 0;
   styleUrls: ['nav-tabs-outlet.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-nav-tabs-outlet',
+    class: 'et-nav-tabs-outlet et-legacy',
     role: 'tabpanel',
     '[attr.id]': 'id',
     '[attr.aria-labelledby]': '_activeTabId',

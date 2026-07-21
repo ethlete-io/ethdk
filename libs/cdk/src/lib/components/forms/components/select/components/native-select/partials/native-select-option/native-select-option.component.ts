@@ -6,7 +6,7 @@ import { NativeSelectOptionDirective } from '../../directives/native-select-opti
   template: ` <ng-template #textTpl> <ng-content /></ng-template> `,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-native-select-option',
+    class: 'et-native-select-option et-legacy',
   },
   hostDirectives: [{ directive: NativeSelectOptionDirective, inputs: ['value', 'disabled', 'hidden'] }],
 })

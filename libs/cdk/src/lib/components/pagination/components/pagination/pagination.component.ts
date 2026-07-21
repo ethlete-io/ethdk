@@ -28,7 +28,7 @@ import { paginate } from '../../utils';
   imports: [AsyncPipe, PaginationLinkDirective],
   providers: [PaginationHeadService],
   host: {
-    class: 'et-pagination',
+    class: 'et-pagination et-legacy',
   },
 })
 export class PaginationComponent implements OnInit, OnDestroy {

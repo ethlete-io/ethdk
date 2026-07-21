@@ -8,7 +8,7 @@ import { CheckboxGroupDirective } from '../../directives/checkbox-group';
   styleUrls: ['./checkbox-group.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-form-group et-checkbox-group',
+    class: 'et-form-group et-checkbox-group et-legacy',
   },
   hostDirectives: [CheckboxGroupDirective, StaticFormGroupDirective],
 })

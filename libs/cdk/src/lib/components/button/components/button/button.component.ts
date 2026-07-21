@@ -8,7 +8,7 @@ import { ButtonDirective } from '../../directives/button';
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [{ directive: ButtonDirective, inputs: ['disabled', 'type', 'pressed'] }],
   host: {
-    class: 'et-button',
+    class: 'et-button et-legacy',
   },
 })
 export class ButtonComponent {

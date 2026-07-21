@@ -6,7 +6,7 @@ import { Component, ViewEncapsulation } from '@angular/core';
   styleUrls: ['skeleton-item.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-skeleton-item',
+    class: 'et-skeleton-item et-legacy',
     'aria-hidden': 'true',
   },
 })

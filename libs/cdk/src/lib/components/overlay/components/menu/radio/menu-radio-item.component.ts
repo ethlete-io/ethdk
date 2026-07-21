@@ -27,7 +27,7 @@ import { MENU_TRIGGER_TOKEN } from '../menu-trigger.directive';
   styleUrl: './menu-radio-item.component.scss',
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-menu-radio-item',
+    class: 'et-menu-radio-item et-legacy',
     role: 'menuitemradio',
     '[id]': 'input.id',
   },

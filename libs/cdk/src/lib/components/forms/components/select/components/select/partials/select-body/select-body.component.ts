@@ -18,7 +18,7 @@ import { SELECT_BODY_TOKEN, SelectBodyDirective } from '../../directives/select-
   styleUrls: ['./select-body.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-select-body et-with-default-animation',
+    class: 'et-select-body et-with-default-animation et-legacy',
   },
   imports: [AnimatedLifecycleDirective, NgTemplateOutlet],
   hostDirectives: [SelectBodyDirective, ProvideColorDirective],

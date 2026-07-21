@@ -12,7 +12,7 @@ import { RADIO_GROUP_TOKEN } from '../../directives/radio-group';
   styleUrls: ['./radio.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-radio',
+    class: 'et-radio et-legacy',
   },
   imports: [AsyncPipe, NgClass, NativeInputRefDirective],
   hostDirectives: [

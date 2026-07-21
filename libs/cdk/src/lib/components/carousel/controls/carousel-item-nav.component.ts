@@ -23,7 +23,7 @@ import { CAROUSEL_ITEM_NAV_TOKEN, CarouselItemNavDirective } from './carousel-it
   `,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-carousel-item-nav-host',
+    class: 'et-carousel-item-nav-host et-legacy',
   },
   hostDirectives: [{ directive: CarouselItemNavDirective }],
 })

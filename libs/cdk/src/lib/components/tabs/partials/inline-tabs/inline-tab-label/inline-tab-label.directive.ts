@@ -11,7 +11,7 @@ export const TAB = new InjectionToken<unknown>('TAB');
   providers: [{ provide: TAB_LABEL, useExisting: InlineTabLabelDirective }],
 
   host: {
-    class: 'et-inline-tab-label',
+    class: 'et-inline-tab-label et-legacy',
   },
 })
 export class InlineTabLabelDirective extends CdkPortal {

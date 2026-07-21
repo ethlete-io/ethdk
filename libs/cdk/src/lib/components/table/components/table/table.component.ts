@@ -55,7 +55,7 @@ import { TableBusyOutletDirective } from '../../partials/table-busy-outlet';
   `,
   styleUrls: ['table.component.scss'],
   host: {
-    class: 'et-table et-data-table__table',
+    class: 'et-table et-data-table__table et-legacy',
     '[class.et-table-fixed-layout]': 'fixedLayout',
     '[attr.aria-busy]': 'busy ? true : null',
   },

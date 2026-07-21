@@ -100,7 +100,7 @@ export type ScrollableLoadingTemplatePosition = 'start' | 'end';
     ScrollObserverEndDirective,
   ],
   host: {
-    class: 'et-scrollable',
+    class: 'et-scrollable et-legacy',
   },
   providers: [provideIcons(CHEVRON_ICON), provideBreakpointInstance(ScrollableComponent)],
 })

@@ -31,7 +31,7 @@ import { MENU_TRIGGER_TOKEN } from '../menu-trigger.directive';
   styleUrl: './menu-checkbox-item.component.scss',
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-menu-checkbox-item',
+    class: 'et-menu-checkbox-item et-legacy',
     role: 'menuitemcheckbox',
     '[id]': 'input.id',
   },

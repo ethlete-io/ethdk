@@ -4,7 +4,7 @@ import { Directive } from '@angular/core';
   // eslint-disable-next-line @angular-eslint/directive-selector
   selector: '[et-accordion-label]',
   host: {
-    class: 'et-accordion-label',
+    class: 'et-accordion-label et-legacy',
   },
 })
 export class AccordionLabelDirective {}

@@ -6,7 +6,7 @@ export const INPUT_PREFIX_TOKEN = new InjectionToken<InputPrefixDirective>('INPU
   selector: '[etInputPrefix]',
 
   host: {
-    class: 'et-input-prefix',
+    class: 'et-input-prefix et-legacy',
   },
   exportAs: 'etInputPrefix',
   providers: [

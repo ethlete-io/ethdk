@@ -21,7 +21,7 @@ export type SegmentedButtonGroupRenderAs = 'buttons' | 'tabs';
   styleUrls: ['./segmented-button-group.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-form-group et-segmented-button-group',
+    class: 'et-form-group et-segmented-button-group et-legacy',
   },
   hostDirectives: [
     StaticFormGroupDirective,

@@ -12,7 +12,7 @@ import { BracketRoundSwissGroup, NewBracketRound } from './linked';
   `,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-new-bracket-default-round-header-host',
+    class: 'et-new-bracket-default-round-header-host et-legacy',
   },
   styles: `
     .et-new-bracket-default-round-header-host {

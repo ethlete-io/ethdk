@@ -29,7 +29,7 @@ import { ArrowViewStateTransition } from './sort-header.types';
   templateUrl: 'sort-header.component.html',
   styleUrls: ['sort-header.component.scss'],
   host: {
-    class: 'et-sort-header',
+    class: 'et-sort-header et-legacy',
     '[class.et-sort-header-disabled]': 'disabled',
     '[attr.aria-sort]': '_ariaSortAttr',
   },

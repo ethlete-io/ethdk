@@ -19,7 +19,7 @@ import { SelectFieldDirective } from '../../directives/select-field';
   `,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-form-field et-select-field',
+    class: 'et-form-field et-select-field et-legacy',
   },
   hostDirectives: [
     SelectFieldDirective,

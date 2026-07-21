@@ -11,7 +11,7 @@ import { TEXTAREA_INPUT_TOKEN, TextareaInputDirective } from '../../directives/t
   styleUrls: ['./textarea-input.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-textarea-input',
+    class: 'et-textarea-input et-legacy',
   },
   imports: [AsyncPipe, NativeInputRefDirective],
   hostDirectives: [TextareaInputDirective, { directive: InputDirective, inputs: ['autocomplete', 'placeholder'] }],

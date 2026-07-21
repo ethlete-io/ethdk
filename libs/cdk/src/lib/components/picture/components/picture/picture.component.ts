@@ -27,7 +27,7 @@ import {
   encapsulation: ViewEncapsulation.None,
   imports: [NgClass],
   host: {
-    class: 'et-picture',
+    class: 'et-picture et-legacy',
   },
 })
 export class PictureComponent {

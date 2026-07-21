@@ -18,7 +18,7 @@ import { RadioGroupDirective } from '../../directives/radio-group';
   styleUrls: ['./radio-group.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-form-group et-radio-group',
+    class: 'et-form-group et-radio-group et-legacy',
   },
   hostDirectives: [
     StaticFormGroupDirective,

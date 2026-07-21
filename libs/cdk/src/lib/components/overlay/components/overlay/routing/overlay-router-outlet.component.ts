@@ -65,7 +65,7 @@ export const OVERLAY_ROUTER_OUTLET_TOKEN = new InjectionToken<OverlayRouterOutle
   `,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-overlay-router-outlet-host',
+    class: 'et-overlay-router-outlet-host et-legacy',
   },
   styleUrl: './overlay-router-outlet.component.scss',
   imports: [AnimatedIfDirective, AnimatedLifecycleDirective, NgComponentOutlet, NgTemplateOutlet, OverlayMainDirective],

@@ -20,7 +20,7 @@ import { SCROLLABLE_PLACEHOLDER_OVERLAY_TEMPLATE_TOKEN } from '../../directives/
   encapsulation: ViewEncapsulation.None,
   imports: [NgTemplateOutlet, NgClass],
   host: {
-    class: 'et-scrollable-placeholder',
+    class: 'et-scrollable-placeholder et-legacy',
   },
 })
 export class ScrollablePlaceholderComponent {

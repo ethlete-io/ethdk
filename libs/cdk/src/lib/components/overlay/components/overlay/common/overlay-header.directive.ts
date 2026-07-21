@@ -15,7 +15,7 @@ export const OVERLAY_HEADER_TOKEN = new InjectionToken<OverlayHeaderDirective>('
     },
   ],
   host: {
-    class: 'et-overlay-header',
+    class: 'et-overlay-header et-legacy',
   },
 })
 export class OverlayHeaderDirective implements OnInit {

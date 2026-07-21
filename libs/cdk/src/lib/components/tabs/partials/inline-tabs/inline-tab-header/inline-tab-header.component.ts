@@ -19,7 +19,7 @@ import { InlineTabLabelWrapperDirective } from '../inline-tab-label-wrapper';
   encapsulation: ViewEncapsulation.None,
   imports: [ScrollableComponent],
   host: {
-    class: 'et-inline-tab-header',
+    class: 'et-inline-tab-header et-legacy',
   },
 })
 export class InlineTabHeaderComponent

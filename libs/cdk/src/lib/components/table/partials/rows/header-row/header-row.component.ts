@@ -5,7 +5,7 @@ import { Component, ViewEncapsulation } from '@angular/core';
   selector: 'et-header-row, tr[et-header-row]',
   template: CDK_ROW_TEMPLATE,
   host: {
-    class: 'et-header-row et-data-table__header-row',
+    class: 'et-header-row et-data-table__header-row et-legacy',
     role: 'row',
   },
   encapsulation: ViewEncapsulation.None,

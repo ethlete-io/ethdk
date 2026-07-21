@@ -5,7 +5,7 @@ import { Directive } from '@angular/core';
   // eslint-disable-next-line @angular-eslint/directive-selector
   selector: 'et-cell, td[et-cell]',
   host: {
-    class: 'et-cell et-data-table__cell',
+    class: 'et-cell et-data-table__cell et-legacy',
   },
 })
 export class CellDirective extends CdkCell {}

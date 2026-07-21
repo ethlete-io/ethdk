@@ -18,7 +18,7 @@ import { ComboboxBodyComponent } from '../../partials/combobox-body';
   styleUrls: ['./combobox.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-combobox',
+    class: 'et-combobox et-legacy',
     '(click)': 'combobox.selectInputAndOpen()',
   },
   imports: [NativeInputRefDirective, AsyncPipe, NgTemplateOutlet, NgComponentOutlet, IconDirective],

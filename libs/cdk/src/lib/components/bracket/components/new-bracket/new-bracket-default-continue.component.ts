@@ -6,7 +6,7 @@ import { NewBracketMatch } from './linked';
   template: ` Next stage ({{ bracketMatches().length }}) `,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-new-bracket-default-continue-host',
+    class: 'et-new-bracket-default-continue-host et-legacy',
   },
   styles: `
     .et-new-bracket-default-continue-host {

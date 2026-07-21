@@ -6,7 +6,7 @@ import { SELECT_OPTION_TOKEN, SelectOptionDirective } from '../../directives/sel
   template: ` <ng-content /> `,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-select-option',
+    class: 'et-select-option et-legacy',
   },
   hostDirectives: [{ directive: SelectOptionDirective, inputs: ['value', 'disabled', 'label'] }],
 })

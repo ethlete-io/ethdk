@@ -30,7 +30,7 @@ let nextUniqueId = 0;
     </span>
   `,
   host: {
-    class: 'et-nav-tab-link',
+    class: 'et-nav-tab-link et-legacy',
     '[id]:': 'id',
     '[attr.aria-controls]': '_getAriaControls()',
     '[attr.aria-current]': '_getAriaCurrent()',

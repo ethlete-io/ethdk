@@ -6,7 +6,7 @@ import { BracketRoundSwissGroup, NewBracketMatch, NewBracketRound } from './link
   template: ` {{ bracketMatch().id }} `,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-new-bracket-default-match-host',
+    class: 'et-new-bracket-default-match-host et-legacy',
   },
   styles: `
     .et-new-bracket-default-match-host {

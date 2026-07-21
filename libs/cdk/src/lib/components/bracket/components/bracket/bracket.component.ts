@@ -16,7 +16,7 @@ import { Memo } from './memo.decorator';
   encapsulation: ViewEncapsulation.None,
   imports: [PortalModule, AsyncPipe],
   host: {
-    class: 'et-bracket',
+    class: 'et-bracket et-legacy',
     '[attr.has-round-headers]': '!!this._config?.roundHeaderComponent',
   },
   providers: [

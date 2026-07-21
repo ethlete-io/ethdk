@@ -18,7 +18,7 @@ export const OVERLAY_BACK_OR_CLOSE_TOKEN = new InjectionToken<OverlayBackOrClose
     },
   ],
   host: {
-    class: 'et-overlay-back-or-close',
+    class: 'et-overlay-back-or-close et-legacy',
     type: 'button',
   },
 })

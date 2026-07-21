@@ -14,7 +14,7 @@ export const OVERLAY_FOOTER_TOKEN = new InjectionToken<OverlayFooterDirective>('
     },
   ],
   host: {
-    class: 'et-overlay-footer',
+    class: 'et-overlay-footer et-legacy',
   },
 })
 export class OverlayFooterDirective implements OnInit {

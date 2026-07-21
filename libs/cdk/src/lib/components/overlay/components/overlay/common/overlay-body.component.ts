@@ -35,7 +35,7 @@ export type OverlayBodyDividerType = 'static' | 'dynamic' | false;
     provideBoundaryElement(),
   ],
   host: {
-    class: 'et-overlay-body',
+    class: 'et-overlay-body et-legacy',
   },
 })
 export class OverlayBodyComponent implements OnInit {

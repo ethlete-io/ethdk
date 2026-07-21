@@ -11,7 +11,7 @@ import { SLIDE_TOGGLE_TOKEN, SlideToggleDirective } from '../../directives/slide
   styleUrls: ['./slide-toggle.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-slide-toggle',
+    class: 'et-slide-toggle et-legacy',
   },
   imports: [AsyncPipe, NativeInputRefDirective],
   hostDirectives: [SlideToggleDirective, InputDirective],

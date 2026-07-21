@@ -12,7 +12,7 @@ import { SegmentedButtonFieldDirective } from '../../directives/segmented-button
   styleUrls: ['./segmented-button-field.component.scss'],
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'et-form-field et-segmented-button-field',
+    class: 'et-form-field et-segmented-button-field et-legacy',
   },
   hostDirectives: [StaticFormFieldDirective, SegmentedButtonFieldDirective],
 })
