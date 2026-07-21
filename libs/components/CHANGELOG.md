@@ -1,5 +1,72 @@
 # Changelog
 
+## 1.0.0-next.25
+
+### Minor Changes
+
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`08ccfb4`](https://github.com/ethlete-io/ethdk/commit/08ccfb406db0269237ce3d026036c3400dff01d6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `createV2DropzoneUpload` — a legacy `V2QueryClient` flavor of the dropzone `upload` config, mirroring `createDropzoneUpload`. Apps that haven't migrated to the new `@ethlete/query` API can now drive the dropzone from a legacy v2 creator (`client.post(...)` or a `createLegacyQueryCreator` interop wrapper); it slots into the same `upload` input and supports the full lifecycle (progress, success, failure, retry, existing values). Internally the per-file query lifecycle now runs behind an upload-handle abstraction, so both flavors share the directive/entry code and the failure display handles both `QueryErrorResponse` and `RequestError`.
+
+- [`edb1f14`](https://github.com/ethlete-io/ethdk/commit/edb1f146792c308a0b80e8108d48934369d27b1d) Thanks [@TomTomB](https://github.com/TomTomB)! - Form field: the label is now truly optional — the label-mode layouts (`static`,
+  `floating-outside`) no longer reserve the label band when no `<et-label>` is
+  projected.
+  - Text-field controls (`et-input`, `et-number-input`, `et-password-input`,
+    `et-color-input`, `et-textarea`) now accept `aria-label` / `aria-labelledby`,
+    forwarded onto the native control; a consumer `aria-labelledby` overrides the
+    projected `<et-label>`.
+  - In dev mode a form field whose control has no accessible name — no `<et-label>`
+    and no `aria-label`/`aria-labelledby` — now throws (`ET2201`). A placeholder is
+    not an accessible name.
+
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`0ecb9db`](https://github.com/ethlete-io/ethdk/commit/0ecb9dbe116b566beab61391b2cb92f3439c07f6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: public API to insert a token chip at the caret from your own UI.
+  - `RichTextEditorDirective.insertToken(type, id, opts?)` inserts a `{{type:id}}` token chip at the
+    caret (or the end when unfocused), resolving its label via the trigger's `resolveItem` — the same
+    result as picking it from the `#`/`@` popup. `insertTokenItem(type, item, opts?)` does the same
+    when you already hold the resolved `{ id, label }`. The directive now also exports as
+    `etRichTextEditor`.
+  - New opt-in `et-rich-text-editor-token-palette` component (via `RICH_TEXT_EDITOR_TOKEN_PALETTE_IMPORTS`):
+    a click-to-insert chip row driven by the same `RichTextEditorTrigger[]`.
+
+- [#3029](https://github.com/ethlete-io/ethdk/pull/3029) [`129c3c9`](https://github.com/ethlete-io/ethdk/commit/129c3c97c8b2e62fd4532ba03e7cf9bf6aaee764) Thanks [@EliasPapavlassopoulos](https://github.com/EliasPapavlassopoulos)! - Add a two-way `mixed` bulk-edit state (plus `mixedLabel` where the control has a text display slot) across the form controls: select (single, multi, searchable, headless, virtualized), cascader, input, number-input, password-input, textarea, color-input, date-input, time-input, date-time-input, date-range-input, duration-input, tag-input, phone-input, slider, range-slider, rating, and the selection-list groups (radio, checkbox-group, segmented). While `mixed` is set the raw form value stays untouched and masked; the first user commit replaces it and resolves the state. All implementations follow one executable contract (shared conformance suite); checkbox keeps expressing the concept via its platform-named `indeterminate`, and switch deliberately stays two-state (ARIA forbids a mixed switch).
+
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`b5c0207`](https://github.com/ethlete-io/ethdk/commit/b5c0207db2af40b15f8575e3f6c721d07cf81b2f) Thanks [@github-actions](https://github.com/apps/github-actions)! - `et-select` (and the headless `[etSelect]`) gains the `[etSelectOptions]` directive: bind the bundle returned by `selectOptionsFromQuery` or `selectOptionsFromV2Query` with a single attribute and it wires the async plumbing for you — forwarding `loading`, `error` and `hasMoreItems`, forcing `filterMode` to `external`, and driving the bundle's `setQuery`/`loadMore` from the select's `(queryChange)`/`(loadMore)` outputs. You only render the options. Both factories return the same shape, so one directive serves the current query client and the legacy `V2QueryClient` alike. The manual per-input wiring stays fully supported.
+
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`5fc9aa4`](https://github.com/ethlete-io/ethdk/commit/5fc9aa4316390c2db908c6dcd3c2118945a11089) Thanks [@github-actions](https://github.com/apps/github-actions)! - `et-select` (and the headless `[etSelect]`) gains an `pickOption` output and a `pickOnly` input. `pickOption` emits the picked value whenever a single-select option is committed — a "the user actively picked this" signal distinct from `valueChange`. With `pickOnly`, committing an option emits `pickOption` without ever writing `value`, so the select stays empty: a fire-and-forget "add" picker that feeds an external list without the set-then-clear dance (and its race with the `[(value)]` write-back). `pickOnly` has no effect in multi-select.
+
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`6605423`](https://github.com/ethlete-io/ethdk/commit/6605423235364f06c07e827205de2c3a351a538f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Switch now supports an `indeterminate` state (two-way `[(indeterminate)]`), mirroring checkbox — the first toggle resolves it to on. Since `role="switch"` cannot carry `aria-checked="mixed"`, it's presentational only (thumb parks mid-track behind `data-indeterminate`; `aria-checked` stays boolean). The mixed/indeterminate state on the graphical controls (rating, slider, range-slider, checkbox-group, radio-group, switch) now uses a consistent dashed "provisional" treatment so it reads as "values differ" rather than empty.
+
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`d738771`](https://github.com/ethlete-io/ethdk/commit/d738771a05b4505616defab52359870892bae171) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `createOverlayUnsavedChangesGuard` — the overlay flavor of the `unsavedChanges` family. Called from an overlay content component's injection context, it injects the current `OVERLAY_REF` and vetoes a dismissal (outside pointer, escape, drag, or a programmatic `close()`) while the watched form has unsaved changes, runs the `confirm`, and only then re-issues the close. Per-source opt-out via `dismissSources`, honors `disableClose`, and auto-cleans up on injector destroy.
+
+  Also exposes the underlying close-veto seam on `OverlayRef`: `registerCloseGuard(guard)` and `forceClose(source?, result?)`.
+
+### Patch Changes
+
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`b5b037e`](https://github.com/ethlete-io/ethdk/commit/b5b037e6e4e1c1d1ecef9c4c13edab01e40a1d0f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix anchored panels (`select`, `cascader`, the date/time pickers) closing when a popover opened from inside them is clicked. A nested overlay (a select body, menu or tooltip) mounts as a sibling pane in the overlay root, not a DOM descendant, so the panel's outside-pointer check treated a click in the child as an outside dismissal and closed itself. The check now resolves the whole nested overlay tree — anchored by each pane's `origin` — so a pointerdown anywhere inside a descendant popover no longer dismisses the panel that opened it.
+
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`4d70fb1`](https://github.com/ethlete-io/ethdk/commit/4d70fb1fd173e7e9d25031551f752196abb6f94e) Thanks [@github-actions](https://github.com/apps/github-actions)! - `etAutoSurface` now elevates correctly for content rendered inside an overlay. Projected/portaled content keeps the injector of where it was _declared_ (the trigger location), not the pane it renders into, so an `etAutoSurface` inside a select body, menu, date-picker, etc. resolved its parent surface from the outer trigger context and came out one elevation too low — the same level as the overlay's own panel instead of one above it.
+
+  `AutoSurfaceDirective` now also consults the root surface-context tracker (which records the innermost open overlay's surface across the portal boundary) and takes whichever parent surface sits higher. Overlay panels that are themselves the overlay's surface (menu, select/date/cascader panels, tooltip, toggletip) opt out via the new `AutoSurfaceDirective.ignoreOverlaySurfaceContext()` so they keep adopting their overlay's elevation rather than stacking above it — their rendered surface is unchanged.
+
+- [`995eab1`](https://github.com/ethlete-io/ethdk/commit/995eab158002c0e36779cbd54dbbaf7da9355f58) Thanks [@TomTomB](https://github.com/TomTomB)! - Forms: clear ("×") buttons now fade in/out (opacity only) instead of appearing abruptly, consistently across date, time, date-time, duration, phone, select, and cascader. Respects `prefers-reduced-motion`. `et-date-range-input` gains the same clear button (new `clearable`/`clearLabel` inputs).
+
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`43e8711`](https://github.com/ethlete-io/ethdk/commit/43e8711f49ca995a4fdb95d95359219bd8298407) Thanks [@github-actions](https://github.com/apps/github-actions)! - Form fields now keep their focused styling (accent border, lit label/affix) while a control's popup is open. Opening a date/time/date-range picker, select or cascader panel moves focus into the detached overlay, so `:focus-visible` no longer matched the field and it visibly dropped back to its resting look — controls now report an `expanded` state the field reflects as `[data-expanded]`.
+
+  Also fixes a flicker on the date-picker trigger button: clicking it while the field was focused briefly blurred the input (hiding the clear button and dropping the focused style) one frame before the picker opened. The trigger now prevents the mousedown default, matching the clear button, so focus stays on the field through the toggle.
+
+- [`246bb5e`](https://github.com/ethlete-io/ethdk/commit/246bb5ee26d6c28adacea316426a5af19b248a17) Thanks [@TomTomB](https://github.com/TomTomB)! - Form field: text-field controls (`et-input`, `et-number-input`,
+  `et-password-input`, `et-textarea`) no longer render an empty `autocomplete=""`
+  attribute when no autocomplete is set — the attribute is now omitted, clearing
+  Chrome's "Incorrect use of autocomplete attribute" warning.
+
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`b712197`](https://github.com/ethlete-io/ethdk/commit/b712197005495bc180e86d9645f77032da9fb266) Thanks [@github-actions](https://github.com/apps/github-actions)! - Date/time/date-range pickers, select and cascader now flip their alignment on the same side before flipping vertically: their anchored fallback placements changed from `['top-start']` to `['bottom-end', 'top-start', 'top-end']`. A field near the right viewport edge now opens right-aligned under the field (`bottom-end`) instead of being cross-axis shifted, matching the fallback behaviour menus already use.
+
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`62dbf77`](https://github.com/ethlete-io/ethdk/commit/62dbf77444238841fcd22a1c39467fd7f577d707) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor content no longer retints when the editor gains focus. The field frame is an `et-color-interactive--has-focus` ancestor that re-resolves the accent tokens on focus, and rendered content reading the accent — token chips (their outline and fill), links and the caret — inherited that shift. The content root now re-anchors the accent tokens to their resting value, insulating it from the field's interaction state (the same immunity the interactive toolbar buttons already have from carrying `et-color-interactive`).
+
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`5fc9aa4`](https://github.com/ethlete-io/ethdk/commit/5fc9aa4316390c2db908c6dcd3c2118945a11089) Thanks [@github-actions](https://github.com/apps/github-actions)! - `et-select`: a searchable single select with a custom value template (`etSelectValue`) now swaps the rich display for the option's editable plain-text label inside the search input while the field is focused (edit mode), and restores the rich template on blur. Keyboard editing is now at parity with a plain searchable single select — the label is selected on open, Backspace edits the visible text, and erasing it clears the selection. Previously the input stayed empty in this case, so a single Backspace silently deleted the whole selected value with nothing visible to edit.
+
+- [`139d734`](https://github.com/ethlete-io/ethdk/commit/139d73474ec710834a28df50160c2cce1e795c1c) Thanks [@TomTomB](https://github.com/TomTomB)! - Form field: trigger-based controls (select, date pickers) keep their focused frame after a pointer-driven commit, so the frame and the clear affordance no longer disagree about whether the field is focused.
+
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`b7a6582`](https://github.com/ethlete-io/ethdk/commit/b7a6582b0b4753c551617de8282a43df841847d6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Select panel: a width-mirrored panel now matches its field at any width. The panel carried a `max-inline-size: 400px` cap, so on fields wider than 400px the dropdown stopped matching the trigger and rendered narrower than the field. The cap is now scoped to compact triggers (`mirrorPanelWidth={false}`), where the pane is content-sized and still needs an upper bound; when the panel mirrors the field the pane width alone sizes it, with no cap.
+
 ## 1.0.0-next.24
 
 ### Major Changes

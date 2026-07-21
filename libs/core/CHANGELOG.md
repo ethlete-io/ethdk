@@ -1,5 +1,24 @@
 # @ethlete/core
 
+## 5.0.0-next.31
+
+### Minor Changes
+
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`1a6849f`](https://github.com/ethlete-io/ethdk/commit/1a6849fa37e8f6907d08766846a50d3d9de8211b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add the `unsavedChanges` family for guarding forms against accidental discard, and a close-veto seam in the overlay runtime that powers it.
+  - `createUnsavedChangesTracker` — snapshots a default value, tracks whether the watched form/value differs from it (deep-equal snapshot semantics, not signal-forms `dirty()`), and normalizes an async `confirm` (value / Promise / Observable) to a `Promise<boolean>`. Signal-forms `FieldTree` is the first-class source; `Signal<FieldTree | null>` (late/async forms), `AbstractControl` (migration), and `WritableSignal` (escape hatch) are also supported. Includes `refreshDefaultValue` (re-baseline after a save-and-keep-open) and `restoreDefaultValue`.
+  - `createUnsavedChangesGuard` — the router/manual flavor, adding a `canDeactivate` bridge for Angular route guards.
+  - Overlay runtime: `overlayRef.registerCloseGuard(guard)` (synchronous veto for pending closes, returns an unregister fn) and `overlayRef.forceClose(result?, source?)` (commit a close bypassing guards). `reference-detached` closes always bypass guards. This is the seam `createOverlayUnsavedChangesGuard` in `@ethlete/components` builds on.
+
+### Patch Changes
+
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`4d70fb1`](https://github.com/ethlete-io/ethdk/commit/4d70fb1fd173e7e9d25031551f752196abb6f94e) Thanks [@github-actions](https://github.com/apps/github-actions)! - `etAutoSurface` now elevates correctly for content rendered inside an overlay. Projected/portaled content keeps the injector of where it was _declared_ (the trigger location), not the pane it renders into, so an `etAutoSurface` inside a select body, menu, date-picker, etc. resolved its parent surface from the outer trigger context and came out one elevation too low — the same level as the overlay's own panel instead of one above it.
+
+  `AutoSurfaceDirective` now also consults the root surface-context tracker (which records the innermost open overlay's surface across the portal boundary) and takes whichever parent surface sits higher. Overlay panels that are themselves the overlay's surface (menu, select/date/cascader panels, tooltip, toggletip) opt out via the new `AutoSurfaceDirective.ignoreOverlaySurfaceContext()` so they keep adopting their overlay's elevation rather than stacking above it — their rendered surface is unchanged.
+
+- [`eee0451`](https://github.com/ethlete-io/ethdk/commit/eee0451642bfbce97991e539b938fc7c4c84e846) Thanks [@TomTomB](https://github.com/TomTomB)! - `ColorInteractiveDirective`: a readonly control (`aria-readonly="true"`) now keeps its resting accent — hover/active/focus no longer retint it, matching the view-only intent (previously a readonly switch still showed a press color shift).
+
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`008fca5`](https://github.com/ethlete-io/ethdk/commit/008fca57ad434e6d996b1af21f95c55902f74dcd) Thanks [@github-actions](https://github.com/apps/github-actions)! - `ColorInteractiveHasFocusDirective` (`[etColorInteractiveHasFocus]`) now resolves the theme's **base** accent while a descendant is `:focus-visible`, instead of the `-focus` variant. A container merely mirroring a child's focus (e.g. a form field's frame) should read as the plain accent color; the `-focus` variant remains reserved for an element that is itself focused (`[etColorInteractive]:focus-visible`). Effect: focused form fields now paint their focus border/label in the base accent rather than the focus-adjusted shade.
+
 ## 5.0.0-next.30
 
 ### Patch Changes
