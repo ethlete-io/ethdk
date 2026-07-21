@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
 import '../../../../test-helpers';
+import { LabelDirective } from '../../form-field/headless';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { SLIDER_IMPORTS } from '../slider.imports';
 
@@ -57,9 +58,11 @@ const TEST_COLOR_THEMES = [
       (valueChange)="value.set($event)"
       (mixedChange)="mixed.set($event)"
       (touchedChange)="touched.set($event)"
-    />
+    >
+      <et-label>Test label</et-label>
+    </et-slider>
   `,
-  imports: [SLIDER_IMPORTS],
+  imports: [SLIDER_IMPORTS, LabelDirective],
 })
 class SliderTestHost {
   value = signal(0);

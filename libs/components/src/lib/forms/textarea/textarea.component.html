@@ -10,6 +10,7 @@
   [attr.name]="textareaDir.name() || null"
   [attr.aria-invalid]="textareaDir.shouldDisplayError() || null"
   [attr.aria-describedby]="textareaDir.describedBy() || null"
+  [attr.aria-label]="textareaDir.ariaLabel() || null"
   [attr.aria-labelledby]="textareaDir.labelId() || null"
   [attr.data-resize]="textareaDir.effectiveResize()"
   (input)="syncNativeValue($event)"

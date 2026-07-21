@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, ErrorHandler, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ValidationError } from '@angular/forms/signals';
 import '../../../../test-helpers';
@@ -186,5 +186,58 @@ describe('FormFieldDirective', () => {
     formFieldFixture.detectChanges();
 
     expect(describedBy()).toBe('et-form-field-error-myfield');
+  });
+
+  describe('accessible-name guard', () => {
+    const captureErrors = async (component: unknown) => {
+      const errors: unknown[] = [];
+
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [component as never],
+        providers: [{ provide: ErrorHandler, useValue: { handleError: (error: unknown) => errors.push(error) } }],
+      });
+
+      const guardFixture = TestBed.createComponent(component as never);
+      guardFixture.detectChanges();
+      await guardFixture.whenStable();
+
+      return errors;
+    };
+
+    it('throws ET2201 when the control has neither a label nor an aria attribute', async () => {
+      @Component({
+        template: `
+          <div etFormField>
+            <input etInput />
+          </div>
+        `,
+        imports: [FormFieldDirective, InputDirective],
+      })
+      class UnlabelledTestHost {}
+
+      const errors = await captureErrors(UnlabelledTestHost);
+      expect(errors.some((error) => String(error).includes('ET2201'))).toBe(true);
+    });
+
+    it('does not throw when an et-label is projected', async () => {
+      const errors = await captureErrors(FormFieldTestHost);
+      expect(errors.some((error) => String(error).includes('ET2201'))).toBe(false);
+    });
+
+    it('does not throw when the control carries its own aria-label', async () => {
+      @Component({
+        template: `
+          <div etFormField>
+            <input etInput aria-label="Search" />
+          </div>
+        `,
+        imports: [FormFieldDirective, InputDirective],
+      })
+      class AriaLabelledTestHost {}
+
+      const errors = await captureErrors(AriaLabelledTestHost);
+      expect(errors.some((error) => String(error).includes('ET2201'))).toBe(false);
+    });
   });
 });

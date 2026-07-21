@@ -12,6 +12,7 @@
   [attr.name]="numberInputDir.name() || null"
   [attr.aria-invalid]="numberInputDir.shouldDisplayError() || null"
   [attr.aria-describedby]="numberInputDir.describedBy() || null"
+  [attr.aria-label]="numberInputDir.ariaLabel() || null"
   [attr.aria-labelledby]="numberInputDir.labelId() || null"
   [attr.data-text-align]="numberInputDir.textAlign()"
   (input)="syncNativeValue($event)"

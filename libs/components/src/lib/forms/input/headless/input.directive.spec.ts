@@ -60,7 +60,44 @@ class MixedMaskedInputTestHost {
   mixed = signal(false);
 }
 
+@Component({
+  template: `<et-input aria-label="Search products" />`,
+  imports: [INPUT_IMPORTS],
+})
+class AriaLabelInputTestHost {}
+
+@Component({
+  template: `
+    <div etFormField>
+      <et-label>Projected label</et-label>
+      <et-input aria-labelledby="external-label-id" />
+    </div>
+  `,
+  imports: [INPUT_IMPORTS, FormFieldDirective, LabelDirective],
+})
+class AriaLabelledbyOverrideTestHost {}
+
 describe('InputDirective', () => {
+  describe('accessible name forwarding', () => {
+    it('forwards a consumer aria-label onto the native input', () => {
+      TestBed.configureTestingModule({ imports: [AriaLabelInputTestHost] });
+      const fixture = TestBed.createComponent(AriaLabelInputTestHost);
+      fixture.detectChanges();
+
+      const native = fixture.nativeElement.querySelector('.et-input-native') as HTMLInputElement;
+      expect(native.getAttribute('aria-label')).toBe('Search products');
+    });
+
+    it('lets a consumer aria-labelledby override the projected label id', () => {
+      TestBed.configureTestingModule({ imports: [AriaLabelledbyOverrideTestHost] });
+      const fixture = TestBed.createComponent(AriaLabelledbyOverrideTestHost);
+      fixture.detectChanges();
+
+      const native = fixture.nativeElement.querySelector('.et-input-native') as HTMLInputElement;
+      expect(native.getAttribute('aria-labelledby')).toBe('external-label-id');
+    });
+  });
+
   describe('inside form field', () => {
     let fixture: ComponentFixture<InputInFormFieldTestHost>;
 

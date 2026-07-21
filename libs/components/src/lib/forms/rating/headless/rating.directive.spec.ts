@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
 import '../../../../test-helpers';
+import { LabelDirective } from '../../form-field/headless';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { RatingDirective } from './rating.directive';
 import { RATING_IMPORTS } from '../rating.imports';
@@ -55,9 +56,11 @@ const TEST_COLOR_THEMES = [
       [max]="4"
       (valueChange)="value.set($event)"
       (mixedChange)="mixed.set($event)"
-    />
+    >
+      <et-label>Test label</et-label>
+    </et-rating>
   `,
-  imports: [RATING_IMPORTS],
+  imports: [RATING_IMPORTS, LabelDirective],
 })
 class RatingTestHost {
   value = signal<number | null>(null);

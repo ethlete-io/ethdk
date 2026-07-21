@@ -40,6 +40,18 @@ export abstract class TextFieldControlDirective implements FormFieldControl {
   public required = input(false);
   public name = input('');
 
+  /**
+   * Author-supplied accessible name, forwarded onto the native control. Use this (or an
+   * `<et-label>`) when the field has no visible label — a placeholder is not an accessible name.
+   */
+  public ariaLabel = input<string | null>(null, { alias: 'aria-label' });
+
+  /**
+   * Author-supplied `aria-labelledby`, forwarded onto the native control. Takes precedence over the
+   * id of a projected `<et-label>`.
+   */
+  public ariaLabelledby = input<string | null>(null, { alias: 'aria-labelledby' });
+
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
 
   public describedBy = signal<string | null>(null);
@@ -48,7 +60,15 @@ export abstract class TextFieldControlDirective implements FormFieldControl {
   /** @internal The element `activate()` focuses — the native control by default. */
   public focusTarget = signal<HTMLElement | null>(null);
 
-  public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
+  private registeredLabelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
+
+  /**
+   * The `aria-labelledby` the native control should render: a consumer-supplied value wins,
+   * otherwise the id of a projected `<et-label>`.
+   */
+  public labelId = computed(() => this.ariaLabelledby()?.trim() || this.registeredLabelId());
+
+  public hasCustomAccessibleName = computed(() => !!this.ariaLabel()?.trim() || !!this.ariaLabelledby()?.trim());
 
   /** The control-type tag the form-field switches its shell/aria on. */
   public abstract controlType: Signal<FormFieldControlType>;

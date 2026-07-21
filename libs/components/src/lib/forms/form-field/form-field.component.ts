@@ -73,6 +73,7 @@ import {
     '[attr.data-appearance]': 'formFieldDir.usesTextFieldShell() ? appearance() : null',
     '[attr.data-fill]': 'formFieldDir.usesTextFieldShell() ? fill() : null',
     '[attr.data-label-floated]': 'hasFloatingTextLabel() && formFieldDir.shouldFloatLabel() ? "" : null',
+    '[attr.data-has-label]': 'formFieldDir.registeredLabel() ? "" : null',
     '[attr.data-label-mode]': 'formFieldDir.usesTextFieldShell() ? labelMode() : null',
     '[attr.data-size]': 'formFieldDir.usesTextFieldShell() ? size() : null',
     '[attr.data-text-shell]': 'formFieldDir.usesTextFieldShell() || null',

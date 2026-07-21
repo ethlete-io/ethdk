@@ -244,9 +244,10 @@ All tabs checks run in dev mode only.
 
 ## Form field (ET22xx)
 
-| Code     | Cause                                          | Fix                                                                     |
-| -------- | ---------------------------------------------- | ----------------------------------------------------------------------- |
-| `ET2200` | An `<et-form-field>` contains no form control. | Add a control such as `<et-input>` or `<et-checkbox>` inside the field. |
+| Code     | Cause                                                                                 | Fix                                                                                                            |
+| -------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `ET2200` | An `<et-form-field>` contains no form control.                                        | Add a control such as `<et-input>` or `<et-checkbox>` inside the field.                                        |
+| `ET2201` | An `<et-form-field>` control has no accessible name (no label and no aria attribute). | Project an `<et-label>`, or set `aria-label` / `aria-labelledby` on the control. A placeholder is not a label. |
 
 ## Split button (ET23xx)
 

@@ -56,6 +56,13 @@ export type FormFieldControl = {
   parseError?: Signal<boolean>;
   /** User-facing message shown when `parseError` is set and there is no validation error. */
   parseErrorMessage?: Signal<string>;
+  /**
+   * True when the control carries an author-supplied accessible name (its own `aria-label` /
+   * `aria-labelledby`) independent of a projected `<et-label>`. The field's dev-time labelling
+   * guard treats such a control as named even without an `<et-label>`. Controls that only support
+   * `<et-label>` for labelling leave this unset.
+   */
+  hasCustomAccessibleName?: Signal<boolean>;
   activate(): void;
 };
 

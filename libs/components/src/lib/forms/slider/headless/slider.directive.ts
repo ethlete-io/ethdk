@@ -55,6 +55,8 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
   public thumbs = signal<readonly SliderThumbBase[]>([]);
   public registeredThumbLabelTemplate = signal<SliderThumbLabelBase | null>(null);
 
+  public hasCustomAccessibleName = computed(() => this.thumbs().some((thumb) => !!thumb.label().trim()));
+
   public focused = computed(() => this.thumbs().some((thumb) => thumb.focused()));
 
   private bounds = computed(() => ({ min: this.effectiveMin(), max: this.effectiveMax(), step: this.step() }));

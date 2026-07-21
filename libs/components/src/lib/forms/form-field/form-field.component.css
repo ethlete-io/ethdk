@@ -280,7 +280,8 @@
 
     &:where([data-text-shell]) {
       &[data-label-mode='static'] {
-        .et-form-field-shell {
+        /* only reserve the label band when a label is actually projected */
+        &[data-has-label] .et-form-field-shell {
           padding-block-start: calc(var(--et-form-field-label-font-size) * 1.2 + var(--et-form-field-gap));
         }
 
@@ -372,7 +373,8 @@
           inset-inline-start: 0;
         }
 
-        .et-form-field-shell {
+        /* only reserve the label band when a label is actually projected */
+        &[data-has-label] .et-form-field-shell {
           padding-block-start: calc(var(--et-form-field-label-font-size) * 1.2 + var(--et-form-field-gap));
         }
 

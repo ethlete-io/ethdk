@@ -45,6 +45,8 @@ const STEPPER_REPEAT_INTERVAL = 75;
         'errors',
         'required',
         'name',
+        'aria-label',
+        'aria-labelledby',
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange'],
     },

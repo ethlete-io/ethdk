@@ -62,6 +62,8 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
 
   public focused = computed(() => this.thumbs().some((thumb) => thumb.focused()));
 
+  public hasCustomAccessibleName = computed(() => this.thumbs().some((thumb) => !!thumb.label().trim()));
+
   private bounds = computed(() => ({ min: this.effectiveMin(), max: this.effectiveMax(), step: this.step() }));
 
   // while mixed, both thumbs park at the track start so the DOM (positions, ARIA) exposes

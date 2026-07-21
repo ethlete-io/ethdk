@@ -489,9 +489,10 @@ The field chrome handles error display and aria wiring uniformly:
 - Errors show once a control is **touched and invalid** — each signal-forms `ValidationError` renders as an `et-form-error` in the support region (`aria-live="polite"`), replacing the hint with an animated transition. While erroring, the field forces the app's error color theme (the theme registered with `type: 'error'`).
 - A **parse error** (unparseable typed text in the date/time/date-time/duration inputs) is surfaced the same way once touched: its `parseErrorMessage` renders as an error, with matching `aria-invalid` and `aria-describedby` — no more silent invalid state.
 - `aria-describedby` on the control automatically points at the active error (or hint), `aria-labelledby` at the `et-label`; the label renders a `*` marker when the control is `required`.
+- The `et-label` is **optional**, but every control needs an accessible name. When you omit the label, give the control its own `aria-label` or `aria-labelledby` (the text-field controls — `et-input`, `et-number-input`, `et-password-input`, `et-color-input`, `et-textarea` — forward both onto the native element, and a consumer `aria-labelledby` overrides the projected label). A placeholder is **not** an accessible name. Without a label, the layout no longer reserves the label band in `static` / `floating-outside` modes.
 - Selection groups use correct roles for their mode: a single-select group is a `radiogroup` of `radio`s; a multi-select checkbox group is a `role="group"` of `role="checkbox"` items (and the tri-state select-all is a `checkbox`, not an `option`).
 - A schema-`hidden` field (signal-forms `hidden`) removes the whole `et-form-field` from layout and the accessibility tree.
-- Dev mode throws an actionable error ([`ET2200`](/components/error-codes#form-field-et22xx)) if an `et-form-field` contains no control.
+- Dev mode throws an actionable error if an `et-form-field` contains no control ([`ET2200`](/components/error-codes#form-field-et22xx)) or a control with no accessible name — no `et-label` and no `aria-label`/`aria-labelledby` ([`ET2201`](/components/error-codes#form-field-et22xx)).
 
 ### Server-side violations
 

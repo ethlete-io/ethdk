@@ -13,6 +13,8 @@ export type SliderThumbLabelBase = {
 
 export type SliderThumbBase = {
   focused: Signal<boolean>;
+  /** The thumb's own `aria-label`, if the consumer set one instead of a shared `<et-label>`. */
+  label: Signal<string>;
   focus(): void;
 };
 

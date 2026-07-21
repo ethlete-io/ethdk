@@ -127,10 +127,21 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
 
     if (ngDevMode) {
       afterNextRender(() => {
-        if (!this.registeredControl()) {
+        const control = this.registeredControl();
+
+        if (!control) {
           throw new RuntimeError(
             FORM_FIELD_ERROR_CODES.MISSING_CONTROL,
             '[FormFieldDirective] No form control found. Add <et-input> or <et-checkbox> inside <et-form-field>.',
+          );
+        }
+
+        if (!this.registeredLabel() && !(control.hasCustomAccessibleName?.() ?? false)) {
+          throw new RuntimeError(
+            FORM_FIELD_ERROR_CODES.MISSING_LABEL,
+            '[FormFieldDirective] The control has no accessible name. Project an <et-label> into the ' +
+              '<et-form-field>, or set aria-label / aria-labelledby on the control. A placeholder is not ' +
+              'an accessible name.',
           );
         }
       });

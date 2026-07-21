@@ -8,6 +8,7 @@
   [attr.name]="colorInputDir.name() || null"
   [attr.aria-invalid]="colorInputDir.shouldDisplayError() || null"
   [attr.aria-describedby]="colorInputDir.describedBy() || null"
+  [attr.aria-label]="colorInputDir.ariaLabel() || null"
   [attr.aria-labelledby]="colorInputDir.labelId() || null"
   [attr.aria-readonly]="colorInputDir.readonly() || null"
   (input)="syncNativeValue($event)"

@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
 import '../../../../test-helpers';
+import { LabelDirective } from '../../form-field/headless';
 import { OTP_INPUT_IMPORTS } from '../otp-input.imports';
 import { OtpInputCharset } from './otp-input.directive';
 
@@ -51,9 +52,11 @@ const TEST_COLOR_THEMES = [
       [masked]="masked()"
       (valueChange)="value.set($event)"
       (completed)="completions.push($event)"
-    />
+    >
+      <et-label>Test label</et-label>
+    </et-otp-input>
   `,
-  imports: [OTP_INPUT_IMPORTS],
+  imports: [OTP_INPUT_IMPORTS, LabelDirective],
 })
 class OtpTestHost {
   value = signal('');

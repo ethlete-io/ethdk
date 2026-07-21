@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { form, FormField } from '@angular/forms/signals';
 import { QueryTestSetup, setupQueryTest } from '@ethlete/query/testing';
 import '../../../../test-helpers';
-import { FormFieldDirective } from '../../form-field/headless';
+import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
 import { DropzoneEntry } from './dropzone-entry';
 import { AnyDropzoneUploadConfig, createDropzoneUpload } from './dropzone-upload';
 import { DropzoneFileConstraints, DropzoneFileRejection, dropzoneFiles } from './dropzone-validation';
@@ -56,10 +56,11 @@ class DropzoneTestHost {
 @Component({
   template: `
     <div etFormField>
+      <et-label>Media</et-label>
       <div [upload]="upload()!" etDropzone></div>
     </div>
   `,
-  imports: [DropzoneDirective, FormFieldDirective],
+  imports: [DropzoneDirective, FormFieldDirective, LabelDirective],
 })
 class DropzoneInFormFieldTestHost {
   upload = signal<AnyDropzoneUploadConfig<string> | null>(null);
