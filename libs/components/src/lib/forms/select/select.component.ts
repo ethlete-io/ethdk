@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
-import { ColorInteractiveDirective, ProvideColorDirective, injectErrorTheme } from '@ethlete/core';
+import { ColorInteractiveDirective, ProvideColorDirective, createComponentId, injectErrorTheme } from '@ethlete/core';
 import { ChipComponent } from '../../chip';
 import { CHEVRON_ICON, IconDirective, PLUS_ICON, TIMES_ICON, provideIcons } from '../../icon';
 import { SpinnerComponent } from '../../loader';
@@ -32,10 +32,12 @@ import { SelectVirtualOptionComponent } from './select-virtual-option.component'
       directive: SelectDirective,
       inputs: [
         'value',
+        'mixed',
         'touched',
         'open',
         'multiple',
         'placeholder',
+        'mixedLabel',
         'disabled',
         'readonly',
         'invalid',
@@ -54,7 +56,7 @@ import { SelectVirtualOptionComponent } from './select-virtual-option.component'
         'error',
         'hasMoreItems',
       ],
-      outputs: ['valueChange', 'touchedChange', 'openChange', 'queryChange', 'loadMore', 'addNew'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'openChange', 'queryChange', 'loadMore', 'addNew'],
     },
     ColorInteractiveDirective,
   ],
@@ -73,6 +75,7 @@ export class SelectComponent {
   /** Shows a clear (×) control while a value is selected. */
   public clearable = input(true);
   public clearLabel = input('Clear');
+  protected mixedLabelId = createComponentId('et-select-mixed-label');
 
   // only while the field is in use — `focused` covers the trigger/search input having DOM
   // focus as well as the panel being open
@@ -95,6 +98,10 @@ export class SelectComponent {
     const hasSearch = this.hasSearch();
     const entryCount = this.select.selectedEntries().length;
 
+    if (this.select.mixed()) {
+      return !hasSearch || this.select.multiple();
+    }
+
     if (this.select.registeredValueTemplate()) {
       return !hasSearch && entryCount === 0;
     }
@@ -116,7 +123,7 @@ export class SelectComponent {
   // Never rendered without a selection — an empty wrapper would keep the caret/placeholder
   // CSS rules active and the field would look dead
   protected showCustomValue = computed(() => {
-    if (!this.select.registeredValueTemplate() || !this.select.selectedEntries().length) {
+    if (this.select.mixed() || !this.select.registeredValueTemplate() || !this.select.selectedEntries().length) {
       return false;
     }
 
@@ -129,6 +136,10 @@ export class SelectComponent {
   protected stackedValue = computed(
     () => this.hasSearch() && !this.select.multiple() && !!this.select.registeredValueTemplate(),
   );
+
+  constructor() {
+    this.select.mixedLabelId.set(this.mixedLabelId);
+  }
 
   protected handleClearClick(event: Event) {
     // clearing must not toggle the panel

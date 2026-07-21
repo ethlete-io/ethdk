@@ -65,6 +65,7 @@ const defaultNormalizeCustomValue = (raw: string) => {
   exportAs: 'etSelect',
   host: {
     '[attr.data-select-open]': 'open() || null',
+    '[attr.data-mixed]': 'mixed() || null',
   },
 })
 export class SelectDirective implements FormValueControl<unknown>, FormFieldControl {
@@ -73,6 +74,8 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   private document = inject(DOCUMENT);
 
   public value = model<unknown | unknown[] | null>(null);
+  /** View state for a field whose source values disagree. The raw form value stays untouched. */
+  public mixed = model(false);
   public touched = model(false);
   public open = model(false);
   public multiple = input(false);
@@ -83,6 +86,8 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   public required = input(false);
   public name = input('');
   public placeholder = input('');
+  /** Trigger text shown while `mixed` is set. */
+  public mixedLabel = input('Mixed');
 
   /**
    * Data-driven options: the select owns the option rows instead of the consumer projecting
@@ -129,11 +134,18 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
 
-  public hasValue = computed(() => {
+  /** The raw value normalized to the selection the control currently exposes. Mixed has no effective selection. */
+  private effectiveValues = computed<readonly unknown[]>(() => {
+    if (this.mixed()) {
+      return [];
+    }
+
     const value = this.value();
 
-    return Array.isArray(value) ? value.length > 0 : value !== null && value !== undefined;
+    return Array.isArray(value) ? value : value === null || value === undefined ? [] : [value];
   });
+
+  public hasValue = computed(() => this.mixed() || this.effectiveValues().length > 0);
 
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.SELECT);
@@ -154,6 +166,8 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   public registeredValueTemplate = signal<SelectValueDirective | null>(null);
   /** @internal */
   public registeredSearch = signal<SelectSearchDirective | null>(null);
+  /** @internal ID of the component-rendered mixed label, when present. */
+  public mixedLabelId = signal<string | null>(null);
   /** @internal */
   public registeredLoadingTemplate = signal<SelectLoadingDirective | null>(null);
   /** @internal */
@@ -309,7 +323,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   });
 
   public enabledItems = computed(() => this.visibleItems().filter((item) => !item.disabled()));
-  public selectedItems = computed(() => this.sortedItems().filter((item) => item.checked()));
+  public selectedItems = computed(() => (this.mixed() ? [] : this.sortedItems().filter((item) => item.checked())));
 
   /** @internal The query-visible slice of data-driven options — the virtual window renders these. */
   public visibleDataItems = computed(() => this.visibleItems().filter((item) => !!item.data));
@@ -351,6 +365,10 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
       return false;
     }
 
+    if (this.mixed()) {
+      return this.effectiveValues().length >= maxSelection;
+    }
+
     const value = this.value();
 
     return Array.isArray(value) && value.length >= maxSelection;
@@ -375,8 +393,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
       return null;
     }
 
-    const value = this.value();
-    const values = Array.isArray(value) ? value : value === null || value === undefined ? [] : [value];
+    const values = this.effectiveValues();
 
     if (values.includes(candidate)) {
       return null;
@@ -401,8 +418,11 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
    * carries the value. Drives the trigger's chips and label display.
    */
   public selectedEntries = computed<SelectSelectedEntry[]>(() => {
-    const value = this.value();
-    const values = Array.isArray(value) ? value : value === null || value === undefined ? [] : [value];
+    if (this.mixed()) {
+      return [];
+    }
+
+    const values = this.effectiveValues();
     const items = this.sortedItems();
     const cache = this.labelCache();
 
@@ -419,6 +439,10 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
    * known (show the placeholder).
    */
   public displayValue = computed(() => {
+    if (this.mixed()) {
+      return this.mixedLabel();
+    }
+
     const labels = this.selectedEntries()
       .map((entry) => entry.label)
       .filter((label): label is string => label !== null);
@@ -588,6 +612,17 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     }
   }
 
+  /** @internal Whether a value belongs to the effective selection (always false while mixed). */
+  public isValueSelected(value: unknown) {
+    if (this.mixed()) {
+      return false;
+    }
+
+    const current = this.value();
+
+    return Array.isArray(current) ? current.includes(value) : current === value;
+  }
+
   public show() {
     if (this.disabled() || this.readonly() || this.open()) {
       return;
@@ -631,6 +666,20 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   /** @internal Commits an option as the (or a) selected value. Single select closes afterwards. */
   public commitOption(item: SelectItem) {
     if (this.disabled() || this.readonly() || item.disabled()) {
+      return;
+    }
+
+    if (this.mixed()) {
+      if (!this.commitMixedOption(item)) {
+        return;
+      }
+
+      this.registeredSearch()?.clear();
+
+      if (!this.multiple()) {
+        this.hide();
+      }
+
       return;
     }
 
@@ -704,6 +753,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     }
 
     this.value.set(this.multiple() ? [] : null);
+    this.mixed.set(false);
 
     const search = this.registeredSearch();
 
@@ -715,6 +765,10 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   /** Deselects by value — covers selected values without a live option (e.g. custom values). */
   public deselectValue(value: unknown) {
     if (this.disabled() || this.readonly()) {
+      return;
+    }
+
+    if (this.mixed()) {
       return;
     }
 
@@ -888,17 +942,25 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     return committed;
   }
 
+  /** Writes the first explicit choice over a mixed value without consulting raw checked state. */
+  private commitMixedOption(item: SelectItem) {
+    if (this.isFull()) {
+      return false;
+    }
+
+    this.value.set(this.multiple() ? [item.value()] : item.value());
+    this.mixed.set(false);
+
+    return true;
+  }
+
   private createDataItem(data: SelectOptionData) {
     const label = signal(data.label);
     const disabledInput = signal(data.disabled ?? false);
     const element = signal<HTMLElement | null>(null);
     const dataSignal = signal(data);
 
-    const selected = computed(() => {
-      const current = this.value();
-
-      return Array.isArray(current) ? current.includes(data.value) : current === data.value;
-    });
+    const selected = computed(() => this.isValueSelected(data.value));
 
     const item: SelectItem = {
       value: signal(data.value).asReadonly(),
@@ -990,16 +1052,18 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
     if (this.multiple()) {
       const current = this.value();
-      const values = Array.isArray(current) ? current : [];
+      const values = this.mixed() ? [] : Array.isArray(current) ? current : [];
 
       if (values.includes(value)) {
         return false;
       }
 
       this.value.set([...values, value]);
+      this.mixed.set(false);
       this.registeredSearch()?.clear();
     } else {
       this.value.set(value);
+      this.mixed.set(false);
     }
 
     return true;
@@ -1007,6 +1071,12 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
   private commitOptionWhileClosed(item: SelectItem) {
     if (this.disabled() || this.readonly() || item.disabled()) {
+      return;
+    }
+
+    if (this.mixed()) {
+      this.commitMixedOption(item);
+
       return;
     }
 
@@ -1164,7 +1234,11 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     const search = this.registeredSearch();
 
     if (search && this.query()) {
-      search.clear();
+      if (this.mixed()) {
+        search.restoreMixedDisplay();
+      } else {
+        search.clear();
+      }
 
       return;
     }

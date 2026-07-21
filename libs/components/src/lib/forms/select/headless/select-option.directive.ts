@@ -67,13 +67,15 @@ export class SelectOptionDirective {
   public selected = computed(() => {
     const value = this.boundValue();
 
-    if (value === UNBOUND_VALUE || !this.select) {
+    if (!this.select) {
       return this.checked();
     }
 
-    const current = this.select.value();
+    if (value === UNBOUND_VALUE) {
+      return this.select.mixed() ? false : this.checked();
+    }
 
-    return Array.isArray(current) ? current.includes(value) : current === value;
+    return this.select.isValueSelected(value);
   });
 
   /**

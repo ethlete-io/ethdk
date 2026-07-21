@@ -34,7 +34,9 @@ const FRUIT_OPTIONS = [
       <et-form-field [appearance]="appearance()" [fill]="fill()" [size]="size()" [labelMode]="labelMode()">
         <et-label>{{ label() }}</et-label>
         <et-select
+          [(mixed)]="mixedState"
           [formField]="demoForm.value"
+          [mixedLabel]="mixedLabel()"
           [placeholder]="placeholder()"
           [multiple]="multiple()"
           [allowCustomValues]="allowCustomValues()"
@@ -56,7 +58,14 @@ const FRUIT_OPTIONS = [
         }
       </et-form-field>
 
-      <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+      @if (showMixedState()) {
+        <div class="text-sm opacity-60">
+          <p>Raw form value: {{ demoForm.value().value() | json }}</p>
+          <p>Mixed: {{ mixedState() }}</p>
+        </div>
+      } @else {
+        <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -71,6 +80,9 @@ export class FormFieldSelectStorybookComponent {
   public placeholder = input('Pick a fruit');
   public hint = input('');
   public value = input<string | string[] | null>(null);
+  public mixed = input(false);
+  public mixedLabel = input('Mixed');
+  public showMixedState = input(false);
   public multiple = input(false);
   public withSearch = input(false);
   public allowCustomValues = input(false);
@@ -84,6 +96,8 @@ export class FormFieldSelectStorybookComponent {
   public color = input('brand');
 
   protected readonly FRUITS = FRUIT_OPTIONS;
+
+  public mixedState = linkedSignal(() => this.mixed());
 
   private formModel = linkedSignal(() => ({
     value: this.multiple() ? ((this.value() as string[] | null) ?? []) : this.value(),

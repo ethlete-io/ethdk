@@ -35,7 +35,7 @@ import { SelectDirective } from './select.directive';
     '[attr.aria-activedescendant]': 'activeDescendant()',
     '[attr.aria-required]': 'select?.required() || null',
     '[attr.aria-invalid]': 'select?.shouldDisplayError() || null',
-    '[attr.aria-describedby]': 'select?.describedBy() || null',
+    '[attr.aria-describedby]': 'describedBy()',
     '[attr.aria-labelledby]': 'select?.labelId() || null',
     '[disabled]': 'select?.disabled() || false',
     '[readOnly]': 'select?.readonly() || isFull()',
@@ -62,6 +62,21 @@ export class SelectSearchDirective {
   protected activeDescendant = computed(() => (this.select?.open() ? this.select.activeId() : null));
   // a full selection locks the input like the tag-input field — values leave via chips/Backspace
   protected isFull = computed(() => this.select?.isFull() ?? false);
+  protected describedBy = computed(() => {
+    const select = this.select;
+
+    if (!select) {
+      return null;
+    }
+
+    const ids = [select.describedBy()];
+
+    if (select.mixed() && select.multiple() && this.isInlineInTrigger()) {
+      ids.push(select.mixedLabelId());
+    }
+
+    return ids.filter((id): id is string => !!id).join(' ') || null;
+  });
 
   constructor() {
     registerSingleton(this.select?.registeredSearch, this);
@@ -78,7 +93,7 @@ export class SelectSearchDirective {
       if (
         select &&
         !select.multiple() &&
-        !select.registeredValueTemplate() &&
+        (!select.registeredValueTemplate() || select.mixed()) &&
         !query &&
         !this.edited() &&
         this.isInlineInTrigger()
@@ -128,7 +143,7 @@ export class SelectSearchDirective {
     if (
       this.edited() ||
       this.select?.multiple() ||
-      this.select?.registeredValueTemplate() ||
+      (this.select?.registeredValueTemplate() && !this.select.mixed()) ||
       !this.isInlineInTrigger()
     ) {
       return;
@@ -146,6 +161,28 @@ export class SelectSearchDirective {
     // show the selected value's label instead of the empty query)
     this.query.set('');
     this.select?.queryChange.emit('');
+  }
+
+  /** @internal Restores and selects the masked label after Escape without changing normal search behavior. */
+  public restoreMixedDisplay() {
+    const select = this.select;
+
+    this.edited.set(false);
+    this.query.set('');
+    select?.queryChange.emit('');
+
+    if (!select || select.multiple() || !this.isInlineInTrigger()) {
+      return;
+    }
+
+    // Signal effects update the value after this event. Write it eagerly so the selection
+    // range belongs to the restored label and the next keystroke replaces it.
+    const element = this.elementRef.nativeElement;
+    element.value = select.displayValue() ?? '';
+
+    if (element.value) {
+      element.select();
+    }
   }
 
   protected handleInput() {
@@ -186,11 +223,15 @@ export class SelectSearchDirective {
       !value &&
       select &&
       !select.multiple() &&
-      !select.registeredValueTemplate() &&
+      (!select.registeredValueTemplate() || select.mixed()) &&
       select.hasValue() &&
       this.isInlineInTrigger()
     ) {
-      select.deselectValue(select.value());
+      if (select.mixed()) {
+        select.clearValue();
+      } else {
+        select.deselectValue(select.value());
+      }
     }
 
     // typing opens the panel — the combobox pattern
@@ -205,6 +246,13 @@ export class SelectSearchDirective {
       const select = this.select;
 
       if (!select || select.disabled() || select.readonly()) {
+        return;
+      }
+
+      if (select.mixed()) {
+        event.preventDefault();
+        select.clearValue();
+
         return;
       }
 
