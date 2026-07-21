@@ -76,21 +76,17 @@
   --et-theme-color-ink-solid: rgb(var(--et-theme-color-ink-rgb));
 }
 
+/* A wrapper reflecting a *descendant's* focus (e.g. a form field's frame while its control is
+   focused) uses the BASE color, not the `-focus` variant. The `-focus` variant is the treatment
+   for an element that is itself focused (the `:where(.et-color-interactive:focus-visible)` rule
+   above) — a container merely mirroring a child's focus should read as the plain accent, so the
+   focus affordance is the pure theme color rather than the focus-adjusted shade. */
 :where(.et-color-interactive--has-focus:has(:focus-visible)) {
-  --et-theme-color-primary-rgb: var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary)));
+  --et-theme-color-primary-rgb: var(--et-color-primary);
   --et-theme-color-primary-solid: rgb(var(--et-theme-color-primary-rgb));
-  --et-theme-color-on-primary-rgb: var(
-    --et-color-on-primary-focus,
-    var(--et-color-on-primary-hover, var(--et-color-on-primary))
-  );
+  --et-theme-color-on-primary-rgb: var(--et-color-on-primary);
   --et-theme-color-on-primary-solid: rgb(var(--et-theme-color-on-primary-rgb));
-  --et-theme-color-ink-rgb: var(
-    --et-color-primary-ink-focus,
-    var(
-      --et-color-primary-ink-hover,
-      var(--et-color-primary-ink, var(--et-color-primary-focus, var(--et-color-primary-hover, var(--et-color-primary))))
-    )
-  );
+  --et-theme-color-ink-rgb: var(--et-color-primary-ink, var(--et-color-primary));
   --et-theme-color-ink-solid: rgb(var(--et-theme-color-ink-rgb));
 }
 

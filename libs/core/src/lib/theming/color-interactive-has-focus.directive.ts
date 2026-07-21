@@ -9,6 +9,10 @@ import { ColorInteractiveStylesComponent } from './color-interactive-styles.comp
  * NOT react to incidental mouse interaction with unrelated nested widgets (a toolbar button, a
  * rendered link) that happen to live inside the same wrapper.
  *
+ * The color it resolves to is the theme's BASE accent, not the `-focus` variant: the `-focus`
+ * shade is the treatment for an element that is itself focused, whereas a container only mirroring
+ * a child's focus should read as the plain accent color.
+ *
  * Deliberately does NOT also carry `ColorInteractiveDirective`'s `et-color-interactive` class:
  * that class's plain `:hover`/`:active` rules locally override the same (inheriting)
  * `--et-theme-color-primary-rgb`, so anything bubbling up from ANYWHERE in the subtree would
