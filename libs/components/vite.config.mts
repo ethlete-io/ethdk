@@ -1,12 +1,12 @@
 /// <reference types='vitest' />
 import angular from '@analogjs/vite-plugin-angular';
-import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'vite';
 
 export default defineConfig(() => ({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/libs/components',
-  plugins: [angular(), tsconfigPaths()],
+  plugins: [angular({ tsconfig: 'tsconfig.spec.json' })],
+  resolve: { tsconfigPaths: true },
   test: {
     name: 'components',
     watch: false,

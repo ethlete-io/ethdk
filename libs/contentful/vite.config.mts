@@ -1,16 +1,12 @@
 /// <reference types='vitest' />
 import angular from '@analogjs/vite-plugin-angular';
-import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'vite';
 
 export default defineConfig(() => ({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/libs/contentful',
-  plugins: [angular(), tsconfigPaths()],
-  // Uncomment this if you are using workers.
-  // worker: {
-  //  plugins: [ tsconfigPaths() ],
-  // },
+  plugins: [angular({ tsconfig: 'tsconfig.spec.json' })],
+  resolve: { tsconfigPaths: true },
   test: {
     name: 'contentful',
     watch: false,
