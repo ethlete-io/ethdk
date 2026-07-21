@@ -27,10 +27,9 @@
       ]
     },
     "test": {
-      "executor": "@nx/vitest:test",
-      "outputs": ["{options.reportsDirectory}"],
+      "outputs": ["{projectRoot}/{options.coverage.reportsDirectory}", "{workspaceRoot}/coverage/libs/eslint-plugin"],
       "options": {
-        "reportsDirectory": "{projectRoot}/../../coverage/libs/eslint-plugin"
+        "coverage.reportsDirectory": "../../../coverage/libs/eslint-plugin"
       }
     }
   }

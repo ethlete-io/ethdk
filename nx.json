@@ -81,6 +81,20 @@
       "options": {
         "targetName": "lint"
       }
+    },
+    {
+      "plugin": "@nx/vitest",
+      "options": {
+        "testTargetName": "test",
+        "testMode": "watch"
+      },
+      "include": [
+        "libs/cdk/**/*",
+        "libs/components/**/*",
+        "libs/core/**/*",
+        "libs/eslint-plugin/**/*",
+        "libs/query/**/*"
+      ]
     }
   ],
   "generators": {

@@ -1,6 +1,6 @@
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { defineConfig } from 'vitepress';
 import llmstxt from 'vitepress-plugin-llms';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
   title: 'Ethlete SDK',
@@ -8,7 +8,7 @@ export default defineConfig({
   outDir: '../../dist/apps/docs',
 
   vite: {
-    plugins: [nxViteTsPaths(), llmstxt()],
+    plugins: [tsconfigPaths(), llmstxt()],
   },
 
   themeConfig: {

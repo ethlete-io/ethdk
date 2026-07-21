@@ -23,10 +23,9 @@
       }
     },
     "test": {
-      "executor": "@nx/vitest:test",
-      "outputs": ["{options.reportsDirectory}"],
+      "outputs": ["{projectRoot}/{options.coverage.reportsDirectory}", "{workspaceRoot}/coverage/libs/cdk"],
       "options": {
-        "reportsDirectory": "{projectRoot}/../../coverage/libs/cdk"
+        "coverage.reportsDirectory": "../../../coverage/libs/cdk"
       }
     },
     "lint": {
