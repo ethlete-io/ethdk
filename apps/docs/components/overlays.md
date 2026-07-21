@@ -52,6 +52,8 @@ Defaults worth knowing:
 
 Data goes in via `bindings` (Angular's `inputBinding` / `outputBinding` / `twoWayBinding`) and `providers` — see [passing data](/components/overlay-openers#passing-data-into-the-overlay).
 
+Popovers stack safely: a pane opened from **inside** another overlay (a select body, menu or tooltip within a dialog or anchored panel) renders as a sibling in the overlay root, but the parent still treats a pointer interaction with it as "inside". Clicking a nested popover never dismisses the overlay that opened it — dismissal is resolved against the whole nested tree, anchored by each pane's `origin`.
+
 ### The overlay ref
 
 The `OverlayRef` is returned by `open` and injectable inside the overlay via the `OVERLAY_REF` token (or, with openers, via `definition.injectRef()`):

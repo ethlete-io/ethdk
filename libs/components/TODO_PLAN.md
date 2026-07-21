@@ -32,7 +32,11 @@ To support: selectOptionsFromQuery, selectOptionsFromV2Query
 
 ---
 
-Task: Fix overlay closing due to clicking a select body (or any popover) created from within that overlay
+Task: ✅ DONE — Fix overlay closing due to clicking a select body (or any popover) created from within that overlay
+(An anchored panel's outside-pointer check counted a click in a nested popover — which mounts as a
+sibling pane, not a DOM descendant — as an outside dismissal. New `isTargetInsideOverlayTree` helper
+resolves the whole nested overlay tree via each pane's `origin`; wired into `anchored-panel-controller`
+(covers select, cascader, date/time pickers). Unit + integration specs, docs note, changeset added.)
 
 ---
 
@@ -44,8 +48,16 @@ Task: An legacy v2 query adapter is needed for the dropzone component
 
 ---
 
-Task: Logical DOM level auto elevation not working
+Task: ✅ DONE — Logical DOM level auto elevation not working
 given this: a select body has options that themself have etAutoSurface. Since the injector will be the component injector the select is inside and not the one the select body (which in turn has a etAutoSurface) we will be off by 1 level
+(Root cause: projected/portaled overlay content keeps its declaration (trigger) injector, so
+`AutoSurfaceDirective` resolved the parent surface one elevation too low. Fix: the directive now also
+consults the root `surfaceContextTracker` — which each overlay registers its surface into — and takes
+the higher of injector-context vs. innermost-overlay elevation. The 6 overlay panels (menu,
+select/date/cascader panels, tooltip, toggletip) call the new
+`AutoSurfaceDirective.ignoreOverlaySurfaceContext()` so they still adopt their overlay's elevation
+rather than stacking above it. Verified in Storybook: content=dark-elevated-2 vs panel=dark-elevated
+(was equal before). Changeset + docs updated.)
 
 ---
 

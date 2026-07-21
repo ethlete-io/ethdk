@@ -2,6 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { DestroyRef, effect, inject, Signal, untracked, WritableSignal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { fromEvent, Subscription, take, tap } from 'rxjs';
+import { isTargetInsideOverlayTree } from '../../../overlay/get-closest-overlay';
 import { OverlayConfig } from '../../../overlay/overlay-config';
 import { injectOverlayManager } from '../../../overlay/overlay-manager';
 import { OverlayRef } from '../../../overlay/overlay-ref';
@@ -86,7 +87,10 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
 
       const pane = overlayRef()?.elements?.paneElement;
 
-      if (pane?.contains(target)) {
+      // A pointerdown inside this panel — or inside a nested popover it opened (a select body,
+      // menu, tooltip; those mount as sibling panes in the overlay root, not DOM descendants) —
+      // must not count as "outside", otherwise clicking the child popover closes this panel.
+      if (pane && isTargetInsideOverlayTree({ target, rootPane: pane, openOverlays: overlayManager.openOverlays() })) {
         return;
       }
 
