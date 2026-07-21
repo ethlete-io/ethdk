@@ -80,6 +80,27 @@ The `upload` input takes a config object; create it with the `createDropzoneUplo
 
 `resolveExisting` runs in a reactive context — it may read signals, so asynchronously loaded display data (e.g. an id → media map filled by another query) updates the entry as it arrives.
 
+### Legacy V2 query
+
+Apps still on the [legacy `V2QueryClient`](/query/legacy) build the config with `createV2DropzoneUpload` instead — same `upload` input, same `selectValue` / `resolveExisting`, but `queryCreator` takes a legacy creator (from `client.post(...)` or a `createLegacyQueryCreator` interop wrapper) and `createArgs` builds the `prepare()` arguments (default: `FormData` with the file under `file`). A fresh query is prepared and executed per file, and re-prepared on retry.
+
+```ts
+import { createV2DropzoneUpload } from '@ethlete/components';
+
+protected upload = createV2DropzoneUpload({
+  queryCreator: client.post({
+    route: '/media',
+    reportProgress: true,
+    types: { args: def<{ body: FormData }>(), response: def<MediaLikeView>() },
+  }),
+  selectValue: (media) => media.uuid,
+});
+```
+
+<StoryEmbed id="components-forms-dropzone--legacy-v-2-query" height="560px" />
+
+The entry's `error()` then holds a `RequestError` (rather than the new query's `QueryErrorResponse`); the failure message and `uploadErrorMessage` handle both shapes. Prefer a genuine `V2QueryClient` creator over a `createLegacyQueryCreator` interop wrapper here — the interop query has a known teardown limitation that a native v2 creator avoids.
+
 ## Options
 
 On `et-dropzone` (forwarded to the headless `etDropzone` directive):

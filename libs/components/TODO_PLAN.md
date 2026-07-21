@@ -40,11 +40,24 @@ resolves the whole nested overlay tree via each pane's `origin`; wired into `anc
 
 ---
 
-Task: Add the missing overlayCloseDismissChecker logic to the new components lib overlay system
+Task: 📋 PLANNED — Add the missing overlayCloseDismissChecker logic to the new components lib overlay system
+(Scope expanded + API settled: enhanced `unsavedChanges` family instead of a 1:1 port —
+`createUnsavedChangesTracker` (core) / `createOverlayUnsavedChangesGuard` (components) /
+`createUnsavedChangesGuard` (port of `createNavigationDismissChecker`, incl. CanDeactivate bridge), with
+signal forms (`FieldTree`) as first-class value source. Plan in `.claude/handoffs/overlay-dismiss-checker.md`
+— resume with `/handoff resume overlay-dismiss-checker`. Prerequisite: the new overlay runtime has no veto
+seam, so a close guard must be added in `libs/core/src/lib/overlay/overlay-runtime-ref.ts` first.)
 
 ---
 
-Task: An legacy v2 query adapter is needed for the dropzone component
+Task: ✅ DONE — An legacy v2 query adapter is needed for the dropzone component
+(Shipped as `createV2DropzoneUpload` — the legacy `V2QueryClient` twin of `createDropzoneUpload`,
+slotting into the same `upload` input. The per-file query lifecycle was first abstracted behind an
+internal upload-handle (`DropzoneUploadHandle`) so both flavors share the directive/entry code;
+failure display normalizes `QueryErrorResponse` and `RequestError`. New-query path behavior
+unchanged (existing specs stay green). Story `LegacyV2Query` + docs section + changeset + V2 specs
+added. Note: `createLegacyQueryCreator` interop creators are typed-accepted but carry a known
+LegacyQuery teardown re-entrancy — genuine v2 creators are the recommended path.)
 
 ---
 

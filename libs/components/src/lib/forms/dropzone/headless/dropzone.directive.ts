@@ -25,7 +25,7 @@ import {
   isFileAccepted,
 } from './dropzone-entry';
 import { DROPZONE_ERROR_CODES } from './dropzone-errors';
-import { AnyDropzoneUploadConfig, createDefaultDropzoneArgs } from './dropzone-upload';
+import { AnyDropzoneUploadConfig } from './dropzone-upload';
 import {
   DROPZONE_FILE_CONSTRAINTS,
   DROPZONE_FILE_REJECTION_REASONS,
@@ -157,11 +157,11 @@ export class DropzoneDirective<TValue = unknown>
       afterNextRender(() => {
         const config = this.upload();
 
-        if (typeof config?.queryCreator !== 'function' || typeof config?.selectValue !== 'function') {
+        if (typeof config?.createUploadHandle !== 'function' || typeof config?.selectValue !== 'function') {
           throw new RuntimeError(
             DROPZONE_ERROR_CODES.INVALID_UPLOAD_CONFIG,
-            '[DropzoneDirective] The "upload" input must be a config with a "queryCreator" and a "selectValue" function. ' +
-              'Create one via createDropzoneUpload({ queryCreator, selectValue, ... }).',
+            '[DropzoneDirective] The "upload" input must be a config created via createDropzoneUpload({ queryCreator, selectValue, ... }) ' +
+              'or createV2DropzoneUpload({ queryCreator, selectValue, ... }).',
           );
         }
       });
@@ -262,11 +262,11 @@ export class DropzoneDirective<TValue = unknown>
 
     const entry = this.internalEntries().find((item) => item.id === id);
 
-    if (!entry || entry.status() !== DROPZONE_ENTRY_STATUSES.ERROR || !entry.query || !entry.args) {
+    if (!entry || entry.status() !== DROPZONE_ENTRY_STATUSES.ERROR || !entry.handle) {
       return;
     }
 
-    entry.query.execute({ args: entry.args });
+    entry.handle.execute();
   }
 
   /** Removes all entries and resets the control value. */
@@ -339,9 +339,8 @@ export class DropzoneDirective<TValue = unknown>
 
   private createFileEntry(file: File): DropzoneEntry<TValue> {
     const config = this.upload();
-    const query = config.queryCreator({ injector: this.injector, silenceMissingWithArgsFeatureError: true });
-    const args = (config.createArgs ?? createDefaultDropzoneArgs)(file);
-    const entry = createFileDropzoneEntry({ file, query, args, selectValue: config.selectValue });
+    const handle = config.createUploadHandle({ file, injector: this.injector });
+    const entry = createFileDropzoneEntry({ file, handle });
 
     let previousStatus: string | null = null;
 
@@ -369,7 +368,7 @@ export class DropzoneDirective<TValue = unknown>
 
     this.entryWatchers.set(entry.id, watcher);
 
-    query.execute({ args });
+    handle.execute();
 
     return entry;
   }

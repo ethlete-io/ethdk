@@ -21,6 +21,7 @@ export default {
     disabled: { control: 'boolean' },
     required: { control: 'boolean' },
     flaky: { table: { disable: true } },
+    v2: { table: { disable: true } },
     initialValue: { table: { disable: true } },
   },
   args: {
@@ -32,6 +33,7 @@ export default {
     disabled: false,
     required: false,
     flaky: false,
+    v2: false,
     initialValue: null,
   },
 } as Meta<DropzoneStorybookComponent>;
@@ -56,5 +58,13 @@ export const ExistingMedia: Story = {
 export const FailingUploads: Story = {
   args: {
     flaky: true,
+  },
+};
+
+export const LegacyV2Query: Story = {
+  args: {
+    multiple: true,
+    hint: 'Uploads run through the legacy V2QueryClient adapter.',
+    v2: true,
   },
 };

@@ -1,7 +1,11 @@
 import { randomId } from '@ethlete/core';
 import { computed, Signal } from '@angular/core';
-import { AnyNewQuery, QueryArgs, QueryErrorResponse, RequestArgs } from '@ethlete/query';
-import { AnyDropzoneUploadConfig, DropzoneExistingFileInfo } from './dropzone-upload';
+import {
+  AnyDropzoneUploadConfig,
+  DropzoneExistingFileInfo,
+  DropzoneUploadError,
+  DropzoneUploadHandle,
+} from './dropzone-upload';
 
 export const DROPZONE_ENTRY_STATUSES = {
   UPLOADING: 'uploading',
@@ -36,16 +40,16 @@ export type DropzoneEntry<TValue = unknown> = {
   progress: Signal<number | null>;
 
   /** The upload error, if the last upload attempt failed. */
-  error: Signal<QueryErrorResponse | null>;
+  error: Signal<DropzoneUploadError | null>;
+
+  /** The first human readable error message of a failed upload, normalized across query flavors. */
+  errorMessage: Signal<string | null>;
 
   /** The form control value of this entry. `null` until the upload succeeded. */
   value: Signal<TValue | null>;
 
-  /** @internal The upload query. `null` for existing entries. */
-  query: AnyNewQuery | null;
-
-  /** @internal The frozen request args of the upload. Reused for retries. */
-  args: RequestArgs<QueryArgs> | null;
+  /** @internal The upload handle driving this entry. `null` for existing entries. */
+  handle: DropzoneUploadHandle<TValue> | null;
 
   /** @internal Object URL that must be revoked when the entry is disposed. */
   objectUrl: string | null;
@@ -53,29 +57,21 @@ export type DropzoneEntry<TValue = unknown> = {
 
 export type CreateFileDropzoneEntryOptions<TValue> = {
   file: File;
-  query: AnyNewQuery;
-  args: RequestArgs<QueryArgs>;
-  selectValue: (response: unknown) => TValue;
+  handle: DropzoneUploadHandle<TValue>;
 };
 
 export const createFileDropzoneEntry = <TValue>(
   options: CreateFileDropzoneEntryOptions<TValue>,
 ): DropzoneEntry<TValue> => {
-  const { file, query, args, selectValue } = options;
+  const { file, handle } = options;
 
   const objectUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
 
   const status = computed<DropzoneEntryStatus>(() => {
-    const state = query.executionState();
-
-    if (!state) {
-      return DROPZONE_ENTRY_STATUSES.UPLOADING;
-    }
-
-    switch (state.type) {
+    switch (handle.state()) {
       case 'success':
         return DROPZONE_ENTRY_STATUSES.SUCCESS;
-      case 'failure':
+      case 'error':
         return DROPZONE_ENTRY_STATUSES.ERROR;
       default:
         return DROPZONE_ENTRY_STATUSES.UPLOADING;
@@ -89,15 +85,11 @@ export const createFileDropzoneEntry = <TValue>(
     size: computed(() => file.size),
     previewUrl: computed(() => objectUrl),
     status,
-    progress: computed(() => query.loading()?.progress?.percentage ?? null),
-    error: computed(() => query.error()),
-    value: computed(() => {
-      const response = query.response();
-
-      return response === null || response === undefined ? null : selectValue(response);
-    }),
-    query,
-    args,
+    progress: handle.progress,
+    error: handle.error,
+    errorMessage: handle.errorMessage,
+    value: handle.value,
+    handle,
     objectUrl,
   };
 };
@@ -123,9 +115,9 @@ export const createExistingDropzoneEntry = <TValue>(
     status: computed(() => DROPZONE_ENTRY_STATUSES.EXISTING),
     progress: computed(() => null),
     error: computed(() => null),
+    errorMessage: computed(() => null),
     value: computed(() => value),
-    query: null,
-    args: null,
+    handle: null,
     objectUrl: null,
   };
 };
@@ -136,7 +128,7 @@ export const disposeDropzoneEntry = <TValue>(entry: DropzoneEntry<TValue>) => {
     URL.revokeObjectURL(entry.objectUrl);
   }
 
-  entry.query?.subtle.destroy();
+  entry.handle?.dispose();
 };
 
 /** Checks a file against the native `accept` attribute semantics (`.ext`, `type/subtype`, `type/*`). */

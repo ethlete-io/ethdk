@@ -228,8 +228,7 @@ export class DropzoneComponent {
   }
 
   private defaultUploadErrorMessage(entry: DropzoneEntry) {
-    const error = entry.error();
-    const serverMessage = error ? (error.isList ? error.errors[0]?.message : error.error.message) : null;
+    const serverMessage = entry.errorMessage();
 
     return serverMessage ? `"${entry.name()}": ${serverMessage}` : `"${entry.name()}" ${this.uploadErrorLabel()}.`;
   }
