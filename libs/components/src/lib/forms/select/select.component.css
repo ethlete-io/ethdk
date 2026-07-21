@@ -166,6 +166,21 @@
         inline-size: calc(var(--et-select-arrow-size) - 4px);
         block-size: calc(var(--et-select-arrow-size) - 4px);
       }
+
+      &.et-select-clear--enter {
+        animation: et-select-clear-in 150ms ease;
+      }
+
+      &.et-select-clear--leave {
+        animation: et-select-clear-out 120ms ease forwards;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        &.et-select-clear--enter,
+        &.et-select-clear--leave {
+          animation: none;
+        }
+      }
     }
 
     .et-select-arrow {
@@ -189,6 +204,18 @@
         /* the registered chevron icon points up natively — this select always points down */
         rotate: 180deg;
       }
+    }
+  }
+
+  @keyframes et-select-clear-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes et-select-clear-out {
+    to {
+      opacity: 0;
     }
   }
 }

@@ -72,9 +72,39 @@
       }
     }
 
+    /* only the clear button fades — the arrow shares the block above but stays put */
+    .et-cascader-clear {
+      &.et-cascader-clear--enter {
+        animation: et-cascader-clear-in 150ms ease;
+      }
+
+      &.et-cascader-clear--leave {
+        animation: et-cascader-clear-out 120ms ease forwards;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        &.et-cascader-clear--enter,
+        &.et-cascader-clear--leave {
+          animation: none;
+        }
+      }
+    }
+
     .et-cascader-arrow .et-icon {
       /* the registered chevron points up; the trigger shows it pointing down */
       rotate: 180deg;
+    }
+  }
+
+  @keyframes et-cascader-clear-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes et-cascader-clear-out {
+    to {
+      opacity: 0;
     }
   }
 }

@@ -59,6 +59,21 @@
           color: var(--et-surface-color-solid, currentColor);
         }
       }
+
+      &.et-date-input-clear--enter {
+        animation: et-date-input-clear-in 150ms ease;
+      }
+
+      &.et-date-input-clear--leave {
+        animation: et-date-input-clear-out 120ms ease forwards;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        &.et-date-input-clear--enter,
+        &.et-date-input-clear--leave {
+          animation: none;
+        }
+      }
     }
 
     .et-date-input-picker-trigger {
@@ -105,6 +120,18 @@
         cursor: not-allowed;
         color: var(--et-surface-color-subtle-solid, currentColor);
       }
+    }
+  }
+
+  @keyframes et-date-input-clear-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes et-date-input-clear-out {
+    to {
+      opacity: 0;
     }
   }
 }

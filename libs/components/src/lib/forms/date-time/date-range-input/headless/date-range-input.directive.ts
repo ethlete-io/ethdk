@@ -335,6 +335,26 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
     }
   }
 
+  /** Clears both sides and any uncommitted field text — wired to the styled input's clear button. */
+  public clearRange() {
+    if (!this.interactive()) {
+      return;
+    }
+
+    this.value.set({ start: null, end: null });
+    this.mixed.set(false);
+
+    for (const side of ['start', 'end'] as const) {
+      this.sides[side].inputText.set('');
+      this.sides[side].parseError.set(false);
+      // the field only mirrors state while unfocused; a clear happens while focused, so blank the element directly
+      const el = this.sides[side].field()?.elementRef.nativeElement;
+      if (el) {
+        el.value = '';
+      }
+    }
+  }
+
   /** @internal */
   public registerField(side: DateRangeSide, field: DateRangeInputFieldDirective) {
     this.sides[side].field.set(field);

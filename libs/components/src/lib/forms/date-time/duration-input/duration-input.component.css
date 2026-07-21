@@ -59,6 +59,33 @@
           color: var(--et-surface-color-solid, currentColor);
         }
       }
+
+      &.et-duration-input-clear--enter {
+        animation: et-duration-input-clear-in 150ms ease;
+      }
+
+      &.et-duration-input-clear--leave {
+        animation: et-duration-input-clear-out 120ms ease forwards;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        &.et-duration-input-clear--enter,
+        &.et-duration-input-clear--leave {
+          animation: none;
+        }
+      }
+    }
+  }
+
+  @keyframes et-duration-input-clear-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes et-duration-input-clear-out {
+    to {
+      opacity: 0;
     }
   }
 }

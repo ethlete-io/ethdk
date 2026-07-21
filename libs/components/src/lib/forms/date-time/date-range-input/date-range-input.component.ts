@@ -1,6 +1,6 @@
-import { Component, ViewEncapsulation, inject, input } from '@angular/core';
+import { Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
 import { CALENDAR_IMPORTS } from '../../../calendar';
-import { CALENDAR_ICON, IconDirective, provideIcons } from '../../../icon';
+import { CALENDAR_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../../icon';
 import { InputMaskDirective } from '../../masked-input/headless';
 import { DatePickerPanelComponent } from '../date-picker-panel.component';
 import { DatePickerSurfaceDirective } from '../picker/date-picker-surface.directive';
@@ -21,7 +21,7 @@ import { DateRangeInputDirective, DateRangeInputFieldDirective } from './headles
     IconDirective,
     InputMaskDirective,
   ],
-  providers: [provideIcons(CALENDAR_ICON)],
+  providers: [provideIcons(CALENDAR_ICON, TIMES_ICON)],
   hostDirectives: [
     {
       directive: DateRangeInputDirective,
@@ -63,4 +63,19 @@ export class DateRangeInputComponent {
   public startAriaLabel = input('Start date');
   public endAriaLabel = input('End date');
   public pickerTriggerLabel = input('Open calendar');
+
+  /** Shows a clear (×) control while a value is set and the field is in use. */
+  public clearable = input(true);
+  public clearLabel = input('Clear');
+
+  // only while the field is in use — mirrors the single date input's clear affordance
+  protected showClear = computed(
+    () => this.clearable() && this.rangeInput.hasValue() && this.rangeInput.focused() && this.rangeInput.interactive(),
+  );
+
+  protected handleClearClick(event: Event) {
+    // clearing must not bubble into the form field's frame-click handling
+    event.stopPropagation();
+    this.rangeInput.clearRange();
+  }
 }

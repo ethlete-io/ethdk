@@ -20,6 +20,24 @@
   side="end"
 />
 
+@if (showClear()) {
+  <!-- pointer-only, out of the tab order — keyboard users clear by erasing the text.
+       mousedown is prevented so the field keeps focus (its blur would unmount this
+       button before the click could land) -->
+  <button
+    [attr.aria-label]="clearLabel()"
+    (click)="handleClearClick($event)"
+    (mousedown)="$event.preventDefault()"
+    class="et-date-range-input-clear"
+    animate.enter="et-date-range-input-clear--enter"
+    animate.leave="et-date-range-input-clear--leave"
+    tabindex="-1"
+    type="button"
+  >
+    <i etIcon="et-times"></i>
+  </button>
+}
+
 <button [attr.aria-label]="pickerTriggerLabel()" class="et-date-range-input-picker-trigger" etDatePickerTrigger>
   <i etIcon="et-calendar"></i>
 </button>

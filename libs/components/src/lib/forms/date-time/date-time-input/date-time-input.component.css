@@ -59,6 +59,21 @@
           color: var(--et-surface-color-solid, currentColor);
         }
       }
+
+      &.et-date-time-input-clear--enter {
+        animation: et-date-time-input-clear-in 150ms ease;
+      }
+
+      &.et-date-time-input-clear--leave {
+        animation: et-date-time-input-clear-out 120ms ease forwards;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        &.et-date-time-input-clear--enter,
+        &.et-date-time-input-clear--leave {
+          animation: none;
+        }
+      }
     }
 
     .et-date-time-input-picker-trigger {
@@ -222,6 +237,18 @@
     .et-date-time-input-panel-panes > et-calendar,
     .et-date-time-input-panel-panes > .et-date-time-input-panel-time-pane {
       animation: none;
+    }
+  }
+
+  @keyframes et-date-time-input-clear-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes et-date-time-input-clear-out {
+    to {
+      opacity: 0;
     }
   }
 }

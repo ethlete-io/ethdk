@@ -95,6 +95,21 @@
           color: var(--et-surface-color-solid, currentColor);
         }
       }
+
+      &.et-phone-input-clear--enter {
+        animation: et-phone-input-clear-in 150ms ease;
+      }
+
+      &.et-phone-input-clear--leave {
+        animation: et-phone-input-clear-out 120ms ease forwards;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        &.et-phone-input-clear--enter,
+        &.et-phone-input-clear--leave {
+          animation: none;
+        }
+      }
     }
   }
 
@@ -178,5 +193,17 @@
     display: block;
     inline-size: 20px;
     block-size: auto;
+  }
+
+  @keyframes et-phone-input-clear-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes et-phone-input-clear-out {
+    to {
+      opacity: 0;
+    }
   }
 }

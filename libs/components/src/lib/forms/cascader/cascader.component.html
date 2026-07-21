@@ -12,6 +12,8 @@
       [attr.aria-label]="clearLabel()"
       (click)="handleClearClick($event)"
       class="et-cascader-clear"
+      animate.enter="et-cascader-clear--enter"
+      animate.leave="et-cascader-clear--leave"
       tabindex="-1"
       type="button"
     >
