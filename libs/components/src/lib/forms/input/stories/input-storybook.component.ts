@@ -21,7 +21,9 @@ import { INPUT_IMPORTS } from '../input.imports';
   template: `
     <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
       <et-form-field [appearance]="appearance()" [fill]="fill()" [size]="size()" [labelMode]="labelMode()">
-        <et-label>{{ label() }}</et-label>
+        @if (label()) {
+          <et-label>{{ label() }}</et-label>
+        }
         @if (showPrefix()) {
           <span etInputPrefix>@</span>
         }
@@ -31,6 +33,7 @@ import { INPUT_IMPORTS } from '../input.imports';
           [mixedLabel]="mixedLabel()"
           [type]="type()"
           [placeholder]="placeholder()"
+          [aria-label]="label() ? null : ariaLabel()"
         />
         @if (showSuffix()) {
           <span etInputSuffix>.com</span>
@@ -65,6 +68,8 @@ export class FormFieldInputStorybookComponent {
   public labelMode = input<FormFieldLabelMode>(FORM_FIELD_LABEL_MODES.STATIC);
   public type = input<(typeof INPUT_TYPES)[keyof typeof INPUT_TYPES]>(INPUT_TYPES.TEXT);
   public label = input('Label');
+  /** Accessible name used when `label` is empty — a placeholder is not an accessible name. */
+  public ariaLabel = input('Search');
   public placeholder = input('Placeholder');
   public hint = input('');
   public value = input('');
