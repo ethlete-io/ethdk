@@ -60,7 +60,9 @@ export const createDatePickerOverlay = (options: CreateDatePickerOverlayOptions)
         ...anchoredOverlayStrategy({
           containerClass: ['et-overlay--anchored', 'et-overlay--date-picker'],
           placement: 'bottom-start',
-          fallbackPlacements: ['top-start'],
+          // prefer flipping the alignment on the same side (right-align under the field) before
+          // flipping up, so a field near the right viewport edge opens bottom-end, not shifted
+          fallbackPlacements: ['bottom-end', 'top-start', 'top-end'],
           offset: 4,
           viewportPadding: 8,
           autoResize: true,
