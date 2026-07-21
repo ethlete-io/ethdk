@@ -120,12 +120,12 @@ export class OverlayPopoverExampleComponent {}
   imports: [BUTTON_IMPORTS],
   styles: `
     .et-sb-overlay-panel {
-      background-color: #1c1c1f;
-      color: #fafafa;
+      background-color: var(--et-surface-background-solid);
+      color: var(--et-surface-color-solid);
     }
 
     .et-sb-overlay-panel--bordered {
-      border: 1px solid rgb(255 255 255 / 0.25);
+      border: 1px solid var(--et-surface-border-solid);
     }
 
     .et-overlay--dialog.et-sb-overlay-panel,
