@@ -27,6 +27,8 @@ import { TimeInputDirective, TimeInputFieldDirective } from './headless';
       directive: TimeInputDirective,
       inputs: [
         'value',
+        'mixed',
+        'mixedLabel',
         'touched',
         'disabled',
         'readonly',
@@ -42,7 +44,7 @@ import { TimeInputDirective, TimeInputFieldDirective } from './headless';
         'mask',
         'pickerOpen',
       ],
-      outputs: ['valueChange', 'touchedChange', 'pickerOpenChange'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'pickerOpenChange'],
     },
   ],
   host: {

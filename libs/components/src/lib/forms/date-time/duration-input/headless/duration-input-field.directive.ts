@@ -15,7 +15,7 @@ import { DurationInputDirective } from './duration-input.directive';
     type: 'text',
     inputmode: 'numeric',
     autocomplete: 'off',
-    '[attr.placeholder]': 'durationInput?.placeholder() || null',
+    '[attr.placeholder]': 'durationInput?.effectivePlaceholder() || null',
     '[attr.aria-required]': 'durationInput?.required() || null',
     '[attr.aria-invalid]': 'durationInput?.shouldDisplayError() || null',
     '[attr.aria-describedby]': 'durationInput?.describedBy() || null',

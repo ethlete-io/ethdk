@@ -103,6 +103,15 @@
       }
     }
 
+    /* an unresolved bulk-edit selection reads as provisional — between a committed value
+       (full strength) and the placeholder (46%). The focused search input stays plain: its
+       text is about to be replaced by a query. Consumers restyle via [data-mixed]. */
+    &[data-mixed] .et-select-value,
+    &[data-mixed] input[etselectsearch]:not(:focus) {
+      font-style: italic;
+      color: color-mix(in srgb, currentColor 72%, transparent);
+    }
+
     .et-select-value-custom {
       display: flex;
       align-items: center;

@@ -19,6 +19,7 @@ import {
     '[attr.aria-describedby]': 'describedBy() || null',
     '[attr.aria-labelledby]': 'labelId() || null',
     '[attr.data-disabled]': 'disabled() || null',
+    '[attr.data-mixed]': 'mixed() || null',
     // aria-readonly is only valid on radiogroup, not on group — the multi case reflects it
     // per option instead (role=checkbox supports it)
     '[attr.aria-readonly]': '!multiple() && readonly() || null',
@@ -31,6 +32,12 @@ export class SelectionListDirective implements SelectionListDirectiveBase, FormF
   private multipleOverride = inject(SELECTION_LIST_MULTIPLE, { optional: true });
 
   public value = model<unknown | unknown[] | null>(null);
+  /**
+   * View state for a group whose source values disagree (bulk edit). The raw `value` stays
+   * untouched but no option reports as checked; the first user commit replaces it and
+   * resolves the flag. There is no text display slot — the masking itself is the presentation.
+   */
+  public mixed = model(false);
   public touched = model(false);
   public multipleInput = input(false, { alias: 'multiple' });
   public disabled = input(false);
@@ -50,6 +57,9 @@ export class SelectionListDirective implements SelectionListDirectiveBase, FormF
     // every option is rendered, so a destroyed checked option is genuinely gone — drop its
     // stranded value from the model (the select family renders lazily and must not prune)
     pruneValueOnUnregister: true,
+    // masking + first-commit-replaces live in the selection state, so aria-checked and all
+    // styled visuals (which key off the options' checked state) follow automatically
+    mixed: this.mixed,
   });
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());

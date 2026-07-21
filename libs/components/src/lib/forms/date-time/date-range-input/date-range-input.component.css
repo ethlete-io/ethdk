@@ -28,6 +28,14 @@
       }
     }
 
+    /* an unresolved bulk-edit range reads as provisional: both fields stay empty and the
+       mixed label shows through their placeholders — stronger than a regular hint (72% vs
+       46%). Consumers restyle via [data-mixed]. */
+    &[data-mixed] .et-date-range-input-field::placeholder {
+      font-style: italic;
+      color: color-mix(in srgb, currentColor 72%, transparent);
+    }
+
     .et-date-range-input-separator {
       color: var(--et-surface-color-muted-solid, currentColor);
     }

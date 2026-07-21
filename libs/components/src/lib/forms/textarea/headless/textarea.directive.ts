@@ -28,8 +28,14 @@ export class TextareaDirective extends TextFieldControlDirective implements Form
   /** Only applied when `autosize` is off; an autosizing textarea is never manually resizable. */
   public resize = input<TextareaResizeMode>(TEXTAREA_RESIZE_MODES.VERTICAL);
 
-  public hasValue = computed(() => this.value().length > 0);
+  public hasValue = computed(() => this.mixed() || this.value().length > 0);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.TEXTAREA);
+
+  /** The text the native textarea renders — empty while mixed so the raw value never reaches the DOM. */
+  public displayValue = computed(() => (this.mixed() ? '' : this.value()));
+
+  /** The placeholder the native textarea renders — `mixedLabel` overrides the consumer placeholder while mixed. */
+  public effectivePlaceholder = computed(() => (this.mixed() ? this.mixedLabel() : this.placeholder()));
 
   public effectiveResize = computed(() => (this.autosize() ? TEXTAREA_RESIZE_MODES.NONE : this.resize()));
 
@@ -66,7 +72,9 @@ export class TextareaDirective extends TextFieldControlDirective implements Form
         return;
       }
 
-      const value = this.value();
+      // size against what is actually rendered — while mixed that is the empty masked display,
+      // never the hidden raw value (resizeToFit would otherwise write it into the DOM)
+      const value = this.displayValue();
       const bounds: AutosizeBounds = { minRows: this.minRows() ?? this.rows(), maxRows: this.maxRows() };
       const inlineSize = this.nativeControlDimensions()?.client?.width ?? 0;
 
@@ -78,6 +86,23 @@ export class TextareaDirective extends TextFieldControlDirective implements Form
 
       untracked(() => this.resizeToFit(textarea, { bounds, value }));
     });
+  }
+
+  /**
+   * @internal Routes a user edit from the native textarea into the model. Typing is the commit
+   * over a mixed state: the first edit that produces content replaces the raw value and
+   * resolves `mixed`; an edit that leaves the textarea empty keeps both untouched.
+   */
+  public syncFromNativeInput(textareaElement: HTMLTextAreaElement) {
+    if (this.mixed()) {
+      if (!textareaElement.value) {
+        return;
+      }
+
+      this.mixed.set(false);
+    }
+
+    this.value.set(textareaElement.value);
   }
 
   private resizeToFit(textarea: HTMLTextAreaElement, { bounds, value }: { bounds: AutosizeBounds; value: string }) {

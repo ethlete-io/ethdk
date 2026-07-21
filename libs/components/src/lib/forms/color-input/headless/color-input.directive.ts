@@ -9,7 +9,7 @@ export class ColorInputDirective extends TextFieldControlDirective implements Fo
   /** Hex color in `#rrggbb` notation, or `null` when nothing was picked yet. */
   public value = model<string | null>(null);
 
-  public hasValue = computed(() => this.value() !== null);
+  public hasValue = computed(() => this.mixed() || this.value() !== null);
 
   /**
    * `<input type="color">` ignores the native `readonly` attribute (spec), so the surface gates
@@ -18,8 +18,17 @@ export class ColorInputDirective extends TextFieldControlDirective implements Fo
    */
   public interactive = computed(() => !this.disabled() && !this.readonly());
 
-  /** The color the native input currently paints — `#000000` until a value is picked. */
-  public resolvedColor = computed(() => this.value() ?? '#000000');
+  /**
+   * The color the native input currently paints — `#000000` until a value is picked, and
+   * while mixed (the picker must not preselect and thereby reveal the hidden raw color).
+   */
+  public resolvedColor = computed(() => (this.mixed() ? '#000000' : (this.value() ?? '#000000')));
+
+  /** The color the swatch paints — `null` while mixed so the CSS neutral treatment takes over. */
+  public swatchColor = computed(() => (this.mixed() ? null : this.resolvedColor()));
+
+  /** The text the value slot renders — `mixedLabel` while mixed, never the hidden raw color. */
+  public displayValue = computed(() => (this.mixed() ? this.mixedLabel() : (this.value() ?? '')));
 
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.COLOR_INPUT);
 
@@ -42,10 +51,21 @@ export class ColorInputDirective extends TextFieldControlDirective implements Fo
     }
   }
 
-  /** @internal */
+  /**
+   * @internal Routes a picked color from the native input into the model. Picking is the
+   * commit over a mixed state: it replaces the raw value and resolves `mixed`.
+   */
   public syncFromNativeInput(inputElement: HTMLInputElement) {
     if (!this.interactive()) {
       return;
+    }
+
+    if (this.mixed()) {
+      if (!inputElement.value) {
+        return;
+      }
+
+      this.mixed.set(false);
     }
 
     this.value.set(inputElement.value || null);

@@ -37,8 +37,14 @@ export class InputDirective extends TextFieldControlDirective implements FormVal
    */
   private nativeSyncSuppressed = false;
 
-  public hasValue = computed(() => this.value().length > 0);
+  public hasValue = computed(() => this.mixed() || this.value().length > 0);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.TEXT_INPUT);
+
+  /** The text the native input renders — empty while mixed so the raw value never reaches the DOM. */
+  public displayValue = computed(() => (this.mixed() ? '' : this.value()));
+
+  /** The placeholder the native input renders — `mixedLabel` overrides the consumer placeholder while mixed. */
+  public effectivePlaceholder = computed(() => (this.mixed() ? this.mixedLabel() : this.placeholder()));
 
   /**
    * The native input element this directive controls. Set automatically when the
@@ -71,14 +77,31 @@ export class InputDirective extends TextFieldControlDirective implements FormVal
 
   /**
    * Keeps the model in sync while typing. The wrapper components also bind `(input)` on their
-   * inner element, so this is redundant there (it writes the same value); its real job is the
-   * standalone `input[etInput]` case, which otherwise has no listener updating the model.
+   * inner element, so this is redundant there (it routes through the same sync); its real job is
+   * the standalone `input[etInput]` case, which otherwise has no listener updating the model.
    */
   protected handleNativeInput(event: Event) {
     if (this.nativeSyncSuppressed || event.target !== this.nativeControl()) {
       return;
     }
 
-    this.value.set((event.target as HTMLInputElement).value);
+    this.syncFromNativeInput(event.target as HTMLInputElement);
+  }
+
+  /**
+   * @internal Routes a user edit from the native input into the model. Typing is the commit
+   * over a mixed state: the first edit that produces content replaces the raw value and
+   * resolves `mixed`; an edit that leaves the input empty keeps both untouched.
+   */
+  public syncFromNativeInput(inputElement: HTMLInputElement) {
+    if (this.mixed()) {
+      if (!inputElement.value) {
+        return;
+      }
+
+      this.mixed.set(false);
+    }
+
+    this.value.set(inputElement.value);
   }
 }

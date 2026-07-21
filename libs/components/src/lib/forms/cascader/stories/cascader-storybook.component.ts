@@ -112,10 +112,12 @@ const deepSource: CascaderDataSource<string> = {
         <et-form-field>
           <et-label>{{ label() }}</et-label>
           <et-cascader
+            [(mixed)]="mixedState"
             [formField]="multiForm.value"
             [dataSource]="resolvedSource()"
             [selectableLevels]="selectableLevels()"
             [toErrorMessage]="toErrorMessage"
+            [mixedLabel]="mixedLabel()"
             [placeholder]="placeholder()"
             [multiple]="true"
           />
@@ -124,15 +126,24 @@ const deepSource: CascaderDataSource<string> = {
           }
         </et-form-field>
 
-        <p class="text-sm opacity-60">Form value: {{ multiFormValue() }}</p>
+        @if (showMixedState()) {
+          <div class="text-sm opacity-60">
+            <p>Raw form value: {{ multiFormValue() }}</p>
+            <p>Mixed: {{ mixedState() }}</p>
+          </div>
+        } @else {
+          <p class="text-sm opacity-60">Form value: {{ multiFormValue() }}</p>
+        }
       } @else {
         <et-form-field>
           <et-label>{{ label() }}</et-label>
           <et-cascader
+            [(mixed)]="mixedState"
             [formField]="demoForm.value"
             [dataSource]="resolvedSource()"
             [selectableLevels]="selectableLevels()"
             [toErrorMessage]="toErrorMessage"
+            [mixedLabel]="mixedLabel()"
             [placeholder]="placeholder()"
           />
           @if (hint()) {
@@ -140,7 +151,14 @@ const deepSource: CascaderDataSource<string> = {
           }
         </et-form-field>
 
-        <p class="text-sm opacity-60">Form value: "{{ demoForm.value().value() ?? 'null' }}"</p>
+        @if (showMixedState()) {
+          <div class="text-sm opacity-60">
+            <p>Raw form value: "{{ demoForm.value().value() ?? 'null' }}"</p>
+            <p>Mixed: {{ mixedState() }}</p>
+          </div>
+        } @else {
+          <p class="text-sm opacity-60">Form value: "{{ demoForm.value().value() ?? 'null' }}"</p>
+        }
       }
     </div>
   `,
@@ -161,7 +179,10 @@ export class CascaderStorybookComponent {
   public multiple = input(false);
   /** Fails the first load of each level and recovers on Retry — demonstrates the error state. */
   public errorMode = input(false);
-  public value = input<string | null>(null);
+  public value = input<string | string[] | null>(null);
+  public mixed = input(false);
+  public mixedLabel = input('Mixed');
+  public showMixedState = input(false);
   public color = input('brand');
 
   // per-level attempt tracking: the first load of a level fails, a Retry (second load) succeeds
@@ -198,11 +219,21 @@ export class CascaderStorybookComponent {
     return this.async() ? asyncSource : syncSource;
   });
 
-  private formModel = linkedSignal(() => ({ value: this.value() }));
+  public mixedState = linkedSignal(() => this.mixed());
+
+  private formModel = linkedSignal(() => {
+    const value = this.value();
+
+    return { value: Array.isArray(value) ? null : value };
+  });
 
   public demoForm = form(this.formModel);
 
-  private multiFormModel = linkedSignal<{ value: string[] }>(() => ({ value: [] }));
+  private multiFormModel = linkedSignal<{ value: string[] }>(() => {
+    const value = this.value();
+
+    return { value: Array.isArray(value) ? value : [] };
+  });
 
   public multiForm = form(this.multiFormModel);
 

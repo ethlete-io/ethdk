@@ -29,5 +29,12 @@
         resize: vertical;
       }
     }
+
+    /* an unresolved bulk-edit value reads as provisional — the mixed label shows as the
+       placeholder, between a committed value (full strength) and a real placeholder (46%) */
+    &[data-mixed] .et-textarea-native::placeholder {
+      font-style: italic;
+      color: color-mix(in srgb, currentColor 72%, transparent);
+    }
   }
 }

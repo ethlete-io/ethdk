@@ -36,16 +36,7 @@ export class SelectVirtualOptionDirective {
   // derived from the select's value instead of the item's `checked` (which the registry sync
   // effect writes after the fact) — a freshly windowed-in row must paint its selected state
   // on its very first frame
-  public selected = computed(() => {
-    const value = this.item().value();
-    const current = this.select?.value();
-
-    if (this.select?.mixed()) {
-      return false;
-    }
-
-    return Array.isArray(current) ? current.includes(value) : current === value;
-  });
+  public selected = computed(() => this.select?.isValueSelected(this.item().value()) ?? false);
 
   public active = computed(() => this.select?.activeItem() === this.item());
   protected activeSource = computed(() => (this.active() ? (this.select?.activeItemSource() ?? null) : null));

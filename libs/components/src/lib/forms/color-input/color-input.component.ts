@@ -10,8 +10,19 @@ import { ColorInputDirective } from './headless';
   hostDirectives: [
     {
       directive: ColorInputDirective,
-      inputs: ['value', 'disabled', 'readonly', 'hidden', 'invalid', 'errors', 'required', 'name'],
-      outputs: ['valueChange', 'touchedChange'],
+      inputs: [
+        'value',
+        'mixed',
+        'mixedLabel',
+        'disabled',
+        'readonly',
+        'hidden',
+        'invalid',
+        'errors',
+        'required',
+        'name',
+      ],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange'],
     },
     ColorInteractiveDirective,
   ],

@@ -104,21 +104,47 @@ With a [flat search](#flat-search), activating a result toggles it and **keeps t
 
 Values set programmatically (a form patch/restore) display and mark their ancestors once the data source's [`resolvePath`](#resolving-a-programmatic-value-—-resolvepath) resolves their chains — one call per unknown value. The panel reports itself as an `aria-multiselectable` tree.
 
+## Mixed values in bulk editors
+
+Try it live in Storybook: `Components/Forms/Cascader` → `Mixed` / `Mixed multiple`.
+
+Use `mixed` when one cascader edits several records whose current values differ. It is presentation state, not a sentinel form value: while mixed, the trigger shows `mixedLabel` instead of the breadcrumb (or the joined labels in [multi mode](#multi-select)), the raw form value stays unchanged, and no node reports itself as selected — checkmarks, partial-branch indeterminate dashes, and `aria-selected` all read as unselected, and the panel opens at the root instead of re-opening the hidden branch.
+
+```html
+<et-cascader
+  [(mixed)]="categoryIsMixed"
+  [formField]="form.category"
+  [dataSource]="categories"
+  mixedLabel="Different values"
+  placeholder="Browse categories"
+/>
+```
+
+Treat `mixed` as explicitly controlled state. Updating the raw form value from application code does not change it; set `categoryIsMixed` to `false` yourself when external data establishes one value. Setting it to `false` reveals whatever raw value is currently in the form.
+
+- The first user commit **replaces** the hidden raw value and resolves mixed: a single-mode pick sets that node's value; the first multi-mode toggle starts a fresh array containing only the toggled node — even when that node was part of the hidden selection — and later toggles behave normally again. Committing a [flat search](#flat-search) result works the same way.
+- The clear (×) control writes the empty shape (`null` single, `[]` multi) and resolves mixed.
+- Opening, browsing, searching, and cancelling a search leave mixed unchanged — deleting the search query never touches the hidden value; the clear control is the only destructive path.
+- Signal Forms validation continues to inspect the raw form value. The mixed presentation by itself does not satisfy `required` or otherwise override validation.
+- Tree nodes (and search results) use `aria-selected="false"` while mixed — they never expose `aria-selected="mixed"`, which is not a valid tree-item state. The cascader host exposes `data-mixed` for consumer styling.
+
 ## Options
 
 On `et-cascader` (forwarded from the headless `[etCascader]` directive):
 
-| Input               | Type                            | Default  | Description                                                                                                                                 |
-| ------------------- | ------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dataSource`        | `CascaderDataSource<T> \| null` | `null`   | The hierarchy to browse (required to open).                                                                                                 |
-| `multiple`          | `boolean`                       | `false`  | [Multi-select](#multi-select): activations toggle values, the form value is a `T[]`.                                                        |
-| `selectableLevels`  | `'leaf' \| 'any'`               | `'leaf'` | `'leaf'` commits only terminal nodes; `'any'` also commits intermediate branches (see below).                                               |
-| `compareWith`       | `(a: T, b: T) => boolean`       | `===`    | Value equality — override when values are objects.                                                                                          |
-| `toErrorMessage`    | `(error: unknown) => string`    | see note | Maps a `loadChildren` / `search` failure to the panel's error text. Default: an `Error`'s `message` verbatim, a generic fallback otherwise. |
-| `mirrorPanelWidth`  | `boolean`                       | `false`  | Whether the panel matches the field width (off — columns size themselves).                                                                  |
-| `maxVisibleColumns` | `number`                        | `3`      | Columns shown side by side before older levels collapse into the [breadcrumb row](#deep-hierarchies) (min 1).                               |
-| `placeholder`       | `string`                        | `''`     | Shown on the trigger until a value is committed.                                                                                            |
-| `searchPlaceholder` | `string`                        | `Search` | Placeholder of the panel's [flat search](#flat-search) input (rendered only when the data source has a `search` hook).                      |
+| Input               | Type                            | Default   | Description                                                                                                                                                                            |
+| ------------------- | ------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dataSource`        | `CascaderDataSource<T> \| null` | `null`    | The hierarchy to browse (required to open).                                                                                                                                            |
+| `multiple`          | `boolean`                       | `false`   | [Multi-select](#multi-select): activations toggle values, the form value is a `T[]`.                                                                                                   |
+| `selectableLevels`  | `'leaf' \| 'any'`               | `'leaf'`  | `'leaf'` commits only terminal nodes; `'any'` also commits intermediate branches (see below).                                                                                          |
+| `compareWith`       | `(a: T, b: T) => boolean`       | `===`     | Value equality — override when values are objects.                                                                                                                                     |
+| `toErrorMessage`    | `(error: unknown) => string`    | see note  | Maps a `loadChildren` / `search` failure to the panel's error text. Default: an `Error`'s `message` verbatim, a generic fallback otherwise.                                            |
+| `mirrorPanelWidth`  | `boolean`                       | `false`   | Whether the panel matches the field width (off — columns size themselves).                                                                                                             |
+| `maxVisibleColumns` | `number`                        | `3`       | Columns shown side by side before older levels collapse into the [breadcrumb row](#deep-hierarchies) (min 1).                                                                          |
+| `mixed`             | `boolean`                       | `false`   | Presents an [unresolved bulk-edit selection](#mixed-values-in-bulk-editors) independently of `value`. Two-way bindable (`mixedChange`); a user commit or clear resolves it to `false`. |
+| `mixedLabel`        | `string`                        | `'Mixed'` | Trigger text shown while `mixed` is true.                                                                                                                                              |
+| `placeholder`       | `string`                        | `''`      | Shown on the trigger until a value is committed.                                                                                                                                       |
+| `searchPlaceholder` | `string`                        | `Search`  | Placeholder of the panel's [flat search](#flat-search) input (rendered only when the data source has a `search` hook).                                                                 |
 
 The `value` model is the selected node's `value` (`T | null`; a `T[]` with [`multiple`](#multi-select)). The full chosen chain is exposed as `path` (`CascaderNode<T>[]`) and `pathValue` (`T[]`) computeds, and the trigger shows the breadcrumb (`Euro / Knockout stage / Final`) — or the joined labels in multi mode.
 

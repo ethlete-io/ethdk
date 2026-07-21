@@ -9,6 +9,9 @@ export default {
     label: { control: 'text' },
     hint: { control: 'text' },
     value: { control: 'number' },
+    mixed: { control: 'boolean' },
+    mixedLabel: { control: 'text' },
+    showMixedState: { control: false, table: { disable: true } },
     max: { control: 'number' },
     allowHalf: { control: 'boolean' },
     disabled: { control: 'boolean' },
@@ -20,6 +23,9 @@ export default {
     label: 'Rating',
     hint: '',
     value: null,
+    mixed: false,
+    mixedLabel: 'Mixed',
+    showMixedState: false,
     max: 5,
     allowHalf: false,
     disabled: false,
@@ -35,6 +41,16 @@ export const Default: Story = {};
 
 export const HalfSteps: Story = {
   args: { allowHalf: true, value: 3.5 },
+};
+
+export const Mixed: Story = {
+  args: {
+    mixed: true,
+    value: 3,
+    mixedLabel: 'Different ratings',
+    showMixedState: true,
+    hint: 'The raw value stays intact until a user commits a pick; no star fills while mixed.',
+  },
 };
 
 export const Readonly: Story = {

@@ -10,6 +10,9 @@ export default {
     placeholder: { control: 'text' },
     hint: { control: 'text' },
     value: { control: 'text' },
+    mixed: { control: 'boolean' },
+    mixedLabel: { control: 'text' },
+    showMixedState: { control: false, table: { disable: true } },
     valueFormat: { control: 'text' },
     displayFormat: { control: 'text' },
     minuteStep: { control: 'number' },
@@ -25,6 +28,9 @@ export default {
     placeholder: 'mm/dd/yyyy, hh:mm',
     hint: '',
     value: null,
+    mixed: false,
+    mixedLabel: 'Mixed',
+    showMixedState: false,
     valueFormat: undefined,
     displayFormat: 'Pp',
     minuteStep: 5,
@@ -56,4 +62,14 @@ export const CustomFormats: Story = {
 
 export const German: Story = {
   args: { locale: 'de', hint: '24-Stunden-Anzeige (Pp mit de-Locale)' },
+};
+
+export const Mixed: Story = {
+  args: {
+    value: '2026-07-16T14:30:00+02:00',
+    mixed: true,
+    mixedLabel: 'Mixed values',
+    showMixedState: true,
+    hint: 'The hidden date-time stays intact and unshown; the mixed label is the placeholder. Parsing a typed value or picking one commits a replacement.',
+  },
 };

@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
 import '../../../../test-helpers';
+import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { PHONE_INPUT_IMPORTS } from '../phone-input.imports';
 import { PhoneInputDirective } from './phone-input.directive';
 import { matchCountryByDialCode, phoneCountryFlag } from './phone-countries';
@@ -30,7 +31,9 @@ const TEST_COLOR_THEMES = [
   template: `
     <et-phone-input
       [value]="value()"
+      [mixed]="mixed()"
       (valueChange)="value.set($event)"
+      (mixedChange)="mixed.set($event)"
       defaultCountry="de"
       placeholder="Phone number"
     />
@@ -39,6 +42,7 @@ const TEST_COLOR_THEMES = [
 })
 class PhoneInputTestHost {
   value = signal('');
+  mixed = signal(false);
 }
 
 describe('phone-countries', () => {
@@ -192,5 +196,130 @@ describe('PhoneInputDirective', () => {
 
     type('1234567');
     expect(phone.isPlausible()).toBe(true);
+  });
+
+  describe('mixed', () => {
+    const enterMixed = (raw: string) => {
+      fixture.componentInstance.value.set(raw);
+      fixture.componentInstance.mixed.set(true);
+      fixture.detectChanges();
+    };
+
+    it('masks the hidden number in every display path while the raw value survives', () => {
+      enterMixed('+491701234567');
+
+      expect(phone.nationalNumber()).toBe('');
+      expect(phone.formattedNational()).toBe('');
+      expect(field.value).toBe('');
+      expect(field.getAttribute('placeholder')).toBe('Mixed');
+      expect(fixture.componentInstance.value()).toBe('+491701234567');
+
+      // focusing for editing must not surface the hidden digits either
+      field.dispatchEvent(new FocusEvent('focus'));
+      fixture.detectChanges();
+
+      expect(field.value).toBe('');
+    });
+
+    it('updates only the country presentation on selectCountry — no value write, mixed stays', () => {
+      enterMixed('+491701234567');
+
+      phone.selectCountry('fr');
+      fixture.detectChanges();
+
+      expect(phone.country()).toBe('fr');
+      expect(phone.dialCode()).toBe('33');
+      expect(fixture.componentInstance.value()).toBe('+491701234567');
+      expect(fixture.componentInstance.mixed()).toBe(true);
+      expect(field.value).toBe('');
+    });
+
+    it('builds the first committed number from scratch with the chosen country and resolves mixed', () => {
+      enterMixed('+491701234567');
+
+      phone.selectCountry('fr');
+      fixture.detectChanges();
+      type('612345678');
+
+      expect(fixture.componentInstance.value()).toBe('+33612345678');
+      expect(fixture.componentInstance.mixed()).toBe(false);
+      expect(phone.nationalNumber()).toBe('612345678');
+    });
+
+    it('keeps mixed and the raw value when the typed input produces no value', () => {
+      enterMixed('+491701234567');
+
+      type('');
+
+      expect(fixture.componentInstance.value()).toBe('+491701234567');
+      expect(fixture.componentInstance.mixed()).toBe(true);
+    });
+
+    it('clears to the empty value and resolves mixed', () => {
+      enterMixed('+491701234567');
+
+      phone.clearValue();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.value()).toBe('');
+      expect(fixture.componentInstance.mixed()).toBe(false);
+    });
+
+    it('preserves mixed across external value writes', () => {
+      enterMixed('+491701234567');
+
+      fixture.componentInstance.value.set('+33123456789');
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.mixed()).toBe(true);
+      expect(field.value).toBe('');
+    });
+  });
+});
+
+describe('PhoneInputDirective (contract)', () => {
+  describeMixedStateContract(() => {
+    TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+
+    const fixture = TestBed.createComponent(PhoneInputTestHost);
+
+    fixture.detectChanges();
+
+    const phone = fixture.debugElement.children[0]!.injector.get(PhoneInputDirective);
+    const field = fixture.nativeElement.querySelector('.et-phone-input-field') as HTMLInputElement;
+
+    return {
+      enterMixed: () => {
+        fixture.componentInstance.value.set('+491701234567');
+        fixture.componentInstance.mixed.set(true);
+        fixture.detectChanges();
+      },
+      rawValue: () => '+491701234567',
+      value: () => fixture.componentInstance.value(),
+      mixed: () => fixture.componentInstance.mixed(),
+      hostElement: () => fixture.nativeElement.querySelector('et-phone-input') as HTMLElement,
+      writeValueExternally: () => {
+        fixture.componentInstance.value.set('+33123456789');
+        fixture.detectChanges();
+      },
+      externallyWrittenValue: () => '+33123456789',
+      commit: () => {
+        field.value = '170555';
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+        fixture.detectChanges();
+      },
+      // replace semantics: built from scratch with the active country, no hidden digits
+      committedValue: () => '+49170555',
+      assertMasked: () => {
+        expect(phone.formattedNational()).toBe('');
+        expect(field.value).toBe('');
+        expect(field.getAttribute('placeholder')).toBe('Mixed');
+      },
+      clear: () => {
+        phone.clearValue();
+        fixture.detectChanges();
+      },
+      emptyValue: () => '',
+    };
   });
 });

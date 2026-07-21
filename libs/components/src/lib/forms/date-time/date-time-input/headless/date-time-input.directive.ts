@@ -40,6 +40,14 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
 
   /** The current value as a `Date` (what the picker calendar and time picker bind to). */
   public dateTime = computed(() => {
+    // masking: while mixed the hidden raw value is neither rendered in the field
+    // (displayValue derives from here) nor highlighted in the calendar/time picker.
+    // selectDate/selectTime read this too, so a resolving pick starts from scratch
+    // (replace semantics) instead of merging with the hidden date or time of day
+    if (this.mixed()) {
+      return null;
+    }
+
     const value = this.value();
 
     if (value === null) {
@@ -70,6 +78,12 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
       this.inputText.set('');
       this.parseError.set(false);
 
+      // while mixed the field is empty anyway — a blank commit is a plain blur, not a user
+      // clear, so the hidden raw value survives (the clear affordance resolves instead)
+      if (this.mixed()) {
+        return;
+      }
+
       if (this.value() !== null) {
         this.value.set(null);
       }
@@ -83,7 +97,8 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
       this.inputText.set(raw);
       this.parseError.set(true);
 
-      if (this.value() !== null) {
+      // a failed parse resolves nothing: mixed stays set and the masked raw value untouched
+      if (!this.mixed() && this.value() !== null) {
         this.value.set(null);
       }
 
@@ -135,5 +150,6 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
     this.inputText.set('');
     this.parseError.set(false);
     this.value.set(formatDateValue(dateTime, { format: this.effectiveValueFormat(), locale: this.effectiveLocale() }));
+    this.mixed.set(false);
   }
 }

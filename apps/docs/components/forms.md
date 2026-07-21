@@ -1,6 +1,6 @@
 # Forms
 
-Signal-forms-native form controls: text, number, textarea and color inputs, checkbox, switch and selection lists, plus the shared field chrome (labels, hints, errors, affixes) that wires accessibility for you. For formatted content see the [rich text editor](/components/rich-text-editor) guide, and for file uploads the [dropzone](/components/dropzone) guide.
+Signal-forms-native form controls: text, number, textarea and color inputs, checkbox, switch and selection lists, plus the shared field chrome (labels, hints, errors, affixes) that wires accessibility for you. Editing many records at once? The value controls share a [mixed state contract](/components/mixed-state) for bulk editors. For formatted content see the [rich text editor](/components/rich-text-editor) guide, and for file uploads the [dropzone](/components/dropzone) guide.
 
 ::: info Signal forms only
 These controls implement Angular's [signal forms](https://angular.dev/guide/forms) contracts (`FormValueControl` / `FormCheckboxControl`) and bind via `[formField]` from `@angular/forms/signals`. There is no `ngModel`/`ControlValueAccessor` layer — the classic stack lives only in the legacy `@ethlete/cdk`. Two-way `[(value)]` / `[(checked)]` also works for simple cases.
@@ -471,6 +471,16 @@ Three group flavors over one selection engine — options are projected children
 Checkbox options and radios accept an `et-description` child for secondary text, and the headless layer offers a tri-state "select all" control (`[etSelectionListControl]`).
 
 Try the three group flavors live in Storybook: `Components/Forms/Selection List`.
+
+## Mixed values (bulk editing)
+
+When one form edits several records whose values disagree, every value control on this page implements the SDK-wide [mixed state contract](/components/mixed-state): set `[(mixed)]="true"` and the control masks its hidden raw value (nothing reads as selected, the field renders empty) and exposes `data-mixed` for styling; the first user commit **replaces** the value and resolves `mixed` to `false`. It is explicitly controlled — external value writes never resolve it, so set it back to `false` yourself once external data establishes one value. See the shared guide for the full contract, wiring recipe, and per-control presentation table.
+
+- **Text-slot controls take a `mixedLabel`** (default `'Mixed'`) shown in place of the value while mixed: `et-input`, `et-number-input`, `et-password-input`, `et-textarea` (placeholder), `et-color-input`, `et-tag-input`, `et-phone-input`, and the date/time family (`et-date-input`, `et-date-range-input`, `et-time-input`, `et-date-time-input`, `et-duration-input`).
+- **Controls without a text slot** express it through ARIA/visual masking only — no `mixedLabel`: `et-rating` (`aria-valuetext`), and the selection groups `et-radio-group`, `et-checkbox-group`, `et-segmented-button-group` (nothing `aria-checked`).
+- **Boundaries.** `et-checkbox` already carries this concept as its platform-named `indeterminate` / `aria-checked="mixed"` (see above), so it has no separate `mixed`. `et-switch` deliberately has no mixed state — `role="switch"` is strictly two-state in ARIA; use `et-checkbox` for tri-state booleans. `et-otp-input` and the rich text editors are not bulk-edit fields.
+
+Each control's `Mixed` Storybook story (under its `Components/Forms/…` entry) demonstrates the masking and the first-commit-replaces behavior.
 
 ## Validation & accessibility
 

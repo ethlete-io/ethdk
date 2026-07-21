@@ -2,6 +2,8 @@ import { Component, DebugElement, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../test-helpers';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
+import { describeMixedStateContract } from '../../testing/mixed-state-contract';
+import { TEXTAREA_IMPORTS } from '../textarea.imports';
 import { TextareaDirective } from './textarea.directive';
 
 @Component({
@@ -22,6 +24,24 @@ class TextareaInFormFieldTestHost {}
 class StandaloneTextareaTestHost {
   autosize = signal(true);
   rows = signal(3);
+}
+
+@Component({
+  template: `
+    <et-textarea
+      [value]="value()"
+      [mixed]="mixed()"
+      (valueChange)="value.set($event)"
+      (mixedChange)="mixed.set($event)"
+      mixedLabel="Mixed values"
+      placeholder="Write here"
+    />
+  `,
+  imports: [TEXTAREA_IMPORTS],
+})
+class MixedTextareaTestHost {
+  value = signal('');
+  mixed = signal(false);
 }
 
 describe('TextareaDirective', () => {
@@ -90,6 +110,80 @@ describe('TextareaDirective', () => {
 
     it('should not display error when not touched', () => {
       expect(textareaDir.shouldDisplayError()).toBe(false);
+    });
+  });
+
+  describe('mixed state', () => {
+    const setup = () => {
+      TestBed.configureTestingModule({ imports: [MixedTextareaTestHost] });
+
+      const fixture = TestBed.createComponent(MixedTextareaTestHost);
+
+      fixture.detectChanges();
+
+      const host = fixture.componentInstance;
+      const nativeTextarea = () => fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
+      const typeInto = (text: string) => {
+        const textareaElement = nativeTextarea();
+
+        textareaElement.value = text;
+        textareaElement.dispatchEvent(new InputEvent('input', { bubbles: true }));
+        fixture.detectChanges();
+      };
+      const enterMixed = (rawValue: string) => {
+        host.value.set(rawValue);
+        host.mixed.set(true);
+        fixture.detectChanges();
+      };
+
+      return { fixture, host, nativeTextarea, typeInto, enterMixed };
+    };
+
+    describeMixedStateContract(() => {
+      const { fixture, host, nativeTextarea, typeInto, enterMixed } = setup();
+
+      return {
+        enterMixed: () => enterMixed('hidden raw\nsecond line'),
+        rawValue: () => 'hidden raw\nsecond line',
+        value: () => host.value(),
+        mixed: () => host.mixed(),
+        hostElement: () => fixture.nativeElement.querySelector('et-textarea') as HTMLElement,
+        writeValueExternally: () => {
+          host.value.set('server write');
+          fixture.detectChanges();
+        },
+        externallyWrittenValue: () => 'server write',
+        commit: () => typeInto('typed over'),
+        committedValue: () => 'typed over',
+        assertMasked: () => {
+          expect(nativeTextarea().value).toBe('');
+          expect(nativeTextarea().placeholder).toBe('Mixed values');
+        },
+      };
+    });
+
+    it('masks via the placeholder and restores the consumer placeholder after the commit', () => {
+      const { nativeTextarea, typeInto, enterMixed } = setup();
+
+      enterMixed('secret');
+
+      expect(nativeTextarea().value).toBe('');
+      expect(nativeTextarea().placeholder).toBe('Mixed values');
+
+      typeInto('new text');
+
+      expect(nativeTextarea().value).toBe('new text');
+      expect(nativeTextarea().placeholder).toBe('Write here');
+    });
+
+    it('keeps mixed and the raw value when an edit produces no content', () => {
+      const { host, typeInto, enterMixed } = setup();
+
+      enterMixed('secret');
+      typeInto('');
+
+      expect(host.mixed()).toBe(true);
+      expect(host.value()).toBe('secret');
     });
   });
 });

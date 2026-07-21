@@ -37,6 +37,12 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
 
   /** The current value as a `Date` (what the picker calendar binds to). */
   public date = computed(() => {
+    // masking: while mixed the hidden raw value is neither rendered in the field
+    // (displayValue derives from here) nor highlighted in the picker calendar
+    if (this.mixed()) {
+      return null;
+    }
+
     const value = this.value();
 
     if (value === null) {
@@ -67,6 +73,12 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
       this.inputText.set('');
       this.parseError.set(false);
 
+      // while mixed the field is empty anyway — a blank commit is a plain blur, not a user
+      // clear, so the hidden raw value survives (the clear affordance resolves instead)
+      if (this.mixed()) {
+        return;
+      }
+
       if (this.value() !== null) {
         this.value.set(null);
       }
@@ -88,7 +100,8 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
       this.inputText.set(raw);
       this.parseError.set(true);
 
-      if (this.value() !== null) {
+      // a failed parse resolves nothing: mixed stays set and the masked raw value untouched
+      if (!this.mixed() && this.value() !== null) {
         this.value.set(null);
       }
 
@@ -98,6 +111,7 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
     this.inputText.set('');
     this.parseError.set(false);
     this.value.set(formatDateValue(parsed, { format: this.effectiveValueFormat(), locale: this.effectiveLocale() }));
+    this.mixed.set(false);
   }
 
   /** Commits a picker-selected date and closes the picker. */
@@ -109,6 +123,7 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
     this.inputText.set('');
     this.parseError.set(false);
     this.value.set(formatDateValue(date, { format: this.effectiveValueFormat(), locale: this.effectiveLocale() }));
+    this.mixed.set(false);
     this.touched.set(true);
     this.closePicker();
   }

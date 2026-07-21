@@ -13,11 +13,24 @@ import { FORM_FIELD_TOKEN, FormFieldControl, FormFieldControlType } from './form
  * surface (placeholder, native element wiring, etc.). Must be extended by an `@Directive` — Angular
  * only surfaces inherited inputs/outputs from a decorated base.
  */
-@Directive()
+@Directive({
+  host: {
+    '[attr.data-mixed]': 'mixed() || null',
+  },
+})
 export abstract class TextFieldControlDirective implements FormFieldControl {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
 
   public touched = model(false);
+  /**
+   * View state for a bulk-edit field whose source values disagree. While set, the raw `value`
+   * stays untouched but is masked: the native control renders empty with `mixedLabel` as its
+   * placeholder. The first user edit that produces content commits over the raw value (replace
+   * semantics) and resolves `mixed`; external/programmatic value writes do not.
+   */
+  public mixed = model(false);
+  /** Placeholder text shown while `mixed` is set — overrides the consumer placeholder. */
+  public mixedLabel = input('Mixed');
   public disabled = input(false);
   public readonly = input(false);
   // eslint-disable-next-line ethlete/no-native-html-input-name -- form-field hidden state deliberately mirrors the native attribute

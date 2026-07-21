@@ -25,7 +25,13 @@ import { INPUT_IMPORTS } from '../input.imports';
         @if (showPrefix()) {
           <span etInputPrefix>@</span>
         }
-        <et-input [formField]="demoForm.value" [type]="type()" [placeholder]="placeholder()" />
+        <et-input
+          [(mixed)]="mixedState"
+          [formField]="demoForm.value"
+          [mixedLabel]="mixedLabel()"
+          [type]="type()"
+          [placeholder]="placeholder()"
+        />
         @if (showSuffix()) {
           <span etInputSuffix>.com</span>
         }
@@ -33,6 +39,13 @@ import { INPUT_IMPORTS } from '../input.imports';
           <et-hint>{{ hint() }}</et-hint>
         }
       </et-form-field>
+
+      @if (showMixedState()) {
+        <div class="text-sm opacity-60">
+          <p>Raw form value: {{ demoForm.value().value() }}</p>
+          <p>Mixed: {{ mixedState() }}</p>
+        </div>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -55,12 +68,17 @@ export class FormFieldInputStorybookComponent {
   public placeholder = input('Placeholder');
   public hint = input('');
   public value = input('');
+  public mixed = input(false);
+  public mixedLabel = input('Mixed');
+  public showMixedState = input(false);
   public disabled = input(false);
   public readonly = input(false);
   public required = input(false);
   public showPrefix = input(false);
   public showSuffix = input(false);
   public color = input('brand');
+
+  public mixedState = linkedSignal(() => this.mixed());
 
   private formModel = linkedSignal(() => ({ value: this.value() }));
 

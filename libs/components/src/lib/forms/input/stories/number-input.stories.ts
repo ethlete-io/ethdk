@@ -14,6 +14,9 @@ export default {
     placeholder: { control: 'text' },
     hint: { control: 'text' },
     value: { control: 'number' },
+    mixed: { control: 'boolean' },
+    mixedLabel: { control: 'text' },
+    showMixedState: { control: false, table: { disable: true } },
     min: { control: 'number' },
     max: { control: 'number' },
     step: { control: 'number' },
@@ -33,6 +36,9 @@ export default {
     placeholder: '0',
     hint: '',
     value: null,
+    mixed: false,
+    mixedLabel: 'Mixed',
+    showMixedState: false,
     min: null,
     max: null,
     step: null,
@@ -51,4 +57,14 @@ export const Default: Story = {};
 
 export const Stepper: Story = {
   args: { stepper: true, min: 0, max: 10, hint: 'Hold a button to auto-repeat' },
+};
+
+export const Mixed: Story = {
+  args: {
+    value: 42,
+    mixed: true,
+    mixedLabel: 'Mixed amounts',
+    showMixedState: true,
+    hint: 'The raw value stays hidden and intact until typing commits a replacement; the mixed label shows as the placeholder.',
+  },
 };

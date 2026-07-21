@@ -54,5 +54,23 @@
       outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
       outline-offset: 2px;
     }
+
+    /* an unresolved bulk-edit value: the swatch must not reveal the hidden raw color, so it
+       renders neutral — transparent with a diagonal strike — and the value slot shows the
+       mixed label in the same provisional treatment the text fields use */
+    &[data-mixed] .et-color-input-swatch {
+      background: linear-gradient(
+        to top right,
+        transparent calc(50% - 1px),
+        color-mix(in srgb, currentColor 25%, transparent) calc(50% - 1px),
+        color-mix(in srgb, currentColor 25%, transparent) calc(50% + 1px),
+        transparent calc(50% + 1px)
+      );
+    }
+
+    &[data-mixed] .et-color-input-value {
+      font-style: italic;
+      color: color-mix(in srgb, currentColor 72%, transparent);
+    }
   }
 }

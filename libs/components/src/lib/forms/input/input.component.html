@@ -1,11 +1,11 @@
 <input
   #nativeInput
   [type]="inputDir.type()"
-  [value]="inputDir.value()"
+  [value]="inputDir.displayValue()"
   [disabled]="inputDir.disabled()"
   [readOnly]="inputDir.readonly()"
   [required]="inputDir.required()"
-  [placeholder]="inputDir.placeholder()"
+  [placeholder]="inputDir.effectivePlaceholder()"
   [autocomplete]="inputDir.autocomplete()"
   [attr.name]="inputDir.name() || null"
   [attr.aria-invalid]="inputDir.shouldDisplayError() || null"

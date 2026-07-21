@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormField, form, required } from '@angular/forms/signals';
 import { provideColorThemes } from '@ethlete/core';
 import '../../../../test-helpers';
+import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { SELECT_IMPORTS } from '../select.imports';
 import { SelectDirective } from './select.directive';
 
@@ -453,6 +454,18 @@ describe('SelectDirective', () => {
     expect(select.open()).toBe(false);
   });
 
+  it('resolves mixed via closed typeahead without opening', () => {
+    fixture.componentInstance.value.set('banana');
+    fixture.componentInstance.mixed.set(true);
+    fixture.detectChanges();
+
+    keydown(trigger, 'a');
+
+    expect(fixture.componentInstance.value()).toBe('apple');
+    expect(fixture.componentInstance.mixed()).toBe(false);
+    expect(select.open()).toBe(false);
+  });
+
   it('marks the aria-selected option when open', async () => {
     fixture.componentInstance.value.set('apple');
     fixture.detectChanges();
@@ -757,7 +770,7 @@ describe('SelectDirective (search)', () => {
     expect(searchInput()!.selectionEnd).toBe('Various fruits'.length);
   });
 
-  it('exposes and clears mixed from search with the correct single and multi value shapes', async () => {
+  it('clears mixed when the single display text is erased but ignores Backspace on the empty multi input', async () => {
     fixture.componentInstance.value.set('banana');
     fixture.componentInstance.mixed.set(true);
     fixture.detectChanges();
@@ -779,11 +792,12 @@ describe('SelectDirective (search)', () => {
     expect(mixedLabelId).not.toBe('');
     expect(searchInput()!.getAttribute('aria-describedby')?.split(' ')).toEqual(['search-hint', mixedLabelId]);
 
+    // no visible chip to delete — Backspace must not silently clear the hidden raw selection
     searchInput()!.value = '';
     keydownOnSearch('Backspace');
 
-    expect(fixture.componentInstance.value()).toEqual([]);
-    expect(fixture.componentInstance.mixed()).toBe(false);
+    expect(fixture.componentInstance.value()).toEqual(['apple', 'banana']);
+    expect(fixture.componentInstance.mixed()).toBe(true);
   });
 
   it('opens the panel when the user starts typing', () => {
@@ -1512,5 +1526,101 @@ describe('SelectDirective (searchable custom value)', () => {
 
     expect(fixture.componentInstance.value()).toBe('de');
     expect(customValue()?.textContent?.trim()).toBe('🇩🇪 Germany');
+  });
+});
+
+describe('SelectDirective (single)', () => {
+  describeMixedStateContract(() => {
+    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
+
+    TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+
+    const fixture = TestBed.createComponent(SelectTestHost);
+
+    fixture.detectChanges();
+
+    const select = fixture.debugElement.children[0]!.injector.get(SelectDirective);
+    const trigger = fixture.nativeElement.querySelector('[role="combobox"]') as HTMLElement;
+    const tick = () => TestBed.inject(ApplicationRef).tick();
+
+    return {
+      enterMixed: () => {
+        fixture.componentInstance.value.set('banana');
+        fixture.componentInstance.mixed.set(true);
+        fixture.detectChanges();
+      },
+      rawValue: () => 'banana',
+      value: () => fixture.componentInstance.value(),
+      mixed: () => fixture.componentInstance.mixed(),
+      hostElement: () => fixture.nativeElement.querySelector('et-select') as HTMLElement,
+      writeValueExternally: () => {
+        fixture.componentInstance.value.set('cherry');
+        fixture.detectChanges();
+      },
+      externallyWrittenValue: () => 'cherry',
+      // closed typeahead — a real keyboard commit that needs no open panel
+      commit: () => {
+        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
+        tick();
+      },
+      committedValue: () => 'apple',
+      assertMasked: () => {
+        expect(select.displayValue()).toBe('Mixed');
+        expect(select.selectedEntries()).toEqual([]);
+      },
+      clear: () => {
+        select.clearValue();
+        tick();
+      },
+      emptyValue: () => null,
+    };
+  });
+});
+
+describe('SelectDirective (multiple, contract)', () => {
+  describeMixedStateContract(() => {
+    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
+
+    TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+
+    const fixture = TestBed.createComponent(MultiSelectTestHost);
+
+    fixture.detectChanges();
+
+    const select = fixture.debugElement.children[0]!.injector.get(SelectDirective);
+    const trigger = fixture.nativeElement.querySelector('[role="combobox"]') as HTMLElement;
+    const tick = () => TestBed.inject(ApplicationRef).tick();
+
+    return {
+      enterMixed: () => {
+        fixture.componentInstance.value.set(['banana', 'cherry']);
+        fixture.componentInstance.mixed.set(true);
+        fixture.detectChanges();
+      },
+      rawValue: () => ['banana', 'cherry'],
+      value: () => fixture.componentInstance.value(),
+      mixed: () => fixture.componentInstance.mixed(),
+      hostElement: () => fixture.nativeElement.querySelector('et-select') as HTMLElement,
+      writeValueExternally: () => {
+        fixture.componentInstance.value.set(['apple']);
+        fixture.detectChanges();
+      },
+      externallyWrittenValue: () => ['apple'],
+      commit: () => {
+        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
+        tick();
+      },
+      // replace semantics: a fresh array around the committed option, not a toggle
+      committedValue: () => ['apple'],
+      assertMasked: () => {
+        expect(select.displayValue()).toBe('Mixed');
+        expect(fixture.nativeElement.querySelectorAll('et-chip').length).toBe(0);
+      },
+      clear: () => {
+        select.clearValue();
+        tick();
+      },
+      emptyValue: () => [],
+    };
   });
 });

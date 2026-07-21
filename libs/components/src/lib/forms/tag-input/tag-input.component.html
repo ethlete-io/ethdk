@@ -1,7 +1,8 @@
 <div class="et-tag-input-row">
   <!-- readonly is not disabled: the chips keep their normal look, they just lose the
-       remove affordance -->
-  @for (tag of tagInput.value(); track $index) {
+       remove affordance. While mixed there are no effective tags — the hidden raw value
+       must not render as chips -->
+  @for (tag of tagInput.effectiveValues(); track $index) {
     <et-chip
       [disabled]="tagInput.disabled()"
       [removable]="!tagInput.readonly() && !tagInput.disabled()"

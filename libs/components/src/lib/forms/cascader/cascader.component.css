@@ -32,6 +32,13 @@
       }
     }
 
+    /* an unresolved bulk-edit selection reads as provisional — between a committed value
+       (full strength) and the placeholder (46%). Consumers restyle via [data-mixed]. */
+    &[data-mixed] .et-cascader-value {
+      font-style: italic;
+      color: color-mix(in srgb, currentColor 72%, transparent);
+    }
+
     .et-cascader-clear,
     .et-cascader-arrow {
       display: flex;

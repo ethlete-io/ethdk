@@ -191,6 +191,7 @@ export default defineConfig({
           text: 'Forms',
           items: [
             { text: 'Forms', link: '/components/forms' },
+            { text: 'Mixed state (bulk editing)', link: '/components/mixed-state' },
             { text: 'Cascader', link: '/components/cascader' },
             { text: 'Select', link: '/components/select' },
             { text: 'Slider', link: '/components/slider' },

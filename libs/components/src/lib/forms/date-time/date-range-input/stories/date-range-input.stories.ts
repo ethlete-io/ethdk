@@ -12,6 +12,9 @@ export default {
     hint: { control: 'text' },
     start: { control: 'text' },
     end: { control: 'text' },
+    mixed: { control: 'boolean' },
+    mixedLabel: { control: 'text' },
+    showMixedState: { control: false, table: { disable: true } },
     valueFormat: { control: 'text' },
     displayFormat: { control: 'text' },
     mask: { control: 'boolean' },
@@ -27,6 +30,9 @@ export default {
     hint: '',
     start: null,
     end: null,
+    mixed: false,
+    mixedLabel: 'Mixed',
+    showMixedState: false,
     valueFormat: 'yyyy-MM-dd',
     displayFormat: 'P',
     mask: false,
@@ -56,5 +62,16 @@ export const Masked: Story = {
     startPlaceholder: 'tt.mm.jjjj',
     endPlaceholder: 'tt.mm.jjjj',
     hint: 'Typing is guided by the fixed-width display format — separators insert themselves',
+  },
+};
+
+export const Mixed: Story = {
+  args: {
+    start: '2026-07-08',
+    end: '2026-07-23',
+    mixed: true,
+    mixedLabel: 'Mixed',
+    showMixedState: true,
+    hint: 'The hidden range stays intact and unshown; the mixed label is the placeholder in both fields. Committing either end starts a fresh range.',
   },
 };

@@ -14,7 +14,9 @@ import { DATE_INPUT_IMPORTS } from '../date-input.imports';
       <et-form-field>
         <et-label>{{ label() }}</et-label>
         <et-date-input
+          [(mixed)]="mixedState"
           [formField]="demoForm.value"
+          [mixedLabel]="mixedLabel()"
           [placeholder]="placeholder()"
           [valueFormat]="valueFormat()"
           [displayFormat]="displayFormat()"
@@ -29,6 +31,9 @@ import { DATE_INPUT_IMPORTS } from '../date-input.imports';
       </et-form-field>
 
       <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+      @if (showMixedState()) {
+        <p class="text-sm opacity-60">Mixed: {{ mixedState() }}</p>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -39,6 +44,9 @@ export class DateInputStorybookComponent {
   public placeholder = input('mm/dd/yyyy');
   public hint = input('');
   public value = input<string | null>(null);
+  public mixed = input(false);
+  public mixedLabel = input('Mixed');
+  public showMixedState = input(false);
   public valueFormat = input<string | undefined>(undefined);
   public displayFormat = input('P');
   public mask = input(false);
@@ -48,6 +56,8 @@ export class DateInputStorybookComponent {
   public readonly = input(false);
   public required = input(false);
   public color = input('brand');
+
+  public mixedState = linkedSignal(() => this.mixed());
 
   protected localeObject = computed(() => (this.locale() === 'de' ? de : null));
   protected minDate = computed(() => (this.constrained() ? startOfDay(addDays(new Date(), -7)) : null));

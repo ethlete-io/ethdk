@@ -1,7 +1,9 @@
-import { Component, DebugElement } from '@angular/core';
+import { Component, DebugElement, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../test-helpers';
+import { COLOR_INPUT_IMPORTS } from '../color-input.imports';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
+import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { ColorInputDirective } from './color-input.directive';
 
 @Component({
@@ -20,6 +22,23 @@ class ColorInputInFormFieldTestHost {}
   imports: [ColorInputDirective],
 })
 class StandaloneColorInputTestHost {}
+
+@Component({
+  template: `
+    <et-color-input
+      [value]="value()"
+      [mixed]="mixed()"
+      (valueChange)="value.set($event)"
+      (mixedChange)="mixed.set($event)"
+      mixedLabel="Mixed colors"
+    />
+  `,
+  imports: [COLOR_INPUT_IMPORTS],
+})
+class MixedColorInputTestHost {
+  value = signal<string | null>(null);
+  mixed = signal(false);
+}
 
 describe('ColorInputDirective', () => {
   describe('inside form field', () => {
@@ -79,6 +98,82 @@ describe('ColorInputDirective', () => {
 
     it('should not display error when not touched', () => {
       expect(colorInputDir.shouldDisplayError()).toBe(false);
+    });
+  });
+
+  describe('mixed state', () => {
+    const setup = () => {
+      TestBed.configureTestingModule({ imports: [MixedColorInputTestHost] });
+
+      const fixture = TestBed.createComponent(MixedColorInputTestHost);
+
+      fixture.detectChanges();
+
+      const host = fixture.componentInstance;
+      const nativeInput = () => fixture.nativeElement.querySelector('input') as HTMLInputElement;
+      const swatch = () => fixture.nativeElement.querySelector('.et-color-input-swatch') as HTMLElement;
+      const valueSlot = () => fixture.nativeElement.querySelector('.et-color-input-value') as HTMLElement;
+      const pick = (color: string) => {
+        const inputElement = nativeInput();
+
+        inputElement.value = color;
+        inputElement.dispatchEvent(new InputEvent('input', { bubbles: true }));
+        fixture.detectChanges();
+      };
+      const enterMixed = (rawValue: string) => {
+        host.value.set(rawValue);
+        host.mixed.set(true);
+        fixture.detectChanges();
+      };
+
+      return { fixture, host, nativeInput, swatch, valueSlot, pick, enterMixed };
+    };
+
+    describeMixedStateContract(() => {
+      const { fixture, host, nativeInput, swatch, valueSlot, pick, enterMixed } = setup();
+
+      return {
+        enterMixed: () => enterMixed('#ff0000'),
+        rawValue: () => '#ff0000',
+        value: () => host.value(),
+        mixed: () => host.mixed(),
+        hostElement: () => fixture.nativeElement.querySelector('et-color-input') as HTMLElement,
+        writeValueExternally: () => {
+          host.value.set('#00ff00');
+          fixture.detectChanges();
+        },
+        externallyWrittenValue: () => '#00ff00',
+        commit: () => pick('#123456'),
+        committedValue: () => '#123456',
+        assertMasked: () => {
+          // the value slot shows the mixed label, the swatch drops its inline color (the CSS
+          // neutral treatment takes over) and the picker sits on the default, not the raw color
+          expect(valueSlot().textContent?.trim()).toBe('Mixed colors');
+          expect(swatch().style.backgroundColor).toBe('');
+          expect(nativeInput().value).toBe('#000000');
+        },
+      };
+    });
+
+    it('restores the swatch and value text after a pick resolves mixed', () => {
+      const { host, swatch, valueSlot, pick, enterMixed } = setup();
+
+      enterMixed('#ff0000');
+      pick('#123456');
+
+      expect(host.mixed()).toBe(false);
+      expect(host.value()).toBe('#123456');
+      expect(valueSlot().textContent?.trim()).toBe('#123456');
+      expect(swatch().style.backgroundColor).not.toBe('');
+    });
+
+    it('never paints the hidden raw color while mixed', () => {
+      const { swatch, nativeInput, enterMixed } = setup();
+
+      enterMixed('#ff0000');
+
+      expect(swatch().style.backgroundColor).toBe('');
+      expect(nativeInput().value).toBe('#000000');
     });
   });
 });

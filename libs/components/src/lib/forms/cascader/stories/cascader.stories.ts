@@ -15,6 +15,9 @@ export default {
     deep: { control: 'boolean' },
     multiple: { control: 'boolean' },
     errorMode: { control: 'boolean' },
+    mixed: { control: 'boolean' },
+    mixedLabel: { control: 'text' },
+    showMixedState: { control: false, table: { disable: true } },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
   },
   args: {
@@ -27,6 +30,9 @@ export default {
     deep: false,
     multiple: false,
     errorMode: false,
+    mixed: false,
+    mixedLabel: 'Mixed',
+    showMixedState: false,
     color: 'brand',
   },
 } as Meta<CascaderStorybookComponent>;
@@ -56,6 +62,27 @@ export const Multiple: Story = {
 
 export const MultipleWithSearch: Story = {
   args: { multiple: true, searchable: true, hint: 'Toggle several results of one search' },
+};
+
+export const Mixed: Story = {
+  args: {
+    value: 'euro-final',
+    mixed: true,
+    mixedLabel: 'Different values',
+    showMixedState: true,
+    hint: 'The raw value stays intact until a user commits a new pick; Mixed shows the live presentation state.',
+  },
+};
+
+export const MixedMultiple: Story = {
+  args: {
+    multiple: true,
+    value: ['euro-group-a', 'wc-final'],
+    mixed: true,
+    mixedLabel: 'Different selections',
+    showMixedState: true,
+    hint: 'The first committed node replaces the hidden raw selection, then regular multi toggling resumes.',
+  },
 };
 
 export const DeepNesting: Story = {

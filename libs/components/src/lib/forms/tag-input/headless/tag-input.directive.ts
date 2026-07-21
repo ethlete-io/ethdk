@@ -14,6 +14,7 @@ const defaultNormalizeTag = (raw: string) => {
   exportAs: 'etTagInput',
   host: {
     '[attr.data-disabled]': 'disabled() || null',
+    '[attr.data-mixed]': 'mixed() || null',
   },
 })
 export class TagInputDirective implements FormValueControl<string[]>, FormFieldControl {
@@ -21,6 +22,8 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
   private destroyRef = inject(DestroyRef);
 
   public value = model<string[]>([]);
+  /** View state for a field whose source values disagree. The raw form value stays untouched. */
+  public mixed = model(false);
   public touched = model(false);
   public disabled = input(false);
   public readonly = input(false);
@@ -29,6 +32,8 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
   public required = input(false);
   public name = input('');
   public placeholder = input('');
+  /** Field placeholder shown while `mixed` is set. */
+  public mixedLabel = input('Mixed');
 
   /**
    * What commits the pending text as a tag: multi-character entries are key names
@@ -41,7 +46,14 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
   public maxTags = input<number | undefined>(undefined);
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
-  public hasValue = computed(() => this.value().length > 0);
+
+  /** The raw value normalized to the tags the control currently shows. Mixed has no effective tags. */
+  public effectiveValues = computed<readonly string[]>(() => (this.mixed() ? [] : this.value()));
+
+  public hasValue = computed(() => this.mixed() || this.effectiveValues().length > 0);
+
+  /** The placeholder the text field currently shows — `mixedLabel` while mixed. */
+  public effectivePlaceholder = computed(() => (this.mixed() ? this.mixedLabel() : this.placeholder()));
 
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.TAG_INPUT);
@@ -54,11 +66,11 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
 
   public interactive = computed(() => !this.disabled() && !this.readonly());
 
-  /** True once `maxTags` is reached — further adds are ignored. */
+  /** True once `maxTags` is reached — further adds are ignored. Mixed counts as no tags. */
   public isFull = computed(() => {
     const maxTags = this.maxTags();
 
-    return maxTags !== undefined && this.value().length >= maxTags;
+    return maxTags !== undefined && this.effectiveValues().length >= maxTags;
   });
 
   /** @internal Single-character separators — they split pastes and commit while typing. */
@@ -79,7 +91,10 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
     this.registeredField()?.focus();
   }
 
-  /** Normalizes and appends a tag. Returns whether it was added. */
+  /**
+   * Normalizes and appends a tag. Returns whether it was added. While mixed, the first
+   * added tag REPLACES the hidden raw value (starting a fresh set) and resolves mixed.
+   */
   public add(raw: string) {
     if (!this.interactive() || this.isFull()) {
       return false;
@@ -91,11 +106,16 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
       return false;
     }
 
-    if (!this.allowDuplicates() && this.value().includes(tag)) {
+    // while mixed the effective set is empty — duplicates are checked against the fresh
+    // set the user is building, never against the hidden raw value
+    const current = this.effectiveValues();
+
+    if (!this.allowDuplicates() && current.includes(tag)) {
       return false;
     }
 
-    this.value.set([...this.value(), tag]);
+    this.value.set([...current, tag]);
+    this.mixed.set(false);
 
     return true;
   }
@@ -112,7 +132,7 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
       return;
     }
 
-    const index = this.value().lastIndexOf(tag);
+    const index = this.effectiveValues().lastIndexOf(tag);
 
     if (index !== -1) {
       this.removeAt(index);
@@ -120,7 +140,9 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
   }
 
   public removeAt(index: number) {
-    if (!this.interactive()) {
+    // while mixed there is no visible chip to delete — a removal (e.g. Backspace on the
+    // empty field) must not touch the hidden raw tags of every edited record
+    if (!this.interactive() || this.mixed()) {
       return;
     }
 
@@ -128,6 +150,6 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
   }
 
   public removeLast() {
-    this.removeAt(this.value().length - 1);
+    this.removeAt(this.effectiveValues().length - 1);
   }
 }

@@ -21,13 +21,14 @@ import { SLIDER_IMPORTS } from '@ethlete/components';
 
 On `et-slider` (forwarded from the headless `[etSlider]` directive):
 
-| Input      | Type                  | Default     | Description                                                                                              |
-| ---------- | --------------------- | ----------- | -------------------------------------------------------------------------------------------------------- |
-| `min`      | `number \| undefined` | `undefined` | Lower bound; `undefined` means `0`. A schema `min(...)` validator binds into this input automatically.   |
-| `max`      | `number \| undefined` | `undefined` | Upper bound; `undefined` means `100`. A schema `max(...)` validator binds into this input automatically. |
-| `step`     | `number`              | `1`         | Snap grid, anchored at `min`. Keyboard steps, pointer commits and the displayed value all snap to it.    |
-| `disabled` | `boolean`             | `false`     | Blocks all interaction and removes the thumb from the tab order.                                         |
-| `readonly` | `boolean`             | `false`     | Focusable but not adjustable (`aria-readonly`).                                                          |
+| Input        | Type                  | Default     | Description                                                                                              |
+| ------------ | --------------------- | ----------- | -------------------------------------------------------------------------------------------------------- |
+| `min`        | `number \| undefined` | `undefined` | Lower bound; `undefined` means `0`. A schema `min(...)` validator binds into this input automatically.   |
+| `max`        | `number \| undefined` | `undefined` | Upper bound; `undefined` means `100`. A schema `max(...)` validator binds into this input automatically. |
+| `step`       | `number`              | `1`         | Snap grid, anchored at `min`. Keyboard steps, pointer commits and the displayed value all snap to it.    |
+| `disabled`   | `boolean`             | `false`     | Blocks all interaction and removes the thumb from the tab order.                                         |
+| `readonly`   | `boolean`             | `false`     | Focusable but not adjustable (`aria-readonly`).                                                          |
+| `mixedLabel` | `string`              | `'Mixed'`   | `aria-valuetext` the thumb announces while `mixed` is true.                                              |
 
 The `value` model is a plain `number` (default `0`). Values outside the bounds or off the step grid are displayed clamped and snapped, but the model is only rewritten when the user interacts.
 
@@ -41,6 +42,7 @@ The `value` model is a plain `number` (default `0`). Values outside the bounds o
 | `step`                    | `number` | `1`                       | Snap grid.                                                                           |
 | `minDistance`             | `number` | `0`                       | Minimum gap kept between the thumbs — use a multiple of `step`. `0` lets them touch. |
 | `startLabel` / `endLabel` | `string` | `'Minimum'` / `'Maximum'` | Accessible name (`aria-label`) of each thumb.                                        |
+| `mixedLabel`              | `string` | `'Mixed'`                 | `aria-valuetext` both thumbs announce while `mixed` is true.                         |
 
 A reversed tuple is normalized for display (`[80, 20]` renders as 20–80). Dragging or stepping a thumb never lets it cross its sibling; each thumb's `aria-valuemin`/`aria-valuemax` shrink to the sibling's position (± `minDistance`), so assistive tech announces the real limits.
 
@@ -58,6 +60,25 @@ Project an `ng-template[etSliderThumbLabel]` to render a value bubble above each
 ```
 
 <StoryEmbed id="components-forms-slider--value-label" height="220px" />
+
+## Mixed values in bulk editors
+
+Try it live in Storybook: `Components/Forms/Slider` → `Mixed` / `Components/Forms/Range slider` → `Mixed`.
+
+Use `mixed` when one slider edits several records whose current values differ — both slider components implement the SDK-wide [mixed state contract](/components/mixed-state). A slider has no text display slot, so the state is expressed through ARIA and visual masking: while mixed, the thumb(s) park dimmed at the track start (the position reads as "unset", not "minimum"), the fill collapses, any value-label bubble is hidden, `aria-valuenow` is removed (the ARIA-sanctioned indeterminate value) and `aria-valuetext` announces `mixedLabel`. The raw form value stays unchanged and is not readable from the DOM.
+
+```html
+<et-slider [(mixed)]="volumeIsMixed" [formField]="form.volume" mixedLabel="Different volumes">
+  <et-label>Volume</et-label>
+</et-slider>
+```
+
+Treat `mixed` as explicitly controlled state. Updating the raw form value from application code does not change it; set `volumeIsMixed` to `false` yourself when external data establishes one value. Setting it to `false` reveals whatever raw value is currently in the form.
+
+- The first user commit replaces the hidden raw value and resolves mixed — clicking or dragging on the track commits that position; keyboard steps start from the effective minimum (`ArrowRight` on a `0`–`100` slider commits `1`, `Home` commits the minimum, `End` the maximum). A commit that happens to equal the hidden value still resolves.
+- On `et-range-slider` one flag masks both thumbs. The first committed thumb writes a fresh range: its own end takes the committed value, the untouched end falls back to its default bound (`[value, maxValue]` when the start thumb commits first, `[minValue, value]` for the end thumb), honoring `minDistance`. While mixed, each thumb announces the full track as its `aria-valuemin`/`aria-valuemax` — parked thumbs carry no sibling constraint.
+- Sliders have no clear affordance; there is no empty shape to clear to.
+- Both hosts expose `data-mixed` for consumer styling.
 
 ## Headless usage
 

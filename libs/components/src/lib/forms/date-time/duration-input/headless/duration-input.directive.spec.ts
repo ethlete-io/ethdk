@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../../test-helpers';
+import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
 import { DURATION_INPUT_IMPORTS } from '../duration-input.imports';
 import { DurationInputDirective } from './duration-input.directive';
 
@@ -8,9 +9,11 @@ import { DurationInputDirective } from './duration-input.directive';
   template: `
     <et-duration-input
       [value]="value()"
+      [mixed]="mixed()"
       [durationFormat]="durationFormat()"
       [disabled]="disabled()"
       (valueChange)="value.set($event)"
+      (mixedChange)="mixed.set($event)"
       (touchedChange)="touched.set($event)"
       placeholder="mm:ss"
     />
@@ -19,6 +22,7 @@ import { DurationInputDirective } from './duration-input.directive';
 })
 class DurationInputTestHost {
   value = signal<number | null>(null);
+  mixed = signal(false);
   touched = signal(false);
   disabled = signal(false);
   durationFormat = signal('mm:ss');

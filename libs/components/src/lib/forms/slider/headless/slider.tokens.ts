@@ -24,6 +24,10 @@ export type SliderHostBase = {
   effectiveMin: Signal<number>;
   effectiveMax: Signal<number>;
   step: Signal<number>;
+  /** Bulk-edit view state — while set, thumbs park at the track start and hide their value from ARIA. */
+  mixed: Signal<boolean>;
+  /** `aria-valuetext` the thumbs announce while `mixed` is set. */
+  mixedLabel: Signal<string>;
   disabled: Signal<boolean>;
   readonly: Signal<boolean>;
   interactive: Signal<boolean>;

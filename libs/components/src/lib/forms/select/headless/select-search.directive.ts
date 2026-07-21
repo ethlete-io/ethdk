@@ -168,8 +168,7 @@ export class SelectSearchDirective {
     const select = this.select;
 
     this.edited.set(false);
-    this.query.set('');
-    select?.queryChange.emit('');
+    this.clear();
 
     if (!select || select.multiple() || !this.isInlineInTrigger()) {
       return;
@@ -249,10 +248,9 @@ export class SelectSearchDirective {
         return;
       }
 
+      // while mixed there is no visible chip to delete — a lone Backspace must not nuke the
+      // hidden raw selection of every edited record; the clear button stays the destructive path
       if (select.mixed()) {
-        event.preventDefault();
-        select.clearValue();
-
         return;
       }
 

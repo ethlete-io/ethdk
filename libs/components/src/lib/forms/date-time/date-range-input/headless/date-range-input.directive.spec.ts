@@ -2,6 +2,7 @@ import { ApplicationRef, Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../../test-helpers';
 import { InputMaskDirective } from '../../../masked-input/headless';
+import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { DateRangeInputFieldDirective } from './date-range-input-field.directive';
@@ -9,7 +10,7 @@ import { DateRangeInputDirective, DateRangeValue } from './date-range-input.dire
 
 @Component({
   template: `
-    <div [(value)]="value" [disabled]="disabled()" valueFormat="yyyy-MM-dd" etDateRangeInput>
+    <div [(value)]="value" [(mixed)]="mixed" [disabled]="disabled()" valueFormat="yyyy-MM-dd" etDateRangeInput>
       <input class="start" etDateRangeInputField side="start" />
       <input class="end" etDateRangeInputField side="end" />
       <button class="open-picker" etDatePickerTrigger>open</button>
@@ -41,6 +42,7 @@ import { DateRangeInputDirective, DateRangeValue } from './date-range-input.dire
 })
 class DateRangeInputTestHost {
   value = signal<DateRangeValue>({ start: null, end: null });
+  mixed = signal(false);
   disabled = signal(false);
   pickStart = new Date(2026, 6, 8);
   pickEnd = new Date(2026, 6, 23);
@@ -224,6 +226,123 @@ describe('DateRangeInputDirective', () => {
     tick();
 
     expect(rangeInput.pickerOpen()).toBe(false);
+  });
+
+  describe('mixed (bulk edit)', () => {
+    const rawRange = { start: '2026-03-01', end: '2026-03-10' };
+
+    const enterMixed = () => {
+      host.value.set({ ...rawRange });
+      host.mixed.set(true);
+      tick();
+    };
+
+    it('renders both fields empty with the mixed label as placeholder — one flag masks the whole range', () => {
+      enterMixed();
+
+      expect(startField.value).toBe('');
+      expect(endField.value).toBe('');
+      expect(startField.getAttribute('placeholder')).toBe('Mixed');
+      expect(endField.getAttribute('placeholder')).toBe('Mixed');
+      expect(rangeInput.displayValue('start')).toBe('');
+      expect(rangeInput.displayValue('end')).toBe('');
+      expect(rangeInput.calendarRange()).toEqual({ start: null, end: null });
+      expect(rangeInput.hasValue()).toBe(true);
+    });
+
+    it('starts a fresh range on the first typed commit — the hidden other side does not leak', () => {
+      enterMixed();
+      typeAndBlur(endField, '07/20/2026');
+
+      expect(host.mixed()).toBe(false);
+      expect(host.value()).toEqual({ start: null, end: '2026-07-20' });
+    });
+
+    it('keeps mixed and the raw range on a failed typed parse', () => {
+      enterMixed();
+      typeAndBlur(startField, 'not a date');
+
+      expect(host.mixed()).toBe(true);
+      expect(host.value()).toEqual(rawRange);
+      expect(rangeInput.startParseError()).toBe(true);
+    });
+
+    it('keeps mixed and the raw range on a blank blur commit', () => {
+      enterMixed();
+      typeAndBlur(startField, '');
+
+      expect(host.mixed()).toBe(true);
+      expect(host.value()).toEqual(rawRange);
+    });
+
+    it('gives the calendar no selection while mixed; the first pick starts a fresh range and resolves', async () => {
+      enterMixed();
+      await openPicker();
+
+      expect(host.mixed()).toBe(true);
+      expect(rangeInput.calendarRange()).toEqual({ start: null, end: null });
+
+      pane()?.querySelector<HTMLButtonElement>('.pick-start')?.click();
+      tick();
+
+      expect(host.mixed()).toBe(false);
+      expect(host.value()).toEqual({ start: '2026-07-08', end: null });
+      expect(rangeInput.pickerOpen()).toBe(true);
+    });
+  });
+});
+
+describe('DateRangeInputDirective mixed state', () => {
+  describeMixedStateContract(() => {
+    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
+
+    TestBed.configureTestingModule({ imports: [DateRangeInputTestHost] });
+
+    const fixture = TestBed.createComponent(DateRangeInputTestHost);
+
+    fixture.detectChanges();
+
+    const rangeInput = fixture.debugElement.children[0]!.injector.get(DateRangeInputDirective);
+    const startField = fixture.nativeElement.querySelector('.start') as HTMLInputElement;
+    const endField = fixture.nativeElement.querySelector('.end') as HTMLInputElement;
+    const tick = () => TestBed.inject(ApplicationRef).tick();
+
+    const typeAndBlur = (field: HTMLInputElement, text: string) => {
+      field.focus();
+      field.value = text;
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+      tick();
+      field.blur();
+      field.dispatchEvent(new Event('blur'));
+      tick();
+    };
+
+    return {
+      enterMixed: () => {
+        fixture.componentInstance.value.set({ start: '2026-03-01', end: '2026-03-10' });
+        fixture.componentInstance.mixed.set(true);
+        tick();
+      },
+      rawValue: () => ({ start: '2026-03-01', end: '2026-03-10' }),
+      value: () => fixture.componentInstance.value(),
+      mixed: () => fixture.componentInstance.mixed(),
+      hostElement: () => fixture.debugElement.children[0]!.nativeElement as HTMLElement,
+      writeValueExternally: () => {
+        fixture.componentInstance.value.set({ start: '2026-01-01', end: '2026-01-05' });
+        tick();
+      },
+      externallyWrittenValue: () => ({ start: '2026-01-01', end: '2026-01-05' }),
+      // replace semantics: the resolving commit starts a fresh range — no merge with the hidden end
+      commit: () => typeAndBlur(startField, '07/20/2026'),
+      committedValue: () => ({ start: '2026-07-20', end: null }),
+      assertMasked: () => {
+        expect(rangeInput.calendarRange()).toEqual({ start: null, end: null });
+        expect(startField.value).toBe('');
+        expect(endField.value).toBe('');
+        expect(startField.getAttribute('placeholder')).toBe('Mixed');
+        expect(endField.getAttribute('placeholder')).toBe('Mixed');
+      },
+    };
   });
 });
 

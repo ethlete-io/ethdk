@@ -16,8 +16,8 @@ import { SelectionListDirective } from '../headless';
     FormFieldDirective,
     {
       directive: SelectionListDirective,
-      inputs: ['value', 'touched', 'disabled', 'readonly', 'invalid', 'errors', 'required', 'name'],
-      outputs: ['valueChange', 'touchedChange'],
+      inputs: ['value', 'mixed', 'touched', 'disabled', 'readonly', 'invalid', 'errors', 'required', 'name'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange'],
     },
     { directive: ProvideColorDirective, inputs: ['etProvideColor:color'] },
   ],

@@ -12,7 +12,9 @@ import { PHONE_INPUT_IMPORTS } from '../phone-input.imports';
       <et-form-field>
         <et-label>{{ label() }}</et-label>
         <et-phone-input
+          [(mixed)]="mixedState"
           [formField]="demoForm.value"
+          [mixedLabel]="mixedLabel()"
           [defaultCountry]="defaultCountry()"
           [preferredCountries]="preferredCountries()"
           [placeholder]="placeholder()"
@@ -22,7 +24,14 @@ import { PHONE_INPUT_IMPORTS } from '../phone-input.imports';
         }
       </et-form-field>
 
-      <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+      @if (showMixedState()) {
+        <div class="text-sm opacity-60">
+          <p>Raw form value: {{ demoForm.value().value() | json }}</p>
+          <p>Mixed: {{ mixedState() }}</p>
+        </div>
+      } @else {
+        <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -33,11 +42,16 @@ export class PhoneInputStorybookComponent {
   public placeholder = input('170 1234567');
   public hint = input('');
   public value = input('');
+  public mixed = input(false);
+  public mixedLabel = input('Mixed');
+  public showMixedState = input(false);
   public defaultCountry = input('de');
   public preferredCountries = input<string[]>(['de', 'at', 'ch']);
   public disabled = input(false);
   public readonly = input(false);
   public color = input('brand');
+
+  public mixedState = linkedSignal(() => this.mixed());
 
   private formModel = linkedSignal(() => ({ value: this.value() }));
 

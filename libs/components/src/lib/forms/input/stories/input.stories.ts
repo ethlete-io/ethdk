@@ -15,6 +15,9 @@ export default {
     placeholder: { control: 'text' },
     hint: { control: 'text' },
     value: { control: 'text' },
+    mixed: { control: 'boolean' },
+    mixedLabel: { control: 'text' },
+    showMixedState: { control: false, table: { disable: true } },
     disabled: { control: 'boolean' },
     required: { control: 'boolean' },
     showPrefix: { control: 'boolean' },
@@ -31,6 +34,9 @@ export default {
     placeholder: 'Placeholder',
     hint: '',
     value: '',
+    mixed: false,
+    mixedLabel: 'Mixed',
+    showMixedState: false,
     disabled: false,
     required: false,
     showPrefix: false,
@@ -42,3 +48,13 @@ export default {
 type Story = StoryObj<FormFieldInputStorybookComponent>;
 
 export const Default: Story = {};
+
+export const Mixed: Story = {
+  args: {
+    value: 'shared draft title',
+    mixed: true,
+    mixedLabel: 'Mixed values',
+    showMixedState: true,
+    hint: 'The raw value stays hidden and intact until typing commits a replacement; the mixed label shows as the placeholder.',
+  },
+};

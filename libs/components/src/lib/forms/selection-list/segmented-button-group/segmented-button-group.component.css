@@ -98,6 +98,13 @@
       box-shadow: inset 0 0 0 1px var(--et-theme-color-primary-solid);
     }
 
+    /* an unresolved bulk-edit selection: no segment reads as pressed (normally impossible),
+       so the track hints at the provisional state. Consumers restyle via [data-mixed]. */
+    &[data-mixed] .et-segmented-button-group-buttons {
+      outline: 1px dashed var(--et-surface-border-solid, currentColor);
+      outline-offset: -1px;
+    }
+
     .et-segmented-button-group-support {
       overflow: clip;
       block-size: 0;

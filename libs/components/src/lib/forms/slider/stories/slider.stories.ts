@@ -9,6 +9,9 @@ export default {
     label: { control: 'text' },
     hint: { control: 'text' },
     value: { control: 'number' },
+    mixed: { control: 'boolean' },
+    mixedLabel: { control: 'text' },
+    showMixedState: { control: false, table: { disable: true } },
     min: { control: 'number' },
     max: { control: 'number' },
     step: { control: 'number' },
@@ -22,6 +25,9 @@ export default {
     label: 'Volume',
     hint: '',
     value: 40,
+    mixed: false,
+    mixedLabel: 'Mixed',
+    showMixedState: false,
     min: 0,
     max: 100,
     step: 1,
@@ -43,6 +49,15 @@ export const Steps: Story = {
 
 export const ValueLabel: Story = {
   args: { showValueLabel: true },
+};
+
+export const Mixed: Story = {
+  args: {
+    mixed: true,
+    mixedLabel: 'Different volumes',
+    showMixedState: true,
+    hint: 'The raw value stays intact until a user commits a new position; the thumb parks dimmed at the track start.',
+  },
 };
 
 export const Disabled: Story = {

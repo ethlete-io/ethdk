@@ -1,3 +1,4 @@
+import { JsonPipe } from '@angular/common';
 import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
 import { disabled, form, FormField, required } from '@angular/forms/signals';
 import { ColorInteractiveDirective, ProvideColorDirective } from '@ethlete/core';
@@ -10,7 +11,7 @@ import { CheckboxOptionComponent } from '../checkbox-option.component';
   selector: 'et-sb-checkbox-group',
   template: `
     <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
-      <et-checkbox-group [formField]="demoForm.toppings" [size]="size()">
+      <et-checkbox-group [(mixed)]="mixedState" [formField]="demoForm.toppings" [size]="size()">
         <et-label>{{ label() }}</et-label>
 
         @if (groupControl()) {
@@ -38,6 +39,13 @@ import { CheckboxOptionComponent } from '../checkbox-option.component';
           <et-hint>{{ hint() }}</et-hint>
         }
       </et-checkbox-group>
+
+      @if (showMixedState()) {
+        <div class="text-sm opacity-60">
+          <p>Raw form value: {{ demoForm.toppings().value() | json }}</p>
+          <p>Mixed: {{ mixedState() }}</p>
+        </div>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -45,6 +53,7 @@ import { CheckboxOptionComponent } from '../checkbox-option.component';
     CheckboxGroupComponent,
     CheckboxOptionComponent,
     FormField,
+    JsonPipe,
     ProvideColorDirective,
     HintComponent,
     LabelDirective,
@@ -150,6 +159,9 @@ import { CheckboxOptionComponent } from '../checkbox-option.component';
 export class CheckboxGroupStorybookComponent {
   public label = input('Select toppings');
   public hint = input('');
+  public value = input<string[]>([]);
+  public mixed = input(false);
+  public showMixedState = input(false);
   public disabled = input(false);
   public required = input(false);
   public color = input('brand');
@@ -162,7 +174,9 @@ export class CheckboxGroupStorybookComponent {
     { value: 'mushrooms', label: 'Mushrooms' },
   ]);
 
-  private formModel = linkedSignal(() => ({ toppings: [] as string[] }));
+  public mixedState = linkedSignal(() => this.mixed());
+
+  private formModel = linkedSignal(() => ({ toppings: this.value() }));
 
   public demoForm = form(this.formModel, (s) => {
     disabled(s, () => this.disabled());

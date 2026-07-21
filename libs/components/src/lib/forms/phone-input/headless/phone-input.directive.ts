@@ -10,6 +10,9 @@ const onlyDigits = (raw: string) => raw.replace(/\D/g, '');
 @Directive({
   selector: '[etPhoneInput]',
   exportAs: 'etPhoneInput',
+  host: {
+    '[attr.data-mixed]': 'mixed() || null',
+  },
 })
 export class PhoneInputDirective implements FormValueControl<string>, FormFieldControl {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
@@ -17,6 +20,8 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
 
   /** Normalized `+<dialCode><national digits>` — empty string while nothing is entered. */
   public value = model('');
+  /** View state for a field whose source values disagree. The raw form value stays untouched. */
+  public mixed = model(false);
   public touched = model(false);
   public disabled = input(false);
   public readonly = input(false);
@@ -25,13 +30,18 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
   public required = input(false);
   public name = input('');
   public placeholder = input('');
+  /** Field placeholder shown while `mixed` is set. */
+  public mixedLabel = input('Mixed');
 
   public defaultCountry = input('us');
   /** ISO codes listed on top of the country dropdown. */
   public preferredCountries = input<string[]>([]);
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
-  public hasValue = computed(() => this.value().length > 0);
+  public hasValue = computed(() => this.mixed() || this.value().length > 0);
+
+  /** The placeholder the tel field currently shows — `mixedLabel` while mixed. */
+  public effectivePlaceholder = computed(() => (this.mixed() ? this.mixedLabel() : this.placeholder()));
 
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.PHONE_INPUT);
@@ -68,8 +78,12 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
 
   public dialCode = computed(() => this.dialCodeOf(this.country()));
 
-  /** The digits after the dial code. */
+  /** The digits after the dial code. Mixed masks the hidden raw number — it is never displayed. */
   public nationalNumber = computed(() => {
+    if (this.mixed()) {
+      return '';
+    }
+
     const digits = onlyDigits(this.value());
     const dialCode = this.dialCode();
 
@@ -113,6 +127,7 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
     }
 
     this.value.set('');
+    this.mixed.set(false);
 
     // the tel field shows raw digits while focused (blur reformats) — a clear happens
     // while focused, so reset the element text directly
@@ -126,6 +141,15 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
   /** Switches the country, keeping the national number. */
   public selectCountry(iso2: string) {
     if (!this.interactive() || !PHONE_COUNTRIES.some((country) => country.iso2 === iso2)) {
+      return;
+    }
+
+    // while mixed a country pick is preparatory (like opening a select): it updates the
+    // presentation only — rebuilding a value would leak the hidden national number, and
+    // mixed resolves only once a national number is committed
+    if (this.mixed()) {
+      this.country.set(iso2);
+
       return;
     }
 
@@ -148,14 +172,31 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
     if (trimmed.startsWith('+') || digits.startsWith('00')) {
       const international = digits.startsWith('00') ? digits.slice(2) : digits;
 
-      this.value.set(international ? `+${international}` : '');
+      this.commitTypedValue(international ? `+${international}` : '');
 
       return;
     }
 
     const national = stripTrunkZero(digits, this.country());
 
-    this.value.set(national ? `+${this.dialCode()}${national}` : '');
+    this.commitTypedValue(national ? `+${this.dialCode()}${national}` : '');
+  }
+
+  /**
+   * Writes a user-typed value. While mixed, only a non-empty entry commits — it is built
+   * from scratch with the chosen country (never from the hidden number) and resolves mixed;
+   * an empty entry leaves the hidden raw value untouched.
+   */
+  private commitTypedValue(next: string) {
+    if (this.mixed()) {
+      if (!next) {
+        return;
+      }
+
+      this.mixed.set(false);
+    }
+
+    this.value.set(next);
   }
 
   private dialCodeOf(iso2: string) {

@@ -33,13 +33,17 @@ export type DatePickerInputFieldBase = { focus(): void; elementRef: ElementRef<H
  * bounds. Must be extended by an `@Directive` — Angular only surfaces inherited inputs from a
  * decorated base.
  */
-@Directive()
+@Directive({
+  host: {
+    '[attr.data-mixed]': 'mixed() || null',
+  },
+})
 export abstract class DatePickerInputDirective
   implements FormValueControl<string | null>, FormFieldControl, DatePickerHost
 {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private document = inject(DOCUMENT);
-  protected defaultLocale = injectDateLocale();
+  public defaultLocale = injectDateLocale();
 
   /** date-fns wire format used when `valueFormat` is unset — the token differs per control. */
   protected abstract defaultValueFormat: string;
@@ -59,6 +63,8 @@ export abstract class DatePickerInputDirective
 
   /** The wire value in `valueFormat`, or `null` while empty/unparseable. */
   public value = model<string | null>(null);
+  /** View state for a field whose source values disagree (bulk edit). The raw form value stays untouched. */
+  public mixed = model(false);
   public touched = model(false);
   public disabled = input(false);
   public readonly = input(false);
@@ -67,6 +73,12 @@ export abstract class DatePickerInputDirective
   public required = input(false);
   public name = input('');
   public placeholder = input('');
+  /**
+   * Field placeholder shown while `mixed` is set. Presentation only — a masked
+   * date field cannot render arbitrary text, so the field stays empty and the
+   * label shows through the placeholder slot; it never enters the form value.
+   */
+  public mixedLabel = input('Mixed');
 
   /** date-fns format of the string value. Defaults to the control's format token. */
   public valueFormat = input<string | undefined>(undefined);
@@ -103,8 +115,11 @@ export abstract class DatePickerInputDirective
   public registeredSurface = signal<DatePickerSurfaceBase | null>(null);
 
   public interactive = computed(() => !this.disabled() && !this.readonly());
-  public hasValue = computed(() => this.value() !== null || this.inputText().length > 0);
+  public hasValue = computed(() => this.mixed() || this.value() !== null || this.inputText().length > 0);
   public shouldDisplayError = computed(() => this.touched() && (this.invalid() || this.parseError()));
+
+  /** What the field renders as its placeholder — `mixedLabel` while mixed masks the value. */
+  public effectivePlaceholder = computed(() => (this.mixed() ? this.mixedLabel() : this.placeholder()));
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
 
@@ -160,6 +175,7 @@ export abstract class DatePickerInputDirective
     }
 
     this.value.set(null);
+    this.mixed.set(false);
     this.inputText.set('');
     this.parseError.set(false);
 
@@ -197,7 +213,7 @@ export abstract class DatePickerInputDirective
   }
 
   // the field is the anchor inside a form field so the panel lines up with the visible box
-  protected resolveAnchorElement() {
+  public resolveAnchorElement() {
     return (
       this.formField?.controlFrameElement() ??
       this.registeredField()?.elementRef.nativeElement ??

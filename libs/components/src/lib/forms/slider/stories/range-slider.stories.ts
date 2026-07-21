@@ -9,6 +9,9 @@ export default {
     label: { control: 'text' },
     hint: { control: 'text' },
     value: { control: 'object' },
+    mixed: { control: 'boolean' },
+    mixedLabel: { control: 'text' },
+    showMixedState: { control: false, table: { disable: true } },
     minValue: { control: 'number' },
     maxValue: { control: 'number' },
     step: { control: 'number' },
@@ -25,6 +28,9 @@ export default {
     label: 'Price range',
     hint: '',
     value: [20, 80],
+    mixed: false,
+    mixedLabel: 'Mixed',
+    showMixedState: false,
     minValue: 0,
     maxValue: 100,
     step: 1,
@@ -49,6 +55,15 @@ export const MinimumDistance: Story = {
 
 export const ValueLabels: Story = {
   args: { showValueLabel: true },
+};
+
+export const Mixed: Story = {
+  args: {
+    mixed: true,
+    mixedLabel: 'Different ranges',
+    showMixedState: true,
+    hint: 'The raw range stays intact until a user commits a thumb; the first commit writes a fresh range.',
+  },
 };
 
 export const Disabled: Story = {

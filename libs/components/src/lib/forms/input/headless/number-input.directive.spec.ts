@@ -2,6 +2,7 @@ import { Component, DebugElement, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../test-helpers';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
+import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { NUMBER_INPUT_IMPORTS } from '../input.imports';
 import { NumberInputDirective } from './number-input.directive';
 
@@ -42,6 +43,25 @@ class StepperTestHost {
   max = signal<number | undefined>(undefined);
   step = signal<number | null>(null);
   disabled = signal(false);
+}
+
+@Component({
+  template: `
+    <et-number-input
+      [value]="value()"
+      [mixed]="mixed()"
+      [stepper]="true"
+      (valueChange)="value.set($event)"
+      (mixedChange)="mixed.set($event)"
+      mixedLabel="Mixed values"
+      placeholder="Amount"
+    />
+  `,
+  imports: [NUMBER_INPUT_IMPORTS],
+})
+class MixedNumberInputTestHost {
+  value = signal<number | null>(null);
+  mixed = signal(false);
 }
 
 describe('NumberInputDirective', () => {
@@ -212,6 +232,85 @@ describe('NumberInputDirective', () => {
       press(1);
       expect(fixture.componentInstance.value()).toBeNull();
       expect(buttons().every((button) => button.disabled)).toBe(true);
+    });
+  });
+
+  describe('mixed state', () => {
+    const setup = () => {
+      TestBed.configureTestingModule({ imports: [MixedNumberInputTestHost] });
+
+      const fixture = TestBed.createComponent(MixedNumberInputTestHost);
+
+      fixture.detectChanges();
+
+      const host = fixture.componentInstance;
+      const nativeInput = () => fixture.nativeElement.querySelector('input') as HTMLInputElement;
+      const typeInto = (text: string) => {
+        const inputElement = nativeInput();
+
+        inputElement.value = text;
+        inputElement.dispatchEvent(new InputEvent('input', { bubbles: true }));
+        fixture.detectChanges();
+      };
+      const enterMixed = (rawValue: number) => {
+        host.value.set(rawValue);
+        host.mixed.set(true);
+        fixture.detectChanges();
+      };
+      const press = (index: number) => {
+        const button = fixture.nativeElement.querySelectorAll<HTMLButtonElement>('.et-number-input-stepper-button')[
+          index
+        ]!;
+
+        button.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+        button.dispatchEvent(new MouseEvent('pointerup', { bubbles: true }));
+        fixture.detectChanges();
+      };
+
+      return { fixture, host, nativeInput, typeInto, enterMixed, press };
+    };
+
+    describeMixedStateContract(() => {
+      const { fixture, host, nativeInput, typeInto, enterMixed } = setup();
+
+      return {
+        enterMixed: () => enterMixed(42),
+        rawValue: () => 42,
+        value: () => host.value(),
+        mixed: () => host.mixed(),
+        hostElement: () => fixture.nativeElement.querySelector('et-number-input') as HTMLElement,
+        writeValueExternally: () => {
+          host.value.set(7);
+          fixture.detectChanges();
+        },
+        externallyWrittenValue: () => 7,
+        commit: () => typeInto('5'),
+        committedValue: () => 5,
+        assertMasked: () => {
+          expect(nativeInput().value).toBe('');
+          expect(nativeInput().placeholder).toBe('Mixed values');
+        },
+      };
+    });
+
+    it('steps from 0 over a mixed value and resolves it — never from the hidden raw value', () => {
+      const { host, enterMixed, press } = setup();
+
+      enterMixed(42);
+      press(1);
+
+      expect(host.mixed()).toBe(false);
+      expect(host.value()).toBe(1);
+    });
+
+    it('keeps mixed and the raw value when an edit produces no content', () => {
+      const { host, typeInto, enterMixed } = setup();
+
+      enterMixed(42);
+      typeInto('');
+
+      expect(host.mixed()).toBe(true);
+      expect(host.value()).toBe(42);
     });
   });
 });

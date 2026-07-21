@@ -17,6 +17,8 @@ import { PasswordInputDirective } from './headless';
         'placeholder',
         'autocomplete',
         'value',
+        'mixed',
+        'mixedLabel',
         'revealed',
         'disabled',
         'readonly',
@@ -26,7 +28,7 @@ import { PasswordInputDirective } from './headless';
         'required',
         'name',
       ],
-      outputs: ['valueChange', 'touchedChange', 'revealedChange'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'revealedChange'],
     },
     ColorInteractiveDirective,
   ],
@@ -69,6 +71,6 @@ export class PasswordInputComponent {
   }
 
   public syncNativeValue(event: Event) {
-    this.passwordDir.value.set((event.target as HTMLInputElement).value);
+    this.passwordDir.syncFromNativeInput(event.target as HTMLInputElement);
   }
 }

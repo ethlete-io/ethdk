@@ -13,7 +13,9 @@ import { TIME_INPUT_IMPORTS } from '../time-input.imports';
       <et-form-field>
         <et-label>{{ label() }}</et-label>
         <et-time-input
+          [(mixed)]="mixedState"
           [formField]="demoForm.value"
+          [mixedLabel]="mixedLabel()"
           [placeholder]="placeholder()"
           [valueFormat]="valueFormat()"
           [displayFormat]="displayFormat()"
@@ -27,6 +29,9 @@ import { TIME_INPUT_IMPORTS } from '../time-input.imports';
       </et-form-field>
 
       <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+      @if (showMixedState()) {
+        <p class="text-sm opacity-60">Mixed: {{ mixedState() }}</p>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -37,6 +42,9 @@ export class TimeInputStorybookComponent {
   public placeholder = input('hh:mm');
   public hint = input('');
   public value = input<string | null>(null);
+  public mixed = input(false);
+  public mixedLabel = input('Mixed');
+  public showMixedState = input(false);
   public valueFormat = input<string | undefined>(undefined);
   public displayFormat = input('p');
   public minuteStep = input(5);
@@ -46,6 +54,8 @@ export class TimeInputStorybookComponent {
   public readonly = input(false);
   public required = input(false);
   public color = input('brand');
+
+  public mixedState = linkedSignal(() => this.mixed());
 
   protected localeObject = computed(() => (this.locale() === 'de' ? de : null));
 

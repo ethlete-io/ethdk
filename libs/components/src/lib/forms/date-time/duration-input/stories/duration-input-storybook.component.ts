@@ -11,7 +11,9 @@ import { DURATION_INPUT_IMPORTS } from '../duration-input.imports';
       <et-form-field>
         <et-label>{{ label() }}</et-label>
         <et-duration-input
+          [(mixed)]="mixedState"
           [formField]="demoForm.value"
+          [mixedLabel]="mixedLabel()"
           [durationFormat]="durationFormat()"
           [placeholder]="placeholder()"
         />
@@ -21,6 +23,9 @@ import { DURATION_INPUT_IMPORTS } from '../duration-input.imports';
       </et-form-field>
 
       <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() ?? 'null' }} ms</p>
+      @if (showMixedState()) {
+        <p class="text-sm opacity-60">Mixed: {{ mixedState() }}</p>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -32,9 +37,14 @@ export class DurationInputStorybookComponent {
   public placeholder = input('mm:ss');
   public durationFormat = input('mm:ss');
   public value = input<number | null>(null);
+  public mixed = input(false);
+  public mixedLabel = input('Mixed');
+  public showMixedState = input(false);
   public disabled = input(false);
   public required = input(false);
   public color = input('brand');
+
+  public mixedState = linkedSignal(() => this.mixed());
 
   private formModel = linkedSignal(() => ({ value: this.value() }));
 

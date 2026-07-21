@@ -9,6 +9,12 @@ import { InjectionToken, Signal, WritableSignal } from '@angular/core';
 export type InputMaskHost = {
   /** The text model the mask writes — raw or masked per `maskValueMode`. */
   value: WritableSignal<string>;
+  /**
+   * Bulk-edit mixed state of the host, when it has one. While set, the mask leaves the
+   * host's (empty) mixed display alone instead of repainting the hidden raw value, and the
+   * first edit that produces raw content commits it and resolves the flag.
+   */
+  mixed?: WritableSignal<boolean>;
   /** Whether the field has focus — drives the guide display. */
   focused: Signal<boolean>;
   /** The native input element the mask rewrites. */

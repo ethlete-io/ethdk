@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../test-helpers';
+import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { PASSWORD_INPUT_IMPORTS } from '../input.imports';
 import { PasswordInputDirective } from './password-input.directive';
 
@@ -21,6 +22,24 @@ class PasswordInputTestHost {
   revealable = signal(true);
   capsLockWarning = signal(false);
   disabled = signal(false);
+}
+
+@Component({
+  template: `
+    <et-password-input
+      [value]="value()"
+      [mixed]="mixed()"
+      (valueChange)="value.set($event)"
+      (mixedChange)="mixed.set($event)"
+      mixedLabel="Mixed values"
+      placeholder="Enter password"
+    />
+  `,
+  imports: [PASSWORD_INPUT_IMPORTS],
+})
+class MixedPasswordInputTestHost {
+  value = signal('');
+  mixed = signal(false);
 }
 
 describe('PasswordInputDirective', () => {
@@ -126,5 +145,85 @@ describe('PasswordInputDirective', () => {
     fixture.detectChanges();
 
     expect(nativeInput().type).toBe('password');
+  });
+});
+
+describe('PasswordInputDirective mixed state', () => {
+  const setup = () => {
+    TestBed.configureTestingModule({ imports: [MixedPasswordInputTestHost] });
+
+    const fixture = TestBed.createComponent(MixedPasswordInputTestHost);
+
+    fixture.detectChanges();
+
+    const host = fixture.componentInstance;
+    const directive = fixture.debugElement.children[0]!.injector.get(PasswordInputDirective);
+    const nativeInput = () => fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    const typeInto = (text: string) => {
+      const inputElement = nativeInput();
+
+      inputElement.value = text;
+      inputElement.dispatchEvent(new InputEvent('input', { bubbles: true }));
+      fixture.detectChanges();
+    };
+    const enterMixed = (rawValue: string) => {
+      host.value.set(rawValue);
+      host.mixed.set(true);
+      fixture.detectChanges();
+    };
+
+    return { fixture, host, directive, nativeInput, typeInto, enterMixed };
+  };
+
+  describeMixedStateContract(() => {
+    const { fixture, host, nativeInput, typeInto, enterMixed } = setup();
+
+    return {
+      enterMixed: () => enterMixed('hunter2'),
+      rawValue: () => 'hunter2',
+      value: () => host.value(),
+      mixed: () => host.mixed(),
+      hostElement: () => fixture.nativeElement.querySelector('et-password-input') as HTMLElement,
+      writeValueExternally: () => {
+        host.value.set('correct horse');
+        fixture.detectChanges();
+      },
+      externallyWrittenValue: () => 'correct horse',
+      commit: () => typeInto('new password'),
+      committedValue: () => 'new password',
+      assertMasked: () => {
+        expect(nativeInput().value).toBe('');
+        expect(nativeInput().placeholder).toBe('Mixed values');
+      },
+    };
+  });
+
+  it('never reveals the hidden raw value, even with the reveal toggle', () => {
+    const { fixture, directive, nativeInput, enterMixed } = setup();
+
+    enterMixed('hunter2');
+    directive.toggleRevealed();
+    fixture.detectChanges();
+
+    expect(nativeInput().type).toBe('text');
+    expect(nativeInput().value).toBe('');
+  });
+
+  it('reports zero strength while mixed instead of scoring the hidden raw value', () => {
+    const { directive, enterMixed } = setup();
+
+    enterMixed('Abcdefgh1!xy');
+
+    expect(directive.strength()).toBe(0);
+  });
+
+  it('keeps mixed and the raw value when an edit produces no content', () => {
+    const { host, typeInto, enterMixed } = setup();
+
+    enterMixed('hunter2');
+    typeInto('');
+
+    expect(host.mixed()).toBe(true);
+    expect(host.value()).toBe('hunter2');
   });
 });

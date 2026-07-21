@@ -14,7 +14,9 @@ import { DATE_RANGE_INPUT_IMPORTS } from '../date-range-input.imports';
       <et-form-field>
         <et-label>{{ label() }}</et-label>
         <et-date-range-input
+          [(mixed)]="mixedState"
           [formField]="demoForm.range"
+          [mixedLabel]="mixedLabel()"
           [startPlaceholder]="startPlaceholder()"
           [endPlaceholder]="endPlaceholder()"
           [valueFormat]="valueFormat()"
@@ -28,6 +30,9 @@ import { DATE_RANGE_INPUT_IMPORTS } from '../date-range-input.imports';
       </et-form-field>
 
       <p class="text-sm opacity-60">Form value: {{ demoForm.range().value() | json }}</p>
+      @if (showMixedState()) {
+        <p class="text-sm opacity-60">Mixed: {{ mixedState() }}</p>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -40,6 +45,9 @@ export class DateRangeInputStorybookComponent {
   public hint = input('');
   public start = input<string | null>(null);
   public end = input<string | null>(null);
+  public mixed = input(false);
+  public mixedLabel = input('Mixed');
+  public showMixedState = input(false);
   public valueFormat = input<string | undefined>('yyyy-MM-dd');
   public displayFormat = input('P');
   public mask = input(false);
@@ -47,6 +55,8 @@ export class DateRangeInputStorybookComponent {
   public disabled = input(false);
   public readonly = input(false);
   public color = input('brand');
+
+  public mixedState = linkedSignal(() => this.mixed());
 
   protected localeObject = computed(() => (this.locale() === 'de' ? de : null));
 

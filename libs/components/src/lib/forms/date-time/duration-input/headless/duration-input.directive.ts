@@ -13,6 +13,9 @@ import { DurationInputFieldDirective } from './duration-input-field.directive';
 @Directive({
   selector: '[etDurationInput]',
   exportAs: 'etDurationInput',
+  host: {
+    '[attr.data-mixed]': 'mixed() || null',
+  },
 })
 export class DurationInputDirective implements FormValueControl<number | null>, FormFieldControl {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
@@ -20,6 +23,8 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
 
   /** Total elapsed milliseconds, or `null` while empty/unparseable. */
   public value = model<number | null>(null);
+  /** View state for a field whose source values disagree (bulk edit). The raw form value stays untouched. */
+  public mixed = model(false);
   public touched = model(false);
   public disabled = input(false);
   public readonly = input(false);
@@ -28,6 +33,11 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
   public required = input(false);
   public name = input('');
   public placeholder = input('');
+  /**
+   * Field placeholder shown while `mixed` is set. Presentation only — the field stays
+   * empty and the label shows through the placeholder slot; it never enters the form value.
+   */
+  public mixedLabel = input('Mixed');
 
   /** Message the form field shows when typed text can't be parsed as a duration. */
   public parseErrorMessage = input('Please enter a valid duration');
@@ -37,8 +47,8 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
 
   public spec = computed(() => deriveDurationFormatSpec(this.durationFormat()));
 
-  /** The committed value formatted for display. */
-  public displayValue = computed(() => formatDuration(this.value(), this.spec()));
+  /** The committed value formatted for display — masked (empty) while mixed. */
+  public displayValue = computed(() => (this.mixed() ? '' : formatDuration(this.value(), this.spec())));
 
   /** The raw text currently in the field (tracked so unparseable input survives). */
   public inputText = signal('');
@@ -49,7 +59,10 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
   public focused = signal(false);
 
   public shouldDisplayError = computed(() => this.touched() && (this.invalid() || this.parseError()));
-  public hasValue = computed(() => this.value() !== null || this.inputText().trim().length > 0);
+  public hasValue = computed(() => this.mixed() || this.value() !== null || this.inputText().trim().length > 0);
+
+  /** What the field renders as its placeholder — `mixedLabel` while mixed masks the value. */
+  public effectivePlaceholder = computed(() => (this.mixed() ? this.mixedLabel() : this.placeholder()));
 
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.DURATION_INPUT);
@@ -79,6 +92,7 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
     }
 
     this.value.set(null);
+    this.mixed.set(false);
     this.inputText.set('');
     this.parseError.set(false);
 
@@ -103,7 +117,12 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
 
     if (!trimmed) {
       this.parseError.set(false);
-      this.value.set(null);
+
+      // while mixed the field is empty anyway — a blank commit is a plain blur, not a user
+      // clear, so the hidden raw value survives (the clear affordance resolves instead)
+      if (!this.mixed()) {
+        this.value.set(null);
+      }
 
       return;
     }
@@ -114,8 +133,9 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
       this.parseError.set(true);
 
       // drop the now-stale value so the wire model can't disagree with the unparseable
-      // text on screen — mirrors date/time/date-time, which all null on a bad commit
-      if (this.value() !== null) {
+      // text on screen — mirrors date/time/date-time, which all null on a bad commit.
+      // A failed parse resolves nothing while mixed: the masked raw value stays untouched
+      if (!this.mixed() && this.value() !== null) {
         this.value.set(null);
       }
 
@@ -124,5 +144,6 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
 
     this.parseError.set(false);
     this.value.set(parsed);
+    this.mixed.set(false);
   }
 }

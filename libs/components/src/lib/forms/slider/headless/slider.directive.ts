@@ -10,12 +10,19 @@ import { SLIDER_TOKEN, SliderHostBase, SliderThumbBase, SliderThumbLabelBase } f
   selector: '[etSlider]',
   exportAs: 'etSlider',
   providers: [{ provide: SLIDER_TOKEN, useExisting: SliderDirective }],
+  host: {
+    '[attr.data-mixed]': 'mixed() || null',
+  },
 })
 export class SliderDirective implements FormValueControl<number>, FormFieldControl, SliderHostBase {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
 
   public value = model(0);
+  /** View state for a field whose source values disagree. The raw form value stays untouched. */
+  public mixed = model(false);
+  /** `aria-valuetext` the thumb announces while `mixed` is set. */
+  public mixedLabel = input('Mixed');
   public touched = model(false);
   public disabled = input(false);
   public readonly = input(false);
@@ -52,7 +59,11 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
 
   private bounds = computed(() => ({ min: this.effectiveMin(), max: this.effectiveMax(), step: this.step() }));
 
-  public thumbValues = computed<readonly number[]>(() => [snapValueToStep(this.value(), this.bounds())]);
+  // while mixed, the thumb parks at the track start so the DOM (position, ARIA) exposes
+  // nothing of the hidden raw value — the keyboard model then also steps from the minimum
+  public thumbValues = computed<readonly number[]>(() =>
+    this.mixed() ? [this.effectiveMin()] : [snapValueToStep(this.value(), this.bounds())],
+  );
 
   public thumbPercents = computed<readonly number[]>(() =>
     this.thumbValues().map((value) => valueToPercent(value, this.bounds())),
@@ -95,6 +106,10 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
     }
 
     const snapped = snapValueToStep(value, this.bounds());
+
+    // only user interactions route through here — the first commit resolves mixed even
+    // when the chosen value happens to equal the hidden raw one (replace semantics)
+    this.mixed.set(false);
 
     if (snapped !== this.value()) {
       this.value.set(snapped);

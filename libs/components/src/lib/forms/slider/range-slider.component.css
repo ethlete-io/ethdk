@@ -134,6 +134,21 @@
       user-select: none;
     }
 
+    /* an unresolved bulk-edit range parks both thumbs at the track start — the neutral,
+       dimmed treatment makes that read as "unset", not "minimum". The fill is already
+       zero-width while mixed. Consumers restyle via [data-mixed]. */
+    &[data-mixed] {
+      .et-range-slider-thumb {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 48%, transparent);
+        box-shadow: none;
+      }
+
+      /* the parked positions are meaningless — never label them with numbers */
+      .et-range-slider-thumb-value {
+        display: none;
+      }
+    }
+
     &[data-disabled],
     &[data-readonly] {
       .et-range-slider-interaction {

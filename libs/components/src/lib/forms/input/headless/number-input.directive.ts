@@ -18,8 +18,14 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
   public autocomplete = input('');
   public textAlign = input<InputTextAlignment>(INPUT_TEXT_ALIGNMENTS.START);
 
-  public hasValue = computed(() => this.value() !== null);
+  public hasValue = computed(() => this.mixed() || this.value() !== null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.NUMBER_INPUT);
+
+  /** What the native input renders — empty while mixed so the raw value never reaches the DOM. */
+  public displayValue = computed(() => (this.mixed() ? '' : (this.value() ?? '')));
+
+  /** The placeholder the native input renders — `mixedLabel` overrides the consumer placeholder while mixed. */
+  public effectivePlaceholder = computed(() => (this.mixed() ? this.mixedLabel() : this.placeholder()));
 
   /**
    * The native input element this directive controls. Set automatically when the
@@ -28,13 +34,16 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
    */
   public nativeControl = signal<HTMLInputElement | null>(null);
 
+  /** The value stepping starts from — `0` while mixed (deriving from the hidden raw value would leak it). */
+  private steppingBase = computed(() => (this.mixed() ? 0 : (this.value() ?? 0)));
+
   /** Whether stepping up would change the value — `false` at the `max` bound or while non-interactive. */
   public canStepUp = computed(() => {
     if (this.disabled() || this.readonly()) return false;
 
     const max = this.max();
 
-    return max === undefined || (this.value() ?? 0) < max;
+    return max === undefined || this.steppingBase() < max;
   });
 
   /** Whether stepping down would change the value — `false` at the `min` bound or while non-interactive. */
@@ -43,7 +52,7 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
 
     const min = this.min();
 
-    return min === undefined || (this.value() ?? 0) > min;
+    return min === undefined || this.steppingBase() > min;
   });
 
   constructor() {
@@ -58,12 +67,12 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
     }
   }
 
-  /** Steps the value by `step` (an empty value starts from `0`), clamped to `min`/`max`. */
+  /** Steps the value by `step` (an empty or mixed value starts from `0`), clamped to `min`/`max`. */
   public stepBy(direction: 1 | -1) {
     if (this.disabled() || this.readonly()) return;
 
     const step = this.step() ?? 1;
-    const current = this.value() ?? 0;
+    const current = this.steppingBase();
     const precision = Math.max(decimalPrecisionOf(step), decimalPrecisionOf(current));
     let next = Number((current + step * direction).toFixed(precision));
 
@@ -73,6 +82,15 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
     if (min !== undefined) next = Math.max(min, next);
     if (max !== undefined) next = Math.min(max, next);
 
+    if (this.mixed()) {
+      // stepping is a user commit — it replaces the hidden raw value and resolves mixed
+      this.mixed.set(false);
+      this.value.set(next);
+      this.touched.set(true);
+
+      return;
+    }
+
     if (next !== this.value()) {
       this.value.set(next);
       // stepping is a deliberate edit — mark touched so validation errors surface immediately,
@@ -81,8 +99,20 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
     }
   }
 
-  /** @internal */
+  /**
+   * @internal Routes a user edit from the native input into the model. Typing is the commit
+   * over a mixed state: the first edit that produces content replaces the raw value and
+   * resolves `mixed`; an edit that leaves the input empty keeps both untouched.
+   */
   public syncFromNativeInput(inputElement: HTMLInputElement) {
+    if (this.mixed()) {
+      if (!inputElement.value) {
+        return;
+      }
+
+      this.mixed.set(false);
+    }
+
     const parsed = inputElement.valueAsNumber;
 
     this.value.set(Number.isNaN(parsed) ? null : parsed);

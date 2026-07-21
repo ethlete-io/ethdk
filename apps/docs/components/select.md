@@ -68,7 +68,7 @@ With `multiple`, each selected value renders as a removable chip in the trigger;
 
 Try it live in Storybook: `Components/Forms/Select` → `Mixed` / `Mixed multiple`.
 
-Use `mixed` when one select edits several records whose current values differ. It is presentation state, not a sentinel form value: while mixed, the select shows `mixedLabel`, keeps the raw form value unchanged, hides selected chips, and does not mark any option as selected.
+Use `mixed` when one select edits several records whose current values differ — the select implements the SDK-wide [mixed state contract](/components/mixed-state). It is presentation state, not a sentinel form value: while mixed, the select shows `mixedLabel`, keeps the raw form value unchanged, hides selected chips, and does not mark any option as selected.
 
 ```html
 <et-select
@@ -87,6 +87,8 @@ Treat `mixed` as explicitly controlled state. Updating the raw form value from a
 
 - Committing an option or custom value replaces the hidden raw value and resolves mixed. In multi mode, that first commit starts a new array containing the committed option; later commits use normal toggle behavior.
 - Clear writes `null` for single select or `[]` for multi-select and resolves mixed. Opening, searching, or cancelling leaves it unchanged; closing only resolves mixed when `commitCustomValueOnClose` successfully commits pending text.
+- Keyboard deletion never mass-clears: Backspace on an empty multi-select search input is a no-op while mixed (there is no visible chip to delete — the clear button is the destructive path). Erasing the displayed label text in a searchable _single_ select clears, exactly as it does for a committed value.
+- Headless note: while mixed, every option reports unselected — including unbound options whose `checked` input the consumer set explicitly. Mixed is the stronger claim.
 - `allowAddNew` only emits `addNew`; it neither writes a value nor resolves mixed. After creating the option, update the form value and set `mixed` to `false` explicitly.
 - Signal Forms validation continues to inspect the raw form value. The mixed presentation by itself does not satisfy `required` or otherwise override validation.
 - Listbox options use `aria-selected="false"` while mixed. They never expose `aria-selected="mixed"`, which is not a valid option state. The select host exposes `data-mixed` for consumer styling.

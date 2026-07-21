@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
 import '../../../../test-helpers';
+import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { SLIDER_IMPORTS } from '../slider.imports';
 
 const TEST_COLOR_THEMES = [
@@ -45,6 +46,8 @@ const TEST_COLOR_THEMES = [
   template: `
     <et-slider
       [value]="value()"
+      [mixed]="mixed()"
+      [mixedLabel]="mixedLabel()"
       [min]="min()"
       [max]="max()"
       [step]="step()"
@@ -52,6 +55,7 @@ const TEST_COLOR_THEMES = [
       [readonly]="readonly()"
       [touched]="touched()"
       (valueChange)="value.set($event)"
+      (mixedChange)="mixed.set($event)"
       (touchedChange)="touched.set($event)"
     />
   `,
@@ -59,6 +63,8 @@ const TEST_COLOR_THEMES = [
 })
 class SliderTestHost {
   value = signal(0);
+  mixed = signal(false);
+  mixedLabel = signal('Mixed');
   touched = signal(false);
   min = signal<number | undefined>(undefined);
   max = signal<number | undefined>(undefined);
@@ -214,5 +220,110 @@ describe('SliderDirective', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.touched()).toBe(true);
+  });
+
+  describe('mixed', () => {
+    beforeEach(() => {
+      fixture.componentInstance.value.set(40);
+      fixture.componentInstance.mixed.set(true);
+      fixture.detectChanges();
+    });
+
+    it('removes aria-valuenow, announces the mixed label and parks the thumb at the track start', () => {
+      expect(thumb().hasAttribute('aria-valuenow')).toBe(false);
+      expect(thumb().getAttribute('aria-valuetext')).toBe('Mixed');
+      expect(thumb().style.getPropertyValue('--_et-slider-thumb-position')).toBe('0');
+      expect(host.querySelector<HTMLElement>('.et-slider-fill')!.style.getPropertyValue('--_et-slider-fill-end')).toBe(
+        '0',
+      );
+
+      fixture.componentInstance.mixedLabel.set('Different volumes');
+      fixture.detectChanges();
+
+      expect(thumb().getAttribute('aria-valuetext')).toBe('Different volumes');
+    });
+
+    it('starts the first keyboard step from the effective minimum', () => {
+      fixture.componentInstance.min.set(10);
+      fixture.detectChanges();
+
+      keydown('ArrowRight');
+
+      expect(fixture.componentInstance.value()).toBe(11);
+      expect(fixture.componentInstance.mixed()).toBe(false);
+      expect(thumb().getAttribute('aria-valuenow')).toBe('11');
+      expect(thumb().hasAttribute('aria-valuetext')).toBe(false);
+    });
+
+    it('resolves on Home even though the committed value equals the effective minimum', () => {
+      keydown('Home');
+
+      expect(fixture.componentInstance.value()).toBe(0);
+      expect(fixture.componentInstance.mixed()).toBe(false);
+    });
+
+    it('resolves on a pointer commit that lands on the hidden raw value', () => {
+      pointer('pointerdown', 40);
+      pointer('pointerup', 40);
+
+      expect(fixture.componentInstance.value()).toBe(40);
+      expect(fixture.componentInstance.mixed()).toBe(false);
+      expect(host.hasAttribute('data-mixed')).toBe(false);
+    });
+
+    it('stays mixed while disabled or readonly interactions are ignored', () => {
+      fixture.componentInstance.readonly.set(true);
+      fixture.detectChanges();
+
+      keydown('ArrowRight');
+      pointer('pointerdown', 50);
+
+      expect(fixture.componentInstance.value()).toBe(40);
+      expect(fixture.componentInstance.mixed()).toBe(true);
+    });
+  });
+});
+
+describe('SliderDirective (mixed contract)', () => {
+  describeMixedStateContract(() => {
+    TestBed.configureTestingModule({
+      imports: [SliderTestHost],
+      providers: [provideColorThemes(TEST_COLOR_THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(SliderTestHost);
+
+    fixture.detectChanges();
+
+    const hostElement = fixture.nativeElement.querySelector('et-slider') as HTMLElement;
+    const thumb = () => hostElement.querySelector<HTMLElement>('.et-slider-thumb')!;
+
+    return {
+      enterMixed: () => {
+        fixture.componentInstance.value.set(40);
+        fixture.componentInstance.mixed.set(true);
+        fixture.detectChanges();
+      },
+      rawValue: () => 40,
+      value: () => fixture.componentInstance.value(),
+      mixed: () => fixture.componentInstance.mixed(),
+      hostElement: () => hostElement,
+      writeValueExternally: () => {
+        fixture.componentInstance.value.set(70);
+        fixture.detectChanges();
+      },
+      externallyWrittenValue: () => 70,
+      commit: () => {
+        thumb().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+        fixture.detectChanges();
+      },
+      // the first keyboard step starts from the effective minimum (0), not the hidden 40
+      committedValue: () => 1,
+      assertMasked: () => {
+        expect(thumb().hasAttribute('aria-valuenow')).toBe(false);
+        expect(thumb().getAttribute('aria-valuetext')).toBe('Mixed');
+        expect(thumb().style.getPropertyValue('--_et-slider-thumb-position')).toBe('0');
+      },
+    };
   });
 });

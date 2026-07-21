@@ -1,10 +1,10 @@
 <input
   #nativeInput
-  [value]="numberInputDir.value() ?? ''"
+  [value]="numberInputDir.displayValue()"
   [disabled]="numberInputDir.disabled()"
   [readOnly]="numberInputDir.readonly()"
   [required]="numberInputDir.required()"
-  [placeholder]="numberInputDir.placeholder()"
+  [placeholder]="numberInputDir.effectivePlaceholder()"
   [autocomplete]="numberInputDir.autocomplete()"
   [attr.min]="numberInputDir.min() ?? null"
   [attr.max]="numberInputDir.max() ?? null"

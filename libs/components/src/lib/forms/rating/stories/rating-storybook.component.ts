@@ -9,14 +9,27 @@ import { RATING_IMPORTS } from '../rating.imports';
   selector: 'et-sb-rating',
   template: `
     <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
-      <et-rating [formField]="demoForm.value" [max]="max()" [allowHalf]="allowHalf()">
+      <et-rating
+        [(mixed)]="mixedState"
+        [formField]="demoForm.value"
+        [mixedLabel]="mixedLabel()"
+        [max]="max()"
+        [allowHalf]="allowHalf()"
+      >
         <et-label>{{ label() }}</et-label>
         @if (hint()) {
           <et-hint>{{ hint() }}</et-hint>
         }
       </et-rating>
 
-      <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() ?? 'null' }}</p>
+      @if (showMixedState()) {
+        <div class="text-sm opacity-60">
+          <p>Raw form value: {{ demoForm.value().value() ?? 'null' }}</p>
+          <p>Mixed: {{ mixedState() }}</p>
+        </div>
+      } @else {
+        <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() ?? 'null' }}</p>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -26,12 +39,17 @@ export class RatingStorybookComponent {
   public label = input('Rating');
   public hint = input('');
   public value = input<number | null>(null);
+  public mixed = input(false);
+  public mixedLabel = input('Mixed');
+  public showMixedState = input(false);
   public max = input(5);
   public allowHalf = input(false);
   public disabled = input(false);
   public readonly = input(false);
   public required = input(false);
   public color = input('brand');
+
+  public mixedState = linkedSignal(() => this.mixed());
 
   private formModel = linkedSignal(() => ({ value: this.value() }));
 

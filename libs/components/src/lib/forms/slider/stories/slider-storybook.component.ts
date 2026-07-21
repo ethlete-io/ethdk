@@ -9,7 +9,14 @@ import { SLIDER_IMPORTS } from '../slider.imports';
   selector: 'et-sb-slider',
   template: `
     <div [etProvideColor]="color()" [attr.dir]="direction() || null" class="flex max-w-md flex-col gap-4 p-8 font-sans">
-      <et-slider [formField]="demoForm.value" [min]="min()" [max]="max()" [step]="step()">
+      <et-slider
+        [(mixed)]="mixedState"
+        [formField]="demoForm.value"
+        [mixedLabel]="mixedLabel()"
+        [min]="min()"
+        [max]="max()"
+        [step]="step()"
+      >
         <et-label>{{ label() }}</et-label>
         @if (hint()) {
           <et-hint>{{ hint() }}</et-hint>
@@ -19,7 +26,14 @@ import { SLIDER_IMPORTS } from '../slider.imports';
         }
       </et-slider>
 
-      <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() }}</p>
+      @if (showMixedState()) {
+        <div class="text-sm opacity-60">
+          <p>Raw form value: {{ demoForm.value().value() }}</p>
+          <p>Mixed: {{ mixedState() }}</p>
+        </div>
+      } @else {
+        <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() }}</p>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -29,6 +43,9 @@ export class SliderStorybookComponent {
   public label = input('Volume');
   public hint = input('');
   public value = input(40);
+  public mixed = input(false);
+  public mixedLabel = input('Mixed');
+  public showMixedState = input(false);
   public min = input(0);
   public max = input(100);
   public step = input(1);
@@ -37,6 +54,8 @@ export class SliderStorybookComponent {
   public showValueLabel = input(false);
   public color = input('brand');
   public direction = input('');
+
+  public mixedState = linkedSignal(() => this.mixed());
 
   private formModel = linkedSignal(() => ({ value: this.value() }));
 

@@ -66,6 +66,7 @@ type CascaderSearchLike = {
   exportAs: 'etCascader',
   host: {
     '[attr.data-cascader-open]': 'open() || null',
+    '[attr.data-mixed]': 'mixed() || null',
   },
 })
 export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] | null>, FormFieldControl {
@@ -76,6 +77,8 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
 
   /** The committed value: `T | null` in single mode, `T[]` with `multiple`. */
   public value = model<T | T[] | null>(null);
+  /** View state for a field whose source values disagree. The raw form value stays untouched. */
+  public mixed = model(false);
   public touched = model(false);
   public open = model(false);
   public disabled = input(false);
@@ -87,6 +90,8 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   public required = input(false);
   public name = input('');
   public placeholder = input('');
+  /** Trigger text shown while `mixed` is set. */
+  public mixedLabel = input('Mixed');
 
   /** The hierarchical source browsed by the cascader. Required. */
   public dataSource = input<CascaderDataSource<T> | null>(null);
@@ -132,7 +137,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
     return value === null || value === undefined ? [] : [value];
   });
 
-  public hasValue = computed(() => this.values().length > 0);
+  public hasValue = computed(() => this.mixed() || this.values().length > 0);
 
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.CASCADER);
@@ -213,6 +218,10 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   /** The label of the current value, or `null` (show the placeholder). */
   public displayPath = computed(() => this.path().map((node) => node.label));
   public displayValue = computed(() => {
+    if (this.mixed()) {
+      return this.mixedLabel();
+    }
+
     if (this.multiple()) {
       // one label per selected node (not the full breadcrumb — several would not scan)
       const compareWith = this.compareWith();
@@ -633,6 +642,11 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
    * of a partial selection show as indeterminate instead).
    */
   public isSelected(node: CascaderNode<T>) {
+    // mixed masks the raw selection: nothing reports selected until the user commits
+    if (this.mixed()) {
+      return false;
+    }
+
     if (this.multiple()) {
       return this.isFullySelected(node, []);
     }
@@ -642,7 +656,8 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
 
   /** Multi mode: whether a node that isn't (fully) selected has a selected descendant (the dash state). */
   public isIndeterminate(node: CascaderNode<T>) {
-    if (!this.multiple() || this.isSelected(node)) {
+    // the hidden mixed selection must not leak through partial-branch dashes either
+    if (!this.multiple() || this.mixed() || this.isSelected(node)) {
       return false;
     }
 
@@ -703,6 +718,16 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
       return;
     }
 
+    // the first commit over a mixed value REPLACES: a fresh array around the toggled node,
+    // never a toggle against the hidden raw selection
+    if (this.mixed()) {
+      this.value.set([node.value]);
+      this.selectedPaths.set([[...chain]]);
+      this.mixed.set(false);
+
+      return;
+    }
+
     const compareWith = this.compareWith();
     const values = this.values();
     const selected = values.some((value) => compareWith(value, node.value));
@@ -731,6 +756,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
     }
 
     this.value.set(this.multiple() ? [] : null);
+    this.mixed.set(false);
     this.path.set([]);
     this.selectedPaths.set([]);
   }
@@ -946,6 +972,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
     // branch commit in any-level mode (unlike a browse click, which stays open to drill)
     this.path.set([...path]);
     this.value.set(node.value);
+    this.mixed.set(false);
     this.hide();
   }
 
@@ -1159,6 +1186,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
 
     this.path.set(chain);
     this.value.set(node.value);
+    this.mixed.set(false);
 
     if (close) {
       this.hide();
@@ -1283,7 +1311,9 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
     // seed focus to the committed root before loading — a set value re-opens where it left off,
     // and the guard in the root load skips its own seed. An empty value leaves focus null so the
     // root load seeds it to the first node instead. Multi re-opens onto the first known chain.
-    const committed = this.multiple() ? (this.selectedPaths()[0] ?? []) : this.path();
+    // While mixed, the raw value is masked — opening at its branch would reveal it, so the
+    // panel starts at the root like an empty control.
+    const committed = this.mixed() ? [] : this.multiple() ? (this.selectedPaths()[0] ?? []) : this.path();
 
     this.focusedNode.set(committed[0] ?? null);
 

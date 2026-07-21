@@ -12,7 +12,9 @@ import { SLIDER_IMPORTS } from '../slider.imports';
   template: `
     <div [etProvideColor]="color()" [attr.dir]="direction() || null" class="flex max-w-md flex-col gap-4 p-8 font-sans">
       <et-range-slider
+        [(mixed)]="mixedState"
         [formField]="demoForm.value"
+        [mixedLabel]="mixedLabel()"
         [minValue]="minValue()"
         [maxValue]="maxValue()"
         [step]="step()"
@@ -29,7 +31,14 @@ import { SLIDER_IMPORTS } from '../slider.imports';
         }
       </et-range-slider>
 
-      <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+      @if (showMixedState()) {
+        <div class="text-sm opacity-60">
+          <p>Raw form value: {{ demoForm.value().value() | json }}</p>
+          <p>Mixed: {{ mixedState() }}</p>
+        </div>
+      } @else {
+        <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -39,6 +48,9 @@ export class RangeSliderStorybookComponent {
   public label = input('Price range');
   public hint = input('');
   public value = input<RangeSliderValue>([20, 80]);
+  public mixed = input(false);
+  public mixedLabel = input('Mixed');
+  public showMixedState = input(false);
   public minValue = input(0);
   public maxValue = input(100);
   public step = input(1);
@@ -50,6 +62,8 @@ export class RangeSliderStorybookComponent {
   public showValueLabel = input(false);
   public color = input('brand');
   public direction = input('');
+
+  public mixedState = linkedSignal(() => this.mixed());
 
   private formModel = linkedSignal(() => ({ value: this.value() }));
 

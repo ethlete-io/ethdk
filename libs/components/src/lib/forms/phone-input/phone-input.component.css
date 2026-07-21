@@ -64,6 +64,14 @@
       }
     }
 
+    /* an unresolved bulk-edit value reads as provisional — the mixedLabel placeholder sits
+       between committed text (full strength) and the regular placeholder (46%). Consumers
+       restyle via [data-mixed]. */
+    &[data-mixed] .et-phone-input-field::placeholder {
+      font-style: italic;
+      color: color-mix(in srgb, currentColor 72%, transparent);
+    }
+
     .et-phone-input-clear {
       display: inline-flex;
       align-items: center;

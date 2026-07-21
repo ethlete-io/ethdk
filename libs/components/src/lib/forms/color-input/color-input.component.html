@@ -1,5 +1,5 @@
-<span [style.background-color]="colorInputDir.resolvedColor()" class="et-color-input-swatch" aria-hidden="true"></span>
-<span class="et-color-input-value">{{ colorInputDir.value() ?? '' }}</span>
+<span [style.background-color]="colorInputDir.swatchColor()" class="et-color-input-swatch" aria-hidden="true"></span>
+<span class="et-color-input-value">{{ colorInputDir.displayValue() }}</span>
 <input
   #nativeInput
   [value]="colorInputDir.resolvedColor()"

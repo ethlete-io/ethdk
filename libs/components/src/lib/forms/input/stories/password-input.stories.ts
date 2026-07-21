@@ -10,6 +10,9 @@ export default {
     hint: { control: 'text' },
     placeholder: { control: 'text' },
     value: { control: 'text' },
+    mixed: { control: 'boolean' },
+    mixedLabel: { control: 'text' },
+    showMixedState: { control: false, table: { disable: true } },
     revealable: { control: 'boolean' },
     capsLockWarning: { control: 'boolean' },
     showStrength: { control: 'boolean' },
@@ -22,6 +25,9 @@ export default {
     hint: '',
     placeholder: '',
     value: '',
+    mixed: false,
+    mixedLabel: 'Mixed',
+    showMixedState: false,
     revealable: true,
     capsLockWarning: false,
     showStrength: false,
@@ -41,4 +47,14 @@ export const StrengthMeter: Story = {
 
 export const CapsLockWarning: Story = {
   args: { capsLockWarning: true, hint: 'Type with Caps Lock on to see the warning' },
+};
+
+export const Mixed: Story = {
+  args: {
+    value: 'hunter2',
+    mixed: true,
+    mixedLabel: 'Mixed',
+    showMixedState: true,
+    hint: 'The raw value stays hidden and intact until typing commits a replacement; the mixed label shows as the placeholder.',
+  },
 };

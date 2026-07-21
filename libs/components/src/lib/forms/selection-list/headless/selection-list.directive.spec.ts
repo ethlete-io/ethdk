@@ -1,6 +1,8 @@
-import { Component, DebugElement, signal } from '@angular/core';
+import { ApplicationRef, Component, DebugElement, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../test-helpers';
+import { describeMixedStateContract } from '../../testing/mixed-state-contract';
+import { SelectionListControlDirective } from './selection-list-control.directive';
 import { SelectionListDirective } from './selection-list.directive';
 import { SelectionOptionDirective } from './selection-option.directive';
 
@@ -45,6 +47,50 @@ class MultiSelectTestHost {
 class ReadonlySelectTestHost {
   value = signal<string | null>('a');
   readonly = signal(true);
+}
+
+@Component({
+  template: `
+    <div
+      [value]="value()"
+      [mixed]="mixed()"
+      (valueChange)="value.set($event)"
+      (mixedChange)="mixed.set($event)"
+      etSelectionList
+    >
+      <div etSelectionOption value="a"></div>
+      <div etSelectionOption value="b"></div>
+      <div etSelectionOption value="c"></div>
+    </div>
+  `,
+  imports: [SelectionListDirective, SelectionOptionDirective],
+})
+class MixedSingleSelectTestHost {
+  value = signal<string | null>(null);
+  mixed = signal(false);
+}
+
+@Component({
+  template: `
+    <div
+      [value]="value()"
+      [mixed]="mixed()"
+      [multiple]="true"
+      (valueChange)="value.set($event)"
+      (mixedChange)="mixed.set($event)"
+      etSelectionList
+    >
+      <div etSelectionListControl></div>
+      <div etSelectionOption value="a"></div>
+      <div etSelectionOption value="b"></div>
+      <div etSelectionOption value="c"></div>
+    </div>
+  `,
+  imports: [SelectionListDirective, SelectionOptionDirective, SelectionListControlDirective],
+})
+class MixedMultiSelectTestHost {
+  value = signal<string[]>([]);
+  mixed = signal(false);
 }
 
 describe('SelectionListDirective', () => {
@@ -165,6 +211,229 @@ describe('SelectionListDirective', () => {
       fixture.detectChanges();
 
       expect(fixture.componentInstance.value()).toBe('b');
+    });
+  });
+});
+
+describe('SelectionListDirective (single, mixed contract)', () => {
+  describeMixedStateContract(() => {
+    TestBed.configureTestingModule({ imports: [MixedSingleSelectTestHost] });
+
+    const fixture = TestBed.createComponent(MixedSingleSelectTestHost);
+
+    fixture.detectChanges();
+
+    const tick = () => TestBed.inject(ApplicationRef).tick();
+    const options = () => fixture.nativeElement.querySelectorAll<HTMLElement>('[etSelectionOption]');
+
+    return {
+      enterMixed: () => {
+        fixture.componentInstance.value.set('b');
+        fixture.componentInstance.mixed.set(true);
+        fixture.detectChanges();
+        tick();
+      },
+      rawValue: () => 'b',
+      value: () => fixture.componentInstance.value(),
+      mixed: () => fixture.componentInstance.mixed(),
+      hostElement: () => fixture.nativeElement.querySelector('[etSelectionList]') as HTMLElement,
+      writeValueExternally: () => {
+        fixture.componentInstance.value.set('c');
+        fixture.detectChanges();
+        tick();
+      },
+      externallyWrittenValue: () => 'c',
+      commit: () => {
+        options()[0]!.click();
+        fixture.detectChanges();
+        tick();
+      },
+      committedValue: () => 'a',
+      assertMasked: () => {
+        for (const option of Array.from(options())) {
+          expect(option.getAttribute('aria-checked')).toBe('false');
+        }
+      },
+      // no clear affordance — selection lists have no empty-shape control of their own
+    };
+  });
+});
+
+describe('SelectionListDirective (multiple, mixed contract)', () => {
+  describeMixedStateContract(() => {
+    TestBed.configureTestingModule({ imports: [MixedMultiSelectTestHost] });
+
+    const fixture = TestBed.createComponent(MixedMultiSelectTestHost);
+
+    fixture.detectChanges();
+
+    const tick = () => TestBed.inject(ApplicationRef).tick();
+    const options = () => fixture.nativeElement.querySelectorAll<HTMLElement>('[etSelectionOption]');
+
+    return {
+      enterMixed: () => {
+        fixture.componentInstance.value.set(['b', 'c']);
+        fixture.componentInstance.mixed.set(true);
+        fixture.detectChanges();
+        tick();
+      },
+      rawValue: () => ['b', 'c'],
+      value: () => fixture.componentInstance.value(),
+      mixed: () => fixture.componentInstance.mixed(),
+      hostElement: () => fixture.nativeElement.querySelector('[etSelectionList]') as HTMLElement,
+      writeValueExternally: () => {
+        fixture.componentInstance.value.set(['a']);
+        fixture.detectChanges();
+        tick();
+      },
+      externallyWrittenValue: () => ['a'],
+      // Space on an option — a real keyboard commit
+      commit: () => {
+        options()[0]!.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+        fixture.detectChanges();
+        tick();
+      },
+      // replace semantics: a fresh array around the committed option, not a toggle
+      committedValue: () => ['a'],
+      assertMasked: () => {
+        for (const option of Array.from(options())) {
+          expect(option.getAttribute('aria-checked')).toBe('false');
+        }
+      },
+    };
+  });
+});
+
+describe('SelectionListDirective (mixed specifics)', () => {
+  const tick = () => TestBed.inject(ApplicationRef).tick();
+
+  describe('single (radio pattern)', () => {
+    let fixture: ComponentFixture<MixedSingleSelectTestHost>;
+    let options: NodeListOf<HTMLElement>;
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({ imports: [MixedSingleSelectTestHost] });
+      fixture = TestBed.createComponent(MixedSingleSelectTestHost);
+      fixture.componentInstance.value.set('b');
+      fixture.componentInstance.mixed.set(true);
+      fixture.detectChanges();
+      tick();
+      options = fixture.nativeElement.querySelectorAll('[etSelectionOption]');
+    });
+
+    it('reports no option as checked despite the hidden raw value', () => {
+      for (const option of Array.from(options)) {
+        expect(option.getAttribute('aria-checked')).toBe('false');
+      }
+    });
+
+    it('roves the tab stop from the first option (no-selection behavior), not the hidden raw value', () => {
+      expect(options[0]!.getAttribute('tabindex')).toBe('0');
+      expect(options[1]!.getAttribute('tabindex')).toBe('-1');
+      expect(options[2]!.getAttribute('tabindex')).toBe('-1');
+    });
+
+    it('resolves mixed through radio arrow-selection', () => {
+      // raw 'c' so the committed 'b' provably comes from the arrow target, not the hidden value
+      fixture.componentInstance.value.set('c');
+      fixture.detectChanges();
+      tick();
+
+      options[0]!.focus();
+      options[0]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      fixture.detectChanges();
+      tick();
+
+      expect(fixture.componentInstance.mixed()).toBe(false);
+      expect(fixture.componentInstance.value()).toBe('b');
+      expect(options[1]!.getAttribute('aria-checked')).toBe('true');
+      expect(document.activeElement).toBe(options[1]);
+    });
+
+    it('keeps masking across external value writes', () => {
+      fixture.componentInstance.value.set('c');
+      fixture.detectChanges();
+      tick();
+
+      expect(fixture.componentInstance.mixed()).toBe(true);
+
+      for (const option of Array.from(options)) {
+        expect(option.getAttribute('aria-checked')).toBe('false');
+      }
+    });
+  });
+
+  describe('multiple (checkbox pattern)', () => {
+    let fixture: ComponentFixture<MixedMultiSelectTestHost>;
+    let options: NodeListOf<HTMLElement>;
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({ imports: [MixedMultiSelectTestHost] });
+      fixture = TestBed.createComponent(MixedMultiSelectTestHost);
+      fixture.componentInstance.value.set(['a', 'c']);
+      fixture.componentInstance.mixed.set(true);
+      fixture.detectChanges();
+      tick();
+      options = fixture.nativeElement.querySelectorAll('[etSelectionOption]');
+    });
+
+    it('reports no option as checked despite the hidden raw array', () => {
+      for (const option of Array.from(options)) {
+        expect(option.getAttribute('aria-checked')).toBe('false');
+      }
+    });
+
+    it('replaces with a fresh array on first commit — even for a value inside the hidden raw array', () => {
+      // 'a' is part of the hidden raw value; toggling against it would remove it instead
+      options[0]!.click();
+      fixture.detectChanges();
+      tick();
+
+      expect(fixture.componentInstance.mixed()).toBe(false);
+      expect(fixture.componentInstance.value()).toEqual(['a']);
+    });
+
+    it('resumes normal toggling after the first commit', () => {
+      options[1]!.click();
+      fixture.detectChanges();
+      tick();
+
+      expect(fixture.componentInstance.value()).toEqual(['b']);
+
+      options[0]!.click();
+      fixture.detectChanges();
+      tick();
+
+      // the group recomputes the array in option (registry) order, not click order
+      expect(fixture.componentInstance.value()).toEqual(['a', 'b']);
+      expect(fixture.componentInstance.mixed()).toBe(false);
+    });
+
+    it('keeps mixed and the raw array across external value writes', () => {
+      fixture.componentInstance.value.set(['b']);
+      fixture.detectChanges();
+      tick();
+
+      expect(fixture.componentInstance.mixed()).toBe(true);
+      expect(fixture.componentInstance.value()).toEqual(['b']);
+
+      for (const option of Array.from(options)) {
+        expect(option.getAttribute('aria-checked')).toBe('false');
+      }
+    });
+
+    it('shows the select-all control as unchecked while mixed and resolves via toggle-all with every value', () => {
+      const control = fixture.nativeElement.querySelector('[etSelectionListControl]') as HTMLElement;
+
+      expect(control.getAttribute('aria-checked')).toBe('false');
+
+      control.click();
+      fixture.detectChanges();
+      tick();
+
+      expect(fixture.componentInstance.mixed()).toBe(false);
+      expect(fixture.componentInstance.value()).toEqual(['a', 'b', 'c']);
+      expect(control.getAttribute('aria-checked')).toBe('true');
     });
   });
 });

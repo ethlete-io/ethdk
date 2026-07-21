@@ -12,7 +12,9 @@ import { PASSWORD_INPUT_IMPORTS } from '../input.imports';
         <et-label>{{ label() }}</et-label>
         <et-password-input
           #pw="etPasswordInput"
+          [(mixed)]="mixedState"
           [formField]="demoForm.value"
+          [mixedLabel]="mixedLabel()"
           [revealable]="revealable()"
           [capsLockWarning]="capsLockWarning()"
           [placeholder]="placeholder()"
@@ -22,6 +24,10 @@ import { PASSWORD_INPUT_IMPORTS } from '../input.imports';
           <et-hint>{{ hint() }}</et-hint>
         }
       </et-form-field>
+
+      @if (showMixedState()) {
+        <p class="text-sm opacity-60">Mixed: {{ mixedState() }}</p>
+      }
 
       @if (showStrength()) {
         <div class="flex items-center gap-2" aria-hidden="true">
@@ -46,12 +52,17 @@ export class PasswordInputStorybookComponent {
   public hint = input('');
   public placeholder = input('');
   public value = input('');
+  public mixed = input(false);
+  public mixedLabel = input('Mixed');
+  public showMixedState = input(false);
   public revealable = input(true);
   public capsLockWarning = input(false);
   public showStrength = input(false);
   public disabled = input(false);
   public required = input(false);
   public color = input('brand');
+
+  public mixedState = linkedSignal(() => this.mixed());
 
   private formModel = linkedSignal(() => ({ value: this.value() }));
 

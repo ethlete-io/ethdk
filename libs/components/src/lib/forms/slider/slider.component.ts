@@ -25,6 +25,8 @@ import { SliderDirective, SliderThumbDirective, SliderThumbLabelContext, SliderT
       directive: SliderDirective,
       inputs: [
         'value',
+        'mixed',
+        'mixedLabel',
         'touched',
         'disabled',
         'readonly',
@@ -36,7 +38,7 @@ import { SliderDirective, SliderThumbDirective, SliderThumbLabelContext, SliderT
         'max',
         'step',
       ],
-      outputs: ['valueChange', 'touchedChange'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange'],
     },
     { directive: ProvideColorDirective, inputs: ['etProvideColor:color'] },
   ],

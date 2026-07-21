@@ -18,7 +18,10 @@ const PAGE_STEP_MULTIPLIER = 10;
     '[attr.tabindex]': 'slider?.disabled() ? -1 : 0',
     '[attr.aria-valuemin]': 'ariaMin()',
     '[attr.aria-valuemax]': 'ariaMax()',
-    '[attr.aria-valuenow]': 'value()',
+    // a removed aria-valuenow is the ARIA-sanctioned "indeterminate value" — the valuetext
+    // then carries the mixed label so assistive tech announces the bulk-edit state
+    '[attr.aria-valuenow]': 'slider?.mixed() ? null : value()',
+    '[attr.aria-valuetext]': 'slider?.mixed() ? slider?.mixedLabel() : null',
     '[attr.aria-label]': 'label() || null',
     '[attr.aria-labelledby]': 'label() ? null : slider?.labelId()',
     '[attr.aria-describedby]': 'slider?.describedBy()',

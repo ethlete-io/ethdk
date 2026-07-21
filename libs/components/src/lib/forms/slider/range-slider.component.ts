@@ -25,6 +25,8 @@ import { RangeSliderDirective, SliderThumbDirective, SliderThumbLabelContext, Sl
       directive: RangeSliderDirective,
       inputs: [
         'value',
+        'mixed',
+        'mixedLabel',
         'touched',
         'disabled',
         'readonly',
@@ -37,7 +39,7 @@ import { RangeSliderDirective, SliderThumbDirective, SliderThumbLabelContext, Sl
         'step',
         'minDistance',
       ],
-      outputs: ['valueChange', 'touchedChange'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange'],
     },
     { directive: ProvideColorDirective, inputs: ['etProvideColor:color'] },
   ],

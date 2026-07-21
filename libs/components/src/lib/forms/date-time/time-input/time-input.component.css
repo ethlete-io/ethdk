@@ -28,6 +28,14 @@
       }
     }
 
+    /* an unresolved bulk-edit value reads as provisional: the field stays empty and the
+       mixed label shows through its placeholder — stronger than a regular hint (72% vs
+       46%). Consumers restyle via [data-mixed]. */
+    &[data-mixed] .et-time-input-field::placeholder {
+      font-style: italic;
+      color: color-mix(in srgb, currentColor 72%, transparent);
+    }
+
     .et-time-input-clear {
       display: inline-flex;
       align-items: center;

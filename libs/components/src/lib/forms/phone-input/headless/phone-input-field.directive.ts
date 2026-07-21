@@ -12,7 +12,7 @@ import { PhoneInputDirective } from './phone-input.directive';
     type: 'tel',
     autocomplete: 'tel',
     inputmode: 'tel',
-    '[attr.placeholder]': 'phoneInput?.placeholder() || null',
+    '[attr.placeholder]': 'phoneInput?.effectivePlaceholder() || null',
     '[attr.aria-required]': 'phoneInput?.required() || null',
     '[attr.aria-invalid]': 'phoneInput?.shouldDisplayError() || null',
     '[attr.aria-describedby]': 'phoneInput?.describedBy() || null',

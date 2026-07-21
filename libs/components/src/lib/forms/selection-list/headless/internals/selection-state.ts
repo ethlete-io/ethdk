@@ -18,6 +18,15 @@ export type SelectionStateConfig<TValue = unknown> = {
    * a removed option is genuinely gone and opts in.
    */
   pruneValueOnUnregister?: boolean;
+  /**
+   * Mixed (bulk-edit) view state. While `true`, the value↔items sync masks every item to
+   * unchecked — the raw `value` stays untouched but nothing reports as checked. The first
+   * user commit (`select` / `toggleAll`) REPLACES the value (single → that value, multiple →
+   * a fresh array; never a toggle against the hidden raw value) and resolves the flag to
+   * `false`. External `value` writes never resolve it. Omit for controls without a mixed
+   * state — the select family masks pull-based in its own layer instead.
+   */
+  mixed?: WritableSignal<boolean>;
 };
 
 export type SelectionState<TValue = unknown, TItem extends SelectionStateItem<TValue> = SelectionStateItem<TValue>> = {
@@ -84,6 +93,9 @@ export const createSelectionState = <
   effect(() => {
     const currentValue = config.value();
     const currentItems = items();
+    // tracked: entering/leaving mixed must re-run the sync (masking on, or restoring the
+    // checked states the raw value implies once mixed resolves)
+    const isMixed = config.mixed?.() ?? false;
 
     if (currentItems.length === 0) {
       return;
@@ -95,6 +107,15 @@ export const createSelectionState = <
     const syncEntries = currentItems.map((item) => ({ item, itemValue: item.value() }));
 
     untracked(() => {
+      // mixed masks: the raw value is preserved but no item may report it as checked
+      if (isMixed) {
+        for (const { item } of syncEntries) {
+          item.checked.set(false);
+        }
+
+        return;
+      }
+
       if (config.multiple()) {
         const valueArray = Array.isArray(currentValue) ? currentValue : [];
 
@@ -123,9 +144,11 @@ export const createSelectionState = <
     }
 
     // defer to a microtask so a full teardown (which unregisters every item) is skipped via the
-    // `destroyed` guard, while a single-option removal (@for churn, owner still alive) reconciles
+    // `destroyed` guard, while a single-option removal (@for churn, owner still alive) reconciles.
+    // While mixed the raw value is a preserved snapshot the (masked) items don't reflect —
+    // recomputing from checked states would clobber it, so pruning pauses.
     queueMicrotask(() => {
-      if (destroyed) {
+      if (destroyed || config.mixed?.()) {
         return;
       }
 
@@ -141,6 +164,19 @@ export const createSelectionState = <
 
   const select = (item: TItem) => {
     if (config.disabled() || item.disabled()) {
+      return;
+    }
+
+    // the first commit over a mixed value REPLACES — checked states are recomputed from
+    // scratch (never toggled against the hidden raw value) and the flag resolves
+    if (config.mixed?.()) {
+      for (const i of items()) {
+        i.checked.set(i === item);
+      }
+
+      config.value.set(config.multiple() ? [item.value()] : item.value());
+      config.mixed.set(false);
+
       return;
     }
 
@@ -162,6 +198,23 @@ export const createSelectionState = <
 
   const toggleAll = () => {
     if (config.disabled()) {
+      return;
+    }
+
+    // over a mixed value "select all" is a REPLACE commit: check every enabled item outright
+    // (nothing counts as selected while mixed) and resolve the flag
+    if (config.mixed?.()) {
+      for (const item of items()) {
+        item.checked.set(!item.disabled());
+      }
+
+      config.value.set(
+        items()
+          .filter((i) => i.checked())
+          .map((i) => i.value()),
+      );
+      config.mixed.set(false);
+
       return;
     }
 

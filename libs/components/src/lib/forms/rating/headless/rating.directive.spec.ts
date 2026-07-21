@@ -2,6 +2,8 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
 import '../../../../test-helpers';
+import { describeMixedStateContract } from '../../testing/mixed-state-contract';
+import { RatingDirective } from './rating.directive';
 import { RATING_IMPORTS } from '../rating.imports';
 
 const TEST_COLOR_THEMES = [
@@ -45,17 +47,22 @@ const TEST_COLOR_THEMES = [
   template: `
     <et-rating
       [value]="value()"
+      [mixed]="mixed()"
+      [mixedLabel]="mixedLabel()"
       [allowHalf]="allowHalf()"
       [disabled]="disabled()"
       [readonly]="readonly()"
       [max]="4"
       (valueChange)="value.set($event)"
+      (mixedChange)="mixed.set($event)"
     />
   `,
   imports: [RATING_IMPORTS],
 })
 class RatingTestHost {
   value = signal<number | null>(null);
+  mixed = signal(false);
+  mixedLabel = signal('Mixed');
   allowHalf = signal(false);
   disabled = signal(false);
   readonly = signal(false);
@@ -184,5 +191,135 @@ describe('RatingDirective', () => {
     keydown('ArrowRight');
     expect(fixture.componentInstance.value()).toBeNull();
     expect(host.getAttribute('tabindex')).toBe('0');
+  });
+
+  describe('mixed', () => {
+    beforeEach(() => {
+      fixture.componentInstance.value.set(3);
+      fixture.componentInstance.mixed.set(true);
+      fixture.detectChanges();
+    });
+
+    it('fills no icons, removes aria-valuenow and announces the mixed label', () => {
+      expect(fillVars()).toEqual({ icons: '0', gaps: '0' });
+      expect(host.hasAttribute('aria-valuenow')).toBe(false);
+      expect(host.getAttribute('aria-valuetext')).toBe('Mixed');
+      expect(host.getAttribute('data-mixed')).toBe('true');
+
+      fixture.componentInstance.mixedLabel.set('Different ratings');
+      fixture.detectChanges();
+
+      expect(host.getAttribute('aria-valuetext')).toBe('Different ratings');
+    });
+
+    it('keeps the hover preview working over the masked value', () => {
+      const rating = fixture.debugElement.children[0]!.injector.get(RatingDirective);
+
+      rating.setHoverValue(2);
+      fixture.detectChanges();
+
+      expect(fillVars()).toEqual({ icons: '2', gaps: '1' });
+
+      rating.clearHover();
+      fixture.detectChanges();
+
+      expect(fillVars()).toEqual({ icons: '0', gaps: '0' });
+      expect(fixture.componentInstance.mixed()).toBe(true);
+    });
+
+    it('always commits a pick — even the hidden raw value — instead of clearing by repick', () => {
+      icons()[2]!.click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.value()).toBe(3);
+      expect(fixture.componentInstance.mixed()).toBe(false);
+      expect(host.getAttribute('aria-valuenow')).toBe('3');
+
+      // resolved — the normal clear-by-repick behavior is back
+      icons()[2]!.click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.value()).toBeNull();
+    });
+
+    it('starts keyboard steps from the visible zero and resolves on the first write', () => {
+      keydown('ArrowRight');
+
+      expect(fixture.componentInstance.value()).toBe(1);
+      expect(fixture.componentInstance.mixed()).toBe(false);
+    });
+
+    it('clears to null and resolves via Backspace or Delete', () => {
+      keydown('Delete');
+
+      expect(fixture.componentInstance.value()).toBeNull();
+      expect(fixture.componentInstance.mixed()).toBe(false);
+      expect(host.getAttribute('aria-valuetext')).toBe('No rating');
+    });
+
+    it('stays mixed across external value writes and ignored interactions', () => {
+      fixture.componentInstance.value.set(2);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.mixed()).toBe(true);
+      expect(fillVars()).toEqual({ icons: '0', gaps: '0' });
+
+      fixture.componentInstance.readonly.set(true);
+      fixture.detectChanges();
+
+      icons()[1]!.click();
+      keydown('ArrowRight');
+
+      expect(fixture.componentInstance.mixed()).toBe(true);
+      expect(fixture.componentInstance.value()).toBe(2);
+    });
+  });
+});
+
+describe('RatingDirective (mixed contract)', () => {
+  describeMixedStateContract(() => {
+    TestBed.configureTestingModule({
+      imports: [RatingTestHost],
+      providers: [provideColorThemes(TEST_COLOR_THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(RatingTestHost);
+
+    fixture.detectChanges();
+
+    const hostElement = fixture.nativeElement.querySelector('et-rating') as HTMLElement;
+    const icons = () =>
+      Array.from(hostElement.querySelectorAll<HTMLElement>('.et-rating-row:first-of-type .et-rating-icon'));
+
+    return {
+      enterMixed: () => {
+        fixture.componentInstance.value.set(3);
+        fixture.componentInstance.mixed.set(true);
+        fixture.detectChanges();
+      },
+      rawValue: () => 3,
+      value: () => fixture.componentInstance.value(),
+      mixed: () => fixture.componentInstance.mixed(),
+      hostElement: () => hostElement,
+      writeValueExternally: () => {
+        fixture.componentInstance.value.set(1);
+        fixture.detectChanges();
+      },
+      externallyWrittenValue: () => 1,
+      commit: () => {
+        icons()[1]!.click();
+        fixture.detectChanges();
+      },
+      committedValue: () => 2,
+      assertMasked: () => {
+        expect(hostElement.hasAttribute('aria-valuenow')).toBe(false);
+        expect(hostElement.getAttribute('aria-valuetext')).toBe('Mixed');
+      },
+      clear: () => {
+        hostElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
+        fixture.detectChanges();
+      },
+      emptyValue: () => null,
+    };
   });
 });

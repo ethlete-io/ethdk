@@ -1,3 +1,4 @@
+import { JsonPipe } from '@angular/common';
 import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
 import { disabled, form, FormField, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
@@ -9,7 +10,7 @@ import { SegmentedButtonComponent } from '../segmented-button.component';
   selector: 'et-sb-segmented-button-group',
   template: `
     <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
-      <et-segmented-button-group [formField]="demoForm.viewMode" [size]="size()">
+      <et-segmented-button-group [(mixed)]="mixedState" [formField]="demoForm.viewMode" [size]="size()">
         <et-label>{{ label() }}</et-label>
 
         @for (option of options(); track option.value) {
@@ -19,6 +20,13 @@ import { SegmentedButtonComponent } from '../segmented-button.component';
           <et-hint>{{ hint() }}</et-hint>
         }
       </et-segmented-button-group>
+
+      @if (showMixedState()) {
+        <div class="text-sm opacity-60">
+          <p>Raw form value: {{ demoForm.viewMode().value() | json }}</p>
+          <p>Mixed: {{ mixedState() }}</p>
+        </div>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -26,6 +34,7 @@ import { SegmentedButtonComponent } from '../segmented-button.component';
     SegmentedButtonGroupComponent,
     SegmentedButtonComponent,
     FormField,
+    JsonPipe,
     ProvideColorDirective,
     HintComponent,
     LabelDirective,
@@ -34,6 +43,9 @@ import { SegmentedButtonComponent } from '../segmented-button.component';
 export class SegmentedButtonGroupStorybookComponent {
   public label = input('View mode');
   public hint = input('');
+  public value = input<string | null>('list');
+  public mixed = input(false);
+  public showMixedState = input(false);
   public disabled = input(false);
   public required = input(false);
   public color = input('brand');
@@ -45,7 +57,9 @@ export class SegmentedButtonGroupStorybookComponent {
     { value: 'table', label: 'Table' },
   ]);
 
-  private formModel = linkedSignal(() => ({ viewMode: 'list' as string | null }));
+  public mixedState = linkedSignal(() => this.mixed());
+
+  private formModel = linkedSignal(() => ({ viewMode: this.value() }));
 
   public demoForm = form(this.formModel, (s) => {
     disabled(s, () => this.disabled());

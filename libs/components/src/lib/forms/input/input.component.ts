@@ -16,6 +16,8 @@ import { InputDirective } from './headless';
         'autocomplete',
         'textAlign',
         'value',
+        'mixed',
+        'mixedLabel',
         'disabled',
         'readonly',
         'hidden',
@@ -24,7 +26,7 @@ import { InputDirective } from './headless';
         'required',
         'name',
       ],
-      outputs: ['valueChange', 'touchedChange'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange'],
     },
     ColorInteractiveDirective,
   ],
@@ -48,6 +50,6 @@ export class InputComponent {
   }
 
   public syncNativeValue(event: Event) {
-    this.inputDir.value.set((event.target as HTMLInputElement).value);
+    this.inputDir.syncFromNativeInput(event.target as HTMLInputElement);
   }
 }

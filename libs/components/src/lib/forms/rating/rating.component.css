@@ -122,6 +122,16 @@
       color: var(--et-theme-color-primary-solid, currentColor);
     }
 
+    /* an unresolved bulk-edit rating fills nothing — dimming the outlines below the
+       normal empty strength makes that read as "unset", not "zero stars". Hovered
+       previews keep their full state colors. Consumers restyle via [data-mixed]. */
+    &[data-mixed] {
+      .et-rating-icon-base,
+      .et-rating-icon[data-state='empty'] {
+        color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 18%, transparent);
+      }
+    }
+
     /* custom icon templates render per-step — expose the state for their own styling */
     .et-rating-icon[data-state] {
       color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 32%, transparent);

@@ -2,7 +2,9 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
 import '../../../../test-helpers';
+import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { TAG_INPUT_IMPORTS } from '../tag-input.imports';
+import { TagInputDirective } from './tag-input.directive';
 
 const TEST_COLOR_THEMES = [
   {
@@ -31,7 +33,9 @@ const TEST_COLOR_THEMES = [
       [allowDuplicates]="allowDuplicates()"
       [maxTags]="maxTags()"
       [disabled]="disabled()"
+      [mixed]="mixed()"
       (valueChange)="value.set($event)"
+      (mixedChange)="mixed.set($event)"
       placeholder="Add tags"
     />
   `,
@@ -42,6 +46,7 @@ class TagInputTestHost {
   allowDuplicates = signal(false);
   maxTags = signal<number | undefined>(undefined);
   disabled = signal(false);
+  mixed = signal(false);
 }
 
 describe('TagInputDirective', () => {
@@ -167,5 +172,129 @@ describe('TagInputDirective', () => {
 
     expect(fixture.componentInstance.value()).toEqual(['one']);
     expect(field.disabled).toBe(true);
+  });
+
+  describe('mixed', () => {
+    const enterMixed = (raw: string[]) => {
+      fixture.componentInstance.value.set(raw);
+      fixture.componentInstance.mixed.set(true);
+      fixture.detectChanges();
+    };
+
+    it('hides the chips and shows the mixedLabel as placeholder while the raw value survives', () => {
+      enterMixed(['one', 'two']);
+
+      expect(chips()).toEqual([]);
+      expect(field.getAttribute('placeholder')).toBe('Mixed');
+      expect(fixture.componentInstance.value()).toEqual(['one', 'two']);
+    });
+
+    it('replaces the hidden raw value with the first committed tag, then appends normally', () => {
+      enterMixed(['one', 'two']);
+
+      typeAndKey('fresh', 'Enter');
+
+      expect(fixture.componentInstance.value()).toEqual(['fresh']);
+      expect(fixture.componentInstance.mixed()).toBe(false);
+
+      typeAndKey('next', 'Enter');
+
+      expect(fixture.componentInstance.value()).toEqual(['fresh', 'next']);
+    });
+
+    it('checks duplicates against the fresh set, not the hidden raw value', () => {
+      enterMixed(['alpha']);
+
+      typeAndKey('alpha', 'Enter');
+
+      expect(fixture.componentInstance.value()).toEqual(['alpha']);
+      expect(fixture.componentInstance.mixed()).toBe(false);
+    });
+
+    it('ignores Backspace on the empty field and removeLast while mixed', () => {
+      enterMixed(['one', 'two']);
+
+      const tagInput = fixture.debugElement.children[0]!.injector.get(TagInputDirective);
+
+      field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.value()).toEqual(['one', 'two']);
+      expect(fixture.componentInstance.mixed()).toBe(true);
+
+      tagInput.removeLast();
+      tagInput.removeAt(0);
+      tagInput.remove('one');
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.value()).toEqual(['one', 'two']);
+      expect(fixture.componentInstance.mixed()).toBe(true);
+    });
+
+    it('evaluates maxTags against the effective (empty) selection while mixed', () => {
+      fixture.componentInstance.maxTags.set(2);
+      enterMixed(['one', 'two']);
+
+      const tagInput = fixture.debugElement.children[0]!.injector.get(TagInputDirective);
+
+      expect(tagInput.isFull()).toBe(false);
+      expect(field.readOnly).toBe(false);
+
+      typeAndKey('fresh', 'Enter');
+
+      expect(fixture.componentInstance.value()).toEqual(['fresh']);
+    });
+
+    it('preserves mixed across external value writes', () => {
+      enterMixed(['one']);
+
+      fixture.componentInstance.value.set(['server']);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.mixed()).toBe(true);
+      expect(chips()).toEqual([]);
+    });
+  });
+});
+
+describe('TagInputDirective (contract)', () => {
+  describeMixedStateContract(() => {
+    TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+
+    const fixture = TestBed.createComponent(TagInputTestHost);
+
+    fixture.detectChanges();
+
+    const field = fixture.nativeElement.querySelector('.et-tag-input-field') as HTMLInputElement;
+
+    return {
+      enterMixed: () => {
+        fixture.componentInstance.value.set(['one', 'two']);
+        fixture.componentInstance.mixed.set(true);
+        fixture.detectChanges();
+      },
+      rawValue: () => ['one', 'two'],
+      value: () => fixture.componentInstance.value(),
+      mixed: () => fixture.componentInstance.mixed(),
+      hostElement: () => fixture.nativeElement.querySelector('et-tag-input') as HTMLElement,
+      writeValueExternally: () => {
+        fixture.componentInstance.value.set(['three']);
+        fixture.detectChanges();
+      },
+      externallyWrittenValue: () => ['three'],
+      commit: () => {
+        field.value = 'fresh';
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+        field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        fixture.detectChanges();
+      },
+      // replace semantics: a fresh array around the committed tag, not an append
+      committedValue: () => ['fresh'],
+      assertMasked: () => {
+        expect(fixture.nativeElement.querySelectorAll('et-chip').length).toBe(0);
+        expect(field.getAttribute('placeholder')).toBe('Mixed');
+      },
+      // no clear affordance — the tag input has no clear-all control
+    };
   });
 });

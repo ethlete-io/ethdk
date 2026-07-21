@@ -14,6 +14,9 @@ export default {
     placeholder: { control: 'text' },
     hint: { control: 'text' },
     value: { control: 'text' },
+    mixed: { control: 'boolean' },
+    mixedLabel: { control: 'text' },
+    showMixedState: { control: false, table: { disable: true } },
     rows: { control: 'number' },
     autosize: { control: 'boolean' },
     minRows: { control: 'number' },
@@ -32,6 +35,9 @@ export default {
     placeholder: 'Write something…',
     hint: '',
     value: '',
+    mixed: false,
+    mixedLabel: 'Mixed',
+    showMixedState: false,
     rows: 3,
     autosize: true,
     minRows: null,
@@ -46,6 +52,16 @@ export default {
 type Story = StoryObj<FormFieldTextareaStorybookComponent>;
 
 export const Default: Story = {};
+
+export const Mixed: Story = {
+  args: {
+    value: 'A shared description that differs between the selected records.',
+    mixed: true,
+    mixedLabel: 'Mixed values',
+    showMixedState: true,
+    hint: 'The raw value stays hidden and intact until typing commits a replacement; the mixed label shows as the placeholder.',
+  },
+};
 
 export const FixedWithMaxRows: Story = {
   args: {

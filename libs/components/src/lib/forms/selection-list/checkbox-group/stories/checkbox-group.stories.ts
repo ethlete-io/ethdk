@@ -8,6 +8,9 @@ export default {
   argTypes: {
     label: { control: 'text' },
     hint: { control: 'text' },
+    value: { control: 'object' },
+    mixed: { control: 'boolean' },
+    showMixedState: { control: false, table: { disable: true } },
     disabled: { control: 'boolean' },
     required: { control: 'boolean' },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
@@ -17,6 +20,9 @@ export default {
   args: {
     label: 'Select toppings',
     hint: '',
+    value: [],
+    mixed: false,
+    showMixedState: false,
     disabled: false,
     required: false,
     color: 'brand',
@@ -28,6 +34,15 @@ export default {
 type Story = StoryObj<CheckboxGroupStorybookComponent>;
 
 export const Default: Story = {};
+
+export const Mixed: Story = {
+  args: {
+    value: ['cheese', 'mushrooms'],
+    mixed: true,
+    showMixedState: true,
+    hint: 'Bulk edit over records that disagree — no box reads as checked; the first pick replaces the hidden raw array with a fresh one.',
+  },
+};
 
 export const GroupControl: Story = {
   args: {

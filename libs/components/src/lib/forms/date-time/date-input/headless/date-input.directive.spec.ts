@@ -2,6 +2,7 @@ import { ApplicationRef, Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../../test-helpers';
 import { InputMaskDirective } from '../../../masked-input/headless';
+import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { DateInputFieldDirective } from './date-input-field.directive';
@@ -9,7 +10,7 @@ import { DateInputDirective } from './date-input.directive';
 
 @Component({
   template: `
-    <div [(value)]="value" [disabled]="disabled()" valueFormat="yyyy-MM-dd" etDateInput>
+    <div [(value)]="value" [(mixed)]="mixed" [disabled]="disabled()" valueFormat="yyyy-MM-dd" etDateInput>
       <input etDateInputField />
       <button class="open-picker" etDatePickerTrigger>open</button>
 
@@ -22,6 +23,7 @@ import { DateInputDirective } from './date-input.directive';
 })
 class DateInputTestHost {
   value = signal<string | null>(null);
+  mixed = signal(false);
   disabled = signal(false);
   pickDate = new Date(2026, 6, 16);
 }
@@ -207,6 +209,117 @@ describe('DateInputDirective', () => {
     tick();
 
     expect(dateInput.pickerOpen()).toBe(false);
+  });
+
+  describe('mixed (bulk edit)', () => {
+    const enterMixed = () => {
+      host.value.set('2026-03-05');
+      host.mixed.set(true);
+      tick();
+    };
+
+    it('renders the field empty with the mixed label as placeholder', () => {
+      enterMixed();
+
+      expect(field.value).toBe('');
+      expect(field.getAttribute('placeholder')).toBe('Mixed');
+      expect(dateInput.displayValue()).toBe('');
+      expect(dateInput.hasValue()).toBe(true);
+    });
+
+    it('keeps mixed and the raw value on a failed typed parse', () => {
+      enterMixed();
+      typeAndBlur('not a date');
+
+      expect(host.mixed()).toBe(true);
+      expect(host.value()).toBe('2026-03-05');
+      expect(dateInput.parseError()).toBe(true);
+      expect(field.value).toBe('not a date');
+    });
+
+    it('keeps mixed and the raw value on a blank blur commit', () => {
+      enterMixed();
+      typeAndBlur('');
+
+      expect(host.mixed()).toBe(true);
+      expect(host.value()).toBe('2026-03-05');
+    });
+
+    it('gives the picker no selected date and leaves mixed set on open; a pick replaces and resolves', async () => {
+      enterMixed();
+
+      expect(dateInput.date()).toBeNull();
+
+      await openPicker();
+
+      expect(host.mixed()).toBe(true);
+      expect(dateInput.pickerOpen()).toBe(true);
+
+      pickButton()?.click();
+      tick();
+      await flushFrames();
+      tick();
+
+      expect(host.mixed()).toBe(false);
+      expect(host.value()).toBe('2026-07-16');
+      expect(field.value).toBe('07/16/2026');
+    });
+  });
+});
+
+describe('DateInputDirective mixed state', () => {
+  describeMixedStateContract(() => {
+    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
+
+    TestBed.configureTestingModule({ imports: [DateInputTestHost] });
+
+    const fixture = TestBed.createComponent(DateInputTestHost);
+
+    fixture.detectChanges();
+
+    const dateInput = fixture.debugElement.children[0]!.injector.get(DateInputDirective);
+    const field = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    const tick = () => TestBed.inject(ApplicationRef).tick();
+
+    const typeAndBlur = (text: string) => {
+      field.focus();
+      field.value = text;
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+      tick();
+      field.blur();
+      field.dispatchEvent(new Event('blur'));
+      tick();
+    };
+
+    return {
+      enterMixed: () => {
+        fixture.componentInstance.value.set('2026-03-05');
+        fixture.componentInstance.mixed.set(true);
+        tick();
+      },
+      rawValue: () => '2026-03-05',
+      value: () => fixture.componentInstance.value(),
+      mixed: () => fixture.componentInstance.mixed(),
+      hostElement: () => fixture.debugElement.children[0]!.nativeElement as HTMLElement,
+      writeValueExternally: () => {
+        fixture.componentInstance.value.set('2026-01-01');
+        tick();
+      },
+      externallyWrittenValue: () => '2026-01-01',
+      commit: () => typeAndBlur('07/20/2026'),
+      committedValue: () => '2026-07-20',
+      assertMasked: () => {
+        expect(dateInput.date()).toBeNull();
+        expect(dateInput.displayValue()).toBe('');
+        expect(field.value).toBe('');
+        expect(field.getAttribute('placeholder')).toBe('Mixed');
+      },
+      clear: () => {
+        dateInput.clearValue();
+        tick();
+      },
+      emptyValue: () => null,
+    };
   });
 });
 

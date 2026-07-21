@@ -47,6 +47,9 @@ type SideState = {
   selector: '[etDateRangeInput]',
   exportAs: 'etDateRangeInput',
   providers: [{ provide: DATE_PICKER_HOST, useExisting: DateRangeInputDirective }],
+  host: {
+    '[attr.data-mixed]': 'mixed() || null',
+  },
 })
 export class DateRangeInputDirective implements FormValueControl<DateRangeValue>, FormFieldControl, DatePickerHost {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
@@ -57,6 +60,11 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
 
   /** Wire values in `valueFormat`; a side is `null` while empty/unparseable. */
   public value = model<DateRangeValue>({ start: null, end: null });
+  /**
+   * View state for a field whose source values disagree (bulk edit). One flag masks
+   * the whole range value — not per side. The raw form value stays untouched.
+   */
+  public mixed = model(false);
   public touched = model(false);
   public disabled = input(false);
   public readonly = input(false);
@@ -66,6 +74,12 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
   public name = input('');
   public startPlaceholder = input('');
   public endPlaceholder = input('');
+  /**
+   * Placeholder both fields show while `mixed` is set. Presentation only — a masked
+   * date field cannot render arbitrary text, so the fields stay empty and the label
+   * shows through the placeholder slot; it never enters the form value.
+   */
+  public mixedLabel = input('Mixed');
 
   /** Message the form field shows when either side's typed text can't be parsed as a date. */
   public parseErrorMessage = input('Please enter a valid date range');
@@ -104,8 +118,10 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
     end: { inputText: signal(''), parseError: signal(false), field: signal(null) },
   };
 
-  public startDate = computed(() => this.parseSide(this.value().start));
-  public endDate = computed(() => this.parseSide(this.value().end));
+  // masking: while mixed the hidden raw range is neither rendered in the fields
+  // (displayValue derives from here) nor highlighted in the picker calendar
+  public startDate = computed(() => (this.mixed() ? null : this.parseSide(this.value().start)));
+  public endDate = computed(() => (this.mixed() ? null : this.parseSide(this.value().end)));
 
   /** What the picker calendar binds to (`Date` objects, day-granular use). */
   public calendarRange = computed(() => ({ start: this.startDate(), end: this.endDate() }));
@@ -126,6 +142,10 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
   public interactive = computed(() => !this.disabled() && !this.readonly());
 
   public hasValue = computed(() => {
+    if (this.mixed()) {
+      return true;
+    }
+
     const { start, end } = this.value();
 
     return (
@@ -196,8 +216,9 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
       return;
     }
 
-    // the first empty side, else start — mirrors where the next interaction lands
-    const target = this.value().start === null || this.value().end !== null ? 'start' : 'end';
+    // the first empty side, else start — mirrors where the next interaction lands.
+    // While mixed both fields read as empty, so a fresh entry starts at the start side
+    const target = this.mixed() || this.value().start === null || this.value().end !== null ? 'start' : 'end';
 
     this.sides[target].field()?.focus();
   }
@@ -238,7 +259,12 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
     if (!raw.trim()) {
       state.inputText.set('');
       state.parseError.set(false);
-      this.writeSide(side, null);
+
+      // while mixed the fields are empty anyway — a blank commit is a plain blur, not a
+      // user clear, so the hidden raw range survives
+      if (!this.mixed()) {
+        this.writeSide(side, null);
+      }
 
       return;
     }
@@ -254,17 +280,30 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
     if (parsed === null) {
       state.inputText.set(raw);
       state.parseError.set(true);
-      this.writeSide(side, null);
+
+      // a failed parse resolves nothing: mixed stays set and the masked raw range untouched
+      if (!this.mixed()) {
+        this.writeSide(side, null);
+      }
 
       return;
     }
 
     state.inputText.set('');
     state.parseError.set(false);
-    this.writeSide(
-      side,
-      formatDateValue(parsed, { format: this.effectiveValueFormat(), locale: this.effectiveLocale() }),
-    );
+
+    const formatted = formatDateValue(parsed, { format: this.effectiveValueFormat(), locale: this.effectiveLocale() });
+
+    // replace semantics: the first resolving commit starts a fresh range — the hidden
+    // other side must not leak into the new value
+    if (this.mixed()) {
+      this.value.set({ start: null, end: null, [side]: formatted });
+      this.mixed.set(false);
+
+      return;
+    }
+
+    this.writeSide(side, formatted);
   }
 
   /** Commits a picker range; a completed range closes the picker. */
@@ -284,6 +323,9 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
       start: range.start === null ? null : formatDateValue(range.start, options),
       end: range.end === null ? null : formatDateValue(range.end, options),
     });
+    // the calendar showed no selection while mixed, so this is the normal range-building
+    // flow starting fresh — the first pick already replaces the whole hidden range
+    this.mixed.set(false);
 
     if (range.start !== null && range.end !== null) {
       this.touched.set(true);

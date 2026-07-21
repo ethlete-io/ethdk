@@ -8,6 +8,9 @@ export default {
   argTypes: {
     label: { control: 'text' },
     hint: { control: 'text' },
+    value: { control: 'select', options: [null, 'list', 'grid', 'table'] },
+    mixed: { control: 'boolean' },
+    showMixedState: { control: false, table: { disable: true } },
     disabled: { control: 'boolean' },
     required: { control: 'boolean' },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
@@ -16,6 +19,9 @@ export default {
   args: {
     label: 'View mode',
     hint: '',
+    value: 'list',
+    mixed: false,
+    showMixedState: false,
     disabled: false,
     required: false,
     color: 'brand',
@@ -26,3 +32,12 @@ export default {
 type Story = StoryObj<SegmentedButtonGroupStorybookComponent>;
 
 export const Default: Story = {};
+
+export const Mixed: Story = {
+  args: {
+    value: 'grid',
+    mixed: true,
+    showMixedState: true,
+    hint: 'Bulk edit over records that disagree — no segment reads as selected until a user picks one, which replaces the hidden raw value.',
+  },
+};

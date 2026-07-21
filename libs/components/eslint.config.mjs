@@ -31,7 +31,9 @@ export default [
     files: ['**/*.ts'],
     // Generators are Node/nx tooling scripts, not Angular library code — the Angular/RxJS
     // styleguide (no function declarations, no async/await, etc.) does not apply to them.
-    ignores: ['**/*.spec.ts', '**/*.test.ts', '**/test-helpers.ts', '**/generators/**'],
+    // `testing/` holds spec-only helpers (excluded from the lib build) that run inside the
+    // test harness, so they share the spec exemption — async/await et al. are fine there.
+    ignores: ['**/*.spec.ts', '**/*.test.ts', '**/test-helpers.ts', '**/testing/**', '**/generators/**'],
     rules: {
       ...ethlete.configs.recommendedTs.rules,
       // Angular selector conventions (project-specific)

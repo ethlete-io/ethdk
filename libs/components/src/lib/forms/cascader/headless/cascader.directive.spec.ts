@@ -2,6 +2,7 @@ import { ApplicationRef, Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
 import '../../../../test-helpers';
+import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { CASCADER_IMPORTS } from '../cascader.imports';
 import { CascaderDirective } from './cascader.directive';
 import { CascaderDataSource, CascaderNode } from './internals/cascader-tree';
@@ -101,12 +102,14 @@ const deepSource: CascaderDataSource<string> = {
   template: `
     <et-cascader
       [value]="value()"
+      [mixed]="mixed()"
       [dataSource]="dataSource()"
       [selectableLevels]="selectableLevels()"
       [disabled]="disabled()"
       [multiple]="multiple()"
       [maxVisibleColumns]="maxVisibleColumns()"
       (valueChange)="value.set($event)"
+      (mixedChange)="mixed.set($event)"
       (touchedChange)="touched.set($event)"
       placeholder="Pick a match"
     />
@@ -115,6 +118,7 @@ const deepSource: CascaderDataSource<string> = {
 })
 class CascaderTestHost {
   value = signal<string | string[] | null>(null);
+  mixed = signal(false);
   touched = signal(false);
   disabled = signal(false);
   multiple = signal(false);
@@ -888,5 +892,237 @@ describe('CascaderDirective', () => {
     tick();
 
     expect(nodesIn(0).length).toBe(3);
+  });
+
+  describe('mixed', () => {
+    it('shows the mixed label instead of the breadcrumb and reopens at the root', async () => {
+      await open();
+      nodeByLabel('Euro')!.click();
+      tick();
+      nodeByLabel('Group stage')!.click();
+      tick();
+      nodeByLabel('Group A')!.click();
+      tick();
+      await flushFrames();
+      expect(cascader.displayValue()).toBe('Euro / Group stage / Group A');
+
+      fixture.componentInstance.mixed.set(true);
+      fixture.detectChanges();
+
+      expect(cascader.displayValue()).toBe('Mixed');
+      expect(trigger.textContent).toContain('Mixed');
+      // the raw value and its chain survive masking untouched
+      expect(fixture.componentInstance.value()).toBe('euro-group-a');
+      expect(cascader.pathValue()).toEqual(['euro', 'euro-group', 'euro-group-a']);
+
+      await open();
+
+      // the hidden branch is not re-opened, and nothing reports selected
+      expect(columns().length).toBe(1);
+      expect(nodeByLabel('Euro')!.getAttribute('aria-selected')).toBe('false');
+      expect(pane()!.querySelectorAll('[data-selected]').length).toBe(0);
+    });
+
+    it('masks multi selection checkmarks and indeterminate dashes while mixed', async () => {
+      fixture.componentInstance.multiple.set(true);
+      fixture.detectChanges();
+
+      await open();
+      nodeByLabel('Euro')!.click();
+      tick();
+      nodeByLabel('Group stage')!.click();
+      tick();
+      nodeByLabel('Group A')!.click();
+      tick();
+      expect(nodeByLabel('Group A')!.getAttribute('data-selected')).toBe('true');
+
+      fixture.componentInstance.mixed.set(true);
+      fixture.detectChanges();
+      tick();
+
+      expect(nodeByLabel('Group A')!.hasAttribute('data-selected')).toBe(false);
+      expect(nodeByLabel('Group A')!.getAttribute('aria-selected')).toBe('false');
+      expect(nodeByLabel('Group stage')!.hasAttribute('data-indeterminate')).toBe(false);
+      expect(nodeByLabel('Euro')!.hasAttribute('data-indeterminate')).toBe(false);
+      expect(cascader.displayValue()).toBe('Mixed');
+      // masking is presentation only — the raw array is preserved
+      expect(fixture.componentInstance.value()).toEqual(['euro-group-a']);
+    });
+
+    it('replaces the hidden multi selection on the first toggle, then toggles normally', async () => {
+      fixture.componentInstance.multiple.set(true);
+      fixture.componentInstance.value.set(['euro-group-a', 'world-final']);
+      fixture.componentInstance.mixed.set(true);
+      fixture.detectChanges();
+
+      await open();
+      nodeByLabel('Euro')!.click();
+      tick();
+      nodeByLabel('Group stage')!.click();
+      tick();
+      // "Group A" is part of the hidden raw selection — the first commit must still SELECT it
+      // into a fresh array, never toggle it away against the hidden value
+      nodeByLabel('Group A')!.click();
+      tick();
+
+      expect(fixture.componentInstance.value()).toEqual(['euro-group-a']);
+      expect(fixture.componentInstance.mixed()).toBe(false);
+      expect(nodeByLabel('Group A')!.getAttribute('data-selected')).toBe('true');
+
+      // later commits behave normally again
+      nodeByLabel('Group B')!.click();
+      tick();
+
+      expect(fixture.componentInstance.value()).toEqual(['euro-group-a', 'euro-group-b']);
+    });
+
+    it('keeps mixed through searching and query deletion, resolving only on a result commit', async () => {
+      fixture.componentInstance.dataSource.set(searchableSource);
+      fixture.componentInstance.value.set('world-final');
+      fixture.componentInstance.mixed.set(true);
+      fixture.detectChanges();
+
+      await open();
+      expect(fixture.componentInstance.mixed()).toBe(true);
+
+      const input = pane()!.querySelector<HTMLInputElement>('.et-cascader-search input')!;
+      const typeQuery = async (query: string) => {
+        input.value = query;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        tick();
+        await flushFrames();
+        tick();
+      };
+
+      await typeQuery('group a');
+
+      const results = Array.from(pane()!.querySelectorAll<HTMLElement>('[role="option"]'));
+
+      expect(results.length).toBe(1);
+      expect(fixture.componentInstance.mixed()).toBe(true);
+
+      // deleting the query (keyboard erase) never mass-clears the hidden value
+      await typeQuery('');
+
+      expect(fixture.componentInstance.mixed()).toBe(true);
+      expect(fixture.componentInstance.value()).toBe('world-final');
+
+      await typeQuery('group a');
+      pane()!.querySelector<HTMLElement>('[role="option"]')!.click();
+      tick();
+      await flushFrames();
+
+      expect(fixture.componentInstance.value()).toBe('euro-group-a');
+      expect(fixture.componentInstance.mixed()).toBe(false);
+    });
+  });
+});
+
+const setupContractFixture = (multiple: boolean) => {
+  document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
+
+  TestBed.configureTestingModule({
+    imports: [CascaderTestHost],
+    providers: [provideColorThemes(TEST_COLOR_THEMES)],
+  });
+
+  const fixture = TestBed.createComponent(CascaderTestHost);
+
+  fixture.componentInstance.multiple.set(multiple);
+  fixture.detectChanges();
+
+  const cascader = fixture.debugElement.children[0]!.injector.get(CascaderDirective) as CascaderDirective<string>;
+  const trigger = fixture.nativeElement.querySelector('[role="combobox"]') as HTMLElement;
+  const tick = () => TestBed.inject(ApplicationRef).tick();
+  const nodeByLabel = (label: string) =>
+    Array.from(document.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane [role="treeitem"]')).find(
+      (node) => node.textContent?.trim() === label,
+    ) ?? null;
+
+  // a real pointer commit: open the panel, drill Euro → Group stage, pick the "Group A" leaf
+  const commitGroupA = async () => {
+    trigger.click();
+    tick();
+    await flushFrames();
+    tick();
+    nodeByLabel('Euro')!.click();
+    tick();
+    nodeByLabel('Group stage')!.click();
+    tick();
+    nodeByLabel('Group A')!.click();
+    tick();
+    await flushFrames();
+  };
+
+  return { fixture, cascader, tick, commitGroupA };
+};
+
+describe('CascaderDirective (single, mixed contract)', () => {
+  describeMixedStateContract(() => {
+    const { fixture, cascader, tick, commitGroupA } = setupContractFixture(false);
+
+    return {
+      enterMixed: () => {
+        fixture.componentInstance.value.set('world-final');
+        fixture.componentInstance.mixed.set(true);
+        fixture.detectChanges();
+      },
+      rawValue: () => 'world-final',
+      value: () => fixture.componentInstance.value(),
+      mixed: () => fixture.componentInstance.mixed(),
+      hostElement: () => fixture.nativeElement.querySelector('et-cascader') as HTMLElement,
+      writeValueExternally: () => {
+        fixture.componentInstance.value.set('euro-group-b');
+        fixture.detectChanges();
+      },
+      externallyWrittenValue: () => 'euro-group-b',
+      commit: commitGroupA,
+      committedValue: () => 'euro-group-a',
+      assertMasked: () => {
+        expect(cascader.displayValue()).toBe('Mixed');
+        expect(fixture.nativeElement.querySelector('.et-cascader-value')?.textContent?.trim()).toBe('Mixed');
+      },
+      clear: () => {
+        cascader.clearValue();
+        tick();
+      },
+      emptyValue: () => null,
+    };
+  });
+});
+
+describe('CascaderDirective (multiple, mixed contract)', () => {
+  describeMixedStateContract(() => {
+    const { fixture, cascader, tick, commitGroupA } = setupContractFixture(true);
+
+    return {
+      enterMixed: () => {
+        fixture.componentInstance.value.set(['euro-group-a', 'world-final']);
+        fixture.componentInstance.mixed.set(true);
+        fixture.detectChanges();
+      },
+      rawValue: () => ['euro-group-a', 'world-final'],
+      value: () => fixture.componentInstance.value(),
+      mixed: () => fixture.componentInstance.mixed(),
+      hostElement: () => fixture.nativeElement.querySelector('et-cascader') as HTMLElement,
+      writeValueExternally: () => {
+        fixture.componentInstance.value.set(['euro-group-b']);
+        fixture.detectChanges();
+      },
+      externallyWrittenValue: () => ['euro-group-b'],
+      // "Group A" is inside the hidden raw array — replace semantics must still yield a fresh
+      // one-entry array instead of toggling it away
+      commit: commitGroupA,
+      committedValue: () => ['euro-group-a'],
+      assertMasked: () => {
+        expect(cascader.displayValue()).toBe('Mixed');
+        expect(fixture.nativeElement.querySelector('.et-cascader-value')?.textContent?.trim()).toBe('Mixed');
+      },
+      clear: () => {
+        cascader.clearValue();
+        tick();
+      },
+      emptyValue: () => [],
+    };
   });
 });

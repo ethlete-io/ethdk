@@ -25,7 +25,9 @@ import { NUMBER_INPUT_IMPORTS } from '../input.imports';
           <span etInputPrefix>€</span>
         }
         <et-number-input
+          [(mixed)]="mixedState"
           [formField]="demoForm.value"
+          [mixedLabel]="mixedLabel()"
           [min]="min()"
           [max]="max()"
           [step]="step()"
@@ -39,6 +41,13 @@ import { NUMBER_INPUT_IMPORTS } from '../input.imports';
           <et-hint>{{ hint() }}</et-hint>
         }
       </et-form-field>
+
+      @if (showMixedState()) {
+        <div class="text-sm opacity-60">
+          <p>Raw form value: {{ demoForm.value().value() }}</p>
+          <p>Mixed: {{ mixedState() }}</p>
+        </div>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -60,6 +69,9 @@ export class FormFieldNumberInputStorybookComponent {
   public placeholder = input('0');
   public hint = input('');
   public value = input<number | null>(null);
+  public mixed = input(false);
+  public mixedLabel = input('Mixed');
+  public showMixedState = input(false);
   public min = input<number | null>(null);
   public max = input<number | null>(null);
   public step = input<number | null>(null);
@@ -70,6 +82,8 @@ export class FormFieldNumberInputStorybookComponent {
   public showPrefix = input(false);
   public showSuffix = input(false);
   public color = input('brand');
+
+  public mixedState = linkedSignal(() => this.mixed());
 
   private formModel = linkedSignal(() => ({ value: this.value() }));
 

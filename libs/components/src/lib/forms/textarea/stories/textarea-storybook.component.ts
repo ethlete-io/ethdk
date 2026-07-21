@@ -21,7 +21,9 @@ import { TEXTAREA_IMPORTS } from '../textarea.imports';
       <et-form-field [appearance]="appearance()" [fill]="fill()" [size]="size()" [labelMode]="labelMode()">
         <et-label>{{ label() }}</et-label>
         <et-textarea
+          [(mixed)]="mixedState"
           [formField]="demoForm.value"
+          [mixedLabel]="mixedLabel()"
           [placeholder]="placeholder()"
           [rows]="rows()"
           [autosize]="autosize()"
@@ -33,6 +35,13 @@ import { TEXTAREA_IMPORTS } from '../textarea.imports';
           <et-hint>{{ hint() }}</et-hint>
         }
       </et-form-field>
+
+      @if (showMixedState()) {
+        <div class="text-sm opacity-60">
+          <p>Raw form value: {{ demoForm.value().value() }}</p>
+          <p>Mixed: {{ mixedState() }}</p>
+        </div>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -47,6 +56,9 @@ export class FormFieldTextareaStorybookComponent {
   public placeholder = input('Placeholder');
   public hint = input('');
   public value = input('');
+  public mixed = input(false);
+  public mixedLabel = input('Mixed');
+  public showMixedState = input(false);
   public rows = input(3);
   public autosize = input(true);
   public minRows = input<number | null>(null);
@@ -56,6 +68,8 @@ export class FormFieldTextareaStorybookComponent {
   public readonly = input(false);
   public required = input(false);
   public color = input('brand');
+
+  public mixedState = linkedSignal(() => this.mixed());
 
   private formModel = linkedSignal(() => ({ value: this.value() }));
 

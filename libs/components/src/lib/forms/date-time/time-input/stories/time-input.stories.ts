@@ -10,6 +10,9 @@ export default {
     placeholder: { control: 'text' },
     hint: { control: 'text' },
     value: { control: 'text' },
+    mixed: { control: 'boolean' },
+    mixedLabel: { control: 'text' },
+    showMixedState: { control: false, table: { disable: true } },
     valueFormat: { control: 'text' },
     displayFormat: { control: 'text' },
     minuteStep: { control: 'number' },
@@ -25,6 +28,9 @@ export default {
     placeholder: 'hh:mm',
     hint: '',
     value: null,
+    mixed: false,
+    mixedLabel: 'Mixed',
+    showMixedState: false,
     valueFormat: 'HH:mm',
     displayFormat: 'p',
     minuteStep: 5,
@@ -51,4 +57,14 @@ export const WithSeconds: Story = {
 
 export const German: Story = {
   args: { locale: 'de', hint: '24-Stunden-Anzeige (p mit de-Locale)' },
+};
+
+export const Mixed: Story = {
+  args: {
+    value: '14:30',
+    mixed: true,
+    mixedLabel: 'Mixed times',
+    showMixedState: true,
+    hint: 'The hidden time stays intact and unshown; the mixed label is the placeholder. Parsing a typed time or picking one commits a replacement.',
+  },
 };

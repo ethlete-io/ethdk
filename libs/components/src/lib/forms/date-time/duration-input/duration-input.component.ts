@@ -14,6 +14,8 @@ import { DurationInputDirective, DurationInputFieldDirective } from './headless'
       directive: DurationInputDirective,
       inputs: [
         'value',
+        'mixed',
+        'mixedLabel',
         'touched',
         'disabled',
         'readonly',
@@ -25,7 +27,7 @@ import { DurationInputDirective, DurationInputFieldDirective } from './headless'
         'parseErrorMessage',
         'durationFormat',
       ],
-      outputs: ['valueChange', 'touchedChange'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange'],
     },
   ],
   host: {

@@ -20,7 +20,9 @@ import { TAG_INPUT_IMPORTS } from '../tag-input.imports';
       <et-form-field [appearance]="appearance()" [fill]="fill()" [size]="size()">
         <et-label>{{ label() }}</et-label>
         <et-tag-input
+          [(mixed)]="mixedState"
           [formField]="demoForm.value"
+          [mixedLabel]="mixedLabel()"
           [placeholder]="placeholder()"
           [allowDuplicates]="allowDuplicates()"
           [maxTags]="maxTags()"
@@ -30,7 +32,14 @@ import { TAG_INPUT_IMPORTS } from '../tag-input.imports';
         }
       </et-form-field>
 
-      <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+      @if (showMixedState()) {
+        <div class="text-sm opacity-60">
+          <p>Raw form value: {{ demoForm.value().value() | json }}</p>
+          <p>Mixed: {{ mixedState() }}</p>
+        </div>
+      } @else {
+        <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -44,11 +53,16 @@ export class TagInputStorybookComponent {
   public placeholder = input('Add a tag…');
   public hint = input('Enter or comma commits a tag');
   public value = input<string[]>([]);
+  public mixed = input(false);
+  public mixedLabel = input('Mixed');
+  public showMixedState = input(false);
   public allowDuplicates = input(false);
   public maxTags = input<number | undefined>(undefined);
   public disabled = input(false);
   public readonly = input(false);
   public color = input('brand');
+
+  public mixedState = linkedSignal(() => this.mixed());
 
   private formModel = linkedSignal(() => ({ value: this.value() }));
 

@@ -27,6 +27,8 @@ import { DateInputDirective, DateInputFieldDirective } from './headless';
       directive: DateInputDirective,
       inputs: [
         'value',
+        'mixed',
+        'mixedLabel',
         'touched',
         'disabled',
         'readonly',
@@ -45,7 +47,7 @@ import { DateInputDirective, DateInputFieldDirective } from './headless';
         'dateFilter',
         'pickerOpen',
       ],
-      outputs: ['valueChange', 'touchedChange', 'pickerOpenChange'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'pickerOpenChange'],
     },
   ],
   host: {

@@ -128,6 +128,21 @@
       user-select: none;
     }
 
+    /* an unresolved bulk-edit value parks the thumb at the track start — the neutral,
+       dimmed treatment makes that read as "unset", not "minimum". The fill is already
+       zero-width while mixed. Consumers restyle via [data-mixed]. */
+    &[data-mixed] {
+      .et-slider-thumb {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 48%, transparent);
+        box-shadow: none;
+      }
+
+      /* the parked position is meaningless — never label it with a number */
+      .et-slider-thumb-value {
+        display: none;
+      }
+    }
+
     &[data-disabled],
     &[data-readonly] {
       .et-slider-interaction {

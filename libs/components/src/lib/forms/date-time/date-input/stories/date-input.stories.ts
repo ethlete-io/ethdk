@@ -10,6 +10,9 @@ export default {
     placeholder: { control: 'text' },
     hint: { control: 'text' },
     value: { control: 'text' },
+    mixed: { control: 'boolean' },
+    mixedLabel: { control: 'text' },
+    showMixedState: { control: false, table: { disable: true } },
     valueFormat: { control: 'text' },
     displayFormat: { control: 'text' },
     mask: { control: 'boolean' },
@@ -25,6 +28,9 @@ export default {
     placeholder: 'mm/dd/yyyy',
     hint: '',
     value: null,
+    mixed: false,
+    mixedLabel: 'Mixed',
+    showMixedState: false,
     valueFormat: 'yyyy-MM-dd',
     displayFormat: 'P',
     mask: false,
@@ -59,5 +65,15 @@ export const Masked: Story = {
     displayFormat: 'dd.MM.yyyy',
     placeholder: 'tt.mm.jjjj',
     hint: 'Typing is guided by the fixed-width display format — separators insert themselves',
+  },
+};
+
+export const Mixed: Story = {
+  args: {
+    value: '2026-12-24',
+    mixed: true,
+    mixedLabel: 'Mixed dates',
+    showMixedState: true,
+    hint: 'The hidden date stays intact and unshown; the mixed label is the placeholder. Parsing a typed date or picking one commits a replacement.',
   },
 };

@@ -16,7 +16,7 @@ import { DatePickerInputDirective } from './date-picker-input.directive';
     type: 'text',
     autocomplete: 'off',
     '[attr.inputmode]': 'maskAttached() ? "numeric" : null',
-    '[attr.placeholder]': 'pickerInput?.placeholder() || null',
+    '[attr.placeholder]': 'pickerInput?.effectivePlaceholder() || null',
     '[attr.aria-required]': 'pickerInput?.required() || null',
     '[attr.aria-invalid]': 'pickerInput?.shouldDisplayError() || null',
     '[attr.aria-describedby]': 'pickerInput?.describedBy() || null',

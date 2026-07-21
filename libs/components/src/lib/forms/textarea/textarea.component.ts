@@ -19,6 +19,8 @@ import { TextareaDirective } from './headless';
         'maxRows',
         'resize',
         'value',
+        'mixed',
+        'mixedLabel',
         'disabled',
         'readonly',
         'hidden',
@@ -27,7 +29,7 @@ import { TextareaDirective } from './headless';
         'required',
         'name',
       ],
-      outputs: ['valueChange', 'touchedChange'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange'],
     },
     ColorInteractiveDirective,
   ],
@@ -51,6 +53,6 @@ export class TextareaComponent {
   }
 
   public syncNativeValue(event: Event) {
-    this.textareaDir.value.set((event.target as HTMLTextAreaElement).value);
+    this.textareaDir.syncFromNativeInput(event.target as HTMLTextAreaElement);
   }
 }

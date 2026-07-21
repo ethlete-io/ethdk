@@ -125,6 +125,12 @@ export class InputMaskDirective {
         return;
       }
 
+      // while the host is mixed the raw value is hidden state that must survive untouched —
+      // normalizing it would count as a value edit the bulk-edit flow never made
+      if (host.mixed?.()) {
+        return;
+      }
+
       const value = host.value();
       const raw = spec.toRaw(value);
       const normalized = this.maskValueMode() === MASK_VALUE_MODES.MASKED ? spec.toDisplay(raw) : raw;
@@ -143,6 +149,15 @@ export class InputMaskDirective {
       const spec = this.spec();
 
       if (!host || !element || !spec) {
+        return;
+      }
+
+      // a mixed host renders empty with its mixed label as placeholder — repainting the masked
+      // raw value here would leak the hidden value into the DOM. The next edit starts from an
+      // empty committed raw, so the first typed content replaces the hidden value outright.
+      if (host.mixed?.()) {
+        this.committedRaw = '';
+
         return;
       }
 
@@ -212,6 +227,19 @@ export class InputMaskDirective {
       // typing implies focus, so the guide display (when available) applies
       guide: true,
     });
+
+    if (host.mixed?.()) {
+      // an edit that produced no raw content is an empty commit — it keeps the mixed state
+      // (and the hidden raw value); clear the element so no stray literals linger
+      if (!result.raw) {
+        element.value = '';
+
+        return;
+      }
+
+      // typing is the commit: the first raw content replaces the hidden value and resolves mixed
+      host.mixed.set(false);
+    }
 
     this.committedRaw = result.raw;
     this.caret = result.caret;

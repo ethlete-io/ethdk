@@ -2,6 +2,7 @@ import { ApplicationRef, Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../../test-helpers';
 import { InputMaskDirective } from '../../../masked-input/headless';
+import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
 import { TimePickerColumnDirective } from '../../../../time-picker/headless/time-picker-column.directive';
 import { TimePickerOptionDirective } from '../../../../time-picker/headless/time-picker-option.directive';
 import { TimePickerDirective } from '../../../../time-picker/headless/time-picker.directive';
@@ -12,7 +13,7 @@ import { TimeInputDirective } from './time-input.directive';
 
 @Component({
   template: `
-    <div [(value)]="value" [disabled]="disabled()" displayFormat="HH:mm" etTimeInput>
+    <div [(value)]="value" [(mixed)]="mixed" [disabled]="disabled()" displayFormat="HH:mm" etTimeInput>
       <input etTimeInputField />
       <button class="open-picker" etDatePickerTrigger>open</button>
 
@@ -48,6 +49,7 @@ import { TimeInputDirective } from './time-input.directive';
 })
 class TimeInputTestHost {
   value = signal<string | null>(null);
+  mixed = signal(false);
   disabled = signal(false);
 }
 
@@ -235,6 +237,114 @@ describe('TimeInputDirective', () => {
     tick();
 
     expect(timeInput.pickerOpen()).toBe(false);
+  });
+
+  describe('mixed (bulk edit)', () => {
+    const enterMixed = () => {
+      host.value.set('14:20');
+      host.mixed.set(true);
+      tick();
+    };
+
+    it('renders the field empty with the mixed label as placeholder', () => {
+      enterMixed();
+
+      expect(field.value).toBe('');
+      expect(field.getAttribute('placeholder')).toBe('Mixed');
+      expect(timeInput.displayValue()).toBe('');
+      expect(timeInput.hasValue()).toBe(true);
+    });
+
+    it('keeps mixed and the raw value on a failed typed parse', () => {
+      enterMixed();
+      typeAndBlur('not a time');
+
+      expect(host.mixed()).toBe(true);
+      expect(host.value()).toBe('14:20');
+      expect(timeInput.parseError()).toBe(true);
+      expect(field.value).toBe('not a time');
+    });
+
+    it('keeps mixed and the raw value on a blank blur commit', () => {
+      enterMixed();
+      typeAndBlur('');
+
+      expect(host.mixed()).toBe(true);
+      expect(host.value()).toBe('14:20');
+    });
+
+    it('gives the picker no selected time and leaves mixed set on open; a pick replaces and resolves', async () => {
+      enterMixed();
+
+      expect(timeInput.time()).toBeNull();
+
+      await openPicker();
+
+      expect(host.mixed()).toBe(true);
+
+      pickerOption('hour', 9)?.click();
+      tick();
+
+      expect(host.mixed()).toBe(false);
+      // replace semantics: the hidden 14:20 does not leak into the picked time
+      expect(host.value()?.startsWith('09:')).toBe(true);
+    });
+  });
+});
+
+describe('TimeInputDirective mixed state', () => {
+  describeMixedStateContract(() => {
+    document.querySelectorAll('.et-overlay-runtime-entry').forEach((entry) => entry.remove());
+
+    TestBed.configureTestingModule({ imports: [TimeInputTestHost] });
+
+    const fixture = TestBed.createComponent(TimeInputTestHost);
+
+    fixture.detectChanges();
+
+    const timeInput = fixture.debugElement.children[0]!.injector.get(TimeInputDirective);
+    const field = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    const tick = () => TestBed.inject(ApplicationRef).tick();
+
+    const typeAndBlur = (text: string) => {
+      field.focus();
+      field.value = text;
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+      tick();
+      field.blur();
+      field.dispatchEvent(new Event('blur'));
+      tick();
+    };
+
+    return {
+      enterMixed: () => {
+        fixture.componentInstance.value.set('14:20');
+        fixture.componentInstance.mixed.set(true);
+        tick();
+      },
+      rawValue: () => '14:20',
+      value: () => fixture.componentInstance.value(),
+      mixed: () => fixture.componentInstance.mixed(),
+      hostElement: () => fixture.debugElement.children[0]!.nativeElement as HTMLElement,
+      writeValueExternally: () => {
+        fixture.componentInstance.value.set('10:00');
+        tick();
+      },
+      externallyWrittenValue: () => '10:00',
+      commit: () => typeAndBlur('09:30'),
+      committedValue: () => '09:30',
+      assertMasked: () => {
+        expect(timeInput.time()).toBeNull();
+        expect(timeInput.displayValue()).toBe('');
+        expect(field.value).toBe('');
+        expect(field.getAttribute('placeholder')).toBe('Mixed');
+      },
+      clear: () => {
+        timeInput.clearValue();
+        tick();
+      },
+      emptyValue: () => null,
+    };
   });
 });
 

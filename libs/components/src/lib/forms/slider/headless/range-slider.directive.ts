@@ -12,12 +12,19 @@ export type RangeSliderValue = [number, number];
   selector: '[etRangeSlider]',
   exportAs: 'etRangeSlider',
   providers: [{ provide: SLIDER_TOKEN, useExisting: RangeSliderDirective }],
+  host: {
+    '[attr.data-mixed]': 'mixed() || null',
+  },
 })
 export class RangeSliderDirective implements FormValueControl<RangeSliderValue>, FormFieldControl, SliderHostBase {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
 
   public value = model<RangeSliderValue>([0, 100]);
+  /** View state for a field whose source values disagree. The raw form value stays untouched. */
+  public mixed = model(false);
+  /** `aria-valuetext` both thumbs announce while `mixed` is set. */
+  public mixedLabel = input('Mixed');
   public touched = model(false);
   public disabled = input(false);
   public readonly = input(false);
@@ -57,7 +64,15 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
 
   private bounds = computed(() => ({ min: this.effectiveMin(), max: this.effectiveMax(), step: this.step() }));
 
+  // while mixed, both thumbs park at the track start so the DOM (positions, ARIA) exposes
+  // nothing of the hidden raw range — the keyboard model then also steps from the minimum
   public thumbValues = computed<readonly number[]>(() => {
+    if (this.mixed()) {
+      const min = this.effectiveMin();
+
+      return [min, min];
+    }
+
     const bounds = this.bounds();
     const snapped = this.value().map((end) => snapValueToStep(end, bounds));
 
@@ -93,6 +108,11 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
   }
 
   public thumbAriaBounds(index: number) {
+    // parked thumbs carry no sibling constraint — while mixed, both announce the full track
+    if (this.mixed()) {
+      return { min: this.effectiveMin(), max: this.effectiveMax() };
+    }
+
     const [start, end] = this.thumbValues() as RangeSliderValue;
 
     return index === 0
@@ -102,6 +122,23 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
 
   public commitThumbValue(index: number, value: number) {
     if (!this.interactive()) {
+      return;
+    }
+
+    // only user interactions route through here — the first committed thumb resolves mixed
+    // by writing a fresh range: the chosen value on its end, the default bound on the other
+    if (this.mixed()) {
+      const otherBound = index === 0 ? this.effectiveMax() : this.effectiveMin();
+      const constrained = constrainRangeThumb(snapValueToStep(value, this.bounds()), {
+        end: index === 0 ? 'start' : 'end',
+        otherValue: otherBound,
+        minDistance: this.minDistance(),
+      });
+      const snapped = snapValueToStep(constrained, this.bounds());
+
+      this.mixed.set(false);
+      this.value.set(index === 0 ? [snapped, otherBound] : [otherBound, snapped]);
+
       return;
     }
 

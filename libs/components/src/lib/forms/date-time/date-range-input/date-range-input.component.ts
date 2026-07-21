@@ -27,6 +27,8 @@ import { DateRangeInputDirective, DateRangeInputFieldDirective } from './headles
       directive: DateRangeInputDirective,
       inputs: [
         'value',
+        'mixed',
+        'mixedLabel',
         'touched',
         'disabled',
         'readonly',
@@ -46,7 +48,7 @@ import { DateRangeInputDirective, DateRangeInputFieldDirective } from './headles
         'dateFilter',
         'pickerOpen',
       ],
-      outputs: ['valueChange', 'touchedChange', 'pickerOpenChange'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'pickerOpenChange'],
     },
   ],
   host: {
