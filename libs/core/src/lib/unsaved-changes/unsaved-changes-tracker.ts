@@ -1,5 +1,5 @@
 import { assertInInjectionContext, computed, effect, signal, Signal, untracked } from '@angular/core';
-import { isObservable, Observable } from 'rxjs';
+import { catchError, defaultIfEmpty, firstValueFrom, isObservable, map, Observable, of, take } from 'rxjs';
 import { equal } from '../utils';
 import { normalizeUnsavedChangesSource, UnsavedChangesSource } from './unsaved-changes-source';
 
@@ -62,22 +62,14 @@ const toBooleanPromise = (result: boolean | Promise<boolean> | Observable<boolea
   }
 
   if (isObservable(result)) {
-    return new Promise<boolean>((resolve) => {
-      let settled = false;
-      const sub = result.subscribe({
-        next: (value) => {
-          settled = true;
-          resolve(Boolean(value));
-          sub.unsubscribe();
-        },
-        error: () => resolve(false),
-        complete: () => {
-          if (!settled) {
-            resolve(false);
-          }
-        },
-      });
-    });
+    return firstValueFrom(
+      result.pipe(
+        take(1),
+        map(Boolean),
+        defaultIfEmpty(false),
+        catchError(() => of(false)),
+      ),
+    );
   }
 
   return Promise.resolve(Boolean(result));
