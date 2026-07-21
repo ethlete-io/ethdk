@@ -90,6 +90,18 @@
   --et-theme-color-ink-solid: rgb(var(--et-theme-color-ink-rgb));
 }
 
+/* view-only controls (readonly) keep the resting accent — they stay focusable but must not
+   react to hover/active/focus the way an editable control does. Placed after the interaction
+   rules above so, at equal :where() specificity, source order lets it win them back to rest. */
+:where(.et-color-interactive[aria-readonly='true']) {
+  --et-theme-color-primary-rgb: var(--et-color-primary);
+  --et-theme-color-primary-solid: rgb(var(--et-theme-color-primary-rgb));
+  --et-theme-color-on-primary-rgb: var(--et-color-on-primary);
+  --et-theme-color-on-primary-solid: rgb(var(--et-theme-color-on-primary-rgb));
+  --et-theme-color-ink-rgb: var(--et-color-primary-ink, var(--et-color-primary));
+  --et-theme-color-ink-solid: rgb(var(--et-theme-color-ink-rgb));
+}
+
 :where(.et-color-interactive[disabled]),
 :where(.et-color-interactive[aria-disabled='true']) {
   --et-theme-color-primary-rgb: var(
