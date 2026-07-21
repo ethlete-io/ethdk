@@ -58,7 +58,6 @@
     display: grid;
     grid-template-rows: minmax(0, 1fr);
     box-sizing: border-box;
-    max-inline-size: min(400px, calc(100vw - 24px));
     max-block-size: var(--et-select-panel-max-height);
     /* the host paints the chrome and clips; scrolling lives on the inner scroller — a
        scroller's own background is dragged along by macOS rubber-band overscroll (it is
@@ -178,5 +177,13 @@
       /* the registered chevron icon points up natively — load-more points down */
       rotate: 180deg;
     }
+  }
+
+  /* compact triggers (`mirrorPanelWidth={false}`): the pane is content-sized rather than pinned
+     to the field width, so the panel needs an upper bound to stop a long option from stretching
+     it across the viewport. When the panel *does* mirror the field, the pane width already sizes
+     it and no cap must apply — otherwise fields wider than 400px stop matching the panel. */
+  .et-overlay--select-content-width .et-select-panel {
+    max-inline-size: min(400px, calc(100vw - 24px));
   }
 }
