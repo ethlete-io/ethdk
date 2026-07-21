@@ -27,19 +27,19 @@ Every implementing control:
 
 ## Control coverage
 
-| Control                                                                                            | Mixed presentation                                                                       |
-| -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `et-select` (single, multi, searchable, virtualized)                                               | Trigger shows `mixedLabel`; chips hidden; no option `aria-selected`                      |
-| `et-cascader`                                                                                      | Trigger shows `mixedLabel`; no node selected in columns/breadcrumb                       |
-| `et-input`, `et-number-input`, `et-password-input`                                                 | Field renders empty with `mixedLabel` as placeholder; typing commits                     |
-| `et-textarea`                                                                                      | Same as inputs                                                                           |
-| `et-color-input`                                                                                   | Neutral swatch (raw color never shown); value slot shows `mixedLabel`; picking commits   |
-| `et-date-input`, `et-time-input`, `et-date-time-input`, `et-date-range-input`, `et-duration-input` | Field empty with `mixedLabel` placeholder; picker highlights nothing; parse/pick commits |
-| `et-tag-input`                                                                                     | Chips hidden; `mixedLabel` placeholder; first added tag starts a fresh array             |
-| `et-phone-input`                                                                                   | Number field masked; country picking alone neither leaks the hidden number nor resolves  |
+| Control                                                                                            | Mixed presentation                                                                            |
+| -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `et-select` (single, multi, searchable, virtualized)                                               | Trigger shows `mixedLabel`; chips hidden; no option `aria-selected`                           |
+| `et-cascader`                                                                                      | Trigger shows `mixedLabel`; no node selected in columns/breadcrumb                            |
+| `et-input`, `et-number-input`, `et-password-input`                                                 | Field renders empty with `mixedLabel` as placeholder; typing commits                          |
+| `et-textarea`                                                                                      | Same as inputs                                                                                |
+| `et-color-input`                                                                                   | Neutral swatch (raw color never shown); value slot shows `mixedLabel`; picking commits        |
+| `et-date-input`, `et-time-input`, `et-date-time-input`, `et-date-range-input`, `et-duration-input` | Field empty with `mixedLabel` placeholder; picker highlights nothing; parse/pick commits      |
+| `et-tag-input`                                                                                     | Chips hidden; `mixedLabel` placeholder; first added tag starts a fresh array                  |
+| `et-phone-input`                                                                                   | Number field masked; country picking alone neither leaks the hidden number nor resolves       |
 | `et-slider`, `et-range-slider`                                                                     | `aria-valuenow` removed, `aria-valuetext` = `mixedLabel`; dashed rail, thumbs parked + dimmed |
 | `et-rating`                                                                                        | No stars filled + dashed baseline; `aria-valuenow` removed, `aria-valuetext` = `mixedLabel`   |
-| `et-radio-group`, `et-checkbox-group`, `et-segmented-button-group`                                 | Nothing `aria-checked`; dashed marks/track; first pick replaces                          |
+| `et-radio-group`, `et-checkbox-group`, `et-segmented-button-group`                                 | Nothing `aria-checked`; dashed marks/track; first pick replaces                               |
 
 ### Deliberate boundaries
 
