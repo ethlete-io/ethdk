@@ -1,26 +1,35 @@
 import { DOCUMENT } from '@angular/common';
 import { computed, DestroyRef, Directive, inject, input, model, signal } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { htmlToMarkdown, markdownToHtml } from '@ethlete/core';
+import { htmlToMarkdown, injectRenderer, markdownToHtml, RuntimeError } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
+import { RICH_TEXT_EDITOR_ERROR_CODES } from '../rich-text-editor-errors';
 import { RICH_TEXT_EDITOR_TOKEN_CODEC } from '../rich-text-editor-token-codec.token';
 import { injectRichTextEditorTools, RichTextEditorTool } from '../rich-text-editor-tools';
+import { RichTextEditorTriggerItem } from '../rich-text-editor-trigger';
 import {
   HeadingTag,
   injectRichTextEditorDom,
   InlineTag,
   provideRichTextEditorDom,
 } from './internals/rich-text-editor-dom';
-import { RichTextEditorTokenCodec } from './internals/rich-text-editor-token';
+import {
+  assertValidToken,
+  buildChipElement,
+  RichTextEditorTokenChip,
+  RichTextEditorTokenCodec,
+} from './internals/rich-text-editor-token';
 
 @Directive({
   selector: '[etRichTextEditor]',
+  exportAs: 'etRichTextEditor',
   providers: [provideRichTextEditorDom()],
 })
 export class RichTextEditorDirective implements FormValueControl<string>, FormFieldControl {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
+  private renderer = injectRenderer();
   private toolsConfig = injectRichTextEditorTools();
 
   /** @internal */
@@ -359,6 +368,83 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
     this.editorDom.insertToken(node);
     this.syncFromDom();
+  }
+
+  /**
+   * Inserts a `{{type:id}}` token chip at the caret — the same result as picking it from the `#`/`@`
+   * trigger popup — resolving its label via the matching trigger's `resolveItem`. Lets a consumer
+   * wire a click-to-insert palette (their own placeholder/merge-field buttons) in a single call,
+   * reusing the editor's codec and label resolution instead of appending token markdown to the value.
+   *
+   * Inserts at the current caret, or — if the editor isn't focused — at the position it last held,
+   * falling back to the end of the content. The caret is left after the chip. A token codec must be
+   * installed (by `[etRichTextEditorTriggers]` or `provideRichTextEditorTokenRendering`); without one
+   * token markdown can't round-trip, so this throws in dev and no-ops in production.
+   *
+   * @param opts.focus Focus the editor after inserting so the user can keep typing. @default true
+   */
+  // eslint-disable-next-line max-params -- (type, id, opts?) is the documented public API shape, mirroring common editor insert methods
+  public insertToken(type: string, id: string, opts?: { focus?: boolean }) {
+    const codec = this.requireTokenCodec();
+
+    if (!codec) return;
+    if (ngDevMode) assertValidToken(type, id);
+
+    // resolveChip resolves the label synchronously (id fallback); hydrate patches async resolvers.
+    this.insertChip(codec.resolveChip(type, id), { focus: opts?.focus, hydrate: true });
+  }
+
+  /**
+   * Like {@link insertToken}, but for when the app already holds the resolved `{ id, label }` item
+   * (e.g. the row a palette button represents) — the label is used as-is, skipping resolution. The
+   * trigger-char prefix still comes from the installed codec, so the chip matches the popup's.
+   *
+   * @param opts.focus Focus the editor after inserting so the user can keep typing. @default true
+   */
+  // eslint-disable-next-line max-params -- (type, item, opts?) mirrors insertToken's documented public API shape
+  public insertTokenItem(type: string, item: RichTextEditorTriggerItem, opts?: { focus?: boolean }) {
+    const codec = this.requireTokenCodec();
+
+    if (!codec || item.disabled) return;
+    if (ngDevMode) assertValidToken(type, item.id);
+
+    // Keep the codec's trigger-char prefix, but honor the caller's already-resolved label (no hydrate).
+    this.insertChip({ ...codec.resolveChip(type, item.id), label: item.label }, { focus: opts?.focus, hydrate: false });
+  }
+
+  private requireTokenCodec(): RichTextEditorTokenCodec | null {
+    const codec = this.tokenCodec();
+
+    if (!codec && ngDevMode) {
+      throw new RuntimeError(
+        RICH_TEXT_EDITOR_ERROR_CODES.INSERT_TOKEN_WITHOUT_CODEC,
+        'insertToken requires a token codec. Add [etRichTextEditorTriggers] or provideRichTextEditorTokenRendering() so {{type:id}} tokens can (de)serialize.',
+      );
+    }
+
+    return codec;
+  }
+
+  private insertChip(chip: RichTextEditorTokenChip, { focus, hydrate }: { focus?: boolean; hydrate: boolean }) {
+    if (this.disabled() || this.readonly()) return;
+
+    const root = this.editorDom.root();
+
+    if (!root || !this.editorDom.ensureCaret()) return;
+
+    this.editorDom.insertToken(buildChipElement(this.renderer, chip));
+    // Trailing no-break space so the caret escapes the chip and the next word doesn't hug it — same
+    // treatment as the trigger popup (a plain trailing space is CSS-collapsed and dropped by Chrome;
+    // serialization normalizes the nbsp back to a plain space).
+    this.editorDom.insertToken(this.renderer.createText(' '));
+
+    if (hydrate) this.tokenCodec()?.hydrate(root);
+
+    this.syncFromDom();
+
+    // Focus last so the caret placed after the nbsp stays live. Skip when already focused —
+    // re-focusing a contenteditable that holds the caret collapses the selection to its start.
+    if ((focus ?? true) && root.ownerDocument.activeElement !== root) root.focus();
   }
 
   private serializeCleanHtml(root: HTMLElement) {

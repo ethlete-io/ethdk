@@ -280,3 +280,4 @@ All rich text editor checks run in dev mode only, and cover the opt-in `etRichTe
 | `ET2502` | A trigger `type` is malformed.                                          | Match `[a-z][a-z0-9-]*` so the <code v-pre>{{type:id}}</code> token round-trips through Markdown.  |
 | `ET2503` | An item `id` is malformed.                                              | Match `[A-Za-z0-9._:-]+` so the <code v-pre>{{type:id}}</code> token round-trips through Markdown. |
 | `ET2504` | `etRichTextEditorTriggers` is on an element without `etRichTextEditor`. | Place it on the editor element (e.g. `<et-rich-text-editor>`).                                     |
+| `ET2505` | `insertToken`/`insertTokenItem` called with no token codec installed.   | Add `etRichTextEditorTriggers` or `provideRichTextEditorTokenRendering(triggers)`.                 |

@@ -1,0 +1,18 @@
+@layer components {
+  @property --et-rich-text-editor-token-palette-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 6px;
+  }
+
+  .et-rte-token-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--et-rich-text-editor-token-palette-gap);
+
+    /* de-emphasize the trigger char shown ahead of the label, matching the inserted chip's prefix */
+    .et-rte-token-palette-chip-prefix {
+      opacity: 0.65;
+    }
+  }
+}

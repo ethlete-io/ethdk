@@ -214,6 +214,53 @@ query, use the generic `createRichTextEditorTrigger` with an `Observable`/`Promi
 
 <StoryEmbed id="components-forms-rich-text-editor-triggers--default" height="460px" />
 
+### Inserting tokens from your own UI
+
+Apps often render their own placeholder/merge-field buttons _outside_ the editor. Instead of
+appending token Markdown to the bound value (which lands at the end and resets the caret), insert a
+token at the caret — the same result as picking one from the popup — with the editor's own codec and
+label resolution. Grab the editor through its `etRichTextEditor` `exportAs` (or a
+`viewChild(RichTextEditorDirective)`) and call one method:
+
+- **`insertToken(type, id, opts?)`** — resolves the chip label via the matching trigger's
+  `resolveItem`, builds the chip, and inserts it at the caret (or at the end when the editor isn't
+  focused), leaving the caret after the chip. `opts.focus` (default `true`) refocuses the editor so
+  the user can keep typing.
+- **`insertTokenItem(type, item, opts?)`** — the same, for when you already hold the resolved
+  `{ id, label }` (e.g. the row a button represents); the label is used as-is, skipping resolution.
+
+```html
+<et-rich-text-editor #rte="etRichTextEditor" [triggers]="triggers" etRichTextEditorTriggers />
+<button (click)="rte.insertToken('placeholder', 'firstName')" type="button">First name</button>
+```
+
+A token codec must be installed — by `etRichTextEditorTriggers` or
+`provideRichTextEditorTokenRendering(triggers)` — or the call throws in dev (tokens can't
+(de)serialize without one).
+
+### Built-in token palette
+
+For a ready-made button row, drop in `et-rich-text-editor-token-palette`, driven by the same
+`RichTextEditorTrigger[]`. Each available item becomes a tonal [`et-button`](/components/button)
+that inserts its token on click, reusing the label resolution and caret handling above. Static item
+sources list all their items; search-only sources (with `minQueryLength`) stay empty, since a
+palette is a fixed set rather than a search.
+
+```html
+<et-rich-text-editor #rte="etRichTextEditor" [triggers]="triggers" etRichTextEditorTriggers />
+<et-rich-text-editor-token-palette [editor]="rte" [triggers]="triggers" />
+```
+
+Import it via `RICH_TEXT_EDITOR_TOKEN_PALETTE_IMPORTS`. The **Token Palette** story under
+_Rich Text Editor/Triggers_ shows it live.
+
+| `et-rich-text-editor-token-palette` input | Type                      | Default          | Notes                                                         |
+| ----------------------------------------- | ------------------------- | ---------------- | ------------------------------------------------------------- |
+| `editor`                                  | `RichTextEditorDirective` | — (required)     | The editor to insert into (a template ref to its directive).  |
+| `triggers`                                | `RichTextEditorTrigger[]` | `[]`             | The triggers whose items become chips (use the same array).   |
+| `label`                                   | `string`                  | `'Insert token'` | Accessible name for the palette group.                        |
+| `focusEditorOnInsert`                     | `boolean`                 | `true`           | Focus the editor after inserting so the user can keep typing. |
+
 ## Multi-language rich text editor
 
 `et-multi-language-rich-text-editor` wraps the editor above to author the same content in several
@@ -290,9 +337,11 @@ Public design tokens, overridable in your CSS scope — all colors resolve throu
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `et-rich-text-editor`                | `--et-rich-text-editor-toolbar-gap`, `-toolbar-padding`, `-button-radius`, `-min-height`, `-content-gap`, `-token-radius`, `-token-padding-inline` |
 | `et-rich-text-editor-link-editor`    | `--et-rich-text-editor-link-editor-width`, `-radius`, `-gap`, `-padding`                                                                           |
+| `et-rich-text-editor-token-palette`  | `--et-rich-text-editor-token-palette-gap` (buttons follow the `et-button` `tonal` variant)                                                         |
 | `et-multi-language-rich-text-editor` | `--et-multi-language-rich-text-editor-badge-size` (plus every `et-rich-text-editor` token, inherited by the embedded editor)                       |
 
 ## Error codes
 
 The trigger/token building blocks throw [`ET25xx`](/components/error-codes#rich-text-editor-et25xx)
-in dev mode (duplicate trigger char/type, invalid token type/id, triggers used outside an editor).
+in dev mode (duplicate trigger char/type, invalid token type/id, triggers used outside an editor, or
+`insertToken` called with no token codec installed).

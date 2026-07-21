@@ -8,6 +8,7 @@ import {
   RichTextEditorTrigger,
   RichTextEditorTriggerItem,
 } from '../rich-text-editor-trigger';
+import { RICH_TEXT_EDITOR_TOKEN_PALETTE_IMPORTS } from '../rich-text-editor-token-palette.imports';
 import { provideRichTextEditorTokenRendering } from '../rich-text-editor-token-providers';
 import { DEFAULT_RICH_TEXT_EDITOR_TOOLS, RichTextEditorTool } from '../rich-text-editor-tools';
 import { RICH_TEXT_EDITOR_TRIGGERS_IMPORTS } from '../rich-text-editor-triggers.imports';
@@ -139,4 +140,67 @@ export class RichTextEditorTokenDisplayStorybookComponent {
   public demoForm = form(this.formModel, (s) => {
     readonly(s.value);
   });
+}
+
+/** Merge fields for the click-to-insert palette (a fixed set — the palette is not a search). */
+const PLACEHOLDERS: RichTextEditorTriggerItem[] = [
+  { id: 'firstName', label: 'First name' },
+  { id: 'lastName', label: 'Last name' },
+  { id: 'company', label: 'Company' },
+  { id: 'email', label: 'Email address' },
+  { id: 'unsubscribeUrl', label: 'Unsubscribe link' },
+];
+
+const PALETTE_TRIGGERS: RichTextEditorTrigger[] = [
+  createRichTextEditorTrigger({
+    char: '#',
+    type: 'placeholder',
+    items: PLACEHOLDERS,
+    resolveItem: (id) => findById(PLACEHOLDERS, id),
+  }),
+];
+
+@Component({
+  selector: 'et-sb-rich-text-editor-token-palette',
+  template: `
+    <div
+      class="flex max-w-2xl flex-col gap-4 p-8 font-sans"
+      style="--et-rich-text-editor-min-height: 180px"
+      etProvideColor="brand"
+    >
+      <et-form-field>
+        <et-label>Message</et-label>
+        <et-rich-text-editor
+          #rte="etRichTextEditor"
+          [triggers]="TRIGGERS"
+          [formField]="demoForm.value"
+          etRichTextEditorTriggers
+          placeholder="Write a message, then click a field below to insert it…"
+        />
+        <et-hint>Click a chip to drop a merge field at the caret — or type <b>#</b> to pick one inline.</et-hint>
+      </et-form-field>
+
+      <et-rich-text-editor-token-palette [editor]="rte" [triggers]="TRIGGERS" />
+
+      <pre class="rounded bg-black/5 p-3 text-xs whitespace-pre-wrap">{{
+        demoForm.value().value() || '(empty value)'
+      }}</pre>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [
+    ...FORM_FIELD_IMPORTS,
+    ...RICH_TEXT_EDITOR_IMPORTS,
+    ...RICH_TEXT_EDITOR_TRIGGERS_IMPORTS,
+    ...RICH_TEXT_EDITOR_TOKEN_PALETTE_IMPORTS,
+    FormField,
+    ProvideColorDirective,
+  ],
+})
+export class RichTextEditorTokenPaletteStorybookComponent {
+  protected readonly TRIGGERS = PALETTE_TRIGGERS;
+
+  private formModel = linkedSignal(() => ({ value: '' }));
+
+  public demoForm = form(this.formModel);
 }

@@ -2,6 +2,8 @@ export * from './headless';
 export * from './rich-text-editor-floating-toolbar.component';
 export * from './rich-text-editor-link-editor.component';
 export * from './rich-text-editor-token-codec.token';
+export * from './rich-text-editor-token-palette.component';
+export * from './rich-text-editor-token-palette.imports';
 export * from './rich-text-editor-token-popup.component';
 export * from './rich-text-editor-token-providers';
 export * from './rich-text-editor-tools';

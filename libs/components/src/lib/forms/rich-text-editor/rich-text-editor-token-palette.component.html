@@ -1,0 +1,19 @@
+@for (group of visibleGroups(); track group.trigger.type) {
+  @for (item of group.items; track item.id) {
+    <button
+      [disabled]="item.disabled || editorInactive()"
+      [title]="item.description || null"
+      (click)="insert(group.trigger, item)"
+      (mousedown)="$event.preventDefault()"
+      et-button
+      variant="tonal"
+      size="sm"
+      type="button"
+    >
+      @if (group.trigger.char) {
+        <span class="et-rte-token-palette-chip-prefix" aria-hidden="true">{{ group.trigger.char }}</span>
+      }
+      {{ item.label }}
+    </button>
+  }
+}

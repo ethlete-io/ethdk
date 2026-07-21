@@ -339,6 +339,46 @@ export const createRichTextEditorDomCore = (doc: Document, renderer: EditorRende
     };
   };
 
+  /** Ensures there is a caret to act on for a programmatic insert, preferring (in order) the live
+   *  in-editor selection, the last known in-editor range (e.g. before a palette button stole focus),
+   *  then the end of the content. Does not move focus. Returns `false` only when the editor has no
+   *  root or no usable selection object. */
+  const ensureCaret = () => {
+    const el = root();
+
+    if (!el) {
+      return false;
+    }
+
+    // Live selection already inside the editor — insert exactly where the caret sits.
+    if (getSelection()) {
+      return true;
+    }
+
+    const selection = doc.getSelection();
+
+    if (!selection) {
+      return false;
+    }
+
+    const range = doc.createRange();
+
+    if (lastRange && el.contains(lastRange.commonAncestorContainer)) {
+      // Restore the caret the editor last held (focus moved to a palette/toolbar control).
+      range.setStart(lastRange.startContainer, lastRange.startOffset);
+      range.collapse(true);
+    } else {
+      // Never focused: append at the end of the content.
+      range.selectNodeContents(el);
+      range.collapse(false);
+    }
+
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    return true;
+  };
+
   const insertToken = (node: Node) => {
     const editable = getSelection();
 
@@ -378,6 +418,7 @@ export const createRichTextEditorDomCore = (doc: Document, renderer: EditorRende
     resolveBoundaryNode,
     resolveStartNode,
     markStates,
+    ensureCaret,
     insertToken,
   };
 };

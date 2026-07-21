@@ -23,15 +23,10 @@ import { RICH_TEXT_EDITOR_ERROR_CODES } from '../rich-text-editor-errors';
 import { RichTextEditorTokenPopupComponent } from '../rich-text-editor-token-popup.component';
 import { RichTextEditorTrigger, RichTextEditorTriggerItem } from '../rich-text-editor-trigger';
 import {
+  assertValidToken,
+  buildChipElement,
   createRichTextEditorTokenCodec,
   TOKEN_CHIP_ATTR,
-  TOKEN_CHIP_CLASS,
-  TOKEN_ID_ATTR,
-  TOKEN_ID_RE,
-  TOKEN_LABEL_CLASS,
-  TOKEN_PREFIX_CLASS,
-  TOKEN_TYPE_ATTR,
-  TOKEN_TYPE_RE,
 } from './internals/rich-text-editor-token';
 import {
   resolveTriggerMatch,
@@ -280,7 +275,7 @@ export class RichTextEditorTriggersDirective {
 
     const { type } = match.trigger;
 
-    if (ngDevMode) this.assertValidToken(type, item.id);
+    if (ngDevMode) assertValidToken(type, item.id);
 
     // Select the trigger char + query so inserting the token replaces it.
     const range = this.document.createRange();
@@ -305,30 +300,12 @@ export class RichTextEditorTriggersDirective {
   }
 
   private buildChip(trigger: RichTextEditorTrigger, item: RichTextEditorTriggerItem): HTMLElement {
-    const chip = this.renderer.createElement('span') as HTMLElement;
-
-    this.renderer.addClass(chip, TOKEN_CHIP_CLASS);
-    this.renderer.setAttribute(chip, TOKEN_CHIP_ATTR, '');
-    this.renderer.setAttribute(chip, TOKEN_TYPE_ATTR, trigger.type);
-    this.renderer.setAttribute(chip, TOKEN_ID_ATTR, item.id);
-    this.renderer.setAttribute(chip, 'contenteditable', 'false');
-
-    // keep the trigger char (e.g. `@`, `#`) visible ahead of the label, matching `buildChipHtml`
-    if (trigger.char) {
-      const prefixEl = this.renderer.createElement('span') as HTMLElement;
-
-      this.renderer.addClass(prefixEl, TOKEN_PREFIX_CLASS);
-      this.renderer.appendChild(prefixEl, this.renderer.createText(trigger.char));
-      this.renderer.appendChild(chip, prefixEl);
-    }
-
-    const labelEl = this.renderer.createElement('span') as HTMLElement;
-
-    this.renderer.addClass(labelEl, TOKEN_LABEL_CLASS);
-    this.renderer.appendChild(labelEl, this.renderer.createText(item.label));
-    this.renderer.appendChild(chip, labelEl);
-
-    return chip;
+    return buildChipElement(this.renderer, {
+      type: trigger.type,
+      id: item.id,
+      label: item.label,
+      prefix: trigger.char,
+    });
   }
 
   private deletePrecedingChip() {
@@ -498,22 +475,6 @@ export class RichTextEditorTriggersDirective {
 
       chars.add(trigger.char);
       types.add(trigger.type);
-    }
-  }
-
-  private assertValidToken(type: string, id: string) {
-    if (!TOKEN_TYPE_RE.test(type)) {
-      throw new RuntimeError(
-        RICH_TEXT_EDITOR_ERROR_CODES.INVALID_TOKEN_TYPE,
-        `[etRichTextEditorTriggers] invalid trigger type "${type}". Types must match ${TOKEN_TYPE_RE}.`,
-      );
-    }
-
-    if (!TOKEN_ID_RE.test(id)) {
-      throw new RuntimeError(
-        RICH_TEXT_EDITOR_ERROR_CODES.INVALID_TOKEN_ID,
-        `[etRichTextEditorTriggers] invalid item id "${id}" for type "${type}". Ids must match ${TOKEN_ID_RE} so the {{type:id}} token round-trips through Markdown.`,
-      );
     }
   }
 }

@@ -113,6 +113,7 @@ const richTextEditorDomFactory = () => {
     restoreSelection: core.restoreSelection,
     closestWithin: core.closestWithin,
     markStates: core.markStates,
+    ensureCaret: core.ensureCaret,
     insertToken: core.insertToken,
     toggleInline: marks.toggleInline,
     activeInlineTags: marks.activeInlineTags,

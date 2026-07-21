@@ -2,6 +2,8 @@ import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../test-helpers';
 import { FORM_FIELD_CONTROL_TYPES, FormFieldDirective, LabelDirective } from '../../form-field/headless';
+import { RichTextEditorTrigger, RichTextEditorTriggerItem } from '../rich-text-editor-trigger';
+import { createRichTextEditorTokenCodec } from './internals/rich-text-editor-token';
 import { RichTextEditorDirective } from './rich-text-editor.directive';
 
 @Component({
@@ -170,6 +172,113 @@ describe('RichTextEditorDirective', () => {
 
       caretIn('td');
       expect(dir.headingToolDisabled()).toBe(true);
+    });
+  });
+
+  describe('insertToken', () => {
+    let fixture: ComponentFixture<StandaloneEditorTestHost>;
+    let dir: RichTextEditorDirective;
+    let editable: HTMLElement;
+
+    const MERGE_FIELDS: RichTextEditorTriggerItem[] = [
+      { id: 'firstName', label: 'First name' },
+      { id: 'company', label: 'Company' },
+    ];
+    const TRIGGERS: RichTextEditorTrigger[] = [
+      {
+        char: '#',
+        type: 'block',
+        items: MERGE_FIELDS,
+        resolveItem: (id) => MERGE_FIELDS.find((item) => item.id === id) ?? null,
+      },
+    ];
+
+    const placeCaretAtStart = () => {
+      const range = document.createRange();
+      range.setStart(editable, 0);
+      range.collapse(true);
+      const selection = document.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    };
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({ imports: [StandaloneEditorTestHost] });
+      fixture = TestBed.createComponent(StandaloneEditorTestHost);
+      fixture.detectChanges();
+      dir = (fixture.debugElement.children[0] as DebugElement).injector.get(RichTextEditorDirective);
+
+      editable = document.createElement('div');
+      editable.contentEditable = 'true';
+      document.body.appendChild(editable);
+      dir.editorDom.root.set(editable);
+      dir.tokenCodec.set(createRichTextEditorTokenCodec(() => TRIGGERS));
+    });
+
+    afterEach(() => {
+      editable.remove();
+      document.getSelection()?.removeAllRanges();
+    });
+
+    it('inserts a chip at the caret and serializes it to token markdown', () => {
+      placeCaretAtStart();
+
+      dir.insertToken('block', 'firstName');
+
+      const chip = editable.querySelector('[data-et-token]');
+      expect(chip?.getAttribute('data-token-type')).toBe('block');
+      expect(chip?.getAttribute('data-token-id')).toBe('firstName');
+      // label resolved synchronously via the trigger's resolveItem
+      expect(chip?.textContent).toContain('First name');
+      expect(dir.value()).toContain('{{block:firstName}}');
+    });
+
+    it('uses the caller-provided label for insertTokenItem without re-resolving', () => {
+      placeCaretAtStart();
+
+      dir.insertTokenItem('block', { id: 'company', label: 'Acme Corp' });
+
+      const chip = editable.querySelector('[data-et-token]');
+      expect(chip?.getAttribute('data-token-id')).toBe('company');
+      expect(chip?.textContent).toContain('Acme Corp');
+      expect(dir.value()).toContain('{{block:company}}');
+    });
+
+    it('appends at the end when the editor is not focused (no selection inside it)', () => {
+      editable.innerHTML = '<p>Hello</p>';
+      document.getSelection()?.removeAllRanges();
+
+      dir.insertToken('block', 'company');
+
+      // chip landed after the existing content, not before it
+      const chip = editable.querySelector('[data-et-token]');
+      expect(chip).not.toBeNull();
+      expect(
+        editable.querySelector('p')?.compareDocumentPosition(chip as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+      expect(dir.value()).toContain('Hello');
+      expect(dir.value()).toContain('{{block:company}}');
+    });
+
+    it('throws in dev when no token codec is installed', () => {
+      dir.tokenCodec.set(null);
+      placeCaretAtStart();
+
+      expect(() => dir.insertToken('block', 'firstName')).toThrowError(/token codec/);
+    });
+
+    it('throws in dev for an invalid token type or id', () => {
+      placeCaretAtStart();
+
+      expect(() => dir.insertToken('Block', 'firstName')).toThrow();
+      expect(() => dir.insertToken('block', 'has space')).toThrow();
+    });
+
+    it('does nothing without an editable element', () => {
+      dir.editorDom.root.set(null);
+
+      expect(() => dir.insertToken('block', 'firstName')).not.toThrow();
+      expect(dir.value()).toBe('');
     });
   });
 });
