@@ -49,3 +49,9 @@ given this: a select body has options that themself have etAutoSurface. Since th
 Task: popovers wont match their host form field in size from a certain point on
 
 ![alt text](image.png)
+
+---
+
+Task: ✅ DONE — optionPicked is a lint warning. rename it
+(Renamed `optionPicked` → `pickOption` — present-tense, verb-first like `loadMore`/`addNew`, satisfies
+`ethlete/prefer-present-tense-output`. Updated directive/component/spec/docs/changeset.)

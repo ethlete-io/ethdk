@@ -127,7 +127,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   /** Whether the panel mirrors the anchor's width. Off for compact triggers (e.g. a country picker). */
   public mirrorPanelWidth = input(true);
   /**
-   * Fire-and-forget picker mode (single select): committing an option emits `optionPicked`
+   * Fire-and-forget picker mode (single select): committing an option emits `pickOption`
    * without ever writing `value`, so the select stays empty and can feed an external list
    * without the set-then-clear dance. No effect in multi select.
    */
@@ -142,7 +142,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
    * the only pick signal and `value` is never mutated; otherwise it fires alongside the normal
    * value selection.
    */
-  public optionPicked = output<unknown>();
+  public pickOption = output<unknown>();
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
 
@@ -957,7 +957,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   // single-select commit: fire the pick command, then write the value unless the select is a
   // fire-and-forget picker (`pickOnly`), in which case it stays valueless
   private pickSingleOption(item: SelectItem) {
-    this.optionPicked.emit(item.value());
+    this.pickOption.emit(item.value());
 
     if (!this.pickOnly()) {
       this.selection.select(item);

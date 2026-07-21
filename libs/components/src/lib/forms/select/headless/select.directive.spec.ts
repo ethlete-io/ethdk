@@ -239,7 +239,7 @@ class PanelSearchTestHost {
       [value]="value()"
       [pickOnly]="true"
       (valueChange)="value.set($event)"
-      (optionPicked)="picked.push($event)"
+      (pickOption)="picked.push($event)"
       class="select"
       placeholder="Pick a fruit"
     >
@@ -1700,7 +1700,7 @@ describe('SelectDirective (pickOnly)', () => {
     await flushFrames();
   });
 
-  it('emits optionPicked without retaining the value and still closes', async () => {
+  it('emits pickOption without retaining the value and still closes', async () => {
     await openSelect();
 
     options()[1]!.click();

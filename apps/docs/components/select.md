@@ -36,19 +36,19 @@ On `et-select` (forwarded from the headless `[etSelect]` directive), plus the st
 | `multiple`          | `boolean`                            | `false`      | Multi-select: `value` is an array, options toggle (the panel stays open) and the trigger renders removable chips.                                                       |
 | `filterMode`        | `'none' \| 'internal' \| 'external'` | `'internal'` | How a search query filters: `internal` hides non-matching options, `external` leaves the option list to you (react to `queryChange`), `none` never filters.             |
 | `allowCustomValues` | `boolean`                            | `false`      | Enter with a query that matches no option commits the raw string as the value.                                                                                          |
-| `pickOnly`          | `boolean`                            | `false`      | Single-select command picker: committing an option emits `optionPicked` and never writes `value`, so the select stays empty. See [command picker](#command-picker).     |
+| `pickOnly`          | `boolean`                            | `false`      | Single-select command picker: committing an option emits `pickOption` and never writes `value`, so the select stays empty. See [command picker](#command-picker).       |
 | `allowAddNew`       | `boolean`                            | `false`      | Renders an "Add new" action row at the end of the panel that emits `addNew` (label via `addNewLabel`).                                                                  |
 | `loading`           | `boolean`                            | `false`      | Shows a spinner in the field and a loading row in the panel (override the row with `ng-template[etSelectLoading]`).                                                     |
 | `error`             | `string \| null`                     | `null`       | Shows an error row in the panel (override with `ng-template[etSelectError]`, error text as context).                                                                    |
 | `hasMoreItems`      | `boolean`                            | `false`      | Shows a load-more control emitting `loadMore` (label via `loadMoreLabel`).                                                                                              |
 
-| Output         | Payload   | Emitted when                                                                                                                                |
-| -------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `mixedChange`  | `boolean` | A user commit or clear resolves the controlled mixed state.                                                                                 |
-| `queryChange`  | `string`  | The search query changes (every keystroke).                                                                                                 |
-| `loadMore`     | `void`    | The load-more control is activated.                                                                                                         |
-| `addNew`       | `string`  | The add-new row is picked; the payload is the current search query (prefill your dialog).                                                   |
-| `optionPicked` | `unknown` | A single-select option is committed; the payload is the picked value. With `pickOnly` this is the only pick signal (`value` never changes). |
+| Output        | Payload   | Emitted when                                                                                                                                |
+| ------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mixedChange` | `boolean` | A user commit or clear resolves the controlled mixed state.                                                                                 |
+| `queryChange` | `string`  | The search query changes (every keystroke).                                                                                                 |
+| `loadMore`    | `void`    | The load-more control is activated.                                                                                                         |
+| `addNew`      | `string`  | The add-new row is picked; the payload is the current search query (prefill your dialog).                                                   |
+| `pickOption`  | `unknown` | A single-select option is committed; the payload is the picked value. With `pickOnly` this is the only pick signal (`value` never changes). |
 
 On `et-select-option`:
 
@@ -206,10 +206,10 @@ Unlike `allowCustomValues` (which commits the raw query string directly), the ad
 
 ### Command picker
 
-Set `pickOnly` to use a single select as a fire-and-forget "add" picker (search → pick → append to an external list): committing an option emits `(optionPicked)` with the picked value **without ever writing `value`**, so the select stays empty and immediately ready for the next pick. Use it when the select feeds a list you own rather than holding a value of its own — it removes the set-then-clear dance (and its race with the `[(value)]` write-back) that a `valueChange`-based picker needs.
+Set `pickOnly` to use a single select as a fire-and-forget "add" picker (search → pick → append to an external list): committing an option emits `(pickOption)` with the picked value **without ever writing `value`**, so the select stays empty and immediately ready for the next pick. Use it when the select feeds a list you own rather than holding a value of its own — it removes the set-then-clear dance (and its race with the `[(value)]` write-back) that a `valueChange`-based picker needs.
 
 ```html
-<et-select [pickOnly]="true" (optionPicked)="addMember($event)" placeholder="Add a member">
+<et-select [pickOnly]="true" (pickOption)="addMember($event)" placeholder="Add a member">
   <input etSelectSearch placeholder="Search people" />
   @for (person of people(); track person.id) {
   <et-select-option [value]="person.id">{{ person.name }}</et-select-option>
@@ -217,7 +217,7 @@ Set `pickOnly` to use a single select as a fire-and-forget "add" picker (search 
 </et-select>
 ```
 
-`optionPicked` also fires in normal (non-`pickOnly`) single selects — there it accompanies the value selection, as a "the user actively picked this" signal distinct from `valueChange` (which also fires on programmatic writes and clears). `pickOnly` has no effect in multi-select.
+`pickOption` also fires in normal (non-`pickOnly`) single selects — there it accompanies the value selection, as a "the user actively picked this" signal distinct from `valueChange` (which also fires on programmatic writes and clears). `pickOnly` has no effect in multi-select.
 
 ## Option groups
 

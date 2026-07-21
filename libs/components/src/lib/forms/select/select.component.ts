@@ -65,7 +65,7 @@ import { SelectVirtualOptionComponent } from './select-virtual-option.component'
         'queryChange',
         'loadMore',
         'addNew',
-        'optionPicked',
+        'pickOption',
       ],
     },
     ColorInteractiveDirective,
