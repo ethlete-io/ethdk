@@ -1,7 +1,8 @@
-import { computed, Directive, effect, inject, input, untracked } from '@angular/core';
+import { computed, Directive, effect, inject, input, signal, untracked } from '@angular/core';
 import { setInputSignal } from '../utils';
 import { ProvideSurfaceDirective, SURFACE_PROVIDER } from './provide-surface.directive';
-import { injectSurfaceThemes, resolveSurfaceByElevation } from './surface-theme.util';
+import { injectSurfaceContextTracker } from './surface-context-tracker';
+import { injectSurfaceThemes, resolveSurfaceByElevation, SurfaceType } from './surface-theme.util';
 
 @Directive({
   selector: '[etAutoSurface]',
@@ -11,6 +12,7 @@ export class AutoSurfaceDirective {
   private ownSurfaceProvider = inject(ProvideSurfaceDirective);
   private contextSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
   private surfaceThemes = injectSurfaceThemes({ optional: true });
+  private surfaceContextTracker = injectSurfaceContextTracker();
 
   /**
    * Explicit surface provider to resolve the surface relative to. Falls back to the
@@ -18,22 +20,59 @@ export class AutoSurfaceDirective {
    */
   surfaceProvider = input<ProvideSurfaceDirective | null>(null);
 
+  // Overlay panels that ARE their overlay's own surface opt out (see
+  // ignoreOverlaySurfaceContext) so they adopt the overlay elevation from their
+  // injector/explicit context instead of stacking one level above it.
+  private consultsOverlayContext = signal(true);
+
   resolvedSurface = computed(() => {
     const themes = this.surfaceThemes;
-    const parentSurfaceProvider = this.surfaceProvider() ?? this.contextSurfaceProvider ?? null;
 
-    if (!themes || !parentSurfaceProvider) {
+    if (!themes) {
       return null;
     }
 
-    return (
-      resolveSurfaceByElevation(
-        themes,
-        parentSurfaceProvider.surfaceType() ?? 'dark',
-        parentSurfaceProvider.elevation() + 1,
-      )?.name ?? null
-    );
+    const contextProvider = this.surfaceProvider() ?? this.contextSurfaceProvider ?? null;
+    const contextElevation = contextProvider?.elevation() ?? null;
+    const contextType = contextProvider?.surfaceType() ?? null;
+
+    // An overlay's projected/portaled content keeps the injector of where it was
+    // *declared* (the trigger location), not the pane it renders into — so the
+    // injector-derived parent surface is one elevation too low. The surface-context
+    // tracker records the innermost open overlay's surface across that boundary, so
+    // consult it and take whichever parent surface sits higher. Panels that are
+    // themselves the overlay's surface opt out via ignoreOverlaySurfaceContext().
+    const overlayActive = this.consultsOverlayContext() && this.surfaceContextTracker.topType() !== null;
+    const overlayElevation = overlayActive ? this.surfaceContextTracker.topElevation() : null;
+    const overlayType = overlayActive ? this.surfaceContextTracker.topType() : null;
+
+    let parentElevation: number;
+    let parentType: SurfaceType;
+
+    if (overlayElevation !== null && (contextElevation === null || overlayElevation > contextElevation)) {
+      parentElevation = overlayElevation;
+      parentType = overlayType ?? contextType ?? 'dark';
+    } else if (contextElevation !== null) {
+      parentElevation = contextElevation;
+      parentType = contextType ?? overlayType ?? 'dark';
+    } else {
+      return null;
+    }
+
+    return resolveSurfaceByElevation(themes, parentType, parentElevation + 1)?.name ?? null;
   });
+
+  /**
+   * Opt this auto-surface out of the overlay surface-context tracker. An overlay
+   * *panel* (menu, select/date/cascader panel, tooltip, toggletip) is its overlay's
+   * own painted surface, so it must adopt the overlay elevation from its injector or
+   * explicit `surfaceProvider` — not stack a level above it. The tracker exists for
+   * content rendered *inside* such a panel, whose injector points back at the trigger
+   * location and therefore cannot see the overlay it visually lives in.
+   */
+  ignoreOverlaySurfaceContext() {
+    this.consultsOverlayContext.set(false);
+  }
 
   constructor() {
     effect(() => {

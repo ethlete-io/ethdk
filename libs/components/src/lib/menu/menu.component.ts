@@ -40,6 +40,10 @@ export class MenuComponent {
   protected searchErrorId = createComponentId('et-menu-search-error');
 
   constructor() {
+    // this panel IS the overlay's own surface — adopt the overlay elevation from the trigger
+    // context, don't stack a level above it (the tracker is for content rendered inside the panel)
+    inject(AutoSurfaceDirective).ignoreOverlaySurfaceContext();
+
     // the panel renders inside a detached overlay pane, so color context from the
     // trigger location has to be re-applied here instead of cascading via the DOM
     // (the surface context is handled the same way by AutoSurfaceDirective). Synced

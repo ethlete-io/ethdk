@@ -37,7 +37,7 @@ When several apps share one theme definition set (a monorepo) but need different
 
 Both provider factories and generators accept a custom prefix (default `'et'`); the provider `prefix` argument must match the generator's `runtimePrefix`.
 
-For code that needs to know the currently active surface (e.g. pickers rendering into overlays), `provideSurfaceContextTracker()` / `injectSurfaceContextTracker()` maintain a registration stack of surface `type` + `elevation` and expose the top entry as signals.
+For code that needs to know the currently active surface (e.g. pickers rendering into overlays), `provideSurfaceContextTracker()` / `injectSurfaceContextTracker()` maintain a registration stack of surface `type` + `elevation` and expose the top entry as signals. Each open overlay registers its own surface, so the top entry is the innermost overlay's surface. `AutoSurfaceDirective` consults it too — see below.
 
 ## Surface themes
 
@@ -67,11 +67,11 @@ Inside any surface scope (and on `:root`, resolved from the default surfaces per
 
 ### Surface directives
 
-| Directive                     | Selector                 | What it does                                                                                                                                  |
-| ----------------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ProvideSurfaceDirective`     | `[etProvideSurface]`     | Sets the surface for the subtree: `<div etProvideSurface="dark">`. Without a value, inherits the parent surface.                              |
-| `AutoSurfaceDirective`        | `[etAutoSurface]`        | Picks the registered surface with the parent's `elevation + 1` in the same `type` — nested panels elevate themselves.                         |
-| `SurfaceInteractiveDirective` | `[etSurfaceInteractive]` | Makes the surface tokens react to the host's `:hover` / `:focus-visible` / `:active` / `[disabled]` state using the neutral interaction tint. |
+| Directive                     | Selector                 | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ----------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ProvideSurfaceDirective`     | `[etProvideSurface]`     | Sets the surface for the subtree: `<div etProvideSurface="dark">`. Without a value, inherits the parent surface.                                                                                                                                                                                                                                                                                                                                   |
+| `AutoSurfaceDirective`        | `[etAutoSurface]`        | Picks the registered surface with the parent's `elevation + 1` in the same `type` — nested panels elevate themselves. Inside an overlay it also consults the surface-context tracker, so content elevates above the overlay's surface even though its injector points back at the trigger location. Overlay panels that _are_ the overlay's own surface call `ignoreOverlaySurfaceContext()` to adopt that elevation instead of stacking above it. |
+| `SurfaceInteractiveDirective` | `[etSurfaceInteractive]` | Makes the surface tokens react to the host's `:hover` / `:focus-visible` / `:active` / `[disabled]` state using the neutral interaction tint.                                                                                                                                                                                                                                                                                                      |
 
 ## Color themes
 

@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewEncapsulation, viewChild } from '@angular/core';
+import { Component, ElementRef, ViewEncapsulation, inject, viewChild } from '@angular/core';
 import { AutoSurfaceDirective, ProvideColorDirective } from '@ethlete/core';
 import { injectOverlaySurfaceContext } from '../form-field/headless';
 import { SelectListboxDirective, SelectViewportDirective } from './headless';
@@ -35,6 +35,10 @@ export class SelectPanelComponent {
   private panelBody = viewChild<ElementRef<HTMLElement>>('panelBody');
 
   constructor() {
+    // this panel IS the overlay's own surface — adopt the overlay elevation from the trigger
+    // context, don't stack a level above it (the tracker is for content rendered inside the panel)
+    inject(AutoSurfaceDirective).ignoreOverlaySurfaceContext();
+
     injectOverlaySurfaceContext({ panelBody: this.panelBody, resizingClass: 'et-select-panel--resizing' });
   }
 }

@@ -36,6 +36,10 @@ export class TooltipComponent {
   });
 
   constructor() {
+    // the tooltip surface IS the overlay's own surface — it adopts the trigger-context
+    // elevation via its `surfaceProvider`, so it must not also stack above the overlay tracker
+    inject(AutoSurfaceDirective).ignoreOverlaySurfaceContext();
+
     effect(() => {
       const providedColor = this.colorProvider() ?? this.triggerColorProvider ?? null;
 

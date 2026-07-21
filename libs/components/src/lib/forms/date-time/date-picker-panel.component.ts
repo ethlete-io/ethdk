@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewEncapsulation, input, viewChild } from '@angular/core';
+import { Component, ElementRef, ViewEncapsulation, inject, input, viewChild } from '@angular/core';
 import { AutoSurfaceDirective, ProvideColorDirective } from '@ethlete/core';
 import { injectOverlaySurfaceContext } from '../form-field/headless';
 
@@ -29,6 +29,10 @@ export class DatePickerPanelComponent {
   private panelBody = viewChild<ElementRef<HTMLElement>>('panelBody');
 
   constructor() {
+    // this panel IS the overlay's own surface — adopt the overlay elevation from the trigger
+    // context, don't stack a level above it (the tracker is for content rendered inside the panel)
+    inject(AutoSurfaceDirective).ignoreOverlaySurfaceContext();
+
     injectOverlaySurfaceContext({ panelBody: this.panelBody, resizingClass: 'et-date-picker-panel--resizing' });
   }
 }
