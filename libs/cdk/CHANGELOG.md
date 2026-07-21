@@ -1,5 +1,18 @@
 # @ethlete/cdk
 
+## 5.0.0-next.21
+
+### Minor Changes
+
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`6a0959a`](https://github.com/ethlete-io/ethdk/commit/6a0959ac61d5641ae3f0da7552310d58b4029580) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add an `et-legacy` marker class to every cdk component host. Because cdk and
+  `@ethlete/components` reuse many of the same global class names (`et-overlay`,
+  `et-menu`, `et-radio`, `et-select`, `et-checkbox`, `et-tooltip`, …), apps that
+  consume both libraries at once can no longer target one without hitting the
+  other. Every cdk element now carries `et-legacy` alongside its usual classes, so
+  consumer overrides can be scoped to the cdk implementation only — e.g. rewrite
+  `.et-overlay { … }` as `.et-overlay.et-legacy { … }`. The marker is inert (no cdk
+  CSS references it), so cdk rendering is unchanged.
+
 ## 5.0.0-next.20
 
 ### Patch Changes
