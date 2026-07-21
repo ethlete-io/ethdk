@@ -37,14 +37,15 @@ Every implementing control:
 | `et-date-input`, `et-time-input`, `et-date-time-input`, `et-date-range-input`, `et-duration-input` | Field empty with `mixedLabel` placeholder; picker highlights nothing; parse/pick commits |
 | `et-tag-input`                                                                                     | Chips hidden; `mixedLabel` placeholder; first added tag starts a fresh array             |
 | `et-phone-input`                                                                                   | Number field masked; country picking alone neither leaks the hidden number nor resolves  |
-| `et-slider`, `et-range-slider`                                                                     | `aria-valuenow` removed, `aria-valuetext` = `mixedLabel`; thumbs parked + dimmed         |
-| `et-rating`                                                                                        | No stars filled; `aria-valuenow` removed, `aria-valuetext` = `mixedLabel`                |
-| `et-radio-group`, `et-checkbox-group`, `et-segmented-button-group`                                 | Nothing `aria-checked`; first pick replaces                                              |
+| `et-slider`, `et-range-slider`                                                                     | `aria-valuenow` removed, `aria-valuetext` = `mixedLabel`; dashed rail, thumbs parked + dimmed |
+| `et-rating`                                                                                        | No stars filled + dashed baseline; `aria-valuenow` removed, `aria-valuetext` = `mixedLabel`   |
+| `et-radio-group`, `et-checkbox-group`, `et-segmented-button-group`                                 | Nothing `aria-checked`; dashed marks/track; first pick replaces                          |
 
 ### Deliberate boundaries
 
-- **`et-checkbox`** already expresses this concept through the platform-named API: `indeterminate` / `aria-checked="mixed"`, with the native resolution behavior (activating an indeterminate checkbox checks it). Boolean tri-state is `indeterminate`, not `mixed` — the names differ because the platform's do.
-- **`et-switch` deliberately has no mixed state.** ARIA defines `role="switch"` as strictly two-state — `aria-checked="mixed"` is invalid — so a mixed switch cannot be represented to assistive technology. Use `et-checkbox` for tri-state booleans in bulk editors.
+- **`et-checkbox` and `et-switch`** express this concept through the platform-named `indeterminate` input rather than `mixed`, with the native resolution behavior (activating an indeterminate control turns it on). Boolean tri-state is `indeterminate`, not `mixed` — the names differ because the platform's do.
+  - `et-checkbox` reflects it as `aria-checked="mixed"` (valid for `role="checkbox"`).
+  - `et-switch` **cannot**: ARIA defines `role="switch"` as strictly two-state, so `aria-checked="mixed"` is invalid. Its indeterminate state is therefore presentational only — the thumb parks mid-track behind a `data-indeterminate` attribute while `aria-checked` stays boolean, so assistive tech hears "off" until the first toggle resolves it to on. Prefer `et-checkbox` when the mixed state must be announced.
 - **`et-otp-input`, `et-dropzone`, and the rich text editors** are not bulk-edit fields; they have no mixed state. `et-choice-field` is layout chrome — the control it wraps carries the state.
 - **`etInputMask`** decorates `et-input` and inherits its mixed behavior.
 

@@ -134,12 +134,20 @@
       user-select: none;
     }
 
-    /* an unresolved bulk-edit range parks both thumbs at the track start — the neutral,
-       dimmed treatment makes that read as "unset", not "minimum". The fill is already
-       zero-width while mixed. Consumers restyle via [data-mixed]. */
+    /* an unresolved bulk-edit range parks both thumbs at the track start — the dashed accent rail
+       (not a muted/grey one, which would read as disabled) makes that read as "provisional /
+       values differ", not "minimum". The fill is already zero-width while mixed. Consumers
+       restyle via [data-mixed]. */
     &[data-mixed] {
+      .et-range-slider-rail {
+        background: repeating-linear-gradient(
+          to right,
+          var(--et-theme-color-primary-solid, currentColor) 0 6px,
+          transparent 6px 11px
+        );
+      }
+
       .et-range-slider-thumb {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 48%, transparent);
         box-shadow: none;
       }
 

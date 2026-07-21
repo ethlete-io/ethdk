@@ -87,6 +87,14 @@
       --_et-control-border: var(--et-theme-color-primary-solid);
     }
 
+    /* an unresolved bulk-edit selection: no radio reads as checked (normally impossible), so the
+       dashed accent borders (not muted/grey ones, which would read as disabled) hint at the
+       provisional state. Consumers restyle via [data-mixed]. */
+    &[data-mixed] .et-radio-circle {
+      border-style: dashed;
+      border-color: var(--et-theme-color-primary-solid, currentColor);
+    }
+
     .et-radio-group-support {
       overflow: clip;
       block-size: 0;

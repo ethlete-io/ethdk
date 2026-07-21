@@ -183,7 +183,7 @@ Boolean controls pair with a label inside `et-choice-field` (instead of `et-form
 ```
 
 - `et-checkbox` — `role="checkbox"`, `checked` + `indeterminate` models (`aria-checked="mixed"` when indeterminate; toggling an indeterminate checkbox resolves to checked).
-- `et-switch` — `role="switch"`, `checked` model, no indeterminate.
+- `et-switch` — `role="switch"`, `checked` + `indeterminate` models (toggling an indeterminate switch resolves to checked). Because `role="switch"` cannot carry `aria-checked="mixed"`, the indeterminate state is presentational only — the thumb parks mid-track behind `data-indeterminate` while `aria-checked` stays boolean.
 - Both toggle on click and <kbd>Space</kbd>, and mark themselves touched on blur.
 - Both honor `readonly` (e.g. from a `readonly(...)` schema): the control keeps its normal look and stays focusable (`aria-readonly`), it just cannot be toggled — distinct from the dimmed `disabled` state.
 - `et-choice-field` accepts `size: 'sm' | 'md' | 'lg'` (default `'md'`), scaling the control and label together.
@@ -478,7 +478,7 @@ When one form edits several records whose values disagree, every value control o
 
 - **Text-slot controls take a `mixedLabel`** (default `'Mixed'`) shown in place of the value while mixed: `et-input`, `et-number-input`, `et-password-input`, `et-textarea` (placeholder), `et-color-input`, `et-tag-input`, `et-phone-input`, and the date/time family (`et-date-input`, `et-date-range-input`, `et-time-input`, `et-date-time-input`, `et-duration-input`).
 - **Controls without a text slot** express it through ARIA/visual masking only — no `mixedLabel`: `et-rating` (`aria-valuetext`), and the selection groups `et-radio-group`, `et-checkbox-group`, `et-segmented-button-group` (nothing `aria-checked`).
-- **Boundaries.** `et-checkbox` already carries this concept as its platform-named `indeterminate` / `aria-checked="mixed"` (see above), so it has no separate `mixed`. `et-switch` deliberately has no mixed state — `role="switch"` is strictly two-state in ARIA; use `et-checkbox` for tri-state booleans. `et-otp-input` and the rich text editors are not bulk-edit fields.
+- **Boundaries.** `et-checkbox` and `et-switch` carry this concept as their platform-named `indeterminate` input (see above) rather than `mixed`. `et-checkbox` reflects it as `aria-checked="mixed"`; `et-switch` can't (`role="switch"` is strictly two-state in ARIA) so its indeterminate state is presentational only and unannounced — prefer `et-checkbox` when the mixed state must reach assistive tech. `et-otp-input` and the rich text editors are not bulk-edit fields.
 
 Each control's `Mixed` Storybook story (under its `Components/Forms/…` entry) demonstrates the masking and the first-commit-replaces behavior.
 

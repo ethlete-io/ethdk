@@ -2,7 +2,7 @@ import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 import { SelectOptionGroupStorybookComponent } from './select-option-group-storybook.component';
 
 export default {
-  title: 'Components/Forms/Select option group',
+  title: 'Components/Forms/Select/Option group',
   component: SelectOptionGroupStorybookComponent,
   decorators: [moduleMetadata({ imports: [SelectOptionGroupStorybookComponent] })],
   argTypes: {

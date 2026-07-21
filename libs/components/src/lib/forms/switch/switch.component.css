@@ -63,15 +63,18 @@
 
     /* hover-capable pointers only — on touch, :hover sticks after a tap */
     @media (hover: hover) {
-      &:hover:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']) .et-switch-track,
+      &:hover:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']):not([data-indeterminate])
+        .et-switch-track,
       :where(et-choice-field:has(.et-choice-field-label-area:hover))
-        &:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true'])
+        &:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']):not([data-indeterminate])
         .et-switch-track {
         background-color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 30%, transparent);
       }
     }
 
-    :where(et-choice-field[data-error]) &:not([aria-disabled='true']):not([aria-checked='true']) .et-switch-track {
+    :where(et-choice-field[data-error])
+      &:not([aria-disabled='true']):not([aria-checked='true']):not([data-indeterminate])
+      .et-switch-track {
       background-color: color-mix(in srgb, var(--et-theme-color-primary-solid) 40%, transparent);
     }
 
@@ -130,6 +133,29 @@
       &:active:not([aria-disabled='true']):not([data-readonly]) .et-switch-thumb {
         width: calc(var(--et-switch-thumb-size) + 3px);
         left: calc(var(--et-switch-track-width) - var(--et-switch-thumb-size) - 3px - var(--et-switch-thumb-offset));
+      }
+    }
+
+    /* bulk-edit indeterminate: the thumb parks mid-track and the track goes to a dashed accent
+       outline (not a muted/grey one, which would read as disabled) — neither off nor on.
+       Mirrors the checkbox indeterminate state; the first toggle resolves it to on. Consumers
+       restyle via [data-indeterminate]. */
+    &[data-indeterminate] {
+      .et-switch-track {
+        background-color: transparent;
+
+        &::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          border: 1px dashed var(--et-theme-color-primary-solid, currentColor);
+        }
+      }
+
+      .et-switch-thumb {
+        left: calc((var(--et-switch-track-width) - (var(--et-switch-thumb-size) - 4px)) / 2);
+        background-color: var(--et-theme-color-primary-solid, currentColor);
       }
     }
 

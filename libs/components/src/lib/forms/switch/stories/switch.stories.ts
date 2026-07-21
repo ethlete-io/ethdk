@@ -1,5 +1,9 @@
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
-import { FormFieldSwitchStorybookComponent, SwitchDisabledStorybookComponent } from './switch-storybook.component';
+import {
+  FormFieldSwitchStorybookComponent,
+  SwitchDisabledStorybookComponent,
+  SwitchIndeterminateStorybookComponent,
+} from './switch-storybook.component';
 
 export default {
   title: 'Components/Forms/Switch',
@@ -21,6 +25,13 @@ export const Default: Story = {};
 
 export const Readonly: Story = {
   args: { readonly: true },
+};
+
+export const Indeterminate: StoryObj<SwitchIndeterminateStorybookComponent> = {
+  render: () => ({
+    moduleMetadata: { imports: [SwitchIndeterminateStorybookComponent] },
+    template: '<et-sb-switch-indeterminate />',
+  }),
 };
 
 export const Disabled: StoryObj<SwitchDisabledStorybookComponent> = {

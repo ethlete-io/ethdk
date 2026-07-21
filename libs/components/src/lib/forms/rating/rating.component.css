@@ -122,13 +122,17 @@
       color: var(--et-theme-color-primary-solid, currentColor);
     }
 
-    /* an unresolved bulk-edit rating fills nothing — dimming the outlines below the
-       normal empty strength makes that read as "unset", not "zero stars". Hovered
-       previews keep their full state colors. Consumers restyle via [data-mixed]. */
+    /* an unresolved bulk-edit rating fills nothing — a dashed accent baseline under the row
+       (not a muted/grey one, which would read as disabled) makes that read as "provisional /
+       values differ", not "zero stars". Hovered previews keep their full state colors.
+       Consumers restyle via [data-mixed]. */
     &[data-mixed] {
-      .et-rating-icon-base,
-      .et-rating-icon[data-state='empty'] {
-        color: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 18%, transparent);
+      .et-rating-icons::after {
+        content: '';
+        position: absolute;
+        inset-inline: 0;
+        inset-block-end: -6px;
+        border-block-end: 1px dashed var(--et-theme-color-primary-solid, currentColor);
       }
     }
 

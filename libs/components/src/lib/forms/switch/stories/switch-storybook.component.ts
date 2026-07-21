@@ -1,4 +1,4 @@
-import { Component, computed, input, signal, ViewEncapsulation } from '@angular/core';
+import { Component, computed, input, linkedSignal, signal, ViewEncapsulation } from '@angular/core';
 import { form, FormField, readonly, required } from '@angular/forms/signals';
 import { CHOICE_FIELD_IMPORTS } from '../../choice-field';
 import { FormFieldSize } from '../../form-field';
@@ -47,6 +47,34 @@ export class FormFieldSwitchStorybookComponent {
   });
 
   public debugInfo = computed(() => JSON.stringify(this.formModel(), null, 2));
+}
+
+@Component({
+  selector: 'et-sb-switch-indeterminate',
+  template: `
+    <div class="flex max-w-md flex-col gap-4 p-8 font-sans">
+      <et-choice-field>
+        <et-switch [(indeterminate)]="indeterminateState" [(checked)]="checkedState" />
+        <et-label>Push notifications</et-label>
+      </et-choice-field>
+
+      <p class="text-xs text-et-surface-muted">
+        Bulk edit over records that disagree — the switch parks mid-track. The first toggle resolves it to on.
+      </p>
+
+      <pre class="rounded bg-et-surface-bg p-2 text-xs">
+Checked: {{ checkedState() }}
+Indeterminate: {{ indeterminateState() }}</pre
+      >
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...CHOICE_FIELD_IMPORTS, ...SWITCH_IMPORTS],
+})
+export class SwitchIndeterminateStorybookComponent {
+  public indeterminate = input(true);
+  public indeterminateState = linkedSignal(() => this.indeterminate());
+  public checkedState = signal(false);
 }
 
 @Component({

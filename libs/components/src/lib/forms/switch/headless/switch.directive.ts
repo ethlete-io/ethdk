@@ -7,6 +7,9 @@ import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '..
   host: {
     role: 'switch',
     '[attr.aria-checked]': 'checked()',
+    // role=switch does not support aria-checked="mixed" (ARIA treats it as false), so the
+    // indeterminate/bulk-edit state is reflected for styling only — aria-checked stays boolean
+    '[attr.data-indeterminate]': 'indeterminate() || null',
     '[attr.aria-invalid]': 'shouldDisplayError() || null',
     '[attr.aria-disabled]': 'disabled() || null',
     '[attr.aria-readonly]': 'readonly() || null',
@@ -26,6 +29,12 @@ export class SwitchDirective implements FormFieldControl {
   private el = inject<ElementRef<HTMLElement>>(ElementRef);
 
   public checked = model(false);
+  /**
+   * Bulk-edit state for a switch whose source records disagree (some on, some off), mirroring
+   * checkbox's platform `indeterminate`. The committed `checked` value stays untouched while
+   * indeterminate; the first user toggle resolves the flag and turns the switch on.
+   */
+  public indeterminate = model(false);
   public touched = model(false);
   public disabled = input(false);
   /** View-only: keeps the normal look and focusability but blocks toggling (unlike `disabled`). */
@@ -49,6 +58,13 @@ export class SwitchDirective implements FormFieldControl {
 
   public toggle() {
     if (this.disabled() || this.readonly()) {
+      return;
+    }
+
+    if (this.indeterminate()) {
+      this.indeterminate.set(false);
+      this.checked.set(true);
+
       return;
     }
 
