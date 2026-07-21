@@ -1,6 +1,5 @@
 import { Component, inject, ViewEncapsulation } from '@angular/core';
 import { ColorInteractiveDirective, createCanAnimateSignal } from '@ethlete/core';
-import { DescriptionComponent } from '../../description';
 import { SelectionOptionDirective } from '../headless';
 
 @Component({
@@ -8,7 +7,6 @@ import { SelectionOptionDirective } from '../headless';
   templateUrl: './radio.component.html',
   styleUrl: './radio.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [DescriptionComponent],
   hostDirectives: [
     {
       directive: SelectionOptionDirective,
