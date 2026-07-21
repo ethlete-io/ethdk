@@ -24,8 +24,7 @@
     "date-fns": "4.1.0",
     "rxjs": "7.8.2",
     "typescript": "6.0.3",
-    "vite": "8.0.13",
-    "vite-tsconfig-paths": "^6.1.1"
+    "vite": "8.0.13"
   },
   "generators": "./generators/generators.json"
 }
