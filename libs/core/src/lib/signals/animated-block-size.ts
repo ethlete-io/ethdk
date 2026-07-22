@@ -122,6 +122,15 @@ export const injectAnimatedBlockSize = (config: AnimatedBlockSizeConfig): void =
     const nextAnimation = host.animate([fromFrame, toFrame], { duration, easing });
 
     const cleanup = () => {
+      // Cancelling an animation to start the next one rejects its `finished` promise, firing this
+      // cleanup after a newer animation has already taken over. That newer animation owns the
+      // resizing class, so only strip it when no other animation is mid-flight — otherwise an
+      // interrupted resize (rapid content changes, e.g. async search typing) would un-clip the
+      // scroller while it is still animating and flash a scrollbar.
+      if (animation !== null && animation !== nextAnimation) {
+        return;
+      }
+
       if (config.resizingClass && renderer) {
         renderer.removeClass(host, config.resizingClass);
       }
