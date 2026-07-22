@@ -51,7 +51,7 @@ Selectable chips — filter bars, tag pickers — are a **composition**, not a d
 
 <StoryEmbed id="components-chip--filter-chips" height="320px" />
 
-Everything the [selection lists](/components/forms#selection-lists) document applies: value is an array with `multiple` and a single value otherwise, arrow keys rove across chips (selecting as they move in single mode), <kbd>Space</kbd>/<kbd>Enter</kbd> toggles, `readonly` keeps the chips focusable but blocks changes. Don't combine `removable` with `etSelectionOption` on the same chip — a filter chip toggles, it doesn't remove.
+Everything the [selection lists](/components/choice-inputs#selection-lists) document applies: value is an array with `multiple` and a single value otherwise, arrow keys rove across chips (selecting as they move in single mode), <kbd>Space</kbd>/<kbd>Enter</kbd> toggles, `readonly` keeps the chips focusable but blocks changes. Don't combine `removable` with `etSelectionOption` on the same chip — a filter chip toggles, it doesn't remove.
 
 ## Headless usage
 

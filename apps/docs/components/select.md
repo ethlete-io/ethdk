@@ -200,7 +200,7 @@ The tag-input ergonomics are available on top:
 - **`normalizeCustomValue`** — maps raw text to the stored value, return `null` to reject; defaults to trimming.
 - **`maxSelection`** — caps the number of selected values (multi mode); at the cap the search input locks (like the tag input's `maxTags`) and every still-unselected option renders disabled (skipped by keyboard navigation, like any disabled option) until a value is removed. Selected options stay enabled for deselection.
 
-Prefer this over [`et-tag-input`](/components/forms#tag-input-—-et-tag-input) whenever suggestions/autocomplete are involved — it is a superset of the tag input's behavior with an option list on top. The tag input remains the deliberately minimal variant for pure free-text entry with no panel at all.
+Prefer this over [`et-tag-input`](/components/text-inputs#tag-input) whenever suggestions/autocomplete are involved — it is a superset of the tag input's behavior with an option list on top. The tag input remains the deliberately minimal variant for pure free-text entry with no panel at all.
 
 ### Adding new options
 

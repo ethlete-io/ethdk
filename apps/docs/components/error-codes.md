@@ -23,31 +23,31 @@ Two kinds of checks produce these errors:
 
 Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU_ERROR_CODES`, `OVERLAY_ERROR_CODES`) if you need to match on them programmatically.
 
-| Range     | Domain             | Guide                                            |
-| --------- | ------------------ | ------------------------------------------------ |
-| 1000–1099 | Select             | [Select](/components/select)                     |
-| 1100–1199 | Chip               | [Chip](/components/chip)                         |
-| 1200–1299 | Overlay            | [Overlays](/components/overlays)                 |
-| 1300–1399 | Menu               | [Menu](/components/menu)                         |
-| 1400–1499 | Tooltip            | [Tooltip](/components/tooltip)                   |
-| 1500–1599 | Toggletip          | [Toggletip](/components/toggletip)               |
-| 1600–1699 | Stream             | [Stream](/components/stream)                     |
-| 1700–1799 | Notification       | [Notification](/components/notification)         |
-| 1800–1899 | Icon               | [Icon](/components/icon)                         |
-| 1900–1999 | Grid               | [Grid](/components/grid)                         |
-| 2000–2099 | Tabs               | [Tabs](/components/tabs)                         |
-| 2100–2199 | Scrollable         | [Scrollable](/components/scrollable)             |
-| 2200–2299 | Form field         | [Forms](/components/forms)                       |
-| 2300–2399 | Split button       | [Button](/components/button)                     |
-| 2400–2499 | Dropzone           | [Dropzone](/components/dropzone)                 |
-| 2500–2599 | Rich text editor   | [Rich text editor](/components/rich-text-editor) |
-| 2700–2799 | Tag input          | [Forms](/components/forms)                       |
-| 2800–2899 | Phone input        | [Forms](/components/forms)                       |
-| 2900–2999 | Calendar           | [Calendar](/components/calendar)                 |
-| 3000–3099 | Date & time inputs | [Forms](/components/forms)                       |
-| 3100–3199 | Slider             | [Slider](/components/slider)                     |
-| 3200–3299 | Masked input       | [Forms](/components/forms)                       |
-| 3300–3399 | Cascader           | [Cascader](/components/cascader)                 |
+| Range     | Domain             | Guide                                              |
+| --------- | ------------------ | -------------------------------------------------- |
+| 1000–1099 | Select             | [Select](/components/select)                       |
+| 1100–1199 | Chip               | [Chip](/components/chip)                           |
+| 1200–1299 | Overlay            | [Overlays](/components/overlays)                   |
+| 1300–1399 | Menu               | [Menu](/components/menu)                           |
+| 1400–1499 | Tooltip            | [Tooltip](/components/tooltip)                     |
+| 1500–1599 | Toggletip          | [Toggletip](/components/toggletip)                 |
+| 1600–1699 | Stream             | [Stream](/components/stream)                       |
+| 1700–1799 | Notification       | [Notification](/components/notification)           |
+| 1800–1899 | Icon               | [Icon](/components/icon)                           |
+| 1900–1999 | Grid               | [Grid](/components/grid)                           |
+| 2000–2099 | Tabs               | [Tabs](/components/tabs)                           |
+| 2100–2199 | Scrollable         | [Scrollable](/components/scrollable)               |
+| 2200–2299 | Form field         | [Forms](/components/forms)                         |
+| 2300–2399 | Split button       | [Button](/components/button)                       |
+| 2400–2499 | Dropzone           | [Dropzone](/components/dropzone)                   |
+| 2500–2599 | Rich text editor   | [Rich text editor](/components/rich-text-editor)   |
+| 2700–2799 | Tag input          | [Text inputs](/components/text-inputs)             |
+| 2800–2899 | Phone input        | [Text inputs](/components/text-inputs)             |
+| 2900–2999 | Calendar           | [Calendar](/components/calendar)                   |
+| 3000–3099 | Date & time inputs | [Date & time inputs](/components/date-time-inputs) |
+| 3100–3199 | Slider             | [Slider](/components/slider)                       |
+| 3200–3299 | Masked input       | [Text inputs](/components/text-inputs)             |
+| 3300–3399 | Cascader           | [Cascader](/components/cascader)                   |
 
 ::: info Codes below 1000
 Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web sockets). `ET1000`/`ET1001` therefore exist in both packages — the bracketed source in the message (`[SelectDirective]` vs. a query feature) tells them apart.

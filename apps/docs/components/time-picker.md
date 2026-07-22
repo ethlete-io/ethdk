@@ -1,6 +1,6 @@
 # Time picker
 
-`et-time-picker` is an inline column-list time picker operating purely on `Date` objects — one scrollable listbox column per time unit, with the column layout (12/24-hour cycle, optional seconds, AM/PM) derived from a date-fns format string. It is a standalone element (usable outside forms) and the surface the [time input](/components/forms#time-input-—-et-time-input)'s picker overlay hosts. Import `TIME_PICKER_IMPORTS`.
+`et-time-picker` is an inline column-list time picker operating purely on `Date` objects — one scrollable listbox column per time unit, with the column layout (12/24-hour cycle, optional seconds, AM/PM) derived from a date-fns format string. It is a standalone element (usable outside forms) and the surface the [time input](/components/date-time-inputs#time-input)'s picker overlay hosts. Import `TIME_PICKER_IMPORTS`.
 
 ```ts
 import { TIME_PICKER_IMPORTS } from '@ethlete/components';

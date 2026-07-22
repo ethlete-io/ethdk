@@ -190,13 +190,16 @@ export default defineConfig({
         {
           text: 'Forms',
           items: [
-            { text: 'Forms', link: '/components/forms' },
-            { text: 'Mixed state (bulk editing)', link: '/components/mixed-state' },
-            { text: 'Cascader', link: '/components/cascader' },
+            { text: 'Overview', link: '/components/forms' },
+            { text: 'Text inputs', link: '/components/text-inputs' },
+            { text: 'Date & time inputs', link: '/components/date-time-inputs' },
+            { text: 'Choice & rating', link: '/components/choice-inputs' },
             { text: 'Select', link: '/components/select' },
+            { text: 'Cascader', link: '/components/cascader' },
             { text: 'Slider', link: '/components/slider' },
             { text: 'Rich text editor', link: '/components/rich-text-editor' },
             { text: 'Dropzone', link: '/components/dropzone' },
+            { text: 'Mixed state (bulk editing)', link: '/components/mixed-state' },
           ],
         },
         {

@@ -59,12 +59,16 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 
 ### Forms
 
-- [Forms](/components/forms) — signal-forms-native text/number/textarea/color inputs, checkbox, switch and selection lists with shared field chrome.
-- [Cascader](/components/cascader) — browse a hierarchy level by level (Miller columns / mobile drill) from an abstract, lazily-loaded data source.
+- [Forms overview](/components/forms) — the shared field shell (labels, hints, errors, affixes), signal-forms binding, validation, bulk editing and theming that every control inherits.
+- [Text inputs](/components/text-inputs) — text field, number, password, textarea, color, masked input, OTP, tag and phone.
+- [Date & time inputs](/components/date-time-inputs) — date, date range, time, date-time and duration controls with typed entry plus anchored pickers.
+- [Choice & rating](/components/choice-inputs) — checkbox, switch, radio/checkbox/segmented selection lists and the star rating.
 - [Select](/components/select) — combobox-pattern dropdown select with keyboard navigation, typeahead and virtual option focus.
+- [Cascader](/components/cascader) — browse a hierarchy level by level (Miller columns / mobile drill) from an abstract, lazily-loaded data source.
 - [Slider](/components/slider) — single-value and two-thumb range sliders with pointer drag, a full keyboard model and RTL support.
 - [Rich text editor](/components/rich-text-editor) — Markdown-valued `contenteditable` editor with a data-driven toolbar, tables, `#`/`@` trigger tokens and a multi-language variant.
 - [Dropzone](/components/dropzone) — file-upload form control with a built-in @ethlete/query upload workflow, previews, progress and retry.
+- [Mixed state](/components/mixed-state) — the bulk-editing contract shared by every value control.
 
 ### Layout & structure
 
