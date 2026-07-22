@@ -1,0 +1,54 @@
+@layer components {
+  .et-bracket {
+    position: relative;
+  }
+
+  .et-bracket-round {
+    position: absolute;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .et-bracket-element {
+    position: absolute;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    transition: opacity 0.2s;
+  }
+
+  .et-bracket-svg {
+    inline-size: 100%;
+    block-size: 100%;
+    position: absolute;
+
+    /*
+     * Connector lines default to the ambient surface's border color; consumers override with
+     * the public --et-bracket-line-color token. Not declared via @property because an
+     * @property initial-value cannot contain a var() (see the theming skill).
+     */
+    path {
+      color: var(--et-bracket-line-color, var(--et-surface-border-solid, rgb(255 255 255 / 0.1)));
+      transition: opacity 0.2s;
+    }
+
+    .et-bracket-swiss-group-border {
+      color: var(
+        --et-bracket-swiss-group-border-color,
+        var(--et-bracket-line-color, var(--et-surface-border-solid, rgb(255 255 255 / 0.1)))
+      );
+    }
+  }
+
+  .et-bracket-host--journey-hover {
+    path,
+    .et-bracket-element--match {
+      opacity: 0.5;
+    }
+
+    .et-bracket-journey-active {
+      opacity: 1 !important;
+    }
+  }
+}
