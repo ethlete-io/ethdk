@@ -291,7 +291,7 @@ const createTwoToNothingRelation = <TRoundData, TMatchData>(params: {
     .get(relation.previousUpperRound.id)
     ?.get(previousUpperRoundMatchPosition);
   const previousLowerMatch = matchPositionMaps
-    .get(relation.previousUpperRound.id)
+    .get(relation.previousLowerRound.id)
     ?.get(previousLowerRoundMatchPosition);
 
   if (!previousUpperMatch) throw new Error('Previous upper round match not found');
@@ -304,7 +304,7 @@ const createTwoToNothingRelation = <TRoundData, TMatchData>(params: {
     previousUpperMatch,
     previousUpperRound: relation.previousUpperRound,
     previousLowerMatch,
-    previousLowerRound: relation.previousUpperRound,
+    previousLowerRound: relation.previousLowerRound,
   };
 };
 
