@@ -466,9 +466,9 @@ export class ContentfulRichTextRendererComponent {
     const lastComponentIndexes: { newIndex: number; prevIndex: number; command: RenderCommand }[] = [];
     for (const [id, command] of previousRenderCommandMap) {
       const index = commands.findIndex((c) => getRenderCommandId(c) === id);
-      const newCommand = commands[index]!;
+      const newCommand = commands[index];
 
-      if (index === -1) {
+      if (index === -1 || !newCommand) {
         throw new Error('Command not found!');
       }
 
@@ -943,10 +943,12 @@ export class ContentfulRichTextRendererComponent {
       this._updateComponentInputs(command, componentRef);
     }
 
+    // `cached` and the fresh `command` share the same id and therefore the same union variant,
+    // but TS can't correlate the two after the spread — assert the merged object as the union.
     this._executedCommandsCache.set(id, {
       ...cached,
-      command: command as any,
-    });
+      command,
+    } as ExecutedCommandCacheItem);
   }
 
   private _runMoveInstruction(command: RenderCommand) {
@@ -984,8 +986,8 @@ export class ContentfulRichTextRendererComponent {
 
       this._executedCommandsCache.set(id, {
         ...cached,
-        command: command as any,
-      });
+        command,
+      } as ExecutedCommandCacheItem);
     }
   }
 
@@ -1020,11 +1022,11 @@ export class ContentfulRichTextRendererComponent {
     this._executedCommandsCache.delete(id);
   }
 
-  private _getComponentRootNode(componentRef: ComponentRef<any>): HTMLElement {
-    return (componentRef.hostView as EmbeddedViewRef<any>).rootNodes[0] as HTMLElement;
+  private _getComponentRootNode(componentRef: ComponentRef<unknown>): HTMLElement {
+    return (componentRef.hostView as EmbeddedViewRef<unknown>).rootNodes[0] as HTMLElement;
   }
 
-  private _updateComponentInputs(command: ComponentRenderCommand, componentRef: ComponentRef<any>) {
+  private _updateComponentInputs(command: ComponentRenderCommand, componentRef: ComponentRef<unknown>) {
     const inputMeta = reflectComponentType(command[COMPONENT_RENDER_COMMAND_POSITION.COMPONENT])?.inputs ?? [];
     const inputsByProp = new Map(inputMeta.map((i) => [i.propName, i.templateName]));
 
