@@ -90,7 +90,13 @@
                   }
                 </button>
               } @empty {
-                <p class="et-query-devtools-empty">No queries registered.</p>
+                @if (inspectFilterIds()) {
+                  <p class="et-query-devtools-empty">
+                    The inspected element's queries are no longer registered. Reset the filter.
+                  </p>
+                } @else {
+                  <p class="et-query-devtools-empty">No queries registered.</p>
+                }
               }
             </div>
 
@@ -249,6 +255,40 @@
           </div>
         }
 
+        <!-- GRAPHQL -->
+        @case ('gql') {
+          <div class="et-query-devtools-scroll">
+            @for (item of gqlEntries(); track item.entry.id) {
+              <div class="et-query-devtools-card">
+                <div class="et-query-devtools-card-head">
+                  <span [attr.data-status]="queryStatus(item.query)" class="et-query-devtools-status"></span>
+                  <span class="et-query-devtools-method">{{ item.entry.meta.method }}</span>
+                  <span class="et-query-devtools-route">{{ item.entry.meta.route || '—' }}</span>
+                  <button (click)="executeQuery(item.query, false)" class="et-query-devtools-btn" type="button">
+                    Execute
+                  </button>
+                </div>
+
+                <h5 class="et-query-devtools-section">Document</h5>
+                <pre class="et-query-devtools-code">{{ item.entry.meta.gqlQuery }}</pre>
+
+                <h5 class="et-query-devtools-section">Variables</h5>
+                <et-query-devtools-json [value]="item.query.args()" />
+
+                @if (item.query.error(); as error) {
+                  <h5 class="et-query-devtools-section">Error ({{ error.raw.status }})</h5>
+                  <et-query-devtools-json [value]="error.isList ? error.errors : error.error" />
+                } @else {
+                  <h5 class="et-query-devtools-section">Response</h5>
+                  <et-query-devtools-json [value]="item.query.response()" />
+                }
+              </div>
+            } @empty {
+              <p class="et-query-devtools-empty">No GraphQL queries registered.</p>
+            }
+          </div>
+        }
+
         <!-- AUTH -->
         @case ('auth') {
           <div class="et-query-devtools-scroll">
@@ -290,6 +330,59 @@
               </div>
             } @empty {
               <p class="et-query-devtools-empty">No auth providers registered.</p>
+            }
+          </div>
+        }
+
+        <!-- SOCKETS -->
+        @case ('ws') {
+          <div class="et-query-devtools-scroll">
+            @for (entry of wsEntries(); track entry.id) {
+              @let ws = asWs(entry);
+              <div class="et-query-devtools-card">
+                <div class="et-query-devtools-card-head">
+                  <strong>{{ entry.meta.name || 'socket' }}</strong>
+                  <span
+                    [class.et-query-devtools-chip--success]="ws.connected()"
+                    [class.et-query-devtools-chip--muted]="!ws.connected()"
+                    class="et-query-devtools-chip"
+                  >
+                    {{ ws.connected() ? 'connected' : 'disconnected' }}
+                  </span>
+                </div>
+                <dl class="et-query-devtools-meta">
+                  <dt>URL</dt>
+                  <dd class="et-query-devtools-mono">{{ entry.meta.url }}</dd>
+                  <dt>Rooms</dt>
+                  <dd>
+                    @if (ws.rooms().length) {
+                      <div class="et-query-devtools-chips">
+                        @for (room of ws.rooms(); track room) {
+                          <span class="et-query-devtools-chip">{{ room }}</span>
+                        }
+                      </div>
+                    } @else {
+                      none
+                    }
+                  </dd>
+                </dl>
+
+                <h5 class="et-query-devtools-section">Messages ({{ ws.messages().length }})</h5>
+                @for (message of ws.messages(); track message.id) {
+                  <div class="et-query-devtools-ws-message">
+                    <div class="et-query-devtools-card-head">
+                      <span class="et-query-devtools-count">{{ formatTime(message.timestamp) }}</span>
+                      <span class="et-query-devtools-chip et-query-devtools-chip--muted">{{ message.room }}</span>
+                      <span class="et-query-devtools-method">{{ message.event }}</span>
+                    </div>
+                    <et-query-devtools-json [value]="message.data" />
+                  </div>
+                } @empty {
+                  <p class="et-query-devtools-empty">No messages received yet.</p>
+                }
+              </div>
+            } @empty {
+              <p class="et-query-devtools-empty">No web socket clients registered.</p>
             }
           </div>
         }
@@ -489,6 +582,11 @@
             <span class="et-query-devtools-chip">{{ featureLabel(feature) }}</span>
           }
         </div>
+      }
+
+      @if (sel.entry.meta.gqlQuery; as gqlQuery) {
+        <h5 class="et-query-devtools-section">GraphQL document</h5>
+        <pre class="et-query-devtools-code">{{ gqlQuery }}</pre>
       }
 
       <div class="et-query-devtools-section-row">

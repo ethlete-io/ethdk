@@ -411,6 +411,26 @@
     overflow-wrap: anywhere;
   }
 
+  .et-query-devtools-code {
+    margin: 0 0 0.8rem;
+    padding: 0.8rem;
+    border: 1px solid var(--_et-qdt-border);
+    border-radius: 0.4rem;
+    background: color-mix(in srgb, var(--_et-qdt-interaction) 4%, transparent);
+    overflow: auto;
+    white-space: pre;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 1.15rem;
+    max-block-size: 20rem;
+  }
+
+  .et-query-devtools-ws-message {
+    border: 1px solid var(--_et-qdt-border);
+    border-radius: 0.4rem;
+    padding: 0.6rem;
+    margin-block-end: 0.4rem;
+  }
+
   /* Truncate long request URLs (e.g. GraphQL transported via query params) with the full value on hover. */
   .et-query-devtools-url {
     display: inline-block;

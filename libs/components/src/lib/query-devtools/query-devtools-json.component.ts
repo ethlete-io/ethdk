@@ -116,9 +116,9 @@ export class QueryDevtoolsJsonComponent {
 
   protected preview = computed(() => {
     const value = this.value();
-    if (Array.isArray(value)) return `[] ${value.length}`;
+    if (Array.isArray(value)) return value.length ? `[…] ${value.length}` : '[]';
     const count = value ? Object.keys(value).length : 0;
-    return `{} ${count}`;
+    return count ? `{…} ${count}` : '{}';
   });
 
   protected display = computed(() => {

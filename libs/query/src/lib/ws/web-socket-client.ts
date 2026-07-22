@@ -11,7 +11,29 @@ import {
 } from '@angular/core';
 import { createRootProvider, previousSignalValue, ProviderResult } from '@ethlete/core';
 import { io } from 'socket.io-client';
+import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools';
 import { messageMalformed, roomNotJoined } from './web-socket-errors';
+
+/** A single message captured for the devtools web socket inspector. */
+export type WebSocketDevtoolsMessage = {
+  id: number;
+  timestamp: number;
+  room: string;
+  event: string;
+  data: unknown;
+};
+
+/**
+ * The live handle a web socket client registers with the devtools. Read by the `<et-query-devtools>`
+ * Sockets tab. Not part of the general public contract.
+ */
+export type WebSocketDevtoolsHandle = {
+  connected: Signal<boolean>;
+  rooms: Signal<string[]>;
+  messages: Signal<WebSocketDevtoolsMessage[]>;
+};
+
+const MAX_DEVTOOLS_MESSAGES = 100;
 
 export type CreateWebSocketClientTransport = 'polling' | 'websocket' | 'webtransport';
 
@@ -84,6 +106,15 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
       const rooms = new Map<string, InternalWebSocketRoom<TMessageData>>();
       const isConnected = signal(false);
 
+      // Devtools instrumentation (no-op unless provideQueryDevtools() was called).
+      const devtoolsEnabled = isQueryDevtoolsEnabled();
+      const devtoolsRooms = signal<string[]>([]);
+      const devtoolsMessages = signal<WebSocketDevtoolsMessage[]>([]);
+      let devtoolsMessageId = 0;
+      const syncDevtoolsRooms = () => {
+        if (devtoolsEnabled) devtoolsRooms.set([...rooms.keys()]);
+      };
+
       const joinRoom = (room: string | (() => string | null)) => {
         const roomFn = typeof room === 'function' ? room : () => room;
         const pre = previousSignalValue(computed(() => roomFn()));
@@ -103,6 +134,7 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
           };
 
           rooms.set(name, newRoom);
+          syncDevtoolsRooms();
 
           return newRoom;
         };
@@ -146,6 +178,7 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
         socket.emit('leave-room', room);
 
         rooms.delete(room);
+        syncDevtoolsRooms();
       };
 
       const setupWebSocketConnectionListener = () => {
@@ -163,6 +196,17 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
         socket.onAny((data: string) => {
           try {
             const json = JSON.parse(data) as TMessageData;
+
+            if (devtoolsEnabled) {
+              const message: WebSocketDevtoolsMessage = {
+                id: devtoolsMessageId++,
+                timestamp: Date.now(),
+                room: json.room,
+                event: json.event,
+                data: json.data,
+              };
+              devtoolsMessages.update((log) => [message, ...log].slice(0, MAX_DEVTOOLS_MESSAGES));
+            }
 
             const room = rooms.get(json.room);
 
@@ -187,6 +231,22 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
           leaveRoom,
         },
       };
+
+      if (devtoolsEnabled) {
+        const handle: WebSocketDevtoolsHandle = {
+          connected: isConnected.asReadonly(),
+          rooms: devtoolsRooms.asReadonly(),
+          messages: devtoolsMessages.asReadonly(),
+        };
+
+        const unregister = registerQueryDevtoolsEntry({
+          kind: 'ws-client',
+          handle,
+          meta: { name: options.name, url: options.url },
+        });
+
+        inject(DestroyRef).onDestroy(unregister);
+      }
 
       return client;
     },

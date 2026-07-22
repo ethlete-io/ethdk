@@ -3,8 +3,11 @@ import { HttpErrorResponse, HttpHeaders, HttpInterceptorFn, HttpResponse } from 
 import {
   createBearerAuthProvider,
   createGetQuery,
+  createGqlQueryViaPost,
   createPostQuery,
   createQueryClient,
+  createWebSocketClient,
+  gql,
   withAuthenticationQuery,
   withRefreshQuery,
 } from '@ethlete/query';
@@ -114,6 +117,16 @@ export const queryDevtoolsDemoInterceptor: HttpInterceptorFn = (req, next) => {
   if (path === '/orders') return respond({ id: 'order-1' });
   if (path === '/payments') return respond({ id: 'payment-1' });
   if (path === '/orders/confirm') return respond({ confirmed: true });
+  if (path === '/graphql') {
+    return respond({
+      data: {
+        posts: [
+          { id: 1, title: 'Post #1' },
+          { id: 2, title: 'Post #2' },
+        ],
+      },
+    });
+  }
 
   return next(req);
 };
@@ -165,3 +178,24 @@ export type ConfirmOrderArgs = { body: { orderId: string; paymentId: string }; r
 export const createOrder = postQuery<CreateOrderArgs>('/orders');
 export const createPayment = postQuery<CreatePaymentArgs>('/payments');
 export const confirmOrder = postQuery<ConfirmOrderArgs>('/orders/confirm');
+
+// GraphQL fixture — POST-transported, routed to /graphql so the mock can match it.
+const gqlQuery = createGqlQueryViaPost(devtoolsDemoClient);
+export const getGqlPosts = gqlQuery<{ response: { posts: PostView[] } }>(
+  gql`
+    query Posts {
+      posts {
+        id
+        title
+      }
+    }
+  `,
+  { route: '/graphql' },
+);
+
+// WebSocket fixture — there is no server in Storybook, so it stays disconnected; the Sockets tab
+// still shows the registered client and its joined room.
+export const devtoolsDemoSocket = createWebSocketClient({
+  name: 'devtools-demo',
+  url: 'wss://query-devtools-demo.invalid',
+});

@@ -8,7 +8,8 @@ import type { QueryRepository } from '../http/query-repository';
  * The kind of object a {@link QueryDevtoolsEntry} describes. Part of the devtools contract consumed
  * by `<et-query-devtools>` — not a general-purpose query API.
  */
-export type QueryDevtoolsEntryKind = 'query' | 'query-stack' | 'paged-query-stack' | 'query-sequence' | 'auth-provider';
+export type QueryDevtoolsEntryKind =
+  'query' | 'query-stack' | 'paged-query-stack' | 'query-sequence' | 'auth-provider' | 'ws-client';
 
 /**
  * Descriptive, mostly-static metadata about a registered devtools entry. The live, reactive state
@@ -18,8 +19,14 @@ export type QueryDevtoolsEntryMeta = {
   /** Display name of the owning query client, where known. */
   clientName?: string;
 
-  /** Human readable display name (e.g. an auth provider name). */
+  /** Human readable display name (e.g. an auth provider or web socket client name). */
   name?: string;
+
+  /** The connection URL, for web socket clients. */
+  url?: string;
+
+  /** The GraphQL document string, for GraphQL queries. */
+  gqlQuery?: string;
 
   /** Stringified route with path params rendered as `:param`, for queries. */
   route?: string;
@@ -86,6 +93,7 @@ const descriptorOf = (entry: Omit<QueryDevtoolsEntry, 'id' | 'createdAt'>): stri
 
   if (kind === 'query') return `query|${meta.clientName ?? ''}|${meta.method ?? ''}|${meta.route ?? ''}`;
   if (kind === 'auth-provider') return `auth-provider|${meta.name ?? ''}`;
+  if (kind === 'ws-client') return `ws-client|${meta.name ?? ''}`;
 
   return kind;
 };

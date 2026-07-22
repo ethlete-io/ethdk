@@ -16,6 +16,7 @@ import {
   QueryRepositoryEvent,
   QuerySequence,
   QuerySequenceStatus,
+  WebSocketDevtoolsHandle,
 } from '@ethlete/query';
 import { EMPTY, filter, fromEvent, interval, map, merge, switchMap, tap } from 'rxjs';
 import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';
@@ -25,7 +26,7 @@ import { QueryDevtoolsToggleComponent } from './query-devtools-toggle.component'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyQuery = Query<any>;
 
-type DevtoolsTab = 'queries' | 'stacks' | 'sequences' | 'auth' | 'cache' | 'events';
+type DevtoolsTab = 'queries' | 'stacks' | 'sequences' | 'gql' | 'auth' | 'ws' | 'cache' | 'events';
 
 type QueryStatus = 'idle' | 'loading' | 'success' | 'error';
 
@@ -53,7 +54,7 @@ type PersistedState = {
   jsonCollapsed?: string[];
 };
 
-const STORAGE_KEY = 'ethlete:query:devtools:v3';
+const STORAGE_KEY = 'ethlete:query:devtools:v4';
 const MAX_EVENTS = 100;
 const DEFAULT_HEIGHT = 360;
 const MIN_HEIGHT = 200;
@@ -110,7 +111,7 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
 })
 export class QueryDevtoolsComponent {
   private hostEl = inject<ElementRef<HTMLElement>>(ElementRef);
-  private document = inject(DOCUMENT);
+  protected document = inject(DOCUMENT);
 
   private eventIdCounter = 0;
 
@@ -120,7 +121,9 @@ export class QueryDevtoolsComponent {
     { id: 'queries', label: 'Queries' },
     { id: 'stacks', label: 'Stacks' },
     { id: 'sequences', label: 'Sequences' },
+    { id: 'gql', label: 'GraphQL' },
     { id: 'auth', label: 'Auth' },
+    { id: 'ws', label: 'Sockets' },
     { id: 'cache', label: 'Cache' },
     { id: 'events', label: 'Events' },
   ] satisfies { id: DevtoolsTab; label: string }[];
@@ -173,6 +176,15 @@ export class QueryDevtoolsComponent {
   protected sequenceEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'query-sequence'));
 
   protected authEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'auth-provider'));
+
+  protected wsEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'ws-client'));
+
+  /** GraphQL queries (those carrying a gql document), for the GraphQL tab. */
+  protected gqlEntries = computed(() =>
+    this.queryEntries()
+      .filter((e) => !!e.meta.gqlQuery)
+      .map((entry) => ({ entry, query: entry.handle as AnyQuery })),
+  );
 
   /** Unique client names present across queries and auth providers, for the Queries-tab picker. */
   protected clientNames = computed(() => {
@@ -524,6 +536,10 @@ export class QueryDevtoolsComponent {
 
   protected asAuth(entry: QueryDevtoolsEntry): AnyBearerAuthProvider {
     return entry.handle as AnyBearerAuthProvider;
+  }
+
+  protected asWs(entry: QueryDevtoolsEntry): WebSocketDevtoolsHandle {
+    return entry.handle as WebSocketDevtoolsHandle;
   }
 
   /** Derives the per-step status of a sequence step from its live progress signals. */

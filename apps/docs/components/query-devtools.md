@@ -2,9 +2,10 @@
 
 An in-app inspector for the signals-first [`@ethlete/query`](/query/) system:
 queries, [stacks & paged stacks](/query/stacks), [dependent-query sequences](/query/dependent-queries),
-[bearer auth providers](/query/auth), the repository cache and a rolling event
-log. It renders as a floating, dockable panel — a development aid, not something
-you ship enabled to end users.
+[GraphQL queries](/query/gql), [bearer auth providers](/query/auth),
+[web socket clients](/query/ws), the repository cache and a rolling event log. It
+renders as a floating, dockable panel — a development aid, not something you ship
+enabled to end users.
 
 Import `QUERY_DEVTOOLS_IMPORTS` for the component and enable instrumentation with
 `provideQueryDevtools()` from `@ethlete/query`.
@@ -60,7 +61,9 @@ host-app CSS can't affect it.)
 | **Queries**   | Every registered query, filterable by client. Method badge, route (path params rendered as `:param`), live status, feature chips and a stale marker; the detail view shows args, response/error, cache key (`id()`), last-executed time and `triggeredBy`, with `execute()` / `execute({ options: { allowCache: true } })` / `reset()` actions. |
 | **Stacks**    | Query stacks and paged query stacks: combined loading/error, and for paged stacks the pages loaded, item count and direction. Inner queries are listed as rows and open in a split-view drawer (the stack context is kept).                                                                                                                     |
 | **Sequences** | Each `querySequence` as a step chain with per-step status (`idle` / `running` / `success` / `error`); expand a step to see its input args and output response/error inline.                                                                                                                                                                     |
+| **GraphQL**   | Each GraphQL query with its document string, variables and response/error — a focused view of the `gql`-created queries that also appear in the Queries tab.                                                                                                                                                                                    |
 | **Auth**      | Each bearer auth provider: authenticated state, access/refresh token presence, the decoded access-token JWT payload, current `executionState` and the latest auth query snapshot.                                                                                                                                                               |
+| **Sockets**   | Each `createWebSocketClient`: connection state, joined rooms and a rolling log of received messages.                                                                                                                                                                                                                                            |
 | **Cache**     | Per-client repository entries: cache key, consumer count, secure flag, a live freshness countdown and per-entry **Refetch** / **Evict** actions.                                                                                                                                                                                                |
 | **Events**    | A rolling log (last 100) of repository `request-success` / `request-error` events with timestamps.                                                                                                                                                                                                                                              |
 
@@ -83,9 +86,12 @@ components are bound to, which the browser Network tab can't do:
 
 ## Persistence
 
-Open/closed state, the active tab and the selected client are persisted to
-`sessionStorage` under `ethlete:query:devtools:v3`, so the panel survives a page
-reload within the tab session without leaking devtools state across sessions.
+The view state — open/closed, panel height, active tab, selected client, selected
+query, inspect filter, value-explorer search and expanded tree paths — is
+persisted to `sessionStorage` under `ethlete:query:devtools:v4`, so it survives a
+page reload within the tab session without leaking devtools state across sessions.
+(Restoring the selected query relies on registry ids being stable across reloads,
+which in turn assumes queries are created in the same order.)
 
 ## Accessibility
 

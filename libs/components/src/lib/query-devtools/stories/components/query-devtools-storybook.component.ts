@@ -12,12 +12,15 @@ import {
   createOrder,
   createPayment,
   devtoolsDemoAuthProvider,
+  devtoolsDemoSocket,
+  getGqlPosts,
   getPost,
   getPosts,
   getServerTime,
 } from '../query-devtools-demo.utils';
 
 const [, injectDemoAuthProvider] = devtoolsDemoAuthProvider;
+const [, injectDemoSocket] = devtoolsDemoSocket;
 
 /** A GET query living in its own component — one inspect target. */
 @Component({
@@ -157,6 +160,42 @@ export class QdCheckoutCardComponent {
   }
 }
 
+/** A GraphQL query. */
+@Component({
+  selector: 'et-sb-qd-gql',
+  template: `
+    <h4>GraphQL posts</h4>
+    @if (gqlPosts.loading()) {
+      <p>loading…</p>
+    } @else if (gqlPosts.error()) {
+      <p class="et-sb-devtools-error">error</p>
+    } @else {
+      <p>{{ gqlPosts.response()?.posts?.length ?? 0 }} posts</p>
+    }
+    <button (click)="gqlPosts.execute()" type="button">Refetch</button>
+  `,
+  encapsulation: ViewEncapsulation.None,
+})
+export class QdGqlCardComponent {
+  protected readonly gqlPosts = getGqlPosts();
+}
+
+/** A web socket client + room (no server in Storybook, so it stays disconnected). */
+@Component({
+  selector: 'et-sb-qd-ws',
+  template: `
+    <h4>Web socket</h4>
+    <p>
+      {{ socket.isConnected() ? 'connected' : 'disconnected (no server)' }} · room: {{ room() ? 'match-events' : '—' }}
+    </p>
+  `,
+  encapsulation: ViewEncapsulation.None,
+})
+export class QdWsCardComponent {
+  protected readonly socket = injectDemoSocket();
+  protected readonly room = this.socket.joinRoom('match-events');
+}
+
 /** The bearer auth provider. */
 @Component({
   selector: 'et-sb-qd-auth',
@@ -194,6 +233,8 @@ export class QdAuthCardComponent {
         <et-sb-qd-paged class="et-sb-devtools-card"></et-sb-qd-paged>
         <et-sb-qd-checkout class="et-sb-devtools-card"></et-sb-qd-checkout>
         <et-sb-qd-auth class="et-sb-devtools-card"></et-sb-qd-auth>
+        <et-sb-qd-gql class="et-sb-devtools-card"></et-sb-qd-gql>
+        <et-sb-qd-ws class="et-sb-devtools-card"></et-sb-qd-ws>
       </div>
     </div>
 
@@ -208,6 +249,8 @@ export class QdAuthCardComponent {
     QdPagedCardComponent,
     QdCheckoutCardComponent,
     QdAuthCardComponent,
+    QdGqlCardComponent,
+    QdWsCardComponent,
   ],
   styles: `
     .et-sb-devtools-demo {

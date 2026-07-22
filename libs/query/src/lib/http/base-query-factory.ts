@@ -238,6 +238,7 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
           creator: options.creator,
           repository: deps.client.repository,
           element: deps.hostElement,
+          gqlQuery: (options.creatorInternals as { query?: string }).query,
         },
       });
 
