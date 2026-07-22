@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.22
+
+### Patch Changes
+
+- [`e39862d`](https://github.com/ethlete-io/ethdk/commit/e39862d0385321e8d39b0c8f33e47a9664195679) Thanks [@TomTomB](https://github.com/TomTomB)! - Overlay: pass the container element to `surfaceContextTracker.register` to match the updated `@ethlete/core` signature.
+
 ## 5.0.0-next.21
 
 ### Minor Changes

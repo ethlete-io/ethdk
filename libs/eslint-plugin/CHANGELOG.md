@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.15
+
+### Minor Changes
+
+- [`6f4b966`](https://github.com/ethlete-io/ethdk/commit/6f4b966c4dc0244b9dfc40978f42362fe9c89a58) Thanks [@TomTomB](https://github.com/TomTomB)! - Expose the `recommendedSpec` flat config (relaxes `no-non-null-assertion` in `*.spec.ts`) as `ethlete.configs.recommendedSpec`.
+
 ## 1.0.0-next.14
 
 ### Patch Changes

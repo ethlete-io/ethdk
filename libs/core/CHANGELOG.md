@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.32
+
+### Patch Changes
+
+- [`ed58b19`](https://github.com/ethlete-io/ethdk/commit/ed58b19b1957f2051e0f1ef68c3814747af9ccd0) Thanks [@TomTomB](https://github.com/TomTomB)! - `etAutoSurface`: opening an overlay (date-picker, select, menu, …) no longer elevates unrelated surfaces on the base page. The overlay surface-context tracker is now matched by DOM containment, so an `etAutoSurface` only adopts an overlay's elevation when it actually renders inside that overlay's pane.
+
 ## 5.0.0-next.31
 
 ### Minor Changes

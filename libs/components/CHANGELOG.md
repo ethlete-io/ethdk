@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.0-next.27
+
+### Major Changes
+
+- [`6f4b966`](https://github.com/ethlete-io/ethdk/commit/6f4b966c4dc0244b9dfc40978f42362fe9c89a58) Thanks [@TomTomB](https://github.com/TomTomB)! - - Cascader: renamed the `opened`/`closed` outputs to `afterOpen`/`afterClose`.
+  - OTP input: renamed the `completed` output to `complete`.
+  - Boolean inputs on select, cascader, selection-list, selection-option, select-option, menu item, menu selection group, switch, text-field controls, number input and scrollable now accept static attributes (e.g. `<et-select multiple>`, `renderMasks="false"`) via a `booleanAttribute` transform.
+
+### Patch Changes
+
+- [`ed58b19`](https://github.com/ethlete-io/ethdk/commit/ed58b19b1957f2051e0f1ef68c3814747af9ccd0) Thanks [@TomTomB](https://github.com/TomTomB)! - `etAutoSurface`: opening an overlay (date-picker, select, menu, …) no longer elevates unrelated surfaces on the base page. The overlay surface-context tracker is now matched by DOM containment, so an `etAutoSurface` only adopts an overlay's elevation when it actually renders inside that overlay's pane.
+
 ## 1.0.0-next.26
 
 ### Patch Changes
