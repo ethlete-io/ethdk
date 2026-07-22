@@ -1,4 +1,4 @@
-import { computed, Directive, effect, inject, input, signal, untracked } from '@angular/core';
+import { computed, Directive, effect, ElementRef, inject, input, signal, untracked } from '@angular/core';
 import { setInputSignal } from '../utils';
 import { ProvideSurfaceDirective, SURFACE_PROVIDER } from './provide-surface.directive';
 import { injectSurfaceContextTracker } from './surface-context-tracker';
@@ -13,6 +13,7 @@ export class AutoSurfaceDirective {
   private contextSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
   private surfaceThemes = injectSurfaceThemes({ optional: true });
   private surfaceContextTracker = injectSurfaceContextTracker();
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   /**
    * Explicit surface provider to resolve the surface relative to. Falls back to the
@@ -39,12 +40,16 @@ export class AutoSurfaceDirective {
     // An overlay's projected/portaled content keeps the injector of where it was
     // *declared* (the trigger location), not the pane it renders into — so the
     // injector-derived parent surface is one elevation too low. The surface-context
-    // tracker records the innermost open overlay's surface across that boundary, so
-    // consult it and take whichever parent surface sits higher. Panels that are
-    // themselves the overlay's surface opt out via ignoreOverlaySurfaceContext().
-    const overlayActive = this.consultsOverlayContext() && this.surfaceContextTracker.topType() !== null;
-    const overlayElevation = overlayActive ? this.surfaceContextTracker.topElevation() : null;
-    const overlayType = overlayActive ? this.surfaceContextTracker.topType() : null;
+    // tracker records each open overlay's surface *and* its pane element, so we consult
+    // only the overlay whose pane actually contains this element in the DOM (portaling
+    // moves the DOM into the pane even though the injector stays at the trigger). An
+    // auto-surface on the base page therefore stays put when an overlay opens elsewhere.
+    // Panels that are themselves the overlay's surface opt out via ignoreOverlaySurfaceContext().
+    const overlaySurface = this.consultsOverlayContext()
+      ? this.surfaceContextTracker.surfaceForElement(this.elementRef.nativeElement)
+      : null;
+    const overlayElevation = overlaySurface?.elevation ?? null;
+    const overlayType = overlaySurface?.type ?? null;
 
     let parentElevation: number;
     let parentType: SurfaceType;

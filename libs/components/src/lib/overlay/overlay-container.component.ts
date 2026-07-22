@@ -93,7 +93,7 @@ export class OverlayContainerComponent {
         this.ownSurfaceProvider.forceSurface(resolved.name);
       }
 
-      const unregister = this.surfaceContextTracker.register(parentType, elevation);
+      const unregister = this.surfaceContextTracker.register(parentType, elevation, this.elementRef.nativeElement);
       this.destroyRef.onDestroy(unregister);
     }
 
