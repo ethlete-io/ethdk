@@ -1,0 +1,369 @@
+@if (open()) {
+  <section class="et-query-devtools-panel">
+    <header class="et-query-devtools-header">
+      <nav class="et-query-devtools-tabs" role="tablist">
+        @for (tab of tabs; track tab.id) {
+          <button
+            [class.et-query-devtools-tab--active]="activeTab() === tab.id"
+            [attr.aria-selected]="activeTab() === tab.id"
+            (click)="activeTab.set(tab.id)"
+            class="et-query-devtools-tab"
+            type="button"
+            role="tab"
+          >
+            {{ tab.label }}
+          </button>
+        }
+      </nav>
+
+      <button (click)="toggleOpen()" class="et-query-devtools-close" type="button" title="Close devtools">✕</button>
+    </header>
+
+    <div class="et-query-devtools-body">
+      @switch (activeTab()) {
+        <!-- QUERIES -->
+        @case ('queries') {
+          <div class="et-query-devtools-master-detail">
+            <div class="et-query-devtools-list">
+              <div class="et-query-devtools-toolbar">
+                <label class="et-query-devtools-field">
+                  <span>Client</span>
+                  <select
+                    #clientSelect
+                    [value]="selectedClientName() ?? ''"
+                    (change)="selectedClientName.set(clientSelect.value || null)"
+                    class="et-query-devtools-select"
+                  >
+                    <option value="">All clients</option>
+                    @for (name of clientNames(); track name) {
+                      <option [value]="name">{{ name }}</option>
+                    }
+                  </select>
+                </label>
+                <span class="et-query-devtools-count">{{ filteredQueries().length }}</span>
+              </div>
+
+              @for (item of filteredQueries(); track item.entry.id) {
+                <button
+                  [class.et-query-devtools-row--active]="selectedQueryId() === item.entry.id"
+                  (click)="selectedQueryId.set(item.entry.id)"
+                  class="et-query-devtools-row"
+                  type="button"
+                >
+                  <span
+                    [attr.data-status]="queryStatus(item.query)"
+                    [title]="queryStatus(item.query)"
+                    class="et-query-devtools-status"
+                  ></span>
+                  <span class="et-query-devtools-method">{{ item.entry.meta.method }}</span>
+                  <span class="et-query-devtools-route">{{ item.entry.meta.route || '—' }}</span>
+                  @if (isStale(item.query)) {
+                    <span class="et-query-devtools-chip et-query-devtools-chip--muted">stale</span>
+                  }
+                </button>
+              } @empty {
+                <p class="et-query-devtools-empty">No queries registered.</p>
+              }
+            </div>
+
+            <div class="et-query-devtools-detail">
+              @if (selectedQuery(); as sel) {
+                <div class="et-query-devtools-detail-head">
+                  <span class="et-query-devtools-method">{{ sel.entry.meta.method }}</span>
+                  <span class="et-query-devtools-route">{{ sel.entry.meta.route || '—' }}</span>
+                </div>
+
+                <div class="et-query-devtools-actions">
+                  <button (click)="executeQuery(sel.query, false)" class="et-query-devtools-btn" type="button">
+                    Execute
+                  </button>
+                  <button (click)="executeQuery(sel.query, true)" class="et-query-devtools-btn" type="button">
+                    Execute (cached)
+                  </button>
+                  <button (click)="resetQuery(sel.query)" class="et-query-devtools-btn" type="button">Reset</button>
+                </div>
+
+                <dl class="et-query-devtools-meta">
+                  <dt>Client</dt>
+                  <dd>{{ sel.entry.meta.clientName || '—' }}</dd>
+                  <dt>Status</dt>
+                  <dd>{{ queryStatus(sel.query) }}</dd>
+                  <dt>Cache key</dt>
+                  <dd class="et-query-devtools-mono">{{ sel.query.id() || '—' }}</dd>
+                  <dt>Last executed</dt>
+                  <dd>{{ formatTime(sel.query.lastTimeExecutedAt()) }}</dd>
+                  <dt>Triggered by</dt>
+                  <dd>{{ sel.query.triggeredBy() || 'user' }}</dd>
+                </dl>
+
+                @if (sel.entry.meta.featureTypes?.length) {
+                  <div class="et-query-devtools-chips">
+                    @for (feature of sel.entry.meta.featureTypes; track feature) {
+                      <span class="et-query-devtools-chip">{{ featureLabel(feature) }}</span>
+                    }
+                  </div>
+                }
+
+                <h4 class="et-query-devtools-section">Args</h4>
+                <pre class="et-query-devtools-json">{{ sel.query.args() | json }}</pre>
+
+                @if (sel.query.error(); as error) {
+                  <h4 class="et-query-devtools-section">Error ({{ error.raw.status }})</h4>
+                  <pre class="et-query-devtools-json et-query-devtools-json--error">{{
+                    error.isList ? error.errors : (error.error | json)
+                  }}</pre>
+                } @else {
+                  <h4 class="et-query-devtools-section">Response</h4>
+                  <pre class="et-query-devtools-json">{{ sel.query.response() | json }}</pre>
+                }
+              } @else {
+                <p class="et-query-devtools-empty">Select a query to inspect it.</p>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- STACKS -->
+        @case ('stacks') {
+          <div class="et-query-devtools-scroll">
+            @for (entry of stackEntries(); track entry.id) {
+              @if (entry.kind === 'paged-query-stack') {
+                @let paged = asPagedStack(entry);
+                <div class="et-query-devtools-card">
+                  <div class="et-query-devtools-card-head">
+                    <span class="et-query-devtools-chip">paged stack</span>
+                    <span class="et-query-devtools-chip et-query-devtools-chip--muted">{{ paged.direction() }}</span>
+                    @if (paged.loading()) {
+                      <span class="et-query-devtools-chip et-query-devtools-chip--loading">loading</span>
+                    }
+                  </div>
+                  <dl class="et-query-devtools-meta">
+                    <dt>Pages loaded</dt>
+                    <dd>{{ paged.queries().length }}</dd>
+                    <dt>Items</dt>
+                    <dd>{{ paged.items().length }}</dd>
+                    <dt>First page loaded</dt>
+                    <dd>{{ paged.isFirstPageLoaded() }}</dd>
+                    <dt>Last page loaded</dt>
+                    <dd>{{ paged.isLastPageLoaded() }}</dd>
+                  </dl>
+                  <div class="et-query-devtools-inner-queries">
+                    @for (link of queriesForStack(paged); track $index) {
+                      <button (click)="openQueryDetail(link.id)" class="et-query-devtools-pill" type="button">
+                        <span [attr.data-status]="queryStatus(link.query)" class="et-query-devtools-status"></span>
+                        {{ link.query.id() || 'query ' + ($index + 1) }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              } @else {
+                @let stack = asStack(entry);
+                <div class="et-query-devtools-card">
+                  <div class="et-query-devtools-card-head">
+                    <span class="et-query-devtools-chip">stack</span>
+                    @if (stack.anyLoading()) {
+                      <span class="et-query-devtools-chip et-query-devtools-chip--loading">loading</span>
+                    }
+                    @if (stack.anyError()) {
+                      <span class="et-query-devtools-chip et-query-devtools-chip--error">error</span>
+                    }
+                  </div>
+                  <dl class="et-query-devtools-meta">
+                    <dt>Queries</dt>
+                    <dd>{{ stack.queries().length }}</dd>
+                    <dt>Loading</dt>
+                    <dd>{{ stack.loadingProgress().loaded }} / {{ stack.loadingProgress().total }}</dd>
+                    <dt>Errors</dt>
+                    <dd>{{ stack.errors().length }}</dd>
+                  </dl>
+                  <div class="et-query-devtools-inner-queries">
+                    @for (link of queriesForStack(stack); track $index) {
+                      <button (click)="openQueryDetail(link.id)" class="et-query-devtools-pill" type="button">
+                        <span [attr.data-status]="queryStatus(link.query)" class="et-query-devtools-status"></span>
+                        {{ link.query.id() || 'query ' + ($index + 1) }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+            } @empty {
+              <p class="et-query-devtools-empty">No stacks registered.</p>
+            }
+          </div>
+        }
+
+        <!-- SEQUENCES -->
+        @case ('sequences') {
+          <div class="et-query-devtools-scroll">
+            @for (entry of sequenceEntries(); track entry.id) {
+              @let sequence = asSequence(entry);
+              @if (sequence) {
+                <div class="et-query-devtools-card">
+                  <div class="et-query-devtools-card-head">
+                    <span class="et-query-devtools-chip">sequence</span>
+                    <span class="et-query-devtools-chip et-query-devtools-chip--muted">{{ sequence.status() }}</span>
+                    <span class="et-query-devtools-count"
+                      >step {{ sequence.currentStep() }} / {{ sequence.total }}</span
+                    >
+                  </div>
+                  <ol class="et-query-devtools-steps">
+                    @for (i of range(sequence.total); track i) {
+                      <li [attr.data-status]="sequenceStepStatus(sequence, i)" class="et-query-devtools-step">
+                        <span
+                          [attr.data-status]="sequenceStepStatus(sequence, i)"
+                          class="et-query-devtools-status"
+                        ></span>
+                        Step {{ i + 1 }}
+                      </li>
+                    }
+                  </ol>
+                  @if (sequence.error(); as error) {
+                    <pre class="et-query-devtools-json et-query-devtools-json--error">{{
+                      error.isList ? error.errors : (error.error | json)
+                    }}</pre>
+                  }
+                </div>
+              }
+            } @empty {
+              <p class="et-query-devtools-empty">No sequences registered.</p>
+            }
+          </div>
+        }
+
+        <!-- AUTH -->
+        @case ('auth') {
+          <div class="et-query-devtools-scroll">
+            @for (entry of authEntries(); track entry.id) {
+              @let auth = asAuth(entry);
+              <div class="et-query-devtools-card">
+                <div class="et-query-devtools-card-head">
+                  <strong>{{ entry.meta.name || 'auth provider' }}</strong>
+                  <span
+                    [class.et-query-devtools-chip--success]="auth.isAuthenticated()"
+                    [class.et-query-devtools-chip--muted]="!auth.isAuthenticated()"
+                    class="et-query-devtools-chip"
+                  >
+                    {{ auth.isAuthenticated() ? 'authenticated' : 'anonymous' }}
+                  </span>
+                </div>
+                <dl class="et-query-devtools-meta">
+                  <dt>Client</dt>
+                  <dd>{{ entry.meta.clientName || '—' }}</dd>
+                  <dt>Access token</dt>
+                  <dd>{{ auth.accessToken() ? 'present' : 'none' }}</dd>
+                  <dt>Refresh token</dt>
+                  <dd>{{ auth.refreshToken() ? 'present' : 'none' }}</dd>
+                  @if (auth.executionState(); as state) {
+                    <dt>Execution state</dt>
+                    <dd>{{ state.type }} · {{ state.state }}</dd>
+                  }
+                </dl>
+
+                @if (authTokenPayload(auth); as payload) {
+                  <h4 class="et-query-devtools-section">Access token payload</h4>
+                  <pre class="et-query-devtools-json">{{ payload | json }}</pre>
+                }
+
+                @if (auth.latestNonInternalQuery(); as latest) {
+                  <h4 class="et-query-devtools-section">Latest auth query · {{ latest.key }}</h4>
+                  <pre class="et-query-devtools-json">{{ latest.snapshot.response() | json }}</pre>
+                }
+              </div>
+            } @empty {
+              <p class="et-query-devtools-empty">No auth providers registered.</p>
+            }
+          </div>
+        }
+
+        <!-- CACHE -->
+        @case ('cache') {
+          <div class="et-query-devtools-scroll">
+            @for (client of cacheView(); track client.name) {
+              <div class="et-query-devtools-card">
+                <div class="et-query-devtools-card-head">
+                  <strong>{{ client.name }}</strong>
+                  <span class="et-query-devtools-count">{{ client.entries.length }} entries</span>
+                </div>
+                <table class="et-query-devtools-table">
+                  <thead>
+                    <tr>
+                      <th>Key</th>
+                      <th>Consumers</th>
+                      <th>Secure</th>
+                      <th>Stale</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (cacheEntry of client.entries; track cacheEntry.key) {
+                      <tr>
+                        <td class="et-query-devtools-mono">{{ cacheEntry.key }}</td>
+                        <td>{{ cacheEntry.consumerCount }}</td>
+                        <td>{{ cacheEntry.isSecure ? 'yes' : 'no' }}</td>
+                        <td>{{ cacheEntry.request.isStale() ? 'yes' : 'no' }}</td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td class="et-query-devtools-empty" colspan="4">Cache empty.</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @empty {
+              <p class="et-query-devtools-empty">No clients with a cache yet.</p>
+            }
+          </div>
+        }
+
+        <!-- EVENTS -->
+        @case ('events') {
+          <div class="et-query-devtools-scroll">
+            <div class="et-query-devtools-toolbar">
+              <span class="et-query-devtools-count">{{ eventLog().length }} events</span>
+              <button (click)="clearEvents()" class="et-query-devtools-btn" type="button">Clear</button>
+            </div>
+            <table class="et-query-devtools-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Client</th>
+                  <th>Type</th>
+                  <th>Key</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (event of eventLog(); track event.id) {
+                  <tr [attr.data-status]="event.type === 'request-error' ? 'error' : 'success'">
+                    <td>{{ formatTime(event.timestamp) }}</td>
+                    <td>{{ event.clientName }}</td>
+                    <td>
+                      {{ event.type === 'request-error' ? 'error ' + event.status : 'success' }}
+                      @if (event.isSecure) {
+                        <span class="et-query-devtools-chip et-query-devtools-chip--muted">secure</span>
+                      }
+                    </td>
+                    <td class="et-query-devtools-mono">{{ event.key }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td class="et-query-devtools-empty" colspan="4">No events captured yet.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    </div>
+  </section>
+}
+
+<button
+  [class.et-query-devtools-toggle--open]="open()"
+  (click)="toggleOpen()"
+  class="et-query-devtools-toggle"
+  type="button"
+  title="Toggle query devtools"
+>
+  <span class="et-query-devtools-toggle-label">Query</span>
+</button>

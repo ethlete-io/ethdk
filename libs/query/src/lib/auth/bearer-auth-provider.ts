@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { createRootProvider, isObject, ProviderResult } from '@ethlete/core';
 import { Observable, Subject } from 'rxjs';
+import { getQueryClientName, isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools';
 import {
   AnyCreateQueryClientResult,
   authExtractTokensResponseMissingAccessToken,
@@ -592,7 +593,7 @@ const createBearerAuthProviderImpl = <
 
   setupMultiTabSyncIfEnabled(config, accessToken, refreshToken, queryClient);
 
-  return {
+  const provider = {
     queries,
     features: features as FeatureRegistry<TFeatures, TBuilders>,
     accessToken: accessToken.asReadonly(),
@@ -605,6 +606,22 @@ const createBearerAuthProviderImpl = <
     logout,
     afterTokenRefresh$,
   } as BearerAuthProvider<TBuilders, TFeatures, TBearerData>;
+
+  if (isQueryDevtoolsEnabled()) {
+    const unregister = registerQueryDevtoolsEntry({
+      kind: 'auth-provider',
+      handle: provider,
+      meta: {
+        name: config.name,
+        clientName: getQueryClientName(config.queryClientRef),
+        repository: queryClient.repository,
+      },
+    });
+
+    destroyRef.onDestroy(unregister);
+  }
+
+  return provider;
 };
 
 export const createBearerAuthProvider = <

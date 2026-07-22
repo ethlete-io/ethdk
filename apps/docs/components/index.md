@@ -84,4 +84,5 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 ### Utilities
 
 - [Focus ring](/components/focus-ring) — the shared keyboard-focus outline for custom interactive elements.
+- [Query devtools](/components/query-devtools) — in-app inspector for the `@ethlete/query` system (queries, stacks, sequences, auth, cache, events).
 - [Error codes](/components/error-codes) — every `ETxxxx` runtime error, what causes it and how to fix it.

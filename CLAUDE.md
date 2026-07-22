@@ -11,7 +11,7 @@ All under `libs/<name>`, published as `@ethlete/<name>`:
 | `types`         | Shared TS types (API, pagination, violations). Framework-agnostic base.                                                                    | —                         |
 | `core`          | Framework primitives: directives, signals utils, overlay runtime, animations, theming, scrolling, drag/resize. Angular but component-less. | `types`                   |
 | `query`         | Data fetching / query client: http, gql, ws, auth, query-form.                                                                             | `core`, `types`           |
-| `components`    | **Active** Angular UI library: overlay, menu, button, forms, grid, tabs, tooltip, etc.                                                     | `core`                    |
+| `components`    | **Active** Angular UI library: overlay, menu, button, forms, grid, tabs, tooltip, etc.                                                     | `core`, `query`           |
 | `cdk`           | **Maintenance mode** — older UI toolkit. Predecessor of `components`.                                                                      | `core`, `query`, `types`  |
 | `contentful`    | Contentful integration (rich-text components, gql, types).                                                                                 | `cdk`, `core`, `query`    |
 | `cli`           | CLI tooling (release helpers).                                                                                                             | —                         |

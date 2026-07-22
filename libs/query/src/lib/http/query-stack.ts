@@ -1,5 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { computed, effect, inject, Injector, runInInjectionContext, Signal, signal, untracked } from '@angular/core';
+import {
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  Injector,
+  runInInjectionContext,
+  Signal,
+  signal,
+  untracked,
+} from '@angular/core';
+import { consumeSuppressQueryStackDevtools, isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools';
 import { AnyNewQuery, RequestArgs, ResponseType } from './query';
 import { AnyQueryCreator, QueryArgsOf, RunQueryCreator } from './query-creator';
 import { QueryErrorResponse } from './query-error-response';
@@ -408,6 +419,20 @@ export const createQueryStack = <
       runWithArgs,
     },
   };
+
+  const skipDevtools = consumeSuppressQueryStackDevtools();
+
+  if (isQueryDevtoolsEnabled() && !skipDevtools) {
+    const unregister = registerQueryDevtoolsEntry({
+      kind: 'query-stack',
+      handle: stack,
+      meta: {
+        featureTypes: features.map((f) => f.type),
+      },
+    });
+
+    inject(DestroyRef).onDestroy(unregister);
+  }
 
   return stack;
 };

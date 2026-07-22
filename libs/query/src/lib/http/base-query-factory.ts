@@ -1,4 +1,10 @@
 import { runInInjectionContext } from '@angular/core';
+import {
+  getQueryClientName,
+  isQueryDevtoolsEnabled,
+  registerQueryDevtoolsEntry,
+  stringifyQueryRoute,
+} from '../devtools';
 import { CreateGqlQueryOptions, isCreateGqlQueryOptions } from '../gql/gql-query';
 import { AnyCreateGqlQueryCreatorOptions, GqlQueryMethod } from '../gql/gql-query-creator';
 import { wrapAsObservableSignal } from './observable-signal';
@@ -208,6 +214,29 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
 
     maybeExecute({ execute, flags });
 
-    return createQueryObject({ state, execute, deps });
+    const query = createQueryObject({ state, execute, deps });
+
+    if (isQueryDevtoolsEnabled()) {
+      const unregister = registerQueryDevtoolsEntry({
+        kind: 'query',
+        handle: query,
+        meta: {
+          clientName: getQueryClientName(client),
+          route: stringifyQueryRoute(
+            (options.creatorInternals as { route?: unknown }).route ??
+              (options.creator as { route?: unknown } | undefined)?.route,
+          ),
+          method: flags.method,
+          featureTypes: options.features.map((f) => f.type),
+          queryConfig: options.queryConfig,
+          creator: options.creator,
+          repository: deps.client.repository,
+        },
+      });
+
+      deps.destroyRef.onDestroy(unregister);
+    }
+
+    return query;
   });
 };

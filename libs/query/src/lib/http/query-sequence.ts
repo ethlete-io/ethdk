@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Signal, signal, WritableSignal } from '@angular/core';
+import { DestroyRef, inject, Signal, signal, WritableSignal } from '@angular/core';
+import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools';
 import { AnyNewQuery, AnyQuerySnapshot, Query, QueryArgs, RequestArgs, ResponseType } from './query';
 import { QueryErrorResponse } from './query-error-response';
 import { querySequenceAlreadyRunning } from './query-errors';
@@ -112,9 +113,18 @@ const createSequenceState = (): SequenceState => ({
   responses: signal<unknown[]>([]),
 });
 
+/**
+ * A stable holder the devtools registry keeps as a sequence entry's handle. Because `.then()`
+ * returns a fresh {@link QuerySequence} object per link (all sharing one {@link SequenceState}),
+ * `current` is updated to the latest link so the UI always reads the fully-built sequence.
+ * @internal
+ */
+export type QuerySequenceDevtoolsHandle = { current: QuerySequence<any> };
+
 const buildSequence = <TResponses extends unknown[]>(
   steps: InternalStep[],
   state: SequenceState,
+  devtoolsHandle?: QuerySequenceDevtoolsHandle,
 ): QuerySequence<TResponses> => {
   const run = async (): Promise<QuerySequenceResult<TResponses>> => {
     if (state.running()) throw querySequenceAlreadyRunning();
@@ -163,7 +173,7 @@ const buildSequence = <TResponses extends unknown[]>(
     return { ok: true, responses: responses as TResponses, snapshots };
   };
 
-  return {
+  const sequence: QuerySequence<TResponses> = {
     then: (query, mapArgs) =>
       buildSequence(
         [
@@ -171,6 +181,7 @@ const buildSequence = <TResponses extends unknown[]>(
           { query, produceArgs: (previousResponse, responses) => mapArgs(previousResponse as any, responses as any) },
         ],
         state,
+        devtoolsHandle,
       ) as any,
     status: state.status.asReadonly(),
     running: state.running.asReadonly(),
@@ -182,6 +193,10 @@ const buildSequence = <TResponses extends unknown[]>(
     responses: state.responses.asReadonly() as Signal<Partial<TResponses>>,
     run,
   };
+
+  if (devtoolsHandle) devtoolsHandle.current = sequence;
+
+  return sequence;
 };
 
 /**
@@ -209,5 +224,31 @@ const buildSequence = <TResponses extends unknown[]>(
 export const querySequence = <TArgs extends QueryArgs>(
   query: Query<TArgs>,
   seedArgs: () => QuerySequenceStepArgs<TArgs>,
-): QuerySequence<[ResponseType<TArgs>]> =>
-  buildSequence<[ResponseType<TArgs>]>([{ query, produceArgs: () => seedArgs() }], createSequenceState());
+): QuerySequence<[ResponseType<TArgs>]> => {
+  const devtoolsHandle: QuerySequenceDevtoolsHandle | undefined = isQueryDevtoolsEnabled()
+    ? { current: null as unknown as QuerySequence<any> }
+    : undefined;
+
+  const seed = buildSequence<[ResponseType<TArgs>]>(
+    [{ query, produceArgs: () => seedArgs() }],
+    createSequenceState(),
+    devtoolsHandle,
+  );
+
+  if (devtoolsHandle) {
+    const unregister = registerQueryDevtoolsEntry({
+      kind: 'query-sequence',
+      handle: devtoolsHandle,
+      meta: {},
+    });
+
+    // Sequences have no destroy hook; tie cleanup to the creating scope when there is one.
+    try {
+      inject(DestroyRef).onDestroy(unregister);
+    } catch {
+      // Created outside an injection context — the entry lives for the app's lifetime.
+    }
+  }
+
+  return seed;
+};

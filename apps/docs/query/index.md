@@ -30,6 +30,10 @@ import { createQueryClient, createGetQuery, withArgs } from '@ethlete/query';
 - [GraphQL](/query/gql) — the `gql` tag and the GET/POST GraphQL creators built on the same core.
 - [WebSockets](/query/ws) — the room-based socket.io client and live-updating query responses.
 
+## Tooling
+
+- [Query devtools](/components/query-devtools) — `provideQueryDevtools()` plus the `<et-query-devtools>` panel (from `@ethlete/components`) inspect live queries, stacks, sequences, auth, cache and events.
+
 ## Legacy
 
 - [Legacy client](/query/legacy) — the maintenance-mode `V2QueryClient` and how its concepts map to the current system.

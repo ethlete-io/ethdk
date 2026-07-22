@@ -1,4 +1,5 @@
 export * from './lib/auth';
+export * from './lib/devtools';
 export * from './lib/gql';
 export * from './lib/http';
 export * from './lib/legacy';

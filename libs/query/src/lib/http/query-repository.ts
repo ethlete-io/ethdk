@@ -1,6 +1,6 @@
 import { randomId } from '@ethlete/core';
 import { HttpClient, HttpErrorResponse, HttpEventType } from '@angular/common/http';
-import { DestroyRef, ErrorHandler, Injector } from '@angular/core';
+import { DestroyRef, ErrorHandler, Injector, Signal, signal } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { buildRoute } from '../legacy';
 import { createHttpRequest, HttpRequest } from './http-request';
@@ -72,6 +72,36 @@ export type QueryRepositoryItem<TArgs extends QueryArgs> = {
 };
 
 /**
+ * A read-only snapshot of a single cache entry, exposed via {@link QueryRepositorySubtle.cacheEntries}
+ * for devtools inspection. The raw cache `Map` is never exposed.
+ */
+export type QueryRepositoryCacheEntry = {
+  /** The cache key of the entry. */
+  key: QueryKey;
+
+  /** Whether the entry belongs to a secure (authenticated) request. */
+  isSecure: boolean;
+
+  /** How many consumers currently hold a binding to the entry. */
+  consumerCount: number;
+
+  /** The underlying HTTP request. */
+  request: HttpRequest<QueryArgs>;
+};
+
+/**
+ * Advanced repository internals used by the query devtools. **Not part of the general public
+ * contract** — do not build application logic on top of these.
+ */
+export type QueryRepositorySubtle = {
+  /** Returns a read-only snapshot of every entry currently held in the cache. */
+  cacheEntries: () => QueryRepositoryCacheEntry[];
+
+  /** A version counter bumped whenever the cache changes (bind / unbind / unbindAllSecure). */
+  cacheVersion: Signal<number>;
+};
+
+/**
  * The query repository is responsible for managing all requests and their consumers.
  * It will cache requests if they can be cached and reuse them if they are already cached.
  * It will also destroy requests if there are no more consumers left.
@@ -88,6 +118,9 @@ export type QueryRepository = {
 
   /** Observable stream of repository events (errors, successes, etc.) */
   events$: Observable<QueryRepositoryEvent>;
+
+  /** Advanced repository internals used by the query devtools. */
+  subtle: QueryRepositorySubtle;
 };
 
 /** The key of a query (either a cache key for cacheable requests or a UUID for uncacheable requests) */
@@ -125,6 +158,11 @@ const generateUuid = () => randomId();
 export const createQueryRepository = (config: CreateQueryRepositoryConfig): QueryRepository => {
   const cache = new Map<QueryKey, DestroyListenerMapItem>();
   const eventsSubject = new Subject<QueryRepositoryEvent>();
+
+  // Bumped on every cache mutation so the devtools cache view can react. Cheap enough to keep
+  // unconditional — it is a single integer signal with no readers unless the devtools are open.
+  const cacheVersion = signal(0);
+  const bumpCacheVersion = () => cacheVersion.update((v) => v + 1);
 
   const request = <TArgs extends QueryArgs>(options: QueryRepositoryRequestOptions<TArgs>) => {
     const { args, creatorOptions, runQueryOptions } = options;
@@ -207,6 +245,8 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       cache.delete(key);
     }
 
+    bumpCacheVersion();
+
     return true;
   };
 
@@ -221,6 +261,8 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
         cache.delete(key);
       }
     }
+
+    bumpCacheVersion();
   };
 
   const bind = (
@@ -261,13 +303,27 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
         eventSubscription,
       });
     }
+
+    bumpCacheVersion();
   };
+
+  const cacheEntries = (): QueryRepositoryCacheEntry[] =>
+    Array.from(cache.entries()).map(([key, entry]) => ({
+      key,
+      isSecure: entry.isSecure,
+      consumerCount: entry.consumers.size,
+      request: entry.request,
+    }));
 
   const repository: QueryRepository = {
     request,
     unbind,
     unbindAllSecure,
     events$: eventsSubject.asObservable(),
+    subtle: {
+      cacheEntries,
+      cacheVersion: cacheVersion.asReadonly(),
+    },
   };
 
   return repository;

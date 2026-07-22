@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { computed, effect, isDevMode, Signal, signal, untracked } from '@angular/core';
+import { computed, DestroyRef, effect, inject, isDevMode, Signal, signal, untracked } from '@angular/core';
+import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry, suppressNextQueryStackDevtools } from '../devtools';
 import {
   ContentfulGqlLikePaginated,
   DynLikePaginated,
@@ -296,6 +297,7 @@ export const createPagedQueryStack = <
 
   const pageDirection = signal<PagedQueryStackDirection>('next');
 
+  suppressNextQueryStackDevtools();
   const stack = createQueryStack({
     args: () => null,
     queryCreator,
@@ -543,6 +545,18 @@ export const createPagedQueryStack = <
     reset,
     execute,
   };
+
+  if (isQueryDevtoolsEnabled()) {
+    const unregister = registerQueryDevtoolsEntry({
+      kind: 'paged-query-stack',
+      handle: pagedQuery,
+      meta: {
+        featureTypes: features?.map((f) => f.type),
+      },
+    });
+
+    inject(DestroyRef).onDestroy(unregister);
+  }
 
   return pagedQuery;
 };

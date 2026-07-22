@@ -1,0 +1,84 @@
+# Query devtools
+
+An in-app inspector for the signals-first [`@ethlete/query`](/query/) system:
+queries, [stacks & paged stacks](/query/stacks), [dependent-query sequences](/query/dependent-queries),
+[bearer auth providers](/query/auth), the repository cache and a rolling event
+log. It renders as a floating, dockable panel — a development aid, not something
+you ship enabled to end users.
+
+Import `QUERY_DEVTOOLS_IMPORTS` for the component and enable instrumentation with
+`provideQueryDevtools()` from `@ethlete/query`.
+
+## Setup
+
+Two steps: turn instrumentation on at bootstrap, and drop the panel into your app
+shell.
+
+```ts
+// main.ts
+import { provideQueryDevtools } from '@ethlete/query';
+
+bootstrapApplication(AppComponent, {
+  providers: [provideQueryDevtools()],
+});
+```
+
+```ts
+// app.component.ts
+import { QUERY_DEVTOOLS_IMPORTS } from '@ethlete/components';
+
+@Component({
+  selector: 'app-root',
+  imports: [QUERY_DEVTOOLS_IMPORTS],
+  template: `
+    <!-- your app -->
+    <et-query-devtools />
+  `,
+})
+export class AppComponent {}
+```
+
+Without `provideQueryDevtools()` the registry stays empty and the panel shows
+nothing. Instrumentation is a no-op until you call it — it retains no references
+and adds no runtime overhead — so leaving `<et-query-devtools>` mounted while
+omitting the provider in production builds is safe.
+
+## Live demo
+
+<StoryEmbed id="components-query-devtools--default" height="520px" />
+
+Open the panel with the floating **Query** button (bottom-right), then use the
+demo controls to drive real fixtures through every tab.
+
+## Tabs
+
+| Tab           | Shows                                                                                                                                                                                                                                                                                                                                           |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Queries**   | Every registered query, filterable by client. Method badge, route (path params rendered as `:param`), live status, feature chips and a stale marker; the detail view shows args, response/error, cache key (`id()`), last-executed time and `triggeredBy`, with `execute()` / `execute({ options: { allowCache: true } })` / `reset()` actions. |
+| **Stacks**    | Query stacks and paged query stacks: combined loading/error, and for paged stacks the pages loaded, item count and direction. Each inner query links back to its Queries detail.                                                                                                                                                                |
+| **Sequences** | Each `querySequence` as a step chain with per-step status (`idle` / `running` / `success` / `error`).                                                                                                                                                                                                                                           |
+| **Auth**      | Each bearer auth provider: authenticated state, access/refresh token presence, the decoded access-token JWT payload, current `executionState` and the latest auth query snapshot.                                                                                                                                                               |
+| **Cache**     | Per-client repository entries: cache key, consumer count, secure flag and staleness.                                                                                                                                                                                                                                                            |
+| **Events**    | A rolling log (last 100) of repository `request-success` / `request-error` events with timestamps.                                                                                                                                                                                                                                              |
+
+## Persistence
+
+Open/closed state, the active tab, the panel height and the selected client are
+persisted to `localStorage` under `ethlete:query:devtools:v3`.
+
+## Accessibility
+
+The devtools panel is a development tool, not part of your product UI. The tab
+strip uses `role="tablist"` / `role="tab"` with `aria-selected`; controls are
+native `<button>` and `<select>` elements. It is not intended to ship in
+production builds.
+
+## Theming
+
+The panel styles its own chrome from the [surface & color theming](/core/theming)
+tokens (`--et-surface-*-solid`, `--et-theme-color-primary-solid`) so it adapts to
+the host app's current surface, and falls back to a self-contained dark palette
+when no themes are registered. Override the panel's internal `--_et-qdt-*` custom
+properties on `.et-query-devtools-host` if you need to retune it. Its CSS lives in
+the `components` cascade layer like every other component, so utility classes can
+override it without `!important`.
