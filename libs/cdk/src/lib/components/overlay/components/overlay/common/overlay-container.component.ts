@@ -90,7 +90,7 @@ export class OverlayContainerComponent extends CdkDialogContainer<OverlayConfig>
         setInputSignal(this.surfaceProvider.surface as any, resolved.name);
       }
 
-      const unregister = this.surfaceContextTracker.register(parentType, elevation);
+      const unregister = this.surfaceContextTracker.register(parentType, elevation, this._elementRef.nativeElement);
       this.destroyRef.onDestroy(unregister);
     }
 
