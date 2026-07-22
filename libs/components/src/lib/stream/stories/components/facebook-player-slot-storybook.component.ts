@@ -1,10 +1,10 @@
 import { Component, ViewEncapsulation, input, signal } from '@angular/core';
 import { ButtonComponent } from '../../../button/button.component';
 import { TextButtonComponent } from '../../../button/text-button.component';
-import { TabImports } from '../../../tabs/tabs.imports';
+import { TAB_IMPORTS } from '../../../tabs/tabs.imports';
 import { PipSlotPlaceholderComponent } from '../../pip/pip-slot-placeholder.component';
 import { provideStreamConfig } from '../../stream-config';
-import { StreamImports } from '../../stream.imports';
+import { STREAM_IMPORTS } from '../../stream.imports';
 import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
 
 @Component({
@@ -63,7 +63,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [StreamImports, ButtonComponent, TextButtonComponent, TabImports],
+  imports: [STREAM_IMPORTS, ButtonComponent, TextButtonComponent, TAB_IMPORTS],
   providers: [
     ...provideStreamConfig({
       pipSlotPlaceholderComponent: PipSlotPlaceholderComponent,

@@ -1,7 +1,7 @@
 import { JsonPipe } from '@angular/common';
 import { Component, ViewEncapsulation, input, viewChild } from '@angular/core';
 import { FacebookPlayerSlotComponent } from '../../platform/facebook/facebook-player-slot.component';
-import { StreamImports } from '../../stream.imports';
+import { STREAM_IMPORTS } from '../../stream.imports';
 
 @Component({
   selector: 'et-sb-facebook-player',
@@ -16,7 +16,7 @@ import { StreamImports } from '../../stream.imports';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [StreamImports, JsonPipe],
+  imports: [STREAM_IMPORTS, JsonPipe],
 })
 export class FacebookPlayerStorybookComponent {
   public videoId = input('10155364627206729');

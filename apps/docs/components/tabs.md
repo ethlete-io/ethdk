@@ -1,6 +1,6 @@
 # Tabs
 
-Two flavors sharing one accessible tab-bar engine: **content tabs** (`et-tab-group`, panels in place) and **nav tabs** (`et-nav-tabs`, anchors bound to the Angular router). Import `TabImports` or `NavTabImports`.
+Two flavors sharing one accessible tab-bar engine: **content tabs** (`et-tab-group`, panels in place) and **nav tabs** (`et-nav-tabs`, anchors bound to the Angular router). Import `TAB_IMPORTS` or `NAV_TAB_IMPORTS`.
 
 ## Content tabs
 
@@ -20,7 +20,7 @@ Two flavors sharing one accessible tab-bar engine: **content tabs** (`et-tab-gro
 ```
 
 ```ts
-import { TabImports } from '@ethlete/components';
+import { TAB_IMPORTS } from '@ethlete/components';
 ```
 
 - `selectedIndex` is a two-way model (default `0`); disabled tabs are skipped.
@@ -47,7 +47,7 @@ Anchors + router instead of an index — active state comes from `RouterLinkActi
 ```
 
 ```ts
-import { NavTabImports } from '@ethlete/components';
+import { NAV_TAB_IMPORTS } from '@ethlete/components';
 ```
 
 `a[et-nav-tab-link]` forwards the usual `RouterLink` inputs (`queryParams`, `fragment`, `relativeTo`, …) and supports `disabled` just like content tabs. The optional `et-nav-tabs-outlet` wrapper gives the routed region proper `role="tabpanel"` semantics — place it as a sibling of `et-nav-tabs` (as above); it finds the bar that labels it automatically.

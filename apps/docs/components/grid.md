@@ -1,6 +1,6 @@
 # Grid
 
-An interactive dashboard/widget grid — not a CSS-grid helper and not a data table. Items live on a column/row grid per breakpoint, can be dragged and resized (pointer **and** keyboard), auto-place with collision resolution and compaction, and serialize to/from a backend. Import `GridImports`.
+An interactive dashboard/widget grid — not a CSS-grid helper and not a data table. Items live on a column/row grid per breakpoint, can be dragged and resized (pointer **and** keyboard), auto-place with collision resolution and compaction, and serialize to/from a backend. Import `GRID_IMPORTS`.
 
 ## Registering widgets
 
@@ -30,7 +30,7 @@ providers: [
 ```
 
 ```ts
-import { GridImports } from '@ethlete/components';
+import { GRID_IMPORTS } from '@ethlete/components';
 ```
 
 Each `GridItemConfig` is `{ id, type, data, layout }`, where `layout` maps breakpoint names to `{ col, row, colSpan, rowSpan }` positions.

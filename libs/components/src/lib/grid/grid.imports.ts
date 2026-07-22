@@ -4,7 +4,7 @@ import { GridItemToolbarComponent } from './grid-item-toolbar.component';
 import { GridItemComponent } from './grid-item.component';
 import { GridComponent } from './grid.component';
 
-export const GridImports = [
+export const GRID_IMPORTS = [
   GridComponent,
   GridItemComponent,
   GridItemToolbarComponent,

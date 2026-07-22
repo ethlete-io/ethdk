@@ -36,7 +36,7 @@ import { YoutubePlayerComponent } from './platform/youtube/youtube-player.compon
 import { YoutubePlayerDirective } from './platform/youtube/headless/youtube-player.directive';
 import { StreamPlayerSlotDirective } from './stream-player-slot.directive';
 
-export const StreamImports = [
+export const STREAM_IMPORTS = [
   StreamConsentComponent,
   StreamConsentAcceptDirective,
   StreamPlayerLoadingComponent,

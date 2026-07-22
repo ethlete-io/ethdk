@@ -2,13 +2,13 @@ import { Component, ViewEncapsulation, input } from '@angular/core';
 import { StreamConsentComponent } from '../../consent/stream-consent.component';
 import { PipSlotPlaceholderComponent } from '../../pip/pip-slot-placeholder.component';
 import { provideStreamConfig } from '../../stream-config';
-import { StreamImports } from '../../stream.imports';
+import { STREAM_IMPORTS } from '../../stream.imports';
 
 @Component({
   selector: 'et-sb-youtube-player-slot-consent',
   template: ` <et-youtube-player-slot [videoId]="videoId()" class="block w-full max-w-4xl aspect-video" /> `,
   encapsulation: ViewEncapsulation.None,
-  imports: [StreamImports],
+  imports: [STREAM_IMPORTS],
   providers: [
     ...provideStreamConfig({
       consentComponent: StreamConsentComponent,

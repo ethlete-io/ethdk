@@ -1,6 +1,6 @@
 # Stream
 
-Embedded live-stream and video players for **YouTube, Twitch, Vimeo, Dailymotion, Kick, Facebook, TikTok and SOOP** — with consent gating, loading/error overlays and cross-slot picture-in-picture. Import `StreamImports`.
+Embedded live-stream and video players for **YouTube, Twitch, Vimeo, Dailymotion, Kick, Facebook, TikTok and SOOP** — with consent gating, loading/error overlays and cross-slot picture-in-picture. Import `STREAM_IMPORTS`.
 
 ## Player slots
 
@@ -13,7 +13,7 @@ Each platform ships a raw player (`et-youtube-player`) and a **slot** (`et-youtu
 ```
 
 ```ts
-import { StreamImports } from '@ethlete/components';
+import { STREAM_IMPORTS } from '@ethlete/components';
 ```
 
 Source inputs per platform:
@@ -64,7 +64,7 @@ A slot's player can detach into a floating, draggable PiP window and hand back l
 <button (click)="slot.slotDirective.slot.pipActivate(() => goBackToThisView())" et-button>Enter PiP</button>
 ```
 
-`pipActivate(onBack?)` / `pipDeactivate()` control it; the PiP window chrome (close, back, grid toggle for multiple simultaneous PiP players) and window sizing are configurable via `provideStreamConfig({ pipChromeComponent, pipChrome, pipWindow, pipSlotPlaceholderComponent })` — `pipChrome` tunes the appearance of the built-in chrome without replacing it. A custom chrome component composes the headless PiP directives from `StreamImports`: `etPipClose`, `etPipBack`, `etPipBringBack` and `etPipGridToggle`. The `Mixed` story demonstrates a PiP grid mixing 16∶9 and 9∶16 players.
+`pipActivate(onBack?)` / `pipDeactivate()` control it; the PiP window chrome (close, back, grid toggle for multiple simultaneous PiP players) and window sizing are configurable via `provideStreamConfig({ pipChromeComponent, pipChrome, pipWindow, pipSlotPlaceholderComponent })` — `pipChrome` tunes the appearance of the built-in chrome without replacing it. A custom chrome component composes the headless PiP directives from `STREAM_IMPORTS`: `etPipClose`, `etPipBack`, `etPipBringBack` and `etPipGridToggle`. The `Mixed` story demonstrates a PiP grid mixing 16∶9 and 9∶16 players.
 
 <StoryEmbed id="components-stream-mixed--mixed-aspect-ratios" height="560px" />
 
