@@ -24,10 +24,14 @@ import {
   ProvideColorDirective,
   ProvideSurfaceDirective,
   SURFACE_PROVIDER,
+  SurfaceTheme,
+  SurfaceType,
+  createCssSurfaceName,
   injectBoundaryElement,
   injectRenderer,
   injectSurfaceContextTracker,
   injectSurfaceThemes,
+  injectSurfaceThemesPrefix,
   provideBoundaryElement,
   resolveAppRootColorProvider,
   resolveSurfaceByElevation,
@@ -58,6 +62,7 @@ export class OverlayContainerComponent {
 
   protected overlayRef = inject(OVERLAY_REF);
   private surfaceThemes = injectSurfaceThemes({ optional: true });
+  private surfacePrefix = injectSurfaceThemesPrefix({ optional: true });
   private surfaceContextTracker = injectSurfaceContextTracker();
   private renderer = injectRenderer();
 
@@ -84,9 +89,18 @@ export class OverlayContainerComponent {
     }
 
     if (this.surfaceThemes) {
-      const parentType = this.parentSurfaceProvider?.surfaceType() ?? 'dark';
+      // Resolve the surface the overlay's trigger visually sits on, so the overlay elevates one
+      // level above it. The trigger keeps its *declaration* injector even when projected/portaled
+      // into another overlay, so DI (`parentSurfaceProvider`) reports the wrong surface for a
+      // trigger rendered inside a dialog/menu pane, and reports nothing for the anchored panel
+      // overlays (select/menu/date) which mount with no DI link to the trigger at all. The
+      // trigger's nearest painted surface ancestor *in the DOM* is authoritative in every case —
+      // an overlay pane and a plain elevated card both carry the surface class — so read that,
+      // and fall back to DI (openers that pass a viewContainerRef but no origin).
+      const parentSurface = this.resolveOriginSurface() ?? this.parentDiSurface();
+      const parentType = parentSurface?.type ?? 'dark';
       const hasBackdrop = this.overlayRef.config.hasBackdrop ?? this.overlayRef.config.mode !== 'non-modal';
-      const elevation = hasBackdrop || !this.parentSurfaceProvider ? 1 : this.parentSurfaceProvider.elevation() + 1;
+      const elevation = hasBackdrop || !parentSurface ? 1 : parentSurface.elevation + 1;
       const resolved = resolveSurfaceByElevation(this.surfaceThemes, parentType, elevation);
 
       if (resolved) {
@@ -186,6 +200,61 @@ export class OverlayContainerComponent {
    * dialog), otherwise the first painted element in the rendered content (menu/tooltip/date-picker
    * paint a nested element, potentially at a higher elevation than the host's forced surface).
    */
+  private parentDiSurface(): { elevation: number; type: SurfaceType } | null {
+    const provider = this.parentSurfaceProvider;
+
+    if (!provider) return null;
+
+    return { elevation: provider.elevation(), type: provider.surfaceType() ?? 'dark' };
+  }
+
+  /**
+   * The surface of the nearest ancestor of the overlay's origin (trigger) that paints a resolved
+   * surface — walking the real DOM so it sees *through* the portal/projection boundary that hides
+   * the true parent surface from DI. Returns null when there is no origin element or no surfaced
+   * ancestor (the overlay then falls back to DI, and ultimately to elevation 1).
+   */
+  private resolveOriginSurface(): { elevation: number; type: SurfaceType } | null {
+    const themes = this.surfaceThemes;
+
+    if (!themes) return null;
+
+    const origin = this.resolveOriginElement();
+
+    if (!origin) return null;
+
+    const prefix = this.surfacePrefix || 'et';
+    const themeByClass = new Map<string, SurfaceTheme>();
+
+    for (const theme of themes) {
+      themeByClass.set(`${prefix}-surface--${createCssSurfaceName(theme.name)}`, theme);
+    }
+
+    for (let el: HTMLElement | null = origin; el; el = el.parentElement) {
+      for (const cls of Array.from(el.classList)) {
+        const theme = themeByClass.get(cls);
+
+        if (theme) return { elevation: theme.elevation, type: theme.type };
+      }
+    }
+
+    return null;
+  }
+
+  private resolveOriginElement(): HTMLElement | null {
+    const origin = this.overlayRef.config.origin;
+
+    if (origin instanceof HTMLElement) return origin;
+
+    if (origin instanceof Event) {
+      const target = origin.target ?? origin.currentTarget;
+
+      return target instanceof HTMLElement ? target : null;
+    }
+
+    return null;
+  }
+
   private isSheetHost(host: HTMLElement) {
     return (
       host.classList.contains('et-overlay--bottom-sheet') ||

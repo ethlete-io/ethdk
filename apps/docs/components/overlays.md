@@ -154,6 +154,8 @@ The boxed overlay kinds — `dialog`, `anchoredDialog`, the four sheets and the 
 
 Content inherits the radius through the pane, and the anchored-dialog arrow reads the pane's real background and border so it matches. Anchored/centered panes (menu, tooltip, select, date-picker, …) are deliberately excluded — they paint their own surface.
 
+Every overlay resolves its elevation one level **above the surface its trigger sits on**, found from the trigger's nearest surface ancestor in the DOM. This works across the portal boundary: a `select` opened from inside a dialog (elevation 1) mounts at elevation 2, a picker anchored to a field inside an elevated card elevates above the card, and a submenu elevates above its parent menu. Modal dialogs are the exception — a backdrop resets the visual context, so they always mount at elevation 1.
+
 Override per instance via `panelClass` and the pane tokens:
 
 | Token                               | Default                         |
