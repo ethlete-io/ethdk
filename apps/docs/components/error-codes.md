@@ -283,3 +283,22 @@ All rich text editor checks run in dev mode only, and cover the opt-in `etRichTe
 | `ET2503` | An item `id` is malformed.                                              | Match `[A-Za-z0-9._:-]+` so the <code v-pre>{{type:id}}</code> token round-trips through Markdown. |
 | `ET2504` | `etRichTextEditorTriggers` is on an element without `etRichTextEditor`. | Place it on the editor element (e.g. `<et-rich-text-editor>`).                                     |
 | `ET2505` | `insertToken`/`insertTokenItem` called with no token codec installed.   | Add `etRichTextEditorTriggers` or `provideRichTextEditorTokenRendering(triggers)`.                 |
+
+## Bracket (ET34xx)
+
+Runtime errors from the bracket data pipeline and layout engine. They indicate a malformed or unsupported `BracketDataSource` rather than a template-placement mistake.
+
+| Code     | Cause                                                                          | Fix                                                                                     |
+| -------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| `ET3400` | The requested `layout` can't be rendered for the source's tournament `mode`.   | Only single-elimination supports `mirrored`; use `left-to-right` for the others.        |
+| `ET3401` | The source has no rounds/matches to render.                                    | Provide a non-empty `BracketDataSource`.                                                 |
+| `ET3402` | An integration received an unsupported tournament mode.                        | Use a supported mode (`single-elimination`, `double-elimination`, swiss-with-elimination). |
+| `ET3403` | Two rounds in the source share an id.                                          | Give every round a unique `id`.                                                          |
+| `ET3404` | Two matches in the source share an id.                                         | Give every match a unique `id`.                                                          |
+| `ET3405` | A round-to-round relation couldn't be resolved (malformed round structure).    | Emit the expected round types/counts for the mode (see the Bracket guide).              |
+| `ET3406` | A match-to-match relation couldn't be resolved (match counts don't line up).   | Ensure each round's match count follows the mode's halving/lower-bracket pattern.       |
+| `ET3407` | The computed layout grid ended up in an inconsistent state.                    | Check the round types and match counts against the mode's expected structure.           |
+| `ET3408` | Swiss groups couldn't be generated from the source.                            | Ensure per-match win/loss records are consistent across swiss rounds.                    |
+| `ET3409` | A swiss group ended up empty while round headers are enabled.                  | Populate every available win/loss group, or hide round headers.                         |
+| `ET3410` | A match's resolved winner id isn't among its participants.                     | Set `winner` to `'home'`/`'away'`/`null` matching the match's `home`/`away`.             |
+| `ET3411` | A required key was missing from an internal bracket lookup.                    | Ensure every match `roundId` references an existing round.                               |

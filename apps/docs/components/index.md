@@ -72,6 +72,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 
 ### Layout & structure
 
+- [Bracket](/components/bracket) — tournament bracket renderer for single/double-elimination and swiss stages, with SVG connectors, journey highlighting and pluggable match/header cards.
 - [Grid](/components/grid) — drag & resize dashboard grid with breakpoints, keyboard editing and backend serialization.
 - [Scrollable](/components/scrollable) — scroll containers with buttons, masks, snap and drag scrolling.
 - [Tabs](/components/tabs) — content tabs and router-driven nav tabs.
