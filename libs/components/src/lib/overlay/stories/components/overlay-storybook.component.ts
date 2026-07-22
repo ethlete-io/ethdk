@@ -119,15 +119,8 @@ export class OverlayPopoverExampleComponent {}
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS],
   styles: `
-    .et-sb-overlay-panel {
-      background-color: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
-    }
-
-    .et-sb-overlay-panel--bordered {
-      border: 1px solid var(--et-surface-border-solid);
-    }
-
+    /* Surface, border and radius now come from the overlay pane defaults; these only tweak the
+       radius per kind to show it can be overridden per instance. */
     .et-overlay--dialog.et-sb-overlay-panel,
     .et-overlay--anchored-dialog.et-sb-overlay-panel {
       border-radius: 12px;
@@ -158,8 +151,8 @@ export class OverlayStorybookComponent {
     this.overlayManager.open(OverlayPopoverExampleComponent, {
       strategies: anchoredDialogOverlayStrategy({ placement: 'bottom', minWidth: 'unset' }),
       origin,
-      // bordered: the arrow overlaps the pane border and continues it on its protruding edges
-      panelClass: ['et-sb-overlay-panel', 'et-sb-overlay-panel--bordered'],
+      // the pane's default border lets the arrow overlap it and continue it on its protruding edges
+      panelClass: 'et-sb-overlay-panel',
     });
   }
 

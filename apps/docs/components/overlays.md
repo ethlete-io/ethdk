@@ -144,6 +144,26 @@ import { OVERLAY_CONTENT_IMPORTS } from '@ethlete/components';
 | `OverlayTitleDirective`  | `[etOverlayTitle]`                     | Wires the overlay's `aria-labelledby` to the title element                                                               |
 | `OverlayCloseDirective`  | `[etOverlayClose]`                     | Click closes the nearest overlay; the bound value becomes the close result                                               |
 
+### Pane surface
+
+The boxed overlay kinds — `dialog`, `anchoredDialog`, the four sheets and the full-screen dialog — paint a default surface on the pane itself, so plain content (header/body/footer) needs no styling of its own. The colors come from the [surface theme](/core/theming) at the pane's elevation:
+
+- **Background & text** from `--et-surface-background-solid` / `--et-surface-color-solid`.
+- **Border** (`0.1rem` of `--et-surface-border-solid`) — all around for dialogs; on a bottom/top sheet every edge but the docked one; on a side sheet only the exposed inner edge (its block edges sit flush against the viewport).
+- **Radius** on the exposed corners — `1.6rem` for dialogs and sheets, `1.2rem` for the anchored dialog. The full-screen dialog stays square (its radius is animated from the origin).
+
+Content inherits the radius through the pane, and the anchored-dialog arrow reads the pane's real background and border so it matches. Anchored/centered panes (menu, tooltip, select, date-picker, …) are deliberately excluded — they paint their own surface.
+
+Override per instance via `panelClass` and the pane tokens:
+
+| Token                               | Default                         |
+| ----------------------------------- | ------------------------------- |
+| `--et-overlay-surface-background`   | `--et-surface-background-solid` |
+| `--et-overlay-surface-color`        | `--et-surface-color-solid`      |
+| `--et-overlay-surface-border-color` | `--et-surface-border-solid`     |
+| `--et-overlay-surface-border-width` | `0.1rem`                        |
+| `--et-overlay-radius`               | `1.6rem`                        |
+
 ## Strategies
 
 A strategy controls the overlay's position, sizing, classes and animation. Pass one via `config.strategies`:

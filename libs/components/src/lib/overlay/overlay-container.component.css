@@ -11,6 +11,17 @@
 
     --et-overlay-body-min-block-size: 100px;
 
+    /* Default pane chrome for the "boxed" overlay kinds (dialog / anchored-dialog / sheets).
+     Surface-themed so the pane matches whatever elevation the container forces onto itself, with
+     a static fallback for theme-less setups. Kept as tokens so a specific overlay (e.g. the RTE
+     link editor, the date-picker sheet) can override radius/border per instance. Anchored/centered
+     panes are deliberately excluded — their content paints its own surface. */
+    --et-overlay-surface-background: var(--et-surface-background-solid, rgb(32 32 32));
+    --et-overlay-surface-color: var(--et-surface-color-solid, rgb(244 244 245));
+    --et-overlay-surface-border-color: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    --et-overlay-surface-border-width: 0.1rem;
+    --et-overlay-radius: 1.6rem;
+
     --_et-overlay-drag-handle-inline-size: 32px;
     --_et-overlay-drag-handle-block-size: 4px;
     --_et-overlay-drag-handle-block-margin: 22px;
@@ -48,6 +59,61 @@
         display: block;
         overflow: visible;
       }
+    }
+
+    /* Boxed overlays get a themed surface on the pane itself; content inherits the radius via the
+     `> :nth-child(2) { border-radius: inherit }` rule above, and the anchored-dialog arrow reads the
+     pane's real background/border so it matches. */
+    &.et-overlay--dialog,
+    &.et-overlay--anchored-dialog,
+    &.et-overlay--full-screen-dialog,
+    &.et-overlay--bottom-sheet,
+    &.et-overlay--top-sheet,
+    &.et-overlay--left-sheet,
+    &.et-overlay--right-sheet {
+      background-color: var(--et-overlay-surface-background);
+      color: var(--et-overlay-surface-color);
+    }
+
+    &.et-overlay--dialog,
+    &.et-overlay--anchored-dialog {
+      border: var(--et-overlay-surface-border-width) solid var(--et-overlay-surface-border-color);
+      border-radius: var(--et-overlay-radius);
+    }
+
+    /* Anchored popover sits tight against its trigger, so a slightly smaller radius reads better. */
+    &.et-overlay--anchored-dialog {
+      --et-overlay-radius: 1.2rem;
+    }
+
+    /* Sheets are docked to one viewport edge: border everything but the docked edge and round only
+     the two exposed corners. */
+    &.et-overlay--bottom-sheet {
+      border: var(--et-overlay-surface-border-width) solid var(--et-overlay-surface-border-color);
+      border-block-end: none;
+      border-start-start-radius: var(--et-overlay-radius);
+      border-start-end-radius: var(--et-overlay-radius);
+    }
+
+    &.et-overlay--top-sheet {
+      border: var(--et-overlay-surface-border-width) solid var(--et-overlay-surface-border-color);
+      border-block-start: none;
+      border-end-start-radius: var(--et-overlay-radius);
+      border-end-end-radius: var(--et-overlay-radius);
+    }
+
+    /* Side sheets span the full viewport height, so their block edges sit flush against the top and
+     bottom of the screen — border only the exposed inner edge. */
+    &.et-overlay--left-sheet {
+      border-inline-end: var(--et-overlay-surface-border-width) solid var(--et-overlay-surface-border-color);
+      border-start-end-radius: var(--et-overlay-radius);
+      border-end-end-radius: var(--et-overlay-radius);
+    }
+
+    &.et-overlay--right-sheet {
+      border-inline-start: var(--et-overlay-surface-border-width) solid var(--et-overlay-surface-border-color);
+      border-start-start-radius: var(--et-overlay-radius);
+      border-end-start-radius: var(--et-overlay-radius);
     }
 
     &:has(> .et-overlay-arrow) {
