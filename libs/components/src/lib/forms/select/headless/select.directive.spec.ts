@@ -59,7 +59,7 @@ const TEST_COLOR_THEMES = [
     >
       <et-select-option value="apple">Apple</et-select-option>
       <et-select-option value="banana">Banana</et-select-option>
-      <et-select-option [disabled]="true" value="cherry">Cherry</et-select-option>
+      <et-select-option disabled value="cherry">Cherry</et-select-option>
     </et-select>
   `,
   imports: [SELECT_IMPORTS],
@@ -93,13 +93,13 @@ class MixedRequiredTestHost {
   template: `
     <et-select
       [value]="value()"
-      [multiple]="true"
       [readonly]="readonly()"
       [mixed]="mixed()"
       [maxSelection]="maxSelection()"
       (valueChange)="value.set($event)"
       (mixedChange)="mixed.set($event)"
       class="select"
+      multiple
       placeholder="Pick fruits"
     >
       <et-select-option value="apple">Apple</et-select-option>
@@ -237,10 +237,10 @@ class PanelSearchTestHost {
   template: `
     <et-select
       [value]="value()"
-      [pickOnly]="true"
       (valueChange)="value.set($event)"
       (pickOption)="picked.push($event)"
       class="select"
+      pickOnly
       placeholder="Pick a fruit"
     >
       <et-select-option value="apple">Apple</et-select-option>

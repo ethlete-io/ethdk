@@ -1,4 +1,14 @@
-import { computed, DestroyRef, Directive, ElementRef, inject, input, model, signal } from '@angular/core';
+import {
+  booleanAttribute,
+  computed,
+  DestroyRef,
+  Directive,
+  ElementRef,
+  inject,
+  input,
+  model,
+  signal,
+} from '@angular/core';
 import { SELECTION_LIST_TOKEN } from './selection-list.tokens';
 
 let uniqueOptionLabelId = 0;
@@ -42,7 +52,7 @@ export class SelectionOptionDirective {
 
   public value = input.required<unknown>();
   public checked = model(false);
-  public disabled = input(false);
+  public disabled = input(false, { transform: booleanAttribute });
 
   public effectiveDisabled = computed(() => this.disabled() || (this.list?.disabled() ?? false));
   public effectiveReadonly = computed(() => this.list?.readonly() ?? false);

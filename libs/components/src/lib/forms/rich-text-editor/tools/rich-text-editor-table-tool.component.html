@@ -2,8 +2,8 @@
   <button
     [disabled]="disabled()"
     [pressed]="tableMenu.open()"
-    [emitAriaPressed]="false"
     (mousedown)="$event.preventDefault(); refreshContext()"
+    emitAriaPressed="false"
     etMenuTrigger
     et-icon-button
     size="sm"

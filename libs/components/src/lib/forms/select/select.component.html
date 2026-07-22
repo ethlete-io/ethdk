@@ -112,12 +112,7 @@
          Its label is the candidate itself — that is what commits and what the label cache
          stores; the "Create" prefix is display-only. -->
     @if (select.customValueCandidate(); as candidate) {
-      <et-select-option
-        [value]="candidate"
-        [label]="candidate"
-        [customValueOption]="true"
-        class="et-select-create-option"
-      >
+      <et-select-option [value]="candidate" [label]="candidate" class="et-select-create-option" customValueOption>
         <i class="et-select-create-option-icon" etIcon="et-plus" aria-hidden="true"></i>
         {{ createLabel() }} “{{ candidate }}”
       </et-select-option>

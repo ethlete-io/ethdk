@@ -1,4 +1,4 @@
-import { computed, DestroyRef, Directive, inject, input, model, signal } from '@angular/core';
+import { booleanAttribute, computed, DestroyRef, Directive, inject, input, model, signal } from '@angular/core';
 import { ValidationError } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 import { createSelectionState } from './internals/selection-state';
@@ -39,7 +39,7 @@ export class SelectionListDirective implements SelectionListDirectiveBase, FormF
    */
   public mixed = model(false);
   public touched = model(false);
-  public multipleInput = input(false, { alias: 'multiple' });
+  public multipleInput = input(false, { alias: 'multiple', transform: booleanAttribute });
   public disabled = input(false);
   /** View-only: options keep their normal look and focusability but cannot be (de)selected. */
   public readonly = input(false);

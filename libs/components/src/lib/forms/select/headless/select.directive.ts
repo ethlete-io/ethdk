@@ -5,6 +5,7 @@ import {
   Signal,
   WritableSignal,
   afterNextRender,
+  booleanAttribute,
   computed,
   effect,
   inject,
@@ -90,8 +91,8 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   public mixed = model(false);
   public touched = model(false);
   public open = model(false);
-  public multiple = input(false);
-  public disabled = input(false);
+  public multiple = input(false, { transform: booleanAttribute });
+  public disabled = input(false, { transform: booleanAttribute });
   public readonly = input(false);
   public invalid = input(false);
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
@@ -129,7 +130,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   /** Maximum number of selected values (multi select) — further adds are ignored. */
   public maxSelection = input<number | undefined>(undefined);
   /** Renders an "Add new" row in `et-select`'s panel — clicking it emits `addNew`. */
-  public allowAddNew = input(false);
+  public allowAddNew = input(false, { transform: booleanAttribute });
   /** Async option state — rendered by `et-select` as a loading row inside the panel. */
   public loadingInput = input(false, { alias: 'loading' });
   /** Async option state — rendered by `et-select` as an error row inside the panel. */
@@ -137,13 +138,13 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   /** Async option state — `et-select` renders a load-more control emitting `loadMore`. */
   public hasMoreItemsInput = input(false, { alias: 'hasMoreItems' });
   /** Whether the panel mirrors the anchor's width. Off for compact triggers (e.g. a country picker). */
-  public mirrorPanelWidth = input(true);
+  public mirrorPanelWidth = input(true, { transform: booleanAttribute });
   /**
    * Fire-and-forget picker mode (single select): committing an option emits `pickOption`
    * without ever writing `value`, so the select stays empty and can feed an external list
    * without the set-then-clear dance. No effect in multi select.
    */
-  public pickOnly = input(false);
+  public pickOnly = input(false, { transform: booleanAttribute });
 
   public queryChange = output<string>();
   public loadMore = output<void>();

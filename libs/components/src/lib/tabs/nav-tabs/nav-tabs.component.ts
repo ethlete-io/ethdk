@@ -11,8 +11,8 @@ import { NavTabsDirective } from './headless/nav-tabs.directive';
     <et-scrollable
       [direction]="tabBar.orientation()"
       [itemSize]="tabBar.fit() === 'fill' ? 'same' : 'auto'"
-      [renderMasks]="false"
       class="et-nav-tabs__scrollable"
+      renderMasks="false"
       buttonPosition="inside"
       scrollMode="element"
       scrollOrigin="center"

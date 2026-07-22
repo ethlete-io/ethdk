@@ -4,6 +4,7 @@ import {
   Directive,
   Signal,
   afterNextRender,
+  booleanAttribute,
   computed,
   effect,
   inject,
@@ -84,7 +85,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   public disabled = input(false);
   public readonly = input(false);
   /** Multi-select: node activations toggle values instead of committing-and-closing. */
-  public multiple = input(false);
+  public multiple = input(false, { transform: booleanAttribute });
   public invalid = input(false);
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   public required = input(false);
@@ -121,8 +122,8 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
    */
   public maxVisibleColumns = input(3, { transform: (value: number) => Math.max(1, Math.floor(value)) });
 
-  public opened = output<void>();
-  public closed = output<void>();
+  public afterOpen = output<void>();
+  public afterClose = output<void>();
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
 
@@ -374,11 +375,11 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
         attempt(20);
       });
     },
-    onMounted: () => this.opened.emit(),
+    onMounted: () => this.afterOpen.emit(),
     onDocumentKeydown: (event) => this.handlePanelKeydown(event),
     onAfterClosed: ({ byOutsidePointer }) => {
       this.focusInside.set(false);
-      this.closed.emit();
+      this.afterClose.emit();
 
       if (!byOutsidePointer && this.document.activeElement === this.document.body) {
         this.activate();
@@ -532,8 +533,12 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
                 return;
               }
 
-              if (resolved && resolved.length && compareWith(resolved[resolved.length - 1]!.value, value)) {
-                this.path.set(resolved);
+              if (resolved && resolved.length) {
+                const last = resolved[resolved.length - 1];
+
+                if (last && compareWith(last.value, value)) {
+                  this.path.set(resolved);
+                }
               }
             }),
             catchError(() => EMPTY),
@@ -894,12 +899,11 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   /** Collapses the deepest column and moves focus back to its parent — the sheet's back-nav. */
   public goBack() {
     const path = this.openPath();
+    const parent = path.at(-1);
 
-    if (!path.length) {
+    if (!parent) {
       return;
     }
-
-    const parent = path[path.length - 1]!;
 
     this.navigationDirection.set('backward');
     // returning to the root hides the Back bar (title shifts back to flush) — fade, not slide

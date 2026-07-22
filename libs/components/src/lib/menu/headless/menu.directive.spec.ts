@@ -17,6 +17,7 @@ import { MenuDirective } from './menu.directive';
         <div class="root-panel" etMenuPanel>
           <button (click)="clicked.push('alpha')" class="item-alpha" etMenuItem type="button">Alpha</button>
           <button [disabled]="bravoDisabled()" class="item-bravo" etMenuItem type="button">Bravo</button>
+          <!-- eslint-disable ethlete/prefer-static-boolean-properties -- closeOnActivate is tri-state (boolean | undefined); a transform would collapse its unset state -->
           <button
             [closeOnActivate]="false"
             (click)="clicked.push('charlie')"
@@ -26,6 +27,7 @@ import { MenuDirective } from './menu.directive';
           >
             Charlie
           </button>
+          <!-- eslint-enable ethlete/prefer-static-boolean-properties -->
 
           @for (label of extraLabels(); track label) {
             <button class="item-extra" etMenuItem type="button">{{ label }}</button>

@@ -8,7 +8,7 @@ import { SelectionOptionDirective } from './selection-option.directive';
   template: `
     <div [value]="value()" (valueChange)="value.set($event)" etSelectionList>
       <div etSelectionOption value="a"></div>
-      <div [disabled]="true" etSelectionOption value="b"></div>
+      <div disabled etSelectionOption value="b"></div>
       <div etSelectionOption value="c"></div>
     </div>
   `,

@@ -50,7 +50,7 @@ const DEFAULT_LABELS = ['Design', 'Engineering', 'Marketing', 'Very long departm
     <div class="flex max-w-md flex-col gap-6 p-8 font-sans">
       <div class="flex flex-col gap-2">
         <span class="text-sm opacity-60">Categories (multiple)</span>
-        <div [formField]="demoForm.categories" [multiple]="true" class="flex flex-wrap gap-2" etSelectionList>
+        <div [formField]="demoForm.categories" class="flex flex-wrap gap-2" multiple etSelectionList>
           @for (category of CATEGORIES; track category) {
             <et-chip [value]="category" etSelectionOption>{{ category }}</et-chip>
           }

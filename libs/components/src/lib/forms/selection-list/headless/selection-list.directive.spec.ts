@@ -22,7 +22,7 @@ class SingleSelectTestHost {
 
 @Component({
   template: `
-    <div [value]="value()" [multiple]="true" (valueChange)="value.set($event)" etSelectionList>
+    <div [value]="value()" (valueChange)="value.set($event)" multiple etSelectionList>
       <div etSelectionOption value="a"></div>
       <div etSelectionOption value="b"></div>
       <div etSelectionOption value="c"></div>
@@ -75,9 +75,9 @@ class MixedSingleSelectTestHost {
     <div
       [value]="value()"
       [mixed]="mixed()"
-      [multiple]="true"
       (valueChange)="value.set($event)"
       (mixedChange)="mixed.set($event)"
+      multiple
       etSelectionList
     >
       <div etSelectionListControl></div>

@@ -31,8 +31,8 @@ class StandaloneNumberInputTestHost {}
       [max]="max()"
       [step]="step()"
       [disabled]="disabled()"
-      [stepper]="true"
       (valueChange)="value.set($event)"
+      stepper
     />
   `,
   imports: [NUMBER_INPUT_IMPORTS],
@@ -50,9 +50,9 @@ class StepperTestHost {
     <et-number-input
       [value]="value()"
       [mixed]="mixed()"
-      [stepper]="true"
       (valueChange)="value.set($event)"
       (mixedChange)="mixed.set($event)"
+      stepper
       mixedLabel="Mixed values"
       placeholder="Amount"
     />

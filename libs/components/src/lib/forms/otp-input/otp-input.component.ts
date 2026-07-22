@@ -28,7 +28,7 @@ import { OtpInputDirective } from './headless';
         'charset',
         'masked',
       ],
-      outputs: ['valueChange', 'touchedChange', 'completed'],
+      outputs: ['valueChange', 'touchedChange', 'complete'],
     },
     { directive: ProvideColorDirective, inputs: ['etProvideColor:color'] },
   ],

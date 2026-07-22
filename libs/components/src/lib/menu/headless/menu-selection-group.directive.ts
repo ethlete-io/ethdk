@@ -1,4 +1,4 @@
-import { Directive, computed, effect, inject, input, model, signal, untracked } from '@angular/core';
+import { booleanAttribute, Directive, computed, effect, inject, input, model, signal, untracked } from '@angular/core';
 import { ValidationError } from '@angular/forms/signals';
 import {
   MENU_SELECTION_GROUP_MULTIPLE,
@@ -23,7 +23,7 @@ export class MenuSelectionGroupDirective implements MenuSelectionGroupDirectiveB
 
   public value = model<unknown | unknown[] | null>(null);
   public touched = model(false);
-  public multipleInput = input(false, { alias: 'multiple' });
+  public multipleInput = input(false, { alias: 'multiple', transform: booleanAttribute });
   public disabled = input(false);
   public invalid = input(false);
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);

@@ -238,7 +238,9 @@ export class FormFieldComponent {
 
   constructor() {
     effect(() => {
-      this.formFieldDir.controlFrameElement.set(this.controlFrame()?.nativeElement ?? null);
+      const element = this.controlFrame()?.nativeElement ?? null;
+
+      untracked(() => this.formFieldDir.controlFrameElement.set(element));
     });
 
     toObservable(this.errorAnimatable)

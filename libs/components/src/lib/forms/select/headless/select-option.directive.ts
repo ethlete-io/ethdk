@@ -1,4 +1,14 @@
-import { DestroyRef, Directive, ElementRef, afterNextRender, computed, inject, input, signal } from '@angular/core';
+import {
+  DestroyRef,
+  Directive,
+  ElementRef,
+  afterNextRender,
+  booleanAttribute,
+  computed,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { RuntimeError, createComponentId } from '@ethlete/core';
 import { SELECT_ERROR_CODES } from '../select-errors';
 import { SelectOptionGroupDirective } from './select-option-group.directive';
@@ -36,13 +46,13 @@ export class SelectOptionDirective {
   public value = input.required<unknown>();
   /** Display label. Falls back to the element's text content rendered on first paint. */
   public labelInput = input('', { alias: 'label' });
-  public disabled = input(false);
+  public disabled = input(false, { transform: booleanAttribute });
   /**
    * Marks the option as the select's "Create …" row for the current `customValueCandidate` —
    * it is excluded from the candidate's duplicate-label check (it would otherwise hide
    * itself, since its label *is* the candidate).
    */
-  public customValueOption = input(false);
+  public customValueOption = input(false, { transform: booleanAttribute });
 
   private optionId = signal(createComponentId('et-select-option'));
   private textLabel = signal('');

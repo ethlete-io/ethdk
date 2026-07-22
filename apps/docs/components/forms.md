@@ -216,7 +216,7 @@ The default stars fill as **one continuous motion** — a single clipped overlay
 Segmented one-time-code entry backed by **one real native input** stretched invisibly over the segments — that single input is what makes iOS/Android SMS autofill (`autocomplete="one-time-code"`) and native paste reliable. Value is the raw string.
 
 ```html
-<et-otp-input [formField]="demoForm.code" [length]="6" (completed)="verify($event)">
+<et-otp-input [formField]="demoForm.code" [length]="6" (complete)="verify($event)">
   <et-label>Verification code</et-label>
 </et-otp-input>
 ```
@@ -229,7 +229,7 @@ Try it live in Storybook: `Components/Forms/OTP Input`.
 | `charset` | `'numeric' \| 'alphanumeric' \| RegExp` | `'numeric'` | Accepted characters — everything else is stripped (pastes included).  |
 | `masked`  | `boolean`                               | `false`     | Renders dots instead of characters (PIN entry); the value stays real. |
 
-The `completed` output emits the value each time it reaches the full length. Pastes strip separators (`123-456` → `123456`) and truncate. Editing is append/delete-at-end (the caret is pinned to the end), with the active segment marked visually. Tokens: `--et-otp-input-segment-size` (`44px`), `--et-otp-input-segment-gap` (`8px`), `--et-otp-input-segment-radius` (`8px`).
+The `complete` output emits the value each time it reaches the full length. Pastes strip separators (`123-456` → `123456`) and truncate. Editing is append/delete-at-end (the caret is pinned to the end), with the active segment marked visually. Tokens: `--et-otp-input-segment-size` (`44px`), `--et-otp-input-segment-gap` (`8px`), `--et-otp-input-segment-radius` (`8px`).
 
 ::: warning Verify autofill on real devices
 SMS autofill behavior cannot be emulated headlessly — test `one-time-code` flows on real iOS Safari and Android Chrome.

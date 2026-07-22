@@ -8,6 +8,7 @@ import { injectOverlayRouter } from './overlay-router';
   selector: 'et-overlay-route-header-template-outlet',
   template: `
     <div class="et-overlay-route-header-template-outlet">
+      <!-- eslint-disable-next-line ethlete/prefer-static-boolean-properties -- skipNextEnter is a two-way model() on the core AnimatedLifecycle directive; no booleanAttribute transform applies -->
       <div [skipNextEnter]="true" class="et-overlay-route-header-template-outlet-item" etAnimatedLifecycle>
         <ng-container *etAnimatedIf="overlay.headerTemplate()">
           <ng-container *ngTemplateOutlet="overlay.headerTemplate()" />

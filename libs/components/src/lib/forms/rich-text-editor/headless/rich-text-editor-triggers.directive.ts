@@ -93,8 +93,16 @@ export class RichTextEditorTriggersDirective {
 
     // Reserve the trigger chars so markdown autoformat never converts what may start a token run
     // (e.g. a `#` trigger vs `# ` heading), and suspend autoformat while a popup run is active.
-    effect(() => editor.autoformatReservedChars.set(this.triggers().map((trigger) => trigger.char)));
-    effect(() => editor.autoformatSuppressed.set(this.activeMatch() !== null));
+    effect(() => {
+      const reservedChars = this.triggers().map((trigger) => trigger.char);
+
+      untracked(() => editor.autoformatReservedChars.set(reservedChars));
+    });
+    effect(() => {
+      const suppressed = this.activeMatch() !== null;
+
+      untracked(() => editor.autoformatSuppressed.set(suppressed));
+    });
 
     if (ngDevMode) {
       effect(() => this.assertUniqueTriggers(this.triggers()));

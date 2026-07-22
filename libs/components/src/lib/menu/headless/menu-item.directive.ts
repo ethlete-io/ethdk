@@ -4,6 +4,7 @@ import {
   ElementRef,
   Signal,
   afterNextRender,
+  booleanAttribute,
   computed,
   inject,
   input,
@@ -42,7 +43,7 @@ export class MenuItemDirective {
   public elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private destroyRef = inject(DestroyRef);
 
-  public disabled = input(false);
+  public disabled = input(false, { transform: booleanAttribute });
   public closeOnActivate = input<boolean | undefined>(undefined);
   public activate = output<MenuItemActivationEvent>();
 

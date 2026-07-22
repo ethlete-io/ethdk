@@ -17,6 +17,7 @@ const PLAYERS = ['Alice Anderson', 'Bob Brown', 'Charlie Clark', 'Dana Davis', '
 
             <et-menu-radio-group [(value)]="assignedPlayer">
               @for (player of filteredPlayers(); track player) {
+                <!-- eslint-disable-next-line ethlete/prefer-static-boolean-properties -- closeOnActivate is tri-state (boolean | undefined); a transform would collapse its unset state -->
                 <et-menu-radio-item [value]="player" [closeOnActivate]="true">{{ player }}</et-menu-radio-item>
               } @empty {
                 <p class="et-sb-menu-empty">No players found</p>

@@ -14,7 +14,7 @@ import { OTP_INPUT_IMPORTS } from '../otp-input.imports';
         [length]="length()"
         [charset]="charset()"
         [masked]="masked()"
-        (completed)="lastCompleted.set($event)"
+        (complete)="lastCompleted.set($event)"
       >
         <et-label>{{ label() }}</et-label>
         @if (hint()) {

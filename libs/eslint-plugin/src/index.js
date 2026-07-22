@@ -131,6 +131,8 @@ const configs = {
   recommendedTs: recommendedTsWithPlugin,
   /** Angular template rules (merged into a files: ['**\/*.html'] block) */
   recommendedTemplate: recommendedTemplateWithPlugin,
+  /** Relaxed rules for spec files (files: ['**\/*.spec.ts']) */
+  recommendedSpec,
   /**
    * Both together as a flat array — the most common usage:
    *   export default [...baseConfig, ...ethlete.configs.recommended]

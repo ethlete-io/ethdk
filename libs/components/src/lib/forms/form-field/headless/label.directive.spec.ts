@@ -20,7 +20,7 @@ class LabelTestHost {}
   template: `
     <div etFormField>
       <et-label>Required</et-label>
-      <input [required]="true" etInput />
+      <input required etInput />
     </div>
   `,
   imports: [FormFieldDirective, InputDirective, LabelDirective],

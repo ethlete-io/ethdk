@@ -24,7 +24,7 @@ import { MenuDirective } from './menu.directive';
             <button class="radio-date" etMenuItem etMenuSelectionItem value="date" type="button">Date</button>
           </div>
 
-          <div [(value)]="columns" [multiple]="true" class="check-group" etMenuSelectionGroup>
+          <div [(value)]="columns" class="check-group" multiple etMenuSelectionGroup>
             <button class="check-size" etMenuItem etMenuSelectionItem value="size" type="button">Size</button>
             <button class="check-kind" etMenuItem etMenuSelectionItem value="kind" type="button">Kind</button>
           </div>

@@ -32,7 +32,7 @@ import { MENU_IMPORTS } from '../../menu.imports';
               <et-menu-item-shortcut>⌘S</et-menu-item-shortcut>
             </button>
 
-            <button [disabled]="true" et-menu-item type="button">Publish (disabled)</button>
+            <button disabled et-menu-item type="button">Publish (disabled)</button>
 
             <et-menu-separator />
 

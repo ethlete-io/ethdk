@@ -51,7 +51,7 @@ const TEST_COLOR_THEMES = [
       [charset]="charset()"
       [masked]="masked()"
       (valueChange)="value.set($event)"
-      (completed)="completions.push($event)"
+      (complete)="completions.push($event)"
     >
       <et-label>Test label</et-label>
     </et-otp-input>

@@ -507,6 +507,9 @@ export class RichTextEditorComponent {
 
     merge(
       ...viewports.map((v) => fromEvent(v, 'resize')),
+      // These are ancestor viewports/windows (visualViewport, iframe top), not a component-owned
+      // scroll container — signalElementScrollState targets a known elementRef and doesn't apply.
+      // eslint-disable-next-line ethlete/prefer-scroll-state
       ...scrollTargets.map((t) => fromEvent(t, 'scroll', { passive: true })),
     )
       .pipe(

@@ -18,8 +18,8 @@ import { TabComponent } from './tab.component';
       <et-scrollable
         [direction]="tabGroup.tabBar.orientation()"
         [itemSize]="tabGroup.tabBar.fit() === 'fill' ? 'same' : 'auto'"
-        [renderMasks]="false"
         class="et-tab-group__header-scrollable"
+        renderMasks="false"
         buttonPosition="inside"
         scrollMode="element"
         scrollOrigin="center"

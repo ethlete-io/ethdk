@@ -60,4 +60,6 @@ export default [
   },
   // Ethlete styleguide rules — HTML templates
   ethlete.configs.recommendedTemplate,
+  // Relaxed rules for spec files (non-null assertions are common and intentional in tests)
+  ethlete.configs.recommendedSpec,
 ];

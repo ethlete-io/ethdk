@@ -1,4 +1,4 @@
-import { computed, DestroyRef, Directive, inject, input, model, signal, Signal } from '@angular/core';
+import { booleanAttribute, computed, DestroyRef, Directive, inject, input, model, signal, Signal } from '@angular/core';
 import { ValidationError } from '@angular/forms/signals';
 import { FORM_FIELD_TOKEN, FormFieldControl, FormFieldControlType } from './form-field.tokens';
 
@@ -37,7 +37,7 @@ export abstract class TextFieldControlDirective implements FormFieldControl {
   public hidden = input(false);
   public invalid = input(false);
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
-  public required = input(false);
+  public required = input(false, { transform: booleanAttribute });
   public name = input('');
 
   /**

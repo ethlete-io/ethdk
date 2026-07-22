@@ -15,6 +15,7 @@
     <et-menu>
       <et-menu-radio-group [value]="activeCode()" (valueChange)="select($event)" (mousedown)="$event.preventDefault()">
         @for (language of languages(); track language.code) {
+          <!-- eslint-disable-next-line ethlete/prefer-static-boolean-properties -- closeOnActivate is tri-state (boolean | undefined); a transform would collapse its unset state -->
           <et-menu-radio-item [value]="language.code" [icon]="activeIcon(language.code)" [closeOnActivate]="true">
             <span class="et-ml-rte-lang-item">
               <span class="et-ml-rte-lang-item-label">{{ language.label }}</span>

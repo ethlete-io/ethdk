@@ -1,7 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../../../test-helpers';
-import { describeMixedStateContract } from '../../../testing/mixed-state-contract';
 import { DURATION_INPUT_IMPORTS } from '../duration-input.imports';
 import { DurationInputDirective } from './duration-input.directive';
 

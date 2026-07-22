@@ -94,7 +94,7 @@ const DEEP_LEVEL_NAMES = ['Region', 'Country', 'League', 'Club', 'Team', 'Player
 const deepSource: CascaderDataSource<string> = {
   loadChildren: (parent) => {
     const depth = parent ? parent.value.split('/').length : 0;
-    const name = DEEP_LEVEL_NAMES[depth]!;
+    const name = DEEP_LEVEL_NAMES[depth] ?? '';
 
     return Array.from({ length: 6 }, (_, index) => ({
       value: parent ? `${parent.value}/${index}` : `${index}`,
@@ -119,7 +119,7 @@ const deepSource: CascaderDataSource<string> = {
             [toErrorMessage]="toErrorMessage"
             [mixedLabel]="mixedLabel()"
             [placeholder]="placeholder()"
-            [multiple]="true"
+            multiple
           />
           @if (hint()) {
             <et-hint>{{ hint() }}</et-hint>

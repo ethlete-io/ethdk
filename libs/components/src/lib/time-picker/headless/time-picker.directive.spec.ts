@@ -28,7 +28,6 @@ class TimePickerTestHost {
 describe('TimePickerDirective', () => {
   let fixture: ComponentFixture<TimePickerTestHost>;
   let host: TimePickerTestHost;
-  let timePicker: TimePickerDirective;
 
   const tick = () => TestBed.inject(ApplicationRef).tick();
 
@@ -46,7 +45,6 @@ describe('TimePickerDirective', () => {
     fixture = TestBed.createComponent(TimePickerTestHost);
     host = fixture.componentInstance;
     fixture.detectChanges();
-    timePicker = fixture.debugElement.children[0]!.injector.get(TimePickerDirective);
   });
 
   it('renders hour and minute columns for a 24-hour format without seconds', () => {

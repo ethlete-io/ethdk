@@ -60,7 +60,7 @@ import {
         'required',
         'name',
       ],
-      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'openChange', 'opened', 'closed'],
+      outputs: ['valueChange', 'mixedChange', 'touchedChange', 'openChange', 'afterOpen', 'afterClose'],
     },
     ColorInteractiveDirective,
   ],

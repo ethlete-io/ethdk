@@ -1,6 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import {
   afterNextRender,
+  booleanAttribute,
   Component,
   DestroyRef,
   ElementRef,
@@ -64,7 +65,7 @@ export class NumberInputComponent {
   private document = inject(DOCUMENT);
 
   /** Renders −/+ stepper buttons with press-and-hold auto-repeat. */
-  public stepper = input(false);
+  public stepper = input(false, { transform: booleanAttribute });
 
   /** Accessible name of the increment stepper button. */
   public incrementLabel = input('Increment');

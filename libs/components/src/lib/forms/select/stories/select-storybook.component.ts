@@ -263,8 +263,8 @@ export class FormFieldSelectCountryStorybookComponent {
         <et-label>Project</et-label>
         <et-select
           [formField]="demoForm.value"
-          [allowAddNew]="true"
           (addNew)="createProject($event)"
+          allowAddNew
           addNewLabel="Create a new project"
           placeholder="Pick a project"
         >
@@ -321,7 +321,7 @@ export class FormFieldSelectAddNewStorybookComponent {
 export class FormFieldSelectManyOptionsStorybookComponent {
   protected readonly ITEMS = Array.from({ length: 2000 }, (_, index) => ({
     value: `item-${index + 1}`,
-    label: `Item ${index + 1} — ${FRUIT_OPTIONS[index % FRUIT_OPTIONS.length]!.label}`,
+    label: `Item ${index + 1} — ${FRUIT_OPTIONS[index % FRUIT_OPTIONS.length]?.label ?? ''}`,
   }));
 
   private formModel = linkedSignal(() => ({ value: null as string | null }));
@@ -362,8 +362,8 @@ const LAST_NAMES = ['Adler', 'Berg', 'Castro', 'Diaz', 'Egede', 'Fuchs', 'Grau',
 })
 export class FormFieldSelectOptionTemplateStorybookComponent {
   protected readonly USERS = Array.from({ length: 1000 }, (_, index) => {
-    const firstName = FIRST_NAMES[index % FIRST_NAMES.length]!;
-    const lastName = LAST_NAMES[Math.floor(index / FIRST_NAMES.length) % LAST_NAMES.length]!;
+    const firstName = FIRST_NAMES[index % FIRST_NAMES.length] ?? '';
+    const lastName = LAST_NAMES[Math.floor(index / FIRST_NAMES.length) % LAST_NAMES.length] ?? '';
     const name = `${firstName} ${lastName}`;
 
     return {

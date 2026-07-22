@@ -35,7 +35,7 @@ export const maskPatternFromDisplayFormat = (format: string): string | null => {
   let index = 0;
 
   while (index < format.length) {
-    const char = format[index]!;
+    const char = format.charAt(index);
 
     if (char === "'") {
       // date-fns quoting: '...' is literal text, '' inside it is an escaped quote,

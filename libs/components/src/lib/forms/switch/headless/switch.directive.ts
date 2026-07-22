@@ -1,4 +1,14 @@
-import { computed, DestroyRef, Directive, ElementRef, inject, input, model, signal } from '@angular/core';
+import {
+  booleanAttribute,
+  computed,
+  DestroyRef,
+  Directive,
+  ElementRef,
+  inject,
+  input,
+  model,
+  signal,
+} from '@angular/core';
 import { ValidationError } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 
@@ -36,7 +46,7 @@ export class SwitchDirective implements FormFieldControl {
    */
   public indeterminate = model(false);
   public touched = model(false);
-  public disabled = input(false);
+  public disabled = input(false, { transform: booleanAttribute });
   /** View-only: keeps the normal look and focusability but blocks toggling (unlike `disabled`). */
   public readonly = input(false);
   public invalid = input(false);

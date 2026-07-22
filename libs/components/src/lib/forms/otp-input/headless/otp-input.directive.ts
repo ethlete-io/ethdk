@@ -34,7 +34,7 @@ export class OtpInputDirective implements FormValueControl<string>, FormFieldCon
   public masked = input(false);
 
   /** Emits once each time the value reaches the full length. */
-  public completed = output<string>();
+  public complete = output<string>();
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
   public hasValue = computed(() => this.value().length > 0);
@@ -129,7 +129,7 @@ export class OtpInputDirective implements FormValueControl<string>, FormFieldCon
     // or replacing one complete code with another (select-all + paste, autofill over a filled
     // field) would silently never re-complete
     if (sanitized.length === this.length() && sanitized !== previous) {
-      this.completed.emit(sanitized);
+      this.complete.emit(sanitized);
     }
   }
 

@@ -34,7 +34,7 @@ export const deriveDurationFormatSpec = (format: string): DurationFormatSpec => 
   let index = 0;
 
   while (index < format.length) {
-    const char = format[index]!;
+    const char = format.charAt(index);
     const unit = TOKEN_UNIT[char];
 
     if (unit) {
@@ -128,7 +128,7 @@ export const parseDuration = (value: string, spec: DurationFormatSpec): number |
     unitValues = spec.segments.map((_, position) => (position < offset ? 0 : Number(groups[position - offset])));
   } else {
     // one digit run: consume from the right, smallest unit first
-    let digits = groups[0]!;
+    let digits = groups[0] ?? '';
 
     unitValues = spec.segments
       .map((segment) => segment.width)
@@ -145,14 +145,14 @@ export const parseDuration = (value: string, spec: DurationFormatSpec): number |
 
     // leftover digits pile onto the largest unit (e.g. `123456` under mm:ss → 1234 min)
     if (digits.length) {
-      unitValues[0] = Number(digits + String(unitValues[0]).padStart(spec.segments[0]!.width, '0'));
+      unitValues[0] = Number(digits + String(unitValues[0]).padStart(spec.segments[0]?.width ?? 0, '0'));
     }
   }
 
   let total = 0;
 
   spec.segments.forEach((segment, position) => {
-    total += unitValues[position]! * UNIT_MS[segment.unit];
+    total += (unitValues[position] ?? 0) * UNIT_MS[segment.unit];
   });
 
   return total;

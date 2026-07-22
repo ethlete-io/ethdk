@@ -184,6 +184,10 @@ export class GridResizeDirective {
   }
 
   private attachGestureListeners() {
+    // Captures scroll on any ancestor during an active drag-resize gesture to recompute the
+    // container origin — this is document-wide gesture tracking, not a component scroll container,
+    // so signalElementScrollState / signalHostElementScrollState don't apply.
+    // eslint-disable-next-line ethlete/prefer-scroll-state
     const scroll$ = fromEvent(this.document, 'scroll', { capture: true, passive: true }).pipe(
       tap(() => {
         if (!this.start) return;

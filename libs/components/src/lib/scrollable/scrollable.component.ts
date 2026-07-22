@@ -1,5 +1,14 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, ElementRef, ViewEncapsulation, computed, inject, input, viewChild } from '@angular/core';
+import {
+  booleanAttribute,
+  Component,
+  ElementRef,
+  ViewEncapsulation,
+  computed,
+  inject,
+  input,
+  viewChild,
+} from '@angular/core';
 import { outputFromObservable, takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
   ProvideColorDirective,
@@ -65,7 +74,7 @@ import {
 export class ScrollableComponent {
   public scrollableDir = inject(ScrollableDirective);
 
-  public renderMasks = input(true);
+  public renderMasks = input(true, { transform: booleanAttribute });
   public maskVariant = input<ScrollableMaskVariant>('gradient');
   public renderButtons = input(true);
   public buttonPosition = input<ScrollableButtonPosition>('inside');
