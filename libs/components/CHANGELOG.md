@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.0.0-next.30
+
+### Minor Changes
+
+- [#3036](https://github.com/ethlete-io/ethdk/pull/3036) [`aa4bdde`](https://github.com/ethlete-io/ethdk/commit/aa4bdde586615ed13735ed9c970831b91323ebad) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `<et-query-devtools>` (`QUERY_DEVTOOLS_IMPORTS`): a floating, dockable panel
+  that inspects the signals-first `@ethlete/query` system — queries, stacks,
+  sequences, GraphQL queries, bearer auth providers, web socket clients, the
+  repository cache and a rolling event log. Enable instrumentation with
+  `provideQueryDevtools()` from `@ethlete/query`.
+
+  Beyond a read-only view it can act on live queries: a searchable value explorer,
+  JIT editing (apply an edited response via `setResponse`, replay with edited
+  args), forcing loading / error / empty states, cache freshness countdowns with
+  refetch / evict, and an "inspect" mode that highlights the component behind a
+  query when you hover the live UI.
+
+  Calls are identified by base URL (not the internal client name); stacks and auth
+  providers surface identifying info (endpoint, features, queries, token-expiry
+  countdown); the Stacks and Sequences drawers each keep their own selection; and a
+  "Copy report" action puts a Slack-ready rich-text summary (path, args, status,
+  slimmed response, GraphQL document) on the clipboard.
+
+### Patch Changes
+
+- [#3036](https://github.com/ethlete-io/ethdk/pull/3036) [`2699bf3`](https://github.com/ethlete-io/ethdk/commit/2699bf3fa4b7a9a906f274c6b63598ed78644f1a) Thanks [@github-actions](https://github.com/apps/github-actions)! - Throw `ET1208` when an overlay header, body, or footer is used without an `etOverlayMain` ancestor, so the misuse surfaces immediately instead of silently rendering an unstyled region.
+
 ## 1.0.0-next.29
 
 ### Patch Changes

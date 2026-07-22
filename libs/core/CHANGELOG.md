@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.34
+
+### Patch Changes
+
+- [`ef65231`](https://github.com/ethlete-io/ethdk/commit/ef65231ed04184345200f1e6f2e80d3207778157) Thanks [@TomTomB](https://github.com/TomTomB)! - Auto-surface: content that is grafted into an overlay pane after it first renders (e.g. a select option's `etAutoSurface` avatar) now re-resolves its elevation once it lands in the pane, instead of staying stuck one level too low.
+
 ## 5.0.0-next.33
 
 ### Patch Changes
