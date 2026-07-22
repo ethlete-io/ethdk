@@ -86,6 +86,12 @@ export type HttpRequestLoadingProgressState = {
 };
 
 export type HttpRequest<TArgs extends QueryArgs> = {
+  /** The HTTP method of the request. */
+  method: QueryMethod;
+
+  /** The full URL of the request (base + path + query params). */
+  url: string;
+
   /** Executes the request */
   execute: (options?: { allowCache?: boolean }) => boolean;
 
@@ -323,6 +329,8 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
   };
 
   const httpRequest: HttpRequest<TArgs> = {
+    method: options.method,
+    url: options.fullPath,
     execute,
     destroy,
     loading: loading.asReadonly(),

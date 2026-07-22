@@ -17,8 +17,9 @@ import {
   QuerySequence,
   QuerySequenceStatus,
 } from '@ethlete/query';
-import { EMPTY, fromEvent, interval, map, merge, switchMap, tap } from 'rxjs';
+import { EMPTY, filter, fromEvent, interval, map, merge, switchMap, tap } from 'rxjs';
 import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';
+import { QueryDevtoolsToggleComponent } from './query-devtools-toggle.component';
 
 // The registry stores queries type-erased; the panel reads them structurally.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,16 +34,19 @@ type EventLogItem = {
   timestamp: number;
   clientName: string;
   type: QueryRepositoryEvent['type'];
-  key: string;
+  method: string;
+  url: string;
   isSecure: boolean;
   status: number | null;
 };
 
 type PersistedState = {
   open?: boolean;
+  height?: number;
   activeTab?: DevtoolsTab;
   selectedClientName?: string | null;
   selectedQueryId?: string | null;
+  inspectFilterIds?: string[] | null;
   jsonSearch?: string;
   expandedSteps?: string[];
   jsonExpanded?: string[];
@@ -51,6 +55,8 @@ type PersistedState = {
 
 const STORAGE_KEY = 'ethlete:query:devtools:v3';
 const MAX_EVENTS = 100;
+const DEFAULT_HEIGHT = 360;
+const MIN_HEIGHT = 200;
 
 const readPersistedState = (): PersistedState => {
   try {
@@ -97,7 +103,7 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
   templateUrl: './query-devtools.component.html',
   styleUrl: './query-devtools.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [NgTemplateOutlet, QueryDevtoolsJsonComponent],
+  imports: [NgTemplateOutlet, QueryDevtoolsJsonComponent, QueryDevtoolsToggleComponent],
   host: {
     class: 'et-query-devtools-host',
   },
@@ -120,6 +126,8 @@ export class QueryDevtoolsComponent {
   ] satisfies { id: DevtoolsTab; label: string }[];
 
   protected open = signal(this.persisted.open ?? false);
+  protected panelHeight = signal(this.persisted.height ?? DEFAULT_HEIGHT);
+  protected resizing = signal(false);
   protected activeTab = signal<DevtoolsTab>(this.persisted.activeTab ?? 'queries');
   protected selectedClientName = signal<string | null>(this.persisted.selectedClientName ?? null);
   protected selectedQueryId = signal<string | null>(this.persisted.selectedQueryId ?? null);
@@ -153,6 +161,9 @@ export class QueryDevtoolsComponent {
   protected inspectActive = signal(false);
   protected inspectHover = signal<{ rect: DOMRect; entries: QueryDevtoolsEntry[] } | null>(null);
 
+  /** When set (via inspect), the Queries list is filtered to exactly these entry ids. */
+  protected inspectFilterIds = signal<string[] | null>(this.persisted.inspectFilterIds ?? null);
+
   private queryEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'query'));
 
   protected stackEntries = computed(() =>
@@ -185,9 +196,17 @@ export class QueryDevtoolsComponent {
   });
 
   protected filteredQueries = computed(() => {
-    const client = this.selectedClientName();
     const entries = this.queryEntries();
-    const filtered = client ? entries.filter((e) => e.meta.clientName === client) : entries;
+    const inspectIds = this.inspectFilterIds();
+
+    let filtered: QueryDevtoolsEntry[];
+    if (inspectIds) {
+      filtered = entries.filter((e) => inspectIds.includes(e.id));
+    } else {
+      const client = this.selectedClientName();
+      filtered = client ? entries.filter((e) => e.meta.clientName === client) : entries;
+    }
+
     return filtered.map((entry) => ({ entry, query: entry.handle as AnyQuery }));
   });
 
@@ -252,9 +271,11 @@ export class QueryDevtoolsComponent {
     effect(() => {
       const state: PersistedState = {
         open: this.open(),
+        height: this.panelHeight(),
         activeTab: this.activeTab(),
         selectedClientName: this.selectedClientName(),
         selectedQueryId: this.selectedQueryId(),
+        inspectFilterIds: this.inspectFilterIds(),
         jsonSearch: this.jsonSearch(),
         expandedSteps: [...this.expandedSteps()],
         jsonExpanded: [...this.jsonExpandedPaths()],
@@ -275,8 +296,36 @@ export class QueryDevtoolsComponent {
       this.editError.set(null);
     });
 
-    // Inspect mode: while active, listen on the document to map the hovered element to a query.
     const doc = this.document;
+
+    // Global toggle shortcut: Ctrl/Cmd + Alt + Q ("Q" for Query) — uncommon, no browser/OS conflict.
+    fromEvent<KeyboardEvent>(doc, 'keydown')
+      .pipe(
+        filter((e) => (e.ctrlKey || e.metaKey) && e.altKey && e.key.toLowerCase() === 'q'),
+        tap((e) => {
+          e.preventDefault();
+          this.open.update((v) => !v);
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    // Drag-to-resize: while a resize is in progress, track pointer movement on the document.
+    toObservable(this.resizing)
+      .pipe(
+        switchMap((active) =>
+          active
+            ? merge(
+                fromEvent<PointerEvent>(doc, 'pointermove').pipe(tap((e) => this.applyResize(e))),
+                fromEvent<PointerEvent>(doc, 'pointerup').pipe(tap(() => this.resizing.set(false))),
+              )
+            : EMPTY,
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    // Inspect mode: while active, listen on the document to map the hovered element to a query.
     const capture = { capture: true };
     toObservable(this.inspectActive)
       .pipe(
@@ -309,8 +358,22 @@ export class QueryDevtoolsComponent {
     this.eventLog.set([]);
   }
 
+  protected selectClient(name: string | null) {
+    this.selectedClientName.set(name);
+    this.inspectFilterIds.set(null);
+  }
+
+  protected clearInspectFilter() {
+    this.inspectFilterIds.set(null);
+  }
+
   protected toggleInspect() {
     this.inspectActive.update((v) => !v);
+  }
+
+  protected startResize(event: PointerEvent) {
+    event.preventDefault();
+    this.resizing.set(true);
   }
 
   protected inspectLabel(entries: QueryDevtoolsEntry[]) {
@@ -392,6 +455,8 @@ export class QueryDevtoolsComponent {
 
   protected forceError(query: AnyQuery) {
     query.subtle.setLoading(null);
+    // A real failed execution also drops the response, so mirror that for consumers bound to it.
+    query.subtle.setResponse(null);
     query.subtle.setError(
       createQueryErrorResponse(
         new HttpErrorResponse({
@@ -426,10 +491,21 @@ export class QueryDevtoolsComponent {
 
   protected cacheFreshness(entry: QueryRepositoryCacheEntry) {
     this.clock();
+    if (entry.request.loading()) return 'refreshing…';
     const expiresAt = entry.request.expiresAt();
     if (expiresAt === null) return 'uncacheable';
     const ms = expiresAt - Date.now();
     return ms <= 0 ? 'stale' : `${Math.ceil(ms / 1000)}s`;
+  }
+
+  /** The path + query of a request URL (origin stripped), for readable cache/event identifiers. */
+  protected requestPath(url: string) {
+    try {
+      const parsed = new URL(url);
+      return parsed.pathname + parsed.search;
+    } catch {
+      return url;
+    }
   }
 
   // --- Typed template accessors (entry.handle is `unknown`) ---
@@ -535,6 +611,14 @@ export class QueryDevtoolsComponent {
     return `${entryId}:${index}`;
   }
 
+  private applyResize(event: PointerEvent) {
+    // The panel is docked to the bottom, so its height is the distance from the pointer to the viewport bottom.
+    const viewport = this.document.documentElement.clientHeight;
+    const next = viewport - event.clientY;
+    const max = Math.round(viewport * 0.9);
+    this.panelHeight.set(Math.min(Math.max(next, MIN_HEIGHT), max));
+  }
+
   private updateInspectHover(event: MouseEvent) {
     const host = this.hostEl.nativeElement;
     const map = this.elementQueryMap();
@@ -566,15 +650,19 @@ export class QueryDevtoolsComponent {
     const hover = this.inspectHover();
     const first = hover?.entries[0];
 
-    if (!first) return;
+    if (!hover || !first) return;
 
     event.preventDefault();
     event.stopPropagation();
 
+    const ids = hover.entries.map((e) => e.id);
+
     this.open.set(true);
     this.activeTab.set('queries');
     this.selectedClientName.set(null);
-    this.selectedQueryId.set(first.id);
+    this.inspectFilterIds.set(ids);
+    // Auto-select when the element owns a single query, otherwise let the user pick from the filtered list.
+    this.selectedQueryId.set(ids.length === 1 ? first.id : null);
     this.inspectActive.set(false);
   }
 
@@ -584,7 +672,8 @@ export class QueryDevtoolsComponent {
       timestamp: Date.now(),
       clientName,
       type: event.type,
-      key: event.key,
+      method: event.request.method,
+      url: event.request.url,
       isSecure: event.isSecure,
       status: event.type === 'request-error' ? event.error.status : null,
     };

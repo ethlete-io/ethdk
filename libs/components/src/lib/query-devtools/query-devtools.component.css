@@ -29,46 +29,46 @@
     pointer-events: auto;
   }
 
-  .et-query-devtools-toggle {
-    position: fixed;
-    inset-block-end: 1.2rem;
-    inset-inline-end: 1.2rem;
-    z-index: 2147483001;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.8rem 1.2rem;
-    border: 1px solid var(--_et-qdt-border);
-    border-radius: 999px;
-    background: var(--_et-qdt-bg);
-    color: var(--_et-qdt-fg);
-    cursor: pointer;
-    box-shadow: 0 0.4rem 1.6rem rgb(0 0 0 / 0.3);
-  }
-
-  .et-query-devtools-toggle:hover {
-    background: var(--_et-qdt-hover);
-  }
-
-  .et-query-devtools-toggle--open {
-    border-color: var(--_et-qdt-accent);
-  }
-
-  .et-query-devtools-toggle-label {
-    font-weight: 600;
-  }
-
   .et-query-devtools-panel {
+    position: relative;
     display: flex;
     flex-direction: column;
     inline-size: 100%;
-    block-size: 42vh;
-    min-block-size: 24rem;
+    min-block-size: 20rem;
     max-block-size: 90vh;
     background: var(--_et-qdt-bg);
     color: var(--_et-qdt-fg);
     border-block-start: 1px solid var(--_et-qdt-border);
     box-shadow: 0 -0.4rem 2rem rgb(0 0 0 / 0.35);
+  }
+
+  .et-query-devtools-panel--resizing {
+    user-select: none;
+  }
+
+  .et-query-devtools-resize {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 0;
+    block-size: 0.6rem;
+    cursor: ns-resize;
+    z-index: 1;
+  }
+
+  .et-query-devtools-resize::after {
+    content: '';
+    position: absolute;
+    inset-inline: 50%;
+    inset-block-start: 0.2rem;
+    inline-size: 4rem;
+    margin-inline-start: -2rem;
+    block-size: 0.2rem;
+    border-radius: 999px;
+    background: var(--_et-qdt-border);
+  }
+
+  .et-query-devtools-resize:hover::after {
+    background: var(--_et-qdt-accent);
   }
 
   .et-query-devtools-header {
@@ -130,7 +130,7 @@
   }
 
   .et-query-devtools-inspect-btn--active {
-    color: var(--_et-qdt-on-accent, #fff);
+    color: #09090b;
     background: var(--_et-qdt-accent);
     border-color: var(--_et-qdt-accent);
   }
@@ -162,9 +162,10 @@
     padding: 0.2rem 0.5rem;
     border-radius: 0.3rem;
     background: var(--_et-qdt-accent);
-    color: var(--_et-qdt-on-accent, #fff);
+    color: #09090b;
     font-family: ui-monospace, monospace;
     font-size: 1.1rem;
+    font-weight: 600;
     white-space: nowrap;
   }
 
@@ -201,7 +202,7 @@
 
   .et-query-devtools-scroll {
     block-size: 100%;
-    overflow-y: auto;
+    overflow: auto;
     padding: 1rem;
     display: flex;
     flex-direction: column;
@@ -408,6 +409,18 @@
   .et-query-devtools-mono {
     font-variant-numeric: tabular-nums;
     overflow-wrap: anywhere;
+  }
+
+  /* Truncate long request URLs (e.g. GraphQL transported via query params) with the full value on hover. */
+  .et-query-devtools-url {
+    display: inline-block;
+    max-inline-size: 32rem;
+    margin-inline-start: 0.6rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
 
   .et-query-devtools-chips,

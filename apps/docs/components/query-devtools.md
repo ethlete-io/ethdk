@@ -47,8 +47,11 @@ omitting the provider in production builds is safe.
 
 <StoryEmbed id="components-query-devtools--default" height="520px" />
 
-Open the panel with the floating **Query** button (bottom-right), then use the
-demo controls to drive real fixtures through every tab.
+Open the panel with the floating **Query** button (bottom-right) or the
+<kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Alt</kbd> + <kbd>Q</kbd> shortcut, then use
+the demo controls to drive real fixtures through every tab. Drag the panel's top
+edge to resize it. (The floating button is rendered in its own Shadow DOM so
+host-app CSS can't affect it.)
 
 ## Tabs
 

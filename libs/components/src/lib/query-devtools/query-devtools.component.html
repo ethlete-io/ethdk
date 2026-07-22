@@ -1,5 +1,15 @@
 @if (open()) {
-  <section class="et-query-devtools-panel">
+  <section
+    [class.et-query-devtools-panel--resizing]="resizing()"
+    [style.height.px]="panelHeight()"
+    class="et-query-devtools-panel"
+  >
+    <div
+      (pointerdown)="startResize($event)"
+      class="et-query-devtools-resize"
+      title="Drag to resize"
+      aria-hidden="true"
+    ></div>
     <header class="et-query-devtools-header">
       <nav class="et-query-devtools-tabs" role="tablist">
         @for (tab of tabs; track tab.id) {
@@ -37,20 +47,27 @@
           <div class="et-query-devtools-master-detail">
             <div class="et-query-devtools-list">
               <div class="et-query-devtools-toolbar">
-                <label class="et-query-devtools-field">
-                  <span>Client</span>
-                  <select
-                    #clientSelect
-                    [value]="selectedClientName() ?? ''"
-                    (change)="selectedClientName.set(clientSelect.value || null)"
-                    class="et-query-devtools-select"
-                  >
-                    <option value="">All clients</option>
-                    @for (name of clientNames(); track name) {
-                      <option [value]="name">{{ name }}</option>
-                    }
-                  </select>
-                </label>
+                @if (inspectFilterIds(); as ids) {
+                  <span class="et-query-devtools-chip et-query-devtools-chip--success">
+                    inspected element · {{ ids.length }}
+                  </span>
+                  <button (click)="clearInspectFilter()" class="et-query-devtools-btn" type="button">Reset</button>
+                } @else {
+                  <label class="et-query-devtools-field">
+                    <span>Client</span>
+                    <select
+                      #clientSelect
+                      [value]="selectedClientName() ?? ''"
+                      (change)="selectClient(clientSelect.value || null)"
+                      class="et-query-devtools-select"
+                    >
+                      <option value="">All clients</option>
+                      @for (name of clientNames(); track name) {
+                        <option [value]="name">{{ name }}</option>
+                      }
+                    </select>
+                  </label>
+                }
                 <span class="et-query-devtools-count">{{ filteredQueries().length }}</span>
               </div>
 
@@ -289,7 +306,7 @@
                 <table class="et-query-devtools-table">
                   <thead>
                     <tr>
-                      <th>Key</th>
+                      <th>Request</th>
                       <th>Consumers</th>
                       <th>Secure</th>
                       <th>Freshness</th>
@@ -299,7 +316,10 @@
                   <tbody>
                     @for (cacheEntry of client.entries; track cacheEntry.key) {
                       <tr>
-                        <td class="et-query-devtools-mono">{{ cacheEntry.key }}</td>
+                        <td [title]="cacheEntry.request.method + ' ' + cacheEntry.request.url">
+                          <span class="et-query-devtools-method">{{ cacheEntry.request.method }}</span>
+                          <span class="et-query-devtools-url">{{ requestPath(cacheEntry.request.url) }}</span>
+                        </td>
                         <td>{{ cacheEntry.consumerCount }}</td>
                         <td>{{ cacheEntry.isSecure ? 'yes' : 'no' }}</td>
                         <td>{{ cacheFreshness(cacheEntry) }}</td>
@@ -343,7 +363,7 @@
                   <th>Time</th>
                   <th>Client</th>
                   <th>Type</th>
-                  <th>Key</th>
+                  <th>Request</th>
                 </tr>
               </thead>
               <tbody>
@@ -357,7 +377,10 @@
                         <span class="et-query-devtools-chip et-query-devtools-chip--muted">secure</span>
                       }
                     </td>
-                    <td class="et-query-devtools-mono">{{ event.key }}</td>
+                    <td [title]="event.method + ' ' + event.url">
+                      <span class="et-query-devtools-method">{{ event.method }}</span>
+                      <span class="et-query-devtools-url">{{ requestPath(event.url) }}</span>
+                    </td>
                   </tr>
                 } @empty {
                   <tr>
@@ -515,15 +538,9 @@
   </section>
 }
 
-<button
-  [class.et-query-devtools-toggle--open]="open()"
-  (click)="toggleOpen()"
-  class="et-query-devtools-toggle"
-  type="button"
-  title="Toggle query devtools"
->
-  <span class="et-query-devtools-toggle-label">Query</span>
-</button>
+@if (!open()) {
+  <et-query-devtools-toggle (openChange)="toggleOpen()" />
+}
 
 @if (inspectActive() && inspectHover(); as hover) {
   <div
