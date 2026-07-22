@@ -92,6 +92,7 @@
     "form-field-disabled-via-control-state",
     "form-field-fill-elevation-and-rte-popup-error",
     "form-field-optional-label",
+    "form-field-selection-option-build-warnings",
     "forms-otp-input",
     "forms-rating",
     "forms-readonly-clearable",
