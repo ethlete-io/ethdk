@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.26
+
+### Patch Changes
+
+- [`13e41b0`](https://github.com/ethlete-io/ethdk/commit/13e41b04c48ccfc0f171e0693c7662435565b490) Thanks [@TomTomB](https://github.com/TomTomB)! - Drop the unused `DescriptionComponent` import from the checkbox-option and radio components (both only project `et-description` via `<ng-content>`), clearing the NG8113 unused-import build warnings.
+
 ## 1.0.0-next.25
 
 ### Minor Changes
