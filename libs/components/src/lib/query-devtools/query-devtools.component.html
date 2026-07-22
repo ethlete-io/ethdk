@@ -16,7 +16,18 @@
         }
       </nav>
 
-      <button (click)="toggleOpen()" class="et-query-devtools-close" type="button" title="Close devtools">✕</button>
+      <div class="et-query-devtools-header-actions">
+        <button
+          [class.et-query-devtools-inspect-btn--active]="inspectActive()"
+          (click)="toggleInspect()"
+          class="et-query-devtools-inspect-btn"
+          type="button"
+          title="Inspect: hover the UI to find its query"
+        >
+          ⌖ Inspect
+        </button>
+        <button (click)="toggleOpen()" class="et-query-devtools-close" type="button" title="Close devtools">✕</button>
+      </div>
     </header>
 
     <div class="et-query-devtools-body">
@@ -192,20 +203,18 @@
                           <div class="et-query-devtools-step-io">
                             <h5 class="et-query-devtools-section">In · args</h5>
                             @if (sequence.stepArgs().length > i) {
-                              <pre class="et-query-devtools-json">{{ sequence.stepArgs()[i] | json }}</pre>
+                              <et-query-devtools-json [value]="sequence.stepArgs()[i]" />
                             } @else {
                               <p class="et-query-devtools-empty">Not run yet.</p>
                             }
 
                             @if (snap?.error(); as error) {
                               <h5 class="et-query-devtools-section">Out · error ({{ error.raw.status }})</h5>
-                              <pre class="et-query-devtools-json et-query-devtools-json--error">{{
-                                error.isList ? error.errors : (error.error | json)
-                              }}</pre>
+                              <et-query-devtools-json [value]="error.isList ? error.errors : error.error" />
                             } @else {
                               <h5 class="et-query-devtools-section">Out · response</h5>
                               @if (snap) {
-                                <pre class="et-query-devtools-json">{{ snap.response() | json }}</pre>
+                                <et-query-devtools-json [value]="snap.response()" />
                               } @else {
                                 <p class="et-query-devtools-empty">Not run yet.</p>
                               }
@@ -254,12 +263,12 @@
 
                 @if (authTokenPayload(auth); as payload) {
                   <h4 class="et-query-devtools-section">Access token payload</h4>
-                  <pre class="et-query-devtools-json">{{ payload | json }}</pre>
+                  <et-query-devtools-json [value]="payload" />
                 }
 
                 @if (auth.latestNonInternalQuery(); as latest) {
                   <h4 class="et-query-devtools-section">Latest auth query · {{ latest.key }}</h4>
-                  <pre class="et-query-devtools-json">{{ latest.snapshot.response() | json }}</pre>
+                  <et-query-devtools-json [value]="latest.snapshot.response()" />
                 }
               </div>
             } @empty {
@@ -283,7 +292,8 @@
                       <th>Key</th>
                       <th>Consumers</th>
                       <th>Secure</th>
-                      <th>Stale</th>
+                      <th>Freshness</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -292,11 +302,23 @@
                         <td class="et-query-devtools-mono">{{ cacheEntry.key }}</td>
                         <td>{{ cacheEntry.consumerCount }}</td>
                         <td>{{ cacheEntry.isSecure ? 'yes' : 'no' }}</td>
-                        <td>{{ cacheEntry.request.isStale() ? 'yes' : 'no' }}</td>
+                        <td>{{ cacheFreshness(cacheEntry) }}</td>
+                        <td class="et-query-devtools-cell-actions">
+                          <button (click)="refetchCacheEntry(cacheEntry)" class="et-query-devtools-btn" type="button">
+                            Refetch
+                          </button>
+                          <button
+                            (click)="evictCacheEntry(client.repository, cacheEntry.key)"
+                            class="et-query-devtools-btn"
+                            type="button"
+                          >
+                            Evict
+                          </button>
+                        </td>
                       </tr>
                     } @empty {
                       <tr>
-                        <td class="et-query-devtools-empty" colspan="4">Cache empty.</td>
+                        <td class="et-query-devtools-empty" colspan="5">Cache empty.</td>
                       </tr>
                     }
                   </tbody>
@@ -383,6 +405,52 @@
         <button (click)="resetQuery(sel.query)" class="et-query-devtools-btn" type="button">Reset</button>
       </div>
 
+      <div class="et-query-devtools-actions">
+        <span class="et-query-devtools-actions-label">Edit</span>
+        <button (click)="openResponseEditor(sel.query)" class="et-query-devtools-btn" type="button">Response</button>
+        <button (click)="openArgsEditor(sel.query)" class="et-query-devtools-btn" type="button">Replay args</button>
+        <span class="et-query-devtools-actions-label">Force</span>
+        <button (click)="forceLoading(sel.query)" class="et-query-devtools-btn" type="button">Loading</button>
+        <button (click)="forceError(sel.query)" class="et-query-devtools-btn" type="button">Error</button>
+        <button (click)="forceEmpty(sel.query)" class="et-query-devtools-btn" type="button">Empty</button>
+        <button (click)="clearForced(sel.query)" class="et-query-devtools-btn" type="button">Clear</button>
+      </div>
+
+      @if (editorMode() !== 'none') {
+        <div class="et-query-devtools-editor">
+          @if (editorMode() === 'response') {
+            <h4 class="et-query-devtools-section">Edit response → setResponse()</h4>
+            <textarea
+              #respArea
+              [value]="responseDraft()"
+              (input)="responseDraft.set(respArea.value)"
+              class="et-query-devtools-textarea"
+              spellcheck="false"
+            ></textarea>
+            <div class="et-query-devtools-actions">
+              <button (click)="applyResponse(sel.query)" class="et-query-devtools-btn" type="button">Apply</button>
+              <button (click)="cancelEditor()" class="et-query-devtools-btn" type="button">Cancel</button>
+            </div>
+          } @else {
+            <h4 class="et-query-devtools-section">Replay with edited args → execute()</h4>
+            <textarea
+              #argsArea
+              [value]="argsDraft()"
+              (input)="argsDraft.set(argsArea.value)"
+              class="et-query-devtools-textarea"
+              spellcheck="false"
+            ></textarea>
+            <div class="et-query-devtools-actions">
+              <button (click)="applyArgs(sel.query)" class="et-query-devtools-btn" type="button">Execute</button>
+              <button (click)="cancelEditor()" class="et-query-devtools-btn" type="button">Cancel</button>
+            </div>
+          }
+          @if (editError(); as err) {
+            <p class="et-query-devtools-editor-error">{{ err }}</p>
+          }
+        </div>
+      }
+
       <dl class="et-query-devtools-meta">
         <dt>Client</dt>
         <dd>{{ sel.entry.meta.clientName || '—' }}</dd>
@@ -404,17 +472,27 @@
         </div>
       }
 
-      <h4 class="et-query-devtools-section">Args</h4>
-      <pre class="et-query-devtools-json">{{ sel.query.args() | json }}</pre>
+      <div class="et-query-devtools-section-row">
+        <h4 class="et-query-devtools-section">Value explorer</h4>
+        <input
+          #jsonSearchInput
+          [value]="jsonSearch()"
+          (input)="jsonSearch.set(jsonSearchInput.value)"
+          class="et-query-devtools-search"
+          type="search"
+          placeholder="filter keys / values…"
+        />
+      </div>
+
+      <h5 class="et-query-devtools-section">Args</h5>
+      <et-query-devtools-json [value]="sel.query.args()" [search]="jsonSearchTerm()" />
 
       @if (sel.query.error(); as error) {
-        <h4 class="et-query-devtools-section">Error ({{ error.raw.status }})</h4>
-        <pre class="et-query-devtools-json et-query-devtools-json--error">{{
-          error.isList ? error.errors : (error.error | json)
-        }}</pre>
+        <h5 class="et-query-devtools-section">Error ({{ error.raw.status }})</h5>
+        <et-query-devtools-json [value]="error.isList ? error.errors : error.error" [search]="jsonSearchTerm()" />
       } @else {
-        <h4 class="et-query-devtools-section">Response</h4>
-        <pre class="et-query-devtools-json">{{ sel.query.response() | json }}</pre>
+        <h5 class="et-query-devtools-section">Response</h5>
+        <et-query-devtools-json [value]="sel.query.response()" [search]="jsonSearchTerm()" />
       }
     </ng-template>
   </section>
@@ -429,3 +507,15 @@
 >
   <span class="et-query-devtools-toggle-label">Query</span>
 </button>
+
+@if (inspectActive() && inspectHover(); as hover) {
+  <div
+    [style.left.px]="hover.rect.left"
+    [style.top.px]="hover.rect.top"
+    [style.width.px]="hover.rect.width"
+    [style.height.px]="hover.rect.height"
+    class="et-query-devtools-inspect-box"
+  >
+    <span class="et-query-devtools-inspect-tag">{{ inspectLabel(hover.entries) }}</span>
+  </div>
+}

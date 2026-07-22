@@ -107,6 +107,34 @@
     border-block-end-color: var(--_et-qdt-accent);
   }
 
+  .et-query-devtools-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex: 0 0 auto;
+  }
+
+  .et-query-devtools-inspect-btn {
+    appearance: none;
+    border: 1px solid var(--_et-qdt-border);
+    border-radius: 0.4rem;
+    background: transparent;
+    color: var(--_et-qdt-muted);
+    cursor: pointer;
+    padding: 0.4rem 0.8rem;
+    font: inherit;
+  }
+
+  .et-query-devtools-inspect-btn:hover {
+    color: var(--_et-qdt-fg);
+  }
+
+  .et-query-devtools-inspect-btn--active {
+    color: var(--_et-qdt-on-accent, #fff);
+    background: var(--_et-qdt-accent);
+    border-color: var(--_et-qdt-accent);
+  }
+
   .et-query-devtools-close {
     appearance: none;
     border: none;
@@ -115,6 +143,29 @@
     cursor: pointer;
     padding: 0.6rem;
     font: inherit;
+  }
+
+  .et-query-devtools-inspect-box {
+    position: fixed;
+    z-index: 2147483002;
+    pointer-events: none;
+    border: 2px solid var(--_et-qdt-accent);
+    background: color-mix(in srgb, var(--_et-qdt-accent) 15%, transparent);
+    border-radius: 0.2rem;
+  }
+
+  .et-query-devtools-inspect-tag {
+    position: absolute;
+    inset-block-start: 100%;
+    inset-inline-start: 0;
+    margin-block-start: 0.2rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.3rem;
+    background: var(--_et-qdt-accent);
+    color: var(--_et-qdt-on-accent, #fff);
+    font-family: ui-monospace, monospace;
+    font-size: 1.1rem;
+    white-space: nowrap;
   }
 
   .et-query-devtools-close:hover {
@@ -526,5 +577,157 @@
     color: var(--_et-qdt-subtle);
     padding: 1.2rem;
     text-align: center;
+  }
+
+  .et-query-devtools-actions-label {
+    color: var(--_et-qdt-subtle);
+    align-self: center;
+    text-transform: uppercase;
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+  }
+
+  .et-query-devtools-cell-actions {
+    display: flex;
+    gap: 0.4rem;
+    white-space: nowrap;
+  }
+
+  .et-query-devtools-section-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    margin-block-start: 1rem;
+  }
+
+  .et-query-devtools-search {
+    flex: 0 1 20rem;
+    background: var(--_et-qdt-bg);
+    color: var(--_et-qdt-fg);
+    border: 1px solid var(--_et-qdt-border);
+    border-radius: 0.4rem;
+    padding: 0.4rem 0.6rem;
+    font: inherit;
+  }
+
+  /* --- JIT editor --- */
+
+  .et-query-devtools-editor {
+    border: 1px solid var(--_et-qdt-border);
+    border-radius: 0.4rem;
+    padding: 0.8rem;
+    margin-block-end: 1rem;
+  }
+
+  .et-query-devtools-textarea {
+    inline-size: 100%;
+    min-block-size: 12rem;
+    resize: vertical;
+    background: color-mix(in srgb, var(--_et-qdt-interaction) 4%, transparent);
+    color: var(--_et-qdt-fg);
+    border: 1px solid var(--_et-qdt-border);
+    border-radius: 0.4rem;
+    padding: 0.6rem;
+    font-family: inherit;
+    font-size: 1.2rem;
+  }
+
+  .et-query-devtools-editor-error {
+    color: var(--_et-qdt-error);
+    margin: 0.4rem 0 0;
+  }
+
+  /* --- Value explorer (JSON tree) --- */
+
+  .et-query-devtools-json-node,
+  .et-query-devtools-json-children {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .et-query-devtools-json-children {
+    padding-inline-start: 1.4rem;
+    border-inline-start: 1px solid var(--_et-qdt-border);
+    margin-inline-start: 0.4rem;
+  }
+
+  .et-query-devtools-json-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    padding: 0.1rem 0;
+    font-family: inherit;
+    line-height: 1.5;
+  }
+
+  .et-query-devtools-json-toggle {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--_et-qdt-fg);
+    cursor: pointer;
+    text-align: start;
+    font: inherit;
+    padding: 0.1rem 0;
+  }
+
+  .et-query-devtools-json-toggle:hover {
+    background: var(--_et-qdt-hover);
+  }
+
+  .et-query-devtools-json-caret {
+    color: var(--_et-qdt-subtle);
+    inline-size: 1rem;
+    flex: 0 0 auto;
+  }
+
+  .et-query-devtools-json-key {
+    color: var(--_et-qdt-accent);
+  }
+
+  .et-query-devtools-json-colon {
+    color: var(--_et-qdt-subtle);
+  }
+
+  .et-query-devtools-json-preview {
+    color: var(--_et-qdt-subtle);
+  }
+
+  .et-query-devtools-json-value {
+    overflow-wrap: anywhere;
+  }
+
+  .et-query-devtools-json-leaf[data-kind='string'] .et-query-devtools-json-value {
+    color: var(--_et-qdt-success);
+  }
+
+  .et-query-devtools-json-leaf[data-kind='number'] .et-query-devtools-json-value,
+  .et-query-devtools-json-leaf[data-kind='boolean'] .et-query-devtools-json-value {
+    color: var(--_et-qdt-loading);
+  }
+
+  .et-query-devtools-json-leaf[data-kind='null'] .et-query-devtools-json-value,
+  .et-query-devtools-json-leaf[data-kind='undefined'] .et-query-devtools-json-value {
+    color: var(--_et-qdt-subtle);
+  }
+
+  .et-query-devtools-json-hit {
+    background: color-mix(in srgb, var(--_et-qdt-loading) 40%, transparent);
+    border-radius: 0.2rem;
+  }
+
+  .et-query-devtools-json-copy {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--_et-qdt-subtle);
+    cursor: pointer;
+    opacity: 0;
+    font: inherit;
+  }
+
+  .et-query-devtools-json-row:hover .et-query-devtools-json-copy {
+    opacity: 1;
   }
 }

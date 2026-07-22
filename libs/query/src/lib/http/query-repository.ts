@@ -99,6 +99,13 @@ export type QueryRepositorySubtle = {
 
   /** A version counter bumped whenever the cache changes (bind / unbind / unbindAllSecure). */
   cacheVersion: Signal<number>;
+
+  /**
+   * Destroys and removes a single cache entry by key, regardless of its consumers. Intended for
+   * devtools cache management — consumers still holding the query will get a fresh request on their
+   * next execution.
+   */
+  evict: (key: QueryKey) => void;
 };
 
 /**
@@ -315,6 +322,17 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       request: entry.request,
     }));
 
+  const evict = (key: QueryKey) => {
+    const entry = cache.get(key);
+
+    if (!entry) return;
+
+    entry.request.destroy();
+    entry.eventSubscription?.unsubscribe();
+    cache.delete(key);
+    bumpCacheVersion();
+  };
+
   const repository: QueryRepository = {
     request,
     unbind,
@@ -323,6 +341,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     subtle: {
       cacheEntries,
       cacheVersion: cacheVersion.asReadonly(),
+      evict,
     },
   };
 

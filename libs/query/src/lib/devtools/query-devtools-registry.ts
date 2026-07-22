@@ -39,6 +39,12 @@ export type QueryDevtoolsEntryMeta = {
 
   /** The owning client's repository, where known (queries and auth providers). */
   repository?: QueryRepository;
+
+  /**
+   * The DOM element of the component/directive that created a query, when available. Used by the
+   * devtools "inspect" tool to map a query back to its place in the live UI.
+   */
+  element?: HTMLElement | null;
 };
 
 /**

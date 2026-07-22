@@ -7,8 +7,10 @@ import {
 } from '../devtools';
 import { CreateGqlQueryOptions, isCreateGqlQueryOptions } from '../gql/gql-query';
 import { AnyCreateGqlQueryCreatorOptions, GqlQueryMethod } from '../gql/gql-query-creator';
+import { HttpRequestLoadingState } from './http-request';
 import { wrapAsObservableSignal } from './observable-signal';
 import { CreateQueryOptions, Query, QueryArgs, RawResponseType, ReadonlyQuery, ResponseType } from './query';
+import { QueryErrorResponse } from './query-error-response';
 import { AnyCreateQueryClientResult } from './query-client';
 import {
   CreateQueryCreatorOptions,
@@ -106,6 +108,8 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
 
   const destroy = () => deps.injector.destroy();
   const setResponse = (response: ResponseType<TArgs>) => state.rawResponse.set(response as RawResponseType<TArgs>);
+  const setLoading = (loading: HttpRequestLoadingState | null) => state.loading.set(loading);
+  const setError = (error: QueryErrorResponse | null) => state.error.set(error);
   const createSnapshot = createQuerySnapshotFn({ state, execute, deps });
 
   // Pre-wrap all public signals once so both `query` and `roQuery` share the same instances.
@@ -154,6 +158,8 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
     subtle: {
       destroy,
       setResponse,
+      setLoading,
+      setError,
       request: wrappedRequest,
       destroyRef: deps.scopeDestroyRef,
       injector: deps.injector,
@@ -231,6 +237,7 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
           queryConfig: options.queryConfig,
           creator: options.creator,
           repository: deps.client.repository,
+          element: deps.hostElement,
         },
       });
 

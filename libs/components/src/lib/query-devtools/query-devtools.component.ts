@@ -1,20 +1,24 @@
-import { JsonPipe, NgTemplateOutlet } from '@angular/common';
-import { Component, computed, effect, signal, ViewEncapsulation } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { HttpErrorResponse } from '@angular/common/http';
+import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
+import { Component, computed, effect, ElementRef, inject, signal, ViewEncapsulation } from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import {
   AnyBearerAuthProvider,
   AnyPagedQueryStack,
   AnyQuerySnapshot,
   AnyQueryStack,
+  createQueryErrorResponse,
   Query,
   queryDevtoolsEntries,
   QueryDevtoolsEntry,
   QueryRepository,
+  QueryRepositoryCacheEntry,
   QueryRepositoryEvent,
   QuerySequence,
   QuerySequenceStatus,
 } from '@ethlete/query';
-import { map, merge, switchMap, tap } from 'rxjs';
+import { EMPTY, fromEvent, interval, map, merge, switchMap, tap } from 'rxjs';
+import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';
 
 // The registry stores queries type-erased; the panel reads them structurally.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -88,12 +92,15 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
   templateUrl: './query-devtools.component.html',
   styleUrl: './query-devtools.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [JsonPipe, NgTemplateOutlet],
+  imports: [NgTemplateOutlet, QueryDevtoolsJsonComponent],
   host: {
     class: 'et-query-devtools-host',
   },
 })
 export class QueryDevtoolsComponent {
+  private hostEl = inject<ElementRef<HTMLElement>>(ElementRef);
+  private document = inject(DOCUMENT);
+
   private eventIdCounter = 0;
 
   private readonly persisted = readPersistedState();
@@ -116,6 +123,23 @@ export class QueryDevtoolsComponent {
 
   /** Keys (`<entryId>:<stepIndex>`) of the sequence steps whose in/out detail is expanded. */
   private expandedSteps = signal<ReadonlySet<string>>(new Set());
+
+  /** Shared value-explorer search term. */
+  protected jsonSearch = signal('');
+  protected jsonSearchTerm = computed(() => this.jsonSearch().trim().toLowerCase());
+
+  /** JIT editor state (response / args editing on the selected query). */
+  protected editorMode = signal<'none' | 'response' | 'args'>('none');
+  protected responseDraft = signal('');
+  protected argsDraft = signal('');
+  protected editError = signal<string | null>(null);
+
+  /** 1-second tick driving the cache freshness countdowns. */
+  private clock = toSignal(interval(1000), { initialValue: 0 });
+
+  /** "Inspect" mode: hover the live UI to find the query that a component created. */
+  protected inspectActive = signal(false);
+  protected inspectHover = signal<{ rect: DOMRect; entries: QueryDevtoolsEntry[] } | null>(null);
 
   private queryEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'query'));
 
@@ -166,9 +190,22 @@ export class QueryDevtoolsComponent {
     this.repositories().map(({ repository, name }) => {
       // Read the version signal so this recomputes on every cache mutation.
       repository.subtle.cacheVersion();
-      return { name, entries: repository.subtle.cacheEntries() };
+      return { name, repository, entries: repository.subtle.cacheEntries() };
     }),
   );
+
+  /** Map of a component's host element to the query entries it created (for the inspect tool). */
+  private elementQueryMap = computed(() => {
+    const map = new Map<HTMLElement, QueryDevtoolsEntry[]>();
+    for (const entry of this.queryEntries()) {
+      const el = entry.meta.element;
+      if (!el) continue;
+      const list = map.get(el);
+      if (list) list.push(entry);
+      else map.set(el, [entry]);
+    }
+    return map;
+  });
 
   constructor() {
     // Merge every live repository's event stream into the rolling log, re-subscribing as the set of
@@ -196,6 +233,38 @@ export class QueryDevtoolsComponent {
         // ignore (private mode / disabled storage)
       }
     });
+
+    // Close any open JIT editor when the inspected query changes.
+    effect(() => {
+      this.selectedQueryId();
+      this.editorMode.set('none');
+      this.editError.set(null);
+    });
+
+    // Inspect mode: while active, listen on the document to map the hovered element to a query.
+    const doc = this.document;
+    const capture = { capture: true };
+    toObservable(this.inspectActive)
+      .pipe(
+        tap((active) => {
+          if (!active) this.inspectHover.set(null);
+        }),
+        switchMap((active) =>
+          active
+            ? merge(
+                fromEvent<MouseEvent>(doc, 'mousemove', capture).pipe(tap((e) => this.updateInspectHover(e))),
+                fromEvent<MouseEvent>(doc, 'click', capture).pipe(tap((e) => this.selectInspectedQuery(e))),
+                fromEvent<KeyboardEvent>(doc, 'keydown', capture).pipe(
+                  tap((e) => {
+                    if (e.key === 'Escape') this.inspectActive.set(false);
+                  }),
+                ),
+              )
+            : EMPTY,
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
   }
 
   protected toggleOpen() {
@@ -204,6 +273,16 @@ export class QueryDevtoolsComponent {
 
   protected clearEvents() {
     this.eventLog.set([]);
+  }
+
+  protected toggleInspect() {
+    this.inspectActive.update((v) => !v);
+  }
+
+  protected inspectLabel(entries: QueryDevtoolsEntry[]) {
+    const first = entries[0];
+    if (entries.length === 1 && first) return `${first.meta.method ?? ''} ${first.meta.route ?? ''}`.trim();
+    return `${entries.length} queries`;
   }
 
   protected queryStatus(query: AnyQuery): QueryStatus {
@@ -228,6 +307,90 @@ export class QueryDevtoolsComponent {
 
   protected resetQuery(query: AnyQuery) {
     query.reset();
+  }
+
+  // --- JIT editing ---
+
+  protected openResponseEditor(query: AnyQuery) {
+    this.responseDraft.set(JSON.stringify(query.response() ?? null, null, 2));
+    this.editError.set(null);
+    this.editorMode.set('response');
+  }
+
+  protected openArgsEditor(query: AnyQuery) {
+    this.argsDraft.set(JSON.stringify(query.args() ?? {}, null, 2));
+    this.editError.set(null);
+    this.editorMode.set('args');
+  }
+
+  protected applyResponse(query: AnyQuery) {
+    try {
+      query.subtle.setResponse(JSON.parse(this.responseDraft()));
+      this.editorMode.set('none');
+      this.editError.set(null);
+    } catch {
+      this.editError.set('Invalid JSON');
+    }
+  }
+
+  protected applyArgs(query: AnyQuery) {
+    try {
+      query.execute({ args: JSON.parse(this.argsDraft()) });
+      this.editorMode.set('none');
+      this.editError.set(null);
+    } catch {
+      this.editError.set('Invalid JSON');
+    }
+  }
+
+  protected cancelEditor() {
+    this.editorMode.set('none');
+    this.editError.set(null);
+  }
+
+  // --- Force states ---
+
+  protected forceLoading(query: AnyQuery) {
+    query.subtle.setLoading({ executeTime: Date.now(), progress: null });
+  }
+
+  protected forceError(query: AnyQuery) {
+    query.subtle.setError(
+      createQueryErrorResponse(
+        new HttpErrorResponse({
+          status: 500,
+          statusText: 'Forced',
+          error: { message: 'Forced error (devtools)' },
+        }),
+      ),
+    );
+  }
+
+  protected forceEmpty(query: AnyQuery) {
+    query.subtle.setResponse(null);
+  }
+
+  protected clearForced(query: AnyQuery) {
+    query.subtle.setLoading(null);
+    query.subtle.setError(null);
+  }
+
+  // --- Cache actions ---
+
+  protected refetchCacheEntry(entry: QueryRepositoryCacheEntry) {
+    entry.request.execute();
+  }
+
+  protected evictCacheEntry(repository: QueryRepository, key: string) {
+    repository.subtle.evict(key);
+  }
+
+  protected cacheFreshness(entry: QueryRepositoryCacheEntry) {
+    this.clock();
+    const expiresAt = entry.request.expiresAt();
+    if (expiresAt === null) return 'uncacheable';
+    const ms = expiresAt - Date.now();
+    return ms <= 0 ? 'stale' : `${Math.ceil(ms / 1000)}s`;
   }
 
   // --- Typed template accessors (entry.handle is `unknown`) ---
@@ -331,6 +494,49 @@ export class QueryDevtoolsComponent {
 
   private stepKey(entryId: string, index: number) {
     return `${entryId}:${index}`;
+  }
+
+  private updateInspectHover(event: MouseEvent) {
+    const host = this.hostEl.nativeElement;
+    const map = this.elementQueryMap();
+    let node = event.target as HTMLElement | null;
+
+    // Ignore the devtools UI itself.
+    if (node && host.contains(node)) {
+      this.inspectHover.set(null);
+
+      return;
+    }
+
+    while (node) {
+      const entries = map.get(node);
+
+      if (entries) {
+        this.inspectHover.set({ rect: node.getBoundingClientRect(), entries });
+
+        return;
+      }
+
+      node = node.parentElement;
+    }
+
+    this.inspectHover.set(null);
+  }
+
+  private selectInspectedQuery(event: MouseEvent) {
+    const hover = this.inspectHover();
+    const first = hover?.entries[0];
+
+    if (!first) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    this.open.set(true);
+    this.activeTab.set('queries');
+    this.selectedClientName.set(null);
+    this.selectedQueryId.set(first.id);
+    this.inspectActive.set(false);
   }
 
   private pushEvent(event: QueryRepositoryEvent, clientName: string) {

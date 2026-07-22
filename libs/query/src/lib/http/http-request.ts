@@ -119,6 +119,12 @@ export type HttpRequest<TArgs extends QueryArgs> = {
    * staleness depends on wall-clock time rather than on any tracked signal.
    */
   isStale: () => boolean;
+
+  /**
+   * The timestamp (ms) at which the cached response goes stale, or `null` when the request is not
+   * cacheable / has no freshness window. Exposed for devtools freshness countdowns.
+   */
+  expiresAt: Signal<number | null>;
 };
 
 /** A custom error event since the Angular http client does not provide a specific event for errors */
@@ -325,6 +331,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     currentEvent: currentEvent.asReadonly(),
     events$: event$.asObservable(),
     isStale,
+    expiresAt: expiresIn.asReadonly(),
   };
 
   return httpRequest;

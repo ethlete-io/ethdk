@@ -55,16 +55,33 @@ demo controls to drive real fixtures through every tab.
 | Tab           | Shows                                                                                                                                                                                                                                                                                                                                           |
 | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Queries**   | Every registered query, filterable by client. Method badge, route (path params rendered as `:param`), live status, feature chips and a stale marker; the detail view shows args, response/error, cache key (`id()`), last-executed time and `triggeredBy`, with `execute()` / `execute({ options: { allowCache: true } })` / `reset()` actions. |
-| **Stacks**    | Query stacks and paged query stacks: combined loading/error, and for paged stacks the pages loaded, item count and direction. Each inner query links back to its Queries detail.                                                                                                                                                                |
-| **Sequences** | Each `querySequence` as a step chain with per-step status (`idle` / `running` / `success` / `error`).                                                                                                                                                                                                                                           |
+| **Stacks**    | Query stacks and paged query stacks: combined loading/error, and for paged stacks the pages loaded, item count and direction. Inner queries are listed as rows and open in a split-view drawer (the stack context is kept).                                                                                                                     |
+| **Sequences** | Each `querySequence` as a step chain with per-step status (`idle` / `running` / `success` / `error`); expand a step to see its input args and output response/error inline.                                                                                                                                                                     |
 | **Auth**      | Each bearer auth provider: authenticated state, access/refresh token presence, the decoded access-token JWT payload, current `executionState` and the latest auth query snapshot.                                                                                                                                                               |
-| **Cache**     | Per-client repository entries: cache key, consumer count, secure flag and staleness.                                                                                                                                                                                                                                                            |
+| **Cache**     | Per-client repository entries: cache key, consumer count, secure flag, a live freshness countdown and per-entry **Refetch** / **Evict** actions.                                                                                                                                                                                                |
 | **Events**    | A rolling log (last 100) of repository `request-success` / `request-error` events with timestamps.                                                                                                                                                                                                                                              |
+
+## Beyond a read-only view
+
+The panel doesn't just display state — it acts on the live query objects your
+components are bound to, which the browser Network tab can't do:
+
+- **Value explorer** — a collapsible, searchable tree of the _transformed_ value
+  (args / response / error, post-`transformResponse`), with copy-to-clipboard.
+- **JIT editing** — edit a query's response and apply it via `setResponse()` (the
+  UI re-renders instantly — great for optimistic / edge-case testing), or replay
+  the query with edited args.
+- **Force states** — force a query into loading / error / empty to exercise
+  skeletons, spinners and error / empty UIs on demand (`Clear` restores it).
+- **Cache actions** — refetch or evict individual cache entries and watch the
+  freshness countdown.
+- **Inspect** — toggle inspect mode, then hover the live UI to highlight the query
+  a component created; click to jump straight to its detail.
 
 ## Persistence
 
-Open/closed state, the active tab, the panel height and the selected client are
-persisted to `localStorage` under `ethlete:query:devtools:v3`.
+Open/closed state, the active tab and the selected client are persisted to
+`localStorage` under `ethlete:query:devtools:v3`.
 
 ## Accessibility
 

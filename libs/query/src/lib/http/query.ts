@@ -88,6 +88,18 @@ export type QuerySubtle<TArgs extends QueryArgs> = {
   /** Manually sets the response of the query. This will not trigger a new execution of the query. */
   setResponse: (response: ResponseType<TArgs>) => void;
 
+  /**
+   * Manually forces the loading state of the query. Overridden on the next execution. Intended for
+   * devtools / testing UI states — not for application logic.
+   */
+  setLoading: (loading: HttpRequestLoadingState | null) => void;
+
+  /**
+   * Manually forces the error state of the query. Overridden on the next execution. Intended for
+   * devtools / testing UI states — not for application logic.
+   */
+  setError: (error: QueryErrorResponse | null) => void;
+
   /** The currently underlying HTTP request of the query. Will be `null` if the query has never been executed. */
   request: ObservableSignal<HttpRequest<TArgs> | null>;
 
