@@ -19,7 +19,7 @@ import { ToggletipContent } from './headless/toggletip.directive';
   styleUrl: './toggletip.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [NgTemplateOutlet],
-  hostDirectives: [ProvideColorDirective, { directive: AutoSurfaceDirective, inputs: ['surfaceProvider'] }],
+  hostDirectives: [ProvideColorDirective, AutoSurfaceDirective],
   host: {
     class: 'et-toggletip',
     '[attr.id]': 'toggletipId()',
@@ -47,9 +47,9 @@ export class ToggletipComponent {
   });
 
   constructor() {
-    // the toggletip surface IS the overlay's own surface — it adopts the trigger-context
-    // elevation via its `surfaceProvider`, so it must not also stack above the overlay tracker
-    inject(AutoSurfaceDirective).ignoreOverlaySurfaceContext();
+    // the toggletip surface IS the overlay's own surface — paint the overlay's registered elevation
+    // exactly (read from the surface-context tracker), don't stack a level above it
+    inject(AutoSurfaceDirective).matchOverlaySurface();
 
     effect(() => {
       const providedColor = this.colorProvider() ?? this.triggerColorProvider ?? null;

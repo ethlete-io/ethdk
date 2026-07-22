@@ -35,9 +35,9 @@ export class SelectPanelComponent {
   private panelBody = viewChild<ElementRef<HTMLElement>>('panelBody');
 
   constructor() {
-    // this panel IS the overlay's own surface — adopt the overlay elevation from the trigger
-    // context, don't stack a level above it (the tracker is for content rendered inside the panel)
-    inject(AutoSurfaceDirective).ignoreOverlaySurfaceContext();
+    // this panel IS the overlay's own surface — paint the overlay's registered elevation exactly,
+    // don't stack a level above it (the tracker is authoritative; content inside elevates off it)
+    inject(AutoSurfaceDirective).matchOverlaySurface();
 
     injectOverlaySurfaceContext({ panelBody: this.panelBody, resizingClass: 'et-select-panel--resizing' });
   }

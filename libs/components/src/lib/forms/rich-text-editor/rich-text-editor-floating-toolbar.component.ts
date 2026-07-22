@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, input, untracked, ViewEncapsulation } from '@angular/core';
-import { COLOR_PROVIDER, ProvideColorDirective, ProvideSurfaceDirective, SURFACE_PROVIDER } from '@ethlete/core';
+import { AutoSurfaceDirective, COLOR_PROVIDER, ProvideColorDirective } from '@ethlete/core';
 import { IconButtonComponent } from '../../button/icon-button.component';
 import {
   BOLD_ICON,
@@ -25,7 +25,7 @@ import {
   encapsulation: ViewEncapsulation.None,
   imports: [IconButtonComponent, IconDirective],
   providers: [provideIcons(BOLD_ICON, ITALIC_ICON, UNDERLINE_ICON, STRIKETHROUGH_ICON, CODE_ICON, LINK_ICON)],
-  hostDirectives: [ProvideColorDirective, ProvideSurfaceDirective],
+  hostDirectives: [ProvideColorDirective, AutoSurfaceDirective],
   host: {
     class: 'et-rte-floating-toolbar',
     role: 'toolbar',
@@ -37,8 +37,6 @@ import {
 export class RichTextEditorFloatingToolbarComponent {
   private ownColorProvider = inject(ProvideColorDirective);
   private contextColorProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
-  private ownSurfaceProvider = inject(ProvideSurfaceDirective);
-  private contextSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
 
   /** The editor whose selection this toolbar formats (passed in — the toolbar is detached from the DOM). */
   public editor = input.required<RichTextEditorDirective>();
@@ -54,19 +52,18 @@ export class RichTextEditorFloatingToolbarComponent {
   );
 
   constructor() {
-    // Detached overlay pane: re-sync color and surface context instead of cascading through the DOM,
-    // adopting the pane's elevation (see the token popup for the same treatment).
+    // Detached overlay pane: the toolbar's surface IS the overlay's own surface, so it paints the
+    // overlay's registered elevation exactly (via the surface-context tracker) — the same treatment
+    // as the token popup / menu.
+    inject(AutoSurfaceDirective).matchOverlaySurface();
+
+    // Color still has to be re-synced here instead of cascading through the detached DOM.
     effect(() => {
       const contextColorProvider = this.contextColorProvider;
-      const contextSurfaceProvider = this.contextSurfaceProvider;
 
       untracked(() => {
         if (contextColorProvider) {
           this.ownColorProvider.syncWithProvider(contextColorProvider);
-        }
-
-        if (contextSurfaceProvider) {
-          this.ownSurfaceProvider.syncWithProvider(contextSurfaceProvider);
         }
       });
     });

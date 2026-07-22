@@ -10,13 +10,12 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import {
+  AutoSurfaceDirective,
   COLOR_PROVIDER,
   ColorTheme,
   injectAnimatedBlockSize,
   injectErrorTheme,
   ProvideColorDirective,
-  ProvideSurfaceDirective,
-  SURFACE_PROVIDER,
 } from '@ethlete/core';
 import { ProgressBarComponent, SpinnerComponent } from '../../loader';
 import { RichTextEditorTriggerItem } from './rich-text-editor-trigger';
@@ -36,7 +35,7 @@ import { RichTextEditorTriggerItem } from './rich-text-editor-trigger';
   styleUrl: './rich-text-editor-token-popup.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [SpinnerComponent, ProgressBarComponent, ProvideColorDirective],
-  hostDirectives: [ProvideColorDirective, ProvideSurfaceDirective],
+  hostDirectives: [ProvideColorDirective, AutoSurfaceDirective],
   host: {
     class: 'et-rte-token-popup',
     role: 'listbox',
@@ -48,8 +47,6 @@ import { RichTextEditorTriggerItem } from './rich-text-editor-trigger';
 export class RichTextEditorTokenPopupComponent {
   private ownColorProvider = inject(ProvideColorDirective);
   private contextColorProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
-  private ownSurfaceProvider = inject(ProvideSurfaceDirective);
-  private contextSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
 
   public items = input.required<RichTextEditorTriggerItem[]>();
   public activeIndex = input.required<number>();
@@ -67,21 +64,18 @@ export class RichTextEditorTokenPopupComponent {
   protected errorColorTheme: ColorTheme | null = this.resolveErrorTheme();
 
   constructor() {
-    // The popup mounts in a detached overlay pane, so color and surface context have to be
-    // re-synced here instead of cascading through the DOM. The overlay pane (container) already
-    // establishes the correct floating elevation, so the popup adopts that surface as-is rather
-    // than elevating another step above it — otherwise it renders one elevation too high.
+    // The popup mounts in a detached overlay pane. Its surface IS the overlay's own surface, so it
+    // paints the overlay's registered elevation exactly (via the surface-context tracker) rather
+    // than stacking a level above it — the same treatment as the menu / tooltip panels.
+    inject(AutoSurfaceDirective).matchOverlaySurface();
+
+    // Color still has to be re-synced here instead of cascading through the detached DOM.
     effect(() => {
       const contextColorProvider = this.contextColorProvider;
-      const contextSurfaceProvider = this.contextSurfaceProvider;
 
       untracked(() => {
         if (contextColorProvider) {
           this.ownColorProvider.syncWithProvider(contextColorProvider);
-        }
-
-        if (contextSurfaceProvider) {
-          this.ownSurfaceProvider.syncWithProvider(contextSurfaceProvider);
         }
       });
     });

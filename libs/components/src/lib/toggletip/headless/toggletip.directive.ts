@@ -13,7 +13,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { COLOR_PROVIDER, RuntimeError, SURFACE_PROVIDER } from '@ethlete/core';
+import { COLOR_PROVIDER, RuntimeError } from '@ethlete/core';
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 import { tap } from 'rxjs';
 import { OverlayConfig, OverlayRef, anchoredOverlayStrategy } from '../../overlay';
@@ -40,7 +40,6 @@ export class ToggletipDirective {
   private destroyRef = inject(DestroyRef);
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private colorProvider = inject(COLOR_PROVIDER, { optional: true });
-  private surfaceProvider = inject(SURFACE_PROVIDER, { optional: true });
 
   private overlayManager = injectOverlayManager();
 
@@ -180,7 +179,6 @@ export class ToggletipDirective {
         inputBinding('contentId', () => this.contentId),
         inputBinding('content', () => content),
         inputBinding('colorProvider', () => this.colorProvider ?? null),
-        inputBinding('surfaceProvider', () => this.surfaceProvider ?? null),
       ],
       role: 'dialog',
       ariaLabel: this.resolvedAriaLabel(),

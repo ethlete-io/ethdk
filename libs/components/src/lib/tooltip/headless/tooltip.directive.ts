@@ -13,13 +13,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  COLOR_PROVIDER,
-  RuntimeError,
-  SURFACE_PROVIDER,
-  injectFocusVisibleTracker,
-  injectRenderer,
-} from '@ethlete/core';
+import { COLOR_PROVIDER, RuntimeError, injectFocusVisibleTracker, injectRenderer } from '@ethlete/core';
 import { OffsetOptions, Padding, Placement } from '@floating-ui/dom';
 import { filter, fromEvent, map, switchMap, takeUntil, tap, timer } from 'rxjs';
 import { OverlayConfig, OverlayRef, anchoredOverlayStrategy } from '../../overlay';
@@ -44,7 +38,6 @@ export class TooltipDirective {
   private destroyRef = inject(DestroyRef);
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private colorProvider = inject(COLOR_PROVIDER, { optional: true });
-  private surfaceProvider = inject(SURFACE_PROVIDER, { optional: true });
   private overlayManager = injectOverlayManager();
   private focusVisibleTracker = injectFocusVisibleTracker();
   private renderer = injectRenderer();
@@ -145,7 +138,6 @@ export class TooltipDirective {
         inputBinding('tooltipId', () => tooltipId),
         inputBinding('content', () => content),
         inputBinding('colorProvider', () => this.colorProvider ?? null),
-        inputBinding('surfaceProvider', () => this.surfaceProvider ?? null),
       ],
       disableClose: true,
       hasBackdrop: false,

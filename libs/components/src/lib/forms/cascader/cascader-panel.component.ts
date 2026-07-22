@@ -54,9 +54,9 @@ export class CascaderPanelComponent {
   protected multiselectable = computed(() => (this.cascader?.multiple() ? 'true' : null));
 
   constructor() {
-    // this panel IS the overlay's own surface — adopt the overlay elevation from the trigger
-    // context, don't stack a level above it (the tracker is for content rendered inside the panel)
-    inject(AutoSurfaceDirective).ignoreOverlaySurfaceContext();
+    // this panel IS the overlay's own surface — paint the overlay's registered elevation exactly,
+    // don't stack a level above it (the tracker is authoritative; content inside elevates off it)
+    inject(AutoSurfaceDirective).matchOverlaySurface();
 
     // give the tree a stable id and hand it to the cascader so the trigger's `aria-controls`
     // resolves to a real element (the overlay pane itself is never assigned an id)

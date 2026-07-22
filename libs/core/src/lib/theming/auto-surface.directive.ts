@@ -21,10 +21,10 @@ export class AutoSurfaceDirective {
    */
   surfaceProvider = input<ProvideSurfaceDirective | null>(null);
 
-  // Overlay panels that ARE their overlay's own surface opt out (see
-  // ignoreOverlaySurfaceContext) so they adopt the overlay elevation from their
-  // injector/explicit context instead of stacking one level above it.
-  private consultsOverlayContext = signal(true);
+  // An overlay *panel* that IS its overlay's own painted surface opts in (see
+  // matchOverlaySurface) so it adopts the overlay's registered elevation exactly,
+  // rather than layering one level above a parent surface.
+  private isOverlaySurface = signal(false);
 
   resolvedSurface = computed(() => {
     const themes = this.surfaceThemes;
@@ -44,13 +44,30 @@ export class AutoSurfaceDirective {
     // only the overlay whose pane actually contains this element in the DOM (portaling
     // moves the DOM into the pane even though the injector stays at the trigger). An
     // auto-surface on the base page therefore stays put when an overlay opens elsewhere.
-    // Panels that are themselves the overlay's surface opt out via ignoreOverlaySurfaceContext().
-    const overlaySurface = this.consultsOverlayContext()
-      ? this.surfaceContextTracker.surfaceForElement(this.elementRef.nativeElement)
-      : null;
+    const overlaySurface = this.surfaceContextTracker.surfaceForElement(this.elementRef.nativeElement);
     const overlayElevation = overlaySurface?.elevation ?? null;
     const overlayType = overlaySurface?.type ?? null;
 
+    // A panel that IS its overlay's own surface (see matchOverlaySurface) must paint exactly the
+    // overlay's elevation: the overlay container already resolved it (one above the trigger) and
+    // registered it in the tracker. It must NOT re-derive from its declaration injector — that
+    // points back at the trigger location and disagrees with the pane whenever the trigger itself
+    // sits on a surface, which would double-elevate the panel relative to its own pane.
+    if (this.isOverlaySurface()) {
+      if (overlayElevation !== null) {
+        return resolveSurfaceByElevation(themes, overlayType ?? contextType ?? 'dark', overlayElevation)?.name ?? null;
+      }
+
+      // Rendered outside any tracked overlay: fall back to the injector context unchanged.
+      if (contextElevation !== null) {
+        return resolveSurfaceByElevation(themes, contextType ?? 'dark', contextElevation)?.name ?? null;
+      }
+
+      return null;
+    }
+
+    // A regular auto-surface sits one elevation *above* the deeper of its injector context and the
+    // overlay pane it renders into (content painted onto the surface it lives on).
     let parentElevation: number;
     let parentType: SurfaceType;
 
@@ -68,15 +85,16 @@ export class AutoSurfaceDirective {
   });
 
   /**
-   * Opt this auto-surface out of the overlay surface-context tracker. An overlay
-   * *panel* (menu, select/date/cascader panel, tooltip, toggletip) is its overlay's
-   * own painted surface, so it must adopt the overlay elevation from its injector or
-   * explicit `surfaceProvider` — not stack a level above it. The tracker exists for
-   * content rendered *inside* such a panel, whose injector points back at the trigger
-   * location and therefore cannot see the overlay it visually lives in.
+   * Mark this auto-surface as its overlay's *own painted surface*. An overlay *panel*
+   * (menu, select/date/cascader panel, tooltip, toggletip, rich-text-editor popups) is
+   * the overlay's surface, so it must paint the overlay's registered elevation exactly —
+   * not stack a level above a parent surface. The elevation is read from the surface-context
+   * tracker (the pane it renders into), which is authoritative across the portal boundary;
+   * the panel's own declaration injector points back at the trigger location and cannot be
+   * trusted.
    */
-  ignoreOverlaySurfaceContext() {
-    this.consultsOverlayContext.set(false);
+  matchOverlaySurface() {
+    this.isOverlaySurface.set(true);
   }
 
   constructor() {

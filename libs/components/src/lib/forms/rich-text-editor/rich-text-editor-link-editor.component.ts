@@ -9,7 +9,7 @@ import {
   untracked,
   ViewEncapsulation,
 } from '@angular/core';
-import { COLOR_PROVIDER, ProvideColorDirective, ProvideSurfaceDirective, SURFACE_PROVIDER } from '@ethlete/core';
+import { AutoSurfaceDirective, COLOR_PROVIDER, ProvideColorDirective } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../../button';
 import { IconDirective, provideIcons, TIMES_ICON } from '../../icon';
 import { CHECKBOX_IMPORTS } from '../checkbox';
@@ -38,7 +38,7 @@ export type RichTextEditorLinkEditorValue = {
     IconDirective,
   ],
   providers: [provideIcons(TIMES_ICON)],
-  hostDirectives: [ProvideColorDirective, ProvideSurfaceDirective],
+  hostDirectives: [ProvideColorDirective, AutoSurfaceDirective],
   host: {
     class: 'et-rte-link-editor',
     role: 'dialog',
@@ -49,8 +49,6 @@ export type RichTextEditorLinkEditorValue = {
 export class RichTextEditorLinkEditorComponent {
   private ownColorProvider = inject(ProvideColorDirective);
   private contextColorProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
-  private ownSurfaceProvider = inject(ProvideSurfaceDirective);
-  private contextSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
 
   public href = input('');
   public text = input('');
@@ -69,17 +67,19 @@ export class RichTextEditorLinkEditorComponent {
   protected title = computed(() => (this.exists() ? 'Edit link' : 'Add link'));
 
   constructor() {
-    // The popover mounts in a detached overlay pane, so color/surface context is re-synced here
-    // instead of cascading through the DOM (same as the token popup / menu). Initial focus of the
-    // URL field is handled by the overlay's `autoFocus` (reliable timing; works within the tap's
-    // user-activation window so the mobile keyboard opens).
+    // The popover mounts in a detached overlay pane. Its surface IS the overlay's own surface, so it
+    // paints the overlay's registered elevation exactly (via the surface-context tracker) — the same
+    // treatment as the token popup / menu. Initial focus of the URL field is handled by the overlay's
+    // `autoFocus` (reliable timing; works within the tap's user-activation window so the mobile
+    // keyboard opens).
+    inject(AutoSurfaceDirective).matchOverlaySurface();
+
+    // Color still has to be re-synced here instead of cascading through the detached DOM.
     effect(() => {
       const contextColorProvider = this.contextColorProvider;
-      const contextSurfaceProvider = this.contextSurfaceProvider;
 
       untracked(() => {
         if (contextColorProvider) this.ownColorProvider.syncWithProvider(contextColorProvider);
-        if (contextSurfaceProvider) this.ownSurfaceProvider.syncWithProvider(contextSurfaceProvider);
       });
     });
   }
