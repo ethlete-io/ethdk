@@ -92,10 +92,29 @@ export const DARK_ELEVATED_2_SURFACE: SurfaceTheme = {
   border: '82 82 82',
 };
 
+export const DARK_ELEVATED_3_SURFACE: SurfaceTheme = {
+  name: 'dark-elevated-3',
+  type: 'dark',
+  elevation: 3,
+  interactionColor: {
+    default: '161 161 161',
+    hover: '220 220 220',
+    focus: '220 220 220',
+    active: '250 250 250',
+    disabled: '100 100 100',
+  },
+  background: '90 90 90',
+  color: '250 250 250',
+  colorMuted: '161 161 161',
+  colorSubtle: '115 115 115',
+  border: '110 110 110',
+};
+
 export const SURFACE_THEMES = [
   LIGHT_SURFACE,
   LIGHT_ELEVATED_SURFACE,
   DARK_SURFACE,
   DARK_ELEVATED_SURFACE,
   DARK_ELEVATED_2_SURFACE,
+  DARK_ELEVATED_3_SURFACE,
 ];

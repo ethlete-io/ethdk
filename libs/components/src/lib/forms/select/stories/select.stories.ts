@@ -1,4 +1,6 @@
-import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
+import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular';
+import { provideOverlay } from '../../../overlay/overlay.imports';
+import { SelectNestedElevationStorybookComponent } from './select-nested-elevation-storybook.component';
 import {
   FormFieldSelectAddNewStorybookComponent,
   FormFieldSelectAsyncStorybookComponent,
@@ -155,4 +157,12 @@ export const ManyOptions: StoryObj<FormFieldSelectManyOptionsStorybookComponent>
 export const OptionTemplate: StoryObj<FormFieldSelectOptionTemplateStorybookComponent> = {
   decorators: [moduleMetadata({ imports: [FormFieldSelectOptionTemplateStorybookComponent] })],
   render: () => ({ template: `<et-sb-form-field-select-option-template />` }),
+};
+
+export const NestedElevation: StoryObj<SelectNestedElevationStorybookComponent> = {
+  decorators: [
+    moduleMetadata({ imports: [SelectNestedElevationStorybookComponent] }),
+    applicationConfig({ providers: [provideOverlay()] }),
+  ],
+  render: () => ({ template: `<et-sb-select-nested-elevation />` }),
 };

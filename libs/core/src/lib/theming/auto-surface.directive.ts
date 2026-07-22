@@ -1,4 +1,14 @@
-import { computed, Directive, effect, ElementRef, inject, input, signal, untracked } from '@angular/core';
+import {
+  afterEveryRender,
+  computed,
+  Directive,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { setInputSignal } from '../utils';
 import { ProvideSurfaceDirective, SURFACE_PROVIDER } from './provide-surface.directive';
 import { injectSurfaceContextTracker } from './surface-context-tracker';
@@ -26,12 +36,22 @@ export class AutoSurfaceDirective {
   // rather than layering one level above a parent surface.
   private isOverlaySurface = signal(false);
 
+  // Bumped by the afterEveryRender watcher in the constructor whenever this element's overlay
+  // containment changes. surfaceForElement() below does a non-reactive element.contains() read,
+  // so the computed must be re-triggered when this element is (re)grafted into an overlay pane —
+  // otherwise a value cached from before the graft (one elevation too low) sticks forever.
+  private domSettleTick = signal(0);
+
   resolvedSurface = computed(() => {
     const themes = this.surfaceThemes;
 
     if (!themes) {
       return null;
     }
+
+    // Establish a dependency on the DOM-settle tick so the non-reactive containment read below
+    // is re-evaluated after the element is grafted into its final overlay pane.
+    this.domSettleTick();
 
     const contextProvider = this.surfaceProvider() ?? this.contextSurfaceProvider ?? null;
     const contextElevation = contextProvider?.elevation() ?? null;
@@ -98,6 +118,31 @@ export class AutoSurfaceDirective {
   }
 
   constructor() {
+    // Projected/portaled auto-surface content (e.g. a select option's avatar) can have its
+    // resolvedSurface computed run *before* it is grafted into the overlay pane it visually lives
+    // in — or while it is briefly mounted in an off-pane measuring container, as windowed lists do.
+    // surfaceForElement()'s element.contains() check then returns the wrong (or no) overlay, so it
+    // resolves off the declaration injector (the trigger location) one elevation too low. That check
+    // is a plain DOM read, not a signal, so nothing re-runs the computed once the element reaches its
+    // final pane. Watch the tracker result across renders and re-trigger the computed whenever the
+    // element's overlay containment changes, settling (and unsubscribing) once it stops moving.
+    let lastElevation: number | null =
+      this.surfaceContextTracker.surfaceForElement(this.elementRef.nativeElement)?.elevation ?? null;
+    let stableRenders = 0;
+    const settleWatcher = afterEveryRender(() => {
+      const el = this.elementRef.nativeElement;
+      const elevation = this.surfaceContextTracker.surfaceForElement(el)?.elevation ?? null;
+
+      if (elevation !== lastElevation) {
+        lastElevation = elevation;
+        stableRenders = 0;
+        this.domSettleTick.update((v) => v + 1);
+      } else if (el.isConnected && ++stableRenders >= 2) {
+        // containment has held for a couple of renders and the element is in the DOM — done moving
+        settleWatcher.destroy();
+      }
+    });
+
     effect(() => {
       const surface = this.resolvedSurface();
 

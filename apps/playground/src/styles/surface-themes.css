@@ -68,6 +68,18 @@
   --color-et-surface-dark-elevated-2-interaction-active: rgb(250 250 250);
   --color-et-surface-dark-elevated-2-interaction-disabled: rgb(100 100 100);
 
+  /* dark-elevated-3 surface */
+  --color-et-surface-dark-elevated-3-bg: rgb(90 90 90);
+  --color-et-surface-dark-elevated-3: rgb(250 250 250);
+  --color-et-surface-dark-elevated-3-muted: rgb(161 161 161);
+  --color-et-surface-dark-elevated-3-subtle: rgb(115 115 115);
+  --color-et-surface-dark-elevated-3-border: rgb(110 110 110);
+  --color-et-surface-dark-elevated-3-interaction: rgb(161 161 161);
+  --color-et-surface-dark-elevated-3-interaction-hover: rgb(220 220 220);
+  --color-et-surface-dark-elevated-3-interaction-focus: rgb(220 220 220);
+  --color-et-surface-dark-elevated-3-interaction-active: rgb(250 250 250);
+  --color-et-surface-dark-elevated-3-interaction-disabled: rgb(100 100 100);
+
   /* Dynamic surface colors (references runtime CSS variables) */
   --color-et-surface-bg: rgb(var(--et-surface-background));
   --color-et-surface: rgb(var(--et-surface-color));
@@ -152,6 +164,21 @@
     --et-surface-border: 82 82 82;
     --et-surface-type: dark;
     --et-surface-elevation: 2;
+    --et-surface-interaction: 161 161 161;
+    --et-surface-interaction-hover: 220 220 220;
+    --et-surface-interaction-focus: 220 220 220;
+    --et-surface-interaction-active: 250 250 250;
+    --et-surface-interaction-disabled: 100 100 100;
+  }
+
+  .et-surface--dark-elevated-3 {
+    --et-surface-background: 90 90 90;
+    --et-surface-color: 250 250 250;
+    --et-surface-color-muted: 161 161 161;
+    --et-surface-color-subtle: 115 115 115;
+    --et-surface-border: 110 110 110;
+    --et-surface-type: dark;
+    --et-surface-elevation: 3;
     --et-surface-interaction: 161 161 161;
     --et-surface-interaction-hover: 220 220 220;
     --et-surface-interaction-focus: 220 220 220;
