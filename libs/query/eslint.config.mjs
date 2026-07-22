@@ -1,3 +1,4 @@
+import ethlete from '@ethlete/eslint-plugin';
 import nx from '@nx/eslint-plugin';
 import baseConfig from '../../eslint.config.mjs';
 
@@ -38,6 +39,19 @@ export default [
           style: 'kebab-case',
         },
       ],
+      // Match the repo-wide styleguide convention: `_`-prefixed args/vars/caught errors are
+      // intentionally unused (e.g. positional params kept for a type-guard signature).
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          vars: 'all',
+          args: 'all',
+          argsIgnorePattern: '^_',
+          caughtErrors: 'all',
+          caughtErrorsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+        },
+      ],
     },
   },
   {
@@ -45,4 +59,14 @@ export default [
     // Override or add rules here
     rules: {},
   },
+  // Generators are Node/nx tooling scripts (run-once schematics over the TS AST), not shipped
+  // library code — non-null assertions on AST nodes / just-populated Maps are idiomatic there.
+  {
+    files: ['**/generators/**'],
+    rules: {
+      '@typescript-eslint/no-non-null-assertion': 'off',
+    },
+  },
+  // Relaxed rules for spec files (non-null assertions are common and intentional in tests)
+  ethlete.configs.recommendedSpec,
 ];

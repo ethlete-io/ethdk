@@ -805,7 +805,7 @@ const transformSinglePrepareCall = (
   return `${creatorName}.prepare(${nextArgumentString})`;
 };
 
-const findQueryVariableNameForPrepareCall = (prepareCallNode: ts.CallExpression, sourceFile: ts.SourceFile) => {
+const findQueryVariableNameForPrepareCall = (prepareCallNode: ts.CallExpression, _sourceFile: ts.SourceFile) => {
   let parent = prepareCallNode.parent;
 
   while (parent) {

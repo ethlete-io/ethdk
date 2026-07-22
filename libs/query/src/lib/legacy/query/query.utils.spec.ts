@@ -25,7 +25,7 @@ beforeEach(() => {
 });
 
 describe('switchQueryCollectionState', () => {
-  it('should switch to the query state observable and return the query state', (done) => {
+  it('should switch to the query state observable and return the query state', () => {
     runInInjectionContext(injector, async () => {
       const collection = createQueryCollectionSubject({ mediaWithDetailsQuery: postsQuery, mediaQuery: posts2Query });
       collection.next({ type: 'mediaQuery', query: posts2Query.prepare() });
@@ -38,7 +38,7 @@ describe('switchQueryCollectionState', () => {
     });
   });
 
-  it('should return null if the query state observable is null', (done) => {
+  it('should return null if the query state observable is null', () => {
     runInInjectionContext(injector, async () => {
       const collection = createQueryCollectionSubject({ mediaWithDetailsQuery: postsQuery, mediaQuery: posts2Query });
 
@@ -52,7 +52,7 @@ describe('switchQueryCollectionState', () => {
 });
 
 describe('switchQueryState', () => {
-  it('should switch to the query state observable and return the query state', async (done) => {
+  it('should switch to the query state observable and return the query state', async () => {
     const query = posts2Query.prepare();
 
     const result$ = switchQueryState()(of(query));
@@ -61,7 +61,7 @@ describe('switchQueryState', () => {
     expect(result).toEqual({ meta: { id: 0, triggeredVia: 'program' }, type: QueryStateType.Prepared });
   });
 
-  it('should return null if the query state observable is null', async (done) => {
+  it('should return null if the query state observable is null', async () => {
     const result$ = switchQueryState()(of(null));
 
     const result = await firstValueFrom(result$);

@@ -119,6 +119,9 @@ export type AnyLegacyQuery = LegacyQuery<any, any, any, any, any, any, any>;
 export class LegacyQuery<
   Response,
   Arguments extends BaseArguments | undefined,
+  // Positional public-API generic slot — consumers infer it via `LegacyQuery<…, infer Route, …>`,
+  // so it must stay even though the class body never references it.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Route extends V2RouteType<Arguments>,
   Store extends EntityStore<unknown>,
   Data,

@@ -126,7 +126,7 @@ export class InfinityQueryDirective<
 
   static ngTemplateContextGuard<
     Q extends InfinityQueryConfig<DirectiveQueryCreator, BaseArguments | undefined, any, unknown[]>,
-  >(dir: InfinityQueryDirective<Q>, ctx: unknown): ctx is InfinityQueryContext<Q> {
+  >(_dir: InfinityQueryDirective<Q>, _ctx: unknown): _ctx is InfinityQueryContext<Q> {
     return true;
   }
 

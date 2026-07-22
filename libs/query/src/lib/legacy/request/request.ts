@@ -122,7 +122,7 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
           } else {
             body = text;
           }
-        } catch (error) {
+        } catch {
           // Ignore the error.
         }
       }

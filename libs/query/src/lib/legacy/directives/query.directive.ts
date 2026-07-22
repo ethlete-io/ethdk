@@ -96,9 +96,9 @@ export class QueryDirective<Q extends QueryDirectiveType | null> {
   queryState = queryStateSignal(this.query);
 
   static ngTemplateContextGuard<Q extends QueryDirectiveType | null>(
-    dir: QueryDirective<Q>,
-    ctx: unknown,
-  ): ctx is QueryDirectiveContext<Q> {
+    _dir: QueryDirective<Q>,
+    _ctx: unknown,
+  ): _ctx is QueryDirectiveContext<Q> {
     return true;
   }
 

@@ -61,19 +61,15 @@ export class QueryDevtoolsComponent {
   protected readonly selectedQueryId = signal<number | null>(null);
 
   protected readonly selectedClientConfig = computed(() => {
-    if (this.queryClientConfigs.length === 1) {
-      return this.queryClientConfigs[0]!;
+    const configs = this.queryClientConfigs;
+    const index = configs.length === 1 ? 0 : (this.selectedClientId() ?? 0);
+    const config = configs[index] ?? configs[0];
+
+    if (!config) {
+      throw new Error('QueryDevtools: no query client configs registered');
     }
 
-    const index = this.selectedClientId() ?? 0;
-
-    const cfg = this.queryClientConfigs[index];
-
-    if (!cfg) {
-      return this.queryClientConfigs[0]!;
-    }
-
-    return cfg;
+    return config;
   });
 
   protected readonly queryStore = computed(() => {

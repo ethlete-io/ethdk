@@ -115,7 +115,7 @@ export const setupQueryTest = (config?: QueryTestSetupConfig): QueryTestSetup =>
   };
 
   // Store the restore function for cleanup
-  (setup as any)._restoreConsole = restoreConsole;
+  (setup as typeof setup & { _restoreConsole: () => void })._restoreConsole = restoreConsole;
 
   return setup;
 };

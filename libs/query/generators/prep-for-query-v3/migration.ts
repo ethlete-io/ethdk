@@ -78,7 +78,7 @@ function renameConflictingSymbols(tree: Tree): void {
   if (updatedFiles.length > 0) {
     console.log(`\n📊 Renamed symbols in ${updatedFiles.length} files:`);
 
-    const hasRenames = Array.from(symbolUsageCounts.entries()).filter(([_, count]) => count > 0);
+    const hasRenames = Array.from(symbolUsageCounts.entries()).filter(([, count]) => count > 0);
 
     if (hasRenames.length > 0) {
       console.log('\n   Symbol usage counts:');
@@ -154,7 +154,7 @@ function renameSymbolsInFile(content: string, filePath: string, symbolUsageCount
   visit(sourceFile);
 
   // Update imports in @ethlete/query import declarations
-  const importReplacements = updateImports(sourceFile, content);
+  const importReplacements = updateImports(sourceFile);
   replacements.push(...importReplacements);
 
   // Count usages
@@ -176,7 +176,6 @@ function renameSymbolsInFile(content: string, filePath: string, symbolUsageCount
 
 function updateImports(
   sourceFile: ts.SourceFile,
-  content: string,
 ): Array<{ start: number; end: number; replacement: string; oldName: string }> {
   const replacements: Array<{ start: number; end: number; replacement: string; oldName: string }> = [];
 
