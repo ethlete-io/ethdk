@@ -4213,22 +4213,22 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/cdk@workspace:libs/cdk"
   peerDependencies:
-    "@analogjs/vite-plugin-angular": 2.6.2
-    "@angular/cdk": 22.0.3
-    "@angular/common": 22.0.5
-    "@angular/core": 22.0.5
-    "@angular/forms": 22.0.5
-    "@angular/platform-browser": 22.0.5
-    "@angular/router": 22.0.5
+    "@analogjs/vite-plugin-angular": 2.6.3
+    "@angular/cdk": 22.0.5
+    "@angular/common": 22.0.7
+    "@angular/core": 22.0.7
+    "@angular/forms": 22.0.7
+    "@angular/platform-browser": 22.0.7
+    "@angular/router": 22.0.7
     "@ethlete/core": ^5.0.0-beta.11
     "@ethlete/query": ^6.0.0-beta.8
     "@ethlete/types": ^2.0.0-beta.4
-    "@floating-ui/dom": 1.7.6
-    "@nx/devkit": 23.1.0-beta.7
-    date-fns: 4.1.0
+    "@floating-ui/dom": 1.8.0
+    "@nx/devkit": 23.1.0
+    date-fns: 4.4.0
     rxjs: 7.8.2
     typescript: 6.0.3
-    vite: 8.0.13
+    vite: 8.1.5
   languageName: unknown
   linkType: soft
 
@@ -4246,18 +4246,18 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/components@workspace:libs/components"
   peerDependencies:
-    "@analogjs/vitest-angular": 2.6.2
-    "@angular/common": 22.0.5
-    "@angular/compiler": 22.0.5
-    "@angular/core": 22.0.5
-    "@angular/forms": 22.0.5
-    "@angular/platform-browser": 22.0.5
-    "@angular/router": 22.0.5
+    "@analogjs/vitest-angular": 2.6.3
+    "@angular/common": 22.0.7
+    "@angular/compiler": 22.0.7
+    "@angular/core": 22.0.7
+    "@angular/forms": 22.0.7
+    "@angular/platform-browser": 22.0.7
+    "@angular/router": 22.0.7
     "@ethlete/core": ^5.0.0-beta.11
     "@ethlete/query": ^6.0.0-beta.8
-    "@floating-ui/dom": 1.7.6
-    "@nx/devkit": 23.1.0-beta.7
-    date-fns: 4.1.0
+    "@floating-ui/dom": 1.8.0
+    "@nx/devkit": 23.1.0
+    date-fns: 4.4.0
     rxjs: 7.8.2
   peerDependenciesMeta:
     "@nx/devkit":
@@ -4269,17 +4269,17 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/contentful@workspace:libs/contentful"
   peerDependencies:
-    "@analogjs/vite-plugin-angular": 2.6.2
-    "@angular/cdk": 22.0.3
-    "@angular/common": 22.0.5
-    "@angular/core": 22.0.5
-    "@angular/router": 22.0.5
+    "@analogjs/vite-plugin-angular": 2.6.3
+    "@angular/cdk": 22.0.5
+    "@angular/common": 22.0.7
+    "@angular/core": 22.0.7
+    "@angular/router": 22.0.7
     "@contentful/rich-text-types": 17.2.7
     "@ethlete/cdk": ^5.0.0-beta.12
     "@ethlete/core": ^5.0.0-beta.11
     "@ethlete/query": ^6.0.0-beta.8
     rxjs: 7.8.2
-    vite: 8.0.13
+    vite: 8.1.5
   languageName: unknown
   linkType: soft
 
@@ -4287,20 +4287,20 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/core@workspace:libs/core"
   peerDependencies:
-    "@analogjs/vite-plugin-angular": 2.6.2
-    "@angular/cdk": 22.0.3
-    "@angular/common": 22.0.5
-    "@angular/core": 22.0.5
-    "@angular/forms": 22.0.5
-    "@angular/platform-browser": 22.0.5
-    "@angular/router": 22.0.5
+    "@analogjs/vite-plugin-angular": 2.6.3
+    "@angular/cdk": 22.0.5
+    "@angular/common": 22.0.7
+    "@angular/core": 22.0.7
+    "@angular/forms": 22.0.7
+    "@angular/platform-browser": 22.0.7
+    "@angular/router": 22.0.7
     "@ethlete/types": ^2.0.0-beta.4
-    "@floating-ui/dom": 1.7.6
-    "@nx/devkit": 23.1.0-beta.7
+    "@floating-ui/dom": 1.8.0
+    "@nx/devkit": 23.1.0
     rxjs: 7.8.2
     ts-morph: 21.0.1
     typescript: 6.0.3
-    vite: 8.0.13
+    vite: 8.1.5
   languageName: unknown
   linkType: soft
 
@@ -4309,7 +4309,7 @@ __metadata:
   resolution: "@ethlete/eslint-plugin@workspace:libs/eslint-plugin"
   peerDependencies:
     "@angular-eslint/eslint-plugin-template": ">=21.0.0"
-    "@angular/core": 22.0.5
+    "@angular/core": 22.0.7
     "@typescript-eslint/eslint-plugin": ">=8.0.0"
     eslint: ">=9.0.0"
     tslib: 2.8.1
@@ -4321,18 +4321,18 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/query@workspace:libs/query"
   peerDependencies:
-    "@analogjs/vite-plugin-angular": 2.6.2
-    "@angular/common": 22.0.5
-    "@angular/core": 22.0.5
-    "@angular/forms": 22.0.5
-    "@angular/router": 22.0.5
+    "@analogjs/vite-plugin-angular": 2.6.3
+    "@angular/common": 22.0.7
+    "@angular/core": 22.0.7
+    "@angular/forms": 22.0.7
+    "@angular/router": 22.0.7
     "@ethlete/core": ^5.0.0-beta.11
     "@ethlete/types": ^2.0.0-beta.4
-    "@nx/devkit": 23.1.0-beta.7
+    "@nx/devkit": 23.1.0
     rxjs: 7.8.2
     socket.io-client: 4.8.3
     typescript: 6.0.3
-    vite: 8.0.13
+    vite: 8.1.5
   languageName: unknown
   linkType: soft
 
