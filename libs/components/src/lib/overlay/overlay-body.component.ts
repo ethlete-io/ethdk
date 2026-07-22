@@ -10,6 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import {
+  RuntimeError,
   ScrollObserverDirective,
   ScrollObserverEndDirective,
   ScrollObserverStartDirective,
@@ -18,6 +19,8 @@ import {
   signalElementScrollState,
 } from '@ethlete/core';
 import { resolveClosestOverlay } from './get-closest-overlay';
+import { OVERLAY_ERROR_CODES } from './overlay-errors';
+import { OVERLAY_MAIN_TOKEN } from './overlay-main.directive';
 import { injectOverlayManager } from './overlay-manager';
 import { OVERLAY_REF, OverlayRef } from './overlay-ref';
 
@@ -60,6 +63,7 @@ export class OverlayBodyComponent implements OnInit {
 
   private scrollObserver = inject(ScrollObserverDirective);
   private overlayManager = injectOverlayManager();
+  private overlayMain = inject(OVERLAY_MAIN_TOKEN, { optional: true });
 
   public dividers = input<OverlayBodyDividerType>(false);
 
@@ -88,6 +92,13 @@ export class OverlayBodyComponent implements OnInit {
   }
 
   public ngOnInit() {
+    if (!this.overlayMain) {
+      throw new RuntimeError(
+        OVERLAY_ERROR_CODES.MISSING_OVERLAY_MAIN,
+        '[OverlayBodyComponent] An overlay body must be used inside an <et-overlay-main> element or a host with the etOverlayMain directive.',
+      );
+    }
+
     this.overlayRef = resolveClosestOverlay({
       overlayRef: this.overlayRef,
       element: this.elementRef,

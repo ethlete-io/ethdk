@@ -138,16 +138,17 @@ The date input, date range input, [time picker](/components/time-picker), time i
 
 ## Overlay (ET12xx)
 
-| Code     | Cause                                                                                            | Fix                                                                               |
-| -------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
-| `ET1200` | An `[etOverlay]` element has no surface template.                                                | Add `<ng-template etOverlaySurface>` inside the `[etOverlay]` element.            |
-| `ET1201` | `etOverlayTrigger` is not inside an `[etOverlay]` element.                                       | Move the trigger inside the overlay root.                                         |
-| `ET1202` | `etOverlayAnchor` is not inside an `[etOverlay]` element.                                        | Move the anchor inside the overlay root.                                          |
-| `ET1203` | `etOverlaySurface` is not inside an `[etOverlay]` element.                                       | Move the surface template inside the overlay root.                                |
-| `ET1204` | Merged overlay strategies each contribute a layout class for the same config key.                | Overwrite the layout class instead of combining strategies that each provide one. |
-| `ET1205` | A closest-overlay lookup ran on an element that isn't rendered inside an open overlay.           | Only call it from content rendered inside an overlay.                             |
-| `ET1206` | An overlay contains nested `<et-overlay-main>` elements or `etOverlayMain` directives.           | Keep exactly one main region per overlay.                                         |
-| `ET1207` | An overlay definition's `injectRef()` was called outside a component opened via that definition. | Call it only inside the component the definition opens.                           |
+| Code     | Cause                                                                                              | Fix                                                                                           |
+| -------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `ET1200` | An `[etOverlay]` element has no surface template.                                                  | Add `<ng-template etOverlaySurface>` inside the `[etOverlay]` element.                        |
+| `ET1201` | `etOverlayTrigger` is not inside an `[etOverlay]` element.                                         | Move the trigger inside the overlay root.                                                     |
+| `ET1202` | `etOverlayAnchor` is not inside an `[etOverlay]` element.                                          | Move the anchor inside the overlay root.                                                      |
+| `ET1203` | `etOverlaySurface` is not inside an `[etOverlay]` element.                                         | Move the surface template inside the overlay root.                                            |
+| `ET1204` | Merged overlay strategies each contribute a layout class for the same config key.                  | Overwrite the layout class instead of combining strategies that each provide one.             |
+| `ET1205` | A closest-overlay lookup ran on an element that isn't rendered inside an open overlay.             | Only call it from content rendered inside an overlay.                                         |
+| `ET1206` | An overlay contains nested `<et-overlay-main>` elements or `etOverlayMain` directives.             | Keep exactly one main region per overlay.                                                     |
+| `ET1207` | An overlay definition's `injectRef()` was called outside a component opened via that definition.   | Call it only inside the component the definition opens.                                       |
+| `ET1208` | An `et-overlay-header`, `et-overlay-body`, or `et-overlay-footer` has no `etOverlayMain` ancestor. | Wrap them in an `<et-overlay-main>` element or a host carrying the `etOverlayMain` directive. |
 
 ## Menu (ET13xx)
 

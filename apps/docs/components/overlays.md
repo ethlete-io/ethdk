@@ -135,6 +135,8 @@ Import `OVERLAY_CONTENT_IMPORTS` into the overlay component and structure it wit
 import { OVERLAY_CONTENT_IMPORTS } from '@ethlete/components';
 ```
 
+The header, body, and footer must have an `etOverlayMain` ancestor — either an `<et-overlay-main>` element (as above) or a host applying the directive via `hostDirectives` (`etOverlayMain` sits equally well on a `<form>` that wraps the body). Using any of them without a main throws [`ET1208`](/components/error-codes). The main may live on the routed page rather than the overlay component itself — see [Routing inside overlays](#routing-inside-overlays).
+
 | Piece                    | Selector                               | Purpose                                                                                                                  |
 | ------------------------ | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `OverlayMainDirective`   | `[etOverlayMain]`                      | Layout wrapper enabling pinned header/footer + scrolling body; often applied via `hostDirectives`                        |
