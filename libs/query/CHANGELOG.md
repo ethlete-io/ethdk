@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 6.0.0-next.18
+
+### Minor Changes
+
+- [`5685798`](https://github.com/ethlete-io/ethdk/commit/56857988a9fb579a791950cd85d015dfd36921a3) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `querySequence` for imperative waterfalls of dependent queries — chain mutations with `.then()`, thread each response into the next, and `run()` to a typed, discriminated result that aborts on the first error. Exposes `status`/`running`/`currentStep`/`error` progress signals for driving UI.
+
 ## 6.0.0-next.17
 
 ### Minor Changes
