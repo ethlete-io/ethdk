@@ -28,7 +28,7 @@ export default [
 | --------------------- | -------------- | -------------------------------------------------------------------------------------------------------------- |
 | `recommendedTs`       | `**/*.ts`      | All custom `ethlete/*` rules plus the baseline TypeScript/JavaScript rules below                               |
 | `recommendedTemplate` | `**/*.html`    | Angular template rules (`@angular-eslint/template/*` and `ethlete/prefer-static-boolean-properties`)           |
-| _(spec relaxation)_   | `**/*.spec.ts` | Turns off `@typescript-eslint/no-non-null-assertion` — non-null assertions are common and intentional in tests |
+| `recommendedSpec`     | `**/*.spec.ts` | Turns off `@typescript-eslint/no-non-null-assertion` — non-null assertions are common and intentional in tests |
 
 The `ethlete` plugin itself is pre-wired into the configs — you don't need a `plugins:` entry for it.
 
@@ -58,6 +58,7 @@ export default [
     },
   },
   ethlete.configs.recommendedTemplate,
+  ethlete.configs.recommendedSpec,
 ];
 ```
 
