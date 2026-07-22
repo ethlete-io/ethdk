@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.33
+
+### Patch Changes
+
+- [#3034](https://github.com/ethlete-io/ethdk/pull/3034) [`9dd2a23`](https://github.com/ethlete-io/ethdk/commit/9dd2a2335f4cb677e3eb8120098cfb1b8a67d87d) Thanks [@github-actions](https://github.com/apps/github-actions)! - `injectAnimatedBlockSize`: keep the `resizingClass` applied when a resize animation is interrupted by a new one, so overlay panels (select, cascader, date-picker, menu) no longer flash a scrollbar during rapid successive content changes such as async search typing.
+
 ## 5.0.0-next.32
 
 ### Patch Changes
