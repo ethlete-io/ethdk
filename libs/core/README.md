@@ -13,9 +13,7 @@ yarn add @ethlete/core
 ```ts
 import { injectCurrentBreakpoint, signalHostElementDimensions } from '@ethlete/core';
 
-@Component({
-  /* … */
-})
+@Component({/* … */})
 export class ExampleComponent {
   breakpoint = injectCurrentBreakpoint();
   dimensions = signalHostElementDimensions();

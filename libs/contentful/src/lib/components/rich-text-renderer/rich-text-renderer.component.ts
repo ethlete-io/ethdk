@@ -206,9 +206,7 @@ type ExecutedTextCommandCacheItem = {
 } & ExecutedCommandCacheItemBase;
 
 type ExecutedCommandCacheItem =
-  | ExecutedComponentCommandCacheItem
-  | ExecutedHtmlCommandCacheItem
-  | ExecutedTextCommandCacheItem;
+  ExecutedComponentCommandCacheItem | ExecutedHtmlCommandCacheItem | ExecutedTextCommandCacheItem;
 
 export const isExecutedComponentCommandCacheItem = (
   cache: ExecutedCommandCacheItem,

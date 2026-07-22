@@ -86,9 +86,7 @@ Marks on text nodes are emitted as classes: `bold` → `font-bold`, `italic` →
 `embedded-entry-block` / `embedded-entry-inline` nodes are rendered by looking up the entry's content-type id in `config.customComponents`. No registered component throws [ET006](#error-codes). A custom component declares **any subset** of these inputs — only the ones it declares are set:
 
 ```ts
-@Component({
-  /* … */
-})
+@Component({/* … */})
 export class TeaserCollectionComponent {
   fields = input.required<TeaserCollectionFields>(); // the entry's fields
   sys = input.required<ContentfulEntrySys>();

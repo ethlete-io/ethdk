@@ -5,9 +5,7 @@ Reactive DOM observation as Angular signals — element size, intersection, muta
 ```ts
 import { signalElementDimensions, signalHostClasses, signalHostElementScrollState } from '@ethlete/core';
 
-@Component({
-  /* … */
-})
+@Component({/* … */})
 export class ScrollShadowComponent {
   container = viewChild<ElementRef<HTMLElement>>('container');
 

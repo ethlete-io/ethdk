@@ -35,8 +35,7 @@ export type SelectionModelOptionValueFn<T extends SelectionModelTypes = any> = (
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type SelectionModelBinding<T extends SelectionModelTypes = any> =
-  | SelectionModelPropertyPath
-  | SelectionModelOptionValueFn<T>;
+  SelectionModelPropertyPath | SelectionModelOptionValueFn<T>;
 
 export class SelectionModel<T extends SelectionModelTypes = unknown> {
   private readonly _destroy$ = createDestroy();

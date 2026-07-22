@@ -56,9 +56,7 @@ export type OverlayRuntimeAnchoredPosition = {
 };
 
 export type OverlayRuntimePositionStrategy =
-  | OverlayRuntimeCenteredPosition
-  | OverlayRuntimeAnchoredPosition
-  | OverlayRuntimeGlobalPosition;
+  OverlayRuntimeCenteredPosition | OverlayRuntimeAnchoredPosition | OverlayRuntimeGlobalPosition;
 
 export type OverlayRuntimeElements = {
   rootElement: HTMLElement;

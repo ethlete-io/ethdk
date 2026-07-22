@@ -64,8 +64,7 @@ export class FormFieldSwitchStorybookComponent {
 
       <pre class="rounded bg-et-surface-bg p-2 text-xs">
 Checked: {{ checkedState() }}
-Indeterminate: {{ indeterminateState() }}</pre
-      >
+Indeterminate: {{ indeterminateState() }}</pre>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,

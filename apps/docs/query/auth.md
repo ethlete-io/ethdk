@@ -32,9 +32,7 @@ export const getMe = secureGetQuery<GetMeQueryArgs>('/me');
 ```
 
 ```ts
-@Component({
-  /* … */
-})
+@Component({/* … */})
 export class LoginFormComponent {
   private auth = injectAuthProvider();
 

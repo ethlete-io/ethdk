@@ -74,13 +74,10 @@ export type QueryExecutionStateLoadingWithCachedResponse<TArgs extends QueryArgs
 };
 
 export type QueryExecutionStateLoading<TArgs extends QueryArgs> =
-  | QueryExecutionStateLoadingWithNoResponse
-  | QueryExecutionStateLoadingWithCachedResponse<TArgs>;
+  QueryExecutionStateLoadingWithNoResponse | QueryExecutionStateLoadingWithCachedResponse<TArgs>;
 
 export type QueryExecutionState<TArgs extends QueryArgs> =
-  | QueryExecutionStateSuccess<TArgs>
-  | QueryExecutionStateFailure
-  | QueryExecutionStateLoading<TArgs>;
+  QueryExecutionStateSuccess<TArgs> | QueryExecutionStateFailure | QueryExecutionStateLoading<TArgs>;
 
 export const setupQueryState = <TArgs extends QueryArgs>(options: SetupQueryStateOptions<TArgs>) => {
   const request = signal<HttpRequest<TArgs> | null>(null);

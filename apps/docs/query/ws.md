@@ -14,9 +14,7 @@ export const [provideMatchSocket, injectMatchSocket] = createWebSocketClient({
 ```
 
 ```ts
-@Component({
-  /* … */
-})
+@Component({/* … */})
 export class MatchComponent {
   matchId = input.required<string>();
 

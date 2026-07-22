@@ -459,8 +459,7 @@ const DEFAULT_CONSTRAINTS = { minColSpan: 1, maxColSpan: 12, minRowSpan: 1, maxR
           <pre
             class="p-3 rounded text-[11px] overflow-auto max-h-60"
             style="background: rgb(var(--et-surface-background)); border: 1px solid rgb(var(--et-surface-border)); color: rgb(var(--et-surface-color-muted))"
-            >{{ apiPayloadJson() }}</pre
-          >
+            >{{ apiPayloadJson() }}</pre>
         </div>
       }
     </div>

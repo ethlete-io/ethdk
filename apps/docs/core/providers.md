@@ -5,9 +5,7 @@ App-level services following the SDK's provider-tuple pattern (see [Utilities �
 ```ts
 import { injectBreakpointObserver } from '@ethlete/core';
 
-@Component({
-  /* … */
-})
+@Component({/* … */})
 export class ToolbarComponent {
   private breakpointObserver = injectBreakpointObserver();
 

@@ -49,10 +49,7 @@ export type SwissBracketRoundType = (typeof SWISS_BRACKET_ROUND_TYPE)[keyof type
 export type GroupBracketRoundType = (typeof GROUP_BRACKET_ROUND_TYPE)[keyof typeof GROUP_BRACKET_ROUND_TYPE];
 
 export type BracketRoundType =
-  | SingleEliminationBracketRoundType
-  | DoubleEliminationBracketRoundType
-  | SwissBracketRoundType
-  | GroupBracketRoundType;
+  SingleEliminationBracketRoundType | DoubleEliminationBracketRoundType | SwissBracketRoundType | GroupBracketRoundType;
 
 export type NewBracketRoundBase<TRoundData> = {
   logicalIndex: number;

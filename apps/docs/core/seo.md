@@ -7,9 +7,7 @@ Every binding accepts a raw value **or a signal** (`MaybeSignal<T>`) and must be
 ```ts
 import { applyDescriptionBinding, applyHeadTitleBinding } from '@ethlete/core';
 
-@Component({
-  /* … */
-})
+@Component({/* … */})
 export class HomeComponent {
   constructor() {
     applyHeadTitleBinding('Home');

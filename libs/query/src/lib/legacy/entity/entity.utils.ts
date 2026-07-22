@@ -14,13 +14,13 @@ export function mapToPaginated<T>(response: Paginated<T>) {
 export const insertFrom = <
   OriginStoreType,
   OriginKeys extends keyof NonNullable<OriginStoreType>,
-  SubStoreType extends NonNullable<OriginStoreType>[OriginKeys] extends Array<infer U>
+  SubStoreType extends (NonNullable<OriginStoreType>[OriginKeys] extends Array<infer U>
     ? U
-    : NonNullable<OriginStoreType>[OriginKeys],
+    : NonNullable<OriginStoreType>[OriginKeys]),
   IdFn extends (value: NonNullable<OriginStoreType>) => EntityKey | EntityKey[],
-  ComputedEntityType extends ReturnType<IdFn> extends Array<unknown>
+  ComputedEntityType extends (ReturnType<IdFn> extends Array<unknown>
     ? OriginStoreType
-    : Omit<OriginStoreType, OriginKeys> & { [K in OriginKeys]: SubStoreType | null },
+    : Omit<OriginStoreType, OriginKeys> & { [K in OriginKeys]: SubStoreType | null }),
 >(
   store: EntityStore<SubStoreType>,
   { for: key, id }: InsertFromConfig<OriginStoreType, OriginKeys, IdFn>,

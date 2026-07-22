@@ -26,9 +26,7 @@ export const getPost = getQuery<GetPostQueryArgs>((p) => `/posts/${p.postId}`);
 
 ```ts
 // post.component.ts — a live query per component instance
-@Component({
-  /* … */
-})
+@Component({/* … */})
 export class PostComponent {
   postId = input.required<string>();
 

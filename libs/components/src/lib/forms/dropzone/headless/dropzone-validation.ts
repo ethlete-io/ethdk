@@ -119,12 +119,10 @@ export const dropzoneFiles = <TValue, TPathKind extends PathKind = PathKind.Root
 
     const currentConstraints = channel.constraints();
 
-    return channel.rejections().map(
-      (rejection): ValidationError.WithoutFieldTree => ({
-        kind: DROPZONE_FILES_ERROR_KIND,
-        message:
-          currentConstraints?.message?.(rejection) ?? defaultDropzoneRejectionMessage(rejection, currentConstraints),
-      }),
-    );
+    return channel.rejections().map((rejection): ValidationError.WithoutFieldTree => ({
+      kind: DROPZONE_FILES_ERROR_KIND,
+      message:
+        currentConstraints?.message?.(rejection) ?? defaultDropzoneRejectionMessage(rejection, currentConstraints),
+    }));
   });
 };

@@ -627,8 +627,7 @@ function addOrUpdateConstructor(
 
   // Find existing constructor
   const existingConstructor = classNode.members.find((member) => ts.isConstructorDeclaration(member)) as
-    | ts.ConstructorDeclaration
-    | undefined;
+    ts.ConstructorDeclaration | undefined;
 
   const callStatements = constructorCalls.map((call) => `    ${call};`).join('\n');
 

@@ -117,8 +117,7 @@ export const postRefreshToken = client.post({
 
     {{ users | json }}
 
-    </pre
-    >
+    </pre>
 
     <h1>Form 2</h1>
     <form [formGroup]="form2.form">

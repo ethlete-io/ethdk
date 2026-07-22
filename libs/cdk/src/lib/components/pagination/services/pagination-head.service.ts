@@ -70,7 +70,7 @@ export class PaginationHeadService implements OnDestroy {
     }
   }
 
-  private _getCanonicalElement<T extends boolean, R extends T extends true ? HTMLElement : HTMLElement | null>(
+  private _getCanonicalElement<T extends boolean, R extends (T extends true ? HTMLElement : HTMLElement | null)>(
     createIfNotExisting: T,
   ) {
     let element = this._document.querySelector(`link[rel='canonical']`) || null;

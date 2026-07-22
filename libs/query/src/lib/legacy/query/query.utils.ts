@@ -420,7 +420,7 @@ export const paginatedEntityValueUpdater =
     T extends Paginated<unknown>,
     Args extends BaseArguments,
     Entity,
-    J extends T extends Paginated<infer X> ? X : never,
+    J extends (T extends Paginated<infer X> ? X : never),
   >(
     findFn: (val: J, entity: Entity) => boolean,
   ) =>

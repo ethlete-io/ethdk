@@ -264,8 +264,7 @@ const posEq = (a: GridItemPosition | undefined, b: GridItemPosition | undefined)
           <pre
             class="p-3 rounded text-[11px] overflow-auto max-h-64"
             style="background: rgb(var(--et-surface-background)); border: 1px solid rgb(var(--et-surface-border)); color: rgb(var(--et-surface-color-muted))"
-            >{{ apiPayloadJson() }}</pre
-          >
+            >{{ apiPayloadJson() }}</pre>
         </div>
       }
     </div>

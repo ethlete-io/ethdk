@@ -2,11 +2,7 @@ import { ComponentType } from '@angular/cdk/portal';
 import { Injector, Signal, TemplateRef, computed } from '@angular/core';
 
 export type AnyTemplateType =
-  | string
-  | TemplateRef<unknown>
-  | ComponentType<unknown>
-  | TemplateRefWithContext
-  | ComponentTypeWithInputs;
+  string | TemplateRef<unknown> | ComponentType<unknown> | TemplateRefWithContext | ComponentTypeWithInputs;
 
 export type TemplateRefWithContext<T = Record<string, unknown> | undefined, J = unknown> = {
   template: TemplateRef<J>;

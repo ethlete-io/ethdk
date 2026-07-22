@@ -78,9 +78,7 @@ An overlay that hosts a form should not silently throw away unsaved edits when t
 import { createOverlayUnsavedChangesGuard, injectOverlayManager, OVERLAY_REF } from '@ethlete/components';
 import { form } from '@angular/forms/signals';
 
-@Component({
-  /* … */
-})
+@Component({/* … */})
 export class EditItemOverlayComponent {
   private overlays = injectOverlayManager();
   private overlayRef = inject(OVERLAY_REF);

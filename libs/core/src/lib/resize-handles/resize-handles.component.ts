@@ -60,12 +60,10 @@ const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge): Obse
     of<GestureEvent>({ type: 'start', edge }),
     fromEvent<PointerEvent>(document, 'pointermove').pipe(
       filter((e) => e.pointerId === pointerId),
-      map(
-        (e): GestureEvent => ({
-          type: 'move',
-          data: { edge, dx: e.clientX - startX, dy: e.clientY - startY, clientX: e.clientX, clientY: e.clientY },
-        }),
-      ),
+      map((e): GestureEvent => ({
+        type: 'move',
+        data: { edge, dx: e.clientX - startX, dy: e.clientY - startY, clientX: e.clientX, clientY: e.clientY },
+      })),
       takeUntil(end$),
     ),
     of<GestureEvent>({ type: 'end' }),
