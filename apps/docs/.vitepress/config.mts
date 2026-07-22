@@ -97,6 +97,7 @@ export default defineConfig({
           items: [
             { text: 'Queries & creators', link: '/query/queries' },
             { text: 'Query features', link: '/query/features' },
+            { text: 'Dependent queries', link: '/query/dependent-queries' },
             { text: 'Caching & deduplication', link: '/query/caching' },
             { text: 'Query stacks & pagination', link: '/query/stacks' },
             { text: 'Errors & retries', link: '/query/errors' },

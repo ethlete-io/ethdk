@@ -18,6 +18,7 @@ export * from './query-execute-utils';
 export * from './query-features';
 export * from './query-repository';
 export * from './query-retry-utils';
+export * from './query-sequence';
 export * from './query-signal-forms';
 export * from './query-snapshot';
 export * from './query-snapshot-utils';

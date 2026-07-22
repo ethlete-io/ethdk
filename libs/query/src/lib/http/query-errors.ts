@@ -42,6 +42,9 @@ export const QueryRuntimeErrorCode = {
 
   // Query Execution
   CIRCULAR_QUERY_DEPENDENCY: 800,
+
+  // Query Sequence
+  QUERY_SEQUENCE_ALREADY_RUNNING: 900,
 } as const;
 
 export type QueryRuntimeErrorCode = (typeof QueryRuntimeErrorCode)[keyof typeof QueryRuntimeErrorCode];
@@ -198,5 +201,12 @@ export const circularQueryDependency = () => {
   return new RuntimeError(
     QueryRuntimeErrorCode.CIRCULAR_QUERY_DEPENDENCY,
     `Query was executed more than 5 times in less than 100ms. This is usually a sign of a circular dependency.`,
+  );
+};
+
+export const querySequenceAlreadyRunning = () => {
+  return new RuntimeError(
+    QueryRuntimeErrorCode.QUERY_SEQUENCE_ALREADY_RUNNING,
+    `run() was called on a query sequence that is already running. Wait for the current run to settle before starting another.`,
   );
 };

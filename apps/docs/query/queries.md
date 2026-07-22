@@ -104,7 +104,7 @@ Methods:
 
 - `execute({ args?, options? })` — `options.allowCache` reuses a fresh cached response, `options.triggeredBy` tags the run.
 - `reset()` — back to the never-executed state.
-- `createSnapshot()` — a frozen copy of the current state with an `isAlive` signal. Useful for "the request I started", untouched by later executions. The standalone `executeUntilSettled(query, executeArgs?)` combines both: it executes and resolves with the settled snapshot — handy in `async` flows like a signal-forms [`submit()` action](/query/errors#mapping-violations-onto-signal-forms).
+- `createSnapshot()` — a frozen copy of the current state with an `isAlive` signal. Useful for "the request I started", untouched by later executions. The standalone `executeUntilSettled(query, executeArgs?)` combines both: it executes and resolves with the settled snapshot — handy in `async` flows like a signal-forms [`submit()` action](/query/errors#mapping-violations-onto-signal-forms). For a chain of dependent mutations built on top of it, see [Dependent queries](/query/dependent-queries).
 - `asReadonly()` — the query without its mutating methods.
 
 Some objects also carry a `subtle` namespace — everything under it is an unsupported escape hatch: if you touch it and it breaks, that's on you.
