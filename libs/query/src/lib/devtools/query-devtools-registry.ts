@@ -19,6 +19,9 @@ export type QueryDevtoolsEntryMeta = {
   /** Display name of the owning query client, where known. */
   clientName?: string;
 
+  /** Base URL of the owning query client, where known. */
+  clientBaseUrl?: string;
+
   /** Human readable display name (e.g. an auth provider or web socket client name). */
   name?: string;
 

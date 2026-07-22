@@ -13,3 +13,9 @@ JIT editing (apply an edited response via `setResponse`, replay with edited
 args), forcing loading / error / empty states, cache freshness countdowns with
 refetch / evict, and an "inspect" mode that highlights the component behind a
 query when you hover the live UI.
+
+Calls are identified by base URL (not the internal client name); stacks and auth
+providers surface identifying info (endpoint, features, queries, token-expiry
+countdown); the Stacks and Sequences drawers each keep their own selection; and a
+"Copy report" action puts a Slack-ready rich-text summary (path, args, status,
+slimmed response, GraphQL document) on the clipboard.

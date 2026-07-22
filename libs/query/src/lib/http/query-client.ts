@@ -39,6 +39,9 @@ export type CreateQueryClientConfigOptions = {
 
 export type QueryClient = {
   repository: QueryRepository;
+
+  /** The base URL the client was configured with. */
+  baseUrl: string;
 };
 
 export type QueryClientRef = ProviderResult<QueryClient>;
@@ -59,6 +62,7 @@ export const createQueryClient = (options: CreateQueryClientConfigOptions): Quer
 
       const client: QueryClient = {
         repository,
+        baseUrl: options.baseUrl,
       };
 
       return client;

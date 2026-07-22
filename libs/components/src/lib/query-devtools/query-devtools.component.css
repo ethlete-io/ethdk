@@ -200,6 +200,38 @@
     padding: 1rem;
   }
 
+  /* Detail-pane hierarchy: divide the header, the meta block and the value explorer. */
+  .et-query-devtools-detail .et-query-devtools-detail-head,
+  .et-query-devtools-drawer .et-query-devtools-detail-head {
+    padding-block-end: 0.8rem;
+    border-block-end: 1px solid var(--_et-qdt-border);
+  }
+
+  .et-query-devtools-detail .et-query-devtools-meta,
+  .et-query-devtools-drawer .et-query-devtools-meta {
+    padding: 0.8rem;
+    border: 1px solid var(--_et-qdt-border);
+    border-radius: 0.4rem;
+    background: color-mix(in srgb, var(--_et-qdt-interaction) 3%, transparent);
+  }
+
+  .et-query-devtools-detail .et-query-devtools-section-row,
+  .et-query-devtools-drawer .et-query-devtools-section-row {
+    padding-block-start: 0.8rem;
+    border-block-start: 1px solid var(--_et-qdt-border);
+  }
+
+  .et-query-devtools-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    background: var(--_et-qdt-accent);
+    color: #09090b;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
   .et-query-devtools-scroll {
     block-size: 100%;
     overflow: auto;
@@ -495,6 +527,20 @@
     margin-block-end: 0.8rem;
   }
 
+  .et-query-devtools-card-title {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-block-end: 0.2rem;
+  }
+
+  .et-query-devtools-card-sub {
+    color: var(--_et-qdt-subtle);
+    font-size: 1.1rem;
+    margin-block-end: 0.6rem;
+    overflow-wrap: anywhere;
+  }
+
   .et-query-devtools-inner-queries {
     display: flex;
     flex-direction: column;
@@ -548,6 +594,33 @@
 
   .et-query-devtools-step-item[data-status='error'] {
     border-color: color-mix(in srgb, var(--_et-qdt-error) 50%, transparent);
+  }
+
+  .et-query-devtools-step-head {
+    display: flex;
+    align-items: stretch;
+  }
+
+  .et-query-devtools-step-head .et-query-devtools-inner-row {
+    border: none;
+    border-radius: 0;
+    flex: 1 1 auto;
+  }
+
+  .et-query-devtools-step-caret-btn {
+    appearance: none;
+    border: none;
+    border-inline-start: 1px solid var(--_et-qdt-border);
+    background: transparent;
+    color: var(--_et-qdt-muted);
+    cursor: pointer;
+    padding: 0 0.7rem;
+    font: inherit;
+  }
+
+  .et-query-devtools-step-caret-btn:hover {
+    background: var(--_et-qdt-hover);
+    color: var(--_et-qdt-fg);
   }
 
   .et-query-devtools-step-toggle {

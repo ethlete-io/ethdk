@@ -62,6 +62,9 @@ export type QuerySequence<TResponses extends unknown[]> = {
   /** The static number of steps in the sequence. */
   total: number;
 
+  /** The query objects backing each step, in order. Useful for devtools / advanced introspection. */
+  queries: AnyNewQuery[];
+
   /** The error of the step that failed, or `null` while running / on success. */
   error: Signal<QueryErrorResponse | null>;
 
@@ -199,6 +202,7 @@ const buildSequence = <TResponses extends unknown[]>(
     running: state.running.asReadonly(),
     currentStep: state.currentStep.asReadonly(),
     total: steps.length,
+    queries: steps.map((s) => s.query),
     error: state.error.asReadonly(),
     failedAt: state.failedAt.asReadonly(),
     snapshots: state.snapshots.asReadonly(),

@@ -26,14 +26,14 @@ import { QueryDevtoolsToggleComponent } from './query-devtools-toggle.component'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyQuery = Query<any>;
 
-type DevtoolsTab = 'queries' | 'stacks' | 'sequences' | 'gql' | 'auth' | 'ws' | 'cache' | 'events';
+type DevtoolsTab = 'queries' | 'stacks' | 'sequences' | 'auth' | 'ws' | 'cache' | 'events';
 
 type QueryStatus = 'idle' | 'loading' | 'success' | 'error';
 
 type EventLogItem = {
   id: number;
   timestamp: number;
-  clientName: string;
+  client: string;
   type: QueryRepositoryEvent['type'];
   method: string;
   url: string;
@@ -66,6 +66,33 @@ const readPersistedState = (): PersistedState => {
   } catch {
     return {};
   }
+};
+
+/**
+ * Slims a value for a shareable report: long strings are truncated and long arrays keep only the
+ * first couple of entries, replacing the repetitive tail with a `… (N more)` marker, so a big
+ * response collapses to a representative sample.
+ */
+const slimForReport = (value: unknown, depth = 0): unknown => {
+  if (typeof value === 'string') return value.length > 200 ? `${value.slice(0, 200)}…` : value;
+  if (depth > 6) return '…';
+
+  if (Array.isArray(value)) {
+    if (value.length > 3) {
+      return [...value.slice(0, 2).map((v) => slimForReport(v, depth + 1)), `… (${value.length - 2} more)`];
+    }
+
+    return value.map((v) => slimForReport(v, depth + 1));
+  }
+
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(value)) out[key] = slimForReport(val, depth + 1);
+
+    return out;
+  }
+
+  return value;
 };
 
 /** Best-effort decode of a JWT payload for the auth tab. Returns `null` for anything non-decodable. */
@@ -114,6 +141,7 @@ export class QueryDevtoolsComponent {
   protected document = inject(DOCUMENT);
 
   private eventIdCounter = 0;
+  private lastSelectionKey = '';
 
   private readonly persisted = readPersistedState();
 
@@ -121,7 +149,6 @@ export class QueryDevtoolsComponent {
     { id: 'queries', label: 'Queries' },
     { id: 'stacks', label: 'Stacks' },
     { id: 'sequences', label: 'Sequences' },
-    { id: 'gql', label: 'GraphQL' },
     { id: 'auth', label: 'Auth' },
     { id: 'ws', label: 'Sockets' },
     { id: 'cache', label: 'Cache' },
@@ -134,6 +161,10 @@ export class QueryDevtoolsComponent {
   protected activeTab = signal<DevtoolsTab>(this.persisted.activeTab ?? 'queries');
   protected selectedClientName = signal<string | null>(this.persisted.selectedClientName ?? null);
   protected selectedQueryId = signal<string | null>(this.persisted.selectedQueryId ?? null);
+
+  // Independent per-drawer selection so the Stacks / Sequences drawers don't share the Queries tab's.
+  protected stackSelectedQueryId = signal<string | null>(null);
+  protected sequenceSelectedQueryId = signal<string | null>(null);
 
   protected eventLog = signal<EventLogItem[]>([]);
 
@@ -157,6 +188,9 @@ export class QueryDevtoolsComponent {
   protected argsDraft = signal('');
   protected editError = signal<string | null>(null);
 
+  /** Transient "Copied!" feedback for the copy-report action. */
+  protected copiedReport = signal(false);
+
   /** 1-second tick driving the cache freshness countdowns. */
   private clock = toSignal(interval(1000), { initialValue: 0 });
 
@@ -179,13 +213,6 @@ export class QueryDevtoolsComponent {
 
   protected wsEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'ws-client'));
 
-  /** GraphQL queries (those carrying a gql document), for the GraphQL tab. */
-  protected gqlEntries = computed(() =>
-    this.queryEntries()
-      .filter((e) => !!e.meta.gqlQuery)
-      .map((entry) => ({ entry, query: entry.handle as AnyQuery })),
-  );
-
   /** Unique client names present across queries and auth providers, for the Queries-tab picker. */
   protected clientNames = computed(() => {
     const names = new Set<string>();
@@ -195,16 +222,16 @@ export class QueryDevtoolsComponent {
     return Array.from(names).sort();
   });
 
-  /** Unique repositories (with their client name) used by the Cache and Events tabs. */
+  /** Unique repositories (with their client name + base URL) used by the Cache and Events tabs. */
   private repositories = computed(() => {
-    const map = new Map<QueryRepository, string>();
+    const map = new Map<QueryRepository, { name: string; baseUrl: string }>();
     for (const entry of queryDevtoolsEntries()) {
       const repo = entry.meta.repository;
       if (repo && !map.has(repo)) {
-        map.set(repo, entry.meta.clientName ?? 'unknown');
+        map.set(repo, { name: entry.meta.clientName ?? 'unknown', baseUrl: entry.meta.clientBaseUrl ?? '' });
       }
     }
-    return Array.from(map, ([repository, name]) => ({ repository, name }));
+    return Array.from(map, ([repository, info]) => ({ repository, name: info.name, baseUrl: info.baseUrl }));
   });
 
   protected filteredQueries = computed(() => {
@@ -222,18 +249,15 @@ export class QueryDevtoolsComponent {
     return filtered.map((entry) => ({ entry, query: entry.handle as AnyQuery }));
   });
 
-  protected selectedQuery = computed(() => {
-    const id = this.selectedQueryId();
-    if (!id) return null;
-    const entry = this.queryEntries().find((e) => e.id === id);
-    return entry ? { entry, query: entry.handle as AnyQuery } : null;
-  });
+  protected selectedQuery = computed(() => this.findQuery(this.selectedQueryId()));
+  protected stackSelectedQuery = computed(() => this.findQuery(this.stackSelectedQueryId()));
+  protected sequenceSelectedQuery = computed(() => this.findQuery(this.sequenceSelectedQueryId()));
 
   protected cacheView = computed(() =>
-    this.repositories().map(({ repository, name }) => {
+    this.repositories().map(({ repository, name, baseUrl }) => {
       // Read the version signal so this recomputes on every cache mutation.
       repository.subtle.cacheVersion();
-      return { name, repository, entries: repository.subtle.cacheEntries() };
+      return { name, baseUrl, repository, entries: repository.subtle.cacheEntries() };
     }),
   );
 
@@ -273,9 +297,13 @@ export class QueryDevtoolsComponent {
     toObservable(this.repositories)
       .pipe(
         switchMap((repos) =>
-          merge(...repos.map(({ repository, name }) => repository.events$.pipe(map((event) => ({ event, name }))))),
+          merge(
+            ...repos.map(({ repository, name, baseUrl }) =>
+              repository.events$.pipe(map((event) => ({ event, client: baseUrl || name }))),
+            ),
+          ),
         ),
-        tap(({ event, name }) => this.pushEvent(event, name)),
+        tap(({ event, client }) => this.pushEvent(event, client)),
         takeUntilDestroyed(),
       )
       .subscribe();
@@ -301,11 +329,22 @@ export class QueryDevtoolsComponent {
       }
     });
 
-    // Close any open JIT editor when the inspected query changes.
+    // Close any open JIT editor on any selection / tab change, and reset the value-explorer search
+    // when the *selected query* actually changes (but not on the initial restore, so a persisted
+    // search survives a reload).
+    this.lastSelectionKey = this.selectionKey();
     effect(() => {
-      this.selectedQueryId();
+      const key = this.selectionKey();
+      this.activeTab();
+
       this.editorMode.set('none');
       this.editError.set(null);
+      this.copiedReport.set(false);
+
+      if (key !== this.lastSelectionKey) {
+        this.lastSelectionKey = key;
+        this.jsonSearch.set('');
+      }
     });
 
     const doc = this.document;
@@ -416,6 +455,48 @@ export class QueryDevtoolsComponent {
 
   protected resetQuery(query: AnyQuery) {
     query.reset();
+  }
+
+  /**
+   * Copies a shareable report (path, args, status, slimmed response) for handing to an API dev.
+   * Writes both rich `text/html` (Slack applies formatting on paste — it does not parse markdown) and
+   * a plain-text fallback.
+   */
+  protected copyReport(entry: QueryDevtoolsEntry, query: AnyQuery) {
+    const error = query.error();
+    const httpStatus = error ? error.raw.status : this.responseStatus(query);
+    const method = entry.meta.method ?? '';
+    const route = entry.meta.route || '—';
+    const client = entry.meta.clientBaseUrl ?? entry.meta.clientName ?? '';
+    const statusLine = `status: ${this.queryStatus(query)}${httpStatus !== null ? ` (${httpStatus})` : ''} · ${this.formatTime(query.lastTimeExecutedAt())}`;
+    const gqlDoc = entry.meta.gqlQuery ? this.gqlDocument(entry.meta.gqlQuery) : null;
+    const args = query.args();
+    const argsLabel = gqlDoc ? 'Variables' : 'Args';
+    const argsJson = args !== null && args !== undefined ? JSON.stringify(args, null, 2) : null;
+    const bodyLabel = error ? `Error (${error.raw.status})` : 'Response';
+    const bodyContent = error
+      ? error.isList
+        ? error.errors.map((e) => e.message).join('\n')
+        : error.error.message
+      : JSON.stringify(slimForReport(query.response()), null, 2);
+
+    const textParts = [`${method} ${route}${client ? ` — ${client}` : ''}`, statusLine];
+    if (gqlDoc) textParts.push('', 'GraphQL document', gqlDoc);
+    if (argsJson) textParts.push('', argsLabel, argsJson);
+    textParts.push('', bodyLabel, bodyContent);
+    const text = textParts.join('\n');
+
+    const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const htmlParts = [
+      `<b>${esc(method)}</b> <code>${esc(route)}</code>${client ? ` — <code>${esc(client)}</code>` : ''}`,
+      esc(statusLine),
+    ];
+    if (gqlDoc) htmlParts.push('<b>GraphQL document</b>', `<pre><code>${esc(gqlDoc)}</code></pre>`);
+    if (argsJson) htmlParts.push(`<b>${argsLabel}</b>`, `<pre><code>${esc(argsJson)}</code></pre>`);
+    htmlParts.push(`<b>${esc(bodyLabel)}</b>`, `<pre><code>${esc(bodyContent)}</code></pre>`);
+    const html = htmlParts.join('<br>');
+
+    this.writeToClipboard(html, text);
   }
 
   // --- JIT editing ---
@@ -563,7 +644,7 @@ export class QueryDevtoolsComponent {
 
   protected queriesForStack(
     stack: AnyQueryStack | AnyPagedQueryStack,
-  ): { id: string; query: AnyQuery; method: string; route: string }[] {
+  ): { id: string; query: AnyQuery; method: string; route: string; clientName: string; clientBaseUrl: string }[] {
     const inner = stack.queries();
     const queryEntries = this.queryEntries();
 
@@ -574,17 +655,55 @@ export class QueryDevtoolsComponent {
         query: query as AnyQuery,
         method: entry?.meta.method ?? '',
         route: entry?.meta.route ?? '',
+        clientName: entry?.meta.clientName ?? '',
+        clientBaseUrl: entry?.meta.clientBaseUrl ?? '',
       };
     });
   }
 
-  /**
-   * Opens the detail for a linked query in a split-view drawer of the current tab, so the stack /
-   * sequence context is not lost by jumping to the Queries tab.
-   */
-  protected inspectQuery(id: string) {
-    if (!id) return;
-    this.selectedQueryId.set(id);
+  /** Identifying info for a stack, derived from its (uniform) inner queries. */
+  protected stackIdentity(stack: AnyQueryStack | AnyPagedQueryStack) {
+    const first = this.queriesForStack(stack)[0];
+    return { method: first?.method ?? '', route: first?.route ?? '', baseUrl: first?.clientBaseUrl ?? '' };
+  }
+
+  protected authFeatures(auth: AnyBearerAuthProvider): string[] {
+    return Object.keys(auth.features ?? {});
+  }
+
+  protected authQueryKeys(auth: AnyBearerAuthProvider): string[] {
+    return Object.keys(auth.queries ?? {});
+  }
+
+  /** Countdown to the access-token's `exp` (the point a refresh becomes due), or `null` if unknown. */
+  protected authTokenExpiry(auth: AnyBearerAuthProvider): string | null {
+    this.clock();
+    const payload = decodeJwtPayload(auth.accessToken());
+    const exp = typeof payload?.['exp'] === 'number' ? payload['exp'] : null;
+    if (exp === null) return null;
+
+    const seconds = Math.round((exp * 1000 - Date.now()) / 1000);
+    if (seconds <= 0) return 'expired';
+    if (seconds < 120) return `${seconds}s`;
+    if (seconds > 86400) return `${Math.floor(seconds / 86400)}d`;
+
+    return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+  }
+
+  protected queriesForSequence(
+    sequence: QuerySequence<unknown[]>,
+  ): { id: string; query: AnyQuery; method: string; route: string }[] {
+    const queryEntries = this.queryEntries();
+
+    return sequence.queries.map((query) => {
+      const entry = queryEntries.find((e) => e.handle === query);
+      return {
+        id: entry?.id ?? '',
+        query: query as AnyQuery,
+        method: entry?.meta.method ?? '',
+        route: entry?.meta.route ?? '',
+      };
+    });
   }
 
   /** The snapshot of a sequence step, once it has run (holds the args in and the response/error out). */
@@ -607,8 +726,14 @@ export class QueryDevtoolsComponent {
     this.expandedSteps.set(next);
   }
 
-  protected range(length: number): number[] {
-    return Array.from({ length }, (_, i) => i);
+  /** Dedents a GraphQL document (template-literal indentation) for readable display. */
+  protected gqlDocument(doc: string) {
+    const lines = doc.replace(/\t/g, '  ').split('\n');
+    while (lines.length && !lines[0]?.trim()) lines.shift();
+    while (lines.length && !lines[lines.length - 1]?.trim()) lines.pop();
+    const indents = lines.filter((l) => l.trim()).map((l) => l.match(/^ */)?.[0].length ?? 0);
+    const min = indents.length ? Math.min(...indents) : 0;
+    return lines.map((l) => l.slice(min)).join('\n');
   }
 
   protected featureLabel(type: string) {
@@ -682,11 +807,55 @@ export class QueryDevtoolsComponent {
     this.inspectActive.set(false);
   }
 
-  private pushEvent(event: QueryRepositoryEvent, clientName: string) {
+  private selectionKey() {
+    return `${this.selectedQueryId()}|${this.stackSelectedQueryId()}|${this.sequenceSelectedQueryId()}`;
+  }
+
+  private writeToClipboard(html: string, text: string) {
+    const clipboard = navigator.clipboard;
+    if (!clipboard) return;
+
+    // Prefer rich HTML (Slack keeps the formatting on paste); fall back to plain text.
+    if ('write' in clipboard && typeof ClipboardItem !== 'undefined') {
+      const item = new ClipboardItem({
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([text], { type: 'text/plain' }),
+      });
+      clipboard
+        .write([item])
+        .then(() => this.copiedReport.set(true))
+        .catch(() =>
+          clipboard
+            .writeText(text)
+            .then(() => this.copiedReport.set(true))
+            .catch(() => undefined),
+        );
+
+      return;
+    }
+
+    clipboard
+      .writeText(text)
+      .then(() => this.copiedReport.set(true))
+      .catch(() => undefined);
+  }
+
+  private responseStatus(query: AnyQuery): number | null {
+    const event = query.latestHttpEvent() as { status?: number } | null;
+    return typeof event?.status === 'number' ? event.status : null;
+  }
+
+  private findQuery(id: string | null) {
+    if (!id) return null;
+    const entry = this.queryEntries().find((e) => e.id === id);
+    return entry ? { entry, query: entry.handle as AnyQuery } : null;
+  }
+
+  private pushEvent(event: QueryRepositoryEvent, client: string) {
     const item: EventLogItem = {
       id: this.eventIdCounter++,
       timestamp: Date.now(),
-      clientName,
+      client,
       type: event.type,
       method: event.request.method,
       url: event.request.url,

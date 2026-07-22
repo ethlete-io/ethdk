@@ -48,9 +48,7 @@
             <div class="et-query-devtools-list">
               <div class="et-query-devtools-toolbar">
                 @if (inspectFilterIds(); as ids) {
-                  <span class="et-query-devtools-chip et-query-devtools-chip--success">
-                    inspected element · {{ ids.length }}
-                  </span>
+                  <span class="et-query-devtools-filter-chip">⌖ inspected · {{ ids.length }}</span>
                   <button (click)="clearInspectFilter()" class="et-query-devtools-btn" type="button">Reset</button>
                 } @else {
                   <label class="et-query-devtools-field">
@@ -125,6 +123,21 @@
                         <span class="et-query-devtools-chip et-query-devtools-chip--loading">loading</span>
                       }
                     </div>
+
+                    @let pagedId = stackIdentity(paged);
+                    <div class="et-query-devtools-card-title">
+                      <span class="et-query-devtools-method">{{ pagedId.method }}</span>
+                      <span class="et-query-devtools-route">{{ pagedId.route }}</span>
+                    </div>
+                    <div class="et-query-devtools-card-sub et-query-devtools-mono">{{ pagedId.baseUrl }}</div>
+                    @if (entry.meta.featureTypes?.length) {
+                      <div class="et-query-devtools-chips">
+                        @for (feature of entry.meta.featureTypes; track feature) {
+                          <span class="et-query-devtools-chip">{{ featureLabel(feature) }}</span>
+                        }
+                      </div>
+                    }
+
                     <dl class="et-query-devtools-meta">
                       <dt>Pages loaded</dt>
                       <dd>{{ paged.queries().length }}</dd>
@@ -149,6 +162,21 @@
                         <span class="et-query-devtools-chip et-query-devtools-chip--error">error</span>
                       }
                     </div>
+
+                    @let stackId = stackIdentity(stack);
+                    <div class="et-query-devtools-card-title">
+                      <span class="et-query-devtools-method">{{ stackId.method }}</span>
+                      <span class="et-query-devtools-route">{{ stackId.route }}</span>
+                    </div>
+                    <div class="et-query-devtools-card-sub et-query-devtools-mono">{{ stackId.baseUrl }}</div>
+                    @if (entry.meta.featureTypes?.length) {
+                      <div class="et-query-devtools-chips">
+                        @for (feature of entry.meta.featureTypes; track feature) {
+                          <span class="et-query-devtools-chip">{{ featureLabel(feature) }}</span>
+                        }
+                      </div>
+                    }
+
                     <dl class="et-query-devtools-meta">
                       <dt>Queries</dt>
                       <dd>{{ stack.queries().length }}</dd>
@@ -165,12 +193,12 @@
               }
             </div>
 
-            @if (selectedQuery(); as sel) {
+            @if (stackSelectedQuery(); as sel) {
               <aside class="et-query-devtools-drawer">
                 <div class="et-query-devtools-drawer-head">
                   <span>Query detail</span>
                   <button
-                    (click)="selectedQueryId.set(null)"
+                    (click)="stackSelectedQueryId.set(null)"
                     class="et-query-devtools-close"
                     type="button"
                     title="Close detail"
@@ -186,105 +214,97 @@
 
         <!-- SEQUENCES -->
         @case ('sequences') {
-          <div class="et-query-devtools-scroll">
-            @for (entry of sequenceEntries(); track entry.id) {
-              @let sequence = asSequence(entry);
-              @if (sequence) {
-                <div class="et-query-devtools-card">
-                  <div class="et-query-devtools-card-head">
-                    <span class="et-query-devtools-chip">sequence</span>
-                    <span class="et-query-devtools-chip et-query-devtools-chip--muted">{{ sequence.status() }}</span>
-                    <span class="et-query-devtools-count"
-                      >step {{ sequence.currentStep() }} / {{ sequence.total }}</span
-                    >
-                  </div>
+          <div class="et-query-devtools-split">
+            <div class="et-query-devtools-scroll">
+              @for (entry of sequenceEntries(); track entry.id) {
+                @let sequence = asSequence(entry);
+                @if (sequence) {
+                  <div class="et-query-devtools-card">
+                    <div class="et-query-devtools-card-head">
+                      <span class="et-query-devtools-chip">sequence</span>
+                      <span class="et-query-devtools-chip et-query-devtools-chip--muted">{{ sequence.status() }}</span>
+                      <span class="et-query-devtools-count"
+                        >step {{ sequence.currentStep() }} / {{ sequence.total }}</span
+                      >
+                    </div>
 
-                  <ol class="et-query-devtools-step-list">
-                    @for (i of range(sequence.total); track i) {
-                      @let snap = stepSnapshot(sequence, i);
-                      <li [attr.data-status]="sequenceStepStatus(sequence, i)" class="et-query-devtools-step-item">
-                        <button
-                          [attr.aria-expanded]="isStepExpanded(entry.id, i)"
-                          (click)="toggleStep(entry.id, i)"
-                          class="et-query-devtools-step-toggle"
-                          type="button"
-                        >
-                          <span
-                            [attr.data-status]="sequenceStepStatus(sequence, i)"
-                            class="et-query-devtools-status"
-                          ></span>
-                          <span class="et-query-devtools-step-index">Step {{ i + 1 }}</span>
-                          <span class="et-query-devtools-chip et-query-devtools-chip--muted">
-                            {{ sequenceStepStatus(sequence, i) }}
-                          </span>
-                          <span class="et-query-devtools-step-caret">{{
-                            isStepExpanded(entry.id, i) ? '▾' : '▸'
-                          }}</span>
-                        </button>
+                    <ol class="et-query-devtools-step-list">
+                      @for (link of queriesForSequence(sequence); track $index; let i = $index) {
+                        <li [attr.data-status]="sequenceStepStatus(sequence, i)" class="et-query-devtools-step-item">
+                          <div class="et-query-devtools-step-head">
+                            <button
+                              [class.et-query-devtools-inner-row--active]="sequenceSelectedQueryId() === link.id"
+                              [disabled]="!link.id"
+                              (click)="sequenceSelectedQueryId.set(link.id)"
+                              class="et-query-devtools-inner-row"
+                              type="button"
+                            >
+                              <span
+                                [attr.data-status]="sequenceStepStatus(sequence, i)"
+                                class="et-query-devtools-status"
+                              ></span>
+                              <span class="et-query-devtools-method">{{ i + 1 }}. {{ link.method }}</span>
+                              <span class="et-query-devtools-route">{{ link.route || 'step ' + (i + 1) }}</span>
+                            </button>
+                            <button
+                              [attr.aria-expanded]="isStepExpanded(entry.id, i)"
+                              (click)="toggleStep(entry.id, i)"
+                              class="et-query-devtools-step-caret-btn"
+                              type="button"
+                              title="Toggle in / out"
+                            >
+                              {{ isStepExpanded(entry.id, i) ? '▾' : '▸' }}
+                            </button>
+                          </div>
 
-                        @if (isStepExpanded(entry.id, i)) {
-                          <div class="et-query-devtools-step-io">
-                            <h5 class="et-query-devtools-section">In · args</h5>
-                            @if (sequence.stepArgs().length > i) {
-                              <et-query-devtools-json [value]="sequence.stepArgs()[i]" />
-                            } @else {
-                              <p class="et-query-devtools-empty">Not run yet.</p>
-                            }
-
-                            @if (snap?.error(); as error) {
-                              <h5 class="et-query-devtools-section">Out · error ({{ error.raw.status }})</h5>
-                              <et-query-devtools-json [value]="error.isList ? error.errors : error.error" />
-                            } @else {
-                              <h5 class="et-query-devtools-section">Out · response</h5>
-                              @if (snap) {
-                                <et-query-devtools-json [value]="snap.response()" />
+                          @if (isStepExpanded(entry.id, i)) {
+                            @let snap = stepSnapshot(sequence, i);
+                            <div class="et-query-devtools-step-io">
+                              <h5 class="et-query-devtools-section">In · args</h5>
+                              @if (sequence.stepArgs().length > i) {
+                                <et-query-devtools-json [value]="sequence.stepArgs()[i]" />
                               } @else {
                                 <p class="et-query-devtools-empty">Not run yet.</p>
                               }
-                            }
-                          </div>
-                        }
-                      </li>
-                    }
-                  </ol>
-                </div>
-              }
-            } @empty {
-              <p class="et-query-devtools-empty">No sequences registered.</p>
-            }
-          </div>
-        }
 
-        <!-- GRAPHQL -->
-        @case ('gql') {
-          <div class="et-query-devtools-scroll">
-            @for (item of gqlEntries(); track item.entry.id) {
-              <div class="et-query-devtools-card">
-                <div class="et-query-devtools-card-head">
-                  <span [attr.data-status]="queryStatus(item.query)" class="et-query-devtools-status"></span>
-                  <span class="et-query-devtools-method">{{ item.entry.meta.method }}</span>
-                  <span class="et-query-devtools-route">{{ item.entry.meta.route || '—' }}</span>
-                  <button (click)="executeQuery(item.query, false)" class="et-query-devtools-btn" type="button">
-                    Execute
+                              @if (snap?.error(); as error) {
+                                <h5 class="et-query-devtools-section">Out · error ({{ error.raw.status }})</h5>
+                                <et-query-devtools-json [value]="error.isList ? error.errors : error.error" />
+                              } @else {
+                                <h5 class="et-query-devtools-section">Out · response</h5>
+                                @if (snap) {
+                                  <et-query-devtools-json [value]="snap.response()" />
+                                } @else {
+                                  <p class="et-query-devtools-empty">Not run yet.</p>
+                                }
+                              }
+                            </div>
+                          }
+                        </li>
+                      }
+                    </ol>
+                  </div>
+                }
+              } @empty {
+                <p class="et-query-devtools-empty">No sequences registered.</p>
+              }
+            </div>
+
+            @if (sequenceSelectedQuery(); as sel) {
+              <aside class="et-query-devtools-drawer">
+                <div class="et-query-devtools-drawer-head">
+                  <span>Query detail</span>
+                  <button
+                    (click)="sequenceSelectedQueryId.set(null)"
+                    class="et-query-devtools-close"
+                    type="button"
+                    title="Close detail"
+                  >
+                    ✕
                   </button>
                 </div>
-
-                <h5 class="et-query-devtools-section">Document</h5>
-                <pre class="et-query-devtools-code">{{ item.entry.meta.gqlQuery }}</pre>
-
-                <h5 class="et-query-devtools-section">Variables</h5>
-                <et-query-devtools-json [value]="item.query.args()" />
-
-                @if (item.query.error(); as error) {
-                  <h5 class="et-query-devtools-section">Error ({{ error.raw.status }})</h5>
-                  <et-query-devtools-json [value]="error.isList ? error.errors : error.error" />
-                } @else {
-                  <h5 class="et-query-devtools-section">Response</h5>
-                  <et-query-devtools-json [value]="item.query.response()" />
-                }
-              </div>
-            } @empty {
-              <p class="et-query-devtools-empty">No GraphQL queries registered.</p>
+                <ng-container *ngTemplateOutlet="queryDetailTpl; context: { sel }" />
+              </aside>
             }
           </div>
         }
@@ -306,15 +326,39 @@
                   </span>
                 </div>
                 <dl class="et-query-devtools-meta">
-                  <dt>Client</dt>
-                  <dd>{{ entry.meta.clientName || '—' }}</dd>
+                  <dt>Base URL</dt>
+                  <dd class="et-query-devtools-mono">{{ entry.meta.clientBaseUrl || entry.meta.clientName || '—' }}</dd>
                   <dt>Access token</dt>
                   <dd>{{ auth.accessToken() ? 'present' : 'none' }}</dd>
                   <dt>Refresh token</dt>
                   <dd>{{ auth.refreshToken() ? 'present' : 'none' }}</dd>
+                  @if (authTokenExpiry(auth); as expiry) {
+                    <dt>Token expires in</dt>
+                    <dd>{{ expiry }}</dd>
+                  }
                   @if (auth.executionState(); as state) {
                     <dt>Execution state</dt>
                     <dd>{{ state.type }} · {{ state.state }}</dd>
+                  }
+                  @if (authQueryKeys(auth).length) {
+                    <dt>Queries</dt>
+                    <dd>
+                      <div class="et-query-devtools-chips">
+                        @for (key of authQueryKeys(auth); track key) {
+                          <span class="et-query-devtools-chip">{{ key }}</span>
+                        }
+                      </div>
+                    </dd>
+                  }
+                  @if (authFeatures(auth).length) {
+                    <dt>Features</dt>
+                    <dd>
+                      <div class="et-query-devtools-chips">
+                        @for (feature of authFeatures(auth); track feature) {
+                          <span class="et-query-devtools-chip">{{ feature }}</span>
+                        }
+                      </div>
+                    </dd>
                   }
                 </dl>
 
@@ -393,7 +437,7 @@
             @for (client of cacheView(); track client.name) {
               <div class="et-query-devtools-card">
                 <div class="et-query-devtools-card-head">
-                  <strong>{{ client.name }}</strong>
+                  <strong class="et-query-devtools-mono">{{ client.baseUrl || client.name }}</strong>
                   <span class="et-query-devtools-count">{{ client.entries.length }} entries</span>
                 </div>
                 <table class="et-query-devtools-table">
@@ -454,7 +498,7 @@
               <thead>
                 <tr>
                   <th>Time</th>
-                  <th>Client</th>
+                  <th>Base URL</th>
                   <th>Type</th>
                   <th>Request</th>
                 </tr>
@@ -463,7 +507,7 @@
                 @for (event of eventLog(); track event.id) {
                   <tr [attr.data-status]="event.type === 'request-error' ? 'error' : 'success'">
                     <td>{{ formatTime(event.timestamp) }}</td>
-                    <td>{{ event.clientName }}</td>
+                    <td class="et-query-devtools-mono">{{ event.client }}</td>
                     <td>
                       {{ event.type === 'request-error' ? 'error ' + event.status : 'success' }}
                       @if (event.isSecure) {
@@ -492,9 +536,9 @@
       <div class="et-query-devtools-inner-queries">
         @for (link of links; track $index) {
           <button
-            [class.et-query-devtools-inner-row--active]="selectedQueryId() === link.id"
+            [class.et-query-devtools-inner-row--active]="stackSelectedQueryId() === link.id"
             [disabled]="!link.id"
-            (click)="inspectQuery(link.id)"
+            (click)="stackSelectedQueryId.set(link.id)"
             class="et-query-devtools-inner-row"
             type="button"
           >
@@ -518,6 +562,9 @@
         <button (click)="executeQuery(sel.query, false)" class="et-query-devtools-btn" type="button">Execute</button>
         <button (click)="executeQuery(sel.query, true)" class="et-query-devtools-btn" type="button">Cached</button>
         <button (click)="resetQuery(sel.query)" class="et-query-devtools-btn" type="button">Reset</button>
+        <button (click)="copyReport(sel.entry, sel.query)" class="et-query-devtools-btn" type="button">
+          {{ copiedReport() ? '✓ Copied' : 'Copy report' }}
+        </button>
         <span class="et-query-devtools-actions-label">Edit</span>
         <button (click)="openResponseEditor(sel.query)" class="et-query-devtools-btn" type="button">Response</button>
         <button (click)="openArgsEditor(sel.query)" class="et-query-devtools-btn" type="button">Replay args</button>
@@ -564,8 +611,8 @@
       }
 
       <dl class="et-query-devtools-meta">
-        <dt>Client</dt>
-        <dd>{{ sel.entry.meta.clientName || '—' }}</dd>
+        <dt>Base URL</dt>
+        <dd class="et-query-devtools-mono">{{ sel.entry.meta.clientBaseUrl || sel.entry.meta.clientName || '—' }}</dd>
         <dt>Status</dt>
         <dd>{{ queryStatus(sel.query) }}</dd>
         <dt>Cache key</dt>
@@ -574,19 +621,21 @@
         <dd>{{ formatTime(sel.query.lastTimeExecutedAt()) }}</dd>
         <dt>Triggered by</dt>
         <dd>{{ sel.query.triggeredBy() || 'user' }}</dd>
+        @if (sel.entry.meta.featureTypes?.length) {
+          <dt>Features</dt>
+          <dd>
+            <div class="et-query-devtools-chips">
+              @for (feature of sel.entry.meta.featureTypes; track feature) {
+                <span class="et-query-devtools-chip">{{ featureLabel(feature) }}</span>
+              }
+            </div>
+          </dd>
+        }
       </dl>
-
-      @if (sel.entry.meta.featureTypes?.length) {
-        <div class="et-query-devtools-chips">
-          @for (feature of sel.entry.meta.featureTypes; track feature) {
-            <span class="et-query-devtools-chip">{{ featureLabel(feature) }}</span>
-          }
-        </div>
-      }
 
       @if (sel.entry.meta.gqlQuery; as gqlQuery) {
         <h5 class="et-query-devtools-section">GraphQL document</h5>
-        <pre class="et-query-devtools-code">{{ gqlQuery }}</pre>
+        <pre class="et-query-devtools-code">{{ gqlDocument(gqlQuery) }}</pre>
       }
 
       <div class="et-query-devtools-section-row">

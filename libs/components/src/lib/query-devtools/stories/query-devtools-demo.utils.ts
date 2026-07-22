@@ -9,6 +9,7 @@ import {
   createWebSocketClient,
   gql,
   withAuthenticationQuery,
+  withPersistentAuth,
   withRefreshQuery,
 } from '@ethlete/query';
 import { Paginated } from '@ethlete/types';
@@ -167,6 +168,14 @@ export const devtoolsDemoAuthProvider = createBearerAuthProvider({
     withRefreshQuery('tokenRefresh', {
       queryCreator: refresh,
       extractTokens: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
+    }),
+  ],
+  features: [
+    withPersistentAuth({
+      autoLogin: {
+        queryKey: 'tokenRefresh',
+        buildArgs: (token) => ({ body: { refresh_token: token } }),
+      },
     }),
   ],
 });

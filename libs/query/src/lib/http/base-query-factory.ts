@@ -228,6 +228,7 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
         handle: query,
         meta: {
           clientName: getQueryClientName(client),
+          clientBaseUrl: deps.client.baseUrl,
           route: stringifyQueryRoute(
             (options.creatorInternals as { route?: unknown }).route ??
               (options.creator as { route?: unknown } | undefined)?.route,
