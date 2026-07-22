@@ -81,7 +81,8 @@ components are bound to, which the browser Network tab can't do:
 ## Persistence
 
 Open/closed state, the active tab and the selected client are persisted to
-`localStorage` under `ethlete:query:devtools:v3`.
+`sessionStorage` under `ethlete:query:devtools:v3`, so the panel survives a page
+reload within the tab session without leaking devtools state across sessions.
 
 ## Accessibility
 

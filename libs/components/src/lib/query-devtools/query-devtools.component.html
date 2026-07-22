@@ -398,14 +398,10 @@
       </div>
 
       <div class="et-query-devtools-actions">
+        <span class="et-query-devtools-actions-label">Run</span>
         <button (click)="executeQuery(sel.query, false)" class="et-query-devtools-btn" type="button">Execute</button>
-        <button (click)="executeQuery(sel.query, true)" class="et-query-devtools-btn" type="button">
-          Execute (cached)
-        </button>
+        <button (click)="executeQuery(sel.query, true)" class="et-query-devtools-btn" type="button">Cached</button>
         <button (click)="resetQuery(sel.query)" class="et-query-devtools-btn" type="button">Reset</button>
-      </div>
-
-      <div class="et-query-devtools-actions">
         <span class="et-query-devtools-actions-label">Edit</span>
         <button (click)="openResponseEditor(sel.query)" class="et-query-devtools-btn" type="button">Response</button>
         <button (click)="openArgsEditor(sel.query)" class="et-query-devtools-btn" type="button">Replay args</button>

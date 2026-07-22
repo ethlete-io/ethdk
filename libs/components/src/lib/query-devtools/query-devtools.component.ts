@@ -49,7 +49,7 @@ const MAX_EVENTS = 100;
 
 const readPersistedState = (): PersistedState => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = sessionStorage.getItem(STORAGE_KEY);
     return raw ? (JSON.parse(raw) as PersistedState) : {};
   } catch {
     return {};
@@ -228,7 +228,7 @@ export class QueryDevtoolsComponent {
       };
 
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       } catch {
         // ignore (private mode / disabled storage)
       }
@@ -351,10 +351,13 @@ export class QueryDevtoolsComponent {
   // --- Force states ---
 
   protected forceLoading(query: AnyQuery) {
+    // `executionState` prioritises loading > error > response, so clear the others to switch cleanly.
+    query.subtle.setError(null);
     query.subtle.setLoading({ executeTime: Date.now(), progress: null });
   }
 
   protected forceError(query: AnyQuery) {
+    query.subtle.setLoading(null);
     query.subtle.setError(
       createQueryErrorResponse(
         new HttpErrorResponse({
@@ -367,6 +370,8 @@ export class QueryDevtoolsComponent {
   }
 
   protected forceEmpty(query: AnyQuery) {
+    query.subtle.setLoading(null);
+    query.subtle.setError(null);
     query.subtle.setResponse(null);
   }
 
