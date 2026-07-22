@@ -68,54 +68,7 @@
 
             <div class="et-query-devtools-detail">
               @if (selectedQuery(); as sel) {
-                <div class="et-query-devtools-detail-head">
-                  <span class="et-query-devtools-method">{{ sel.entry.meta.method }}</span>
-                  <span class="et-query-devtools-route">{{ sel.entry.meta.route || '—' }}</span>
-                </div>
-
-                <div class="et-query-devtools-actions">
-                  <button (click)="executeQuery(sel.query, false)" class="et-query-devtools-btn" type="button">
-                    Execute
-                  </button>
-                  <button (click)="executeQuery(sel.query, true)" class="et-query-devtools-btn" type="button">
-                    Execute (cached)
-                  </button>
-                  <button (click)="resetQuery(sel.query)" class="et-query-devtools-btn" type="button">Reset</button>
-                </div>
-
-                <dl class="et-query-devtools-meta">
-                  <dt>Client</dt>
-                  <dd>{{ sel.entry.meta.clientName || '—' }}</dd>
-                  <dt>Status</dt>
-                  <dd>{{ queryStatus(sel.query) }}</dd>
-                  <dt>Cache key</dt>
-                  <dd class="et-query-devtools-mono">{{ sel.query.id() || '—' }}</dd>
-                  <dt>Last executed</dt>
-                  <dd>{{ formatTime(sel.query.lastTimeExecutedAt()) }}</dd>
-                  <dt>Triggered by</dt>
-                  <dd>{{ sel.query.triggeredBy() || 'user' }}</dd>
-                </dl>
-
-                @if (sel.entry.meta.featureTypes?.length) {
-                  <div class="et-query-devtools-chips">
-                    @for (feature of sel.entry.meta.featureTypes; track feature) {
-                      <span class="et-query-devtools-chip">{{ featureLabel(feature) }}</span>
-                    }
-                  </div>
-                }
-
-                <h4 class="et-query-devtools-section">Args</h4>
-                <pre class="et-query-devtools-json">{{ sel.query.args() | json }}</pre>
-
-                @if (sel.query.error(); as error) {
-                  <h4 class="et-query-devtools-section">Error ({{ error.raw.status }})</h4>
-                  <pre class="et-query-devtools-json et-query-devtools-json--error">{{
-                    error.isList ? error.errors : (error.error | json)
-                  }}</pre>
-                } @else {
-                  <h4 class="et-query-devtools-section">Response</h4>
-                  <pre class="et-query-devtools-json">{{ sel.query.response() | json }}</pre>
-                }
+                <ng-container *ngTemplateOutlet="queryDetailTpl; context: { sel }" />
               } @else {
                 <p class="et-query-devtools-empty">Select a query to inspect it.</p>
               }
@@ -125,69 +78,74 @@
 
         <!-- STACKS -->
         @case ('stacks') {
-          <div class="et-query-devtools-scroll">
-            @for (entry of stackEntries(); track entry.id) {
-              @if (entry.kind === 'paged-query-stack') {
-                @let paged = asPagedStack(entry);
-                <div class="et-query-devtools-card">
-                  <div class="et-query-devtools-card-head">
-                    <span class="et-query-devtools-chip">paged stack</span>
-                    <span class="et-query-devtools-chip et-query-devtools-chip--muted">{{ paged.direction() }}</span>
-                    @if (paged.loading()) {
-                      <span class="et-query-devtools-chip et-query-devtools-chip--loading">loading</span>
-                    }
+          <div class="et-query-devtools-split">
+            <div class="et-query-devtools-scroll">
+              @for (entry of stackEntries(); track entry.id) {
+                @if (entry.kind === 'paged-query-stack') {
+                  @let paged = asPagedStack(entry);
+                  <div class="et-query-devtools-card">
+                    <div class="et-query-devtools-card-head">
+                      <span class="et-query-devtools-chip">paged stack</span>
+                      <span class="et-query-devtools-chip et-query-devtools-chip--muted">{{ paged.direction() }}</span>
+                      @if (paged.loading()) {
+                        <span class="et-query-devtools-chip et-query-devtools-chip--loading">loading</span>
+                      }
+                    </div>
+                    <dl class="et-query-devtools-meta">
+                      <dt>Pages loaded</dt>
+                      <dd>{{ paged.queries().length }}</dd>
+                      <dt>Items</dt>
+                      <dd>{{ paged.items().length }}</dd>
+                      <dt>First page loaded</dt>
+                      <dd>{{ paged.isFirstPageLoaded() }}</dd>
+                      <dt>Last page loaded</dt>
+                      <dd>{{ paged.isLastPageLoaded() }}</dd>
+                    </dl>
+                    <ng-container *ngTemplateOutlet="innerQueriesTpl; context: { links: queriesForStack(paged) }" />
                   </div>
-                  <dl class="et-query-devtools-meta">
-                    <dt>Pages loaded</dt>
-                    <dd>{{ paged.queries().length }}</dd>
-                    <dt>Items</dt>
-                    <dd>{{ paged.items().length }}</dd>
-                    <dt>First page loaded</dt>
-                    <dd>{{ paged.isFirstPageLoaded() }}</dd>
-                    <dt>Last page loaded</dt>
-                    <dd>{{ paged.isLastPageLoaded() }}</dd>
-                  </dl>
-                  <div class="et-query-devtools-inner-queries">
-                    @for (link of queriesForStack(paged); track $index) {
-                      <button (click)="openQueryDetail(link.id)" class="et-query-devtools-pill" type="button">
-                        <span [attr.data-status]="queryStatus(link.query)" class="et-query-devtools-status"></span>
-                        {{ link.query.id() || 'query ' + ($index + 1) }}
-                      </button>
-                    }
+                } @else {
+                  @let stack = asStack(entry);
+                  <div class="et-query-devtools-card">
+                    <div class="et-query-devtools-card-head">
+                      <span class="et-query-devtools-chip">stack</span>
+                      @if (stack.anyLoading()) {
+                        <span class="et-query-devtools-chip et-query-devtools-chip--loading">loading</span>
+                      }
+                      @if (stack.anyError()) {
+                        <span class="et-query-devtools-chip et-query-devtools-chip--error">error</span>
+                      }
+                    </div>
+                    <dl class="et-query-devtools-meta">
+                      <dt>Queries</dt>
+                      <dd>{{ stack.queries().length }}</dd>
+                      <dt>Loading</dt>
+                      <dd>{{ stack.loadingProgress().loaded }} / {{ stack.loadingProgress().total }}</dd>
+                      <dt>Errors</dt>
+                      <dd>{{ stack.errors().length }}</dd>
+                    </dl>
+                    <ng-container *ngTemplateOutlet="innerQueriesTpl; context: { links: queriesForStack(stack) }" />
                   </div>
-                </div>
-              } @else {
-                @let stack = asStack(entry);
-                <div class="et-query-devtools-card">
-                  <div class="et-query-devtools-card-head">
-                    <span class="et-query-devtools-chip">stack</span>
-                    @if (stack.anyLoading()) {
-                      <span class="et-query-devtools-chip et-query-devtools-chip--loading">loading</span>
-                    }
-                    @if (stack.anyError()) {
-                      <span class="et-query-devtools-chip et-query-devtools-chip--error">error</span>
-                    }
-                  </div>
-                  <dl class="et-query-devtools-meta">
-                    <dt>Queries</dt>
-                    <dd>{{ stack.queries().length }}</dd>
-                    <dt>Loading</dt>
-                    <dd>{{ stack.loadingProgress().loaded }} / {{ stack.loadingProgress().total }}</dd>
-                    <dt>Errors</dt>
-                    <dd>{{ stack.errors().length }}</dd>
-                  </dl>
-                  <div class="et-query-devtools-inner-queries">
-                    @for (link of queriesForStack(stack); track $index) {
-                      <button (click)="openQueryDetail(link.id)" class="et-query-devtools-pill" type="button">
-                        <span [attr.data-status]="queryStatus(link.query)" class="et-query-devtools-status"></span>
-                        {{ link.query.id() || 'query ' + ($index + 1) }}
-                      </button>
-                    }
-                  </div>
-                </div>
+                }
+              } @empty {
+                <p class="et-query-devtools-empty">No stacks registered.</p>
               }
-            } @empty {
-              <p class="et-query-devtools-empty">No stacks registered.</p>
+            </div>
+
+            @if (selectedQuery(); as sel) {
+              <aside class="et-query-devtools-drawer">
+                <div class="et-query-devtools-drawer-head">
+                  <span>Query detail</span>
+                  <button
+                    (click)="selectedQueryId.set(null)"
+                    class="et-query-devtools-close"
+                    type="button"
+                    title="Close detail"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <ng-container *ngTemplateOutlet="queryDetailTpl; context: { sel }" />
+              </aside>
             }
           </div>
         }
@@ -206,22 +164,57 @@
                       >step {{ sequence.currentStep() }} / {{ sequence.total }}</span
                     >
                   </div>
-                  <ol class="et-query-devtools-steps">
+
+                  <ol class="et-query-devtools-step-list">
                     @for (i of range(sequence.total); track i) {
-                      <li [attr.data-status]="sequenceStepStatus(sequence, i)" class="et-query-devtools-step">
-                        <span
-                          [attr.data-status]="sequenceStepStatus(sequence, i)"
-                          class="et-query-devtools-status"
-                        ></span>
-                        Step {{ i + 1 }}
+                      @let snap = stepSnapshot(sequence, i);
+                      <li [attr.data-status]="sequenceStepStatus(sequence, i)" class="et-query-devtools-step-item">
+                        <button
+                          [attr.aria-expanded]="isStepExpanded(entry.id, i)"
+                          (click)="toggleStep(entry.id, i)"
+                          class="et-query-devtools-step-toggle"
+                          type="button"
+                        >
+                          <span
+                            [attr.data-status]="sequenceStepStatus(sequence, i)"
+                            class="et-query-devtools-status"
+                          ></span>
+                          <span class="et-query-devtools-step-index">Step {{ i + 1 }}</span>
+                          <span class="et-query-devtools-chip et-query-devtools-chip--muted">
+                            {{ sequenceStepStatus(sequence, i) }}
+                          </span>
+                          <span class="et-query-devtools-step-caret">{{
+                            isStepExpanded(entry.id, i) ? '▾' : '▸'
+                          }}</span>
+                        </button>
+
+                        @if (isStepExpanded(entry.id, i)) {
+                          <div class="et-query-devtools-step-io">
+                            <h5 class="et-query-devtools-section">In · args</h5>
+                            @if (sequence.stepArgs().length > i) {
+                              <pre class="et-query-devtools-json">{{ sequence.stepArgs()[i] | json }}</pre>
+                            } @else {
+                              <p class="et-query-devtools-empty">Not run yet.</p>
+                            }
+
+                            @if (snap?.error(); as error) {
+                              <h5 class="et-query-devtools-section">Out · error ({{ error.raw.status }})</h5>
+                              <pre class="et-query-devtools-json et-query-devtools-json--error">{{
+                                error.isList ? error.errors : (error.error | json)
+                              }}</pre>
+                            } @else {
+                              <h5 class="et-query-devtools-section">Out · response</h5>
+                              @if (snap) {
+                                <pre class="et-query-devtools-json">{{ snap.response() | json }}</pre>
+                              } @else {
+                                <p class="et-query-devtools-empty">Not run yet.</p>
+                              }
+                            }
+                          </div>
+                        }
                       </li>
                     }
                   </ol>
-                  @if (sequence.error(); as error) {
-                    <pre class="et-query-devtools-json et-query-devtools-json--error">{{
-                      error.isList ? error.errors : (error.error | json)
-                    }}</pre>
-                  }
                 </div>
               }
             } @empty {
@@ -355,6 +348,75 @@
         }
       }
     </div>
+
+    <!-- Reusable inner-query list (stacks) — clicking opens the split-view drawer, not a tab switch. -->
+    <ng-template #innerQueriesTpl let-links="links">
+      <div class="et-query-devtools-inner-queries">
+        @for (link of links; track $index) {
+          <button
+            [class.et-query-devtools-inner-row--active]="selectedQueryId() === link.id"
+            [disabled]="!link.id"
+            (click)="inspectQuery(link.id)"
+            class="et-query-devtools-inner-row"
+            type="button"
+          >
+            <span [attr.data-status]="queryStatus(link.query)" class="et-query-devtools-status"></span>
+            <span class="et-query-devtools-method">{{ link.method }}</span>
+            <span class="et-query-devtools-route">{{ link.route || link.query.id() || 'query ' + ($index + 1) }}</span>
+          </button>
+        }
+      </div>
+    </ng-template>
+
+    <!-- Reusable query detail — used by the Queries tab and the stacks split-view drawer. -->
+    <ng-template #queryDetailTpl let-sel="sel">
+      <div class="et-query-devtools-detail-head">
+        <span class="et-query-devtools-method">{{ sel.entry.meta.method }}</span>
+        <span class="et-query-devtools-route">{{ sel.entry.meta.route || '—' }}</span>
+      </div>
+
+      <div class="et-query-devtools-actions">
+        <button (click)="executeQuery(sel.query, false)" class="et-query-devtools-btn" type="button">Execute</button>
+        <button (click)="executeQuery(sel.query, true)" class="et-query-devtools-btn" type="button">
+          Execute (cached)
+        </button>
+        <button (click)="resetQuery(sel.query)" class="et-query-devtools-btn" type="button">Reset</button>
+      </div>
+
+      <dl class="et-query-devtools-meta">
+        <dt>Client</dt>
+        <dd>{{ sel.entry.meta.clientName || '—' }}</dd>
+        <dt>Status</dt>
+        <dd>{{ queryStatus(sel.query) }}</dd>
+        <dt>Cache key</dt>
+        <dd class="et-query-devtools-mono">{{ sel.query.id() || '—' }}</dd>
+        <dt>Last executed</dt>
+        <dd>{{ formatTime(sel.query.lastTimeExecutedAt()) }}</dd>
+        <dt>Triggered by</dt>
+        <dd>{{ sel.query.triggeredBy() || 'user' }}</dd>
+      </dl>
+
+      @if (sel.entry.meta.featureTypes?.length) {
+        <div class="et-query-devtools-chips">
+          @for (feature of sel.entry.meta.featureTypes; track feature) {
+            <span class="et-query-devtools-chip">{{ featureLabel(feature) }}</span>
+          }
+        </div>
+      }
+
+      <h4 class="et-query-devtools-section">Args</h4>
+      <pre class="et-query-devtools-json">{{ sel.query.args() | json }}</pre>
+
+      @if (sel.query.error(); as error) {
+        <h4 class="et-query-devtools-section">Error ({{ error.raw.status }})</h4>
+        <pre class="et-query-devtools-json et-query-devtools-json--error">{{
+          error.isList ? error.errors : (error.error | json)
+        }}</pre>
+      } @else {
+        <h4 class="et-query-devtools-section">Response</h4>
+        <pre class="et-query-devtools-json">{{ sel.query.response() | json }}</pre>
+      }
+    </ng-template>
   </section>
 }
 

@@ -71,6 +71,12 @@ export type QuerySequence<TResponses extends unknown[]> = {
   /** The settled snapshots of every step that has run, grows as the waterfall progresses. */
   snapshots: Signal<AnyQuerySnapshot[]>;
 
+  /**
+   * The resolved input args each step was run with, grows as the waterfall progresses. The value at
+   * index `i` is what {@link QuerySequence.then}'s `mapArgs` produced for step `i` at run time.
+   */
+  stepArgs: Signal<unknown[]>;
+
   /** The responses of every step that has succeeded, grows as the waterfall progresses. */
   responses: Signal<Partial<TResponses>>;
 
@@ -100,6 +106,7 @@ type SequenceState = {
   error: WritableSignal<QueryErrorResponse | null>;
   failedAt: WritableSignal<number | null>;
   snapshots: WritableSignal<AnyQuerySnapshot[]>;
+  stepArgs: WritableSignal<unknown[]>;
   responses: WritableSignal<unknown[]>;
 };
 
@@ -110,6 +117,7 @@ const createSequenceState = (): SequenceState => ({
   error: signal<QueryErrorResponse | null>(null),
   failedAt: signal<number | null>(null),
   snapshots: signal<AnyQuerySnapshot[]>([]),
+  stepArgs: signal<unknown[]>([]),
   responses: signal<unknown[]>([]),
 });
 
@@ -135,9 +143,11 @@ const buildSequence = <TResponses extends unknown[]>(
     state.error.set(null);
     state.failedAt.set(null);
     state.snapshots.set([]);
+    state.stepArgs.set([]);
     state.responses.set([]);
 
     const snapshots: AnyQuerySnapshot[] = [];
+    const stepArgs: unknown[] = [];
     const responses: unknown[] = [];
     let previousResponse: unknown = undefined;
 
@@ -145,6 +155,8 @@ const buildSequence = <TResponses extends unknown[]>(
       state.currentStep.set(i + 1);
 
       const { args } = step.produceArgs(previousResponse, responses);
+      stepArgs.push(args);
+      state.stepArgs.set([...stepArgs]);
       const snapshot = await executeUntilSettled(step.query, { args });
 
       snapshots.push(snapshot);
@@ -190,6 +202,7 @@ const buildSequence = <TResponses extends unknown[]>(
     error: state.error.asReadonly(),
     failedAt: state.failedAt.asReadonly(),
     snapshots: state.snapshots.asReadonly(),
+    stepArgs: state.stepArgs.asReadonly(),
     responses: state.responses.asReadonly() as Signal<Partial<TResponses>>,
     run,
   };

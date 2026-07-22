@@ -1,9 +1,10 @@
-import { JsonPipe } from '@angular/common';
+import { JsonPipe, NgTemplateOutlet } from '@angular/common';
 import { Component, computed, effect, signal, ViewEncapsulation } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
   AnyBearerAuthProvider,
   AnyPagedQueryStack,
+  AnyQuerySnapshot,
   AnyQueryStack,
   Query,
   queryDevtoolsEntries,
@@ -87,7 +88,7 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
   templateUrl: './query-devtools.component.html',
   styleUrl: './query-devtools.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [JsonPipe],
+  imports: [JsonPipe, NgTemplateOutlet],
   host: {
     class: 'et-query-devtools-host',
   },
@@ -112,6 +113,9 @@ export class QueryDevtoolsComponent {
   protected selectedQueryId = signal<string | null>(null);
 
   protected eventLog = signal<EventLogItem[]>([]);
+
+  /** Keys (`<entryId>:<stepIndex>`) of the sequence steps whose in/out detail is expanded. */
+  private expandedSteps = signal<ReadonlySet<string>>(new Set());
 
   private queryEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'query'));
 
@@ -263,22 +267,50 @@ export class QueryDevtoolsComponent {
     return decodeJwtPayload(auth.accessToken());
   }
 
-  protected queriesForStack(stack: AnyQueryStack | AnyPagedQueryStack): { id: string; query: AnyQuery }[] {
+  protected queriesForStack(
+    stack: AnyQueryStack | AnyPagedQueryStack,
+  ): { id: string; query: AnyQuery; method: string; route: string }[] {
     const inner = stack.queries();
     const queryEntries = this.queryEntries();
 
     return inner.map((query) => {
       const entry = queryEntries.find((e) => e.handle === query);
-      return { id: entry?.id ?? '', query: query as AnyQuery };
+      return {
+        id: entry?.id ?? '',
+        query: query as AnyQuery,
+        method: entry?.meta.method ?? '',
+        route: entry?.meta.route ?? '',
+      };
     });
   }
 
-  /** Jumps to the Queries tab and opens the detail view for the given (linked) query id. */
-  protected openQueryDetail(id: string) {
+  /**
+   * Opens the detail for a linked query in a split-view drawer of the current tab, so the stack /
+   * sequence context is not lost by jumping to the Queries tab.
+   */
+  protected inspectQuery(id: string) {
     if (!id) return;
-    this.activeTab.set('queries');
-    this.selectedClientName.set(null);
     this.selectedQueryId.set(id);
+  }
+
+  /** The snapshot of a sequence step, once it has run (holds the args in and the response/error out). */
+  protected stepSnapshot(sequence: QuerySequence<unknown[]>, index: number): AnyQuerySnapshot | null {
+    return sequence.snapshots()[index] ?? null;
+  }
+
+  protected isStepExpanded(entryId: string, index: number) {
+    return this.expandedSteps().has(this.stepKey(entryId, index));
+  }
+
+  protected toggleStep(entryId: string, index: number) {
+    const key = this.stepKey(entryId, index);
+    const next = new Set(this.expandedSteps());
+    if (next.has(key)) {
+      next.delete(key);
+    } else {
+      next.add(key);
+    }
+    this.expandedSteps.set(next);
   }
 
   protected range(length: number): number[] {
@@ -295,6 +327,10 @@ export class QueryDevtoolsComponent {
   protected formatTime(timestamp: number | null) {
     if (!timestamp) return '—';
     return new Date(timestamp).toLocaleTimeString(undefined, { hour12: false });
+  }
+
+  private stepKey(entryId: string, index: number) {
+    return `${entryId}:${index}`;
   }
 
   private pushEvent(event: QueryRepositoryEvent, clientName: string) {
