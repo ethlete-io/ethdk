@@ -42,6 +42,11 @@ type PersistedState = {
   open?: boolean;
   activeTab?: DevtoolsTab;
   selectedClientName?: string | null;
+  selectedQueryId?: string | null;
+  jsonSearch?: string;
+  expandedSteps?: string[];
+  jsonExpanded?: string[];
+  jsonCollapsed?: string[];
 };
 
 const STORAGE_KEY = 'ethlete:query:devtools:v3';
@@ -117,16 +122,23 @@ export class QueryDevtoolsComponent {
   protected open = signal(this.persisted.open ?? false);
   protected activeTab = signal<DevtoolsTab>(this.persisted.activeTab ?? 'queries');
   protected selectedClientName = signal<string | null>(this.persisted.selectedClientName ?? null);
-  protected selectedQueryId = signal<string | null>(null);
+  protected selectedQueryId = signal<string | null>(this.persisted.selectedQueryId ?? null);
 
   protected eventLog = signal<EventLogItem[]>([]);
 
   /** Keys (`<entryId>:<stepIndex>`) of the sequence steps whose in/out detail is expanded. */
-  private expandedSteps = signal<ReadonlySet<string>>(new Set());
+  private expandedSteps = signal<ReadonlySet<string>>(new Set(this.persisted.expandedSteps ?? []));
 
   /** Shared value-explorer search term. */
-  protected jsonSearch = signal('');
+  protected jsonSearch = signal(this.persisted.jsonSearch ?? '');
   protected jsonSearchTerm = computed(() => this.jsonSearch().trim().toLowerCase());
+
+  /** Path-keyed value-explorer expansion overrides (persisted so open trees survive a reload). */
+  protected jsonExpandedPaths = signal<ReadonlySet<string>>(new Set(this.persisted.jsonExpanded ?? []));
+  protected jsonCollapsedPaths = signal<ReadonlySet<string>>(new Set(this.persisted.jsonCollapsed ?? []));
+
+  /** Bound callback passed into the value explorer to persist per-path expansion. Assigned in the constructor. */
+  protected toggleJsonPath: (path: string, expand: boolean) => void;
 
   /** JIT editor state (response / args editing on the selected query). */
   protected editorMode = signal<'none' | 'response' | 'args'>('none');
@@ -208,6 +220,23 @@ export class QueryDevtoolsComponent {
   });
 
   constructor() {
+    // Assigned here (not as an arrow property) so `this` is bound for the value-explorer callback.
+    this.toggleJsonPath = (path: string, expand: boolean) => {
+      const expanded = new Set(this.jsonExpandedPaths());
+      const collapsed = new Set(this.jsonCollapsedPaths());
+
+      if (expand) {
+        expanded.add(path);
+        collapsed.delete(path);
+      } else {
+        collapsed.add(path);
+        expanded.delete(path);
+      }
+
+      this.jsonExpandedPaths.set(expanded);
+      this.jsonCollapsedPaths.set(collapsed);
+    };
+
     // Merge every live repository's event stream into the rolling log, re-subscribing as the set of
     // repositories changes. Composed with RxJS (not a subscribe-in-effect) per the styleguide.
     toObservable(this.repositories)
@@ -225,6 +254,11 @@ export class QueryDevtoolsComponent {
         open: this.open(),
         activeTab: this.activeTab(),
         selectedClientName: this.selectedClientName(),
+        selectedQueryId: this.selectedQueryId(),
+        jsonSearch: this.jsonSearch(),
+        expandedSteps: [...this.expandedSteps()],
+        jsonExpanded: [...this.jsonExpandedPaths()],
+        jsonCollapsed: [...this.jsonCollapsedPaths()],
       };
 
       try {

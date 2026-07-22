@@ -21,7 +21,7 @@ const kindOf = (value: unknown): JsonKind => {
       <div class="et-query-devtools-json-node">
         <button
           [attr.aria-expanded]="effectiveExpanded()"
-          (click)="expanded.set(!expanded())"
+          (click)="toggle()"
           class="et-query-devtools-json-row et-query-devtools-json-toggle"
           type="button"
         >
@@ -38,7 +38,16 @@ const kindOf = (value: unknown): JsonKind => {
         @if (effectiveExpanded()) {
           <div class="et-query-devtools-json-children">
             @for (entry of entries(); track entry.k) {
-              <et-query-devtools-json [value]="entry.v" [nodeKey]="entry.k" [depth]="depth() + 1" [search]="search()" />
+              <et-query-devtools-json
+                [value]="entry.v"
+                [nodeKey]="entry.k"
+                [depth]="depth() + 1"
+                [path]="childPath(entry.k)"
+                [search]="search()"
+                [expandedPaths]="expandedPaths()"
+                [collapsedPaths]="collapsedPaths()"
+                [toggleFn]="toggleFn()"
+              />
             }
           </div>
         }
@@ -66,6 +75,15 @@ export class QueryDevtoolsJsonComponent {
   /** Lowercased search term; when set, the tree auto-expands and matches are highlighted. */
   public search = input('');
 
+  /** Full path of this node from the explorer root, used as the key for persisted expansion. */
+  public path = input('');
+  /** Persisted paths explicitly expanded (overrides the depth default). */
+  public expandedPaths = input<ReadonlySet<string> | null>(null);
+  /** Persisted paths explicitly collapsed (overrides the depth default). */
+  public collapsedPaths = input<ReadonlySet<string> | null>(null);
+  /** When provided, expansion is externally persisted via this callback instead of local state. */
+  public toggleFn = input<((path: string, expand: boolean) => void) | null>(null);
+
   protected kind = computed(() => kindOf(this.value()));
   protected isContainer = computed(() => this.kind() === 'array' || this.kind() === 'object');
 
@@ -78,7 +96,22 @@ export class QueryDevtoolsJsonComponent {
     return [];
   });
 
-  protected expanded = linkedSignal(() => this.depth() < 1);
+  private localExpanded = linkedSignal(() => this.depth() < 1);
+
+  protected expanded = computed(() => {
+    // Externally-persisted mode: resolve from the expanded/collapsed path sets, else the depth default.
+    if (this.toggleFn()) {
+      const path = this.path();
+
+      if (this.collapsedPaths()?.has(path)) return false;
+      if (this.expandedPaths()?.has(path)) return true;
+
+      return this.depth() < 1;
+    }
+
+    return this.localExpanded();
+  });
+
   protected effectiveExpanded = computed(() => (this.search() ? true : this.expanded()));
 
   protected preview = computed(() => {
@@ -107,6 +140,23 @@ export class QueryDevtoolsJsonComponent {
     const term = this.search();
     return !!term && this.display().toLowerCase().includes(term);
   });
+
+  protected childPath(key: string) {
+    const path = this.path();
+    return path ? `${path}.${key}` : key;
+  }
+
+  protected toggle() {
+    const toggleFn = this.toggleFn();
+
+    if (toggleFn) {
+      toggleFn(this.path(), !this.expanded());
+
+      return;
+    }
+
+    this.localExpanded.set(!this.localExpanded());
+  }
 
   protected copyValue() {
     try {

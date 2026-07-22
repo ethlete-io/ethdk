@@ -481,14 +481,35 @@
       </div>
 
       <h5 class="et-query-devtools-section">Args</h5>
-      <et-query-devtools-json [value]="sel.query.args()" [search]="jsonSearchTerm()" />
+      <et-query-devtools-json
+        [value]="sel.query.args()"
+        [search]="jsonSearchTerm()"
+        [expandedPaths]="jsonExpandedPaths()"
+        [collapsedPaths]="jsonCollapsedPaths()"
+        [toggleFn]="toggleJsonPath"
+        path="args"
+      />
 
       @if (sel.query.error(); as error) {
         <h5 class="et-query-devtools-section">Error ({{ error.raw.status }})</h5>
-        <et-query-devtools-json [value]="error.isList ? error.errors : error.error" [search]="jsonSearchTerm()" />
+        <et-query-devtools-json
+          [value]="error.isList ? error.errors : error.error"
+          [search]="jsonSearchTerm()"
+          [expandedPaths]="jsonExpandedPaths()"
+          [collapsedPaths]="jsonCollapsedPaths()"
+          [toggleFn]="toggleJsonPath"
+          path="error"
+        />
       } @else {
         <h5 class="et-query-devtools-section">Response</h5>
-        <et-query-devtools-json [value]="sel.query.response()" [search]="jsonSearchTerm()" />
+        <et-query-devtools-json
+          [value]="sel.query.response()"
+          [search]="jsonSearchTerm()"
+          [expandedPaths]="jsonExpandedPaths()"
+          [collapsedPaths]="jsonCollapsedPaths()"
+          [toggleFn]="toggleJsonPath"
+          path="response"
+        />
       }
     </ng-template>
   </section>

@@ -1,5 +1,4 @@
 import { EnvironmentProviders, isDevMode, makeEnvironmentProviders, Signal, signal } from '@angular/core';
-import { randomId } from '@ethlete/core';
 import type { AnyCreateQueryClientResult } from '../http/query-client';
 import type { CreateQueryCreatorOptions, QueryConfig } from '../http/query-creator';
 import type { QueryFeatureType } from '../http/query-features';
@@ -77,9 +76,26 @@ const entries = signal<QueryDevtoolsEntry[]>([]);
  */
 export const queryDevtoolsEntries: Signal<QueryDevtoolsEntry[]> = entries.asReadonly();
 
+// Per-descriptor counter used to derive stable, reload-deterministic ids. Reset on page load (module
+// re-eval), so the same queries created in the same order get the same ids across reloads — which is
+// what lets the devtools restore the selected query after a reload.
+const idCounters = new Map<string, number>();
+
+const descriptorOf = (entry: Omit<QueryDevtoolsEntry, 'id' | 'createdAt'>): string => {
+  const { kind, meta } = entry;
+
+  if (kind === 'query') return `query|${meta.clientName ?? ''}|${meta.method ?? ''}|${meta.route ?? ''}`;
+  if (kind === 'auth-provider') return `auth-provider|${meta.name ?? ''}`;
+
+  return kind;
+};
+
 /**
  * Registers an entry with the devtools registry. Returns an unregister callback. A no-op (returning
  * a no-op callback) unless {@link provideQueryDevtools} has been called.
+ *
+ * Ids are derived deterministically from a stable descriptor + a per-descriptor sequence number, so
+ * they survive a page reload (letting the UI restore the selected entry) instead of being random.
  * @internal
  */
 export const registerQueryDevtoolsEntry = (
@@ -87,12 +103,20 @@ export const registerQueryDevtoolsEntry = (
 ): (() => void) => {
   if (!devtoolsEnabled) return noop;
 
-  const id = entry.id ?? randomId();
+  let id = entry.id;
+
+  if (!id) {
+    const descriptor = descriptorOf(entry);
+    const seq = idCounters.get(descriptor) ?? 0;
+    idCounters.set(descriptor, seq + 1);
+    id = `${descriptor}#${seq}`;
+  }
+
   const fullEntry: QueryDevtoolsEntry = { ...entry, id, createdAt: Date.now() };
 
   entries.update((list) => [...list, fullEntry]);
 
-  return () => entries.update((list) => list.filter((e) => e.id !== id));
+  return () => entries.update((list) => list.filter((e) => e.id !== fullEntry.id));
 };
 
 let suppressStackRegistration = false;
