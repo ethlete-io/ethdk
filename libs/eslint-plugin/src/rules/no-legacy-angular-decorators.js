@@ -116,7 +116,6 @@ const buildObjectTextWithAppendedProperty = (sourceCode, objectExpression, entry
     return existingText.length === 0 ? `{ ${entryText} }` : `{ ${existingText.join(', ')}, ${entryText} }`;
   }
 
-  const openingBrace = sourceCode.getFirstToken(objectExpression);
   const closingBrace = sourceCode.getLastToken(objectExpression);
   const closingIndent = closingBrace ? getIndent(sourceCode, closingBrace) : '';
   const propertyIndent = properties[0] ? getIndent(sourceCode, properties[0]) : `${closingIndent}  `;
