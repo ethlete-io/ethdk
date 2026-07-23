@@ -235,13 +235,16 @@
     background: var(--_et-table-stripe-solid);
   }
 
-  .et-table-row:hover .et-table-cell.et-table-sticky-start,
-  .et-table-row:hover .et-table-cell.et-table-sticky-end {
-    background: color-mix(
-      in srgb,
-      var(--et-surface-interaction-solid, gray) 8%,
-      var(--et-surface-background-solid, Canvas)
-    );
+  /* Only on real hover-capable pointers — a touch tap otherwise leaves the row stuck "hovered". */
+  @media (hover: hover) {
+    .et-table-row:hover .et-table-cell.et-table-sticky-start,
+    .et-table-row:hover .et-table-cell.et-table-sticky-end {
+      background: color-mix(
+        in srgb,
+        var(--et-surface-interaction-solid, gray) 8%,
+        var(--et-surface-background-solid, Canvas)
+      );
+    }
   }
 
   /* Header/footer pinned cells are corner-sticky (both axes) and sit above the row-pinned cells. */
@@ -335,8 +338,39 @@
     text-align: end;
   }
 
-  .et-table-row:hover .et-table-cell {
-    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 8%, transparent);
+  /* Selected rows carry a persistent accent tint (opaque variant on pinned cells, like stripe/hover). */
+  .et-table-row--selected .et-table-cell {
+    background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 12%, transparent);
+  }
+
+  .et-table-row--selected .et-table-cell.et-table-sticky-start,
+  .et-table-row--selected .et-table-cell.et-table-sticky-end {
+    background: color-mix(
+      in srgb,
+      var(--et-theme-color-primary-solid, gray) 12%,
+      var(--et-surface-background-solid, Canvas)
+    );
+  }
+
+  /* Hover only on real hover-capable pointers, so a touch tap doesn't leave the row stuck grey.
+     A hovered *selected* row keeps its accent (slightly stronger) rather than reverting to grey. */
+  @media (hover: hover) {
+    .et-table-row:hover .et-table-cell {
+      background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 8%, transparent);
+    }
+
+    .et-table-row--selected:hover .et-table-cell {
+      background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 18%, transparent);
+    }
+
+    .et-table-row--selected:hover .et-table-cell.et-table-sticky-start,
+    .et-table-row--selected:hover .et-table-cell.et-table-sticky-end {
+      background: color-mix(
+        in srgb,
+        var(--et-theme-color-primary-solid, gray) 18%,
+        var(--et-surface-background-solid, Canvas)
+      );
+    }
   }
 
   /* Sortable header: the whole label is a button. It fills the cell so the click
@@ -446,6 +480,14 @@
   .et-table-expander-cell {
     justify-content: center;
     padding-inline: 0.25rem;
+  }
+
+  /* Leading checkbox column for multi-selection. The checkbox's own size token (inherited) is
+     dialed down so it sits in scale with the table text rather than the 20px form default. */
+  .et-table-select-cell {
+    justify-content: center;
+    padding-inline: 0.25rem;
+    --et-checkbox-size: 1rem;
   }
 
   .et-table-expander {

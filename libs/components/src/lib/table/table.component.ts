@@ -26,6 +26,7 @@ import {
   RuntimeError,
   signalHostElementDimensions,
 } from '@ethlete/core';
+import { CheckboxComponent } from '../forms/checkbox';
 import { createVirtualWindow } from '../internals/virtual-window';
 import {
   MenuCheckboxGroupComponent,
@@ -79,6 +80,7 @@ const DEFAULT_TRACK = 'minmax(0, 1fr)';
   imports: [
     NgTemplateOutlet,
     DragHandleDirective,
+    CheckboxComponent,
     MenuDirective,
     MenuTriggerDirective,
     MenuSurfaceDirective,
@@ -169,6 +171,15 @@ export class TableComponent<T> {
   /** The set of expanded row keys (by `rowKey`, else row reference). Two-way bindable. */
   public expandedKeys = model<Set<unknown>>(new Set());
 
+  /** Show a leading checkbox column for multi-row selection. @default false */
+  public selectable = input(false);
+
+  /** The set of selected row keys (by `rowKey`, else row reference). Two-way bindable. */
+  public selection = model<Set<unknown>>(new Set());
+
+  /** Gate which rows can be selected. Defaults to all rows (when `selectable`). */
+  public selectableRow = input<(row: T) => boolean>();
+
   /** Allow reordering columns by dragging their headers. @default false */
   public reorderable = input(false);
 
@@ -194,8 +205,13 @@ export class TableComponent<T> {
   // Group-header cells; the first is measured to offset the sub-header row's sticky position.
   private groupCells = viewChildren<ElementRef<HTMLElement>>('groupCell');
 
-  // The expander column header, measured so sticky-start columns clear it.
-  private expanderHeaderCell = viewChildren<ElementRef<HTMLElement>>('expanderHeaderCell');
+  // The leading utility-column headers (select checkbox, expander), measured so pinned data
+  // columns — and the expander itself — clear them.
+  protected selectHeaderCell = viewChildren<ElementRef<HTMLElement>>('selectHeaderCell');
+  protected expanderHeaderCell = viewChildren<ElementRef<HTMLElement>>('expanderHeaderCell');
+
+  // Inline-start offset for the auto-pinned expander column (it sits after the select column).
+  protected expanderStickyOffset = signal(0);
   // Recompute sticky-column offsets when the host resizes (column widths change).
   private hostDimensions = signalHostElementDimensions();
 
@@ -309,7 +325,10 @@ export class TableComponent<T> {
   public templateColumns = computed(() => {
     const tracks = this.visibleColumns().map((column) => column.width ?? DEFAULT_TRACK);
 
+    // Leading utility columns, in render order: expander first, then the select checkbox is
+    // prepended before it so the checkbox is leftmost.
     if (this.expandable()) tracks.unshift('var(--et-table-expander-width, 2.75rem)');
+    if (this.selectable()) tracks.unshift('var(--et-table-select-width, 2.75rem)');
 
     return tracks.join(' ');
   });
@@ -368,6 +387,37 @@ export class TableComponent<T> {
     return [...result];
   });
 
+  /** The currently-rendered rows that can be selected (respects `selectableRow`), for select-all. */
+  private selectableData = computed(() => {
+    const gate = this.selectableRow();
+
+    return gate ? this.rows().filter((row) => gate(row)) : this.rows();
+  });
+
+  /** True when every selectable row in the current data set is selected. */
+  public isAllSelected = computed(() => {
+    const rows = this.selectableData();
+    const selection = this.selection();
+
+    return rows.length > 0 && rows.every((row) => selection.has(this.rowIdentity(row)));
+  });
+
+  /** True when some — but not all — selectable rows are selected (checkbox indeterminate). */
+  public isPartiallySelected = computed(() => {
+    const rows = this.selectableData();
+    const selection = this.selection();
+    const selected = rows.filter((row) => selection.has(this.rowIdentity(row))).length;
+
+    return selected > 0 && selected < rows.length;
+  });
+
+  /** The selected rows within the current data set (selection keys with no matching row are ignored). */
+  public selectedRows = computed(() => {
+    const selection = this.selection();
+
+    return this.rows().filter((row) => selection.has(this.rowIdentity(row)));
+  });
+
   /**
    * Windows {@link rows} to the viewport when {@link virtualScroll} is on: `paddingTop()`/
    * `paddingBottom()` stand in for the rows outside {@link renderedRows}, rendered as spacer
@@ -421,7 +471,12 @@ export class TableComponent<T> {
       const width = (index: number) => cells[index]?.nativeElement.getBoundingClientRect().width ?? 0;
 
       const start: Record<string, number> = {};
-      let left = this.expanderHeaderCell()[0]?.nativeElement.getBoundingClientRect().width ?? 0;
+      // Leading utility columns stack from the edge: select checkbox (at 0), then the expander.
+      const selectWidth = this.selectHeaderCell()[0]?.nativeElement.getBoundingClientRect().width ?? 0;
+
+      this.expanderStickyOffset.set(selectWidth);
+
+      let left = selectWidth + (this.expanderHeaderCell()[0]?.nativeElement.getBoundingClientRect().width ?? 0);
 
       for (let index = 0; index < columns.length; index++) {
         const column = columns[index];
@@ -545,12 +600,12 @@ export class TableComponent<T> {
 
   /** Whether a row is currently expanded. */
   public isExpanded(row: T) {
-    return this.expandedKeys().has(this.expandKey(row));
+    return this.expandedKeys().has(this.rowIdentity(row));
   }
 
   /** Toggle a row's expanded state. */
   public toggleExpanded(row: T) {
-    const key = this.expandKey(row);
+    const key = this.rowIdentity(row);
     const next = new Set(this.expandedKeys());
 
     if (next.has(key)) {
@@ -562,16 +617,60 @@ export class TableComponent<T> {
     this.expandedKeys.set(next);
   }
 
-  protected expandKey(row: T): unknown {
-    const rowKey = this.rowKey();
+  /** Whether a row is selected. */
+  public isSelected(row: T) {
+    return this.selection().has(this.rowIdentity(row));
+  }
 
-    // Coerce to string so expansion keys match their serialized form regardless of whether
-    // rowKey returns a string or a number; without a rowKey, fall back to row identity.
-    return rowKey ? String(rowKey(row)) : row;
+  /** Select or deselect a single row. */
+  public setSelected(row: T, selected: boolean) {
+    const key = this.rowIdentity(row);
+    const next = new Set(this.selection());
+
+    if (selected) {
+      next.add(key);
+    } else {
+      next.delete(key);
+    }
+
+    this.selection.set(next);
+  }
+
+  /** Select all selectable rows in the current data set, or clear them when all are already selected. */
+  public toggleAll() {
+    const rows = this.selectableData();
+
+    if (this.isAllSelected()) {
+      const next = new Set(this.selection());
+
+      for (const row of rows) next.delete(this.rowIdentity(row));
+
+      this.selection.set(next);
+    } else {
+      const next = new Set(this.selection());
+
+      for (const row of rows) next.add(this.rowIdentity(row));
+
+      this.selection.set(next);
+    }
   }
 
   protected canExpand(row: T) {
     return this.expandable() && (this.expandableRow()?.(row) ?? true);
+  }
+
+  protected canSelect(row: T) {
+    return this.selectableRow()?.(row) ?? true;
+  }
+
+  /**
+   * Stable identity for row-keyed state (change tracking, expansion, selection): the string form of
+   * `rowKey` (so it matches its serialized form regardless of string/number), or the row reference.
+   */
+  protected rowIdentity(row: T): unknown {
+    const rowKey = this.rowKey();
+
+    return rowKey ? String(rowKey(row)) : row;
   }
 
   /** Begin a reorder drag: lift a floating ghost of the header, leaving the table markup in place. */

@@ -57,6 +57,8 @@ const MANY_PEOPLE: Person[] = Array.from({ length: 2000 }, (_, i) => makePerson(
         [multiSort]="multiSort()"
         [reorderable]="reorderable()"
         [virtualScroll]="virtualScroll()"
+        [selectable]="selectable()"
+        [rowKey]="rowKey"
         [expandedRowTemplate]="expandable() ? detail : undefined"
         emptyLabel="No people found"
       />
@@ -100,6 +102,7 @@ export class TableStorybookComponent {
   public grouped = input(false);
   public stickyColumns = input(false);
   public footer = input(false);
+  public selectable = input(false);
   public appearance = input<'enclosed' | 'divided' | 'zebra' | 'grid' | 'bare'>('enclosed');
   public density = input<'sm' | 'md' | 'lg'>('md');
   public surface = input('dark');
@@ -162,4 +165,9 @@ export class TableStorybookComponent {
       },
     ]);
   });
+
+  // Stable identity so selection/expansion key by id rather than row reference.
+  protected rowKey(person: Person) {
+    return person.id;
+  }
 }

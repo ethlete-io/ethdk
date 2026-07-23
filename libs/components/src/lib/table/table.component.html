@@ -6,6 +6,9 @@
 >
   @if (hasGroups()) {
     <div class="et-table-group-row" role="row">
+      @if (selectable()) {
+        <div class="et-table-group-cell" aria-hidden="true"></div>
+      }
       @if (expandable()) {
         <div class="et-table-group-cell" aria-hidden="true"></div>
       }
@@ -27,10 +30,27 @@
   }
 
   <div class="et-table-header-row" role="row">
-    @if (expandable()) {
+    @if (selectable()) {
       <div
+        #selectHeaderCell
         [class.et-table-sticky-start]="hasStickyStart()"
         [style.inset-inline-start.px]="hasStickyStart() ? 0 : null"
+        class="et-table-header-cell et-table-select-cell"
+        role="columnheader"
+      >
+        <et-checkbox
+          [checked]="isAllSelected()"
+          [indeterminate]="isPartiallySelected()"
+          (checkedChange)="toggleAll()"
+          aria-label="Select all rows"
+        />
+      </div>
+    }
+    @if (expandable()) {
+      <div
+        #expanderHeaderCell
+        [class.et-table-sticky-start]="hasStickyStart()"
+        [style.inset-inline-start.px]="hasStickyStart() ? expanderStickyOffset() : null"
         class="et-table-header-cell et-table-expander-cell"
         role="columnheader"
         aria-hidden="true"
@@ -130,12 +150,33 @@
     ></div>
   }
 
-  @for (row of renderedRows(); track expandKey(row); let index = $index) {
-    <div [class.et-table-row--stripe]="(rowIndexOffset() + index) % 2 === 1" class="et-table-row" role="row">
-      @if (expandable()) {
+  @for (row of renderedRows(); track rowIdentity(row); let index = $index) {
+    <div
+      [class.et-table-row--stripe]="(rowIndexOffset() + index) % 2 === 1"
+      [class.et-table-row--selected]="selectable() && isSelected(row)"
+      class="et-table-row"
+      role="row"
+    >
+      @if (selectable()) {
         <div
           [class.et-table-sticky-start]="hasStickyStart()"
           [style.inset-inline-start.px]="hasStickyStart() ? 0 : null"
+          class="et-table-cell et-table-select-cell"
+          role="gridcell"
+        >
+          @if (canSelect(row)) {
+            <et-checkbox
+              [checked]="isSelected(row)"
+              (checkedChange)="setSelected(row, $event)"
+              aria-label="Select row"
+            />
+          }
+        </div>
+      }
+      @if (expandable()) {
+        <div
+          [class.et-table-sticky-start]="hasStickyStart()"
+          [style.inset-inline-start.px]="hasStickyStart() ? expanderStickyOffset() : null"
           class="et-table-cell et-table-expander-cell"
           role="gridcell"
         >
@@ -213,10 +254,19 @@
 
   @if (hasFooter()) {
     <div class="et-table-footer-row" role="row">
-      @if (expandable()) {
+      @if (selectable()) {
         <div
           [class.et-table-sticky-start]="hasStickyStart()"
           [style.inset-inline-start.px]="hasStickyStart() ? 0 : null"
+          class="et-table-footer-cell et-table-select-cell"
+          role="gridcell"
+          aria-hidden="true"
+        ></div>
+      }
+      @if (expandable()) {
+        <div
+          [class.et-table-sticky-start]="hasStickyStart()"
+          [style.inset-inline-start.px]="hasStickyStart() ? expanderStickyOffset() : null"
           class="et-table-footer-cell et-table-expander-cell"
           role="gridcell"
           aria-hidden="true"

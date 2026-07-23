@@ -522,6 +522,68 @@ describe('TableComponent', () => {
     });
   });
 
+  describe('selection', () => {
+    // Exercises the selection logic directly (the rendered checkbox column is verified in Storybook).
+    const setup = (data = UNSORTED) => {
+      const fixture = create(columns(), data);
+      fixture.componentRef.setInput('rowKey', (row: Person) => row.id);
+      fixture.detectChanges();
+
+      return fixture.componentInstance;
+    };
+
+    it('selects and deselects a single row (keyed by rowKey)', () => {
+      const table = setup();
+      const row = UNSORTED[0]!;
+
+      expect(table.isSelected(row)).toBe(false);
+
+      table.setSelected(row, true);
+      expect(table.isSelected(row)).toBe(true);
+      expect(table.selection().size).toBe(1);
+
+      table.setSelected(row, false);
+      expect(table.isSelected(row)).toBe(false);
+    });
+
+    it('toggleAll selects every row, then clears', () => {
+      const table = setup();
+
+      expect(table.isAllSelected()).toBe(false);
+
+      table.toggleAll();
+      expect(table.isAllSelected()).toBe(true);
+      expect(table.selectedRows()).toHaveLength(UNSORTED.length);
+
+      table.toggleAll();
+      expect(table.selection().size).toBe(0);
+    });
+
+    it('reports a partial selection as indeterminate', () => {
+      const table = setup();
+
+      table.setSelected(UNSORTED[0]!, true);
+
+      expect(table.isPartiallySelected()).toBe(true);
+      expect(table.isAllSelected()).toBe(false);
+    });
+
+    it('excludes rows blocked by selectableRow from select-all', () => {
+      const fixture = create(columns(), UNSORTED);
+      fixture.componentRef.setInput('rowKey', (row: Person) => row.id);
+      fixture.componentRef.setInput('selectableRow', (row: Person) => row.role !== 'Viewer');
+      fixture.detectChanges();
+      const table = fixture.componentInstance;
+
+      table.toggleAll();
+
+      // UNSORTED: Charlie (Viewer), Ada (Admin), Bob (Editor) → only the two non-Viewers select
+      expect(table.selectedRows()).toHaveLength(2);
+      expect(table.selectedRows().every((row) => row.role !== 'Viewer')).toBe(true);
+      expect(table.isAllSelected()).toBe(true);
+    });
+  });
+
   describe('sticky columns & footer', () => {
     it('hasStickyStart reflects a start-pinned column; end offsets are null when unpinned', () => {
       const cols = tableColumns<Person>([

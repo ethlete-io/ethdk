@@ -18,6 +18,7 @@ export default {
     grouped: false,
     stickyColumns: false,
     footer: false,
+    selectable: false,
     surface: 'dark',
   },
   argTypes: {
@@ -33,6 +34,7 @@ export default {
     grouped: { control: 'boolean' },
     stickyColumns: { control: 'boolean' },
     footer: { control: 'boolean' },
+    selectable: { control: 'boolean' },
     surface: { control: 'text' },
   },
 } as Meta<TableStorybookComponent>;
@@ -128,6 +130,19 @@ export const StickyColumns: Story = {
         story:
           'Give columns `sticky: "start"` / `"end"` to pin them while the table scrolls horizontally. ' +
           'Here Name pins left and Joined pins right; scroll sideways to see the middle columns pass behind.',
+      },
+    },
+  },
+};
+
+export const Selectable: Story = {
+  args: { selectable: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'With `selectable`, a leading checkbox column drives a two-way `selection` set of row keys; the ' +
+          'header checkbox selects/clears all rows (indeterminate when only some are selected).',
       },
     },
   },
