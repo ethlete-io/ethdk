@@ -47,7 +47,7 @@ const PEOPLE: Person[] = Array.from({ length: 40 }, (_, i) => {
         class="overflow-auto rounded-xl border border-black/10 dark:border-white/10"
         data-testid="scroll-container"
       >
-        <et-table [data]="rows()" [columns]="columns()" emptyLabel="No people found" />
+        <et-table [data]="rows()" [columns]="columns()" [multiSort]="multiSort()" emptyLabel="No people found" />
       </div>
     </div>
 
@@ -73,6 +73,7 @@ export class TableStorybookComponent {
   public rowCount = input(6);
   public constrainHeight = input(false);
   public empty = input(false);
+  public multiSort = input(false);
   public surface = input('dark');
 
   public roleCell = viewChild<TemplateRef<TableCellContext<Person, Person['role']>>>('roleCell');
@@ -81,10 +82,17 @@ export class TableStorybookComponent {
 
   protected columns = computed(() =>
     tableColumns<Person>([
-      { key: 'name', header: 'Name', value: (person) => person.name, width: 'minmax(0, 2fr)' },
-      { key: 'email', header: 'Email', value: (person) => person.email, width: 'minmax(0, 2fr)' },
+      { key: 'name', header: 'Name', value: (person) => person.name, sortable: true, width: 'minmax(0, 2fr)' },
+      { key: 'email', header: 'Email', value: (person) => person.email, sortable: true, width: 'minmax(0, 2fr)' },
       { key: 'role', header: 'Role', value: (person) => person.role, cell: this.roleCell(), width: 'minmax(0, 1fr)' },
-      { key: 'joined', header: 'Joined', value: (person) => person.joinedAt, align: 'end', width: 'minmax(0, 1fr)' },
+      {
+        key: 'joined',
+        header: 'Joined',
+        value: (person) => person.joinedAt,
+        sortable: true,
+        align: 'end',
+        width: 'minmax(0, 1fr)',
+      },
     ]),
   );
 }

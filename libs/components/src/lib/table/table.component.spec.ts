@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RuntimeError } from '@ethlete/core';
 import { tableColumns } from './table-columns';
 import { TABLE_ERROR_CODES } from './table-errors';
+import { sortRows } from './table-sort';
 import { TableComponent } from './table.component';
 import { AnyTableColumn } from './table.types';
 
@@ -10,6 +11,12 @@ type Person = { id: number; name: string; role: string };
 const PEOPLE: Person[] = [
   { id: 1, name: 'Ada', role: 'Admin' },
   { id: 2, name: 'Alan', role: 'Viewer' },
+];
+
+const UNSORTED: Person[] = [
+  { id: 3, name: 'Charlie', role: 'Viewer' },
+  { id: 1, name: 'Ada', role: 'Admin' },
+  { id: 2, name: 'Bob', role: 'Editor' },
 ];
 
 const columns = (roleHidden = false) =>
@@ -92,5 +99,87 @@ describe('TableComponent', () => {
 
     expect(error).toBeInstanceOf(RuntimeError);
     expect((error as RuntimeError<number>).code).toBe(TABLE_ERROR_CODES.DUPLICATE_COLUMN_KEY);
+  });
+
+  describe('sorting', () => {
+    const sortableColumns = () =>
+      tableColumns<Person>([
+        { key: 'name', header: 'Name', value: (person) => person.name, sortable: true },
+        { key: 'role', header: 'Role', value: (person) => person.role, sortable: true },
+      ]);
+
+    it('sortRows sorts ascending and descending by a column key', () => {
+      const cols = sortableColumns();
+
+      expect(
+        sortRows({ rows: UNSORTED, sort: [{ key: 'name', direction: 'asc' }], columns: cols }).map((r) => r.name),
+      ).toEqual(['Ada', 'Bob', 'Charlie']);
+      expect(
+        sortRows({ rows: UNSORTED, sort: [{ key: 'name', direction: 'desc' }], columns: cols }).map((r) => r.name),
+      ).toEqual(['Charlie', 'Bob', 'Ada']);
+    });
+
+    it('sortRows sinks nullish values to the bottom regardless of direction', () => {
+      const rows = [{ v: 2 }, { v: null }, { v: 1 }] as { v: number | null }[];
+      const cols = tableColumns<{ v: number | null }>([{ key: 'v', value: (r) => r.v }]);
+
+      expect(sortRows({ rows, sort: [{ key: 'v', direction: 'asc' }], columns: cols }).map((r) => r.v)).toEqual([
+        1,
+        2,
+        null,
+      ]);
+      expect(sortRows({ rows, sort: [{ key: 'v', direction: 'desc' }], columns: cols }).map((r) => r.v)).toEqual([
+        2,
+        1,
+        null,
+      ]);
+    });
+
+    it('client sort mode reorders the rendered rows when a header is toggled', () => {
+      const { componentInstance: table } = create(sortableColumns(), UNSORTED);
+
+      expect(table.rows().map((r) => r.name)).toEqual(['Charlie', 'Ada', 'Bob']);
+
+      table.toggleSort('name');
+      expect(table.rows().map((r) => r.name)).toEqual(['Ada', 'Bob', 'Charlie']);
+    });
+
+    it('toggleSort cycles a column asc → desc → off (single-sort replaces others)', () => {
+      const { componentInstance: table } = create(sortableColumns(), UNSORTED);
+
+      table.toggleSort('name');
+      expect(table.sort()).toEqual([{ key: 'name', direction: 'asc' }]);
+      table.toggleSort('name');
+      expect(table.sort()).toEqual([{ key: 'name', direction: 'desc' }]);
+      table.toggleSort('name');
+      expect(table.sort()).toEqual([]);
+
+      // single-sort: sorting another column replaces the first
+      table.toggleSort('name');
+      table.toggleSort('role');
+      expect(table.sort()).toEqual([{ key: 'role', direction: 'asc' }]);
+    });
+
+    it('multiSort accumulates sorts across columns', () => {
+      const fixture = create(sortableColumns(), UNSORTED);
+      fixture.componentRef.setInput('multiSort', true);
+      fixture.detectChanges();
+
+      fixture.componentInstance.toggleSort('role');
+      fixture.componentInstance.toggleSort('name');
+      expect(fixture.componentInstance.sort()).toEqual([
+        { key: 'role', direction: 'asc' },
+        { key: 'name', direction: 'asc' },
+      ]);
+    });
+
+    it('server sort mode leaves the row order untouched', () => {
+      const fixture = create(sortableColumns(), UNSORTED);
+      fixture.componentRef.setInput('sortMode', 'server');
+      fixture.detectChanges();
+
+      fixture.componentInstance.toggleSort('name');
+      expect(fixture.componentInstance.rows().map((r) => r.name)).toEqual(['Charlie', 'Ada', 'Bob']);
+    });
   });
 });

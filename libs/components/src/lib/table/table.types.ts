@@ -3,6 +3,17 @@ import { TemplateRef } from '@angular/core';
 /** Horizontal alignment of a column's header and cells. */
 export type TableColumnAlign = 'start' | 'center' | 'end';
 
+/** A comparable value a column can be sorted by. */
+export type TableSortValue = string | number | Date | boolean | null | undefined;
+
+export type TableSortDirection = 'asc' | 'desc';
+
+/** One column's sort, by column `key`. Sort state is an ordered list of these. */
+export type TableSort = {
+  key: string;
+  direction: TableSortDirection;
+};
+
 /** The context passed to a custom cell template. */
 export type TableCellContext<T, TValue> = {
   /** The row. */
@@ -33,6 +44,12 @@ export type TableColumn<T, TValue = unknown> = {
 
   /** Typed accessor for the cell's value. Rendered directly unless `cell` is set. */
   value: (row: T) => TValue;
+
+  /** Allow sorting by this column (renders a sortable header). @default false */
+  sortable?: boolean;
+
+  /** Comparable value to sort by. Defaults to `value`. Use when the display value isn't comparable. */
+  sortValue?: (row: T) => TableSortValue;
 
   /** Custom cell template. Receives {@link TableCellContext}. */
   cell?: TemplateRef<TableCellContext<T, TValue>>;

@@ -84,6 +84,64 @@
     background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 8%, transparent);
   }
 
+  /* Sortable header: the whole label is a button. It fills the cell so the click
+     target matches the header, and keeps the header's alignment via justify. */
+  .et-table-sort-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: inherit;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  .et-table-header-cell:where([data-align='center']) .et-table-sort-button {
+    margin-inline: auto;
+  }
+
+  .et-table-header-cell:where([data-align='end']) .et-table-sort-button {
+    margin-inline-start: auto;
+  }
+
+  .et-table-sort-indicator {
+    flex: none;
+    inline-size: 0.85em;
+    font-size: 0.85em;
+    line-height: 1;
+    opacity: 0.35;
+  }
+
+  .et-table-sort-indicator::before {
+    content: '↕';
+  }
+
+  .et-table-sort-indicator:where([data-direction='asc']) {
+    opacity: 1;
+  }
+
+  .et-table-sort-indicator:where([data-direction='asc'])::before {
+    content: '↑';
+  }
+
+  .et-table-sort-indicator:where([data-direction='desc']) {
+    opacity: 1;
+  }
+
+  .et-table-sort-indicator:where([data-direction='desc'])::before {
+    content: '↓';
+  }
+
+  .et-table-sort-button:hover .et-table-sort-indicator,
+  .et-table-sort-button:focus-visible .et-table-sort-indicator {
+    opacity: 0.7;
+  }
+
   .et-table-empty-cell {
     grid-column: 1 / -1;
     padding: 2rem var(--et-table-cell-padding-inline);

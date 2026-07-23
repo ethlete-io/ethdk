@@ -1,8 +1,9 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, input, isDevMode, linkedSignal, ViewEncapsulation } from '@angular/core';
+import { Component, computed, input, isDevMode, linkedSignal, model, ViewEncapsulation } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
+import { sortRows } from './table-sort';
 import { TABLE_ERROR_CODES } from './table-errors';
-import { AnyTableColumn, TableState } from './table.types';
+import { AnyTableColumn, TableSort, TableSortDirection, TableState } from './table.types';
 
 const DEFAULT_TRACK = 'minmax(0, 1fr)';
 
@@ -45,6 +46,23 @@ export class TableComponent<T> {
 
   /** Text shown when there are no rows and no `[etTableEmpty]` content is projected. */
   public emptyLabel = input('No data');
+
+  /**
+   * The active sort, as an ordered list of `{ key, direction }`. Two-way bindable.
+   * In `'client'` mode the table sorts rows by it; in `'server'` mode it's yours to
+   * feed into query args.
+   */
+  public sort = model<TableSort[]>([]);
+
+  /** Allow more than one column to be sorted at once. @default false */
+  public multiSort = input(false);
+
+  /**
+   * `'client'` sorts the rows in the browser via {@link sortRows}; `'server'`
+   * leaves rows untouched so the backend can sort.
+   * @default 'client'
+   */
+  public sortMode = input<'client' | 'server'>('client');
 
   // Column order + visibility overrides reset when the `columns` input changes, but
   // a manual restoreState() persists until then (linkedSignal semantics).
@@ -104,8 +122,14 @@ export class TableComponent<T> {
     })),
   }));
 
-  /** The rendered rows. */
-  public rows = computed(() => this.data());
+  /** The rendered rows — client-sorted when `sortMode` is `'client'`. */
+  public rows = computed(() => {
+    const data = this.data();
+
+    if (this.sortMode() === 'server') return [...data];
+
+    return sortRows({ rows: data, sort: this.sort(), columns: this.columns() });
+  });
 
   /** Apply a previously captured {@link TableState} (column order + visibility). */
   public restoreState(next: TableState) {
@@ -113,7 +137,37 @@ export class TableComponent<T> {
     this.hiddenColumns.set(new Set(next.columns.filter((column) => column.hidden).map((column) => column.key)));
   }
 
+  /** The sort direction for a column key, or `null` when it isn't sorted. */
+  public sortDirection(key: string): TableSortDirection | null {
+    return this.sort().find((entry) => entry.key === key)?.direction ?? null;
+  }
+
+  /**
+   * Cycle a column's sort: unsorted → ascending → descending → unsorted. In
+   * single-sort mode this replaces any other sort; with `multiSort` it toggles
+   * this column while keeping the others (appended in click order).
+   */
+  public toggleSort(key: string) {
+    const current = this.sort();
+    const direction = this.sortDirection(key);
+    const others = this.multiSort() ? current.filter((entry) => entry.key !== key) : [];
+
+    if (direction === null) {
+      this.sort.set([...others, { key, direction: 'asc' }]);
+    } else if (direction === 'asc') {
+      this.sort.set([...others, { key, direction: 'desc' }]);
+    } else {
+      this.sort.set(others);
+    }
+  }
+
   protected trackRow(row: T): string | number | T {
     return this.rowKey()?.(row) ?? row;
+  }
+
+  protected ariaSort(key: string): 'ascending' | 'descending' | 'none' {
+    const direction = this.sortDirection(key);
+
+    return direction === 'asc' ? 'ascending' : direction === 'desc' ? 'descending' : 'none';
   }
 }

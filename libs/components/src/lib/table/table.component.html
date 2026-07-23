@@ -1,9 +1,23 @@
 <div [style.grid-template-columns]="templateColumns()" class="et-table" role="grid">
   <div class="et-table-header-row" role="row">
     @for (column of visibleColumns(); track column.key) {
-      <div [attr.data-align]="column.align ?? 'start'" class="et-table-header-cell" role="columnheader">
+      <div
+        [attr.data-align]="column.align ?? 'start'"
+        [attr.aria-sort]="column.sortable ? ariaSort(column.key) : null"
+        class="et-table-header-cell"
+        role="columnheader"
+      >
         @if (column.headerCell) {
           <ng-container *ngTemplateOutlet="column.headerCell; context: { $implicit: column.header }" />
+        } @else if (column.sortable) {
+          <button (click)="toggleSort(column.key)" class="et-table-sort-button" type="button">
+            <span class="et-table-cell-text">{{ column.header }}</span>
+            <span
+              [attr.data-direction]="sortDirection(column.key)"
+              class="et-table-sort-indicator"
+              aria-hidden="true"
+            ></span>
+          </button>
         } @else {
           <span class="et-table-cell-text">{{ column.header }}</span>
         }
