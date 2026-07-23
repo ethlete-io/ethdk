@@ -33,42 +33,37 @@ back-to-top (covered by `10-filter.md` Layer 1's generic floating trigger).
 Already covered — don't rebuild: date-range picker, segmented control,
 loaders, popover-as-API (overlay), rating/switch.
 
-## Platform modernization (ranked by win ÷ support-risk)
+## Platform modernization — team decisions recorded 2026-07-23
 
 Repo has no browserslist config → implicit evergreen baseline. Already
 adopted (don't re-plan): `:has()` widely, `@starting-style` in rating +
 otp-input, `container-type` in stream/pip.
 
-1. **Enter/leave animation state machine → `@starting-style` +
-   `transition-behavior: allow-discrete`** — cross-browser today.
-   `libs/core/src/lib/animations/animatable.directive.ts` (147) +
-   `animated-lifecycle.directive.ts` (464) hand-roll from/active/to/done class
-   choreography, `forceReflow()`, interrupt bookkeeping — consumed by ~24 CSS
-   files. CSS transitions interrupt-and-reverse natively. **Load-bearing:
-   spike on one low-stakes consumer (toggletip) first**; full migration is a
-   multi-week effort with regression risk, not a quick win.
-2. **`<dialog>`/`showModal()` for modal overlay kinds** — cross-browser.
-   Deletes manual z-index stacking (`overlay-runtime.ts:69`), most of the
-   hand-rolled focus trap (`overlay-focus.ts`, ~117 lines) and backdrop
-   handling for center/global/fullscreen strategies. Partial migration only —
-   anchored/non-modal kinds keep the current portal; scroll-blocker
-   (`overlay-scroll-blocker.ts`) still needed for those.
-3. **Fullscreen clone animation → View Transitions** —
-   `overlay/strategies/fullscreen-animation.ts` (733 lines, biggest single
-   file): manual origin-rect→viewport transform math + trigger cloning.
-   Textbook `document.startViewTransition()`; VT snapshots pixels, which may
-   also sidestep the Angular style-unload constraint that forced cloning.
-   **Blocked: Firefox lacks same-document View Transitions** — track, don't
-   build. Same blocker for `flip-animation.ts` (tab underline, segmented
-   button) — smaller, lower priority.
-4. **Chrome-only for now — re-scan when Firefox/Safari ship**: CSS anchor
-   positioning (would shrink `overlay-position.ts`'s floating-ui usage — do
-   NOT swap yet), `interpolate-size`/`calc-size` (would replace
-   `animated-block-size.ts`; a `@supports` progressive-enhancement fast path
-   is possible), `field-sizing: content` (would delete
-   `textarea-autosize.ts` + ~70–90 lines of `textarea.directive.ts`).
-5. **Popover API for tooltip/toggletip/menu**: small win (top-layer replaces
-   the z-index constant; positioning stays floating-ui) — do opportunistically.
+- **Animated lifecycle stays. Decided — do not plan a replacement.**
+  `animatable.directive.ts` + `animated-lifecycle.directive.ts` took a long
+  time to fine-tune (interrupts, batching, nested trees, forced-instant
+  states); `@starting-style`/`allow-discrete` cannot replace all of it. New
+  simple show/hide cases may use `@starting-style` directly (precedent:
+  rating, otp-input), but the directive pair is not a migration target.
+- **`<dialog>`/top-layer: rejected.** The native top layer breaks consumer
+  apps that rely on z-index layering to push their own elements above modals
+  (magic z-indexes over `z-index: 1000` work today; nothing beats the top
+  layer). The overlay system keeps its portal + z-index approach. This
+  reasoning applies equally to the **Popover API** for tooltip/toggletip/menu
+  — same top-layer semantics, same rejection.
+- **View Transitions: agreed in principle, not yet baseline** (Firefox lacks
+  same-document VT). Highest-value target when it lands:
+  `overlay/strategies/fullscreen-animation.ts` (733 lines of origin→viewport
+  transform math + trigger cloning; VT snapshots pixels, which may also
+  sidestep the Angular style-unload constraint that forced cloning — see the
+  no-clone-animations rule). Also `flip-animation.ts` (tab underline,
+  segmented button). **Re-check browser support before any future planning.**
+- **Chrome-only for now — re-scan when Firefox/Safari ship**: CSS anchor
+  positioning (would shrink `overlay-position.ts`'s floating-ui usage — do
+  NOT swap yet), `interpolate-size`/`calc-size` (would replace
+  `animated-block-size.ts`; a `@supports` progressive-enhancement fast path
+  is possible), `field-sizing: content` (would delete
+  `textarea-autosize.ts` + ~70–90 lines of `textarea.directive.ts`).
 
 ## DX / tooling
 
