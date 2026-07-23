@@ -168,11 +168,12 @@
     z-index: 2;
     /* Opaque band so scrolling rows pass behind it. */
     background: var(--_et-table-header-bg);
+    /* Full-width divider between the group tier and the column headers — on every cell (labelled or
+       not) so the line runs the whole width, in the same subtle border colour as the rest. */
+    border-block-end: 1px solid var(--_et-table-header-border);
   }
 
-  /* Only runs with a label read as a group; ungrouped runs just extend the header band upward.
-     No bottom border here — the sub-header row below carries the single, full-width header divider,
-     so the group band and sub-headers read as one header block. */
+  /* Only runs with a label read as a group; ungrouped runs just extend the header band upward. */
   .et-table-group-cell:where(.et-table-group-cell--labeled) {
     justify-content: center;
     font-size: 0.78rem;
