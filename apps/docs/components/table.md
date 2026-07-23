@@ -64,7 +64,8 @@ Each entry of `tableColumns<T>()`:
 | `sortable`      | `false`            | Render a sortable header for this column.                                                                               |
 | `sortValue`     | `value`            | Comparable to sort by (`string`/`number`/`Date`/`boolean`/`null`) when the display value isn't comparable.              |
 | `filterable`    | `false`            | Render a filter menu on this column's header.                                                                           |
-| `filterOptions` | —                  | The selectable `{ label, value }[]` shown in the filter menu.                                                           |
+| `filterOptions` | —                  | The `{ label, value }[]` choices — a static list or an async provider (see [below](#searchable-async-filter-options)).  |
+| `filterSearch`  | `false`            | Add a search box to the filter menu.                                                                                    |
 | `filterValue`   | `value`            | The value matched against the selected filter values, when the display value isn't the one to match on.                 |
 | `header`        | —                  | Static header text. Ignored when `headerCell` is set.                                                                   |
 | `cell`          | —                  | A `TemplateRef` for a custom cell. Context: `{ $implicit: row, value, index }`.                                         |
@@ -155,6 +156,29 @@ columns = tableColumns<User>([
 
 The `filterRows({ rows, filters, columns })` helper is exported and tree-shakable.
 Use `filterValue` when the value to match on differs from the displayed value.
+
+### Searchable & async filter options
+
+Set `filterSearch` to add a search box to the filter menu (client-side for a
+static list). For **async, paginated options**, pass `filterOptions` as a
+provider instead of an array — the exact shape
+[`selectOptionsFromQuery`](/query/) already returns, so you can reuse it:
+
+```ts
+roleOptions = selectOptionsFromQuery({
+  queryCreator: searchRoles,
+  args: (query, page) => ({ queryParams: { q: query(), page: page() } }),
+  toOptions: (res) => res.items.map((r) => ({ label: r.name, value: r.id })),
+  toHasMore: (res) => res.hasMore,
+});
+
+columns = tableColumns<User>([
+  { key: 'role', header: 'Role', value: (u) => u.role, filterable: true, filterOptions: this.roleOptions },
+]);
+```
+
+The menu wires its search to the provider's `setQuery`, shows its `loading`, and
+renders a **Load more** button when `hasMore` is true.
 
 ## Server-side rows (query)
 
