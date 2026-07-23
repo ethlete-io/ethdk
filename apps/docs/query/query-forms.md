@@ -134,21 +134,20 @@ createQueryForm({ fields: { page: queryField<number>({ defaultValue: 1 }) }, que
 ## Reset the page on an out-of-range error
 
 When a filter shrinks a result set below the current page, the backend returns an
-out-of-range error. `resetPageOnQueryError` watches a query's `error` signal and
-resets the form's page field to its default:
+out-of-range error. The [`withPageResetOnError`](/query/features#withpageresetonerror)
+query feature resets the form's page field so the query re-runs on a valid page:
 
 ```ts
-import { resetPageOnQueryError } from '@ethlete/query';
+import { withArgs, withPageResetOnError } from '@ethlete/query';
 
-users = getUsers({ args: () => ({ queryParams: this.qf.value() }) });
-
-constructor() {
-  resetPageOnQueryError({ error: this.users.error, queryForm: this.qf });
-}
+users = getUsers(
+  withArgs(() => ({ queryParams: this.qf.value() })),
+  withPageResetOnError({ reset: () => this.qf.resetFieldToDefault('page') }),
+);
 ```
 
 It reacts to HTTP `416`, and to a `500` carrying a Pagerfanta out-of-range detail
-(the dev-mode shape). Pass `pageField` if your page field isn't named `page`.
+(the dev-mode shape); override the trigger with `when`.
 
 ## Filter overlays
 

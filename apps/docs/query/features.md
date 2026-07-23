@@ -84,6 +84,35 @@ See [WebSockets](/query/ws) for the room client this pairs with, and a live demo
 
 <StoryEmbed id="query-demos-live-response-update--default" height="440px" />
 
+## withPageResetOnError
+
+Resets the page when the current page becomes out of range — e.g. after a filter shrinks the result set below the current page. It reacts to the query's error events and resets the **page source** (a signal or a [query form](/query/query-forms) field), so the normal reactive re-execution then runs with the corrected page. Fixing the source (rather than patching args) is what makes the change stick, since query args are reactively sourced.
+
+```ts
+import { withArgs, withPageResetOnError } from '@ethlete/query';
+
+// signal-driven page
+const users = getUsers(
+  withArgs(() => ({ queryParams: { page: this.page() } })),
+  withPageResetOnError({ page: this.page }),
+);
+
+// query-form-driven page
+const users = getUsers(
+  withArgs(() => ({ queryParams: this.qf.value() })),
+  withPageResetOnError({ reset: () => this.qf.resetFieldToDefault('page') }),
+);
+```
+
+| Option    | Default                 | Description                                                                                                        |
+| --------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `page`    | —                       | A `WritableSignal<number>` to reset (use this **or** `reset`).                                                     |
+| `resetTo` | `1`                     | Value to reset `page` to.                                                                                          |
+| `reset`   | —                       | Callback to reset any page source (use this **or** `page`).                                                        |
+| `when`    | `isPageOutOfRangeError` | Which errors trigger the reset. The default matches HTTP `416` and a dev-mode `500` Pagerfanta out-of-range error. |
+
+The `isPageOutOfRangeError` predicate is exported too, so you can reuse it inside a plain `withErrorHandling` handler when you need custom behavior.
+
 ## Authoring custom features
 
 `createQueryFeature()` is the extension point behind all the built-in `with*` features — use it to package your own reusable query behavior:

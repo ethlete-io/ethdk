@@ -1,5 +1,4 @@
-import { HttpErrorResponse } from '@angular/common/http';
-import { Component, Injector, model, runInInjectionContext, signal } from '@angular/core';
+import { Component, Injector, model, runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormField, FormValueControl } from '@angular/forms/signals';
 import { provideRouter, Router } from '@angular/router';
@@ -319,40 +318,5 @@ describe('createQueryForm', () => {
     TestBed.tick();
 
     expect(qf.value().search).toBe('typed');
-  });
-
-  it('resetPageOnQueryError resets the page when the page is out of range', async () => {
-    const { injector, mod } = await setup();
-
-    const error = signal<import('../http').QueryErrorResponse | null>(null);
-
-    const qf = runInInjectionContext(injector, () => {
-      const form = mod
-        .createQueryForm({
-          fields: {
-            search: mod.queryField<string>(),
-            page: mod.queryField<number>({ defaultValue: 1 }),
-          },
-        })
-        .observe({ writeToQueryParams: false, syncOnNavigation: false });
-
-      mod.resetPageOnQueryError({ error, queryForm: form });
-
-      return form;
-    });
-
-    qf.setValue({ search: 'x', page: 5 });
-    TestBed.tick();
-    expect(qf.value().page).toBe(5);
-
-    // A benign error should not touch the page.
-    error.set({ code: 422, raw: new HttpErrorResponse({ status: 422 }) } as import('../http').QueryErrorResponse);
-    TestBed.tick();
-    expect(qf.value().page).toBe(5);
-
-    // An out-of-range (416) error resets the page to its default.
-    error.set({ code: 416, raw: new HttpErrorResponse({ status: 416 }) } as import('../http').QueryErrorResponse);
-    TestBed.tick();
-    expect(qf.value().page).toBe(1);
   });
 });

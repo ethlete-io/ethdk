@@ -1,5 +1,5 @@
 import { HttpEventType } from '@angular/common/http';
-import { CreateEffectOptions, effect, Signal, untracked } from '@angular/core';
+import { CreateEffectOptions, effect, Signal, untracked, WritableSignal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { getActiveConsumer, setActiveConsumer } from '@angular/core/primitives/signals';
 import { filter } from 'rxjs';
@@ -7,6 +7,7 @@ import { HttpErrorEvent, RequestHttpEvent } from './http-request';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { QueryDependencies } from './query-dependencies';
 import { QueryErrorResponse } from './query-error-response';
+import { isSymfonyPagerfantaOutOfRangeError } from './query-error-response-utils';
 import {
   withAutoRefreshUsedInManualQuery,
   withAutoRefreshUsedOnUnsupportedHttpMethod,
@@ -56,6 +57,7 @@ export const QueryFeatureType = {
   WITH_POLLING: 'WITH_POLLING',
   WITH_AUTO_REFRESH: 'WITH_AUTO_REFRESH',
   WITH_RESPONSE_UPDATE: 'WITH_RESPONSE_UPDATE',
+  WITH_PAGE_RESET_ON_ERROR: 'WITH_PAGE_RESET_ON_ERROR',
 } as const;
 export type QueryFeatureType = (typeof QueryFeatureType)[keyof typeof QueryFeatureType];
 
@@ -345,6 +347,92 @@ export const withResponseUpdate = <TArgs extends QueryArgs>(options: WithRespons
         },
         { injector: context.deps.injector },
       );
+    },
+  });
+};
+
+/**
+ * Whether an error means the requested page is out of range: HTTP `416`, or a
+ * `500` carrying a Symfony/Pagerfanta out-of-range detail (the dev-mode shape).
+ * Exported so it can also be used as the predicate of a `withErrorHandling` handler.
+ */
+export const isPageOutOfRangeError = (error: QueryErrorResponse): boolean => {
+  if (error.code === 416) return true;
+
+  return error.code === 500 && isSymfonyPagerfantaOutOfRangeError(error.raw.error);
+};
+
+export type WithPageResetOnErrorFeatureOptions = {
+  /**
+   * Which errors trigger the reset.
+   * @default isPageOutOfRangeError (HTTP 416, or a dev-mode 500 Pagerfanta out-of-range error)
+   */
+  when?: (error: QueryErrorResponse) => boolean;
+} & (
+  | {
+      /** The writable page signal to reset. */
+      page: WritableSignal<number>;
+      /**
+       * The value to reset the page to.
+       * @default 1
+       */
+      resetTo?: number;
+      reset?: never;
+    }
+  | {
+      /**
+       * Called when a matching error occurs. Reset whatever drives the page here —
+       * a signal (`() => page.set(1)`) or a query form (`() => qf.resetFieldToDefault('page')`).
+       */
+      reset: () => void;
+      page?: never;
+      resetTo?: never;
+    }
+);
+
+/**
+ * A query feature that resets the page when the current page becomes out of range
+ * — e.g. after a filter shrinks the result set below the current page. It reacts
+ * to the query's error events and resets the page source; the normal reactive
+ * re-execution then runs with the corrected page.
+ *
+ * Because query args are reactively sourced, this fixes the *source* (a signal or
+ * query form field) rather than patching args directly — so the change sticks.
+ *
+ * @example
+ * // signal-driven page
+ * const users = getUsers(
+ *   withArgs(() => ({ queryParams: { page: page() } })),
+ *   withPageResetOnError({ page }),
+ * );
+ *
+ * @example
+ * // query-form-driven page
+ * const users = getUsers(
+ *   withArgs(() => ({ queryParams: qf.value() })),
+ *   withPageResetOnError({ reset: () => qf.resetFieldToDefault('page') }),
+ * );
+ */
+export const withPageResetOnError = <TArgs extends QueryArgs>(options: WithPageResetOnErrorFeatureOptions) => {
+  const matches = options.when ?? isPageOutOfRangeError;
+
+  return createQueryFeature<TArgs>({
+    type: QueryFeatureType.WITH_PAGE_RESET_ON_ERROR,
+    fn: (context) => {
+      context.state.events$
+        .pipe(
+          filter((event): event is HttpErrorEvent => event.type === 'error'),
+          takeUntilDestroyed(context.deps.destroyRef),
+        )
+        .subscribe((event) => {
+          if (!matches(event.error)) return;
+
+          if (options.reset) {
+            options.reset();
+          } else {
+            options.page.set(options.resetTo ?? 1);
+          }
+        });
     },
   });
 };

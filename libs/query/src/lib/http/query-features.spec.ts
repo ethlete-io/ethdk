@@ -15,9 +15,11 @@ import {
   QueryFeatureContext,
   QueryFeatureFlags,
   QueryFeatureType,
+  isPageOutOfRangeError,
   withArgs,
   withErrorHandling,
   withLogging,
+  withPageResetOnError,
   withResponseUpdate,
   withSuccessHandling,
 } from './query-features';
@@ -262,6 +264,44 @@ describe('query features', () => {
 
       expect(onError).toHaveBeenCalledTimes(1);
       expect(onSuccess).not.toHaveBeenCalled();
+    });
+
+    it('withPageResetOnError resets a page signal on an out-of-range (416) error', () => {
+      const page = signal(5);
+      const { execute } = buildQuery([withPageResetOnError<QueryArgs>({ page })]);
+
+      execute({ args: { queryParams: { page: 5 } } });
+      flushError(416);
+      TestBed.tick();
+
+      expect(page()).toBe(1);
+    });
+
+    it('withPageResetOnError ignores a benign error', () => {
+      const page = signal(5);
+      const { execute } = buildQuery([withPageResetOnError<QueryArgs>({ page })]);
+
+      execute({ args: { queryParams: { page: 5 } } });
+      flushError(400);
+      TestBed.tick();
+
+      expect(page()).toBe(5);
+    });
+
+    it('withPageResetOnError honors a custom `when` and calls a `reset` callback', () => {
+      const reset = vi.fn();
+      const { execute } = buildQuery([withPageResetOnError<QueryArgs>({ reset, when: (e) => e.code === 400 })]);
+
+      execute({ args: { queryParams: { page: 5 } } });
+      flushError(400);
+      TestBed.tick();
+
+      expect(reset).toHaveBeenCalledTimes(1);
+    });
+
+    it('isPageOutOfRangeError detects 416', () => {
+      expect(isPageOutOfRangeError({ code: 416 } as never)).toBe(true);
+      expect(isPageOutOfRangeError({ code: 400 } as never)).toBe(false);
     });
 
     it('withLogging receives the terminal Response event', () => {
