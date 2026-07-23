@@ -1,9 +1,9 @@
 # 01 — Table (new system, NOT a cdk port)
 
-**Status: Phases 1–4 shipped (2026-07-23), incl. Phase 3b.** Size: XL — split into
+**Status: Phases 1–5 shipped (2026-07-23), incl. Phase 3b.** Size: XL — split into
 shippable phases below. Phase 0 decisions recorded under _Markup strategy_; the
-table lives in `libs/components/src/lib/table/`. Next up: Phase 5 (column
-reordering + visibility toggling). Deferred: headless `[etTable]` directive
+table lives in `libs/components/src/lib/table/`. Next up: Phase 6 (virtualization,
+via the extracted `createVirtualWindow`). Deferred: headless `[etTable]` directive
 (review), select-adapter unification onto the shared driver.
 
 ## Why green-field
@@ -311,8 +311,14 @@ toTotal, ... })`, called from an injection context like the select's. It
   `animate.enter`/`animate.leave` (0fr↔1fr row-track keyframes; the framework keeps
   the row mounted through the leave and honors reduced motion) — the repo idiom,
   no custom mount-tracking.
-- **Phase 5 — Column reordering** (+ visibility toggling, which state
-  serialization needs anyway).
+- **Phase 5 — Column reordering + visibility**: ✅ **shipped 2026-07-23**.
+  `reorderable` enables drag-to-reorder headers (via core `etDragHandle`;
+  hit-tests header rects through `viewChildren`, reorders the `columnOrder` state —
+  no DOM surgery). Programmatic `moveColumn(key, toIndex)` +
+  `isColumnVisible`/`setColumnVisible`/`toggleColumnVisibility`; the show/hide
+  chooser is consumer-composed (API + menu). Both order + visibility round-trip
+  through `state()`/`restoreState()`. Spec + Storybook-verified (drag Name past
+  Email reorders) + docs + changeset.
 - **Phase 6 — Virtualization** (compose with Phase 4's variable heights).
 - **Phase 7 — State export/restore** (TableState, URL adapter, docs recipe
   "restore a table from a link"). Depends on 2/3/5 states existing but the
