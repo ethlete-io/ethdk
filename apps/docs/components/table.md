@@ -2,9 +2,9 @@
 
 A type-safe, light-by-default data table. The row type flows from your data
 through the column definitions into every cell, and the base table renders typed
-rows on a CSS grid with a sticky header and an empty state — nothing more. Sort,
-filter, expansion, reordering, virtualization and state persistence arrive as
-separate opt-in features (coming in later phases).
+rows on a CSS grid with a sticky header, an empty state and opt-in [sorting](#sorting).
+Filtering, row expansion, reordering, virtualization and richer state persistence
+arrive as further features in later phases.
 
 ```ts
 import { TABLE_IMPORTS, tableColumns } from '@ethlete/components';
@@ -41,12 +41,15 @@ typed `value` accessor is the only link between a column and the row.
 
 ## Inputs
 
-| Input        | Default     | Description                                                                            |
-| ------------ | ----------- | -------------------------------------------------------------------------------------- |
-| `data`       | `[]`        | The rows to render.                                                                    |
-| `columns`    | `[]`        | The column definitions from `tableColumns<T>()`.                                       |
-| `rowKey`     | reference   | `(row: T) => string \| number` for stable change tracking (and later row-keyed state). |
-| `emptyLabel` | `'No data'` | Text shown when there are no rows and no `[etTableEmpty]` content is projected.        |
+| Input        | Default     | Description                                                                               |
+| ------------ | ----------- | ----------------------------------------------------------------------------------------- |
+| `data`       | `[]`        | The rows to render.                                                                       |
+| `columns`    | `[]`        | The column definitions from `tableColumns<T>()`.                                          |
+| `rowKey`     | reference   | `(row: T) => string \| number` for stable change tracking (and later row-keyed state).    |
+| `emptyLabel` | `'No data'` | Text shown when there are no rows and no `[etTableEmpty]` content is projected.           |
+| `sort`       | `[]`        | Two-way bindable sort state — an ordered `{ key, direction }[]`. See [Sorting](#sorting). |
+| `multiSort`  | `false`     | Allow more than one column to be sorted at once.                                          |
+| `sortMode`   | `'client'`  | `'client'` sorts rows in the browser; `'server'` leaves them for the backend to sort.     |
 
 ## Columns
 
@@ -56,6 +59,8 @@ Each entry of `tableColumns<T>()`:
 | ------------ | ------------------ | ----------------------------------------------------------------------------------------------------------------------- |
 | `key`        | — (required)       | Stable, unique column identity for state. Duplicate keys throw [`ET3500`](/components/error-codes#table-et35xx) in dev. |
 | `value`      | — (required)       | `(row: T) => V` — the typed cell accessor. Rendered directly unless `cell` is set.                                      |
+| `sortable`   | `false`            | Render a sortable header for this column.                                                                               |
+| `sortValue`  | `value`            | Comparable to sort by (`string`/`number`/`Date`/`boolean`/`null`) when the display value isn't comparable.              |
 | `header`     | —                  | Static header text. Ignored when `headerCell` is set.                                                                   |
 | `cell`       | —                  | A `TemplateRef` for a custom cell. Context: `{ $implicit: row, value, index }`.                                         |
 | `headerCell` | —                  | A `TemplateRef` for a custom header. Context: `{ $implicit: header }`.                                                  |
@@ -88,6 +93,32 @@ export class UsersComponent {
   );
 }
 ```
+
+## Sorting
+
+Mark columns `sortable` and the table renders sortable header buttons that cycle
+**unsorted → ascending → descending → unsorted**, manage `aria-sort`, and drive
+the two-way `sort` state (`{ key, direction }[]`):
+
+```ts
+columns = tableColumns<User>([
+  { key: 'name', header: 'Name', value: (u) => u.name, sortable: true },
+  // sort by a comparable when the display value isn't one:
+  { key: 'joined', header: 'Joined', value: (u) => u.joinedLabel, sortValue: (u) => u.joinedAt, sortable: true },
+]);
+```
+
+- **Client mode** (default) sorts rows in the browser. Nullish values always sink
+  to the bottom. `multiSort` lets clicks layer multiple columns.
+- **Server mode** (`sortMode="server"`) leaves rows untouched — read `sort()` and
+  feed it into your query args (it maps directly onto the query form's sort field):
+
+```html
+<et-table [(sort)]="sort" [data]="users()" [columns]="columns" sortMode="server" />
+```
+
+The `sortRows({ rows, sort, columns })` helper the client mode uses is exported
+and tree-shakable, for custom flows where you sort outside the table.
 
 ## Sticky header
 
@@ -128,7 +159,9 @@ table.restoreState(snapshot);
 
 The table uses the ARIA grid pattern: `role="grid"` on the container, `role="row"`
 on each row, `role="columnheader"` on header cells and `role="gridcell"` on body
-cells. Keyboard navigation and `aria-sort` arrive with the sort/filter features.
+cells. Sortable headers are real `<button>`s (keyboard-operable) and set
+`aria-sort` on their column header. Full grid keyboard navigation arrives with the
+later interactive features.
 
 ## Theming
 
