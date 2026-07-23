@@ -40,9 +40,9 @@
       cursor: default;
     }
     border-radius: var(--et-checkbox-border-radius);
-    transition:
-      opacity 150ms ease,
-      outline-color 150ms ease;
+    /* Transitions live under `&[data-can-animate]` (added after first render) so nothing animates
+       on mount — otherwise `outline-color` transitions from its resolved value and the focus ring
+       flashes briefly on first paint. */
 
     &[aria-disabled='true'] {
       opacity: var(--et-checkbox-opacity-disabled);
