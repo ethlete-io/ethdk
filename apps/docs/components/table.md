@@ -4,7 +4,8 @@ A type-safe, light-by-default data table. The row type flows from your data
 through the column definitions into every cell, and the base table renders typed
 rows on a CSS grid with a sticky header and an empty state. Choose its look with
 [appearance & density](#appearance-density), fill cells with
-[any content you like](#custom-cells), and turn on
+[any content you like](#custom-cells), group columns under
+[spanning headers](#grouped-headers), and turn on
 [sorting](#sorting), [filtering](#filtering), [row expansion](#row-expansion),
 [column reordering & visibility](#column-visibility-reordering) and
 [virtualization](#virtualization) as needed.
@@ -183,6 +184,29 @@ columns = tableColumns<Player>([
   { key: 'actions', header: '', value: (p) => p, cell: actionsCell },
 ]);
 ```
+
+## Grouped headers
+
+Give columns a `group` and adjacent ones sharing it render beneath a single
+spanning label in a second header row. Each sub-column stays a normal
+column — independently [sortable](#sorting), [filterable](#filtering), reorderable.
+Columns without a `group` span both header rows.
+
+```ts
+columns = tableColumns<Player>([
+  { key: 'name', header: 'Name', value: (p) => p.name }, // ungrouped — spans both rows
+  { key: 'gp', header: 'GP', value: (p) => p.gp, sortable: true, group: 'Season 24/25' },
+  { key: 'pts', header: 'PTS', value: (p) => p.pts, sortable: true, group: 'Season 24/25' },
+  { key: 'ast', header: 'AST', value: (p) => p.ast, sortable: true, group: 'Season 24/25' },
+]);
+```
+
+<StoryEmbed id="components-table--grouped-headers" height="360px" />
+
+Grouping follows the **visible column order**: a label spans each contiguous run
+of columns that share it, so dragging a column out of a group (with `reorderable`)
+simply splits the label into two runs — no separate group-move step. Both header
+rows stay pinned when the table scrolls.
 
 ## Sorting
 
