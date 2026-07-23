@@ -4,8 +4,7 @@
 shippable phases below. Phase 0 decisions recorded under _Markup strategy_; the
 table lives in `libs/components/src/lib/table/`. Next up: Phase 5 (column
 reordering + visibility toggling). Deferred: headless `[etTable]` directive
-(review), animated collapse for row expansion, select-adapter unification onto
-the shared driver.
+(review), select-adapter unification onto the shared driver.
 
 ## Why green-field
 
@@ -308,8 +307,10 @@ toTotal, ... })`, called from an injection context like the select's. It
   `<et-table>`. `expandableRow` gates rows; `expandedKeys` is a two-way `Set`
   keyed by `rowKey`; `isExpanded`/`toggleExpanded` on the instance. Spec (toggle +
   rowKey identity) + Storybook-verified (lazy detail appears/collapses, aria) +
-  docs + changeset. (No animated _collapse_ — detail is removed on toggle-off;
-  animated exit would need the animatable directive, deferred.)
+  docs + changeset. **Both directions animate** via Angular 22's built-in
+  `animate.enter`/`animate.leave` (0fr↔1fr row-track keyframes; the framework keeps
+  the row mounted through the leave and honors reduced motion) — the repo idiom,
+  no custom mount-tracking.
 - **Phase 5 — Column reordering** (+ visibility toggling, which state
   serialization needs anyway).
 - **Phase 6 — Virtualization** (compose with Phase 4's variable heights).
