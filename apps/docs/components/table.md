@@ -2,9 +2,9 @@
 
 A type-safe, light-by-default data table. The row type flows from your data
 through the column definitions into every cell, and the base table renders typed
-rows on a CSS grid with a sticky header, an empty state and opt-in [sorting](#sorting).
-Filtering, row expansion, reordering, virtualization and richer state persistence
-arrive as further features in later phases.
+rows on a CSS grid with a sticky header, an empty state, opt-in [sorting](#sorting)
+and opt-in [filtering](#filtering). Row expansion, reordering, virtualization and
+richer state persistence arrive as further features in later phases.
 
 ```ts
 import { TABLE_IMPORTS, tableColumns } from '@ethlete/components';
@@ -50,23 +50,28 @@ typed `value` accessor is the only link between a column and the row.
 | `sort`       | `[]`        | Two-way bindable sort state — an ordered `{ key, direction }[]`. See [Sorting](#sorting). |
 | `multiSort`  | `false`     | Allow more than one column to be sorted at once.                                          |
 | `sortMode`   | `'client'`  | `'client'` sorts rows in the browser; `'server'` leaves them for the backend to sort.     |
+| `filters`    | `[]`        | Two-way bindable filter state — `{ key, values }[]`. See [Filtering](#filtering).         |
+| `filterMode` | `'client'`  | `'client'` filters rows in the browser; `'server'` leaves them for the backend to filter. |
 
 ## Columns
 
 Each entry of `tableColumns<T>()`:
 
-| Field        | Default            | Description                                                                                                             |
-| ------------ | ------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| `key`        | — (required)       | Stable, unique column identity for state. Duplicate keys throw [`ET3500`](/components/error-codes#table-et35xx) in dev. |
-| `value`      | — (required)       | `(row: T) => V` — the typed cell accessor. Rendered directly unless `cell` is set.                                      |
-| `sortable`   | `false`            | Render a sortable header for this column.                                                                               |
-| `sortValue`  | `value`            | Comparable to sort by (`string`/`number`/`Date`/`boolean`/`null`) when the display value isn't comparable.              |
-| `header`     | —                  | Static header text. Ignored when `headerCell` is set.                                                                   |
-| `cell`       | —                  | A `TemplateRef` for a custom cell. Context: `{ $implicit: row, value, index }`.                                         |
-| `headerCell` | —                  | A `TemplateRef` for a custom header. Context: `{ $implicit: header }`.                                                  |
-| `align`      | `'start'`          | `'start' \| 'center' \| 'end'`.                                                                                         |
-| `width`      | `'minmax(0, 1fr)'` | Any `grid-template-columns` track value (`'200px'`, `'minmax(120px, 1fr)'`, …).                                         |
-| `hidden`     | `false`            | Hide the column initially; toggle later via table state.                                                                |
+| Field           | Default            | Description                                                                                                             |
+| --------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `key`           | — (required)       | Stable, unique column identity for state. Duplicate keys throw [`ET3500`](/components/error-codes#table-et35xx) in dev. |
+| `value`         | — (required)       | `(row: T) => V` — the typed cell accessor. Rendered directly unless `cell` is set.                                      |
+| `sortable`      | `false`            | Render a sortable header for this column.                                                                               |
+| `sortValue`     | `value`            | Comparable to sort by (`string`/`number`/`Date`/`boolean`/`null`) when the display value isn't comparable.              |
+| `filterable`    | `false`            | Render a filter menu on this column's header.                                                                           |
+| `filterOptions` | —                  | The selectable `{ label, value }[]` shown in the filter menu.                                                           |
+| `filterValue`   | `value`            | The value matched against the selected filter values, when the display value isn't the one to match on.                 |
+| `header`        | —                  | Static header text. Ignored when `headerCell` is set.                                                                   |
+| `cell`          | —                  | A `TemplateRef` for a custom cell. Context: `{ $implicit: row, value, index }`.                                         |
+| `headerCell`    | —                  | A `TemplateRef` for a custom header. Context: `{ $implicit: header }`.                                                  |
+| `align`         | `'start'`          | `'start' \| 'center' \| 'end'`.                                                                                         |
+| `width`         | `'minmax(0, 1fr)'` | Any `grid-template-columns` track value (`'200px'`, `'minmax(120px, 1fr)'`, …).                                         |
+| `hidden`        | `false`            | Hide the column initially; toggle later via table state.                                                                |
 
 ### Custom cells
 
@@ -120,6 +125,37 @@ columns = tableColumns<User>([
 The `sortRows({ rows, sort, columns })` helper the client mode uses is exported
 and tree-shakable, for custom flows where you sort outside the table.
 
+## Filtering
+
+Mark columns `filterable` and give them `filterOptions`; the header renders a
+filter menu (a multi-select checkbox list, built on [`menu`](/components/menu))
+that drives the two-way `filters` state (`{ key, values }[]`):
+
+```ts
+columns = tableColumns<User>([
+  { key: 'name', header: 'Name', value: (u) => u.name },
+  {
+    key: 'role',
+    header: 'Role',
+    value: (u) => u.role,
+    filterable: true,
+    filterOptions: [
+      { label: 'Admin', value: 'admin' },
+      { label: 'Editor', value: 'editor' },
+    ],
+  },
+]);
+```
+
+- **Client mode** (default) filters rows in the browser: a row passes when, for
+  every filtered column, its value is one of the selected values (AND across
+  columns, OR within a column).
+- **Server mode** (`filterMode="server"`) leaves rows untouched — read `filters()`
+  and feed it into your query args.
+
+The `filterRows({ rows, filters, columns })` helper is exported and tree-shakable.
+Use `filterValue` when the value to match on differs from the displayed value.
+
 ## Server-side rows (query)
 
 `tableRowsFromQuery` feeds the table from an [`@ethlete/query`](/query/) query,
@@ -149,10 +185,12 @@ users = tableRowsFromQuery({
 />
 ```
 
-It returns `rows`, `loading`, `error`, `total`, `hasMore`, `sort` and `page`
-signals plus `setSort`/`setPage`. `rows` keeps the previous page visible while the
-next one loads (no empty flash); `setSort` resets to `initialPage`. Call it from a
-field initializer / constructor, like a query or query stack.
+It returns `rows`, `loading`, `error`, `total`, `hasMore`, `sort`, `filters` and
+`page` signals plus `setSort`/`setFilters`/`setPage` — the `args` builder reads
+`sort`/`filters`/`page` to build the request. `rows` keeps the previous page visible
+while the next one loads (no empty flash); `setSort`/`setFilters` reset to
+`initialPage`. Pair with `sortMode="server"` and `filterMode="server"`. Call it from
+a field initializer / constructor, like a query or query stack.
 
 For the legacy `V2QueryClient`, use **`tableRowsFromV2Query`** — the same config
 and return shape, backed by the legacy `queryComputed` container. Both adapters
