@@ -1,8 +1,8 @@
 # 01 — Table (new system, NOT a cdk port)
 
-**Status: Phase 0 decisions recorded (2026-07-23), no code yet.** Size: XL —
-split into shippable phases below. See the "Phase 0 decisions" block under
-_Markup strategy_ before implementing.
+**Status: Phase 1 shipped (2026-07-23).** Size: XL — split into shippable phases
+below. Phase 0 decisions recorded under _Markup strategy_; Phase 1 core table
+lives in `libs/components/src/lib/table/`. Next up: Phase 2 (sort + query glue).
 
 ## Why green-field
 
@@ -254,10 +254,22 @@ toTotal, ... })`, called from an injection context like the select's. It
   extracted utilities stay `@internal`. Remaining Phase 0 work is the rendered
   Storybook markup prototype confirming sticky + virtual + reorder before Phase 1
   locks the markup.
-- **Phase 1 — Core table**: headless `etTable` + typed columns + default styled
-  component (theming tokens, `@layer components`), sticky header, empty state.
-  This is the "light by default" deliverable and defines the public API shape —
-  get review on this before later phases.
+- **Phase 1 — Core table**: ✅ **shipped 2026-07-23** (`libs/components/src/lib/table/`).
+  Default `et-table` component + typed columns via `tableColumns<T>()` (the chosen
+  primary API — full accessor inference; a per-column template-driven authoring
+  path was rejected for Phase 1 because Angular can't infer `T` into an ancestor
+  column directive's cell context), CSS-grid markup (`display: contents` rows so
+  columns align across all rows), sticky header, empty state (`emptyLabel` +
+  `[etTableEmpty]`), surface-token theming, and a versioned `state()` /
+  `restoreState()` (column order + visibility) as the state-container seed. Story
+  verified in Storybook (grid, sticky-while-scrolled, custom cell, empty); spec +
+  docs guide + `ET35xx` + changeset done.
+  **Deferred, needs review:** a separate headless `[etTable]` directive was NOT
+  built — the default component carries the state inline. Whether a headless tier
+  is needed (and its exact shape) is a public-API call best made when a feature
+  (sort/filter, Phase 2/3) or a custom-markup consumer actually needs it; the
+  component's signals (`visibleColumns`, `state`, …) are already the extension
+  surface a feature directive would `inject(TableComponent)` to read.
 - **Phase 2 — Sort + query glue**: sort headers, client-side sort helpers,
   server-side wiring incl. the QueryForm-or-adapter decision.
 - **Phase 3 — Filter headers**: menu + search composition, typed filter state,
