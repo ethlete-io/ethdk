@@ -5,10 +5,18 @@
     }
     @for (column of visibleColumns(); track column.key) {
       <div
+        #headerCell
         [attr.data-align]="column.align ?? 'start'"
         [attr.aria-sort]="column.sortable ? ariaSort(column.key) : null"
+        [class.et-table-header-cell--reorderable]="reorderable()"
+        [class.et-table-header-cell--dragging]="draggingColumn() === column.key"
+        [disabled]="!reorderable()"
+        (dragStarted)="draggingColumn.set(column.key)"
+        (dragMoved)="updateColumnReorder($event)"
+        (dragEnded)="draggingColumn.set(null)"
         class="et-table-header-cell"
         role="columnheader"
+        etDragHandle
       >
         @if (column.headerCell) {
           <ng-container *ngTemplateOutlet="column.headerCell; context: { $implicit: column.header }" />

@@ -51,6 +51,7 @@ const PEOPLE: Person[] = Array.from({ length: 40 }, (_, i) => {
           [data]="rows()"
           [columns]="columns()"
           [multiSort]="multiSort()"
+          [reorderable]="reorderable()"
           [expandedRowTemplate]="expandable() ? detail : undefined"
           emptyLabel="No people found"
         />
@@ -88,6 +89,7 @@ export class TableStorybookComponent {
   public empty = input(false);
   public multiSort = input(false);
   public expandable = input(false);
+  public reorderable = input(false);
   public surface = input('dark');
 
   public roleCell = viewChild<TemplateRef<TableCellContext<Person, Person['role']>>>('roleCell');

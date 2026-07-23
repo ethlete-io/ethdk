@@ -11,6 +11,7 @@ export default {
     empty: false,
     multiSort: false,
     expandable: false,
+    reorderable: false,
     surface: 'dark',
   },
   argTypes: {
@@ -19,6 +20,7 @@ export default {
     empty: { control: 'boolean' },
     multiSort: { control: 'boolean' },
     expandable: { control: 'boolean' },
+    reorderable: { control: 'boolean' },
     surface: { control: 'text' },
   },
 } as Meta<TableStorybookComponent>;
@@ -61,5 +63,12 @@ export const Expandable: Story = {
         story: 'Rows expand to a lazily-instantiated detail row (nest another `<et-table>` here for sub-tables).',
       },
     },
+  },
+};
+
+export const Reorderable: Story = {
+  args: { reorderable: true },
+  parameters: {
+    docs: { description: { story: 'Drag a column header sideways to reorder columns.' } },
   },
 };

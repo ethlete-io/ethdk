@@ -68,6 +68,20 @@
     border-block-end: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
   }
 
+  .et-table-header-cell:where(.et-table-header-cell--reorderable) {
+    cursor: grab;
+    user-select: none;
+  }
+
+  .et-table-header-cell:where(.et-table-header-cell--dragging) {
+    cursor: grabbing;
+    background: color-mix(
+      in srgb,
+      var(--et-surface-interaction-solid, gray) 14%,
+      var(--et-surface-background-solid, Canvas)
+    );
+  }
+
   .et-table-header-cell:where([data-align='center']),
   .et-table-cell:where([data-align='center']) {
     justify-content: center;

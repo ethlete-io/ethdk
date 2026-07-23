@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import {
   Component,
   computed,
+  ElementRef,
   input,
   isDevMode,
   linkedSignal,
@@ -9,8 +10,9 @@ import {
   signal,
   TemplateRef,
   ViewEncapsulation,
+  viewChildren,
 } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
+import { DragHandleDirective, DragMoveEvent, RuntimeError } from '@ethlete/core';
 import {
   MenuCheckboxGroupComponent,
   MenuCheckboxItemComponent,
@@ -57,6 +59,7 @@ const DEFAULT_TRACK = 'minmax(0, 1fr)';
   encapsulation: ViewEncapsulation.None,
   imports: [
     NgTemplateOutlet,
+    DragHandleDirective,
     MenuDirective,
     MenuTriggerDirective,
     MenuSurfaceDirective,
@@ -129,8 +132,16 @@ export class TableComponent<T> {
   /** The set of expanded row keys (by `rowKey`, else row reference). Two-way bindable. */
   public expandedKeys = model<Set<unknown>>(new Set());
 
+  /** Allow reordering columns by dragging their headers. @default false */
+  public reorderable = input(false);
+
+  private headerCells = viewChildren<ElementRef<HTMLElement>>('headerCell');
+
   /** Whether row expansion is active (a detail template was provided). */
   public expandable = computed(() => this.expandedRowTemplate() !== undefined);
+
+  // The column key currently being drag-reordered.
+  protected draggingColumn = signal<string | null>(null);
 
   // Column order + visibility overrides reset when the `columns` input changes, but
   // a manual restoreState() persists until then (linkedSignal semantics).
@@ -256,6 +267,46 @@ export class TableComponent<T> {
     this.filters.set(values.length ? [...others, { key, values }] : others);
   }
 
+  /** Whether a column is currently visible. */
+  public isColumnVisible(key: string) {
+    return !this.hiddenColumns().has(key);
+  }
+
+  /** Show or hide a column. */
+  public setColumnVisible(key: string, visible: boolean) {
+    this.hiddenColumns.update((hidden) => {
+      const next = new Set(hidden);
+
+      if (visible) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+
+      return next;
+    });
+  }
+
+  /** Toggle a column's visibility. */
+  public toggleColumnVisibility(key: string) {
+    this.setColumnVisible(key, !this.isColumnVisible(key));
+  }
+
+  /** Move a column to a new index within the full column order. */
+  public moveColumn(key: string, toIndex: number) {
+    this.columnOrder.update((order) => {
+      const from = order.indexOf(key);
+
+      if (from === -1) return order;
+
+      const next = [...order];
+      next.splice(from, 1);
+      next.splice(Math.max(0, Math.min(toIndex, next.length)), 0, key);
+
+      return next;
+    });
+  }
+
   /** Whether a row is currently expanded. */
   public isExpanded(row: T) {
     return this.expandedKeys().has(this.expandKey(row));
@@ -281,6 +332,35 @@ export class TableComponent<T> {
 
   protected canExpand(row: T) {
     return this.expandable() && (this.expandableRow()?.(row) ?? true);
+  }
+
+  /** Live-reorder the dragged column when the pointer crosses another header. */
+  protected updateColumnReorder(event: DragMoveEvent) {
+    const dragging = this.draggingColumn();
+
+    if (!dragging) return;
+
+    // Hit-test the header the pointer is over by its rect (viewChildren order === visibleColumns order).
+    const cells = this.headerCells();
+    const columns = this.visibleColumns();
+
+    for (let index = 0; index < cells.length; index++) {
+      const cell = cells[index];
+
+      if (!cell) continue;
+
+      const rect = cell.nativeElement.getBoundingClientRect();
+
+      if (event.clientX >= rect.left && event.clientX <= rect.right) {
+        const overKey = columns[index]?.key;
+
+        if (overKey && overKey !== dragging) {
+          this.moveColumn(dragging, this.columnOrder().indexOf(overKey));
+        }
+
+        return;
+      }
+    }
   }
 
   protected isFiltered(key: string) {

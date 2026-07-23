@@ -301,6 +301,39 @@ describe('TableComponent', () => {
     });
   });
 
+  describe('columns (reorder + visibility)', () => {
+    const threeColumns = () =>
+      tableColumns<Person>([
+        { key: 'id', header: 'ID', value: (p) => p.id },
+        { key: 'name', header: 'Name', value: (p) => p.name },
+        { key: 'role', header: 'Role', value: (p) => p.role },
+      ]);
+
+    it('moveColumn reorders the visible columns and the state', () => {
+      const { componentInstance: table } = create(threeColumns(), UNSORTED);
+
+      table.moveColumn('role', 0);
+
+      expect(table.visibleColumns().map((c) => c.key)).toEqual(['role', 'id', 'name']);
+      expect(table.state().columns.map((c) => c.key)).toEqual(['role', 'id', 'name']);
+    });
+
+    it('setColumnVisible / toggleColumnVisibility hide and show a column', () => {
+      const { componentInstance: table } = create(threeColumns(), UNSORTED);
+
+      expect(table.isColumnVisible('role')).toBe(true);
+
+      table.setColumnVisible('role', false);
+      expect(table.isColumnVisible('role')).toBe(false);
+      expect(table.visibleColumns().map((c) => c.key)).toEqual(['id', 'name']);
+      // hidden columns are still in the serialized state
+      expect(table.state().columns.find((c) => c.key === 'role')?.hidden).toBe(true);
+
+      table.toggleColumnVisibility('role');
+      expect(table.isColumnVisible('role')).toBe(true);
+    });
+  });
+
   describe('row expansion', () => {
     it('toggles a row and tracks it in expandedKeys', () => {
       const { componentInstance: table } = create(columns(), UNSORTED);
