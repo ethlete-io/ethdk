@@ -73,7 +73,7 @@ export class TableStorybookComponent {
   public rowCount = input(6);
   public constrainHeight = input(false);
   public empty = input(false);
-  public surface = input('light');
+  public surface = input('dark');
 
   public roleCell = viewChild<TemplateRef<TableCellContext<Person, Person['role']>>>('roleCell');
 

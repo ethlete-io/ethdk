@@ -9,7 +9,7 @@ export default {
     rowCount: 6,
     constrainHeight: false,
     empty: false,
-    surface: 'light',
+    surface: 'dark',
   },
   argTypes: {
     rowCount: { control: { type: 'range', min: 0, max: 40, step: 1 } },
