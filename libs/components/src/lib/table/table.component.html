@@ -108,7 +108,12 @@
     @if (canExpand(row) && isExpanded(row)) {
       @if (expandedRowTemplate(); as detail) {
         <div class="et-table-detail-row" role="row">
-          <div class="et-table-detail-cell" role="gridcell">
+          <div
+            class="et-table-detail-cell"
+            role="gridcell"
+            animate.enter="et-table-detail--enter"
+            animate.leave="et-table-detail--leave"
+          >
             <div class="et-table-detail-content">
               <ng-container *ngTemplateOutlet="detail; context: { $implicit: row }" />
             </div>

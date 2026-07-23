@@ -228,17 +228,31 @@
     display: contents;
   }
 
-  /* 0fr → 1fr row reveal for the lazily-mounted detail content (respects reduced motion). */
+  /* Detail rows animate open and closed via a 0fr↔1fr row track. Angular's `animate.enter`/
+     `animate.leave` keep the row mounted through the leave animation, then unmount it. */
   .et-table-detail-cell {
     display: grid;
     grid-column: 1 / -1;
     grid-template-rows: 1fr;
     border-block-end: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
-    transition: grid-template-rows 0.18s ease;
   }
 
-  @starting-style {
-    .et-table-detail-cell {
+  .et-table-detail-cell.et-table-detail--enter {
+    animation: et-table-detail-in 0.18s ease;
+  }
+
+  .et-table-detail-cell.et-table-detail--leave {
+    animation: et-table-detail-out 0.18s ease forwards;
+  }
+
+  @keyframes et-table-detail-in {
+    from {
+      grid-template-rows: 0fr;
+    }
+  }
+
+  @keyframes et-table-detail-out {
+    to {
       grid-template-rows: 0fr;
     }
   }
@@ -250,8 +264,9 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .et-table-detail-cell {
-      transition: none;
+    .et-table-detail-cell.et-table-detail--enter,
+    .et-table-detail-cell.et-table-detail--leave {
+      animation: none;
     }
   }
 
