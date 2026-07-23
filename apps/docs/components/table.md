@@ -110,6 +110,9 @@ Each entry of `tableColumns<T>()`:
 | `header`        | —                  | Static header text. Ignored when `headerCell` is set.                                                                   |
 | `cell`          | —                  | A `TemplateRef` for a custom cell. Context: `{ $implicit: row, value, index }`.                                         |
 | `headerCell`    | —                  | A `TemplateRef` for a custom header. Context: `{ $implicit: header }`.                                                  |
+| `footerCell`    | —                  | A `TemplateRef` for a footer/summary cell. Context: `{ $implicit: rows }`. See [Sticky footer](#sticky-columns-footer). |
+| `group`         | —                  | Group label; adjacent columns sharing it span a header. See [Grouped headers](#grouped-headers).                        |
+| `sticky`        | —                  | `'start' \| 'end'` — pin the column while scrolling horizontally. See [Sticky columns](#sticky-columns-footer).         |
 | `align`         | `'start'`          | `'start' \| 'center' \| 'end'`.                                                                                         |
 | `width`         | `'minmax(0, 1fr)'` | Any `grid-template-columns` track value (`'200px'`, `'minmax(120px, 1fr)'`, …).                                         |
 | `hidden`        | `false`            | Hide the column initially; toggle later via table state.                                                                |
@@ -358,6 +361,47 @@ scrolls:
 ```html
 <et-table [data]="rows()" [columns]="columns" style="block-size: 320px" />
 ```
+
+## Sticky columns & footer
+
+Pin columns to an edge with `sticky: 'start' | 'end'` — they stay put while the
+table scrolls horizontally. Pin from the edges (leading columns to `'start'`,
+trailing to `'end'`); give pinned columns explicit widths so the table has
+something to scroll.
+
+```ts
+columns = tableColumns<User>([
+  { key: 'name', header: 'Name', value: (u) => u.name, width: '220px', sticky: 'start' },
+  { key: 'email', header: 'Email', value: (u) => u.email, width: '280px' },
+  // …more columns…
+  { key: 'actions', header: '', value: (u) => u, cell: actionsCell, width: '96px', sticky: 'end' },
+]);
+```
+
+A column `footerCell` adds a **summary row pinned to the bottom** of the scroll
+viewport. Its context is the rendered rows, so it can aggregate:
+
+```ts
+@Component({
+  template: `
+    <et-table [data]="orders()" [columns]="columns()" style="block-size: 24rem" />
+    <ng-template #totalCell let-rows>{{ rows.length }} orders</ng-template>
+    <ng-template #sumCell let-rows>{{ sum(rows) | currency }}</ng-template>
+  `,
+})
+export class OrdersComponent {
+  columns = computed(() =>
+    tableColumns<Order>([
+      { key: 'id', header: 'Order', value: (o) => o.id, footerCell: this.totalCell() },
+      { key: 'total', header: 'Total', value: (o) => o.total, align: 'end', footerCell: this.sumCell() },
+    ]),
+  );
+}
+```
+
+Any column with a `footerCell` shows the footer row; columns without one render an
+empty footer cell. Both work with the other features — a pinned column's footer
+cell is pinned in both directions.
 
 ## Empty state
 
