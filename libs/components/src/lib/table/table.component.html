@@ -38,14 +38,32 @@
 
             <ng-template etMenuSurface>
               <et-menu>
+                @if (column.filterSearch || filterProviderOf(column)) {
+                  <input
+                    [query]="filterSearchQuery(column.key)"
+                    [loading]="filterLoading(column)"
+                    (queryChange)="setFilterSearchQuery(column, $event)"
+                    etMenuSearch
+                    placeholder="Search…"
+                  />
+                }
+
                 <et-menu-checkbox-group
                   [value]="filterValuesFor(column.key)"
                   (valueChange)="setFilterValues(column.key, asArray($event))"
                 >
-                  @for (option of column.filterOptions ?? []; track option.value) {
+                  @for (option of filterOptionsFor(column); track option.value) {
                     <et-menu-checkbox-item [value]="option.value">{{ option.label }}</et-menu-checkbox-item>
+                  } @empty {
+                    @if (!filterLoading(column)) {
+                      <p class="et-table-filter-empty">No options</p>
+                    }
                   }
                 </et-menu-checkbox-group>
+
+                @if (filterHasMore(column)) {
+                  <button (click)="filterLoadMore(column)" class="et-table-filter-more" type="button">Load more</button>
+                }
               </et-menu>
             </ng-template>
           </div>

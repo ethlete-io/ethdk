@@ -1,18 +1,27 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, input, isDevMode, linkedSignal, model, ViewEncapsulation } from '@angular/core';
+import { Component, computed, input, isDevMode, linkedSignal, model, signal, ViewEncapsulation } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import {
   MenuCheckboxGroupComponent,
   MenuCheckboxItemComponent,
   MenuComponent,
   MenuDirective,
+  MenuSearchDirective,
   MenuSurfaceDirective,
   MenuTriggerDirective,
 } from '../menu';
 import { filterRows } from './table-filter';
 import { sortRows } from './table-sort';
 import { TABLE_ERROR_CODES } from './table-errors';
-import { AnyTableColumn, TableFilter, TableSort, TableSortDirection, TableState } from './table.types';
+import {
+  AnyTableColumn,
+  TableFilter,
+  TableFilterOption,
+  TableFilterOptionsProvider,
+  TableSort,
+  TableSortDirection,
+  TableState,
+} from './table.types';
 
 const DEFAULT_TRACK = 'minmax(0, 1fr)';
 
@@ -41,6 +50,7 @@ const DEFAULT_TRACK = 'minmax(0, 1fr)';
     MenuTriggerDirective,
     MenuSurfaceDirective,
     MenuComponent,
+    MenuSearchDirective,
     MenuCheckboxGroupComponent,
     MenuCheckboxItemComponent,
   ],
@@ -153,6 +163,9 @@ export class TableComponent<T> {
     })),
   }));
 
+  // Per-column filter-menu search text (client-side for static options; drives a provider's setQuery).
+  private filterSearchQueries = signal<Record<string, string>>({});
+
   /**
    * The rendered rows — client-filtered then client-sorted for whichever of
    * `filterMode`/`sortMode` is `'client'`.
@@ -230,5 +243,48 @@ export class TableComponent<T> {
     const direction = this.sortDirection(key);
 
     return direction === 'asc' ? 'ascending' : direction === 'desc' ? 'descending' : 'none';
+  }
+
+  /** The async options provider for a column, or `null` when its options are a static list. */
+  protected filterProviderOf(column: AnyTableColumn<T>): TableFilterOptionsProvider | null {
+    const options = column.filterOptions;
+
+    return options && !Array.isArray(options) ? options : null;
+  }
+
+  protected filterSearchQuery(key: string) {
+    return this.filterSearchQueries()[key] ?? '';
+  }
+
+  protected setFilterSearchQuery(column: AnyTableColumn<T>, query: string) {
+    this.filterSearchQueries.update((current) => ({ ...current, [column.key]: query }));
+    this.filterProviderOf(column)?.setQuery?.(query);
+  }
+
+  /** The options for a column's filter menu — provider-backed, or the static list filtered by the search text. */
+  protected filterOptionsFor(column: AnyTableColumn<T>): TableFilterOption[] {
+    const provider = this.filterProviderOf(column);
+
+    if (provider) return provider.options();
+
+    const options = (column.filterOptions as TableFilterOption[] | undefined) ?? [];
+
+    if (!column.filterSearch) return options;
+
+    const query = this.filterSearchQuery(column.key).trim().toLowerCase();
+
+    return query ? options.filter((option) => option.label.toLowerCase().includes(query)) : options;
+  }
+
+  protected filterLoading(column: AnyTableColumn<T>) {
+    return this.filterProviderOf(column)?.loading?.() ?? false;
+  }
+
+  protected filterHasMore(column: AnyTableColumn<T>) {
+    return this.filterProviderOf(column)?.hasMore?.() ?? false;
+  }
+
+  protected filterLoadMore(column: AnyTableColumn<T>) {
+    this.filterProviderOf(column)?.loadMore?.();
   }
 }

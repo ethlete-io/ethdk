@@ -90,6 +90,7 @@ export class TableStorybookComponent {
         value: (person) => person.role,
         cell: this.roleCell(),
         filterable: true,
+        filterSearch: true,
         filterOptions: ROLES.map((role) => ({ label: role, value: role })),
         width: 'minmax(0, 1fr)',
       },

@@ -170,6 +170,24 @@
     opacity: 1;
   }
 
+  .et-table-filter-empty {
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    color: var(--et-surface-color-muted-solid, CanvasText);
+    font-size: 0.8125rem;
+  }
+
+  .et-table-filter-more {
+    inline-size: 100%;
+    padding: 0.5rem;
+    color: var(--et-theme-color-ink-solid, currentColor);
+    font: inherit;
+    text-align: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
   .et-table-empty-cell {
     grid-column: 1 / -1;
     padding: 2rem var(--et-table-cell-padding-inline);

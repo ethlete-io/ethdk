@@ -1,4 +1,4 @@
-import { TemplateRef } from '@angular/core';
+import { Signal, TemplateRef } from '@angular/core';
 
 /** Horizontal alignment of a column's header and cells. */
 export type TableColumnAlign = 'start' | 'center' | 'end';
@@ -18,6 +18,19 @@ export type TableSort = {
 export type TableFilterOption = {
   label: string;
   value: unknown;
+};
+
+/**
+ * An async/dynamic source for a column's filter options — the shape
+ * `selectOptionsFromQuery` produces, so it can be reused directly (map its
+ * options to `TableFilterOption`s). Wired to the filter menu's search + load-more.
+ */
+export type TableFilterOptionsProvider = {
+  options: Signal<TableFilterOption[]>;
+  loading?: Signal<boolean>;
+  hasMore?: Signal<boolean>;
+  setQuery?: (query: string) => void;
+  loadMore?: () => void;
 };
 
 /** One column's active filter — the selected values, by column `key`. */
@@ -66,8 +79,11 @@ export type TableColumn<T, TValue = unknown> = {
   /** Show a filter menu on this column's header. Provide `filterOptions` for the choices. */
   filterable?: boolean;
 
-  /** The selectable values shown in the filter menu (static). */
-  filterOptions?: TableFilterOption[];
+  /** The selectable values shown in the filter menu — a static list or an async {@link TableFilterOptionsProvider}. */
+  filterOptions?: TableFilterOption[] | TableFilterOptionsProvider;
+
+  /** Show a search box in the filter menu (client-side for a static list; drives `setQuery` for a provider). */
+  filterSearch?: boolean;
 
   /** The value matched against the selected filter values. Defaults to `value`. */
   filterValue?: (row: T) => unknown;

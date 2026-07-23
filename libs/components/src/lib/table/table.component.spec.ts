@@ -1,3 +1,4 @@
+import { computed, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RuntimeError } from '@ethlete/core';
 import { tableColumns } from './table-columns';
@@ -240,6 +241,63 @@ describe('TableComponent', () => {
 
       fixture.componentInstance.setFilterValues('role', ['Viewer']);
       expect(fixture.componentInstance.rows()).toHaveLength(3);
+    });
+
+    // filterOptionsFor / search / provider are protected template helpers — reach them via a cast.
+    type FilterHelpers = {
+      filterOptionsFor: (column: AnyTableColumn<Person>) => { label: string; value: unknown }[];
+      setFilterSearchQuery: (column: AnyTableColumn<Person>, query: string) => void;
+      filterLoading: (column: AnyTableColumn<Person>) => boolean;
+    };
+    const helpersOf = (table: TableComponent<Person>) => table as unknown as FilterHelpers;
+
+    it('narrows a static option list by the in-menu search text', () => {
+      const cols = tableColumns<Person>([
+        {
+          key: 'role',
+          value: (p) => p.role,
+          filterable: true,
+          filterSearch: true,
+          filterOptions: [
+            { label: 'Admin', value: 'Admin' },
+            { label: 'Editor', value: 'Editor' },
+            { label: 'Viewer', value: 'Viewer' },
+          ],
+        },
+      ]);
+      const table = helpersOf(create(cols, UNSORTED).componentInstance);
+      const column = cols[0];
+
+      expect(table.filterOptionsFor(column).map((o) => o.label)).toEqual(['Admin', 'Editor', 'Viewer']);
+
+      table.setFilterSearchQuery(column, 'ed');
+      expect(table.filterOptionsFor(column).map((o) => o.label)).toEqual(['Editor']);
+    });
+
+    it('reads options and loading from an async provider (and forwards search to setQuery)', () => {
+      const query = signal('');
+      const setQuery = vi.fn((next: string) => query.set(next));
+      const cols = tableColumns<Person>([
+        {
+          key: 'role',
+          value: (p) => p.role,
+          filterable: true,
+          filterOptions: {
+            options: computed(() => (query() ? [{ label: 'Match', value: 'm' }] : [])),
+            loading: signal(true),
+            setQuery,
+          },
+        },
+      ]);
+      const table = helpersOf(create(cols, UNSORTED).componentInstance);
+      const column = cols[0];
+
+      expect(table.filterOptionsFor(column)).toEqual([]);
+      expect(table.filterLoading(column)).toBe(true);
+
+      table.setFilterSearchQuery(column, 'x');
+      expect(setQuery).toHaveBeenCalledWith('x');
+      expect(table.filterOptionsFor(column)).toEqual([{ label: 'Match', value: 'm' }]);
     });
   });
 });
