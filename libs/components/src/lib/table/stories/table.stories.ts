@@ -16,6 +16,8 @@ export default {
     reorderable: false,
     virtualScroll: false,
     grouped: false,
+    stickyColumns: false,
+    footer: false,
     surface: 'dark',
   },
   argTypes: {
@@ -29,6 +31,8 @@ export default {
     reorderable: { control: 'boolean' },
     virtualScroll: { control: 'boolean' },
     grouped: { control: 'boolean' },
+    stickyColumns: { control: 'boolean' },
+    footer: { control: 'boolean' },
     surface: { control: 'text' },
   },
 } as Meta<TableStorybookComponent>;
@@ -111,6 +115,32 @@ export const GroupedHeaders: Story = {
         story:
           'Columns sharing a `group` render beneath one spanning label in a second header row; each ' +
           'sub-column stays independently sortable. Ungrouped columns (Name) span both header rows.',
+      },
+    },
+  },
+};
+
+export const StickyColumns: Story = {
+  args: { stickyColumns: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Give columns `sticky: "start"` / `"end"` to pin them while the table scrolls horizontally. ' +
+          'Here Name pins left and Joined pins right; scroll sideways to see the middle columns pass behind.',
+      },
+    },
+  },
+};
+
+export const StickyFooter: Story = {
+  args: { footer: true, constrainHeight: true, rowCount: 40 },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'A column `footerCell` (context: the rendered rows) adds a summary row pinned to the bottom of ' +
+          'the scroll viewport — here a running count in the Name column.',
       },
     },
   },

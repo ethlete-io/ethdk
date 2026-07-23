@@ -1,4 +1,4 @@
-import { computed, signal } from '@angular/core';
+import { computed, signal, TemplateRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RuntimeError } from '@ethlete/core';
 import '../../test-helpers';
@@ -519,6 +519,32 @@ describe('TableComponent', () => {
       expect(rows[0]!.classList.contains('et-table-row--stripe')).toBe(false);
       expect(rows[1]!.classList.contains('et-table-row--stripe')).toBe(true);
       expect(rows[2]!.classList.contains('et-table-row--stripe')).toBe(false);
+    });
+  });
+
+  describe('sticky columns & footer', () => {
+    it('hasStickyStart reflects a start-pinned column; end offsets are null when unpinned', () => {
+      const cols = tableColumns<Person>([
+        { key: 'name', value: (p) => p.name, sticky: 'start' },
+        { key: 'role', value: (p) => p.role },
+      ]);
+      const table = create(cols).componentInstance as TableComponent<Person> & {
+        stickyEnd: (key: string) => number | null;
+      };
+
+      expect(table.hasStickyStart()).toBe(true);
+      expect(table.stickyEnd('role')).toBeNull();
+    });
+
+    it('hasFooter reflects a column footer template', () => {
+      const cols = tableColumns<Person>([
+        { key: 'name', value: (p) => p.name, footerCell: {} as unknown as TemplateRef<unknown> },
+      ]);
+      const fixture = TestBed.createComponent<TableComponent<Person>>(TableComponent);
+      fixture.componentRef.setInput('columns', cols);
+
+      // read the computed without rendering (the dummy template is never instantiated)
+      expect(fixture.componentInstance.hasFooter()).toBe(true);
     });
   });
 

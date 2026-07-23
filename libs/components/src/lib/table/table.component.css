@@ -97,6 +97,13 @@
     line-height: 1.4;
   }
 
+  /* With pinned columns the grid must span its full track width (not just the viewport) so a
+     sticky column's containing block covers the whole scroll extent — otherwise it drifts. */
+  .et-table:where(.et-table--sticky-cols) {
+    inline-size: max-content;
+    min-inline-size: 100%;
+  }
+
   /* Rows are semantic (role=row) but layout-transparent, so their cells are the
      actual grid items and every column track lines up across all rows. */
   .et-table-header-row,
@@ -155,7 +162,9 @@
     background: var(--_et-table-header-bg);
   }
 
-  /* Only runs with a label read as a group; ungrouped runs just extend the header band upward. */
+  /* Only runs with a label read as a group; ungrouped runs just extend the header band upward.
+     No bottom border here — the sub-header row below carries the single, full-width header divider,
+     so the group band and sub-headers read as one header block. */
   .et-table-group-cell:where(.et-table-group-cell--labeled) {
     justify-content: center;
     font-size: 0.78rem;
@@ -163,7 +172,6 @@
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--et-surface-color-muted-solid, CanvasText);
-    border-block-end: 1px solid var(--_et-table-header-border);
   }
 
   .et-table-cell {
@@ -185,6 +193,66 @@
   .et-table-host:where([data-appearance='grid']) .et-table-header-row .et-table-header-cell:last-child,
   .et-table-host:where([data-appearance='grid']) .et-table-row .et-table-cell:last-child {
     border-inline-end: 0;
+  }
+
+  /* ── Sticky columns ─────────────────────────────────────────────────────
+     Pinned cells stay put during horizontal scroll. The inline offset comes from a per-cell
+     style binding (measured header widths); the edge shadow marks the pinned boundary — inner
+     pinned cells' shadows are covered by the next opaque pinned cell, so only the edge shows. */
+  .et-table-sticky-start,
+  .et-table-sticky-end {
+    position: sticky;
+    z-index: 1;
+  }
+
+  .et-table-sticky-start {
+    box-shadow: 4px 0 6px -4px rgb(0 0 0 / 0.18);
+  }
+
+  .et-table-sticky-end {
+    box-shadow: -4px 0 6px -4px rgb(0 0 0 / 0.18);
+  }
+
+  /* Body pinned cells need an opaque fill so scrolled cells pass behind them. */
+  .et-table-cell:where(.et-table-sticky-start, .et-table-sticky-end) {
+    background: var(--et-surface-background-solid, Canvas);
+  }
+
+  /* Header/footer pinned cells are corner-sticky (both axes) and sit above the row-pinned cells. */
+  .et-table-header-cell:where(.et-table-sticky-start, .et-table-sticky-end),
+  .et-table-footer-cell:where(.et-table-sticky-start, .et-table-sticky-end) {
+    z-index: 3;
+  }
+
+  /* ── Sticky footer row ──────────────────────────────────────────────────
+     A summary/totals row pinned to the bottom of the scroll viewport. */
+  .et-table-footer-row {
+    display: contents;
+  }
+
+  .et-table-footer-cell {
+    display: flex;
+    align-items: center;
+    min-inline-size: 0;
+    overflow: hidden;
+    padding: var(--et-table-cell-padding-block) var(--et-table-cell-padding-inline);
+    position: sticky;
+    inset-block-end: 0;
+    z-index: 1;
+    font-weight: 600;
+    /* Opaque band so scrolling rows pass behind the pinned footer. */
+    background: var(--_et-table-header-bg);
+    border-block-start: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.3));
+  }
+
+  .et-table-footer-cell:where([data-align='center']) {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .et-table-footer-cell:where([data-align='end']) {
+    justify-content: flex-end;
+    text-align: end;
   }
 
   .et-table-header-cell:where(.et-table-header-cell--reorderable) {

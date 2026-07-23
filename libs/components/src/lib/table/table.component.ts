@@ -24,6 +24,7 @@ import {
   injectPrefersReducedMotion,
   injectRenderer,
   RuntimeError,
+  signalHostElementDimensions,
 } from '@ethlete/core';
 import { createVirtualWindow } from '../internals/virtual-window';
 import {
@@ -50,6 +51,9 @@ import {
   TableSortDirection,
   TableState,
 } from './table.types';
+
+/** Horizontal sticky offsets (px) for pinned columns, keyed by column key. */
+type StickyOffsets = { start: Record<string, number>; end: Record<string, number> };
 
 const DEFAULT_TRACK = 'minmax(0, 1fr)';
 
@@ -190,9 +194,17 @@ export class TableComponent<T> {
   // Group-header cells; the first is measured to offset the sub-header row's sticky position.
   private groupCells = viewChildren<ElementRef<HTMLElement>>('groupCell');
 
+  // The expander column header, measured so sticky-start columns clear it.
+  private expanderHeaderCell = viewChildren<ElementRef<HTMLElement>>('expanderHeaderCell');
+  // Recompute sticky-column offsets when the host resizes (column widths change).
+  private hostDimensions = signalHostElementDimensions();
+
   // Rendered height of the spanning group-header row (0 when there are no groups), so the
   // sub-header row can stick just below it.
   protected groupRowHeight = signal(0);
+
+  // Measured inline offsets for pinned columns (see the effect that fills them).
+  private stickyOffsets = signal<StickyOffsets>({ start: {}, end: {} });
 
   /** Whether row expansion is active (a detail template was provided). */
   public expandable = computed(() => this.expandedRowTemplate() !== undefined);
@@ -283,6 +295,15 @@ export class TableComponent<T> {
 
     return runs;
   });
+
+  /** Whether any visible column is pinned to the inline-start edge (also pins the expander column). */
+  public hasStickyStart = computed(() => this.visibleColumns().some((column) => column.sticky === 'start'));
+
+  /** Whether any visible column is pinned (start or end) — the grid then sizes to its tracks so pinning works. */
+  public hasStickyColumns = computed(() => this.visibleColumns().some((column) => !!column.sticky));
+
+  /** Whether any visible column defines a footer cell (drives the sticky footer row). */
+  public hasFooter = computed(() => this.visibleColumns().some((column) => !!column.footerCell));
 
   /** The `grid-template-columns` value for the visible columns (plus a leading expander track when expandable). */
   public templateColumns = computed(() => {
@@ -387,6 +408,41 @@ export class TableComponent<T> {
       const cell = this.groupCells()[0];
 
       this.groupRowHeight.set(cell ? cell.nativeElement.offsetHeight : 0);
+    });
+
+    // Measure pinned columns' inline offsets from header-cell widths (re-runs on resize and
+    // structural change). Sticky-start columns stack from the left edge (clearing the expander),
+    // sticky-end columns stack from the right — pin from the edges, so widths sum cleanly.
+    effect(() => {
+      this.hostDimensions();
+
+      const columns = this.visibleColumns();
+      const cells = this.headerCells();
+      const width = (index: number) => cells[index]?.nativeElement.getBoundingClientRect().width ?? 0;
+
+      const start: Record<string, number> = {};
+      let left = this.expanderHeaderCell()[0]?.nativeElement.getBoundingClientRect().width ?? 0;
+
+      for (let index = 0; index < columns.length; index++) {
+        const column = columns[index];
+
+        if (column?.sticky === 'start') start[column.key] = left;
+
+        left += width(index);
+      }
+
+      const end: Record<string, number> = {};
+      let right = 0;
+
+      for (let index = columns.length - 1; index >= 0; index--) {
+        const column = columns[index];
+
+        if (column?.sticky === 'end') end[column.key] = right;
+
+        right += width(index);
+      }
+
+      this.stickyOffsets.set({ start, end });
     });
   }
 
@@ -571,6 +627,16 @@ export class TableComponent<T> {
     const direction = this.sortDirection(key);
 
     return direction === 'asc' ? 'ascending' : direction === 'desc' ? 'descending' : 'none';
+  }
+
+  /** The inline-start offset (px) for a start-pinned column, or `null` when it isn't pinned there. */
+  protected stickyStart(key: string): number | null {
+    return this.stickyOffsets().start[key] ?? null;
+  }
+
+  /** The inline-end offset (px) for an end-pinned column, or `null` when it isn't pinned there. */
+  protected stickyEnd(key: string): number | null {
+    return this.stickyOffsets().end[key] ?? null;
   }
 
   /** The async options provider for a column, or `null` when its options are a static list. */

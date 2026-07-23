@@ -1,7 +1,7 @@
 import { Component, computed, input, TemplateRef, viewChild, ViewEncapsulation } from '@angular/core';
 import { ProvideSurfaceDirective } from '@ethlete/core';
 import { tableColumns } from '../table-columns';
-import { TableCellContext } from '../table.types';
+import { TableCellContext, TableFooterContext } from '../table.types';
 import { TABLE_IMPORTS } from '../table.imports';
 
 type Person = {
@@ -69,6 +69,8 @@ const MANY_PEOPLE: Person[] = Array.from({ length: 2000 }, (_, i) => makePerson(
       </div>
     </ng-template>
 
+    <ng-template #footerCount let-rows>{{ rows.length }} people</ng-template>
+
     <ng-template #roleCell let-value="value">
       <span
         [class]="
@@ -96,11 +98,14 @@ export class TableStorybookComponent {
   public reorderable = input(false);
   public virtualScroll = input(false);
   public grouped = input(false);
+  public stickyColumns = input(false);
+  public footer = input(false);
   public appearance = input<'enclosed' | 'divided' | 'zebra' | 'grid' | 'bare'>('enclosed');
   public density = input<'comfortable' | 'compact' | 'spacious'>('comfortable');
   public surface = input('dark');
 
   public roleCell = viewChild<TemplateRef<TableCellContext<Person, Person['role']>>>('roleCell');
+  public footerCount = viewChild<TemplateRef<TableFooterContext<Person>>>('footerCount');
 
   protected rows = computed(() => {
     if (this.empty()) return [];
@@ -112,15 +117,26 @@ export class TableStorybookComponent {
     // When grouped, Email sits alone under "Contact" and Role + Joined share "Details";
     // Name stays ungrouped and spans both header rows.
     const grouped = this.grouped();
+    // Fixed widths (when pinning) make the table overflow its container, so the sticky columns show.
+    const sticky = this.stickyColumns();
+    const footer = this.footer();
 
     return tableColumns<Person>([
-      { key: 'name', header: 'Name', value: (person) => person.name, sortable: true, width: 'minmax(0, 2fr)' },
+      {
+        key: 'name',
+        header: 'Name',
+        value: (person) => person.name,
+        sortable: true,
+        width: sticky ? '220px' : 'minmax(0, 2fr)',
+        sticky: sticky ? 'start' : undefined,
+        footerCell: footer ? this.footerCount() : undefined,
+      },
       {
         key: 'email',
         header: 'Email',
         value: (person) => person.email,
         sortable: true,
-        width: 'minmax(0, 2fr)',
+        width: sticky ? '280px' : 'minmax(0, 2fr)',
         group: grouped ? 'Contact' : undefined,
       },
       {
@@ -131,7 +147,7 @@ export class TableStorybookComponent {
         filterable: true,
         filterSearch: true,
         filterOptions: ROLES.map((role) => ({ label: role, value: role })),
-        width: 'minmax(0, 1fr)',
+        width: sticky ? '200px' : 'minmax(0, 1fr)',
         group: grouped ? 'Details' : undefined,
       },
       {
@@ -140,7 +156,8 @@ export class TableStorybookComponent {
         value: (person) => person.joinedAt,
         sortable: true,
         align: 'end',
-        width: 'minmax(0, 1fr)',
+        width: sticky ? '160px' : 'minmax(0, 1fr)',
+        sticky: sticky ? 'end' : undefined,
         group: grouped ? 'Details' : undefined,
       },
     ]);

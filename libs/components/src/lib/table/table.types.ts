@@ -61,6 +61,12 @@ export type TableExpandedRowContext<T> = {
   $implicit: T;
 };
 
+/** The context passed to a column's footer cell template — all currently rendered rows, for aggregates. */
+export type TableFooterContext<T> = {
+  /** The rendered rows (client-filtered/sorted), e.g. to sum a column. */
+  $implicit: readonly T[];
+};
+
 /**
  * A typed column definition. Authored via {@link tableColumns} so the row type `T`
  * flows into every `value` accessor, and via `key` into sort/filter/state — the
@@ -99,6 +105,18 @@ export type TableColumn<T, TValue = unknown> = {
 
   /** Custom header template. Receives {@link TableHeaderContext}. */
   headerCell?: TemplateRef<TableHeaderContext>;
+
+  /**
+   * A footer cell template (context: all rendered rows) — e.g. a totals/summary cell. Any column
+   * with a `footerCell` shows the table's sticky footer row. Receives {@link TableFooterContext}.
+   */
+  footerCell?: TemplateRef<TableFooterContext<T>>;
+
+  /**
+   * Pin this column to the inline-start or inline-end edge while the table scrolls horizontally.
+   * Pin from the edges — leading columns to `'start'`, trailing columns to `'end'`.
+   */
+  sticky?: 'start' | 'end';
 
   /** Header/cell alignment. @default 'start' */
   align?: TableColumnAlign;

@@ -1,4 +1,9 @@
-<div [style.grid-template-columns]="templateColumns()" class="et-table" role="grid">
+<div
+  [style.grid-template-columns]="templateColumns()"
+  [class.et-table--sticky-cols]="hasStickyColumns()"
+  class="et-table"
+  role="grid"
+>
   @if (hasGroups()) {
     <div class="et-table-group-row" role="row">
       @if (expandable()) {
@@ -23,7 +28,13 @@
 
   <div class="et-table-header-row" role="row">
     @if (expandable()) {
-      <div class="et-table-header-cell et-table-expander-cell" role="columnheader" aria-hidden="true"></div>
+      <div
+        [class.et-table-sticky-start]="hasStickyStart()"
+        [style.inset-inline-start.px]="hasStickyStart() ? 0 : null"
+        class="et-table-header-cell et-table-expander-cell"
+        role="columnheader"
+        aria-hidden="true"
+      ></div>
     }
     @for (column of visibleColumns(); track column.key) {
       <div
@@ -33,6 +44,10 @@
         [attr.aria-sort]="column.sortable ? ariaSort(column.key) : null"
         [class.et-table-header-cell--reorderable]="reorderable()"
         [class.et-table-header-cell--dragging]="draggingColumn() === column.key"
+        [class.et-table-sticky-start]="column.sticky === 'start'"
+        [class.et-table-sticky-end]="column.sticky === 'end'"
+        [style.inset-inline-start.px]="stickyStart(column.key)"
+        [style.inset-inline-end.px]="stickyEnd(column.key)"
         [disabled]="!reorderable()"
         (dragStarted)="startColumnDrag(column.key, $event)"
         (dragMoved)="updateColumnDrag($event)"
@@ -118,7 +133,12 @@
   @for (row of renderedRows(); track expandKey(row); let index = $index) {
     <div [class.et-table-row--stripe]="(rowIndexOffset() + index) % 2 === 1" class="et-table-row" role="row">
       @if (expandable()) {
-        <div class="et-table-cell et-table-expander-cell" role="gridcell">
+        <div
+          [class.et-table-sticky-start]="hasStickyStart()"
+          [style.inset-inline-start.px]="hasStickyStart() ? 0 : null"
+          class="et-table-cell et-table-expander-cell"
+          role="gridcell"
+        >
           @if (canExpand(row)) {
             <button
               [attr.aria-expanded]="isExpanded(row)"
@@ -137,6 +157,10 @@
           #bodyCell
           [attr.data-align]="column.align ?? 'start'"
           [attr.data-col-key]="column.key"
+          [class.et-table-sticky-start]="column.sticky === 'start'"
+          [class.et-table-sticky-end]="column.sticky === 'end'"
+          [style.inset-inline-start.px]="stickyStart(column.key)"
+          [style.inset-inline-end.px]="stickyEnd(column.key)"
           class="et-table-cell"
           role="gridcell"
         >
@@ -185,6 +209,35 @@
       role="presentation"
       aria-hidden="true"
     ></div>
+  }
+
+  @if (hasFooter()) {
+    <div class="et-table-footer-row" role="row">
+      @if (expandable()) {
+        <div
+          [class.et-table-sticky-start]="hasStickyStart()"
+          [style.inset-inline-start.px]="hasStickyStart() ? 0 : null"
+          class="et-table-footer-cell et-table-expander-cell"
+          role="gridcell"
+          aria-hidden="true"
+        ></div>
+      }
+      @for (column of visibleColumns(); track column.key) {
+        <div
+          [attr.data-align]="column.align ?? 'start'"
+          [class.et-table-sticky-start]="column.sticky === 'start'"
+          [class.et-table-sticky-end]="column.sticky === 'end'"
+          [style.inset-inline-start.px]="stickyStart(column.key)"
+          [style.inset-inline-end.px]="stickyEnd(column.key)"
+          class="et-table-footer-cell"
+          role="gridcell"
+        >
+          @if (column.footerCell) {
+            <ng-container *ngTemplateOutlet="column.footerCell; context: { $implicit: rows() }" />
+          }
+        </div>
+      }
+    </div>
   }
 </div>
 
