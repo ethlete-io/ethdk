@@ -154,10 +154,9 @@ signals plus `setSort`/`setPage`. `rows` keeps the previous page visible while t
 next one loads (no empty flash); `setSort` resets to `initialPage`. Call it from a
 field initializer / constructor, like a query or query stack.
 
-::: info Legacy client & shared core
-A twin for the legacy `V2QueryClient` (and factoring the shared query-lifecycle
-core out of the select + table adapters) is planned — see the porting plan.
-:::
+For the legacy `V2QueryClient`, use **`tableRowsFromV2Query`** — the same config
+and return shape, backed by the legacy `queryComputed` container. Both adapters
+share one client-agnostic core (`createTableRowsSource`), so they stay in lockstep.
 
 ## Sticky header
 
