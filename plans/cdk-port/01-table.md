@@ -439,12 +439,23 @@ was reviewed and steered the scope below. Decisions taken with the user:
     a hovered selected row keeps its accent. Storybook + specs + docs; folded into
     the consolidated `table.md` changeset.
   - **Planned next (user-requested, not yet built):**
-    - **Row router links** — a row navigates on click (e.g. `routerLink` per row),
-      without swallowing clicks on interactive cell content (checkboxes, action
-      buttons). Needs a row-level link/click API + careful event handling.
-    - **Action cells** — first-class support for cells with buttons (edit/delete)
-      and menus; today done via a `cell` template, but a documented recipe (and
-      maybe an alignment/spacing helper) would help. Overlaps the cells cookbook.
+    Guiding principle for both of the next two: **the table ships the API surface,
+    not the behavior.** No baked-in "edit"/"delete"/"navigate" — the SDK stays
+    schema- and action-agnostic; the consumer wires whatever they need through the
+    provided hooks/templates. We only make that surface exist and be ergonomic.
+    - **Row navigation / router links** — expose a way to make a row navigable: a
+      per-row link target (`routerLink`/`href`) and/or a `(rowClick)`-style output,
+      NOT a hardcoded navigation. Key requirement: clicks on interactive cell
+      content (selection checkbox, action buttons, links, the expander) must **not**
+      trigger the row navigation — the row-level handler ignores events originating
+      from interactive descendants. The table provides the row-click/link hook; the
+      app decides what it does.
+    - **Action cells** — do **not** ship edit/delete/action components or an
+      "actions column" helper. The existing `cell` template + `{ $implicit: row }`
+      context already IS the API surface: the consumer renders their own `et-button`/
+      `et-menu`/links in a plain column. Scope here is only: confirm the surface is
+      sufficient (e.g. does a cell need row index / selection state? it has them) and
+      **document recipes** in the cells cookbook — nothing more baked in.
     - **Pagination** — `02-pagination.md` **Phase 1 shipped** (`et-pagination` +
       headless `etPagination`). Table integration: bind `et-pagination`'s `page`/
       `(pageChange)` to `tableRowsFromQuery`'s `page`/`setPage`, `totalPages` from
