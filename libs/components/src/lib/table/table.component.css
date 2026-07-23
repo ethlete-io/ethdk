@@ -11,8 +11,79 @@
     initial-value: 0.75rem;
   }
 
+  /* The table owns its scroll container: give the host a bounded block-size to scroll within, and
+     the sticky header pins to it (virtualization relies on this too). Without a height it grows to
+     content; a too-wide table scrolls horizontally inside itself instead of breaking the page. */
   :where(.et-table-host) {
     display: block;
+    overflow: auto;
+
+    /* Skin knobs — the flat cell rules read these; each appearance overrides what it needs. The band
+       is a subtle neutral tint mixed over the surface so it stays opaque under the sticky header. */
+    --_et-table-band: color-mix(
+      in srgb,
+      var(--et-surface-interaction-solid, gray) 7%,
+      var(--et-surface-background-solid, Canvas)
+    );
+    --_et-table-header-bg: var(--et-surface-background-solid, Canvas);
+    --_et-table-header-border: var(--et-surface-border-solid, rgb(128 128 128 / 0.3));
+    --_et-table-row-divider: transparent;
+    --_et-table-stripe-bg: transparent;
+  }
+
+  /* Density drives the shared cell-padding custom props. */
+  .et-table-host:where([data-density='compact']) {
+    --et-table-cell-padding-block: 0.35rem;
+    --et-table-cell-padding-inline: 0.6rem;
+  }
+
+  .et-table-host:where([data-density='comfortable']) {
+    --et-table-cell-padding-block: 0.625rem;
+    --et-table-cell-padding-inline: 0.75rem;
+  }
+
+  .et-table-host:where([data-density='spacious']) {
+    --et-table-cell-padding-block: 0.95rem;
+    --et-table-cell-padding-inline: 1rem;
+  }
+
+  /* "Panel" skins wrap the table in a bordered, rounded surface; overflow:auto (above) clips the
+     rounded corners and keeps the sticky header inside the panel. */
+  .et-table-host:where([data-appearance='enclosed'], [data-appearance='zebra'], [data-appearance='grid']) {
+    border: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.3));
+    border-radius: 0.625rem;
+  }
+
+  .et-table-host:where([data-appearance='enclosed']) {
+    --_et-table-header-bg: var(--_et-table-band);
+    --_et-table-row-divider: var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 0.04),
+      0 6px 16px rgb(0 0 0 / 0.06);
+  }
+
+  .et-table-host:where([data-appearance='divided']) {
+    --_et-table-row-divider: var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
+  }
+
+  .et-table-host:where([data-appearance='zebra']) {
+    --_et-table-header-bg: var(--_et-table-band);
+    --_et-table-stripe-bg: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 4%, transparent);
+  }
+
+  .et-table-host:where([data-appearance='grid']) {
+    --_et-table-header-bg: var(--_et-table-band);
+    --_et-table-row-divider: var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
+  }
+
+  .et-table-host:where([data-appearance='bare']) {
+    --_et-table-header-border: transparent;
+  }
+
+  /* Full-width filler standing in for the unrendered rows above/below the virtual window; its
+     block-size is the window's padding, so the scrollbar reflects the whole row count. */
+  .et-table-spacer {
+    grid-column: 1 / -1;
   }
 
   .et-table {
@@ -59,13 +130,29 @@
     z-index: 1;
     font-weight: 600;
     color: var(--et-surface-color-muted-solid, CanvasText);
-    /* Opaque so scrolling rows pass behind the pinned header. */
-    background: var(--et-surface-background-solid, Canvas);
-    border-block-end: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.3));
+    /* Opaque (band or plain surface) so scrolling rows pass behind the pinned header. */
+    background: var(--_et-table-header-bg);
+    border-block-end: 1px solid var(--_et-table-header-border);
   }
 
   .et-table-cell {
-    border-block-end: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
+    border-block-end: 1px solid var(--_et-table-row-divider);
+  }
+
+  /* Zebra striping — keyed off the absolute row index so it survives virtualization and expansion. */
+  .et-table-row--stripe .et-table-cell {
+    background: var(--_et-table-stripe-bg);
+  }
+
+  /* Grid skin: vertical rules between cells (dropped on the last column of each row). */
+  .et-table-host:where([data-appearance='grid']) .et-table-header-cell,
+  .et-table-host:where([data-appearance='grid']) .et-table-cell {
+    border-inline-end: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
+  }
+
+  .et-table-host:where([data-appearance='grid']) .et-table-header-row .et-table-header-cell:last-child,
+  .et-table-host:where([data-appearance='grid']) .et-table-row .et-table-cell:last-child {
+    border-inline-end: 0;
   }
 
   .et-table-header-cell:where(.et-table-header-cell--reorderable) {
@@ -73,13 +160,41 @@
     user-select: none;
   }
 
+  /* The source header stays in place, dimmed, while its floating ghost is dragged. */
   .et-table-header-cell:where(.et-table-header-cell--dragging) {
     cursor: grabbing;
-    background: color-mix(
-      in srgb,
-      var(--et-surface-interaction-solid, gray) 14%,
-      var(--et-surface-background-solid, Canvas)
-    );
+    opacity: 0.4;
+  }
+
+  /* Floating copy of the dragged header, following the pointer (offset so it clears a finger/cursor). */
+  .et-table-drag-ghost {
+    position: fixed;
+    z-index: 10;
+    transform: translate(0.75rem, 0.5rem);
+    max-inline-size: 16rem;
+    padding: var(--et-table-cell-padding-block) var(--et-table-cell-padding-inline);
+    overflow: hidden;
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--et-surface-color-solid, CanvasText);
+    background: var(--et-surface-background-solid, Canvas);
+    border: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.3));
+    border-radius: 0.375rem;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+    pointer-events: none;
+  }
+
+  /* Vertical line marking where the dragged column will drop. */
+  .et-table-drop-indicator {
+    position: fixed;
+    z-index: 9;
+    inline-size: 2px;
+    margin-inline-start: -1px;
+    background: var(--et-theme-color-primary-solid, currentColor);
+    border-radius: 1px;
+    pointer-events: none;
   }
 
   .et-table-header-cell:where([data-align='center']),

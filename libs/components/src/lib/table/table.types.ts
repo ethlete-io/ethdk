@@ -118,22 +118,40 @@ export type TableColumn<T, TValue = unknown> = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyTableColumn<T> = TableColumn<T, any>;
 
-/** Per-column entry of a serialized {@link TableState}. */
+/**
+ * Per-column entry of a serialized {@link TableState}. Shaped to map 1:1 onto
+ * server-side per-column config (e.g. a list-view's `hidden` / `valueSortOrder` /
+ * `filterValues`), so bridging to a backend is mechanical.
+ */
 export type TableColumnState = {
   key: string;
   hidden: boolean;
+  /** This column's sort direction, when it is sorted. Omitted when unsorted. */
+  sort?: TableSortDirection;
+  /**
+   * This column's 0-based position within the active multi-sort, so the sort priority
+   * round-trips. Written only when more than one column is sorted.
+   */
+  sortPriority?: number;
+  /** This column's selected filter values. Omitted when the column is unfiltered. */
+  filterValues?: unknown[];
 };
 
 /**
- * A serializable snapshot of a table's configurable state. Versioned so persisted
- * states survive schema evolution. Phase 1 carries column order + visibility;
- * later phases add sort, filters and expanded/selected row keys.
+ * A serializable snapshot of a table's configurable state — column order, visibility,
+ * sort and filters (per column) plus expanded rows. Versioned so persisted states
+ * survive schema evolution. Round-trips via `state()` / `restoreState()`.
  */
 export type TableState = {
   /** State schema version. */
   v: 1;
-  /** Columns in display order, each with its visibility. */
+  /** Columns in display order, each with its visibility, sort and filter. */
   columns: TableColumnState[];
+  /**
+   * Expanded row keys (the string form of each `rowKey`). Present only when row
+   * expansion is used with a `rowKey` — without one, expansion can't be serialized.
+   */
+  expanded?: string[];
 };
 
 /** A reference to a row, derived from a consumer-provided `rowKey`, or the row itself. */

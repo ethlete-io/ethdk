@@ -7,20 +7,26 @@ export default {
   decorators: [moduleMetadata({ imports: [TableStorybookComponent] })],
   args: {
     rowCount: 6,
+    appearance: 'enclosed',
+    density: 'comfortable',
     constrainHeight: false,
     empty: false,
     multiSort: false,
     expandable: false,
     reorderable: false,
+    virtualScroll: false,
     surface: 'dark',
   },
   argTypes: {
     rowCount: { control: { type: 'range', min: 0, max: 40, step: 1 } },
+    appearance: { control: 'inline-radio', options: ['enclosed', 'divided', 'zebra', 'grid', 'bare'] },
+    density: { control: 'inline-radio', options: ['comfortable', 'compact', 'spacious'] },
     constrainHeight: { control: 'boolean' },
     empty: { control: 'boolean' },
     multiSort: { control: 'boolean' },
     expandable: { control: 'boolean' },
     reorderable: { control: 'boolean' },
+    virtualScroll: { control: 'boolean' },
     surface: { control: 'text' },
   },
 } as Meta<TableStorybookComponent>;
@@ -28,6 +34,28 @@ export default {
 type Story = StoryObj<TableStorybookComponent>;
 
 export const Default: Story = {};
+
+export const Appearance: Story = {
+  args: { appearance: 'zebra' },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The `appearance` input picks the frame: `enclosed` (default, bordered rounded panel), `divided`, ' +
+          '`zebra`, `grid`, or `bare`. Switch it in the controls to compare.',
+      },
+    },
+  },
+};
+
+export const Density: Story = {
+  args: { density: 'compact' },
+  parameters: {
+    docs: {
+      description: { story: '`density` sets the cell padding: `comfortable` (default), `compact`, `spacious`.' },
+    },
+  },
+};
 
 export const MultiSort: Story = {
   args: { multiSort: true },
@@ -70,5 +98,18 @@ export const Reorderable: Story = {
   args: { reorderable: true },
   parameters: {
     docs: { description: { story: 'Drag a column header sideways to reorder columns.' } },
+  },
+};
+
+export const Virtualized: Story = {
+  args: { virtualScroll: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'With `virtualScroll`, the table becomes its own scroll container and renders only the rows near ' +
+          'the viewport — here 2,000 rows scroll smoothly with a handful in the DOM. Give the table a bounded height.',
+      },
+    },
   },
 };

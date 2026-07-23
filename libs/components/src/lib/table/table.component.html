@@ -7,13 +7,14 @@
       <div
         #headerCell
         [attr.data-align]="column.align ?? 'start'"
+        [attr.data-col-key]="column.key"
         [attr.aria-sort]="column.sortable ? ariaSort(column.key) : null"
         [class.et-table-header-cell--reorderable]="reorderable()"
         [class.et-table-header-cell--dragging]="draggingColumn() === column.key"
         [disabled]="!reorderable()"
-        (dragStarted)="draggingColumn.set(column.key)"
-        (dragMoved)="updateColumnReorder($event)"
-        (dragEnded)="draggingColumn.set(null)"
+        (dragStarted)="startColumnDrag(column.key, $event)"
+        (dragMoved)="updateColumnDrag($event)"
+        (dragEnded)="endColumnDrag()"
         class="et-table-header-cell"
         role="columnheader"
         etDragHandle
@@ -83,8 +84,17 @@
     }
   </div>
 
-  @for (row of rows(); track expandKey(row); let index = $index) {
-    <div class="et-table-row" role="row">
+  @if (virtualScroll() && rows().length) {
+    <div
+      [style.block-size.px]="virtualWindow.paddingTop()"
+      class="et-table-spacer"
+      role="presentation"
+      aria-hidden="true"
+    ></div>
+  }
+
+  @for (row of renderedRows(); track expandKey(row); let index = $index) {
+    <div [class.et-table-row--stripe]="(rowIndexOffset() + index) % 2 === 1" class="et-table-row" role="row">
       @if (expandable()) {
         <div class="et-table-cell et-table-expander-cell" role="gridcell">
           @if (canExpand(row)) {
@@ -101,10 +111,19 @@
         </div>
       }
       @for (column of visibleColumns(); track column.key) {
-        <div [attr.data-align]="column.align ?? 'start'" class="et-table-cell" role="gridcell">
+        <div
+          #bodyCell
+          [attr.data-align]="column.align ?? 'start'"
+          [attr.data-col-key]="column.key"
+          class="et-table-cell"
+          role="gridcell"
+        >
           @if (column.cell) {
             <ng-container
-              *ngTemplateOutlet="column.cell; context: { $implicit: row, value: column.value(row), index: index }"
+              *ngTemplateOutlet="
+                column.cell;
+                context: { $implicit: row, value: column.value(row), index: rowIndexOffset() + index }
+              "
             />
           } @else {
             <span class="et-table-cell-text">{{ column.value(row) }}</span>
@@ -136,4 +155,33 @@
       </div>
     </div>
   }
+
+  @if (virtualScroll() && rows().length) {
+    <div
+      [style.block-size.px]="virtualWindow.paddingBottom()"
+      class="et-table-spacer"
+      role="presentation"
+      aria-hidden="true"
+    ></div>
+  }
 </div>
+
+@if (draggingColumn(); as draggingKey) {
+  <!-- Floating copy of the dragged header; the table markup stays put until drop. -->
+  @if (dragPointer(); as pointer) {
+    <div [style.left.px]="pointer.x" [style.top.px]="pointer.y" class="et-table-drag-ghost" aria-hidden="true">
+      {{ draggedColumnHeader() }}
+    </div>
+  }
+
+  <!-- Where the column will land, shown only while hovering another column. -->
+  @if (dragIndicatorX() !== null && dragBounds(); as bounds) {
+    <div
+      [style.left.px]="dragIndicatorX()"
+      [style.top.px]="bounds.top"
+      [style.height.px]="bounds.height"
+      class="et-table-drop-indicator"
+      aria-hidden="true"
+    ></div>
+  }
+}

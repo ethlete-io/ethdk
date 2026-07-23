@@ -10,10 +10,10 @@ export type VirtualWindowConfig = {
    */
   container: Signal<HTMLElement | null>;
   itemCount: Signal<number>;
-  /** Row height assumed until a rendered row was measured. */
-  estimateItemHeight: number;
-  /** Rows kept rendered beyond the visible range on both sides. */
-  overscan: number;
+  /** Row height assumed until a rendered row was measured. Reactive so a host input can drive it. */
+  estimateItemHeight: number | Signal<number>;
+  /** Rows kept rendered beyond the visible range on both sides. Reactive so a host input can drive it. */
+  overscan: number | Signal<number>;
 };
 
 export type VirtualWindowRange = {
@@ -40,6 +40,9 @@ export type VirtualWindow = {
  */
 const FALLBACK_VIEWPORT_SIZE = 400;
 
+const asSignal = (value: number | Signal<number>): Signal<number> =>
+  typeof value === 'number' ? signal(value) : value;
+
 /**
  * Uniform-row-height windowing over a scroll container: only the rows near the viewport are
  * rendered, block paddings stand in for the rest of the scroll height. Purely behavioral —
@@ -47,7 +50,11 @@ const FALLBACK_VIEWPORT_SIZE = 400;
  * context (it subscribes to the container's scroll and size).
  */
 export const createVirtualWindow = (config: VirtualWindowConfig): VirtualWindow => {
-  const itemHeight = signal(config.estimateItemHeight);
+  const estimateItemHeight = asSignal(config.estimateItemHeight);
+  const overscan = asSignal(config.overscan);
+  // Height of a real, rendered row once one was measured; falls back to the estimate until then.
+  const measuredItemHeight = signal<number | null>(null);
+  const itemHeight = computed(() => measuredItemHeight() ?? estimateItemHeight());
   const scrollOffset = signal(0);
   const containerDimensions = signalElementDimensions(config.container);
   const viewportSize = computed(() => containerDimensions().client?.height ?? 0);
@@ -123,8 +130,9 @@ export const createVirtualWindow = (config: VirtualWindowConfig): VirtualWindow 
     // clamp into the item range: when the count shrinks while scrolled far down (filtering a
     // long list), the stale offset would otherwise start past the end — the browser's own
     // clamp-scroll event arrives a frame later, but the window must never be empty until then
-    const start = Math.min(Math.max(0, Math.floor(offset / height) - config.overscan), Math.max(0, count - 1));
-    const end = Math.min(count, Math.max(Math.ceil((offset + viewport) / height) + config.overscan, start + 1));
+    const rows = overscan();
+    const start = Math.min(Math.max(0, Math.floor(offset / height) - rows), Math.max(0, count - 1));
+    const end = Math.min(count, Math.max(Math.ceil((offset + viewport) / height) + rows, start + 1));
 
     return { start, end };
   });
@@ -135,8 +143,8 @@ export const createVirtualWindow = (config: VirtualWindowConfig): VirtualWindow 
   const measureItem = (element: HTMLElement) => {
     const height = element.offsetHeight;
 
-    if (height > 0 && height !== itemHeight()) {
-      itemHeight.set(height);
+    if (height > 0 && height !== measuredItemHeight()) {
+      measuredItemHeight.set(height);
     }
   };
 

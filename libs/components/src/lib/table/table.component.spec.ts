@@ -1,6 +1,7 @@
 import { computed, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RuntimeError } from '@ethlete/core';
+import '../../test-helpers';
 import { tableColumns } from './table-columns';
 import { TABLE_ERROR_CODES } from './table-errors';
 import { filterRows } from './table-filter';
@@ -359,6 +360,193 @@ describe('TableComponent', () => {
 
       expect(table.isExpanded({ id: 1, name: 'renamed', role: 'Viewer' })).toBe(true);
       expect(table.isExpanded({ id: 2, name: 'Bob', role: 'Editor' })).toBe(false);
+    });
+  });
+
+  describe('state export/restore', () => {
+    const stateColumns = () =>
+      tableColumns<Person>([
+        { key: 'id', header: 'ID', value: (p) => p.id, sortable: true },
+        { key: 'name', header: 'Name', value: (p) => p.name, sortable: true },
+        { key: 'role', header: 'Role', value: (p) => p.role, filterable: true },
+      ]);
+
+    it('captures sort direction and filter values per column', () => {
+      const { componentInstance: table } = create(stateColumns(), UNSORTED);
+
+      table.toggleSort('name'); // asc
+      table.setFilterValues('role', ['Viewer']);
+
+      const state = table.state();
+
+      expect(state.columns.find((c) => c.key === 'name')?.sort).toBe('asc');
+      expect(state.columns.find((c) => c.key === 'role')?.filterValues).toEqual(['Viewer']);
+      // single sort carries no priority index
+      expect(state.columns.find((c) => c.key === 'name')?.sortPriority).toBeUndefined();
+    });
+
+    it('round-trips a multi-sort through state()/restoreState() preserving priority', () => {
+      const fixture = create(stateColumns(), UNSORTED);
+      fixture.componentRef.setInput('multiSort', true);
+      fixture.detectChanges();
+      const table = fixture.componentInstance;
+
+      table.toggleSort('role');
+      table.toggleSort('name');
+      table.toggleSort('id');
+      const snapshot = table.state();
+
+      // priority is recorded in click order
+      expect(snapshot.columns.find((c) => c.key === 'role')?.sortPriority).toBe(0);
+      expect(snapshot.columns.find((c) => c.key === 'id')?.sortPriority).toBe(2);
+
+      table.sort.set([]);
+      expect(table.sort()).toEqual([]);
+
+      table.restoreState(snapshot);
+      expect(table.sort()).toEqual([
+        { key: 'role', direction: 'asc' },
+        { key: 'name', direction: 'asc' },
+        { key: 'id', direction: 'asc' },
+      ]);
+    });
+
+    it('round-trips filters', () => {
+      const { componentInstance: table } = create(stateColumns(), UNSORTED);
+
+      table.setFilterValues('role', ['Admin', 'Editor']);
+      const snapshot = table.state();
+
+      table.setFilterValues('role', []);
+      expect(table.filters()).toEqual([]);
+
+      table.restoreState(snapshot);
+      expect(table.filters()).toEqual([{ key: 'role', values: ['Admin', 'Editor'] }]);
+    });
+
+    it('serializes and round-trips expanded rows when a rowKey is set', () => {
+      const fixture = create(stateColumns(), UNSORTED);
+      fixture.componentRef.setInput('rowKey', (row: Person) => row.id); // numeric key
+      fixture.detectChanges();
+      const table = fixture.componentInstance;
+
+      table.toggleExpanded(UNSORTED[0]!);
+      const snapshot = table.state();
+
+      // serialized as the string form of the numeric rowKey
+      expect(snapshot.expanded).toEqual([String(UNSORTED[0]!.id)]);
+
+      table.expandedKeys.set(new Set());
+      expect(table.isExpanded(UNSORTED[0]!)).toBe(false);
+
+      table.restoreState(snapshot);
+      expect(table.isExpanded(UNSORTED[0]!)).toBe(true);
+    });
+
+    it('omits expanded from state when no rowKey is set', () => {
+      const { componentInstance: table } = create(stateColumns(), UNSORTED);
+
+      table.toggleExpanded(UNSORTED[0]!);
+
+      expect(table.state().expanded).toBeUndefined();
+    });
+  });
+
+  describe('appearance & density', () => {
+    it('defaults to the enclosed appearance and comfortable density on the host', () => {
+      const { nativeElement } = create(columns());
+
+      expect(nativeElement.getAttribute('data-appearance')).toBe('enclosed');
+      expect(nativeElement.getAttribute('data-density')).toBe('comfortable');
+    });
+
+    it('reflects the appearance and density inputs to host attributes', () => {
+      const fixture = create(columns());
+      fixture.componentRef.setInput('appearance', 'zebra');
+      fixture.componentRef.setInput('density', 'compact');
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.getAttribute('data-appearance')).toBe('zebra');
+      expect(fixture.nativeElement.getAttribute('data-density')).toBe('compact');
+    });
+
+    it('marks odd-indexed rows with the stripe class (zebra styles it)', () => {
+      const fixture = create(columns(), UNSORTED); // 3 rows
+      const rows = [...fixture.nativeElement.querySelectorAll('.et-table-row')] as HTMLElement[];
+
+      expect(rows[0]!.classList.contains('et-table-row--stripe')).toBe(false);
+      expect(rows[1]!.classList.contains('et-table-row--stripe')).toBe(true);
+      expect(rows[2]!.classList.contains('et-table-row--stripe')).toBe(false);
+    });
+  });
+
+  describe('virtualization', () => {
+    const many: Person[] = Array.from({ length: 100 }, (_, index) => ({
+      id: index,
+      name: `Person ${index}`,
+      role: 'Viewer',
+    }));
+
+    // jsdom has no layout — back the geometry the virtual window reads with plain values.
+    const mockScrollGeometry = (host: HTMLElement, viewportHeight: number) => {
+      let scrollTop = 0;
+
+      Object.defineProperty(host, 'clientHeight', { value: viewportHeight, configurable: true });
+      Object.defineProperty(host, 'scrollTop', {
+        get: () => scrollTop,
+        set: (value: number) => {
+          scrollTop = Math.max(0, value);
+        },
+        configurable: true,
+      });
+    };
+
+    it('renders every row and keeps a zero index offset while virtual scroll is off', () => {
+      const { componentInstance: table } = create(columns(), many);
+
+      expect(table.renderedRows()).toHaveLength(100);
+      expect(table.rowIndexOffset()).toBe(0);
+    });
+
+    it('renders only a window of rows when virtual scroll is on', () => {
+      const fixture = create(columns(), many);
+      mockScrollGeometry(fixture.nativeElement, 240);
+
+      fixture.componentRef.setInput('virtualScroll', true);
+      fixture.componentRef.setInput('estimateRowHeight', 40);
+      fixture.componentRef.setInput('overscan', 2);
+      fixture.detectChanges();
+
+      const table = fixture.componentInstance;
+
+      // 240px viewport / 40px rows = 6 visible + 2 overscan below, starting at the top
+      expect(table.renderedRows().length).toBe(8);
+      expect(table.rowIndexOffset()).toBe(0);
+      expect(table.virtualWindow.paddingTop()).toBe(0);
+      expect(table.virtualWindow.paddingBottom()).toBe((100 - 8) * 40);
+    });
+
+    it('shifts the window and the index offset as the container scrolls', () => {
+      const fixture = create(columns(), many);
+      const host: HTMLElement = fixture.nativeElement;
+      mockScrollGeometry(host, 240);
+
+      fixture.componentRef.setInput('virtualScroll', true);
+      fixture.componentRef.setInput('estimateRowHeight', 40);
+      fixture.componentRef.setInput('overscan', 2);
+      fixture.detectChanges();
+
+      host.scrollTop = 400;
+      host.dispatchEvent(new Event('scroll'));
+      fixture.detectChanges();
+
+      const table = fixture.componentInstance;
+      const { start } = table.virtualWindow.range();
+
+      expect(start).toBeGreaterThan(0);
+      expect(table.rowIndexOffset()).toBe(start);
+      // the rendered slice lines up with the window over the source rows
+      expect(table.renderedRows()[0]).toBe(many[start]);
     });
   });
 });

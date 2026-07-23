@@ -26,7 +26,7 @@ const NAMES = [
 ];
 const ROLES: Person['role'][] = ['Admin', 'Editor', 'Viewer'];
 
-const PEOPLE: Person[] = Array.from({ length: 40 }, (_, i) => {
+const makePerson = (i: number): Person => {
   const name = NAMES[i % NAMES.length] ?? 'Person';
 
   return {
@@ -36,26 +36,30 @@ const PEOPLE: Person[] = Array.from({ length: 40 }, (_, i) => {
     role: ROLES[i % ROLES.length] ?? 'Viewer',
     joinedAt: `2024-${String((i % 12) + 1).padStart(2, '0')}-15`,
   };
-});
+};
+
+const PEOPLE: Person[] = Array.from({ length: 40 }, (_, i) => makePerson(i));
+
+// A large set to exercise virtualization — only a window of these ever renders.
+const MANY_PEOPLE: Person[] = Array.from({ length: 2000 }, (_, i) => makePerson(i));
 
 @Component({
   selector: 'et-sb-table',
   template: `
     <div [etProvideSurface]="surface()" class="max-w-3xl p-8 font-sans">
-      <div
-        [style.max-block-size.px]="constrainHeight() ? 320 : null"
-        class="overflow-auto rounded-xl border border-black/10 dark:border-white/10"
-        data-testid="scroll-container"
-      >
-        <et-table
-          [data]="rows()"
-          [columns]="columns()"
-          [multiSort]="multiSort()"
-          [reorderable]="reorderable()"
-          [expandedRowTemplate]="expandable() ? detail : undefined"
-          emptyLabel="No people found"
-        />
-      </div>
+      <!-- The table is its own scroll container: a bounded height (sticky/virtual demos) makes it scroll. -->
+      <et-table
+        [style.block-size.px]="constrainHeight() || virtualScroll() ? 400 : null"
+        [appearance]="appearance()"
+        [density]="density()"
+        [data]="rows()"
+        [columns]="columns()"
+        [multiSort]="multiSort()"
+        [reorderable]="reorderable()"
+        [virtualScroll]="virtualScroll()"
+        [expandedRowTemplate]="expandable() ? detail : undefined"
+        emptyLabel="No people found"
+      />
     </div>
 
     <ng-template #detail let-person>
@@ -90,11 +94,18 @@ export class TableStorybookComponent {
   public multiSort = input(false);
   public expandable = input(false);
   public reorderable = input(false);
+  public virtualScroll = input(false);
+  public appearance = input<'enclosed' | 'divided' | 'zebra' | 'grid' | 'bare'>('enclosed');
+  public density = input<'comfortable' | 'compact' | 'spacious'>('comfortable');
   public surface = input('dark');
 
   public roleCell = viewChild<TemplateRef<TableCellContext<Person, Person['role']>>>('roleCell');
 
-  protected rows = computed(() => (this.empty() ? [] : PEOPLE.slice(0, this.rowCount())));
+  protected rows = computed(() => {
+    if (this.empty()) return [];
+
+    return this.virtualScroll() ? MANY_PEOPLE : PEOPLE.slice(0, this.rowCount());
+  });
 
   protected columns = computed(() =>
     tableColumns<Person>([

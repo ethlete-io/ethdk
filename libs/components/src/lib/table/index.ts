@@ -5,6 +5,7 @@ export * from './table-rows-from-query';
 export * from './table-rows-from-v2-query';
 export * from './table-rows-source';
 export * from './table-sort';
+export * from './table-state-url';
 export * from './table.component';
 export * from './table.imports';
 export * from './table.types';

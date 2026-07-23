@@ -1,8 +1,12 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
+  afterNextRender,
   Component,
   computed,
+  effect,
   ElementRef,
+  inject,
+  Injector,
   input,
   isDevMode,
   linkedSignal,
@@ -12,7 +16,16 @@ import {
   ViewEncapsulation,
   viewChildren,
 } from '@angular/core';
-import { DragHandleDirective, DragMoveEvent, RuntimeError } from '@ethlete/core';
+import {
+  DragHandleDirective,
+  DragMoveEvent,
+  DragStartEvent,
+  forceReflow,
+  injectPrefersReducedMotion,
+  injectRenderer,
+  RuntimeError,
+} from '@ethlete/core';
+import { createVirtualWindow } from '../internals/virtual-window';
 import {
   MenuCheckboxGroupComponent,
   MenuCheckboxItemComponent,
@@ -27,6 +40,7 @@ import { sortRows } from './table-sort';
 import { TABLE_ERROR_CODES } from './table-errors';
 import {
   AnyTableColumn,
+  TableColumnState,
   TableExpandedRowContext,
   TableFilter,
   TableFilterOption,
@@ -70,9 +84,16 @@ const DEFAULT_TRACK = 'minmax(0, 1fr)';
   ],
   host: {
     class: 'et-table-host',
+    '[attr.data-appearance]': 'appearance()',
+    '[attr.data-density]': 'density()',
   },
 })
 export class TableComponent<T> {
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private injector = inject(Injector);
+  private renderer = injectRenderer();
+  private prefersReducedMotion = injectPrefersReducedMotion();
+
   /** The rows to render. */
   public data = input<readonly T[]>([]);
 
@@ -87,6 +108,16 @@ export class TableComponent<T> {
 
   /** Text shown when there are no rows and no `[etTableEmpty]` content is projected. */
   public emptyLabel = input('No data');
+
+  /**
+   * The table's visual frame. `'enclosed'` (default) is a bordered, rounded surface panel with a
+   * tinted header band; `'divided'` is borderless with row dividers; `'zebra'` stripes rows; `'grid'`
+   * draws full cell borders; `'bare'` has no chrome. @default 'enclosed'
+   */
+  public appearance = input<'enclosed' | 'divided' | 'zebra' | 'grid' | 'bare'>('enclosed');
+
+  /** Row density (cell padding). @default 'comfortable' */
+  public density = input<'comfortable' | 'compact' | 'spacious'>('comfortable');
 
   /**
    * The active sort, as an ordered list of `{ key, direction }`. Two-way bindable.
@@ -135,13 +166,40 @@ export class TableComponent<T> {
   /** Allow reordering columns by dragging their headers. @default false */
   public reorderable = input(false);
 
+  /**
+   * Render only the rows near the viewport instead of all of them. The table is its own scroll
+   * container, so give it a bounded height (e.g. `style="block-size: 24rem"`) for the window to
+   * track. @default false
+   */
+  public virtualScroll = input(false);
+
+  /** Row height assumed before a real row is measured — tune it to your row size for a stable first paint. @default 48 */
+  public estimateRowHeight = input(48);
+
+  /** Rows kept rendered just outside the viewport on each side, to hide scroll flicker. @default 6 */
+  public overscan = input(6);
+
   private headerCells = viewChildren<ElementRef<HTMLElement>>('headerCell');
+
+  // Every rendered body cell (tagged with `data-col-key`); the first drives virtual-window
+  // measurement, and they're grouped by column to animate a column shift on reorder drop.
+  private bodyCells = viewChildren<ElementRef<HTMLElement>>('bodyCell');
 
   /** Whether row expansion is active (a detail template was provided). */
   public expandable = computed(() => this.expandedRowTemplate() !== undefined);
 
   // The column key currently being drag-reordered.
   protected draggingColumn = signal<string | null>(null);
+
+  // Live pointer position of the reorder drag — drives the floating ghost header.
+  protected dragPointer = signal<{ x: number; y: number } | null>(null);
+
+  // Where a drop would land: the column it would insert next to, and which side.
+  private dragTarget = signal<{ key: string; before: boolean } | null>(null);
+
+  // Viewport x of the drop indicator line, and the header/body span it covers.
+  protected dragIndicatorX = signal<number | null>(null);
+  protected dragBounds = signal<{ top: number; height: number } | null>(null);
 
   // Column order + visibility overrides reset when the `columns` input changes, but
   // a manual restoreState() persists until then (linkedSignal semantics).
@@ -172,6 +230,13 @@ export class TableComponent<T> {
     return map;
   });
 
+  /** The header text of the column being dragged, shown in the floating ghost. */
+  protected draggedColumnHeader = computed(() => {
+    const key = this.draggingColumn();
+
+    return key ? (this.columnsByKey().get(key)?.header ?? key) : null;
+  });
+
   private orderedColumns = computed(() => {
     const map = this.columnsByKey();
 
@@ -194,14 +259,37 @@ export class TableComponent<T> {
     return tracks.join(' ');
   });
 
-  /** The serializable, versioned table state (column order + visibility). */
-  public state = computed<TableState>(() => ({
-    v: 1,
-    columns: this.orderedColumns().map((column) => ({
-      key: column.key,
-      hidden: this.hiddenColumns().has(column.key),
-    })),
-  }));
+  /** The serializable, versioned table state — column order, visibility, sort, filters and expanded rows. */
+  public state = computed<TableState>(() => {
+    const sort = this.sort();
+    const multiSorted = sort.length > 1;
+    const sortByKey = new Map(sort.map((entry, index) => [entry.key, { direction: entry.direction, index }]));
+    const filtersByKey = new Map(this.filters().map((entry) => [entry.key, entry.values]));
+
+    const columns = this.orderedColumns().map((column) => {
+      const entry: TableColumnState = { key: column.key, hidden: this.hiddenColumns().has(column.key) };
+      const columnSort = sortByKey.get(column.key);
+      const columnFilter = filtersByKey.get(column.key);
+
+      if (columnSort) {
+        entry.sort = columnSort.direction;
+
+        if (multiSorted) entry.sortPriority = columnSort.index;
+      }
+
+      if (columnFilter?.length) entry.filterValues = columnFilter;
+
+      return entry;
+    });
+
+    const rowKey = this.rowKey();
+    const expandedKeys = this.expandedKeys();
+
+    // Expanded rows only serialize when a rowKey gives them a stable string identity.
+    const expanded = rowKey && expandedKeys.size ? [...expandedKeys].map(String) : undefined;
+
+    return expanded ? { v: 1, columns, expanded } : { v: 1, columns };
+  });
 
   // Per-column filter-menu search text (client-side for static options; drives a provider's setQuery).
   private filterSearchQueries = signal<Record<string, string>>({});
@@ -225,10 +313,61 @@ export class TableComponent<T> {
     return [...result];
   });
 
-  /** Apply a previously captured {@link TableState} (column order + visibility). */
+  /**
+   * Windows {@link rows} to the viewport when {@link virtualScroll} is on: `paddingTop()`/
+   * `paddingBottom()` stand in for the rows outside {@link renderedRows}, rendered as spacer
+   * grid cells. Pass-through (renders everything) while virtual scrolling is off.
+   */
+  public virtualWindow = createVirtualWindow({
+    container: computed(() => (this.virtualScroll() ? this.elementRef.nativeElement : null)),
+    itemCount: computed(() => this.rows().length),
+    estimateItemHeight: this.estimateRowHeight,
+    overscan: this.overscan,
+  });
+
+  /** The rows actually rendered — the virtual window's slice of {@link rows}, or all of them. */
+  public renderedRows = computed(() => {
+    if (!this.virtualScroll()) return this.rows();
+
+    const { start, end } = this.virtualWindow.range();
+
+    return this.rows().slice(start, end);
+  });
+
+  /** Absolute index of the first rendered row, so cell contexts keep true row indices while virtualized. */
+  public rowIndexOffset = computed(() => (this.virtualScroll() ? this.virtualWindow.range().start : 0));
+
+  constructor() {
+    // Feed a real rendered row's height back into the window so its scroll math self-corrects
+    // from the estimate. Uniform-height model: any base row stands in for all of them.
+    effect(() => {
+      if (!this.virtualScroll()) return;
+
+      const cell = this.bodyCells()[0];
+
+      if (cell) this.virtualWindow.measureItem(cell.nativeElement);
+    });
+  }
+
+  /** Apply a previously captured {@link TableState} — column order, visibility, sort, filters and expanded rows. */
   public restoreState(next: TableState) {
     this.columnOrder.set(next.columns.map((column) => column.key));
     this.hiddenColumns.set(new Set(next.columns.filter((column) => column.hidden).map((column) => column.key)));
+
+    const sort = next.columns
+      .filter((column) => column.sort)
+      .sort((a, b) => (a.sortPriority ?? 0) - (b.sortPriority ?? 0))
+      .map((column) => ({ key: column.key, direction: column.sort as TableSortDirection }));
+
+    this.sort.set(sort);
+
+    const filters = next.columns
+      .filter((column) => column.filterValues?.length)
+      .map((column) => ({ key: column.key, values: column.filterValues ?? [] }));
+
+    this.filters.set(filters);
+
+    this.expandedKeys.set(new Set(next.expanded ?? []));
   }
 
   /** The sort direction for a column key, or `null` when it isn't sorted. */
@@ -327,39 +466,55 @@ export class TableComponent<T> {
   }
 
   protected expandKey(row: T): unknown {
-    return this.rowKey()?.(row) ?? row;
+    const rowKey = this.rowKey();
+
+    // Coerce to string so expansion keys match their serialized form regardless of whether
+    // rowKey returns a string or a number; without a rowKey, fall back to row identity.
+    return rowKey ? String(rowKey(row)) : row;
   }
 
   protected canExpand(row: T) {
     return this.expandable() && (this.expandableRow()?.(row) ?? true);
   }
 
-  /** Live-reorder the dragged column when the pointer crosses another header. */
-  protected updateColumnReorder(event: DragMoveEvent) {
+  /** Begin a reorder drag: lift a floating ghost of the header, leaving the table markup in place. */
+  protected startColumnDrag(key: string, event: DragStartEvent) {
+    const rect = this.elementRef.nativeElement.getBoundingClientRect();
+
+    this.draggingColumn.set(key);
+    this.dragPointer.set({ x: event.clientX, y: event.clientY });
+    this.dragTarget.set(null);
+    this.dragIndicatorX.set(null);
+    this.dragBounds.set({ top: rect.top, height: rect.height });
+  }
+
+  /** Track the pointer during a reorder drag: move the ghost and show where the column would drop. */
+  protected updateColumnDrag(event: DragMoveEvent) {
+    if (!this.draggingColumn()) return;
+
+    this.dragPointer.set({ x: event.clientX, y: event.clientY });
+    this.resolveDropTarget(event.clientX);
+  }
+
+  /** End a reorder drag: commit the deferred move once, then animate the columns into place. */
+  protected endColumnDrag() {
     const dragging = this.draggingColumn();
+    const target = this.dragTarget();
+    const firstLefts = this.captureColumnLefts();
 
-    if (!dragging) return;
+    if (dragging && target && target.key !== dragging) {
+      this.commitColumnReorder({ dragging, overKey: target.key, before: target.before });
+    }
 
-    // Hit-test the header the pointer is over by its rect (viewChildren order === visibleColumns order).
-    const cells = this.headerCells();
-    const columns = this.visibleColumns();
+    this.draggingColumn.set(null);
+    this.dragPointer.set(null);
+    this.dragTarget.set(null);
+    this.dragIndicatorX.set(null);
+    this.dragBounds.set(null);
 
-    for (let index = 0; index < cells.length; index++) {
-      const cell = cells[index];
-
-      if (!cell) continue;
-
-      const rect = cell.nativeElement.getBoundingClientRect();
-
-      if (event.clientX >= rect.left && event.clientX <= rect.right) {
-        const overKey = columns[index]?.key;
-
-        if (overKey && overKey !== dragging) {
-          this.moveColumn(dragging, this.columnOrder().indexOf(overKey));
-        }
-
-        return;
-      }
+    if (dragging && !this.prefersReducedMotion()) {
+      // The order changed synchronously; FLIP once the reordered grid has rendered.
+      afterNextRender(() => this.playReorderFlip(firstLefts), { injector: this.injector });
     }
   }
 
@@ -418,5 +573,121 @@ export class TableComponent<T> {
 
   protected filterLoadMore(column: AnyTableColumn<T>) {
     this.filterProviderOf(column)?.loadMore?.();
+  }
+
+  // Resolve which column the pointer is over and which side, and place the drop indicator at that edge.
+  private resolveDropTarget(clientX: number) {
+    const dragging = this.draggingColumn();
+    const cells = this.headerCells();
+    const columns = this.visibleColumns();
+
+    for (let index = 0; index < cells.length; index++) {
+      const cell = cells[index];
+      const overKey = columns[index]?.key;
+
+      if (!cell || !overKey) continue;
+
+      const rect = cell.nativeElement.getBoundingClientRect();
+
+      if (clientX < rect.left || clientX > rect.right) continue;
+
+      if (overKey === dragging) {
+        // Hovering the dragged column itself — no move, no indicator.
+        this.dragTarget.set(null);
+        this.dragIndicatorX.set(null);
+
+        return;
+      }
+
+      const before = clientX < rect.left + rect.width / 2;
+
+      this.dragTarget.set({ key: overKey, before });
+      this.dragIndicatorX.set(before ? rect.left : rect.right);
+
+      return;
+    }
+  }
+
+  // Insert the dragged column next to `overKey` in the full column order (hidden columns kept in place).
+  private commitColumnReorder({ dragging, overKey, before }: { dragging: string; overKey: string; before: boolean }) {
+    this.columnOrder.update((order) => {
+      const next = order.filter((key) => key !== dragging);
+      const overIndex = next.indexOf(overKey);
+
+      if (overIndex === -1) return order;
+
+      next.splice(before ? overIndex : overIndex + 1, 0, dragging);
+
+      return next;
+    });
+  }
+
+  // Left edge of every visible column's header, keyed by column, captured before a reorder commit.
+  private captureColumnLefts() {
+    const cells = this.headerCells();
+    const columns = this.visibleColumns();
+    const lefts = new Map<string, number>();
+
+    cells.forEach((cell, index) => {
+      const key = columns[index]?.key;
+
+      if (key) lefts.set(key, cell.nativeElement.getBoundingClientRect().left);
+    });
+
+    return lefts;
+  }
+
+  // FLIP each column that moved: slide its header + body cells from their old x to the new one.
+  private playReorderFlip(firstLefts: Map<string, number>) {
+    const cells = this.headerCells();
+    const columns = this.visibleColumns();
+    const bodyByColumn = this.bodyCellsByColumn();
+
+    cells.forEach((cell, index) => {
+      const key = columns[index]?.key;
+      const firstLeft = key ? firstLefts.get(key) : undefined;
+
+      if (!key || firstLeft === undefined) return;
+
+      const delta = firstLeft - cell.nativeElement.getBoundingClientRect().left;
+
+      if (Math.abs(delta) < 1) return;
+
+      const elements = [cell.nativeElement, ...(bodyByColumn.get(key) ?? [])];
+
+      // FLIP: pin each cell at its old x with no transition…
+      for (const element of elements) {
+        this.renderer.setStyle(element, { transition: 'none', transform: `translateX(${delta}px)` });
+      }
+
+      forceReflow(cell.nativeElement);
+
+      // …then let it transition back to its new resting position.
+      for (const element of elements) {
+        this.renderer.setStyle(element, { transition: 'transform 200ms ease' });
+        this.renderer.removeStyle(element, 'transform');
+      }
+    });
+  }
+
+  // Group the rendered body cells by their `data-col-key`, for the reorder FLIP.
+  private bodyCellsByColumn() {
+    const grouped = new Map<string, HTMLElement[]>();
+
+    for (const cell of this.bodyCells()) {
+      const key = cell.nativeElement.dataset['colKey'];
+
+      if (!key) continue;
+
+      const group = grouped.get(key);
+
+      if (group) {
+        group.push(cell.nativeElement);
+      } else {
+        grouped.set(key, [cell.nativeElement]);
+      }
+    }
+
+    return grouped;
   }
 }
