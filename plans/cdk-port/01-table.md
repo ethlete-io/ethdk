@@ -1,9 +1,10 @@
 # 01 — Table (new system, NOT a cdk port)
 
-**Status: Phases 1 + 2 shipped (2026-07-23).** Size: XL — split into shippable
+**Status: Phases 1 + 2 + 3 shipped (2026-07-23).** Size: XL — split into shippable
 phases below. Phase 0 decisions recorded under _Markup strategy_; the table lives
-in `libs/components/src/lib/table/`. Next up: Phase 3 (filter headers). Phase 2b
-leftovers (legacy-client adapter twin + shared query-core extraction) noted below.
+in `libs/components/src/lib/table/`. Next up: Phase 4 (row expansion / sub-tables).
+Deferred: headless `[etTable]` directive (review), Phase 3b filter search/async,
+select-adapter unification onto the shared driver.
 
 ## Why green-field
 
@@ -287,8 +288,18 @@ toTotal, ... })`, called from an injection context like the select's. It
   adapters weren't refactored onto the same driver — their page-accumulation core
   differs and rewriting production code wasn't worth the regression risk; the
   driver pattern is there if we unify later. Select specs stayed green (untouched).
-- **Phase 3 — Filter headers**: menu + search composition, typed filter state,
-  client helpers + server wiring.
+- **Phase 3 — Filter headers**: ✅ **shipped 2026-07-23**. `filterable` columns
+  with `filterOptions` render a filter menu (multi-select checkbox list built on
+  `menu`) driving a two-way `filters` state (`{key,values}[]`); `filterValue` for
+  matching on a non-display value. `filterMode` client (exported tree-shakable
+  `filterRows` — AND across columns, OR within) / server (rows untouched). The
+  `tableRowsFrom(V2)Query` adapters gained `filters`/`setFilters`. Spec (filterRows
+  - client/server) + Storybook-verified (open menu → select → rows narrow) + docs
+  - changeset. **Note:** the filter UI pulls `menu` into the table component's
+    imports, so `menu` bundles with the table even when unused — a tree-shaking
+    tradeoff of the monolithic-header helper-column API (acceptable; revisit if it
+    matters). **Deferred (Phase 3b):** in-menu search + async paginated filter
+    options (reuse `MenuSearchDirective` + the query-source core).
 - **Phase 4 — Row expansion / nested sub-tables**.
 - **Phase 5 — Column reordering** (+ visibility toggling, which state
   serialization needs anyway).
