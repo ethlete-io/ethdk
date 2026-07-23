@@ -122,8 +122,8 @@ export class TableComponent<T> {
    */
   public appearance = input<'enclosed' | 'divided' | 'zebra' | 'grid' | 'bare'>('enclosed');
 
-  /** Row density (cell padding). @default 'comfortable' */
-  public density = input<'comfortable' | 'compact' | 'spacious'>('comfortable');
+  /** Row density (cell padding): `'sm'` tight, `'md'` default, `'lg'` roomy. @default 'md' */
+  public density = input<'sm' | 'md' | 'lg'>('md');
 
   /**
    * The active sort, as an ordered list of `{ key, direction }`. Two-way bindable.

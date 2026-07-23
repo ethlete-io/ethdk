@@ -35,17 +35,17 @@
   }
 
   /* Density drives the shared cell-padding custom props. */
-  .et-table-host:where([data-density='compact']) {
+  .et-table-host:where([data-density='sm']) {
     --et-table-cell-padding-block: 0.35rem;
     --et-table-cell-padding-inline: 0.6rem;
   }
 
-  .et-table-host:where([data-density='comfortable']) {
+  .et-table-host:where([data-density='md']) {
     --et-table-cell-padding-block: 0.625rem;
     --et-table-cell-padding-inline: 0.75rem;
   }
 
-  .et-table-host:where([data-density='spacious']) {
+  .et-table-host:where([data-density='lg']) {
     --et-table-cell-padding-block: 0.95rem;
     --et-table-cell-padding-inline: 1rem;
   }

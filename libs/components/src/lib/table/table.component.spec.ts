@@ -495,21 +495,21 @@ describe('TableComponent', () => {
   });
 
   describe('appearance & density', () => {
-    it('defaults to the enclosed appearance and comfortable density on the host', () => {
+    it('defaults to the enclosed appearance and md density on the host', () => {
       const { nativeElement } = create(columns());
 
       expect(nativeElement.getAttribute('data-appearance')).toBe('enclosed');
-      expect(nativeElement.getAttribute('data-density')).toBe('comfortable');
+      expect(nativeElement.getAttribute('data-density')).toBe('md');
     });
 
     it('reflects the appearance and density inputs to host attributes', () => {
       const fixture = create(columns());
       fixture.componentRef.setInput('appearance', 'zebra');
-      fixture.componentRef.setInput('density', 'compact');
+      fixture.componentRef.setInput('density', 'sm');
       fixture.detectChanges();
 
       expect(fixture.nativeElement.getAttribute('data-appearance')).toBe('zebra');
-      expect(fixture.nativeElement.getAttribute('data-density')).toBe('compact');
+      expect(fixture.nativeElement.getAttribute('data-density')).toBe('sm');
     });
 
     it('marks odd-indexed rows with the stripe class (zebra styles it)', () => {

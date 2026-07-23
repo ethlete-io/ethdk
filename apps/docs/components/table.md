@@ -45,26 +45,26 @@ typed `value` accessor is the only link between a column and the row.
 
 ## Inputs
 
-| Input                 | Default         | Description                                                                                               |
-| --------------------- | --------------- | --------------------------------------------------------------------------------------------------------- |
-| `data`                | `[]`            | The rows to render.                                                                                       |
-| `columns`             | `[]`            | The column definitions from `tableColumns<T>()`.                                                          |
-| `rowKey`              | reference       | `(row: T) => string \| number` for stable change tracking (and later row-keyed state).                    |
-| `appearance`          | `'enclosed'`    | Visual frame: `'enclosed'`, `'divided'`, `'zebra'`, `'grid'`, `'bare'`. See [below](#appearance-density). |
-| `density`             | `'comfortable'` | Cell padding: `'comfortable'`, `'compact'`, `'spacious'`.                                                 |
-| `emptyLabel`          | `'No data'`     | Text shown when there are no rows and no `[etTableEmpty]` content is projected.                           |
-| `sort`                | `[]`            | Two-way bindable sort state — an ordered `{ key, direction }[]`. See [Sorting](#sorting).                 |
-| `multiSort`           | `false`         | Allow more than one column to be sorted at once.                                                          |
-| `sortMode`            | `'client'`      | `'client'` sorts rows in the browser; `'server'` leaves them for the backend to sort.                     |
-| `filters`             | `[]`            | Two-way bindable filter state — `{ key, values }[]`. See [Filtering](#filtering).                         |
-| `filterMode`          | `'client'`      | `'client'` filters rows in the browser; `'server'` leaves them for the backend to filter.                 |
-| `expandedRowTemplate` | —               | Detail template; setting it enables [row expansion](#row-expansion). Context: `{ $implicit: row }`.       |
-| `expandableRow`       | all rows        | `(row: T) => boolean` gating which rows can expand.                                                       |
-| `expandedKeys`        | `new Set()`     | Two-way bindable set of expanded row keys (by `rowKey`).                                                  |
-| `reorderable`         | `false`         | Allow reordering columns by dragging their headers. See [below](#column-visibility-reordering).           |
-| `virtualScroll`       | `false`         | Render only the rows near the viewport. See [Virtualization](#virtualization).                            |
-| `estimateRowHeight`   | `48`            | Row height (px) assumed before a real row is measured — tune to your rows for a stable first paint.       |
-| `overscan`            | `6`             | Rows kept rendered just outside the viewport on each side, to hide scroll flicker.                        |
+| Input                 | Default      | Description                                                                                               |
+| --------------------- | ------------ | --------------------------------------------------------------------------------------------------------- |
+| `data`                | `[]`         | The rows to render.                                                                                       |
+| `columns`             | `[]`         | The column definitions from `tableColumns<T>()`.                                                          |
+| `rowKey`              | reference    | `(row: T) => string \| number` for stable change tracking (and later row-keyed state).                    |
+| `appearance`          | `'enclosed'` | Visual frame: `'enclosed'`, `'divided'`, `'zebra'`, `'grid'`, `'bare'`. See [below](#appearance-density). |
+| `density`             | `'md'`       | Cell padding: `'sm'` (tight), `'md'`, `'lg'` (roomy).                                                     |
+| `emptyLabel`          | `'No data'`  | Text shown when there are no rows and no `[etTableEmpty]` content is projected.                           |
+| `sort`                | `[]`         | Two-way bindable sort state — an ordered `{ key, direction }[]`. See [Sorting](#sorting).                 |
+| `multiSort`           | `false`      | Allow more than one column to be sorted at once.                                                          |
+| `sortMode`            | `'client'`   | `'client'` sorts rows in the browser; `'server'` leaves them for the backend to sort.                     |
+| `filters`             | `[]`         | Two-way bindable filter state — `{ key, values }[]`. See [Filtering](#filtering).                         |
+| `filterMode`          | `'client'`   | `'client'` filters rows in the browser; `'server'` leaves them for the backend to filter.                 |
+| `expandedRowTemplate` | —            | Detail template; setting it enables [row expansion](#row-expansion). Context: `{ $implicit: row }`.       |
+| `expandableRow`       | all rows     | `(row: T) => boolean` gating which rows can expand.                                                       |
+| `expandedKeys`        | `new Set()`  | Two-way bindable set of expanded row keys (by `rowKey`).                                                  |
+| `reorderable`         | `false`      | Allow reordering columns by dragging their headers. See [below](#column-visibility-reordering).           |
+| `virtualScroll`       | `false`      | Render only the rows near the viewport. See [Virtualization](#virtualization).                            |
+| `estimateRowHeight`   | `48`         | Row height (px) assumed before a real row is measured — tune to your rows for a stable first paint.       |
+| `overscan`            | `6`          | Rows kept rendered just outside the viewport on each side, to hide scroll flicker.                        |
 
 ## Appearance & density
 
@@ -72,7 +72,7 @@ Two independent presentation inputs. `appearance` is the frame; `density` is the
 row rhythm. They compose with every feature.
 
 ```html
-<et-table [data]="rows()" [columns]="columns" appearance="zebra" density="compact" />
+<et-table [data]="rows()" [columns]="columns" appearance="zebra" density="sm" />
 ```
 
 <StoryEmbed id="components-table--appearance" height="360px" />
@@ -85,7 +85,7 @@ row rhythm. They compose with every feature.
 | `grid`       | Full cell borders — spreadsheet density.                                                     |
 | `bare`       | No chrome at all; hover only. For dashboards and cards.                                      |
 
-`density` is `'comfortable'` (default), `'compact'`, or `'spacious'` — it sets the
+`density` is `'md'` (default), `'sm'` (tight), or `'lg'` (roomy) — it sets the
 `--et-table-cell-padding-block` / `--et-table-cell-padding-inline` custom properties,
 which you can also override directly for a bespoke value.
 

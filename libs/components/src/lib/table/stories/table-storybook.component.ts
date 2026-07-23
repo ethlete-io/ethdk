@@ -101,7 +101,7 @@ export class TableStorybookComponent {
   public stickyColumns = input(false);
   public footer = input(false);
   public appearance = input<'enclosed' | 'divided' | 'zebra' | 'grid' | 'bare'>('enclosed');
-  public density = input<'comfortable' | 'compact' | 'spacious'>('comfortable');
+  public density = input<'sm' | 'md' | 'lg'>('md');
   public surface = input('dark');
 
   public roleCell = viewChild<TemplateRef<TableCellContext<Person, Person['role']>>>('roleCell');

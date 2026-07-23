@@ -6,7 +6,7 @@ Add a type-safe, light-by-default **Table** component (`et-table`, `TABLE_IMPORT
 
 Columns are declared with the typed helper `tableColumns<T>()`, so the row type flows into every `value` accessor (and, via each column's `key`, into serializable state) without wiring templates to data by string. Rows and cells render on a CSS grid with a sticky header; the table is its own scroll container (give it a bounded height to scroll a body under the pinned header). Colors come from the surface theming tokens, and any cell can hold custom content via `cell` / `headerCell` templates.
 
-- **Appearance & density**: `appearance` (`'enclosed'` default, `'divided'`, `'zebra'`, `'grid'`, `'bare'`) and `density` (`'comfortable'`, `'compact'`, `'spacious'`).
+- **Appearance & density**: `appearance` (`'enclosed'` default, `'divided'`, `'zebra'`, `'grid'`, `'bare'`) and `density` (`'sm'`, `'md'` default, `'lg'`).
 - **Sorting**: `sortable` columns with tri-state `aria-sort` headers, a two-way `sort` state, `multiSort`, and `sortMode` `'client'` (exported `sortRows`) / `'server'`.
 - **Filtering**: `filterable` columns with a multi-select menu, two-way `filters` state, `filterMode` `'client'` (exported `filterRows`) / `'server'`, plus in-menu search and async/paginated options.
 - **Row expansion**: `expandedRowTemplate` renders lazy, reduced-motion-aware detail rows (nest a table for sub-tables); `expandableRow` gates rows, `expandedKeys` is two-way.

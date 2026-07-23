@@ -8,7 +8,7 @@ export default {
   args: {
     rowCount: 6,
     appearance: 'enclosed',
-    density: 'comfortable',
+    density: 'md',
     constrainHeight: false,
     empty: false,
     multiSort: false,
@@ -23,7 +23,7 @@ export default {
   argTypes: {
     rowCount: { control: { type: 'range', min: 0, max: 40, step: 1 } },
     appearance: { control: 'inline-radio', options: ['enclosed', 'divided', 'zebra', 'grid', 'bare'] },
-    density: { control: 'inline-radio', options: ['comfortable', 'compact', 'spacious'] },
+    density: { control: 'inline-radio', options: ['sm', 'md', 'lg'] },
     constrainHeight: { control: 'boolean' },
     empty: { control: 'boolean' },
     multiSort: { control: 'boolean' },
@@ -55,10 +55,10 @@ export const Appearance: Story = {
 };
 
 export const Density: Story = {
-  args: { density: 'compact' },
+  args: { density: 'sm' },
   parameters: {
     docs: {
-      description: { story: '`density` sets the cell padding: `comfortable` (default), `compact`, `spacious`.' },
+      description: { story: '`density` sets the cell padding: `sm` (tight), `md` (default), `lg` (roomy).' },
     },
   },
 };
