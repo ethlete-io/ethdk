@@ -142,6 +142,34 @@
     opacity: 0.7;
   }
 
+  .et-table-filter {
+    display: inline-flex;
+    margin-inline-start: auto;
+  }
+
+  .et-table-filter-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.125rem;
+    color: inherit;
+    background: none;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    opacity: 0.45;
+  }
+
+  .et-table-filter-trigger:where(:hover, :focus-visible) {
+    opacity: 0.8;
+    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 12%, transparent);
+  }
+
+  .et-table-filter-trigger:where([data-active='true']) {
+    color: var(--et-theme-color-primary-solid, currentColor);
+    opacity: 1;
+  }
+
   .et-table-empty-cell {
     grid-column: 1 / -1;
     padding: 2rem var(--et-table-cell-padding-inline);

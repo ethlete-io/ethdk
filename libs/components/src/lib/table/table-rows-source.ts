@@ -1,5 +1,5 @@
 import { computed, effect, linkedSignal, Signal, WritableSignal } from '@angular/core';
-import { TableSort } from './table.types';
+import { TableFilter, TableSort } from './table.types';
 
 // The client-agnostic core shared by the signals-client (`tableRowsFromQuery`) and legacy-client
 // (`tableRowsFromV2Query`) adapters. Each client provides a small "driver" that normalizes its
@@ -9,6 +9,8 @@ import { TableSort } from './table.types';
 export type TableRowsQueryState = {
   /** The active sort (bind the table's `sort` output through `setSort`). */
   sort: Signal<TableSort[]>;
+  /** The active filters (bind the table's `filters` output through `setFilters`). */
+  filters: Signal<TableFilter[]>;
   /** The current page (1-based by default). */
   page: Signal<number>;
 };
@@ -26,10 +28,14 @@ export type TableRowsFromQuery<TRow> = {
   hasMore: Signal<boolean>;
   /** The current sort — bind to `<et-table [sort]>`. */
   sort: Signal<TableSort[]>;
+  /** The current filters — bind to `<et-table [filters]>`. */
+  filters: Signal<TableFilter[]>;
   /** The current page. */
   page: Signal<number>;
   /** Set the sort (wire the table's `(sortChange)`); resets the page to `initialPage`. */
   setSort: (sort: TableSort[]) => void;
+  /** Set the filters (wire the table's `(filtersChange)`); resets the page to `initialPage`. */
+  setFilters: (filters: TableFilter[]) => void;
   /** Set the page (wire a paginator). */
   setPage: (page: number) => void;
 };
@@ -47,6 +53,7 @@ export type TableRowsDriver<TResponse> = {
 export type CreateTableRowsSourceOptions<TResponse, TRow> = {
   driver: TableRowsDriver<TResponse>;
   sort: WritableSignal<TableSort[]>;
+  filters: WritableSignal<TableFilter[]>;
   page: WritableSignal<number>;
   initialPage: number;
   toRows: (response: TResponse) => TRow[];
@@ -58,7 +65,7 @@ export type CreateTableRowsSourceOptions<TResponse, TRow> = {
 export const createTableRowsSource = <TResponse, TRow>(
   options: CreateTableRowsSourceOptions<TResponse, TRow>,
 ): TableRowsFromQuery<TRow> => {
-  const { driver, sort, page, initialPage, toRows, toTotal, toHasMore } = options;
+  const { driver, sort, filters, page, initialPage, toRows, toTotal, toHasMore } = options;
 
   // Keep the previous page's rows while the next request is in flight (driver.response is null
   // between executions) so the table doesn't flash empty. linkedSignal folds synchronously on read.
@@ -87,9 +94,14 @@ export const createTableRowsSource = <TResponse, TRow>(
       return response === null || !toHasMore ? false : toHasMore(response);
     }),
     sort: sort.asReadonly(),
+    filters: filters.asReadonly(),
     page: page.asReadonly(),
     setSort: (next) => {
       sort.set(next);
+      page.set(initialPage);
+    },
+    setFilters: (next) => {
+      filters.set(next);
       page.set(initialPage);
     },
     setPage: (next) => page.set(next),

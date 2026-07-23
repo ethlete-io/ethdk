@@ -14,6 +14,18 @@ export type TableSort = {
   direction: TableSortDirection;
 };
 
+/** A selectable value in a column's filter menu. */
+export type TableFilterOption = {
+  label: string;
+  value: unknown;
+};
+
+/** One column's active filter — the selected values, by column `key`. */
+export type TableFilter = {
+  key: string;
+  values: unknown[];
+};
+
 /** The context passed to a custom cell template. */
 export type TableCellContext<T, TValue> = {
   /** The row. */
@@ -50,6 +62,15 @@ export type TableColumn<T, TValue = unknown> = {
 
   /** Comparable value to sort by. Defaults to `value`. Use when the display value isn't comparable. */
   sortValue?: (row: T) => TableSortValue;
+
+  /** Show a filter menu on this column's header. Provide `filterOptions` for the choices. */
+  filterable?: boolean;
+
+  /** The selectable values shown in the filter menu (static). */
+  filterOptions?: TableFilterOption[];
+
+  /** The value matched against the selected filter values. Defaults to `value`. */
+  filterValue?: (row: T) => unknown;
 
   /** Custom cell template. Receives {@link TableCellContext}. */
   cell?: TemplateRef<TableCellContext<T, TValue>>;

@@ -84,7 +84,15 @@ export class TableStorybookComponent {
     tableColumns<Person>([
       { key: 'name', header: 'Name', value: (person) => person.name, sortable: true, width: 'minmax(0, 2fr)' },
       { key: 'email', header: 'Email', value: (person) => person.email, sortable: true, width: 'minmax(0, 2fr)' },
-      { key: 'role', header: 'Role', value: (person) => person.role, cell: this.roleCell(), width: 'minmax(0, 1fr)' },
+      {
+        key: 'role',
+        header: 'Role',
+        value: (person) => person.role,
+        cell: this.roleCell(),
+        filterable: true,
+        filterOptions: ROLES.map((role) => ({ label: role, value: role })),
+        width: 'minmax(0, 1fr)',
+      },
       {
         key: 'joined',
         header: 'Joined',

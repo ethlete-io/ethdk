@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RuntimeError } from '@ethlete/core';
 import { tableColumns } from './table-columns';
 import { TABLE_ERROR_CODES } from './table-errors';
+import { filterRows } from './table-filter';
 import { sortRows } from './table-sort';
 import { TableComponent } from './table.component';
 import { AnyTableColumn } from './table.types';
@@ -180,6 +181,65 @@ describe('TableComponent', () => {
 
       fixture.componentInstance.toggleSort('name');
       expect(fixture.componentInstance.rows().map((r) => r.name)).toEqual(['Charlie', 'Ada', 'Bob']);
+    });
+  });
+
+  describe('filtering', () => {
+    const filterableColumns = () =>
+      tableColumns<Person>([
+        { key: 'name', header: 'Name', value: (person) => person.name },
+        {
+          key: 'role',
+          header: 'Role',
+          value: (person) => person.role,
+          filterable: true,
+          filterOptions: [
+            { label: 'Admin', value: 'Admin' },
+            { label: 'Editor', value: 'Editor' },
+            { label: 'Viewer', value: 'Viewer' },
+          ],
+        },
+      ]);
+
+    it('filterRows keeps only rows whose value is in the selected set', () => {
+      const cols = filterableColumns();
+
+      expect(filterRows({ rows: UNSORTED, filters: [{ key: 'role', values: ['Admin'] }], columns: cols })).toEqual([
+        { id: 1, name: 'Ada', role: 'Admin' },
+      ]);
+      expect(
+        filterRows({ rows: UNSORTED, filters: [{ key: 'role', values: ['Admin', 'Editor'] }], columns: cols }).map(
+          (r) => r.name,
+        ),
+      ).toEqual(['Ada', 'Bob']);
+    });
+
+    it('an empty filter list passes all rows through', () => {
+      const cols = filterableColumns();
+
+      expect(filterRows({ rows: UNSORTED, filters: [], columns: cols })).toHaveLength(UNSORTED.length);
+    });
+
+    it('client filter mode narrows the rendered rows and setFilterValues drives it', () => {
+      const { componentInstance: table } = create(filterableColumns(), UNSORTED);
+
+      expect(table.rows()).toHaveLength(3);
+
+      table.setFilterValues('role', ['Viewer']);
+      expect(table.rows().map((r) => r.name)).toEqual(['Charlie']);
+      expect(table.filterValuesFor('role')).toEqual(['Viewer']);
+
+      table.setFilterValues('role', []);
+      expect(table.rows()).toHaveLength(3);
+    });
+
+    it('server filter mode leaves the rows untouched', () => {
+      const fixture = create(filterableColumns(), UNSORTED);
+      fixture.componentRef.setInput('filterMode', 'server');
+      fixture.detectChanges();
+
+      fixture.componentInstance.setFilterValues('role', ['Viewer']);
+      expect(fixture.componentInstance.rows()).toHaveLength(3);
     });
   });
 });

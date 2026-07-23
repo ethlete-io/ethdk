@@ -1,7 +1,7 @@
 import { computed, signal } from '@angular/core';
 import { AnyQueryCreator, QueryArgsOf, QueryErrorResponse, RequestArgs, ResponseType, withArgs } from '@ethlete/query';
 import { createTableRowsSource, TableRowsFromQuery, TableRowsQueryState } from './table-rows-source';
-import { TableSort } from './table.types';
+import { TableFilter, TableSort } from './table.types';
 
 // Note: `@ethlete/components` intentionally depends on `@ethlete/query`, so this query-aware
 // convenience factory lives here. It's a standalone function in its own module — tables that don't
@@ -26,7 +26,9 @@ export type TableRowsFromQueryConfig<TCreator extends AnyQueryCreator, TRow> = {
   toErrorMessage?: (error: QueryErrorResponse) => string;
   /** Initial sort. @default [] */
   initialSort?: TableSort[];
-  /** The page `args` receives on first load; `setSort` resets to it. @default 1 */
+  /** Initial filters. @default [] */
+  initialFilters?: TableFilter[];
+  /** The page `args` receives on first load; `setSort`/`setFilters` reset to it. @default 1 */
   initialPage?: number;
 };
 
@@ -74,10 +76,11 @@ export const tableRowsFromQuery = <TCreator extends AnyQueryCreator, TRow>(
 
   const initialPage = config.initialPage ?? 1;
   const sort = signal<TableSort[]>(config.initialSort ?? []);
+  const filters = signal<TableFilter[]>(config.initialFilters ?? []);
   const page = signal(initialPage);
 
-  // Created once — `withArgs` re-runs as sort/page change.
-  const query = config.queryCreator(withArgs<TArgs>(() => config.args({ sort, page }) ?? null));
+  // Created once — `withArgs` re-runs as sort/filters/page change.
+  const query = config.queryCreator(withArgs<TArgs>(() => config.args({ sort, filters, page }) ?? null));
   const toErrorMessage = config.toErrorMessage ?? firstErrorMessage;
 
   return createTableRowsSource<TResponse, TRow>({
@@ -91,6 +94,7 @@ export const tableRowsFromQuery = <TCreator extends AnyQueryCreator, TRow>(
       }),
     },
     sort,
+    filters,
     page,
     initialPage,
     toRows: config.toRows,

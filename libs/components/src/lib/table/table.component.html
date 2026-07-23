@@ -21,6 +21,35 @@
         } @else {
           <span class="et-table-cell-text">{{ column.header }}</span>
         }
+
+        @if (column.filterable) {
+          <div class="et-table-filter" etMenu>
+            <button
+              [attr.data-active]="isFiltered(column.key)"
+              [attr.aria-label]="'Filter ' + (column.header ?? column.key)"
+              class="et-table-filter-trigger"
+              etMenuTrigger
+              type="button"
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="M1 2h14l-5.5 6.5V14L6.5 12V8.5z" />
+              </svg>
+            </button>
+
+            <ng-template etMenuSurface>
+              <et-menu>
+                <et-menu-checkbox-group
+                  [value]="filterValuesFor(column.key)"
+                  (valueChange)="setFilterValues(column.key, asArray($event))"
+                >
+                  @for (option of column.filterOptions ?? []; track option.value) {
+                    <et-menu-checkbox-item [value]="option.value">{{ option.label }}</et-menu-checkbox-item>
+                  }
+                </et-menu-checkbox-group>
+              </et-menu>
+            </ng-template>
+          </div>
+        }
       </div>
     }
   </div>

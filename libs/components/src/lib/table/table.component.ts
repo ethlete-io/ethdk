@@ -1,9 +1,18 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, isDevMode, linkedSignal, model, ViewEncapsulation } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
+import {
+  MenuCheckboxGroupComponent,
+  MenuCheckboxItemComponent,
+  MenuComponent,
+  MenuDirective,
+  MenuSurfaceDirective,
+  MenuTriggerDirective,
+} from '../menu';
+import { filterRows } from './table-filter';
 import { sortRows } from './table-sort';
 import { TABLE_ERROR_CODES } from './table-errors';
-import { AnyTableColumn, TableSort, TableSortDirection, TableState } from './table.types';
+import { AnyTableColumn, TableFilter, TableSort, TableSortDirection, TableState } from './table.types';
 
 const DEFAULT_TRACK = 'minmax(0, 1fr)';
 
@@ -26,7 +35,15 @@ const DEFAULT_TRACK = 'minmax(0, 1fr)';
   templateUrl: './table.component.html',
   styleUrl: './table.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [NgTemplateOutlet],
+  imports: [
+    NgTemplateOutlet,
+    MenuDirective,
+    MenuTriggerDirective,
+    MenuSurfaceDirective,
+    MenuComponent,
+    MenuCheckboxGroupComponent,
+    MenuCheckboxItemComponent,
+  ],
   host: {
     class: 'et-table-host',
   },
@@ -63,6 +80,20 @@ export class TableComponent<T> {
    * @default 'client'
    */
   public sortMode = input<'client' | 'server'>('client');
+
+  /**
+   * The active filters, as `{ key, values }` per filtered column. Two-way bindable.
+   * In `'client'` mode the table filters rows by it; in `'server'` mode it's yours
+   * to feed into query args.
+   */
+  public filters = model<TableFilter[]>([]);
+
+  /**
+   * `'client'` filters the rows in the browser via {@link filterRows}; `'server'`
+   * leaves rows untouched so the backend can filter.
+   * @default 'client'
+   */
+  public filterMode = input<'client' | 'server'>('client');
 
   // Column order + visibility overrides reset when the `columns` input changes, but
   // a manual restoreState() persists until then (linkedSignal semantics).
@@ -122,13 +153,23 @@ export class TableComponent<T> {
     })),
   }));
 
-  /** The rendered rows — client-sorted when `sortMode` is `'client'`. */
+  /**
+   * The rendered rows — client-filtered then client-sorted for whichever of
+   * `filterMode`/`sortMode` is `'client'`.
+   */
   public rows = computed(() => {
-    const data = this.data();
+    const columns = this.columns();
+    let result: readonly T[] = this.data();
 
-    if (this.sortMode() === 'server') return [...data];
+    if (this.filterMode() !== 'server') {
+      result = filterRows({ rows: result, filters: this.filters(), columns });
+    }
 
-    return sortRows({ rows: data, sort: this.sort(), columns: this.columns() });
+    if (this.sortMode() !== 'server') {
+      result = sortRows({ rows: result, sort: this.sort(), columns });
+    }
+
+    return [...result];
   });
 
   /** Apply a previously captured {@link TableState} (column order + visibility). */
@@ -161,8 +202,28 @@ export class TableComponent<T> {
     }
   }
 
+  /** The selected filter values for a column key (empty when unfiltered). */
+  public filterValuesFor(key: string): unknown[] {
+    return this.filters().find((entry) => entry.key === key)?.values ?? [];
+  }
+
+  /** Replace a column's selected filter values (drops the entry when empty). */
+  public setFilterValues(key: string, values: unknown[]) {
+    const others = this.filters().filter((entry) => entry.key !== key);
+
+    this.filters.set(values.length ? [...others, { key, values }] : others);
+  }
+
   protected trackRow(row: T): string | number | T {
     return this.rowKey()?.(row) ?? row;
+  }
+
+  protected isFiltered(key: string) {
+    return this.filterValuesFor(key).length > 0;
+  }
+
+  protected asArray(value: unknown): unknown[] {
+    return Array.isArray(value) ? value : value === null || value === undefined ? [] : [value];
   }
 
   protected ariaSort(key: string): 'ascending' | 'descending' | 'none' {

@@ -13,7 +13,7 @@ import {
   queryStateSignal,
 } from '@ethlete/query';
 import { createTableRowsSource, TableRowsFromQuery, TableRowsQueryState } from './table-rows-source';
-import { TableSort } from './table.types';
+import { TableFilter, TableSort } from './table.types';
 
 // The legacy twin of `table-rows-from-query.ts` for apps still on the class-based `V2QueryClient`.
 // Same module rules: standalone function in its own file so unused integrations tree-shake away.
@@ -33,7 +33,9 @@ export type TableRowsFromV2QueryConfig<TCreator extends AnyV2QueryCreator | AnyL
   toErrorMessage?: (error: RequestError) => string;
   /** Initial sort. @default [] */
   initialSort?: TableSort[];
-  /** The page `args` receives on first load; `setSort` resets to it. @default 1 */
+  /** Initial filters. @default [] */
+  initialFilters?: TableFilter[];
+  /** The page `args` receives on first load; `setSort`/`setFilters` reset to it. @default 1 */
   initialPage?: number;
 };
 
@@ -65,10 +67,11 @@ export const tableRowsFromV2Query = <TCreator extends AnyV2QueryCreator | AnyLeg
 
   const initialPage = config.initialPage ?? 1;
   const sort = signal<TableSort[]>(config.initialSort ?? []);
+  const filters = signal<TableFilter[]>(config.initialFilters ?? []);
   const page = signal(initialPage);
 
   const query = queryComputed<AnyV2Query | AnyLegacyQuery | null>(() => {
-    const args = config.args({ sort, page });
+    const args = config.args({ sort, filters, page });
 
     if (args === null) return null;
 
@@ -95,6 +98,7 @@ export const tableRowsFromV2Query = <TCreator extends AnyV2QueryCreator | AnyLeg
       }),
     },
     sort,
+    filters,
     page,
     initialPage,
     toRows: config.toRows,
