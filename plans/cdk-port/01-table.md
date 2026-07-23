@@ -417,6 +417,16 @@ was reviewed and steered the scope below. Decisions taken with the user:
   Ungrouped columns get an unlabeled band cell above them (reads as spanning both
   rows). Spec (run merge + split-on-reorder) + Storybook-verified (spans, sortable
   sub-columns, sticky stacking) + docs + changeset.
+  - **Follow-ups (shipped 2026-07-23, after mobile-device review):** (1) removed the
+    partial group-row underline (looked broken over ungrouped columns) — the
+    sub-header row's full-width border is the sole header/body divider now.
+    (2) **Sticky columns** (`sticky: 'start' | 'end'`): offsets measured from header
+    widths into per-cell inline styles, expander auto-pins with start columns, and
+    the grid switches to `inline-size: max-content` when pinned so the sticky cell's
+    containing block spans the full scroll extent (else the start column drifts).
+    (3) **Sticky footer**: a column `footerCell` (context: rendered rows) → a
+    bottom-pinned summary row. Storybook-verified + specs + docs + `table-sticky`
+    changeset.
   - **Deferred (not built):** the _multi-metric cell_ (one column exposing >1 sort
     key in its header, e.g. `W`/`L`) — grouped headers cover the "2 sortable
     sub-headers" ask; revisit if a single-track multi-sort cell is actually needed.
