@@ -59,8 +59,8 @@ handed back to your cards as `bracketRound().data` / `bracketMatch().data`.
 
 The Ethlete API integration builds the source for you:
 
-| Integration | Function | Input |
-| --- | --- | --- |
+| Integration | Function                                | Input                                                          |
+| ----------- | --------------------------------------- | -------------------------------------------------------------- |
 | Ethlete API | `generateBracketDataForEthlete(rounds)` | `RoundStageStructureWithMatchesView[]` (from `@ethlete/types`) |
 
 For any other backend, construct a `BracketDataSource` by hand (or write a small adapter in
@@ -71,45 +71,45 @@ your app).
 All layout inputs are numbers (px) unless noted and can be defaulted app-wide via
 `provideBracketConfig`. Defaults below are the component's fallbacks.
 
-| Input | Default | Purpose |
-| --- | --- | --- |
-| `source` | — (required) | The resolved `BracketDataSource`. |
-| `layout` | `'left-to-right'` | `'left-to-right'` or `'mirrored'` (finals in the centre). |
-| `columnWidth` | `250` | Width of a round column. |
-| `matchHeight` | `75` | Height of a match card. |
-| `columnGap` | `60` | Horizontal gap between round columns. |
-| `rowGap` | `30` | Vertical gap between matches in a column. |
-| `rowRoundGap` | `20` | Vertical gap between the upper/lower halves of a double-elimination round. |
-| `finalColumnWidth` | `300` | Width of the final column. |
-| `finalMatchHeight` | `75` | Height of the final match card. |
-| `roundHeaderHeight` | `50` | Height of the round-header row. |
-| `roundHeaderGap` | `20` | Gap between the header row and the first match. |
-| `hideRoundHeaders` | `false` | Drop the header row entirely. |
-| `lineWidth` | `2` | Connector stroke width. |
-| `lineStartingCurveAmount` | `10` | Curve radius where a connector leaves a match. |
-| `lineEndingCurveAmount` | `0` | Curve radius where a connector meets the next match. |
-| `lineDashArray` | `0` | Connector dash length (`0` = solid). |
-| `lineDashOffset` | `0` | Connector dash offset. |
-| `disableJourneyHighlight` | `false` | Turn off hover journey highlighting. |
-| `swissGroupPadding` | `10` | Padding inside a swiss group border box. |
-| `swissGroupBorderRadius` | `12` | Corner radius of a swiss group border box. |
-| `swissColors` | — | Per-group-type colors (see [Swiss](#swiss)). |
-| `showContinueElement` | `false` | Append a "continue" column (see [Continue element](#continue-element)). |
-| `continueColumnWidth` | `250` | Width of the continue column. |
-| `continueElementHeight` | `75` | Height of the continue card. |
-| `continueLineDashArray` | `6` | Dash length for the continue connectors. |
+| Input                     | Default           | Purpose                                                                    |
+| ------------------------- | ----------------- | -------------------------------------------------------------------------- |
+| `source`                  | — (required)      | The resolved `BracketDataSource`.                                          |
+| `layout`                  | `'left-to-right'` | `'left-to-right'` or `'mirrored'` (finals in the centre).                  |
+| `columnWidth`             | `250`             | Width of a round column.                                                   |
+| `matchHeight`             | `75`              | Height of a match card.                                                    |
+| `columnGap`               | `60`              | Horizontal gap between round columns.                                      |
+| `rowGap`                  | `30`              | Vertical gap between matches in a column.                                  |
+| `rowRoundGap`             | `20`              | Vertical gap between the upper/lower halves of a double-elimination round. |
+| `finalColumnWidth`        | `300`             | Width of the final column.                                                 |
+| `finalMatchHeight`        | `75`              | Height of the final match card.                                            |
+| `roundHeaderHeight`       | `50`              | Height of the round-header row.                                            |
+| `roundHeaderGap`          | `20`              | Gap between the header row and the first match.                            |
+| `hideRoundHeaders`        | `false`           | Drop the header row entirely.                                              |
+| `lineWidth`               | `2`               | Connector stroke width.                                                    |
+| `lineStartingCurveAmount` | `10`              | Curve radius where a connector leaves a match.                             |
+| `lineEndingCurveAmount`   | `0`               | Curve radius where a connector meets the next match.                       |
+| `lineDashArray`           | `0`               | Connector dash length (`0` = solid).                                       |
+| `lineDashOffset`          | `0`               | Connector dash offset.                                                     |
+| `disableJourneyHighlight` | `false`           | Turn off hover journey highlighting.                                       |
+| `swissGroupPadding`       | `10`              | Padding inside a swiss group border box.                                   |
+| `swissGroupBorderRadius`  | `12`              | Corner radius of a swiss group border box.                                 |
+| `swissColors`             | —                 | Per-group-type colors (see [Swiss](#swiss)).                               |
+| `showContinueElement`     | `false`           | Append a "continue" column (see [Continue element](#continue-element)).    |
+| `continueColumnWidth`     | `250`             | Width of the continue column.                                              |
+| `continueElementHeight`   | `75`              | Height of the continue card.                                               |
+| `continueLineDashArray`   | `6`               | Dash length for the continue connectors.                                   |
 
 ## Custom cards
 
 Each slot is an Angular component rendered per element via `ngComponentOutlet`. Provide
 your own to replace the [placeholder defaults](#bracket):
 
-| Input | Receives (all `input.required`) |
-| --- | --- |
-| `matchComponent` | `bracketRound`, `bracketMatch`, `bracketRoundSwissGroup` |
-| `finalMatchComponent` | same as `matchComponent` (used for final-round matches) |
-| `roundHeaderComponent` | `bracketRound`, `bracketRoundSwissGroup` |
-| `continueComponent` | `bracketMatches` (the matches whose winners advance) |
+| Input                  | Receives (all `input.required`)                          |
+| ---------------------- | -------------------------------------------------------- |
+| `matchComponent`       | `bracketRound`, `bracketMatch`, `bracketRoundSwissGroup` |
+| `finalMatchComponent`  | same as `matchComponent` (used for final-round matches)  |
+| `roundHeaderComponent` | `bracketRound`, `bracketRoundSwissGroup`                 |
+| `continueComponent`    | `bracketMatches` (the matches whose winners advance)     |
 
 ```ts
 @Component({
@@ -192,9 +192,9 @@ Connector and swiss-group-border colors are public custom properties. They defau
 ambient [surface](/core/theming) border color, so the bracket blends into whatever surface
 it sits on — set them to override:
 
-| Token | Default | Purpose |
-| --- | --- | --- |
-| `--et-bracket-line-color` | `--et-surface-border-solid` | Connector line color. |
+| Token                                   | Default                        | Purpose                                                                 |
+| --------------------------------------- | ------------------------------ | ----------------------------------------------------------------------- |
+| `--et-bracket-line-color`               | `--et-surface-border-solid`    | Connector line color.                                                   |
 | `--et-bracket-swiss-group-border-color` | `var(--et-bracket-line-color)` | Swiss group border color (per-group overrides come from `swissColors`). |
 
 These are not declared via `@property`: an `@property` `initial-value` can't contain a
@@ -217,18 +217,18 @@ This component is the `@ethlete/cdk` `NewBracket` renderer, moved into `@ethlete
 and renamed. The layout engine, inputs, and `BracketDataSource` shape are unchanged — the
 breaking changes are naming and packaging:
 
-| Area | `@ethlete/cdk` | `@ethlete/components` |
-| --- | --- | --- |
-| Import | `BracketNew` namespace / `NewBracket*` from `@ethlete/cdk` | flat exports from `@ethlete/components` |
-| Selector | `et-new-bracket` | `et-bracket` |
-| Component | `NewBracketComponent` | `BracketComponent` (+ `BRACKET_IMPORTS`) |
-| Config | `NewBracketConfig`, `provideNewBracketConfig`, `injectNewBracketConfig` | `BracketConfig`, `provideBracketConfig`, `injectBracketConfig` |
-| Default cards | `NewBracketDefault*Component` | `BracketDefault*Component` |
-| Data types | `NewBracket`, `NewBracketRound`, `NewBracketMatch`, `createNewBracket` | `Bracket`, `BracketRound`, `BracketMatch`, `createBracket` |
-| CSS classes | `et-new-bracket*` / `et-bracket-new*` (+ `et-legacy` marker) | `et-bracket*` (no `et-legacy`) |
-| Color tokens | `--bracket-line-color` (default `red`), `--bracket-swiss-group-border-color` | `--et-bracket-line-color` / `--et-bracket-swiss-group-border-color` (default `--et-surface-border-solid`) |
-| Errors | native `Error` | `RuntimeError` (ET34xx) |
-| Styling | unlayered global CSS | wrapped in `@layer components` (utilities override without `!important`) |
+| Area          | `@ethlete/cdk`                                                               | `@ethlete/components`                                                                                     |
+| ------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Import        | `BracketNew` namespace / `NewBracket*` from `@ethlete/cdk`                   | flat exports from `@ethlete/components`                                                                   |
+| Selector      | `et-new-bracket`                                                             | `et-bracket`                                                                                              |
+| Component     | `NewBracketComponent`                                                        | `BracketComponent` (+ `BRACKET_IMPORTS`)                                                                  |
+| Config        | `NewBracketConfig`, `provideNewBracketConfig`, `injectNewBracketConfig`      | `BracketConfig`, `provideBracketConfig`, `injectBracketConfig`                                            |
+| Default cards | `NewBracketDefault*Component`                                                | `BracketDefault*Component`                                                                                |
+| Data types    | `NewBracket`, `NewBracketRound`, `NewBracketMatch`, `createNewBracket`       | `Bracket`, `BracketRound`, `BracketMatch`, `createBracket`                                                |
+| CSS classes   | `et-new-bracket*` / `et-bracket-new*` (+ `et-legacy` marker)                 | `et-bracket*` (no `et-legacy`)                                                                            |
+| Color tokens  | `--bracket-line-color` (default `red`), `--bracket-swiss-group-border-color` | `--et-bracket-line-color` / `--et-bracket-swiss-group-border-color` (default `--et-surface-border-solid`) |
+| Errors        | native `Error`                                                               | `RuntimeError` (ET34xx)                                                                                   |
+| Styling       | unlayered global CSS                                                         | wrapped in `@layer components` (utilities override without `!important`)                                  |
 
 Also note:
 
