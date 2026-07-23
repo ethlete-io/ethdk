@@ -7,8 +7,8 @@ rows on a CSS grid with a sticky header and an empty state. Choose its look with
 [any content you like](#custom-cells), group columns under
 [spanning headers](#grouped-headers), and turn on
 [sorting](#sorting), [filtering](#filtering), [row expansion](#row-expansion),
-[column reordering & visibility](#column-visibility-reordering) and
-[virtualization](#virtualization) as needed.
+[selection](#selection), [column reordering & visibility](#column-visibility-reordering)
+and [virtualization](#virtualization) as needed.
 
 ```ts
 import { TABLE_IMPORTS, tableColumns } from '@ethlete/components';
@@ -61,6 +61,9 @@ typed `value` accessor is the only link between a column and the row.
 | `expandedRowTemplate` | —            | Detail template; setting it enables [row expansion](#row-expansion). Context: `{ $implicit: row }`.       |
 | `expandableRow`       | all rows     | `(row: T) => boolean` gating which rows can expand.                                                       |
 | `expandedKeys`        | `new Set()`  | Two-way bindable set of expanded row keys (by `rowKey`).                                                  |
+| `selectable`          | `false`      | Show a leading checkbox column for multi-row selection. See [Selection](#selection).                      |
+| `selection`           | `new Set()`  | Two-way bindable set of selected row keys (by `rowKey`).                                                  |
+| `selectableRow`       | all rows     | `(row: T) => boolean` gating which rows can be selected.                                                  |
 | `reorderable`         | `false`      | Allow reordering columns by dragging their headers. See [below](#column-visibility-reordering).           |
 | `virtualScroll`       | `false`      | Render only the rows near the viewport. See [Virtualization](#virtualization).                            |
 | `estimateRowHeight`   | `48`         | Row height (px) assumed before a real row is measured — tune to your rows for a stable first paint.       |
@@ -351,6 +354,23 @@ changes; gate rows with `expandableRow`.
 `expandedKeys` is a two-way `Set` of row keys, so you can drive or persist which
 rows are open. `isExpanded(row)` / `toggleExpanded(row)` are available on the
 table instance.
+
+## Selection
+
+Set `selectable` and the table prepends a checkbox column. The header checkbox
+selects or clears every selectable row (indeterminate when only some are), and
+`selection` is a two-way `Set` of selected row keys — set a `rowKey` so selection
+survives sorting, filtering and data changes.
+
+```html
+<et-table [(selection)]="selected" [data]="users()" [columns]="columns" [rowKey]="userId" [selectable]="true" />
+```
+
+Gate which rows can be selected with `selectableRow`. On the instance:
+`isSelected(row)`, `setSelected(row, checked)`, `toggleAll()`, and the
+`selectedRows()` / `isAllSelected()` / `isPartiallySelected()` signals. Select-all
+and the "all/some" state consider only the rows currently in view (after
+filtering), while `selection` keeps keys for filtered-out rows.
 
 ## Sticky header
 
