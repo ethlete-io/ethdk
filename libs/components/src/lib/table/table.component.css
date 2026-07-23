@@ -35,9 +35,22 @@
 
   .et-table-header-cell,
   .et-table-cell {
+    display: flex;
+    align-items: center;
     min-inline-size: 0;
+    /* Cells stay stretched to the row height (grid default), so their bottom
+       borders line up; the flex box centers content within that height. Clip
+       overflow so long values never bleed into the next column. */
+    overflow: hidden;
     padding: var(--et-table-cell-padding-block) var(--et-table-cell-padding-inline);
-    text-align: start;
+  }
+
+  /* Truncate default text content with an ellipsis instead of overflowing. */
+  .et-table-cell-text {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .et-table-header-cell {
@@ -57,11 +70,13 @@
 
   .et-table-header-cell:where([data-align='center']),
   .et-table-cell:where([data-align='center']) {
+    justify-content: center;
     text-align: center;
   }
 
   .et-table-header-cell:where([data-align='end']),
   .et-table-cell:where([data-align='end']) {
+    justify-content: flex-end;
     text-align: end;
   }
 

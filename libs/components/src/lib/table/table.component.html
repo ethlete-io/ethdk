@@ -5,7 +5,7 @@
         @if (column.headerCell) {
           <ng-container *ngTemplateOutlet="column.headerCell; context: { $implicit: column.header }" />
         } @else {
-          {{ column.header }}
+          <span class="et-table-cell-text">{{ column.header }}</span>
         }
       </div>
     }
@@ -20,7 +20,7 @@
               *ngTemplateOutlet="column.cell; context: { $implicit: row, value: column.value(row), index: index }"
             />
           } @else {
-            {{ column.value(row) }}
+            <span class="et-table-cell-text">{{ column.value(row) }}</span>
           }
         </div>
       }
