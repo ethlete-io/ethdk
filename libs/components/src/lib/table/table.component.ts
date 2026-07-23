@@ -45,6 +45,7 @@ import {
   TableFilter,
   TableFilterOption,
   TableFilterOptionsProvider,
+  TableHeaderGroup,
   TableSort,
   TableSortDirection,
   TableState,
@@ -86,6 +87,7 @@ const DEFAULT_TRACK = 'minmax(0, 1fr)';
     class: 'et-table-host',
     '[attr.data-appearance]': 'appearance()',
     '[attr.data-density]': 'density()',
+    '[style.--_et-table-group-h]': 'groupRowHeight() + "px"',
   },
 })
 export class TableComponent<T> {
@@ -185,6 +187,13 @@ export class TableComponent<T> {
   // measurement, and they're grouped by column to animate a column shift on reorder drop.
   private bodyCells = viewChildren<ElementRef<HTMLElement>>('bodyCell');
 
+  // Group-header cells; the first is measured to offset the sub-header row's sticky position.
+  private groupCells = viewChildren<ElementRef<HTMLElement>>('groupCell');
+
+  // Rendered height of the spanning group-header row (0 when there are no groups), so the
+  // sub-header row can stick just below it.
+  protected groupRowHeight = signal(0);
+
   /** Whether row expansion is active (a detail template was provided). */
   public expandable = computed(() => this.expandedRowTemplate() !== undefined);
 
@@ -249,6 +258,31 @@ export class TableComponent<T> {
   public visibleColumns = computed(() =>
     this.orderedColumns().filter((column) => !this.hiddenColumns().has(column.key)),
   );
+
+  /** Whether any visible column declares a `group` (drives the spanning group-header row). */
+  public hasGroups = computed(() => this.visibleColumns().some((column) => !!column.group));
+
+  /**
+   * The spanning group-header row as maximal runs of adjacent visible columns sharing a `group`.
+   * Ungrouped columns each form their own single-track run (`label: null`) so the row still covers
+   * every track — dragging a column out of a group simply splits the run.
+   */
+  public headerGroups = computed<TableHeaderGroup[]>(() => {
+    const runs: TableHeaderGroup[] = [];
+
+    for (const column of this.visibleColumns()) {
+      const label = column.group ?? null;
+      const last = runs[runs.length - 1];
+
+      if (last && label !== null && last.label === label) {
+        last.span += 1;
+      } else {
+        runs.push({ key: column.key, label, span: 1 });
+      }
+    }
+
+    return runs;
+  });
 
   /** The `grid-template-columns` value for the visible columns (plus a leading expander track when expandable). */
   public templateColumns = computed(() => {
@@ -346,6 +380,13 @@ export class TableComponent<T> {
       const cell = this.bodyCells()[0];
 
       if (cell) this.virtualWindow.measureItem(cell.nativeElement);
+    });
+
+    // Track the group-header row's height so the sub-header row sticks right below it.
+    effect(() => {
+      const cell = this.groupCells()[0];
+
+      this.groupRowHeight.set(cell ? cell.nativeElement.offsetHeight : 0);
     });
   }
 

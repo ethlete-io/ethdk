@@ -15,6 +15,7 @@ export default {
     expandable: false,
     reorderable: false,
     virtualScroll: false,
+    grouped: false,
     surface: 'dark',
   },
   argTypes: {
@@ -27,6 +28,7 @@ export default {
     expandable: { control: 'boolean' },
     reorderable: { control: 'boolean' },
     virtualScroll: { control: 'boolean' },
+    grouped: { control: 'boolean' },
     surface: { control: 'text' },
   },
 } as Meta<TableStorybookComponent>;
@@ -98,6 +100,19 @@ export const Reorderable: Story = {
   args: { reorderable: true },
   parameters: {
     docs: { description: { story: 'Drag a column header sideways to reorder columns.' } },
+  },
+};
+
+export const GroupedHeaders: Story = {
+  args: { grouped: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Columns sharing a `group` render beneath one spanning label in a second header row; each ' +
+          'sub-column stays independently sortable. Ungrouped columns (Name) span both header rows.',
+      },
+    },
   },
 };
 

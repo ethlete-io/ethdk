@@ -1,4 +1,26 @@
 <div [style.grid-template-columns]="templateColumns()" class="et-table" role="grid">
+  @if (hasGroups()) {
+    <div class="et-table-group-row" role="row">
+      @if (expandable()) {
+        <div class="et-table-group-cell" aria-hidden="true"></div>
+      }
+      @for (group of headerGroups(); track group.key) {
+        <div
+          #groupCell
+          [style.grid-column]="'span ' + group.span"
+          [class.et-table-group-cell--labeled]="group.label"
+          [attr.role]="group.label ? 'columnheader' : null"
+          [attr.aria-hidden]="group.label ? null : 'true'"
+          class="et-table-group-cell"
+        >
+          @if (group.label) {
+            <span class="et-table-cell-text">{{ group.label }}</span>
+          }
+        </div>
+      }
+    </div>
+  }
+
   <div class="et-table-header-row" role="row">
     @if (expandable()) {
       <div class="et-table-header-cell et-table-expander-cell" role="columnheader" aria-hidden="true"></div>

@@ -95,6 +95,7 @@ export class TableStorybookComponent {
   public expandable = input(false);
   public reorderable = input(false);
   public virtualScroll = input(false);
+  public grouped = input(false);
   public appearance = input<'enclosed' | 'divided' | 'zebra' | 'grid' | 'bare'>('enclosed');
   public density = input<'comfortable' | 'compact' | 'spacious'>('comfortable');
   public surface = input('dark');
@@ -107,10 +108,21 @@ export class TableStorybookComponent {
     return this.virtualScroll() ? MANY_PEOPLE : PEOPLE.slice(0, this.rowCount());
   });
 
-  protected columns = computed(() =>
-    tableColumns<Person>([
+  protected columns = computed(() => {
+    // When grouped, Email sits alone under "Contact" and Role + Joined share "Details";
+    // Name stays ungrouped and spans both header rows.
+    const grouped = this.grouped();
+
+    return tableColumns<Person>([
       { key: 'name', header: 'Name', value: (person) => person.name, sortable: true, width: 'minmax(0, 2fr)' },
-      { key: 'email', header: 'Email', value: (person) => person.email, sortable: true, width: 'minmax(0, 2fr)' },
+      {
+        key: 'email',
+        header: 'Email',
+        value: (person) => person.email,
+        sortable: true,
+        width: 'minmax(0, 2fr)',
+        group: grouped ? 'Contact' : undefined,
+      },
       {
         key: 'role',
         header: 'Role',
@@ -120,6 +132,7 @@ export class TableStorybookComponent {
         filterSearch: true,
         filterOptions: ROLES.map((role) => ({ label: role, value: role })),
         width: 'minmax(0, 1fr)',
+        group: grouped ? 'Details' : undefined,
       },
       {
         key: 'joined',
@@ -128,7 +141,8 @@ export class TableStorybookComponent {
         sortable: true,
         align: 'end',
         width: 'minmax(0, 1fr)',
+        group: grouped ? 'Details' : undefined,
       },
-    ]),
-  );
+    ]);
+  });
 }

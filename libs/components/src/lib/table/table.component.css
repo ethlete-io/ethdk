@@ -126,12 +126,43 @@
 
   .et-table-header-cell {
     position: sticky;
-    inset-block-start: 0;
+    /* Sticks below the spanning group-header row (var is 0 when there are no groups). */
+    inset-block-start: var(--_et-table-group-h, 0px);
     z-index: 1;
     font-weight: 600;
     color: var(--et-surface-color-muted-solid, CanvasText);
     /* Opaque (band or plain surface) so scrolling rows pass behind the pinned header. */
     background: var(--_et-table-header-bg);
+    border-block-end: 1px solid var(--_et-table-header-border);
+  }
+
+  /* Spanning group-header row: layout-transparent like other rows, so its cells span column tracks. */
+  .et-table-group-row {
+    display: contents;
+  }
+
+  .et-table-group-cell {
+    display: flex;
+    align-items: center;
+    min-inline-size: 0;
+    overflow: hidden;
+    padding: 0.4rem var(--et-table-cell-padding-inline);
+    /* Pinned above the sub-header row. */
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 2;
+    /* Opaque band so scrolling rows pass behind it. */
+    background: var(--_et-table-header-bg);
+  }
+
+  /* Only runs with a label read as a group; ungrouped runs just extend the header band upward. */
+  .et-table-group-cell:where(.et-table-group-cell--labeled) {
+    justify-content: center;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--et-surface-color-muted-solid, CanvasText);
     border-block-end: 1px solid var(--_et-table-header-border);
   }
 
@@ -146,7 +177,8 @@
 
   /* Grid skin: vertical rules between cells (dropped on the last column of each row). */
   .et-table-host:where([data-appearance='grid']) .et-table-header-cell,
-  .et-table-host:where([data-appearance='grid']) .et-table-cell {
+  .et-table-host:where([data-appearance='grid']) .et-table-cell,
+  .et-table-host:where([data-appearance='grid']) .et-table-group-cell:where(.et-table-group-cell--labeled) {
     border-inline-end: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
   }
 

@@ -112,6 +112,13 @@ export type TableColumn<T, TValue = unknown> = {
 
   /** Hide the column initially. Toggle later via table state. @default false */
   hidden?: boolean;
+
+  /**
+   * Group this column under a spanning header label. Adjacent visible columns sharing the same
+   * `group` render beneath one label in a second header row; each stays independently sortable/
+   * filterable. Columns without a `group` span both header rows.
+   */
+  group?: string;
 };
 
 /** Any column definition, regardless of value type. */
@@ -152,6 +159,19 @@ export type TableState = {
    * expansion is used with a `rowKey` — without one, expansion can't be serialized.
    */
   expanded?: string[];
+};
+
+/**
+ * One cell of the spanning group-header row — a maximal run of adjacent visible columns that
+ * share a `group` (or a single ungrouped column, with `label: null`).
+ */
+export type TableHeaderGroup = {
+  /** Stable key (the run's first column key). */
+  key: string;
+  /** The shared group label, or `null` for a run of one ungrouped column. */
+  label: string | null;
+  /** How many column tracks this run spans. */
+  span: number;
 };
 
 /** A reference to a row, derived from a consumer-provided `rowKey`, or the row itself. */
