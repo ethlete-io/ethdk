@@ -280,11 +280,13 @@ toTotal, ... })`, called from an injection context like the select's. It
   (`table-rows-from-query.ts`, signals client): created-once query re-executing on
   sort/page, returns `rows`/`loading`/`error`/`total`/`hasMore`/`sort`/`page` +
   `setSort`/`setPage`, keeps the previous page visible during load, resets page on
-  sort. 4-case spec (HttpTestingController) + docs + changeset. **Still remaining:**
-  the legacy `V2QueryClient` twin, and factoring the shared query-lifecycle core
-  out of the select + table adapters (the Phase 0 extraction — now safe since the
-  table adapter's shape is proven). Deferred to avoid touching the production
-  select adapters mid-phase.
+  sort. **Legacy twin `tableRowsFromV2Query` + shared core done** — both adapters
+  are thin wrappers over `createTableRowsSource` (a client-agnostic core driven by
+  a per-client `{response, loading, errorText}` driver); v1 (HttpTestingController)
+  and v2 (mock-adapter) specs both green. **Optional leftover:** the _select_
+  adapters weren't refactored onto the same driver — their page-accumulation core
+  differs and rewriting production code wasn't worth the regression risk; the
+  driver pattern is there if we unify later. Select specs stayed green (untouched).
 - **Phase 3 — Filter headers**: menu + search composition, typed filter state,
   client helpers + server wiring.
 - **Phase 4 — Row expansion / nested sub-tables**.
