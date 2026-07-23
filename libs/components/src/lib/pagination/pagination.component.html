@@ -1,0 +1,73 @@
+<ul class="et-pagination-list">
+  @for (item of pagination.items(); track $index) {
+    @if (item.type === 'ellipsis') {
+      <li class="et-pagination-item">
+        <span class="et-pagination-ellipsis" aria-hidden="true">…</span>
+      </li>
+    } @else {
+      <li class="et-pagination-item">
+        <button
+          [attr.aria-label]="item.label"
+          [attr.aria-current]="item.current ? 'page' : null"
+          [attr.data-type]="item.type"
+          [class.et-pagination-button--current]="item.current"
+          [class.et-pagination-button--control]="item.type !== 'page'"
+          [disabled]="item.disabled"
+          (click)="select(item)"
+          class="et-pagination-button"
+          type="button"
+        >
+          @switch (item.type) {
+            @case ('first') {
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
+                <path
+                  d="M11 3 6 8l5 5M5 3v10"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            }
+            @case ('previous') {
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
+                <path
+                  d="M10 3 5 8l5 5"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            }
+            @case ('next') {
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
+                <path
+                  d="M6 3l5 5-5 5"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            }
+            @case ('last') {
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
+                <path
+                  d="M5 3l5 5-5 5M11 3v10"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            }
+            @default {
+              {{ item.page }}
+            }
+          }
+        </button>
+      </li>
+    }
+  }
+</ul>

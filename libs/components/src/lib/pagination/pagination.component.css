@@ -1,0 +1,93 @@
+@layer components {
+  @property --et-pagination-item-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 2.25rem;
+  }
+
+  @property --et-pagination-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0.25rem;
+  }
+
+  @property --et-pagination-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0.5rem;
+  }
+
+  :where(.et-pagination-host) {
+    display: block;
+  }
+
+  .et-pagination-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--et-pagination-gap);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .et-pagination-item {
+    display: flex;
+  }
+
+  .et-pagination-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-inline-size: var(--et-pagination-item-size);
+    block-size: var(--et-pagination-item-size);
+    padding-inline: 0.5rem;
+    font: inherit;
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--et-surface-color-solid, CanvasText);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--et-pagination-radius);
+    cursor: pointer;
+  }
+
+  /* Jump controls (first/prev/next/last) read as secondary to the page numbers. */
+  .et-pagination-button:where(.et-pagination-button--control) {
+    color: var(--et-surface-color-muted-solid, CanvasText);
+  }
+
+  /* Hover only on real hover-capable pointers, so a touch tap doesn't stick. */
+  @media (hover: hover) {
+    .et-pagination-button:where(:hover:not(:disabled)) {
+      background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 10%, transparent);
+    }
+  }
+
+  .et-pagination-button:where(:focus-visible) {
+    outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+    outline-offset: 2px;
+  }
+
+  .et-pagination-button:where(:disabled) {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  /* Current page: filled accent from the nearest color scope. */
+  .et-pagination-button:where(.et-pagination-button--current) {
+    color: var(--et-theme-color-on-primary-solid, white);
+    background: var(--et-theme-color-primary-solid, gray);
+    font-weight: 600;
+  }
+
+  .et-pagination-ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-inline-size: var(--et-pagination-item-size);
+    block-size: var(--et-pagination-item-size);
+    color: var(--et-surface-color-muted-solid, CanvasText);
+    user-select: none;
+  }
+}
