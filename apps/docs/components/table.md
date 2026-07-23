@@ -3,9 +3,9 @@
 A type-safe, light-by-default data table. The row type flows from your data
 through the column definitions into every cell, and the base table renders typed
 rows on a CSS grid with a sticky header and an empty state, plus opt-in
-[sorting](#sorting), [filtering](#filtering) and [row expansion](#row-expansion).
-Reordering, virtualization and richer state persistence arrive as further
-features in later phases.
+[sorting](#sorting), [filtering](#filtering), [row expansion](#row-expansion) and
+[column reordering & visibility](#column-visibility-reordering). Virtualization
+and richer state persistence arrive as further features in later phases.
 
 ```ts
 import { TABLE_IMPORTS, tableColumns } from '@ethlete/components';
@@ -56,6 +56,7 @@ typed `value` accessor is the only link between a column and the row.
 | `expandedRowTemplate` | —           | Detail template; setting it enables [row expansion](#row-expansion). Context: `{ $implicit: row }`. |
 | `expandableRow`       | all rows    | `(row: T) => boolean` gating which rows can expand.                                                 |
 | `expandedKeys`        | `new Set()` | Two-way bindable set of expanded row keys (by `rowKey`).                                            |
+| `reorderable`         | `false`     | Allow reordering columns by dragging their headers. See [below](#column-visibility-reordering).     |
 
 ## Columns
 
@@ -267,6 +268,24 @@ default `emptyLabel` text by projecting `[etTableEmpty]` content:
   <div etTableEmpty>No results — try adjusting your filters.</div>
 </et-table>
 ```
+
+## Column visibility & reordering
+
+Set `reorderable` to let users **drag column headers** sideways to reorder them
+(pure state — no DOM surgery, since the grid re-lays-out from the column order).
+
+Column **order and visibility** are also fully programmatic, so you can build a
+"columns" chooser with the [menu](/components/menu):
+
+| Method / signal                  | Description                     |
+| -------------------------------- | ------------------------------- |
+| `moveColumn(key, toIndex)`       | Move a column within the order. |
+| `isColumnVisible(key)`           | Whether a column is shown.      |
+| `setColumnVisible(key, visible)` | Show/hide a column.             |
+| `toggleColumnVisibility(key)`    | Flip a column's visibility.     |
+
+Both order and visibility are captured by [`state()`](#table-state) and restored
+by `restoreState()`.
 
 ## Table state
 
