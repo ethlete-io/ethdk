@@ -1,7 +1,6 @@
 # 01 — Table (new system, NOT a cdk port)
 
-**Status: Phases 1–8 shipped (2026-07-23).** Remaining: **Phase 9 (grouped &
-multi-sort headers)** — deferred, needs a markup spike. Size: XL — split into
+**Status: Phases 1–9 shipped (2026-07-23) — plan complete.** Size: XL — split into
 shippable phases. Phase 0 decisions recorded under _Markup strategy_; the table lives in
 `libs/components/src/lib/table/`. Deferred (not blocking; revisit on demand):
 headless `[etTable]` directive (review), select-adapter unification onto the
@@ -405,16 +404,24 @@ was reviewed and steered the scope below. Decisions taken with the user:
     a Storybook story per appearance + a density control, docs "Appearance &
     density" section + the cookbook, changeset (`@ethlete/components` minor).
 
-- **Phase 9 — Grouped & multi-sort headers** (deferred, needs a markup spike):
-  - Column `group` field → a multi-row header with a spanning group label over its
-    sub-columns; each sub-column independently `sortable`. Grid markup grows a
-    second header row; `visibleColumns` / `templateColumns` / reorder must become
-    group-aware (reorder within a group, and move whole groups).
-  - Multi-metric cell: one visual column exposing >1 sort key in its header (e.g. a
-    "Record" column with `W` / `L` toggles) — lighter alternative to real groups.
-  - Consider here (not before): the **data-driven renderer registry** (server
-    list-view `type` → renderer) as the extensibility path for columns-as-data —
-    the other half of "batteries included," scoped only if a consumer needs it.
+- **Phase 9 — Grouped headers**: ✅ **shipped 2026-07-23.** A `group` field on the
+  column def renders adjacent visible columns sharing it beneath one spanning label
+  in a second header row; each sub-column stays an ordinary column (independently
+  sortable/filterable/reorderable). **Design decision: contiguous-run model** — a
+  label spans each maximal run of adjacent same-group columns, so reorder stays
+  column-level (no group-aware reorder logic); dragging a column out of a group just
+  splits the run. `templateColumns` unchanged (groups add no tracks); group cells use
+  `grid-column: span N` and auto-flow fills row 1 (spans) → row 2 (sub-headers) →
+  body. Both header rows sticky: the group-row height is measured into
+  `--_et-table-group-h` and the sub-header row's `inset-block-start` uses it.
+  Ungrouped columns get an unlabeled band cell above them (reads as spanning both
+  rows). Spec (run merge + split-on-reorder) + Storybook-verified (spans, sortable
+  sub-columns, sticky stacking) + docs + changeset.
+  - **Deferred (not built):** the _multi-metric cell_ (one column exposing >1 sort
+    key in its header, e.g. `W`/`L`) — grouped headers cover the "2 sortable
+    sub-headers" ask; revisit if a single-track multi-sort cell is actually needed.
+    Likewise the **data-driven renderer registry** (server list-view `type` →
+    renderer) stays out of scope until a consumer needs it.
 
 Dependencies on other plans: `02-pagination.md` (query glue), `03-skeleton.md`
 (loading rows) — both nice-to-have, not blockers.
