@@ -1,8 +1,9 @@
 # 01 — Table (new system, NOT a cdk port)
 
-**Status: Phase 1 shipped (2026-07-23).** Size: XL — split into shippable phases
-below. Phase 0 decisions recorded under _Markup strategy_; Phase 1 core table
-lives in `libs/components/src/lib/table/`. Next up: Phase 2 (sort + query glue).
+**Status: Phases 1 + 2 shipped (2026-07-23).** Size: XL — split into shippable
+phases below. Phase 0 decisions recorded under _Markup strategy_; the table lives
+in `libs/components/src/lib/table/`. Next up: Phase 3 (filter headers). Phase 2b
+leftovers (legacy-client adapter twin + shared query-core extraction) noted below.
 
 ## Why green-field
 
@@ -274,11 +275,16 @@ toTotal, ... })`, called from an injection context like the select's. It
   columns render tri-state sortable header buttons (`aria-sort`), a two-way
   `sort` model (`{key,direction}[]`), `multiSort`, and a `sortMode`
   (`'client'` applies the exported tree-shakable `sortRows({rows,sort,columns})`;
-  `'server'` leaves rows so `sort()` feeds query args). Spec + Storybook-verified
-  - docs + changeset. **Remaining (Phase 2b): the server query-glue adapter**
-    `tableRowsFromQuery` (both clients) — this is where the deferred select
-    query-adapter-core extraction happens (Phase 0 note). Not yet built; consumers
-    can wire `sortMode="server"` + `sort()` into a query form manually today.
+  `'server'` leaves rows so `sort()` feeds query args). Spec + Storybook-verified,
+  docs + changeset. **Phase 2b — `tableRowsFromQuery` shipped 2026-07-23**
+  (`table-rows-from-query.ts`, signals client): created-once query re-executing on
+  sort/page, returns `rows`/`loading`/`error`/`total`/`hasMore`/`sort`/`page` +
+  `setSort`/`setPage`, keeps the previous page visible during load, resets page on
+  sort. 4-case spec (HttpTestingController) + docs + changeset. **Still remaining:**
+  the legacy `V2QueryClient` twin, and factoring the shared query-lifecycle core
+  out of the select + table adapters (the Phase 0 extraction — now safe since the
+  table adapter's shape is proven). Deferred to avoid touching the production
+  select adapters mid-phase.
 - **Phase 3 — Filter headers**: menu + search composition, typed filter state,
   client helpers + server wiring.
 - **Phase 4 — Row expansion / nested sub-tables**.
