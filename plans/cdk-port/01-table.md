@@ -1,6 +1,8 @@
 # 01 — Table (new system, NOT a cdk port)
 
-**Status: planned, not started.** Size: XL — split into shippable phases below.
+**Status: Phase 0 decisions recorded (2026-07-23), no code yet.** Size: XL —
+split into shippable phases below. See the "Phase 0 decisions" block under
+_Markup strategy_ before implementing.
 
 ## Why green-field
 
@@ -105,6 +107,45 @@ Leaning **B** (grid) because reordering + virtualization + column sizing across
 virtualized rows are structurally simpler, and the select precedent shows the
 ARIA-manual approach works. But the spike decides; record the decision here.
 
+#### Phase 0 decisions (recorded 2026-07-23)
+
+Grounded in a source map of the select's virtualization + query adapters (not
+yet a rendered Storybook spike — a lightweight sticky+virtual+reorder prototype
+should still confirm before Phase 1 finalizes the markup).
+
+- **Markup: B — CSS grid + `role="grid"`/`row`/`gridcell`.** Decider:
+  `grid-template-columns` defines column widths once for the whole grid, so
+  virtualizing rows (rendering only a window) never disturbs column alignment.
+  Native `<table>` would need `table-layout: fixed` + explicit widths and spacer
+  `<tr>`s to keep columns stable across a changing row window, and reordering
+  means per-row DOM moves. Grid also lets the table reuse the select's existing
+  single-scroll-container block-padding windowing model **directly**.
+- **Virtualization core is ALREADY extracted** — `createVirtualWindow` in
+  `libs/components/src/lib/internals/virtual-window.ts` (consumed by select
+  today; decoupled, only dep is `signalElementDimensions` from core). The table
+  calls it directly. **No select refactor needed for windowing.** Only the
+  select's row-directive glue (ARIA + `attachVirtualOptionElement`/`measureItem`
+  adopt-measure-detach) is select-specific; the table writes its own row
+  directive over the same attach/measure/detach pattern.
+- **Query-adapter core extraction** (the one production-touching refactor):
+  `select-options-from-query.ts` (v1 signals client) and
+  `select-options-from-v2-query.ts` (legacy client) duplicate, line-for-line,
+  the shared machinery — debounced query, `minQueryLength` skip, page
+  reset/advance (`linkedSignal` keyed on the debounced query), `pageSlices`
+  accumulation + keepalive, error-message defaulting, return-object assembly.
+  Extract that into a new package-private `internals/` helper parameterized by a
+  small per-client "query driver" (`{ response/settled, loading, error }`
+  signals); the two select factories become thin typed wrappers. Both
+  `select-options-from-*query.spec.ts` are the regression gate and must stay
+  green unchanged. **Sequencing note:** this only serves Phase 2 (query glue),
+  not Phase 1 (core table) — it can be done in Phase 0 as the plan intends, or
+  deferred to Phase 2. Prefer deferring to Phase 2 to avoid a speculative
+  extraction shape before the table's own adapter exists.
+- **Extracted utilities stay `@internal`** — `libs/components/src/lib/internals/`
+  is already package-private (not in `src/index.ts`) and is the established home
+  (`virtual-window.ts`, `typeahead.ts`, `dom-order.ts`). Promote to public later
+  only if apps need to build their own "from query" glue.
+
 ### Typed column model
 
 - `etTable` headless directive is generic over `T`: `etTable [data]="rows()"`.
@@ -205,13 +246,14 @@ toTotal, ... })`, called from an injection context like the select's. It
 ## Phases (each = shippable PR: code + stories + docs + changeset)
 
 - **Phase 0 — Spike + extraction (no public API)**: markup-strategy prototype
-  (A vs B above, verify sticky+virtual+reorder feasibility in Storybook);
-  extract select's windowing **and** its query-adapter core (both clients)
-  into shared generic utilities; all select specs stay green. Record decisions
-  in this file. Decide whether the extracted utilities are `@internal` or
-  public — public would let apps build their own "options/rows from query"
-  glue for future components (lean `@internal` first; promoting later is easy,
-  demoting is a breaking change).
+  (A vs B above, verify sticky+virtual+reorder feasibility in Storybook).
+  **Decisions recorded** in the "Phase 0 decisions" block above — key outcomes:
+  markup = B (grid); windowing is **already extracted** (`createVirtualWindow`),
+  so nothing to do there; the query-adapter core extraction is the only refactor
+  and is **deferred to Phase 2** (it serves the query glue, not the core table);
+  extracted utilities stay `@internal`. Remaining Phase 0 work is the rendered
+  Storybook markup prototype confirming sticky + virtual + reorder before Phase 1
+  locks the markup.
 - **Phase 1 — Core table**: headless `etTable` + typed columns + default styled
   component (theming tokens, `@layer components`), sticky header, empty state.
   This is the "light by default" deliverable and defines the public API shape —
