@@ -1,10 +1,11 @@
 # 01 — Table (new system, NOT a cdk port)
 
-**Status: Phases 1 + 2 + 3 shipped (2026-07-23).** Size: XL — split into shippable
-phases below. Phase 0 decisions recorded under _Markup strategy_; the table lives
-in `libs/components/src/lib/table/`. Next up: Phase 4 (row expansion / sub-tables).
-Deferred: headless `[etTable]` directive (review), Phase 3b filter search/async,
-select-adapter unification onto the shared driver.
+**Status: Phases 1–4 shipped (2026-07-23), incl. Phase 3b.** Size: XL — split into
+shippable phases below. Phase 0 decisions recorded under _Markup strategy_; the
+table lives in `libs/components/src/lib/table/`. Next up: Phase 5 (column
+reordering + visibility toggling). Deferred: headless `[etTable]` directive
+(review), animated collapse for row expansion, select-adapter unification onto
+the shared driver.
 
 ## Why green-field
 
@@ -300,7 +301,15 @@ toTotal, ... })`, called from an injection context like the select's. It
     tradeoff of the monolithic-header helper-column API (acceptable; revisit if it
     matters). **Deferred (Phase 3b):** in-menu search + async paginated filter
     options (reuse `MenuSearchDirective` + the query-source core).
-- **Phase 4 — Row expansion / nested sub-tables**.
+- **Phase 4 — Row expansion / nested sub-tables**: ✅ **shipped 2026-07-23**.
+  An `expandedRowTemplate` input enables expansion (prepends an expander column);
+  each row toggles a **lazily-instantiated** full-width detail row (0fr→1fr
+  reveal, reduced-motion aware). Nesting = the detail template holds another
+  `<et-table>`. `expandableRow` gates rows; `expandedKeys` is a two-way `Set`
+  keyed by `rowKey`; `isExpanded`/`toggleExpanded` on the instance. Spec (toggle +
+  rowKey identity) + Storybook-verified (lazy detail appears/collapses, aria) +
+  docs + changeset. (No animated _collapse_ — detail is removed on toggle-off;
+  animated exit would need the animatable directive, deferred.)
 - **Phase 5 — Column reordering** (+ visibility toggling, which state
   serialization needs anyway).
 - **Phase 6 — Virtualization** (compose with Phase 4's variable heights).
