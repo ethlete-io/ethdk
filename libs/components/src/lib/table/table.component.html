@@ -1,0 +1,35 @@
+<div [style.grid-template-columns]="templateColumns()" class="et-table" role="grid">
+  <div class="et-table-header-row" role="row">
+    @for (column of visibleColumns(); track column.key) {
+      <div [attr.data-align]="column.align ?? 'start'" class="et-table-header-cell" role="columnheader">
+        @if (column.headerCell) {
+          <ng-container *ngTemplateOutlet="column.headerCell; context: { $implicit: column.header }" />
+        } @else {
+          {{ column.header }}
+        }
+      </div>
+    }
+  </div>
+
+  @for (row of rows(); track trackRow(row); let index = $index) {
+    <div class="et-table-row" role="row">
+      @for (column of visibleColumns(); track column.key) {
+        <div [attr.data-align]="column.align ?? 'start'" class="et-table-cell" role="gridcell">
+          @if (column.cell) {
+            <ng-container
+              *ngTemplateOutlet="column.cell; context: { $implicit: row, value: column.value(row), index: index }"
+            />
+          } @else {
+            {{ column.value(row) }}
+          }
+        </div>
+      }
+    </div>
+  } @empty {
+    <div class="et-table-empty-row" role="row">
+      <div class="et-table-empty-cell" role="gridcell">
+        <ng-content select="[etTableEmpty]">{{ emptyLabel() }}</ng-content>
+      </div>
+    </div>
+  }
+</div>

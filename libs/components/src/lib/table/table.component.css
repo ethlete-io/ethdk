@@ -1,0 +1,75 @@
+@layer components {
+  @property --et-table-cell-padding-block {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0.625rem;
+  }
+
+  @property --et-table-cell-padding-inline {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0.75rem;
+  }
+
+  :where(.et-table-host) {
+    display: block;
+  }
+
+  .et-table {
+    display: grid;
+    inline-size: 100%;
+    color: var(--et-surface-color-solid, CanvasText);
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+
+  /* Rows are semantic (role=row) but layout-transparent, so their cells are the
+     actual grid items and every column track lines up across all rows. */
+  .et-table-header-row,
+  .et-table-row {
+    display: contents;
+  }
+
+  .et-table-header-cell,
+  .et-table-cell {
+    min-inline-size: 0;
+    padding: var(--et-table-cell-padding-block) var(--et-table-cell-padding-inline);
+    text-align: start;
+  }
+
+  .et-table-header-cell {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 1;
+    font-weight: 600;
+    color: var(--et-surface-color-muted-solid, CanvasText);
+    /* Opaque so scrolling rows pass behind the pinned header. */
+    background: var(--et-surface-background-solid, Canvas);
+    border-block-end: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.3));
+  }
+
+  .et-table-cell {
+    border-block-end: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
+  }
+
+  .et-table-header-cell:where([data-align='center']),
+  .et-table-cell:where([data-align='center']) {
+    text-align: center;
+  }
+
+  .et-table-header-cell:where([data-align='end']),
+  .et-table-cell:where([data-align='end']) {
+    text-align: end;
+  }
+
+  .et-table-row:hover .et-table-cell {
+    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 8%, transparent);
+  }
+
+  .et-table-empty-cell {
+    grid-column: 1 / -1;
+    padding: 2rem var(--et-table-cell-padding-inline);
+    color: var(--et-surface-color-muted-solid, CanvasText);
+    text-align: center;
+  }
+}

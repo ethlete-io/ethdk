@@ -13,6 +13,7 @@ export * from './lib/overlay';
 export * from './lib/query-devtools';
 export * from './lib/scrollable';
 export * from './lib/stream';
+export * from './lib/table';
 export * from './lib/tabs';
 export * from './lib/time-picker';
 export * from './lib/toggletip';
