@@ -1,5 +1,8 @@
 <div [style.grid-template-columns]="templateColumns()" class="et-table" role="grid">
   <div class="et-table-header-row" role="row">
+    @if (expandable()) {
+      <div class="et-table-header-cell et-table-expander-cell" role="columnheader" aria-hidden="true"></div>
+    }
     @for (column of visibleColumns(); track column.key) {
       <div
         [attr.data-align]="column.align ?? 'start'"
@@ -72,8 +75,23 @@
     }
   </div>
 
-  @for (row of rows(); track trackRow(row); let index = $index) {
+  @for (row of rows(); track expandKey(row); let index = $index) {
     <div class="et-table-row" role="row">
+      @if (expandable()) {
+        <div class="et-table-cell et-table-expander-cell" role="gridcell">
+          @if (canExpand(row)) {
+            <button
+              [attr.aria-expanded]="isExpanded(row)"
+              [attr.aria-label]="isExpanded(row) ? 'Collapse row' : 'Expand row'"
+              (click)="toggleExpanded(row)"
+              class="et-table-expander"
+              type="button"
+            >
+              <span [attr.data-expanded]="isExpanded(row)" class="et-table-expander-icon" aria-hidden="true"></span>
+            </button>
+          }
+        </div>
+      }
       @for (column of visibleColumns(); track column.key) {
         <div [attr.data-align]="column.align ?? 'start'" class="et-table-cell" role="gridcell">
           @if (column.cell) {
@@ -86,6 +104,18 @@
         </div>
       }
     </div>
+
+    @if (canExpand(row) && isExpanded(row)) {
+      @if (expandedRowTemplate(); as detail) {
+        <div class="et-table-detail-row" role="row">
+          <div class="et-table-detail-cell" role="gridcell">
+            <div class="et-table-detail-content">
+              <ng-container *ngTemplateOutlet="detail; context: { $implicit: row }" />
+            </div>
+          </div>
+        </div>
+      }
+    }
   } @empty {
     <div class="et-table-empty-row" role="row">
       <div class="et-table-empty-cell" role="gridcell">

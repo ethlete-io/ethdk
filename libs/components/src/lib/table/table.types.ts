@@ -55,6 +55,12 @@ export type TableHeaderContext = {
   $implicit: string | undefined;
 };
 
+/** The context passed to the expanded-row detail template. */
+export type TableExpandedRowContext<T> = {
+  /** The row being expanded. */
+  $implicit: T;
+};
+
 /**
  * A typed column definition. Authored via {@link tableColumns} so the row type `T`
  * flows into every `value` accessor, and via `key` into sort/filter/state — the

@@ -10,6 +10,7 @@ export default {
     constrainHeight: false,
     empty: false,
     multiSort: false,
+    expandable: false,
     surface: 'dark',
   },
   argTypes: {
@@ -17,6 +18,7 @@ export default {
     constrainHeight: { control: 'boolean' },
     empty: { control: 'boolean' },
     multiSort: { control: 'boolean' },
+    expandable: { control: 'boolean' },
     surface: { control: 'text' },
   },
 } as Meta<TableStorybookComponent>;
@@ -49,4 +51,15 @@ export const StickyHeader: Story = {
 
 export const Empty: Story = {
   args: { empty: true },
+};
+
+export const Expandable: Story = {
+  args: { expandable: true },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Rows expand to a lazily-instantiated detail row (nest another `<et-table>` here for sub-tables).',
+      },
+    },
+  },
 };

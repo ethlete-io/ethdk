@@ -300,4 +300,32 @@ describe('TableComponent', () => {
       expect(table.filterOptionsFor(column)).toEqual([{ label: 'Match', value: 'm' }]);
     });
   });
+
+  describe('row expansion', () => {
+    it('toggles a row and tracks it in expandedKeys', () => {
+      const { componentInstance: table } = create(columns(), UNSORTED);
+      const row = UNSORTED[0]!;
+
+      expect(table.isExpanded(row)).toBe(false);
+
+      table.toggleExpanded(row);
+      expect(table.isExpanded(row)).toBe(true);
+      expect(table.expandedKeys().size).toBe(1);
+
+      table.toggleExpanded(row);
+      expect(table.isExpanded(row)).toBe(false);
+    });
+
+    it('keys expansion by rowKey so equal-keyed rows share state', () => {
+      const fixture = create(columns(), UNSORTED);
+      fixture.componentRef.setInput('rowKey', (row: Person) => row.id);
+      fixture.detectChanges();
+      const table = fixture.componentInstance;
+
+      table.toggleExpanded({ id: 1, name: 'Ada', role: 'Admin' });
+
+      expect(table.isExpanded({ id: 1, name: 'renamed', role: 'Viewer' })).toBe(true);
+      expect(table.isExpanded({ id: 2, name: 'Bob', role: 'Editor' })).toBe(false);
+    });
+  });
 });

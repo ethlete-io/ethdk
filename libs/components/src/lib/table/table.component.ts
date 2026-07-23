@@ -1,5 +1,15 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, input, isDevMode, linkedSignal, model, signal, ViewEncapsulation } from '@angular/core';
+import {
+  Component,
+  computed,
+  input,
+  isDevMode,
+  linkedSignal,
+  model,
+  signal,
+  TemplateRef,
+  ViewEncapsulation,
+} from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import {
   MenuCheckboxGroupComponent,
@@ -15,6 +25,7 @@ import { sortRows } from './table-sort';
 import { TABLE_ERROR_CODES } from './table-errors';
 import {
   AnyTableColumn,
+  TableExpandedRowContext,
   TableFilter,
   TableFilterOption,
   TableFilterOptionsProvider,
@@ -105,6 +116,22 @@ export class TableComponent<T> {
    */
   public filterMode = input<'client' | 'server'>('client');
 
+  /**
+   * The detail template rendered as a full-width row when a row is expanded. Setting
+   * it enables row expansion (an expander column is prepended). Context: `{ $implicit: row }`.
+   * Nest another `<et-table>` here for sub-tables.
+   */
+  public expandedRowTemplate = input<TemplateRef<TableExpandedRowContext<T>>>();
+
+  /** Gate which rows can expand. Defaults to all rows (when a detail template is set). */
+  public expandableRow = input<(row: T) => boolean>();
+
+  /** The set of expanded row keys (by `rowKey`, else row reference). Two-way bindable. */
+  public expandedKeys = model<Set<unknown>>(new Set());
+
+  /** Whether row expansion is active (a detail template was provided). */
+  public expandable = computed(() => this.expandedRowTemplate() !== undefined);
+
   // Column order + visibility overrides reset when the `columns` input changes, but
   // a manual restoreState() persists until then (linkedSignal semantics).
   private columnOrder = linkedSignal(() => this.columns().map((column) => column.key));
@@ -147,12 +174,14 @@ export class TableComponent<T> {
     this.orderedColumns().filter((column) => !this.hiddenColumns().has(column.key)),
   );
 
-  /** The `grid-template-columns` value for the visible columns. */
-  public templateColumns = computed(() =>
-    this.visibleColumns()
-      .map((column) => column.width ?? DEFAULT_TRACK)
-      .join(' '),
-  );
+  /** The `grid-template-columns` value for the visible columns (plus a leading expander track when expandable). */
+  public templateColumns = computed(() => {
+    const tracks = this.visibleColumns().map((column) => column.width ?? DEFAULT_TRACK);
+
+    if (this.expandable()) tracks.unshift('var(--et-table-expander-width, 2.75rem)');
+
+    return tracks.join(' ');
+  });
 
   /** The serializable, versioned table state (column order + visibility). */
   public state = computed<TableState>(() => ({
@@ -227,8 +256,31 @@ export class TableComponent<T> {
     this.filters.set(values.length ? [...others, { key, values }] : others);
   }
 
-  protected trackRow(row: T): string | number | T {
+  /** Whether a row is currently expanded. */
+  public isExpanded(row: T) {
+    return this.expandedKeys().has(this.expandKey(row));
+  }
+
+  /** Toggle a row's expanded state. */
+  public toggleExpanded(row: T) {
+    const key = this.expandKey(row);
+    const next = new Set(this.expandedKeys());
+
+    if (next.has(key)) {
+      next.delete(key);
+    } else {
+      next.add(key);
+    }
+
+    this.expandedKeys.set(next);
+  }
+
+  protected expandKey(row: T): unknown {
     return this.rowKey()?.(row) ?? row;
+  }
+
+  protected canExpand(row: T) {
+    return this.expandable() && (this.expandableRow()?.(row) ?? true);
   }
 
   protected isFiltered(key: string) {

@@ -47,9 +47,22 @@ const PEOPLE: Person[] = Array.from({ length: 40 }, (_, i) => {
         class="overflow-auto rounded-xl border border-black/10 dark:border-white/10"
         data-testid="scroll-container"
       >
-        <et-table [data]="rows()" [columns]="columns()" [multiSort]="multiSort()" emptyLabel="No people found" />
+        <et-table
+          [data]="rows()"
+          [columns]="columns()"
+          [multiSort]="multiSort()"
+          [expandedRowTemplate]="expandable() ? detail : undefined"
+          emptyLabel="No people found"
+        />
       </div>
     </div>
+
+    <ng-template #detail let-person>
+      <div class="rounded-lg bg-black/5 p-4 text-sm dark:bg-white/5">
+        <p class="font-medium">{{ person.name }}</p>
+        <p class="opacity-70">{{ person.email }} · {{ person.role }} · joined {{ person.joinedAt }}</p>
+      </div>
+    </ng-template>
 
     <ng-template #roleCell let-value="value">
       <span
@@ -74,6 +87,7 @@ export class TableStorybookComponent {
   public constrainHeight = input(false);
   public empty = input(false);
   public multiSort = input(false);
+  public expandable = input(false);
   public surface = input('dark');
 
   public roleCell = viewChild<TemplateRef<TableCellContext<Person, Person['role']>>>('roleCell');
