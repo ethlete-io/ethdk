@@ -2,9 +2,10 @@
 
 A type-safe, light-by-default data table. The row type flows from your data
 through the column definitions into every cell, and the base table renders typed
-rows on a CSS grid with a sticky header, an empty state, opt-in [sorting](#sorting)
-and opt-in [filtering](#filtering). Row expansion, reordering, virtualization and
-richer state persistence arrive as further features in later phases.
+rows on a CSS grid with a sticky header and an empty state, plus opt-in
+[sorting](#sorting), [filtering](#filtering) and [row expansion](#row-expansion).
+Reordering, virtualization and richer state persistence arrive as further
+features in later phases.
 
 ```ts
 import { TABLE_IMPORTS, tableColumns } from '@ethlete/components';
@@ -41,17 +42,20 @@ typed `value` accessor is the only link between a column and the row.
 
 ## Inputs
 
-| Input        | Default     | Description                                                                               |
-| ------------ | ----------- | ----------------------------------------------------------------------------------------- |
-| `data`       | `[]`        | The rows to render.                                                                       |
-| `columns`    | `[]`        | The column definitions from `tableColumns<T>()`.                                          |
-| `rowKey`     | reference   | `(row: T) => string \| number` for stable change tracking (and later row-keyed state).    |
-| `emptyLabel` | `'No data'` | Text shown when there are no rows and no `[etTableEmpty]` content is projected.           |
-| `sort`       | `[]`        | Two-way bindable sort state — an ordered `{ key, direction }[]`. See [Sorting](#sorting). |
-| `multiSort`  | `false`     | Allow more than one column to be sorted at once.                                          |
-| `sortMode`   | `'client'`  | `'client'` sorts rows in the browser; `'server'` leaves them for the backend to sort.     |
-| `filters`    | `[]`        | Two-way bindable filter state — `{ key, values }[]`. See [Filtering](#filtering).         |
-| `filterMode` | `'client'`  | `'client'` filters rows in the browser; `'server'` leaves them for the backend to filter. |
+| Input                 | Default     | Description                                                                                         |
+| --------------------- | ----------- | --------------------------------------------------------------------------------------------------- |
+| `data`                | `[]`        | The rows to render.                                                                                 |
+| `columns`             | `[]`        | The column definitions from `tableColumns<T>()`.                                                    |
+| `rowKey`              | reference   | `(row: T) => string \| number` for stable change tracking (and later row-keyed state).              |
+| `emptyLabel`          | `'No data'` | Text shown when there are no rows and no `[etTableEmpty]` content is projected.                     |
+| `sort`                | `[]`        | Two-way bindable sort state — an ordered `{ key, direction }[]`. See [Sorting](#sorting).           |
+| `multiSort`           | `false`     | Allow more than one column to be sorted at once.                                                    |
+| `sortMode`            | `'client'`  | `'client'` sorts rows in the browser; `'server'` leaves them for the backend to sort.               |
+| `filters`             | `[]`        | Two-way bindable filter state — `{ key, values }[]`. See [Filtering](#filtering).                   |
+| `filterMode`          | `'client'`  | `'client'` filters rows in the browser; `'server'` leaves them for the backend to filter.           |
+| `expandedRowTemplate` | —           | Detail template; setting it enables [row expansion](#row-expansion). Context: `{ $implicit: row }`. |
+| `expandableRow`       | all rows    | `(row: T) => boolean` gating which rows can expand.                                                 |
+| `expandedKeys`        | `new Set()` | Two-way bindable set of expanded row keys (by `rowKey`).                                            |
 
 ## Columns
 
@@ -219,6 +223,27 @@ a field initializer / constructor, like a query or query stack.
 For the legacy `V2QueryClient`, use **`tableRowsFromV2Query`** — the same config
 and return shape, backed by the legacy `queryComputed` container. Both adapters
 share one client-agnostic core (`createTableRowsSource`), so they stay in lockstep.
+
+## Row expansion
+
+Provide an `expandedRowTemplate` and the table prepends an expander column; each
+row toggles a **lazily-instantiated** full-width detail row (revealed with a
+reduced-motion-aware height animation). Nest another `<et-table>` in the detail
+template for **sub-tables**. Set `rowKey` so expansion state survives data
+changes; gate rows with `expandableRow`.
+
+```html
+<et-table [data]="orders()" [columns]="columns" [rowKey]="orderId" [expandedRowTemplate]="detail" />
+
+<ng-template #detail let-order>
+  <!-- nest another table for a sub-table -->
+  <et-table [data]="order.lines" [columns]="lineColumns" />
+</ng-template>
+```
+
+`expandedKeys` is a two-way `Set` of row keys, so you can drive or persist which
+rows are open. `isExpanded(row)` / `toggleExpanded(row)` are available on the
+table instance.
 
 ## Sticky header
 
