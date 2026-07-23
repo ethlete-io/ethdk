@@ -74,6 +74,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 
 - [Bracket](/components/bracket) — tournament bracket renderer for single/double-elimination and swiss stages, with SVG connectors, journey highlighting and pluggable match/header cards.
 - [Grid](/components/grid) — drag & resize dashboard grid with breakpoints, keyboard editing and backend serialization.
+- [Pagination](/components/pagination) — page-number paginator with ellipsis, jump controls and a headless tier.
 - [Scrollable](/components/scrollable) — scroll containers with buttons, masks, snap and drag scrolling.
 - [Table](/components/table) — type-safe, light-by-default data table on CSS grid with a sticky header and empty state.
 - [Tabs](/components/tabs) — content tabs and router-driven nav tabs.
