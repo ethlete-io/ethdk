@@ -1,10 +1,11 @@
 # 01 — Table (new system, NOT a cdk port)
 
-**Status: Phases 1–5 shipped (2026-07-23), incl. Phase 3b.** Size: XL — split into
-shippable phases below. Phase 0 decisions recorded under _Markup strategy_; the
-table lives in `libs/components/src/lib/table/`. Next up: Phase 6 (virtualization,
-via the extracted `createVirtualWindow`). Deferred: headless `[etTable]` directive
-(review), select-adapter unification onto the shared driver.
+**Status: Phases 1–8 shipped (2026-07-23).** Remaining: **Phase 9 (grouped &
+multi-sort headers)** — deferred, needs a markup spike. Size: XL — split into
+shippable phases. Phase 0 decisions recorded under _Markup strategy_; the table lives in
+`libs/components/src/lib/table/`. Deferred (not blocking; revisit on demand):
+headless `[etTable]` directive (review), select-adapter unification onto the
+shared driver, column resizing, selection.
 
 ## Why green-field
 
@@ -314,15 +315,106 @@ toTotal, ... })`, called from an injection context like the select's. It
 - **Phase 5 — Column reordering + visibility**: ✅ **shipped 2026-07-23**.
   `reorderable` enables drag-to-reorder headers (via core `etDragHandle`;
   hit-tests header rects through `viewChildren`, reorders the `columnOrder` state —
-  no DOM surgery). Programmatic `moveColumn(key, toIndex)` +
+  no DOM surgery). **Reorder UX (refined 2026-07-23):** a floating ghost header
+  follows the pointer + a drop indicator marks the target edge; the table markup
+  stays put during the drag and the reorder is **committed once on drop**, after
+  which the columns FLIP-animate (header + body cells, via core `forceReflow` +
+  `injectRenderer`, reduced-motion aware) into their new positions. Programmatic
+  `moveColumn(key, toIndex)` +
   `isColumnVisible`/`setColumnVisible`/`toggleColumnVisibility`; the show/hide
   chooser is consumer-composed (API + menu). Both order + visibility round-trip
   through `state()`/`restoreState()`. Spec + Storybook-verified (drag Name past
   Email reorders) + docs + changeset.
-- **Phase 6 — Virtualization** (compose with Phase 4's variable heights).
-- **Phase 7 — State export/restore** (TableState, URL adapter, docs recipe
-  "restore a table from a link"). Depends on 2/3/5 states existing but the
-  state container should be designed in Phase 1 so features register into it.
+- **Phase 6 — Virtualization**: ✅ **shipped 2026-07-23**. Opt-in `virtualScroll`
+  renders only the rows near the viewport, with block-padding spacer grid cells
+  (`grid-column: 1 / -1`) standing in for the rest so the scrollbar reflects the
+  full count. Reuses the extracted `createVirtualWindow` (now accepting reactive
+  `estimateItemHeight`/`overscan` so the `estimateRowHeight`/`overscan` inputs
+  drive it); the table owns the scroll container (host `overflow: auto`, consumer
+  sets a bounded block-size) so the sticky header keeps pinning. Row heights are
+  measured from a rendered base cell (uniform model, like the select). Composes
+  with Phase 4 expansion (verified: expanded rows render within the window while
+  scrolling). Spec (window slice + index offset + scroll shift) + Storybook-verified
+  (2,000 rows, ~30 in DOM, window shifts, sticky header holds) + docs + changeset.
+- **Phase 7 — State export/restore**: ✅ **shipped 2026-07-23**. `TableState`
+  grew from order+visibility to a full per-column snapshot — each column entry now
+  carries `sort` (direction) + `sortPriority` (preserves multi-sort order) +
+  `filterValues`, plus a top-level `expanded` (rowKey strings). `state()` captures
+  it and `restoreState()` applies all of it, round-tripping losslessly; the
+  per-column shape maps 1:1 onto server list-view config. `expandKey` now coerces
+  the rowKey to a string so numeric ids round-trip. New tree-shakable
+  `serializeTableState`/`deserializeTableState` (`table-state-url.ts`) turn a
+  snapshot into a URL query-param string and back (null on absent/malformed/
+  unknown-version). Spec (per-column capture, multi-sort priority round-trip,
+  filter round-trip, numeric-rowKey expansion round-trip, serialize/deserialize +
+  null cases) + docs section with a "restore a table from a link" router recipe +
+  changeset.
+
+### Follow-on polish (planned 2026-07-23 — the table looks too bare by default)
+
+Framing: "variants" are **four orthogonal axes** — skin, density, cell content,
+header structure — mixed per table, not one redesign. A visual mockup of all four
+was reviewed and steered the scope below. Decisions taken with the user:
+
+- **Ship all five skins; `enclosed` becomes the default** (the bare look today is
+  the complaint). Skins are the `appearance` input; density is a separate input.
+- **Do NOT ship project-specific cell components** (avatar/badge/etc.). Keep the
+  table generic and instead guarantee "batteries included" extension — a great
+  `cell` template API + a docs cookbook composing the lib's existing `chip` /
+  `button` / `menu` and plain HTML. Rich cells stay the consumer's, not the SDK's.
+- **Grouped & multi-sort headers are their own phase** (they change the grid
+  markup + sort model) — Phase 9, deferred.
+
+- **Phase 8 — Appearance (skins) + density + extension ergonomics**: ✅ **shipped
+  2026-07-23.** Landed exactly as specified below; notable decision during build:
+  adopted a **uniform scroll model** — the host is always its own scroll container
+  (`overflow: auto`), so a bounded height gives a scrolling body + pinned header
+  (this subsumed the virtualization "bounded height" note; the sticky story/docs
+  moved from wrap-in-a-scroller to height-on-the-table). Zebra stripes are keyed
+  off the absolute row index (`et-table-row--stripe`) so they survive virtualization
+  - expansion. `appearance`/`density` reflect to `data-*` host attrs; skins are
+    driven by `--_et-table-*` indirection vars set per `[data-appearance]`, consumed
+    by flat cell rules. Cookbook shipped as docs (compose `chip`/`button`/`menu` +
+    HTML; `sortValue`/`filterValue` keep sort/filter working on rich cells). 44 specs
+    green; Storybook-verified all 5 skins + density + sticky + virtualization; docs
+    "Appearance & density" + cookbook; changeset. Original spec:
+  * `appearance` input: `'enclosed' | 'divided' | 'zebra' | 'grid' | 'bare'`,
+    **default `'enclosed'`** (rounded surface panel, tinted header band, hairline
+    row dividers, hover tint, subtle elevation). `divided` = today's refined
+    borderless look; `zebra` = striped rows; `grid` = full cell borders; `bare` =
+    no chrome (dashboards/cards).
+  * `density` input: `'comfortable' | 'compact' | 'spacious'`, **default
+    `'comfortable'`** — drives the existing `--et-table-cell-padding-block/inline`
+    custom props (already the styling seam), orthogonal to skin.
+  * CSS only + two inputs. Everything stays inside `@layer components` and uses
+    **surface tokens** (`--et-surface-*`) — no hardcoded colors (read the
+    `theming` skill first). The header band is a surface tint (e.g. `color-mix`
+    of surface background + border), never a literal grey.
+  * Must not regress: sticky header inside a rounded/`overflow:hidden` enclosed
+    panel; virtualization (host already `overflow:auto` — enclosed border/radius
+    goes on the host); reorder ghost/indicator + FLIP; expansion; empty state.
+  * Default-look change is safe (table is unreleased). Changeset notes the new
+    default and that `appearance="divided"` restores the old look.
+  * **Batteries-included extension** (same phase, mostly docs): confirm the `cell`
+    context (`{ $implicit: row, value, index }`) is sufficient (it is), keep the
+    API generic, and add a docs "custom cells cookbook" — avatar + two-line, status
+    badge (`et-chip`), thumbnail, numeric + trend, meter, row-actions (`et-menu` /
+    `et-button`) — each a plain `cell` template, showing that `sortValue` /
+    `filterValue` keep sort/filter working when the display cell is rich.
+  * Deliverables: spec (appearance/density reflect to DOM + padding vars change),
+    a Storybook story per appearance + a density control, docs "Appearance &
+    density" section + the cookbook, changeset (`@ethlete/components` minor).
+
+- **Phase 9 — Grouped & multi-sort headers** (deferred, needs a markup spike):
+  - Column `group` field → a multi-row header with a spanning group label over its
+    sub-columns; each sub-column independently `sortable`. Grid markup grows a
+    second header row; `visibleColumns` / `templateColumns` / reorder must become
+    group-aware (reorder within a group, and move whole groups).
+  - Multi-metric cell: one visual column exposing >1 sort key in its header (e.g. a
+    "Record" column with `W` / `L` toggles) — lighter alternative to real groups.
+  - Consider here (not before): the **data-driven renderer registry** (server
+    list-view `type` → renderer) as the extensibility path for columns-as-data —
+    the other half of "batteries included," scoped only if a consumer needs it.
 
 Dependencies on other plans: `02-pagination.md` (query glue), `03-skeleton.md`
 (loading rows) — both nice-to-have, not blockers.
