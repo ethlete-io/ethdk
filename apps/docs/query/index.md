@@ -40,5 +40,5 @@ import { createQueryClient, createGetQuery, withArgs } from '@ethlete/query';
 
 ## Also in the package
 
-- **`QueryForm`** — router-synced filter/search forms (`QueryField`, `SearchQueryField`, `SortQueryField`, …) that debounce, serialize to URL query params and feed query args. Primarily used together with the [legacy client](/query/legacy) today.
+- **[Query forms](/query/query-forms)** — router-synced filter/search/sort forms that debounce, serialize to URL query params and feed query args. Use the signals-first `createQueryForm` for new code; the original reactive-forms `QueryForm` remains available.
 - **HTTP error pipes** — `ParseHttpErrorCodeToTitle{En,De}Pipe` and `ParseHttpErrorCodeToMessage{En,De}Pipe` translate HTTP status codes into a human-readable title and message (English/German).
