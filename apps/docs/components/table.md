@@ -120,6 +120,45 @@ columns = tableColumns<User>([
 The `sortRows({ rows, sort, columns })` helper the client mode uses is exported
 and tree-shakable, for custom flows where you sort outside the table.
 
+## Server-side rows (query)
+
+`tableRowsFromQuery` feeds the table from an [`@ethlete/query`](/query/) query,
+server-side — mirroring `selectOptionsFromQuery`. The query is created once and
+re-executes reactively as sort/page change; pair it with `sortMode="server"` so
+the backend does the sorting:
+
+```ts
+users = tableRowsFromQuery({
+  queryCreator: getUsers,
+  args: ({ sort, page }) => ({
+    queryParams: { sortBy: sort()[0]?.key, sortOrder: sort()[0]?.direction, page: page() },
+  }),
+  toRows: (res) => res.items,
+  toTotal: (res) => res.totalHits,
+  toHasMore: (res) => res.hasMore,
+});
+```
+
+```html
+<et-table
+  [data]="users.rows()"
+  [columns]="columns"
+  [sort]="users.sort()"
+  (sortChange)="users.setSort($event)"
+  sortMode="server"
+/>
+```
+
+It returns `rows`, `loading`, `error`, `total`, `hasMore`, `sort` and `page`
+signals plus `setSort`/`setPage`. `rows` keeps the previous page visible while the
+next one loads (no empty flash); `setSort` resets to `initialPage`. Call it from a
+field initializer / constructor, like a query or query stack.
+
+::: info Legacy client & shared core
+A twin for the legacy `V2QueryClient` (and factoring the shared query-lifecycle
+core out of the select + table adapters) is planned — see the porting plan.
+:::
+
 ## Sticky header
 
 The header row is `position: sticky`. It pins to the top of the **nearest
