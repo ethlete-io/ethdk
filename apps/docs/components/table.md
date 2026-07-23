@@ -2,10 +2,12 @@
 
 A type-safe, light-by-default data table. The row type flows from your data
 through the column definitions into every cell, and the base table renders typed
-rows on a CSS grid with a sticky header and an empty state, plus opt-in
-[sorting](#sorting), [filtering](#filtering), [row expansion](#row-expansion) and
-[column reordering & visibility](#column-visibility-reordering). Virtualization
-and richer state persistence arrive as further features in later phases.
+rows on a CSS grid with a sticky header and an empty state. Choose its look with
+[appearance & density](#appearance-density), fill cells with
+[any content you like](#custom-cells), and turn on
+[sorting](#sorting), [filtering](#filtering), [row expansion](#row-expansion),
+[column reordering & visibility](#column-visibility-reordering) and
+[virtualization](#virtualization) as needed.
 
 ```ts
 import { TABLE_IMPORTS, tableColumns } from '@ethlete/components';
@@ -42,21 +44,53 @@ typed `value` accessor is the only link between a column and the row.
 
 ## Inputs
 
-| Input                 | Default     | Description                                                                                         |
-| --------------------- | ----------- | --------------------------------------------------------------------------------------------------- |
-| `data`                | `[]`        | The rows to render.                                                                                 |
-| `columns`             | `[]`        | The column definitions from `tableColumns<T>()`.                                                    |
-| `rowKey`              | reference   | `(row: T) => string \| number` for stable change tracking (and later row-keyed state).              |
-| `emptyLabel`          | `'No data'` | Text shown when there are no rows and no `[etTableEmpty]` content is projected.                     |
-| `sort`                | `[]`        | Two-way bindable sort state — an ordered `{ key, direction }[]`. See [Sorting](#sorting).           |
-| `multiSort`           | `false`     | Allow more than one column to be sorted at once.                                                    |
-| `sortMode`            | `'client'`  | `'client'` sorts rows in the browser; `'server'` leaves them for the backend to sort.               |
-| `filters`             | `[]`        | Two-way bindable filter state — `{ key, values }[]`. See [Filtering](#filtering).                   |
-| `filterMode`          | `'client'`  | `'client'` filters rows in the browser; `'server'` leaves them for the backend to filter.           |
-| `expandedRowTemplate` | —           | Detail template; setting it enables [row expansion](#row-expansion). Context: `{ $implicit: row }`. |
-| `expandableRow`       | all rows    | `(row: T) => boolean` gating which rows can expand.                                                 |
-| `expandedKeys`        | `new Set()` | Two-way bindable set of expanded row keys (by `rowKey`).                                            |
-| `reorderable`         | `false`     | Allow reordering columns by dragging their headers. See [below](#column-visibility-reordering).     |
+| Input                 | Default         | Description                                                                                               |
+| --------------------- | --------------- | --------------------------------------------------------------------------------------------------------- |
+| `data`                | `[]`            | The rows to render.                                                                                       |
+| `columns`             | `[]`            | The column definitions from `tableColumns<T>()`.                                                          |
+| `rowKey`              | reference       | `(row: T) => string \| number` for stable change tracking (and later row-keyed state).                    |
+| `appearance`          | `'enclosed'`    | Visual frame: `'enclosed'`, `'divided'`, `'zebra'`, `'grid'`, `'bare'`. See [below](#appearance-density). |
+| `density`             | `'comfortable'` | Cell padding: `'comfortable'`, `'compact'`, `'spacious'`.                                                 |
+| `emptyLabel`          | `'No data'`     | Text shown when there are no rows and no `[etTableEmpty]` content is projected.                           |
+| `sort`                | `[]`            | Two-way bindable sort state — an ordered `{ key, direction }[]`. See [Sorting](#sorting).                 |
+| `multiSort`           | `false`         | Allow more than one column to be sorted at once.                                                          |
+| `sortMode`            | `'client'`      | `'client'` sorts rows in the browser; `'server'` leaves them for the backend to sort.                     |
+| `filters`             | `[]`            | Two-way bindable filter state — `{ key, values }[]`. See [Filtering](#filtering).                         |
+| `filterMode`          | `'client'`      | `'client'` filters rows in the browser; `'server'` leaves them for the backend to filter.                 |
+| `expandedRowTemplate` | —               | Detail template; setting it enables [row expansion](#row-expansion). Context: `{ $implicit: row }`.       |
+| `expandableRow`       | all rows        | `(row: T) => boolean` gating which rows can expand.                                                       |
+| `expandedKeys`        | `new Set()`     | Two-way bindable set of expanded row keys (by `rowKey`).                                                  |
+| `reorderable`         | `false`         | Allow reordering columns by dragging their headers. See [below](#column-visibility-reordering).           |
+| `virtualScroll`       | `false`         | Render only the rows near the viewport. See [Virtualization](#virtualization).                            |
+| `estimateRowHeight`   | `48`            | Row height (px) assumed before a real row is measured — tune to your rows for a stable first paint.       |
+| `overscan`            | `6`             | Rows kept rendered just outside the viewport on each side, to hide scroll flicker.                        |
+
+## Appearance & density
+
+Two independent presentation inputs. `appearance` is the frame; `density` is the
+row rhythm. They compose with every feature.
+
+```html
+<et-table [data]="rows()" [columns]="columns" appearance="zebra" density="compact" />
+```
+
+<StoryEmbed id="components-table--appearance" height="360px" />
+
+| `appearance` | Looks like                                                                                   |
+| ------------ | -------------------------------------------------------------------------------------------- |
+| `enclosed`   | **Default.** Bordered, rounded surface panel with a tinted header band and subtle elevation. |
+| `divided`    | Borderless; rows separated by hairline dividers. Sits flat inline in a page.                 |
+| `zebra`      | Alternating row backgrounds; good for wide, scannable tables.                                |
+| `grid`       | Full cell borders — spreadsheet density.                                                     |
+| `bare`       | No chrome at all; hover only. For dashboards and cards.                                      |
+
+`density` is `'comfortable'` (default), `'compact'`, or `'spacious'` — it sets the
+`--et-table-cell-padding-block` / `--et-table-cell-padding-inline` custom properties,
+which you can also override directly for a bespoke value.
+
+The table is **its own scroll container**: give it a bounded height to scroll its
+body with the header pinned (see [Sticky header](#sticky-header)), rather than
+wrapping it in a scroller.
 
 ## Columns
 
@@ -81,8 +115,11 @@ Each entry of `tableColumns<T>()`:
 
 ### Custom cells
 
-Pass a `TemplateRef` as `cell`. The context gives you the row (`$implicit`), the
-accessor's `value`, and the row `index`:
+A cell is whatever you put in a `TemplateRef` — text, avatars, badges, buttons,
+charts, nested components. The table ships **no** opinionated cell components on
+purpose: point a column's `cell` at your own template and compose the pieces you
+already have. The context gives you the row (`$implicit`), the accessor's `value`,
+and the row `index`:
 
 ```ts
 @Component({
@@ -103,6 +140,48 @@ export class UsersComponent {
     ]),
   );
 }
+```
+
+**Sort and filter still work on rich cells.** The display template is decoupled
+from the values sorted/filtered on — set `sortValue` / `filterValue` on the column
+so a cell that renders an avatar can still sort by name, or a badge by status.
+
+#### Cookbook
+
+Common cell shapes, each just a `cell` template. Compose the library's existing
+components (`et-chip`, `et-button`, `et-menu`) rather than reaching for
+table-specific ones:
+
+```html
+<!-- Avatar + two-line identity (whole row object as the value) -->
+<ng-template #userCell let-user>
+  <div class="flex items-center gap-2">
+    <img [src]="user.avatarUrl" class="size-8 rounded-full" alt="" />
+    <span class="flex flex-col leading-tight">
+      <b>{{ user.name }}</b>
+      <small class="opacity-70">{{ user.handle }}</small>
+    </span>
+  </div>
+</ng-template>
+
+<!-- Status badge — reuse the chip component -->
+<ng-template #statusCell let-value="value">
+  <et-chip [color]="value === 'active' ? 'success' : 'neutral'">{{ value }}</et-chip>
+</ng-template>
+
+<!-- Row actions — a menu trigger -->
+<ng-template #actionsCell let-row>
+  <button [etMenuTrigger]="rowMenu" etButton variant="text" aria-label="Row actions">⋯</button>
+</ng-template>
+```
+
+```ts
+columns = tableColumns<Player>([
+  // sorts by name even though the cell renders an avatar + handle
+  { key: 'player', header: 'Player', value: (p) => p, cell: userCell, sortValue: (p) => p.name },
+  { key: 'status', header: 'Status', value: (p) => p.status, cell: statusCell, filterable: true },
+  { key: 'actions', header: '', value: (p) => p, cell: actionsCell },
+]);
 ```
 
 ## Sorting
@@ -248,14 +327,12 @@ table instance.
 
 ## Sticky header
 
-The header row is `position: sticky`. It pins to the top of the **nearest
-scroll container**, so wrap the table in a height-constrained scrollable element
-to activate it:
+The table is its own scroll container, so you don't wrap it — just give it a
+bounded height and the header row stays pinned (`position: sticky`) while the body
+scrolls:
 
 ```html
-<div style="max-block-size: 320px; overflow: auto">
-  <et-table [data]="rows()" [columns]="columns" />
-</div>
+<et-table [data]="rows()" [columns]="columns" style="block-size: 320px" />
 ```
 
 ## Empty state
@@ -271,8 +348,12 @@ default `emptyLabel` text by projecting `[etTableEmpty]` content:
 
 ## Column visibility & reordering
 
-Set `reorderable` to let users **drag column headers** sideways to reorder them
-(pure state — no DOM surgery, since the grid re-lays-out from the column order).
+Set `reorderable` to let users **drag column headers** sideways to reorder them.
+A floating ghost of the header follows the pointer and a drop indicator marks
+where the column will land; the table itself doesn't move until you drop, and the
+columns then animate into their new positions (respecting reduced-motion). It's
+pure column-order state — no DOM surgery, since the grid re-lays-out from the
+order.
 
 Column **order and visibility** are also fully programmatic, so you can build a
 "columns" chooser with the [menu](/components/menu):
@@ -287,16 +368,89 @@ Column **order and visibility** are also fully programmatic, so you can build a
 Both order and visibility are captured by [`state()`](#table-state) and restored
 by `restoreState()`.
 
+## Virtualization
+
+For long lists, set `virtualScroll` so the table renders only the rows near the
+viewport — a few dozen `<div role="row">`s stay in the DOM no matter how many
+rows `data` holds, with block-padding spacers standing in for the rest so the
+scrollbar still reflects the full count.
+
+As always, the table is its own scroll container — give it a bounded height so the
+window has a viewport to track:
+
+```html
+<et-table [data]="rows()" [columns]="columns" [virtualScroll]="true" style="block-size: 24rem" />
+```
+
+<StoryEmbed id="components-table--virtualized" height="440px" />
+
+The sticky header pins to the table's own scroll container, so it keeps working.
+Row heights are measured from a rendered row and assumed uniform; set
+`estimateRowHeight` close to your real row height for the steadiest first paint,
+and raise `overscan` if fast scrolling reveals blank rows before they render.
+
+Virtualization composes with [row expansion](#row-expansion) — expanded rows
+render within the window as you scroll to them. Because the window assumes a
+uniform row height, lists where many rows are expanded at once scroll most
+smoothly when expanded content is modest.
+
 ## Table state
 
-`state()` is a serializable, versioned snapshot of column order and visibility;
-`restoreState(state)` applies one back. This is the seed of the persistence
-layer later phases build on (sort, filters, expanded/selected rows), and is
-shaped to map onto server-side per-column config.
+`state()` is a serializable, versioned snapshot of the table's configurable
+state — column **order**, **visibility**, **sort** and **filters** (per column),
+plus **expanded rows**. `restoreState(state)` applies one back. The two round-trip
+losslessly, so it's the basis for persisting and sharing a table setup.
 
 ```ts
-const snapshot = table.state(); // { v: 1, columns: [{ key, hidden }, …] }
+const snapshot = table.state();
+// {
+//   v: 1,
+//   columns: [
+//     { key: 'name', hidden: false, sort: 'asc' },
+//     { key: 'role', hidden: true, filterValues: ['Admin'] },
+//   ],
+//   expanded: ['42'], // present only when a rowKey is set
+// }
 table.restoreState(snapshot);
+```
+
+The per-column shape maps 1:1 onto typical server-side list-view config (`hidden`,
+sort direction, `filterValues`), so bridging to a backend is mechanical. With
+`multiSort`, each sorted column also carries a `sortPriority` so the sort order
+survives the round-trip. Expanded rows serialize by their `rowKey` — set a
+[`rowKey`](#inputs) for expansion to be captured.
+
+### Restore a table from a link
+
+`serializeTableState()` / `deserializeTableState()` turn a snapshot into a string
+you can put in a URL query param (and back), so a filtered, sorted, reordered
+table is shareable as a link. Deserialize returns `null` for an absent, malformed
+or unknown-version value, so a stale link just falls back to the default view.
+
+```ts
+import { deserializeTableState, serializeTableState } from '@ethlete/components';
+
+@Component({
+  template: `<et-table #table [data]="rows()" [columns]="columns" />`,
+})
+export class UsersComponent {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+
+  table = viewChild.required<TableComponent<User>>('table');
+
+  constructor() {
+    // Restore from the URL on load.
+    const restored = deserializeTableState(this.route.snapshot.queryParamMap.get('table'));
+    if (restored) afterNextRender(() => this.table().restoreState(restored));
+
+    // Reflect changes back into the URL (the router encodes the value).
+    effect(() => {
+      const table = serializeTableState(this.table().state());
+      this.router.navigate([], { queryParams: { table }, queryParamsHandling: 'merge', replaceUrl: true });
+    });
+  }
+}
 ```
 
 ## Accessibility
