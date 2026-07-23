@@ -1,6 +1,15 @@
 # 02 — Pagination
 
-**Status: planned, not started.** Size: M. Research done 2026-07-23 against
+**Status: Phase 1 shipped 2026-07-24.** `libs/components/src/lib/pagination/` —
+pure `paginate()` (ellipsis, no globals), headless `etPagination` (page model,
+`totalPages`, sibling/boundary window, `items()`, `goTo`/`first`/`previous`/`next`/
+`last`), themed default `et-pagination` (buttons, surface/color tokens, `nav`+ARIA,
+`@media (hover:hover)`), `PAGINATION_IMPORTS`, stories, specs, docs, changeset.
+**Deferred (not built):** links mode (`renderAs:'links'` with router/`urlForPage`,
+SEO-crawlable) and the SEO head service — both opt-in, revisit when needed. Query
+helper to derive `totalPages` from the list envelope: not shipped as code (trivial
+`ceil(totalHits/itemsPerPage)`; documented as a recipe instead) — build it if the
+binding proves fiddly. Size: M. Research done 2026-07-23 against
 `libs/cdk/src/lib/components/pagination/` (~730 lines incl. stories/docs).
 Net-new in `libs/components` — nothing pagination-shaped exists there
 (`selectOptionsFromQuery` is load-more, not a numbered paginator).

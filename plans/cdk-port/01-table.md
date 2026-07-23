@@ -445,9 +445,21 @@ was reviewed and steered the scope below. Decisions taken with the user:
     - **Action cells** — first-class support for cells with buttons (edit/delete)
       and menus; today done via a `cell` template, but a documented recipe (and
       maybe an alignment/spacing helper) would help. Overlaps the cells cookbook.
-    - **Pagination** — integrate `02-pagination.md`. The styled paginator component
-      may not fit under the table; plan to consume the **tier-2 headless** paginator
-      parts and render a table-appropriate footer/pager instead.
+    - **Pagination** — `02-pagination.md` **Phase 1 shipped** (`et-pagination` +
+      headless `etPagination`). Table integration: bind `et-pagination`'s `page`/
+      `(pageChange)` to `tableRowsFromQuery`'s `page`/`setPage`, `totalPages` from
+      the envelope (documented in the pagination guide). If the styled paginator
+      doesn't fit under the table, drop to the **tier-2 headless** `etPagination`
+      and render a table-appropriate pager. Not yet wired as a first-class table
+      footer slot — decide whether the table hosts the pager or the consumer places
+      it below.
+    - **Page-size select** — a "rows per page" select rendered alongside the
+      paginator (drives the query's `limit`/`itemsPerPage`); pairs with pagination
+      in the table footer.
+    - **Resizable columns** — user-draggable column widths (drag the header edge),
+      persisted into `TableState` (the `TableState` already reserves room for
+      widths). Currently out of scope in the plan's "not-yet" list; promote when
+      tackled.
   - **Deferred (not built):** the _multi-metric cell_ (one column exposing >1 sort
     key in its header, e.g. `W`/`L`) — grouped headers cover the "2 sortable
     sub-headers" ask; revisit if a single-track multi-sort cell is actually needed.
