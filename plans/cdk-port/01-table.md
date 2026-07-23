@@ -270,8 +270,15 @@ toTotal, ... })`, called from an injection context like the select's. It
   (sort/filter, Phase 2/3) or a custom-markup consumer actually needs it; the
   component's signals (`visibleColumns`, `state`, …) are already the extension
   surface a feature directive would `inject(TableComponent)` to read.
-- **Phase 2 — Sort + query glue**: sort headers, client-side sort helpers,
-  server-side wiring incl. the QueryForm-or-adapter decision.
+- **Phase 2 — Sort + query glue**: 🟡 **sort shipped 2026-07-23** — `sortable`
+  columns render tri-state sortable header buttons (`aria-sort`), a two-way
+  `sort` model (`{key,direction}[]`), `multiSort`, and a `sortMode`
+  (`'client'` applies the exported tree-shakable `sortRows({rows,sort,columns})`;
+  `'server'` leaves rows so `sort()` feeds query args). Spec + Storybook-verified
+  - docs + changeset. **Remaining (Phase 2b): the server query-glue adapter**
+    `tableRowsFromQuery` (both clients) — this is where the deferred select
+    query-adapter-core extraction happens (Phase 0 note). Not yet built; consumers
+    can wire `sortMode="server"` + `sort()` into a query form manually today.
 - **Phase 3 — Filter headers**: menu + search composition, typed filter state,
   client helpers + server wiring.
 - **Phase 4 — Row expansion / nested sub-tables**.
