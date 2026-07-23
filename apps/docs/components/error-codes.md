@@ -48,6 +48,8 @@ Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU
 | 3100–3199 | Slider             | [Slider](/components/slider)                       |
 | 3200–3299 | Masked input       | [Text inputs](/components/text-inputs)             |
 | 3300–3399 | Cascader           | [Cascader](/components/cascader)                   |
+| 3400–3499 | Bracket            | [Bracket](/components/bracket)                     |
+| 3500–3599 | Table              | [Table](/components/table)                         |
 
 ::: info Codes below 1000
 Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web sockets). `ET1000`/`ET1001` therefore exist in both packages — the bracketed source in the message (`[SelectDirective]` vs. a query feature) tells them apart.
@@ -302,3 +304,9 @@ Runtime errors from the bracket data pipeline and layout engine. They indicate a
 | `ET3409` | A swiss group ended up empty while round headers are enabled.                | Populate every available win/loss group, or hide round headers.                            |
 | `ET3410` | A match's resolved winner id isn't among its participants.                   | Set `winner` to `'home'`/`'away'`/`null` matching the match's `home`/`away`.               |
 | `ET3411` | A required key was missing from an internal bracket lookup.                  | Ensure every match `roundId` references an existing round.                                 |
+
+## Table (ET35xx)
+
+| Code     | Cause                             | Fix                                                  |
+| -------- | --------------------------------- | ---------------------------------------------------- |
+| `ET3500` | Two columns share the same `key`. | Give every column a unique `key` (keys drive state). |

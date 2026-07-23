@@ -1,0 +1,144 @@
+# Table
+
+A type-safe, light-by-default data table. The row type flows from your data
+through the column definitions into every cell, and the base table renders typed
+rows on a CSS grid with a sticky header and an empty state — nothing more. Sort,
+filter, expansion, reordering, virtualization and state persistence arrive as
+separate opt-in features (coming in later phases).
+
+```ts
+import { TABLE_IMPORTS, tableColumns } from '@ethlete/components';
+```
+
+## Usage
+
+Declare columns with `tableColumns<T>()` — binding the row type once makes every
+`value` accessor typed against `T` — and pass them to `<et-table>`:
+
+```ts
+type User = { id: string; name: string; email: string; role: string };
+
+@Component({
+  imports: [TABLE_IMPORTS],
+  template: `<et-table [data]="users()" [columns]="columns" />`,
+})
+export class UsersComponent {
+  users = signal<User[]>([]);
+
+  columns = tableColumns<User>([
+    { key: 'name', header: 'Name', value: (user) => user.name },
+    { key: 'email', header: 'Email', value: (user) => user.email },
+    { key: 'role', header: 'Role', value: (user) => user.role },
+  ]);
+}
+```
+
+<StoryEmbed id="components-table--default" height="360px" />
+
+The `key` is a stable identity used for state serialization (column order,
+visibility — and later sort/filter); it never wires templates to data. The
+typed `value` accessor is the only link between a column and the row.
+
+## Inputs
+
+| Input        | Default     | Description                                                                            |
+| ------------ | ----------- | -------------------------------------------------------------------------------------- |
+| `data`       | `[]`        | The rows to render.                                                                    |
+| `columns`    | `[]`        | The column definitions from `tableColumns<T>()`.                                       |
+| `rowKey`     | reference   | `(row: T) => string \| number` for stable change tracking (and later row-keyed state). |
+| `emptyLabel` | `'No data'` | Text shown when there are no rows and no `[etTableEmpty]` content is projected.        |
+
+## Columns
+
+Each entry of `tableColumns<T>()`:
+
+| Field        | Default            | Description                                                                                                             |
+| ------------ | ------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `key`        | — (required)       | Stable, unique column identity for state. Duplicate keys throw [`ET3500`](/components/error-codes#table-et35xx) in dev. |
+| `value`      | — (required)       | `(row: T) => V` — the typed cell accessor. Rendered directly unless `cell` is set.                                      |
+| `header`     | —                  | Static header text. Ignored when `headerCell` is set.                                                                   |
+| `cell`       | —                  | A `TemplateRef` for a custom cell. Context: `{ $implicit: row, value, index }`.                                         |
+| `headerCell` | —                  | A `TemplateRef` for a custom header. Context: `{ $implicit: header }`.                                                  |
+| `align`      | `'start'`          | `'start' \| 'center' \| 'end'`.                                                                                         |
+| `width`      | `'minmax(0, 1fr)'` | Any `grid-template-columns` track value (`'200px'`, `'minmax(120px, 1fr)'`, …).                                         |
+| `hidden`     | `false`            | Hide the column initially; toggle later via table state.                                                                |
+
+### Custom cells
+
+Pass a `TemplateRef` as `cell`. The context gives you the row (`$implicit`), the
+accessor's `value`, and the row `index`:
+
+```ts
+@Component({
+  template: `
+    <et-table [data]="users()" [columns]="columns()" />
+    <ng-template #roleCell let-value="value">
+      <span class="badge">{{ value }}</span>
+    </ng-template>
+  `,
+})
+export class UsersComponent {
+  roleCell = viewChild<TemplateRef<{ value: string }>>('roleCell');
+
+  columns = computed(() =>
+    tableColumns<User>([
+      { key: 'name', header: 'Name', value: (u) => u.name },
+      { key: 'role', header: 'Role', value: (u) => u.role, cell: this.roleCell() },
+    ]),
+  );
+}
+```
+
+## Sticky header
+
+The header row is `position: sticky`. It pins to the top of the **nearest
+scroll container**, so wrap the table in a height-constrained scrollable element
+to activate it:
+
+```html
+<div style="max-block-size: 320px; overflow: auto">
+  <et-table [data]="rows()" [columns]="columns" />
+</div>
+```
+
+## Empty state
+
+When `data` is empty the table renders a single full-width row. Override the
+default `emptyLabel` text by projecting `[etTableEmpty]` content:
+
+```html
+<et-table [data]="rows()" [columns]="columns">
+  <div etTableEmpty>No results — try adjusting your filters.</div>
+</et-table>
+```
+
+## Table state
+
+`state()` is a serializable, versioned snapshot of column order and visibility;
+`restoreState(state)` applies one back. This is the seed of the persistence
+layer later phases build on (sort, filters, expanded/selected rows), and is
+shaped to map onto server-side per-column config.
+
+```ts
+const snapshot = table.state(); // { v: 1, columns: [{ key, hidden }, …] }
+table.restoreState(snapshot);
+```
+
+## Accessibility
+
+The table uses the ARIA grid pattern: `role="grid"` on the container, `role="row"`
+on each row, `role="columnheader"` on header cells and `role="gridcell"` on body
+cells. Keyboard navigation and `aria-sort` arrive with the sort/filter features.
+
+## Theming
+
+Colors come from the [surface theming](/core/theming) tokens of the nearest
+surface scope — header/body text from `--et-surface-color-*-solid`, separators
+from `--et-surface-border-solid`, and the row hover tint from
+`--et-surface-interaction-solid`. Cell padding is tunable via the
+`--et-table-cell-padding-block` / `--et-table-cell-padding-inline` custom
+properties.
+
+## Error codes
+
+See [`ET35xx`](/components/error-codes#table-et35xx).

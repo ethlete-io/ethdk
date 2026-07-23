@@ -210,6 +210,7 @@ export default defineConfig({
             { text: 'Bracket', link: '/components/bracket' },
             { text: 'Grid', link: '/components/grid' },
             { text: 'Scrollable', link: '/components/scrollable' },
+            { text: 'Table', link: '/components/table' },
             { text: 'Tabs', link: '/components/tabs' },
           ],
         },
