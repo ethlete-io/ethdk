@@ -28,7 +28,10 @@
     --_et-table-header-bg: var(--et-surface-background-solid, Canvas);
     --_et-table-header-border: var(--et-surface-border-solid, rgb(128 128 128 / 0.3));
     --_et-table-row-divider: transparent;
+    /* Stripe as a translucent tint (layered over the opaque table surface for normal cells) and as
+       an opaque solid (for pinned cells, which must not let scrolled content show through). */
     --_et-table-stripe-bg: transparent;
+    --_et-table-stripe-solid: var(--et-surface-background-solid, Canvas);
   }
 
   /* Density drives the shared cell-padding custom props. */
@@ -69,6 +72,11 @@
   .et-table-host:where([data-appearance='zebra']) {
     --_et-table-header-bg: var(--_et-table-band);
     --_et-table-stripe-bg: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 4%, transparent);
+    --_et-table-stripe-solid: color-mix(
+      in srgb,
+      var(--et-surface-interaction-solid, gray) 4%,
+      var(--et-surface-background-solid, Canvas)
+    );
   }
 
   .et-table-host:where([data-appearance='grid']) {
@@ -213,9 +221,26 @@
     box-shadow: -4px 0 6px -4px rgb(0 0 0 / 0.18);
   }
 
-  /* Body pinned cells need an opaque fill so scrolled cells pass behind them. */
+  /* Body pinned cells need an opaque fill so scrolled cells pass behind them — but they still
+     reflect the row's zebra stripe and hover, using opaque (solid) variants of those tints. The
+     real `.et-table-sticky-*` classes (not `:where`) give these the specificity to win over the
+     translucent stripe/hover rules. */
   .et-table-cell:where(.et-table-sticky-start, .et-table-sticky-end) {
     background: var(--et-surface-background-solid, Canvas);
+  }
+
+  .et-table-row--stripe .et-table-cell.et-table-sticky-start,
+  .et-table-row--stripe .et-table-cell.et-table-sticky-end {
+    background: var(--_et-table-stripe-solid);
+  }
+
+  .et-table-row:hover .et-table-cell.et-table-sticky-start,
+  .et-table-row:hover .et-table-cell.et-table-sticky-end {
+    background: color-mix(
+      in srgb,
+      var(--et-surface-interaction-solid, gray) 8%,
+      var(--et-surface-background-solid, Canvas)
+    );
   }
 
   /* Header/footer pinned cells are corner-sticky (both axes) and sit above the row-pinned cells. */
