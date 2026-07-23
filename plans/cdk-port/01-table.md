@@ -427,6 +427,27 @@ was reviewed and steered the scope below. Decisions taken with the user:
     (3) **Sticky footer**: a column `footerCell` (context: rendered rows) → a
     bottom-pinned summary row. Storybook-verified + specs + docs + `table-sticky`
     changeset.
+    (4) Renamed `density` values `compact/comfortable/spacious` → **`sm`/`md`/`lg`**
+    (repo scale convention), default `md`.
+    (5) **Selection** (was parked): `selectable` adds a leading checkbox column;
+    two-way `selection` set of row keys (by `rowKey`), `selectableRow` gate,
+    header select-all + indeterminate, `isSelected`/`setSelected`/`toggleAll` +
+    `selectedRows`/`isAllSelected`/`isPartiallySelected`. Composes with the leading
+    expander (both auto-pin under sticky columns). Checkbox sized down via inherited
+    `--et-checkbox-size` (form default 20px was huge against the 10px-rem-root text);
+    row hover gated behind `@media (hover: hover)` so a touch tap doesn't stick, and
+    a hovered selected row keeps its accent. Storybook + specs + docs; folded into
+    the consolidated `table.md` changeset.
+  - **Planned next (user-requested, not yet built):**
+    - **Row router links** — a row navigates on click (e.g. `routerLink` per row),
+      without swallowing clicks on interactive cell content (checkboxes, action
+      buttons). Needs a row-level link/click API + careful event handling.
+    - **Action cells** — first-class support for cells with buttons (edit/delete)
+      and menus; today done via a `cell` template, but a documented recipe (and
+      maybe an alignment/spacing helper) would help. Overlaps the cells cookbook.
+    - **Pagination** — integrate `02-pagination.md`. The styled paginator component
+      may not fit under the table; plan to consume the **tier-2 headless** paginator
+      parts and render a table-appropriate footer/pager instead.
   - **Deferred (not built):** the _multi-metric cell_ (one column exposing >1 sort
     key in its header, e.g. `W`/`L`) — grouped headers cover the "2 sortable
     sub-headers" ask; revisit if a single-track multi-sort cell is actually needed.
