@@ -1,18 +1,11 @@
-import { computed, effect, linkedSignal, Signal, signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
 import { AnyQueryCreator, QueryArgsOf, QueryErrorResponse, RequestArgs, ResponseType, withArgs } from '@ethlete/query';
+import { createTableRowsSource, TableRowsFromQuery, TableRowsQueryState } from './table-rows-source';
 import { TableSort } from './table.types';
 
 // Note: `@ethlete/components` intentionally depends on `@ethlete/query`, so this query-aware
 // convenience factory lives here. It's a standalone function in its own module — tables that don't
 // use it (and apps not using `@ethlete/query`) tree-shake it away.
-
-/** The reactive server-side state the query args are built from. */
-export type TableRowsQueryState = {
-  /** The active sort (bind the table's `sort` output through `setSort`). */
-  sort: Signal<TableSort[]>;
-  /** The current page (1-based by default). */
-  page: Signal<number>;
-};
 
 export type TableRowsFromQueryConfig<TCreator extends AnyQueryCreator, TRow> = {
   /** The query creator to run. Created **once** and re-executes reactively as sort/page change. */
@@ -35,27 +28,6 @@ export type TableRowsFromQueryConfig<TCreator extends AnyQueryCreator, TRow> = {
   initialSort?: TableSort[];
   /** The page `args` receives on first load; `setSort` resets to it. @default 1 */
   initialPage?: number;
-};
-
-export type TableRowsFromQuery<TRow> = {
-  /** Bind to `<et-table [data]>`. Keeps the previous page visible while the next one loads. */
-  rows: Signal<TRow[]>;
-  /** True while a request is in flight. */
-  loading: Signal<boolean>;
-  /** The mapped error text, or `null`. */
-  error: Signal<string | null>;
-  /** Total row count (via `toTotal`), or `null`. */
-  total: Signal<number | null>;
-  /** Whether more pages exist (via `toHasMore`). */
-  hasMore: Signal<boolean>;
-  /** The current sort — bind to `<et-table [sort]>`. */
-  sort: Signal<TableSort[]>;
-  /** The current page. */
-  page: Signal<number>;
-  /** Set the sort (wire the table's `(sortChange)`); resets the page to `initialPage`. */
-  setSort: (sort: TableSort[]) => void;
-  /** Set the page (wire a paginator). */
-  setPage: (page: number) => void;
 };
 
 const firstErrorMessage = (error: QueryErrorResponse) => {
@@ -92,12 +64,13 @@ const firstErrorMessage = (error: QueryErrorResponse) => {
  * ```
  *
  * Call it from a field initializer / constructor (injection context), the same place you'd create a
- * query or a query stack.
+ * query or a query stack. For the legacy `V2QueryClient`, use `tableRowsFromV2Query`.
  */
 export const tableRowsFromQuery = <TCreator extends AnyQueryCreator, TRow>(
   config: TableRowsFromQueryConfig<TCreator, TRow>,
 ): TableRowsFromQuery<TRow> => {
   type TArgs = QueryArgsOf<TCreator>;
+  type TResponse = ResponseType<TArgs>;
 
   const initialPage = config.initialPage ?? 1;
   const sort = signal<TableSort[]>(config.initialSort ?? []);
@@ -105,45 +78,23 @@ export const tableRowsFromQuery = <TCreator extends AnyQueryCreator, TRow>(
 
   // Created once — `withArgs` re-runs as sort/page change.
   const query = config.queryCreator(withArgs<TArgs>(() => config.args({ sort, page }) ?? null));
-
   const toErrorMessage = config.toErrorMessage ?? firstErrorMessage;
 
-  // Keep the previous page's rows while the next request is in flight (response() is null between
-  // executions) so the table doesn't flash empty. linkedSignal folds synchronously on read.
-  const rows = linkedSignal<ResponseType<TArgs> | null, TRow[]>({
-    source: () => query.response(),
-    computation: (response, previous) => (response === null ? (previous?.value ?? []) : config.toRows(response)),
-  });
-  // Fold even when nothing observes `rows` (e.g. between renders).
-  effect(() => void rows());
+  return createTableRowsSource<TResponse, TRow>({
+    driver: {
+      response: computed(() => query.response()),
+      loading: computed(() => query.loading() !== null),
+      errorText: computed(() => {
+        const error = query.error();
 
-  const total = linkedSignal<ResponseType<TArgs> | null, number | null>({
-    source: () => query.response(),
-    computation: (response, previous) =>
-      response === null ? (previous?.value ?? null) : (config.toTotal?.(response) ?? null),
-  });
-  effect(() => void total());
-
-  return {
-    rows,
-    total,
-    loading: computed(() => query.loading() !== null),
-    error: computed(() => {
-      const error = query.error();
-
-      return error === null ? null : toErrorMessage(error);
-    }),
-    hasMore: computed(() => {
-      const response = query.response();
-
-      return response === null || !config.toHasMore ? false : config.toHasMore(response);
-    }),
-    sort: sort.asReadonly(),
-    page: page.asReadonly(),
-    setSort: (next) => {
-      sort.set(next);
-      page.set(initialPage);
+        return error === null ? null : toErrorMessage(error);
+      }),
     },
-    setPage: (next) => page.set(next),
-  };
+    sort,
+    page,
+    initialPage,
+    toRows: config.toRows,
+    toTotal: config.toTotal,
+    toHasMore: config.toHasMore,
+  });
 };
