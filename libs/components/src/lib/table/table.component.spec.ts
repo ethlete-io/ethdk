@@ -12,10 +12,10 @@ const PEOPLE: Person[] = [
   { id: 2, name: 'Alan', role: 'Viewer' },
 ];
 
-const columns = () =>
+const columns = (roleHidden = false) =>
   tableColumns<Person>([
     { key: 'name', header: 'Name', value: (person) => person.name, width: '200px' },
-    { key: 'role', header: 'Role', value: (person) => person.role },
+    { key: 'role', header: 'Role', value: (person) => person.role, hidden: roleHidden },
   ]);
 
 const create = (cols: AnyTableColumn<Person>[], data: Person[] = PEOPLE): ComponentFixture<TableComponent<Person>> => {
@@ -41,18 +41,14 @@ describe('TableComponent', () => {
   });
 
   it('excludes hidden columns from the visible set and the track template', () => {
-    const cols = columns();
-    cols[1].hidden = true;
-    const { componentInstance: table } = create(cols);
+    const { componentInstance: table } = create(columns(true));
 
     expect(table.visibleColumns().map((c) => c.key)).toEqual(['name']);
     expect(table.templateColumns()).toBe('200px');
   });
 
   it('captures a versioned state snapshot of order + visibility', () => {
-    const cols = columns();
-    cols[1].hidden = true;
-    const { componentInstance: table } = create(cols);
+    const { componentInstance: table } = create(columns(true));
 
     expect(table.state()).toEqual({
       v: 1,

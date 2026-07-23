@@ -18,6 +18,9 @@
   .et-table {
     display: grid;
     inline-size: 100%;
+    /* The table is a surface panel: paint its background so cells (and the sticky
+       header, which reuses this token) sit on an opaque, themed surface. */
+    background: var(--et-surface-background-solid, Canvas);
     color: var(--et-surface-color-solid, CanvasText);
     font-size: 0.875rem;
     line-height: 1.4;

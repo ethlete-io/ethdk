@@ -1,6 +1,7 @@
 import { Component, computed, input, TemplateRef, viewChild, ViewEncapsulation } from '@angular/core';
 import { ProvideSurfaceDirective } from '@ethlete/core';
 import { tableColumns } from '../table-columns';
+import { TableCellContext } from '../table.types';
 import { TABLE_IMPORTS } from '../table.imports';
 
 type Person = {
@@ -26,13 +27,13 @@ const NAMES = [
 const ROLES: Person['role'][] = ['Admin', 'Editor', 'Viewer'];
 
 const PEOPLE: Person[] = Array.from({ length: 40 }, (_, i) => {
-  const name = NAMES[i % NAMES.length];
+  const name = NAMES[i % NAMES.length] ?? 'Person';
 
   return {
     id: i + 1,
     name: `${name} ${Math.floor(i / NAMES.length) + 1}`,
     email: `${name.toLowerCase().replace(/[^a-z]/g, '.')}@example.com`,
-    role: ROLES[i % ROLES.length],
+    role: ROLES[i % ROLES.length] ?? 'Viewer',
     joinedAt: `2024-${String((i % 12) + 1).padStart(2, '0')}-15`,
   };
 });
@@ -74,16 +75,16 @@ export class TableStorybookComponent {
   public empty = input(false);
   public surface = input('light');
 
-  public roleCell = viewChild<TemplateRef<{ $implicit: string; value: Person['role'] }>>('roleCell');
+  public roleCell = viewChild<TemplateRef<TableCellContext<Person, Person['role']>>>('roleCell');
 
   protected rows = computed(() => (this.empty() ? [] : PEOPLE.slice(0, this.rowCount())));
 
   protected columns = computed(() =>
     tableColumns<Person>([
-      { key: 'name', header: 'Name', value: (person) => person.name, width: 'minmax(160px, 2fr)' },
-      { key: 'email', header: 'Email', value: (person) => person.email, width: 'minmax(180px, 2fr)' },
-      { key: 'role', header: 'Role', value: (person) => person.role, cell: this.roleCell(), width: '120px' },
-      { key: 'joined', header: 'Joined', value: (person) => person.joinedAt, align: 'end', width: '120px' },
+      { key: 'name', header: 'Name', value: (person) => person.name, width: 'minmax(0, 2fr)' },
+      { key: 'email', header: 'Email', value: (person) => person.email, width: 'minmax(0, 2fr)' },
+      { key: 'role', header: 'Role', value: (person) => person.role, cell: this.roleCell(), width: 'minmax(0, 1fr)' },
+      { key: 'joined', header: 'Joined', value: (person) => person.joinedAt, align: 'end', width: 'minmax(0, 1fr)' },
     ]),
   );
 }
