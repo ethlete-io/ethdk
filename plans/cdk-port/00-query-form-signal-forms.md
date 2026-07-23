@@ -1,6 +1,11 @@
 # 00 — QueryForm, signals-first (prerequisite, lives in `libs/query`)
 
-**Status: planned, not started.** Size: M–L. Not a cdk port, but a prerequisite
+**Status: in progress (2026-07-23).** Core done: `createQueryForm()` +
+`QueryFormSignals`, field creators, types and a 14-case spec (all green) live in
+`libs/query/src/lib/query-form-signals/`, exported from the barrel; changeset
+written. Built on Angular signal forms (decision #1 confirmed — components
+controls are `FormValueControl`s). **Remaining:** playground example, docs page,
+and the signals-native `resetPageOnError` equivalent (§6). Size: M–L. A prerequisite
 for `01-table.md` Phase 7 (URL state restore) and helpful for Phase 2
 (server-side sort/filter). Research done 2026-07-23 against the current source.
 

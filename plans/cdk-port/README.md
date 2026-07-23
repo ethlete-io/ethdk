@@ -99,9 +99,13 @@ auto-shapes from content.
       windowing pattern, TableState export/restore). Also stubbed
       `00-query-form-signal-forms.md` as a prerequisite.
 - [x] Chunk 2b (2026-07-23): `00-query-form-signal-forms.md` fully planned —
-      plain signals (not signal forms), new implementation alongside the
-      untouched reactive-forms QueryForm, full parity checklist + hard parts
-      (debounce batching, isResetBy reformulation, zoneless nav) documented.
+      new implementation alongside the untouched reactive-forms QueryForm, full
+      parity checklist + hard parts (debounce batching, isResetBy reformulation,
+      zoneless nav) documented. (Built on Angular signal forms, per the plan's
+      decision #1 — an earlier "plain signals" note here was wrong: the
+      components lib's controls are signal-forms `FormValueControl`s, so fields
+      must be signal-forms fields to bind via `[formField]`. Verified during
+      implementation 2026-07-23.)
 - [x] Chunk 3 (2026-07-23): `02-pagination.md` (signals `page` model, ellipsis
       support cdk lacked, router-based URLs instead of window.location, real
       themed default styling, SEO head as opt-in import) and `03-skeleton.md`
