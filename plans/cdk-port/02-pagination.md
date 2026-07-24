@@ -5,10 +5,18 @@ pure `paginate()` (ellipsis, no globals), headless `etPagination` (page model,
 `totalPages`, sibling/boundary window, `items()`, `goTo`/`first`/`previous`/`next`/
 `last`), themed default `et-pagination` (buttons, surface/color tokens, `nav`+ARIA,
 `@media (hover:hover)`), `PAGINATION_IMPORTS`, stories, specs, docs, changeset.
-**Deferred (not built):** links mode (`renderAs:'links'` with router/`urlForPage`,
-SEO-crawlable) and the SEO head service — both opt-in, revisit when needed. Query
-helper to derive `totalPages` from the list envelope: not shipped as code (trivial
-`ceil(totalHits/itemsPerPage)`; documented as a recipe instead) — build it if the
+**Phase 2 — polish (planned, next):** the Phase 1 component is bare-bones. (1) Render
+controls with the existing **`[et-button]`** component (variants), not raw
+`<button>`. (2) Links mode (`renderAs:'links'`, `urlForPage`, router-intercepted) +
+paged-title/canonical built on the **existing core SEO utils**
+(`libs/core/src/lib/seo/`: `SeoDirective`, `applyCanonicalBinding`,
+`applyHeadTitleBinding`/`injectTitleConfig`, `applyMetaBinding`, `json-ld`) — do NOT
+rebuild a head service; keep it a separate secondary import. (3) First-class
+**query-form binding**: `page` model ↔ a query-form `page` control (the usual real
+usage — the control becomes a query arg); one-liner + docs for both reactive-forms
+and signals QueryForm. (4) Optional extras: "showing X–Y of Z" readout, jump-to-page
+input for huge counts, full keyboard nav. Query helper to derive `totalPages` from
+the list envelope: still just a doc recipe (`ceil(totalHits/itemsPerPage)`) unless
 binding proves fiddly. Size: M. Research done 2026-07-23 against
 `libs/cdk/src/lib/components/pagination/` (~730 lines incl. stories/docs).
 Net-new in `libs/components` — nothing pagination-shaped exists there
