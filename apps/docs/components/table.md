@@ -372,6 +372,32 @@ Gate which rows can be selected with `selectableRow`. On the instance:
 and the "all/some" state consider only the rows currently in view (after
 filtering), while `selection` keeps keys for filtered-out rows.
 
+## Row navigation
+
+Set `rowInteractive` to make whole rows respond to clicks: rows get a pointer
+affordance and emit `(rowClick)` with the row. The table performs **no** navigation
+itself — you wire it, keeping the SDK action-agnostic:
+
+```html
+<et-table [data]="orders()" [columns]="columns" [rowInteractive]="true" (rowClick)="open($event)" />
+```
+
+```ts
+open(order: Order) {
+  this.router.navigate(['/orders', order.id]);
+}
+```
+
+Clicks that land on interactive cell content — a `<button>`, `<a>`, `<input>`,
+`<select>`, a menu trigger, or the selection/expander cells — are ignored (detected
+by walking `event.composedPath()`), so in-row controls and the row's own checkbox
+keep working without also triggering navigation. Interactive rows are keyboard
+focusable and activate on Enter/Space.
+
+For crawlable, middle-click-friendly per-row links, prefer rendering a real `<a>` in
+a cell over `(rowClick)` — a genuine link is better for SEO and accessibility;
+`rowInteractive` is the convenience layer for the whole-row target.
+
 ## Sticky header
 
 The table is its own scroll container, so you don't wrap it — just give it a
