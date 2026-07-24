@@ -11,6 +11,10 @@ export default {
     boundaryCount: 1,
     hideFirstLast: false,
     hidePreviousNext: false,
+    renderAs: 'buttons',
+    totalItems: 0,
+    pageSize: 20,
+    showJumpTo: false,
     surface: 'dark',
   },
   argTypes: {
@@ -19,6 +23,10 @@ export default {
     boundaryCount: { control: { type: 'range', min: 0, max: 4, step: 1 } },
     hideFirstLast: { control: 'boolean' },
     hidePreviousNext: { control: 'boolean' },
+    renderAs: { control: 'radio', options: ['buttons', 'links'] },
+    totalItems: { control: { type: 'number', min: 0 } },
+    pageSize: { control: { type: 'number', min: 1 } },
+    showJumpTo: { control: 'boolean' },
     surface: { control: 'text' },
   },
 } as Meta<PaginationStorybookComponent>;
@@ -44,6 +52,30 @@ export const Minimal: Story = {
     docs: {
       description: {
         story: 'Drop the first/last jumps with `hideFirstLast` (or previous/next with `hidePreviousNext`).',
+      },
+    },
+  },
+};
+
+export const WithRangeAndJump: Story = {
+  args: { totalPages: 25, totalItems: 500, pageSize: 20, showJumpTo: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Opt into a "Showing X–Y of Z" readout by passing `totalItems` + `pageSize`, and a jump-to-page field with `showJumpTo` — handy for large result sets.',
+      },
+    },
+  },
+};
+
+export const Links: Story = {
+  args: { renderAs: 'links', totalPages: 8 },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'With `renderAs="links"` + a `urlForPage`, items render as crawlable `<a href>`s. Plain clicks are intercepted (no reload); ⌘/Ctrl/middle clicks open the URL as usual.',
       },
     },
   },

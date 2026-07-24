@@ -1,73 +1,113 @@
+@if (range(); as range) {
+  <p class="et-pagination-range" aria-live="polite">Showing {{ range[0] }}–{{ range[1] }} of {{ totalItems() }}</p>
+}
+
 <ul class="et-pagination-list">
   @for (item of pagination.items(); track $index) {
-    @if (item.type === 'ellipsis') {
-      <li class="et-pagination-item">
+    <li class="et-pagination-item">
+      @if (item.type === 'ellipsis') {
         <span class="et-pagination-ellipsis" aria-hidden="true">…</span>
-      </li>
-    } @else {
-      <li class="et-pagination-item">
+      } @else if (hrefFor(item); as href) {
+        <a
+          [attr.href]="href"
+          [attr.aria-label]="item.label"
+          [attr.aria-current]="item.current ? 'page' : null"
+          [attr.data-type]="item.type"
+          [variant]="item.current ? 'filled' : 'transparent'"
+          [mutedUntilPressed]="!item.current"
+          [class.et-pagination-button--control]="item.type !== 'page'"
+          (click)="selectLink($event, item)"
+          class="et-pagination-button"
+          et-button
+          size="sm"
+        >
+          <ng-container *ngTemplateOutlet="inner; context: { $implicit: item }" />
+        </a>
+      } @else {
         <button
           [attr.aria-label]="item.label"
           [attr.aria-current]="item.current ? 'page' : null"
           [attr.data-type]="item.type"
-          [class.et-pagination-button--current]="item.current"
-          [class.et-pagination-button--control]="item.type !== 'page'"
+          [variant]="item.current ? 'filled' : 'transparent'"
+          [mutedUntilPressed]="!item.current"
           [disabled]="item.disabled"
+          [class.et-pagination-button--control]="item.type !== 'page'"
           (click)="select(item)"
           class="et-pagination-button"
-          type="button"
+          et-button
+          size="sm"
         >
-          @switch (item.type) {
-            @case ('first') {
-              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
-                <path
-                  d="M11 3 6 8l5 5M5 3v10"
-                  stroke="currentColor"
-                  stroke-width="1.6"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            }
-            @case ('previous') {
-              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
-                <path
-                  d="M10 3 5 8l5 5"
-                  stroke="currentColor"
-                  stroke-width="1.6"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            }
-            @case ('next') {
-              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
-                <path
-                  d="M6 3l5 5-5 5"
-                  stroke="currentColor"
-                  stroke-width="1.6"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            }
-            @case ('last') {
-              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
-                <path
-                  d="M5 3l5 5-5 5M11 3v10"
-                  stroke="currentColor"
-                  stroke-width="1.6"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            }
-            @default {
-              {{ item.page }}
-            }
-          }
+          <ng-container *ngTemplateOutlet="inner; context: { $implicit: item }" />
         </button>
-      </li>
-    }
+      }
+    </li>
   }
 </ul>
+
+@if (showJumpTo()) {
+  <div class="et-pagination-jump">
+    <label class="et-pagination-jump-label" for="et-pagination-jump-input">Go to page</label>
+    <input
+      #jumpInput
+      [min]="1"
+      [max]="pagination.totalPages()"
+      (keydown.enter)="jump(jumpInput.value); jumpInput.value = ''"
+      id="et-pagination-jump-input"
+      class="et-pagination-jump-input"
+      inputmode="numeric"
+      type="number"
+    />
+  </div>
+}
+
+<ng-template #inner let-item>
+  @switch (item.type) {
+    @case ('first') {
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
+        <path
+          d="M11 3 6 8l5 5M5 3v10"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    }
+    @case ('previous') {
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
+        <path
+          d="M10 3 5 8l5 5"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    }
+    @case ('next') {
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
+        <path
+          d="M6 3l5 5-5 5"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    }
+    @case ('last') {
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
+        <path
+          d="M5 3l5 5-5 5M11 3v10"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    }
+    @default {
+      {{ item.page }}
+    }
+  }
+</ng-template>
