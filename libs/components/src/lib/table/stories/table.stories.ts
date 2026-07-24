@@ -18,6 +18,7 @@ export default {
     grouped: false,
     stickyColumns: false,
     footer: false,
+    paginated: false,
     selectable: false,
     surface: 'dark',
   },
@@ -34,6 +35,7 @@ export default {
     grouped: { control: 'boolean' },
     stickyColumns: { control: 'boolean' },
     footer: { control: 'boolean' },
+    paginated: { control: 'boolean' },
     selectable: { control: 'boolean' },
     surface: { control: 'text' },
   },
@@ -156,6 +158,20 @@ export const StickyFooter: Story = {
         story:
           'A column `footerCell` (context: the rendered rows) adds a summary row pinned to the bottom of ' +
           'the scroll viewport — here a running count in the Name column.',
+      },
+    },
+  },
+};
+
+export const PaginatedFooter: Story = {
+  args: { paginated: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The `[etTableFooter]` slot projects arbitrary controls into a full-width bar pinned to the bottom ' +
+          'of the table. The table bakes in no pager — here a page-size `<et-select>` and an `<et-pagination>` ' +
+          'drive a client-side page slice; wire them to `tableRowsFromQuery` for server paging.',
       },
     },
   },

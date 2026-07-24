@@ -1,6 +1,7 @@
 export * from './table-columns';
 export * from './table-errors';
 export * from './table-filter';
+export * from './table-footer.directive';
 export * from './table-rows-from-query';
 export * from './table-rows-from-v2-query';
 export * from './table-rows-source';

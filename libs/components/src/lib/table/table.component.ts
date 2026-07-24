@@ -3,6 +3,7 @@ import {
   afterNextRender,
   Component,
   computed,
+  contentChild,
   effect,
   ElementRef,
   inject,
@@ -39,6 +40,7 @@ import {
 } from '../menu';
 import { filterRows } from './table-filter';
 import { sortRows } from './table-sort';
+import { TableFooterDirective } from './table-footer.directive';
 import { TABLE_ERROR_CODES } from './table-errors';
 import {
   AnyTableColumn,
@@ -195,6 +197,10 @@ export class TableComponent<T> {
 
   /** Rows kept rendered just outside the viewport on each side, to hide scroll flicker. @default 6 */
   public overscan = input(6);
+
+  // Whether the consumer projected an `[etTableFooter]` slot, so its chrome (border, sticky bar)
+  // renders only when there's actually footer content.
+  protected footerSlot = contentChild(TableFooterDirective);
 
   private headerCells = viewChildren<ElementRef<HTMLElement>>('headerCell');
 

@@ -1,5 +1,9 @@
-import { Component, computed, input, TemplateRef, viewChild, ViewEncapsulation } from '@angular/core';
+import { Component, computed, input, linkedSignal, TemplateRef, viewChild, ViewEncapsulation } from '@angular/core';
+import { form, FormField } from '@angular/forms/signals';
 import { ProvideSurfaceDirective } from '@ethlete/core';
+import { FORM_FIELD_IMPORTS } from '../../forms/form-field';
+import { SELECT_IMPORTS } from '../../forms/select';
+import { PAGINATION_IMPORTS } from '../../pagination';
 import { tableColumns } from '../table-columns';
 import { TableCellContext, TableFooterContext } from '../table.types';
 import { TABLE_IMPORTS } from '../table.imports';
@@ -49,10 +53,10 @@ const MANY_PEOPLE: Person[] = Array.from({ length: 2000 }, (_, i) => makePerson(
     <div [etProvideSurface]="surface()" class="max-w-3xl p-8 font-sans">
       <!-- The table is its own scroll container: a bounded height (sticky/virtual demos) makes it scroll. -->
       <et-table
-        [style.block-size.px]="constrainHeight() || virtualScroll() ? 400 : null"
+        [style.block-size.px]="constrainHeight() || virtualScroll() || paginated() ? 400 : null"
         [appearance]="appearance()"
         [density]="density()"
-        [data]="rows()"
+        [data]="displayRows()"
         [columns]="columns()"
         [multiSort]="multiSort()"
         [reorderable]="reorderable()"
@@ -61,7 +65,26 @@ const MANY_PEOPLE: Person[] = Array.from({ length: 2000 }, (_, i) => makePerson(
         [rowKey]="rowKey"
         [expandedRowTemplate]="expandable() ? detail : undefined"
         emptyLabel="No people found"
-      />
+      >
+        @if (paginated()) {
+          <div etTableFooter>
+            <et-form-field class="w-40">
+              <et-select [formField]="pageSizeForm.pageSize" [clearable]="false" placeholder="Page size">
+                <et-select-option [value]="5">5 per page</et-select-option>
+                <et-select-option [value]="10">10 per page</et-select-option>
+                <et-select-option [value]="20">20 per page</et-select-option>
+              </et-select>
+            </et-form-field>
+
+            <et-pagination
+              [(page)]="page"
+              [totalPages]="totalPages()"
+              [totalItems]="PEOPLE_COUNT"
+              [pageSize]="pageSize()"
+            />
+          </div>
+        }
+      </et-table>
     </div>
 
     <ng-template #detail let-person>
@@ -89,7 +112,14 @@ const MANY_PEOPLE: Person[] = Array.from({ length: 2000 }, (_, i) => makePerson(
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [TABLE_IMPORTS, ProvideSurfaceDirective],
+  imports: [
+    TABLE_IMPORTS,
+    ProvideSurfaceDirective,
+    PAGINATION_IMPORTS,
+    ...SELECT_IMPORTS,
+    ...FORM_FIELD_IMPORTS,
+    FormField,
+  ],
 })
 export class TableStorybookComponent {
   public rowCount = input(6);
@@ -102,6 +132,7 @@ export class TableStorybookComponent {
   public grouped = input(false);
   public stickyColumns = input(false);
   public footer = input(false);
+  public paginated = input(false);
   public selectable = input(false);
   public appearance = input<'enclosed' | 'divided' | 'zebra' | 'grid' | 'bare'>('enclosed');
   public density = input<'sm' | 'md' | 'lg'>('md');
@@ -110,10 +141,28 @@ export class TableStorybookComponent {
   public roleCell = viewChild<TemplateRef<TableCellContext<Person, Person['role']>>>('roleCell');
   public footerCount = viewChild<TemplateRef<TableFooterContext<Person>>>('footerCount');
 
+  // Page-size select is a signal form, mirroring how a real form would carry it.
+  public pageSizeForm = form(linkedSignal(() => ({ pageSize: 10 })));
+  protected pageSize = computed(() => this.pageSizeForm.pageSize().value() ?? 10);
+  // Reset to the first page whenever the page size changes; the paginator drives it otherwise.
+  protected page = linkedSignal<number, number>({ source: () => this.pageSize(), computation: () => 1 });
+  protected readonly PEOPLE_COUNT = PEOPLE.length;
+  protected totalPages = computed(() => Math.max(1, Math.ceil(PEOPLE.length / this.pageSize())));
+
   protected rows = computed(() => {
     if (this.empty()) return [];
 
     return this.virtualScroll() ? MANY_PEOPLE : PEOPLE.slice(0, this.rowCount());
+  });
+
+  // What the table actually renders: a client-side page slice when the paginated footer demo is on.
+  protected displayRows = computed(() => {
+    if (!this.paginated()) return this.rows();
+
+    const size = this.pageSize();
+    const start = (this.page() - 1) * size;
+
+    return PEOPLE.slice(start, start + size);
   });
 
   protected columns = computed(() => {

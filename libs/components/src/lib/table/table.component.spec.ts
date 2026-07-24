@@ -1,4 +1,4 @@
-import { computed, signal, TemplateRef } from '@angular/core';
+import { Component, computed, signal, TemplateRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RuntimeError } from '@ethlete/core';
 import '../../test-helpers';
@@ -7,6 +7,7 @@ import { TABLE_ERROR_CODES } from './table-errors';
 import { filterRows } from './table-filter';
 import { sortRows } from './table-sort';
 import { TableComponent } from './table.component';
+import { TABLE_IMPORTS } from './table.imports';
 import { AnyTableColumn } from './table.types';
 
 type Person = { id: number; name: string; role: string };
@@ -677,6 +678,34 @@ describe('TableComponent', () => {
       expect(table.rowIndexOffset()).toBe(start);
       // the rendered slice lines up with the window over the source rows
       expect(table.renderedRows()[0]).toBe(many[start]);
+    });
+  });
+
+  describe('footer slot', () => {
+    it('renders projected [etTableFooter] content in a full-width footer bar', () => {
+      @Component({
+        template: `<et-table [columns]="columns" [data]="data"
+          ><div etTableFooter><span class="pager">pager here</span></div></et-table
+        >`,
+        imports: [TABLE_IMPORTS],
+      })
+      class HostComponent {
+        columns = columns();
+        data = PEOPLE;
+      }
+
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      const footer = (fixture.nativeElement as HTMLElement).querySelector('.et-table-footer');
+      expect(footer).not.toBeNull();
+      expect(footer?.querySelector('.pager')?.textContent).toBe('pager here');
+    });
+
+    it('omits the footer bar entirely when no [etTableFooter] is projected', () => {
+      const fixture = create(columns());
+
+      expect((fixture.nativeElement as HTMLElement).querySelector('.et-table-footer')).toBeNull();
     });
   });
 });

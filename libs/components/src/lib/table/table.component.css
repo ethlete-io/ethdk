@@ -284,6 +284,26 @@
     text-align: end;
   }
 
+  /* ── Full-width footer slot ─────────────────────────────────────────────
+     A content-projection region below the grid for arbitrary controls (paginator,
+     page-size select). It's a sibling of the grid — not a grid row — so it spans the
+     viewport and stays put during horizontal scroll (sticky start), pinned to the
+     bottom of the scroll viewport (sticky block-end), above the pinned footer cells. */
+  .et-table-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    position: sticky;
+    inset-block-end: 0;
+    inset-inline-start: 0;
+    z-index: 4;
+    padding: var(--et-table-cell-padding-block) var(--et-table-cell-padding-inline);
+    background: var(--_et-table-header-bg);
+    border-block-start: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.3));
+  }
+
   .et-table-header-cell:where(.et-table-header-cell--reorderable) {
     cursor: grab;
     user-select: none;

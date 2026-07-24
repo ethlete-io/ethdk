@@ -291,6 +291,14 @@
   }
 </div>
 
+<!-- Full-width footer slot (paginator, page-size, etc.), pinned to the bottom of the scroll viewport.
+     Rendered only when the consumer projects `[etTableFooter]`, so the chrome never shows empty. -->
+@if (footerSlot()) {
+  <div class="et-table-footer">
+    <ng-content select="[etTableFooter]" />
+  </div>
+}
+
 @if (draggingColumn(); as draggingKey) {
   <!-- Floating copy of the dragged header; the table markup stays put until drop. -->
   @if (dragPointer(); as pointer) {

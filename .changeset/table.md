@@ -14,6 +14,7 @@ Columns are declared with the typed helper `tableColumns<T>()`, so the row type 
 - **Column reordering & visibility**: `reorderable` drag-to-reorder (floating ghost preview, deferred + animated drop) plus `moveColumn` / `setColumnVisible` / `toggleColumnVisibility`.
 - **Grouped headers**: a column `group` spans adjacent columns under one label in a second header row; each sub-column stays independently sortable/filterable.
 - **Sticky columns & footer**: `sticky: 'start' | 'end'` pins columns during horizontal scroll; a column `footerCell` renders a bottom-pinned summary row.
+- **Footer slot**: project `[etTableFooter]` for a full-width bar below the grid (pinned to the scroll bottom, rendered only when used) — drop in an `<et-pagination>` + page-size `<et-select>` and wire them to `tableRowsFromQuery`.
 - **Virtualization**: `virtualScroll` (with `estimateRowHeight` / `overscan`) renders only the rows near the viewport for long lists.
 - **State**: versioned `state()` / `restoreState()` capture column order, visibility, sort, filters and expanded rows and round-trip losslessly; `serializeTableState` / `deserializeTableState` make a table shareable as a URL query param.
 - **Query integration**: `tableRowsFromQuery` (and the legacy `tableRowsFromV2Query` twin) feed the table from an `@ethlete/query` query with server-side sort/filter/pagination.
