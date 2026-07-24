@@ -423,6 +423,45 @@ Any column with a `footerCell` shows the footer row; columns without one render 
 empty footer cell. Both work with the other features — a pinned column's footer
 cell is pinned in both directions.
 
+## Pagination & page size
+
+For controls that span the whole table — a paginator, a page-size picker — project
+them into the **`[etTableFooter]` slot**. It renders a full-width bar below the grid,
+pinned to the bottom of the table's scroll viewport (and only appears when you
+actually project something). The table bakes in **no** pager; you drop in
+[`<et-pagination>`](/components/pagination) and a page-size
+[`<et-select>`](/components/select) and wire them to your data source.
+
+With the `tableRowsFromQuery` adapter, bind the paginator's `page` / `(pageChange)`
+to the adapter's `page` / `setPage`, and let the page-size select drive the query's
+`limit`:
+
+```ts
+@Component({
+  template: `
+    <et-table [data]="rows.rows()" [columns]="columns" sortMode="server" style="block-size: 32rem">
+      <div etTableFooter>
+        <et-form-field>
+          <et-select [formField]="pageSizeForm.pageSize" [clearable]="false" />
+        </et-form-field>
+        <et-pagination [page]="rows.page()" [totalPages]="totalPages()" (pageChange)="rows.setPage($event)" />
+      </div>
+    </et-table>
+  `,
+})
+export class UsersComponent {
+  rows = tableRowsFromQuery({ queryCreator, args, toRows, toTotal });
+  pageSizeForm = form(signal({ pageSize: 20 }));
+  totalPages = computed(() => Math.ceil((this.rows.total() ?? 0) / this.pageSizeForm.pageSize().value()));
+}
+```
+
+The slot is layout-only: it's a flex row (`justify-content: space-between`) that
+wraps on narrow tables. See the "Pagination & page size" story for a runnable
+client-side example. For the paginator's own options (links mode, paged SEO, the
+"Showing X–Y of Z" readout, jump-to-page), see the
+[pagination guide](/components/pagination).
+
 ## Empty state
 
 When `data` is empty the table renders a single full-width row. Override the
