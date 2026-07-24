@@ -8,10 +8,11 @@ pure `paginate()` (ellipsis, no globals), headless `etPagination` (page model,
 **Phase 2 — polish (planned, next):** the Phase 1 component is bare-bones. (1) Render
 controls with the existing **`[et-button]`** component (variants), not raw
 `<button>`. (2) Links mode (`renderAs:'links'`, `urlForPage`, router-intercepted) +
-paged-title/canonical built on the **existing core SEO utils**
-(`libs/core/src/lib/seo/`: `SeoDirective`, `applyCanonicalBinding`,
-`applyHeadTitleBinding`/`injectTitleConfig`, `applyMetaBinding`, `json-ld`) — do NOT
-rebuild a head service; keep it a separate secondary import. (3) First-class
+paged-title/canonical built on the **existing core SEO binding utils**
+(`libs/core/src/lib/seo/`: `applyCanonicalBinding`, `applyHeadTitleBinding` +
+`injectTitleConfig`/`injectTitleStore`, `applyMetaBinding`, `json-ld`) — do NOT
+rebuild a head service, and do NOT use `SeoDirective` (it's `@deprecated` — "use
+binding utils instead"). Keep it a separate secondary import. (3) First-class
 **query-form binding**: `page` model ↔ a query-form `page` control (the usual real
 usage — the control becomes a query arg); one-liner + docs for both reactive-forms
 and signals QueryForm. (4) Optional extras: "showing X–Y of Z" readout, jump-to-page

@@ -471,18 +471,9 @@ was reviewed and steered the scope below. Decisions taken with the user:
       persisted into `TableState` (the `TableState` already reserves room for
       widths). Currently out of scope in the plan's "not-yet" list; promote when
       tackled.
-    - **Scroll restoration on back-navigation** (cross-cutting; spans query +
-      navigation). Native browser scroll restoration is wrong for query-driven list
-      pages: on render the queries re-run → loading/empty states → the document is
-      much shorter than when data had loaded → the browser restores to an offset
-      that no longer exists. Need a **restore-after-settle** mechanism: capture the
-      intended scroll offset per navigation (history state / nav id) and re-apply it
-      only once the relevant data has settled and the list rendered its real height.
-      Likely a navigation-scoped store + a `scrollable`/table "content settled" hook.
-      **Deeper follow-up (own investigation):** a smart back-nav data cache so the
-      list is populated immediately on back-nav — beyond the query package's current
-      TTL cache. Build the restore-after-settle version first; the cache is a
-      separate `@ethlete/query` design.
+
+  (Back-navigation scroll restoration is **not** a table concern — tracked
+  separately in `plans/scroll-restoration.md`.)
   - **Deferred (not built):** the _multi-metric cell_ (one column exposing >1 sort
     key in its header, e.g. `W`/`L`) — grouped headers cover the "2 sortable
     sub-headers" ask; revisit if a single-track multi-sort cell is actually needed.
