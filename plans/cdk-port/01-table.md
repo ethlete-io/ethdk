@@ -469,10 +469,17 @@ was reviewed and steered the scope below. Decisions taken with the user:
       (page-size → the query `limit`). Story `PaginatedFooter` (client-side slice),
       spec (projected content renders / absent when unused), docs "Pagination & page
       size" recipe. `02-pagination.md` Phase 2 (the polished pager) also shipped.
-    - **Resizable columns** — user-draggable column widths (drag the header edge),
-      persisted into `TableState` (the `TableState` already reserves room for
-      widths). Currently out of scope in the plan's "not-yet" list; promote when
-      tackled.
+    - **Resizable columns — SHIPPED 2026-07-24.** `resizableColumns` input renders a
+      `col-resize` grip (its own nested `etDragHandle`, so its pointerdown
+      `stopPropagation` keeps it from starting a header reorder) on each header's
+      trailing edge. Drag sets a per-column px width into a `columnWidths`
+      `linkedSignal<Record<key, number>>` (reset when the `columns` input changes)
+      that `templateColumns()` reads over `column.width`; clamped to `MIN_COLUMN_WIDTH`
+      (48). Double-click the grip resets a column. Persisted via `TableColumnState.width`
+      — emitted in `state()`, applied in `restoreState()` (JSON URL serialization gets
+      it for free). The sticky-offset effect also reads `columnWidths()` so pinned
+      columns re-measure after a resize. Story `ResizableColumns`, spec (width →
+      templateColumns + state() round-trip).
 
   (Back-navigation scroll restoration is **not** a table concern — tracked
   separately in `plans/scroll-restoration.md`.)
@@ -488,8 +495,8 @@ Dependencies on other plans: `02-pagination.md` (query glue), `03-skeleton.md`
 ## Explicitly out of scope (park as future ideas)
 
 Cell editing, row grouping/aggregation, pivot, CSV/Excel export of _data_
-(state export ≠ data export), column resizing (mention in docs as not-yet),
-tree data (nested sub-tables cover the requested case).
+(state export ≠ data export), tree data (nested sub-tables cover the requested
+case). (Column resizing has since shipped — see the follow-on section above.)
 
 ## A11y checklist (applies to every phase)
 
