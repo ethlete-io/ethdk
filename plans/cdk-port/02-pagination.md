@@ -1,26 +1,32 @@
 # 02 — Pagination
 
-**Status: Phase 1 shipped 2026-07-24.** `libs/components/src/lib/pagination/` —
+**Status: Phases 1 & 2 shipped 2026-07-24.** `libs/components/src/lib/pagination/` —
 pure `paginate()` (ellipsis, no globals), headless `etPagination` (page model,
 `totalPages`, sibling/boundary window, `items()`, `goTo`/`first`/`previous`/`next`/
-`last`), themed default `et-pagination` (buttons, surface/color tokens, `nav`+ARIA,
-`@media (hover:hover)`), `PAGINATION_IMPORTS`, stories, specs, docs, changeset.
-**Phase 2 — polish (planned, next):** the Phase 1 component is bare-bones. (1) Render
-controls with the existing **`[et-button]`** component (variants), not raw
-`<button>`. (2) Links mode (`renderAs:'links'`, `urlForPage`, router-intercepted) +
-paged-title/canonical built on the **existing core SEO binding utils**
-(`libs/core/src/lib/seo/`: `applyCanonicalBinding`, `applyHeadTitleBinding` +
-`injectTitleConfig`/`injectTitleStore`, `applyMetaBinding`, `json-ld`) — do NOT
-rebuild a head service, and do NOT use `SeoDirective` (it's `@deprecated` — "use
-binding utils instead"). Keep it a separate secondary import. (3) First-class
-**query-form binding**: `page` model ↔ a query-form `page` control (the usual real
-usage — the control becomes a query arg); one-liner + docs for both reactive-forms
-and signals QueryForm. (4) Optional extras: "showing X–Y of Z" readout, jump-to-page
-input for huge counts, full keyboard nav. Query helper to derive `totalPages` from
-the list envelope: still just a doc recipe (`ceil(totalHits/itemsPerPage)`) unless
-binding proves fiddly. Size: M. Research done 2026-07-23 against
-`libs/cdk/src/lib/components/pagination/` (~730 lines incl. stories/docs).
-Net-new in `libs/components` — nothing pagination-shaped exists there
+`last`), themed default `et-pagination`, `PAGINATION_IMPORTS`, stories, specs, docs,
+changeset.
+
+**Phase 2 — polish, DONE.** (1) Items now render with the shared **`[et-button]`**:
+current page = `filled` variant, others = `transparent` + `mutedUntilPressed` (stay
+neutral until active); compact/square via `--et-button-*` token overrides (no
+`!important`). (2) **Links mode** (`renderAs:'links'` + `urlForPage`) renders real
+`<a href>`s; plain clicks intercepted, modified clicks pass through. **Paged SEO** is
+an opt-in `etPaginationSeo` directive (own file/export, NOT in `PAGINATION_IMPORTS`,
+so the base paginator tree-shakes clean) — per-page canonical + `rel="prev"`/`"next"`
++ optional `pageTitle`. ⚠️ It uses `applyLinkBinding`/`applyHeadTitleBinding`
+**directly**, NOT `applyCanonicalBinding`/`applyPrevBinding`/`applyNextBinding`:
+those go through `createPropertyBinding`, which reads its input `untracked`
+(`libs/core/src/lib/seo/head-binding.ts:49`) and so **freezes the value at first
+eval** — non-reactive, unusable with a changing `page` signal. (Left core as-is; a
+core fix would be a separate, wider change.) (3) **Query-form binding** is already a
+one-liner (`page` is a two-way `model`, `(pageChange)` exposed) — documented for
+`tableRowsFromQuery`, signals `QueryForm`, and reactive-forms `QueryForm`; no new
+code. (4) Extras shipped: "Showing X–Y of Z" readout (`totalItems`+`pageSize`),
+`showJumpTo` field. Keyboard nav is native per-item tab stops (no roving tabindex —
+that's the standard, more accessible pattern for a link/button list).
+
+Original research (2026-07-23) against `libs/cdk/src/lib/components/pagination/`
+(~730 lines incl. stories/docs). Net-new in `libs/components`
 (`selectOptionsFromQuery` is load-more, not a numbered paginator).
 
 ## What cdk ships today (keep / fix / drop)
