@@ -160,6 +160,8 @@ export type TableColumnState = {
   sortPriority?: number;
   /** This column's selected filter values. Omitted when the column is unfiltered. */
   filterValues?: unknown[];
+  /** This column's user-resized width in pixels. Omitted when the column is at its default width. */
+  width?: number;
 };
 
 /**

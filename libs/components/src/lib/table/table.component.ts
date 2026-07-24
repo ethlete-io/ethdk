@@ -61,6 +61,9 @@ type StickyOffsets = { start: Record<string, number>; end: Record<string, number
 
 const DEFAULT_TRACK = 'minmax(0, 1fr)';
 
+/** Smallest width (px) a column can be dragged to. */
+const MIN_COLUMN_WIDTH = 48;
+
 /**
  * The default table. Renders typed rows and cells from a {@link tableColumns}
  * definition on a CSS grid with a sticky header and an empty state. Light by
@@ -193,6 +196,12 @@ export class TableComponent<T> {
   public reorderable = input(false);
 
   /**
+   * Let users resize columns by dragging a grip on each header's trailing edge. Widths persist in
+   * `state()` (`TableColumnState.width`); double-click a grip to reset that column. @default false
+   */
+  public resizableColumns = input(false);
+
+  /**
    * Render only the rows near the viewport instead of all of them. The table is its own scroll
    * container, so give it a bounded height (e.g. `style="block-size: 24rem"`) for the window to
    * track. @default false
@@ -271,6 +280,15 @@ export class TableComponent<T> {
           .map((column) => column.key),
       ),
   );
+  // User-resized column widths (px), keyed by column key. Reset when the `columns` input changes;
+  // a manual restoreState() persists until then (same linkedSignal semantics as order/visibility).
+  private columnWidths = linkedSignal<AnyTableColumn<T>[], Record<string, number>>({
+    source: () => this.columns(),
+    computation: () => ({}),
+  });
+
+  // The column currently being resized, with the width it had when the drag began.
+  private resizingColumn = signal<{ key: string; startWidth: number } | null>(null);
 
   private columnsByKey = computed(() => {
     const map = new Map<string, AnyTableColumn<T>>();
@@ -345,7 +363,12 @@ export class TableComponent<T> {
 
   /** The `grid-template-columns` value for the visible columns (plus a leading expander track when expandable). */
   public templateColumns = computed(() => {
-    const tracks = this.visibleColumns().map((column) => column.width ?? DEFAULT_TRACK);
+    const widths = this.columnWidths();
+    const tracks = this.visibleColumns().map((column) => {
+      const resized = widths[column.key];
+
+      return resized !== undefined ? `${resized}px` : (column.width ?? DEFAULT_TRACK);
+    });
 
     // Leading utility columns, in render order: expander first, then the select checkbox is
     // prepended before it so the checkbox is leftmost.
@@ -362,6 +385,8 @@ export class TableComponent<T> {
     const sortByKey = new Map(sort.map((entry, index) => [entry.key, { direction: entry.direction, index }]));
     const filtersByKey = new Map(this.filters().map((entry) => [entry.key, entry.values]));
 
+    const widths = this.columnWidths();
+
     const columns = this.orderedColumns().map((column) => {
       const entry: TableColumnState = { key: column.key, hidden: this.hiddenColumns().has(column.key) };
       const columnSort = sortByKey.get(column.key);
@@ -374,6 +399,8 @@ export class TableComponent<T> {
       }
 
       if (columnFilter?.length) entry.filterValues = columnFilter;
+
+      if (widths[column.key] !== undefined) entry.width = widths[column.key];
 
       return entry;
     });
@@ -487,6 +514,9 @@ export class TableComponent<T> {
     // sticky-end columns stack from the right — pin from the edges, so widths sum cleanly.
     effect(() => {
       this.hostDimensions();
+      // Re-measure when a column is resized (widths change but the host doesn't), so pinned
+      // columns keep their offsets in sync with the new track widths.
+      this.columnWidths();
 
       const columns = this.visibleColumns();
       const cells = this.headerCells();
@@ -527,6 +557,14 @@ export class TableComponent<T> {
   public restoreState(next: TableState) {
     this.columnOrder.set(next.columns.map((column) => column.key));
     this.hiddenColumns.set(new Set(next.columns.filter((column) => column.hidden).map((column) => column.key)));
+
+    const widths: Record<string, number> = {};
+
+    for (const column of next.columns) {
+      if (typeof column.width === 'number') widths[column.key] = column.width;
+    }
+
+    this.columnWidths.set(widths);
 
     const sort = next.columns
       .filter((column) => column.sort)
@@ -746,6 +784,39 @@ export class TableComponent<T> {
     }
   }
 
+  /** Begin resizing a column: capture its current rendered width as the baseline for the drag. */
+  protected startColumnResize(key: string) {
+    this.resizingColumn.set({ key, startWidth: this.headerCellWidth(key) });
+  }
+
+  /** Track a resize drag: set the column's width to its start width plus the pointer's total delta. */
+  protected updateColumnResize(event: DragMoveEvent) {
+    const resizing = this.resizingColumn();
+
+    if (!resizing) return;
+
+    const width = Math.max(MIN_COLUMN_WIDTH, Math.round(resizing.startWidth + event.totalDx));
+
+    this.columnWidths.update((widths) => ({ ...widths, [resizing.key]: width }));
+  }
+
+  /** Finish a resize drag. */
+  protected endColumnResize() {
+    this.resizingColumn.set(null);
+  }
+
+  /** Reset a column to its default width (drops the user override), e.g. on grip double-click. */
+  protected resetColumnWidth(key: string) {
+    this.columnWidths.update((widths) => {
+      if (widths[key] === undefined) return widths;
+
+      const next = { ...widths };
+      delete next[key];
+
+      return next;
+    });
+  }
+
   protected isFiltered(key: string) {
     return this.filterValuesFor(key).length > 0;
   }
@@ -811,6 +882,13 @@ export class TableComponent<T> {
 
   protected filterLoadMore(column: AnyTableColumn<T>) {
     this.filterProviderOf(column)?.loadMore?.();
+  }
+
+  // Current rendered width (px) of a column's header cell, matched by its data-col-key.
+  private headerCellWidth(key: string) {
+    const cell = this.headerCells().find((ref) => ref.nativeElement.getAttribute('data-col-key') === key);
+
+    return cell?.nativeElement.getBoundingClientRect().width ?? 0;
   }
 
   // Walk the event's composed path up to the row element; bail if it passed through anything the

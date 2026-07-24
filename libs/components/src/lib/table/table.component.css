@@ -315,6 +315,36 @@
     opacity: 0.4;
   }
 
+  /* Resize grip: a thin col-resize hit area on the header's trailing edge with a hairline that
+     strengthens to the accent on hover. It's a nested etDragHandle, so it swallows its own pointerdown
+     and never starts a reorder. The header cell is position:sticky, so this positions against it. */
+  .et-table-resize-grip {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 0;
+    inline-size: 0.5625rem;
+    z-index: 1;
+    cursor: col-resize;
+  }
+
+  .et-table-resize-grip::after {
+    content: '';
+    position: absolute;
+    inset-block: 20%;
+    inset-inline-end: 0.1875rem;
+    inline-size: 0.125rem;
+    border-radius: 0.0625rem;
+    background: var(--et-surface-border-solid, rgb(128 128 128 / 0.4));
+    transition: background 120ms ease;
+  }
+
+  @media (hover: hover) {
+    .et-table-resize-grip:where(:hover)::after {
+      inset-block: 0;
+      background: var(--et-theme-color-primary-solid, currentColor);
+    }
+  }
+
   /* Floating copy of the dragged header, following the pointer (offset so it clears a finger/cursor). */
   .et-table-drag-ghost {
     position: fixed;

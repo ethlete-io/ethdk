@@ -137,6 +137,20 @@
             </ng-template>
           </div>
         }
+
+        @if (resizableColumns()) {
+          <!-- Its own drag handle: etDragHandle stops the pointerdown from propagating, so grabbing the
+               grip resizes instead of starting a header reorder. Double-click resets to the default width. -->
+          <span
+            (dragStarted)="startColumnResize(column.key)"
+            (dragMoved)="updateColumnResize($event)"
+            (dragEnded)="endColumnResize()"
+            (dblclick)="resetColumnWidth(column.key)"
+            class="et-table-resize-grip"
+            etDragHandle
+            aria-hidden="true"
+          ></span>
+        }
       </div>
     }
   </div>

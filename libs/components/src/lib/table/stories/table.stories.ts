@@ -20,6 +20,7 @@ export default {
     footer: false,
     paginated: false,
     rowInteractive: false,
+    resizableColumns: false,
     selectable: false,
     surface: 'dark',
   },
@@ -38,6 +39,7 @@ export default {
     footer: { control: 'boolean' },
     paginated: { control: 'boolean' },
     rowInteractive: { control: 'boolean' },
+    resizableColumns: { control: 'boolean' },
     selectable: { control: 'boolean' },
     surface: { control: 'text' },
   },
@@ -160,6 +162,21 @@ export const StickyFooter: Story = {
         story:
           'A column `footerCell` (context: the rendered rows) adds a summary row pinned to the bottom of ' +
           'the scroll viewport — here a running count in the Name column.',
+      },
+    },
+  },
+};
+
+export const ResizableColumns: Story = {
+  args: { resizableColumns: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'With `resizableColumns`, each header grows a grip on its trailing edge — drag it to resize the ' +
+          'column, double-click to reset to the default width. Widths persist in `state()` and round-trip ' +
+          'through `restoreState()`. Composes with reordering: the grip swallows its own pointerdown so it ' +
+          'never starts a header drag.',
       },
     },
   },

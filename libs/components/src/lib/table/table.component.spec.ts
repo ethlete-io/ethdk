@@ -709,6 +709,28 @@ describe('TableComponent', () => {
     });
   });
 
+  describe('resizable columns', () => {
+    it('applies a restored width to the grid template and round-trips it through state()', () => {
+      const { componentInstance: table } = create(columns());
+
+      table.restoreState({
+        v: 1,
+        columns: [
+          { key: 'name', hidden: false, width: 240 },
+          { key: 'role', hidden: false },
+        ],
+      });
+
+      // The restored px width overrides the column's default track.
+      expect(table.templateColumns()).toBe('240px minmax(0, 1fr)');
+
+      // state() emits the width back for the resized column only.
+      const columnStates = table.state().columns;
+      expect(columnStates.find((column) => column.key === 'name')?.width).toBe(240);
+      expect(columnStates.find((column) => column.key === 'role')?.width).toBeUndefined();
+    });
+  });
+
   describe('row interaction', () => {
     @Component({
       template: `

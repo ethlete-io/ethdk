@@ -72,6 +72,7 @@ const MANY_PEOPLE: Person[] = Array.from({ length: 2000 }, (_, i) => makePerson(
         [virtualScroll]="virtualScroll()"
         [selectable]="selectable()"
         [rowInteractive]="rowInteractive()"
+        [resizableColumns]="resizableColumns()"
         [rowKey]="rowKey"
         [expandedRowTemplate]="expandable() ? detail : undefined"
         (rowClick)="lastClicked.set($event)"
@@ -149,6 +150,7 @@ export class TableStorybookComponent {
   public footer = input(false);
   public paginated = input(false);
   public rowInteractive = input(false);
+  public resizableColumns = input(false);
   public selectable = input(false);
   public appearance = input<'enclosed' | 'divided' | 'zebra' | 'grid' | 'bare'>('enclosed');
   public density = input<'sm' | 'md' | 'lg'>('md');
