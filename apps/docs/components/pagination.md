@@ -53,7 +53,7 @@ still drives everything; modified clicks (⌘/Ctrl/Shift/middle) open the URL as
 browser normally would.
 
 ```html
-<et-pagination [(page)]="page" [totalPages]="totalPages()" renderAs="links" [urlForPage]="urlForPage" />
+<et-pagination [(page)]="page" [totalPages]="totalPages()" [urlForPage]="urlForPage" renderAs="links" />
 ```
 
 ```ts
@@ -76,10 +76,10 @@ import { PaginationSeoDirective, PAGINATION_IMPORTS } from '@ethlete/components'
 <et-pagination
   [(page)]="page"
   [totalPages]="totalPages()"
-  renderAs="links"
   [urlForPage]="urlForPage"
   [etPaginationSeo]="urlForPage"
   [pageTitle]="pageTitle"
+  renderAs="links"
 />
 ```
 
@@ -90,20 +90,20 @@ pageTitle = (page: number) => (page > 1 ? `Results – Page ${page}` : null);
 
 ## Inputs
 
-| Input              | Default        | Description                                                                    |
-| ------------------ | -------------- | ------------------------------------------------------------------------------ |
-| `page`             | `1`            | The current page (1-based). Two-way bindable.                                  |
-| `totalPages`       | `1`            | Total number of pages.                                                         |
-| `siblingCount`     | `1`            | Pages shown on each side of the current page.                                  |
-| `boundaryCount`    | `1`            | Pages shown at each edge before an ellipsis.                                   |
-| `hideFirstLast`    | `false`        | Omit the first/last jump controls.                                             |
-| `hidePreviousNext` | `false`        | Omit the previous/next controls.                                               |
+| Input              | Default        | Description                                                                         |
+| ------------------ | -------------- | ----------------------------------------------------------------------------------- |
+| `page`             | `1`            | The current page (1-based). Two-way bindable.                                       |
+| `totalPages`       | `1`            | Total number of pages.                                                              |
+| `siblingCount`     | `1`            | Pages shown on each side of the current page.                                       |
+| `boundaryCount`    | `1`            | Pages shown at each edge before an ellipsis.                                        |
+| `hideFirstLast`    | `false`        | Omit the first/last jump controls.                                                  |
+| `hidePreviousNext` | `false`        | Omit the previous/next controls.                                                    |
 | `renderAs`         | `'buttons'`    | `'buttons'` (client state) or `'links'` (crawlable `<a href>`, needs `urlForPage`). |
-| `urlForPage`       | `null`         | `(page) => string`; maps a page to its URL for links mode.                     |
-| `totalItems`       | `null`         | Total item count; with `pageSize`, shows the "Showing X–Y of Z" readout.       |
-| `pageSize`         | `null`         | Items per page; used to compute the readout range.                             |
-| `showJumpTo`       | `false`        | Show a jump-to-page number field.                                              |
-| `ariaLabel`        | `'Pagination'` | Accessible label for the navigation landmark.                                  |
+| `urlForPage`       | `null`         | `(page) => string`; maps a page to its URL for links mode.                          |
+| `totalItems`       | `null`         | Total item count; with `pageSize`, shows the "Showing X–Y of Z" readout.            |
+| `pageSize`         | `null`         | Items per page; used to compute the readout range.                                  |
+| `showJumpTo`       | `false`        | Show a jump-to-page number field.                                                   |
+| `ariaLabel`        | `'Pagination'` | Accessible label for the navigation landmark.                                       |
 
 ## Headless
 
@@ -138,13 +138,17 @@ const qf = createQueryForm({
 ```
 
 ```html
-<et-pagination [page]="qf.value().page ?? 1" (pageChange)="qf.patchValue({ page: $event })" [totalPages]="totalPages()" />
+<et-pagination
+  [page]="qf.value().page ?? 1"
+  [totalPages]="totalPages()"
+  (pageChange)="qf.patchValue({ page: $event })"
+/>
 ```
 
 With the reactive-forms `QueryForm`, bind through the page control:
 
 ```html
-<et-pagination [page]="page()" (pageChange)="form.controls.page.setValue($event)" [totalPages]="totalPages()" />
+<et-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="form.controls.page.setValue($event)" />
 ```
 
 ## Accessibility
@@ -155,7 +159,9 @@ real `<button>` (or `<a href>` in links mode) with a descriptive `aria-label`
 unavailable controls (previous on the first page, etc.) are `disabled`. Each item is
 a standard tab stop, so keyboard users move through them with Tab and activate with
 Enter/Space (links also with the usual anchor semantics). Ellipses are inert and
-`aria-hidden`; the readout is an `aria-live="polite"` region.
+`aria-hidden`; the readout is an `aria-live="polite"` region. On coarse pointers
+(touch) the controls grow to a comfortable ~44px tap target, and when a large set
+doesn't fit they wrap (rather than scrolling) so every control stays reachable.
 
 ## Theming
 
