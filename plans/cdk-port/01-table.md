@@ -451,12 +451,13 @@ was reviewed and steered the scope below. Decisions taken with the user:
       navigation — the consumer calls `router.navigate` etc. True per-row `<a href>`
       SEO links stay **deferred** (documented: prefer a real `<a>` in a cell). Story
       `RowInteractive`, specs (plain cell emits; select cell / in-cell button / rowInteractive-off do not).
-    - **Action cells** — do **not** ship edit/delete/action components or an
-      "actions column" helper. The existing `cell` template + `{ $implicit: row }`
-      context already IS the API surface: the consumer renders their own `et-button`/
-      `et-menu`/links in a plain column. Scope here is only: confirm the surface is
-      sufficient (e.g. does a cell need row index / selection state? it has them) and
-      **document recipes** in the cells cookbook — nothing more baked in.
+    - **Action cells — DONE 2026-07-24 (docs only).** Confirmed the `cell` context
+      (`{ $implicit: row, value, index }`) is sufficient — no new code. Expanded the
+      cells cookbook + added an "Action cells" recipe in `table.md`: right-aligned
+      (`align: 'end'`) actions column with `[et-button]`/`[et-icon-button]`/`et-menu`,
+      and a note that it composes with `rowInteractive` (action clicks are ignored by
+      `(rowClick)` via `composedPath`, no `stopPropagation` needed). Fixed the stale
+      `etButton variant="text"` snippet to the real selectors.
     - **Pagination & page-size — footer slot SHIPPED 2026-07-24.** Decision made:
       the table hosts a **content-projection** slot, not a baked-in pager. Project
       `[etTableFooter]` (marker `TableFooterDirective`, in `TABLE_IMPORTS`) → a
