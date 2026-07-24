@@ -19,6 +19,7 @@ export default {
     stickyColumns: false,
     footer: false,
     paginated: false,
+    rowInteractive: false,
     selectable: false,
     surface: 'dark',
   },
@@ -36,6 +37,7 @@ export default {
     stickyColumns: { control: 'boolean' },
     footer: { control: 'boolean' },
     paginated: { control: 'boolean' },
+    rowInteractive: { control: 'boolean' },
     selectable: { control: 'boolean' },
     surface: { control: 'text' },
   },
@@ -158,6 +160,21 @@ export const StickyFooter: Story = {
         story:
           'A column `footerCell` (context: the rendered rows) adds a summary row pinned to the bottom of ' +
           'the scroll viewport — here a running count in the Name column.',
+      },
+    },
+  },
+};
+
+export const RowInteractive: Story = {
+  args: { rowInteractive: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'With `rowInteractive`, rows get a pointer affordance and emit `(rowClick)` with the row — except ' +
+          'when the click lands on interactive cell content (a button, link, input, the selection checkbox, ' +
+          'or the expander), which keeps those controls working. The table performs no navigation itself; ' +
+          'wire `router.navigate` in the handler. Click a row to update the readout below.',
       },
     },
   },

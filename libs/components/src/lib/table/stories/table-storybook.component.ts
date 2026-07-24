@@ -1,4 +1,13 @@
-import { Component, computed, input, linkedSignal, TemplateRef, viewChild, ViewEncapsulation } from '@angular/core';
+import {
+  Component,
+  computed,
+  input,
+  linkedSignal,
+  signal,
+  TemplateRef,
+  viewChild,
+  ViewEncapsulation,
+} from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { ProvideSurfaceDirective } from '@ethlete/core';
 import { FORM_FIELD_IMPORTS } from '../../forms/form-field';
@@ -62,8 +71,10 @@ const MANY_PEOPLE: Person[] = Array.from({ length: 2000 }, (_, i) => makePerson(
         [reorderable]="reorderable()"
         [virtualScroll]="virtualScroll()"
         [selectable]="selectable()"
+        [rowInteractive]="rowInteractive()"
         [rowKey]="rowKey"
         [expandedRowTemplate]="expandable() ? detail : undefined"
+        (rowClick)="lastClicked.set($event)"
         emptyLabel="No people found"
       >
         @if (paginated()) {
@@ -85,6 +96,10 @@ const MANY_PEOPLE: Person[] = Array.from({ length: 2000 }, (_, i) => makePerson(
           </div>
         }
       </et-table>
+
+      @if (rowInteractive()) {
+        <p class="mt-4 text-sm opacity-70">Last clicked: {{ lastClicked()?.name ?? '—' }}</p>
+      }
     </div>
 
     <ng-template #detail let-person>
@@ -133,6 +148,7 @@ export class TableStorybookComponent {
   public stickyColumns = input(false);
   public footer = input(false);
   public paginated = input(false);
+  public rowInteractive = input(false);
   public selectable = input(false);
   public appearance = input<'enclosed' | 'divided' | 'zebra' | 'grid' | 'bare'>('enclosed');
   public density = input<'sm' | 'md' | 'lg'>('md');
@@ -147,6 +163,7 @@ export class TableStorybookComponent {
   // Reset to the first page whenever the page size changes; the paginator drives it otherwise.
   protected page = linkedSignal<number, number>({ source: () => this.pageSize(), computation: () => 1 });
   protected readonly PEOPLE_COUNT = PEOPLE.length;
+  protected lastClicked = signal<Person | null>(null);
   protected totalPages = computed(() => Math.max(1, Math.ceil(PEOPLE.length / this.pageSize())));
 
   protected rows = computed(() => {

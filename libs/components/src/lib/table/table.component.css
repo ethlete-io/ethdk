@@ -372,6 +372,12 @@
     );
   }
 
+  /* Interactive rows read as clickable via a pointer cursor (the hover tint below applies to every
+     row already). The cursor lives on the cells because the row itself is display:contents. */
+  .et-table-row--interactive .et-table-cell {
+    cursor: pointer;
+  }
+
   /* Hover only on real hover-capable pointers, so a touch tap doesn't leave the row stuck grey.
      A hovered *selected* row keeps its accent (slightly stronger) rather than reverting to grey. */
   @media (hover: hover) {

@@ -11,6 +11,7 @@ Columns are declared with the typed helper `tableColumns<T>()`, so the row type 
 - **Filtering**: `filterable` columns with a multi-select menu, two-way `filters` state, `filterMode` `'client'` (exported `filterRows`) / `'server'`, plus in-menu search and async/paginated options.
 - **Row expansion**: `expandedRowTemplate` renders lazy, reduced-motion-aware detail rows (nest a table for sub-tables); `expandableRow` gates rows, `expandedKeys` is two-way.
 - **Selection**: `selectable` adds a checkbox column driving a two-way `selection` set of row keys, with select-all/indeterminate header and `selectableRow` gating.
+- **Row navigation**: `rowInteractive` gives rows a pointer/hover affordance and emits `(rowClick)` with the row (keyboard-activatable); clicks on interactive cell content (buttons/links/inputs/menu triggers/select/expander cells) are ignored via `composedPath`. Navigation stays the consumer's job.
 - **Column reordering & visibility**: `reorderable` drag-to-reorder (floating ghost preview, deferred + animated drop) plus `moveColumn` / `setColumnVisible` / `toggleColumnVisibility`.
 - **Grouped headers**: a column `group` spans adjacent columns under one label in a second header row; each sub-column stays independently sortable/filterable.
 - **Sticky columns & footer**: `sticky: 'start' | 'end'` pins columns during horizontal scroll; a column `footerCell` renders a bottom-pinned summary row.

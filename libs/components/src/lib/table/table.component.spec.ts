@@ -1,4 +1,4 @@
-import { Component, computed, signal, TemplateRef } from '@angular/core';
+import { Component, computed, signal, TemplateRef, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RuntimeError } from '@ethlete/core';
 import '../../test-helpers';
@@ -706,6 +706,87 @@ describe('TableComponent', () => {
       const fixture = create(columns());
 
       expect((fixture.nativeElement as HTMLElement).querySelector('.et-table-footer')).toBeNull();
+    });
+  });
+
+  describe('row interaction', () => {
+    @Component({
+      template: `
+        <et-table
+          [columns]="cols()"
+          [data]="data"
+          [selectable]="true"
+          [rowInteractive]="true"
+          (rowClick)="clicked = $event"
+        ></et-table>
+        <ng-template #actionCell><button class="act" type="button">Act</button></ng-template>
+      `,
+      imports: [TABLE_IMPORTS],
+    })
+    class HostComponent {
+      clicked: Person | null = null;
+      actionCell = viewChild.required<TemplateRef<unknown>>('actionCell');
+      data = PEOPLE;
+      cols = computed(() =>
+        tableColumns<Person>([
+          { key: 'name', header: 'Name', value: (person) => person.name },
+          { key: 'act', header: '', value: (person) => person, cell: this.actionCell() },
+        ]),
+      );
+    }
+
+    const build = () => {
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+      // Second pass so the viewChild-backed cell template resolves into the columns.
+      fixture.detectChanges();
+
+      return fixture;
+    };
+
+    it('emits rowClick with the row when a plain cell is clicked', () => {
+      const fixture = build();
+      const host = fixture.nativeElement as HTMLElement;
+      const nameCell = host.querySelector('.et-table-row .et-table-cell[data-col-key="name"]') as HTMLElement;
+
+      nameCell.click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.clicked).toBe(PEOPLE[0]);
+    });
+
+    it('ignores clicks in the selection cell', () => {
+      const fixture = build();
+      const host = fixture.nativeElement as HTMLElement;
+      const selectCell = host.querySelector('.et-table-row .et-table-select-cell') as HTMLElement;
+
+      selectCell.click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.clicked).toBeNull();
+    });
+
+    it('ignores clicks on an in-cell button', () => {
+      const fixture = build();
+      const host = fixture.nativeElement as HTMLElement;
+      const button = host.querySelector('.et-table-row button.act') as HTMLElement;
+
+      button.click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.clicked).toBeNull();
+    });
+
+    it('does not emit when rowInteractive is off', () => {
+      const fixture = create(columns());
+      const table = fixture.componentInstance;
+      let emitted = false;
+      table.rowClick.subscribe(() => (emitted = true));
+
+      const cell = (fixture.nativeElement as HTMLElement).querySelector('.et-table-row .et-table-cell') as HTMLElement;
+      cell.click();
+
+      expect(emitted).toBe(false);
     });
   });
 });

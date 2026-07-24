@@ -154,6 +154,11 @@
     <div
       [class.et-table-row--stripe]="(rowIndexOffset() + index) % 2 === 1"
       [class.et-table-row--selected]="selectable() && isSelected(row)"
+      [class.et-table-row--interactive]="rowInteractive()"
+      [attr.tabindex]="rowInteractive() ? 0 : null"
+      (click)="activateRow(row, $event)"
+      (keydown.enter)="activateRow(row, $event)"
+      (keydown.space)="activateRow(row, $event)"
       class="et-table-row"
       role="row"
     >

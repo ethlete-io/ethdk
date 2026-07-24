@@ -12,6 +12,7 @@ import {
   isDevMode,
   linkedSignal,
   model,
+  output,
   signal,
   TemplateRef,
   ViewEncapsulation,
@@ -182,6 +183,12 @@ export class TableComponent<T> {
   /** Gate which rows can be selected. Defaults to all rows (when `selectable`). */
   public selectableRow = input<(row: T) => boolean>();
 
+  /**
+   * Make whole rows respond to clicks: adds a hover/pointer affordance and emits {@link rowClick}
+   * (clicks landing on interactive cell content are ignored — see `rowClick`). @default false
+   */
+  public rowInteractive = input(false);
+
   /** Allow reordering columns by dragging their headers. @default false */
   public reorderable = input(false);
 
@@ -197,6 +204,15 @@ export class TableComponent<T> {
 
   /** Rows kept rendered just outside the viewport on each side, to hide scroll flicker. @default 6 */
   public overscan = input(6);
+
+  /**
+   * Emitted when an interactive row (see {@link rowInteractive}) is clicked, with the row as payload.
+   * Clicks originating from interactive descendants — buttons, links, inputs, selects, a menu trigger,
+   * and the selection/expander cells — are ignored, so in-row controls keep working. The table bakes
+   * in no navigation; call `router.navigate` (etc.) yourself. For crawlable per-row links, render a
+   * real `<a>` in a cell instead.
+   */
+  public rowClick = output<T>();
 
   // Whether the consumer projected an `[etTableFooter]` slot, so its chrome (border, sticky bar)
   // renders only when there's actually footer content.
@@ -669,6 +685,16 @@ export class TableComponent<T> {
     return this.selectableRow()?.(row) ?? true;
   }
 
+  /** Emit {@link rowClick} for a row (click or keyboard), unless the activation came from interactive content inside it. */
+  protected activateRow(row: T, event: MouseEvent | KeyboardEvent) {
+    if (!this.rowInteractive() || this.originatesFromInteractive(event)) return;
+
+    // Enter/Space on a focused row shouldn't also scroll the page.
+    if (event instanceof KeyboardEvent) event.preventDefault();
+
+    this.rowClick.emit(row);
+  }
+
   /**
    * Stable identity for row-keyed state (change tracking, expansion, selection): the string form of
    * `rowKey` (so it matches its serialized form regardless of string/number), or the row reference.
@@ -785,6 +811,26 @@ export class TableComponent<T> {
 
   protected filterLoadMore(column: AnyTableColumn<T>) {
     this.filterProviderOf(column)?.loadMore?.();
+  }
+
+  // Walk the event's composed path up to the row element; bail if it passed through anything the
+  // user meant to click instead of the row (a control, a menu trigger, or a utility cell). Uses
+  // composedPath (not `.closest()`, which the styleguide forbids) so it also works across shadow roots.
+  private originatesFromInteractive(event: MouseEvent | KeyboardEvent) {
+    for (const target of event.composedPath()) {
+      if (target === event.currentTarget) break;
+      if (!(target instanceof HTMLElement)) continue;
+
+      const tag = target.tagName;
+
+      if (tag === 'BUTTON' || tag === 'A' || tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return true;
+      if (target.hasAttribute('etMenuTrigger') || target.getAttribute('role') === 'button') return true;
+      if (target.classList.contains('et-table-select-cell') || target.classList.contains('et-table-expander-cell')) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   // Resolve which column the pointer is over and which side, and place the drop indicator at that edge.
