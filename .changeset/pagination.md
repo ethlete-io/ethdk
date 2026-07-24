@@ -18,4 +18,5 @@ Extras: `renderAs="links"` + `urlForPage` render crawlable `<a href>`s (plain
 clicks intercepted, modified clicks pass through); an opt-in `etPaginationSeo`
 directive adds a per-page canonical plus `rel="prev"`/`rel="next"` (built on the
 core head-binding utils, SSR-safe, tree-shakes when unused); a "Showing X–Y of Z"
-readout via `totalItems`/`pageSize`; and a `showJumpTo` jump-to-page field.
+readout via `totalItems`/`pageSize`; and a `showJumpTo` jump-to-page field. On
+coarse pointers the controls grow to ~44px tap targets.

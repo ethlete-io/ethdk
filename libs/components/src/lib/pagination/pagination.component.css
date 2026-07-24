@@ -89,4 +89,13 @@
     outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
     outline-offset: 2px;
   }
+
+  /* Comfortable ~44px tap targets on coarse pointers (phones/tablets). Items still wrap rather than
+     scroll, so first/prev/next/last stay reachable — none hide behind an overflow scroller. */
+  @media (pointer: coarse) {
+    .et-pagination-host {
+      --et-pagination-item-size: 2.75rem;
+      --et-pagination-gap: 0.375rem;
+    }
+  }
 }
