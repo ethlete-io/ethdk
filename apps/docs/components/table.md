@@ -64,7 +64,9 @@ typed `value` accessor is the only link between a column and the row.
 | `selectable`          | `false`      | Show a leading checkbox column for multi-row selection. See [Selection](#selection).                      |
 | `selection`           | `new Set()`  | Two-way bindable set of selected row keys (by `rowKey`).                                                  |
 | `selectableRow`       | all rows     | `(row: T) => boolean` gating which rows can be selected.                                                  |
+| `rowInteractive`      | `false`      | Make rows clickable, emitting `(rowClick)`. See [Row navigation](#row-navigation).                        |
 | `reorderable`         | `false`      | Allow reordering columns by dragging their headers. See [below](#column-visibility-reordering).           |
+| `resizableColumns`    | `false`      | Let users drag a header grip to resize columns. See [below](#resizable-columns).                          |
 | `virtualScroll`       | `false`      | Render only the rows near the viewport. See [Virtualization](#virtualization).                            |
 | `estimateRowHeight`   | `48`         | Row height (px) assumed before a real row is measured — tune to your rows for a stable first paint.       |
 | `overscan`            | `6`          | Rows kept rendered just outside the viewport on each side, to hide scroll flicker.                        |
@@ -542,6 +544,24 @@ Column **order and visibility** are also fully programmatic, so you can build a
 Both order and visibility are captured by [`state()`](#table-state) and restored
 by `restoreState()`.
 
+## Resizable columns
+
+Set `resizableColumns` and each header grows a grip on its trailing edge. Drag it
+to resize the column; **double-click** it to reset that column to its default
+width.
+
+```html
+<et-table [data]="rows()" [columns]="columns" [resizableColumns]="true" />
+```
+
+Resized widths are pixel overrides on top of each column's declared `width` (or the
+default `minmax(0, 1fr)` track), clamped to a sensible minimum. They're captured by
+[`state()`](#table-state) as `TableColumnState.width` and restored by
+`restoreState()`, so a user's column widths persist alongside order, visibility,
+sort and filters. Resizing **composes with reordering** — the grip is its own drag
+handle that swallows its pointer gesture, so grabbing it resizes instead of starting
+a header reorder.
+
 ## Virtualization
 
 For long lists, set `virtualScroll` so the table renders only the rows near the
@@ -571,9 +591,9 @@ smoothly when expanded content is modest.
 ## Table state
 
 `state()` is a serializable, versioned snapshot of the table's configurable
-state — column **order**, **visibility**, **sort** and **filters** (per column),
-plus **expanded rows**. `restoreState(state)` applies one back. The two round-trip
-losslessly, so it's the basis for persisting and sharing a table setup.
+state — column **order**, **visibility**, **sort**, **filters** and **width** (per
+column), plus **expanded rows**. `restoreState(state)` applies one back. The two
+round-trip losslessly, so it's the basis for persisting and sharing a table setup.
 
 ```ts
 const snapshot = table.state();
