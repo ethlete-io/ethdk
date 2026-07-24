@@ -443,13 +443,14 @@ was reviewed and steered the scope below. Decisions taken with the user:
     not the behavior.** No baked-in "edit"/"delete"/"navigate" — the SDK stays
     schema- and action-agnostic; the consumer wires whatever they need through the
     provided hooks/templates. We only make that surface exist and be ergonomic.
-    - **Row navigation / router links** — expose a way to make a row navigable: a
-      per-row link target (`routerLink`/`href`) and/or a `(rowClick)`-style output,
-      NOT a hardcoded navigation. Key requirement: clicks on interactive cell
-      content (selection checkbox, action buttons, links, the expander) must **not**
-      trigger the row navigation — the row-level handler ignores events originating
-      from interactive descendants. The table provides the row-click/link hook; the
-      app decides what it does.
+    - **Row navigation — SHIPPED 2026-07-24.** `rowInteractive` input (pointer/hover
+      affordance, keyboard-focusable rows, Enter/Space) + `(rowClick)` output emitting
+      the row. Clicks/keys originating from interactive descendants (button/a/input/
+      select/textarea, `[etMenuTrigger]`, `role=button`, the select/expander cells) are
+      ignored via `event.composedPath()` (NOT `.closest()` — lint). No baked-in
+      navigation — the consumer calls `router.navigate` etc. True per-row `<a href>`
+      SEO links stay **deferred** (documented: prefer a real `<a>` in a cell). Story
+      `RowInteractive`, specs (plain cell emits; select cell / in-cell button / rowInteractive-off do not).
     - **Action cells** — do **not** ship edit/delete/action components or an
       "actions column" helper. The existing `cell` template + `{ $implicit: row }`
       context already IS the API surface: the consumer renders their own `et-button`/
