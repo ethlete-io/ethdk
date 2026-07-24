@@ -35,6 +35,18 @@ Two layers, build the first now:
    maybe rendered state) restored synchronously on `popstate`. This is a real
    `@ethlete/query` architecture fork; scope and prototype it on its own before
    committing. Do NOT block layer 1 on it.
+   - **Candidate simplification (shower thought):** rather than a whole new
+     snapshot mechanism, just **keep stale query results in the cache** (retain past
+     TTL / don't evict on back-nav) so the data is already there on return — a much
+     smaller change than a bespoke history cache, and it makes layer 1 easy (the
+     list renders full height immediately, so restoration is trivial). Worth
+     evaluating first.
+   - **Caveat — caching is off on ~all private/authed routes.** So the cache lever
+     (either flavour) does nothing there; those routes MUST still work via layer 1's
+     restore-after-settle. Treat the cache as an optimization for public/cacheable
+     routes, not the mechanism — layer 1 is the baseline that always applies.
+     (Also think about staleness: showing stale data on return then refreshing —
+     acceptable? per-route opt-in? memory bounds on retained results?)
 
 ## Open questions (resolve during design)
 
