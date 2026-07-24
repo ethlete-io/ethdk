@@ -456,17 +456,17 @@ was reviewed and steered the scope below. Decisions taken with the user:
       `et-menu`/links in a plain column. Scope here is only: confirm the surface is
       sufficient (e.g. does a cell need row index / selection state? it has them) and
       **document recipes** in the cells cookbook — nothing more baked in.
-    - **Pagination** — `02-pagination.md` **Phase 1 shipped** (`et-pagination` +
-      headless `etPagination`). Table integration: bind `et-pagination`'s `page`/
-      `(pageChange)` to `tableRowsFromQuery`'s `page`/`setPage`, `totalPages` from
-      the envelope (documented in the pagination guide). If the styled paginator
-      doesn't fit under the table, drop to the **tier-2 headless** `etPagination`
-      and render a table-appropriate pager. Not yet wired as a first-class table
-      footer slot — decide whether the table hosts the pager or the consumer places
-      it below.
-    - **Page-size select** — a "rows per page" select rendered alongside the
-      paginator (drives the query's `limit`/`itemsPerPage`); pairs with pagination
-      in the table footer.
+    - **Pagination & page-size — footer slot SHIPPED 2026-07-24.** Decision made:
+      the table hosts a **content-projection** slot, not a baked-in pager. Project
+      `[etTableFooter]` (marker `TableFooterDirective`, in `TABLE_IMPORTS`) → a
+      full-width bar below the grid, `position: sticky; inset-block-end/inline-start`
+      pinned to the scroll viewport, `z-index: 4` (above pinned footer cells),
+      rendered only when the `contentChild(TableFooterDirective)` resolves (so the
+      chrome never shows empty). Consumer drops `<et-pagination>` + a page-size
+      `<et-select>` in it and wires them to `tableRowsFromQuery`'s `page`/`setPage`
+      (page-size → the query `limit`). Story `PaginatedFooter` (client-side slice),
+      spec (projected content renders / absent when unused), docs "Pagination & page
+      size" recipe. `02-pagination.md` Phase 2 (the polished pager) also shipped.
     - **Resizable columns** — user-draggable column widths (drag the header edge),
       persisted into `TableState` (the `TableState` already reserves room for
       widths). Currently out of scope in the plan's "not-yet" list; promote when
