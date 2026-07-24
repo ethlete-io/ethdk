@@ -176,9 +176,14 @@ table-specific ones:
   <et-chip [color]="value === 'active' ? 'success' : 'neutral'">{{ value }}</et-chip>
 </ng-template>
 
-<!-- Row actions — a menu trigger -->
-<ng-template #actionsCell let-row>
-  <button [etMenuTrigger]="rowMenu" etButton variant="text" aria-label="Row actions">⋯</button>
+<!-- Row actions — inline buttons (right-aligned via the column's align: 'end') -->
+<ng-template #actionsCell let-user>
+  <span class="flex gap-1">
+    <button (click)="edit(user)" et-button variant="transparent" size="sm">Edit</button>
+    <button [etMenuTrigger]="rowMenu" et-icon-button variant="transparent" size="sm" aria-label="More actions">
+      <i etIcon="et-chevron"></i>
+    </button>
+  </span>
 </ng-template>
 ```
 
@@ -187,9 +192,25 @@ columns = tableColumns<Player>([
   // sorts by name even though the cell renders an avatar + handle
   { key: 'player', header: 'Player', value: (p) => p, cell: userCell, sortValue: (p) => p.name },
   { key: 'status', header: 'Status', value: (p) => p.status, cell: statusCell, filterable: true },
-  { key: 'actions', header: '', value: (p) => p, cell: actionsCell },
+  // right-align an actions column and give it a fixed width; pin it with sticky: 'end' if the table scrolls
+  { key: 'actions', header: '', value: (p) => p, cell: actionsCell, align: 'end', width: '120px' },
 ]);
 ```
+
+### Action cells
+
+There's no `actionsColumn()` helper or built-in edit/delete components — a plain
+`cell` template **is** the action-column API. Its context already carries
+everything an action needs: the whole `row` (`$implicit`), the accessor `value`,
+and the row `index`. Render your own [`[et-button]`](/components/button) /
+[`et-menu`](/components/menu) and call your handlers directly. Right-align the
+column with `align: 'end'` and give it a fixed `width`; pin it with `sticky: 'end'`
+when the table scrolls horizontally.
+
+Action cells **compose with [row navigation](#row-navigation)**: when the table is
+`rowInteractive`, a click on any button, link, input or menu trigger inside a cell
+is ignored by `(rowClick)` (it's detected via `composedPath`), so "Edit" fires its
+own handler without also triggering row navigation — no `stopPropagation` needed.
 
 ## Grouped headers
 
