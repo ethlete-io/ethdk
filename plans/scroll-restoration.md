@@ -1,8 +1,15 @@
 # Scroll restoration on back-navigation
 
-**Status: planned, not started.** Own initiative — not part of the table or
-pagination plans (a table/list is the main _consumer_, but this is a cross-cutting
-`@ethlete/query` + navigation concern). Size: L (has a research/design fork).
+**Status (2026-07-25): complete — both layers shipped.** The
+research/design fork is closed — see
+[`scroll-restoration-design.md`](./scroll-restoration-design.md) for the findings,
+the options weighed, and the decisions. Read that file first; the sections below
+are the original framing and are partly superseded (notably §2's cache
+assumptions — see design doc §1.5).
+
+Own initiative — not part of the table or pagination plans (a table/list is the
+main _consumer_, but this is a cross-cutting `@ethlete/query` + navigation
+concern). Size: L.
 
 ## Problem
 
@@ -48,17 +55,39 @@ Two layers, build the first now:
      (Also think about staleness: showing stale data on return then refreshing —
      acceptable? per-route opt-in? memory bounds on retained results?)
 
-## Open questions (resolve during design)
+## Open questions — all resolved
 
-- Where does the nav-scoped store live — a `@ethlete/core` navigation util, or
-  `@ethlete/query`? Who owns "settled"?
-- Router integration: Angular Router `withInMemoryScrolling`/`scrollPositionRestoration`
-  is the thing to _replace/augment_; confirm how it interacts.
-- Interaction with virtualization (measured heights) and pagination (page changes
-  are not back-nav — don't restore then).
+Answers and rationale in
+[`scroll-restoration-design.md`](./scroll-restoration-design.md) §3. In short:
+the nav-scoped store lives in `@ethlete/core` inside `setupScrollRestoration`;
+nobody owns "settled" (the scroll container's own height is the signal, with an
+optional `holdScrollRestoration()` override); `withInMemoryScrolling` is not used
+(only Angular's `navigationId` keying is borrowed); virtualization needs no
+changes; and only `popstate` navigations with a stored offset restore, so
+pagination via a link still scrolls to top.
 
-## Deliverables (layer 1)
+## Deliverables
 
-A restore-after-settle utility/service + a "settled" hook consumers (table, lists)
-opt into, docs, changeset for whichever package owns it. Layer 2 gets its own
-plan/changeset once designed.
+**Layer 1 — done** (`@ethlete/core`, changeset `core-scroll-restoration`):
+
+- `setupScrollRestoration({ restore: { enabled, timeout, maxTimeout, clampOnTimeout } })`
+  captures the offset per history entry and re-applies it once the content is tall
+  enough to reach it; abandons the attempt if the user scrolls.
+- `holdScrollRestoration(() => query.isLoading())` — optional per-page suspension
+  of the wait, for data slower than `timeout`.
+- `scrollElement` now also accepts a getter, for per-route / app-shell scrollers.
+- Docs: `apps/docs/core/signal-utils.md` → "Navigation scrolling & scroll
+  restoration". Tests: `libs/core/src/lib/signals/recipes/scroll-restoration.spec.ts`.
+
+**Layer 2 — done** (`@ethlete/query`, changeset `query-keep-unused-for`):
+
+- `createQueryClient({ keepUnusedFor })` (default 5 min, overridable per creator,
+  `0` restores the old behavior) keeps a cache entry alive after its last consumer
+  is destroyed, so a returning query renders its previous response immediately
+  while revalidating. Independent of `cache-control`, so it covers authed routes.
+- Only entries holding a response are kept; capped at 50 unused entries per
+  client; disabled on the server; force-cleared on logout.
+- Docs: `apps/docs/query/caching.md` → "Keeping unused entries around".
+
+Built as entry retention rather than the bespoke history snapshot the original
+plan imagined — see the design doc §1.5 and §5 for why.
