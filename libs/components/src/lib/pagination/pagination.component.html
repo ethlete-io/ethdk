@@ -1,52 +1,76 @@
-@if (range(); as range) {
-  <p class="et-pagination-range" aria-live="polite">Showing {{ range[0] }}–{{ range[1] }} of {{ totalItems() }}</p>
+@if (!isCompact() && rangeStatus(); as status) {
+  <p class="et-pagination-range" aria-live="polite">{{ status }}</p>
 }
 
-<ul class="et-pagination-list">
-  @for (item of pagination.items(); track $index) {
-    <li class="et-pagination-item">
-      @if (item.type === 'ellipsis') {
-        <span class="et-pagination-ellipsis" aria-hidden="true">…</span>
-      } @else if (hrefFor(item); as href) {
-        <a
-          [attr.href]="href"
-          [attr.aria-label]="item.label"
-          [attr.aria-current]="item.current ? 'page' : null"
-          [attr.data-type]="item.type"
-          [variant]="item.current ? 'filled' : 'transparent'"
-          [mutedUntilPressed]="!item.current"
-          [class.et-pagination-button--control]="item.type !== 'page'"
-          (click)="selectLink($event, item)"
-          class="et-pagination-button"
-          et-button
-          size="sm"
-        >
-          <ng-container *ngTemplateOutlet="inner; context: { $implicit: item }" />
-        </a>
-      } @else {
-        <button
-          [attr.aria-label]="item.label"
-          [attr.aria-current]="item.current ? 'page' : null"
-          [attr.data-type]="item.type"
-          [variant]="item.current ? 'filled' : 'transparent'"
-          [mutedUntilPressed]="!item.current"
-          [disabled]="item.disabled"
-          [class.et-pagination-button--control]="item.type !== 'page'"
-          (click)="select(item)"
-          class="et-pagination-button"
-          et-button
-          size="sm"
-        >
-          <ng-container *ngTemplateOutlet="inner; context: { $implicit: item }" />
-        </button>
-      }
-    </li>
+<ul #paginationList class="et-pagination-list">
+  @if (isCompact()) {
+    <!-- Compact pager: the readout, then previous/next — readout first so a changing digit count grows
+         leftward and the chevrons hold their place across page changes. -->
+    <li class="et-pagination-status" aria-live="polite">{{ compactStatus() }}</li>
+    @if (compactControls().previous; as item) {
+      <li [attr.data-type]="item.type" class="et-pagination-item">
+        <ng-container *ngTemplateOutlet="control; context: { $implicit: item }" />
+      </li>
+    }
+    @if (compactControls().next; as item) {
+      <li [attr.data-type]="item.type" class="et-pagination-item">
+        <ng-container *ngTemplateOutlet="control; context: { $implicit: item }" />
+      </li>
+    }
+  } @else {
+    @for (item of items(); track $index) {
+      <li #paginationItem [attr.data-type]="item.type" class="et-pagination-item">
+        @if (item.type === 'ellipsis') {
+          <span class="et-pagination-ellipsis" aria-hidden="true">…</span>
+        } @else {
+          <ng-container *ngTemplateOutlet="control; context: { $implicit: item }" />
+        }
+      </li>
+    }
   }
 </ul>
 
+<ng-template #control let-item>
+  @if (hrefFor(item); as href) {
+    <a
+      [attr.href]="href"
+      [attr.aria-label]="item.label"
+      [attr.aria-current]="item.current ? 'page' : null"
+      [attr.data-type]="item.type"
+      [variant]="item.current ? 'filled' : 'transparent'"
+      [mutedUntilPressed]="!item.current"
+      [class.et-pagination-button--control]="item.type !== 'page'"
+      (click)="selectLink($event, item)"
+      class="et-pagination-button"
+      et-button
+      size="sm"
+    >
+      <ng-container *ngTemplateOutlet="inner; context: { $implicit: item }" />
+    </a>
+  } @else {
+    <button
+      [attr.aria-label]="item.label"
+      [attr.aria-current]="item.current ? 'page' : null"
+      [attr.data-type]="item.type"
+      [variant]="item.current ? 'filled' : 'transparent'"
+      [mutedUntilPressed]="!item.current"
+      [disabled]="item.disabled"
+      [class.et-pagination-button--control]="item.type !== 'page'"
+      (click)="select(item)"
+      class="et-pagination-button"
+      et-button
+      size="sm"
+    >
+      <ng-container *ngTemplateOutlet="inner; context: { $implicit: item }" />
+    </button>
+  }
+</ng-template>
+
 @if (showJumpTo()) {
   <div class="et-pagination-jump">
-    <label class="et-pagination-jump-label" for="et-pagination-jump-input">Go to page</label>
+    <label class="et-pagination-jump-label" for="et-pagination-jump-input">
+      {{ pagination.resolvedLabels().jumpTo }}
+    </label>
     <input
       #jumpInput
       [min]="1"

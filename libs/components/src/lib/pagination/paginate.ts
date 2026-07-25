@@ -1,4 +1,5 @@
 import { clamp } from '@ethlete/core';
+import { DEFAULT_PAGINATION_LABELS } from './pagination-labels';
 import { PaginateOptions, PaginationItem } from './pagination.types';
 
 const range = (start: number, end: number): number[] =>
@@ -13,9 +14,12 @@ const range = (start: number, end: number): number[] =>
  * The page-window algorithm mirrors the well-worn boundary/sibling approach: `boundaryCount` pages
  * are always shown at each edge and `siblingCount` on each side of the current page, with ellipses
  * only where they replace more than one page.
+ *
+ * Item `label`s come from the default English labels unless `options.labels` overrides them.
  */
 export const paginate = (options: PaginateOptions): PaginationItem[] => {
   const { totalPages, siblingCount = 1, boundaryCount = 1, hideFirstLast = false, hidePreviousNext = false } = options;
+  const labels = { ...DEFAULT_PAGINATION_LABELS, ...options.labels };
 
   if (totalPages <= 0) return [];
 
@@ -52,7 +56,7 @@ export const paginate = (options: PaginateOptions): PaginationItem[] => {
   const items: PaginationItem[] = [];
 
   if (!hideFirstLast) {
-    items.push({ type: 'first', page: 1, current: false, disabled: current === 1, label: 'First page' });
+    items.push({ type: 'first', page: 1, current: false, disabled: current === 1, label: labels.first });
   }
 
   if (!hidePreviousNext) {
@@ -61,15 +65,21 @@ export const paginate = (options: PaginateOptions): PaginationItem[] => {
       page: current - 1,
       current: false,
       disabled: current === 1,
-      label: 'Previous page',
+      label: labels.previous,
     });
   }
 
   for (const entry of middle) {
     if (entry === 'ellipsis') {
-      items.push({ type: 'ellipsis', page: null, current: false, disabled: true, label: 'More pages' });
+      items.push({ type: 'ellipsis', page: null, current: false, disabled: true, label: labels.ellipsis });
     } else {
-      items.push({ type: 'page', page: entry, current: entry === current, disabled: false, label: `Page ${entry}` });
+      items.push({
+        type: 'page',
+        page: entry,
+        current: entry === current,
+        disabled: false,
+        label: labels.page(entry, totalPages),
+      });
     }
   }
 
@@ -79,7 +89,7 @@ export const paginate = (options: PaginateOptions): PaginationItem[] => {
       page: current + 1,
       current: false,
       disabled: current === totalPages,
-      label: 'Next page',
+      label: labels.next,
     });
   }
 
@@ -89,7 +99,7 @@ export const paginate = (options: PaginateOptions): PaginationItem[] => {
       page: totalPages,
       current: false,
       disabled: current === totalPages,
-      label: 'Last page',
+      label: labels.last,
     });
   }
 

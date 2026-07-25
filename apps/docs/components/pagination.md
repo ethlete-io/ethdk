@@ -44,6 +44,65 @@ large result sets.
 
 <StoryEmbed id="components-pagination--with-range-and-jump" height="220px" />
 
+## Localization
+
+Every string the paginator renders itself — the control `aria-label`s ("Previous
+page", "Page 3"), the "Showing X–Y of Z" readout, the compact pager's readout, the
+jump-to-page label and the landmark's `aria-label` — comes from one label set,
+English by default. Localize it once per app (or per lazy-loaded feature) with
+`providePaginationLabels`; anything you leave out keeps its English default.
+
+```ts
+import { providePaginationLabels } from '@ethlete/components';
+
+bootstrapApplication(AppComponent, {
+  providers: [
+    providePaginationLabels({
+      navigation: 'Seitennavigation',
+      first: 'Erste Seite',
+      previous: 'Vorherige Seite',
+      next: 'Nächste Seite',
+      last: 'Letzte Seite',
+      page: (page) => `Seite ${page}`,
+      range: ({ start, end, totalItems }) => `Zeige ${start}–${end} von ${totalItems}`,
+      compactRange: ({ start, end, totalItems }) => `${start}–${end} von ${totalItems}`,
+      jumpTo: 'Gehe zu Seite',
+    }),
+  ],
+});
+```
+
+The `labels` input overrides the provided set for a single paginator — use it for a
+one-off wording, not for translation:
+
+```html
+<et-pagination [(page)]="page" [totalPages]="totalPages()" [labels]="{ next: 'Weiter' }" />
+```
+
+<StoryEmbed id="components-pagination--localized" height="240px" />
+
+The label keys, all optional:
+
+| Key            | Default                        | Where it shows                                                          |
+| -------------- | ------------------------------ | ----------------------------------------------------------------------- |
+| `navigation`   | `'Pagination'`                 | The landmark's `aria-label` (unless `ariaLabel` is set).                |
+| `first`        | `'First page'`                 | `aria-label` of the jump-to-first control.                              |
+| `previous`     | `'Previous page'`              | `aria-label` of the previous control.                                   |
+| `next`         | `'Next page'`                  | `aria-label` of the next control.                                       |
+| `last`         | `'Last page'`                  | `aria-label` of the jump-to-last control.                               |
+| `ellipsis`     | `'More pages'`                 | `aria-label` for a gap (inert here; for custom renderings).             |
+| `page`         | `` (page) => `Page ${page}` `` | `aria-label` of a page item; also gets `totalPages`.                    |
+| `range`        | `'Showing 41–60 of 500'`       | The `totalItems`/`pageSize` readout; gets `{ start, end, totalItems }`. |
+| `compactRange` | `'41–60 of 500'`               | The compact pager's readout when the range is known.                    |
+| `compactPage`  | `'3 / 25'`                     | The compact pager's readout without `totalItems`/`pageSize`.            |
+| `jumpTo`       | `'Go to page'`                 | Label of the `showJumpTo` field.                                        |
+
+`ariaLabel` still wins over `navigation` — set it when two paginators share a page
+("Search results pages" vs "Comments pages"), and translate that string yourself.
+
+The pure `paginate()` function takes the same overrides as a `labels` option, so item
+labels are localized outside Angular too.
+
 ## Links mode & SEO
 
 By default items are `<button>`s (pure client state). For crawlable pagination,
@@ -90,27 +149,65 @@ pageTitle = (page: number) => (page > 1 ? `Results – Page ${page}` : null);
 
 ## Inputs
 
-| Input              | Default        | Description                                                                         |
-| ------------------ | -------------- | ----------------------------------------------------------------------------------- |
-| `page`             | `1`            | The current page (1-based). Two-way bindable.                                       |
-| `totalPages`       | `1`            | Total number of pages.                                                              |
-| `siblingCount`     | `1`            | Pages shown on each side of the current page.                                       |
-| `boundaryCount`    | `1`            | Pages shown at each edge before an ellipsis.                                        |
-| `hideFirstLast`    | `false`        | Omit the first/last jump controls.                                                  |
-| `hidePreviousNext` | `false`        | Omit the previous/next controls.                                                    |
-| `renderAs`         | `'buttons'`    | `'buttons'` (client state) or `'links'` (crawlable `<a href>`, needs `urlForPage`). |
-| `urlForPage`       | `null`         | `(page) => string`; maps a page to its URL for links mode.                          |
-| `totalItems`       | `null`         | Total item count; with `pageSize`, shows the "Showing X–Y of Z" readout.            |
-| `pageSize`         | `null`         | Items per page; used to compute the readout range.                                  |
-| `showJumpTo`       | `false`        | Show a jump-to-page number field.                                                   |
-| `ariaLabel`        | `'Pagination'` | Accessible label for the navigation landmark.                                       |
+| Input              | Default     | Description                                                                         |
+| ------------------ | ----------- | ----------------------------------------------------------------------------------- |
+| `page`             | `1`         | The current page (1-based). Two-way bindable.                                       |
+| `totalPages`       | `1`         | Total number of pages.                                                              |
+| `siblingCount`     | `1`         | Pages shown on each side of the current page.                                       |
+| `boundaryCount`    | `1`         | Pages shown at each edge before an ellipsis.                                        |
+| `hideFirstLast`    | `false`     | Omit the first/last jump controls.                                                  |
+| `hidePreviousNext` | `false`     | Omit the previous/next controls.                                                    |
+| `responsive`       | `true`      | Auto-fit the page window to the available width (see below).                        |
+| `compact`          | `null`      | Force the compact prev/next pager on/off; `null` leaves it to `responsive` width.   |
+| `size`             | `'md'`      | `'sm'` shrinks the items for tight spots like a mobile table footer.                |
+| `renderAs`         | `'buttons'` | `'buttons'` (client state) or `'links'` (crawlable `<a href>`, needs `urlForPage`). |
+| `urlForPage`       | `null`      | `(page) => string`; maps a page to its URL for links mode.                          |
+| `totalItems`       | `null`      | Total item count; with `pageSize`, shows the "Showing X–Y of Z" readout.            |
+| `pageSize`         | `null`      | Items per page; used to compute the readout range.                                  |
+| `showJumpTo`       | `false`     | Show a jump-to-page number field.                                                   |
+| `labels`           | `null`      | Per-instance string overrides, merged over the provided set (see Localization).     |
+| `ariaLabel`        | `null`      | Landmark label; `null` uses the label set's `navigation` string.                    |
+
+## Responsive window
+
+With `responsive` on (the default), the paginator adapts to **its own measured
+width** — not a viewport media query, so it reacts to the space it actually sits
+in (a sidebar, a table footer, a modal). As width shrinks it first trims the page
+window to fit one row — shedding sibling pages, then the first/last jumps
+(`siblingCount`/`boundaryCount` act as the _desired_ maximum; it only ever shows
+that many or fewer). Once the width is too tight for a useful number row, it
+**collapses to a compact pager**. Set `responsive="false"` to always render the
+full configured number row.
+
+The compact pager is a range readout followed by previous/next — the item range
+("1–10 of 40") when `totalItems`/`pageSize` are set, otherwise the page position —
+with the readout _before_ the chevrons so a changing digit count grows leftward and
+the controls hold their position across page changes. Because auto-collapse measures
+the paginator's own box, give it a definite
+width where it would otherwise shrink to its content (e.g. a flex item) — stretch it
+(`w-full`, `flex: 1`). Or skip measurement entirely with `[compact]="true"` for a
+Material-style controls row where the paginator sits inline with a page-size select:
+
+```html
+<div class="flex items-center justify-end gap-3">
+  <span>Items per page:</span>
+  <et-form-field appearance="underline" size="sm">
+    <et-select [formField]="pageSize" [clearable]="false"> … </et-select>
+  </et-form-field>
+  <et-pagination [(page)]="page" [totalPages]="totalPages()" [totalItems]="total()" [pageSize]="20" [compact]="true" />
+</div>
+```
+
+The `size="sm"` input independently shrinks the number-row items for explicit
+compact layouts.
 
 ## Headless
 
 `et-pagination` applies the headless `etPagination` directive via `hostDirectives`.
 Use the directive directly for a bespoke layout — it owns the `page` model and
 exposes `items()` (the ordered `PaginationItem[]` of page numbers, jump controls
-and ellipses) plus `goTo(page)` / `first()` / `previous()` / `next()` / `last()`.
+and ellipses — labels already localized) plus `resolvedLabels()` for your own
+readouts, and `goTo(page)` / `first()` / `previous()` / `next()` / `last()`.
 The pure `paginate(options)` function is exported too, for computing the item list
 outside Angular.
 
@@ -155,7 +252,7 @@ With the reactive-forms `QueryForm`, bind through the page control:
 
 The host is a `nav` landmark (`role="navigation"`, `aria-label`). Each control is a
 real `<button>` (or `<a href>` in links mode) with a descriptive `aria-label`
-("Page 3", "Previous page"); the current page sets `aria-current="page"`, and
+("Page 3", "Previous page" — all [localizable](#localization)); the current page sets `aria-current="page"`, and
 unavailable controls (previous on the first page, etc.) are `disabled`. Each item is
 a standard tab stop, so keyboard users move through them with Tab and activate with
 Enter/Space (links also with the usual anchor semantics). Ellipses are inert and

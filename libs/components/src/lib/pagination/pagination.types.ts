@@ -1,3 +1,5 @@
+import { PaginationLabels } from './pagination-labels';
+
 /** The kind of control a {@link PaginationItem} represents. */
 export type PaginationItemType = 'first' | 'previous' | 'page' | 'ellipsis' | 'next' | 'last';
 
@@ -11,7 +13,7 @@ export type PaginationItem = {
   current: boolean;
   /** Whether the control is unavailable (e.g. `'previous'` on the first page, or an ellipsis). */
   disabled: boolean;
-  /** Accessible label, e.g. `'Page 3'`, `'Previous page'`. */
+  /** Accessible label, e.g. `'Page 3'`, `'Previous page'` — from the resolved {@link PaginationLabels}. */
   label: string;
 };
 
@@ -29,4 +31,11 @@ export type PaginateOptions = {
   hideFirstLast?: boolean;
   /** Omit the previous/next controls. @default false */
   hidePreviousNext?: boolean;
+  /**
+   * Overrides for the item `label`s, merged over the default (English) labels. Only the
+   * item-label keys (`first`, `previous`, `next`, `last`, `ellipsis`, `page`) are read here — the
+   * readout labels belong to the component. Accepts a full {@link PaginationLabels} so a resolved
+   * set can be passed straight through.
+   */
+  labels?: Partial<PaginationLabels>;
 };

@@ -1,7 +1,22 @@
-import { Component, input, signal, ViewEncapsulation } from '@angular/core';
+import { Component, computed, input, signal, ViewEncapsulation } from '@angular/core';
 import { ProvideSurfaceDirective } from '@ethlete/core';
+import { PaginationLabels } from '../pagination-labels';
 import { PaginationRenderAs } from '../pagination.component';
 import { PAGINATION_IMPORTS } from '../pagination.imports';
+
+// A full German label set — an app would normally provide this once via `providePaginationLabels`.
+const GERMAN_LABELS: Partial<PaginationLabels> = {
+  navigation: 'Seitennavigation',
+  first: 'Erste Seite',
+  previous: 'Vorherige Seite',
+  next: 'Nächste Seite',
+  last: 'Letzte Seite',
+  ellipsis: 'Weitere Seiten',
+  page: (page) => `Seite ${page}`,
+  range: ({ start, end, totalItems }) => `Zeige ${start}–${end} von ${totalItems}`,
+  compactRange: ({ start, end, totalItems }) => `${start}–${end} von ${totalItems}`,
+  jumpTo: 'Gehe zu Seite',
+};
 
 @Component({
   selector: 'et-sb-pagination',
@@ -19,8 +34,9 @@ import { PAGINATION_IMPORTS } from '../pagination.imports';
         [totalItems]="totalItems() || null"
         [pageSize]="pageSize()"
         [showJumpTo]="showJumpTo()"
+        [labels]="labels()"
       />
-      <p class="mt-4 text-sm opacity-70">Page {{ page() }} of {{ totalPages() }}</p>
+      <p class="text-small mt-4 opacity-70">Page {{ page() }} of {{ totalPages() }}</p>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -36,9 +52,12 @@ export class PaginationStorybookComponent {
   public totalItems = input(0);
   public pageSize = input(20);
   public showJumpTo = input(false);
+  public localized = input(false);
   public surface = input('dark');
 
   protected page = signal(1);
+
+  protected labels = computed(() => (this.localized() ? GERMAN_LABELS : null));
 
   protected urlForPage(page: number) {
     return `?page=${page}`;

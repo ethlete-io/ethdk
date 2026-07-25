@@ -15,6 +15,7 @@ export default {
     totalItems: 0,
     pageSize: 20,
     showJumpTo: false,
+    localized: false,
     surface: 'dark',
   },
   argTypes: {
@@ -27,6 +28,7 @@ export default {
     totalItems: { control: { type: 'number', min: 0 } },
     pageSize: { control: { type: 'number', min: 1 } },
     showJumpTo: { control: 'boolean' },
+    localized: { control: 'boolean' },
     surface: { control: 'text' },
   },
 } as Meta<PaginationStorybookComponent>;
@@ -64,6 +66,18 @@ export const WithRangeAndJump: Story = {
       description: {
         story:
           'Opt into a "Showing X–Y of Z" readout by passing `totalItems` + `pageSize`, and a jump-to-page field with `showJumpTo` — handy for large result sets.',
+      },
+    },
+  },
+};
+
+export const Localized: Story = {
+  args: { localized: true, totalPages: 25, totalItems: 500, pageSize: 20, showJumpTo: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Every built-in string — control `aria-label`s, the range readout and the jump-to label — comes from the paginator's label set. Localize it app-wide with `providePaginationLabels`, or per instance with the `labels` input (as here, in German).",
       },
     },
   },

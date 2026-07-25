@@ -55,4 +55,23 @@ describe('paginate', () => {
 
     expect(items.every((i) => i.type === 'page' || i.type === 'ellipsis')).toBe(true);
   });
+
+  it('labels items in English by default', () => {
+    const items = paginate({ currentPage: 3, totalPages: 10 });
+
+    expect(control(items, 'previous')?.label).toBe('Previous page');
+    expect(items.find((i) => i.page === 3)?.label).toBe('Page 3');
+  });
+
+  it('takes label overrides, falling back to the defaults per key', () => {
+    const items = paginate({
+      currentPage: 3,
+      totalPages: 10,
+      labels: { previous: 'Vorherige Seite', page: (page, totalPages) => `Seite ${page} von ${totalPages}` },
+    });
+
+    expect(control(items, 'previous')?.label).toBe('Vorherige Seite');
+    expect(items.find((i) => i.page === 3)?.label).toBe('Seite 3 von 10');
+    expect(control(items, 'next')?.label).toBe('Next page'); // not overridden
+  });
 });

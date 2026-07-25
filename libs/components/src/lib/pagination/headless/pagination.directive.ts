@@ -1,6 +1,7 @@
 import { computed, Directive, input, model } from '@angular/core';
 import { clamp } from '@ethlete/core';
 import { paginate } from '../paginate';
+import { injectPaginationLabels, PaginationLabels } from '../pagination-labels';
 import { PaginationItem } from '../pagination.types';
 
 /**
@@ -14,10 +15,12 @@ import { PaginationItem } from '../pagination.types';
   exportAs: 'etPagination',
   host: {
     role: 'navigation',
-    '[attr.aria-label]': 'ariaLabel()',
+    '[attr.aria-label]': 'ariaLabel() ?? resolvedLabels().navigation',
   },
 })
 export class PaginationDirective {
+  private injectedLabels = injectPaginationLabels();
+
   /** The active page (1-based). Two-way bindable. */
   public page = model(1);
 
@@ -36,8 +39,22 @@ export class PaginationDirective {
   /** Omit the previous/next controls. @default false */
   public hidePreviousNext = input(false);
 
-  /** Accessible label for the navigation landmark. @default 'Pagination' */
-  public ariaLabel = input('Pagination');
+  /**
+   * Accessible label for the navigation landmark. `null` (the default) uses the resolved
+   * {@link PaginationLabels}' `navigation` label — set this only to distinguish one paginator from
+   * another on the same page ("Search results pages"), not to translate it.
+   */
+  public ariaLabel = input<string | null>(null);
+
+  /**
+   * Per-instance overrides for the paginator's strings, merged over the injected
+   * `PAGINATION_LABELS`. Prefer `providePaginationLabels` for app-wide localization; use this
+   * for a one-off wording. Partial — omitted keys keep the provided/default value.
+   */
+  public labels = input<Partial<PaginationLabels> | null>(null);
+
+  /** The strings in effect here: the injected label set with this instance's `labels` applied. */
+  public resolvedLabels = computed<PaginationLabels>(() => ({ ...this.injectedLabels, ...this.labels() }));
 
   /** The ordered items to render (page numbers, jump controls, ellipsis gaps). */
   public items = computed<PaginationItem[]>(() =>
@@ -48,6 +65,7 @@ export class PaginationDirective {
       boundaryCount: this.boundaryCount(),
       hideFirstLast: this.hideFirstLast(),
       hidePreviousNext: this.hidePreviousNext(),
+      labels: this.resolvedLabels(),
     }),
   );
 

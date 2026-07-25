@@ -2,19 +2,19 @@
   @property --et-pagination-item-size {
     syntax: '<length>';
     inherits: true;
-    initial-value: 2.25rem;
+    initial-value: 36px;
   }
 
   @property --et-pagination-gap {
     syntax: '<length>';
     inherits: true;
-    initial-value: 0.25rem;
+    initial-value: 4px;
   }
 
   @property --et-pagination-radius {
     syntax: '<length>';
     inherits: true;
-    initial-value: 0.5rem;
+    initial-value: 8px;
   }
 
   :where(.et-pagination-host) {
@@ -38,15 +38,26 @@
     display: flex;
   }
 
-  /* Square, compact cells: override the shared button's own padding/radius tokens rather than
-     fighting them — no !important needed since these win on specificity over the button's :where(). */
-  .et-pagination-button {
-    --et-button-padding: 0.25rem 0.4rem;
+  /* Square, compact cells. Scoped through the host so these beat the button's own
+     `.et-button:where([data-size='sm'])` size rule (two classes vs one) — setting
+     `--et-button-padding` from a single-class selector loses to it, which is what used to leave the
+     chevrons 40×34 instead of square. */
+  .et-pagination-host .et-pagination-button {
+    --et-button-padding: 0;
     --et-button-border-radius: var(--et-pagination-radius);
 
+    /* Page numbers grow past the square only when the digits demand it (100+). */
+    padding-inline: 4px;
     min-inline-size: var(--et-pagination-item-size);
     min-block-size: var(--et-pagination-item-size);
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Icon-only controls (first/previous/next/last) hold an exact square: there is no text to grow them,
+     so a fixed inline size keeps every chevron cell identical to the item size. */
+  .et-pagination-host .et-pagination-button--control {
+    padding-inline: 0;
+    inline-size: var(--et-pagination-item-size);
   }
 
   .et-pagination-ellipsis {
@@ -61,22 +72,22 @@
 
   .et-pagination-range {
     margin: 0;
-    font-size: 0.875rem;
+    font-size: 14px;
     color: var(--et-surface-color-muted-solid, CanvasText);
   }
 
   .et-pagination-jump {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
+    gap: 8px;
+    font-size: 14px;
     color: var(--et-surface-color-muted-solid, CanvasText);
   }
 
   .et-pagination-jump-input {
-    inline-size: 4rem;
+    inline-size: 64px;
     min-block-size: var(--et-pagination-item-size);
-    padding-inline: 0.5rem;
+    padding-inline: 8px;
     font: inherit;
     font-variant-numeric: tabular-nums;
     color: var(--et-surface-color-solid, CanvasText);
@@ -90,12 +101,41 @@
     outline-offset: 2px;
   }
 
-  /* Comfortable ~44px tap targets on coarse pointers (phones/tablets). Items still wrap rather than
-     scroll, so first/prev/next/last stay reachable — none hide behind an overflow scroller. */
-  @media (pointer: coarse) {
-    .et-pagination-host {
-      --et-pagination-item-size: 2.75rem;
-      --et-pagination-gap: 0.375rem;
-    }
+  /* Compact density: smaller cells with tighter padding, so the paginator sits closer to table-row
+     height. Deliberately below the comfortable touch size — opt in only where space is tight. */
+  .et-pagination-host:where([data-size='sm']) {
+    --et-pagination-item-size: 28px;
+    --et-pagination-gap: 4px;
+  }
+
+  /* Only the block padding and text size change — inline padding and the square geometry stay with the
+     base rule above, so `sm` cells are smaller squares rather than a different shape. */
+  .et-pagination-host:where([data-size='sm']) .et-pagination-button {
+    --et-button-padding: 2px 0;
+
+    font-size: 13px;
+  }
+
+  /* Compact pager: when the paginator's own width can't hold a comfortable numbered window, it renders
+     just previous/next around a "page X of Y" readout (see `compact` in the component). Driven by the
+     measured container width — not a viewport media query — so it collapses per instance, wherever it
+     sits. The remaining controls grow into roomy touch targets since there are only two of them. */
+  .et-pagination-host:where([data-compact]) {
+    /* Modest chevrons that sit level with a small page-size select — floored so touch stays usable
+       without the bulky whitespace of a full 44px target. */
+    --et-pagination-item-size: 34px;
+    --et-pagination-gap: 2px;
+  }
+
+  .et-pagination-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-block-size: var(--et-pagination-item-size);
+    padding-inline: 6px;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--et-surface-color-muted-solid, CanvasText);
   }
 }

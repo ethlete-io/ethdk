@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import '../../test-helpers';
 import { PaginationDirective } from './headless/pagination.directive';
+import { PaginationRangeContext, providePaginationLabels } from './pagination-labels';
 import { PaginationComponent } from './pagination.component';
 
 const create = (): ComponentFixture<PaginationComponent> => {
@@ -124,5 +126,81 @@ describe('PaginationComponent', () => {
 
     expect(event.defaultPrevented).toBe(false);
     expect(pagination.page()).toBe(1);
+  });
+
+  it('localizes every built-in string via providePaginationLabels', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        providePaginationLabels({
+          navigation: 'Seitennavigation',
+          previous: 'Vorherige Seite',
+          page: (page) => `Seite ${page}`,
+          range: ({ start, end, totalItems }) => `Zeige ${start}–${end} von ${totalItems}`,
+          jumpTo: 'Gehe zu Seite',
+        }),
+      ],
+    });
+
+    const fixture = TestBed.createComponent(PaginationComponent);
+    fixture.componentRef.setInput('totalPages', 25);
+    fixture.componentRef.setInput('page', 3);
+    fixture.componentRef.setInput('totalItems', 500);
+    fixture.componentRef.setInput('pageSize', 20);
+    fixture.componentRef.setInput('showJumpTo', true);
+    fixture.detectChanges();
+
+    const nav = fixture.nativeElement as HTMLElement;
+
+    expect(nav.getAttribute('aria-label')).toBe('Seitennavigation');
+    expect(nav.querySelector('.et-pagination-button[data-type="previous"]')?.getAttribute('aria-label')).toBe(
+      'Vorherige Seite',
+    );
+    expect(nav.querySelector('[aria-current="page"]')?.getAttribute('aria-label')).toBe('Seite 3');
+    expect(nav.querySelector('.et-pagination-range')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Zeige 41–60 von 500',
+    );
+    expect(nav.querySelector('.et-pagination-jump-label')?.textContent?.trim()).toBe('Gehe zu Seite');
+    // untranslated keys keep their English default
+    expect(nav.querySelector('.et-pagination-button[data-type="next"]')?.getAttribute('aria-label')).toBe('Next page');
+  });
+
+  it('lets a `labels` input override the provided set for one instance', () => {
+    TestBed.configureTestingModule({ providers: [providePaginationLabels({ next: 'Vorwärts' })] });
+
+    const fixture = create();
+    fixture.componentRef.setInput('labels', { next: 'Weiter' });
+    fixture.detectChanges();
+
+    const nav = fixture.nativeElement as HTMLElement;
+
+    expect(nav.querySelector('.et-pagination-button[data-type="next"]')?.getAttribute('aria-label')).toBe('Weiter');
+    expect(nav.querySelector('.et-pagination-button[data-type="previous"]')?.getAttribute('aria-label')).toBe(
+      'Previous page',
+    );
+  });
+
+  it('localizes the compact pager readout', () => {
+    const fixture = TestBed.createComponent(PaginationComponent);
+    fixture.componentRef.setInput('totalPages', 4);
+    fixture.componentRef.setInput('page', 1);
+    fixture.componentRef.setInput('compact', true);
+    fixture.componentRef.setInput('totalItems', 40);
+    fixture.componentRef.setInput('pageSize', 10);
+    fixture.componentRef.setInput('labels', {
+      compactRange: ({ start, end, totalItems }: PaginationRangeContext) => `${start}–${end} von ${totalItems}`,
+    });
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.et-pagination-status')?.textContent?.trim()).toBe(
+      '1–10 von 40',
+    );
+  });
+
+  it('keeps an explicit ariaLabel ahead of the label set (multiple paginators on a page)', () => {
+    const fixture = create();
+    fixture.componentRef.setInput('ariaLabel', 'Search results pages');
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).getAttribute('aria-label')).toBe('Search results pages');
   });
 });
