@@ -501,6 +501,17 @@
       }
 
       &[data-appearance='underline'] {
+        /* An underline field is text with a rule beneath it — there is no box to fill, so it must not
+           reserve the box height the filled/box skins need. With the shared per-size min-height a `sm`
+           field left ~12px of dead space between its value and the underline (very visible in a table
+           footer's page-size select). Sizing the floor to the control's own line box puts the rule
+           `--et-form-field-control-padding-block` under the text instead. A floating label still grows
+           the frame past this floor — it adds its own padding-block-start on top. */
+        --et-form-field-control-min-height: calc(
+          var(--et-form-field-control-font-size) * var(--et-form-field-control-line-height) +
+            var(--et-form-field-control-padding-block) * 2
+        );
+
         .et-form-field-control-frame {
           border-top: none;
           border-inline: none;

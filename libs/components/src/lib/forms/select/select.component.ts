@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
+import { booleanAttribute, Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
 import { ColorInteractiveDirective, ProvideColorDirective, createComponentId, injectErrorTheme } from '@ethlete/core';
 import { ChipComponent } from '../../chip';
 import { CHEVRON_ICON, IconDirective, PLUS_ICON, TIMES_ICON, provideIcons } from '../../icon';
@@ -56,6 +56,7 @@ import { SelectVirtualOptionComponent } from './select-virtual-option.component'
         'error',
         'hasMoreItems',
         'pickOnly',
+        'mirrorPanelWidth',
       ],
       outputs: [
         'valueChange',
@@ -83,7 +84,7 @@ export class SelectComponent {
   /** Leading text of the "Create …" row rendered for `customValueCandidate`. */
   public createLabel = input('Create');
   /** Shows a clear (×) control while a value is selected. */
-  public clearable = input(true);
+  public clearable = input(true, { transform: booleanAttribute });
   public clearLabel = input('Clear');
   protected mixedLabelId = createComponentId('et-select-mixed-label');
 

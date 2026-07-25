@@ -97,6 +97,11 @@ Field shell variants (as `data-*`-reflected inputs on `et-form-field`):
 | `labelMode`  | `'static' \| 'inline' \| 'floating-inside' \| 'floating-outside'` | `'static'`      |
 | `size`       | `'sm' \| 'md' \| 'lg'`                                            | `'md'`          |
 
+`appearance: 'underline'` is the compact one: it has no box to fill, so its frame is
+content-height and the rule sits right under the value (`sm` renders at 27px vs 42px for
+`box`). That density also means a smaller tap target — prefer `box`/`filled`, or a larger
+`size`, where touch matters more than compactness.
+
 Only `fill: 'filled'` paints a surface behind the control, so only a filled field
 raises the surface elevation for its contents (and for overlays anchored inside
 it, such as the rich text editor's autocomplete). A `transparent` field stays
