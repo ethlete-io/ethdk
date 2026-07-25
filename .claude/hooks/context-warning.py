@@ -25,10 +25,13 @@ CRITICAL_FRACTION = 0.85
 # from the transcript — first match wins. Edit these as model windows change;
 # anything unmatched falls back to DEFAULT_WINDOW.
 CONTEXT_WINDOWS = (
+    ("opus-5", 1_000_000),
     ("opus-4-8", 1_000_000),
     ("sonnet-4-5", 1_000_000),
     ("sonnet-5", 1_000_000),
     ("fable-5", 1_000_000),
+    # Generic fallbacks — keep these last: the first substring match wins, so a bare
+    # "opus"/"sonnet" entry placed above would shadow every versioned entry below it.
     ("opus", 200_000),
     ("sonnet", 200_000),
     ("haiku", 200_000),
