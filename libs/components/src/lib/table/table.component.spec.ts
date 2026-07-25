@@ -1,4 +1,4 @@
-import { Component, computed, signal, TemplateRef, viewChild } from '@angular/core';
+import { Component, computed, TemplateRef, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RuntimeError } from '@ethlete/core';
 import '../../test-helpers';
@@ -7,7 +7,7 @@ import { TABLE_ERROR_CODES } from './table-errors';
 import { filterRows } from './table-filter';
 import { sortRows } from './table-sort';
 import { TableComponent } from './table.component';
-import { TABLE_IMPORTS } from './table.imports';
+import { TABLE_IMPORTS, TABLE_SELECTION_IMPORTS } from './table.imports';
 import { AnyTableColumn } from './table.types';
 
 type Person = { id: number; name: string; role: string };
@@ -245,61 +245,10 @@ describe('TableComponent', () => {
       expect(fixture.componentInstance.rows()).toHaveLength(3);
     });
 
-    // filterOptionsFor / search / provider are protected template helpers — reach them via a cast.
-    type FilterHelpers = {
-      filterOptionsFor: (column: AnyTableColumn<Person>) => { label: string; value: unknown }[];
-      setFilterSearchQuery: (column: AnyTableColumn<Person>, query: string) => void;
-      filterLoading: (column: AnyTableColumn<Person>) => boolean;
-    };
-    const helpersOf = (table: TableComponent<Person>) => table as unknown as FilterHelpers;
+    it('renders no filter UI without the opt-in feature (the menu system stays out of the bundle)', () => {
+      const fixture = create(filterableColumns(), UNSORTED);
 
-    it('narrows a static option list by the in-menu search text', () => {
-      const cols = tableColumns<Person>([
-        {
-          key: 'role',
-          value: (p) => p.role,
-          filterable: true,
-          filterSearch: true,
-          filterOptions: [
-            { label: 'Admin', value: 'Admin' },
-            { label: 'Editor', value: 'Editor' },
-            { label: 'Viewer', value: 'Viewer' },
-          ],
-        },
-      ]);
-      const table = helpersOf(create(cols, UNSORTED).componentInstance);
-      const column = cols[0];
-
-      expect(table.filterOptionsFor(column).map((o) => o.label)).toEqual(['Admin', 'Editor', 'Viewer']);
-
-      table.setFilterSearchQuery(column, 'ed');
-      expect(table.filterOptionsFor(column).map((o) => o.label)).toEqual(['Editor']);
-    });
-
-    it('reads options and loading from an async provider (and forwards search to setQuery)', () => {
-      const query = signal('');
-      const setQuery = vi.fn((next: string) => query.set(next));
-      const cols = tableColumns<Person>([
-        {
-          key: 'role',
-          value: (p) => p.role,
-          filterable: true,
-          filterOptions: {
-            options: computed(() => (query() ? [{ label: 'Match', value: 'm' }] : [])),
-            loading: signal(true),
-            setQuery,
-          },
-        },
-      ]);
-      const table = helpersOf(create(cols, UNSORTED).componentInstance);
-      const column = cols[0];
-
-      expect(table.filterOptionsFor(column)).toEqual([]);
-      expect(table.filterLoading(column)).toBe(true);
-
-      table.setFilterSearchQuery(column, 'x');
-      expect(setQuery).toHaveBeenCalledWith('x');
-      expect(table.filterOptionsFor(column)).toEqual([{ label: 'Match', value: 'm' }]);
+      expect((fixture.nativeElement as HTMLElement).querySelector('.et-table-filter-trigger')).toBeNull();
     });
   });
 
@@ -523,68 +472,6 @@ describe('TableComponent', () => {
     });
   });
 
-  describe('selection', () => {
-    // Exercises the selection logic directly (the rendered checkbox column is verified in Storybook).
-    const setup = (data = UNSORTED) => {
-      const fixture = create(columns(), data);
-      fixture.componentRef.setInput('rowKey', (row: Person) => row.id);
-      fixture.detectChanges();
-
-      return fixture.componentInstance;
-    };
-
-    it('selects and deselects a single row (keyed by rowKey)', () => {
-      const table = setup();
-      const row = UNSORTED[0]!;
-
-      expect(table.isSelected(row)).toBe(false);
-
-      table.setSelected(row, true);
-      expect(table.isSelected(row)).toBe(true);
-      expect(table.selection().size).toBe(1);
-
-      table.setSelected(row, false);
-      expect(table.isSelected(row)).toBe(false);
-    });
-
-    it('toggleAll selects every row, then clears', () => {
-      const table = setup();
-
-      expect(table.isAllSelected()).toBe(false);
-
-      table.toggleAll();
-      expect(table.isAllSelected()).toBe(true);
-      expect(table.selectedRows()).toHaveLength(UNSORTED.length);
-
-      table.toggleAll();
-      expect(table.selection().size).toBe(0);
-    });
-
-    it('reports a partial selection as indeterminate', () => {
-      const table = setup();
-
-      table.setSelected(UNSORTED[0]!, true);
-
-      expect(table.isPartiallySelected()).toBe(true);
-      expect(table.isAllSelected()).toBe(false);
-    });
-
-    it('excludes rows blocked by selectableRow from select-all', () => {
-      const fixture = create(columns(), UNSORTED);
-      fixture.componentRef.setInput('rowKey', (row: Person) => row.id);
-      fixture.componentRef.setInput('selectableRow', (row: Person) => row.role !== 'Viewer');
-      fixture.detectChanges();
-      const table = fixture.componentInstance;
-
-      table.toggleAll();
-
-      // UNSORTED: Charlie (Viewer), Ada (Admin), Bob (Editor) → only the two non-Viewers select
-      expect(table.selectedRows()).toHaveLength(2);
-      expect(table.selectedRows().every((row) => row.role !== 'Viewer')).toBe(true);
-      expect(table.isAllSelected()).toBe(true);
-    });
-  });
-
   describe('sticky columns & footer', () => {
     it('hasStickyStart reflects a start-pinned column; end offsets are null when unpinned', () => {
       const cols = tableColumns<Person>([
@@ -608,76 +495,6 @@ describe('TableComponent', () => {
 
       // read the computed without rendering (the dummy template is never instantiated)
       expect(fixture.componentInstance.hasFooter()).toBe(true);
-    });
-  });
-
-  describe('virtualization', () => {
-    const many: Person[] = Array.from({ length: 100 }, (_, index) => ({
-      id: index,
-      name: `Person ${index}`,
-      role: 'Viewer',
-    }));
-
-    // jsdom has no layout — back the geometry the virtual window reads with plain values.
-    const mockScrollGeometry = (host: HTMLElement, viewportHeight: number) => {
-      let scrollTop = 0;
-
-      Object.defineProperty(host, 'clientHeight', { value: viewportHeight, configurable: true });
-      Object.defineProperty(host, 'scrollTop', {
-        get: () => scrollTop,
-        set: (value: number) => {
-          scrollTop = Math.max(0, value);
-        },
-        configurable: true,
-      });
-    };
-
-    it('renders every row and keeps a zero index offset while virtual scroll is off', () => {
-      const { componentInstance: table } = create(columns(), many);
-
-      expect(table.renderedRows()).toHaveLength(100);
-      expect(table.rowIndexOffset()).toBe(0);
-    });
-
-    it('renders only a window of rows when virtual scroll is on', () => {
-      const fixture = create(columns(), many);
-      mockScrollGeometry(fixture.nativeElement, 240);
-
-      fixture.componentRef.setInput('virtualScroll', true);
-      fixture.componentRef.setInput('estimateRowHeight', 40);
-      fixture.componentRef.setInput('overscan', 2);
-      fixture.detectChanges();
-
-      const table = fixture.componentInstance;
-
-      // 240px viewport / 40px rows = 6 visible + 2 overscan below, starting at the top
-      expect(table.renderedRows().length).toBe(8);
-      expect(table.rowIndexOffset()).toBe(0);
-      expect(table.virtualWindow.paddingTop()).toBe(0);
-      expect(table.virtualWindow.paddingBottom()).toBe((100 - 8) * 40);
-    });
-
-    it('shifts the window and the index offset as the container scrolls', () => {
-      const fixture = create(columns(), many);
-      const host: HTMLElement = fixture.nativeElement;
-      mockScrollGeometry(host, 240);
-
-      fixture.componentRef.setInput('virtualScroll', true);
-      fixture.componentRef.setInput('estimateRowHeight', 40);
-      fixture.componentRef.setInput('overscan', 2);
-      fixture.detectChanges();
-
-      host.scrollTop = 400;
-      host.dispatchEvent(new Event('scroll'));
-      fixture.detectChanges();
-
-      const table = fixture.componentInstance;
-      const { start } = table.virtualWindow.range();
-
-      expect(start).toBeGreaterThan(0);
-      expect(table.rowIndexOffset()).toBe(start);
-      // the rendered slice lines up with the window over the source rows
-      expect(table.renderedRows()[0]).toBe(many[start]);
     });
   });
 
@@ -734,16 +551,12 @@ describe('TableComponent', () => {
   describe('row interaction', () => {
     @Component({
       template: `
-        <et-table
-          [columns]="cols()"
-          [data]="data"
-          [selectable]="true"
-          [rowInteractive]="true"
-          (rowClick)="clicked = $event"
-        ></et-table>
+        <et-table [columns]="cols()" [data]="data" (rowClick)="clicked = $event" rowInteractive>
+          <et-table-selection />
+        </et-table>
         <ng-template #actionCell><button class="act" type="button">Act</button></ng-template>
       `,
-      imports: [TABLE_IMPORTS],
+      imports: [TABLE_IMPORTS, TABLE_SELECTION_IMPORTS],
     })
     class HostComponent {
       clicked: Person | null = null;

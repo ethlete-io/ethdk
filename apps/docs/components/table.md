@@ -14,6 +14,34 @@ and [virtualization](#virtualization) as needed.
 import { TABLE_IMPORTS, tableColumns } from '@ethlete/components';
 ```
 
+## Opt-in features
+
+`TABLE_IMPORTS` is deliberately lean: typed rows and cells, sort headers, sticky
+columns, the empty state and the footer slot. Anything that would drag a heavier
+dependency in ships as its own component — import its array and drop the element
+inside the table. A table that doesn't import a feature never pays for its code.
+
+| Feature        | Import                         | Element                       | Brings in                                 |
+| -------------- | ------------------------------ | ----------------------------- | ----------------------------------------- |
+| Filter menus   | `TABLE_FILTER_IMPORTS`         | `<et-table-filters />`        | the [menu](/components/menu) system       |
+| Column resize  | `TABLE_RESIZE_IMPORTS`         | `<et-table-resize />`         | the drag primitives                       |
+| Column reorder | `TABLE_REORDER_IMPORTS`        | `<et-table-reorder />`        | the drag primitives                       |
+| Row selection  | `TABLE_SELECTION_IMPORTS`      | `<et-table-selection />`      | the [checkbox](/components/choice-inputs) |
+| Virtual scroll | `TABLE_VIRTUAL_SCROLL_IMPORTS` | `<et-table-virtual-scroll />` | the virtual-window utility                |
+
+```html
+<et-table [data]="rows()" [columns]="columns">
+  <et-table-filters />
+  <et-table-resize />
+</et-table>
+```
+
+Features register themselves with the table, and the serializable state they drive
+(filter values, column widths) lives on the table — so
+[`state()` / `restoreState()`](#table-state) round-trip it whether or not the feature is
+imported. Sorting, row expansion, sticky columns, the footer slot and the empty state are
+part of the base: they cost nothing beyond the table itself.
+
 ## Usage
 
 Declare columns with `tableColumns<T>()` — binding the row type once makes every
@@ -61,15 +89,7 @@ typed `value` accessor is the only link between a column and the row.
 | `expandedRowTemplate` | —            | Detail template; setting it enables [row expansion](#row-expansion). Context: `{ $implicit: row }`.       |
 | `expandableRow`       | all rows     | `(row: T) => boolean` gating which rows can expand.                                                       |
 | `expandedKeys`        | `new Set()`  | Two-way bindable set of expanded row keys (by `rowKey`).                                                  |
-| `selectable`          | `false`      | Show a leading checkbox column for multi-row selection. See [Selection](#selection).                      |
-| `selection`           | `new Set()`  | Two-way bindable set of selected row keys (by `rowKey`).                                                  |
-| `selectableRow`       | all rows     | `(row: T) => boolean` gating which rows can be selected.                                                  |
 | `rowInteractive`      | `false`      | Make rows clickable, emitting `(rowClick)`. See [Row navigation](#row-navigation).                        |
-| `reorderable`         | `false`      | Allow reordering columns by dragging their headers. See [below](#column-visibility-reordering).           |
-| `resizableColumns`    | `false`      | Let users drag a header grip to resize columns. See [below](#resizable-columns).                          |
-| `virtualScroll`       | `false`      | Render only the rows near the viewport. See [Virtualization](#virtualization).                            |
-| `estimateRowHeight`   | `48`         | Row height (px) assumed before a real row is measured — tune to your rows for a stable first paint.       |
-| `overscan`            | `6`          | Rows kept rendered just outside the viewport on each side, to hide scroll flicker.                        |
 
 ## Appearance & density
 
@@ -265,9 +285,25 @@ and tree-shakable, for custom flows where you sort outside the table.
 
 ## Filtering
 
-Mark columns `filterable` and give them `filterOptions`; the header renders a
-filter menu (a multi-select checkbox list, built on [`menu`](/components/menu))
-that drives the two-way `filters` state (`{ key, values }[]`):
+Filter menus are **opt-in**: they carry the whole [`menu`](/components/menu) system, so
+they live in a separate component rather than in the base table. Import
+`TABLE_FILTER_IMPORTS` and drop `<et-table-filters />` inside the table — a table
+without it never pulls the menu into your bundle.
+
+```ts
+import { TABLE_FILTER_IMPORTS, TABLE_IMPORTS } from '@ethlete/components';
+```
+
+```html
+<et-table [data]="users()" [columns]="columns">
+  <et-table-filters />
+</et-table>
+```
+
+Then mark columns `filterable` and give them `filterOptions`; each such header renders a
+filter menu (a multi-select checkbox list) that drives the two-way `filters` state
+(`{ key, values }[]`). Filter state lives on the table itself, so `state()` /
+`restoreState()` round-trip filter values whether or not the feature is imported:
 
 ```ts
 columns = tableColumns<User>([
@@ -315,7 +351,9 @@ columns = tableColumns<User>([
 ```
 
 The menu wires its search to the provider's `setQuery`, shows its `loading`, and
-renders a **Load more** button when `hasMore` is true.
+renders a **Load more** button when `hasMore` is true. (A provider implies a search box
+even without `filterSearch`.) Override the "no options" text with
+`<et-table-filters [emptyLabel]="'Keine Optionen'" />`.
 
 ## Server-side rows (query)
 
@@ -360,10 +398,15 @@ share one client-agnostic core (`createTableRowsSource`), so they stay in lockst
 ## Row expansion
 
 Provide an `expandedRowTemplate` and the table prepends an expander column; each
-row toggles a **lazily-instantiated** full-width detail row (revealed with a
-reduced-motion-aware height animation). Nest another `<et-table>` in the detail
-template for **sub-tables**. Set `rowKey` so expansion state survives data
-changes; gate rows with `expandableRow`.
+row toggles a **lazily-instantiated** full-width detail row. Nest another
+`<et-table>` in the detail template for **sub-tables**. Set `rowKey` so expansion
+state survives data changes; gate rows with `expandableRow`.
+
+The detail row reveals its content with a reduced-motion-aware `transform`/`opacity`
+animation (compositor-only, so it stays smooth on a long table on a phone), and only
+for the row the user just toggled — a detail row that re-mounts because the rows
+changed (paging, sorting, a refetch) appears instantly rather than replaying the
+reveal.
 
 ```html
 <et-table [data]="orders()" [columns]="columns" [rowKey]="orderId" [expandedRowTemplate]="detail" />
@@ -380,19 +423,28 @@ table instance.
 
 ## Selection
 
-Set `selectable` and the table prepends a checkbox column. The header checkbox
-selects or clears every selectable row (indeterminate when only some are), and
-`selection` is a two-way `Set` of selected row keys — set a `rowKey` so selection
-survives sorting, filtering and data changes.
+Selection is **opt-in**: import `TABLE_SELECTION_IMPORTS` and drop
+`<et-table-selection />` inside the table to prepend a checkbox column. Its header
+checkbox selects or clears every selectable row (indeterminate when only some are), and
+`selection` is a two-way `Set` of selected row keys — set the table's `rowKey` so a
+selection survives sorting, filtering and data changes.
 
 ```html
-<et-table [(selection)]="selected" [data]="users()" [columns]="columns" [rowKey]="userId" [selectable]="true" />
+<et-table [data]="users()" [columns]="columns" [rowKey]="userId">
+  <et-table-selection [(selection)]="selected" />
+</et-table>
 ```
 
-Gate which rows can be selected with `selectableRow`. On the instance:
-`isSelected(row)`, `setSelected(row, checked)`, `toggleAll()`, and the
-`selectedRows()` / `isAllSelected()` / `isPartiallySelected()` signals. Select-all
-and the "all/some" state consider only the rows currently in view (after
+| Input on `et-table-selection` | Default             | Description                                              |
+| ----------------------------- | ------------------- | -------------------------------------------------------- |
+| `selection`                   | `new Set()`         | Two-way bindable set of selected row keys.               |
+| `selectableRow`               | all rows            | `(row: T) => boolean` gating which rows can be selected. |
+| `selectAllLabel`              | `'Select all rows'` | Accessible label for the header checkbox.                |
+| `rowLabel`                    | `'Select row'`      | Accessible label for a row's checkbox.                   |
+
+On the feature instance: `isSelected(row)`, `setSelected(row, checked)`, `toggleAll()`,
+and the `selectedRows()` / `isAllSelected()` / `isPartiallySelected()` signals.
+Select-all and the "all/some" state consider only the rows currently in view (after
 filtering), while `selection` keeps keys for filtered-out rows.
 
 ## Row navigation
@@ -437,6 +489,12 @@ Pin columns to an edge with `sticky: 'start' | 'end'` — they stay put while th
 table scrolls horizontally. Pin from the edges (leading columns to `'start'`,
 trailing to `'end'`); give pinned columns explicit widths so the table has
 something to scroll.
+
+On a viewport too narrow for the pinned columns to leave room — where they would
+otherwise cover the whole width and horizontal scrolling would reveal nothing —
+pinning is **automatically suspended** and every column scrolls normally. It
+resumes once there's room again, so the same table works on desktop and mobile
+without a breakpoint of your own.
 
 ```ts
 columns = tableColumns<User>([
@@ -489,11 +547,21 @@ to the adapter's `page` / `setPage`, and let the page-size select drive the quer
 @Component({
   template: `
     <et-table [data]="rows.rows()" [columns]="columns" sortMode="server" style="block-size: 32rem">
-      <div etTableFooter>
-        <et-form-field>
-          <et-select [formField]="pageSizeForm.pageSize" [clearable]="false" />
+      <!-- Material-style controls row: label + page-size select + range + prev/next, right-aligned. -->
+      <div class="flex flex-wrap items-center justify-end gap-3" etTableFooter>
+        <span>Items per page:</span>
+        <et-form-field appearance="underline" size="sm">
+          <!-- a page-size trigger is narrower than its option rows, so let the panel size itself -->
+          <et-select [formField]="pageSizeForm.pageSize" [clearable]="false" [mirrorPanelWidth]="false" />
         </et-form-field>
-        <et-pagination [page]="rows.page()" [totalPages]="totalPages()" (pageChange)="rows.setPage($event)" />
+        <et-pagination
+          [page]="rows.page()"
+          [totalPages]="totalPages()"
+          [totalItems]="rows.total()"
+          [pageSize]="pageSizeForm.pageSize().value()"
+          [compact]="true"
+          (pageChange)="rows.setPage($event)"
+        />
       </div>
     </et-table>
   `,
@@ -505,11 +573,14 @@ export class UsersComponent {
 }
 ```
 
-The slot is layout-only: it's a flex row (`justify-content: space-between`) that
-wraps on narrow tables. See the "Pagination & page size" story for a runnable
-client-side example. For the paginator's own options (links mode, paged SEO, the
-"Showing X–Y of Z" readout, jump-to-page), see the
-[pagination guide](/components/pagination).
+The slot is layout-only, so its arrangement is yours: the example above is a
+right-aligned Material-style row with an external, translatable "Items per page:"
+label and an `underline` select (`[mirrorPanelWidth]="false"` keeps its option rows
+readable — a page-size trigger is narrower than "20 ✓"). In a table with a bounded
+`block-size`, the bar sits at the bottom of the box even when the rows don't fill it. With `[compact]="true"` the paginator renders as a
+range readout plus previous/next chevrons that sit inline and hold their position
+across page changes. For its other options (links mode, paged SEO, jump-to-page,
+the width-driven auto-collapse), see the [pagination guide](/components/pagination).
 
 ## Empty state
 
@@ -524,12 +595,23 @@ default `emptyLabel` text by projecting `[etTableEmpty]` content:
 
 ## Column visibility & reordering
 
-Set `reorderable` to let users **drag column headers** sideways to reorder them.
+Drag-to-reorder is **opt-in**: import `TABLE_REORDER_IMPORTS` and drop
+`<et-table-reorder />` inside the table to let users **drag column headers** sideways.
 A floating ghost of the header follows the pointer and a drop indicator marks
 where the column will land; the table itself doesn't move until you drop, and the
 columns then animate into their new positions (respecting reduced-motion). It's
 pure column-order state — no DOM surgery, since the grid re-lays-out from the
 order.
+
+```html
+<et-table [data]="rows()" [columns]="columns">
+  <et-table-reorder />
+</et-table>
+```
+
+[Pinned columns](#sticky-columns-footer) are excluded from dragging — they anchor
+to an edge, so moving one into the scrolling middle would strand the layout —
+though `moveColumn` can still reposition anything programmatically.
 
 Column **order and visibility** are also fully programmatic, so you can build a
 "columns" chooser with the [menu](/components/menu):
@@ -546,42 +628,51 @@ by `restoreState()`.
 
 ## Resizable columns
 
-Set `resizableColumns` and each header grows a grip on its trailing edge. Drag it
-to resize the column; **double-click** it to reset that column to its default
-width.
+Resizing is **opt-in**: import `TABLE_RESIZE_IMPORTS` and drop `<et-table-resize />`
+inside the table, and each header grows a grip on its trailing edge. Drag it to resize
+the column; **double-click** it to reset that column to its default width.
 
 ```html
-<et-table [data]="rows()" [columns]="columns" [resizableColumns]="true" />
+<et-table [data]="rows()" [columns]="columns">
+  <et-table-resize />
+</et-table>
 ```
 
 Resized widths are pixel overrides on top of each column's declared `width` (or the
-default `minmax(0, 1fr)` track), clamped to a sensible minimum. They're captured by
+default `minmax(0, 1fr)` track), clamped between a usable minimum and the table's
+own width (a column can't be dragged wider than the viewport). They're captured by
 [`state()`](#table-state) as `TableColumnState.width` and restored by
 `restoreState()`, so a user's column widths persist alongside order, visibility,
 sort and filters. Resizing **composes with reordering** — the grip is its own drag
 handle that swallows its pointer gesture, so grabbing it resizes instead of starting
-a header reorder.
+a header reorder, and because widths are keyed by column they travel with a column
+when it's moved. On touch pointers the grip's hit area widens so it's grabbable with
+a finger.
 
 ## Virtualization
 
-For long lists, set `virtualScroll` so the table renders only the rows near the
-viewport — a few dozen `<div role="row">`s stay in the DOM no matter how many
-rows `data` holds, with block-padding spacers standing in for the rest so the
-scrollbar still reflects the full count.
+For long lists, import `TABLE_VIRTUAL_SCROLL_IMPORTS` and drop
+`<et-table-virtual-scroll />` inside the table: only the rows near the viewport render —
+a few dozen `<div role="row">`s stay in the DOM no matter how many rows `data` holds,
+with block-padding spacers standing in for the rest so the scrollbar still reflects the
+full count.
 
 As always, the table is its own scroll container — give it a bounded height so the
 window has a viewport to track:
 
 ```html
-<et-table [data]="rows()" [columns]="columns" [virtualScroll]="true" style="block-size: 24rem" />
+<et-table [data]="rows()" [columns]="columns" style="block-size: 24rem">
+  <et-table-virtual-scroll />
+</et-table>
 ```
 
 <StoryEmbed id="components-table--virtualized" height="440px" />
 
 The sticky header pins to the table's own scroll container, so it keeps working.
-Row heights are measured from a rendered row and assumed uniform; set
-`estimateRowHeight` close to your real row height for the steadiest first paint,
-and raise `overscan` if fast scrolling reveals blank rows before they render.
+Row heights are measured from a rendered row and assumed uniform; set the feature's
+`estimateRowHeight` (default `48`) close to your real row height for the steadiest first
+paint, and raise `overscan` (default `6`) if fast scrolling reveals blank rows before they
+render.
 
 Virtualization composes with [row expansion](#row-expansion) — expanded rows
 render within the window as you scroll to them. Because the window assumes a
@@ -662,7 +753,12 @@ surface scope — header/body text from `--et-surface-color-*-solid`, separators
 from `--et-surface-border-solid`, and the row hover tint from
 `--et-surface-interaction-solid`. Cell padding is tunable via the
 `--et-table-cell-padding-block` / `--et-table-cell-padding-inline` custom
-properties.
+properties, and the leading utility columns via `--et-table-expander-width` /
+`--et-table-select-width` (both `32px`, sized to their control — the expander button
+and the checkbox keep their own size even if you set these narrower).
+
+All of the table's metrics are px, not `rem`, so they don't shift with the host app's
+root font size.
 
 ## Error codes
 

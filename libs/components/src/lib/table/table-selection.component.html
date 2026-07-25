@@ -1,0 +1,19 @@
+<!-- Both templates are stamped into the table's leading checkbox column (see registerLeadColumn). -->
+<ng-template #selectionHeaderCell>
+  <et-checkbox
+    [checked]="isAllSelected()"
+    [indeterminate]="isPartiallySelected()"
+    [attr.aria-label]="selectAllLabel()"
+    (checkedChange)="toggleAll()"
+  />
+</ng-template>
+
+<ng-template #selectionBodyCell let-row>
+  @if (canSelect(row)) {
+    <et-checkbox
+      [checked]="isSelected(row)"
+      [attr.aria-label]="rowLabel()"
+      (checkedChange)="setSelected(row, $event)"
+    />
+  }
+</ng-template>

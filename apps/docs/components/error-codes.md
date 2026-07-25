@@ -307,6 +307,7 @@ Runtime errors from the bracket data pipeline and layout engine. They indicate a
 
 ## Table (ET35xx)
 
-| Code     | Cause                             | Fix                                                  |
-| -------- | --------------------------------- | ---------------------------------------------------- |
-| `ET3500` | Two columns share the same `key`. | Give every column a unique `key` (keys drive state). |
+| Code     | Cause                                                                     | Fix                                                  |
+| -------- | ------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `ET3500` | Two columns share the same `key`.                                         | Give every column a unique `key` (keys drive state). |
+| `ET3501` | A table feature (e.g. `<et-table-filters>`) sits outside an `<et-table>`. | Move it inside the table element it belongs to.      |

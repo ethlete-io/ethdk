@@ -1,0 +1,53 @@
+@layer components {
+  /* The table projects feature components so their views attach to the DOM; the host itself must take
+     no space and create no grid track (its templates render inside the table's own cells). */
+  et-table-selection {
+    position: absolute;
+    inline-size: 0;
+    block-size: 0;
+  }
+
+  /* Leading checkbox column for multi-selection. The checkbox's own size token (inherited) is dialed
+     down so it sits in scale with the table text rather than the 20px form default. */
+  .et-table-select-cell {
+    justify-content: center;
+    padding-inline: 4px;
+    --et-checkbox-size: 16px;
+
+    /* Keep the control at its own size, never shrunk by the track. */
+    et-checkbox {
+      flex: none;
+    }
+  }
+
+  /* Selected rows carry a persistent accent tint (opaque variant on pinned cells, like stripe/hover). */
+  .et-table-row--selected .et-table-cell {
+    background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 12%, transparent);
+  }
+
+  .et-table-row--selected .et-table-cell.et-table-sticky-start,
+  .et-table-row--selected .et-table-cell.et-table-sticky-end {
+    background: color-mix(
+      in srgb,
+      var(--et-theme-color-primary-solid, gray) 12%,
+      var(--et-surface-background-solid, Canvas)
+    );
+  }
+
+  /* A hovered selected row keeps its accent (slightly stronger) rather than reverting to the grey the
+     base table paints on hover. */
+  @media (hover: hover) {
+    .et-table-row--selected:hover .et-table-cell {
+      background: color-mix(in srgb, var(--et-theme-color-primary-solid, gray) 18%, transparent);
+    }
+
+    .et-table-row--selected:hover .et-table-cell.et-table-sticky-start,
+    .et-table-row--selected:hover .et-table-cell.et-table-sticky-end {
+      background: color-mix(
+        in srgb,
+        var(--et-theme-color-primary-solid, gray) 18%,
+        var(--et-surface-background-solid, Canvas)
+      );
+    }
+  }
+}

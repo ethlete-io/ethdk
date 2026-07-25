@@ -6,10 +6,7 @@
 >
   @if (hasGroups()) {
     <div class="et-table-group-row" role="row">
-      @if (selectable()) {
-        <div class="et-table-group-cell" aria-hidden="true"></div>
-      }
-      @if (expandable()) {
+      @for (lead of leadColumns(); track lead.key) {
         <div class="et-table-group-cell" aria-hidden="true"></div>
       }
       @for (group of headerGroups(); track group.key) {
@@ -30,31 +27,22 @@
   }
 
   <div class="et-table-header-row" role="row">
-    @if (selectable()) {
+    <!-- Leading utility columns (selection from a feature, the expander when expansion is on). The
+         table owns the cell chrome; the feature only supplies what goes inside. -->
+    @for (lead of leadColumns(); track lead.key) {
       <div
-        #selectHeaderCell
+        #leadHeaderCell
+        [class]="lead.cellClass"
         [class.et-table-sticky-start]="hasStickyStart()"
-        [style.inset-inline-start.px]="hasStickyStart() ? 0 : null"
-        class="et-table-header-cell et-table-select-cell"
+        [style.inset-inline-start.px]="hasStickyStart() ? leadStickyStart(lead.key) : null"
+        [attr.aria-hidden]="lead.headerCell?.() ? null : 'true'"
+        class="et-table-header-cell"
         role="columnheader"
       >
-        <et-checkbox
-          [checked]="isAllSelected()"
-          [indeterminate]="isPartiallySelected()"
-          (checkedChange)="toggleAll()"
-          aria-label="Select all rows"
-        />
+        @if (lead.headerCell?.(); as headerTemplate) {
+          <ng-container *ngTemplateOutlet="headerTemplate" />
+        }
       </div>
-    }
-    @if (expandable()) {
-      <div
-        #expanderHeaderCell
-        [class.et-table-sticky-start]="hasStickyStart()"
-        [style.inset-inline-start.px]="hasStickyStart() ? expanderStickyOffset() : null"
-        class="et-table-header-cell et-table-expander-cell"
-        role="columnheader"
-        aria-hidden="true"
-      ></div>
     }
     @for (column of visibleColumns(); track column.key) {
       <div
@@ -62,112 +50,66 @@
         [attr.data-align]="column.align ?? 'start'"
         [attr.data-col-key]="column.key"
         [attr.aria-sort]="column.sortable ? ariaSort(column.key) : null"
-        [class.et-table-header-cell--reorderable]="reorderable()"
-        [class.et-table-header-cell--dragging]="draggingColumn() === column.key"
-        [class.et-table-sticky-start]="column.sticky === 'start'"
-        [class.et-table-sticky-end]="column.sticky === 'end'"
+        [class.et-table-sticky-start]="effectiveSticky(column) === 'start'"
+        [class.et-table-sticky-end]="effectiveSticky(column) === 'end'"
         [style.inset-inline-start.px]="stickyStart(column.key)"
         [style.inset-inline-end.px]="stickyEnd(column.key)"
-        [disabled]="!reorderable()"
-        (dragStarted)="startColumnDrag(column.key, $event)"
-        (dragMoved)="updateColumnDrag($event)"
-        (dragEnded)="endColumnDrag()"
         class="et-table-header-cell"
         role="columnheader"
-        etDragHandle
       >
         @if (column.headerCell) {
           <ng-container *ngTemplateOutlet="column.headerCell; context: { $implicit: column.header }" />
         } @else if (column.sortable) {
           <button (click)="toggleSort(column.key)" class="et-table-sort-button" type="button">
             <span class="et-table-cell-text">{{ column.header }}</span>
-            <span
+            <svg
               [attr.data-direction]="sortDirection(column.key)"
-              class="et-table-sort-indicator"
+              class="et-table-sort-icon"
+              viewBox="0 0 16 16"
+              fill="none"
               aria-hidden="true"
-            ></span>
+            >
+              <path
+                class="et-table-sort-icon-up"
+                d="M4.5 7 8 3.5 11.5 7"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                class="et-table-sort-icon-down"
+                d="M4.5 9 8 12.5 11.5 9"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
           </button>
         } @else {
           <span class="et-table-cell-text">{{ column.header }}</span>
         }
 
-        @if (column.filterable) {
-          <div class="et-table-filter" etMenu>
-            <button
-              [attr.data-active]="isFiltered(column.key)"
-              [attr.aria-label]="'Filter ' + (column.header ?? column.key)"
-              class="et-table-filter-trigger"
-              etMenuTrigger
-              type="button"
-            >
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                <path d="M1 2h14l-5.5 6.5V14L6.5 12V8.5z" />
-              </svg>
-            </button>
-
-            <ng-template etMenuSurface>
-              <et-menu>
-                @if (column.filterSearch || filterProviderOf(column)) {
-                  <input
-                    [query]="filterSearchQuery(column.key)"
-                    [loading]="filterLoading(column)"
-                    (queryChange)="setFilterSearchQuery(column, $event)"
-                    etMenuSearch
-                    placeholder="Search…"
-                  />
-                }
-
-                <et-menu-checkbox-group
-                  [value]="filterValuesFor(column.key)"
-                  (valueChange)="setFilterValues(column.key, asArray($event))"
-                >
-                  @for (option of filterOptionsFor(column); track option.value) {
-                    <et-menu-checkbox-item [value]="option.value">{{ option.label }}</et-menu-checkbox-item>
-                  } @empty {
-                    @if (!filterLoading(column)) {
-                      <p class="et-table-filter-empty">No options</p>
-                    }
-                  }
-                </et-menu-checkbox-group>
-
-                @if (filterHasMore(column)) {
-                  <button (click)="filterLoadMore(column)" class="et-table-filter-more" type="button">Load more</button>
-                }
-              </et-menu>
-            </ng-template>
-          </div>
-        }
-
-        @if (resizableColumns()) {
-          <!-- Its own drag handle: etDragHandle stops the pointerdown from propagating, so grabbing the
-               grip resizes instead of starting a header reorder. Double-click resets to the default width. -->
-          <span
-            (dragStarted)="startColumnResize(column.key)"
-            (dragMoved)="updateColumnResize($event)"
-            (dragEnded)="endColumnResize()"
-            (dblclick)="resetColumnWidth(column.key)"
-            class="et-table-resize-grip"
-            etDragHandle
-            aria-hidden="true"
-          ></span>
+        <!-- UI from opt-in features (filter menu, …), each registered rather than referenced — see
+             registerHeaderAdornment. Renders nothing when no feature is imported. -->
+        @for (adornment of headerAdornments(); track $index) {
+          @if (adornment.template(); as adornmentTemplate) {
+            <ng-container *ngTemplateOutlet="adornmentTemplate; context: { $implicit: column }" />
+          }
         }
       </div>
     }
   </div>
 
-  @if (virtualScroll() && rows().length) {
-    <div
-      [style.block-size.px]="virtualWindow.paddingTop()"
-      class="et-table-spacer"
-      role="presentation"
-      aria-hidden="true"
-    ></div>
+  @if (spacers(); as spacer) {
+    <div [style.block-size.px]="spacer.start" class="et-table-spacer" role="presentation" aria-hidden="true"></div>
   }
 
   @for (row of renderedRows(); track rowIdentity(row); let index = $index) {
     <div
+      [class]="leadRowClasses(row)"
       [class.et-table-row--stripe]="(rowIndexOffset() + index) % 2 === 1"
-      [class.et-table-row--selected]="selectable() && isSelected(row)"
       [class.et-table-row--interactive]="rowInteractive()"
       [attr.tabindex]="rowInteractive() ? 0 : null"
       (click)="activateRow(row, $event)"
@@ -176,39 +118,16 @@
       class="et-table-row"
       role="row"
     >
-      @if (selectable()) {
+      @for (lead of leadColumns(); track lead.key) {
         <div
+          [class]="lead.cellClass"
           [class.et-table-sticky-start]="hasStickyStart()"
-          [style.inset-inline-start.px]="hasStickyStart() ? 0 : null"
-          class="et-table-cell et-table-select-cell"
+          [style.inset-inline-start.px]="hasStickyStart() ? leadStickyStart(lead.key) : null"
+          class="et-table-cell"
           role="gridcell"
         >
-          @if (canSelect(row)) {
-            <et-checkbox
-              [checked]="isSelected(row)"
-              (checkedChange)="setSelected(row, $event)"
-              aria-label="Select row"
-            />
-          }
-        </div>
-      }
-      @if (expandable()) {
-        <div
-          [class.et-table-sticky-start]="hasStickyStart()"
-          [style.inset-inline-start.px]="hasStickyStart() ? expanderStickyOffset() : null"
-          class="et-table-cell et-table-expander-cell"
-          role="gridcell"
-        >
-          @if (canExpand(row)) {
-            <button
-              [attr.aria-expanded]="isExpanded(row)"
-              [attr.aria-label]="isExpanded(row) ? 'Collapse row' : 'Expand row'"
-              (click)="toggleExpanded(row)"
-              class="et-table-expander"
-              type="button"
-            >
-              <span [attr.data-expanded]="isExpanded(row)" class="et-table-expander-icon" aria-hidden="true"></span>
-            </button>
+          @if (lead.bodyCell(); as leadTemplate) {
+            <ng-container *ngTemplateOutlet="leadTemplate; context: { $implicit: row }" />
           }
         </div>
       }
@@ -217,8 +136,8 @@
           #bodyCell
           [attr.data-align]="column.align ?? 'start'"
           [attr.data-col-key]="column.key"
-          [class.et-table-sticky-start]="column.sticky === 'start'"
-          [class.et-table-sticky-end]="column.sticky === 'end'"
+          [class.et-table-sticky-start]="effectiveSticky(column) === 'start'"
+          [class.et-table-sticky-end]="effectiveSticky(column) === 'end'"
           [style.inset-inline-start.px]="stickyStart(column.key)"
           [style.inset-inline-end.px]="stickyEnd(column.key)"
           class="et-table-cell"
@@ -241,11 +160,13 @@
     @if (canExpand(row) && isExpanded(row)) {
       @if (expandedRowTemplate(); as detail) {
         <div class="et-table-detail-row" role="row">
+          <!-- Animated only for the row the user just toggled — a re-mount from paging/sorting must not
+               replay the reveal (see detailAnimation). -->
           <div
+            [animate.enter]="detailAnimation(row, 'enter')"
+            [animate.leave]="detailAnimation(row, 'leave')"
             class="et-table-detail-cell"
             role="gridcell"
-            animate.enter="et-table-detail--enter"
-            animate.leave="et-table-detail--leave"
           >
             <div class="et-table-detail-content">
               <ng-container *ngTemplateOutlet="detail; context: { $implicit: row }" />
@@ -262,31 +183,18 @@
     </div>
   }
 
-  @if (virtualScroll() && rows().length) {
-    <div
-      [style.block-size.px]="virtualWindow.paddingBottom()"
-      class="et-table-spacer"
-      role="presentation"
-      aria-hidden="true"
-    ></div>
+  @if (spacers(); as spacer) {
+    <div [style.block-size.px]="spacer.end" class="et-table-spacer" role="presentation" aria-hidden="true"></div>
   }
 
   @if (hasFooter()) {
     <div class="et-table-footer-row" role="row">
-      @if (selectable()) {
+      @for (lead of leadColumns(); track lead.key) {
         <div
+          [class]="lead.cellClass"
           [class.et-table-sticky-start]="hasStickyStart()"
-          [style.inset-inline-start.px]="hasStickyStart() ? 0 : null"
-          class="et-table-footer-cell et-table-select-cell"
-          role="gridcell"
-          aria-hidden="true"
-        ></div>
-      }
-      @if (expandable()) {
-        <div
-          [class.et-table-sticky-start]="hasStickyStart()"
-          [style.inset-inline-start.px]="hasStickyStart() ? expanderStickyOffset() : null"
-          class="et-table-footer-cell et-table-expander-cell"
+          [style.inset-inline-start.px]="hasStickyStart() ? leadStickyStart(lead.key) : null"
+          class="et-table-footer-cell"
           role="gridcell"
           aria-hidden="true"
         ></div>
@@ -294,8 +202,8 @@
       @for (column of visibleColumns(); track column.key) {
         <div
           [attr.data-align]="column.align ?? 'start'"
-          [class.et-table-sticky-start]="column.sticky === 'start'"
-          [class.et-table-sticky-end]="column.sticky === 'end'"
+          [class.et-table-sticky-start]="effectiveSticky(column) === 'start'"
+          [class.et-table-sticky-end]="effectiveSticky(column) === 'end'"
           [style.inset-inline-start.px]="stickyStart(column.key)"
           [style.inset-inline-end.px]="stickyEnd(column.key)"
           class="et-table-footer-cell"
@@ -318,22 +226,38 @@
   </div>
 }
 
-@if (draggingColumn(); as draggingKey) {
-  <!-- Floating copy of the dragged header; the table markup stays put until drop. -->
-  @if (dragPointer(); as pointer) {
-    <div [style.left.px]="pointer.x" [style.top.px]="pointer.y" class="et-table-drag-ghost" aria-hidden="true">
-      {{ draggedColumnHeader() }}
-    </div>
+<!-- The table's own lead column: the row expander. Registered like a feature's, so one loop renders
+     every leading utility column. -->
+<ng-template #expanderCell let-row>
+  @if (canExpand(row)) {
+    <button
+      [attr.aria-expanded]="isExpanded(row)"
+      [attr.aria-label]="isExpanded(row) ? 'Collapse row' : 'Expand row'"
+      (click)="toggleExpanded(row)"
+      class="et-table-expander"
+      type="button"
+    >
+      <svg
+        [attr.data-expanded]="isExpanded(row)"
+        class="et-table-expander-icon"
+        viewBox="0 0 16 16"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M6 4 10 8 6 12"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </button>
   }
+</ng-template>
 
-  <!-- Where the column will land, shown only while hovering another column. -->
-  @if (dragIndicatorX() !== null && dragBounds(); as bounds) {
-    <div
-      [style.left.px]="dragIndicatorX()"
-      [style.top.px]="bounds.top"
-      [style.height.px]="bounds.height"
-      class="et-table-drop-indicator"
-      aria-hidden="true"
-    ></div>
-  }
-}
+<!-- Everything else the consumer put inside the table — in practice the opt-in feature components.
+     Most render nothing (they hand the table templates); the ones that do render their own UI (the
+     reorder drag ghost) need their host element attached here, since an unprojected component's view
+     is created but never inserted. Their own styles keep those hosts out of the layout. -->
+<ng-content />

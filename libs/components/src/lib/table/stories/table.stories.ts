@@ -111,7 +111,13 @@ export const Expandable: Story = {
 export const Reorderable: Story = {
   args: { reorderable: true },
   parameters: {
-    docs: { description: { story: 'Drag a column header sideways to reorder columns.' } },
+    docs: {
+      description: {
+        story:
+          'Drop `<et-table-reorder />` (from `TABLE_REORDER_IMPORTS`) inside the table and a column header ' +
+          'can be dragged sideways to reorder columns.',
+      },
+    },
   },
 };
 
@@ -173,10 +179,27 @@ export const ResizableColumns: Story = {
     docs: {
       description: {
         story:
-          'With `resizableColumns`, each header grows a grip on its trailing edge — drag it to resize the ' +
+          'With `<et-table-resize />` (from `TABLE_RESIZE_IMPORTS`) each header grows a grip on its ' +
+          'trailing edge — drag it to resize the ' +
           'column, double-click to reset to the default width. Widths persist in `state()` and round-trip ' +
           'through `restoreState()`. Composes with reordering: the grip swallows its own pointerdown so it ' +
           'never starts a header drag.',
+      },
+    },
+  },
+};
+
+export const ReorderableAndResizable: Story = {
+  args: { reorderable: true, resizableColumns: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Both features are opt-in components inside the table (`<et-table-reorder />` + ' +
+          '`<et-table-resize />`) and compose: drag a header body to move the column, or grab its trailing grip ' +
+          'to resize it. The grip swallows its own pointerdown so it never starts a reorder, and resized ' +
+          'widths are keyed by column, so they travel with the column when it moves. On touch the grip has an ' +
+          'enlarged hit area.',
       },
     },
   },

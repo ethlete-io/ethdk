@@ -1,13 +1,13 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
-  afterNextRender,
+  booleanAttribute,
   Component,
   computed,
   contentChild,
+  DestroyRef,
   effect,
   ElementRef,
   inject,
-  Injector,
   input,
   isDevMode,
   linkedSignal,
@@ -15,30 +15,20 @@ import {
   output,
   signal,
   TemplateRef,
+  viewChild,
   ViewEncapsulation,
   viewChildren,
 } from '@angular/core';
+import { RuntimeError, signalElementDimensions, signalHostElementDimensions } from '@ethlete/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subscription, tap, timer } from 'rxjs';
 import {
-  DragHandleDirective,
-  DragMoveEvent,
-  DragStartEvent,
-  forceReflow,
-  injectPrefersReducedMotion,
-  injectRenderer,
-  RuntimeError,
-  signalHostElementDimensions,
-} from '@ethlete/core';
-import { CheckboxComponent } from '../forms/checkbox';
-import { createVirtualWindow } from '../internals/virtual-window';
-import {
-  MenuCheckboxGroupComponent,
-  MenuCheckboxItemComponent,
-  MenuComponent,
-  MenuDirective,
-  MenuSearchDirective,
-  MenuSurfaceDirective,
-  MenuTriggerDirective,
-} from '../menu';
+  TABLE_FEATURE_HOST,
+  TableHeaderAdornment,
+  TableLeadCellContext,
+  TableLeadColumn,
+  TableRowWindow,
+} from './table-features';
 import { filterRows } from './table-filter';
 import { sortRows } from './table-sort';
 import { TableFooterDirective } from './table-footer.directive';
@@ -48,8 +38,6 @@ import {
   TableColumnState,
   TableExpandedRowContext,
   TableFilter,
-  TableFilterOption,
-  TableFilterOptionsProvider,
   TableHeaderGroup,
   TableSort,
   TableSortDirection,
@@ -63,6 +51,15 @@ const DEFAULT_TRACK = 'minmax(0, 1fr)';
 
 /** Smallest width (px) a column can be dragged to. */
 const MIN_COLUMN_WIDTH = 48;
+
+/** Detail-row enter/leave duration (must match the CSS animations) — see `markUserToggled`. */
+const DETAIL_ANIMATION_MS = 200;
+
+/**
+ * Least horizontal room (px) the non-pinned columns must keep before sticky columns are suppressed:
+ * below this, start+end pinned columns would cover the viewport and scrolling would reveal nothing.
+ */
+const MIN_UNPINNED_SPACE = 96;
 
 /**
  * The default table. Renders typed rows and cells from a {@link tableColumns}
@@ -83,18 +80,8 @@ const MIN_COLUMN_WIDTH = 48;
   templateUrl: './table.component.html',
   styleUrl: './table.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [
-    NgTemplateOutlet,
-    DragHandleDirective,
-    CheckboxComponent,
-    MenuDirective,
-    MenuTriggerDirective,
-    MenuSurfaceDirective,
-    MenuComponent,
-    MenuSearchDirective,
-    MenuCheckboxGroupComponent,
-    MenuCheckboxItemComponent,
-  ],
+  imports: [NgTemplateOutlet],
+  providers: [{ provide: TABLE_FEATURE_HOST, useExisting: TableComponent }],
   host: {
     class: 'et-table-host',
     '[attr.data-appearance]': 'appearance()',
@@ -104,9 +91,7 @@ const MIN_COLUMN_WIDTH = 48;
 })
 export class TableComponent<T> {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private injector = inject(Injector);
-  private renderer = injectRenderer();
-  private prefersReducedMotion = injectPrefersReducedMotion();
+  private destroyRef = inject(DestroyRef);
 
   /** The rows to render. */
   public data = input<readonly T[]>([]);
@@ -177,42 +162,11 @@ export class TableComponent<T> {
   /** The set of expanded row keys (by `rowKey`, else row reference). Two-way bindable. */
   public expandedKeys = model<Set<unknown>>(new Set());
 
-  /** Show a leading checkbox column for multi-row selection. @default false */
-  public selectable = input(false);
-
-  /** The set of selected row keys (by `rowKey`, else row reference). Two-way bindable. */
-  public selection = model<Set<unknown>>(new Set());
-
-  /** Gate which rows can be selected. Defaults to all rows (when `selectable`). */
-  public selectableRow = input<(row: T) => boolean>();
-
   /**
    * Make whole rows respond to clicks: adds a hover/pointer affordance and emits {@link rowClick}
    * (clicks landing on interactive cell content are ignored — see `rowClick`). @default false
    */
-  public rowInteractive = input(false);
-
-  /** Allow reordering columns by dragging their headers. @default false */
-  public reorderable = input(false);
-
-  /**
-   * Let users resize columns by dragging a grip on each header's trailing edge. Widths persist in
-   * `state()` (`TableColumnState.width`); double-click a grip to reset that column. @default false
-   */
-  public resizableColumns = input(false);
-
-  /**
-   * Render only the rows near the viewport instead of all of them. The table is its own scroll
-   * container, so give it a bounded height (e.g. `style="block-size: 24rem"`) for the window to
-   * track. @default false
-   */
-  public virtualScroll = input(false);
-
-  /** Row height assumed before a real row is measured — tune it to your row size for a stable first paint. @default 48 */
-  public estimateRowHeight = input(48);
-
-  /** Rows kept rendered just outside the viewport on each side, to hide scroll flicker. @default 6 */
-  public overscan = input(6);
+  public rowInteractive = input(false, { transform: booleanAttribute });
 
   /**
    * Emitted when an interactive row (see {@link rowInteractive}) is clicked, with the row as payload.
@@ -236,38 +190,55 @@ export class TableComponent<T> {
   // Group-header cells; the first is measured to offset the sub-header row's sticky position.
   private groupCells = viewChildren<ElementRef<HTMLElement>>('groupCell');
 
-  // The leading utility-column headers (select checkbox, expander), measured so pinned data
-  // columns — and the expander itself — clear them.
-  protected selectHeaderCell = viewChildren<ElementRef<HTMLElement>>('selectHeaderCell');
-  protected expanderHeaderCell = viewChildren<ElementRef<HTMLElement>>('expanderHeaderCell');
+  // The rendered lead-column header cells, in lead-column order — measured so each lead column and
+  // the pinned data columns know how far in they start.
+  private leadHeaderCells = viewChildren<ElementRef<HTMLElement>>('leadHeaderCell');
+
+  // The table's own expander cell template, registered as a lead column when expansion is on.
+  private expanderCellTemplate = viewChild<TemplateRef<TableLeadCellContext>>('expanderCell');
+
+  // Inline-start offset per lead column key, for when they're pinned alongside a sticky-start column.
+  private leadStickyOffsets = signal<Record<string, number>>({});
+
+  // UI contributed by opt-in features (filter menus, resize grips), rendered in every header cell.
+  // Features register themselves (see TABLE_FEATURE_HOST) rather than being queried, so the table
+  // never references a feature's dependencies — that's what keeps them out of an unused bundle.
+  private headerAdornmentList = signal<TableHeaderAdornment[]>([]);
+
+  protected headerAdornments = computed(() =>
+    [...this.headerAdornmentList()].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+  );
+
+  // Leading utility columns from features (selection), plus the table's own expander column when a
+  // detail template is set. One generic loop per row kind renders them all.
+  private leadColumnList = signal<TableLeadColumn[]>([]);
+
+  // A registered row window (virtual scrolling); `null` renders every row.
+  private rowWindow = signal<TableRowWindow | null>(null);
 
   // Inline-start offset for the auto-pinned expander column (it sits after the select column).
-  protected expanderStickyOffset = signal(0);
   // Recompute sticky-column offsets when the host resizes (column widths change).
   private hostDimensions = signalHostElementDimensions();
 
-  // Rendered height of the spanning group-header row (0 when there are no groups), so the
-  // sub-header row can stick just below it.
-  protected groupRowHeight = signal(0);
+  // Rendered height of the spanning group-header row (0 when there are no groups), so the sub-header
+  // row can stick just below it. ResizeObserver-backed, tracking the first group cell.
+  private groupCellDimensions = signalElementDimensions(computed(() => [...this.groupCells()]));
+
+  protected groupRowHeight = computed(() => this.groupCellDimensions()?.offset?.height ?? 0);
 
   // Measured inline offsets for pinned columns (see the effect that fills them).
   private stickyOffsets = signal<StickyOffsets>({ start: {}, end: {} });
 
+  // True when pinning is measured to crowd the non-pinned columns off-screen (see the sticky effect):
+  // sticky positioning is then dropped so every column scrolls normally instead of hiding behind the pins.
+  private stickySuppressed = signal(false);
+
   /** Whether row expansion is active (a detail template was provided). */
   public expandable = computed(() => this.expandedRowTemplate() !== undefined);
 
-  // The column key currently being drag-reordered.
-  protected draggingColumn = signal<string | null>(null);
-
-  // Live pointer position of the reorder drag — drives the floating ghost header.
-  protected dragPointer = signal<{ x: number; y: number } | null>(null);
-
-  // Where a drop would land: the column it would insert next to, and which side.
-  private dragTarget = signal<{ key: string; before: boolean } | null>(null);
-
-  // Viewport x of the drop indicator line, and the header/body span it covers.
-  protected dragIndicatorX = signal<number | null>(null);
-  protected dragBounds = signal<{ top: number; height: number } | null>(null);
+  // See markUserToggled / detailAnimation: gates the detail row's animation to user-driven toggles.
+  private userToggledKey = signal<unknown>(null);
+  private userToggleReset: Subscription | undefined;
 
   // Column order + visibility overrides reset when the `columns` input changes, but
   // a manual restoreState() persists until then (linkedSignal semantics).
@@ -287,9 +258,6 @@ export class TableComponent<T> {
     computation: () => ({}),
   });
 
-  // The column currently being resized, with the width it had when the drag began.
-  private resizingColumn = signal<{ key: string; startWidth: number } | null>(null);
-
   private columnsByKey = computed(() => {
     const map = new Map<string, AnyTableColumn<T>>();
 
@@ -305,13 +273,6 @@ export class TableComponent<T> {
     }
 
     return map;
-  });
-
-  /** The header text of the column being dragged, shown in the floating ghost. */
-  protected draggedColumnHeader = computed(() => {
-    const key = this.draggingColumn();
-
-    return key ? (this.columnsByKey().get(key)?.header ?? key) : null;
   });
 
   private orderedColumns = computed(() => {
@@ -353,13 +314,38 @@ export class TableComponent<T> {
   });
 
   /** Whether any visible column is pinned to the inline-start edge (also pins the expander column). */
-  public hasStickyStart = computed(() => this.visibleColumns().some((column) => column.sticky === 'start'));
+  public hasStickyStart = computed(
+    () => !this.stickySuppressed() && this.visibleColumns().some((column) => column.sticky === 'start'),
+  );
 
   /** Whether any visible column is pinned (start or end) — the grid then sizes to its tracks so pinning works. */
-  public hasStickyColumns = computed(() => this.visibleColumns().some((column) => !!column.sticky));
+  public hasStickyColumns = computed(
+    () => !this.stickySuppressed() && this.visibleColumns().some((column) => !!column.sticky),
+  );
 
   /** Whether any visible column defines a footer cell (drives the sticky footer row). */
   public hasFooter = computed(() => this.visibleColumns().some((column) => !!column.footerCell));
+
+  /**
+   * The leading utility columns in render order: whatever features registered (selection), then the
+   * table's own expander column when a detail template is set.
+   */
+  protected leadColumns = computed<TableLeadColumn[]>(() => {
+    const leads = [...this.leadColumnList()];
+
+    if (this.expandable()) {
+      leads.push({
+        key: 'et-table-expander',
+        width: 'var(--et-table-expander-width, 32px)',
+        // after any feature column, so a select checkbox stays leftmost
+        order: 100,
+        cellClass: 'et-table-expander-cell',
+        bodyCell: this.expanderCellTemplate,
+      });
+    }
+
+    return leads.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  });
 
   /** The `grid-template-columns` value for the visible columns (plus a leading expander track when expandable). */
   public templateColumns = computed(() => {
@@ -370,12 +356,10 @@ export class TableComponent<T> {
       return resized !== undefined ? `${resized}px` : (column.width ?? DEFAULT_TRACK);
     });
 
-    // Leading utility columns, in render order: expander first, then the select checkbox is
-    // prepended before it so the checkbox is leftmost.
-    if (this.expandable()) tracks.unshift('var(--et-table-expander-width, 2.75rem)');
-    if (this.selectable()) tracks.unshift('var(--et-table-select-width, 2.75rem)');
-
-    return tracks.join(' ');
+    // Leading utility columns come first, in registration order (see `leadColumns`). Their widths are
+    // px, not rem: they must fit their control (a 24px button / 16px checkbox plus the cell's 4px
+    // inline padding) regardless of the host app's root font size.
+    return [...this.leadColumns().map((lead) => lead.width), ...tracks].join(' ');
   });
 
   /** The serializable, versioned table state — column order, visibility, sort, filters and expanded rows. */
@@ -414,9 +398,6 @@ export class TableComponent<T> {
     return expanded ? { v: 1, columns, expanded } : { v: 1, columns };
   });
 
-  // Per-column filter-menu search text (client-side for static options; drives a provider's setQuery).
-  private filterSearchQueries = signal<Record<string, string>>({});
-
   /**
    * The rendered rows — client-filtered then client-sorted for whichever of
    * `filterMode`/`sortMode` is `'client'`.
@@ -436,79 +417,27 @@ export class TableComponent<T> {
     return [...result];
   });
 
-  /** The currently-rendered rows that can be selected (respects `selectableRow`), for select-all. */
-  private selectableData = computed(() => {
-    const gate = this.selectableRow();
+  /** The rows actually rendered — a registered row window's slice (virtual scrolling), or all of them. */
+  public renderedRows = computed<readonly T[]>(() => {
+    const window = this.rowWindow();
+    const rows = this.rows();
 
-    return gate ? this.rows().filter((row) => gate(row)) : this.rows();
+    return window ? (window.slice(rows) as readonly T[]) : rows;
   });
 
-  /** True when every selectable row in the current data set is selected. */
-  public isAllSelected = computed(() => {
-    const rows = this.selectableData();
-    const selection = this.selection();
+  /** Absolute index of the first rendered row, so cell contexts keep true row indices while windowed. */
+  public rowIndexOffset = computed(() => this.rowWindow()?.offset() ?? 0);
 
-    return rows.length > 0 && rows.every((row) => selection.has(this.rowIdentity(row)));
+  /** Spacer sizes standing in for the rows a window leaves out, or `null` when every row renders. */
+  protected spacers = computed(() => {
+    const window = this.rowWindow();
+
+    if (!window || !this.rows().length) return null;
+
+    return { start: window.paddingStart(), end: window.paddingEnd() };
   });
-
-  /** True when some — but not all — selectable rows are selected (checkbox indeterminate). */
-  public isPartiallySelected = computed(() => {
-    const rows = this.selectableData();
-    const selection = this.selection();
-    const selected = rows.filter((row) => selection.has(this.rowIdentity(row))).length;
-
-    return selected > 0 && selected < rows.length;
-  });
-
-  /** The selected rows within the current data set (selection keys with no matching row are ignored). */
-  public selectedRows = computed(() => {
-    const selection = this.selection();
-
-    return this.rows().filter((row) => selection.has(this.rowIdentity(row)));
-  });
-
-  /**
-   * Windows {@link rows} to the viewport when {@link virtualScroll} is on: `paddingTop()`/
-   * `paddingBottom()` stand in for the rows outside {@link renderedRows}, rendered as spacer
-   * grid cells. Pass-through (renders everything) while virtual scrolling is off.
-   */
-  public virtualWindow = createVirtualWindow({
-    container: computed(() => (this.virtualScroll() ? this.elementRef.nativeElement : null)),
-    itemCount: computed(() => this.rows().length),
-    estimateItemHeight: this.estimateRowHeight,
-    overscan: this.overscan,
-  });
-
-  /** The rows actually rendered — the virtual window's slice of {@link rows}, or all of them. */
-  public renderedRows = computed(() => {
-    if (!this.virtualScroll()) return this.rows();
-
-    const { start, end } = this.virtualWindow.range();
-
-    return this.rows().slice(start, end);
-  });
-
-  /** Absolute index of the first rendered row, so cell contexts keep true row indices while virtualized. */
-  public rowIndexOffset = computed(() => (this.virtualScroll() ? this.virtualWindow.range().start : 0));
 
   constructor() {
-    // Feed a real rendered row's height back into the window so its scroll math self-corrects
-    // from the estimate. Uniform-height model: any base row stands in for all of them.
-    effect(() => {
-      if (!this.virtualScroll()) return;
-
-      const cell = this.bodyCells()[0];
-
-      if (cell) this.virtualWindow.measureItem(cell.nativeElement);
-    });
-
-    // Track the group-header row's height so the sub-header row sticks right below it.
-    effect(() => {
-      const cell = this.groupCells()[0];
-
-      this.groupRowHeight.set(cell ? cell.nativeElement.offsetHeight : 0);
-    });
-
     // Measure pinned columns' inline offsets from header-cell widths (re-runs on resize and
     // structural change). Sticky-start columns stack from the left edge (clearing the expander),
     // sticky-end columns stack from the right — pin from the edges, so widths sum cleanly.
@@ -520,20 +449,42 @@ export class TableComponent<T> {
 
       const columns = this.visibleColumns();
       const cells = this.headerCells();
+
+      // `signalElementDimensions` observes one element; sticky offsets need the widths of *every*
+      // header cell summed in order, re-read whenever the host resizes or a column width changes —
+      // both of which this effect already tracks above.
+      // eslint-disable-next-line ethlete/prefer-element-dimensions
       const width = (index: number) => cells[index]?.nativeElement.getBoundingClientRect().width ?? 0;
 
       const start: Record<string, number> = {};
-      // Leading utility columns stack from the edge: select checkbox (at 0), then the expander.
-      const selectWidth = this.selectHeaderCell()[0]?.nativeElement.getBoundingClientRect().width ?? 0;
 
-      this.expanderStickyOffset.set(selectWidth);
+      // Leading utility columns stack from the edge, each starting after the ones before it.
+      const leadCells = this.leadHeaderCells();
+      const leadOffsets: Record<string, number> = {};
+      let leadWidth = 0;
 
-      let left = selectWidth + (this.expanderHeaderCell()[0]?.nativeElement.getBoundingClientRect().width ?? 0);
+      this.leadColumns().forEach((lead, index) => {
+        leadOffsets[lead.key] = leadWidth;
+        // Same as above: a running sum over all lead cells, not one observable element.
+        // eslint-disable-next-line ethlete/prefer-element-dimensions
+        leadWidth += leadCells[index]?.nativeElement.getBoundingClientRect().width ?? 0;
+      });
+
+      this.leadStickyOffsets.set(leadOffsets);
+
+      let left = leadWidth;
+      let pinnedStartWidth = 0;
+      let pinnedEndWidth = 0;
+      let hasStartPin = false;
 
       for (let index = 0; index < columns.length; index++) {
         const column = columns[index];
 
-        if (column?.sticky === 'start') start[column.key] = left;
+        if (column?.sticky === 'start') {
+          start[column.key] = left;
+          pinnedStartWidth += width(index);
+          hasStartPin = true;
+        }
 
         left += width(index);
       }
@@ -544,13 +495,62 @@ export class TableComponent<T> {
       for (let index = columns.length - 1; index >= 0; index--) {
         const column = columns[index];
 
-        if (column?.sticky === 'end') end[column.key] = right;
+        if (column?.sticky === 'end') {
+          end[column.key] = right;
+          pinnedEndWidth += width(index);
+        }
 
         right += width(index);
       }
 
       this.stickyOffsets.set({ start, end });
+
+      // Suppress pinning when the columns that would stay put (pins, plus the leading utility columns
+      // when a start pin makes them sticky too) leave the scrollable columns too little room to ever
+      // surface. Track widths don't change when we unpin, so this can't oscillate.
+      // The host's own width is already tracked reactively above, so read it from there.
+      const containerWidth = this.hostDimensions()?.client?.width ?? 0;
+      const pinnedWidth = pinnedStartWidth + pinnedEndWidth + (hasStartPin ? leadWidth : 0);
+      const hasUnpinned = columns.some((column) => !column?.sticky);
+
+      this.stickySuppressed.set(hasUnpinned && containerWidth > 0 && containerWidth - pinnedWidth < MIN_UNPINNED_SPACE);
     });
+  }
+
+  /**
+   * Called by an opt-in feature (e.g. `<et-table-filters>`) to add UI to every header cell. Part of
+   * the feature contract — see `TableFeatureHost`; consumers never call this.
+   */
+  public registerHeaderAdornment(adornment: TableHeaderAdornment) {
+    this.headerAdornmentList.update((adornments) => [...adornments, adornment]);
+  }
+
+  /**
+   * Called by an opt-in feature to add a leading utility column (e.g. `<et-table-selection>`). Part of
+   * the feature contract; consumers never call this.
+   */
+  public registerLeadColumn(column: TableLeadColumn) {
+    this.leadColumnList.update((columns) => [...columns, column]);
+  }
+
+  /**
+   * Called by an opt-in feature to window the rendered rows (`<et-table-virtual-scroll>`). Part of the
+   * feature contract; consumers never call this.
+   */
+  public registerRowWindow(window: TableRowWindow) {
+    if (isDevMode() && this.rowWindow()) {
+      throw new RuntimeError(
+        TABLE_ERROR_CODES.DUPLICATE_ROW_WINDOW,
+        '[et-table] Two features tried to window the rows. Use only one row-windowing feature per table.',
+      );
+    }
+
+    this.rowWindow.set(window);
+  }
+
+  /** A rendered body cell, for a feature measuring real row height. Part of the feature contract. */
+  public firstBodyCellElement() {
+    return this.bodyCells()[0]?.nativeElement ?? null;
   }
 
   /** Apply a previously captured {@link TableState} — column order, visibility, sort, filters and expanded rows. */
@@ -674,57 +674,44 @@ export class TableComponent<T> {
       next.add(key);
     }
 
+    this.markUserToggled(key);
     this.expandedKeys.set(next);
   }
 
-  /** Whether a row is selected. */
-  public isSelected(row: T) {
-    return this.selection().has(this.rowIdentity(row));
+  /** The inline-start offset (px) of a lead column, when the leading columns are pinned. */
+  protected leadStickyStart(key: string) {
+    return this.leadStickyOffsets()[key] ?? 0;
   }
 
-  /** Select or deselect a single row. */
-  public setSelected(row: T, selected: boolean) {
-    const key = this.rowIdentity(row);
-    const next = new Set(this.selection());
-
-    if (selected) {
-      next.add(key);
-    } else {
-      next.delete(key);
-    }
-
-    this.selection.set(next);
-  }
-
-  /** Select all selectable rows in the current data set, or clear them when all are already selected. */
-  public toggleAll() {
-    const rows = this.selectableData();
-
-    if (this.isAllSelected()) {
-      const next = new Set(this.selection());
-
-      for (const row of rows) next.delete(this.rowIdentity(row));
-
-      this.selection.set(next);
-    } else {
-      const next = new Set(this.selection());
-
-      for (const row of rows) next.add(this.rowIdentity(row));
-
-      this.selection.set(next);
-    }
+  /** Row classes contributed by lead columns (selection marks its rows). */
+  protected leadRowClasses(row: T) {
+    return this.leadColumns()
+      .map((lead) => lead.rowClass?.(row))
+      .filter((className): className is string => !!className)
+      .join(' ');
   }
 
   protected canExpand(row: T) {
     return this.expandable() && (this.expandableRow()?.(row) ?? true);
   }
 
-  protected canSelect(row: T) {
-    return this.selectableRow()?.(row) ?? true;
+  /**
+   * The animation class for a detail row's enter/leave, or `''` to mount/unmount it instantly.
+   *
+   * Only the row the user just toggled animates. A detail row also mounts and unmounts when the rows
+   * themselves change — paging away and back, sorting, a query refresh — and animating those replays
+   * an open/close the user never asked for (and pays the layout cost mid page-change).
+   */
+  protected detailAnimation(row: T, phase: 'enter' | 'leave') {
+    return this.userToggledKey() === this.rowIdentity(row) ? `et-table-detail--${phase}` : '';
   }
 
-  /** Emit {@link rowClick} for a row (click or keyboard), unless the activation came from interactive content inside it. */
-  protected activateRow(row: T, event: MouseEvent | KeyboardEvent) {
+  /**
+   * Emit {@link rowClick} for a row (click or keyboard), unless the activation came from interactive
+   * content inside it. Takes a plain `Event`: Angular types `$event` for the `keydown.enter` /
+   * `keydown.space` pseudo-events that way, and the keyboard case is narrowed below.
+   */
+  protected activateRow(row: T, event: Event) {
     if (!this.rowInteractive() || this.originatesFromInteractive(event)) return;
 
     // Enter/Space on a focused row shouldn't also scroll the page.
@@ -743,70 +730,76 @@ export class TableComponent<T> {
     return rowKey ? String(rowKey(row)) : row;
   }
 
-  /** Begin a reorder drag: lift a floating ghost of the header, leaving the table markup in place. */
-  protected startColumnDrag(key: string, event: DragStartEvent) {
-    const rect = this.elementRef.nativeElement.getBoundingClientRect();
-
-    this.draggingColumn.set(key);
-    this.dragPointer.set({ x: event.clientX, y: event.clientY });
-    this.dragTarget.set(null);
-    this.dragIndicatorX.set(null);
-    this.dragBounds.set({ top: rect.top, height: rect.height });
+  /** The table's own element. Part of the feature contract (features are never projected into the DOM). */
+  public get element() {
+    return this.elementRef.nativeElement;
   }
 
-  /** Track the pointer during a reorder drag: move the ghost and show where the column would drop. */
-  protected updateColumnDrag(event: DragMoveEvent) {
-    if (!this.draggingColumn()) return;
-
-    this.dragPointer.set({ x: event.clientX, y: event.clientY });
-    this.resolveDropTarget(event.clientX);
+  /** The visible columns, in render order. Part of the feature contract. */
+  public visibleColumnsMeta() {
+    return this.visibleColumns();
   }
 
-  /** End a reorder drag: commit the deferred move once, then animate the columns into place. */
-  protected endColumnDrag() {
-    const dragging = this.draggingColumn();
-    const target = this.dragTarget();
-    const firstLefts = this.captureColumnLefts();
-
-    if (dragging && target && target.key !== dragging) {
-      this.commitColumnReorder({ dragging, overKey: target.key, before: target.before });
-    }
-
-    this.draggingColumn.set(null);
-    this.dragPointer.set(null);
-    this.dragTarget.set(null);
-    this.dragIndicatorX.set(null);
-    this.dragBounds.set(null);
-
-    if (dragging && !this.prefersReducedMotion()) {
-      // The order changed synchronously; FLIP once the reordered grid has rendered.
-      afterNextRender(() => this.playReorderFlip(firstLefts), { injector: this.injector });
-    }
+  /** The rendered header cells, ordered like {@link visibleColumnsMeta}. Part of the feature contract. */
+  public headerCellElements() {
+    return this.headerCells().map((ref) => ref.nativeElement);
   }
 
-  /** Begin resizing a column: capture its current rendered width as the baseline for the drag. */
-  protected startColumnResize(key: string) {
-    this.resizingColumn.set({ key, startWidth: this.headerCellWidth(key) });
+  /** The rendered body cells of one column. Part of the feature contract (reorder animates them). */
+  public bodyCellElementsFor(key: string) {
+    return this.bodyCells()
+      .map((ref) => ref.nativeElement)
+      .filter((cell) => cell.dataset['colKey'] === key);
   }
 
-  /** Track a resize drag: set the column's width to its start width plus the pointer's total delta. */
-  protected updateColumnResize(event: DragMoveEvent) {
-    const resizing = this.resizingColumn();
+  /** A column's effective pinning, or `null` when unpinned/suppressed. Part of the feature contract. */
+  public effectiveStickyOf(key: string): 'start' | 'end' | null {
+    const column = this.columnsByKey().get(key);
 
-    if (!resizing) return;
-
-    const width = Math.max(MIN_COLUMN_WIDTH, Math.round(resizing.startWidth + event.totalDx));
-
-    this.columnWidths.update((widths) => ({ ...widths, [resizing.key]: width }));
+    return column ? this.effectiveSticky(column) : null;
   }
 
-  /** Finish a resize drag. */
-  protected endColumnResize() {
-    this.resizingColumn.set(null);
+  /**
+   * Insert a column next to another in the full column order, keeping hidden columns in place. Part of
+   * the feature contract — `<et-table-reorder>` commits a drop with it.
+   */
+  public moveColumnNextTo(key: string, target: { overKey: string; before: boolean }) {
+    this.columnOrder.update((order) => {
+      const next = order.filter((entry) => entry !== key);
+      const overIndex = next.indexOf(target.overKey);
+
+      if (overIndex === -1) return order;
+
+      next.splice(target.before ? overIndex : overIndex + 1, 0, key);
+
+      return next;
+    });
+  }
+
+  /**
+   * The column's current rendered header width in px. Part of the feature contract — `<et-table-resize>`
+   * uses it as the baseline for a drag.
+   */
+  public renderedColumnWidth(key: string) {
+    const cell = this.headerCells().find((ref) => ref.nativeElement.getAttribute('data-col-key') === key);
+
+    return cell?.nativeElement.getBoundingClientRect().width ?? 0;
+  }
+
+  /**
+   * Override a column's width, clamped between a usable minimum and the table's own width — a column
+   * wider than the visible table only scrolls uselessly and makes it easy to strand the layout in a
+   * strange state. Stored in `state()` so it round-trips. Part of the feature contract.
+   */
+  public setColumnWidth(key: string, width: number) {
+    const max = this.elementRef.nativeElement.clientWidth || Number.MAX_SAFE_INTEGER;
+    const clamped = Math.min(max, Math.max(MIN_COLUMN_WIDTH, Math.round(width)));
+
+    this.columnWidths.update((widths) => ({ ...widths, [key]: clamped }));
   }
 
   /** Reset a column to its default width (drops the user override), e.g. on grip double-click. */
-  protected resetColumnWidth(key: string) {
+  public resetColumnWidth(key: string) {
     this.columnWidths.update((widths) => {
       if (widths[key] === undefined) return widths;
 
@@ -817,84 +810,44 @@ export class TableComponent<T> {
     });
   }
 
-  protected isFiltered(key: string) {
-    return this.filterValuesFor(key).length > 0;
-  }
-
-  protected asArray(value: unknown): unknown[] {
-    return Array.isArray(value) ? value : value === null || value === undefined ? [] : [value];
-  }
-
   protected ariaSort(key: string): 'ascending' | 'descending' | 'none' {
     const direction = this.sortDirection(key);
 
     return direction === 'asc' ? 'ascending' : direction === 'desc' ? 'descending' : 'none';
   }
 
+  /** A column's effective pinning, or `null` when it isn't pinned or pinning is suppressed (see {@link stickySuppressed}). */
+  protected effectiveSticky(column: AnyTableColumn<T>): 'start' | 'end' | null {
+    return this.stickySuppressed() ? null : (column.sticky ?? null);
+  }
+
   /** The inline-start offset (px) for a start-pinned column, or `null` when it isn't pinned there. */
   protected stickyStart(key: string): number | null {
-    return this.stickyOffsets().start[key] ?? null;
+    return this.stickySuppressed() ? null : (this.stickyOffsets().start[key] ?? null);
   }
 
   /** The inline-end offset (px) for an end-pinned column, or `null` when it isn't pinned there. */
   protected stickyEnd(key: string): number | null {
-    return this.stickyOffsets().end[key] ?? null;
+    return this.stickySuppressed() ? null : (this.stickyOffsets().end[key] ?? null);
   }
 
-  /** The async options provider for a column, or `null` when its options are a static list. */
-  protected filterProviderOf(column: AnyTableColumn<T>): TableFilterOptionsProvider | null {
-    const options = column.filterOptions;
-
-    return options && !Array.isArray(options) ? options : null;
-  }
-
-  protected filterSearchQuery(key: string) {
-    return this.filterSearchQueries()[key] ?? '';
-  }
-
-  protected setFilterSearchQuery(column: AnyTableColumn<T>, query: string) {
-    this.filterSearchQueries.update((current) => ({ ...current, [column.key]: query }));
-    this.filterProviderOf(column)?.setQuery?.(query);
-  }
-
-  /** The options for a column's filter menu — provider-backed, or the static list filtered by the search text. */
-  protected filterOptionsFor(column: AnyTableColumn<T>): TableFilterOption[] {
-    const provider = this.filterProviderOf(column);
-
-    if (provider) return provider.options();
-
-    const options = (column.filterOptions as TableFilterOption[] | undefined) ?? [];
-
-    if (!column.filterSearch) return options;
-
-    const query = this.filterSearchQuery(column.key).trim().toLowerCase();
-
-    return query ? options.filter((option) => option.label.toLowerCase().includes(query)) : options;
-  }
-
-  protected filterLoading(column: AnyTableColumn<T>) {
-    return this.filterProviderOf(column)?.loading?.() ?? false;
-  }
-
-  protected filterHasMore(column: AnyTableColumn<T>) {
-    return this.filterProviderOf(column)?.hasMore?.() ?? false;
-  }
-
-  protected filterLoadMore(column: AnyTableColumn<T>) {
-    this.filterProviderOf(column)?.loadMore?.();
-  }
-
-  // Current rendered width (px) of a column's header cell, matched by its data-col-key.
-  private headerCellWidth(key: string) {
-    const cell = this.headerCells().find((ref) => ref.nativeElement.getAttribute('data-col-key') === key);
-
-    return cell?.nativeElement.getBoundingClientRect().width ?? 0;
+  // The row key whose expansion the user just toggled, cleared once the animation has run. Compared
+  // by identity in `detailAnimation`, so any other (re-)mount of a detail row skips its animation.
+  private markUserToggled(key: unknown) {
+    this.userToggledKey.set(key);
+    this.userToggleReset?.unsubscribe();
+    this.userToggleReset = timer(DETAIL_ANIMATION_MS)
+      .pipe(
+        tap(() => this.userToggledKey.set(null)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
   // Walk the event's composed path up to the row element; bail if it passed through anything the
   // user meant to click instead of the row (a control, a menu trigger, or a utility cell). Uses
   // composedPath (not `.closest()`, which the styleguide forbids) so it also works across shadow roots.
-  private originatesFromInteractive(event: MouseEvent | KeyboardEvent) {
+  private originatesFromInteractive(event: Event) {
     for (const target of event.composedPath()) {
       if (target === event.currentTarget) break;
       if (!(target instanceof HTMLElement)) continue;
@@ -909,121 +862,5 @@ export class TableComponent<T> {
     }
 
     return false;
-  }
-
-  // Resolve which column the pointer is over and which side, and place the drop indicator at that edge.
-  private resolveDropTarget(clientX: number) {
-    const dragging = this.draggingColumn();
-    const cells = this.headerCells();
-    const columns = this.visibleColumns();
-
-    for (let index = 0; index < cells.length; index++) {
-      const cell = cells[index];
-      const overKey = columns[index]?.key;
-
-      if (!cell || !overKey) continue;
-
-      const rect = cell.nativeElement.getBoundingClientRect();
-
-      if (clientX < rect.left || clientX > rect.right) continue;
-
-      if (overKey === dragging) {
-        // Hovering the dragged column itself — no move, no indicator.
-        this.dragTarget.set(null);
-        this.dragIndicatorX.set(null);
-
-        return;
-      }
-
-      const before = clientX < rect.left + rect.width / 2;
-
-      this.dragTarget.set({ key: overKey, before });
-      this.dragIndicatorX.set(before ? rect.left : rect.right);
-
-      return;
-    }
-  }
-
-  // Insert the dragged column next to `overKey` in the full column order (hidden columns kept in place).
-  private commitColumnReorder({ dragging, overKey, before }: { dragging: string; overKey: string; before: boolean }) {
-    this.columnOrder.update((order) => {
-      const next = order.filter((key) => key !== dragging);
-      const overIndex = next.indexOf(overKey);
-
-      if (overIndex === -1) return order;
-
-      next.splice(before ? overIndex : overIndex + 1, 0, dragging);
-
-      return next;
-    });
-  }
-
-  // Left edge of every visible column's header, keyed by column, captured before a reorder commit.
-  private captureColumnLefts() {
-    const cells = this.headerCells();
-    const columns = this.visibleColumns();
-    const lefts = new Map<string, number>();
-
-    cells.forEach((cell, index) => {
-      const key = columns[index]?.key;
-
-      if (key) lefts.set(key, cell.nativeElement.getBoundingClientRect().left);
-    });
-
-    return lefts;
-  }
-
-  // FLIP each column that moved: slide its header + body cells from their old x to the new one.
-  private playReorderFlip(firstLefts: Map<string, number>) {
-    const cells = this.headerCells();
-    const columns = this.visibleColumns();
-    const bodyByColumn = this.bodyCellsByColumn();
-
-    cells.forEach((cell, index) => {
-      const key = columns[index]?.key;
-      const firstLeft = key ? firstLefts.get(key) : undefined;
-
-      if (!key || firstLeft === undefined) return;
-
-      const delta = firstLeft - cell.nativeElement.getBoundingClientRect().left;
-
-      if (Math.abs(delta) < 1) return;
-
-      const elements = [cell.nativeElement, ...(bodyByColumn.get(key) ?? [])];
-
-      // FLIP: pin each cell at its old x with no transition…
-      for (const element of elements) {
-        this.renderer.setStyle(element, { transition: 'none', transform: `translateX(${delta}px)` });
-      }
-
-      forceReflow(cell.nativeElement);
-
-      // …then let it transition back to its new resting position.
-      for (const element of elements) {
-        this.renderer.setStyle(element, { transition: 'transform 200ms ease' });
-        this.renderer.removeStyle(element, 'transform');
-      }
-    });
-  }
-
-  // Group the rendered body cells by their `data-col-key`, for the reorder FLIP.
-  private bodyCellsByColumn() {
-    const grouped = new Map<string, HTMLElement[]>();
-
-    for (const cell of this.bodyCells()) {
-      const key = cell.nativeElement.dataset['colKey'];
-
-      if (!key) continue;
-
-      const group = grouped.get(key);
-
-      if (group) {
-        group.push(cell.nativeElement);
-      } else {
-        grouped.set(key, [cell.nativeElement]);
-      }
-    }
-
-    return grouped;
   }
 }

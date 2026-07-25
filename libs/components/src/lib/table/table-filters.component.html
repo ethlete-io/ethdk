@@ -1,0 +1,50 @@
+<!-- Rendered by the table once per visible header cell (see registerHeaderAdornment); `column` is the
+     column's metadata, so a non-filterable column simply renders nothing. -->
+<ng-template #filterAdornment let-column>
+  @if (column.filterable) {
+    <div class="et-table-filter" etMenu>
+      <button
+        [attr.data-active]="isFiltered(column.key)"
+        [attr.aria-label]="'Filter ' + (column.header ?? column.key)"
+        class="et-table-filter-trigger"
+        etMenuTrigger
+        type="button"
+      >
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <path d="M1 2h14l-5.5 6.5V14L6.5 12V8.5z" />
+        </svg>
+      </button>
+
+      <ng-template etMenuSurface>
+        <et-menu>
+          @if (hasSearch(column)) {
+            <input
+              [query]="searchQuery(column.key)"
+              [loading]="loading(column)"
+              (queryChange)="setSearchQuery(column, $event)"
+              etMenuSearch
+              placeholder="Search…"
+            />
+          }
+
+          <et-menu-checkbox-group
+            [value]="table.filterValuesFor(column.key)"
+            (valueChange)="table.setFilterValues(column.key, asArray($event))"
+          >
+            @for (option of optionsFor(column); track option.value) {
+              <et-menu-checkbox-item [value]="option.value">{{ option.label }}</et-menu-checkbox-item>
+            } @empty {
+              @if (!loading(column)) {
+                <p class="et-table-filter-empty">{{ emptyLabel() }}</p>
+              }
+            }
+          </et-menu-checkbox-group>
+
+          @if (hasMore(column)) {
+            <button (click)="loadMore(column)" class="et-table-filter-more" type="button">Load more</button>
+          }
+        </et-menu>
+      </ng-template>
+    </div>
+  }
+</ng-template>

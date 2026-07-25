@@ -1,0 +1,58 @@
+@layer components {
+  /* The table projects feature components so their views attach to the DOM; the host itself must take
+     no space and create no grid track (only its fixed-position UI is ever visible). */
+  et-table-filters {
+    position: absolute;
+    inline-size: 0;
+    block-size: 0;
+  }
+
+  /* The trigger sits at the trailing edge of the header cell, pushed there by the auto margin so it
+     stays put whether the header holds a sort button or plain text. */
+  .et-table-filter {
+    display: inline-flex;
+    margin-inline-start: auto;
+  }
+
+  .et-table-filter-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    color: inherit;
+    background: none;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    opacity: 0.45;
+  }
+
+  .et-table-filter-trigger:where(:hover, :focus-visible) {
+    opacity: 0.8;
+    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 12%, transparent);
+  }
+
+  /* An active filter reads as accented, so a filtered column is obvious at a glance. */
+  .et-table-filter-trigger:where([data-active='true']) {
+    color: var(--et-theme-color-primary-solid, currentColor);
+    opacity: 1;
+  }
+
+  .et-table-filter-empty {
+    margin: 0;
+    padding: 8px 12px;
+    color: var(--et-surface-color-muted-solid, CanvasText);
+    font-size: 13px;
+  }
+
+  .et-table-filter-more {
+    inline-size: 100%;
+    padding: 8px;
+    color: var(--et-theme-color-ink-solid, currentColor);
+    font: inherit;
+    text-align: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+}
