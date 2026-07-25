@@ -90,6 +90,7 @@ The second argument of a creator factory (required only when `rawResponse` diffe
 | `withCredentials`   | `false`  | Send cookies on cross-origin requests.                                                                                                  |
 | `transferCache`     | —        | Angular SSR transfer-cache config.                                                                                                      |
 | `retryFn`           | client's | Per-endpoint retry override.                                                                                                            |
+| `keepUnusedFor`     | client's | Per-endpoint override for how long an unused cache entry is kept — see [Caching](/query/caching#keeping-unused-entries-around).         |
 
 ## Secure queries
 

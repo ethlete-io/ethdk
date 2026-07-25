@@ -85,6 +85,13 @@ export type QueryRepositoryCacheEntry = {
   /** How many consumers currently hold a binding to the entry. */
   consumerCount: number;
 
+  /**
+   * Whether the entry has no consumers left and is only being kept around for its
+   * `keepUnusedFor` window. Such an entry is not a leak — it is waiting to be reused by a
+   * consumer that comes back.
+   */
+  isUnused: boolean;
+
   /** The underlying HTTP request. */
   request: HttpRequest<QueryArgs>;
 };
@@ -136,12 +143,25 @@ export type QueryKey = string;
 /** Runs .unbind() if the DestroyRef.onDestroy() gets called */
 export type DestroyCleanupCallback = () => void;
 
-/** Keeps track of all places where the request gets used. Will be cleaned up and removed if there are no more consumers.  */
+/**
+ * Keeps track of all places where the request gets used. Once the last consumer is gone the entry is
+ * either destroyed right away or kept for `keepUnusedFor` milliseconds so a consumer that comes back
+ * (e.g. via browser back navigation) finds its data already there.
+ */
 type DestroyListenerMapItem = {
   consumers: Map<DestroyRef, DestroyCleanupCallback>;
   request: HttpRequest<QueryArgs>;
   isSecure: boolean;
   eventSubscription?: { unsubscribe: () => void };
+
+  /** How long this entry survives without consumers. `0` destroys it immediately. */
+  keepUnusedFor: number;
+
+  /** When the entry lost its last consumer — drives the eviction order of the unused-entry cap. */
+  unusedSince?: number;
+
+  /** Pending eviction of an unused entry, cancelled as soon as a consumer binds again. */
+  evictTimer?: ReturnType<typeof setTimeout>;
 };
 
 export type QueryRepositoryDependencies = {
@@ -158,9 +178,27 @@ export type QueryRepositoryDependencies = {
 export type CreateQueryRepositoryConfig = CreateQueryClientConfigOptions & {
   /** The dependencies of the query repository */
   dependencies: QueryRepositoryDependencies;
+
+  /**
+   * Whether unused entries may be retained at all. `false` forces `keepUnusedFor` to `0` everywhere,
+   * regardless of client or creator configuration — used to disable retention on the server, where a
+   * per-request injector must not hold response bodies (and a pending timer) for minutes.
+   * @default true
+   */
+  retentionEnabled?: boolean;
 };
 
 const generateUuid = () => randomId();
+
+/** @see CreateQueryClientConfigOptions.keepUnusedFor */
+export const DEFAULT_KEEP_UNUSED_FOR = 300_000;
+
+/**
+ * Hard cap on entries kept without consumers, per client. Retention is opportunistic, so a runaway
+ * count (a search-as-you-type query produces a new cache key per keystroke, and each one goes through
+ * `unbind`) must never grow unbounded — the least recently orphaned entries are dropped first.
+ */
+export const MAX_UNUSED_ENTRIES = 50;
 
 export const createQueryRepository = (config: CreateQueryRepositoryConfig): QueryRepository => {
   const cache = new Map<QueryKey, DestroyListenerMapItem>();
@@ -170,6 +208,12 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
   // unconditional — it is a single integer signal with no readers unless the devtools are open.
   const cacheVersion = signal(0);
   const bumpCacheVersion = () => cacheVersion.update((v) => v + 1);
+
+  const resolveKeepUnusedFor = (creatorOptions: CreateQueryCreatorOptions | undefined, shouldCache: boolean) => {
+    if (config.retentionEnabled === false || !shouldCache) return 0;
+
+    return Math.max(0, creatorOptions?.keepUnusedFor ?? config.keepUnusedFor ?? DEFAULT_KEEP_UNUSED_FOR);
+  };
 
   const request = <TArgs extends QueryArgs>(options: QueryRepositoryRequestOptions<TArgs>) => {
     const { args, creatorOptions, runQueryOptions } = options;
@@ -199,6 +243,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       : false;
 
     const trackingKey = cacheKey || generateUuid();
+    const keepUnusedFor = resolveKeepUnusedFor(creatorOptions, shouldCache);
 
     const previousKey = options.previousKey;
 
@@ -210,7 +255,11 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       const cacheEntry = cache.get(cacheKey);
 
       if (cacheEntry) {
-        bind(cacheKey, options.consumerDestroyRef, cacheEntry.request, options.isSecure ?? false, true);
+        // The entry may have been sitting out its `keepUnusedFor` window — a consumer binding again
+        // makes it live, so the pending eviction must go.
+        cancelEviction(cacheEntry);
+
+        bind(cacheKey, options.consumerDestroyRef, cacheEntry.request, options.isSecure ?? false, true, keepUnusedFor);
 
         if (!runQueryOptions?.allowCache || cacheEntry.request.isStale()) {
           cacheEntry.request.execute({ allowCache: runQueryOptions?.allowCache });
@@ -232,9 +281,45 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
 
     request.execute();
 
-    bind(trackingKey, options.consumerDestroyRef, request, options.isSecure ?? false, shouldCache);
+    bind(trackingKey, options.consumerDestroyRef, request, options.isSecure ?? false, shouldCache, keepUnusedFor);
 
     return { key: trackingKey, request };
+  };
+
+  /** Tears an entry down for good, whether it currently has consumers or not. */
+  const destroyEntry = (key: QueryKey, cacheEntry: DestroyListenerMapItem) => {
+    clearTimeout(cacheEntry.evictTimer);
+    cacheEntry.request.destroy();
+    cacheEntry.eventSubscription?.unsubscribe();
+    cache.delete(key);
+  };
+
+  const cancelEviction = (cacheEntry: DestroyListenerMapItem) => {
+    if (cacheEntry.evictTimer === undefined) return;
+
+    clearTimeout(cacheEntry.evictTimer);
+    cacheEntry.evictTimer = undefined;
+    cacheEntry.unusedSince = undefined;
+  };
+
+  /** Drops the least recently orphaned unused entries until the cap is respected again. */
+  const enforceUnusedEntryLimit = () => {
+    const unused = Array.from(cache.entries()).filter(([, entry]) => entry.consumers.size === 0);
+
+    if (unused.length <= MAX_UNUSED_ENTRIES) return;
+
+    unused.sort(([, a], [, b]) => (a.unusedSince ?? 0) - (b.unusedSince ?? 0));
+
+    for (const [key, entry] of unused.slice(0, unused.length - MAX_UNUSED_ENTRIES)) {
+      destroyEntry(key, entry);
+    }
+  };
+
+  const retain = (key: QueryKey, cacheEntry: DestroyListenerMapItem) => {
+    cacheEntry.unusedSince = Date.now();
+    cacheEntry.evictTimer = setTimeout(() => evict(key), cacheEntry.keepUnusedFor);
+
+    enforceUnusedEntryLimit();
   };
 
   const unbind = (key: QueryKey | null, consumerDestroyRef: DestroyRef) => {
@@ -247,9 +332,13 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     cacheEntry.consumers.delete(consumerDestroyRef);
 
     if (cacheEntry.consumers.size === 0) {
-      cacheEntry.request.destroy();
-      cacheEntry.eventSubscription?.unsubscribe();
-      cache.delete(key);
+      // Only data is worth keeping around: an entry that never produced a response has nothing to
+      // hand back to a returning consumer, so it is aborted immediately as it always was.
+      if (cacheEntry.keepUnusedFor > 0 && cacheEntry.request.response() !== null) {
+        retain(key, cacheEntry);
+      } else {
+        destroyEntry(key, cacheEntry);
+      }
     }
 
     bumpCacheVersion();
@@ -259,14 +348,12 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
 
   const unbindAllSecure = () => {
     for (const [key, cacheEntry] of cache.entries()) {
-      if (cacheEntry.isSecure) {
-        for (const consumerDestroyRef of cacheEntry.consumers.keys()) {
-          unbind(key, consumerDestroyRef);
-        }
+      if (!cacheEntry.isSecure) continue;
 
-        cacheEntry.eventSubscription?.unsubscribe();
-        cache.delete(key);
-      }
+      // Force the teardown instead of routing through `unbind`: a logged out session must not leave a
+      // retained response body behind waiting out its `keepUnusedFor` window.
+      cacheEntry.consumers.clear();
+      destroyEntry(key, cacheEntry);
     }
 
     bumpCacheVersion();
@@ -278,6 +365,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     request: HttpRequest<QueryArgs>,
     isSecure: boolean,
     allowReuse: boolean,
+    keepUnusedFor: number,
   ) => {
     const destroyListener = consumerDestroyRef.onDestroy(() => unbind(key, consumerDestroyRef));
 
@@ -308,6 +396,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
         request,
         isSecure,
         eventSubscription,
+        keepUnusedFor,
       });
     }
 
@@ -319,6 +408,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       key,
       isSecure: entry.isSecure,
       consumerCount: entry.consumers.size,
+      isUnused: entry.consumers.size === 0,
       request: entry.request,
     }));
 
@@ -327,9 +417,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
 
     if (!entry) return;
 
-    entry.request.destroy();
-    entry.eventSubscription?.unsubscribe();
-    cache.delete(key);
+    destroyEntry(key, entry);
     bumpCacheVersion();
   };
 

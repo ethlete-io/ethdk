@@ -48,13 +48,14 @@ A real query against a mocked backend — execute it, make it fail, and watch th
 
 `createQueryClient(options)` returns a root-provider tuple ([`[provide, inject, token]` from `@ethlete/core`](/core/utilities#dependency-injection)). You normally never touch the tuple yourself — creators take the whole client reference, and because the token is provided in root there is nothing to register in your app config.
 
-| Option         | Default                   | Description                                                                          |
-| -------------- | ------------------------- | ------------------------------------------------------------------------------------ |
-| `name`         | — (required)              | Unique name, used in the injection token (`QueryClient_<name>`).                     |
-| `baseUrl`      | — (required)              | Base URL prepended to every route, e.g. `https://api.example.com/v1`.                |
-| `queryString`  | —                         | Config for how query params are serialized.                                          |
-| `cacheAdapter` | `extractExpiresInSeconds` | Maps response headers to a freshness TTL — see [Caching](/query/caching).            |
-| `retryFn`      | `shouldRetryRequest`      | Decides whether a failed request is retried — see [Errors & retries](/query/errors). |
+| Option          | Default                   | Description                                                                                                                     |
+| --------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `name`          | — (required)              | Unique name, used in the injection token (`QueryClient_<name>`).                                                                |
+| `baseUrl`       | — (required)              | Base URL prepended to every route, e.g. `https://api.example.com/v1`.                                                           |
+| `queryString`   | —                         | Config for how query params are serialized.                                                                                     |
+| `cacheAdapter`  | `extractExpiresInSeconds` | Maps response headers to a freshness TTL — see [Caching](/query/caching).                                                       |
+| `retryFn`       | `shouldRetryRequest`      | Decides whether a failed request is retried — see [Errors & retries](/query/errors).                                            |
+| `keepUnusedFor` | `300000` (5 min)          | How long an entry survives after its last consumer was destroyed — see [Caching](/query/caching#keeping-unused-entries-around). |
 
 ## Query creators
 

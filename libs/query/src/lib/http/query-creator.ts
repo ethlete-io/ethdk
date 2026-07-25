@@ -68,6 +68,15 @@ export type BaseQueryCreatorOptions<TArgs extends QueryArgs = QueryArgs> = {
    */
   retryFn?: ShouldRetryRequestFn;
 
+  /**
+   * How long (in ms) this query's cache entry is kept after its last consumer was destroyed.
+   * Overrides the client level `keepUnusedFor`. Use `0` for responses that should never outlive their
+   * consumer (very large payloads, or data that must not be shown stale).
+   *
+   * @default Client's keepUnusedFor (5 minutes)
+   */
+  keepUnusedFor?: number;
+
   /** Advanced query creator features. **WARNING!** Incorrectly using these features will likely **BREAK** your application. You have been warned! */
   subtle?: BaseQueryCreatorOptionsSubtle;
 };

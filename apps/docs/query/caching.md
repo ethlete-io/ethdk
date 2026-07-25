@@ -8,7 +8,42 @@ All [queries](/query/queries) of a client share one **query repository** — an 
 
 ## Deduplication
 
-Two queries with the same key share one in-flight request and one response — ten components rendering the same `getUser` query cause exactly one HTTP request. Entries are reference-counted: when the last consumer is destroyed, the request is aborted and evicted.
+Two queries with the same key share one in-flight request and one response — ten components rendering the same `getUser` query cause exactly one HTTP request. Entries are reference-counted: when the last consumer is destroyed, the entry is released — either kept for a while (see below) or aborted and evicted straight away.
+
+## Keeping unused entries around
+
+An entry that lost its last consumer is **kept for `keepUnusedFor` milliseconds (5 minutes by default)** instead of being thrown away. If a query mounts again within that window — a list page reached via browser back navigation, a component that remounts — it binds to the existing entry and **renders the previous response immediately** while revalidating in the background, rather than starting from an empty loading state:
+
+```ts
+export const client = createQueryClient({
+  name: 'api',
+  baseUrl: 'https://api.example.com/v1',
+  keepUnusedFor: 60_000, // or 0 to release entries immediately
+});
+
+// per query, overriding the client
+export const getHugeReport = client.get({ route: '/report', keepUnusedFor: 0 });
+```
+
+Unlike the freshness TTL below, this is independent of `cache-control` — so it also applies to private/authenticated responses, where the header-derived TTL does nothing.
+
+The returning query is in a loading state that carries the old data, so render it via `executionState`:
+
+```ts
+const state = query.executionState();
+
+if (state?.type === 'loading' && state.hasCachedResponse) {
+  // previous rows are in state.cachedResponse — show them, optionally with a refreshing hint
+}
+```
+
+Details worth knowing:
+
+- Only entries that actually **hold a response** are kept. A request unbound while still in flight, or one that only ever errored, is aborted immediately as before.
+- At most **50 unused entries per client** are kept; beyond that the least recently orphaned are dropped. This matters for queries whose args change often (a search field produces a new cache key per keystroke).
+- Retention is **browser only** — on the server entries are always released immediately, so an SSR request never pins response bodies.
+- Logging out clears retained authenticated entries along with the live ones.
+- This pairs with [`setupScrollRestoration`](/core/signal-utils#restoring-the-offset-on-back-forward): a list that renders its rows on the first frame back reaches its full height immediately, so the saved scroll offset is restored without waiting out a refetch.
 
 ## Freshness
 
