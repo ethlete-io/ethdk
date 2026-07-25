@@ -13,17 +13,18 @@ neutral until active); compact/square via `--et-button-*` token overrides (no
 `<a href>`s; plain clicks intercepted, modified clicks pass through. **Paged SEO** is
 an opt-in `etPaginationSeo` directive (own file/export, NOT in `PAGINATION_IMPORTS`,
 so the base paginator tree-shakes clean) — per-page canonical + `rel="prev"`/`"next"`
-+ optional `pageTitle`. ⚠️ It uses `applyLinkBinding`/`applyHeadTitleBinding`
-**directly**, NOT `applyCanonicalBinding`/`applyPrevBinding`/`applyNextBinding`:
-those go through `createPropertyBinding`, which reads its input `untracked`
-(`libs/core/src/lib/seo/head-binding.ts:49`) and so **freezes the value at first
-eval** — non-reactive, unusable with a changing `page` signal. (Left core as-is; a
-core fix would be a separate, wider change.) (3) **Query-form binding** is already a
-one-liner (`page` is a two-way `model`, `(pageChange)` exposed) — documented for
-`tableRowsFromQuery`, signals `QueryForm`, and reactive-forms `QueryForm`; no new
-code. (4) Extras shipped: "Showing X–Y of Z" readout (`totalItems`+`pageSize`),
-`showJumpTo` field. Keyboard nav is native per-item tab stops (no roving tabindex —
-that's the standard, more accessible pattern for a link/button list).
+
+- optional `pageTitle`. ⚠️ It uses `applyLinkBinding`/`applyHeadTitleBinding`
+  **directly**, NOT `applyCanonicalBinding`/`applyPrevBinding`/`applyNextBinding`:
+  those go through `createPropertyBinding`, which reads its input `untracked`
+  (`libs/core/src/lib/seo/head-binding.ts:49`) and so **freezes the value at first
+  eval** — non-reactive, unusable with a changing `page` signal. (Left core as-is; a
+  core fix would be a separate, wider change.) (3) **Query-form binding** is already a
+  one-liner (`page` is a two-way `model`, `(pageChange)` exposed) — documented for
+  `tableRowsFromQuery`, signals `QueryForm`, and reactive-forms `QueryForm`; no new
+  code. (4) Extras shipped: "Showing X–Y of Z" readout (`totalItems`+`pageSize`),
+  `showJumpTo` field. Keyboard nav is native per-item tab stops (no roving tabindex —
+  that's the standard, more accessible pattern for a link/button list).
 
 Original research (2026-07-23) against `libs/cdk/src/lib/components/pagination/`
 (~730 lines incl. stories/docs). Net-new in `libs/components`
