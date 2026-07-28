@@ -84,20 +84,61 @@ Summary of the cross-package change.
 
 ## Writing the note
 
-**Keep it brief.** A changeset note is a one-line changelog entry, not a summary
-of the work. Most changes need a single sentence. Resist explaining the root
-cause, the mechanism, the before/after, or every touched surface — the reader
-wants to know what changed for them, nothing more. If you've written more than
-~2 sentences (or bullets) for a routine fix, cut it back.
+### The length bar is hard, not aspirational
+
+**A changeset note is a TL;DR: at most ~60 words, and never more than 4 lines of
+prose.** Count them before you save. This limit does not scale with how much work
+went in — a change that took a day and touched twenty files still gets one
+sentence. Big features get *shorter* notes than you think, because the reader only
+needs the entry point, not the tour.
+
+If your note is longer than the frontmatter, you have written the wrong thing.
+Delete it and write the one sentence a consumer needs to decide whether this
+release affects them. Depth belongs in `apps/docs` (see the **`docs`** skill) —
+the changelog links readers there by existing, not by duplicating it.
+
+Cut on sight, no matter how interesting it was to work out:
+
+| Never in a changeset | Where it goes instead |
+| --- | --- |
+| Why the bug happened, or what the first attempt was | the PR / commit body |
+| How it works (mechanism, algorithm, CSS technique) | the guide in `apps/docs` |
+| "Verified in Storybook", test counts, file paths | nowhere |
+| A list of every input, token and attribute added | the guide's options table |
+| Before/after comparisons, migration prose for unreleased API | nowhere |
+
+### Bad vs good
+
+Same change, both accurate — only one belongs in a changelog:
+
+```markdown
+<!-- BAD: explains the mechanism, lists every surface, reads like a guide -->
+Slide transitions are a system rather than one effect: each slide carries a registered
+`--et-carousel-slide-progress` running `-1` → `0` (centred) → `1`, filled either by a `view(inline)`
+keyframe animation or — where scroll-driven animations don't exist yet — by a passive scroll listener
+batched into a frame, selected by `transitionDriver`. Every effect is then pure CSS over one number:
+`transition="dim"` and `transition="wipe"` (the Apple-TV-ish reveal), plus `data-transition` as the
+hook for your own. `prefers-reduced-motion` turns the driver off…
+```
+
+```markdown
+<!-- GOOD -->
+Carousel: add scroll-driven slide transitions — `transition="dim"` / `"wipe"`, with `transitionDriver`
+to pick what fills them.
+```
+
+### The rest
 
 - Write for the changelog reader (a consumer of the library), not for reviewers
   of this PR. Say what the behaviour/API now does, not "fixed a bug in X".
 - Lead with the area, e.g. `Overlay:`, `Grid:`, `Menu:`, when it helps scanning.
 - Reference public API in backticks (`overlayRef.updatePositionStrategy(...)`).
 - One sentence for simple changes. Add bullets only when several genuinely
-  distinct things shipped — one line each, not a paragraph each.
-- Keep it to what shipped — no root-cause analysis, no "verified in Storybook",
-  no internal file paths, no rationale the reader doesn't need.
+  distinct things shipped — one line each, not a paragraph each. More than 4
+  bullets means it should have been several changesets, or a shorter summary.
+- A fix may name the symptom in a clause ("…it used to scroll out from under a
+  paused drag") — that tells a reader whether they hit it. It may not explain the
+  cause.
 
 ## Editing and consolidating unreleased changesets
 
@@ -124,10 +165,11 @@ changelog:
   component, or repeated fixes to the same area), merge them into one entry —
   fewer, coherent changelog lines beat a fragmented list. Keep genuinely distinct
   fixes as separate files.
-- **Keep them concise.** Hold every unreleased note to the same brevity bar as
-  writing a fresh one (see **Writing the note**): one sentence for simple changes,
-  one line per bullet for multi-part ones, no walls of text or mid-sentence hard
-  line-wraps. Trim verbose notes down when you pass by them.
+- **Keep them concise.** Hold every unreleased note to the same hard bar as a
+  fresh one (see **Writing the note**): ~60 words, 4 lines of prose, 4 bullets.
+  An unreleased entry that has grown as a feature landed in stages is the most
+  common place this slips — when you extend one, re-read the whole note and cut it
+  back to a TL;DR rather than appending another paragraph.
 - After merging/trimming, re-run the diff above (and `npx changeset status`) to
   confirm the frontmatter still parses and the set is what you expect.
 

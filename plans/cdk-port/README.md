@@ -142,8 +142,8 @@ Each plan file's own header is the detail (including deviations); this is the in
 - [x] `03-skeleton.md` — skeleton container/item/text (2026-07-24)
 - [x] `04-accordion.md` — accordion + group + headless tier (2026-07-28)
 - [x] `05-breadcrumb.md` — breadcrumb + overflow + routed outlet (2026-07-28)
-- [~] `06-carousel.md` — phase 1 shipped (scrollable composition, autoplay, `dim`); **phase 2 planned,
-  not started**: seamless looping + a transition system with a JS fallback driver (2026-07-28)
+- [x] `06-carousel.md` — phase 1 (scrollable composition, autoplay) + phase 2 (template slides, seamless
+      looping, the slide-progress transition system with both drivers, `dim` + `wipe`) (2026-07-28)
 - [ ] `07-masonry.md`
 - [ ] `08-picture.md`
 - [ ] `09-query-error.md`

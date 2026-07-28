@@ -14,6 +14,12 @@ guides and embeds stories where a live demo helps.
 
 Treat docs like the changeset: part of finishing the change, not a follow-up.
 
+**This page is where the depth goes.** The mechanism, the trade-offs, the reason a
+default is what it is, the gotcha a consumer will hit — all of it belongs here,
+and *only* here. The changeset gets a TL;DR (see the **`changeset`** skill); if
+you catch yourself explaining how something works in a changeset note, it means
+this page is missing a paragraph.
+
 - **Public API added/renamed/removed** (component, directive, input, exported
   function, provider) → update the matching guide in `apps/docs/components/`.
 - **Behavior or default changed** → fix every guide statement that's now wrong
