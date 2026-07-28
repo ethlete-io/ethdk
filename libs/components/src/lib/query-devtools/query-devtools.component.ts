@@ -35,8 +35,10 @@ type EventLogItem = {
   timestamp: number;
   client: string;
   type: QueryRepositoryEvent['type'];
-  method: string;
-  url: string;
+
+  /** `null` for events that are not about a single request, e.g. the logout-wide secure unbind. */
+  method: string | null;
+  url: string | null;
   isSecure: boolean;
   status: number | null;
 };
@@ -748,6 +750,12 @@ export class QueryDevtoolsComponent {
     return new Date(timestamp).toLocaleTimeString(undefined, { hour12: false });
   }
 
+  protected eventTypeLabel(event: EventLogItem) {
+    if (event.type === 'unbind-all-secure') return 'logout';
+
+    return event.type === 'request-error' ? `error ${event.status}` : 'success';
+  }
+
   private stepKey(entryId: string, index: number) {
     return `${entryId}:${index}`;
   }
@@ -852,16 +860,20 @@ export class QueryDevtoolsComponent {
   }
 
   private pushEvent(event: QueryRepositoryEvent, client: string) {
-    const item: EventLogItem = {
-      id: this.eventIdCounter++,
-      timestamp: Date.now(),
-      client,
-      type: event.type,
-      method: event.request.method,
-      url: event.request.url,
-      isSecure: event.isSecure,
-      status: event.type === 'request-error' ? event.error.status : null,
-    };
+    const base = { id: this.eventIdCounter++, timestamp: Date.now(), client, type: event.type };
+
+    // A logout drops every secure entry at once — worth a row of its own, since the requests that
+    // disappear from the cache view are otherwise unexplained.
+    const item: EventLogItem =
+      event.type === 'unbind-all-secure'
+        ? { ...base, method: null, url: null, isSecure: true, status: null }
+        : {
+            ...base,
+            method: event.request.method,
+            url: event.request.url,
+            isSecure: event.isSecure,
+            status: event.type === 'request-error' ? event.error.status : null,
+          };
 
     this.eventLog.update((log) => [item, ...log].slice(0, MAX_EVENTS));
   }

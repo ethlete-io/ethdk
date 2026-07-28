@@ -509,15 +509,19 @@
                     <td>{{ formatTime(event.timestamp) }}</td>
                     <td class="et-query-devtools-mono">{{ event.client }}</td>
                     <td>
-                      {{ event.type === 'request-error' ? 'error ' + event.status : 'success' }}
+                      {{ eventTypeLabel(event) }}
                       @if (event.isSecure) {
                         <span class="et-query-devtools-chip et-query-devtools-chip--muted">secure</span>
                       }
                     </td>
-                    <td [title]="event.method + ' ' + event.url">
-                      <span class="et-query-devtools-method">{{ event.method }}</span>
-                      <span class="et-query-devtools-url">{{ requestPath(event.url) }}</span>
-                    </td>
+                    @if (event.url; as url) {
+                      <td [title]="event.method + ' ' + url">
+                        <span class="et-query-devtools-method">{{ event.method }}</span>
+                        <span class="et-query-devtools-url">{{ requestPath(url) }}</span>
+                      </td>
+                    } @else {
+                      <td class="et-query-devtools-url">all secure entries dropped</td>
+                    }
                   </tr>
                 } @empty {
                   <tr>
