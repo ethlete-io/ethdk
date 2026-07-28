@@ -29,6 +29,83 @@ Deviations and decisions beyond the plan below:
 - **Off-screen slides are not hidden.** cdk stacked its slides and had to `inert` them; a scrolling
   carousel must leave them reachable by scroll and by Tab.
 
+## Phase 2 (planned 2026-07-28, not started) — a real carousel
+
+Phase 1 shipped the composition, and the review of it is fair: it is a scrollable with chrome. Two things
+are missing that are the _point_ of a carousel, and both are specified here.
+
+### 1. Seamless looping
+
+Today `loop` is a **rewind**: `next()` on the last slide scrolls back to the first, visibly. A carousel
+must cross the seam without showing it.
+
+The only way to do that on a native scroller is to have content on both sides of the seam and teleport the
+scroll offset across it. Constraints found in this codebase:
+
+- **Clones must be ordinary scrollable children.** The track is a CSS grid (`grid-auto-flow: column`) that
+  pins the first and last real item to explicit columns derived from `--item-count`
+  (`scrollable.component.css`), and `--item-count` counts `scrollableChildren()`. Marking clones
+  `etScrollableIgnoreChild` would exclude them from that count and break the pinning, so clones are counted
+  and the **carousel** owns the DOM-index → slide-index mapping (a modulo), not the scrollable.
+- **Clones must be live Angular views, not `cloneNode` copies.** A cloned DOM subtree has no bindings, so
+  anything interactive or async inside a slide would be dead in the clone (this is the documented cost of
+  Swiper's loop mode; it is not acceptable for an Angular library, and `no-direct-dom-manipulation` says so
+  too).
+- Which forces the API: **slides become data + a template** for the looping case.
+  `<et-carousel [slides]="items" loop>` with `<ng-template etCarouselSlide let-slide let-index="index">`.
+  The carousel then renders `[tail clones][real slides][head clones]` from one template. Projected
+  `etCarouselItem` children keep working for hand-written slides, without seamless loop (documented; `loop`
+  falls back to today's rewind there, or is refused in dev — decide when implementing).
+  This also opens the door to virtualizing long carousels later.
+
+Implementation notes:
+
+- Clone count: enough to cover one viewport plus one, derived from the resolved `itemSize`
+  (`full` → 1, `half` → 2, `third` → 3, `auto` → measure). Recompute on breakpoint change.
+- Teleport: when the active DOM index enters the clone zone, shift `scrollLeft`/`scrollTop` by the real
+  track length with `behavior: 'auto'`. Do it on **`scrollend`** (Firefox 109+, Chrome 114+, Safari 26) and
+  fall back to a debounced `scroll` where it is missing — never mid-animation, or the jump is visible.
+  A teleport during a finger drag must be deferred until the pointer is up.
+- Clones are `aria-hidden` + `inert` and excluded from `count()`, the dots, and the `N of M` labels; the
+  active dot follows the mapped real index. Slide labels come from the real index, so a clone announces
+  nothing.
+- `next()`/`previous()`/autoplay stop having an end: `canGoNext`/`canGoPrevious` are always true while
+  looping, and `isAtStart`/`isAtEnd` become about the _real_ index for consumers that show progress.
+- Edge cases to cover in the spec: fewer slides than fit a viewport (no clones, no loop), a single slide,
+  variable-width slides (`itemSize="auto"` — teleport distance must be measured, not computed), and slides
+  added/removed while looping (clone views must follow).
+
+### 2. A transition system, not one effect
+
+`transition="dim"` is the floor, not the ceiling, and the fallback question has a better answer than
+picking one of the two options: **give every effect one input and fill it two ways.**
+
+- Each slide carries a registered custom property — `--et-carousel-slide-progress`, `syntax: '<number>'` —
+  that runs from `-1` (one viewport before centre) through `0` (centred) to `1` (one viewport past).
+- **Where scroll-driven animations exist** (Chromium, Safari), a `@keyframes` block animates _that
+  property_ along the slide's own `view(inline)` timeline. Zero JavaScript, and the property is already
+  proven to interpolate this way — the autoplay ring does it today.
+- **Where they don't** (Firefox, still), a fallback driver writes the same property per visible slide from
+  a passive `scroll` listener batched into `requestAnimationFrame`. Same variable, same effects, ~N writes
+  per frame with N = slides in view.
+- Every effect is then **pure CSS reading one number**, which is what makes a library of them cheap:
+  - `dim` — today's opacity/scale recede.
+  - `wipe` — the Apple-TV-ish `clip-path: inset()` reveal cdk had, now driven by position rather than by a
+    class flip, so it tracks a finger.
+  - `parallax` — slide content translating slower than the slide.
+  - `tilt` — a small `rotate3d` toward the centre.
+    Ship `dim` + `wipe` first; the rest are additive and consumers can author their own against the same
+    property (documented hook).
+- `prefers-reduced-motion` drops all of it (the JS driver never starts either), and a `transitionDriver`
+  input (`'auto' | 'scroll-timeline' | 'js' | 'none'`) lets a perf-sensitive page opt out of the fallback.
+
+### Verification
+
+Storybook drive per effect (progress property values at known scroll offsets), a loop story that asserts
+the seam is invisible (scroll offset continuity across a teleport plus no change in rendered slide text),
+`scrollend`-less path forced by stubbing the event, and the reduced-motion path. The mobile emulator is
+worth it here for the drag-and-teleport interaction (`verify-in-mobile-emulator`).
+
 Size: M. Research below done 2026-07-23 against
 `libs/cdk/src/lib/components/carousel/` (~970 lines). Net-new in
 `libs/components`.
