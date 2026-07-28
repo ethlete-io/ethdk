@@ -3,6 +3,13 @@
 **Status: complete — all five phases shipped 2026-07-25.** Size: L — split into
 shippable phases, each one green (tests + stories) on its own.
 
+> **Superseded in part by [`table-api-rfc.md`](./table-api-rfc.md) (2026-07-27).** The
+> three seams and the tree-shaking model below still hold, but features are no longer
+> child components of `<et-table>` — they are directives on it, and the seams take
+> component types instead of `TemplateRef`s. The "Feature API shape" section and the
+> `<ng-content />` note in phase 2 describe the old shape; read the RFC for the current
+> one. The size table's per-feature deltas were re-measured there.
+
 ## Why
 
 `plans/cdk-port/01-table.md` requirement #2 was "**light by default, tree-shakable
