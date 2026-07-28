@@ -27,7 +27,8 @@ import { SCROLLABLE_IMPORTS } from '@ethlete/components';
 | `scrollMode`                 | `'container'`  | `'element'` scrolls child-by-child (pair with snap)                                                   |
 | `scrollOrigin`               | `'auto'`       | Where scrolled-to elements align: `'auto' \| 'start' \| 'center' \| 'end'`                            |
 | `scrollMargin`               | `0`            | Extra margin (px) when scrolling elements into view (incl. snap)                                      |
-| `snap`                       | `false`        | CSS scroll-snap on children                                                                           |
+| `snap`                       | `false`        | Snap the track onto a child once the scrolling settles                                                |
+| `snapOrigin`                 | `'auto'`       | Where a snapped child rests: `'auto' \| 'start' \| 'center' \| 'end'`. Only used with `snap`          |
 | `renderButtons`              | `true`         | Prev/next buttons; `buttonPosition: 'inside' \| 'footer'`, `stickyButtons`                            |
 | `renderMasks`                | `true`         | Edge fades; `maskVariant: 'gradient' \| 'border'`                                                     |
 | `renderNavigation`           | `false`        | Dot navigation                                                                                        |
@@ -38,6 +39,16 @@ import { SCROLLABLE_IMPORTS } from '@ethlete/components';
 | `scrollableRole`             | —              | `role` attribute for the scroll container (e.g. `list`)                                               |
 | `scrollableClass`            | —              | Extra class(es) on the scroll container                                                               |
 | `color`                      | —              | App-registered color theme for buttons/dots                                                           |
+
+Snapping is ours rather than CSS `scroll-snap`: the track settles onto a child a moment after the
+scrolling stops. `snapOrigin` decides where that child comes to rest — `'auto'` takes whichever of
+start/centre/end it is already nearest, which keeps a plain list from being dragged around, while
+`'center'` suits a peeking layout where the point is one current item with its neighbours showing either
+side (that is what [carousel](/components/carousel)'s `slideAlign` sets).
+
+A snap never happens while a pointer is held on the track. It waits for the quiet moment after a scroll,
+and a gesture is full of those — without the gate, pausing mid-drag for longer than the settle delay
+would scroll the content out from under the finger still holding it. Touch counts as well as the mouse.
 
 `itemSize`, `direction` and `scrollMode` also accept per-breakpoint maps (e.g. `[itemSize]="{ xs: 'full', md: 'third' }"`) — see [breakpoint inputs](/core/signal-utils#breakpoint-inputs) for how these resolve. The underlying scroll math (snap targets, `scrollToElement`) comes from the [core scrolling primitives](/core/scrolling).
 

@@ -32,6 +32,7 @@ import {
   ScrollableIntersectionChange,
   ScrollableLoadingTemplatePosition,
   ScrollableMaskVariant,
+  ScrollableScrollOrigin,
   ScrollableScrollState,
 } from './headless/scrollable.types';
 
@@ -80,6 +81,14 @@ export class ScrollableComponent {
   public buttonPosition = input<ScrollableButtonPosition>('inside');
   public renderNavigation = input(false, { transform: booleanAttribute });
   public snap = input(false, { transform: booleanAttribute });
+
+  /**
+   * Where a snapped item comes to rest. `'auto'` takes whichever of start/centre/end the item is already
+   * nearest, which keeps a plain list from being dragged around; pin it to `'center'` for a peeking layout,
+   * where the point is that the current item sits in the middle with its neighbours showing either side.
+   * Only used with `snap`. @default 'auto'
+   */
+  public snapOrigin = input<ScrollableScrollOrigin>('auto');
   public cursorDragScroll = input(true, { transform: booleanAttribute });
   public darkenNonIntersectingItems = input(false, { transform: booleanAttribute });
   public stickyButtons = input(false, { transform: booleanAttribute });

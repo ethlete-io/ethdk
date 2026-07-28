@@ -52,7 +52,7 @@
 }
 
 @if (snap()) {
-  <ng-container etScrollableSnap />
+  <ng-container [snapOrigin]="snapOrigin()" etScrollableSnap />
 }
 
 @if (cursorDragScroll()) {
