@@ -253,6 +253,9 @@ const recommendedTs = {
     // No .subscribe() inside effect() or computed()
     'ethlete/no-rxjs-in-effect': 'error',
 
+    // No cleanup function returned from effect() — Angular ignores it, so it never runs
+    'ethlete/no-effect-cleanup-return': 'error',
+
     // No readonly on reactive class properties (signals, inputs, computed, inject, etc.)
     'ethlete/no-readonly-signal': 'error',
 

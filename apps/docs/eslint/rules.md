@@ -70,15 +70,16 @@ export class ProfileAvatarComponent {
 
 ## RxJS & signals
 
-| Rule                     | What it enforces                                                                                              | Fix | Default |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------- | --- | ------- |
-| `require-dollar-suffix`  | Observable variables and class properties end with `$`                                                        |     | error   |
-| `no-subscribe-with-body` | `subscribe()` is called with an empty body — side effects go into `tap()` inside the pipe                     |     | error   |
-| `no-subscribe-in-pipe`   | No `.subscribe()` calls inside `.pipe()` callbacks                                                            |     | error   |
-| `no-rxjs-in-effect`      | No `.subscribe()` inside `effect()` or `computed()` — bridge with `toObservable()` instead                    |     | error   |
-| `no-readonly-signal`     | No `readonly` on class properties initialized with reactive APIs (`signal`, `input`, `computed`, `inject`, …) | 🔧  | error   |
-| `prefer-linked-signal`   | `linkedSignal()` instead of calling `.set()` on a signal inside `effect()`                                    |     | warn    |
-| `prefer-rxjs-timer`      | RxJS `timer` / `interval` / `fromEvent` instead of `setTimeout` / `setInterval` / `addEventListener`          |     | error   |
+| Rule                       | What it enforces                                                                                                 | Fix | Default |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `require-dollar-suffix`    | Observable variables and class properties end with `$`                                                           |     | error   |
+| `no-subscribe-with-body`   | `subscribe()` is called with an empty body — side effects go into `tap()` inside the pipe                        |     | error   |
+| `no-subscribe-in-pipe`     | No `.subscribe()` calls inside `.pipe()` callbacks                                                               |     | error   |
+| `no-rxjs-in-effect`        | No `.subscribe()` inside `effect()` or `computed()` — bridge with `toObservable()` instead                       |     | error   |
+| `no-effect-cleanup-return` | No cleanup function returned from `effect()` — Angular ignores it; use the `onCleanup` parameter or `DestroyRef` | 🔧  | error   |
+| `no-readonly-signal`       | No `readonly` on class properties initialized with reactive APIs (`signal`, `input`, `computed`, `inject`, …)    | 🔧  | error   |
+| `prefer-linked-signal`     | `linkedSignal()` instead of calling `.set()` on a signal inside `effect()`                                       |     | warn    |
+| `prefer-rxjs-timer`        | RxJS `timer` / `interval` / `fromEvent` instead of `setTimeout` / `setInterval` / `addEventListener`             |     | error   |
 
 ```ts
 // ❌ logic in the subscribe callback

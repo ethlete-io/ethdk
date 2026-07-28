@@ -5,6 +5,7 @@ const noInjectChain = require('./rules/no-inject-chain');
 const noTrivialReturnType = require('./rules/no-trivial-return-type');
 const noSubscribeInPipe = require('./rules/no-subscribe-in-pipe');
 const noRxjsInEffect = require('./rules/no-rxjs-in-effect');
+const noEffectCleanupReturn = require('./rules/no-effect-cleanup-return');
 const noReadonlySignal = require('./rules/no-readonly-signal');
 const noScreamingCaseLocal = require('./rules/no-screaming-case-local');
 const preferRxjsTimer = require('./rules/prefer-rxjs-timer');
@@ -65,6 +66,7 @@ const plugin = {
     'no-trivial-return-type': noTrivialReturnType,
     'no-subscribe-in-pipe': noSubscribeInPipe,
     'no-rxjs-in-effect': noRxjsInEffect,
+    'no-effect-cleanup-return': noEffectCleanupReturn,
     'no-readonly-signal': noReadonlySignal,
     'no-screaming-case-local': noScreamingCaseLocal,
     'prefer-rxjs-timer': preferRxjsTimer,

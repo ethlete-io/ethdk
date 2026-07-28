@@ -214,12 +214,14 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
     const elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
     const host = elementRef.nativeElement;
 
-    effect(() => {
+    effect((onCleanup) => {
       if (this.disableJourneyHighlight()) return;
 
       const teardown = ngZone.runOutsideAngular(() => setupJourneyHighlightListeners(host, renderer));
 
-      return () => teardown();
+      // via onCleanup, not a returned function: effect() ignores what the callback returns, so the
+      // listeners would stack up on every re-run and outlive the component.
+      onCleanup(() => teardown());
     });
   }
 }

@@ -1,4 +1,4 @@
-# Style Guide v0.19.0
+# Style Guide v0.20.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -51,6 +51,7 @@ Run `npx nx lint <project> --fix` — the rules below are enforced (and mostly a
 | No redundant `@internal` on `private`/`protected` members                                                                         | `ethlete/no-redundant-internal`                                                                                                                                                                                     |
 | Observable vars/props end with `$`                                                                                                | `ethlete/require-dollar-suffix`                                                                                                                                                                                     |
 | No body in `subscribe()`; no `subscribe` in `pipe()`; no RxJS in `effect()`/`computed()`                                          | `ethlete/no-subscribe-with-body`, `ethlete/no-subscribe-in-pipe`, `ethlete/no-rxjs-in-effect`                                                                                                                       |
+| Effect teardown goes through `onCleanup` (or `DestroyRef`), never a returned cleanup function                                     | `ethlete/no-effect-cleanup-return`                                                                                                                                                                                  |
 | `ViewEncapsulation.None`                                                                                                          | `ethlete/require-view-encapsulation-none`                                                                                                                                                                           |
 | No legacy lifecycle hooks; no legacy Angular decorators (`@HostBinding`, `@Input`, …)                                             | `no-restricted-syntax`, `ethlete/no-legacy-angular-decorators`                                                                                                                                                      |
 | No `@Injectable` / `@Service`; no route guards; no resolvers                                                                      | `no-restricted-syntax`                                                                                                                                                                                              |
