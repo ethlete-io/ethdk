@@ -4,4 +4,5 @@ export * from './breadcrumb-manager';
 export * from './breadcrumb-outlet.component';
 export * from './breadcrumb.component';
 export * from './breadcrumb.imports';
+export * from './breadcrumb.types';
 export * from './headless';

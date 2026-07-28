@@ -12,8 +12,9 @@ import { BreadcrumbDirective } from './headless';
  * {@link BreadcrumbDirective}.
  *
  * The crumbs are `<ng-template etBreadcrumbItemTemplate>`s you declare — see the headless directive for
- * why. Pair it with `<ng-template etBreadcrumbTemplate>` + `<et-breadcrumb-outlet>` to render a routed
- * page's trail up in the app shell.
+ * why. For a routed app, don't place this yourself: let each view contribute an
+ * `<ng-template etBreadcrumbSegment>` and put one `<et-breadcrumb-outlet>` in the shell, which renders
+ * the composed trail through this component.
  *
  * @example
  * <et-breadcrumb>
@@ -31,7 +32,7 @@ import { BreadcrumbDirective } from './headless';
   hostDirectives: [
     {
       directive: BreadcrumbDirective,
-      inputs: ['collapse', 'labels'],
+      inputs: ['collapse', 'labels', 'crumbs'],
     },
   ],
   host: {

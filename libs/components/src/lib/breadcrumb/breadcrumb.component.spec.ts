@@ -113,40 +113,87 @@ describe('BreadcrumbComponent', () => {
 });
 
 @Component({
-  selector: 'et-test-breadcrumb-outlet-host',
+  selector: 'et-test-breadcrumb-shell',
   template: `
     <et-breadcrumb-outlet />
 
-    @if (showsPage()) {
-      <ng-template etBreadcrumbTemplate>
-        <et-breadcrumb>
-          <ng-template etBreadcrumbItemTemplate>
-            <span etBreadcrumbItem>Registered</span>
-          </ng-template>
-        </et-breadcrumb>
+    <ng-template etBreadcrumbSegment>
+      <ng-template etBreadcrumbItemTemplate>
+        <a etBreadcrumbItem href="#">Home</a>
+      </ng-template>
+    </ng-template>
+
+    @if (showsLayout()) {
+      <ng-template etBreadcrumbSegment>
+        <ng-template etBreadcrumbItemTemplate>
+          <a etBreadcrumbItem href="#">Teams</a>
+        </ng-template>
+      </ng-template>
+    }
+
+    @if (showsLeaf()) {
+      <ng-template etBreadcrumbSegment>
+        <ng-template etBreadcrumbItemTemplate>
+          <span etBreadcrumbItem>Squad</span>
+        </ng-template>
       </ng-template>
     }
   `,
   imports: [BREADCRUMB_IMPORTS],
   providers: [provideBreadcrumbManager()],
 })
-class BreadcrumbOutletHostComponent {
+class BreadcrumbShellComponent {
   public outlet = viewChild.required(BreadcrumbOutletComponent);
-  public showsPage = signal(true);
+  public showsLayout = signal(true);
+  public showsLeaf = signal(true);
 }
 
 describe('BreadcrumbOutletComponent', () => {
-  it('renders the registered trail, and nothing once the page that registered it is gone', () => {
-    const fixture = TestBed.createComponent(BreadcrumbOutletHostComponent);
+  const createShell = () => {
+    const fixture = TestBed.createComponent(BreadcrumbShellComponent);
     fixture.detectChanges();
 
-    const element = fixture.nativeElement as HTMLElement;
+    return fixture;
+  };
 
-    expect(element.querySelector('et-breadcrumb')?.textContent?.trim()).toBe('Registered');
+  const trail = (fixture: ComponentFixture<BreadcrumbShellComponent>) =>
+    [...(fixture.nativeElement as HTMLElement).querySelectorAll('.et-breadcrumb-slot')].map((li) =>
+      li.textContent?.trim(),
+    );
 
-    fixture.componentInstance.showsPage.set(false);
+  it('composes the trail from every registered segment, in registration order', () => {
+    const fixture = createShell();
+
+    expect(trail(fixture)).toEqual(['Home', 'Teams', 'Squad']);
+  });
+
+  it('marks the last crumb of the composed trail as the current page', () => {
+    const fixture = createShell();
+    const current = (fixture.nativeElement as HTMLElement).querySelectorAll('[aria-current="page"]');
+
+    expect(current.length).toBe(1);
+    expect(current[0]?.textContent?.trim()).toBe('Squad');
+  });
+
+  it('drops only the crumbs of a segment whose view is gone, and re-marks the new last crumb', () => {
+    const fixture = createShell();
+
+    fixture.componentInstance.showsLeaf.set(false);
     fixture.detectChanges();
 
-    expect(element.querySelector('et-breadcrumb')).toBeNull();
+    expect(trail(fixture)).toEqual(['Home', 'Teams']);
+    expect((fixture.nativeElement as HTMLElement).querySelector('[aria-current="page"]')?.textContent?.trim()).toBe(
+      'Teams',
+    );
+  });
+
+  it("keeps the shell's own crumb when every deeper segment is gone", () => {
+    const fixture = createShell();
+
+    fixture.componentInstance.showsLayout.set(false);
+    fixture.componentInstance.showsLeaf.set(false);
+    fixture.detectChanges();
+
+    expect(trail(fixture)).toEqual(['Home']);
   });
 });

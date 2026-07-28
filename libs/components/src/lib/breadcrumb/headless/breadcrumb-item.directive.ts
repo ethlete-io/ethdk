@@ -7,7 +7,8 @@ import { BreadcrumbItemTemplateDirective } from './breadcrumb-templates.directiv
  * which is how a screen reader knows where in the trail the user actually is.
  *
  * Optional: a crumb template renders whatever it contains. Use it and you get the default look and the
- * `aria-current` wiring for free.
+ * `aria-current` wiring for free — including when the trail is composed from several segments, since the
+ * breadcrumb tells each crumb template whether it ended up last.
  */
 @Directive({
   selector: '[etBreadcrumbItem]',

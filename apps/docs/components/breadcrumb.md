@@ -5,6 +5,9 @@ be a router link, the plain text of the current page, or a placeholder while its
 fetched — and when the trail runs out of room, the middle crumbs move into a popover instead of being
 clipped.
 
+In a routed app you don't build the whole trail anywhere: every view contributes **only the crumbs it
+owns** and the shell's outlet composes them — see [Trails from routed views](#trails-from-routed-views).
+
 ```ts
 import { BREADCRUMB_IMPORTS } from '@ethlete/components';
 ```
@@ -26,20 +29,21 @@ import { BREADCRUMB_IMPORTS } from '@ethlete/components';
 
 ## Anatomy
 
-| Piece                      | What it is                                                                                                                  |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `et-breadcrumb`            | The navigation landmark: an `<ol>` of crumbs with separators, and the overflow control once they stop fitting.              |
-| `etBreadcrumbItemTemplate` | One crumb, as an `<ng-template>` — the breadcrumb decides whether it renders inline or inside the overflow.                 |
-| `etBreadcrumbItem`         | The crumb element itself (`<a>`, `<button>`, `<span>`): default styling plus `aria-current` on the last crumb.              |
-| `etBreadcrumbSeparator`    | Optional `<ng-template>` replacing the chevron between crumbs.                                                              |
-| `etBreadcrumbTemplate`     | Registers a routed page's whole trail, for rendering elsewhere — see [Trails from routed pages](#trails-from-routed-pages). |
-| `et-breadcrumb-outlet`     | Renders whichever page's trail is currently registered.                                                                     |
+| Piece                      | What it is                                                                                                     |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `et-breadcrumb`            | The navigation landmark: an `<ol>` of crumbs with separators, and the overflow control once they stop fitting. |
+| `etBreadcrumbItemTemplate` | One crumb, as an `<ng-template>` — the breadcrumb decides whether it renders inline or inside the overflow.    |
+| `etBreadcrumbItem`         | The crumb element itself (`<a>`, `<button>`, `<span>`): default styling plus `aria-current` on the last crumb. |
+| `etBreadcrumbSeparator`    | Optional `<ng-template>` replacing the chevron between crumbs.                                                 |
+| `etBreadcrumbSegment`      | One view's contribution to the trail — the crumbs it owns, nothing above it.                                   |
+| `et-breadcrumb-outlet`     | Renders the trail composed from every segment currently on screen.                                             |
 
 ### Why templates instead of elements
 
-A crumb has to be renderable in two places — inline in the trail, or inside the overflow popover — and
-only a template can be. It is also what lets a page own a crumb whose label it doesn't have yet: mark
-the template `loading` and the crumb keeps its slot until the name arrives.
+A crumb has to be renderable somewhere its declaring view doesn't control — inline in the trail, inside
+the overflow popover, or in a shell outlet several routes above — and only a template can be. It is also
+what lets a view own a crumb whose label it doesn't have yet: mark the template `loading` and the crumb
+keeps its slot until the name arrives.
 
 ### Inputs
 
@@ -48,7 +52,8 @@ the template `loading` and the crumb keeps its slot until the name arrives.
 | `collapse` | `true`  | Move the middle crumbs into the overflow control when the trail doesn't fit. Off leaves your CSS in charge. |
 | `labels`   | `null`  | Per-instance overrides for the accessible labels, merged over the provided `BREADCRUMB_LABELS`.             |
 
-`etBreadcrumbItemTemplate` takes `loading` (default `false`).
+`etBreadcrumbItemTemplate` takes `loading` (default `false`); `etBreadcrumbSegment` takes `order`
+(default `null`); `et-breadcrumb-outlet` takes `collapse` and `labels` and forwards them.
 
 ## Overflow
 
@@ -63,41 +68,124 @@ ellipsis rather than being clipped mid-word.
 
 <StoryEmbed id="components-breadcrumb--collapsed" height="320px" />
 
-## Trails from routed pages
+## Trails from routed views
 
-The trail usually belongs in the app shell, but only the routed page knows what it says. Provide the
-manager once above both, let each page register its trail, and render it in the shell:
+The trail belongs in the app shell, but no single view knows all of it: the deep pages are named after
+data they just loaded. So each view registers **only its own crumbs** and the outlet renders all the
+registered segments as one trail, in view order — a detail page contributes one crumb and never restates
+the path above it.
 
 ```ts
-// app.config.ts
+// app.config.ts — one manager above the outlet and every view that contributes
 providers: [provideBreadcrumbManager()];
 ```
 
 ```html
-<!-- shell -->
+<!-- shell: one outlet, plus (optionally) the root crumb -->
 <et-breadcrumb-outlet />
+
+<ng-template etBreadcrumbSegment>
+  <ng-template etBreadcrumbItemTemplate>
+    <a etBreadcrumbItem routerLink="/">Home</a>
+  </ng-template>
+</ng-template>
+
+<router-outlet />
 ```
 
 ```html
-<!-- routed page -->
-<ng-template etBreadcrumbTemplate>
-  <et-breadcrumb>
-    <ng-template etBreadcrumbItemTemplate>
-      <a etBreadcrumbItem routerLink="/teams">Teams</a>
-    </ng-template>
-    <ng-template [loading]="isLoading()" etBreadcrumbItemTemplate>
-      <span etBreadcrumbItem>{{ team().name }}</span>
-    </ng-template>
-  </et-breadcrumb>
+<!-- teams-list-view.component.ts — the level's own crumb, then its children -->
+<ng-template etBreadcrumbSegment>
+  <ng-template etBreadcrumbItemTemplate>
+    <a etBreadcrumbItem routerLink="/teams">Teams</a>
+  </ng-template>
 </ng-template>
 ```
 
-The outlet renders nothing when no page has registered a trail, so the shell doesn't need to know which
-routes have breadcrumbs. A page's trail is dropped when the page is destroyed — unless the next page has
-already registered its own, which is what keeps the outlet from blanking during a route change.
+```html
+<!-- team-detail-view.component.ts — one crumb, the part only this view knows -->
+<ng-template etBreadcrumbSegment>
+  <ng-template [loading]="team.isLoading()" etBreadcrumbItemTemplate>
+    <a [routerLink]="['/teams', team.id()]" etBreadcrumbItem>{{ team.name() }}</a>
+  </ng-template>
+</ng-template>
+```
 
-Crumbs are deliberately **not** derived from the route config: half of them are usually named after data
-the page just loaded, which a static config can't know.
+The outlet renders nothing while no view has contributed a crumb, so the shell needs to know nothing
+about which routes have breadcrumbs. When a view is destroyed only _its_ crumbs disappear, which is why
+navigating from `/teams/chemie/squad` back to `/teams/chemie` drops one crumb instead of rebuilding the
+trail.
+
+Crumbs are deliberately **not** derived from the route config: half of them are named after data the
+view just loaded, which a static config can't know.
+
+### The routing hierarchy this needs
+
+Segments compose along the **router hierarchy**, so the routes have to nest the way the trail does. Each
+level that adds a crumb needs a routed view of its own, holding its segment and a `<router-outlet>` for
+the level below:
+
+```ts
+export const TEAM_ROUTES: Routes = [
+  {
+    // contributes "Teams", renders the level below
+    path: 'teams',
+    loadComponent: () => import('./teams-view/teams-view.component').then((m) => m.TeamsViewComponent),
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./teams-list-view/teams-list-view.component').then((m) => m.TeamsListViewComponent),
+      },
+      {
+        // contributes the team's name, renders the level below
+        path: ':teamId',
+        loadComponent: () => import('./team-view/team-view.component').then((m) => m.TeamViewComponent),
+        children: [
+          {
+            path: 'squad',
+            loadComponent: () =>
+              import('./team-squad-view/team-squad-view.component').then((m) => m.TeamSquadViewComponent),
+          },
+        ],
+      },
+    ],
+  },
+];
+```
+
+That is the structure the styleguide's routing rules already push you towards: routed components live in
+a `*-view/` folder and are named `*ViewComponent` (enforced for every `loadComponent`), so "the view that
+owns this level of the URL" is already a file that exists. Its segment is one `<ng-template>` in it.
+
+A view that adds no level simply declares no segment. A view that owns a level but renders no crumb of
+its own (a pure layout) is fine too — it just contributes an empty segment, or none at all.
+
+### Order, and the one rule to follow
+
+Segments appear in the trail in **registration order**, which under the router is view-creation order:
+outermost route first. Two consequences:
+
+- **Declare the segment unconditionally.** A segment behind an `@if` that flips later registers _after_
+  its own children and would land at the wrong position. When the label isn't there yet, keep the
+  segment and mark the crumb `loading` — that is what the placeholder is for.
+- **Sibling order inside one view** is declaration order, so a view contributing two crumbs gets them in
+  the order they appear in its template.
+
+For a structure whose creation order genuinely doesn't match its hierarchy, `etBreadcrumbSegment` takes
+an explicit `order` (a number; segments without one keep their registration index, and the two are
+compared on the same scale, so `order="0"` pins a segment to the front).
+
+### Configuring the composed breadcrumb
+
+The outlet forwards `collapse` and `labels` to the breadcrumb it renders, and anything you project into
+it lands inside — which is how a shell-wide separator is set:
+
+```html
+<et-breadcrumb-outlet [collapse]="true">
+  <ng-template etBreadcrumbSeparator>/</ng-template>
+</et-breadcrumb-outlet>
+```
 
 <StoryEmbed id="components-breadcrumb--routed-outlet" height="360px" />
 

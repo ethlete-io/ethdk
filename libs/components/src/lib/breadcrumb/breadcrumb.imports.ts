@@ -4,15 +4,15 @@ import {
   BreadcrumbDirective,
   BreadcrumbItemDirective,
   BreadcrumbItemTemplateDirective,
+  BreadcrumbSegmentDirective,
   BreadcrumbSeparatorDirective,
-  BreadcrumbTemplateDirective,
 } from './headless';
 
-/** The breadcrumb, its outlet, the crumb/separator templates, and the headless directive. */
+/** The breadcrumb, its outlet, the segment/crumb/separator templates, and the headless directive. */
 export const BREADCRUMB_IMPORTS = [
   BreadcrumbComponent,
   BreadcrumbOutletComponent,
-  BreadcrumbTemplateDirective,
+  BreadcrumbSegmentDirective,
   BreadcrumbItemTemplateDirective,
   BreadcrumbItemDirective,
   BreadcrumbSeparatorDirective,

@@ -5,7 +5,10 @@ import { ProvideSurfaceDirective } from '@ethlete/core';
 import { tap, timer } from 'rxjs';
 import { BREADCRUMB_IMPORTS } from '../breadcrumb.imports';
 
-/** The app shell: it renders the outlet without knowing what any page's trail says. */
+/**
+ * The app shell: it renders the outlet without knowing what any view's trail says, and contributes the
+ * root crumb itself.
+ */
 @Component({
   selector: 'et-sb-breadcrumb-routed',
   template: `
@@ -20,6 +23,12 @@ import { BREADCRUMB_IMPORTS } from '../breadcrumb.imports';
         <et-breadcrumb-outlet />
       </div>
 
+      <ng-template etBreadcrumbSegment>
+        <ng-template etBreadcrumbItemTemplate>
+          <a etBreadcrumbItem routerLink="/teams">Home</a>
+        </ng-template>
+      </ng-template>
+
       <router-outlet />
     </div>
   `,
@@ -30,45 +39,49 @@ export class BreadcrumbRoutedStorybookComponent {
   public surface = input('dark');
 }
 
+/** A layout route: contributes its own crumb and hosts the child routes. Nothing else. */
 @Component({
-  selector: 'et-sb-breadcrumb-page-teams',
+  selector: 'et-sb-breadcrumb-teams-layout',
   template: `
-    <h2 class="m-0">Teams</h2>
-
-    <ng-template etBreadcrumbTemplate>
-      <et-breadcrumb>
-        <ng-template etBreadcrumbItemTemplate>
-          <span etBreadcrumbItem>Teams</span>
-        </ng-template>
-      </et-breadcrumb>
+    <ng-template etBreadcrumbSegment>
+      <ng-template etBreadcrumbItemTemplate>
+        <a etBreadcrumbItem routerLink="/teams">Teams</a>
+      </ng-template>
     </ng-template>
+
+    <router-outlet />
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BREADCRUMB_IMPORTS],
+  imports: [BREADCRUMB_IMPORTS, RouterLink, RouterOutlet],
+})
+export class BreadcrumbTeamsLayoutComponent {}
+
+@Component({
+  selector: 'et-sb-breadcrumb-page-teams',
+  template: `<h2 class="m-0">Teams</h2>`,
+  encapsulation: ViewEncapsulation.None,
 })
 export class BreadcrumbTeamsPageComponent {}
 
+/** A detail route: contributes exactly one crumb — the record's name, which only it can know. */
 @Component({
   selector: 'et-sb-breadcrumb-page-team',
   template: `
     <h2 class="m-0">Team</h2>
 
-    <ng-template etBreadcrumbTemplate>
-      <et-breadcrumb>
-        <ng-template etBreadcrumbItemTemplate>
-          <a etBreadcrumbItem routerLink="/teams">Teams</a>
-        </ng-template>
-        <ng-template [loading]="isLoadingName()" etBreadcrumbItemTemplate>
-          <span etBreadcrumbItem>{{ name() }}</span>
-        </ng-template>
-      </et-breadcrumb>
+    <ng-template etBreadcrumbSegment>
+      <ng-template [loading]="isLoadingName()" etBreadcrumbItemTemplate>
+        <a etBreadcrumbItem routerLink="/teams/chemie">{{ name() }}</a>
+      </ng-template>
     </ng-template>
+
+    <router-outlet />
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BREADCRUMB_IMPORTS, RouterLink],
+  imports: [BREADCRUMB_IMPORTS, RouterLink, RouterOutlet],
 })
 export class BreadcrumbTeamPageComponent {
-  // The crumb only this page can fill in: a placeholder holds its slot until the name is there.
+  // The crumb only this view can fill in: a placeholder holds its slot until the name is there.
   protected isLoadingName = signal(true);
   protected name = signal('…');
 
@@ -90,21 +103,13 @@ export class BreadcrumbTeamPageComponent {
   template: `
     <h2 class="m-0">Squad</h2>
 
-    <ng-template etBreadcrumbTemplate>
-      <et-breadcrumb>
-        <ng-template etBreadcrumbItemTemplate>
-          <a etBreadcrumbItem routerLink="/teams">Teams</a>
-        </ng-template>
-        <ng-template etBreadcrumbItemTemplate>
-          <a etBreadcrumbItem routerLink="/teams/chemie">BSG Chemie Leipzig</a>
-        </ng-template>
-        <ng-template etBreadcrumbItemTemplate>
-          <span etBreadcrumbItem>Squad</span>
-        </ng-template>
-      </et-breadcrumb>
+    <ng-template etBreadcrumbSegment>
+      <ng-template etBreadcrumbItemTemplate>
+        <span etBreadcrumbItem>Squad</span>
+      </ng-template>
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BREADCRUMB_IMPORTS, RouterLink],
+  imports: [BREADCRUMB_IMPORTS],
 })
 export class BreadcrumbSquadPageComponent {}

@@ -26,6 +26,15 @@ Deviations from the plan below, all deliberate:
   even the collapsed trail doesn't fit.
 - **Dropped** the `offset` input: the toggletip positions itself, so there is no floating-ui type to
   leak.
+- **The outlet composes _all_ active segments, not the last registered template.** cdk's manager held a
+  single `TemplateRef` (last write wins), so every page had to restate its ancestors' crumbs. Each view
+  now registers an `etBreadcrumbSegment` with only the crumbs it owns, and the outlet renders every
+  registered segment in view-creation order. Consequences, all documented in the guide: the routes must
+  nest per crumb level (a `*ViewComponent` per level holding its segment + `<router-outlet>` — the shape
+  the styleguide's routing rules already enforce), segments must be declared unconditionally (use a
+  `loading` crumb for a pending label), and `order` is the escape hatch. Crumbs inside a segment register
+  with it rather than being content-queried, because a content query cannot reach into a template another
+  view renders; the breadcrumb pushes `isLast` onto the crumbs since only it knows the composed trail.
 
 Size: S–M. Research below done 2026-07-23 against
 `libs/cdk/src/lib/components/breadcrumb/`. Net-new in `libs/components`.

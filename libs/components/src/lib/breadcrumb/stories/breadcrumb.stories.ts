@@ -5,6 +5,7 @@ import {
   BreadcrumbRoutedStorybookComponent,
   BreadcrumbSquadPageComponent,
   BreadcrumbTeamPageComponent,
+  BreadcrumbTeamsLayoutComponent,
   BreadcrumbTeamsPageComponent,
 } from './breadcrumb-routed-storybook.component';
 import { BreadcrumbStorybookComponent } from './breadcrumb-storybook.component';
@@ -17,11 +18,22 @@ export default {
     applicationConfig({
       providers: [
         provideBreadcrumbManager(),
+        // The hierarchy the composed trail needs: a layout route per level, each contributing its own
+        // crumb, with the leaf views adding only theirs.
         provideRouter(
           [
-            { path: 'teams', component: BreadcrumbTeamsPageComponent },
-            { path: 'teams/chemie', component: BreadcrumbTeamPageComponent },
-            { path: 'teams/chemie/squad', component: BreadcrumbSquadPageComponent },
+            {
+              path: 'teams',
+              component: BreadcrumbTeamsLayoutComponent,
+              children: [
+                { path: '', component: BreadcrumbTeamsPageComponent },
+                {
+                  path: 'chemie',
+                  component: BreadcrumbTeamPageComponent,
+                  children: [{ path: 'squad', component: BreadcrumbSquadPageComponent }],
+                },
+              ],
+            },
             { path: '**', redirectTo: 'teams' },
           ],
           withHashLocation(),
@@ -87,9 +99,11 @@ export const RoutedOutlet: Story = {
     docs: {
       description: {
         story:
-          'The real shape of it: each routed page declares its trail in an `<ng-template etBreadcrumbTemplate>`, ' +
-          'and the shell renders whatever is registered through a single `<et-breadcrumb-outlet>`. The team page ' +
-          "fills its last crumb in when the name loads — something a route-config-derived breadcrumb can't do.",
+          'The real shape of it: every view contributes only the crumb it owns via ' +
+          '`<ng-template etBreadcrumbSegment>` — shell "Home", layout route "Teams", detail route the team name, ' +
+          'leaf "Squad" — and the single `<et-breadcrumb-outlet>` in the shell composes them in view order. ' +
+          'Navigating deeper appends a crumb instead of any view restating the path, and the team crumb fills ' +
+          "itself in when the name loads — something a route-config-derived breadcrumb can't do.",
       },
     },
   },

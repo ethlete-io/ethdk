@@ -13,26 +13,21 @@ import {
 import { RuntimeError, signalHostElementScrollState } from '@ethlete/core';
 import { BREADCRUMB_ERROR_CODES } from '../breadcrumb-errors';
 import { BreadcrumbLabels, injectBreadcrumbLabels } from '../breadcrumb-labels';
+import { BreadcrumbCrumb, BreadcrumbRenderItem } from '../breadcrumb.types';
 import { BREADCRUMB_TOKEN } from './breadcrumb.tokens';
 import { BreadcrumbItemTemplateDirective, BreadcrumbSeparatorDirective } from './breadcrumb-templates.directive';
 
 /** Below this many crumbs there is nothing worth hiding: first + overflow + last is the collapsed shape. */
 const MIN_COLLAPSIBLE_ITEMS = 3;
 
-/** One rendered slot of the trail: a crumb, or the control holding the crumbs that didn't fit. */
-export type BreadcrumbRenderItem =
-  | { type: 'item'; item: BreadcrumbItemTemplateDirective }
-  | { type: 'overflow'; items: BreadcrumbItemTemplateDirective[] };
-
 /**
- * Headless breadcrumb: owns the registered crumb templates, decides how many of them fit, and exposes
- * the slots to render. It is the navigation landmark itself (`role="navigation"` + a label), so the
- * element you put it on is the `<nav>`.
+ * Headless breadcrumb: owns the trail, decides how much of it fits, and exposes the slots to render. It
+ * is the navigation landmark itself (`role="navigation"` + a label), so the element you put it on is the
+ * `<nav>`.
  *
- * The trail is authored by the page as a list of `<ng-template etBreadcrumbItemTemplate>`s, which is
- * what lets a crumb be a router link, plain text, or a placeholder while its name is still loading.
- * When the trail is wider than the space available, the middle crumbs move into an overflow slot —
- * first and last always stay visible.
+ * The trail comes from crumb templates declared inside it, or — in the shell's outlet — from the `crumbs`
+ * input, which the breadcrumb manager composes out of every registered segment. When the trail is wider
+ * than the space available, the middle crumbs move into an overflow slot; first and last stay visible.
  *
  * @example
  * <nav etBreadcrumb>
@@ -66,15 +61,20 @@ export class BreadcrumbDirective {
   public labels = input<Partial<BreadcrumbLabels> | null>(null);
 
   /**
-   * The trail, in DOM order. A content query rather than the self-registration the other domains use:
-   * order *is* the meaning of a breadcrumb, and only Angular's query keeps it right when a `@for` moves
-   * a crumb (a moved view re-registers nothing, and template anchors are comment nodes whose relative
-   * position is not reliably comparable).
+   * The trail, supplied from outside. This is how `<et-breadcrumb-outlet>` renders a trail composed from
+   * the registered segments: those crumb templates are declared in views this element doesn't contain, so
+   * no content query could reach them. `null` (the default) uses the crumbs declared inside instead.
    */
-  public items = contentChildren(BreadcrumbItemTemplateDirective, { descendants: true });
+  public crumbs = input<readonly BreadcrumbCrumb[] | null>(null);
+
+  /** Crumbs declared as content of this element — the direct, non-routed way to build a trail. */
+  private declaredCrumbs = contentChildren(BreadcrumbItemTemplateDirective, { descendants: true });
 
   /** @internal The `etBreadcrumbSeparator` slot, when one is projected. */
   public separatorTemplate = contentChild(BreadcrumbSeparatorDirective, { descendants: true });
+
+  /** The trail this breadcrumb renders, from whichever of the two sources is in play. */
+  public items = computed<readonly BreadcrumbCrumb[]>(() => this.crumbs() ?? this.declaredCrumbs());
 
   // Watches the host: `scroll.width > client.width` is the "doesn't fit" signal, and it re-measures on
   // resize *and* on DOM mutations — which is what makes a crumb's label arriving late trigger a recheck.
@@ -89,7 +89,7 @@ export class BreadcrumbDirective {
    * host measures the collapsed width and says nothing about what the full trail would need. Reset
    * whenever the trail changes, since new crumbs mean a new width.
    */
-  private fullTrailWidth = linkedSignal<readonly BreadcrumbItemTemplateDirective[], number | null>({
+  private fullTrailWidth = linkedSignal<readonly BreadcrumbCrumb[], number | null>({
     source: () => this.items(),
     computation: () => null,
   });
@@ -128,6 +128,18 @@ export class BreadcrumbDirective {
   });
 
   constructor() {
+    // A crumb can't tell where it sits in a trail that may be composed from several segments, so the one
+    // place that knows the whole trail marks its end — that is what carries `aria-current="page"`.
+    effect(() => {
+      const items = this.items();
+
+      untracked(() => {
+        for (const [index, item] of items.entries()) {
+          item.isLast.set(index === items.length - 1);
+        }
+      });
+    });
+
     effect(() => {
       const dimensions = this.scrollState().elementDimensions;
 
@@ -151,8 +163,8 @@ export class BreadcrumbDirective {
         if (this.items().length === 0) {
           throw new RuntimeError(
             BREADCRUMB_ERROR_CODES.MISSING_ITEMS,
-            '[BreadcrumbDirective] No <ng-template etBreadcrumbItemTemplate> was found inside this breadcrumb, so it ' +
-              'has no trail to render. Declare one template per crumb.',
+            '[BreadcrumbDirective] This breadcrumb has no crumbs. Declare an <ng-template etBreadcrumbItemTemplate> ' +
+              'per crumb inside it, or bind a composed trail via [crumbs] (which is what et-breadcrumb-outlet does).',
           );
         }
       });

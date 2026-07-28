@@ -1,26 +1,50 @@
-import { TemplateRef, signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
 import { createProvider } from '@ethlete/core';
+import { BreadcrumbSegment } from './breadcrumb.types';
 
 /**
- * The hand-off between the page that knows its trail and the shell that renders it: a page registers
- * its `<ng-template etBreadcrumbTemplate>`, the single `<et-breadcrumb-outlet>` in the shell renders
- * whatever is registered.
+ * Collects the trail from every view that is currently on screen. Each routed view registers only the
+ * crumbs it owns via `<ng-template etBreadcrumbSegment>`; the single `<et-breadcrumb-outlet>` in the
+ * shell renders all of them, in view order, as one trail. A page therefore never has to restate its
+ * ancestors' crumbs — the layout route above it already contributed those.
  *
- * Provide it once, above both — typically in the app config or the shell route:
+ * Provide it once, above the outlet and every view that contributes to the trail:
  *
  * @example
  * providers: [provideBreadcrumbManager()]
  */
 export const [provideBreadcrumbManager, injectBreadcrumbManager] = createProvider(
   () => {
-    const registeredTemplate = signal<TemplateRef<unknown> | null>(null);
+    const registeredSegments = signal<BreadcrumbSegment[]>([]);
+
+    /**
+     * The registered segments in trail order. That order is **registration order** — which under the
+     * router is view-creation order, i.e. outermost route first — unless a segment sets an explicit
+     * `order`. See the guide's note on declaring segments unconditionally.
+     */
+    const segments = computed(() => {
+      const positioned = registeredSegments().map((segment, index) => ({
+        segment,
+        key: segment.order() ?? index,
+      }));
+
+      // sort() is stable, so equal keys keep registration order
+      return positioned.sort((a, b) => a.key - b.key).map(({ segment }) => segment);
+    });
+
+    /** Every crumb currently contributing to the trail, flattened in segment order. */
+    const crumbs = computed(() => segments().flatMap((segment) => [...segment.crumbs()]));
 
     return {
-      /** The trail the outlet is currently rendering, or `null` when no page has registered one. */
-      template: registeredTemplate.asReadonly(),
+      segments,
+      crumbs,
 
-      /** @internal Set by `etBreadcrumbTemplate` while the declaring page is alive. */
-      setTemplate: (template: TemplateRef<unknown> | null) => registeredTemplate.set(template),
+      /** @internal Called by `etBreadcrumbSegment` while its declaring view is alive. */
+      registerSegment: (segment: BreadcrumbSegment) => registeredSegments.update((segments) => [...segments, segment]),
+
+      /** @internal */
+      unregisterSegment: (segment: BreadcrumbSegment) =>
+        registeredSegments.update((segments) => segments.filter((registered) => registered !== segment)),
     };
   },
   { name: 'Breadcrumb Manager' },
