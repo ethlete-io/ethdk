@@ -1,4 +1,5 @@
-import { Tree, visitNotIgnoredFiles } from '@nx/devkit';
+import { Tree } from '@nx/devkit';
+import { MigrationScope } from './migration-scope.js';
 import * as ts from 'typescript';
 import { QueryV3MigrationReport } from './report.js';
 import {
@@ -21,11 +22,15 @@ type MigrateSingleClientOptions = {
   report: QueryV3MigrationReport;
 };
 
-export const migrateQueryClients = (tree: Tree, report: QueryV3MigrationReport): QueryClientMigrationResult => {
+export const migrateQueryClients = (
+  tree: Tree,
+  report: QueryV3MigrationReport,
+  scope: MigrationScope,
+): QueryClientMigrationResult => {
   const queryClientFiles = new Map<string, string[]>();
   const variableRenames = new Map<string, string>();
 
-  visitNotIgnoredFiles(tree, '', (filePath) => {
+  scope.visit(tree, (filePath) => {
     if (!filePath.endsWith('.ts')) {
       return;
     }
@@ -112,12 +117,12 @@ export const generateQueryCreators = (tree: Tree, queryClientFiles: Map<string, 
   }
 };
 
-export const updateImportsAcrossWorkspace = (tree: Tree, renames: Map<string, string>) => {
+export const updateImportsAcrossWorkspace = (tree: Tree, renames: Map<string, string>, scope: MigrationScope) => {
   if (renames.size === 0) {
     return;
   }
 
-  visitNotIgnoredFiles(tree, '', (filePath) => {
+  scope.visit(tree, (filePath) => {
     if (!filePath.endsWith('.ts')) {
       return;
     }
@@ -209,6 +214,8 @@ const migrateQueryClientToConfig = ({ content, filePath, renamesOut, report }: M
             renamesOut.set(oldVariableName, newVariableName);
           }
         }
+
+        reportDroppedClientOptions({ configArgument, sourceFile, filePath, report });
 
         replacements.push({
           start: node.getStart(sourceFile),
@@ -341,6 +348,81 @@ const renameVariables = (content: string, renames: Map<string, string>) => {
   });
 
   return result;
+};
+
+/**
+ * What each v2 client option turns into, or why it has nowhere to go.
+ *
+ * Silently dropping these is how two apps here lost their default headers without a single warning.
+ * A dropped option that shows up in the report is a five-minute fix; one that doesn't is a bug
+ * report from production.
+ */
+const DROPPED_CLIENT_OPTIONS: Record<string, string> = {
+  'request.autoRefreshQueriesOnWindowFocus':
+    'No direct equivalent. Re-run the affected queries yourself — `withAutoRefresh({ onSignalChanges: [windowFocusSignal] })` per query, or `injectMyClient().refreshQueriesInUse()` from a focus listener.',
+  'request.enableSmartPolling':
+    'No direct equivalent. `withPolling({ interval })` polls unconditionally; pause it yourself when the tab is hidden if that matters.',
+  'logging.preparedQuerySubscriptions':
+    'Removed. Use the v3 devtools (`provideQueryDevtools()`) or `withLogging({ logFn })` on the queries you want to trace.',
+  'logging.queryStateChanges':
+    'Removed. Use the v3 devtools (`provideQueryDevtools()`) or `withLogging({ logFn })` on the queries you want to trace.',
+  'request.autoRefreshOn':
+    'No direct equivalent. Re-run the affected queries yourself with `withAutoRefresh` or `refreshQueriesInUse()`.',
+};
+
+type ReportDroppedClientOptionsInput = {
+  configArgument: ts.ObjectLiteralExpression;
+  sourceFile: ts.SourceFile;
+  filePath: string;
+  report: QueryV3MigrationReport;
+};
+
+const reportDroppedClientOptions = ({
+  configArgument,
+  sourceFile,
+  filePath,
+  report,
+}: ReportDroppedClientOptionsInput) => {
+  const migrated = new Set(['baseRoute', 'queryParams', 'cacheAdapter', 'retryFn', 'request', 'logging']);
+
+  const raise = (optionPath: string, node: ts.Node) => {
+    report.addWarning({
+      title: `Reconfigure dropped query client option "${optionPath}"`,
+      summary: `The v2 client option \`${optionPath}\` has no place in \`createQueryClient\` and was dropped by the migration.`,
+      action: DROPPED_CLIENT_OPTIONS[optionPath] ?? 'Check whether the behaviour is still needed and reimplement it.',
+      locations: [{ filePath, line: sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1 }],
+      source: 'query-client-migration',
+      dedupeKey: `dropped-client-option:${filePath}:${optionPath}`,
+    });
+  };
+
+  configArgument.properties.forEach((property) => {
+    if (!ts.isPropertyAssignment(property) || !ts.isIdentifier(property.name)) {
+      return;
+    }
+
+    const name = property.name.text;
+
+    if ((name === 'request' || name === 'logging') && ts.isObjectLiteralExpression(property.initializer)) {
+      property.initializer.properties.forEach((nested) => {
+        if (!ts.isPropertyAssignment(nested) || !ts.isIdentifier(nested.name)) {
+          return;
+        }
+
+        if (name === 'request' && ['queryParams', 'cacheAdapter', 'retryFn'].includes(nested.name.text)) {
+          return;
+        }
+
+        raise(`${name}.${nested.name.text}`, nested);
+      });
+
+      return;
+    }
+
+    if (!migrated.has(name)) {
+      raise(name, property);
+    }
+  });
 };
 
 const migrateConfigObject = (configArgument: ts.ObjectLiteralExpression, node: ts.Node, sourceFile: ts.SourceFile) => {

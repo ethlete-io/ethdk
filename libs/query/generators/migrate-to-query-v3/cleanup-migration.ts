@@ -1,11 +1,13 @@
-import { Tree, visitNotIgnoredFiles } from '@nx/devkit';
+import { Tree } from '@nx/devkit';
 import * as ts from 'typescript';
+import { MigrationScope } from './migration-scope.js';
+import { QueryV3MigrationReport } from './report.js';
 import { createSourceFile, getLineNumberFromPosition } from './shared.js';
 
-export const removeDevtoolsUsage = (tree: Tree) => {
+export const removeDevtoolsUsage = (tree: Tree, scope: MigrationScope, report: QueryV3MigrationReport) => {
   const updatedFiles: string[] = [];
 
-  visitNotIgnoredFiles(tree, '', (filePath) => {
+  scope.visit(tree, (filePath) => {
     if (!filePath.endsWith('.ts') && !filePath.endsWith('.html')) {
       return;
     }
@@ -47,13 +49,26 @@ export const removeDevtoolsUsage = (tree: Tree) => {
   if (updatedFiles.length > 0) {
     console.log('\n✅ Removed legacy query devtools usage in:');
     updatedFiles.forEach((filePath) => console.log(`   - ${filePath}`));
+
+    // Removing the v2 devtools without saying what replaces them means they just quietly disappear
+    // from every app — and nobody notices until they go looking for them.
+    report.addFollowUp({
+      title: 'Re-add the query devtools',
+      summary:
+        'The v2 devtools (`provideQueryClientForDevtools` / `QueryDevtoolsComponent`) were removed. v3 has a direct replacement, but it is not registered per client, so the migration cannot place it for you.',
+      action:
+        'Add `provideQueryDevtools()` from `@ethlete/query` to the app providers (it registers every client and auth provider at once), and render `<et-query-devtools />` from `@ethlete/components` — usually next to the router outlet, guarded by `isDevMode()`.',
+      locations: updatedFiles.map((filePath) => ({ filePath })),
+      source: 'cleanup-migration',
+      dedupeKey: 'devtools-replacement',
+    });
   }
 };
 
-export const replaceAnyQueryWithLegacy = (tree: Tree) => {
+export const replaceAnyQueryWithLegacy = (tree: Tree, scope: MigrationScope) => {
   const updatedFiles: string[] = [];
 
-  visitNotIgnoredFiles(tree, '', (filePath) => {
+  scope.visit(tree, (filePath) => {
     if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) {
       return;
     }
@@ -77,10 +92,10 @@ export const replaceAnyQueryWithLegacy = (tree: Tree) => {
   }
 };
 
-export const migrateEmptyPrepareCalls = (tree: Tree) => {
+export const migrateEmptyPrepareCalls = (tree: Tree, scope: MigrationScope) => {
   const updatedFiles: string[] = [];
 
-  visitNotIgnoredFiles(tree, '', (filePath) => {
+  scope.visit(tree, (filePath) => {
     if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) {
       return;
     }
@@ -264,21 +279,34 @@ const removeAnyQueryFromImports = (content: string) => {
     return content;
   }
 
-  const nextElements = importNode.importClause.namedBindings.elements.filter((element) => {
-    return element.name.text !== 'AnyV2Query' && element.name.text !== 'AnyV2QueryCreator';
+  const replaced = new Map([
+    ['AnyV2Query', 'AnyLegacyQuery'],
+    ['AnyV2QueryCreator', 'AnyLegacyQueryCreator'],
+  ]);
+
+  const names = new Set<string>();
+  let changed = false;
+
+  importNode.importClause.namedBindings.elements.forEach((element) => {
+    const replacement = replaced.get(element.name.text);
+
+    if (!replacement) {
+      names.add(element.getText(sourceFile));
+
+      return;
+    }
+
+    // Only add the alias that was actually imported. Adding both unconditionally is what put
+    // `AnyLegacyQuery` / `AnyLegacyQueryCreator` into hundreds of files that never referenced them.
+    changed = true;
+    names.add(replacement);
   });
 
-  const names = nextElements.map((element) => element.getText(sourceFile));
-
-  if (!names.includes('AnyLegacyQuery')) {
-    names.push('AnyLegacyQuery');
+  if (!changed) {
+    return content;
   }
 
-  if (!names.includes('AnyLegacyQueryCreator')) {
-    names.push('AnyLegacyQueryCreator');
-  }
-
-  const nextImport = `import { ${names.sort().join(', ')} } from '@ethlete/query';`;
+  const nextImport = `import { ${Array.from(names).sort().join(', ')} } from '@ethlete/query';`;
 
   return content.slice(0, importNode.getStart(sourceFile)) + nextImport + content.slice(importNode.getEnd());
 };

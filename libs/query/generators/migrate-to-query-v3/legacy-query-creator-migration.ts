@@ -1,5 +1,9 @@
-import { Tree, visitNotIgnoredFiles } from '@nx/devkit';
+import { Tree } from '@nx/devkit';
 import * as ts from 'typescript';
+import { V2BearerAuthConfig, collectV2BearerAuthConfigs, renderAuthProviderBody } from './auth-provider-scaffold.js';
+import { MigrationScope } from './migration-scope.js';
+import { createModuleGraph } from './module-graph.js';
+import { pruneUnusedNamedImports, renameImportedReferences } from './rename-symbols.js';
 import { QueryV3MigrationReport } from './report.js';
 import { capitalizeFirstLetter, createSourceFile, ensureConfigSuffix, ensureImportFromQuery } from './shared.js';
 
@@ -33,10 +37,12 @@ export const createNewQueryCreators = (
   tree: Tree,
   queryClientFiles: Map<string, string[]>,
   report: QueryV3MigrationReport,
+  scope: MigrationScope,
 ) => {
   const createdFiles: string[] = [];
   const authProvidersNeeded = new Map<string, string>();
   const clientNameToFilePath = new Map<string, string>();
+  const creatorToClient = new Map<string, string>();
 
   queryClientFiles.forEach((configNames, filePath) => {
     configNames.forEach((configName) => {
@@ -44,7 +50,7 @@ export const createNewQueryCreators = (
     });
   });
 
-  visitNotIgnoredFiles(tree, '', (filePath) => {
+  scope.visit(tree, (filePath) => {
     if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) {
       return;
     }
@@ -62,6 +68,8 @@ export const createNewQueryCreators = (
     }
 
     legacyCreators.forEach((creator) => {
+      creatorToClient.set(creator.name, creator.clientName);
+
       if (!creator.secure) {
         return;
       }
@@ -82,7 +90,13 @@ export const createNewQueryCreators = (
   });
 
   if (authProvidersNeeded.size > 0) {
-    createAuthProviders(tree, authProvidersNeeded, report);
+    createAuthProviders({
+      tree,
+      authProvidersNeeded,
+      report,
+      v2Configs: collectV2BearerAuthConfigs(tree, scope),
+      creatorToClient,
+    });
   }
 
   if (createdFiles.length > 0) {
@@ -91,11 +105,21 @@ export const createNewQueryCreators = (
   }
 };
 
-export const updateLegacyCreatorImportsAndUsages = (tree: Tree) => {
-  const legacyCreators = new Map<string, string>();
+/** Where a `legacy*` wrapper was generated, so consumers can be matched against the real symbol. */
+type LegacyWrapperRegistration = {
+  legacyName: string;
+  definedIn: string;
+};
+
+export const updateLegacyCreatorImportsAndUsages = (
+  tree: Tree,
+  scope: MigrationScope,
+  report: QueryV3MigrationReport,
+) => {
+  const legacyCreators = new Map<string, LegacyWrapperRegistration>();
   const updatedFiles: string[] = [];
 
-  visitNotIgnoredFiles(tree, '', (filePath) => {
+  scope.visit(tree, (filePath) => {
     if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) {
       return;
     }
@@ -106,9 +130,8 @@ export const updateLegacyCreatorImportsAndUsages = (tree: Tree) => {
       return;
     }
 
-    const wrappers = findLegacyWrappers(content);
-    wrappers.forEach((legacyName, originalName) => {
-      legacyCreators.set(originalName, legacyName);
+    findLegacyWrappers(content).forEach((legacyName, originalName) => {
+      legacyCreators.set(originalName, { legacyName, definedIn: filePath });
     });
   });
 
@@ -118,7 +141,9 @@ export const updateLegacyCreatorImportsAndUsages = (tree: Tree) => {
 
   console.log(`\n✅ Found ${legacyCreators.size} legacy query creator wrappers`);
 
-  visitNotIgnoredFiles(tree, '', (filePath) => {
+  const moduleGraph = createModuleGraph(tree);
+
+  scope.visit(tree, (filePath) => {
     if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) {
       return;
     }
@@ -129,8 +154,13 @@ export const updateLegacyCreatorImportsAndUsages = (tree: Tree) => {
       return;
     }
 
-    const nextImports = updateLegacyCreatorImports(content, legacyCreators);
-    const nextContent = updateLegacyCreatorUsages(nextImports, legacyCreators);
+    const nextContent = pointFileAtLegacyWrappers({
+      content,
+      filePath,
+      legacyCreators,
+      moduleGraph,
+      report,
+    });
 
     if (nextContent !== content) {
       tree.write(filePath, nextContent);
@@ -142,6 +172,132 @@ export const updateLegacyCreatorImportsAndUsages = (tree: Tree) => {
     console.log('\n✅ Updated legacy creator imports and usages in:');
     updatedFiles.forEach((filePath) => console.log(`   - ${filePath}`));
   }
+};
+
+type PointFileAtLegacyWrappersOptions = {
+  content: string;
+  filePath: string;
+  legacyCreators: Map<string, LegacyWrapperRegistration>;
+  moduleGraph: ReturnType<typeof createModuleGraph>;
+  report: QueryV3MigrationReport;
+};
+
+/**
+ * Rewrites this file's imports of migrated creators to the `legacy*` wrappers.
+ *
+ * Two rules keep the rewrite honest, and both exist because the first version of this pass did not
+ * have them:
+ *
+ * - An import is only touched when the module it comes from really does resolve to the file that
+ *   defines the wrapper. A same-named export from an unrelated package stays as it is.
+ * - An alias is preserved (`legacyGetPerson as getPersonQuery`) instead of being dropped, so the
+ *   call sites using that alias keep compiling.
+ */
+const pointFileAtLegacyWrappers = ({
+  content,
+  filePath,
+  legacyCreators,
+  moduleGraph,
+  report,
+}: PointFileAtLegacyWrappersOptions) => {
+  const sourceFile = createSourceFile(content, filePath);
+  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+  const referenceRenames = new Map<string, string>();
+
+  const resolvesToWrapper = (specifier: string, importedName: string, registration: LegacyWrapperRegistration) =>
+    moduleGraph.findDeclaringFile(filePath, specifier, importedName) === registration.definedIn;
+
+  const rewriteSpecifiers = (
+    elements: readonly (ts.ImportSpecifier | ts.ExportSpecifier)[],
+    moduleSpecifier: string,
+  ) => {
+    let changed = false;
+
+    const nextElements = elements.map((element) => {
+      const importedName = element.propertyName?.text ?? element.name.text;
+      const registration = legacyCreators.get(importedName);
+
+      if (!registration || !resolvesToWrapper(moduleSpecifier, importedName, registration)) {
+        return element.getText(sourceFile);
+      }
+
+      changed = true;
+
+      // Aliased: only the imported half changes, so nothing in the file body has to move.
+      if (element.propertyName) {
+        return `${registration.legacyName} as ${element.name.text}`;
+      }
+
+      referenceRenames.set(element.name.text, registration.legacyName);
+
+      return registration.legacyName;
+    });
+
+    return changed ? nextElements : null;
+  };
+
+  for (const node of sourceFile.statements) {
+    if (
+      ts.isImportDeclaration(node) &&
+      ts.isStringLiteral(node.moduleSpecifier) &&
+      node.importClause?.namedBindings &&
+      ts.isNamedImports(node.importClause.namedBindings)
+    ) {
+      const nextElements = rewriteSpecifiers(node.importClause.namedBindings.elements, node.moduleSpecifier.text);
+
+      if (nextElements) {
+        replacements.push({
+          start: node.getStart(sourceFile),
+          end: node.getEnd(),
+          replacement: `import { ${nextElements.join(', ')} } from '${node.moduleSpecifier.text}';`,
+        });
+      }
+
+      continue;
+    }
+
+    // Re-exports need the same treatment, or a barrel keeps pointing at the v3 creator.
+    if (
+      ts.isExportDeclaration(node) &&
+      node.moduleSpecifier &&
+      ts.isStringLiteral(node.moduleSpecifier) &&
+      node.exportClause &&
+      ts.isNamedExports(node.exportClause)
+    ) {
+      const nextElements = rewriteSpecifiers(node.exportClause.elements, node.moduleSpecifier.text);
+
+      if (nextElements) {
+        replacements.push({
+          start: node.getStart(sourceFile),
+          end: node.getEnd(),
+          replacement: `export { ${nextElements.join(', ')} } from '${node.moduleSpecifier.text}';`,
+        });
+      }
+    }
+  }
+
+  let result = content;
+
+  replacements.sort((left, right) => right.start - left.start);
+
+  replacements.forEach(({ start, end, replacement }) => {
+    result = result.slice(0, start) + replacement + result.slice(end);
+  });
+
+  const renamed = renameImportedReferences(result, referenceRenames);
+
+  renamed.shadowed.forEach((name) => {
+    report.addManualReview({
+      title: `Point ${name} at its legacy wrapper by hand`,
+      summary: `${filePath} imports the migrated creator \`${name}\` but also declares something with that name, so the migration left its usages alone to avoid rewriting the wrong symbol.`,
+      action: `Rename the local declaration or the import alias, then point the query usages at \`${legacyCreators.get(name)?.legacyName ?? `legacy${capitalizeFirstLetter(name)}`}\`.`,
+      locations: [{ filePath }],
+      source: 'legacy-query-creator-migration',
+      dedupeKey: `shadowed-rename:${filePath}:${name}`,
+    });
+  });
+
+  return renamed.content;
 };
 
 const toLegacyName = (name: string) => `legacy${capitalizeFirstLetter(name)}`;
@@ -328,8 +484,11 @@ const transformLegacyQueryCreators = (content: string, legacyCreators: LegacyQue
   });
 
   result = ensureImportFromQuery(result, ['createLegacyQueryCreator']);
+  result = addCreatorImports(result, creatorsByClient);
 
-  return addCreatorImports(result, creatorsByClient);
+  // The rewritten creators no longer go through `def<T>()` or the v2 client object, so whatever is
+  // left over from those constructs would land as a lint error the moment `formatFiles` runs.
+  return pruneUnusedNamedImports(result, 'all');
 };
 
 const addCreatorImports = (content: string, creatorsByClient: Map<string, LegacyQueryCreatorInfo[]>) => {
@@ -471,10 +630,28 @@ const getTypeParameter = (creator: LegacyQueryCreatorInfo) => {
 };
 
 const generateLegacyWrapper = (creator: LegacyQueryCreatorInfo) => {
-  return `export const ${toLegacyName(creator.name)} = createLegacyQueryCreator({ creator: ${creator.name} });`;
+  // `name` is what lets a `prepare()` called outside an injection context name itself in the error
+  // instead of surfacing as a bare NG0203.
+  return `export const ${toLegacyName(creator.name)} = createLegacyQueryCreator({ name: '${toLegacyName(creator.name)}', creator: ${creator.name} });`;
 };
 
-const createAuthProviders = (tree: Tree, authProvidersNeeded: Map<string, string>, report: QueryV3MigrationReport) => {
+type CreateAuthProvidersOptions = {
+  tree: Tree;
+  authProvidersNeeded: Map<string, string>;
+  report: QueryV3MigrationReport;
+  v2Configs: V2BearerAuthConfig[];
+
+  /** Which client each migrated creator belongs to, used to match a v2 provider to a client. */
+  creatorToClient: Map<string, string>;
+};
+
+const createAuthProviders = ({
+  tree,
+  authProvidersNeeded,
+  report,
+  v2Configs,
+  creatorToClient,
+}: CreateAuthProvidersOptions) => {
   const createdProviders: string[] = [];
 
   authProvidersNeeded.forEach((filePath, clientName) => {
@@ -490,7 +667,14 @@ const createAuthProviders = (tree: Tree, authProvidersNeeded: Map<string, string
       return;
     }
 
-    const nextContent = generateSecureQueryCreators(addAuthProviderToFile(content, clientName), clientName);
+    // Match on the refresh creator: it is the one thing a v2 provider config always names, and it
+    // belongs to exactly one client.
+    const v2Config = v2Configs.find(
+      (candidate) => candidate.refreshCreatorName && creatorToClient.get(candidate.refreshCreatorName) === clientName,
+    );
+
+    const body = renderAuthProviderBody(v2Config);
+    const nextContent = generateSecureQueryCreators(addAuthProviderToFile(content, clientName, body), clientName);
 
     if (nextContent === content) {
       return;
@@ -499,14 +683,38 @@ const createAuthProviders = (tree: Tree, authProvidersNeeded: Map<string, string
     tree.write(filePath, nextContent);
     createdProviders.push(filePath);
 
-    report.addFollowUp({
-      title: `Configure auth queries for ${authProviderName}`,
-      summary: `The migration created ${authProviderName} with an empty \`queries\` array because it cannot infer login or refresh builders safely.`,
-      action:
-        'Add authQuery/tokenRefreshQuery builders, verify token extraction, and remove the placeholder empty array once the provider is configured.',
+    if (body.isScaffolded) {
+      report.addFollowUp({
+        title: `Finish the scaffolded auth provider ${authProviderName}`,
+        summary: `${authProviderName} was scaffolded from the v2 BearerAuthProvider at ${v2Config?.filePath}:${v2Config?.line}. The refresh query and cookie config carried over; the adapters were copied verbatim and their parameter shapes changed between v2 and v3.`,
+        action:
+          'Resolve the TODO(query-v3) comments in the generated provider, add the login query via withAuthenticationQuery, and delete the v2 provider once the app logs in again.',
+        locations: [{ filePath }, ...(v2Config ? [{ filePath: v2Config.filePath, line: v2Config.line }] : [])],
+        source: 'legacy-query-creator-migration',
+        dedupeKey: `auth-provider:${filePath}:${authProviderName}`,
+      });
+    } else {
+      report.addFollowUp({
+        title: `Configure auth queries for ${authProviderName}`,
+        summary: `The migration created ${authProviderName} with an empty \`queries\` array because no v2 BearerAuthProvider config could be matched to this client.`,
+        action:
+          'Add authQuery/tokenRefreshQuery builders, verify token extraction, and remove the placeholder empty array once the provider is configured.',
+        locations: [{ filePath }],
+        source: 'legacy-query-creator-migration',
+        dedupeKey: `auth-provider:${filePath}:${authProviderName}`,
+      });
+    }
+
+    // The generated layout only works if the auth queries live next to the provider: the provider
+    // needs the login/refresh creators, and the secure creators need the provider. Leaving them in
+    // an `auth.queries.ts` that imports the client's `post` creator closes the loop.
+    report.addManualReview({
+      title: `Keep the auth queries in ${filePath}`,
+      summary: `${authProviderName} needs the login and refresh creators, and the secure creators below it need the provider. If those creators stay in a separate auth queries file that imports this client, the two files form an import cycle.`,
+      action: `Move the login/refresh creators into ${filePath} above the provider, and have the auth queries file import them back for its legacy* wrappers.`,
       locations: [{ filePath }],
       source: 'legacy-query-creator-migration',
-      dedupeKey: `auth-provider:${filePath}:${authProviderName}`,
+      dedupeKey: `auth-provider-cycle:${filePath}`,
     });
   });
 
@@ -516,8 +724,12 @@ const createAuthProviders = (tree: Tree, authProvidersNeeded: Map<string, string
   }
 };
 
-const addAuthProviderToFile = (content: string, clientName: string) => {
-  const nextContent = ensureImportFromQuery(content, ['createBearerAuthProvider']);
+const addAuthProviderToFile = (
+  content: string,
+  clientName: string,
+  body: ReturnType<typeof renderAuthProviderBody>,
+) => {
+  const nextContent = ensureImportFromQuery(content, ['createBearerAuthProvider', ...body.importsNeeded]);
   const sourceFile = createSourceFile(nextContent);
   const configName = ensureConfigSuffix(clientName);
   const configPosition = findVariableStatementEnd(sourceFile, configName, 'createQueryClient');
@@ -534,7 +746,8 @@ const addAuthProviderToFile = (content: string, clientName: string) => {
     `export const ${authProviderName} = createBearerAuthProvider({`,
     `  name: '${clientName}',`,
     `  queryClientRef: ${configName},`,
-    `  queries: [],`,
+    body.queries,
+    ...(body.features ? [body.features] : []),
     '});',
     '',
     `export const [provide${capitalizedClientName}AuthProvider, inject${capitalizedClientName}AuthProvider] = ${authProviderName};`,
@@ -646,152 +859,4 @@ const findLegacyWrappers = (content: string) => {
   visit(sourceFile);
 
   return wrappers;
-};
-
-const updateLegacyCreatorImports = (content: string, legacyCreators: Map<string, string>) => {
-  const sourceFile = createSourceFile(content);
-  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
-
-  const visit = (node: ts.Node) => {
-    if (
-      ts.isImportDeclaration(node) &&
-      node.importClause?.namedBindings &&
-      ts.isNamedImports(node.importClause.namedBindings)
-    ) {
-      const nextElements = node.importClause.namedBindings.elements.map((element) => {
-        const importedName = element.propertyName ? element.propertyName.text : element.name.text;
-        const legacyName = legacyCreators.get(importedName);
-
-        return legacyName ?? element.getText(sourceFile);
-      });
-
-      const hasChanges = node.importClause.namedBindings.elements.some((element) => {
-        const importedName = element.propertyName ? element.propertyName.text : element.name.text;
-
-        return legacyCreators.has(importedName);
-      });
-
-      if (hasChanges) {
-        replacements.push({
-          start: node.getStart(sourceFile),
-          end: node.getEnd(),
-          replacement: `import { ${nextElements.join(', ')} } from '${(node.moduleSpecifier as ts.StringLiteral).text}';`,
-        });
-      }
-    }
-
-    ts.forEachChild(node, visit);
-  };
-
-  visit(sourceFile);
-
-  let result = content;
-
-  replacements.sort((left, right) => right.start - left.start);
-
-  replacements.forEach(({ start, end, replacement }) => {
-    result = result.slice(0, start) + replacement + result.slice(end);
-  });
-
-  return result;
-};
-
-const updateLegacyCreatorUsages = (content: string, legacyCreators: Map<string, string>) => {
-  const sourceFile = createSourceFile(content);
-  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
-
-  const visit = (node: ts.Node) => {
-    if (ts.isObjectLiteralExpression(node)) {
-      node.properties.forEach((property) => {
-        if (ts.isPropertyAssignment(property) && ts.isIdentifier(property.initializer)) {
-          const nextName = legacyCreators.get(property.initializer.text);
-
-          if (nextName) {
-            replacements.push({
-              start: property.initializer.getStart(sourceFile),
-              end: property.initializer.getEnd(),
-              replacement: nextName,
-            });
-          }
-        }
-
-        if (ts.isShorthandPropertyAssignment(property) && legacyCreators.has(property.name.text)) {
-          replacements.push({
-            start: property.getStart(sourceFile),
-            end: property.getEnd(),
-            replacement: `${property.name.text}: ${legacyCreators.get(property.name.text)!}`,
-          });
-        }
-      });
-    }
-
-    if (ts.isIdentifier(node) && legacyCreators.has(node.text)) {
-      const parent = node.parent;
-
-      if (ts.isPropertyAccessExpression(parent) && parent.name === node) {
-        ts.forEachChild(node, visit);
-        return;
-      }
-
-      if (ts.isPropertyAssignment(parent) && (parent.name === node || parent.initializer === node)) {
-        ts.forEachChild(node, visit);
-        return;
-      }
-
-      if (ts.isShorthandPropertyAssignment(parent) && parent.name === node) {
-        ts.forEachChild(node, visit);
-        return;
-      }
-
-      if (ts.isVariableDeclaration(parent) && parent.name === node) {
-        ts.forEachChild(node, visit);
-        return;
-      }
-
-      if (ts.isImportSpecifier(parent)) {
-        ts.forEachChild(node, visit);
-        return;
-      }
-
-      if (ts.isFunctionDeclaration(parent) && parent.name === node) {
-        ts.forEachChild(node, visit);
-        return;
-      }
-
-      if (ts.isMethodDeclaration(parent) && parent.name === node) {
-        ts.forEachChild(node, visit);
-        return;
-      }
-
-      if (ts.isParameter(parent) && parent.name === node) {
-        ts.forEachChild(node, visit);
-        return;
-      }
-
-      if (ts.isPropertyDeclaration(parent) && parent.name === node) {
-        ts.forEachChild(node, visit);
-        return;
-      }
-
-      replacements.push({
-        start: node.getStart(sourceFile),
-        end: node.getEnd(),
-        replacement: legacyCreators.get(node.text)!,
-      });
-    }
-
-    ts.forEachChild(node, visit);
-  };
-
-  visit(sourceFile);
-
-  let result = content;
-
-  replacements.sort((left, right) => right.start - left.start);
-
-  replacements.forEach(({ start, end, replacement }) => {
-    result = result.slice(0, start) + replacement + result.slice(end);
-  });
-
-  return result;
 };

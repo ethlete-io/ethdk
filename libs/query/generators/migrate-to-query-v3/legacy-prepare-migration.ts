@@ -1,4 +1,5 @@
-import { Tree, visitNotIgnoredFiles } from '@nx/devkit';
+import { Tree } from '@nx/devkit';
+import { MigrationScope } from './migration-scope.js';
 import * as ts from 'typescript';
 import { QueryV3MigrationReport } from './report.js';
 import {
@@ -33,12 +34,12 @@ type QueryPollingInfo = {
   locations: string[];
 };
 
-export const migrateLegacyPrepareCalls = (tree: Tree, report: QueryV3MigrationReport) => {
+export const migrateLegacyPrepareCalls = (tree: Tree, report: QueryV3MigrationReport, scope: MigrationScope) => {
   console.log('\n🔍 Checking for legacy query creator usages...');
 
   const allUsages: LegacyCreatorUsage[] = [];
 
-  visitNotIgnoredFiles(tree, '', (filePath) => {
+  scope.visit(tree, (filePath) => {
     if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts')) {
       return;
     }
@@ -70,7 +71,7 @@ export const migrateLegacyPrepareCalls = (tree: Tree, report: QueryV3MigrationRe
   });
 
   console.log('\n🔍 Detecting polling usage...');
-  const pollingInfo = detectPollingUsage(tree);
+  const pollingInfo = detectPollingUsage(tree, scope);
 
   if (pollingInfo.size > 0) {
     console.log(`\n⚠️ Found ${pollingInfo.size} queries with polling:`);
@@ -83,7 +84,7 @@ export const migrateLegacyPrepareCalls = (tree: Tree, report: QueryV3MigrationRe
 
   const classInjectors = findOrCreateInjectorMembers(tree, allUsages);
   createInjectorMembers(tree, classInjectors);
-  transformLegacyCreatorPrepareCalls(tree, classInjectors, pollingInfo);
+  transformLegacyCreatorPrepareCalls(tree, classInjectors, pollingInfo, scope);
   reportManualReviewLocations(tree, allUsages, report);
 };
 
@@ -421,6 +422,7 @@ const transformLegacyCreatorPrepareCalls = (
   tree: Tree,
   classInjectors: Map<string, ClassWithInjector>,
   pollingInfo: Map<string, QueryPollingInfo>,
+  scope: MigrationScope,
 ) => {
   const updatedFiles: string[] = [];
   const filesByPath = new Map<string, ClassWithInjector[]>();
@@ -433,7 +435,7 @@ const transformLegacyCreatorPrepareCalls = (
     filesByPath.get(classInfo.filePath)!.push(classInfo);
   });
 
-  visitNotIgnoredFiles(tree, '', (filePath) => {
+  scope.visit(tree, (filePath) => {
     if (!filePath.endsWith('.ts') || filePath.endsWith('.spec.ts') || filesByPath.has(filePath)) {
       return;
     }
@@ -930,10 +932,10 @@ const containsInjectCall = (node: ts.Node) => {
   return hasInject;
 };
 
-const detectPollingUsage = (tree: Tree) => {
+const detectPollingUsage = (tree: Tree, scope: MigrationScope) => {
   const pollingInfo = new Map<string, QueryPollingInfo>();
 
-  visitNotIgnoredFiles(tree, '', (filePath) => {
+  scope.visit(tree, (filePath) => {
     if (filePath.endsWith('.spec.ts')) {
       return;
     }

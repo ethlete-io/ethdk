@@ -54,10 +54,17 @@ export const getUsers = apiClient.get({
 
     const queries = readFile('queries.ts');
 
-    expect(queries).toContain("import { apiClientConfig, apiGet } from './client';");
+    expect(queries).toContain("import { apiGet } from './client';");
     expect(queries).toContain('createLegacyQueryCreator');
     expect(queries).toContain("export const getUsers = apiGet<{ response: User[] }>('/users');");
-    expect(queries).toContain('export const legacyGetUsers = createLegacyQueryCreator({ creator: getUsers });');
+    expect(queries).toContain(
+      "export const legacyGetUsers = createLegacyQueryCreator({ name: 'legacyGetUsers', creator: getUsers });",
+    );
+
+    // The rewrite leaves `def` and the client config behind; they must not survive as imports,
+    // because `formatFiles` runs in the same invocation and lint fails on them.
+    expect(queries).not.toContain('def');
+    expect(queries).not.toContain('apiClientConfig');
   });
 
   it('should create auth providers for secure queries and record a follow-up task', async () => {
