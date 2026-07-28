@@ -131,3 +131,20 @@ with any plan file (respect the 00 → 01 dependency). Open decisions are marked
 inside each file. `90-parity-audits.md` also resolves the inventory's "verify
 parity" notes: icons fully superseded; radio parity yes (native-input +
 card-preset gaps recorded); segmented-button needs a tabs-mode decision.
+
+## Implementation progress
+
+Each plan file's own header is the detail (including deviations); this is the index.
+
+- [x] `00-query-form-signal-forms.md` — signals QueryForm (2026-07-23)
+- [x] `01-table.md` — green-field table, phases 1–9 (2026-07-24)
+- [x] `02-pagination.md` — paginator + polish phase (2026-07-24)
+- [x] `03-skeleton.md` — skeleton container/item/text (2026-07-24)
+- [x] `04-accordion.md` — accordion + group + headless tier (2026-07-28)
+- [ ] `05-breadcrumb.md` — next up
+- [ ] `06-carousel.md`
+- [ ] `07-masonry.md`
+- [ ] `08-picture.md`
+- [ ] `09-query-error.md`
+- [ ] `10-filter.md`
+- [ ] `90-parity-audits.md` — verdicts recorded; cdk deprecation roadmap still open

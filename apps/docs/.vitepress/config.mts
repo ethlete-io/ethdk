@@ -208,6 +208,7 @@ export default defineConfig({
         {
           text: 'Layout & structure',
           items: [
+            { text: 'Accordion', link: '/components/accordion' },
             { text: 'Bracket', link: '/components/bracket' },
             { text: 'Grid', link: '/components/grid' },
             { text: 'Pagination', link: '/components/pagination' },

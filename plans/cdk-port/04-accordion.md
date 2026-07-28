@@ -1,6 +1,38 @@
 # 04 — Accordion
 
-**Status: planned, not started.** Size: S–M. Research done 2026-07-23 against
+**Status: shipped 2026-07-28.** `libs/components/src/lib/accordion/` — headless
+`etAccordion` / `etAccordionTrigger` / `etAccordionPanel` / `etAccordionGroup` +
+`etAccordionLabel` / `etAccordionHint` / `etAccordionContent` slot templates, default
+`et-accordion` / `et-accordion-group`, `ACCORDION_IMPORTS`, error codes ET36xx,
+stories, docs page, changeset.
+
+Deviations from the plan below, all deliberate:
+
+- **Not `injectAnimatedBlockSize`.** That utility animates a _visible_ element whose
+  content changes size, and it deliberately bails on zero measurements
+  (`if (toBlock === 0 || toInline === 0) return`), so it cannot animate a collapse to
+  nothing. The collapse is the `grid-template-rows: 0fr → 1fr` transition instead —
+  already the blessed pattern in this lib (see `table-detail-styles.component.css`) —
+  with cdk's delayed `visibility` flip kept (it takes the collapsed panel out of the
+  a11y tree and find-in-page, which `inert` alone doesn't) and a
+  `prefers-reduced-motion` block that drops the transition entirely.
+- **`aria-disabled`, not native `disabled`**, on the trigger: a disabled header stays
+  focusable so a screen reader can reach it and hear that it won't expand (`toggle()`
+  no-ops). cdk natively disabled the button, which skips it in the tab order.
+- **Heading level is an input** (`headingLevel`, default 3) rendered as
+  `role="heading" + aria-level` — one element instead of six `<h*>` template branches.
+- **Arrow-key navigation between headers** added on the group (`arrowKeyNavigation`,
+  default on, `ArrowUp`/`ArrowDown`/`Home`/`End`), which cdk had none of.
+- **Lazy content is a template, not a boolean.** Projected children are created with
+  their parent regardless of any `@if` around the `<ng-content>`, so deferral has to be
+  an `<ng-template etAccordionContent>`; presence of that template _is_ the opt-in. It
+  stays mounted after the first expand so collapsing keeps state and has something to
+  animate.
+- **Missing-panel is only an error while open** (ET3602): rendering the panel
+  conditionally (`@if (accordion.isOpen())`) is a legitimate headless shape, and the
+  trigger drops its `aria-controls` while the panel isn't in the DOM.
+
+Size: S–M. Research below done 2026-07-23 against
 `libs/cdk/src/lib/components/accordion/`. Net-new in `libs/components` —
 nothing accordion/disclosure-shaped exists there.
 

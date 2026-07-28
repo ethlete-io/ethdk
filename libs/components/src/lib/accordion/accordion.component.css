@@ -1,0 +1,171 @@
+@layer components {
+  @property --et-accordion-padding-block {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 14px;
+  }
+
+  /* Flush with the surrounding copy by default — a header that lines up with the text below it reads as
+     part of the page rather than as a card. Give it inline padding when the group is boxed. */
+  @property --et-accordion-padding-inline {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
+  }
+
+  @property --et-accordion-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-accordion-chevron-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 14px;
+  }
+
+  /* The hover tint's shape. Square by default: a header separated by hairlines is a list row, and a
+     rounded tint inside those lines reads as a card that popped out of the stack. Raise it when the
+     group *is* a card (its own border and inline padding). */
+  @property --et-accordion-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
+  }
+
+  @property --et-accordion-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 240ms;
+  }
+
+  .et-accordion {
+    display: block;
+    color: var(--et-surface-color-solid, CanvasText);
+    border-block-end: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.25));
+  }
+
+  /* A `role="heading"` div, so the level is an input rather than six template branches. It is not an
+     `<h*>`, so it starts with no margin — nothing to reset. */
+  .et-accordion-heading {
+    display: block;
+  }
+
+  .et-accordion-trigger {
+    display: flex;
+    align-items: center;
+    gap: var(--et-accordion-gap);
+    inline-size: 100%;
+    padding: var(--et-accordion-padding-block) var(--et-accordion-padding-inline);
+    border: 0;
+    border-radius: var(--et-accordion-radius);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: 500;
+    text-align: start;
+    cursor: pointer;
+    /* The tint is the only animated property — the row's own geometry never moves on hover. */
+    transition: background-color 120ms ease;
+
+    /* Interaction states are left bare (no `:where()`) so they outrank the base rule and the
+       config modifiers below, per the styling notes in CLAUDE.md. A row highlight wants to be
+       lighter than a button's: it covers the full width, so the same 12% reads much heavier. */
+    &:hover {
+      background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 7%, transparent);
+    }
+
+    &:active {
+      background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 14%, transparent);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+      outline-offset: -2px;
+    }
+
+    /* Disabled headers stay focusable (they are `aria-disabled`, not natively disabled) so a screen
+       reader can reach them and hear that they don't open — they just stop reacting to the pointer. */
+    &:where([aria-disabled='true']) {
+      color: var(--et-surface-color-muted-solid, GrayText);
+      cursor: default;
+
+      &:hover,
+      &:active {
+        background: transparent;
+      }
+    }
+
+    .et-accordion-label {
+      flex: 1;
+      min-inline-size: 0;
+    }
+
+    .et-accordion-hint {
+      flex: none;
+      color: var(--et-surface-color-muted-solid, GrayText);
+      font-weight: 400;
+    }
+
+    .et-accordion-chevron {
+      flex: none;
+      inline-size: var(--et-accordion-chevron-size);
+      block-size: var(--et-accordion-chevron-size);
+      color: var(--et-surface-color-muted-solid, GrayText);
+      /* The icon points up, so closed is the rotated state. */
+      rotate: 180deg;
+      transition: rotate var(--et-accordion-duration) cubic-bezier(0.25, 0, 0.1, 1);
+    }
+
+    &[aria-expanded='true'] .et-accordion-chevron {
+      rotate: 0deg;
+    }
+  }
+
+  /* The collapse: a one-track grid whose row animates between `0fr` and `1fr`, so the content grows to
+     whatever height it happens to have without anyone measuring it. `visibility` is what takes the
+     collapsed panel out of the accessibility tree and out of find-in-page (`inert`, set by the panel
+     directive, only handles focus and pointer events); its flip is delayed by the full duration when
+     closing so the content stays on screen while the track shrinks, and undelayed when opening. */
+  .et-accordion-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    transition:
+      grid-template-rows var(--et-accordion-duration) cubic-bezier(0.25, 0, 0.1, 1),
+      visibility 0s linear var(--et-accordion-duration);
+
+    &:where([data-open]) {
+      grid-template-rows: 1fr;
+      visibility: visible;
+      transition:
+        grid-template-rows var(--et-accordion-duration) cubic-bezier(0.25, 0, 0.1, 1),
+        visibility 0s linear 0s;
+    }
+  }
+
+  /* Stretched to a track that is 0 tall for part of the animation, so it has to be allowed to shrink
+     past its content and clip what doesn't fit. It must also carry no padding or border of its own:
+     under `box-sizing: border-box` those would set a floor under its height, and the panel would pop
+     open to that floor before the animation started. That is what the body below is separated out for. */
+  .et-accordion-panel-clip {
+    min-block-size: 0;
+    overflow: hidden;
+  }
+
+  .et-accordion-panel-body {
+    padding-block-end: var(--et-accordion-padding-block);
+    padding-inline: var(--et-accordion-padding-inline);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* Both the base and the open rule, since each declares its own transition. Collapsing becomes
+       instant, which also means `visibility` no longer needs its delay. */
+    .et-accordion-panel,
+    .et-accordion-panel:where([data-open]),
+    .et-accordion-trigger .et-accordion-chevron {
+      transition: none;
+    }
+  }
+}

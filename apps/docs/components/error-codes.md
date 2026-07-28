@@ -50,6 +50,7 @@ Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU
 | 3300–3399 | Cascader           | [Cascader](/components/cascader)                   |
 | 3400–3499 | Bracket            | [Bracket](/components/bracket)                     |
 | 3500–3599 | Table              | [Table](/components/table)                         |
+| 3600–3699 | Accordion          | [Accordion](/components/accordion)                 |
 
 ::: info Codes below 1000
 Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web sockets). `ET1000`/`ET1001` therefore exist in both packages — the bracketed source in the message (`[SelectDirective]` vs. a query feature) tells them apart.
@@ -316,3 +317,13 @@ Runtime errors from the bracket data pipeline and layout engine. They indicate a
 
 `ET3500` is retired: it flagged duplicate column keys, which the keyed
 `TableColumns` record makes impossible.
+
+## Accordion (ET36xx)
+
+All accordion checks run in dev mode only, after the first render.
+
+| Code     | Cause                                                                                   | Fix                                                                                             |
+| -------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `ET3600` | An `etAccordionTrigger`, `etAccordionPanel` or slot template sits outside an accordion. | Move it inside the `[etAccordion]` element (e.g. `<et-accordion>`) it belongs to.               |
+| `ET3601` | An accordion rendered no `etAccordionTrigger`, so nothing can expand it.                | Add a trigger — ideally a `<button etAccordionTrigger>` inside a heading.                       |
+| `ET3602` | An accordion is open but has no `etAccordionPanel`.                                     | Add an `etAccordionPanel` element, or render it conditionally only while the accordion is open. |

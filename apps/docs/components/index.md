@@ -72,6 +72,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 
 ### Layout & structure
 
+- [Accordion](/components/accordion) — disclosure headers with an animated collapse, single-open groups and arrow-key navigation.
 - [Bracket](/components/bracket) — tournament bracket renderer for single/double-elimination and swiss stages, with SVG connectors, journey highlighting and pluggable match/header cards.
 - [Grid](/components/grid) — drag & resize dashboard grid with breakpoints, keyboard editing and backend serialization.
 - [Pagination](/components/pagination) — page-number paginator with ellipsis, jump controls and a headless tier.

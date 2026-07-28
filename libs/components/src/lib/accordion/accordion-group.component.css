@@ -1,0 +1,12 @@
+@layer components {
+  .et-accordion-group {
+    display: block;
+
+    /* Hairlines between the items, not around the stack: every accordion brings its own bottom border,
+       so the group only has to drop the trailing one. A boxed group is then a border + radius away, on
+       the consumer's side, without having to undo anything first. */
+    > .et-accordion:last-child {
+      border-block-end: 0;
+    }
+  }
+}

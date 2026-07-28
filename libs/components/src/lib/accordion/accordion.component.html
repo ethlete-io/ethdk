@@ -1,0 +1,35 @@
+<div [attr.aria-level]="headingLevel()" class="et-accordion-heading" role="heading">
+  <button class="et-accordion-trigger" etAccordionTrigger type="button">
+    <span class="et-accordion-label">
+      @if (accordion.labelTemplate(); as labelTemplate) {
+        <ng-container [ngTemplateOutlet]="labelTemplate.templateRef" />
+      } @else {
+        {{ label() }}
+      }
+    </span>
+
+    @if (accordion.hintTemplate(); as hintTemplate) {
+      <span class="et-accordion-hint">
+        <ng-container [ngTemplateOutlet]="hintTemplate.templateRef" />
+      </span>
+    }
+
+    <i class="et-accordion-chevron" etIcon="et-chevron"></i>
+  </button>
+</div>
+
+<div class="et-accordion-panel" etAccordionPanel>
+  <!-- The clip window, and nothing else: it has to shrink past its content and hide the overflow while
+       the track collapses, so it can carry no padding of its own (see the CSS). -->
+  <div class="et-accordion-panel-clip">
+    <div class="et-accordion-panel-body">
+      <ng-content />
+
+      @if (accordion.contentTemplate(); as contentTemplate) {
+        @if (accordion.hasBeenOpened()) {
+          <ng-container [ngTemplateOutlet]="contentTemplate.templateRef" />
+        }
+      }
+    </div>
+  </div>
+</div>

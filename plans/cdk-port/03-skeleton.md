@@ -1,6 +1,12 @@
 # 03 — Skeleton
 
-**Status: planned, not started.** Size: S. Research done 2026-07-23 against
+**Status: shipped 2026-07-24** (commit 36c71192). `libs/components/src/lib/skeleton/` —
+`et-skeleton` container (`loadingAllyText`, `animated`), `et-skeleton-item`
+(`shape="text" | "rect" | "circle"`), `et-skeleton-text` (`lines`, `lastLineWidth`),
+surface-token bone + shimmer, `SKELETON_IMPORTS`, stories, docs page, changeset. The
+plan below is the original research.
+
+Size: S. Research done 2026-07-23 against
 `libs/cdk/src/lib/components/skeleton/` (~280 lines incl. stories/docs).
 Net-new in `libs/components` — no skeleton concept exists there. Natural home:
 next to `libs/components/src/lib/loader/` (spinner/progress-bar/brand-loader
