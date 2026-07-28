@@ -51,11 +51,32 @@ scroll offset across it. Constraints found in this codebase:
   anything interactive or async inside a slide would be dead in the clone (this is the documented cost of
   Swiper's loop mode; it is not acceptable for an Angular library, and `no-direct-dom-manipulation` says so
   too).
-- Which forces the API: **slides become data + a template** for the looping case.
-  `<et-carousel [slides]="items" loop>` with `<ng-template etCarouselSlide let-slide let-index="index">`.
-  The carousel then renders `[tail clones][real slides][head clones]` from one template. Projected
-  `etCarouselItem` children keep working for hand-written slides, without seamless loop (documented; `loop`
-  falls back to today's rewind there, or is refused in dev — decide when implementing).
+- Which forces the API: **slides become data + a template**, and (decided by the user 2026-07-28)
+  **template-only — `<et-carousel>` drops projected slides entirely**:
+
+  ```html
+  <et-carousel [slides]="items" loop>
+    <ng-template etCarouselSlide let-slide let-index="index">…</ng-template>
+  </et-carousel>
+  ```
+
+  The carousel renders `[tail clones][real slides][head clones]` from that one template, and there is no
+  second authoring mode to branch on. Consequences to implement:
+
+  - **The carousel renders the slide wrapper itself** — a `<div etCarouselItem>` per slide view — so slide
+    semantics, `N of M` labels, `data-active` and the clone marking (`aria-hidden` + `inert`) are guaranteed
+    rather than something a consumer has to remember. `etCarouselItem` stays a **headless** piece, for a
+    consumer building a carousel on a bare scrollable.
+  - The wrapper is the element the scrollable sizes, and the element the transitions apply to — which is
+    also what makes the effects reliable (a known element with a known progress property).
+  - **Per-slide autoplay duration** can no longer be an attribute on the consumer's element: replace it with
+    an `autoplayTimeFor: ((slide: T, index: number) => number | null) | null` input on the carousel. The
+    headless `etCarouselItem[autoplayTime]` keeps working for hand-built carousels.
+  - Type the template context and add a static `ngTemplateContextGuard` so `let-slide` is `T`, not `any`
+    (the repo already allows this pattern — see the `allow-static-template-context-guard` changeset).
+  - Phase 1's stories, spec and docs page all use projected `etCarouselItem` children and **must be
+    rewritten** as part of this; nothing is released, so no migration path is owed.
+
   This also opens the door to virtualizing long carousels later.
 
 Implementation notes:
