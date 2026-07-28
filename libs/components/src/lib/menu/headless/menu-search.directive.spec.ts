@@ -95,6 +95,23 @@ describe('MenuSearchDirective', () => {
     expect(document.activeElement).toBe(query('.search'));
   });
 
+  it('keeps focus in the search field when the pointer crosses an item', async () => {
+    await openMenu();
+
+    const search = query<HTMLInputElement>('.search');
+
+    search.value = 'br';
+    search.dispatchEvent(new Event('input', { bubbles: true }));
+    tick();
+
+    // Hovering marks the item active but must not take focus — otherwise the rest of what someone is
+    // typing goes nowhere the moment the pointer drifts over the list.
+    query('.item').dispatchEvent(new PointerEvent('pointerenter', { bubbles: true, pointerType: 'mouse' }));
+    tick();
+
+    expect(document.activeElement).toBe(search);
+  });
+
   it('updates the query model from typed input and filters via the consumer', async () => {
     await openMenu();
 

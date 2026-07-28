@@ -437,7 +437,13 @@ export class MenuDirective {
   /** @internal */
   public notifyItemPointerEnter(item: MenuItemDirective) {
     if (!item.isDisabled()) {
-      this.setActiveItem(item, { focus: this.isFocusInsideTree() });
+      // Hovering marks the item active, but it must not pull DOM focus out of the search field: the
+      // pointer crossing the list while someone is typing would otherwise swallow the rest of their
+      // query. Keyboard navigation still moves focus into the items (see `moveActive`), which is the
+      // gesture that means "I am done typing".
+      const searchFocused = this.registeredSearch()?.isFocused() ?? false;
+
+      this.setActiveItem(item, { focus: !searchFocused && this.isFocusInsideTree() });
     }
 
     this.handleItemHover(item);
