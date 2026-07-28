@@ -3,6 +3,7 @@ import { GridItemComponent } from '../../grid-item.component';
 import { GridComponent } from '../../grid.component';
 import { createGridAdapter, fromGridPosition, toGridPosition } from '../../headless/grid-adapter';
 import { GridItemConfig, GridItemPosition, GridSerializedState } from '../../headless/grid.types';
+import { posEq, posLabel } from './grid-partner-storybook.data';
 
 type BreakpointLayout = { x: number; y: number; cols: number; rows: number };
 
@@ -120,17 +121,6 @@ type LayoutRow = {
     intMissing: boolean;
     mismatch: boolean;
   }[];
-};
-
-const posLabel = (pos: GridItemPosition | undefined) => {
-  if (!pos) return '—';
-  return `(${pos.col},${pos.row}) ${pos.colSpan}×${pos.rowSpan}`;
-};
-
-const posEq = (a: GridItemPosition | undefined, b: GridItemPosition | undefined) => {
-  if (!a && !b) return true;
-  if (!a || !b) return false;
-  return a.col === b.col && a.row === b.row && a.colSpan === b.colSpan && a.rowSpan === b.rowSpan;
 };
 
 @Component({

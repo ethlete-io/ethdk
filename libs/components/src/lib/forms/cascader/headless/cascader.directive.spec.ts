@@ -90,9 +90,12 @@ const deepSource: CascaderDataSource<string> = {
     const depth = parent ? parent.value.split('/').length : 0;
     const name = DEEP_LEVEL_NAMES[depth]!;
 
+    // Deliberately not template literals: an interpolated one above the inline template below
+    // breaks Angular language service completions there. See
+    // `ethlete/no-template-literal-before-inline-template`.
     return Array.from({ length: 3 }, (_, index) => ({
-      value: parent ? `${parent.value}/${index}` : `${index}`,
-      label: `${name} ${index + 1}`,
+      value: parent ? parent.value + '/' + index : String(index),
+      label: name + ' ' + (index + 1),
       isLeaf: depth === DEEP_LEVEL_NAMES.length - 1,
     }));
   },

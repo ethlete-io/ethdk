@@ -5,17 +5,6 @@ import { RICH_FILTER_BUTTON_SLOT_TOKEN } from '../../directives/rich-filter-butt
 import { RICH_FILTER_CONTENT_TOKEN } from '../../directives/rich-filter-content';
 import { RICH_FILTER_TOP_TOKEN, RichFilterTopDirective } from '../../directives/rich-filter-top';
 
-export const signalVisibilityChangeClasses = (cfg: {
-  name: string;
-  signal: Signal<IntersectionObserverEntryWithDetails | null | undefined>;
-}) => ({
-  [`${cfg.name}--is-left`]: computed(() => cfg.signal()?.isLeft),
-  [`${cfg.name}--is-right`]: computed(() => cfg.signal()?.isRight),
-  [`${cfg.name}--is-above`]: computed(() => cfg.signal()?.isAbove),
-  [`${cfg.name}--is-below`]: computed(() => cfg.signal()?.isBelow),
-  [`${cfg.name}--is-visible`]: computed(() => cfg.signal()?.isVisible),
-});
-
 @Component({
   selector: 'et-rich-filter-host, [et-rich-filter-host]',
   styleUrls: ['./rich-filter-host.component.scss'],
@@ -53,3 +42,17 @@ export class RichFilterHostComponent {
     this.top()?.elementRef.nativeElement?.scrollIntoView(options);
   }
 }
+
+// Below the component on purpose: an interpolated template literal above an inline `template:`
+// breaks Angular language service completions in it — see the
+// `ethlete/no-template-literal-before-inline-template` lint rule.
+export const signalVisibilityChangeClasses = (cfg: {
+  name: string;
+  signal: Signal<IntersectionObserverEntryWithDetails | null | undefined>;
+}) => ({
+  [`${cfg.name}--is-left`]: computed(() => cfg.signal()?.isLeft),
+  [`${cfg.name}--is-right`]: computed(() => cfg.signal()?.isRight),
+  [`${cfg.name}--is-above`]: computed(() => cfg.signal()?.isAbove),
+  [`${cfg.name}--is-below`]: computed(() => cfg.signal()?.isBelow),
+  [`${cfg.name}--is-visible`]: computed(() => cfg.signal()?.isVisible),
+});

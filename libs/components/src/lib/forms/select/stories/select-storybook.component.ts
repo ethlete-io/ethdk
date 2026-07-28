@@ -289,8 +289,11 @@ export class FormFieldSelectAddNewStorybookComponent {
   public demoForm = form(this.formModel);
 
   protected createProject(query: string) {
-    // a real app would open a creation dialog here — the emitted query prefills it
-    const name = query || `Project ${this.projects().length + 1}`;
+    // a real app would open a creation dialog here — the emitted query prefills it.
+    // Deliberately not a template literal: an interpolated one above the inline template of the
+    // component below breaks Angular language service completions there. See the
+    // `ethlete/no-template-literal-before-inline-template` lint rule.
+    const name = query || 'Project ' + (this.projects().length + 1);
 
     if (!this.projects().includes(name)) {
       this.projects.update((projects) => [...projects, name]);
@@ -319,9 +322,12 @@ export class FormFieldSelectAddNewStorybookComponent {
   imports: [...FORM_FIELD_IMPORTS, ...SELECT_IMPORTS, FormField, JsonPipe, ProvideColorDirective],
 })
 export class FormFieldSelectManyOptionsStorybookComponent {
+  // Deliberately not template literals: an interpolated one above the inline template of a
+  // component below breaks Angular language service completions there. See
+  // `ethlete/no-template-literal-before-inline-template`.
   protected readonly ITEMS = Array.from({ length: 2000 }, (_, index) => ({
-    value: `item-${index + 1}`,
-    label: `Item ${index + 1} — ${FRUIT_OPTIONS[index % FRUIT_OPTIONS.length]?.label ?? ''}`,
+    value: 'item-' + (index + 1),
+    label: 'Item ' + (index + 1) + ' — ' + (FRUIT_OPTIONS[index % FRUIT_OPTIONS.length]?.label ?? ''),
   }));
 
   private formModel = linkedSignal(() => ({ value: null as string | null }));

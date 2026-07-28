@@ -95,19 +95,20 @@ source$
 
 ## Angular components & metadata
 
-| Rule                                     | What it enforces                                                                                                              | Fix | Default |
-| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
-| `require-on-push-change-detection`       | `changeDetection: ChangeDetectionStrategy.OnPush` on every `@Component` (version-aware: inert on Angular 22+)                 | 🔧  | error   |
-| `no-redundant-on-push-change-detection`  | No redundant `OnPush` metadata — it is the default since Angular 22 (version-aware: inert on older Angular)                   | 🔧  | error   |
-| `require-view-encapsulation-none`        | `encapsulation: ViewEncapsulation.None` on every `@Component`                                                                 | 🔧  | error   |
-| `no-legacy-angular-decorators`           | No `@Input`, `@Output`, `@ViewChild`, `@HostBinding`, … — use signal-based APIs (`input()`, `output()`, …) and `host: {}`     | 🔧  | error   |
-| `no-standalone-flag`                     | No `standalone` metadata — standalone is the default and should be omitted                                                    | 🔧  | error   |
-| `no-empty-angular-metadata-arrays`       | No empty `imports: []` / `hostDirectives: []` metadata noise                                                                  | 🔧  | error   |
-| `angular-decorator-property-order`       | Consistent property order in `@Component` / `@Directive` metadata                                                             | 🔧  | error   |
-| `prefer-concise-angular-host-directives` | Shorthand `hostDirectives` entries when only `directive` is needed; extended configs ordered `directive`, `inputs`, `outputs` | 🔧  | error   |
-| `prefer-concise-angular-style-metadata`  | `styleUrl` over single-item `styleUrls`; no array around a single `styles` entry                                              | 🔧  | error   |
-| `no-pipe-logic`                          | No logic inside a pipe's `transform` — extract a utility function and assign it (`transform = myUtil;`)                       |     | error   |
-| `enforce-routing-view-naming`            | Routing components import from a path containing `-view` and use a class name ending in `ViewComponent`                       |     | error   |
+| Rule                                         | What it enforces                                                                                                                                                          | Fix | Default |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| `require-on-push-change-detection`           | `changeDetection: ChangeDetectionStrategy.OnPush` on every `@Component` (version-aware: inert on Angular 22+)                                                             | 🔧  | error   |
+| `no-redundant-on-push-change-detection`      | No redundant `OnPush` metadata — it is the default since Angular 22 (version-aware: inert on older Angular)                                                               | 🔧  | error   |
+| `require-view-encapsulation-none`            | `encapsulation: ViewEncapsulation.None` on every `@Component`                                                                                                             | 🔧  | error   |
+| `no-legacy-angular-decorators`               | No `@Input`, `@Output`, `@ViewChild`, `@HostBinding`, … — use signal-based APIs (`input()`, `output()`, …) and `host: {}`                                                 | 🔧  | error   |
+| `no-standalone-flag`                         | No `standalone` metadata — standalone is the default and should be omitted                                                                                                | 🔧  | error   |
+| `no-empty-angular-metadata-arrays`           | No empty `imports: []` / `hostDirectives: []` metadata noise                                                                                                              | 🔧  | error   |
+| `angular-decorator-property-order`           | Consistent property order in `@Component` / `@Directive` metadata                                                                                                         | 🔧  | error   |
+| `prefer-concise-angular-host-directives`     | Shorthand `hostDirectives` entries when only `directive` is needed; extended configs ordered `directive`, `inputs`, `outputs`                                             | 🔧  | error   |
+| `prefer-concise-angular-style-metadata`      | `styleUrl` over single-item `styleUrls`; no array around a single `styles` entry                                                                                          | 🔧  | error   |
+| `no-template-literal-before-inline-template` | No interpolated template literal above an inline `template:` — it silently disables Angular language service completions, hover and go-to-definition inside that template |     | error   |
+| `no-pipe-logic`                              | No logic inside a pipe's `transform` — extract a utility function and assign it (`transform = myUtil;`)                                                                   |     | error   |
+| `enforce-routing-view-naming`                | Routing components import from a path containing `-view` and use a class name ending in `ViewComponent`                                                                   |     | error   |
 
 ::: info The OnPush pair is version-aware
 `require-on-push-change-detection` and `no-redundant-on-push-change-detection` are both part of `recommended` and detect the installed Angular version: on Angular ≤ 21 the first enforces explicit `OnPush` and the second is inert; on Angular 22+ (where `OnPush` is the default) the roles flip and the redundant metadata — including the now-unused import — is removed.

@@ -31,7 +31,7 @@ let nextUniqueId = 0;
   `,
   host: {
     class: 'et-nav-tab-link et-legacy',
-    '[id]:': 'id',
+    '[id]': 'id',
     '[attr.aria-controls]': '_getAriaControls()',
     '[attr.aria-current]': '_getAriaCurrent()',
     '[attr.aria-disabled]': 'disabled',

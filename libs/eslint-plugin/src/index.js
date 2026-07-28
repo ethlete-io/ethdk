@@ -40,6 +40,7 @@ const noUnusedClassMember = require('./rules/no-unused-class-member');
 const noDomQuery = require('./rules/no-dom-query');
 const noLeadingUnderscoreClassMember = require('./rules/no-leading-underscore-class-member');
 const noEmptyAngularMetadataArrays = require('./rules/no-empty-angular-metadata-arrays');
+const noTemplateLiteralBeforeInlineTemplate = require('./rules/no-template-literal-before-inline-template');
 const noStandaloneFlag = require('./rules/no-standalone-flag');
 const noEmptyNewlinesBetweenImports = require('./rules/no-empty-newlines-between-imports');
 const angularDecoratorPropertyOrder = require('./rules/angular-decorator-property-order');
@@ -99,6 +100,7 @@ const plugin = {
     'no-dom-query': noDomQuery,
     'no-leading-underscore-class-member': noLeadingUnderscoreClassMember,
     'no-empty-angular-metadata-arrays': noEmptyAngularMetadataArrays,
+    'no-template-literal-before-inline-template': noTemplateLiteralBeforeInlineTemplate,
     'no-standalone-flag': noStandaloneFlag,
     'no-empty-newlines-between-imports': noEmptyNewlinesBetweenImports,
     'angular-decorator-property-order': angularDecoratorPropertyOrder,

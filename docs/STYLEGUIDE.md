@@ -1,4 +1,4 @@
-# Style Guide v0.18.1
+# Style Guide v0.19.0
 
 This document outlines the coding style guide for Angular applications at Braune Digital.
 
@@ -58,6 +58,7 @@ Run `npx nx lint <project> --fix` — the rules below are enforced (and mostly a
 | Inputs/models not named after a global HTML attribute (`title`, `id`, `hidden`, `role`, …) — collides with the host element       | `ethlete/no-native-html-input-name`                                                                                                                                                                                 |
 | No logic in pipe `transform`                                                                                                      | `ethlete/no-pipe-logic`                                                                                                                                                                                             |
 | Consistent class-member + decorator-metadata order; concise host-directive / style metadata                                       | `ethlete/class-member-order`, `ethlete/angular-decorator-property-order`, `ethlete/prefer-concise-angular-host-directives`, `ethlete/prefer-concise-angular-style-metadata`                                         |
+| No interpolated template literal above an inline `template:` — it kills Angular language service completions in that file         | `ethlete/no-template-literal-before-inline-template`                                                                                                                                                                |
 | Routing components: `-view` path + `ViewComponent` class name                                                                     | `ethlete/enforce-routing-view-naming`                                                                                                                                                                               |
 | No direct `document` / `window` / DOM query / observers / cookies / `window.location`                                             | `no-restricted-globals`, `ethlete/no-direct-dom-manipulation`, `ethlete/no-dom-query`, `ethlete/no-native-observers`, `ethlete/no-document-cookie`, `ethlete/no-window-location`                                    |
 | No barrel (index) imports — import from the source file                                                                           | `no-restricted-syntax`                                                                                                                                                                                              |

@@ -11,15 +11,7 @@ import {
 import { ScrollableActiveChildDirective } from '../../headless/scrollable-active-child.directive';
 import { ScrollableComponent } from '../../scrollable.component';
 import { SCROLLABLE_IMPORTS } from '../../scrollable.imports';
-
-const ITEM_COLORS = ['#7c3aed', '#c026d3', '#db2777', '#e11d48', '#ea580c', '#d97706', '#059669'] as const;
-
-const SCROLLABLE_ITEMS = Array.from({ length: 7 }, (_, i) => ({
-  index: i,
-  label: `Item ${i}`,
-  active: i === 3 || i === 4,
-  color: ITEM_COLORS[i],
-}));
+import { SCROLLABLE_ITEMS } from './scrollable-storybook.data';
 
 @Component({
   selector: 'et-sb-scrollable',

@@ -36,7 +36,7 @@ const flush = async () => {
 describe('createV2DropzoneUpload', () => {
   beforeEach(() => {
     // jsdom does not implement object URLs
-    URL.createObjectURL = vi.fn(() => `blob:mock-${Math.random()}`);
+    URL.createObjectURL = vi.fn(() => 'blob:mock-' + Math.random());
     URL.revokeObjectURL = vi.fn();
   });
 

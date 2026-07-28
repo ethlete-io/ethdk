@@ -7,7 +7,7 @@ import { TabGroupComponent } from './tab-group.component';
 import { TabComponent } from './tab.component';
 
 const SESSION_MEMORY_KEY = 'test-tabs';
-const SESSION_MEMORY_STORAGE_KEY = `et-tab-group:${SESSION_MEMORY_KEY}`;
+const SESSION_MEMORY_STORAGE_KEY = 'et-tab-group:' + SESSION_MEMORY_KEY;
 
 @Component({
   imports: [TabGroupComponent, TabComponent],

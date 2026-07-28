@@ -24,7 +24,10 @@ export class RandomKittenComponent {
   randomHeight = this.randomNumberBetween100AndMax;
 
   get randomUrl() {
-    return `${this.baseUrl}/${this.randomWidth}x${this.randomHeight}`;
+    // Deliberately not a template literal: an interpolated one above the inline template of the
+    // component below breaks Angular language service completions there. See the
+    // `ethlete/no-template-literal-before-inline-template` lint rule.
+    return this.baseUrl + '/' + this.randomWidth + 'x' + this.randomHeight;
   }
 
   get randomLorem() {

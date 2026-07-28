@@ -1,22 +1,8 @@
 import { Component, computed, input, signal, ViewEncapsulation } from '@angular/core';
 import { ProvideSurfaceDirective } from '@ethlete/core';
-import { PaginationLabels } from '../pagination-labels';
 import { PaginationRenderAs } from '../pagination.component';
 import { PAGINATION_IMPORTS } from '../pagination.imports';
-
-// A full German label set — an app would normally provide this once via `providePaginationLabels`.
-const GERMAN_LABELS: Partial<PaginationLabels> = {
-  navigation: 'Seitennavigation',
-  first: 'Erste Seite',
-  previous: 'Vorherige Seite',
-  next: 'Nächste Seite',
-  last: 'Letzte Seite',
-  ellipsis: 'Weitere Seiten',
-  page: (page) => `Seite ${page}`,
-  range: ({ start, end, totalItems }) => `Zeige ${start}–${end} von ${totalItems}`,
-  compactRange: ({ start, end, totalItems }) => `${start}–${end} von ${totalItems}`,
-  jumpTo: 'Gehe zu Seite',
-};
+import { GERMAN_LABELS } from './pagination-storybook.data';
 
 @Component({
   selector: 'et-sb-pagination',

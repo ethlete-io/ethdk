@@ -343,6 +343,10 @@ const recommendedTs = {
     // Remove standalone metadata — standalone is implicit and should not be declared
     'ethlete/no-standalone-flag': 'error',
 
+    // No interpolated template literal above an inline template — it silently kills
+    // Angular language service completions for the rest of the file
+    'ethlete/no-template-literal-before-inline-template': 'error',
+
     // ── Angular outputs ─────────────────────────────────────────────────────
 
     // No on-prefixed outputs (onSelectDate → selectDate)

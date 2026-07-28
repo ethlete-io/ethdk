@@ -43,10 +43,12 @@ const TEST_COLOR_THEMES = [
   },
 ] as const;
 
+// Deliberately not template literals: an interpolated one above the inline templates below breaks
+// Angular language service completions there. See `ethlete/no-template-literal-before-inline-template`.
 const makeOptions = (count: number): SelectOptionData[] =>
   Array.from({ length: count }, (_, index) => ({
-    value: `item-${index + 1}`,
-    label: `Item ${index + 1}`,
+    value: 'item-' + (index + 1),
+    label: 'Item ' + (index + 1),
   }));
 
 @Component({
