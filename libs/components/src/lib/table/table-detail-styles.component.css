@@ -1,0 +1,85 @@
+@layer components {
+  /* Detail-row chrome and its grow-open animation, mounted on demand (see TableDetailStylesComponent)
+     the first time a table has row expansion. Sizeable — the keyframes alone are most of it — and
+     useless to a table that never expands a row. */
+  .et-table-detail-row {
+    display: contents;
+  }
+
+  /* Detail rows grow open: the cell is a one-track grid whose row animates between `0fr` and `1fr`,
+     so the rows below glide down with it instead of the detail appearing at full height under them.
+     Angular's `animate.enter`/`animate.leave` keep the row mounted for the leave animation, then
+     unmount it.
+
+     Known cost, accepted for the look: an `fr` track resolves against the whole grid, so every frame
+     re-resolves the table's layout. Measured on a 20-row table at 20× CPU throttle, per toggle: ~41ms
+     average frame and 5–6 long frames, against ~20ms and 3 for the compositor-only
+     transform+opacity reveal this replaced. Reach for that one instead
+     (`opacity`/`translateY`, no track animation) if a table ever needs to stay smooth under load. */
+  .et-table-detail-cell {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-rows: 1fr;
+    border-block-end: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
+  }
+
+  /* The animation must sit on the element Angular puts the class on: `animate.enter`/`animate.leave`
+     look for a running animation on *that* element and drop the class (or unmount) the moment they
+     find none — an animation on a child is never awaited. */
+  .et-table-detail-cell.et-table-detail--enter {
+    animation: et-table-detail-in 0.18s ease;
+  }
+
+  .et-table-detail-cell.et-table-detail--leave {
+    animation: et-table-detail-out 0.18s ease forwards;
+  }
+
+  /* The row's track opens from nothing while the content fades in. Both `from`/`to` are single `<flex>`
+     values, which is the form `grid-template-rows` interpolates. */
+  @keyframes et-table-detail-in {
+    from {
+      grid-template-rows: 0fr;
+      opacity: 0;
+    }
+
+    to {
+      grid-template-rows: 1fr;
+      opacity: 1;
+    }
+  }
+
+  @keyframes et-table-detail-out {
+    from {
+      grid-template-rows: 1fr;
+      opacity: 1;
+    }
+
+    to {
+      grid-template-rows: 0fr;
+      opacity: 0;
+    }
+  }
+
+  /* The clip window, and nothing else. It is stretched to a track that is 0 tall for part of the
+     animation, so it has to be allowed to shrink past its content (`min-block-size`) and clip what
+     doesn't fit (`overflow`) — without either, the row would jump to full height on the first frame.
+
+     It must also carry no padding or border of its own: under `box-sizing: border-box` those set a
+     floor under its height, so the row would pop open to that floor before the animation started and
+     then jump the rest of the way. That is what the padding below is separated out for. */
+  .et-table-detail-content {
+    min-block-size: 0;
+    overflow: hidden;
+  }
+
+  .et-table-detail-body {
+    padding: var(--et-table-cell-padding-block) var(--et-table-cell-padding-inline);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-table-detail-cell.et-table-detail--enter,
+    .et-table-detail-cell.et-table-detail--leave {
+      animation: none;
+    }
+  }
+}

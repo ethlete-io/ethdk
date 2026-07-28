@@ -1,0 +1,65 @@
+<div class="et-table-column-menu" etMenu>
+  <button
+    [attr.aria-label]="labels().columnMenu(column().header ?? column().key)"
+    class="et-table-column-menu-trigger"
+    et-icon-button
+    size="xs"
+    etMenuTrigger
+    type="button"
+  >
+    <i etIcon="et-ellipsis-vertical"></i>
+  </button>
+
+  <ng-template etMenuSurface>
+    <et-menu>
+      @if (column().sortable) {
+        <button (activate)="menu.sortAscending(column())" et-menu-item type="button">
+          <i class="et-table-column-menu-icon" etIcon="et-arrow-up"></i>
+          {{ labels().sortAscending }}
+        </button>
+        <button (activate)="menu.sortDescending(column())" et-menu-item type="button">
+          <i class="et-table-column-menu-icon et-table-column-menu-icon--down" etIcon="et-arrow-up"></i>
+          {{ labels().sortDescending }}
+        </button>
+        @if (menu.directionOf(column())) {
+          <button (activate)="menu.clearSort(column())" et-menu-item type="button">
+            <i class="et-table-column-menu-icon" etIcon="et-times"></i>
+            {{ labels().clearSort }}
+          </button>
+        }
+      }
+
+      @if (menu.canAutosize()) {
+        @if (column().sortable) {
+          <et-menu-separator />
+        }
+        <button (activate)="menu.autosize(column())" et-menu-item type="button">
+          <i class="et-table-column-menu-icon" etIcon="et-arrows-left-right"></i>
+          {{ labels().autosizeColumn }}
+        </button>
+        <button (activate)="menu.autosizeAll()" et-menu-item type="button">
+          <i class="et-table-column-menu-icon" etIcon="et-arrows-left-right"></i>
+          {{ labels().autosizeAllColumns }}
+        </button>
+      }
+
+      @if (menu.canResetWidth(column()) || menu.canHide()) {
+        @if (column().sortable || menu.canAutosize()) {
+          <et-menu-separator />
+        }
+        @if (menu.canResetWidth(column())) {
+          <button (activate)="menu.resetWidth(column())" et-menu-item type="button">
+            <i class="et-table-column-menu-icon" etIcon="et-rotate-right"></i>
+            {{ labels().resetWidth }}
+          </button>
+        }
+        @if (menu.canHide()) {
+          <button (activate)="menu.hide(column())" et-menu-item type="button">
+            <i class="et-table-column-menu-icon" etIcon="et-eye-slash"></i>
+            {{ labels().hideColumn }}
+          </button>
+        }
+      }
+    </et-menu>
+  </ng-template>
+</div>

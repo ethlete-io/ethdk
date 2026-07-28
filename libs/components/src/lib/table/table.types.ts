@@ -39,6 +39,43 @@ export type TableFilter = {
   values: unknown[];
 };
 
+/** Which of a column's slots a registered template fills. */
+export type TableTemplateSlot = 'cell' | 'header' | 'footer' | 'filterOption' | 'cellSkeleton';
+
+/**
+ * How many of a column's filter options can be picked at once: `'multiple'` (the default) is a
+ * checkbox menu, `'single'` a radio menu that holds at most one value. Filter state is a list of
+ * values either way, so nothing downstream — client filtering, `state()`, a server request — has to
+ * care which one a column uses.
+ */
+export type TableFilterSelection = 'single' | 'multiple';
+
+/**
+ * A single cell's own async state, independent of the table's: `'loading'` replaces the cell's
+ * content with a placeholder bar, `'error'` keeps the content and marks it in the app's error color.
+ * For inline editing, where one cell saves (or fails) on its own — see `cellState`.
+ */
+export type TableCellState = 'loading' | 'error';
+
+/**
+ * What a `cellState` callback may return: the bare state, or the state plus what went wrong. A
+ * `message` is shown on the error mark — as its `title` and accessible name in the base table, and as
+ * a real tooltip once `etTableCellErrorTooltip` is imported.
+ */
+export type TableCellStateValue = TableCellState | { state: TableCellState; message?: string | null };
+
+/**
+ * A template registered for one column by `etTableCell` and friends. The column is matched by
+ * **identity** against the table's `columns` record, which is what lets a template be bound to the
+ * column object itself (`[etTableCell]="COLUMNS.role"`) and have its context typed from it.
+ */
+export type TableColumnTemplate = {
+  slot: TableTemplateSlot;
+  /** The bound column definition. Read as a signal so a rebuilt `columns` record stays matched. */
+  column: Signal<object>;
+  template: TemplateRef<unknown>;
+};
+
 /** The context passed to a custom cell template. */
 export type TableCellContext<T, TValue> = {
   /** The row. */
@@ -49,10 +86,41 @@ export type TableCellContext<T, TValue> = {
   index: number;
 };
 
+/** The context passed to a filter option template — the option being rendered. */
+export type TableFilterOptionContext = {
+  /** The option: its `label` and `value`, plus whatever else you put on it. */
+  $implicit: TableFilterOption;
+  /** Whether this option is currently among the column's selected filter values. */
+  selected: boolean;
+};
+
+/**
+ * The context passed to a column's loading-placeholder template. The index and width are what the
+ * table would have used for its own bone, so a custom one can stay in the same rhythm.
+ */
+export type TableCellSkeletonContext = {
+  /** The placeholder row's index (0-based) — for varying the shape down the column. */
+  $implicit: number;
+  /** The width (%) the table's default bone would have used at this position. */
+  width: number;
+};
+
 /** The context passed to a custom header template. */
 export type TableHeaderContext = {
   /** The column's static header text, if any. */
   $implicit: string | undefined;
+};
+
+/** The context passed to the empty-state template — the (empty) row list. */
+export type TableEmptyContext<T> = {
+  /** The rows the table would render: empty here, but typed, so one template can serve both cases. */
+  $implicit: readonly T[];
+};
+
+/** The context passed to the error-state template — whatever was bound to the table's `error`. */
+export type TableErrorContext = {
+  /** The error value, as given. */
+  $implicit: unknown;
 };
 
 /** The context passed to the expanded-row detail template. */
@@ -68,18 +136,15 @@ export type TableFooterContext<T> = {
 };
 
 /**
- * A typed column definition. Authored via {@link tableColumns} so the row type `T`
- * flows into every `value` accessor, and via `key` into sort/filter/state — the
- * key never wires templates to data.
+ * A typed column definition. Declare a table's columns as a {@link TableColumns} record
+ * (`satisfies TableColumns<Row>`) so the row type flows into every `value` accessor and each
+ * column's key is the key it is declared under — nothing to repeat or keep in sync.
  */
 export type TableColumn<T, TValue = unknown> = {
-  /** Stable identity, used for state serialization (order, visibility, sort, filter). */
-  key: string;
-
-  /** Static header text. Ignored when `headerCell` is set. */
+  /** Static header text. Ignored when a header-cell template is registered for this column. */
   header?: string;
 
-  /** Typed accessor for the cell's value. Rendered directly unless `cell` is set. */
+  /** Typed accessor for the cell's value. Rendered directly unless an `etTableCell` template is registered. */
   value: (row: T) => TValue;
 
   /** Allow sorting by this column (renders a sortable header). @default false */
@@ -97,20 +162,15 @@ export type TableColumn<T, TValue = unknown> = {
   /** Show a search box in the filter menu (client-side for a static list; drives `setQuery` for a provider). */
   filterSearch?: boolean;
 
+  /**
+   * Whether the filter menu picks one value or several. `'single'` renders radio items and replaces the
+   * selection on each pick (choosing the selected one again clears it); `'multiple'` renders checkboxes.
+   * @default 'multiple'
+   */
+  filterSelection?: TableFilterSelection;
+
   /** The value matched against the selected filter values. Defaults to `value`. */
   filterValue?: (row: T) => unknown;
-
-  /** Custom cell template. Receives {@link TableCellContext}. */
-  cell?: TemplateRef<TableCellContext<T, TValue>>;
-
-  /** Custom header template. Receives {@link TableHeaderContext}. */
-  headerCell?: TemplateRef<TableHeaderContext>;
-
-  /**
-   * A footer cell template (context: all rendered rows) — e.g. a totals/summary cell. Any column
-   * with a `footerCell` shows the table's sticky footer row. Receives {@link TableFooterContext}.
-   */
-  footerCell?: TemplateRef<TableFooterContext<T>>;
 
   /**
    * Pin this column to the inline-start or inline-end edge while the table scrolls horizontally.
@@ -124,9 +184,18 @@ export type TableColumn<T, TValue = unknown> = {
   /**
    * The grid track size for this column (any `grid-template-columns` track value,
    * e.g. `'1fr'`, `'200px'`, `'minmax(120px, 1fr)'`).
-   * @default 'minmax(0, 1fr)'
+   * @default `minmax(<minWidth>px, 1fr)`
    */
   width?: string;
+
+  /**
+   * Narrowest this column may get (px), whether it is dragged there or squeezed there by a wider
+   * neighbour. Lower it for a column that genuinely reads at a glance — a two-character status, an
+   * icon — where the default would waste space. Ignored when `width` is a fixed length, which is
+   * already the column saying exactly how wide it is.
+   * @default 96
+   */
+  minWidth?: number;
 
   /** Hide the column initially. Toggle later via table state. @default false */
   hidden?: boolean;
@@ -142,6 +211,24 @@ export type TableColumn<T, TValue = unknown> = {
 /** Any column definition, regardless of value type. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyTableColumn<T> = TableColumn<T, any>;
+
+/**
+ * A table's column definitions, keyed by column key — the key each column is declared under is
+ * the one used for sorting, filtering, cell templates and serialized state.
+ *
+ * @example
+ * const COLUMNS = {
+ *   name: { header: 'Name', value: (user: User) => user.name, sortable: true },
+ *   email: { header: 'Email', value: (user: User) => user.email },
+ * } satisfies TableColumns<User>;
+ */
+export type TableColumns<T> = Record<string, AnyTableColumn<T>>;
+
+/**
+ * A column definition paired with the key it was declared under. This is what the table renders
+ * from and what features see — consumers author {@link TableColumns} instead.
+ */
+export type TableColumnDef<T> = AnyTableColumn<T> & { key: string };
 
 /**
  * Per-column entry of a serialized {@link TableState}. Shaped to map 1:1 onto
@@ -170,8 +257,8 @@ export type TableColumnState = {
  * survive schema evolution. Round-trips via `state()` / `restoreState()`.
  */
 export type TableState = {
-  /** State schema version. */
-  v: 1;
+  /** State schema version. `1` predates the `features` bag and still restores. */
+  v: 1 | 2;
   /** Columns in display order, each with its visibility, sort and filter. */
   columns: TableColumnState[];
   /**
@@ -179,6 +266,12 @@ export type TableState = {
    * expansion is used with a `rowKey` — without one, expansion can't be serialized.
    */
   expanded?: string[];
+  /**
+   * State owned by opt-in features, keyed by slice name (`'selection'`, …) — see `TableStateSlice`.
+   * Opaque to the table: it round-trips whatever the feature put there, and a slice whose feature
+   * isn't imported on restore is simply ignored rather than lost.
+   */
+  features?: Record<string, unknown>;
 };
 
 /**

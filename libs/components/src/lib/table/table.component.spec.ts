@@ -1,14 +1,14 @@
-import { Component, computed, TemplateRef, viewChild } from '@angular/core';
+import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RuntimeError } from '@ethlete/core';
+import { injectLocale, RuntimeError } from '@ethlete/core';
 import '../../test-helpers';
-import { tableColumns } from './table-columns';
 import { TABLE_ERROR_CODES } from './table-errors';
-import { filterRows } from './table-filter';
-import { sortRows } from './table-sort';
+import { filterRows } from './headless/table-filter';
+import { sortRows } from './headless/table-sort';
 import { TableComponent } from './table.component';
+import { DEFAULT_TABLE_LABELS, provideTableLabels } from './headless/table-labels';
 import { TABLE_IMPORTS, TABLE_SELECTION_IMPORTS } from './table.imports';
-import { AnyTableColumn } from './table.types';
+import { TableColumns, TableFilter, TableSort } from './table.types';
 
 type Person = { id: number; name: string; role: string };
 
@@ -24,12 +24,12 @@ const UNSORTED: Person[] = [
 ];
 
 const columns = (roleHidden = false) =>
-  tableColumns<Person>([
-    { key: 'name', header: 'Name', value: (person) => person.name, width: '200px' },
-    { key: 'role', header: 'Role', value: (person) => person.role, hidden: roleHidden },
-  ]);
+  ({
+    name: { header: 'Name', value: (person) => person.name, width: '200px' },
+    role: { header: 'Role', value: (person) => person.role, hidden: roleHidden },
+  }) satisfies TableColumns<Person>;
 
-const create = (cols: AnyTableColumn<Person>[], data: Person[] = PEOPLE): ComponentFixture<TableComponent<Person>> => {
+const create = (cols: TableColumns<Person>, data: Person[] = PEOPLE): ComponentFixture<TableComponent<Person>> => {
   const fixture = TestBed.createComponent<TableComponent<Person>>(TableComponent);
   fixture.componentRef.setInput('columns', cols);
   fixture.componentRef.setInput('data', data);
@@ -48,21 +48,173 @@ describe('TableComponent', () => {
   it('builds grid-template-columns from column widths, defaulting the rest', () => {
     const { componentInstance: table } = create(columns());
 
-    expect(table.templateColumns()).toBe('200px minmax(0, 1fr)');
+    expect(table.templateColumns()).toBe('200px minmax(96px, 1fr)');
   });
 
   it('excludes hidden columns from the visible set and the track template', () => {
     const { componentInstance: table } = create(columns(true));
 
     expect(table.visibleColumns().map((c) => c.key)).toEqual(['name']);
-    expect(table.templateColumns()).toBe('200px');
+    // The only remaining column is a rigid width, so a trailing slack track carries the table's chrome
+    // to the panel's edge — see `hasFiller`. Slack, so its floor is 0, unlike a real column's.
+    expect(table.templateColumns()).toBe('200px minmax(0, 1fr)');
+  });
+
+  it('adds a trailing slack track only when every column is a rigid width', () => {
+    const rigid = create({
+      name: { header: 'Name', value: (person) => person.name, width: '200px' },
+      role: { header: 'Role', value: (person) => person.role, width: '120px' },
+    } satisfies TableColumns<Person>);
+
+    expect(rigid.componentInstance.templateColumns()).toBe('200px 120px minmax(0, 1fr)');
+
+    // One `auto` track is enough to soak up the leftover room on its own, so no slack track is added.
+    const stretchy = create({
+      name: { header: 'Name', value: (person) => person.name, width: '200px' },
+      role: { header: 'Role', value: (person) => person.role, width: 'auto' },
+    } satisfies TableColumns<Person>);
+
+    expect(stretchy.componentInstance.templateColumns()).toBe('200px auto');
+  });
+
+  it('gives flexible columns a minimum width, so a wide neighbour cannot squeeze them away', () => {
+    const { componentInstance: table } = create(columns());
+
+    // Every default track carries the floor; without it one resized column takes all the room and
+    // its neighbours collapse to their padding.
+    table.setColumnWidth('name', 5000);
+
+    for (const track of table.templateColumns().split(' minmax')) {
+      expect(track.startsWith('(0px,')).toBe(false);
+    }
+
+    expect(table.templateColumns()).toContain('minmax(96px, 1fr)');
+  });
+
+  it('honours a column-specific minWidth for both its track floor and a resize', () => {
+    const { componentInstance: table } = create({
+      name: { header: 'Name', value: (person) => person.name },
+      role: { header: 'Role', value: (person) => person.role, minWidth: 32 },
+    } satisfies TableColumns<Person>);
+
+    expect(table.templateColumns()).toBe('minmax(96px, 1fr) minmax(32px, 1fr)');
+
+    // A drag is clamped to the same floor, so the two can't disagree.
+    table.setColumnWidth('role', 1);
+    expect(table.templateColumns()).toBe('minmax(96px, 1fr) 32px');
+
+    table.setColumnWidth('name', 1);
+    expect(table.templateColumns()).toBe('96px 32px minmax(0, 1fr)');
+  });
+
+  describe('setSort', () => {
+    const sortable = () =>
+      ({
+        name: { header: 'Name', value: (person) => person.name, sortable: true },
+        role: { header: 'Role', value: (person) => person.role, sortable: true },
+      }) satisfies TableColumns<Person>;
+
+    it('sets a direction outright and clears with null, unlike toggleSort cycling', () => {
+      const { componentInstance: table } = create(sortable());
+
+      table.setSort('name', 'desc');
+      expect(table.sort()).toEqual([{ key: 'name', direction: 'desc' }]);
+
+      // Same direction again is a no-op rather than a step through the cycle.
+      table.setSort('name', 'desc');
+      expect(table.sort()).toEqual([{ key: 'name', direction: 'desc' }]);
+
+      table.setSort('name', null);
+      expect(table.sort()).toEqual([]);
+    });
+
+    it('replaces other sorts unless multiSort is on', () => {
+      const fixture = create(sortable());
+      const table = fixture.componentInstance;
+
+      table.setSort('name', 'asc');
+      table.setSort('role', 'asc');
+      expect(table.sort()).toEqual([{ key: 'role', direction: 'asc' }]);
+
+      fixture.componentRef.setInput('multiSort', true);
+      fixture.detectChanges();
+
+      table.setSort('name', 'desc');
+      expect(table.sort()).toEqual([
+        { key: 'role', direction: 'asc' },
+        { key: 'name', direction: 'desc' },
+      ]);
+    });
+  });
+
+  describe('autosize', () => {
+    it('lets the measured columns out to max-content, and ignores unknown keys', () => {
+      const { componentInstance: table } = create(columns());
+
+      // The measurement itself needs real layout, so it is covered in the browser; what is checkable
+      // here is the transient track it measures through.
+      table.autosizeColumns(['role']);
+      expect(table.templateColumns()).toBe('200px max-content');
+
+      table.autosizeColumns(['nope']);
+      expect(table.templateColumns()).toBe('200px max-content');
+    });
+
+    it('is a no-op for an empty key list', () => {
+      const { componentInstance: table } = create(columns());
+      const before = table.templateColumns();
+
+      table.autosizeColumns([]);
+      expect(table.templateColumns()).toBe(before);
+    });
+  });
+
+  it('reports whether a column carries a width override', () => {
+    const { componentInstance: table } = create(columns());
+
+    expect(table.hasColumnWidthOverride('role')).toBe(false);
+
+    table.setColumnWidth('role', 180);
+    expect(table.hasColumnWidthOverride('role')).toBe(true);
+
+    table.resetColumnWidth('role');
+    expect(table.hasColumnWidthOverride('role')).toBe(false);
+  });
+
+  describe('column visibility', () => {
+    it('enumerates all columns and the hidden ones, and shows them all again', () => {
+      const { componentInstance: table } = create(columns());
+
+      expect(table.allColumns().map((c) => c.key)).toEqual(['name', 'role']);
+      expect(table.hiddenColumnKeys()).toEqual([]);
+
+      table.setColumnVisible('role', false);
+      expect(table.visibleColumns().map((c) => c.key)).toEqual(['name']);
+      // `allColumns` keeps the hidden one, which is what a "columns" chooser lists.
+      expect(table.allColumns().map((c) => c.key)).toEqual(['name', 'role']);
+      expect(table.hiddenColumnKeys()).toEqual(['role']);
+      expect(table.isColumnVisible('role')).toBe(false);
+
+      table.showAllColumns();
+      expect(table.hiddenColumnKeys()).toEqual([]);
+      expect(table.visibleColumns().map((c) => c.key)).toEqual(['name', 'role']);
+    });
+
+    it('lists hidden keys in declared order, not the order they were hidden in', () => {
+      const { componentInstance: table } = create(columns());
+
+      table.setColumnVisible('role', false);
+      table.setColumnVisible('name', false);
+
+      expect(table.hiddenColumnKeys()).toEqual(['name', 'role']);
+    });
   });
 
   it('captures a versioned state snapshot of order + visibility', () => {
     const { componentInstance: table } = create(columns(true));
 
     expect(table.state()).toEqual({
-      v: 1,
+      v: 2,
       columns: [
         { key: 'name', hidden: false },
         { key: 'role', hidden: true },
@@ -84,33 +236,15 @@ describe('TableComponent', () => {
     expect(table.visibleColumns().map((c) => c.key)).toEqual(['role']);
   });
 
-  it('throws ET3500 on duplicate column keys in dev mode', () => {
-    const dupes = tableColumns<Person>([
-      { key: 'name', value: (p) => p.name },
-      { key: 'name', value: (p) => p.role },
-    ]);
-
-    const fixture = TestBed.createComponent<TableComponent<Person>>(TableComponent);
-    fixture.componentRef.setInput('columns', dupes);
-
-    let error: unknown;
-    try {
-      fixture.detectChanges();
-      fixture.componentInstance.visibleColumns();
-    } catch (e) {
-      error = e;
-    }
-
-    expect(error).toBeInstanceOf(RuntimeError);
-    expect((error as RuntimeError<number>).code).toBe(TABLE_ERROR_CODES.DUPLICATE_COLUMN_KEY);
-  });
+  // Duplicate column keys used to throw ET3500. They are unrepresentable now: a column's key is
+  // the key it is declared under in the `TableColumns` record.
 
   describe('sorting', () => {
     const sortableColumns = () =>
-      tableColumns<Person>([
-        { key: 'name', header: 'Name', value: (person) => person.name, sortable: true },
-        { key: 'role', header: 'Role', value: (person) => person.role, sortable: true },
-      ]);
+      ({
+        name: { header: 'Name', value: (person) => person.name, sortable: true },
+        role: { header: 'Role', value: (person) => person.role, sortable: true },
+      }) satisfies TableColumns<Person>;
 
     it('sortRows sorts ascending and descending by a column key', () => {
       const cols = sortableColumns();
@@ -125,7 +259,9 @@ describe('TableComponent', () => {
 
     it('sortRows sinks nullish values to the bottom regardless of direction', () => {
       const rows = [{ v: 2 }, { v: null }, { v: 1 }] as { v: number | null }[];
-      const cols = tableColumns<{ v: number | null }>([{ key: 'v', value: (r) => r.v }]);
+      const cols = {
+        v: { value: (r) => r.v },
+      } satisfies TableColumns<{ v: number | null }>;
 
       expect(sortRows({ rows, sort: [{ key: 'v', direction: 'asc' }], columns: cols }).map((r) => r.v)).toEqual([
         1,
@@ -189,10 +325,9 @@ describe('TableComponent', () => {
 
   describe('filtering', () => {
     const filterableColumns = () =>
-      tableColumns<Person>([
-        { key: 'name', header: 'Name', value: (person) => person.name },
-        {
-          key: 'role',
+      ({
+        name: { header: 'Name', value: (person) => person.name },
+        role: {
           header: 'Role',
           value: (person) => person.role,
           filterable: true,
@@ -202,7 +337,7 @@ describe('TableComponent', () => {
             { label: 'Viewer', value: 'Viewer' },
           ],
         },
-      ]);
+      }) satisfies TableColumns<Person>;
 
     it('filterRows keeps only rows whose value is in the selected set', () => {
       const cols = filterableColumns();
@@ -254,11 +389,11 @@ describe('TableComponent', () => {
 
   describe('columns (reorder + visibility)', () => {
     const threeColumns = () =>
-      tableColumns<Person>([
-        { key: 'id', header: 'ID', value: (p) => p.id },
-        { key: 'name', header: 'Name', value: (p) => p.name },
-        { key: 'role', header: 'Role', value: (p) => p.role },
-      ]);
+      ({
+        id: { header: 'ID', value: (p) => p.id },
+        name: { header: 'Name', value: (p) => p.name },
+        role: { header: 'Role', value: (p) => p.role },
+      }) satisfies TableColumns<Person>;
 
     it('moveColumn reorders the visible columns and the state', () => {
       const { componentInstance: table } = create(threeColumns(), UNSORTED);
@@ -267,6 +402,76 @@ describe('TableComponent', () => {
 
       expect(table.visibleColumns().map((c) => c.key)).toEqual(['role', 'id', 'name']);
       expect(table.state().columns.map((c) => c.key)).toEqual(['role', 'id', 'name']);
+    });
+
+    it('keeps the user order, widths and visibility when the columns input changes identity', () => {
+      const fixture = create(threeColumns(), UNSORTED);
+      const table = fixture.componentInstance;
+
+      table.moveColumn('role', 0);
+      table.setColumnWidth('name', 321);
+      table.setColumnVisible('id', false);
+
+      // Same definitions, new array — what a consumer's `computed()` produces on any unrelated change.
+      fixture.componentRef.setInput('columns', threeColumns());
+      fixture.detectChanges();
+
+      expect(table.state()).toEqual({
+        v: 2,
+        columns: [
+          { key: 'role', hidden: false },
+          { key: 'id', hidden: true },
+          { key: 'name', hidden: false, width: 321 },
+        ],
+      });
+    });
+
+    it('slots a newly declared column in next to the column it was declared after', () => {
+      const fixture = create(threeColumns(), UNSORTED);
+      const table = fixture.componentInstance;
+
+      table.moveColumn('role', 0); // role, id, name
+
+      fixture.componentRef.setInput('columns', {
+        id: { header: 'ID', value: (p) => p.id },
+        email: { header: 'Email', value: () => '' },
+        name: { header: 'Name', value: (p) => p.name },
+        role: { header: 'Role', value: (p) => p.role },
+      } satisfies TableColumns<Person>);
+      fixture.detectChanges();
+
+      expect(table.visibleColumns().map((c) => c.key)).toEqual(['role', 'id', 'email', 'name']);
+    });
+
+    it('drops state for columns that are no longer declared, and re-declares them fresh', () => {
+      const fixture = create(threeColumns(), UNSORTED);
+      const table = fixture.componentInstance;
+
+      table.setColumnWidth('role', 200);
+      table.setColumnVisible('role', false);
+
+      const withoutRole = {
+        id: { header: 'ID', value: (p) => p.id },
+        name: { header: 'Name', value: (p) => p.name },
+      } satisfies TableColumns<Person>;
+
+      fixture.componentRef.setInput('columns', withoutRole);
+      fixture.detectChanges();
+
+      expect(table.state().columns).toEqual([
+        { key: 'id', hidden: false },
+        { key: 'name', hidden: false },
+      ]);
+
+      // Coming back is a column the table has never seen, so it takes its declaration again.
+      fixture.componentRef.setInput('columns', threeColumns());
+      fixture.detectChanges();
+
+      expect(table.state().columns).toEqual([
+        { key: 'id', hidden: false },
+        { key: 'name', hidden: false },
+        { key: 'role', hidden: false },
+      ]);
     });
 
     it('setColumnVisible / toggleColumnVisibility hide and show a column', () => {
@@ -315,11 +520,11 @@ describe('TableComponent', () => {
 
   describe('state export/restore', () => {
     const stateColumns = () =>
-      tableColumns<Person>([
-        { key: 'id', header: 'ID', value: (p) => p.id, sortable: true },
-        { key: 'name', header: 'Name', value: (p) => p.name, sortable: true },
-        { key: 'role', header: 'Role', value: (p) => p.role, filterable: true },
-      ]);
+      ({
+        id: { header: 'ID', value: (p) => p.id, sortable: true },
+        name: { header: 'Name', value: (p) => p.name, sortable: true },
+        role: { header: 'Role', value: (p) => p.role, filterable: true },
+      }) satisfies TableColumns<Person>;
 
     it('captures sort direction and filter values per column', () => {
       const { componentInstance: table } = create(stateColumns(), UNSORTED);
@@ -404,11 +609,11 @@ describe('TableComponent', () => {
 
   describe('grouped headers', () => {
     const groupedColumns = () =>
-      tableColumns<Person>([
-        { key: 'a', header: 'A', value: (p) => p.name, group: 'Season' },
-        { key: 'b', header: 'B', value: (p) => p.role, group: 'Season' },
-        { key: 'c', header: 'C', value: (p) => p.id },
-      ]);
+      ({
+        a: { header: 'A', value: (p) => p.name, group: 'Season' },
+        b: { header: 'B', value: (p) => p.role, group: 'Season' },
+        c: { header: 'C', value: (p) => p.id },
+      }) satisfies TableColumns<Person>;
 
     it('reports no groups and one run per column when none declare a group', () => {
       const { componentInstance: table } = create(columns());
@@ -474,27 +679,415 @@ describe('TableComponent', () => {
 
   describe('sticky columns & footer', () => {
     it('hasStickyStart reflects a start-pinned column; end offsets are null when unpinned', () => {
-      const cols = tableColumns<Person>([
-        { key: 'name', value: (p) => p.name, sticky: 'start' },
-        { key: 'role', value: (p) => p.role },
-      ]);
-      const table = create(cols).componentInstance as TableComponent<Person> & {
-        stickyEnd: (key: string) => number | null;
-      };
+      const cols = {
+        name: { value: (p) => p.name, sticky: 'start' },
+        role: { value: (p) => p.role },
+      } satisfies TableColumns<Person>;
+      const fixture = create(cols);
+      const host = fixture.nativeElement as HTMLElement;
+      const roleHeader = host.querySelector<HTMLElement>('[data-col-key="role"]');
 
-      expect(table.hasStickyStart()).toBe(true);
-      expect(table.stickyEnd('role')).toBeNull();
+      expect(fixture.componentInstance.hasStickyStart()).toBe(true);
+      // An unpinned column carries neither pin class nor an inline offset.
+      expect(roleHeader?.classList.contains('et-table-sticky-end')).toBe(false);
+      expect(roleHeader?.style.insetInlineEnd).toBe('');
     });
 
-    it('hasFooter reflects a column footer template', () => {
-      const cols = tableColumns<Person>([
-        { key: 'name', value: (p) => p.name, footerCell: {} as unknown as TemplateRef<unknown> },
-      ]);
-      const fixture = TestBed.createComponent<TableComponent<Person>>(TableComponent);
-      fixture.componentRef.setInput('columns', cols);
+    it('hasFooter reflects a registered etTableFooterCell, and renders it', () => {
+      @Component({
+        template: `
+          <et-table [columns]="cols" [data]="data">
+            @if (withFooter()) {
+              <ng-template [etTableFooterCell]="cols.name" let-rows>{{ rows.length }} people</ng-template>
+            }
+          </et-table>
+        `,
+        imports: [TABLE_IMPORTS],
+      })
+      class HostComponent {
+        withFooter = signal(true);
+        data = PEOPLE;
+        cols = { name: { header: 'Name', value: (person: Person) => person.name } } satisfies TableColumns<Person>;
+        table = viewChild.required<TableComponent<Person>>(TableComponent);
+      }
 
-      // read the computed without rendering (the dummy template is never instantiated)
-      expect(fixture.componentInstance.hasFooter()).toBe(true);
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      const host = fixture.nativeElement as HTMLElement;
+
+      expect(fixture.componentInstance.table().hasFooter()).toBe(true);
+      expect(host.querySelector('.et-table-footer-row')?.textContent?.trim()).toBe('2 people');
+
+      // A template destroyed with its control-flow block unregisters itself.
+      fixture.componentInstance.withFooter.set(false);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.table().hasFooter()).toBe(false);
+      expect(host.querySelector('.et-table-footer-row')).toBeNull();
+    });
+
+    it('throws when a column template is bound to a column the table does not render', () => {
+      @Component({
+        template: `
+          <et-table [columns]="cols" [data]="data">
+            <ng-template [etTableCell]="stranger.other">nope</ng-template>
+          </et-table>
+        `,
+        imports: [TABLE_IMPORTS],
+      })
+      class OrphanTemplateComponent {
+        data = PEOPLE;
+        cols = { name: { value: (person: Person) => person.name } } satisfies TableColumns<Person>;
+        stranger = { other: { value: (person: Person) => person.role } } satisfies TableColumns<Person>;
+      }
+
+      const fixture = TestBed.createComponent(OrphanTemplateComponent);
+
+      expect(() => fixture.detectChanges()).toThrow(
+        expect.objectContaining({ code: TABLE_ERROR_CODES.UNKNOWN_TEMPLATE_COLUMN }) as unknown as RuntimeError<number>,
+      );
+    });
+  });
+
+  describe('loading & error states', () => {
+    const setStates = (fixture: ComponentFixture<TableComponent<Person>>, states: Record<string, unknown>) => {
+      for (const [input, value] of Object.entries(states)) fixture.componentRef.setInput(input, value);
+      fixture.detectChanges();
+    };
+
+    it('draws placeholder rows while loading with no rows, and marks the host busy', () => {
+      const fixture = create(columns(), []);
+      const host = fixture.nativeElement as HTMLElement;
+
+      setStates(fixture, { loading: true });
+
+      // One placeholder row per `loadingRows`, each with a bar in every column and no busy bar.
+      expect(host.querySelectorAll('.et-table-row--placeholder').length).toBe(5);
+      expect(host.querySelectorAll('.et-table-row--placeholder et-skeleton-item').length).toBe(10);
+      expect(host.getAttribute('aria-busy')).toBe('true');
+      expect(host.querySelector('.et-table-busy-bar')).toBeNull();
+      // The empty state must not show underneath them.
+      expect(host.querySelector('.et-table-empty-cell')).toBeNull();
+
+      setStates(fixture, { loadingRows: 2 });
+      expect(host.querySelectorAll('.et-table-row--placeholder').length).toBe(2);
+
+      setStates(fixture, { loading: false });
+      expect(host.querySelectorAll('.et-table-row--placeholder').length).toBe(0);
+      expect(host.getAttribute('aria-busy')).toBeNull();
+      expect(host.querySelector('.et-table-empty-cell')).not.toBeNull();
+    });
+
+    it('keeps the rows and shows the busy bar when loading over existing rows', () => {
+      const fixture = create(columns());
+      const host = fixture.nativeElement as HTMLElement;
+
+      setStates(fixture, { loading: true });
+
+      expect(host.querySelectorAll('.et-table-row:not(.et-table-row--placeholder)').length).toBe(PEOPLE.length);
+      expect(host.querySelector('.et-table-busy-bar')).not.toBeNull();
+      expect(host.querySelector('.et-table-row--placeholder')).toBeNull();
+      expect(host.getAttribute('aria-busy')).toBe('true');
+    });
+
+    it('lets a column say what its loading placeholder looks like', () => {
+      @Component({
+        template: `
+          <et-table [columns]="cols" [data]="data()" [loading]="true">
+            <ng-template [etTableCellSkeleton]="cols.role" let-index let-width="width">
+              <span class="chip-bone">{{ index }}:{{ width }}</span>
+            </ng-template>
+          </et-table>
+        `,
+        imports: [TABLE_IMPORTS],
+      })
+      class HostComponent {
+        cols = columns();
+        data = signal<Person[]>([]);
+      }
+
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      const host = fixture.nativeElement as HTMLElement;
+      const rows = host.querySelectorAll('.et-table-row--placeholder');
+
+      // The templated column renders the consumer's bone; the other keeps the default one.
+      expect(rows.length).toBe(5);
+      expect(host.querySelectorAll('.chip-bone').length).toBe(5);
+      expect(rows[0]?.querySelectorAll('et-skeleton-item').length).toBe(1);
+      // Context: the row index plus the width the default bone would have used, so a custom one can
+      // stay in the same rhythm.
+      expect(host.querySelector('.chip-bone')?.textContent).toBe('0:45');
+    });
+
+    it('remembers a real row height and gives it to later placeholder rows', () => {
+      const fixture = create(columns());
+      const table = fixture.componentInstance;
+
+      // Row height can only come from a rendered cell — jsdom reports 0, so stand one in.
+      vi.spyOn(table, 'firstBodyCellElement').mockReturnValue({
+        getBoundingClientRect: () => ({ height: 52 }) as DOMRect,
+      } as unknown as HTMLElement);
+      fixture.detectChanges();
+
+      fixture.componentRef.setInput('data', []);
+      fixture.componentRef.setInput('loading', true);
+      fixture.detectChanges();
+
+      const row = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.et-table-row--placeholder');
+
+      // A refetch keeps the table exactly as tall as the data the user was just looking at.
+      expect(row?.style.getPropertyValue('--_et-table-row-h')).toBe('52px');
+    });
+
+    it('replaces the body with the error state for any non-nullish error, ahead of loading', () => {
+      const fixture = create(columns());
+      const host = fixture.nativeElement as HTMLElement;
+
+      setStates(fixture, { error: 'boom', loading: true });
+
+      expect(host.querySelector('.et-table-error-cell')?.textContent?.trim()).toBe('Could not load data');
+      expect(host.querySelectorAll('.et-table-row').length).toBe(0);
+      // An error outranks loading: no placeholder rows and no busy bar next to it.
+      expect(host.querySelector('.et-table-busy-bar')).toBeNull();
+      expect(host.querySelector('.et-table-row--placeholder')).toBeNull();
+
+      setStates(fixture, { labels: { error: 'Nope' } });
+      expect(host.querySelector('.et-table-error-cell')?.textContent?.trim()).toBe('Nope');
+
+      // `false` and `0` are legitimate error payloads; only null/undefined clear the state.
+      setStates(fixture, { error: false });
+      expect(host.querySelector('.et-table-error-cell')).not.toBeNull();
+
+      setStates(fixture, { error: null });
+      expect(host.querySelector('.et-table-error-cell')).toBeNull();
+      expect(host.querySelectorAll('.et-table-row').length).toBe(PEOPLE.length);
+    });
+
+    it('renders projected [etTableError] content instead of the default label', () => {
+      @Component({
+        template: `
+          <et-table [columns]="cols" [data]="data" error="boom">
+            <div etTableError><button class="retry" type="button">Retry</button></div>
+          </et-table>
+        `,
+        imports: [TABLE_IMPORTS],
+      })
+      class HostComponent {
+        data = PEOPLE;
+        cols = columns();
+      }
+
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      const cell = (fixture.nativeElement as HTMLElement).querySelector('.et-table-error-cell');
+      expect(cell?.querySelector('.retry')?.textContent).toBe('Retry');
+      expect(cell?.textContent).not.toContain('Could not load data');
+    });
+
+    it('gives a single cell its own state without touching its neighbours', () => {
+      const fixture = create(columns());
+      const host = fixture.nativeElement as HTMLElement;
+
+      setStates(fixture, {
+        cellState: (person: Person, key: string) =>
+          person.id === 1 && key === 'name' ? 'loading' : person.id === 2 && key === 'role' ? 'error' : null,
+      });
+
+      const cellAt = (row: number, key: string) =>
+        host.querySelectorAll('.et-table-row')[row]?.querySelector(`[data-col-key="${key}"]`);
+
+      // Loading swaps the value for a bar; error keeps the value and adds the mark.
+      expect(cellAt(0, 'name')?.getAttribute('data-state')).toBe('loading');
+      expect(cellAt(0, 'name')?.querySelector('et-skeleton-item')).not.toBeNull();
+      expect(cellAt(0, 'name')?.textContent?.trim()).toBe('');
+
+      expect(cellAt(1, 'role')?.getAttribute('data-state')).toBe('error');
+      expect(cellAt(1, 'role')?.querySelector('.et-table-cell-error-icon')).not.toBeNull();
+      expect(cellAt(1, 'role')?.textContent?.trim()).toBe('Viewer');
+
+      // Untouched cells stay plain.
+      expect(cellAt(0, 'role')?.getAttribute('data-state')).toBeNull();
+      expect(cellAt(1, 'name')?.textContent?.trim()).toBe('Alan');
+    });
+  });
+
+  describe('labels', () => {
+    it('takes the injected label set, and lets a table override single keys', () => {
+      TestBed.configureTestingModule({ providers: [provideTableLabels({ empty: 'Keine Daten' })] });
+
+      const fixture = create(columns(), []);
+      const host = fixture.nativeElement as HTMLElement;
+
+      expect(host.querySelector('.et-table-empty-cell')?.textContent?.trim()).toBe('Keine Daten');
+
+      // The input is partial and layers over the provided set rather than replacing it.
+      fixture.componentRef.setInput('labels', { empty: 'Nichts hier' });
+      fixture.detectChanges();
+      expect(host.querySelector('.et-table-empty-cell')?.textContent?.trim()).toBe('Nichts hier');
+      expect(fixture.componentInstance.resolvedLabels().error).toBe(DEFAULT_TABLE_LABELS.error);
+      expect(fixture.componentInstance.resolvedLabels().selectRow).toBe(DEFAULT_TABLE_LABELS.selectRow);
+    });
+
+    it('re-resolves a locale-driven label factory when the locale changes', () => {
+      TestBed.configureTestingModule({
+        providers: [provideTableLabels((locale) => ({ empty: locale === 'de' ? 'Keine Daten' : 'No data' }))],
+      });
+
+      const fixture = create(columns(), []);
+      const host = fixture.nativeElement as HTMLElement;
+      const locale = TestBed.runInInjectionContext(() => injectLocale());
+
+      expect(host.querySelector('.et-table-empty-cell')?.textContent?.trim()).toBe('No data');
+
+      // A locale switch must reach the wording without recreating the table.
+      locale.currentLocale.set('de');
+      fixture.detectChanges();
+      expect(host.querySelector('.et-table-empty-cell')?.textContent?.trim()).toBe('Keine Daten');
+    });
+
+    it('announces what the next sort click does, through sortAction', () => {
+      const fixture = create({
+        name: { header: 'Name', value: (person: Person) => person.name, sortable: true },
+      } satisfies TableColumns<Person>);
+      const table = fixture.componentInstance;
+      const label = () =>
+        (fixture.nativeElement as HTMLElement)
+          .querySelector('.et-table-header-label--sortable')
+          ?.getAttribute('aria-label');
+
+      expect(label()).toBe('Sort Name ascending');
+
+      table.setSort('name', 'asc');
+      fixture.detectChanges();
+      expect(label()).toBe('Sort Name descending');
+
+      table.setSort('name', 'desc');
+      fixture.detectChanges();
+      expect(label()).toBe('Clear sort on Name');
+    });
+  });
+
+  describe('empty & error templates', () => {
+    it('prefers the templates over the labels, and hands the error to its template', () => {
+      @Component({
+        template: `
+          <et-table [columns]="cols" [data]="data" [error]="error()" [emptyTemplate]="empty" [errorTemplate]="failure">
+            <ng-template #empty let-rows>none of {{ rows.length }}</ng-template>
+            <ng-template #failure let-error>failed: {{ error.message }}</ng-template>
+          </et-table>
+        `,
+        imports: [TABLE_IMPORTS],
+      })
+      class HostComponent {
+        cols = columns();
+        data: Person[] = [];
+        // A signal, not a field: change detection is zoneless here, so a plain mutation would never
+        // mark the host dirty and the binding would not be re-read.
+        error = signal<{ message: string } | null>(null);
+      }
+
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      const host = fixture.nativeElement as HTMLElement;
+      expect(host.querySelector('.et-table-empty-cell')?.textContent?.trim()).toBe('none of 0');
+
+      fixture.componentInstance.error.set({ message: 'nope' });
+      fixture.detectChanges();
+      expect(host.querySelector('.et-table-error-cell')?.textContent?.trim()).toBe('failed: nope');
+    });
+  });
+
+  describe('rowsSource', () => {
+    const createSource = () => {
+      const sort = signal<TableSort[]>([]);
+      const filters = signal<TableFilter[]>([]);
+
+      return {
+        rows: signal<Person[]>([]),
+        loading: signal(false),
+        error: signal<string | null>(null),
+        sort,
+        filters,
+        setSort: vi.fn((next: TableSort[]) => sort.set(next)),
+        setFilters: vi.fn((next: TableFilter[]) => filters.set(next)),
+      };
+    };
+
+    it('feeds data, loading and error, and defaults both modes to server', () => {
+      const source = createSource();
+      const fixture = create(columns());
+      const host = fixture.nativeElement as HTMLElement;
+      const table = fixture.componentInstance;
+
+      fixture.componentRef.setInput('rowsSource', source);
+      source.loading.set(true);
+      fixture.detectChanges();
+
+      // Nothing to show yet → placeholders, and the host is busy without a `loading` binding of its own.
+      expect(host.querySelectorAll('.et-table-row--placeholder').length).toBe(5);
+      expect(host.getAttribute('aria-busy')).toBe('true');
+      // A source has already sorted and filtered server-side.
+      expect(table.resolvedSortMode()).toBe('server');
+      expect(table.resolvedFilterMode()).toBe('server');
+
+      source.rows.set(PEOPLE);
+      source.loading.set(false);
+      fixture.detectChanges();
+      expect(table.rows()).toEqual(PEOPLE);
+      expect(host.querySelectorAll('.et-table-row--placeholder').length).toBe(0);
+
+      source.error.set('boom');
+      fixture.detectChanges();
+      expect(host.querySelector('.et-table-error-cell')).not.toBeNull();
+    });
+
+    it('routes sort and filter changes to the source and mirrors its state back', () => {
+      const source = createSource();
+      const fixture = create({
+        name: { header: 'Name', value: (person: Person) => person.name, sortable: true },
+        role: { header: 'Role', value: (person: Person) => person.role, filterable: true },
+      } satisfies TableColumns<Person>);
+      const table = fixture.componentInstance;
+
+      fixture.componentRef.setInput('rowsSource', source);
+      source.rows.set(PEOPLE);
+      fixture.detectChanges();
+
+      table.toggleSort('name');
+      fixture.detectChanges();
+
+      // The source is asked, not the table's own model — and its answer is mirrored into `sort()` so
+      // features, `state()` and the header keep one read path.
+      expect(source.setSort).toHaveBeenCalledWith([{ key: 'name', direction: 'asc' }]);
+      expect(table.sort()).toEqual([{ key: 'name', direction: 'asc' }]);
+
+      table.setFilterValues('role', ['Admin']);
+      fixture.detectChanges();
+      expect(source.setFilters).toHaveBeenCalledWith([{ key: 'role', values: ['Admin'] }]);
+      expect(table.filterValuesFor('role')).toEqual(['Admin']);
+
+      // Server-side means the rows arrive as they are — no second sort in the browser.
+      expect(table.rows()).toEqual(PEOPLE);
+    });
+
+    it('leaves an explicit mode alone, and keeps the modes client-side without a source', () => {
+      const source = createSource();
+      const fixture = create(columns());
+      const table = fixture.componentInstance;
+
+      expect(table.resolvedSortMode()).toBe('client');
+
+      fixture.componentRef.setInput('rowsSource', source);
+      fixture.componentRef.setInput('sortMode', 'client');
+      fixture.detectChanges();
+
+      expect(table.resolvedSortMode()).toBe('client');
+      expect(table.resolvedFilterMode()).toBe('server');
     });
   });
 
@@ -539,7 +1132,7 @@ describe('TableComponent', () => {
       });
 
       // The restored px width overrides the column's default track.
-      expect(table.templateColumns()).toBe('240px minmax(0, 1fr)');
+      expect(table.templateColumns()).toBe('240px minmax(96px, 1fr)');
 
       // state() emits the width back for the resized column only.
       const columnStates = table.state().columns;
@@ -551,29 +1144,23 @@ describe('TableComponent', () => {
   describe('row interaction', () => {
     @Component({
       template: `
-        <et-table [columns]="cols()" [data]="data" (rowClick)="clicked = $event" rowInteractive>
-          <et-table-selection />
+        <et-table [columns]="cols" [data]="data" (rowClick)="clicked = $event" etTableSelection rowInteractive>
+          <ng-template [etTableCell]="cols.act"><button class="act" type="button">Act</button></ng-template>
         </et-table>
-        <ng-template #actionCell><button class="act" type="button">Act</button></ng-template>
       `,
       imports: [TABLE_IMPORTS, TABLE_SELECTION_IMPORTS],
     })
     class HostComponent {
       clicked: Person | null = null;
-      actionCell = viewChild.required<TemplateRef<unknown>>('actionCell');
       data = PEOPLE;
-      cols = computed(() =>
-        tableColumns<Person>([
-          { key: 'name', header: 'Name', value: (person) => person.name },
-          { key: 'act', header: '', value: (person) => person, cell: this.actionCell() },
-        ]),
-      );
+      cols = {
+        name: { header: 'Name', value: (person: Person) => person.name },
+        act: { header: '', value: (person: Person) => person },
+      } satisfies TableColumns<Person>;
     }
 
     const build = () => {
       const fixture = TestBed.createComponent(HostComponent);
-      fixture.detectChanges();
-      // Second pass so the viewChild-backed cell template resolves into the columns.
       fixture.detectChanges();
 
       return fixture;

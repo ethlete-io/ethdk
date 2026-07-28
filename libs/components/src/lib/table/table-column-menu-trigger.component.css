@@ -1,0 +1,31 @@
+@layer components {
+  /* The stamped host is layout-transparent so the trigger is the header cell's own flex item, sitting
+     after the (growing) label at the trailing edge. */
+  et-table-column-menu-trigger {
+    display: contents;
+  }
+
+  .et-table-column-menu {
+    display: inline-flex;
+    flex: none;
+  }
+
+  /* Permanently visible, like the filter trigger: a column's actions shouldn't have to be discovered
+     by hovering, and a control that appears on hover makes the header twitch under the pointer.
+
+     Scoped through the header cell so it beats the button's own single-class `--_et-button-color`
+     rule: a transparent button paints itself in the accent ink, but in this table accent means
+     *active* (a sorted arrow, a filtered column), so a resting control has to read as header chrome. */
+  .et-table-header-cell .et-table-column-menu-trigger {
+    color: var(--et-surface-color-muted-solid, currentColor);
+  }
+
+  .et-table-column-menu-icon {
+    inline-size: var(--et-menu-item-icon-size, 16px);
+    block-size: var(--et-menu-item-icon-size, 16px);
+  }
+
+  .et-table-column-menu-icon:where(.et-table-column-menu-icon--down) {
+    transform: rotate(180deg);
+  }
+}

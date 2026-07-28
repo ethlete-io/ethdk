@@ -1,0 +1,9 @@
+@layer components {
+  /* Full-width filler standing in for the rows a virtual window leaves out; its block-size is the
+     window's padding, so the scrollbar reflects the whole row count. Mounted by the virtual-scroll
+     feature (see TableVirtualScrollStylesComponent), so a table that renders every row ships none of
+     it — there is nothing to space out. */
+  .et-table-spacer {
+    grid-column: 1 / -1;
+  }
+}

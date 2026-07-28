@@ -1,0 +1,51 @@
+@layer components {
+  /* The expander column's chrome. It lives with the stamped cell component rather than in the table's
+     own sheet, so Angular injects it the first time a table actually renders an expander — a table
+     without a detail template never puts these rules in the document. */
+  .et-table-expander-cell {
+    justify-content: center;
+    padding-inline: 4px;
+  }
+
+  /* The stamped component host is layout-transparent, so the button itself is the cell's flex item
+     and picks up its `align-items: center`. As a block box the host would establish a line box and
+     the inline-flex button would sit on its text baseline — a few px above centre. */
+  et-table-expander-cell {
+    display: contents;
+  }
+
+  .et-table-expander {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* Never let the flex row shrink it out of square — a narrow `--et-table-expander-width` would
+       otherwise squeeze the button's inline size while its block size stayed at 24px. */
+    flex: none;
+    inline-size: 24px;
+    block-size: 24px;
+    padding: 0;
+    color: inherit;
+    background: none;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .et-table-expander:where(:hover, :focus-visible) {
+    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 12%, transparent);
+  }
+
+  /* The shared `et-chevron` points up, and the expander wants it pointing at what it opens: right
+     while collapsed, down once open. Rotating (rather than swapping icons) is what makes the turn
+     animatable. */
+  .et-table-expander-icon {
+    inline-size: 14px;
+    block-size: 14px;
+    transform: rotate(90deg);
+    transition: transform 0.15s ease;
+  }
+
+  .et-table-expander-icon:where([data-expanded='true']) {
+    transform: rotate(180deg);
+  }
+}

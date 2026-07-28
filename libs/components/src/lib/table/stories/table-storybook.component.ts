@@ -1,67 +1,24 @@
-import {
-  Component,
-  computed,
-  input,
-  linkedSignal,
-  signal,
-  TemplateRef,
-  viewChild,
-  ViewEncapsulation,
-} from '@angular/core';
+import { Component, computed, input, linkedSignal, signal, ViewEncapsulation } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
-import { ProvideSurfaceDirective } from '@ethlete/core';
+import { AutoSurfaceDirective, ProvideSurfaceDirective } from '@ethlete/core';
+import { CHIP_IMPORTS } from '../../chip';
+import { SKELETON_IMPORTS } from '../../skeleton';
 import { FORM_FIELD_IMPORTS } from '../../forms/form-field';
 import { SELECT_IMPORTS } from '../../forms/select';
 import { PAGINATION_IMPORTS } from '../../pagination';
-import { tableColumns } from '../table-columns';
-import { TableCellContext, TableFooterContext } from '../table.types';
 import {
+  TABLE_COLUMN_CHOOSER_IMPORTS,
+  TABLE_COLUMN_MENU_IMPORTS,
   TABLE_FILTER_IMPORTS,
   TABLE_IMPORTS,
   TABLE_REORDER_IMPORTS,
   TABLE_RESIZE_IMPORTS,
   TABLE_SELECTION_IMPORTS,
+  TABLE_CELL_ERROR_TOOLTIP_IMPORTS,
   TABLE_VIRTUAL_SCROLL_IMPORTS,
 } from '../table.imports';
-
-type Person = {
-  id: number;
-  name: string;
-  email: string;
-  role: 'Admin' | 'Editor' | 'Viewer';
-  joinedAt: string;
-};
-
-const NAMES = [
-  'Ada Lovelace',
-  'Alan Turing',
-  'Grace Hopper',
-  'Katherine Johnson',
-  'Linus Torvalds',
-  'Margaret Hamilton',
-  'Dennis Ritchie',
-  'Barbara Liskov',
-  'Donald Knuth',
-  'Radia Perlman',
-];
-const ROLES: Person['role'][] = ['Admin', 'Editor', 'Viewer'];
-
-const makePerson = (i: number): Person => {
-  const name = NAMES[i % NAMES.length] ?? 'Person';
-
-  return {
-    id: i + 1,
-    name: `${name} ${Math.floor(i / NAMES.length) + 1}`,
-    email: `${name.toLowerCase().replace(/[^a-z]/g, '.')}@example.com`,
-    role: ROLES[i % ROLES.length] ?? 'Viewer',
-    joinedAt: `2024-${String((i % 12) + 1).padStart(2, '0')}-15`,
-  };
-};
-
-const PEOPLE: Person[] = Array.from({ length: 40 }, (_, i) => makePerson(i));
-
-// A large set to exercise virtualization — only a window of these ever renders.
-const MANY_PEOPLE: Person[] = Array.from({ length: 2000 }, (_, i) => makePerson(i));
+import { TableCellStateValue, TableColumns } from '../table.types';
+import { MANY_PEOPLE, PEOPLE, Person, Project, PROJECTS_BY_PERSON, ROLES } from './table-storybook.data';
 
 @Component({
   selector: 'et-sb-table',
@@ -76,8 +33,19 @@ const MANY_PEOPLE: Person[] = Array.from({ length: 2000 }, (_, i) => makePerson(
       [etProvideSurface]="surface()"
       class="text-medium p-8 font-sans"
     >
+      @if (columnMenu()) {
+        <!-- Above the table, not in a header cell: a visibility list must not hang off the header it
+             edits — hiding a column relays that header out and would drag the menu with it, and hiding
+             the column it was opened from would destroy its anchor. A toolbar here never moves, not
+             even when the table's own height changes. -->
+        <div class="mb-2 flex justify-end">
+          <et-table-column-chooser [table]="table" />
+        </div>
+      }
+
       <!-- The table is its own scroll container: a bounded height (sticky/virtual demos) makes it scroll. -->
       <et-table
+        #table
         [style.block-size.px]="constrainHeight() || virtualScroll() || paginated() ? 400 : null"
         [appearance]="appearance()"
         [density]="density()"
@@ -87,41 +55,79 @@ const MANY_PEOPLE: Person[] = Array.from({ length: 2000 }, (_, i) => makePerson(
         [rowInteractive]="rowInteractive()"
         [rowKey]="rowKey"
         [expandedRowTemplate]="expandable() ? detail : undefined"
+        [loading]="loading()"
+        [error]="failed() ? 'Request failed with status 500' : null"
+        [cellState]="cellStates() ? cellStateOf : undefined"
+        [etTableCellErrorTooltip]="{ enabled: cellStates() }"
+        [etTableResize]="{ enabled: resizableColumns() }"
+        [etTableColumnMenu]="{ enabled: columnMenu() }"
+        [etTableReorder]="{ enabled: reorderable() }"
+        [etTableSelection]="{ selection: selected, enabled: selectable() }"
+        [etTableVirtualScroll]="{ enabled: virtualScroll() }"
+        [labels]="{ empty: 'No people found' }"
         (rowClick)="lastClicked.set($event)"
-        emptyLabel="No people found"
+        etTableFilters
       >
-        <!-- Every optional feature is opt-in: importing its array and dropping the element in is what
-             brings that feature's code into the bundle. Without et-table-filters, filterable columns
-             render as plain headers; without the two drag features, headers neither resize nor reorder. -->
-        <et-table-filters />
-        @if (resizableColumns()) {
-          <et-table-resize />
+        <!-- Custom cells are ng-templates bound to the column they render, so let-row / let-value are
+             typed from that column — no viewChild, and the column definitions stay plain data.
+             A cell composes the library's own components rather than restyling text: et-chip already
+             draws its pill from the surface tokens, so the cell needs no colors of its own (the
+             playground's Tailwind theme resets --color-*, so a bg-blue-500 would do nothing anyway —
+             see the storybook-styling skill). -->
+        <ng-template [etTableCell]="columns().role" let-value="value">
+          <et-chip>{{ value }}</et-chip>
+        </ng-template>
+
+        <!-- The Role cell is a chip, which is taller than a line of text, so its loading placeholder says
+             so too — otherwise the table would grow when the data lands. The bone is chip-shaped: the
+             chip's own height and pill radius. -->
+        <ng-template [etTableCellSkeleton]="columns().role">
+          <et-skeleton-item [style]="CHIP_SKELETON_STYLE" shape="rect" />
+        </ng-template>
+
+        @if (richFilterOptions()) {
+          <!-- A filter option can hold whatever a cell can. The menu keeps the row, its mark and its
+               keyboard behaviour; only the content is ours. let-selected is there for a row that wants
+               to look different when picked. -->
+          <ng-template [etTableFilterOption]="columns().role" let-option let-selected="selected">
+            <span class="flex flex-col">
+              <span>{{ option.label }}</span>
+              <span class="text-small opacity-60">{{ ROLE_HINTS[option.label] }}{{ selected ? ' · active' : '' }}</span>
+            </span>
+          </ng-template>
         }
-        @if (reorderable()) {
-          <et-table-reorder />
-        }
-        @if (selectable()) {
-          <et-table-selection [(selection)]="selected" />
-        }
-        @if (virtualScroll()) {
-          <et-table-virtual-scroll />
+
+        @if (footer()) {
+          <!-- A template inside a control-flow block registers and unregisters with the block. -->
+          <ng-template [etTableFooterCell]="columns().name" let-rows>{{ rows.length }} people</ng-template>
         }
 
         @if (paginated()) {
           <!-- Material-style controls row: label + page-size select + range readout + prev/next, right
                aligned and inline (wrapping when tight). The "Items per page:" label lives here (not baked
-               into the select) so it's the app's to translate. -->
-          <!-- Bottom-aligned (items-end), so the select's underline, the readout's baseline and the
-               chevrons' bottoms sit on one line — centered, the taller transparent buttons visibly
-               overhang the field's rule. The label matches the paginator's own readout size (14px) so
-               the two texts in this row read as one style. -->
-          <div class="flex w-full flex-wrap items-end justify-end gap-x-3 gap-y-2" etTableFooter>
-            <span class="text-medium pb-1 opacity-70">Items per page:</span>
-            <et-form-field [style.inline-size.px]="72" appearance="underline" size="sm">
+               into the select) so it's the app's to translate, and takes the table's own
+               .et-table-footer-label so it matches the paginator's readout exactly.
+               Centered (items-center): the label, the select's value and the paginator's readout are
+               different heights, so aligning their boxes' centers is what puts the three texts on one
+               line. justify-end + flex-wrap keeps every row right-aligned once it wraps. -->
+          <div class="flex w-full flex-wrap items-center justify-end gap-x-3 gap-y-2" etTableFooter>
+            <span class="et-table-footer-label">Items per page:</span>
+            <!-- size="sm" keeps the field compact, but its 12px control text would read a size smaller
+                 than the label and readout either side of it, so pull just the font back to their 14px. -->
+            <et-form-field
+              [style.inline-size.px]="72"
+              appearance="underline"
+              size="sm"
+              style="--et-form-field-control-font-size: 14px"
+            >
               <!-- A page-size trigger is far narrower than its option rows (value + check indicator), so
                    the panel must size to its own content instead of mirroring the field. -->
+              <!-- The visible label sits outside the field (it is the app's to translate), so the control
+                   names itself — a form field with neither a projected label nor an aria-label throws
+                   ET2201. -->
               <et-select
                 [formField]="pageSizeForm.pageSize"
+                aria-label="Items per page"
                 clearable="false"
                 mirrorPanelWidth="false"
                 placeholder="Page size"
@@ -149,41 +155,50 @@ const MANY_PEOPLE: Person[] = Array.from({ length: 2000 }, (_, i) => makePerson(
     </div>
 
     <ng-template #detail let-person>
-      <div class="text-small rounded-lg bg-black/5 p-4 dark:bg-white/5">
-        <p class="font-medium">{{ person.name }}</p>
-        <p class="opacity-70">{{ person.email }} · {{ person.role }} · joined {{ person.joinedAt }}</p>
-      </div>
-    </ng-template>
+      @if (subTable()) {
+        <!-- A sub-table is just another <et-table> in the detail template — it needs no special API.
+             etAutoSurface lifts the nested table one elevation above the table it sits in, so its
+             background reads as a panel on top of the row instead of blending into it. -->
+        <div class="flex flex-col gap-2">
+          <p class="text-small font-medium">{{ person.name }}'s projects</p>
 
-    <ng-template #footerCount let-rows>{{ rows.length }} people</ng-template>
-
-    <ng-template #roleCell let-value="value">
-      <span
-        [class]="
-          {
-            Admin: 'bg-purple-500/15 text-purple-700 dark:text-purple-300',
-            Editor: 'bg-blue-500/15 text-blue-700 dark:text-blue-300',
-            Viewer: 'bg-gray-500/15 text-gray-700 dark:text-gray-300',
-          }[value]
-        "
-        class="text-small inline-flex rounded-full px-2 py-0.5 font-medium"
-      >
-        {{ value }}
-      </span>
+          <et-table
+            [data]="subRows(person)"
+            [columns]="PROJECT_COLUMNS"
+            [rowKey]="projectKey"
+            [labels]="{ empty: 'No projects' }"
+            density="sm"
+            etAutoSurface
+          />
+        </div>
+      } @else {
+        <!-- The panel's tint comes from the surface system, not a dark: utility — dark: follows the
+             OS preference, which knows nothing about the surface theme this table is rendered on. -->
+        <div class="text-small rounded-lg p-4" style="background: var(--et-surface-background-solid)" etAutoSurface>
+          <p class="font-medium">{{ person.name }}</p>
+          <p class="opacity-70">{{ person.email }} · {{ person.role }} · joined {{ person.joinedAt }}</p>
+        </div>
+      }
     </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
     TABLE_IMPORTS,
     TABLE_FILTER_IMPORTS,
+    TABLE_COLUMN_CHOOSER_IMPORTS,
+    TABLE_COLUMN_MENU_IMPORTS,
     TABLE_RESIZE_IMPORTS,
     TABLE_REORDER_IMPORTS,
     TABLE_SELECTION_IMPORTS,
     TABLE_VIRTUAL_SCROLL_IMPORTS,
+    TABLE_CELL_ERROR_TOOLTIP_IMPORTS,
+    AutoSurfaceDirective,
     ProvideSurfaceDirective,
+    CHIP_IMPORTS,
+    SKELETON_IMPORTS,
     PAGINATION_IMPORTS,
-    ...SELECT_IMPORTS,
-    ...FORM_FIELD_IMPORTS,
+    SELECT_IMPORTS,
+    FORM_FIELD_IMPORTS,
     FormField,
   ],
 })
@@ -193,6 +208,12 @@ export class TableStorybookComponent {
   public empty = input(false);
   public multiSort = input(false);
   public expandable = input(false);
+  public subTable = input(false);
+  public loading = input(false);
+  public failed = input(false);
+  public cellStates = input(false);
+  public singleSelectFilter = input(false);
+  public richFilterOptions = input(false);
   public reorderable = input(false);
   public virtualScroll = input(false);
   public grouped = input(false);
@@ -201,13 +222,11 @@ export class TableStorybookComponent {
   public paginated = input(false);
   public rowInteractive = input(false);
   public resizableColumns = input(false);
+  public columnMenu = input(false);
   public selectable = input(false);
   public appearance = input<'enclosed' | 'divided' | 'zebra' | 'grid' | 'bare'>('enclosed');
   public density = input<'sm' | 'md' | 'lg'>('md');
   public surface = input('dark');
-
-  public roleCell = viewChild<TemplateRef<TableCellContext<Person, Person['role']>>>('roleCell');
-  public footerCount = viewChild<TemplateRef<TableFooterContext<Person>>>('footerCount');
 
   // Page-size select is a signal form, mirroring how a real form would carry it.
   public pageSizeForm = form(linkedSignal(() => ({ pageSize: 10 })));
@@ -215,6 +234,14 @@ export class TableStorybookComponent {
   // Reset to the first page whenever the page size changes; the paginator drives it otherwise.
   protected page = linkedSignal<number, number>({ source: () => this.pageSize(), computation: () => 1 });
   protected readonly PEOPLE_COUNT = PEOPLE.length;
+  /** A bone the size of the chip it stands in for — 24px tall, pill-shaped, roughly a role's width. */
+  protected readonly CHIP_SKELETON_STYLE = 'inline-size: 64px; block-size: 24px; --et-skeleton-radius: 999px';
+  /** Demo copy for the templated filter options — the kind of subtitle a real app would resolve. */
+  protected readonly ROLE_HINTS: Record<string, string> = {
+    Admin: 'Full access',
+    Editor: 'Can publish',
+    Viewer: 'Read only',
+  };
   protected lastClicked = signal<Person | null>(null);
   protected selected = signal<Set<unknown>>(new Set());
   // `compact` is `boolean | null` (no attribute transform), so it stays a property binding.
@@ -242,53 +269,76 @@ export class TableStorybookComponent {
     // Name stays ungrouped and spans both header rows.
     const grouped = this.grouped();
     // Fixed widths (when pinning) make the table overflow its container, so the sticky columns show.
+    // The ratio tracks carry a floor rather than `minmax(0, …)`: with a zero floor, resizing one
+    // column wide squeezes the rest to nothing and their cell padding bursts out of the empty tracks.
+    // 96px is the table's own default floor — see MIN_COLUMN_WIDTH.
     const sticky = this.stickyColumns();
-    const footer = this.footer();
-
-    return tableColumns<Person>([
-      {
-        key: 'name',
+    return {
+      name: {
         header: 'Name',
         value: (person) => person.name,
         sortable: true,
-        width: sticky ? '220px' : 'minmax(0, 2fr)',
+        width: sticky ? '220px' : 'minmax(96px, 2fr)',
         sticky: sticky ? 'start' : undefined,
-        footerCell: footer ? this.footerCount() : undefined,
       },
-      {
-        key: 'email',
+      email: {
         header: 'Email',
         value: (person) => person.email,
         sortable: true,
-        width: sticky ? '280px' : 'minmax(0, 2fr)',
+        width: sticky ? '280px' : 'minmax(96px, 2fr)',
         group: grouped ? 'Contact' : undefined,
       },
-      {
-        key: 'role',
+      role: {
         header: 'Role',
         value: (person) => person.role,
-        cell: this.roleCell(),
         filterable: true,
         filterSearch: true,
+        filterSelection: this.singleSelectFilter() ? 'single' : 'multiple',
         filterOptions: ROLES.map((role) => ({ label: role, value: role })),
-        width: sticky ? '200px' : 'minmax(0, 1fr)',
+        width: sticky ? '200px' : 'minmax(96px, 1fr)',
         group: grouped ? 'Details' : undefined,
       },
-      {
-        key: 'joined',
+      joined: {
         header: 'Joined',
         value: (person) => person.joinedAt,
         sortable: true,
         align: 'end',
-        width: sticky ? '160px' : 'minmax(0, 1fr)',
+        width: sticky ? '160px' : 'minmax(96px, 1fr)',
         sticky: sticky ? 'end' : undefined,
         group: grouped ? 'Details' : undefined,
       },
-    ]);
+    } satisfies TableColumns<Person>;
   });
+
+  // The nested table's columns are plain data too, and constant — nothing about them depends on the
+  // parent row, so they're defined once rather than per detail row.
+  protected readonly PROJECT_COLUMNS = {
+    name: { header: 'Project', value: (project) => project.name, sortable: true, width: 'minmax(96px, 2fr)' },
+    status: { header: 'Status', value: (project) => project.status, width: 'minmax(96px, 1fr)' },
+    hours: { header: 'Hours', value: (project) => `${project.hours} h`, sortable: true, align: 'end' },
+  } satisfies TableColumns<Project>;
 
   // Stable identity so selection/expansion key by id rather than row reference.
   protected rowKey(person: Person) {
     return person.id;
+  }
+
+  // What an inline edit would drive from its save request: one cell mid-save, one that failed. Passed
+  // as a plain function (no `this`), so the binding stays a stable reference.
+  protected cellStateOf(person: Person, key: string): TableCellStateValue | null {
+    if (person.id === 2 && key === 'email') return 'loading';
+    if (person.id === 4 && key === 'role') return { state: 'error', message: 'Role could not be saved: 409 conflict' };
+
+    return null;
+  }
+
+  protected projectKey(project: Project) {
+    return project.id;
+  }
+
+  // A template call is fine here because the lookup hands back the same array every time (see
+  // PROJECTS_BY_PERSON) — the nested table's `data` never changes identity while the row stays open.
+  protected subRows(person: Person) {
+    return PROJECTS_BY_PERSON.get(person.id) ?? [];
   }
 }

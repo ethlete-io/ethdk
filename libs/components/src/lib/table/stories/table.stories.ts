@@ -13,6 +13,12 @@ export default {
     empty: false,
     multiSort: false,
     expandable: false,
+    subTable: false,
+    loading: false,
+    failed: false,
+    cellStates: false,
+    singleSelectFilter: false,
+    richFilterOptions: false,
     reorderable: false,
     virtualScroll: false,
     grouped: false,
@@ -21,6 +27,7 @@ export default {
     paginated: false,
     rowInteractive: false,
     resizableColumns: false,
+    columnMenu: false,
     selectable: false,
     surface: 'dark',
   },
@@ -32,6 +39,12 @@ export default {
     empty: { control: 'boolean' },
     multiSort: { control: 'boolean' },
     expandable: { control: 'boolean' },
+    subTable: { control: 'boolean' },
+    loading: { control: 'boolean' },
+    failed: { control: 'boolean' },
+    cellStates: { control: 'boolean' },
+    singleSelectFilter: { control: 'boolean' },
+    richFilterOptions: { control: 'boolean' },
     reorderable: { control: 'boolean' },
     virtualScroll: { control: 'boolean' },
     grouped: { control: 'boolean' },
@@ -40,6 +53,7 @@ export default {
     paginated: { control: 'boolean' },
     rowInteractive: { control: 'boolean' },
     resizableColumns: { control: 'boolean' },
+    columnMenu: { control: 'boolean' },
     selectable: { control: 'boolean' },
     surface: { control: 'text' },
   },
@@ -97,12 +111,111 @@ export const Empty: Story = {
   args: { empty: true },
 };
 
+export const Loading: Story = {
+  args: { loading: true, rowCount: 0 },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`loading` with nothing to show yet fills the body with placeholder rows — one per column, so ' +
+          'the layout does not jump when the data lands. `loadingRows` sets how many; the host carries ' +
+          '`aria-busy` and the rows themselves are hidden from assistive tech.',
+      },
+    },
+  },
+};
+
+export const Refetching: Story = {
+  args: { loading: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The same `loading` input over rows that are already on screen keeps them readable and runs an ' +
+          'indeterminate bar under the header instead — the state a paged or refetching table is in most ' +
+          'of the time, where blanking the body would cost the user their place.',
+      },
+    },
+  },
+};
+
+export const Errored: Story = {
+  args: { failed: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Anything non-nullish in `error` replaces the body with the error state, so stale rows never sit ' +
+          'under an unreported failure. `errorLabel` is the default text; project `[etTableError]` for ' +
+          'more (the message, a retry button). The mark takes the app’s error color theme.',
+      },
+    },
+  },
+};
+
+export const CellStates: Story = {
+  args: { cellStates: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "`cellState` gives a single cell its own async state, for inline editing: `'loading'` swaps that " +
+          "cell’s value for a placeholder bar (here row 2’s email, mid-save) and `'error'` keeps the value " +
+          'and marks it in the error color (row 4’s role). The rest of the row stays live.',
+      },
+    },
+  },
+};
+
 export const Expandable: Story = {
   args: { expandable: true },
   parameters: {
     docs: {
       description: {
         story: 'Rows expand to a lazily-instantiated detail row (nest another `<et-table>` here for sub-tables).',
+      },
+    },
+  },
+};
+
+export const ExpandableSubTable: Story = {
+  args: { expandable: true, subTable: true, rowCount: 5 },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The detail template can hold anything, including another `<et-table>` — a sub-table needs no ' +
+          'dedicated API. The nested table carries its own `columns`, `rowKey`, sorting and empty state, and ' +
+          'sits on `etAutoSurface` so it paints one elevation above the table it is nested in.',
+      },
+    },
+  },
+};
+
+export const SingleSelectFilter: Story = {
+  args: { singleSelectFilter: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A column with `filterSelection: 'single'` filters by one value: the menu renders radio items " +
+          'instead of checkboxes, picking replaces the selection, and picking the selected one again ' +
+          'clears the filter. Filter state stays a list of values either way, so nothing downstream ' +
+          'changes — `state()`, client filtering and a server request all look the same.',
+      },
+    },
+  },
+};
+
+export const TemplatedFilterOptions: Story = {
+  args: { richFilterOptions: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`etTableFilterOption` templates one column’s option rows — a subtitle here, a flag or avatar ' +
+          'elsewhere. `let-option` is the option and `let-selected` whether it is picked; the menu still ' +
+          'owns the row, its checkbox mark and its keyboard behaviour.',
       },
     },
   },
@@ -168,6 +281,22 @@ export const StickyFooter: Story = {
         story:
           'A column `footerCell` (context: the rendered rows) adds a summary row pinned to the bottom of ' +
           'the scroll viewport — here a running count in the Name column.',
+      },
+    },
+  },
+};
+
+export const ColumnMenu: Story = {
+  args: { columnMenu: true, resizableColumns: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'With `etTableColumnMenu` (from `TABLE_COLUMN_MENU_IMPORTS`) every header grows a `\u22ee` ' +
+          'holding that column\u2019s actions: sort ascending / descending / clear, reset a resized width ' +
+          '(offered only once the column has actually been resized), and hide the column (never the last ' +
+          'visible one). Sorting itself stays on the header \u2014 click it to cycle, and the arrow beside ' +
+          'the label shows the direction it is sorted by.',
       },
     },
   },

@@ -1,0 +1,17 @@
+@layer components {
+  /* The stamped host is layout-transparent so the trigger sits directly in whatever row it is dropped
+     into — a footer bar, a toolbar — rather than adding a wrapper box of its own. */
+  et-table-column-chooser {
+    display: contents;
+  }
+
+  .et-table-column-chooser {
+    display: inline-flex;
+    flex: none;
+  }
+
+  .et-table-column-chooser-icon {
+    inline-size: var(--et-menu-item-icon-size, 16px);
+    block-size: var(--et-menu-item-icon-size, 16px);
+  }
+}

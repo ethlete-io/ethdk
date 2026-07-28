@@ -1,0 +1,78 @@
+@if (column().filterable) {
+  <div class="et-table-filter" etMenu>
+    <button
+      [attr.data-active]="filters.isFiltered(column().key)"
+      [attr.aria-label]="labels().filterColumn(column().header ?? column().key)"
+      class="et-table-filter-trigger"
+      et-icon-button
+      size="xs"
+      etMenuTrigger
+      type="button"
+    >
+      <i etIcon="et-filter"></i>
+    </button>
+
+    <ng-template etMenuSurface>
+      <et-menu>
+        @if (filters.hasSearch(column())) {
+          <input
+            [query]="filters.searchQuery(column().key)"
+            [loading]="filters.loading(column())"
+            [placeholder]="labels().filterSearch"
+            (queryChange)="filters.setSearchQuery(column(), $event)"
+            etMenuSearch
+          />
+        }
+
+        <!-- Radio for a single-choice column, checkboxes otherwise. Two blocks rather than one
+             parameterised group: the menu's radio and checkbox groups are different components (their
+             items carry different roles and marks), and which one a column wants never changes at
+             runtime. The option row itself is shared — see the #option template below. -->
+        @if (selection() === 'single') {
+          <!-- The group's `value` draws the mark; the picking is handled per item on `activate`. A radio
+               group emits nothing when the checked item is chosen again, and that gesture has to clear
+               the filter — a radio menu has no "none" row to go back to. -->
+          <et-menu-radio-group [value]="filters.singleValueFor(column().key)">
+            @for (option of options(); track option.value) {
+              <et-menu-radio-item
+                [value]="option.value"
+                (activate)="filters.toggleSingleValue(column().key, option.value)"
+              >
+                <ng-container *ngTemplateOutlet="option.template ?? plain; context: option.context" />
+              </et-menu-radio-item>
+            } @empty {
+              @if (!filters.loading(column())) {
+                <p class="et-table-filter-empty">{{ labels().filterEmpty }}</p>
+              }
+            }
+          </et-menu-radio-group>
+        } @else {
+          <et-menu-checkbox-group
+            [value]="filters.table.filterValuesFor(column().key)"
+            (valueChange)="filters.table.setFilterValues(column().key, filters.asArray($event))"
+          >
+            @for (option of options(); track option.value) {
+              <et-menu-checkbox-item [value]="option.value">
+                <ng-container *ngTemplateOutlet="option.template ?? plain; context: option.context" />
+              </et-menu-checkbox-item>
+            } @empty {
+              @if (!filters.loading(column())) {
+                <p class="et-table-filter-empty">{{ labels().filterEmpty }}</p>
+              }
+            }
+          </et-menu-checkbox-group>
+        }
+
+        @if (filters.hasMore(column())) {
+          <button (click)="filters.loadMore(column())" class="et-table-filter-more" type="button">
+            {{ labels().filterLoadMore }}
+          </button>
+        }
+      </et-menu>
+    </ng-template>
+  </div>
+}
+
+<!-- The default option row: just the label. A column with an `etTableFilterOption` template gets that
+     instead, with the same context, so both paths render through one outlet above. -->
+<ng-template #plain let-option>{{ option.label }}</ng-template>

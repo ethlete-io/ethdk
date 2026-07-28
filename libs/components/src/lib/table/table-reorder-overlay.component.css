@@ -1,0 +1,40 @@
+@layer components {
+  /* The affordance is put on the table host by the feature, so only a reorderable table's headers
+     advertise the grab — pinned columns are excluded, they can't be dragged. */
+  .et-table-host--reorderable
+    .et-table-header-cell:not(
+      .et-table-sticky-start,
+      .et-table-sticky-end,
+      .et-table-select-cell,
+      .et-table-expander-cell
+    ) {
+    cursor: grab;
+    user-select: none;
+  }
+
+  /* The source header stays in place, dimmed, while its floating ghost is dragged. */
+  .et-table-header-cell:where(.et-table-header-cell--dragging) {
+    cursor: grabbing;
+    opacity: 0.4;
+  }
+
+  /* Floating copy of the dragged header, following the pointer (offset so it clears a finger/cursor). */
+  .et-table-drag-ghost {
+    position: fixed;
+    z-index: 10;
+    transform: translate(12px, 8px);
+    max-inline-size: 256px;
+    padding: var(--et-table-cell-padding-block) var(--et-table-cell-padding-inline);
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--et-surface-color-solid, CanvasText);
+    background: var(--et-surface-background-solid, Canvas);
+    border: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.3));
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+    pointer-events: none;
+  }
+}

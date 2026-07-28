@@ -1,0 +1,51 @@
+@layer components {
+  /* The stamped host is layout-transparent, like the other header adornments: as a box it would be a
+     zero-width flex item in the header cell, and the cell's `gap` would then reserve space after the
+     last real control. The grip inside is absolutely positioned, so it keeps its containing block
+     (the sticky header cell) either way. */
+  et-table-resize-grip {
+    display: contents;
+  }
+
+  /* A hairline at the header cell's trailing edge that strengthens to the accent on hover. The header
+     cell is position:sticky, so this positions against it. */
+  .et-table-resize-grip {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 0;
+    inline-size: 9px;
+    z-index: 1;
+    cursor: col-resize;
+  }
+
+  .et-table-resize-grip::after {
+    content: '';
+    position: absolute;
+    inset-block: 20%;
+    inset-inline-end: 3px;
+    inline-size: 2px;
+    border-radius: 1px;
+    background: var(--et-surface-border-solid, rgb(128 128 128 / 0.4));
+    transition: background 120ms ease;
+  }
+
+  @media (hover: hover) {
+    .et-table-resize-grip:where(:hover)::after {
+      inset-block: 0;
+      background: var(--et-theme-color-primary-solid, currentColor);
+    }
+  }
+
+  /* Fingers can't hit a 9px strip: widen the hit area inward on coarse pointers (the header cell clips
+     overflow, so it can't extend past the trailing edge) and thicken the hairline so it reads as a grip. */
+  @media (pointer: coarse) {
+    .et-table-resize-grip {
+      inline-size: 28px;
+    }
+
+    .et-table-resize-grip::after {
+      inset-block: 15%;
+      inline-size: 3px;
+    }
+  }
+}

@@ -1,0 +1,44 @@
+@layer components {
+  /* The stamped host is layout-transparent so the trigger's own auto margin can push it against the
+     trailing edge of the header cell — as a block box the margin would resolve inside it and do nothing. */
+  et-table-filter-trigger {
+    display: contents;
+  }
+
+  /* The header label grows, so the trigger simply sits after it at the cell's trailing edge, beside
+     the column menu when that feature is on too. It is permanently visible: a filter you have to
+     discover by hovering isn't discoverable, and a control that appears on hover makes the header
+     twitch as the pointer crosses it. */
+  .et-table-filter {
+    display: inline-flex;
+    flex: none;
+  }
+
+  /* Header chrome at rest — see the same note on the column menu trigger. */
+  .et-table-header-cell .et-table-filter-trigger {
+    color: var(--et-surface-color-muted-solid, currentColor);
+  }
+
+  /* An active filter reads as accented, so a filtered column is obvious at a glance. */
+  .et-table-header-cell .et-table-filter-trigger:where([data-active='true']) {
+    color: var(--et-theme-color-primary-solid, currentColor);
+  }
+
+  .et-table-filter-empty {
+    margin: 0;
+    padding: 8px 12px;
+    color: var(--et-surface-color-muted-solid, CanvasText);
+    font-size: 13px;
+  }
+
+  .et-table-filter-more {
+    inline-size: 100%;
+    padding: 8px;
+    color: var(--et-theme-color-ink-solid, currentColor);
+    font: inherit;
+    text-align: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+}

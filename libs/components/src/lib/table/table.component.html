@@ -1,12 +1,9 @@
-<div
-  [style.grid-template-columns]="templateColumns()"
-  [class.et-table--sticky-cols]="hasStickyColumns()"
-  class="et-table"
-  role="grid"
->
+<!-- Every binding below reads a field off a render model (see the `…Vm` types in the component):
+     methods belong in event bindings, not in bindings the framework re-evaluates each pass. -->
+<div [style.grid-template-columns]="templateColumns()" class="et-table" role="grid">
   @if (hasGroups()) {
     <div class="et-table-group-row" role="row">
-      @for (lead of leadColumns(); track lead.key) {
+      @for (lead of leadCells(); track lead.key) {
         <div class="et-table-group-cell" aria-hidden="true"></div>
       }
       @for (group of headerGroups(); track group.key) {
@@ -23,196 +20,318 @@
           }
         </div>
       }
+      @if (hasFiller()) {
+        <div class="et-table-group-cell et-table-filler-cell" role="presentation" aria-hidden="true"></div>
+      }
     </div>
   }
 
   <div class="et-table-header-row" role="row">
     <!-- Leading utility columns (selection from a feature, the expander when expansion is on). The
          table owns the cell chrome; the feature only supplies what goes inside. -->
-    @for (lead of leadColumns(); track lead.key) {
+    @for (lead of leadCells(); track lead.key) {
       <div
         #leadHeaderCell
         [class]="lead.cellClass"
-        [class.et-table-sticky-start]="hasStickyStart()"
-        [style.inset-inline-start.px]="hasStickyStart() ? leadStickyStart(lead.key) : null"
-        [attr.aria-hidden]="lead.headerCell?.() ? null : 'true'"
+        [class.et-table-sticky-start]="lead.sticky"
+        [style.inset-inline-start.px]="lead.offset"
+        [attr.aria-hidden]="lead.lead.headerComponent ? null : 'true'"
         class="et-table-header-cell"
         role="columnheader"
       >
-        @if (lead.headerCell?.(); as headerTemplate) {
-          <ng-container *ngTemplateOutlet="headerTemplate" />
+        @if (lead.lead.headerComponent; as headerComponent) {
+          <ng-container *ngComponentOutlet="headerComponent; injector: lead.lead.injector" />
         }
       </div>
     }
-    @for (column of visibleColumns(); track column.key) {
+    @for (cell of headerCellVms(); track cell.key) {
       <div
         #headerCell
-        [attr.data-align]="column.align ?? 'start'"
-        [attr.data-col-key]="column.key"
-        [attr.aria-sort]="column.sortable ? ariaSort(column.key) : null"
-        [class.et-table-sticky-start]="effectiveSticky(column) === 'start'"
-        [class.et-table-sticky-end]="effectiveSticky(column) === 'end'"
-        [style.inset-inline-start.px]="stickyStart(column.key)"
-        [style.inset-inline-end.px]="stickyEnd(column.key)"
+        [attr.data-align]="cell.align"
+        [attr.data-col-key]="cell.key"
+        [attr.aria-sort]="cell.ariaSort"
+        [class.et-table-sticky-start]="cell.stickyStart"
+        [class.et-table-sticky-end]="cell.stickyEnd"
+        [style.inset-inline-start.px]="cell.offsetStart"
+        [style.inset-inline-end.px]="cell.offsetEnd"
         class="et-table-header-cell"
         role="columnheader"
       >
-        @if (column.headerCell) {
-          <ng-container *ngTemplateOutlet="column.headerCell; context: { $implicit: column.header }" />
-        } @else if (column.sortable) {
-          <button (click)="toggleSort(column.key)" class="et-table-sort-button" type="button">
-            <span class="et-table-cell-text">{{ column.header }}</span>
-            <svg
-              [attr.data-direction]="sortDirection(column.key)"
-              class="et-table-sort-icon"
-              viewBox="0 0 16 16"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                class="et-table-sort-icon-up"
-                d="M4.5 7 8 3.5 11.5 7"
-                stroke="currentColor"
-                stroke-width="1.6"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                class="et-table-sort-icon-down"
-                d="M4.5 9 8 12.5 11.5 9"
-                stroke="currentColor"
-                stroke-width="1.6"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
+        <!-- Sorting is the whole header's job, not a control's: the label plus everything around it is
+             one button, and the only sort affordance is the direction arrow, which appears once the
+             column is actually sorted. Adornments sit outside it so their own clicks don't sort. -->
+        @if (cell.sortable) {
+          <button
+            [attr.aria-label]="cell.sortLabel"
+            (click)="toggleSort(cell.key)"
+            class="et-table-header-label et-table-header-label--sortable"
+            type="button"
+          >
+            @if (cell.template; as headerTemplate) {
+              <ng-container *ngTemplateOutlet="headerTemplate; context: { $implicit: cell.column.header }" />
+            } @else {
+              <span class="et-table-cell-text">{{ cell.column.header }}</span>
+            }
+            @if (cell.direction; as direction) {
+              <!-- Flipping direction keeps this element mounted, so the arrow turns over rather than
+                   swapping; only appearing and disappearing are the fade. -->
+              <i
+                [attr.data-direction]="direction"
+                class="et-table-sort-indicator"
+                animate.enter="et-table-sort-indicator--enter"
+                animate.leave="et-table-sort-indicator--leave"
+                etIcon="et-arrow-up"
+              ></i>
+            }
           </button>
         } @else {
-          <span class="et-table-cell-text">{{ column.header }}</span>
+          <span class="et-table-header-label">
+            @if (cell.template; as headerTemplate) {
+              <ng-container *ngTemplateOutlet="headerTemplate; context: { $implicit: cell.column.header }" />
+            } @else {
+              <span class="et-table-cell-text">{{ cell.column.header }}</span>
+            }
+          </span>
         }
 
         <!-- UI from opt-in features (filter menu, …), each registered rather than referenced — see
              registerHeaderAdornment. Renders nothing when no feature is imported. -->
         @for (adornment of headerAdornments(); track $index) {
-          @if (adornment.template(); as adornmentTemplate) {
-            <ng-container *ngTemplateOutlet="adornmentTemplate; context: { $implicit: column }" />
-          }
+          <ng-container
+            *ngComponentOutlet="adornment.component; inputs: { column: cell.column }; injector: adornment.injector"
+          />
         }
       </div>
     }
+    <!-- Filler cell for the trailing slack track (see hasFiller): carries the header band to the
+         panel's edge when every column is a rigid width. -->
+    @if (hasFiller()) {
+      <div class="et-table-header-cell et-table-filler-cell" role="presentation" aria-hidden="true"></div>
+    }
   </div>
+
+  <!-- Refetching over rows that are already on screen: a 2px indeterminate bar right under the header,
+       so the data stays readable and in place. Drawn here rather than with `et-progress-bar` — the base
+       table takes no component dependencies, and this is 2px of chrome, not a control. -->
+  @if (showBusyBar()) {
+    <div class="et-table-busy-bar" role="presentation" aria-hidden="true"></div>
+  }
 
   @if (spacers(); as spacer) {
     <div [style.block-size.px]="spacer.start" class="et-table-spacer" role="presentation" aria-hidden="true"></div>
   }
 
-  @for (row of renderedRows(); track rowIdentity(row); let index = $index) {
-    <div
-      [class]="leadRowClasses(row)"
-      [class.et-table-row--stripe]="(rowIndexOffset() + index) % 2 === 1"
-      [class.et-table-row--interactive]="rowInteractive()"
-      [attr.tabindex]="rowInteractive() ? 0 : null"
-      (click)="activateRow(row, $event)"
-      (keydown.enter)="activateRow(row, $event)"
-      (keydown.space)="activateRow(row, $event)"
-      class="et-table-row"
-      role="row"
-    >
-      @for (lead of leadColumns(); track lead.key) {
-        <div
-          [class]="lead.cellClass"
-          [class.et-table-sticky-start]="hasStickyStart()"
-          [style.inset-inline-start.px]="hasStickyStart() ? leadStickyStart(lead.key) : null"
-          class="et-table-cell"
-          role="gridcell"
-        >
-          @if (lead.bodyCell(); as leadTemplate) {
-            <ng-container *ngTemplateOutlet="leadTemplate; context: { $implicit: row }" />
-          }
-        </div>
-      }
-      @for (column of visibleColumns(); track column.key) {
-        <div
-          #bodyCell
-          [attr.data-align]="column.align ?? 'start'"
-          [attr.data-col-key]="column.key"
-          [class.et-table-sticky-start]="effectiveSticky(column) === 'start'"
-          [class.et-table-sticky-end]="effectiveSticky(column) === 'end'"
-          [style.inset-inline-start.px]="stickyStart(column.key)"
-          [style.inset-inline-end.px]="stickyEnd(column.key)"
-          class="et-table-cell"
-          role="gridcell"
-        >
-          @if (column.cell) {
-            <ng-container
-              *ngTemplateOutlet="
-                column.cell;
-                context: { $implicit: row, value: column.value(row), index: rowIndexOffset() + index }
-              "
-            />
-          } @else {
-            <span class="et-table-cell-text">{{ column.value(row) }}</span>
-          }
-        </div>
-      }
-    </div>
-
-    @if (canExpand(row) && isExpanded(row)) {
-      @if (expandedRowTemplate(); as detail) {
-        <div class="et-table-detail-row" role="row">
-          <!-- Animated only for the row the user just toggled — a re-mount from paging/sorting must not
-               replay the reveal (see detailAnimation). -->
-          <div
-            [animate.enter]="detailAnimation(row, 'enter')"
-            [animate.leave]="detailAnimation(row, 'leave')"
-            class="et-table-detail-cell"
-            role="gridcell"
-          >
-            <div class="et-table-detail-content">
-              <ng-container *ngTemplateOutlet="detail; context: { $implicit: row }" />
-            </div>
-          </div>
-        </div>
-      }
-    }
-  } @empty {
-    <div class="et-table-empty-row" role="row">
-      <div class="et-table-empty-cell" role="gridcell">
-        <ng-content select="[etTableEmpty]">{{ emptyLabel() }}</ng-content>
+  @if (hasError()) {
+    <!-- The error state stands in for the whole body: rows are either trustworthy or absent. -->
+    <div class="et-table-message-row" role="row">
+      <div class="et-table-error-cell" role="gridcell" aria-live="polite">
+        @if (errorTemplate(); as template) {
+          <ng-container *ngTemplateOutlet="template; context: { $implicit: error() }" />
+        } @else {
+          <ng-content select="[etTableError]">
+            <i [etProvideColor]="errorColorTheme" class="et-table-error-icon" etIcon="et-triangle-exclamation"></i>
+            <span>{{ resolvedLabels().error }}</span>
+          </ng-content>
+        }
       </div>
     </div>
+  } @else if (showPlaceholderRows()) {
+    <!-- First load with nothing to show yet. Real rows in every track, so the columns don't jump when
+         the data lands, and hidden from assistive tech — the host's `aria-busy` is the announcement. -->
+    @for (placeholder of placeholderGrid(); track placeholder.key) {
+      <div
+        [style.--_et-table-row-h.px]="measuredRowHeight()"
+        class="et-table-row et-table-row--placeholder et-skeleton--animated"
+        role="row"
+        aria-hidden="true"
+      >
+        @for (lead of placeholder.leads; track lead.key) {
+          <div [class]="lead.cellClass" class="et-table-cell" role="gridcell"></div>
+        }
+        @for (cell of placeholder.cells; track cell.key) {
+          <div [attr.data-align]="cell.align" class="et-table-cell" role="gridcell">
+            @if (cell.template; as skeleton) {
+              <!-- The column said what its cells look like while loading — a chip-shaped bone for a chip
+                   column, an avatar for an avatar. See etTableCellSkeleton. -->
+              <ng-container *ngTemplateOutlet="skeleton; context: cell.context" />
+            } @else {
+              <!-- The shared skeleton bone, so a loading table looks like every other loading surface in
+                   the app. `shape="text"` is a line of text's height, which is what keeps a placeholder
+                   row as tall as a row of text. -->
+              <et-skeleton-item [style.inline-size.%]="cell.width" shape="text" />
+            }
+          </div>
+        }
+        @if (hasFiller()) {
+          <div class="et-table-cell et-table-filler-cell" role="presentation"></div>
+        }
+      </div>
+    }
+  } @else {
+    @for (rowVm of bodyRows(); track rowVm.key) {
+      <div
+        [class]="rowVm.classes"
+        [class.et-table-row--stripe]="rowVm.stripe"
+        [class.et-table-row--interactive]="rowInteractive()"
+        [attr.tabindex]="rowInteractive() ? 0 : null"
+        (click)="activateRow(rowVm.row, $event)"
+        (keydown.enter)="activateRow(rowVm.row, $event)"
+        (keydown.space)="activateRow(rowVm.row, $event)"
+        class="et-table-row"
+        role="row"
+      >
+        @for (lead of rowVm.leads; track lead.key) {
+          <div
+            [class]="lead.cellClass"
+            [class.et-table-sticky-start]="lead.sticky"
+            [style.inset-inline-start.px]="lead.offset"
+            class="et-table-cell"
+            role="gridcell"
+          >
+            <ng-container
+              *ngComponentOutlet="lead.lead.bodyComponent; inputs: { row: rowVm.row }; injector: lead.lead.injector"
+            />
+          </div>
+        }
+        @for (cell of rowVm.cells; track cell.key) {
+          <div
+            #bodyCell
+            [attr.data-align]="cell.align"
+            [attr.data-col-key]="cell.key"
+            [attr.data-state]="cell.state"
+            [class.et-skeleton--animated]="cell.state === 'loading'"
+            [class.et-table-sticky-start]="cell.stickyStart"
+            [class.et-table-sticky-end]="cell.stickyEnd"
+            [style.inset-inline-start.px]="cell.offsetStart"
+            [style.inset-inline-end.px]="cell.offsetEnd"
+            class="et-table-cell"
+            role="gridcell"
+          >
+            @if (cell.state === 'loading') {
+              <!-- A cell that is loading on its own (an inline edit saving) shows a placeholder instead of
+                   its value; the row around it stays readable. -->
+              <et-skeleton-item shape="text" />
+            } @else {
+              @if (cell.state === 'error') {
+                @if (cellErrorMark(); as mark) {
+                  <!-- A feature (etTableCellErrorTooltip) draws the mark instead, so the overlay runtime
+                       only ships when a table actually wants a tooltip. -->
+                  <ng-container
+                    *ngComponentOutlet="mark.component; inputs: { message: cell.message }; injector: mark.injector"
+                  />
+                } @else {
+                  <!-- Color-scoped here rather than on the cell: the mark is the only part that must read
+                       as an error, and a provider per errored cell is cheap where one per cell would not
+                       be. The message rides along as `title`, which costs nothing. -->
+                  <i
+                    [etProvideColor]="errorColorTheme"
+                    [attr.title]="cell.message"
+                    [attr.aria-label]="cell.message"
+                    [attr.aria-hidden]="cell.message ? null : 'true'"
+                    class="et-table-cell-error-icon"
+                    etIcon="et-triangle-exclamation"
+                  ></i>
+                }
+              }
+              @if (cell.template; as bodyTemplate) {
+                <ng-container *ngTemplateOutlet="bodyTemplate; context: cell.context" />
+              } @else {
+                <span class="et-table-cell-text">{{ cell.value }}</span>
+              }
+            }
+          </div>
+        }
+        @if (hasFiller()) {
+          <div class="et-table-cell et-table-filler-cell" role="presentation" aria-hidden="true"></div>
+        }
+      </div>
+
+      @if (rowVm.showDetail) {
+        @if (expandedRowTemplate(); as detail) {
+          <div class="et-table-detail-row" role="row">
+            <!-- Animated only for the row the user just toggled — a re-mount from paging/sorting must not
+                 replay the reveal (see bodyRows). -->
+            <div
+              [animate.enter]="rowVm.enterAnimation"
+              [animate.leave]="rowVm.leaveAnimation"
+              class="et-table-detail-cell"
+              role="gridcell"
+            >
+              <!-- Two elements on purpose: the outer one is the clip window the animating track
+                   squeezes to nothing, the inner one carries the padding. See the CSS. -->
+              <div class="et-table-detail-content">
+                <div class="et-table-detail-body">
+                  <ng-container *ngTemplateOutlet="detail; context: { $implicit: rowVm.row }" />
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      }
+    } @empty {
+      <div class="et-table-message-row" role="row">
+        <div class="et-table-empty-cell" role="gridcell">
+          @if (emptyTemplate(); as template) {
+            <ng-container *ngTemplateOutlet="template; context: { $implicit: rows() }" />
+          } @else {
+            <ng-content select="[etTableEmpty]">{{ resolvedLabels().empty }}</ng-content>
+          }
+        </div>
+      </div>
+    }
   }
 
   @if (spacers(); as spacer) {
     <div [style.block-size.px]="spacer.end" class="et-table-spacer" role="presentation" aria-hidden="true"></div>
   }
 
+  <!-- Edge gradients marking rows scrolled out of view horizontally. The layer is absolutely positioned
+       over the whole grid — the full scroll extent, not just the viewport — which is what lets the two
+       fades inside it hold their place with `position: sticky` for the entire scroll range. Their inline
+       inset clears whatever columns are pinned at that edge, so the fade marks where rows actually
+       disappear (a pinned column's inner edge) rather than the viewport's edge. -->
+  <div class="et-table-scroll-fades" role="presentation" aria-hidden="true">
+    <div
+      [style.inset-inline-start.px]="fadeInset().start"
+      [class.et-table-scroll-fade--visible]="scrollFades().start"
+      class="et-table-scroll-fade et-table-scroll-fade--start"
+    ></div>
+    <div
+      [style.inset-inline-end.px]="fadeInset().end"
+      [class.et-table-scroll-fade--visible]="scrollFades().end"
+      class="et-table-scroll-fade et-table-scroll-fade--end"
+    ></div>
+  </div>
+
   @if (hasFooter()) {
     <div class="et-table-footer-row" role="row">
-      @for (lead of leadColumns(); track lead.key) {
+      @for (lead of leadCells(); track lead.key) {
         <div
           [class]="lead.cellClass"
-          [class.et-table-sticky-start]="hasStickyStart()"
-          [style.inset-inline-start.px]="hasStickyStart() ? leadStickyStart(lead.key) : null"
+          [class.et-table-sticky-start]="lead.sticky"
+          [style.inset-inline-start.px]="lead.offset"
           class="et-table-footer-cell"
           role="gridcell"
           aria-hidden="true"
         ></div>
       }
-      @for (column of visibleColumns(); track column.key) {
+      @for (cell of footerCells(); track cell.key) {
         <div
-          [attr.data-align]="column.align ?? 'start'"
-          [class.et-table-sticky-start]="effectiveSticky(column) === 'start'"
-          [class.et-table-sticky-end]="effectiveSticky(column) === 'end'"
-          [style.inset-inline-start.px]="stickyStart(column.key)"
-          [style.inset-inline-end.px]="stickyEnd(column.key)"
+          [attr.data-align]="cell.align"
+          [class.et-table-sticky-start]="cell.stickyStart"
+          [class.et-table-sticky-end]="cell.stickyEnd"
+          [style.inset-inline-start.px]="cell.offsetStart"
+          [style.inset-inline-end.px]="cell.offsetEnd"
           class="et-table-footer-cell"
           role="gridcell"
         >
-          @if (column.footerCell) {
-            <ng-container *ngTemplateOutlet="column.footerCell; context: { $implicit: rows() }" />
+          @if (cell.template; as footerTemplate) {
+            <ng-container *ngTemplateOutlet="footerTemplate; context: { $implicit: rows() }" />
           }
         </div>
+      }
+      @if (hasFiller()) {
+        <div class="et-table-footer-cell et-table-filler-cell" role="presentation" aria-hidden="true"></div>
       }
     </div>
   }
@@ -226,38 +345,8 @@
   </div>
 }
 
-<!-- The table's own lead column: the row expander. Registered like a feature's, so one loop renders
-     every leading utility column. -->
-<ng-template #expanderCell let-row>
-  @if (canExpand(row)) {
-    <button
-      [attr.aria-expanded]="isExpanded(row)"
-      [attr.aria-label]="isExpanded(row) ? 'Collapse row' : 'Expand row'"
-      (click)="toggleExpanded(row)"
-      class="et-table-expander"
-      type="button"
-    >
-      <svg
-        [attr.data-expanded]="isExpanded(row)"
-        class="et-table-expander-icon"
-        viewBox="0 0 16 16"
-        fill="none"
-        aria-hidden="true"
-      >
-        <path
-          d="M6 4 10 8 6 12"
-          stroke="currentColor"
-          stroke-width="1.6"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-      </svg>
-    </button>
-  }
-</ng-template>
-
-<!-- Everything else the consumer put inside the table — in practice the opt-in feature components.
-     Most render nothing (they hand the table templates); the ones that do render their own UI (the
-     reorder drag ghost) need their host element attached here, since an unprojected component's view
-     is created but never inserted. Their own styles keep those hosts out of the layout. -->
-<ng-content />
+<!-- Floating UI from opt-in features (the reorder drag ghost / drop indicator), stamped here so a
+     feature can draw without having a view — or an element — of its own. -->
+@for (layer of layers(); track $index) {
+  <ng-container *ngComponentOutlet="layer.component; injector: layer.injector" />
+}

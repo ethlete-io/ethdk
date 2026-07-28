@@ -100,11 +100,24 @@
 
   .et-table {
     display: grid;
+    /* Containing block for the scroll-fade layer, which has to span the full scroll extent. */
+    position: relative;
     /* Row heights come from density alone. The host stretches this area into leftover space (see the
        host's grid rows), and a grid's default `align-content: normal` would hand that space to the
        auto-sized rows — so pin the rows to the start and let the slack collect below the last one. */
     align-content: start;
-    inline-size: 100%;
+    /* The box must always cover the tracks. At `inline-size: 100%` it stops at the viewport while
+       wider tracks scroll on past it, which strands everything positioned against that box: a pinned
+       column's containing block, the scroll-fade layer, and the painted surface itself.
+
+       `min-content` is the sizing that says exactly "as wide as the tracks' own minimums" — a fixed
+       track contributes its length, and a `minmax(<min>, 1fr)` one contributes that floor, which is
+       precisely what a flexible track collapses to once the rigid ones have eaten the room.
+       (`max-content` would not do: it resolves `fr` against cell content, blowing the table out to
+       its longest untruncated value.) `min-inline-size` covers the other direction — tracks that
+       don't reach the viewport — where the box stretches and the flexible tracks share the slack. */
+    inline-size: min-content;
+    min-inline-size: 100%;
     /* The table is a surface panel: paint its background so cells (and the sticky
        header, which reuses this token) sit on an opaque, themed surface. */
     background: var(--et-surface-background-solid, Canvas);
@@ -113,11 +126,9 @@
     line-height: 1.4;
   }
 
-  /* With pinned columns the grid must span its full track width (not just the viewport) so a
-     sticky column's containing block covers the whole scroll extent — otherwise it drifts. */
-  .et-table:where(.et-table--sticky-cols) {
-    inline-size: max-content;
-    min-inline-size: 100%;
+  /* The trailing slack cell: table chrome only (band, dividers, rules), never content. */
+  .et-table-filler-cell {
+    padding-inline: 0;
   }
 
   /* Rows are semantic (role=row) but layout-transparent, so their cells are the
@@ -153,6 +164,11 @@
        so a rounded group-row height can't leave a sub-pixel seam that scrolling rows show through — the
        group cell (higher z-index, opaque, owns the divider) draws over the overlap. */
     inset-block-start: max(0px, calc(var(--_et-table-group-h, 0px) - 1px));
+    /* Keeps a feature's controls (filter, column menu) off the label and off each other. It only shows
+       on an end-aligned column, where the label's text ends exactly where the round hit area of the
+       first control begins and its hover ring would otherwise touch the text. 4px and no more: the gap
+       is taken out of the label's own width, and a wider one truncates a narrow header. */
+    gap: 4px;
     z-index: 1;
     font-weight: 600;
     color: var(--et-surface-color-muted-solid, CanvasText);
@@ -294,6 +310,47 @@
     text-align: end;
   }
 
+  /* ── Horizontal scroll fades ────────────────────────────────────────────
+     The layer covers the grid's whole box — the entire scroll extent, not just the viewport — because
+     that is the containing block the two fades inside it stick within: `position: sticky` is clamped to
+     its containing block, so a viewport-sized one would let them drift off after a screenful of
+     scrolling. Being out of flow, it adds no grid track. `space-between` parks each fade at its own
+     edge, giving sticky a resting position to pull away from. */
+  .et-table-scroll-fades {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: space-between;
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .et-table-scroll-fade {
+    position: sticky;
+    flex: none;
+    inline-size: var(--et-table-scroll-fade-size, 28px);
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+
+  .et-table-scroll-fade--visible {
+    opacity: 1;
+  }
+
+  .et-table-scroll-fade--start {
+    background: linear-gradient(to right, rgb(0 0 0 / 0.16), rgb(0 0 0 / 0));
+  }
+
+  .et-table-scroll-fade--end {
+    background: linear-gradient(to left, rgb(0 0 0 / 0.16), rgb(0 0 0 / 0));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-table-scroll-fade {
+      transition: none;
+    }
+  }
+
   /* ── Full-width footer slot ─────────────────────────────────────────────
      A content-projection region below the grid for arbitrary controls (paginator,
      page-size select). It's a sibling of the grid — not a grid row — so it spans the
@@ -314,54 +371,21 @@
     border-block-start: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.3));
   }
 
+  /* Secondary text projected into the footer bar — an "Items per page:" label beside a page-size
+     select, a record count, a hint. Matches the paginator's own readout exactly, so the texts sharing
+     that row read as one style instead of two near-misses. */
+  .et-table-footer-label {
+    margin: 0;
+    font-size: 14px;
+    color: var(--et-surface-color-muted-solid, CanvasText);
+  }
+
   /* Tighten the footer bar on touch layouts, where it otherwise eats a lot of vertical room. */
   @media (pointer: coarse) {
     .et-table-footer {
       gap: 8px;
       padding: 8px var(--et-table-cell-padding-inline);
     }
-  }
-
-  .et-table-header-cell:where(.et-table-header-cell--reorderable) {
-    cursor: grab;
-    user-select: none;
-  }
-
-  /* The source header stays in place, dimmed, while its floating ghost is dragged. */
-  .et-table-header-cell:where(.et-table-header-cell--dragging) {
-    cursor: grabbing;
-    opacity: 0.4;
-  }
-
-  /* Floating copy of the dragged header, following the pointer (offset so it clears a finger/cursor). */
-  .et-table-drag-ghost {
-    position: fixed;
-    z-index: 10;
-    transform: translate(12px, 8px);
-    max-inline-size: 256px;
-    padding: var(--et-table-cell-padding-block) var(--et-table-cell-padding-inline);
-    overflow: hidden;
-    font-size: 14px;
-    font-weight: 600;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    color: var(--et-surface-color-solid, CanvasText);
-    background: var(--et-surface-background-solid, Canvas);
-    border: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.3));
-    border-radius: 6px;
-    box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
-    pointer-events: none;
-  }
-
-  /* Vertical line marking where the dragged column will drop. */
-  .et-table-drop-indicator {
-    position: fixed;
-    z-index: 9;
-    inline-size: 2px;
-    margin-inline-start: -1px;
-    background: var(--et-theme-color-primary-solid, currentColor);
-    border-radius: 1px;
-    pointer-events: none;
   }
 
   .et-table-header-cell:where([data-align='center']),
@@ -390,12 +414,15 @@
     }
   }
 
-  /* Sortable header: the whole label is a button. It fills the cell so the click
-     target matches the header, and keeps the header's alignment via justify. */
-  .et-table-sort-button {
-    display: inline-flex;
+  /* ── Header label & sort ────────────────────────────────────────────────
+     The label fills the cell and, when the column is sortable, *is* the sort button — a big, obvious
+     target that needs no control of its own. It grows so the header's adornments (filter trigger,
+     column menu) are pushed to the trailing edge, and shrinks so a long header still truncates. */
+  .et-table-header-label {
+    display: flex;
     align-items: center;
     gap: 4px;
+    flex: 1;
     min-inline-size: 0;
     margin: 0;
     padding: 0;
@@ -404,161 +431,180 @@
     text-align: inherit;
     background: none;
     border: none;
+  }
+
+  .et-table-header-label:where(.et-table-header-label--sortable) {
     cursor: pointer;
   }
 
-  .et-table-header-cell:where([data-align='center']) .et-table-sort-button {
-    margin-inline: auto;
-  }
-
-  .et-table-header-cell:where([data-align='end']) .et-table-sort-button {
-    margin-inline-start: auto;
-  }
-
-  /* Animated sort glyph: two stacked chevrons. Both sit faint when unsorted; the active direction's
-     chevron fades to full and nudges toward its edge, the other recedes — a small motion on each toggle. */
-  .et-table-sort-icon {
-    flex: none;
-    inline-size: 0.95em;
-    block-size: 0.95em;
-  }
-
-  .et-table-sort-icon path {
-    opacity: 0.3;
-    transform-box: fill-box;
-    transform-origin: center;
-    transition:
-      opacity 0.18s ease,
-      transform 0.18s ease;
-  }
-
-  /* Brighten the resting glyph on hover only while unsorted (no direction yet) — once sorted, the active
-     direction below must win instead of being dimmed back to the hover level. */
-  .et-table-sort-button:where(:hover, :focus-visible) .et-table-sort-icon:not([data-direction]) path {
-    opacity: 0.55;
-  }
-
-  .et-table-sort-icon:where([data-direction='asc']) .et-table-sort-icon-up,
-  .et-table-sort-icon:where([data-direction='desc']) .et-table-sort-icon-down {
-    opacity: 1;
-  }
-
-  .et-table-sort-icon:where([data-direction='asc']) .et-table-sort-icon-down,
-  .et-table-sort-icon:where([data-direction='desc']) .et-table-sort-icon-up {
-    opacity: 0.2;
-    transform: scale(0.72);
-  }
-
-  .et-table-expander-cell {
+  .et-table-header-cell:where([data-align='center']) .et-table-header-label {
     justify-content: center;
-    padding-inline: 4px;
   }
 
-  .et-table-expander {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    /* Never let the flex row shrink it out of square — a narrow `--et-table-expander-width` would
-       otherwise squeeze the button's inline size while its block size stayed at 24px. */
+  .et-table-header-cell:where([data-align='end']) .et-table-header-label {
+    justify-content: flex-end;
+  }
+
+  /* The only sort affordance: absent while unsorted, then the direction the column is sorted by. It is
+     accented so a sorted column reads at a glance, and it never reserves space — an unsorted header is
+     just its label. */
+  /* Sized so the drawn arrow lands on the label's cap height (the glyph fills ~79% of its own box, so
+     the box has to be bigger than the mark you want), and nudged up off the line box's centre: the
+     line box is padded by the font's descent, which a header without descenders never uses, so
+     centring in it leaves the arrow visibly low against the text's own middle. */
+  .et-table-sort-indicator {
     flex: none;
-    inline-size: 24px;
-    block-size: 24px;
-    padding: 0;
-    color: inherit;
-    background: none;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+    inline-size: 1.15em;
+    block-size: 1.15em;
+    transform: translateY(-0.045em);
+    color: var(--et-theme-color-primary-solid, currentColor);
+    /* Reversing the sort turns the arrow over in place — the element stays mounted across the flip,
+       so a plain transition on `transform` is the whole animation. The glyph is drawn centred in its
+       own box (see ARROW_UP_ICON), which is what keeps the ink still while it rotates. */
+    transition: transform 200ms var(--ease-out-5, ease);
   }
 
-  .et-table-expander:where(:hover, :focus-visible) {
-    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 12%, transparent);
+  .et-table-sort-indicator:where([data-direction='desc']) {
+    transform: translateY(-0.045em) rotate(180deg);
   }
 
-  .et-table-expander-icon {
-    inline-size: 14px;
-    block-size: 14px;
-    transition: transform 0.15s ease;
+  /* Appearing and disappearing are a plain opacity fade: a rotate or a scale here would read as the
+     arrow flying in, which is a lot of motion for a mark this small. */
+  .et-table-sort-indicator.et-table-sort-indicator--enter {
+    animation: et-table-sort-in 150ms ease;
   }
 
-  .et-table-expander-icon:where([data-expanded='true']) {
-    transform: rotate(90deg);
+  .et-table-sort-indicator.et-table-sort-indicator--leave {
+    animation: et-table-sort-in 120ms ease reverse forwards;
   }
 
-  .et-table-detail-row {
-    display: contents;
-  }
-
-  /* Detail rows reveal their content: the row takes its final height in one layout pass, then the
-     content slides down into the revealed space and fades in — `transform`/`opacity` only, so every
-     frame is compositor work.
-
-     This deliberately replaced animating the cell's `grid-template-rows` from `0fr`. That looked
-     nicer (following rows glided down) but re-resolved the whole table grid on every frame: on a
-     20-row table at 20× CPU throttle it cost 4–5 dropped frames per toggle and a 133ms worst frame,
-     versus 1 dropped frame and 21ms average here. Angular's `animate.enter`/`animate.leave` keep the
-     row mounted for the leave animation, then unmount it. */
-  .et-table-detail-cell {
-    grid-column: 1 / -1;
-    border-block-end: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.15));
-  }
-
-  /* The animation must sit on the element Angular puts the class on: `animate.enter`/`animate.leave`
-     look for a running animation on *that* element and drop the class (or unmount) the moment they
-     find none — an animation on a child is never awaited. */
-  .et-table-detail-cell.et-table-detail--enter {
-    animation: et-table-detail-in 0.18s ease;
-  }
-
-  .et-table-detail-cell.et-table-detail--leave {
-    animation: et-table-detail-out 0.18s ease forwards;
-  }
-
-  /* The row drops into place and fades in. `opacity` + `transform` are the only properties the
-     compositor can animate on its own: the row takes its final height in one layout pass, and no frame
-     after that touches layout or paint. Measured on a 20-row table at 20× CPU throttle, per toggle:
-     ~20ms average frame and 3 long frames, against ~41ms and 5–6 for animating the cell's grid track
-     (which re-resolved the whole table grid every frame) and ~25ms for a clip-path wipe. */
-  @keyframes et-table-detail-in {
+  @keyframes et-table-sort-in {
     from {
       opacity: 0;
-      transform: translateY(-6px);
     }
 
     to {
       opacity: 1;
-      transform: none;
     }
-  }
-
-  @keyframes et-table-detail-out {
-    from {
-      opacity: 1;
-      transform: none;
-    }
-
-    to {
-      opacity: 0;
-      transform: translateY(-6px);
-    }
-  }
-
-  .et-table-detail-content {
-    min-block-size: 0;
-    padding: var(--et-table-cell-padding-block) var(--et-table-cell-padding-inline);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .et-table-detail-cell.et-table-detail--enter,
-    .et-table-detail-cell.et-table-detail--leave {
+    .et-table-sort-indicator {
+      transition: none;
+    }
+
+    .et-table-sort-indicator.et-table-sort-indicator--enter,
+    .et-table-sort-indicator.et-table-sort-indicator--leave {
       animation: none;
     }
   }
 
-  .et-table-empty-cell {
+  /* A standalone body row (the empty state, the error state): layout-transparent like a real row, so
+     its single cell is the grid item that spans every column track. */
+  .et-table-message-row {
+    display: contents;
+  }
+
+  .et-table-empty-cell,
+  .et-table-error-cell {
     grid-column: 1 / -1;
     padding: 32px var(--et-table-cell-padding-inline);
     color: var(--et-surface-color-muted-solid, CanvasText);
     text-align: center;
+  }
+
+  /* ── Error state ────────────────────────────────────────────────────────
+     A message rather than a row of data: mark and text centred on one line, wrapping on a narrow
+     table. Only the mark takes the error colour (scoped in the template) — a wall of red text reads
+     as an alarm, and the label still has to be legible on any surface. */
+  .et-table-error-cell {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .et-table-error-icon {
+    flex: none;
+    inline-size: 16px;
+    block-size: 16px;
+    /* Ink, not `primary`: the mark sits on the table's own surface, not on a filled swatch. */
+    color: var(--et-theme-color-ink-solid, currentColor);
+  }
+
+  /* A cell that failed on its own keeps its value and gains the mark in front of it, so the row stays
+     readable and the failure is local. */
+  .et-table-cell:where([data-state='error']) {
+    gap: 6px;
+  }
+
+  .et-table-cell-error-icon {
+    flex: none;
+    inline-size: 14px;
+    block-size: 14px;
+    color: var(--et-theme-color-ink-solid, currentColor);
+  }
+
+  /* ── Loading ────────────────────────────────────────────────────────────
+     The bones themselves are `<et-skeleton-item>`s, so a loading table matches every other loading
+     surface in the app. All the table adds is the cell chrome around them: a placeholder row has to be
+     exactly as tall as a row of data, or the table resizes when the data lands. `shape="text"` gives the
+     bar a line of text's height, and the cell keeps the same padding and line box as a real one. */
+  /* A placeholder row is as tall as the row it stands in for: the height measured off a real row when
+     this table has had one (`--_et-table-row-h`, set per row by the template), else a line of text plus
+     the cell's own padding. A column whose cells are taller than text — a chip, an avatar — should also
+     say so with `etTableCellSkeleton`, which is what makes the *first* load match too. */
+  .et-table-row--placeholder .et-table-cell {
+    min-block-size: var(--_et-table-row-h, calc(1.4em + var(--et-table-cell-padding-block) * 2));
+  }
+
+  /* A single cell mid-save (see `cellState`): one animated bone in place of the value. */
+  .et-table-cell:where([data-state='loading']) {
+    /* The item is the cell's own flex child, so it stretches to the cell's inline size. */
+    display: flex;
+  }
+
+  /* Refetch over rows that are already on screen: a 2px indeterminate bar in the grid row right below
+     the header, accented so it reads as activity. It scrolls with the content in a bounded table —
+     a refetch is short, and pinning it would mean measuring the sticky header's height every frame. */
+  .et-table-busy-bar {
+    grid-column: 1 / -1;
+    block-size: 2px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 10%, transparent);
+  }
+
+  .et-table-busy-bar::after {
+    content: '';
+    display: block;
+    inline-size: 40%;
+    block-size: 100%;
+    border-radius: 999px;
+    background: var(--et-theme-color-primary-solid, currentColor);
+    animation: et-table-busy-sweep 1.1s ease-in-out infinite;
+  }
+
+  @keyframes et-table-busy-sweep {
+    from {
+      transform: translateX(-100%);
+    }
+
+    to {
+      transform: translateX(250%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* The states still have to be visible without motion: the sheen goes, and the busy bar becomes a
+       static accent rule across the table. */
+    .et-table-placeholder-bar::after {
+      content: none;
+    }
+
+    .et-table-busy-bar::after {
+      inline-size: 100%;
+      animation: none;
+    }
   }
 }
