@@ -92,7 +92,7 @@ yarn nx g @ethlete/query:migrate-to-query-v3
 ```
 
 1. **`prep-for-query-v3`** prepares the workspace: it renames every legacy symbol that collides with the current system to its `V2`/`v2` name (`QueryClient` → `V2QueryClient`, `BearerAuthProvider` → `V2BearerAuthProvider`, `buildQueryCacheKey` → `v2BuildQueryCacheKey`, …) in all files importing `@ethlete/query`. Run it (and commit) before upgrading the package.
-2. **`migrate-to-query-v3`** performs the migration itself: it converts `V2QueryClient` instances to `createQueryClient`, generates current-system creators for your legacy ones, rewrites `.prepare()` call sites, wires the [`createLegacyQueryCreator`](#migrating-to-the-current-system) interop where a full conversion isn't possible, removes legacy devtools usage — and writes a migration report listing everything it changed and what still needs manual attention.
+2. **`migrate-to-query-v3`** performs the migration itself: it converts `V2QueryClient` instances to `createQueryClient`, generates current-system creators for your legacy ones, rewrites `.prepare()` call sites, wires the [`createLegacyQueryCreator`](#migrating-to-the-current-system) interop where a full conversion isn't possible, points devtools usage at the v3 equivalents — and writes a migration report listing everything it changed and what still needs manual attention.
 
 Both accept `--skipFormat` to skip re-formatting the touched files. `migrate-to-query-v3` also accepts `--projects` (Nx project names) and `--include` (path prefixes) to migrate one app or library at a time — keep a query client and the creators built on it in the same run, though, since they are rewritten together.
 

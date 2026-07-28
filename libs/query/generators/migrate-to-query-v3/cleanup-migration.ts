@@ -2,65 +2,67 @@ import { Tree } from '@nx/devkit';
 import * as ts from 'typescript';
 import { MigrationScope } from './migration-scope.js';
 import { QueryV3MigrationReport } from './report.js';
-import { createSourceFile, getLineNumberFromPosition } from './shared.js';
+import { createSourceFile, ensureImportFromQuery, ensureNamedImports, getLineNumberFromPosition } from './shared.js';
 
-export const removeDevtoolsUsage = (tree: Tree, scope: MigrationScope, report: QueryV3MigrationReport) => {
+/**
+ * Points existing devtools usage at the v3 components instead of deleting it.
+ *
+ * Both versions render `<et-query-devtools>`, so templates need no change at all — only the provider
+ * call and the component's import move. Stripping the markup (as this phase used to) threw away
+ * something that would have kept working, and left every migrated app without devtools until someone
+ * noticed they were gone.
+ */
+export const migrateDevtoolsUsage = (tree: Tree, scope: MigrationScope, report: QueryV3MigrationReport) => {
   const updatedFiles: string[] = [];
+  const filesNeedingComponentsPackage: string[] = [];
 
   scope.visit(tree, (filePath) => {
-    if (!filePath.endsWith('.ts') && !filePath.endsWith('.html')) {
+    if (!filePath.endsWith('.ts')) {
       return;
     }
 
     const content = tree.read(filePath, 'utf-8');
 
-    if (!content) {
+    if (
+      !content ||
+      (!content.includes('provideQueryClientForDevtools') && !content.includes('QueryDevtoolsComponent'))
+    ) {
       return;
     }
 
-    if (filePath.endsWith('.ts')) {
-      if (!content.includes('provideQueryClientForDevtools') && !content.includes('QueryDevtoolsComponent')) {
-        return;
-      }
+    const { content: nextContent, importsComponent } = migrateDevtoolsInFile(content);
 
-      const withoutProviders = removeProvideQueryClientForDevtools(content);
-      const nextContent = removeQueryDevtoolsComponent(withoutProviders);
-
-      if (nextContent !== content) {
-        tree.write(filePath, nextContent);
-        updatedFiles.push(filePath);
-      }
-
+    if (nextContent === content) {
       return;
     }
 
-    if (!content.includes('et-query-devtools')) {
-      return;
-    }
+    tree.write(filePath, nextContent);
+    updatedFiles.push(filePath);
 
-    const nextContent = removeDevtoolsFromHtml(content);
-
-    if (nextContent !== content) {
-      tree.write(filePath, nextContent);
-      updatedFiles.push(filePath);
+    if (importsComponent) {
+      filesNeedingComponentsPackage.push(filePath);
     }
   });
 
-  if (updatedFiles.length > 0) {
-    console.log('\n✅ Removed legacy query devtools usage in:');
-    updatedFiles.forEach((filePath) => console.log(`   - ${filePath}`));
+  if (updatedFiles.length === 0) {
+    return;
+  }
 
-    // Removing the v2 devtools without saying what replaces them means they just quietly disappear
-    // from every app — and nobody notices until they go looking for them.
-    report.addFollowUp({
-      title: 'Re-add the query devtools',
+  console.log('\n✅ Migrated query devtools usage to v3 in:');
+  updatedFiles.forEach((filePath) => console.log(`   - ${filePath}`));
+
+  if (filesNeedingComponentsPackage.length > 0) {
+    // The component moved packages, which is the one part of this rewrite that can fail outside the
+    // file being edited: an app that only ever depended on `@ethlete/query` now needs `@ethlete/components`.
+    report.addManualReview({
+      title: 'Add @ethlete/components for the query devtools',
       summary:
-        'The v2 devtools (`provideQueryClientForDevtools` / `QueryDevtoolsComponent`) were removed. v3 has a direct replacement, but it is not registered per client, so the migration cannot place it for you.',
+        '`QueryDevtoolsComponent` now lives in `@ethlete/components`. The imports were rewritten, but the package may not be a dependency of these projects yet.',
       action:
-        'Add `provideQueryDevtools()` from `@ethlete/query` to the app providers (it registers every client and auth provider at once), and render `<et-query-devtools />` from `@ethlete/components` — usually next to the router outlet, guarded by `isDevMode()`.',
-      locations: updatedFiles.map((filePath) => ({ filePath })),
+        'Run `yarn add @ethlete/components` where needed, then `yarn install` and re-lint the affected libs so the `@nx/dependency-checks` rule sees the new dependency.',
+      locations: filesNeedingComponentsPackage.map((filePath) => ({ filePath })),
       source: 'cleanup-migration',
-      dedupeKey: 'devtools-replacement',
+      dedupeKey: 'devtools-components-dependency',
     });
   }
 };
@@ -119,53 +121,91 @@ export const migrateEmptyPrepareCalls = (tree: Tree, scope: MigrationScope) => {
   }
 };
 
-const removeProvideQueryClientForDevtools = (content: string) => {
-  return content
-    .replace(/,?\s*provideQueryClientForDevtools\([^)]*\)/g, '')
-    .replace(/\[\s*,/g, '[')
-    .replace(/,\s*\]/g, ']')
-    .replace(/\n\s*\n\s*\n/g, '\n\n');
+type DevtoolsFileMigration = {
+  content: string;
+
+  /** Whether the file now imports `QueryDevtoolsComponent` from `@ethlete/components`. */
+  importsComponent: boolean;
 };
 
-const removeQueryDevtoolsComponent = (content: string) => {
-  const withoutImportsArray = removeQueryDevtoolsImportsFromMetadata(content);
+const migrateDevtoolsInFile = (content: string): DevtoolsFileMigration => {
+  const importsComponent = importsFromQuery(content, 'QueryDevtoolsComponent');
 
-  return removeDevtoolsImports(withoutImportsArray);
+  let result = replaceDevtoolsProviderCalls(content);
+
+  const hasProvider = result.includes('provideQueryDevtools()');
+
+  result = dropLegacyDevtoolsImports(result);
+
+  if (hasProvider) {
+    result = ensureImportFromQuery(result, ['provideQueryDevtools']);
+  }
+
+  if (importsComponent) {
+    result = ensureNamedImports({
+      content: result,
+      importsNeeded: ['QueryDevtoolsComponent'],
+      moduleSpecifier: '@ethlete/components',
+    });
+  }
+
+  return { content: result, importsComponent };
 };
 
-const removeQueryDevtoolsImportsFromMetadata = (content: string) => {
+const importsFromQuery = (content: string, name: string) => {
   const sourceFile = createSourceFile(content);
-  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
+
+  return sourceFile.statements.some(
+    (node) =>
+      ts.isImportDeclaration(node) &&
+      ts.isStringLiteral(node.moduleSpecifier) &&
+      node.moduleSpecifier.text === '@ethlete/query' &&
+      !!node.importClause?.namedBindings &&
+      ts.isNamedImports(node.importClause.namedBindings) &&
+      node.importClause.namedBindings.elements.some((element) => element.name.text === name),
+  );
+};
+
+/**
+ * Turns every `provideQueryClientForDevtools({ client, displayName })` into a single
+ * `provideQueryDevtools()`.
+ *
+ * v3 registers every client and auth provider at once, so N per-client calls collapse to one. The
+ * first call site keeps its position — it is already where the app wanted its devtools — and the
+ * rest are removed along with the comma that separated them.
+ */
+const replaceDevtoolsProviderCalls = (content: string) => {
+  const sourceFile = createSourceFile(content);
+  const calls: ts.CallExpression[] = [];
 
   const visit = (node: ts.Node) => {
     if (
-      ts.isPropertyAssignment(node) &&
-      ts.isIdentifier(node.name) &&
-      node.name.text === 'imports' &&
-      ts.isArrayLiteralExpression(node.initializer)
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === 'provideQueryClientForDevtools'
     ) {
-      const nextElements = node.initializer.elements.filter((element) => {
-        return !(ts.isIdentifier(element) && element.text === 'QueryDevtoolsComponent');
-      });
-
-      if (nextElements.length === node.initializer.elements.length) {
-        ts.forEachChild(node, visit);
-        return;
-      }
-
-      const replacement = `imports: [${nextElements.map((element) => element.getText(sourceFile)).join(', ')}]`;
-
-      replacements.push({
-        start: node.getStart(sourceFile),
-        end: node.getEnd(),
-        replacement,
-      });
+      calls.push(node);
     }
 
     ts.forEachChild(node, visit);
   };
 
   visit(sourceFile);
+
+  if (calls.length === 0) {
+    return content;
+  }
+
+  const replacements = calls.map((call, index) => {
+    const start = call.getStart(sourceFile);
+    const end = call.getEnd();
+
+    if (index === 0) {
+      return { start, end, replacement: 'provideQueryDevtools()' };
+    }
+
+    return { ...withSurroundingComma(content, start, end), replacement: '' };
+  });
 
   let result = content;
 
@@ -178,7 +218,29 @@ const removeQueryDevtoolsImportsFromMetadata = (content: string) => {
   return result;
 };
 
-const removeDevtoolsImports = (content: string) => {
+/** Widens a range to swallow the comma that separated the element from its neighbours. */
+const withSurroundingComma = (content: string, start: number, end: number) => {
+  let nextEnd = end;
+
+  while (nextEnd < content.length && /\s/.test(content[nextEnd]!)) nextEnd += 1;
+
+  if (content[nextEnd] === ',') {
+    return { start, end: nextEnd + 1 };
+  }
+
+  let nextStart = start;
+
+  while (nextStart > 0 && /\s/.test(content[nextStart - 1]!)) nextStart -= 1;
+
+  if (content[nextStart - 1] === ',') {
+    return { start: nextStart - 1, end };
+  }
+
+  return { start, end };
+};
+
+/** Drops the v2 devtools names from the `@ethlete/query` import; both moved or were renamed. */
+const dropLegacyDevtoolsImports = (content: string) => {
   const sourceFile = createSourceFile(content);
   let importNode: ts.ImportDeclaration | undefined;
 
@@ -196,9 +258,10 @@ const removeDevtoolsImports = (content: string) => {
     return content;
   }
 
-  const nextElements = importNode.importClause.namedBindings.elements.filter((element) => {
-    return element.name.text !== 'QueryDevtoolsComponent' && element.name.text !== 'provideQueryClientForDevtools';
-  });
+  const nextElements = importNode.importClause.namedBindings.elements.filter(
+    (element) =>
+      element.name.text !== 'QueryDevtoolsComponent' && element.name.text !== 'provideQueryClientForDevtools',
+  );
 
   if (nextElements.length === importNode.importClause.namedBindings.elements.length) {
     return content;
@@ -213,13 +276,6 @@ const removeDevtoolsImports = (content: string) => {
   const nextImport = `import { ${nextElements.map((element) => element.getText(sourceFile)).join(', ')} } from '@ethlete/query';`;
 
   return content.slice(0, importNode.getStart(sourceFile)) + nextImport + content.slice(importNode.getEnd());
-};
-
-const removeDevtoolsFromHtml = (content: string) => {
-  return content
-    .replace(/<et-query-devtools\s*\/>/g, '')
-    .replace(/<et-query-devtools[^>]*>[\s\S]*?<\/et-query-devtools>/g, '')
-    .replace(/\n\s*\n\s*\n/g, '\n\n');
 };
 
 const replaceAnyQueryInFile = (content: string) => {

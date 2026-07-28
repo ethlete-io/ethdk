@@ -83,7 +83,7 @@ export const apiClient = new V2QueryClient({
     expect(report).toContain('refreshQueriesInUse');
   });
 
-  it('points at the v3 devtools after removing the v2 ones', async () => {
+  it('migrates the devtools rather than dropping them', async () => {
     writeClient('client.ts');
     tree.write('queries.ts', "import { apiClient } from './client';\nexport const q = apiClient.get({ route: '/x' });");
     tree.write(
@@ -97,10 +97,8 @@ export const appConfig = { providers: [provideQueryClientForDevtools({ client: a
 
     await migration(tree, { skipFormat: true });
 
-    const report = readFile('query-v3-migration-tasks.md');
-
-    expect(report).toContain('Re-add the query devtools');
-    expect(report).toContain('provideQueryDevtools()');
+    expect(readFile('app.config.ts')).toContain('provideQueryDevtools()');
+    expect(readFile('query-v3-migration-tasks.md')).not.toContain('Re-add the query devtools');
   });
 
   it('scaffolds the auth provider from the v2 bearer config', async () => {

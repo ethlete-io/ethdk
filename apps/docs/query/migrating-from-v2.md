@@ -115,6 +115,13 @@ An `HttpInterceptor` also works, but it only affects _subsequent_ requests — a
 
 `[etInfinityQuery]` has no replacement either — infinite lists are [paged query stacks](/query/stacks#paged-queries) now.
 
+### Devtools keep their markup
+
+Both versions render `<et-query-devtools>`, so templates need no change. Only two things move, and the generator does both:
+
+- the per-client `provideQueryClientForDevtools({ client, displayName })` calls collapse into a single `provideQueryDevtools()` — v3 registers every client and auth provider at once;
+- `QueryDevtoolsComponent` is imported from `@ethlete/components` instead of `@ethlete/query`, so that package has to be a dependency of the app.
+
 ### Query collections become `executionState`
 
 A v2 query collection tracked "which of these queries is currently doing something". For auth that role belongs to [`provider.executionState()`](/query/auth#execution-state); for everything else, read the queries' own `executionState()` signals and combine them in a `computed`.

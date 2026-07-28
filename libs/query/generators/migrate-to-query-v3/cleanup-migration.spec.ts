@@ -21,14 +21,18 @@ describe('migrate-to-query-v3 cleanup passes', () => {
     vi.restoreAllMocks();
   });
 
-  it('should remove legacy devtools usage from ts and html files', async () => {
+  it('should point devtools usage at the v3 components', async () => {
     tree.write(
       'app.config.ts',
       `
 import { provideQueryClientForDevtools } from '@ethlete/query';
 
 export const appConfig = {
-  providers: [provideQueryClientForDevtools({ client: apiClient })],
+  providers: [
+    somethingElse(),
+    provideQueryClientForDevtools({ client: apiClient, displayName: 'API' }),
+    provideQueryClientForDevtools({ client: cmsClient, displayName: 'CMS' }),
+  ],
 };
       `.trim(),
     );
@@ -55,9 +59,47 @@ export const component = {
 
     await migration(tree, { skipFormat: true });
 
-    expect(readFile('app.config.ts')).not.toContain('provideQueryClientForDevtools');
-    expect(readFile('component.ts')).not.toContain('QueryDevtoolsComponent');
-    expect(readFile('component.html')).not.toContain('et-query-devtools');
+    const appConfig = readFile('app.config.ts');
+    const component = readFile('component.ts');
+    const report = readFile('query-v3-migration-tasks.md');
+
+    // Per-client registrations collapse into the one call v3 needs, in place.
+    expect(appConfig).not.toContain('provideQueryClientForDevtools');
+    expect(appConfig).toContain("import { provideQueryDevtools } from '@ethlete/query';");
+    expect(appConfig.match(/provideQueryDevtools\(\)/g)).toHaveLength(1);
+    expect(appConfig).toContain('somethingElse(),');
+    expect(appConfig).not.toContain(',,');
+
+    // The component only changed packages — it stays in the imports array.
+    expect(component).toContain("import { QueryDevtoolsComponent } from '@ethlete/components';");
+    expect(component).not.toContain("from '@ethlete/query'");
+    expect(component).toContain('imports: [QueryDevtoolsComponent]');
+
+    // Both versions use the same selector, so the markup must survive untouched.
+    expect(readFile('component.html')).toContain('<et-query-devtools />');
+
+    expect(report).toContain('Add @ethlete/components for the query devtools');
+  });
+
+  it('should leave a single devtools provider call in place', async () => {
+    tree.write(
+      'app.config.ts',
+      `
+import { provideQueryClientForDevtools, somethingElse } from '@ethlete/query';
+
+export const appConfig = {
+  providers: [provideQueryClientForDevtools({ client: apiClient }), somethingElse()],
+};
+      `.trim(),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const appConfig = readFile('app.config.ts');
+
+    expect(appConfig).toContain('providers: [provideQueryDevtools(), somethingElse()]');
+    expect(appConfig).toContain('provideQueryDevtools');
+    expect(appConfig).toContain('somethingElse');
   });
 
   it('should replace AnyV2Query aliases and normalize empty prepare calls', async () => {

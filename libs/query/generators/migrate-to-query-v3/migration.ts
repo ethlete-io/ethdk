@@ -1,5 +1,5 @@
 import { Tree, formatFiles } from '@nx/devkit';
-import { migrateEmptyPrepareCalls, removeDevtoolsUsage, replaceAnyQueryWithLegacy } from './cleanup-migration.js';
+import { migrateDevtoolsUsage, migrateEmptyPrepareCalls, replaceAnyQueryWithLegacy } from './cleanup-migration.js';
 import { reportDefaultHeaderUsages, reportMissingHttpClientProviders } from './http-client-check.js';
 import { migrateLegacyPrepareCalls } from './legacy-prepare-migration.js';
 import { createNewQueryCreators, updateLegacyCreatorImportsAndUsages } from './legacy-query-creator-migration.js';
@@ -38,7 +38,7 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
   }
 
   replaceAnyQueryWithLegacy(tree, scope);
-  removeDevtoolsUsage(tree, scope, report);
+  migrateDevtoolsUsage(tree, scope, report);
   migrateEmptyPrepareCalls(tree, scope);
   migrateLegacyPrepareCalls(tree, report, scope);
 

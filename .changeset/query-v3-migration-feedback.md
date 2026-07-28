@@ -34,5 +34,8 @@ Close the gaps found while migrating a real workspace from the legacy client to 
 - `--projects` / `--include` migrate one app or library at a time.
 - Unused imports (`def`, `AnyLegacyQuery*`, stale client symbols) are no longer left behind.
 - Auth providers are scaffolded from the v2 `V2BearerAuthProvider` config instead of `queries: []`.
+- Devtools are migrated rather than deleted: the per-client `provideQueryClientForDevtools` calls
+  collapse into one `provideQueryDevtools()`, `QueryDevtoolsComponent` is re-imported from
+  `@ethlete/components`, and `<et-query-devtools>` markup is left alone — both versions use that selector.
 - New report tasks for dropped v2 client options, missing `provideHttpClient()`, `setDefaultHeaders`
-  call sites, the auth import-cycle layout, and the v3 devtools replacement.
+  call sites and the auth import-cycle layout.
