@@ -63,6 +63,7 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
     previousKey: executeState.previousKey(),
     runQueryOptions,
     isSecure,
+    silenceUncacheableAllowCacheError: queryConfig.silenceUncacheableAllowCacheError,
   });
 
   executeState.previousKey.set(key);

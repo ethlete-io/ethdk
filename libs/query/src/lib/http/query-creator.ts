@@ -184,6 +184,16 @@ export type QueryConfig = {
   silenceMissingWithArgsFeatureError?: boolean;
 
   /**
+   * If true, executing with `allowCache` on a request that cannot be cached is ignored instead of throwing
+   * `ET301`.
+   *
+   * For the legacy interop layer: v2 had a single `skipCache` for every method, so it forwards `allowCache`
+   * without being able to tell a cacheable request from an uncacheable one. Application code should not set
+   * this — on a hand-written `execute()` the error it silences is a real mistake.
+   */
+  silenceUncacheableAllowCacheError?: boolean;
+
+  /**
    * A custom injector to use for this query.
    */
   injector?: Injector;

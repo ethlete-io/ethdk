@@ -69,6 +69,9 @@ export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
 
   /** Configuration on how to run the query */
   runQueryOptions?: RunQueryExecuteOptions;
+
+  /** @see QueryConfig.silenceUncacheableAllowCacheError */
+  silenceUncacheableAllowCacheError?: boolean;
 };
 
 export type QueryRepositoryItem<TArgs extends QueryArgs> = {
@@ -240,7 +243,12 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
         : shouldCacheQuery(options.method) || creatorOptions?.subtle?.useQueryRepositoryCache === true;
 
     if (!shouldCache && options.key) throw uncacheableRequestHasCacheKeyParam(options.key);
-    if (!shouldCache && runQueryOptions?.allowCache) throw uncacheableRequestHasAllowCacheParam();
+
+    // `allowCache` is never read on the uncacheable path below — there is no cache entry to reuse — so this throw
+    // is purely a guard against a mistake in hand-written code. The legacy interop opts out of it.
+    if (!shouldCache && runQueryOptions?.allowCache && !options.silenceUncacheableAllowCacheError) {
+      throw uncacheableRequestHasAllowCacheParam();
+    }
 
     const route = buildRoute({
       base: config.baseUrl,
