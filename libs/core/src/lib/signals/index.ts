@@ -9,6 +9,7 @@ export * from './element-dimensions';
 export * from './element-intersection';
 export * from './element-mutations';
 export * from './element-scroll-direction';
+export * from './document-visibility';
 export * from './element-scroll-state';
 export * from './media-queries';
 export * from './recipes';
