@@ -39,6 +39,67 @@
     border-radius: var(--et-rich-text-editor-link-editor-radius);
   }
 
+  /* The anchored popover enters like a toggletip — a short fade plus a nudge away from what it points
+     at — instead of the anchored-dialog default, whose spring scale-from-origin reads as far too much
+     movement for a small card sitting right on top of the text the user is editing. Same shape and
+     timings as `.et-overlay--toggletip` in `toggletip.component.css`.
+
+     The transform has to re-state floating-ui's anchor offset (and win with `!important`) because it
+     replaces the base rule's composed transform wholesale — see the anchored-dialog block there. Only
+     the anchored variant is retargeted; the phone-sized top sheet keeps its slide-down. */
+  .et-overlay.et-with-default-animation.et-rte-link-editor-overlay.et-overlay--anchored-dialog {
+    --_et-rte-link-editor-nudge-x: 0px;
+    --_et-rte-link-editor-nudge-y: 0px;
+
+    /* Nudge away from the anchor, so the card reads as coming out of the selection it points at. */
+    &:where([data-overlay-placement^='top']) {
+      --_et-rte-link-editor-nudge-y: 0.45rem;
+    }
+
+    &:where([data-overlay-placement^='bottom']) {
+      --_et-rte-link-editor-nudge-y: -0.45rem;
+    }
+
+    &:where([data-overlay-placement^='left']) {
+      --_et-rte-link-editor-nudge-x: 0.45rem;
+    }
+
+    &:where([data-overlay-placement^='right']) {
+      --_et-rte-link-editor-nudge-x: -0.45rem;
+    }
+
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      opacity: 0;
+      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
+        translate(var(--_et-rte-link-editor-nudge-x), var(--_et-rte-link-editor-nudge-y)) !important;
+    }
+
+    &.et-animation-enter-active {
+      transition:
+        transform 200ms ease,
+        opacity 200ms ease;
+    }
+
+    &.et-animation-leave-active {
+      transition:
+        transform 140ms ease,
+        opacity 140ms ease;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-overlay.et-with-default-animation.et-rte-link-editor-overlay.et-overlay--anchored-dialog {
+      --_et-rte-link-editor-nudge-x: 0px;
+      --_et-rte-link-editor-nudge-y: 0px;
+
+      &.et-animation-enter-active,
+      &.et-animation-leave-active {
+        transition-duration: 0ms;
+      }
+    }
+  }
+
   /* Top sheet (< md): full-width, pinned above the on-screen keyboard, only the bottom corners round. */
   .et-overlay.et-rte-link-editor-overlay.et-overlay--top-sheet {
     border-end-start-radius: var(--et-rich-text-editor-link-editor-radius);
