@@ -58,8 +58,15 @@ describe('PaginationComponent', () => {
     fixture.componentRef.setInput('pageSize', 20);
     fixture.detectChanges();
 
+    // The live text, not the range box: that also holds an invisible width-reserving copy of the
+    // widest readout (see `widestRangeStatus`).
     const readout = (fixture.nativeElement as HTMLElement).querySelector('.et-pagination-range');
-    expect(readout?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Showing 41–60 of 500');
+    expect(readout?.querySelector('.et-pagination-readout-text')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Showing 41–60 of 500',
+    );
+    expect(readout?.querySelector('.et-pagination-readout-sizer')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Showing 500–500 of 500',
+    );
   });
 
   it('clamps the readout end to the total on the last, partial page', () => {
@@ -156,7 +163,7 @@ describe('PaginationComponent', () => {
       'Vorherige Seite',
     );
     expect(nav.querySelector('[aria-current="page"]')?.getAttribute('aria-label')).toBe('Seite 3');
-    expect(nav.querySelector('.et-pagination-range')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+    expect(nav.querySelector('.et-pagination-range .et-pagination-readout-text')?.textContent?.trim()).toBe(
       'Zeige 41–60 von 500',
     );
     expect(nav.querySelector('.et-pagination-jump-label')?.textContent?.trim()).toBe('Gehe zu Seite');
@@ -191,9 +198,11 @@ describe('PaginationComponent', () => {
     });
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).querySelector('.et-pagination-status')?.textContent?.trim()).toBe(
-      '1–10 von 40',
-    );
+    expect(
+      (fixture.nativeElement as HTMLElement)
+        .querySelector('.et-pagination-status .et-pagination-readout-text')
+        ?.textContent?.trim(),
+    ).toBe('1–10 von 40');
   });
 
   it('keeps an explicit ariaLabel ahead of the label set (multiple paginators on a page)', () => {

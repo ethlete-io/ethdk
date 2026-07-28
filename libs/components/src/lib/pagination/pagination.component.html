@@ -1,12 +1,19 @@
 @if (!isCompact() && rangeStatus(); as status) {
-  <p class="et-pagination-range" aria-live="polite">{{ status }}</p>
+  <p class="et-pagination-range" aria-live="polite">
+    <!-- Invisible width floor; see widestRangeStatus. Stacked with the live text in one grid cell. -->
+    <span class="et-pagination-readout-sizer" aria-hidden="true">{{ widestRangeStatus() }}</span>
+    <span class="et-pagination-readout-text">{{ status }}</span>
+  </p>
 }
 
 <ul #paginationList class="et-pagination-list">
   @if (isCompact()) {
     <!-- Compact pager: the readout, then previous/next — readout first so a changing digit count grows
          leftward and the chevrons hold their place across page changes. -->
-    <li class="et-pagination-status" aria-live="polite">{{ compactStatus() }}</li>
+    <li class="et-pagination-status" aria-live="polite">
+      <span class="et-pagination-readout-sizer" aria-hidden="true">{{ widestCompactStatus() }}</span>
+      <span class="et-pagination-readout-text">{{ compactStatus() }}</span>
+    </li>
     @if (compactControls().previous; as item) {
       <li [attr.data-type]="item.type" class="et-pagination-item">
         <ng-container *ngTemplateOutlet="control; context: { $implicit: item }" />

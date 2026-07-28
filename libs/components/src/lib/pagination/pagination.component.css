@@ -73,7 +73,28 @@
   .et-pagination-range {
     margin: 0;
     font-size: 14px;
+    font-variant-numeric: tabular-nums;
     color: var(--et-surface-color-muted-solid, CanvasText);
+  }
+
+  /* Both readouts stack their live text over an invisible copy of the widest string they can ever show
+     (see `widestRangeStatus`), in a single grid cell — so the cell is sized by the wider of the two and
+     the readout's box stays put as the page changes, instead of nudging whatever sits beside it. */
+  .et-pagination-range,
+  .et-pagination-status {
+    display: inline-grid;
+    grid-template-columns: auto;
+    justify-items: center;
+  }
+
+  .et-pagination-readout-sizer,
+  .et-pagination-readout-text {
+    grid-area: 1 / 1;
+    white-space: nowrap;
+  }
+
+  .et-pagination-readout-sizer {
+    visibility: hidden;
   }
 
   .et-pagination-jump {
@@ -128,9 +149,7 @@
   }
 
   .et-pagination-status {
-    display: inline-flex;
     align-items: center;
-    justify-content: center;
     min-block-size: var(--et-pagination-item-size);
     padding-inline: 6px;
     font-size: 14px;

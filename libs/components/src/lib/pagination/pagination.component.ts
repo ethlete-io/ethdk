@@ -167,6 +167,19 @@ export class PaginationComponent {
     return labels.compactPage(this.pagination.page(), this.pagination.totalPages());
   });
 
+  /**
+   * The widest readout this paginator can ever show, rendered invisibly underneath the live one so the
+   * readout's box never changes size. Without it, stepping 9 → 10 widens the text by a digit and shoves
+   * everything laid out beside the paginator sideways — very visible when the paginator is right-aligned
+   * next to a page-size select.
+   *
+   * Every slot gets the largest number in play, which with the tabular figures below is an upper bound
+   * on the real string. A custom label that beats it only loses the guarantee, never gets clipped: the
+   * two are stacked in one grid cell, which takes whichever is wider.
+   */
+  protected widestRangeStatus = computed(() => this.widestStatus('range'));
+  protected widestCompactStatus = computed(() => this.widestStatus('compact'));
+
   /** The previous/next controls for the compact pager (correct disabled state at the ends). */
   protected compactControls = computed(() => {
     const items = paginate({
@@ -248,6 +261,22 @@ export class PaginationComponent {
   /** The `[start, end]` tuple as the context the readout labels take. */
   private rangeContext([start, end]: [number, number]): PaginationRangeContext {
     return { start, end, totalItems: this.totalItems() ?? 0 };
+  }
+
+  /** The widest string a readout can produce — see {@link widestRangeStatus}. */
+  private widestStatus(variant: 'range' | 'compact') {
+    const labels = this.pagination.resolvedLabels();
+    const total = this.totalItems();
+
+    if (total === null || this.pageSize() === null) {
+      const pages = this.pagination.totalPages();
+
+      return variant === 'compact' ? labels.compactPage(pages, pages) : null;
+    }
+
+    const context: PaginationRangeContext = { start: total, end: total, totalItems: total };
+
+    return variant === 'compact' ? labels.compactRange(context) : labels.range(context);
   }
 
   /**

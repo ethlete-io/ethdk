@@ -44,6 +44,10 @@ large result sets.
 
 <StoryEmbed id="components-pagination--with-range-and-jump" height="220px" />
 
+Both readouts (this one and the compact pager's) **reserve the width of the widest
+text they can ever produce** and use tabular figures, so stepping 9 → 10 doesn't
+widen them and shove whatever is laid out beside the paginator sideways.
+
 ## Localization
 
 Every string the paginator renders itself — the control `aria-label`s ("Previous
@@ -181,8 +185,8 @@ full configured number row.
 
 The compact pager is a range readout followed by previous/next — the item range
 ("1–10 of 40") when `totalItems`/`pageSize` are set, otherwise the page position —
-with the readout _before_ the chevrons so a changing digit count grows leftward and
-the controls hold their position across page changes. Because auto-collapse measures
+with the readout _before_ the chevrons, and its width reserved for the longest range
+it can show, so the controls hold their position across page changes. Because auto-collapse measures
 the paginator's own box, give it a definite
 width where it would otherwise shrink to its content (e.g. a flex item) — stretch it
 (`w-full`, `flex: 1`). Or skip measurement entirely with `[compact]="true"` for a
