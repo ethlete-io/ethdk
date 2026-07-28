@@ -34,7 +34,10 @@ Rough layering: `types` → `core` → (`query`, `components`) ; `cdk` → `cont
 Component styles are plain CSS (global `et-`-prefixed classes,
 `ViewEncapsulation.None`) — see the `.css` files next to each component. **Do not
 use Tailwind in component source.** Tailwind utility classes are allowed **only in
-story files** (`*.stories.ts` and `stories/`), for demo layout.
+story files** (`*.stories.ts` and `stories/`), for demo layout — and the playground's
+Tailwind theme is trimmed (no default color palette, no `text-sm`-style scale), so
+read the **`storybook-styling`** skill (`.claude/skills/storybook-styling/`) before
+styling a story. An unknown utility emits nothing and fails silently.
 
 #### Cascade layers: every component CSS file is wrapped in `@layer components`
 
@@ -62,6 +65,29 @@ see the `&:where([data-size='…'])` / `&:where([disabled])` pattern in
 `libs/components/src/lib/button/*.component.css`. Interaction states (`:hover`,
 `:focus-visible`, `:active`) are deliberately left bare so they escalate and win.
 `:where()` is orthogonal to the layer wrap, not a substitute for it.
+
+#### Splitting a large stylesheet: styles-only components
+
+A component's CSS is injected when that component is **first instantiated**, and a
+`@Component` with an empty template exists only to carry a stylesheet. Together those
+two facts are how a big sheet stops being a tax on every consumer:
+
+- **CSS that belongs to a stamped child** goes on that child (e.g. the table's expander
+  chrome lives on `table-expander-cell.component.css`) — a table without expansion never
+  creates the cell, so the rules never reach the document.
+- **CSS that belongs to an opt-in feature** goes in a styles-only component the _feature_
+  references, mounted with `injectStyleManager().mount(TheStylesComponent)` — see
+  `ButtonStylesDirective` / `ButtonPropertiesStylesComponent`, and
+  `etTableVirtualScroll` → `TableVirtualScrollStylesComponent`. Because only the feature
+  references it, an app that doesn't import the feature doesn't bundle its CSS either.
+- **CSS for a base capability that most tables don't use** (the table's detail-row
+  animation) can be mounted on demand from an `effect` when the capability turns on. That
+  saves injection and style recalculation, not bundle size — the reference is still static.
+
+The style manager de-duplicates per component type, so mounting from many instances
+injects one `<style>`. Reach for this when a sheet grows past a few hundred lines and an
+identifiable slice of it serves a minority of consumers — `form-field` is the next
+candidate.
 
 All colors in component CSS must come from the **surface theming** and **color
 theming** token systems (`--et-surface-*-solid`, `--et-theme-color-*`) — never

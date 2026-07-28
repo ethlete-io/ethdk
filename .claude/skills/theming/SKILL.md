@@ -122,3 +122,9 @@ the interactive element itself, never a wrapper).
 Full docs: `libs/core/src/lib/theming/surface-theming.docs.mdx` and
 `color-theming.docs.mdx` (Storybook pages with the complete token tables and
 theme structure).
+
+Styling a **story** file rather than a component? The same colour rule applies (no
+hardcoded colours, no `dark:` — a story sits inside a surface theme too), but the
+Tailwind side has its own traps: the playground's theme resets `--color-*` and
+`--text-*`, so most utilities you'd reach for don't exist. See the
+**`storybook-styling`** skill.
