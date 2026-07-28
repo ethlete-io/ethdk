@@ -16,13 +16,8 @@
       }
     }
 
-    .et-menu-item-content {
-      flex: 1;
-      min-inline-size: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
+    /* `.et-menu-item-content` is shared with the selection items, so its layout lives in
+       `menu.component.css` — see the note there. */
 
     .et-menu-item-trailing {
       display: inline-flex;

@@ -237,6 +237,19 @@
         /* the item forces the error color theme onto itself while destructive */
         color: var(--et-theme-color-primary-solid, rgb(248 113 113));
       }
+
+      /* Every kind of item has a label — a plain one, a checkbox, a radio — so its layout lives here
+         rather than with any single item component. Those stylesheets are only injected once their
+         component is actually rendered, and a menu of nothing but selection items never renders the
+         plain one: the label would then not grow, and the trailing check/icon would sit against the
+         text instead of the item's trailing edge. */
+      .et-menu-item-content {
+        flex: 1;
+        min-inline-size: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
     }
   }
 
