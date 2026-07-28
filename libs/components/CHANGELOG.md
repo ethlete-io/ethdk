@@ -1,5 +1,116 @@
 # Changelog
 
+## 1.0.0-next.31
+
+### Minor Changes
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`d1fd772`](https://github.com/ethlete-io/ethdk/commit/d1fd7724da894960f5fd9f2a7c1e4f82cdac8ab0) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add the accordion: `<et-accordion>` (themed disclosure with an animated collapse,
+  `isOpen` two-way model, `headingLevel`, label/hint slots and an `etAccordionContent`
+  template for content created on first expand), `<et-accordion-group>`
+  (`autoCloseOthers`, arrow-key navigation between headers) and the headless
+  `etAccordion` / `etAccordionTrigger` / `etAccordionPanel` / `etAccordionGroup`
+  directives behind `ACCORDION_IMPORTS`.
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`13dfd58`](https://github.com/ethlete-io/ethdk/commit/13dfd58886672e1d8b9cfef81e98d29d74877d3c) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add the breadcrumb: `<et-breadcrumb>` with template-authored crumbs
+  (`etBreadcrumbItemTemplate`, `loading` placeholders, `etBreadcrumbSeparator`) and measured overflow that
+  moves the middle crumbs into a toggletip. In a routed app each view contributes only the crumbs it owns
+  via `<ng-template etBreadcrumbSegment>`, and the single `<et-breadcrumb-outlet>` in the shell renders
+  every registered segment as one trail — no view restates the path above it. Labels are localizable via
+  `provideBreadcrumbLabels`.
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`b4eb950`](https://github.com/ethlete-io/ethdk/commit/b4eb9506b3c3beff52670115bf50b26ea45b0c22) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add the carousel: `<et-carousel>` with slides from data plus an `etCarouselSlide` template, seamless looping,
+  and scroll-driven slide transitions (`transition="dim"` / `"wipe"`, with `transitionDriver`). Also
+  `slideAlign`, opt-in `autoplay` with per-slide `autoplayTimeFor`, and the headless `etCarousel` /
+  `etCarouselAutoplay` / `etCarouselItem` / control directives behind `CAROUSEL_IMPORTS`.
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`11ed986`](https://github.com/ethlete-io/ethdk/commit/11ed986c9391b6e4927312d166e8603bf1cefef8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Bracket: new `<et-bracket>` tournament renderer — single/double-elimination and swiss layouts, SVG connectors, journey highlighting, and the `generateBracketDataForEthlete` data-source integration. Round-header, match, and continue cards render via barebones default components for now; supply custom cards through the `roundHeaderComponent` / `matchComponent` / `finalMatchComponent` / `continueComponent` inputs or `provideBracketConfig`.
+
+  This is the `@ethlete/cdk` `NewBracket` renderer moved here and renamed (`et-new-bracket` → `et-bracket`, `NewBracket*` → `Bracket*`), with colors now driven by the `--et-bracket-line-color` / `--et-bracket-swiss-group-border-color` tokens (default `--et-surface-border-solid`) and errors thrown as `RuntimeError` (ET34xx). The fifa.gg integration was not ported. See the guide's "Migrating from @ethlete/cdk" section.
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`875d22b`](https://github.com/ethlete-io/ethdk/commit/875d22bbde15669723cccf73c86983ad761c69b2) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add a **Pagination** component (`et-pagination`, `PAGINATION_IMPORTS`) — responsive, localizable, with optional crawlable page links and SEO head tags. See the [pagination guide](https://ethlete-sdk-docs-next.web.app/components/pagination).
+
+- [`4b661b3`](https://github.com/ethlete-io/ethdk/commit/4b661b366682c18cf5371df03d3100d843146e5d) Thanks [@TomTomB](https://github.com/TomTomB)! - Scrollable: add `snapOrigin` for where a snapped child comes to rest (`'center'` suits a peeking layout), and
+  stop snapping while a pointer is held on the track — it used to scroll out from under a paused drag.
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`36c7119`](https://github.com/ethlete-io/ethdk/commit/36c71192663e3b491de0e7210887852012308c4e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add a **Skeleton** component (`et-skeleton`, `SKELETON_IMPORTS`) for loading placeholders — see the [skeleton guide](https://ethlete-sdk-docs-next.web.app/components/skeleton).
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`3c09f1d`](https://github.com/ethlete-io/ethdk/commit/3c09f1dd0c87ca366fe8f6c45fd138f4e8645402) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add a type-safe **Table** component (`et-table`, `TABLE_IMPORTS`) with a lean base and opt-in features for filtering, column menus, resizing, reordering, selection, virtual scrolling and state persistence — see the [table guide](https://ethlete-sdk-docs-next.web.app/components/table).
+
+### Patch Changes
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`e813ca0`](https://github.com/ethlete-io/ethdk/commit/e813ca0f3b338533e5bccab2332344f7f1c8475c) Thanks [@github-actions](https://github.com/apps/github-actions)! - Checkbox: a checked or indeterminate box keeps its theme-coloured border on hover
+  instead of flipping to the neutral interaction colour.
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`22041b3`](https://github.com/ethlete-io/ethdk/commit/22041b348a3fec8535dd40eaba6fcc2559b83da9) Thanks [@github-actions](https://github.com/apps/github-actions)! - Checkbox: don't flash the focus ring on first render. The host's `opacity` /
+  `outline-color` transitions were declared unconditionally as well as under
+  `[data-can-animate]`, so on mount the outline colour animated from its resolved
+  value and the ring briefly appeared. Transitions now live only under
+  `[data-can-animate]` (added after the first render), so nothing animates on mount.
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`25a6d1a`](https://github.com/ethlete-io/ethdk/commit/25a6d1a93c00f66683e73d6706872526896eab18) Thanks [@github-actions](https://github.com/apps/github-actions)! - Run effect teardown that never ran: tab panels, tab-bar triggers, notification stack items, PiP cells
+  and the bracket's journey-highlight listeners returned a cleanup function from `effect()`, which Angular
+  ignores. A removed tab panel stayed in the group's panel list (shifting later panels' indices), and the
+  bracket's hover listeners stacked up per re-run and outlived the component.
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`88cf3af`](https://github.com/ethlete-io/ethdk/commit/88cf3af9e61f9cc5ea7e6f547430246327c88f96) Thanks [@github-actions](https://github.com/apps/github-actions)! - Tighten `appearance="underline"` form fields: they no longer reserve the box height the
+  `box`/`filled` skins need, so the rule sits directly under the value instead of at the
+  bottom of a taller frame. A `size="sm"` field previously left ~12px of dead space
+  between its value and the underline (most visible on a compact control like a table
+  footer's page-size select) — that is now the field's own
+  `--et-form-field-control-padding-block`, and the frame is content-height (27px instead of
+  42px at `sm`).
+
+  The floor is derived from the control's line box, so it scales with
+  `--et-form-field-control-font-size` / `-line-height` / `-padding-block`, and a floating
+  label still grows the frame past it. `box` and `filled` appearances are unchanged.
+
+  Note this makes underline fields shorter on touch as well — reach for `box`/`filled` or
+  a larger `size` where a full-size tap target matters more than density.
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`dab7346`](https://github.com/ethlete-io/ethdk/commit/dab73460c22b47cf88106d3435cb95f78f756273) Thanks [@github-actions](https://github.com/apps/github-actions)! - Load more now dead-ends properly when the response can't state the end exactly: a page that comes back
+  empty — or that repeats the previous page, which is what an API asked for a page past the end usually
+  serves — is dropped instead of appended, and `hasMore` turns off regardless of `toHasMore`. Affects
+  `selectOptionsFromQuery`, `selectOptionsFromV2Query` and both table rows adapters, so a load-more
+  control no longer survives one page too long or duplicates the tail of the list.
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`3ad95ef`](https://github.com/ethlete-io/ethdk/commit/3ad95efb56034c14f19e7c94d7137efb739f7b14) Thanks [@github-actions](https://github.com/apps/github-actions)! - Menu: hovering an item no longer takes focus from an `etMenuSearch` field, so typing survives the pointer crossing the list.
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`5616552`](https://github.com/ethlete-io/ethdk/commit/56165523fa96b6aef6feffd4302d73f18f094155) Thanks [@github-actions](https://github.com/apps/github-actions)! - Menu: a checkbox/radio item's check, dot or custom icon is pinned to the item's trailing edge again.
+  Its label's layout was declared in the plain menu item's stylesheet, which is only injected once that
+  component renders — so in a menu built entirely from selection items (a filter menu, the rich text
+  editor's heading and alignment menus) the label didn't grow and the indicator sat against the text
+  instead of the edge.
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`3151b7a`](https://github.com/ethlete-io/ethdk/commit/3151b7a253d14e38e22e20d67bf0191f141c144e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `ethlete/no-template-literal-before-inline-template`, and restructure the files it flagged.
+
+  The Angular VS Code extension decides **client-side** whether the cursor sits inside an inline `template:` before it forwards completion, hover, go-to-definition or signature-help to the language server. That check (`isNotTypescriptOrSupportedDecoratorField`) walks the file with a bare `ts.createScanner()` loop, which cannot re-scan `}` as `TemplateMiddle`/`TemplateTail` — that needs the parser's `reScanTemplateToken()`. So the first template literal containing a `${…}` substitution desynchronises both the token stream and the brace counter, the scanner never recognises `template` `:` again, and every template request below it is dropped. The language server answers those requests correctly; the editor just never asks, so the template silently has no IntelliSense at all.
+
+  The new rule reproduces that scanner verbatim, so it reports exactly the templates the extension would abandon — no heuristic. Twenty inline templates across `components`, `cdk` and the playground were affected, all of them behind a fixture or helper that happened to use an interpolated template literal. Story fixtures moved into sibling `*-storybook.data.ts` files; spec fixtures and in-class helpers that must stay above their component (because a later `@Component` references the class in `imports`) were rewritten without the interpolation.
+
+  No public API changed — the `components` and `cdk` bumps are story/spec restructuring plus moving `signalVisibilityChangeClasses` below `RichFilterHostComponent` in the same module.
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`d666dcd`](https://github.com/ethlete-io/ethdk/commit/d666dcd73055e0044a2e635eef15c24849cf1751) Thanks [@github-actions](https://github.com/apps/github-actions)! - Log the logout-wide secure unbind in the query devtools event log. A logout drops every secure cache
+  entry at once; without a row of its own, the requests disappearing from the cache view had no visible
+  cause.
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`d85c58a`](https://github.com/ethlete-io/ethdk/commit/d85c58a84fc857847a03e4b736e27cd70fb5ee14) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: the anchored link popover enters and leaves like a toggletip — a
+  short fade plus a small nudge away from the selection it points at — instead of the
+  anchored-dialog spring scale, which was far too much movement for a card sitting on
+  top of the text being edited. The phone-sized top sheet is unchanged.
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`76a6552`](https://github.com/ethlete-io/ethdk/commit/76a65521ed6efbb9a2e3e1b47099219d1ee0f750) Thanks [@github-actions](https://github.com/apps/github-actions)! - Scrollable: the edge masks and the previous/next buttons now actually appear. Their
+  base `opacity: 0` was declared outside `@layer components`, so it beat the layered
+  rules that reveal them regardless of specificity.
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`f17850e`](https://github.com/ethlete-io/ethdk/commit/f17850eb5300d0f67a630360d3faccad4cedd5f3) Thanks [@github-actions](https://github.com/apps/github-actions)! - `et-select` accepts `aria-label` / `aria-labelledby` as its accessible name, so a select labelled from outside its field no longer trips `ET2201`.
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`88cf3af`](https://github.com/ethlete-io/ethdk/commit/88cf3af9e61f9cc5ea7e6f547430246327c88f96) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix `et-select` not forwarding the headless `mirrorPanelWidth` input, which made the
+  documented escape hatch for compact triggers unreachable from the default component.
+  With `[mirrorPanelWidth]="false"` the panel sizes to its own content (capped at
+  `min(400px, 100vw - 24px)`) instead of the field's width — needed whenever the trigger
+  is narrower than an option row, e.g. a page-size select where the value plus the
+  selected-check indicator no longer fit and the label was squeezed to a few pixels.
+
 ## 1.0.0-next.30
 
 ### Minor Changes

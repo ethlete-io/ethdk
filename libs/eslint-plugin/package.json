@@ -1,6 +1,6 @@
 {
   "name": "@ethlete/eslint-plugin",
-  "version": "1.0.0-next.15",
+  "version": "1.0.0-next.16",
   "license": "MIT",
   "type": "commonjs",
   "main": "./src/index.js",

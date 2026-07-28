@@ -1,5 +1,36 @@
 # @ethlete/core
 
+## 5.0.0-next.35
+
+### Minor Changes
+
+- [`a20d0ce`](https://github.com/ethlete-io/ethdk/commit/a20d0cee2f9937ad45ac1fd5eaec3c1a6ac1d27c) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectIsDocumentVisible()` — a signal for whether the page is the tab in front, which an
+  IntersectionObserver cannot tell you.
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`d787b1d`](https://github.com/ethlete-io/ethdk/commit/d787b1de041da31b6974a9f1b06ceb6ba6f5f6c5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Export `dragGestureFrom(event, element, { commitThreshold })` — the pointer-drag primitive that
+  `etDragHandle` is built on, now usable directly. It takes a `pointerdown` and returns an observable of
+  `start` / `move` / `end` (or a single `tapped` when the pointer never crossed the commit threshold),
+  completing with the gesture.
+
+  Prefer the directive. Reach for the primitive when the draggable element belongs to someone else's
+  template and you only have a delegated `pointerdown` — the case that motivated this: `et-table`'s
+  opt-in column-reorder feature attaches a drag to header cells the table itself renders, without the
+  table having to import any drag code.
+
+  `DragHandleDirective` is unchanged and now uses this primitive internally; `DragStartEvent` /
+  `DragMoveEvent` keep their import path.
+
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`929e355`](https://github.com/ethlete-io/ethdk/commit/929e3554770a132b4791edd2c063fa677f758762) Thanks [@github-actions](https://github.com/apps/github-actions)! - `setupScrollRestoration` can now restore the previous scroll offset on browser back/forward navigation instead of scrolling to top, via `restore: { enabled: true }`.
+
+  - The offset is applied only once the content is tall enough to reach it, so query-driven pages no longer land at the wrong place while their skeleton/loading state is on screen. Options: `timeout`, `maxTimeout`, `clampOnTimeout`.
+  - `holdScrollRestoration(() => query.isLoading())` suspends the wait from inside a route component when the data takes longer than `timeout` to arrive.
+  - `scrollElement` now also accepts a getter (`() => HTMLElement | null`), for scroll containers that only exist after the app shell rendered or are created per route.
+
+### Patch Changes
+
+- [`4ffabfb`](https://github.com/ethlete-io/ethdk/commit/4ffabfbe1830d4560b98dcda7d262155273dd62e) Thanks [@TomTomB](https://github.com/TomTomB)! - `useCursorDragScroll` no longer starts a drag on a secondary click, and ends one when a context menu opens —
+  previously a right-click left it latched on, so every later mouse move scrolled the container.
+
 ## 5.0.0-next.34
 
 ### Patch Changes
