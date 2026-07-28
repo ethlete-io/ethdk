@@ -1,5 +1,5 @@
 import { HttpHeaders } from '@angular/common/http';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { filter, of, Subscription, switchMap, take, tap } from 'rxjs';
 import { AnyBearerAuthProvider } from '../auth';
 import { AnyQuerySnapshot, QueryArgs, RequestArgs } from './query';
@@ -45,6 +45,16 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
       executeOptions: { deps: options.deps, state: options.state },
     });
   };
+
+  // A logout tears down the secure entries in the repository, but the query object holding one keeps
+  // its own `response`/`error` signals — so without this a component still mounted after logout goes
+  // on rendering the previous user's data until something calls `reset()` by hand.
+  options.deps.client.repository.events$
+    .pipe(
+      filter((event) => event.type === 'unbind-all-secure'),
+      takeUntilDestroyed(options.deps.destroyRef),
+    )
+    .subscribe(() => reset());
 
   const error = (query: AnyQuerySnapshot) => {
     const state = options.state;

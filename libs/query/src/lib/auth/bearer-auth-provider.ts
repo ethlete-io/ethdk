@@ -100,14 +100,19 @@ export type ExtractQueryArgs<T> =
       ? TArgs
       : never;
 
+export type QueryRegistryEntry<TArgs extends QueryArgs> = {
+  /**
+   * Executes the auth query. `args` may be omitted for a query that takes none — its
+   * `RequestArgs` is `{}`, which generic helper code cannot produce without a cast.
+   */
+  execute: (args?: RequestArgs<TArgs>, options?: RunQueryExecuteOptions) => QuerySnapshot<TArgs>;
+  snapshot: Signal<QuerySnapshot<TArgs> | null>;
+};
+
 export type QueryRegistry<TBuilders extends readonly AnyQueryBuilder[]> = {
-  [K in ExtractQueryKey<TBuilders[number]>]: {
-    execute: (
-      args: RequestArgs<ExtractQueryArgs<Extract<TBuilders[number], { key: K }>>>,
-      options?: RunQueryExecuteOptions,
-    ) => QuerySnapshot<ExtractQueryArgs<Extract<TBuilders[number], { key: K }>>>;
-    snapshot: Signal<QuerySnapshot<ExtractQueryArgs<Extract<TBuilders[number], { key: K }>>> | null>;
-  };
+  [K in ExtractQueryKey<TBuilders[number]>]: QueryRegistryEntry<
+    ExtractQueryArgs<Extract<TBuilders[number], { key: K }>>
+  >;
 };
 
 type HasFeatureType<
@@ -277,6 +282,20 @@ export type BearerAuthProvider<
   > | null>;
 
   /**
+   * Seeds the provider with tokens that were issued outside of it — an SSO/OIDC callback that
+   * arrives with both tokens in the URL, a token handed over by a native shell, a test harness.
+   *
+   * Behaves exactly like a successful auth query: the tokens are applied, `bearerData` /
+   * `isAuthenticated` update, `afterTokenRefresh$` emits so waiting secure queries run, and (unless
+   * disabled) other tabs are synced. Without it the only way in is to execute the refresh query with
+   * the refresh token and throw the access token away.
+   *
+   * Does **not** persist anything by itself — `withPersistentAuth` picks the tokens up through the
+   * same signals it watches for query-issued ones.
+   */
+  setTokens: (accessToken: string, refreshToken: string) => void;
+
+  /**
    * Logout the user (clears all tokens and unbinds secure queries)
    */
   logout: () => void;
@@ -377,7 +396,7 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
       }
     });
 
-    const execute = (args: RequestArgs<QueryArgs>, options?: { triggeredBy?: string }) => {
+    const execute = (args?: RequestArgs<QueryArgs>, options?: { triggeredBy?: string }) => {
       const query = builder.config.queryCreator({
         onlyManualExecution: true,
         injector,
@@ -603,6 +622,7 @@ const createBearerAuthProviderImpl = <
     latestExecutedQuery: latestExecutedQuery.asReadonly(),
     latestNonInternalQuery: latestNonInternalQuery.asReadonly(),
     executionState: executionState.asReadonly(),
+    setTokens,
     logout,
     afterTokenRefresh$,
   } as BearerAuthProvider<TBuilders, TFeatures, TBearerData>;
@@ -641,4 +661,32 @@ export type BearerAuthProviderRef<
 > = ProviderResult<BearerAuthProvider<TBuilders, TFeatures, TBearerData>>;
 
 export type AnyCreateBearerAuthProviderResult = BearerAuthProviderRef<any, any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
-export type AnyBearerAuthProvider = NonNullable<ReturnType<AnyCreateBearerAuthProviderResult[1]>>;
+
+/**
+ * The exact provider type behind a `createBearerAuthProvider` result — query keys, feature registry
+ * and bearer data all preserved.
+ *
+ * Prefer this over {@link AnyBearerAuthProvider} whenever the provider is reachable as a value, e.g.
+ * when passing one into a helper:
+ *
+ * ```ts
+ * export const myApiAuthProviderRef = createBearerAuthProvider({ ... });
+ * export type MyApiAuthProvider = BearerAuthProviderOf<typeof myApiAuthProviderRef>;
+ *
+ * const doLogin = (provider: MyApiAuthProvider) => provider.queries.login({ body: { ... } });
+ * ```
+ */
+export type BearerAuthProviderOf<TRef extends AnyCreateBearerAuthProviderResult> = NonNullable<ReturnType<TRef[1]>>;
+
+export type AnyBearerAuthProvider = Omit<NonNullable<ReturnType<AnyCreateBearerAuthProviderResult[1]>>, 'queries'> & {
+  /**
+   * Registry of all configured auth queries.
+   *
+   * Deliberately untyped here: with unknown builders the mapped type degrades to an index
+   * signature, and `noPropertyAccessFromIndexSignature` then rejects `provider.queries.login`
+   * (TS4111) — forcing every call site into bracket access or a hand-written structural contract.
+   * Use {@link BearerAuthProviderOf} where the concrete provider is reachable and the keys survive.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  queries: any;
+};

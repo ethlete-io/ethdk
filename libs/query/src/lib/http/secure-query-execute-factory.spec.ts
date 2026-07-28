@@ -1,6 +1,6 @@
 import { HttpHeaders, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Injector, signal, WritableSignal } from '@angular/core';
+import { DestroyRef, Injector, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { config as rxjsConfig, Subject } from 'rxjs';
 import { vi } from 'vitest';
@@ -8,6 +8,7 @@ import { AnyBearerAuthProvider } from '../auth';
 import { AnyQuerySnapshot, QueryArgs } from './query';
 import { QueryDependencies } from './query-dependencies';
 import { QueryErrorResponse } from './query-error-response';
+import { QueryRepositoryEvent } from './query-repository';
 import { QueryState } from './query-state';
 import { createSecureExecuteFactory } from './secure-query-execute-factory';
 
@@ -16,6 +17,7 @@ describe('createSecureExecuteFactory', () => {
   let mockDeps: QueryDependencies;
   let mockState: QueryState<QueryArgs>;
   let mockLatestExecutedQuery: WritableSignal<{ key: string; snapshot: AnyQuerySnapshot } | null>;
+  let mockRepositoryEvents$: Subject<QueryRepositoryEvent>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -31,8 +33,12 @@ describe('createSecureExecuteFactory', () => {
       afterTokenRefresh$: new Subject<void>(),
     } as unknown as AnyBearerAuthProvider;
 
+    mockRepositoryEvents$ = new Subject<QueryRepositoryEvent>();
+
     mockDeps = {
       injector: TestBed.inject(Injector),
+      destroyRef: TestBed.inject(DestroyRef),
+      client: { repository: { events$: mockRepositoryEvents$, unbind: vi.fn() } },
     } as unknown as QueryDependencies;
 
     mockState = {
@@ -41,6 +47,8 @@ describe('createSecureExecuteFactory', () => {
       error: signal(null),
       rawResponse: signal(null),
       latestHttpEvent: signal(null),
+      lastTimeExecutedAt: signal(null),
+      lastTriggeredBy: signal(null),
     } as unknown as QueryState<QueryArgs>;
   });
 
@@ -77,6 +85,25 @@ describe('createSecureExecuteFactory', () => {
     });
 
     expect(exec['currentRepositoryKey']).toBeTruthy();
+  });
+
+  it('should drop its state when the repository unbinds all secure entries', () => {
+    mockState.rawResponse.set({ name: 'logged in user' });
+    mockState.error.set({ code: 401 } as unknown as QueryErrorResponse);
+
+    createSecureExecuteFactory({
+      authProvider: mockAuthProvider,
+      deps: mockDeps,
+      state: mockState,
+      transformAuthAndExec: vi.fn(),
+    });
+
+    // A logout: the repository tears the secure entries down, but the response the query object
+    // holds is its own — without this the logged out user stays on screen.
+    mockRepositoryEvents$.next({ type: 'unbind-all-secure' });
+
+    expect(mockState.rawResponse()).toBeNull();
+    expect(mockState.error()).toBeNull();
   });
 
   it('should inject bearer token in Authorization header', () => {

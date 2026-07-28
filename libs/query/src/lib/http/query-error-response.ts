@@ -30,6 +30,34 @@ export const isQueryErrorResponse = (error: unknown): error is QueryErrorRespons
   return typeof error === 'object' && error !== null && 'raw' in error && 'retryState' in error && 'isList' in error;
 };
 
+/**
+ * Every message carried by an error, flattened into a plain list — one entry for a single error,
+ * one per violation for a list (a form response with several field violations), empty for `null`.
+ *
+ * The single/list split exists because that is how APIs answer; UI almost never wants to branch on
+ * it. Reach for this when rendering, and keep {@link QueryErrorResponse} for anything that needs
+ * the status code or the raw response.
+ *
+ * @example
+ * ```html
+ * @for (message of queryErrorMessages(myQuery.error()); track message) {
+ *   <p class="error">{{ message }}</p>
+ * }
+ * ```
+ */
+export const queryErrorMessages = (error: QueryErrorResponse | null | undefined): string[] => {
+  if (!error) return [];
+
+  return error.isList ? error.errors.map((item) => item.message) : [error.error.message];
+};
+
+/**
+ * The first message of an error, or `null` when there is none — the single-line counterpart to
+ * {@link queryErrorMessages}, for a toast or a form-field hint.
+ */
+export const queryErrorMessage = (error: QueryErrorResponse | null | undefined): string | null =>
+  queryErrorMessages(error)[0] ?? null;
+
 export const createQueryErrorResponse = (error: unknown): QueryErrorResponse => {
   let err = error instanceof HttpErrorResponse ? error : null;
 

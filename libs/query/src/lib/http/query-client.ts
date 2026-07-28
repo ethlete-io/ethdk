@@ -18,6 +18,33 @@ export type CreateQueryClientConfigOptions = {
   /** Configuration for building query strings */
   queryString?: BuildQueryStringConfig;
 
+  /**
+   * Headers sent with every request of this client — an API token, a tenant id, a preview
+   * credential. Per-query `args.headers` are merged on top and win per header name.
+   *
+   * Pass a function to make them dynamic: it is called on every execution, so reading a signal
+   * inside means later requests pick the new value up on their own.
+   *
+   * Client headers are deliberately **not** part of the cache key: they are the same for every
+   * query of the client, so including them would only ever churn the whole cache at once. That
+   * means already-resolved queries keep their response when the headers change — call
+   * {@link QueryClient.refreshQueriesInUse} to re-run them (the v3 equivalent of v2's
+   * `setDefaultHeaders({ refreshQueriesInUse: true })`).
+   *
+   * @example
+   * const previewToken = signal<string | null>(null);
+   *
+   * export const [provideMyClient, injectMyClient] = createQueryClient({
+   *   name: 'my-api',
+   *   baseUrl: 'https://api.example.com',
+   *   headers: () => {
+   *     const token = previewToken();
+   *     return token ? new HttpHeaders({ 'X-Preview-Token': token }) : new HttpHeaders();
+   *   },
+   * });
+   */
+  headers?: HttpHeaders | (() => HttpHeaders);
+
   /** The name of the client */
   name: string;
 
@@ -62,6 +89,20 @@ export type QueryClient = {
 
   /** The base URL the client was configured with. */
   baseUrl: string;
+
+  /**
+   * Re-executes every cacheable request this client currently has consumers for, bypassing the
+   * cache and restarting the ones still in flight.
+   *
+   * The case this exists for is a change to something every request carries but nothing tracks —
+   * typically a client-level header (see {@link CreateQueryClientConfigOptions.headers}). Setting
+   * the new value only affects *subsequent* requests, so anything already resolved keeps data
+   * fetched under the old one until this is called.
+   *
+   * Only GET / HEAD / OPTIONS requests are refreshed: re-firing a mutation nobody asked for would
+   * be a far worse surprise than a stale read.
+   */
+  refreshQueriesInUse: () => void;
 };
 
 export type QueryClientRef = ProviderResult<QueryClient>;
@@ -86,6 +127,7 @@ export const createQueryClient = (options: CreateQueryClientConfigOptions): Quer
       const client: QueryClient = {
         repository,
         baseUrl: options.baseUrl,
+        refreshQueriesInUse: () => repository.refreshInUse(),
       };
 
       return client;

@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { createQueryErrorResponse } from './query-error-response';
+import { createQueryErrorResponse, queryErrorMessage, queryErrorMessages } from './query-error-response';
 
 describe('createQueryErrorResponse', () => {
   it('should wrap a non-HttpErrorResponse as a status 0 error', () => {
@@ -66,5 +66,33 @@ describe('createQueryErrorResponse', () => {
     });
     const result = createQueryErrorResponse(error);
     expect(result.isList).toBe(false);
+  });
+});
+
+describe('queryErrorMessages', () => {
+  const listError = createQueryErrorResponse(
+    new HttpErrorResponse({
+      status: 400,
+      error: { statusCode: 400, message: ['name is required', 'email is invalid'], error: 'Bad Request' },
+    }),
+  );
+
+  const singleError = createQueryErrorResponse(new HttpErrorResponse({ status: 400, error: 'just a string' }));
+
+  it('should flatten a list error', () => {
+    expect(queryErrorMessages(listError)).toEqual(['name is required', 'email is invalid']);
+  });
+
+  it('should flatten a single error', () => {
+    expect(queryErrorMessages(singleError)).toEqual(['just a string']);
+  });
+
+  it('should return an empty list for no error', () => {
+    expect(queryErrorMessages(null)).toEqual([]);
+    expect(queryErrorMessage(null)).toBeNull();
+  });
+
+  it('should return the first message', () => {
+    expect(queryErrorMessage(listError)).toBe('name is required');
   });
 });

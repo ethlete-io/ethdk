@@ -1,4 +1,4 @@
-import { effect, untracked } from '@angular/core';
+import { EffectRef, effect, untracked } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import {
   filter,
@@ -138,24 +138,11 @@ export class LegacyQuery<
   _currentPollConfig: PollConfig | null = null;
 
   /**
+   * `null` for an inert query — there is no live injector to own an effect.
+   *
    * @internal
    */
-  storeSyncEffect = effect(() => {
-    const res = this.newQuery.response();
-
-    untracked(() => {
-      if (this.entity?.set) {
-        const id = this.entity.id({ args: this._arguments, response: res });
-
-        this.entity.set({
-          args: this._arguments,
-          response: res,
-          id,
-          store: this.entity.store,
-        });
-      }
-    });
-  });
+  storeSyncEffect: EffectRef | null = null;
 
   /**
    * @internal
@@ -171,6 +158,8 @@ export class LegacyQuery<
    * @internal
    */
   _isPollingPaused = false;
+
+  private _isDestroyed = false;
 
   state$: Observable<V2QueryState<Data>>;
 
@@ -229,22 +218,71 @@ export class LegacyQuery<
     public newQuery: TNewQuery,
     public _arguments: RequestArgs<QueryArgsOf<TNewQuery>>,
     public entity?: QueryEntityConfig<Store, Data, Response, Arguments, Id>,
+
+    /**
+     * Wraps an inert query — see `createInertQuery`. Skips everything that needs a live injector,
+     * so the wrapper is safe to build during teardown.
+     *
+     * @internal
+     */
+    private _isInert = false,
   ) {
+    if (this._isInert) {
+      this.state$ = of(transformExecStateToQueryState(null)) as Observable<V2QueryState<Data>>;
+      this._isDestroyed = true;
+      return;
+    }
+
     this.state$ = toObservable(this.newQuery.executionState, { injector: this.newQuery.subtle.injector }).pipe(
       map((execState) => transformExecStateToQueryState(execState)),
       switchMap((s) => this._transformState(s)),
       shareReplay({ bufferSize: 1, refCount: true }),
     );
 
-    this.newQuery.subtle.destroyRef.onDestroy(() => this.destroy());
+    this.storeSyncEffect = effect(() => {
+      const res = this.newQuery.response();
+
+      untracked(() => {
+        if (this.entity?.set) {
+          const id = this.entity.id({ args: this._arguments, response: res });
+
+          this.entity.set({
+            args: this._arguments,
+            response: res,
+            id,
+            store: this.entity.store,
+          });
+        }
+      });
+    });
+
+    // Tear down only what this wrapper owns. The underlying query is already being destroyed when this fires, so
+    // destroying it again would call `R3Injector.destroy()` on an injector that is mid-teardown, which throws
+    // NG0205 ("Injector has already been destroyed") from inside the view's cleanup phase.
+    this.newQuery.subtle.destroyRef.onDestroy(() => this._teardown());
   }
 
-  destroy() {
+  private _teardown() {
+    if (this._isDestroyed) {
+      return;
+    }
+
+    this._isDestroyed = true;
     this._pollingSubscription?.unsubscribe();
     this._pollingSubscription = null;
     this._dependentsChanged$.complete();
+    this.storeSyncEffect?.destroy();
+  }
+
+  destroy() {
+    if (this._isDestroyed) {
+      return;
+    }
+
+    this._teardown();
+
+    // Re-enters `_teardown` through the query's `destroyRef`, which the `_isDestroyed` guard absorbs.
     this.newQuery.subtle.destroy();
-    this.storeSyncEffect.destroy();
   }
 
   execute(options: ExecuteQueryOptions = {}) {
@@ -266,7 +304,8 @@ export class LegacyQuery<
   }
 
   poll(config: PollConfig) {
-    if (this._pollingSubscription) {
+    // An inert or already destroyed query has nothing to poll, and the interval would outlive it.
+    if (this._pollingSubscription || this._isDestroyed) {
       return this;
     }
 

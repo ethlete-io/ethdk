@@ -478,6 +478,84 @@ describe('createHttpRequest', () => {
     expect(testHttpReq.isStale()).toBeTruthy();
   });
 
+  describe('Client Headers', () => {
+    const createReq = (options: {
+      clientHeaders?: HttpHeaders | (() => HttpHeaders);
+      args?: { headers?: HttpHeaders | (() => HttpHeaders) };
+    }) =>
+      createHttpRequest({
+        fullPath: 'https://example.com/test',
+        method: 'GET',
+        args: options.args,
+        clientHeaders: options.clientHeaders,
+        dependencies: {
+          httpClient: TestBed.inject(HttpClient),
+          ngErrorHandler: TestBed.inject(ErrorHandler),
+          injector: TestBed.inject(Injector),
+        },
+      });
+
+    it('should send static client headers', () => {
+      createReq({ clientHeaders: new HttpHeaders({ 'X-Api-Token': 'abc' }) }).execute();
+
+      const testReq = testingController.expectOne('https://example.com/test');
+      expect(testReq.request.headers.get('X-Api-Token')).toBe('abc');
+      testReq.flush({});
+    });
+
+    it('should merge client and request headers', () => {
+      createReq({
+        clientHeaders: new HttpHeaders({ 'X-Api-Token': 'abc' }),
+        args: { headers: new HttpHeaders({ 'X-Request-Id': '42' }) },
+      }).execute();
+
+      const testReq = testingController.expectOne('https://example.com/test');
+      expect(testReq.request.headers.get('X-Api-Token')).toBe('abc');
+      expect(testReq.request.headers.get('X-Request-Id')).toBe('42');
+      testReq.flush({});
+    });
+
+    it('should let a request header override the client one entirely', () => {
+      createReq({
+        clientHeaders: new HttpHeaders({ 'X-Api-Token': 'client' }),
+        args: { headers: new HttpHeaders({ 'X-Api-Token': 'request' }) },
+      }).execute();
+
+      const testReq = testingController.expectOne('https://example.com/test');
+      expect(testReq.request.headers.getAll('X-Api-Token')).toEqual(['request']);
+      testReq.flush({});
+    });
+
+    it('should re-resolve function client headers on every execution', () => {
+      let token = 'first';
+      const request = createReq({ clientHeaders: () => new HttpHeaders({ 'X-Api-Token': token }) });
+
+      request.execute();
+      const first = testingController.expectOne('https://example.com/test');
+      expect(first.request.headers.get('X-Api-Token')).toBe('first');
+      first.flush({});
+
+      token = 'second';
+
+      request.execute({ force: true });
+      const second = testingController.expectOne('https://example.com/test');
+      expect(second.request.headers.get('X-Api-Token')).toBe('second');
+      second.flush({});
+    });
+
+    it('should restart an in-flight request when forced', () => {
+      const request = createReq({});
+
+      request.execute();
+      testingController.expectOne('https://example.com/test');
+
+      expect(request.execute()).toBe(false);
+      expect(request.execute({ force: true })).toBe(true);
+
+      testingController.expectOne('https://example.com/test').flush({});
+    });
+  });
+
   describe('Dynamic Headers', () => {
     it('should support static HttpHeaders', () => {
       const staticHeaders = new HttpHeaders({ 'X-Custom': 'static-value' });

@@ -32,6 +32,20 @@ export type BodyType<T extends QueryArgs | null> = T extends QueryArgs ? T['body
 
 export type RequestArgs<T extends QueryArgs | null> = T extends QueryArgs ? Omit<T, 'response'> : never;
 
+/**
+ * The empty request-args object, typed to satisfy `RequestArgs<TArgs>` for a query that takes no
+ * arguments — its `QueryArgs` is just `{ response: T }`, so `RequestArgs` resolves to `{}`.
+ *
+ * Only needed in generic code, where `TArgs` is still a type parameter and TS therefore cannot see
+ * that `{}` is the whole of it. Against a concrete query, omit the argument instead: both
+ * `query.execute()` and the auth registry's `execute()` already take none.
+ *
+ * @example
+ * const runAnything = <TArgs extends QueryArgs>(query: Query<TArgs>) =>
+ *   query.execute({ args: emptyQueryArgs<TArgs>() });
+ */
+export const emptyQueryArgs = <TArgs extends QueryArgs>() => ({}) as RequestArgs<TArgs>;
+
 export type CreateQueryOptions<TArgs extends QueryArgs> = {
   creator?: CreateQueryCreatorOptions;
   creatorInternals: InternalCreateQueryCreatorOptions<TArgs>;

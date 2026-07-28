@@ -25,6 +25,14 @@ export type QueryRepositoryEvent =
       key: QueryKey;
       isSecure: boolean;
       request: HttpRequest<QueryArgs>;
+    }
+  | {
+      /**
+       * Every secure entry was torn down at once — a logout. Emitted after the cache is cleared so
+       * secure queries can drop the state they hold themselves; the repository only owns the
+       * requests, not the `response` signal of the query objects bound to them.
+       */
+      type: 'unbind-all-secure';
     };
 
 export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
@@ -129,6 +137,15 @@ export type QueryRepository = {
 
   /** Removes all secure requests and their consumers */
   unbindAllSecure: () => void;
+
+  /**
+   * Re-executes every cacheable entry that still has consumers, bypassing the cache and restarting
+   * in-flight requests. Entries kept only for their `keepUnusedFor` window are skipped — nobody is
+   * looking at them, and they revalidate on their own when a consumer binds again.
+   *
+   * @see QueryClient.refreshQueriesInUse
+   */
+  refreshInUse: () => void;
 
   /** Observable stream of repository events (errors, successes, etc.) */
   events$: Observable<QueryRepositoryEvent>;
@@ -275,6 +292,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       method: options.method,
       dependencies: config.dependencies,
       clientOptions: creatorOptions,
+      clientHeaders: config.headers,
       cacheAdapter: config.cacheAdapter,
       retryFn: options.retryFn ?? config.retryFn,
     });
@@ -357,6 +375,18 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     }
 
     bumpCacheVersion();
+    eventsSubject.next({ type: 'unbind-all-secure' });
+  };
+
+  const refreshInUse = () => {
+    for (const cacheEntry of cache.values()) {
+      if (cacheEntry.consumers.size === 0) continue;
+
+      // Re-firing a mutation would be a side effect nobody asked for, so only reads are refreshed.
+      if (!shouldCacheQuery(cacheEntry.request.method)) continue;
+
+      cacheEntry.request.execute({ force: true });
+    }
   };
 
   const bind = (
@@ -425,6 +455,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     request,
     unbind,
     unbindAllSecure,
+    refreshInUse,
     events$: eventsSubject.asObservable(),
     subtle: {
       cacheEntries,

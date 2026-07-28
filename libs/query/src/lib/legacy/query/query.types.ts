@@ -509,7 +509,7 @@ export type QueryCollectionOf<T extends { [name: string]: AnyV2QueryCreator | An
   [K in keyof T]: { type: K; query: ConstructQuery<T[K]> };
 }[keyof T];
 
-export type AnyQueryCollection = QueryCollectionOf<AnyQueryCreatorCollection>;
+export type AnyQueryCollection = { type: string; query: AnyV2Query | AnyLegacyQuery };
 
 export type QueryOf<T extends AnyQueryCollection | AnyLegacyQuery | AnyV2Query | null> = T extends AnyV2Query
   ? T

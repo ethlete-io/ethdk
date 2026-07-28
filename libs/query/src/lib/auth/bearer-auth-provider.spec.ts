@@ -358,6 +358,43 @@ describe('createBearerAuthProvider', () => {
     });
   });
 
+  describe('setTokens', () => {
+    it('should authenticate from externally issued tokens', () => {
+      const postQuery = createPostQuery(queryClientRef);
+      const login = postQuery<{
+        body: { username: string };
+        response: { token: string; refresh_token: string };
+      }>('/auth/login');
+
+      const [, injectAuthProvider] = createBearerAuthProvider({
+        name: 'test-auth',
+        queryClientRef,
+        queries: [
+          withAuthenticationQuery('login', {
+            queryCreator: login,
+            extractTokens: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
+          }),
+        ],
+      });
+
+      TestBed.runInInjectionContext(() => {
+        const provider = injectAuthProvider();
+
+        // An SSO callback arrives with both tokens — no auth query runs at all.
+        let refreshed = 0;
+        provider.afterTokenRefresh$.subscribe(() => refreshed++);
+
+        provider.setTokens('external-access', 'external-refresh');
+
+        expect(provider.accessToken()).toBe('external-access');
+        expect(provider.refreshToken()).toBe('external-refresh');
+        expect(provider.isAuthenticated()).toBe(true);
+        expect(refreshed).toBe(1);
+        httpTesting.verify();
+      });
+    });
+  });
+
   describe('logout', () => {
     it('should clear all tokens on logout', () => {
       const postQuery = createPostQuery(queryClientRef);

@@ -45,6 +45,9 @@ export const QueryRuntimeErrorCode = {
 
   // Query Sequence
   QUERY_SEQUENCE_ALREADY_RUNNING: 900,
+
+  // Legacy interop
+  LEGACY_PREPARE_WITHOUT_INJECTION_CONTEXT: 950,
 } as const;
 
 export type QueryRuntimeErrorCode = (typeof QueryRuntimeErrorCode)[keyof typeof QueryRuntimeErrorCode];
@@ -201,6 +204,19 @@ export const circularQueryDependency = () => {
   return new RuntimeError(
     QueryRuntimeErrorCode.CIRCULAR_QUERY_DEPENDENCY,
     `Query was executed more than 5 times in less than 100ms. This is usually a sign of a circular dependency.`,
+  );
+};
+
+export const legacyPrepareWithoutInjectionContext = (creatorName: string | undefined) => {
+  const label = creatorName ? `"${creatorName}"` : 'A legacy query creator';
+
+  return new RuntimeError(
+    QueryRuntimeErrorCode.LEGACY_PREPARE_WITHOUT_INJECTION_CONTEXT,
+    `${label}.prepare() was called outside of an injection context. Unlike the v2 client, the legacy interop layer needs an injector to build the underlying query.\n\n` +
+      `Capture one where a context does exist (field initializer, constructor) and pass it along:\n\n` +
+      `  private injector = inject(Injector);\n` +
+      `  search = (term: string) => myQuery.prepare({ queryParams: { term }, injector: this.injector });\n\n` +
+      `Prefer an injector that outlives the call site. A component injector passed from a callback that can still fire after the component is gone leaves prepare() with a destroyed injector, which returns an inert query instead of executing.`,
   );
 };
 

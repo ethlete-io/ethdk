@@ -379,6 +379,19 @@ describe('createQueryRepository — keepUnusedFor (unused entry retention)', () 
     expect(() => vi.advanceTimersByTime(600_000)).not.toThrow();
   });
 
+  it('emits unbind-all-secure so bound queries can drop their own state', () => {
+    const repo = createRepo();
+    const events: QueryRepositoryEvent[] = [];
+
+    repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/test', isSecure: true });
+    flushAll();
+
+    repo.events$.subscribe((event) => events.push(event));
+    repo.unbindAllSecure();
+
+    expect(events).toEqual([{ type: 'unbind-all-secure' }]);
+  });
+
   it('keeps unsecure entries when secure ones are unbound', () => {
     const repo = createRepo({ keepUnusedFor: 600_000 });
 
@@ -392,5 +405,56 @@ describe('createQueryRepository — keepUnusedFor (unused entry retention)', () 
     repo.unbindAllSecure();
 
     expect(repo.subtle.cacheEntries().map((entry) => entry.key)).toEqual([open.key]);
+  });
+
+  describe('refreshInUse', () => {
+    it('re-executes cacheable entries that still have consumers', () => {
+      const repo = createRepo();
+
+      repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/test' });
+      flushAll();
+
+      repo.refreshInUse();
+
+      expect(httpTesting.match(() => true)).toHaveLength(1);
+    });
+
+    it('bypasses a still fresh cached response', () => {
+      const repo = createRepo();
+
+      repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/test' });
+
+      for (const req of httpTesting.match(() => true)) {
+        req.flush({ ok: true }, { headers: { 'cache-control': 'max-age=600' } });
+      }
+      TestBed.tick();
+
+      repo.refreshInUse();
+
+      expect(httpTesting.match(() => true)).toHaveLength(1);
+    });
+
+    it('does not re-fire mutations', () => {
+      const repo = createRepo();
+
+      repo.request({ consumerDestroyRef: destroyRef, method: 'POST', route: '/test' });
+      flushAll();
+
+      repo.refreshInUse();
+
+      httpTesting.verify();
+    });
+
+    it('skips entries that are only being retained', () => {
+      const repo = createRepo({ keepUnusedFor: 600_000 });
+
+      const req = repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/test' });
+      flushAll();
+      repo.unbind(req.key, destroyRef);
+
+      repo.refreshInUse();
+
+      httpTesting.verify();
+    });
   });
 });

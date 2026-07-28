@@ -1,4 +1,4 @@
-import { HttpClient, HttpEvent, HttpEventType, HttpProgressEvent } from '@angular/common/http';
+import { HttpClient, HttpEvent, HttpEventType, HttpHeaders, HttpProgressEvent } from '@angular/common/http';
 import { ErrorHandler, Signal, signal } from '@angular/core';
 import { Observable, Subject, Subscription, catchError, retry, tap, throwError, timer } from 'rxjs';
 import { buildTimestampFromSeconds } from '../legacy/request';
@@ -48,6 +48,14 @@ export type CreateHttpRequestOptions<TArgs extends QueryArgs> = {
   clientOptions?: CreateQueryCreatorOptions;
 
   /**
+   * Headers configured on the query client, applied to every request it makes. Per-request
+   * `args.headers` are merged on top and win per header name.
+   *
+   * @see CreateQueryClientConfigOptions.headers
+   */
+  clientHeaders?: HttpHeaders | (() => HttpHeaders);
+
+  /**
    * The cache adapter function to use for the request
    * @default extractExpiresInSeconds()
    */
@@ -92,8 +100,14 @@ export type HttpRequest<TArgs extends QueryArgs> = {
   /** The full URL of the request (base + path + query params). */
   url: string;
 
-  /** Executes the request */
-  execute: (options?: { allowCache?: boolean }) => boolean;
+  /**
+   * Executes the request.
+   *
+   * `force` runs it even when one is already in flight (the in-flight one is cancelled) or the
+   * cached response is still fresh — used by `refreshQueriesInUse` after something outside the
+   * request changed, such as a client-level header.
+   */
+  execute: (options?: { allowCache?: boolean; force?: boolean }) => boolean;
 
   /** Destroys the request (cancels it if in progress) */
   destroy: () => boolean;
@@ -167,8 +181,22 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     return expiresInTs === null || expiresInTs < Date.now();
   };
 
+  // Resolved per execution rather than once at creation, so a client whose headers are a function
+  // reading a signal (a preview token, a tenant id) sees the current value on every re-run.
+  const resolveHeaders = () => {
+    const clientHeaders = typeof options.clientHeaders === 'function' ? options.clientHeaders() : options.clientHeaders;
+    const argHeaders = typeof args?.headers === 'function' ? args.headers() : args?.headers;
+
+    if (!clientHeaders) return argHeaders;
+    if (!argHeaders) return clientHeaders;
+
+    // `set` replaces every value of that name, so a per-request header fully overrides the
+    // client-level one instead of being appended next to it.
+    return argHeaders.keys().reduce((merged, key) => merged.set(key, argHeaders.getAll(key) ?? []), clientHeaders);
+  };
+
   const createStream = () => {
-    const headers = typeof args?.headers === 'function' ? args.headers() : args?.headers;
+    const headers = resolveHeaders();
 
     return dependencies.httpClient
       .request(options.method, options.fullPath, {
@@ -203,8 +231,8 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
       );
   };
 
-  const execute = (options?: { allowCache?: boolean }) => {
-    if (loading() || (!isStale() && options?.allowCache)) {
+  const execute = (options?: { allowCache?: boolean; force?: boolean }) => {
+    if (!options?.force && (loading() || (!isStale() && options?.allowCache))) {
       // Do not execute if there is already a request in progress or caching is allowed
       return false;
     }
