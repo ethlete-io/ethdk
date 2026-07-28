@@ -171,6 +171,8 @@ export class LegacyQueryCreator<
           onlyManualExecution: true,
           injector,
           silenceMissingWithArgsFeatureError: true,
+          // `LegacyQuery.execute()` forwards v2's `skipCache` as `allowCache` for every method, cacheable or not.
+          silenceUncacheableAllowCacheError: true,
         });
 
         const legacyQuery = new LegacyQuery<

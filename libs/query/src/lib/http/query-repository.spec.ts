@@ -137,9 +137,34 @@ describe('createQueryRepository', () => {
     ).toThrow();
   });
 
+  it('should not throw if allowCache is used on a uncacheable request with silenceUncacheableAllowCacheError', () => {
+    expect(() =>
+      repo.request({
+        consumerDestroyRef: destroyRef,
+        method: 'POST',
+        route: '/test',
+        runQueryOptions: { allowCache: true },
+        silenceUncacheableAllowCacheError: true,
+      }),
+    ).not.toThrow();
+  });
+
   it('should throw if key is used on a uncacheable request', () => {
     expect(() =>
       repo.request({ consumerDestroyRef: destroyRef, method: 'POST', route: '/test', key: 'my_key' }),
+    ).toThrow();
+  });
+
+  it('should still throw if key is used on a uncacheable request with silenceUncacheableAllowCacheError', () => {
+    expect(() =>
+      repo.request({
+        consumerDestroyRef: destroyRef,
+        method: 'POST',
+        route: '/test',
+        key: 'my_key',
+        runQueryOptions: { allowCache: true },
+        silenceUncacheableAllowCacheError: true,
+      }),
     ).toThrow();
   });
 

@@ -287,6 +287,9 @@ export class LegacyQuery<
 
   execute(options: ExecuteQueryOptions = {}) {
     untracked(() =>
+      // v2 had a single `skipCache` for every method, so this cannot tell whether the underlying request is
+      // cacheable. The creator is built with `silenceUncacheableAllowCacheError`, which makes `allowCache` inert
+      // on a mutation instead of throwing ET301.
       this.newQuery.execute({ args: this._arguments, options: { allowCache: options.skipCache !== true } }),
     );
 
