@@ -29,11 +29,12 @@ export class PipCellDirective {
     const elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
     const el = elementRef.nativeElement;
 
-    effect(() => {
+    effect((onCleanup) => {
       const playerId = this.cell().playerId;
+
       this.chrome.state.registerCell(playerId, el);
 
-      return () => this.chrome.state.unregisterCell(playerId);
+      onCleanup(() => this.chrome.state.unregisterCell(playerId));
     });
   }
 

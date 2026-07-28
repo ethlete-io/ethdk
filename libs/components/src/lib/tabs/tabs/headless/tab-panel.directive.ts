@@ -1,4 +1,4 @@
-import { Directive, afterNextRender, computed, effect, inject, input } from '@angular/core';
+import { DestroyRef, Directive, afterNextRender, computed, inject, input } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { TAB_ERROR_CODES } from '../../tab-errors';
 import { TAB_GROUP_TOKEN, TAB_PANEL_TOKEN } from './tab-group.tokens';
@@ -59,11 +59,9 @@ export class TabPanelDirective {
   });
 
   constructor() {
-    effect(() => {
-      this.tabGroup?.registerPanel(this);
+    this.tabGroup?.registerPanel(this);
 
-      return () => this.tabGroup?.unregisterPanel(this);
-    });
+    inject(DestroyRef).onDestroy(() => this.tabGroup?.unregisterPanel(this));
 
     if (ngDevMode) {
       afterNextRender(() => {

@@ -16,11 +16,12 @@ export class NotificationItemDirective {
   constructor() {
     const el = this.elementRef.nativeElement;
 
-    effect(() => {
+    effect((onCleanup) => {
       const id = this.ref().id;
+
       this.stack?.registerItem(id, el);
 
-      return () => this.stack?.unregisterItem(id);
+      onCleanup(() => this.stack?.unregisterItem(id));
     });
   }
 }

@@ -1,4 +1,14 @@
-import { Directive, ElementRef, afterNextRender, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  DestroyRef,
+  Directive,
+  ElementRef,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { RuntimeError, SurfaceInteractiveDirective } from '@ethlete/core';
 import { ScrollableDirective } from '../../scrollable/headless/scrollable.directive';
 import { TAB_ERROR_CODES } from '../tab-errors';
@@ -64,11 +74,9 @@ export class TabBarTriggerDirective {
   });
 
   constructor() {
-    effect(() => {
-      this.tabBar?.registerTrigger(this);
+    this.tabBar?.registerTrigger(this);
 
-      return () => this.tabBar?.unregisterTrigger(this);
-    });
+    inject(DestroyRef).onDestroy(() => this.tabBar?.unregisterTrigger(this));
 
     effect(() => {
       if (!this.scrollable) {

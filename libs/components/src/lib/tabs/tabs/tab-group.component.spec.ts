@@ -1,8 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { vi } from 'vitest';
+import { TabBarDirective } from '../headless/tab-bar.directive';
+import { TabBarTriggerDirective } from '../headless/tab-bar-trigger.directive';
 import { TabGroupDirective } from './headless/tab-group.directive';
+import { TabPanelDirective } from './headless/tab-panel.directive';
 import { TabGroupComponent } from './tab-group.component';
 import { TabComponent } from './tab.component';
 
@@ -301,5 +304,36 @@ describe('TabGroupComponent', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+@Component({
+  imports: [TabGroupDirective, TabBarDirective, TabBarTriggerDirective, TabPanelDirective],
+  template: `
+    <div etTabBar etTabGroup>
+      @for (label of labels(); track label) {
+        <button etTabBarTrigger type="button">{{ label }}</button>
+        <div etTabPanel>{{ label }} content</div>
+      }
+    </div>
+  `,
+})
+class HeadlessTabsHostComponent {
+  labels = signal(['First', 'Second', 'Third']);
+}
+
+describe('TabPanelDirective registration', () => {
+  it('unregisters a panel that is removed from the DOM', () => {
+    const fixture = TestBed.createComponent(HeadlessTabsHostComponent);
+    fixture.detectChanges();
+
+    const group = fixture.debugElement.query(By.directive(TabGroupDirective)).injector.get(TabGroupDirective);
+
+    expect(group.panels().length).toBe(3);
+
+    fixture.componentInstance.labels.set(['First']);
+    fixture.detectChanges();
+
+    expect(group.panels().length).toBe(1);
   });
 });
