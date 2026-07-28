@@ -186,6 +186,7 @@ export default defineConfig({
             { text: 'Chip', link: '/components/chip' },
             { text: 'Icon', link: '/components/icon' },
             { text: 'Loaders', link: '/components/loader' },
+            { text: 'Skeleton', link: '/components/skeleton' },
             { text: 'Time picker', link: '/components/time-picker' },
           ],
         },

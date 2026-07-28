@@ -1,0 +1,119 @@
+@layer components {
+  @property --et-skeleton-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 1em;
+  }
+
+  @property --et-skeleton-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
+  @property --et-skeleton-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  @property --et-skeleton-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 1400ms;
+  }
+
+  .et-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: var(--et-skeleton-gap);
+    /* The pointer says "not yet" too, which is cheaper than disabling everything inside. */
+    cursor: progress;
+  }
+
+  /* The announcement, kept out of sight but not out of the accessibility tree. There is no shared
+     visually-hidden class in this library, so the clip trick lives here. */
+  .et-skeleton-ally-text {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* The bone. A neutral tint mixed over whatever surface it sits on — never a hardcoded grey, so it
+     reads correctly on every registered surface and elevation. */
+  .et-skeleton-item {
+    display: block;
+    position: relative;
+    overflow: hidden;
+    inline-size: 100%;
+    block-size: var(--et-skeleton-size);
+    border-radius: var(--et-skeleton-radius);
+    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 12%, transparent);
+  }
+
+  /* `text` is a line of text's height rather than a fixed px, so a bar sits in running copy without
+     changing the layout around it. */
+  /* A text bone stands in for words, so it flows with them: inline-block on the text baseline rather
+     than a block that pushes the sentence apart. Inside a flex parent (an `et-skeleton-text` line, a
+     table cell) it is blockified anyway, so this costs those cases nothing. */
+  .et-skeleton-item:where([data-shape='text']) {
+    display: inline-block;
+    vertical-align: middle;
+    block-size: 0.85em;
+    /* Fill the line box the replaced text would occupy, so a row of them keeps its rhythm. */
+    margin-block: calc((1.4em - 0.85em) / 2);
+  }
+
+  .et-skeleton-item:where([data-shape='circle']) {
+    inline-size: var(--et-skeleton-size);
+    block-size: var(--et-skeleton-size);
+    flex: none;
+    border-radius: 50%;
+  }
+
+  .et-skeleton-item:where([data-shape='rect']) {
+    border-radius: var(--et-skeleton-radius);
+  }
+
+  .et-skeleton-text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--et-skeleton-gap);
+    inline-size: 100%;
+  }
+
+  /* The shimmer: a highlight sweeping across the bone. Only inside an animated container, so a single
+     item can't animate on its own by accident, and only where motion is welcome — under reduced
+     motion the sweep is omitted rather than paused, leaving a static placeholder. */
+  @media (prefers-reduced-motion: no-preference) {
+    .et-skeleton--animated .et-skeleton-item::after {
+      content: '';
+      position: absolute;
+      inset-block: 0;
+      inset-inline: 0;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        color-mix(in srgb, var(--et-surface-interaction-solid, gray) 16%, transparent),
+        transparent
+      );
+      animation: et-skeleton-sweep var(--et-skeleton-duration) ease-in-out infinite;
+    }
+  }
+
+  @keyframes et-skeleton-sweep {
+    from {
+      transform: translateX(-100%);
+    }
+
+    to {
+      transform: translateX(100%);
+    }
+  }
+}
