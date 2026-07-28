@@ -568,6 +568,11 @@ users = tableRowsFromQuery({
 />
 ```
 
+`hasMore` comes from your `toHasMore`, with one backstop: a page that comes back with no
+rows reports `hasMore: false` regardless, so a load-more control can't survive one page
+past the end when the end can only be inferred. Prefer an exact derivation anyway
+(`res.nextPage !== null`, `res.currentPage < res.totalPageCount`).
+
 It returns `rows`, `loading`, `error`, `total`, `hasMore`, `sort`, `filters` and
 `page` signals plus `setSort`/`setFilters`/`setPage` — the `args` builder reads
 `sort`/`filters`/`page` to build the request. `rows` keeps the previous page visible

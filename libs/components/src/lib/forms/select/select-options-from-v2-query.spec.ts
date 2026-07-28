@@ -91,7 +91,10 @@ describe('selectOptionsFromV2Query', () => {
         query
           ? {
               response: { items: query === 'euro' ? [euro, eurovision] : [euro], hasMore: false },
-              delay: query === 'euro' ? 40 : 0,
+              // generous, because `search()` awaits real macrotasks: a short delay can elapse while the
+              // helper flushes (the suite is not on fake timers), and the request settles before the
+              // "still loading" assertion below.
+              delay: query === 'euro' ? 500 : 0,
             }
           : null,
     });
@@ -104,7 +107,7 @@ describe('selectOptionsFromV2Query', () => {
     expect(source.loading()).toBe(true);
     expect(source.options()).toEqual([euro]);
 
-    await settle(60);
+    await settle(600);
 
     expect(source.loading()).toBe(false);
     expect(source.options()).toEqual([euro, eurovision]);
@@ -230,6 +233,43 @@ describe('selectOptionsFromV2Query', () => {
       await search(source, 'euro');
       expect(source.options()).toEqual(page1);
       expect(source.hasMore()).toBe(true);
+    });
+
+    it('ends pagination when a page repeats the previous one or comes back empty', async () => {
+      // page 2 clamps back to page 1's items, as an API asked for a page past the end tends to
+      const clampedPages: Record<number, Item[]> = { 1: page1, 2: page1 };
+      const source = TestBed.runInInjectionContext(() => {
+        const client = new V2QueryClient({ baseRoute: 'https://api.example.com' });
+        const searchItems = client.get({
+          route: '/items',
+          types: { args: def<ItemsArgs & { queryParams: { page: number } }>(), response: def<ItemsResponse>() },
+        });
+
+        return selectOptionsFromV2Query({
+          queryCreator: searchItems,
+          args: (query, page) =>
+            query()
+              ? {
+                  queryParams: { q: query(), page: page() },
+                  // claims there is always more, which is what makes the fold's own verdict matter
+                  mock: { delay: 0, response: { items: clampedPages[page()] ?? [], hasMore: true } },
+                }
+              : null,
+          toOptions: (response) => response.items,
+          toHasMore: (response) => response.hasMore,
+          debounceTime: 0,
+        });
+      });
+
+      await search(source, 'eu');
+      expect(source.options()).toEqual(page1);
+      expect(source.hasMore()).toBe(true);
+
+      source.loadMore();
+      await flush();
+
+      expect(source.options()).toEqual(page1);
+      expect(source.hasMore()).toBe(false);
     });
 
     it('ignores loadMore once the last page is loaded', async () => {

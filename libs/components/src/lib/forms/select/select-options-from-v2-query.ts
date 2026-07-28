@@ -14,6 +14,7 @@ import {
   queryStateSignal,
 } from '@ethlete/query';
 import { debounceTime as rxDebounceTime } from 'rxjs';
+import { PageState, endsPagination } from './select-options-paging';
 import { SelectOptionsFromQuery } from './select-options-from-query';
 
 // The legacy twin of `select-options-from-query.ts` for apps still on the class-based
@@ -171,32 +172,42 @@ export const selectOptionsFromV2Query = <TCreator extends AnyV2QueryCreator | An
   // Slicing to `index` drops later pages, so a query change (page back to `initialPage`) resets to
   // one page; a non-success settled state keeps the accumulated slices as-is. It's a `linkedSignal`
   // (not a plain accumulator) so `options` recomputes synchronously on read.
-  const pageSlices = linkedSignal<ReturnType<typeof settledState>, TOption[][]>({
+  //
+  // `ended` is the fold's own verdict on whether the list is exhausted, and it overrules `toHasMore`:
+  // see `endsPagination`.
+  const pageState = linkedSignal<ReturnType<typeof settledState>, PageState<TOption>>({
     source: settledState,
     computation: (settled, previous) => {
       const index = untracked(page) - initialPage;
-      const slices = (previous?.value ?? []).slice(0, index);
+      const slices = (previous?.value?.slices ?? []).slice(0, index);
 
-      if (isQueryStateSuccess(settled)) {
-        slices[index] = config.toOptions(settled.response as QueryDataOf<TCreator>);
+      if (!isQueryStateSuccess(settled)) {
+        return { slices, ended: index === 0 ? false : (previous?.value?.ended ?? false) };
       }
 
-      return slices;
+      const nextSlice = config.toOptions(settled.response as QueryDataOf<TCreator>);
+      const ended = endsPagination(nextSlice, slices[index - 1]);
+
+      if (!ended) {
+        slices[index] = nextSlice;
+      }
+
+      return { slices, ended };
     },
   });
 
   // A `linkedSignal` only folds while something observes it — so a page that settles while nothing
   // renders `options` (e.g. the panel is closed) would be skipped, and a later page would fold over
   // a stale `previous`. This keepalive makes the fold eager: it captures every settled page.
-  effect(() => void pageSlices());
+  effect(() => void pageState());
 
-  const options = computed(() => (skipped() ? [] : pageSlices().flat()));
+  const options = computed(() => (skipped() ? [] : pageState().slices.flat()));
 
   const hasMore = computed(() => {
     const toHasMore = config.toHasMore;
     const settled = settledState();
 
-    if (!toHasMore || skipped() || !isQueryStateSuccess(settled)) {
+    if (!toHasMore || skipped() || pageState().ended || !isQueryStateSuccess(settled)) {
       return false;
     }
 

@@ -147,6 +147,41 @@ describe('selectOptionsFromQuery', () => {
       expect(source.hasMore()).toBe(true);
     });
 
+    // The end-of-list signal a consumer can derive is often inexact ("a full page means there is more"),
+    // and an API asked for a page past the end usually clamps to the last one. Both must dead-end here
+    // rather than duplicating the tail and leaving a load-more control behind.
+    it('ends pagination when a page repeats the previous one (a clamped out-of-range page)', async () => {
+      const source = createSource();
+
+      await search(source, 'eu', { items: page1, hasMore: true });
+      expect(source.hasMore()).toBe(true);
+
+      // the API clamps page 2 to the last page and re-serves it
+      await loadMore(source, { items: page1, hasMore: true });
+
+      expect(source.options()).toEqual(page1);
+      expect(source.hasMore()).toBe(false);
+
+      source.loadMore();
+      TestBed.tick();
+      httpMock.expectNone((r) => r.url.includes('/items'));
+    });
+
+    it('ends pagination when a page comes back empty', async () => {
+      const source = createSource();
+
+      await search(source, 'eu', { items: page1, hasMore: true });
+
+      await loadMore(source, { items: [], hasMore: true });
+
+      expect(source.options()).toEqual(page1);
+      expect(source.hasMore()).toBe(false);
+
+      source.loadMore();
+      TestBed.tick();
+      httpMock.expectNone((r) => r.url.includes('/items'));
+    });
+
     it('ignores loadMore once the last page is loaded', async () => {
       const source = createSource();
 

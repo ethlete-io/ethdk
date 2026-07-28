@@ -69,6 +69,15 @@ describe('tableRowsFromQuery', () => {
     expect(source.error()).toBeNull();
   });
 
+  it('reports no more pages once a page comes back empty, whatever the response claims', () => {
+    const source = createSource();
+
+    respond({ items: [], totalHits: 0, hasMore: true });
+
+    expect(source.rows()).toEqual([]);
+    expect(source.hasMore()).toBe(false);
+  });
+
   it('re-executes with the new sort and resets the page when setSort is called', () => {
     const source = createSource();
     respond({ items: page1, totalHits: 42, hasMore: true });

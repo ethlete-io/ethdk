@@ -118,7 +118,18 @@ export const createTableRowsSource = <TResponse, TRow>(
     hasMore: computed(() => {
       const response = driver.response();
 
-      return response === null || !toHasMore ? false : toHasMore(response);
+      if (response === null || !toHasMore) {
+        return false;
+      }
+
+      // A page that came back with no rows has nothing after it, whatever `toHasMore` derives from the
+      // response — this is what stops a load-more control from surviving one page past the end when the
+      // end can only be inferred (e.g. "a full page means there is more").
+      if (toRows(response).length === 0) {
+        return false;
+      }
+
+      return toHasMore(response);
     }),
     sort: sort.asReadonly(),
     filters: filters.asReadonly(),

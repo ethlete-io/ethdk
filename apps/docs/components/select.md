@@ -186,6 +186,10 @@ Bind the returned bundle with the `[etSelectOptions]` directive and it wires eve
 
 The factory debounces the query (`debounceTime`, default 300ms), skips requests below `minQueryLength`, and maps failures to the error row's text (`toErrorMessage`). **Pagination is built in:** `args` receives a `page` signal (starting at `initialPage`, default `1`) that resets on every query change and advances when you call `loadMore()`. Return only the current page's slice from `toOptions` — the factory appends each page to the accumulated `options`. Derive `hasMore` via `toHasMore` and wire `loadMore` to `(loadMore)`; it's a no-op while loading, when skipped, or once `hasMore` is false. To preload options so the panel isn't empty on first open, let `args` return request args for the empty query (return `null` instead to require a query first).
 
+::: tip Derive `hasMore` exactly
+Take it from a field that states the end (`res.nextPage !== null`, `res.currentPage < res.totalPageCount`), not from a heuristic like "a full page means there is more" — with the latter, a last page that happens to be full leaves the load-more control up for one page too many. The factory has a backstop for when that happens anyway: a page that comes back **empty**, or that repeats the previous page (which is what an API asked for a page past the end usually serves), is dropped instead of appended and ends the pagination — so the trail of options never duplicates and the control disappears.
+:::
+
 Apps still on the [legacy `V2QueryClient`](/query/legacy) use `selectOptionsFromV2Query` instead — same config shape and returned signal bundle, but `queryCreator` takes a legacy creator (from `client.get(...)` or a `createLegacyQueryCreator` interop wrapper) and `args` builds the `prepare()` arguments. Options stay rendered while the next request loads, matching the current-system adapter.
 
 ### Custom values

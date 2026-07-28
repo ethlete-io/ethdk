@@ -2,6 +2,7 @@ import { Signal, computed, effect, linkedSignal, signal, untracked } from '@angu
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { AnyQueryCreator, QueryArgsOf, QueryErrorResponse, RequestArgs, ResponseType, withArgs } from '@ethlete/query';
 import { debounceTime as rxDebounceTime } from 'rxjs';
+import { PageState, endsPagination } from './select-options-paging';
 
 // Note: `@ethlete/components` intentionally depends on `@ethlete/query` (the legacy `cdk` does too),
 // so this query-aware convenience factory can live here. It is a standalone function in its own
@@ -153,31 +154,42 @@ export const selectOptionsFromQuery = <TCreator extends AnyQueryCreator, TOption
   // (`page` read untracked: only a new response, never an in-flight page bump, appends). Slicing to
   // `index` drops later pages, so a query change (page back to `initialPage`) resets to one page.
   // It's a `linkedSignal` (not a plain accumulator) so `options` recomputes synchronously on read.
-  const pageSlices = linkedSignal<ResponseType<TArgs> | null, TOption[][]>({
+  //
+  // `ended` is the fold's own verdict on whether the list is exhausted, and it overrules `toHasMore`:
+  // see `endsPagination`.
+  const pageState = linkedSignal<ResponseType<TArgs> | null, PageState<TOption>>({
     source: () => query.response(),
     computation: (response, previous) => {
       const index = untracked(page) - initialPage;
-      const slices = (previous?.value ?? []).slice(0, index);
+      const slices = (previous?.value?.slices ?? []).slice(0, index);
 
-      if (response !== null) {
-        slices[index] = config.toOptions(response);
+      if (response === null) {
+        // A page is in flight: keep what is accumulated, and keep `ended` unless this is a fresh run.
+        return { slices, ended: index === 0 ? false : (previous?.value?.ended ?? false) };
       }
 
-      return slices;
+      const nextSlice = config.toOptions(response);
+      const ended = endsPagination(nextSlice, slices[index - 1]);
+
+      if (!ended) {
+        slices[index] = nextSlice;
+      }
+
+      return { slices, ended };
     },
   });
 
   // A `linkedSignal` only folds while something observes it — so a page that settles while nothing
   // renders `options` (e.g. the panel is closed) would be skipped, and a later page would fold over
   // a stale `previous`. This keepalive makes the fold eager: it captures every settled page.
-  effect(() => void pageSlices());
+  effect(() => void pageState());
 
-  const options = computed(() => (skipped() ? [] : pageSlices().flat()));
+  const options = computed(() => (skipped() ? [] : pageState().slices.flat()));
 
   const hasMore = computed(() => {
     const toHasMore = config.toHasMore;
 
-    if (!toHasMore || skipped()) {
+    if (!toHasMore || skipped() || pageState().ended) {
       return false;
     }
 
