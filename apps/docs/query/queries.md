@@ -53,9 +53,32 @@ A real query against a mocked backend — execute it, make it fail, and watch th
 | `name`          | — (required)              | Unique name, used in the injection token (`QueryClient_<name>`).                                                                |
 | `baseUrl`       | — (required)              | Base URL prepended to every route, e.g. `https://api.example.com/v1`.                                                           |
 | `queryString`   | —                         | Config for how query params are serialized.                                                                                     |
+| `headers`       | —                         | `HttpHeaders` (or a function returning them) sent with every request — see [Client-wide headers](#client-wide-headers).         |
 | `cacheAdapter`  | `extractExpiresInSeconds` | Maps response headers to a freshness TTL — see [Caching](/query/caching).                                                       |
 | `retryFn`       | `shouldRetryRequest`      | Decides whether a failed request is retried — see [Errors & retries](/query/errors).                                            |
 | `keepUnusedFor` | `300000` (5 min)          | How long an entry survives after its last consumer was destroyed — see [Caching](/query/caching#keeping-unused-entries-around). |
+
+### Client-wide headers
+
+An API token, a tenant id, a preview credential — anything every request of a client carries belongs in `headers` rather than on each creator. Per-query `args.headers` are merged on top and win per header name.
+
+Pass a function to make them dynamic: it runs on every execution, so reading a signal inside is enough for later requests to pick the new value up.
+
+```ts
+const previewToken = signal<string | null>(null);
+
+export const [provideApi, injectApi] = createQueryClient({
+  name: 'api',
+  baseUrl: 'https://api.example.com',
+  headers: () => {
+    const token = previewToken();
+
+    return token ? new HttpHeaders({ 'X-Preview-Token': token }) : new HttpHeaders();
+  },
+});
+```
+
+Client headers are deliberately **not** part of the [cache key](/query/caching) — they are identical for every query of the client, so including them would only ever churn the whole cache at once. The flip side is that already-resolved queries keep their response when the headers change; call [`refreshQueriesInUse()`](/query/caching#refreshing-everything-in-use) to re-run them.
 
 ## Query creators
 

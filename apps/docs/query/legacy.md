@@ -56,20 +56,29 @@ post = queryStateResponseSignal(this.postQuery);
 
 ## Migrating to the current system
 
-| Legacy                                     | Current                                                                                                |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| `new V2QueryClient({ baseRoute })`         | [`createQueryClient({ name, baseUrl })`](/query/queries#the-query-client)                              |
-| `client.get({ route, types })`             | [`createGetQuery(client)<TArgs>(route)`](/query/http)                                                  |
-| `.prepare(args).execute()`                 | [`withArgs(() => args)`](/query/features#withargs) + [auto-execution](/query/queries#auto-execution)   |
-| `query.state$` + `filterSuccess()`         | [`query.response()`](/query/queries#the-query-object) (signals; `.asObservable()` when RxJS is needed) |
-| `createSignal()` / `toQuerySignal()`       | The query object itself — it's already signals.                                                        |
-| `query.poll({ interval })`                 | [`withPolling({ interval })`](/query/features#withpolling)                                             |
-| `autoRefreshOn.windowFocus`                | No equivalent — use [`withAutoRefresh`](/query/features#withautorefresh) with your own focus signal.   |
-| `InfinityQuery` / `[etInfinityQuery]`      | [`createPagedQueryStack`](/query/stacks#paged-queries)                                                 |
-| `V2BearerAuthProvider` + `setAuthProvider` | [`createBearerAuthProvider`](/query/auth) + secure creator templates                                   |
-| `secure: true`                             | [`createSecureGetQuery(client, authProviderRef)`](/query/http#secure-queries)                          |
-| `client.gqlQuery/gqlMutate`                | [`createGqlQueryVia…` / `createGqlMutationVia…`](/query/gql)                                           |
-| `EntityStore`                              | No direct equivalent — [caching](/query/caching) dedupes by request; derive shared state with signals. |
+::: tip Doing an actual migration?
+This table is the API-to-API map. The [migration guide](/query/migrating-from-v2) covers the parts that take the time: the `provideHttpClient` requirement, configuring the auth provider, default headers, what replaces the query UI directives, and the runtime behavior that changed.
+:::
+
+| Legacy                                             | Current                                                                                                                                         |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `new V2QueryClient({ baseRoute })`                 | [`createQueryClient({ name, baseUrl })`](/query/queries#the-query-client)                                                                       |
+| `client.get({ route, types })`                     | [`createGetQuery(client)<TArgs>(route)`](/query/http)                                                                                           |
+| `.prepare(args).execute()`                         | [`withArgs(() => args)`](/query/features#withargs) + [auto-execution](/query/queries#auto-execution)                                            |
+| `query.state$` + `filterSuccess()`                 | [`query.response()`](/query/queries#the-query-object) (signals; `.asObservable()` when RxJS is needed)                                          |
+| `createSignal()` / `toQuerySignal()`               | The query object itself — it's already signals.                                                                                                 |
+| `query.poll({ interval })`                         | [`withPolling({ interval })`](/query/features#withpolling)                                                                                      |
+| `autoRefreshOn.windowFocus`                        | No equivalent — use [`withAutoRefresh`](/query/features#withautorefresh) with your own focus signal, or `injectClient().refreshQueriesInUse()`. |
+| `setDefaultHeaders({ headers })`                   | [`headers` on `createQueryClient`](/query/queries#the-query-client) (a function form re-reads per request)                                      |
+| `setDefaultHeaders({ refreshQueriesInUse: true })` | [`client.refreshQueriesInUse()`](/query/caching#refreshing-everything-in-use)                                                                   |
+| `*etQuery` / `<et-query-error>` / query button     | No replacement by design — [read the query's signals in the template](/query/migrating-from-v2#templates-read-signals-not-directives).          |
+| A query collection tracking several queries        | [`provider.executionState()`](/query/auth#execution-state) for auth; a `computed` over the queries' own `executionState()` otherwise.           |
+| `InfinityQuery` / `[etInfinityQuery]`              | [`createPagedQueryStack`](/query/stacks#paged-queries)                                                                                          |
+| `V2BearerAuthProvider` + `setAuthProvider`         | [`createBearerAuthProvider`](/query/auth) + secure creator templates                                                                            |
+| `secure: true`                                     | [`createSecureGetQuery(client, authProviderRef)`](/query/http#secure-queries)                                                                   |
+| `client.gqlQuery/gqlMutate`                        | [`createGqlQueryVia…` / `createGqlMutationVia…`](/query/gql)                                                                                    |
+| `EntityStore`                                      | No direct equivalent — [caching](/query/caching) dedupes by request; derive shared state with signals.                                          |
+| `provideQueryClientForDevtools`                    | [`provideQueryDevtools()`](/components/query-devtools) + `<et-query-devtools />` (registers every client at once)                               |
 
 The `createLegacyQueryCreator` interop lets both worlds coexist: define new endpoints with the current system and consume them from legacy-style components until those are migrated.
 
@@ -85,4 +94,6 @@ yarn nx g @ethlete/query:migrate-to-query-v3
 1. **`prep-for-query-v3`** prepares the workspace: it renames every legacy symbol that collides with the current system to its `V2`/`v2` name (`QueryClient` → `V2QueryClient`, `BearerAuthProvider` → `V2BearerAuthProvider`, `buildQueryCacheKey` → `v2BuildQueryCacheKey`, …) in all files importing `@ethlete/query`. Run it (and commit) before upgrading the package.
 2. **`migrate-to-query-v3`** performs the migration itself: it converts `V2QueryClient` instances to `createQueryClient`, generates current-system creators for your legacy ones, rewrites `.prepare()` call sites, wires the [`createLegacyQueryCreator`](#migrating-to-the-current-system) interop where a full conversion isn't possible, removes legacy devtools usage — and writes a migration report listing everything it changed and what still needs manual attention.
 
-Both accept `--skipFormat` to skip re-formatting the touched files. The generators are codemods over your source: review the resulting diff (and the report) rather than trusting it blindly.
+Both accept `--skipFormat` to skip re-formatting the touched files. `migrate-to-query-v3` also accepts `--projects` (Nx project names) and `--include` (path prefixes) to migrate one app or library at a time — keep a query client and the creators built on it in the same run, though, since they are rewritten together.
+
+The generators are codemods over your source: review the resulting diff (and the report) rather than trusting it blindly.

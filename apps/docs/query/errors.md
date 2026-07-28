@@ -6,6 +6,18 @@ Failed requests resolve to a **`QueryErrorResponse`** on [`query.error()`](/quer
 
 The normalizer understands class-validator errors, Symfony violation lists/list errors, `{ message }`, `{ detail }`, plain strings and string arrays — so templates can render error messages without caring about the backend flavor.
 
+### Rendering error messages
+
+The single/list split exists because that is how APIs answer; UI almost never wants to branch on it. `queryErrorMessages(error)` flattens both into a plain `string[]` (empty for `null`), and `queryErrorMessage(error)` takes the first one:
+
+```html
+@for (message of queryErrorMessages(createUserQuery.error()); track message) {
+<p class="error">{{ message }}</p>
+}
+```
+
+Keep the `QueryErrorResponse` itself for anything that needs the status code (`code`), the retry state, or the raw `HttpErrorResponse`.
+
 ## Mapping violations onto signal forms
 
 When a mutation fails with a violation list (Symfony-style `{ violations: [{ propertyPath, message }] }`), `mapViolationsToFormErrors` turns it into signal-forms validation errors, resolved against your form's field tree — return its result from a [`submit()`](https://angular.dev/guide/forms) action and each violation lands on the field its `propertyPath` names:
@@ -90,12 +102,13 @@ Override it per client (the `retryFn` [client option](/query/queries#the-query-c
 
 Misuse throws dev-mode `RuntimeError`s with numeric codes, grouped by area:
 
-| Range     | Area                                                                                                                                 |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| 0–199     | Query core — e.g. a feature used twice, `withPolling` on a `POST`, a function route without `withArgs`, circular query dependencies. |
-| 200–299   | [Auth](/query/auth#error-codes) — missing token properties, an auth feature used twice.                                              |
-| 400–499   | [Paged query stacks](/query/stacks#paged-queries) — e.g. fetching past the last page.                                                |
-| 500–599   | [Query stacks](/query/stacks#query-stacks) — e.g. `withArgs` passed as a stack feature.                                              |
-| 1000–1999 | [WebSockets](/query/ws#error-codes) — leaving a room that was never joined, malformed messages.                                      |
+| Range     | Area                                                                                                                                          |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0–199     | Query core — e.g. a feature used twice, `withPolling` on a `POST`, a function route without `withArgs`, circular query dependencies.          |
+| 200–299   | [Auth](/query/auth#error-codes) — missing token properties, an auth feature used twice.                                                       |
+| 400–499   | [Paged query stacks](/query/stacks#paged-queries) — e.g. fetching past the last page.                                                         |
+| 500–599   | [Query stacks](/query/stacks#query-stacks) — e.g. `withArgs` passed as a stack feature.                                                       |
+| 900–999   | Query sequences and [legacy interop](/query/migrating-from-v2#prepare-needs-an-injector) — e.g. `prepare()` called with no injection context. |
+| 1000–1999 | [WebSockets](/query/ws#error-codes) — leaving a room that was never joined, malformed messages.                                               |
 
 The error message names the problem and the fix; the codes exist so you can grep for them.

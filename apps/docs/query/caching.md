@@ -51,6 +51,19 @@ The client's `cacheAdapter` derives a TTL from response headers. The default (`e
 
 While an entry is fresh, `execute({ options: { allowCache: true } })` and auto-executions reuse the cached response without hitting the server; a stale entry re-fetches. There is no interval-based revalidation — combine with [`withPolling`](/query/features#withpolling) when you need periodic refreshes.
 
+## Refreshing everything in use
+
+When something _outside_ the request changes but the cache key doesn't — typically a [client-wide header](/query/queries#client-wide-headers) like a preview token or a tenant id — nothing invalidates on its own, and already-resolved queries keep data fetched under the old value. `refreshQueriesInUse()` re-runs them:
+
+```ts
+previewToken.set(token);
+injectApi().refreshQueriesInUse();
+```
+
+It bypasses the freshness window and restarts requests that are still in flight, so the new value applies everywhere. Only `GET` / `HEAD` / `OPTIONS` entries that still have consumers are refreshed: re-firing a mutation nobody asked for would be a far worse surprise than a stale read, and entries sitting out their `keepUnusedFor` window revalidate on their own when a consumer binds again.
+
+This is what v2's `setDefaultHeaders({ refreshQueriesInUse: true })` did implicitly.
+
 ## See it live
 
 In the demo, the mocked backend sends `cache-control: max-age=20` (a 10s freshness window after halving). `requestNumber` only increments when the server is actually hit — `execute (allowCache)` within the window serves the cache:

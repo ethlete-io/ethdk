@@ -59,8 +59,43 @@ export class LoginFormComponent {
 | `executionState()`                 | Progress of the current auth operation (`autoLogin`, `tokenRefresh`, `logout`, …) as loading/success/error.                                                                                           |
 | `queries`                          | Registry of the configured auth queries: `queries.<key>.execute(args, options?)` runs one and returns a [snapshot](/query/queries#the-query-object); `queries.<key>.snapshot()` holds the latest one. |
 | `features`                         | Registry of the configured [features](#features).                                                                                                                                                     |
-| `logout()`                         | Clears tokens and unbinds all secure queries from the cache.                                                                                                                                          |
+| `setTokens(access, refresh)`       | Seeds tokens issued outside the provider — see [External tokens](#external-tokens).                                                                                                                   |
+| `logout()`                         | Clears tokens, unbinds all secure queries from the cache, and resets the ones still bound.                                                                                                            |
 | `afterTokenRefresh$`               | Emits after every successful token refresh.                                                                                                                                                           |
+
+`queries` keeps its literal keys, so `provider.queries.login` works. The escape-hatch `AnyBearerAuthProvider` type erases them; where the provider is reachable as a value, derive the real type with `BearerAuthProviderOf<typeof authProviderRef>` instead.
+
+## Waiting for a token
+
+A secure query executed before login does **not** fail — it parks until `accessToken()` is set and then runs. There is no need to gate secure queries on `isAuthenticated()`, or to hold their args at `CLEAR_QUERY_ARGS` until a session exists.
+
+`logout()` is the mirror image: it drops the tokens, tears down every secure cache entry, **and** resets the secure queries still bound to them. A component that stays mounted across a logout stops showing the previous user's data on its own.
+
+## Execution state
+
+`executionState()` is the single place to watch what the provider is doing. Its `type` is either one of your query keys or one of the four internal operations, and `state` moves `loading → success | error`:
+
+| `type`           | Raised by                                                          |
+| ---------------- | ------------------------------------------------------------------ |
+| your query key   | An explicit `provider.queries.<key>.execute(...)`, e.g. `'login'`. |
+| `'autoLogin'`    | A session restore attempted by [`withPersistentAuth`](#features).  |
+| `'tokenRefresh'` | Either refresh trigger — proactive timer or reactive `401`.        |
+| `'logout'`       | `logout()`. Always `state: 'success'`.                             |
+| `'revocation'`   | [`withTokenRevocation`](#features).                                |
+
+This is what replaces watching a v2 query collection. A failed session restore, for instance, is `{ type: 'autoLogin', state: 'error', error }` — the signal to send the user to the login screen rather than to show a broken app.
+
+## External tokens
+
+`setTokens(access, refresh)` applies a token pair the provider did not fetch itself — an SSO/OIDC callback that arrives with both tokens in the URL, a token handed over by a native shell, a test harness:
+
+```ts
+const { accessToken, refreshToken } = parseCallbackFragment(location.hash);
+
+auth.setTokens(accessToken, refreshToken);
+```
+
+It behaves exactly like a successful auth query: `bearerData` / `isAuthenticated` update, `afterTokenRefresh$` emits so waiting secure queries run, other tabs are synced, and `withPersistentAuth` picks the tokens up through the same signals it watches for query-issued ones.
 
 ## Token refresh
 
@@ -79,13 +114,13 @@ On by default (`multiTabSync`): tokens and logout are synchronized across tabs v
 
 Optional behaviors passed to the provider's `features` array (each usable once — a duplicate throws):
 
-| Feature                      | Purpose                                                                                                                   |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `withPersistentAuth`         | Cookie-backed "remember me" auto-login (encrypted token storage; cookie `etAuth`, 30 days, `sameSite: 'lax'` by default). |
-| `withTokenExpirationWarning` | `isExpiringSoon` / `expiresIn` signals (default threshold 5 minutes).                                                     |
-| `withInactivityLogout`       | Auto-logout after inactivity (default 15 minutes; listens to mouse/keyboard/scroll/touch).                                |
-| `withTokenRevocation`        | Calls a revocation query — by default automatically on logout.                                                            |
-| `withTracking`               | Typed event bus for auth telemetry (query execute/success/failure, token refresh, logout, leader changes).                |
+| Feature                      | Purpose                                                                                                                                                                                                                                                               |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `withPersistentAuth`         | Cookie-backed "remember me" auto-login (encrypted token storage; cookie `etAuth`, 30 days, `sameSite: 'lax'` by default). It calls `tryLogin()` itself during setup — no app initializer needed; the attempt surfaces as `executionState()` with `type: 'autoLogin'`. |
+| `withTokenExpirationWarning` | `isExpiringSoon` / `expiresIn` signals (default threshold 5 minutes).                                                                                                                                                                                                 |
+| `withInactivityLogout`       | Auto-logout after inactivity (default 15 minutes; listens to mouse/keyboard/scroll/touch).                                                                                                                                                                            |
+| `withTokenRevocation`        | Calls a revocation query — by default automatically on logout.                                                                                                                                                                                                        |
+| `withTracking`               | Typed event bus for auth telemetry (query execute/success/failure, token refresh, logout, leader changes).                                                                                                                                                            |
 
 ## Error codes
 

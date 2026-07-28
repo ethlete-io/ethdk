@@ -120,7 +120,10 @@ export default defineConfig({
         },
         {
           text: 'Legacy',
-          items: [{ text: 'Legacy client (V2)', link: '/query/legacy' }],
+          items: [
+            { text: 'Legacy client (V2)', link: '/query/legacy' },
+            { text: 'Migrating from V2', link: '/query/migrating-from-v2' },
+          ],
         },
       ],
       '/core/': [
