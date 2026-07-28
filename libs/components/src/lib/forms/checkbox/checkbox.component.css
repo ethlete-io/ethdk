@@ -60,11 +60,15 @@
       border-radius: var(--et-checkbox-border-radius);
     }
 
-    /* hover-capable pointers only — on touch, :hover sticks after a tap */
+    /* hover-capable pointers only — on touch, :hover sticks after a tap.
+       Checked/mixed are excluded: their border is the theme color, and this rule outweighs the
+       `&[aria-checked='true']` block below on specificity, so without the exclusion a checked box
+       would flip to the neutral hover border. */
     @media (hover: hover) {
-      &:hover:not([aria-disabled='true']):not([data-readonly]) .et-checkbox-box,
+      &:hover:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']):not([aria-checked='mixed'])
+        .et-checkbox-box,
       :where(et-choice-field:has(.et-choice-field-label-area:hover))
-        &:not([aria-disabled='true']):not([data-readonly])
+        &:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']):not([aria-checked='mixed'])
         .et-checkbox-box {
         border-color: var(--et-surface-interaction-hover-solid, currentColor);
       }
@@ -172,14 +176,6 @@
       .et-checkbox-checkmark-path {
         stroke-dashoffset: 0;
       }
-
-      @media (hover: hover) {
-        &:hover .et-checkbox-box,
-        :where(et-choice-field:has(.et-choice-field-label-area:hover)) & .et-checkbox-box {
-          background-color: var(--et-theme-color-primary-solid, currentColor);
-          border-color: var(--et-theme-color-primary-solid, currentColor);
-        }
-      }
     }
 
     &[aria-checked='mixed'] {
@@ -194,14 +190,6 @@
 
       .et-checkbox-indeterminate-path {
         stroke-dashoffset: 0;
-      }
-
-      @media (hover: hover) {
-        &:hover .et-checkbox-box,
-        :where(et-choice-field:has(.et-choice-field-label-area:hover)) & .et-checkbox-box {
-          background-color: var(--et-theme-color-primary-solid, currentColor);
-          border-color: var(--et-theme-color-primary-solid, currentColor);
-        }
       }
     }
 
