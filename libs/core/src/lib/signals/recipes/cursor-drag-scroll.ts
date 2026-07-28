@@ -1,6 +1,6 @@
 import { DOCUMENT, DestroyRef, Signal, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { filter, fromEvent, map, of, switchMap, take, takeUntil, tap } from 'rxjs';
+import { filter, fromEvent, map, merge, of, switchMap, take, takeUntil, tap } from 'rxjs';
 import { injectRenderer } from '../../providers';
 import { SignalElementBindingType, buildElementSignal, firstElementSignal } from '../element';
 import { signalElementScrollState } from '../element-scroll-state';
@@ -18,6 +18,9 @@ export type CursorDragScrollOptions = {
 
 /** The deadzone in pixels after which the cursor drag scroll will take effect. */
 const CURSOR_DRAG_SCROLL_DEADZONE = 5;
+
+/** `MouseEvent.button` for the primary button. A secondary click opens a menu; it does not drag. */
+const PRIMARY_MOUSE_BUTTON = 0;
 
 /** The class that is added to the element when the cursor is being dragged. */
 const CURSOR_DRAG_SCROLLING_CLASS = 'et-cursor-drag-scroll--scrolling';
@@ -169,7 +172,10 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
   };
 
   const setupDragging = (e: MouseEvent) => {
-    const mouseUp = fromEvent<MouseEvent>(document, 'mouseup');
+    // A context menu takes the pointer away without ever delivering a `mouseup` — so without it in here, a
+    // right click (or a ctrl-click on a Mac, which is the primary button) leaves the drag latched on and
+    // every later mouse move scrolls the container.
+    const dragEnd = merge(fromEvent<MouseEvent>(document, 'mouseup'), fromEvent<MouseEvent>(document, 'contextmenu'));
     const mouseMove = fromEvent<MouseEvent>(document, 'mousemove');
     const el = element().currentElement;
 
@@ -178,12 +184,12 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
     mouseMove
       .pipe(
         takeUntilDestroyed(destroyRef),
-        takeUntil(mouseUp),
+        takeUntil(dragEnd),
         tap((e) => updateDragging(e)),
       )
       .subscribe();
 
-    mouseUp
+    dragEnd
       .pipe(
         take(1),
         takeUntilDestroyed(destroyRef),
@@ -201,6 +207,7 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
       map((e) => e?.currentElement),
       switchMap((el) => (el ? fromEvent<MouseEvent>(el, 'mousedown') : of(null))),
       filter((e): e is MouseEvent => !!e),
+      filter((e) => e.button === PRIMARY_MOUSE_BUTTON),
       filter(() => enabled()),
       tap((e) => setupDragging(e)),
       takeUntilDestroyed(),
