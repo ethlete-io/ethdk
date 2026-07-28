@@ -18,6 +18,27 @@
     initial-value: 24px;
   }
 
+  /* The autoplay countdown ring. Deliberately smaller than the tap target and thicker than a hairline —
+     drawn at the target size it read as a stray outline rather than as a countdown. */
+  @property --et-carousel-dot-ring-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 18px;
+  }
+
+  @property --et-carousel-dot-ring-width {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 2.5px;
+  }
+
+  /* How far the track's edges fade out where slides are cut off by them. Set it to `0px` for a hard cut. */
+  @property --et-carousel-edge-fade {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 32px;
+  }
+
   .et-carousel {
     display: flex;
     flex-direction: column;
@@ -27,6 +48,41 @@
   .et-carousel-track {
     /* The slides carry the visuals; the track is just the viewport they scroll through. */
     display: block;
+  }
+
+  /* A centred peeking layout always has a slide cut off at each edge — that is what makes it a peek — and a
+     hard cut straight through a card's border, or through a word, reads as broken rather than as "there is
+     more this way". So the track fades its own edges instead.
+
+     An alpha mask rather than the scrollable's edge masks, which are a gradient in a background colour and
+     so only disappear over the one background they were told about. And only where slides can actually be
+     cut: at one slide per view the slide meets the track edges exactly, and a fade there would just dim the
+     current slide for no reason. */
+  .et-carousel:where([data-slide-align='center']) .et-carousel-track:not([item-size='full']) {
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      black var(--et-carousel-edge-fade),
+      black calc(100% - var(--et-carousel-edge-fade)),
+      transparent 100%
+    );
+
+    &:where([direction='vertical']) {
+      mask-image: linear-gradient(
+        to bottom,
+        transparent 0,
+        black var(--et-carousel-edge-fade),
+        black calc(100% - var(--et-carousel-edge-fade)),
+        transparent 100%
+      );
+    }
+  }
+
+  /* Transparent by default: it exists so a transition has something to move inside the slide, and so a
+     slide's own `height: 100%` still reaches the wrapper the scrollable sizes. */
+  .et-carousel-slide-content {
+    display: block;
+    block-size: 100%;
   }
 
   .et-carousel-controls {
@@ -75,6 +131,11 @@
     background: transparent;
     cursor: pointer;
 
+    /* Focus comes from the shared `etFocusRing`, so a dot looks focused the same way everything else does —
+       at its standard offset, which draws the ring outside the autoplay one. It reaches over the neighbouring
+       dots' tap targets, which is harmless: only one dot is ever focused, and their visible discs are far
+       smaller than the target they sit in. */
+
     /* The dot itself: a small disc in the middle of a target big enough to hit. */
     &::before {
       content: '';
@@ -82,47 +143,142 @@
       block-size: var(--et-carousel-dot-size);
       border-radius: 50%;
       background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 35%, transparent);
-      transition: background-color 120ms ease;
     }
 
     &:hover::before {
       background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 55%, transparent);
     }
 
-    &:focus-visible {
-      outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
-      outline-offset: -2px;
-    }
-
     /* The current slide's dot takes the accent, at full strength. */
     &:where([data-active])::before {
       background: var(--et-theme-color-primary-solid, currentColor);
     }
+
+    /* Spelled out because the plain `:hover` above outranks a `:where()`-flattened selector, so without this
+       the accent dot went grey under the pointer — the one dot that must never look unselected. */
+    &:where([data-active]):hover::before {
+      background: var(--et-theme-color-primary-solid, currentColor);
+    }
   }
 
-  /* The autoplay countdown, drawn as a ring closing around the active dot. It is rendered only while the
-     countdown is actually running (see the template), which is what keeps it in step with the timer: both
-     start together on a new slide and on a resume, and neither can be left mid-way by the other. */
+  /* The autoplay countdown, drawn as a ring closing around the active dot.
+
+     The element is mounted for every dot while autoplay is on, and it is `data-counting` that applies the
+     keyframes — which is what keeps the ring and the timer as one clock (the attribute landing starts the
+     animation from the beginning, exactly as a fresh mount used to) while still leaving something in the DOM
+     to fade in and out. Mounting and unmounting can only ever hard-cut. */
   .et-carousel-dot-progress {
     position: absolute;
-    inline-size: var(--et-carousel-dot-target-size);
-    block-size: var(--et-carousel-dot-target-size);
+    inline-size: var(--et-carousel-dot-ring-size);
+    block-size: var(--et-carousel-dot-ring-size);
     border-radius: 50%;
+    opacity: 0;
+    scale: 0.55;
     background: conic-gradient(
       var(--et-theme-color-primary-solid, currentColor) var(--_et-carousel-progress),
       transparent 0
     );
+    /* `closest-side` puts 100% at the radius, so this keeps the outermost ring-width and drops the rest —
+       one ring, one token, no radius arithmetic to get wrong. */
     mask: radial-gradient(
       closest-side,
-      transparent calc(50% - 3px),
-      black calc(50% - 3px) calc(50% - 1px),
-      transparent calc(50% - 1px)
+      transparent calc(100% - var(--et-carousel-dot-ring-width)),
+      black calc(100% - var(--et-carousel-dot-ring-width))
     );
-    animation: et-carousel-autoplay-progress var(--_et-carousel-autoplay-duration, 5000ms) linear forwards;
   }
 
   .et-carousel-dot {
     position: relative;
+
+    /* The track the countdown fills against. Without it the ring is a lone arc with nothing to read it
+       against, and at the start of a slide there is almost nothing drawn at all. */
+    &::after {
+      content: '';
+      position: absolute;
+      inline-size: var(--et-carousel-dot-ring-size);
+      block-size: var(--et-carousel-dot-ring-size);
+      border: var(--et-carousel-dot-ring-width) solid
+        color-mix(in srgb, var(--et-surface-interaction-solid, gray) 30%, transparent);
+      border-radius: 50%;
+      opacity: 0;
+      scale: 0.55;
+    }
+
+    /* Counting down: the ring and its track grow into place, and the countdown keyframes start from 0. */
+    &:where([data-counting]) {
+      & .et-carousel-dot-progress {
+        opacity: 1;
+        scale: 1;
+        animation: et-carousel-autoplay-progress var(--_et-carousel-autoplay-duration, 5000ms) linear forwards;
+      }
+
+      &::after {
+        opacity: 1;
+        scale: 1;
+      }
+    }
+
+    /* The dot itself shrinks a little to make room for the ring, so the two don't read as one blob. */
+    &:where([data-counting])::before {
+      scale: 0.75;
+    }
+  }
+
+  /* Only once the component has settled, so nothing animates on the first render. */
+  .et-carousel:where(.et-carousel--can-animate) {
+    & .et-carousel-dot-progress,
+    & .et-carousel-dot::after {
+      transition:
+        opacity 220ms var(--ease-3, ease-out),
+        scale 220ms var(--ease-3, ease-out);
+    }
+
+    /* The dot's own disc: its colour changes on hover and when it becomes current, and its size when the
+       countdown ring appears beside it. All three in one declaration, or the last one wins.  */
+    & .et-carousel-dot::before {
+      transition:
+        background-color 160ms var(--ease-3, ease-out),
+        scale 220ms var(--ease-3, ease-out);
+    }
+
+    & .et-carousel-dot {
+      transition: outline-color 160ms var(--ease-3, ease-out);
+    }
+
+    & .et-carousel-play-toggle-icon {
+      transition:
+        opacity 180ms var(--ease-3, ease-out),
+        scale 180ms var(--ease-3, ease-out),
+        rotate 220ms var(--ease-3, ease-out);
+    }
+  }
+
+  /* The play/pause control keeps both icons and cross-fades them: two different elements have nothing to
+     animate between, so swapping the icon name could only ever hard-cut. */
+  /* The icon button lays its projected icons out in a flex row, which would put play and pause side by side.
+     Three classes deep because that rule is one class deep on the button and is injected at runtime, so it
+     would win at equal specificity however this file is ordered. */
+  .et-carousel .et-carousel-play-toggle .et-icon-button-icon {
+    display: grid;
+    place-items: center;
+  }
+
+  .et-carousel-play-toggle {
+    & .et-carousel-play-toggle-icon {
+      /* Both in the one cell, so they occupy the same space and can cross-fade. */
+      grid-area: 1 / 1;
+      opacity: 0;
+      scale: 0.55;
+      rotate: -35deg;
+    }
+
+    /* Paused: offer play. Playing: offer pause. */
+    &:not([data-playing]) .et-icon--et-play,
+    &:where([data-playing]) .et-icon--et-pause {
+      opacity: 1;
+      scale: 1;
+      rotate: 0deg;
+    }
   }
 
   /* `--_et-carousel-progress` is animated rather than the gradient itself: a registered percentage
@@ -146,39 +302,6 @@
   /* Under reduced motion autoplay never runs (the directive refuses), so the ring never renders — nothing
      to disable here. The scroll itself follows the platform's own reduced-motion handling. */
 
-  /* `transition="dim"`: the slides either side of the current one recede. It is a scroll-driven animation —
-     each slide's own `view()` timeline — so it tracks the finger through a swipe rather than snapping when
-     some "active" flag flips, and it costs no JavaScript at all.
-
-     Everything is inside `@supports`: where the timeline isn't implemented yet (Firefox, as of this
-     writing) an unsupported `animation-timeline` would otherwise leave the animation running on the
-     document timeline and flash every slide once. Gated this way, those browsers simply get the plain
-     scroll — the carousel is fully usable either way, which is the only reason this can ship now. */
-  @supports (animation-timeline: view(inline)) {
-    @media (prefers-reduced-motion: no-preference) {
-      .et-carousel:where([data-transition='dim']) .et-carousel-item {
-        animation: et-carousel-dim linear both;
-        animation-timeline: view(inline);
-        /* Tie the keyframes to the slide's pass across the scrollport, so 50% is "centred". */
-        animation-range: cover 0% cover 100%;
-      }
-    }
-  }
-
-  @keyframes et-carousel-dim {
-    0% {
-      opacity: 0.35;
-      scale: 0.92;
-    }
-
-    50% {
-      opacity: 1;
-      scale: 1;
-    }
-
-    100% {
-      opacity: 0.35;
-      scale: 0.92;
-    }
-  }
+  /* The slide transitions are not here: they live in `CarouselTransitionStylesComponent`, mounted only
+     once a carousel actually asks for one. See that file for the progress property and the effects. */
 }

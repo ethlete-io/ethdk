@@ -3,6 +3,7 @@
      have to be operable, so this component renders labelled ones below instead. -->
 <et-scrollable
   [itemSize]="itemSize()"
+  [snapOrigin]="carousel.slideAlign()"
   [renderButtons]="false"
   [renderNavigation]="false"
   [renderMasks]="false"
@@ -10,7 +11,20 @@
   scrollMode="element"
   snap
 >
-  <ng-content />
+  <!-- The wrapper is rendered here rather than left to the slide template, so slide semantics, the `N of M`
+       label and the clone marking are guaranteed rather than something to remember. It is also the element
+       the scrollable sizes and the transitions apply to — a known element with a known progress property is
+       what makes the effects reliable. -->
+  @for (view of slideViews(); track view.key) {
+    <div [isClone]="view.isClone" [autoplayTime]="view.autoplayTime" etCarouselItem>
+      <!-- The inner element is what lets an effect move a slide's *content* independently of the slide's
+           own box — which is the whole of `wipe`: the content holds still while the box travels over it,
+           so the edge between two slides sweeps instead of the picture being cropped and dragged along. -->
+      <div class="et-carousel-slide-content">
+        <ng-container *ngTemplateOutlet="slideTemplate(); context: view.context" />
+      </div>
+    </div>
+  }
 </et-scrollable>
 
 @if (showControls() || showDots() || isAutoplayEnabled()) {
@@ -28,13 +42,17 @@
             [attr.aria-label]="dot.label"
             [attr.aria-current]="dot.isActive ? 'true' : null"
             [attr.data-active]="dot.isActive ? '' : null"
+            [attr.data-counting]="dot.isActive && isAutoplayRunning() ? '' : null"
             (click)="carousel.goTo(dot.index)"
             class="et-carousel-dot"
+            etFocusRing
             type="button"
           >
-            <!-- The progress ring exists only while a slide is counting down, so it starts fresh with every
-                 slide and every resume — the same restart the timer does, so the two can't drift apart. -->
-            @if (dot.isActive && isAutoplayRunning()) {
+            <!-- Rendered for every dot while autoplay is on, rather than only for the one counting down, so
+                 it has somewhere to fade in from and out to. The countdown keyframes are applied by
+                 `data-counting` instead, which starts them fresh every time the attribute lands — the same
+                 restart the timer does, so the ring and the timer still cannot drift apart. -->
+            @if (isAutoplayEnabled()) {
               <span
                 [style.--_et-carousel-autoplay-duration.ms]="autoplayDuration()"
                 class="et-carousel-dot-progress"
@@ -47,8 +65,20 @@
     }
 
     @if (isAutoplayEnabled()) {
-      <button class="et-carousel-control" et-icon-button etCarouselPlayToggle size="sm" variant="transparent">
-        <i [etIcon]="isAutoplayRunning() ? 'et-pause' : 'et-play'" class="et-carousel-control-icon"></i>
+      <button
+        [attr.data-playing]="isAutoplayRunning() ? '' : null"
+        class="et-carousel-control et-carousel-play-toggle"
+        et-icon-button
+        etCarouselPlayToggle
+        size="sm"
+        variant="transparent"
+      >
+        <!-- Both icons, always: swapping the `etIcon` name would replace one element with another, and there
+             is nothing to animate between two different elements. Stacked and cross-faded instead.
+             Direct children on purpose — the icon button projects `[etIcon]`, so a wrapper of our own would
+             not be projected at all and both icons would simply vanish. -->
+        <i class="et-carousel-control-icon et-carousel-play-toggle-icon" etIcon="et-play" aria-hidden="true"></i>
+        <i class="et-carousel-control-icon et-carousel-play-toggle-icon" etIcon="et-pause" aria-hidden="true"></i>
       </button>
     }
 

@@ -81,6 +81,9 @@ export class CarouselNextDirective {
  * Registering it is what satisfies the dev-mode check in `etCarouselAutoplay`.
  *
  * Its label and `aria-pressed` follow the state, so one button covers both directions.
+ *
+ * It also tells autoplay when the pointer or focus is on *it*, which is what keeps pressing play from
+ * being cancelled by the hover/focus pause it was pressed with — see `isPointerOnPauseControl`.
  */
 @Directive({
   selector: '[etCarouselPlayToggle]',
@@ -90,6 +93,10 @@ export class CarouselNextDirective {
     '[attr.aria-label]': 'label()',
     '[attr.aria-pressed]': 'isPlaying()',
     '(click)': 'toggle()',
+    '(mouseenter)': 'setPointerOn(true)',
+    '(mouseleave)': 'setPointerOn(false)',
+    '(focus)': 'setFocusOn(true)',
+    '(blur)': 'setFocusOn(false)',
   },
 })
 export class CarouselPlayToggleDirective {
@@ -125,5 +132,13 @@ export class CarouselPlayToggleDirective {
 
   protected toggle() {
     this.autoplay?.toggle();
+  }
+
+  protected setPointerOn(isOn: boolean) {
+    this.autoplay?.isPointerOnPauseControl.set(isOn);
+  }
+
+  protected setFocusOn(isOn: boolean) {
+    this.autoplay?.isFocusOnPauseControl.set(isOn);
   }
 }

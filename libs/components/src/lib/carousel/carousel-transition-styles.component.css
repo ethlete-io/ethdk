@@ -1,0 +1,122 @@
+@layer components {
+  /* The one input every slide transition reads: -1 just before the slide enters the track's viewport,
+     0 centred, 1 just after it has left.
+
+     Registered because an *unregistered* custom property does not interpolate — a keyframe animating it
+     would step from one value to the next instead of sweeping through them (the autoplay ring relies on
+     the same fact). Inheriting because a slide's *content* has to be able to read it too: that is what
+     lets a consumer move an image slower than its slide without the carousel shipping a `parallax`
+     effect for it. */
+  @property --et-carousel-slide-progress {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 0;
+  }
+
+  /* How far `wipe` pushes the two slides against each other, on top of the wipe itself — cdk's
+     `--et-carousel-slide-translate`, same 125px. Set it to 0 for a pure wipe with no parallax. */
+  @property --et-carousel-wipe-shift {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 125px;
+  }
+
+  /* How dark `wipe` takes a slide as it leaves — cdk's `brightness(0.5)` on a non-current slide. */
+  @property --et-carousel-wipe-dim {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 0.5;
+  }
+
+  /* Driver 1 of 2 — no JavaScript at all. The property is animated along each slide's own view()
+     timeline, so it follows a finger through a drag rather than stepping when some "active" flag flips.
+     `cover 0%` is the moment the slide's leading edge reaches the far side of the scrollport and
+     `cover 100%` the moment its trailing edge leaves the near side, which puts the midpoint — progress
+     0 — exactly at centred.
+
+     `etCarousel` has already feature-detected this and only asks for the driver where it exists; the
+     @supports is here so that forcing `transitionDriver="scroll-timeline"` on a browser without it
+     degrades to a plain scroll rather than running the keyframes on the document timeline and flashing
+     every slide once. */
+  @supports (animation-timeline: view(inline)) {
+    :where([data-transition-driver='scroll-timeline']) .et-carousel-item {
+      animation: et-carousel-slide-progress linear both;
+      animation-timeline: view(inline);
+      animation-range: cover 0% cover 100%;
+    }
+  }
+
+  @keyframes et-carousel-slide-progress {
+    from {
+      --et-carousel-slide-progress: -1;
+    }
+
+    to {
+      --et-carousel-slide-progress: 1;
+    }
+  }
+
+  /* Driver 2 of 2 (Firefox, as of this writing) writes the very same property from a passive scroll
+     listener — see `useCarouselSlideProgress`. It needs no CSS: the effects below read the property,
+     never the driver that filled it. */
+
+  /* Each effect is then pure CSS over one number, which is what makes a library of them cheap.
+
+     They apply only while a driver is actually running, which is how `prefers-reduced-motion` is
+     handled: it turns the driver off, and the slides are then left entirely alone rather than pinned at
+     whatever the centred value happens to be. */
+  :where([data-transition-driver='scroll-timeline'], [data-transition-driver='js']) {
+    & .et-carousel-item {
+      /* How far off centre the slide is, either side: 0 centred, 1 gone. */
+      --_et-carousel-slide-distance: abs(var(--et-carousel-slide-progress));
+    }
+
+    /* `dim` — the slides either side of the current one recede, so the carousel reads as a focused row
+       rather than a strip that happens to scroll. */
+    &:where([data-transition='dim']) .et-carousel-item {
+      opacity: calc(1 - 0.65 * var(--_et-carousel-slide-distance));
+      scale: calc(1 - 0.08 * var(--_et-carousel-slide-distance));
+    }
+
+    /* `wipe` — cdk's Apple-TV-ish `mask-slide`, driven by position instead of by a class flip, so it tracks
+       a finger and reverses when you drag back. All three parts of it are here:
+
+       **The wipe.** The slide's content is translated by the slide's own displacement from centre, which
+       pins it to the *track* while the slide's box keeps scrolling; the box then clips it. So what the
+       reader sees is two stationary pictures either side of one moving edge — a wipe — rather than one
+       picture cropped and dragged along, which is all a clip on its own can be. (cdk got this for free by
+       stacking its slides and animating a `clip-path` polygon. On a scroller the content has to be put
+       back, and then the box *is* the mask — and the direction falls out of the sign of the progress
+       instead of needing cdk's slide-left/slide-right variants.)
+
+       That displacement is `progress × (viewport + slide) / 2`, expressible exactly with no JavaScript and
+       no per-`itemSize` table: `50cqw` is half the track's visible width (hence the container-type below)
+       and `50%` is half the slide's own width, whatever that turns out to be.
+
+       **The push.** Subtracting `--et-carousel-wipe-shift` from the pin makes the two slides drift against
+       each other by that much as the edge passes — cdk's 125px `translateX`, which it applied to the
+       incoming slide and inverted for the outgoing one. Here one signed term covers both.
+
+       **The dim.** `--et-carousel-wipe-dim` is cdk's `brightness(0.5)` on a non-current slide, now a
+       function of distance from centre rather than of a class.
+
+       There is deliberately no easing curve: cdk needed one because its transition ran on a timer, and
+       here the user's own scrolling is the timing.
+
+       Gated on one slide per view, because that is the only layout the effect means anything in: with the
+       content pinned to the track, a slide whose box is only partly on screen at rest would have its
+       content sitting outside that box and would show as blank. A peeking layout wants `dim`. */
+    &:where([data-transition='wipe']) :where([item-size='full']) {
+      container-type: inline-size;
+
+      & .et-carousel-item {
+        overflow: clip;
+        filter: brightness(calc(1 - (1 - var(--et-carousel-wipe-dim)) * var(--_et-carousel-slide-distance)));
+      }
+
+      & .et-carousel-slide-content {
+        translate: calc(var(--et-carousel-slide-progress) * (50cqw + 50% - var(--et-carousel-wipe-shift)));
+      }
+    }
+  }
+}

@@ -343,9 +343,10 @@ All breadcrumb checks run in dev mode only, after the first render.
 
 All carousel checks run in dev mode only.
 
-| Code     | Cause                                                                    | Fix                                                                                     |
-| -------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| `ET3800` | A slide, control or `etCarouselAutoplay` sits outside an `[etCarousel]`. | Move it inside the carousel element — controls included, since they resolve it upwards. |
-| `ET3801` | The carousel has children but none of them is an `etCarouselItem`.       | Add the directive to each slide, so it can label them and track the current one.        |
-| `ET3802` | Autoplay is on with no control to pause it (WCAG 2.2.2).                 | Add a button with `etCarouselPlayToggle`, or use `<et-carousel>`, which renders one.    |
-| `ET3803` | `etCarousel` found no scrollable to move.                                | Put it on, or around, an `[etScrollable]` element (or use `<et-carousel>`).             |
+| Code     | Cause                                                                                    | Fix                                                                                     |
+| -------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `ET3800` | A slide template, slide, control or `etCarouselAutoplay` sits outside an `[etCarousel]`. | Move it inside the carousel element — controls included, since they resolve it upwards. |
+| `ET3801` | The carousel has children but none of them is an `etCarouselItem`.                       | Add the directive to each slide, so it can label them and track the current one.        |
+| `ET3802` | Autoplay is on with no control to pause it (WCAG 2.2.2).                                 | Add a button with `etCarouselPlayToggle`, or use `<et-carousel>`, which renders one.    |
+| `ET3803` | `etCarousel` found no scrollable to move.                                                | Put it on, or around, an `[etScrollable]` element (or use `<et-carousel>`).             |
+| `ET3804` | `<et-carousel>` was given no `etCarouselSlide` template.                                 | Add one: `<ng-template [etCarouselSlide]="slides()" let-slide>…</ng-template>`.         |

@@ -6,11 +6,13 @@ import {
   CarouselNextDirective,
   CarouselPlayToggleDirective,
   CarouselPreviousDirective,
+  CarouselSlideDirective,
 } from './headless';
 
-/** The carousel, its slides, and the headless directives to build your own out of a scrollable. */
+/** The carousel, its slide template, and the headless directives to build your own out of a scrollable. */
 export const CAROUSEL_IMPORTS = [
   CarouselComponent,
+  CarouselSlideDirective,
   CarouselItemDirective,
   CarouselDirective,
   CarouselAutoplayDirective,

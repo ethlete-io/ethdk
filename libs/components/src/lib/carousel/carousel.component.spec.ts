@@ -6,13 +6,23 @@ import { CAROUSEL_IMPORTS } from './carousel.imports';
 import { provideCarouselLabels } from './carousel-labels';
 import { CarouselAutoplayDirective, CarouselDirective } from './headless';
 
+type Slide = { title: string };
+
 @Component({
   selector: 'et-test-carousel-host',
   template: `
-    <et-carousel [autoplay]="autoplay()" [autoplayTime]="autoplayTime()" [loop]="loop()">
-      @for (slide of slides(); track slide) {
-        <div etCarouselItem>{{ slide }}</div>
-      }
+    <et-carousel
+      [autoplay]="autoplay()"
+      [autoplayTime]="autoplayTime()"
+      [loop]="loop()"
+      [itemSize]="itemSize()"
+      [slideAlign]="slideAlign()"
+      [transition]="transition()"
+      [transitionDriver]="transitionDriver()"
+    >
+      <ng-template [etCarouselSlide]="slides()" [autoplayTimeFor]="autoplayTimeFor()" let-slide let-index="index">
+        <span>{{ index + 1 }}. {{ slide.title }}</span>
+      </ng-template>
     </et-carousel>
   `,
   imports: [CAROUSEL_IMPORTS],
@@ -22,10 +32,17 @@ class CarouselHostComponent {
   public carousel = viewChild.required(CarouselComponent, { read: CarouselDirective });
   public autoplayDirective = viewChild.required(CarouselComponent, { read: CarouselAutoplayDirective });
 
-  public slides = signal(['one', 'two', 'three']);
+  public slides = signal<Slide[]>([{ title: 'one' }, { title: 'two' }, { title: 'three' }]);
   public autoplay = signal(false);
   public autoplayTime = signal(5000);
-  public loop = signal(true);
+  // off by default here so the plain cases see three slides and not three plus their clones; the looping
+  // block below turns it on deliberately
+  public loop = signal(false);
+  public itemSize = signal('full');
+  public slideAlign = signal<'start' | 'center'>('start');
+  public transition = signal<'none' | 'dim' | 'wipe'>('none');
+  public transitionDriver = signal<'auto' | 'scroll-timeline' | 'js' | 'none'>('auto');
+  public autoplayTimeFor = signal<((slide: Slide, index: number) => number | null) | null>(null);
 }
 
 const createHost = (): ComponentFixture<CarouselHostComponent> => {
@@ -37,11 +54,15 @@ const createHost = (): ComponentFixture<CarouselHostComponent> => {
 
 const host = (fixture: ComponentFixture<CarouselHostComponent>) => fixture.nativeElement as HTMLElement;
 
+const slideElements = (fixture: ComponentFixture<CarouselHostComponent>) =>
+  Array.from(host(fixture).querySelectorAll('.et-carousel-item'));
+
 /**
- * The slide count comes from the scrollable's mutation observer, which reports asynchronously — so a
- * change to the slide list needs a turn of the event loop before the carousel has seen it.
+ * The track's children reach the carousel through the scrollable's mutation observer, which reports
+ * asynchronously — so anything reading `domCount()` (the clone count among it) needs a turn of the event
+ * loop. The slide *count* does not: that comes from the slides array.
  */
-const settleSlides = async (fixture: ComponentFixture<CarouselHostComponent>) => {
+const settleChildren = async (fixture: ComponentFixture<CarouselHostComponent>) => {
   await new Promise((resolve) => setTimeout(resolve));
   fixture.detectChanges();
 };
@@ -58,25 +79,35 @@ describe('CarouselComponent', () => {
     expect(carousel?.querySelector('[etCarouselNext]')).toBeTruthy();
   });
 
-  it('gives every slide the slide role, and finds its slides through the scrollable', () => {
+  it('stamps the slide template once per slide, with the slide role and a typed context', () => {
     const fixture = createHost();
-    const slides = host(fixture).querySelectorAll('.et-carousel-item');
+    const slides = slideElements(fixture);
 
     expect(slides.length).toBe(3);
     expect(slides[0]?.getAttribute('role')).toBe('group');
     expect(slides[0]?.getAttribute('aria-roledescription')).toBe('slide');
+    expect(slides[1]?.textContent?.trim()).toBe('2. two');
     expect(fixture.componentInstance.carousel().count()).toBe(3);
   });
 
-  it('renders a labelled dot per slide', async () => {
+  it('takes the slide count from the slides array, so it does not wait for the DOM', () => {
+    const fixture = createHost();
+
+    fixture.componentInstance.slides.set([{ title: 'only one' }]);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.carousel().count()).toBe(1);
+  });
+
+  it('renders a labelled dot per slide', () => {
     const fixture = createHost();
     const dots = host(fixture).querySelectorAll('.et-carousel-dot');
 
     expect(dots.length).toBe(3);
     expect(dots[1]?.getAttribute('aria-label')).toBe('Go to slide 2');
 
-    fixture.componentInstance.slides.set(['one', 'two']);
-    await settleSlides(fixture);
+    fixture.componentInstance.slides.set([{ title: 'one' }, { title: 'two' }]);
+    fixture.detectChanges();
 
     expect(host(fixture).querySelectorAll('.et-carousel-dot').length).toBe(2);
   });
@@ -84,6 +115,9 @@ describe('CarouselComponent', () => {
   it('keeps both controls operable while looping, and marks them aria-disabled without it', () => {
     const fixture = createHost();
     const carousel = fixture.componentInstance.carousel();
+
+    fixture.componentInstance.loop.set(true);
+    fixture.detectChanges();
 
     expect(carousel.canGoNext()).toBe(true);
     expect(carousel.canGoPrevious()).toBe(true);
@@ -124,7 +158,37 @@ describe('CarouselComponent', () => {
     expect(toggle?.getAttribute('aria-label')).toBe('Start automatic slide show');
   });
 
-  it('reports why autoplay is not running', async () => {
+  it('can be paused and restarted from its own control, which the pointer and focus are on', () => {
+    const fixture = createHost();
+    fixture.componentInstance.autoplay.set(true);
+    fixture.detectChanges();
+
+    const autoplay = fixture.componentInstance.autoplayDirective();
+    const toggle = host(fixture).querySelector('[etCarouselPlayToggle]') as HTMLButtonElement;
+
+    // pressing the control leaves the pointer on it and focus in it — the state a real click produces
+    autoplay.isHovered.set(true);
+    autoplay.isFocusWithin.set(true);
+    autoplay.isPointerOnPauseControl.set(true);
+    autoplay.isFocusOnPauseControl.set(true);
+
+    toggle.click();
+    fixture.detectChanges();
+    expect(autoplay.pauseReason()).toBe('stopped');
+
+    toggle.click();
+    fixture.detectChanges();
+
+    // hover and focus are still on the control, and must not stand in for the pause it just cleared
+    expect(autoplay.pauseReason()).toBeNull();
+    expect(autoplay.isPlaying()).toBe(true);
+
+    // moving onto a slide is a different matter: that pause is what it is for
+    autoplay.isPointerOnPauseControl.set(false);
+    expect(autoplay.pauseReason()).toBe('hover');
+  });
+
+  it('reports why autoplay is not running', () => {
     const fixture = createHost();
     const autoplay = fixture.componentInstance.autoplayDirective();
 
@@ -144,19 +208,193 @@ describe('CarouselComponent', () => {
     expect(autoplay.pauseReason()).toBe('stopped');
 
     autoplay.start();
-    fixture.componentInstance.slides.set(['only one']);
-    await settleSlides(fixture);
+    fixture.componentInstance.slides.set([{ title: 'only one' }]);
+    fixture.detectChanges();
 
     // a single slide has nowhere to advance to
     expect(autoplay.pauseReason()).toBe('no-slides');
   });
 
-  it('takes a slide’s own autoplayTime over the carousel’s', () => {
+  it('falls back to the carousel’s autoplayTime when no slide overrides it', () => {
     const fixture = createHost();
     fixture.componentInstance.autoplay.set(true);
     fixture.componentInstance.autoplayTime.set(4000);
     fixture.detectChanges();
 
     expect(fixture.componentInstance.autoplayDirective().duration()).toBe(4000);
+  });
+
+  it('hands each slide the duration autoplayTimeFor returns for it', async () => {
+    const fixture = createHost();
+
+    fixture.componentInstance.autoplayTimeFor.set((_slide, index) => (index === 0 ? 9000 : null));
+    await settleChildren(fixture);
+
+    const slides = fixture.componentInstance.carousel().items();
+
+    expect(slides[0]?.autoplayTime()).toBe(9000);
+    expect(slides[1]?.autoplayTime()).toBeNull();
+  });
+
+  describe('looping', () => {
+    const FOUR_SLIDES: Slide[] = [{ title: 'one' }, { title: 'two' }, { title: 'three' }, { title: 'four' }];
+
+    /** The host keeps `loop` off, so the looping cases turn it on along with the slides they need. */
+    const createLoopingHost = async (slides: Slide[] = FOUR_SLIDES) => {
+      const fixture = createHost();
+
+      fixture.componentInstance.loop.set(true);
+      fixture.componentInstance.slides.set(slides);
+      await settleChildren(fixture);
+
+      return fixture;
+    };
+
+    it('renders clones either side of the slides, marked hidden and inert and left out of the count', async () => {
+      const fixture = await createLoopingHost();
+      const carousel = fixture.componentInstance.carousel();
+      const cloneCount = carousel.cloneCount();
+
+      // one slide per view, so a clone run is two slides long
+      expect(cloneCount).toBe(2);
+      expect(carousel.count()).toBe(4);
+      expect(carousel.isLooping()).toBe(true);
+      expect(carousel.domCount()).toBe(4 + cloneCount * 2);
+
+      const slides = slideElements(fixture);
+      const clones = slides.filter((slide) => slide.hasAttribute('data-clone'));
+
+      expect(slides.length).toBe(8);
+      expect(clones.length).toBe(4);
+      expect(clones.every((clone) => clone.getAttribute('aria-hidden') === 'true')).toBe(true);
+      expect(clones.every((clone) => clone.hasAttribute('inert'))).toBe(true);
+      // a clone announces nothing: it is a slide the reader has already been told about
+      expect(clones.every((clone) => !clone.hasAttribute('aria-label'))).toBe(true);
+
+      // the dots and the `N of M` labels count the real slides only
+      expect(host(fixture).querySelectorAll('.et-carousel-dot').length).toBe(4);
+      expect(slides[cloneCount]?.getAttribute('aria-label')).toBe('1 of 4');
+    });
+
+    it('leads with clones of the last slides and trails with clones of the first', async () => {
+      const fixture = await createLoopingHost();
+      const text = slideElements(fixture).map((slide) => slide.textContent?.trim());
+
+      // [3, 4] [1, 2, 3, 4] [1, 2] — so scrolling off either end lands on content, not on a wall
+      expect(text).toEqual(['3. three', '4. four', '1. one', '2. two', '3. three', '4. four', '1. one', '2. two']);
+    });
+
+    it('maps a clone back onto the slide it clones', async () => {
+      const fixture = await createLoopingHost();
+      const carousel = fixture.componentInstance.carousel();
+      const cloneCount = carousel.cloneCount();
+
+      // the leading clones are the tail of the run, the trailing clones its head
+      expect(carousel.slideIndexOf(0)).toBe(2);
+      expect(carousel.slideIndexOf(1)).toBe(3);
+      // the real slides map to themselves
+      expect(carousel.slideIndexOf(cloneCount)).toBe(0);
+      expect(carousel.slideIndexOf(cloneCount + 3)).toBe(3);
+      // and past them it wraps round again
+      expect(carousel.slideIndexOf(cloneCount + 4)).toBe(0);
+      expect(carousel.slideIndexOf(cloneCount + 5)).toBe(1);
+    });
+
+    it('does not clone when every slide fits a viewport, so there is no seam to cross', async () => {
+      const fixture = await createLoopingHost([{ title: 'only one' }]);
+      const carousel = fixture.componentInstance.carousel();
+
+      expect(carousel.cloneCount()).toBe(0);
+      expect(carousel.isLooping()).toBe(false);
+      expect(slideElements(fixture).length).toBe(1);
+      // and a lone slide has nowhere to go, `loop` or not
+      expect(carousel.canGoNext()).toBe(false);
+    });
+
+    it('does not clone with loop off', async () => {
+      const fixture = createHost();
+
+      fixture.componentInstance.slides.set(FOUR_SLIDES);
+      await settleChildren(fixture);
+
+      expect(fixture.componentInstance.carousel().cloneCount()).toBe(0);
+      expect(slideElements(fixture).length).toBe(4);
+      expect(slideElements(fixture).some((slide) => slide.hasAttribute('data-clone'))).toBe(false);
+    });
+
+    it('follows a change to the slides, clones included', async () => {
+      const fixture = await createLoopingHost();
+      const carousel = fixture.componentInstance.carousel();
+
+      expect(carousel.domCount()).toBe(8);
+
+      fixture.componentInstance.slides.update((slides) => [...slides, { title: 'five' }]);
+      await settleChildren(fixture);
+
+      expect(carousel.count()).toBe(5);
+      expect(carousel.domCount()).toBe(5 + carousel.cloneCount() * 2);
+      // the trailing clones still mirror the head of the run
+      expect(slideElements(fixture).at(-1)?.textContent?.trim()).toBe('2. two');
+    });
+
+    it('grows the clone run with a multi-item view, capped at the number of slides', async () => {
+      const fixture = await createLoopingHost(Array.from({ length: 8 }, (_, index) => ({ title: `slide ${index}` })));
+      const carousel = fixture.componentInstance.carousel();
+
+      fixture.componentInstance.itemSize.set('third');
+      await settleChildren(fixture);
+
+      // three per view plus one, so the seam is never in shot when the offset is shifted
+      expect(carousel.cloneCount()).toBe(4);
+
+      fixture.componentInstance.slides.set(FOUR_SLIDES);
+      await settleChildren(fixture);
+
+      // never more clones than there are slides to clone
+      expect(carousel.cloneCount()).toBe(4);
+      expect(carousel.domCount()).toBe(12);
+    });
+  });
+
+  describe('transitions', () => {
+    it('reports the effect and the driver actually filling the progress property', () => {
+      const fixture = createHost();
+      const carousel = host(fixture).querySelector('et-carousel');
+
+      // nothing asked for, nothing running
+      expect(carousel?.getAttribute('data-transition')).toBe('none');
+      expect(carousel?.getAttribute('data-transition-driver')).toBe('none');
+
+      fixture.componentInstance.transition.set('dim');
+      fixture.componentInstance.transitionDriver.set('js');
+      fixture.detectChanges();
+
+      expect(carousel?.getAttribute('data-transition')).toBe('dim');
+      expect(carousel?.getAttribute('data-transition-driver')).toBe('js');
+    });
+
+    it('centres the current slide when asked to, and tells the track to snap that way', () => {
+      const fixture = createHost();
+
+      expect(host(fixture).querySelector('et-scrollable')?.getAttribute('snapOrigin')).toBeNull();
+
+      fixture.componentInstance.slideAlign.set('center');
+      fixture.detectChanges();
+
+      // the alignment is the carousel's, and the track has to snap the same way or the two would fight
+      expect(fixture.componentInstance.carousel().slideAlign()).toBe('center');
+    });
+
+    it('turns the driver off when asked for none, whatever the effect', () => {
+      const fixture = createHost();
+
+      fixture.componentInstance.transition.set('wipe');
+      fixture.componentInstance.transitionDriver.set('none');
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.carousel().resolvedTransitionDriver()).toBe('none');
+      // the effect is still reported, so a consumer's own CSS can still hang off it
+      expect(host(fixture).querySelector('et-carousel')?.getAttribute('data-transition')).toBe('wipe');
+    });
   });
 });

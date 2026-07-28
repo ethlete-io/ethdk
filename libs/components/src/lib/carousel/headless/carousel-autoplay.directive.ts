@@ -9,14 +9,19 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { RuntimeError, injectPrefersReducedMotion, signalHostElementIntersection } from '@ethlete/core';
+import {
+  RuntimeError,
+  injectIsDocumentVisible,
+  injectPrefersReducedMotion,
+  signalHostElementIntersection,
+} from '@ethlete/core';
 import { EMPTY, switchMap, tap, timer } from 'rxjs';
 import { CAROUSEL_ERROR_CODES } from '../carousel-errors';
 import { CAROUSEL_AUTOPLAY_TOKEN, CAROUSEL_TOKEN } from './carousel.tokens';
 
 /** Why autoplay isn't running, in the order the reasons are checked. `null` while it is running. */
 export type CarouselAutoplayPauseReason =
-  'disabled' | 'stopped' | 'reduced-motion' | 'off-screen' | 'hover' | 'focus' | 'no-slides';
+  'disabled' | 'stopped' | 'reduced-motion' | 'page-hidden' | 'off-screen' | 'hover' | 'focus' | 'no-slides';
 
 /**
  * Advances the carousel on its own. Opt-in — put it on the same element as `[etCarousel]` — so a carousel
@@ -51,6 +56,7 @@ export type CarouselAutoplayPauseReason =
 export class CarouselAutoplayDirective {
   private carousel = inject(CAROUSEL_TOKEN, { optional: true });
   private prefersReducedMotion = injectPrefersReducedMotion();
+  private isDocumentVisible = injectIsDocumentVisible();
 
   /**
    * Turn autoplay off without removing the directive — what `<et-carousel>`'s `autoplay` input flips, and
@@ -68,7 +74,13 @@ export class CarouselAutoplayDirective {
   /** Pause while focus is inside the carousel — moving the slide out from under a keyboard user is worse than stalling. @default true */
   public pauseOnFocus = input(true, { transform: booleanAttribute });
 
-  /** Pause while the carousel is scrolled off screen, so it isn't racing through slides nobody can see. @default true */
+  /**
+   * Pause whenever nobody can see the carousel: scrolled out of view, or on a tab that isn't the one in
+   * front. The second is not the same check as the first — an IntersectionObserver reports a fully visible
+   * element in a background tab — and it matters more, because a hidden tab throttles timers rather than
+   * stopping them, so without it a carousel spends its time in the background queueing up slide changes to
+   * deliver all at once on return. @default true
+   */
   public pauseOnOffScreen = input(true, { transform: booleanAttribute });
 
   /** Start playing as soon as the carousel is ready. Off waits for `start()` (or the play control). @default true */
@@ -87,6 +99,21 @@ export class CarouselAutoplayDirective {
   /** @internal */
   public isFocusWithin = signal(false);
 
+  /**
+   * @internal Whether the pointer is on the play/pause control, and whether focus is.
+   *
+   * Both are subtracted from the hover and focus pauses, because the control lives *inside* the carousel —
+   * it has to, it is part of the region it controls. Without this, pressing play would clear `isStopped`
+   * and then immediately report `'hover'` or `'focus'` instead, because the pointer and focus are still on
+   * the button that was just pressed: autoplay could never be restarted by the one control WCAG requires
+   * for it. And the subtraction is the honest rule rather than a workaround — those pauses exist so a
+   * slide doesn't move while someone is reading or tabbing through it, and the pause control is neither.
+   */
+  public isPointerOnPauseControl = signal(false);
+
+  /** @internal */
+  public isFocusOnPauseControl = signal(false);
+
   /** How long the current slide stays: its own `autoplayTime`, or the carousel's. */
   public duration = computed(() => {
     const carousel = this.carousel;
@@ -94,7 +121,9 @@ export class CarouselAutoplayDirective {
     if (!carousel) return this.autoplayTime();
 
     const activeIndex = carousel.activeIndex();
-    const activeItem = carousel.items().find((item) => item.index() === activeIndex);
+    // The slide itself, not one of its loop clones: they share an index, and the original is the one a
+    // consumer set a duration on.
+    const activeItem = carousel.items().find((item) => !item.isClone() && item.index() === activeIndex);
 
     return activeItem?.autoplayTime() ?? this.autoplayTime();
   });
@@ -107,14 +136,16 @@ export class CarouselAutoplayDirective {
     if ((this.carousel?.count() ?? 0) < 2) return 'no-slides';
 
     if (this.pauseOnOffScreen()) {
+      if (!this.isDocumentVisible()) return 'page-hidden';
+
       const entries = this.hostIntersection();
       const isOnScreen = entries[0]?.isIntersecting ?? true;
 
       if (!isOnScreen) return 'off-screen';
     }
 
-    if (this.pauseOnHover() && this.isHovered()) return 'hover';
-    if (this.pauseOnFocus() && this.isFocusWithin()) return 'focus';
+    if (this.pauseOnHover() && this.isHovered() && !this.isPointerOnPauseControl()) return 'hover';
+    if (this.pauseOnFocus() && this.isFocusWithin() && !this.isFocusOnPauseControl()) return 'focus';
 
     return null;
   });
@@ -177,7 +208,11 @@ export class CarouselAutoplayDirective {
 
   /** Stop if playing, start if stopped — what the play/pause control calls. */
   public toggle() {
-    this.isStopped.update((stopped) => !stopped);
+    if (this.isStopped()) {
+      this.start();
+    } else {
+      this.stop();
+    }
   }
 
   private advance() {

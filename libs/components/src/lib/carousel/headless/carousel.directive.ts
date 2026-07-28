@@ -9,28 +9,69 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { RuntimeError } from '@ethlete/core';
-import { ScrollableDirective } from '../../scrollable';
+import { RuntimeError, injectPrefersReducedMotion, injectStyleManager } from '@ethlete/core';
+import { ScrollableDirective, ScrollableItemSize } from '../../scrollable';
 import { CAROUSEL_ERROR_CODES } from '../carousel-errors';
 import { CarouselLabels, injectCarouselLabels } from '../carousel-labels';
+import { CarouselTransitionStylesComponent } from '../carousel-transition-styles.component';
 import { CAROUSEL_TOKEN } from './carousel.tokens';
 import { CarouselItemDirective } from './carousel-item.directive';
+import { CarouselSlideTemplateRef } from './carousel-slide.directive';
+import { useCarouselLoop } from './internals/carousel-loop';
+import { useCarouselScrollSettled } from './internals/carousel-scroll-settled';
+import { useCarouselSlideProgress } from './internals/carousel-slide-progress';
+
+/** Where the current slide comes to rest. See `CarouselDirective.slideAlign`. */
+export const CAROUSEL_SLIDE_ALIGNMENTS = {
+  START: 'start',
+  CENTER: 'center',
+} as const;
+
+export type CarouselSlideAlign = (typeof CAROUSEL_SLIDE_ALIGNMENTS)[keyof typeof CAROUSEL_SLIDE_ALIGNMENTS];
 
 /** How the slides look as they move. See `CarouselDirective.transition`. */
 export const CAROUSEL_TRANSITIONS = {
   NONE: 'none',
   DIM: 'dim',
+  WIPE: 'wipe',
 } as const;
 
 export type CarouselTransition = (typeof CAROUSEL_TRANSITIONS)[keyof typeof CAROUSEL_TRANSITIONS];
 
+/** What fills the slide progress property. See `CarouselDirective.transitionDriver`. */
+export const CAROUSEL_TRANSITION_DRIVERS = {
+  AUTO: 'auto',
+  SCROLL_TIMELINE: 'scroll-timeline',
+  JS: 'js',
+  NONE: 'none',
+} as const;
+
+export type CarouselTransitionDriver = (typeof CAROUSEL_TRANSITION_DRIVERS)[keyof typeof CAROUSEL_TRANSITION_DRIVERS];
+
+/** The driver actually running — `'auto'` has been resolved and reduced motion applied. */
+export type CarouselResolvedTransitionDriver = Exclude<CarouselTransitionDriver, 'auto'>;
+
+/** How many slides one viewport holds at each fixed `itemSize`. `'auto'` and `'same'` are measured. */
+const SLIDES_PER_VIEW: Partial<Record<ScrollableItemSize, number>> = {
+  full: 1,
+  half: 2,
+  third: 3,
+  quarter: 4,
+};
+
+const supportsViewTimeline = () =>
+  typeof CSS !== 'undefined' &&
+  typeof CSS.supports === 'function' &&
+  CSS.supports('animation-timeline', 'view(inline)');
+
 /**
- * Turns a `[etScrollable]` into a carousel: which slide is current, moving between them, and the
- * landmark semantics a carousel needs. The sliding itself stays native scrolling — that is what gives
- * touch, swipe momentum and keyboard scrolling for free — so this directive adds meaning, not movement.
+ * Turns a `[etScrollable]` into a carousel: which slide is current, moving between them, seamless
+ * looping, and the landmark semantics a carousel needs. The sliding itself stays native scrolling — that
+ * is what gives touch, swipe momentum and keyboard scrolling for free — so this directive adds meaning
+ * and continuity, not movement.
  *
  * Apply it on the scrollable element (`<et-scrollable etCarousel snap itemSize="full">`), or use the
- * default `<et-carousel>`, which is that composition with controls and chrome.
+ * default `<et-carousel>`, which is that composition with controls, chrome and rendered slides.
  *
  * Autoplay is a separate opt-in (`etCarouselAutoplay`) so a carousel that doesn't advance itself carries
  * none of its code.
@@ -50,11 +91,16 @@ export type CarouselTransition = (typeof CAROUSEL_TRANSITIONS)[keyof typeof CARO
     role: 'region',
     'aria-roledescription': 'carousel',
     '[attr.aria-label]': 'resolvedLabels().carousel',
+    '[attr.data-slide-align]': 'slideAlign()',
     '[attr.data-transition]': 'transition()',
+    '[attr.data-transition-driver]': 'resolvedTransitionDriver()',
+    '[attr.data-looping]': 'isLooping() ? "" : null',
   },
 })
 export class CarouselDirective {
   private injectedLabels = injectCarouselLabels();
+  private prefersReducedMotion = injectPrefersReducedMotion();
+  private styleManager = injectStyleManager();
 
   // Three ways the carousel finds its track, because where you put `etCarousel` decides what else can see
   // it: slides and controls resolve the carousel from an *ancestor*, so wrapping the scrollable is usually
@@ -62,25 +108,50 @@ export class CarouselDirective {
   private ownScrollable = inject(ScrollableDirective, { optional: true });
 
   /**
-   * Wrap around at the ends: `next()` on the last slide goes back to the first and `previous()` on the
-   * first goes to the last. Off leaves both controls disabled at the ends.
+   * Cross the seam without showing it: the track carries clones of the slides either side of the real
+   * run, and the scroll offset is shifted a whole track's length whenever it drifts into them — on
+   * `scrollend`, never mid-animation, and never while a finger is down. `next()` past the last slide and
+   * `previous()` before the first then simply keep scrolling, and both controls stay operable.
    *
-   * This is a wrapping *jump*, not a seamless infinite track — with native scrolling the container
-   * scrolls back to the start, which is visible. @default true
+   * Seamless looping needs rendered clones, so it applies to `<et-carousel>` (which renders the slides)
+   * and to carousels with more slides than fit a viewport. Everywhere else `loop` stays a wrapping
+   * *jump* back to the other end — a hand-built carousel over a bare scrollable owns its own DOM, and a
+   * carousel whose slides all fit has no seam to cross. @default true
    */
   public loop = input(true, { transform: booleanAttribute });
 
   /**
-   * The look of the movement, as a `data-transition` hook the styling picks up. `'none'` is the plain
-   * scroll; `'dim'` fades and shrinks the slides either side of the current one, so the carousel reads as
-   * a focused row rather than a strip that happens to scroll.
+   * Where the current slide comes to rest. `'start'` lines it up with the start of the track; `'center'`
+   * puts it in the middle, so a multi-item layout reads as *one* current slide with its neighbours peeking
+   * either side rather than as a row that happens to be cut off.
    *
-   * The effect is scroll-driven (a `view()` animation timeline), which means it costs no JavaScript and
-   * degrades to a plain scroll where the timeline isn't supported yet — Firefox, as of this writing.
-   * `<et-carousel>` ships the CSS for these; a headless carousel gets the attribute to hang its own on.
-   * @default 'none'
+   * It makes no difference at `itemSize="full"`, where a slide fills the track either way. Centring the
+   * first or last slide needs content beyond it, so it comes into its own on a looping carousel — which is
+   * also where the transitions read best, since `--et-carousel-slide-progress` is measured from the centre.
+   * @default 'start'
+   */
+  public slideAlign = input<CarouselSlideAlign>('start');
+
+  /**
+   * The look of the movement. `'none'` is the plain scroll; `'dim'` fades and shrinks the slides either
+   * side of the current one; `'wipe'` uncovers each slide from the edge it is travelling towards.
+   *
+   * Every effect is CSS reading one number — `--et-carousel-slide-progress`, which runs from `-1` before
+   * a slide enters through `0` at centred to `1` once it has left. That is what makes them track a drag
+   * rather than step when an "active" flag flips, and what lets you write your own against the same
+   * property. `transitionDriver` decides what fills it. @default 'none'
    */
   public transition = input<CarouselTransition>('none');
+
+  /**
+   * What fills `--et-carousel-slide-progress`. `'auto'` uses the scroll-driven `view()` timeline where
+   * the browser has one and a scroll listener batched into a frame where it doesn't (Firefox, as of this
+   * writing), so an effect looks the same everywhere. `'scroll-timeline'` and `'js'` pin it; `'none'`
+   * leaves the property alone, for a page that would rather have the plain scroll.
+   *
+   * `prefers-reduced-motion` resolves to `'none'` whatever this says. @default 'auto'
+   */
+  public transitionDriver = input<CarouselTransitionDriver>('auto');
 
   /**
    * Per-instance overrides for the carousel's strings, merged over the injected `CAROUSEL_LABELS`.
@@ -90,6 +161,9 @@ export class CarouselDirective {
   private contentScrollable = contentChild(ScrollableDirective, { descendants: true });
   /** @internal Set by `<et-carousel>` with the scrollable it renders — see the note below. */
   public attachedScrollable = signal<ScrollableDirective | null>(null);
+
+  /** @internal Set by `etCarouselSlide`; its presence is what says the slides are rendered from data. */
+  public slideTemplate = signal<CarouselSlideTemplateRef | null>(null);
 
   /**
    * @internal The scrollable this carousel drives — the movement is all its. Taken from the element itself
@@ -104,23 +178,103 @@ export class CarouselDirective {
   /** @internal The slides, in registration order — used for their `N of M` labels and durations. */
   public items = signal<CarouselItemDirective[]>([]);
 
-  /** How many slides the carousel holds. */
-  public count = computed(() => this.scrollable()?.scrollableChildren().length ?? 0);
+  /** @internal How many children the track holds, loop clones included. */
+  public domCount = computed(() => this.scrollable()?.scrollableChildren().length ?? 0);
 
   /**
-   * The slide currently in view. Derived from how much of each slide the scroll container can see, which
-   * is what makes it follow a finger drag as readily as a button press. `-1` before the first measurement.
+   * How many slides the carousel holds. Clones don't count — from the slides array where there is one,
+   * which is also immediate, and from the track's children for a hand-built carousel.
    */
-  public activeIndex = computed(() => {
+  public count = computed(() => this.slideTemplate()?.slides().length ?? this.domCount());
+
+  /** How many slides one viewport shows, so the clone run can be made long enough to cover it. */
+  private slidesPerView = computed(() => {
+    const scrollable = this.scrollable();
+
+    if (!scrollable) return 0;
+
+    const itemSize = scrollable.itemSize();
+    const fixed = SLIDES_PER_VIEW[itemSize];
+
+    if (fixed) return fixed;
+
+    // `'same'` divides the viewport between every slide, so the track never overflows and there is no
+    // seam to cross in the first place.
+    if (itemSize === 'same') return 0;
+
+    // `'auto'`: the slides size themselves, so how many fit has to be measured. Measuring the *rendered*
+    // children rather than the real run keeps this out of a loop with `cloneCount` — the widths repeat, so
+    // any run of them answers the question.
+    const horizontal = scrollable.direction() !== 'vertical';
+    const client = scrollable.scrollableDimensions().client;
+    const viewport = (horizontal ? client?.width : client?.height) ?? 0;
+
+    if (!viewport) return 0;
+
+    const gap = Number.parseFloat(scrollable.gapValue() ?? '0') || 0;
+    let filled = 0;
+    let fitting = 0;
+
+    for (const child of scrollable.scrollableChildren()) {
+      // A per-slide ResizeObserver to answer "how many fit" would cost more than it saves, and the read is
+      // not stale: the container's own dimensions signal above is what re-runs this.
+      // eslint-disable-next-line ethlete/prefer-element-dimensions
+      filled += (horizontal ? child.offsetWidth : child.offsetHeight) + gap;
+      fitting++;
+
+      if (filled >= viewport) break;
+    }
+
+    return fitting;
+  });
+
+  /**
+   * @internal How many clones sit either side of the real slides. One viewport's worth plus one, so the
+   * seam is never in view when the teleport happens, and never more than there are slides to clone.
+   *
+   * Zero unless the carousel renders its own slides: clones have to be live views, which only the
+   * component stamping the slide template can make.
+   */
+  public cloneCount = computed(() => {
+    if (!this.loop() || !this.slideTemplate()) return 0;
+
+    const count = this.count();
+    const perView = this.slidesPerView();
+
+    // Nothing overflows, so there is no seam — and nothing to clone from either.
+    if (!perView || count <= perView) return 0;
+
+    return Math.min(count, perView + 1);
+  });
+
+  /** Whether the track is a seamless loop right now, rather than one that jumps back at the ends. */
+  public isLooping = computed(() => this.cloneCount() > 0);
+
+  /**
+   * The child a programmatic scroll is heading for.
+   *
+   * The observed index below comes from an IntersectionObserver, which reports a frame or two late — so
+   * while a scroll is in flight it still names the slide the carousel is leaving. Stepping from that is
+   * what made a second click during the first one's animation go nowhere, or retarget the scroll backwards
+   * mid-flight. Everything therefore steps from where the carousel is *going*, and this is cleared once the
+   * scrolling settles or the reader takes over.
+   */
+  private requestedDomIndex = signal<number | null>(null);
+
+  /** @internal Which child the intersections say is in view — the truth, a frame or two late. */
+  public observedDomIndex = computed(() => {
     const scrollable = this.scrollable();
     const intersections = scrollable?.childIntersections() ?? [];
 
     if (intersections.length === 0) return -1;
 
     // At the ends the edge slide wins outright: with a peeking layout the neighbour can cover more of the
-    // container than the first/last slide ever does, and "at the start" must still read as slide 1.
-    if (scrollable?.isAtStart()) return 0;
-    if (scrollable?.isAtEnd()) return intersections.length - 1;
+    // container than the first/last slide ever does, and "at the start" must still read as slide 1. A
+    // looping track has no ends to be at — those positions are clones it is about to teleport out of.
+    if (!this.isLooping()) {
+      if (scrollable?.isAtStart()) return 0;
+      if (scrollable?.isAtEnd()) return intersections.length - 1;
+    }
 
     let activeIndex = 0;
 
@@ -135,10 +289,26 @@ export class CarouselDirective {
     return activeIndex;
   });
 
-  /** Whether the first slide is the current one. */
+  /**
+   * @internal Which child of the track is current, counting clones. The public `activeIndex` is this mapped
+   * back onto the slides.
+   */
+  public activeDomIndex = computed(() => this.requestedDomIndex() ?? this.observedDomIndex());
+
+  /**
+   * The slide currently in view. Derived from how much of each slide the scroll container can see, which
+   * is what makes it follow a finger drag as readily as a button press — and from the pending target while
+   * a button press is still being animated, so the dots move with the click rather than after it. `-1`
+   * before the first measurement.
+   *
+   * A clone reports the slide it clones, so this stays a slide index however far the track has looped.
+   */
+  public activeIndex = computed(() => this.slideIndexOf(this.activeDomIndex()));
+
+  /** Whether the first slide is the current one. True once per lap on a looping carousel. */
   public isAtStart = computed(() => this.activeIndex() <= 0);
 
-  /** Whether the last slide is the current one. */
+  /** Whether the last slide is the current one. True once per lap on a looping carousel. */
   public isAtEnd = computed(() => this.activeIndex() >= this.count() - 1);
 
   /** Whether `previous()` would move — false at the first slide without `loop`. */
@@ -147,9 +317,69 @@ export class CarouselDirective {
   /** Whether `next()` would move — false at the last slide without `loop`. */
   public canGoNext = computed(() => this.count() > 1 && (this.loop() || !this.isAtEnd()));
 
+  /**
+   * Which driver is filling `--et-carousel-slide-progress`, with `'auto'` resolved against what the
+   * browser implements and `prefers-reduced-motion` overriding everything.
+   */
+  public resolvedTransitionDriver = computed<CarouselResolvedTransitionDriver>(() => {
+    if (this.transition() === 'none' || this.prefersReducedMotion()) return 'none';
+
+    const requested = this.transitionDriver();
+
+    if (requested !== 'auto') return requested;
+
+    return supportsViewTimeline() ? 'scroll-timeline' : 'js';
+  });
+
   constructor() {
     // The active slide is read off the child intersections, which the scrollable only observes on demand.
     effect(() => this.scrollable()?.activateChildIntersections());
+
+    const loop = useCarouselLoop({
+      scrollable: this.scrollable,
+      cloneCount: this.cloneCount,
+      count: this.count,
+      domCount: this.domCount,
+      slideAlign: this.slideAlign,
+      activeIndex: this.activeIndex,
+    });
+
+    useCarouselScrollSettled({
+      scrollable: this.scrollable,
+      onSettled: () => {
+        const requested = this.requestedDomIndex();
+
+        // A navigation that steps more than one slide covers the rest instantly first, and that instant
+        // scroll settles too — acting on it would teleport out from under the animation still to come. So a
+        // settle that has not arrived at the requested child is not this navigation's; the scroll that is
+        // still running will settle again.
+        if (requested !== null && loop.restingDomIndex() !== requested) return;
+
+        // Trust the intersections again before crossing the seam: the teleport moves the track under the
+        // very index that was pending, so holding on to it would name the wrong child.
+        this.requestedDomIndex.set(null);
+
+        if (this.isLooping()) loop.teleport();
+      },
+      // The reader is scrolling for themselves now, so whatever a button asked for is no longer the plan.
+      onPointerDown: () => this.requestedDomIndex.set(null),
+    });
+
+    useCarouselSlideProgress({
+      scrollable: this.scrollable,
+      enabled: computed(() => this.resolvedTransitionDriver() === 'js'),
+    });
+
+    // The transition CSS is mounted rather than shipped, so `transition="none"` — the default — injects
+    // none of it, and a headless carousel gets the property registration it needs to write its own.
+    let hasMountedTransitionStyles = false;
+
+    effect(() => {
+      if (hasMountedTransitionStyles || this.transition() === 'none') return;
+
+      hasMountedTransitionStyles = true;
+      this.styleManager.mount(CarouselTransitionStylesComponent);
+    });
 
     if (ngDevMode) {
       afterNextRender(() => {
@@ -169,10 +399,10 @@ export class CarouselDirective {
       let hasCheckedItems = false;
 
       effect(() => {
-        const count = this.count();
+        const domCount = this.domCount();
         const itemCount = this.items().length;
 
-        if (hasCheckedItems || count === 0) return;
+        if (hasCheckedItems || domCount === 0) return;
 
         hasCheckedItems = true;
 
@@ -187,28 +417,30 @@ export class CarouselDirective {
     }
   }
 
-  /** Go to the next slide, wrapping to the first when `loop` is on. */
+  /** Go to the next slide. On a looping carousel it simply keeps scrolling; otherwise it wraps. */
   public next() {
     if (!this.canGoNext()) return;
 
-    this.goTo(this.isAtEnd() ? 0 : this.activeIndex() + 1);
+    this.goToDomIndex(this.stepDomIndex(1));
   }
 
-  /** Go to the previous slide, wrapping to the last when `loop` is on. */
+  /** Go to the previous slide. On a looping carousel it simply keeps scrolling; otherwise it wraps. */
   public previous() {
     if (!this.canGoPrevious()) return;
 
-    this.goTo(this.isAtStart() ? this.count() - 1 : this.activeIndex() - 1);
+    this.goToDomIndex(this.stepDomIndex(-1));
   }
 
-  /** Scroll a slide into view by index. Out-of-range indices are ignored. */
+  /**
+   * Scroll a slide into view by index. Out-of-range indices are ignored.
+   *
+   * On a looping carousel it goes the shorter way round — the clones mean the same slide exists a whole
+   * track either side, so slide 5 of 6 is one step back from slide 1, not five forward.
+   */
   public goTo(index: number) {
     if (index < 0 || index >= this.count()) return;
 
-    // Always align the slide to the start of the track. The scrollable's default ('nearest') deliberately
-    // does nothing for an element that is merely adjacent to the viewport edge — which is exactly where the
-    // next slide sits in a one-slide-per-view carousel, so `next()` would never move.
-    this.scrollable()?.scrollToElementByIndex({ index, origin: 'start' });
+    this.goToDomIndex(this.nearestDomIndexOf(index));
   }
 
   /** @internal Called by a slide while it exists. */
@@ -219,5 +451,97 @@ export class CarouselDirective {
   /** @internal */
   public unregisterItem(item: CarouselItemDirective) {
     this.items.update((items) => items.filter((registered) => registered !== item));
+  }
+
+  /**
+   * @internal Which slide a track child shows: itself, or — for a clone — the slide it clones. `-1` before
+   * there is anything to map.
+   */
+  public slideIndexOf(domIndex: number) {
+    const count = this.count();
+
+    if (domIndex < 0 || count === 0) return -1;
+
+    const shifted = domIndex - this.cloneCount();
+
+    return ((shifted % count) + count) % count;
+  }
+
+  /**
+   * Scroll to a track child by its position among the children, counting clones.
+   *
+   * More than one slide away, the last slide is the only one animated and the rest is covered instantly.
+   * A browser gives a smooth scroll the same duration whatever the distance, so a multi-slide jump is a
+   * blur either way — and with a position-driven transition it is a blur of one transition per slide
+   * crossed, which is what made jumping five dots along look like a strobe. One step, at the speed a step
+   * is meant to take.
+   */
+  private goToDomIndex(domIndex: number) {
+    const scrollable = this.scrollable();
+
+    if (!scrollable || domIndex < 0 || domIndex >= this.domCount()) return;
+
+    const from = this.activeDomIndex();
+    const origin = this.slideAlign();
+    const distance = from < 0 ? 0 : domIndex - from;
+
+    // Recorded before either scroll: a second click during this one steps from here rather than from the
+    // slide the intersections are still reporting, and the settle handler needs it to tell the instant
+    // reposition below apart from the animation that follows it.
+    this.requestedDomIndex.set(domIndex);
+
+    if (Math.abs(distance) > 1) {
+      scrollable.scrollToElementByIndex({
+        index: domIndex - Math.sign(distance),
+        origin,
+        behavior: 'instant',
+        ignoreForcedOrigin: true,
+      });
+    }
+
+    // Never 'nearest' (the scrollable's default): it deliberately does nothing for an element merely
+    // adjacent to the viewport edge, which is exactly where the next slide sits in a one-slide-per-view
+    // carousel — so `next()` would never move.
+    scrollable.scrollToElementByIndex({ index: domIndex, origin });
+  }
+
+  /**
+   * Which copy of a slide to travel to: the one nearest where the carousel is now. Only a looping track has
+   * more than one, and picking the nearest is what makes the dots go the short way round.
+   */
+  private nearestDomIndexOf(index: number) {
+    const cloneCount = this.cloneCount();
+    const target = cloneCount + index;
+
+    if (!this.isLooping()) return target;
+
+    const count = this.count();
+    const domCount = this.domCount();
+    const from = this.activeDomIndex();
+
+    if (from < 0) return target;
+
+    return [target - count, target, target + count]
+      .filter((candidate) => candidate >= 0 && candidate < domCount)
+      .reduce((best, candidate) => (Math.abs(candidate - from) < Math.abs(best - from) ? candidate : best), target);
+  }
+
+  /**
+   * The child one step along. While looping the clones are what make "one more" always exist; if the step
+   * would fall off the end of them — a teleport that hasn't happened yet — it re-enters the real run at the
+   * same slide instead. Without clones it wraps to the other end, which is the visible jump `loop` is
+   * without them.
+   */
+  private stepDomIndex(step: 1 | -1) {
+    const cloneCount = this.cloneCount();
+    const count = this.count();
+    const activeDomIndex = this.activeDomIndex();
+    const from = activeDomIndex < 0 ? cloneCount : activeDomIndex;
+    const target = from + step;
+
+    if (target >= 0 && target < this.domCount()) return target;
+    if (count === 0) return -1;
+
+    return cloneCount + ((((target - cloneCount) % count) + count) % count);
   }
 }
