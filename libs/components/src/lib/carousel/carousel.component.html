@@ -1,0 +1,61 @@
+<!-- The track is a scrollable: snapping per slide, one slide per view by default. Its own buttons, dots
+     and edge masks are off — they are decorative (`aria-hidden`, not tabbable), and a carousel's controls
+     have to be operable, so this component renders labelled ones below instead. -->
+<et-scrollable
+  [itemSize]="itemSize()"
+  [renderButtons]="false"
+  [renderNavigation]="false"
+  [renderMasks]="false"
+  class="et-carousel-track"
+  scrollMode="element"
+  snap
+>
+  <ng-content />
+</et-scrollable>
+
+@if (showControls() || showDots() || isAutoplayEnabled()) {
+  <div class="et-carousel-controls">
+    @if (showControls()) {
+      <button class="et-carousel-control" et-icon-button etCarouselPrevious size="sm" variant="transparent">
+        <i class="et-carousel-control-icon et-carousel-control-icon--previous" etIcon="et-chevron"></i>
+      </button>
+    }
+
+    @if (showDots()) {
+      <div class="et-carousel-dots">
+        @for (dot of dots(); track dot.index) {
+          <button
+            [attr.aria-label]="dot.label"
+            [attr.aria-current]="dot.isActive ? 'true' : null"
+            [attr.data-active]="dot.isActive ? '' : null"
+            (click)="carousel.goTo(dot.index)"
+            class="et-carousel-dot"
+            type="button"
+          >
+            <!-- The progress ring exists only while a slide is counting down, so it starts fresh with every
+                 slide and every resume — the same restart the timer does, so the two can't drift apart. -->
+            @if (dot.isActive && isAutoplayRunning()) {
+              <span
+                [style.--_et-carousel-autoplay-duration.ms]="autoplayDuration()"
+                class="et-carousel-dot-progress"
+                aria-hidden="true"
+              ></span>
+            }
+          </button>
+        }
+      </div>
+    }
+
+    @if (isAutoplayEnabled()) {
+      <button class="et-carousel-control" et-icon-button etCarouselPlayToggle size="sm" variant="transparent">
+        <i [etIcon]="isAutoplayRunning() ? 'et-pause' : 'et-play'" class="et-carousel-control-icon"></i>
+      </button>
+    }
+
+    @if (showControls()) {
+      <button class="et-carousel-control" et-icon-button etCarouselNext size="sm" variant="transparent">
+        <i class="et-carousel-control-icon et-carousel-control-icon--next" etIcon="et-chevron"></i>
+      </button>
+    }
+  </div>
+}

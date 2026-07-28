@@ -1,0 +1,184 @@
+@layer components {
+  @property --et-carousel-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-carousel-dot-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  /* The dot's tap target, kept at a comfortable size while the dot itself stays small. */
+  @property --et-carousel-dot-target-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 24px;
+  }
+
+  .et-carousel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--et-carousel-gap);
+  }
+
+  .et-carousel-track {
+    /* The slides carry the visuals; the track is just the viewport they scroll through. */
+    display: block;
+  }
+
+  .et-carousel-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .et-carousel-control {
+    /* aria-disabled rather than disabled (the control keeps its tab stop), so the muted look is ours to apply. */
+    &:where([aria-disabled='true']) {
+      opacity: 0.4;
+      cursor: default;
+    }
+  }
+
+  .et-carousel-control-icon {
+    inline-size: 14px;
+    block-size: 14px;
+
+    /* The chevron points up; the controls point along the track. */
+    &:where(.et-carousel-control-icon--previous) {
+      rotate: -90deg;
+    }
+
+    &:where(.et-carousel-control-icon--next) {
+      rotate: 90deg;
+    }
+  }
+
+  .et-carousel-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .et-carousel-dot {
+    display: grid;
+    place-items: center;
+    inline-size: var(--et-carousel-dot-target-size);
+    block-size: var(--et-carousel-dot-target-size);
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+
+    /* The dot itself: a small disc in the middle of a target big enough to hit. */
+    &::before {
+      content: '';
+      inline-size: var(--et-carousel-dot-size);
+      block-size: var(--et-carousel-dot-size);
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 35%, transparent);
+      transition: background-color 120ms ease;
+    }
+
+    &:hover::before {
+      background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 55%, transparent);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+      outline-offset: -2px;
+    }
+
+    /* The current slide's dot takes the accent, at full strength. */
+    &:where([data-active])::before {
+      background: var(--et-theme-color-primary-solid, currentColor);
+    }
+  }
+
+  /* The autoplay countdown, drawn as a ring closing around the active dot. It is rendered only while the
+     countdown is actually running (see the template), which is what keeps it in step with the timer: both
+     start together on a new slide and on a resume, and neither can be left mid-way by the other. */
+  .et-carousel-dot-progress {
+    position: absolute;
+    inline-size: var(--et-carousel-dot-target-size);
+    block-size: var(--et-carousel-dot-target-size);
+    border-radius: 50%;
+    background: conic-gradient(
+      var(--et-theme-color-primary-solid, currentColor) var(--_et-carousel-progress),
+      transparent 0
+    );
+    mask: radial-gradient(
+      closest-side,
+      transparent calc(50% - 3px),
+      black calc(50% - 3px) calc(50% - 1px),
+      transparent calc(50% - 1px)
+    );
+    animation: et-carousel-autoplay-progress var(--_et-carousel-autoplay-duration, 5000ms) linear forwards;
+  }
+
+  .et-carousel-dot {
+    position: relative;
+  }
+
+  /* `--_et-carousel-progress` is animated rather than the gradient itself: a registered percentage
+     interpolates, a conic-gradient does not. */
+  @property --_et-carousel-progress {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 0%;
+  }
+
+  @keyframes et-carousel-autoplay-progress {
+    from {
+      --_et-carousel-progress: 0%;
+    }
+
+    to {
+      --_et-carousel-progress: 100%;
+    }
+  }
+
+  /* Under reduced motion autoplay never runs (the directive refuses), so the ring never renders — nothing
+     to disable here. The scroll itself follows the platform's own reduced-motion handling. */
+
+  /* `transition="dim"`: the slides either side of the current one recede. It is a scroll-driven animation —
+     each slide's own `view()` timeline — so it tracks the finger through a swipe rather than snapping when
+     some "active" flag flips, and it costs no JavaScript at all.
+
+     Everything is inside `@supports`: where the timeline isn't implemented yet (Firefox, as of this
+     writing) an unsupported `animation-timeline` would otherwise leave the animation running on the
+     document timeline and flash every slide once. Gated this way, those browsers simply get the plain
+     scroll — the carousel is fully usable either way, which is the only reason this can ship now. */
+  @supports (animation-timeline: view(inline)) {
+    @media (prefers-reduced-motion: no-preference) {
+      .et-carousel:where([data-transition='dim']) .et-carousel-item {
+        animation: et-carousel-dim linear both;
+        animation-timeline: view(inline);
+        /* Tie the keyframes to the slide's pass across the scrollport, so 50% is "centred". */
+        animation-range: cover 0% cover 100%;
+      }
+    }
+  }
+
+  @keyframes et-carousel-dim {
+    0% {
+      opacity: 0.35;
+      scale: 0.92;
+    }
+
+    50% {
+      opacity: 1;
+      scale: 1;
+    }
+
+    100% {
+      opacity: 0.35;
+      scale: 0.92;
+    }
+  }
+}

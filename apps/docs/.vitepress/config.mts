@@ -211,6 +211,7 @@ export default defineConfig({
             { text: 'Accordion', link: '/components/accordion' },
             { text: 'Bracket', link: '/components/bracket' },
             { text: 'Breadcrumb', link: '/components/breadcrumb' },
+            { text: 'Carousel', link: '/components/carousel' },
             { text: 'Grid', link: '/components/grid' },
             { text: 'Pagination', link: '/components/pagination' },
             { text: 'Scrollable', link: '/components/scrollable' },

@@ -76,14 +76,14 @@ export class ScrollableComponent {
 
   public renderMasks = input(true, { transform: booleanAttribute });
   public maskVariant = input<ScrollableMaskVariant>('gradient');
-  public renderButtons = input(true);
+  public renderButtons = input(true, { transform: booleanAttribute });
   public buttonPosition = input<ScrollableButtonPosition>('inside');
-  public renderNavigation = input(false);
-  public snap = input(false);
-  public cursorDragScroll = input(true);
-  public darkenNonIntersectingItems = input(false);
-  public stickyButtons = input(false);
-  public showLoadingTemplate = input(false);
+  public renderNavigation = input(false, { transform: booleanAttribute });
+  public snap = input(false, { transform: booleanAttribute });
+  public cursorDragScroll = input(true, { transform: booleanAttribute });
+  public darkenNonIntersectingItems = input(false, { transform: booleanAttribute });
+  public stickyButtons = input(false, { transform: booleanAttribute });
+  public showLoadingTemplate = input(false, { transform: booleanAttribute });
   public loadingTemplatePosition = input<ScrollableLoadingTemplatePosition>('end');
   public scrollableRole = input<string | null>(null);
   public scrollableClass = input<string | null>(null);

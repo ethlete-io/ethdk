@@ -1,6 +1,35 @@
 # 06 — Carousel
 
-**Status: planned, not started.** Size: M. Research done 2026-07-23 against
+**Status: shipped 2026-07-28.** `libs/components/src/lib/carousel/` — headless `etCarousel` (active
+slide from the scrollable's intersections, `next`/`previous`/`goTo`, `loop`, region semantics),
+`etCarouselItem` (slide semantics + per-slide duration), opt-in `etCarouselAutoplay`, the three control
+directives, default `et-carousel`, `CAROUSEL_IMPORTS`, `provideCarouselLabels`, error codes ET38xx,
+stories, spec, docs page, changeset. Adds the `et-play`/`et-pause` icons and `booleanAttribute`
+transforms on the scrollable's boolean inputs.
+
+Deviations and decisions beyond the plan below:
+
+- **Where `etCarousel` goes.** It needs the scrollable, but the slides and controls need _it_ — and DI
+  only looks upwards. So it takes its track from its own element, from its content, or from
+  `<et-carousel>` handing it over, and the recommended headless shape is a wrapper around both the
+  scrollable and the controls. (First attempt put it on the inner scrollable inside the Tier 3 template;
+  projected slides and the controls then resolved `null`, which the Storybook run caught.)
+- **`goTo` scrolls with `origin: 'start'`.** The scrollable's default `'nearest'` deliberately does
+  nothing for an element merely _adjacent_ to the viewport edge — which is exactly where the next slide
+  sits at one-slide-per-view, so `next()` never moved.
+- **Autoplay restarts the slide's full duration on resume** rather than continuing a partial one, so the
+  progress ring (a CSS animation, rendered only while the countdown runs) and the timer are one clock and
+  cannot drift. Reduced motion refuses to play at all; the WCAG 2.2.2 pause control is enforced in dev.
+- **Slide transitions are scroll-driven, not JS.** `transition="dim"` runs each slide's keyframes on its
+  own `view()` timeline, so the effect tracks a drag instead of stepping on an "active" flag — the closest
+  honest equivalent of cdk's Apple-TV-ish mask-slide in a scrolling carousel. It sits behind
+  `@supports (animation-timeline: view(inline))` + `prefers-reduced-motion`, so browsers without
+  scroll-driven animations (Firefox, as of this writing) get the plain scroll. `data-transition` on the
+  host plus `.et-carousel-item` is the hook for consumers' own effects (e.g. a clip-path wipe).
+- **Off-screen slides are not hidden.** cdk stacked its slides and had to `inert` them; a scrolling
+  carousel must leave them reachable by scroll and by Tab.
+
+Size: M. Research below done 2026-07-23 against
 `libs/cdk/src/lib/components/carousel/` (~970 lines). Net-new in
 `libs/components`.
 

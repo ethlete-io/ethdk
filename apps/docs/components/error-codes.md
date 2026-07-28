@@ -52,6 +52,7 @@ Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU
 | 3500–3599 | Table              | [Table](/components/table)                         |
 | 3600–3699 | Accordion          | [Accordion](/components/accordion)                 |
 | 3700–3799 | Breadcrumb         | [Breadcrumb](/components/breadcrumb)               |
+| 3800–3899 | Carousel           | [Carousel](/components/carousel)                   |
 
 ::: info Codes below 1000
 Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web sockets). `ET1000`/`ET1001` therefore exist in both packages — the bracketed source in the message (`[SelectDirective]` vs. a query feature) tells them apart.
@@ -337,3 +338,14 @@ All breadcrumb checks run in dev mode only, after the first render.
 | -------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | `ET3700` | An `etBreadcrumbItemTemplate` or `etBreadcrumbSeparator` sits outside a breadcrumb. | Move the `<ng-template>` inside the `[etBreadcrumb]` element it belongs to. |
 | `ET3701` | A breadcrumb has no crumb templates, so there is no trail to render.                | Declare one `<ng-template etBreadcrumbItemTemplate>` per crumb.             |
+
+## Carousel (ET38xx)
+
+All carousel checks run in dev mode only.
+
+| Code     | Cause                                                                    | Fix                                                                                     |
+| -------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| `ET3800` | A slide, control or `etCarouselAutoplay` sits outside an `[etCarousel]`. | Move it inside the carousel element — controls included, since they resolve it upwards. |
+| `ET3801` | The carousel has children but none of them is an `etCarouselItem`.       | Add the directive to each slide, so it can label them and track the current one.        |
+| `ET3802` | Autoplay is on with no control to pause it (WCAG 2.2.2).                 | Add a button with `etCarouselPlayToggle`, or use `<et-carousel>`, which renders one.    |
+| `ET3803` | `etCarousel` found no scrollable to move.                                | Put it on, or around, an `[etScrollable]` element (or use `<et-carousel>`).             |

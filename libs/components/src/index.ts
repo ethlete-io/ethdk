@@ -3,6 +3,7 @@ export * from './lib/bracket';
 export * from './lib/breadcrumb';
 export * from './lib/button';
 export * from './lib/calendar';
+export * from './lib/carousel';
 export * from './lib/chip';
 export * from './lib/focus-ring';
 export * from './lib/forms';
