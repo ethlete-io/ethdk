@@ -43,14 +43,16 @@ import { ScrollableButtonPosition } from './scrollable.types';
     '[class.et-scrollable-buttons--footer]': 'position() === "footer"',
   },
   styles: `
-    .et-scrollable-buttons {
-      grid-row: 1 / 1;
-      grid-column: 1 / 1;
-      pointer-events: none;
+    @layer components {
+      .et-scrollable-buttons {
+        grid-row: 1 / 1;
+        grid-column: 1 / 1;
+        pointer-events: none;
 
-      .et-scrollable-button {
-        position: absolute;
-        opacity: 0;
+        .et-scrollable-button {
+          position: absolute;
+          opacity: 0;
+        }
       }
     }
   `,

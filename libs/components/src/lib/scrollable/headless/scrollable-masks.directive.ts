@@ -12,14 +12,16 @@ import { ScrollableDirective } from './scrollable.directive';
     class: 'et-scrollable-masks',
   },
   styles: `
-    .et-scrollable-masks {
-      grid-row: 1 / 1;
-      grid-column: 1 / 1;
-      pointer-events: none;
+    @layer components {
+      .et-scrollable-masks {
+        grid-row: 1 / 1;
+        grid-column: 1 / 1;
+        pointer-events: none;
 
-      .et-scrollable-mask {
-        position: absolute;
-        opacity: 0;
+        .et-scrollable-mask {
+          position: absolute;
+          opacity: 0;
+        }
       }
     }
   `,

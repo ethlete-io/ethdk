@@ -37,70 +37,72 @@ import { ScrollableNavigation } from './scrollable.types';
     'aria-hidden': 'true',
   },
   styles: `
-    .et-scrollable-navigation {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .et-scrollable-navigation-item {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      border: none;
-      padding: 0;
-      inline-size: 20px;
-      block-size: 20px;
-      border-radius: 50%;
-      cursor: pointer;
-      background-color: transparent;
-
-      &.et-scrollable-navigation-item--active::after {
-        background-color: var(--et-theme-color-primary, #c6c6c6);
-      }
-
-      &::after {
-        content: '';
-        display: block;
-        inline-size: 50%;
-        block-size: 50%;
-        border-radius: 50%;
-        background-color: var(--et-surface-interaction-solid, #4b4b4b);
-        opacity: 0.3;
-        transform: scale(0);
-      }
-
-      &[active-offset='0']::after {
-        opacity: 1;
-        transform: scale(1);
-      }
-      &[active-offset='1']::after {
-        opacity: 0.6;
-        transform: scale(0.75);
-      }
-      &[active-offset='2']::after {
-        opacity: 0.45;
-        transform: scale(0.6);
-      }
-      &[active-offset='3']::after {
-        opacity: 0.35;
-        transform: scale(0.5);
-      }
-      &[active-offset='4']::after {
-        opacity: 0.3;
-        transform: scale(0.4);
-      }
-    }
-
-    .et-scrollable-progress-bar {
-      overflow: hidden;
-      max-inline-size: 100px;
-      display: flex;
-      align-items: center;
-
-      .et-scrollable-dots-container {
+    @layer components {
+      .et-scrollable-navigation {
         display: flex;
-        flex-wrap: nowrap;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .et-scrollable-navigation-item {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: none;
+        padding: 0;
+        inline-size: 20px;
+        block-size: 20px;
+        border-radius: 50%;
+        cursor: pointer;
+        background-color: transparent;
+
+        &.et-scrollable-navigation-item--active::after {
+          background-color: var(--et-theme-color-primary, #c6c6c6);
+        }
+
+        &::after {
+          content: '';
+          display: block;
+          inline-size: 50%;
+          block-size: 50%;
+          border-radius: 50%;
+          background-color: var(--et-surface-interaction-solid, #4b4b4b);
+          opacity: 0.3;
+          transform: scale(0);
+        }
+
+        &[active-offset='0']::after {
+          opacity: 1;
+          transform: scale(1);
+        }
+        &[active-offset='1']::after {
+          opacity: 0.6;
+          transform: scale(0.75);
+        }
+        &[active-offset='2']::after {
+          opacity: 0.45;
+          transform: scale(0.6);
+        }
+        &[active-offset='3']::after {
+          opacity: 0.35;
+          transform: scale(0.5);
+        }
+        &[active-offset='4']::after {
+          opacity: 0.3;
+          transform: scale(0.4);
+        }
+      }
+
+      .et-scrollable-progress-bar {
+        overflow: hidden;
+        max-inline-size: 100px;
+        display: flex;
+        align-items: center;
+
+        .et-scrollable-dots-container {
+          display: flex;
+          flex-wrap: nowrap;
+        }
       }
     }
   `,
