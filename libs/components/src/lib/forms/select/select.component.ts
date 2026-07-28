@@ -57,6 +57,10 @@ import { SelectVirtualOptionComponent } from './select-virtual-option.component'
         'hasMoreItems',
         'pickOnly',
         'mirrorPanelWidth',
+        // Named by something outside the field (a shared caption) rather than a projected <et-label> —
+        // forwarded so the field's labelling guard sees the name. See SelectDirective.ariaLabel.
+        'aria-label',
+        'aria-labelledby',
       ],
       outputs: [
         'valueChange',
