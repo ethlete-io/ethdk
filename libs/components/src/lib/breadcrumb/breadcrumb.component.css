@@ -1,0 +1,125 @@
+@layer components {
+  @property --et-breadcrumb-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 6px;
+  }
+
+  @property --et-breadcrumb-separator-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  /* The placeholder a `loading` crumb renders. A fixed width, because there is no label yet to size it
+     from and a zero-width crumb would make the trail jump when the name arrives. */
+  @property --et-breadcrumb-loading-width {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 72px;
+  }
+
+  .et-breadcrumb {
+    display: block;
+    /* The clip that makes overflow measurable — `scroll.width > client.width` is the directive's
+       "doesn't fit" signal. Never `auto`: a scrollbar would defeat the collapsing it drives. */
+    overflow: hidden;
+    color: var(--et-surface-color-muted-solid, GrayText);
+  }
+
+  .et-breadcrumb-list {
+    display: flex;
+    align-items: center;
+    gap: var(--et-breadcrumb-gap);
+    /* Natural width, so flex can't squeeze the crumbs into ellipsised stubs instead of overflowing. */
+    inline-size: max-content;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .et-breadcrumb-slot {
+    display: flex;
+    align-items: center;
+    gap: var(--et-breadcrumb-gap);
+    flex: none;
+    white-space: nowrap;
+  }
+
+  /* Collapsed and *still* too narrow (a long title on a phone): there is nothing left to move into the
+     overflow, so the current page truncates rather than being clipped mid-word. The list may drop its
+     natural width here because the full-trail width is already remembered — the directive stops
+     measuring while collapsed, so this can't feed back into the collapse decision. */
+  .et-breadcrumb:where([data-collapsed]) {
+    .et-breadcrumb-list {
+      inline-size: auto;
+    }
+
+    .et-breadcrumb-slot:last-child {
+      flex: 0 1 auto;
+      min-inline-size: 0;
+
+      .et-breadcrumb-item {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+  }
+
+  .et-breadcrumb-item {
+    color: inherit;
+    text-decoration: none;
+    border-radius: 4px;
+
+    /* Only the crumbs that go somewhere react to the pointer; the current page is text. */
+    &:where(a, button):hover {
+      color: var(--et-surface-color-solid, CanvasText);
+      text-decoration: underline;
+    }
+
+    &:where(a, button):focus-visible {
+      outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+      outline-offset: 2px;
+    }
+
+    /* The page you are on: the one crumb that is not a link, so it carries the emphasis. */
+    &:where([aria-current='page']) {
+      color: var(--et-surface-color-solid, CanvasText);
+      font-weight: 500;
+    }
+  }
+
+  .et-breadcrumb-separator {
+    display: inline-flex;
+    align-items: center;
+    color: var(--et-surface-color-subtle-solid, GrayText);
+  }
+
+  .et-breadcrumb-chevron {
+    /* The chevron icon points up; a trail separator points along the reading direction. */
+    rotate: 90deg;
+    inline-size: var(--et-breadcrumb-separator-size);
+    block-size: var(--et-breadcrumb-separator-size);
+  }
+
+  .et-breadcrumb-overflow-trigger {
+    --et-button-padding: 0 6px;
+
+    /* The ellipsis sits high in its em box; nudging the label keeps the dots visually centred. */
+    line-height: 1;
+  }
+
+  .et-breadcrumb-overflow-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .et-breadcrumb-loading {
+    inline-size: var(--et-breadcrumb-loading-width);
+  }
+}

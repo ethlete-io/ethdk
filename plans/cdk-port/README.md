@@ -141,8 +141,8 @@ Each plan file's own header is the detail (including deviations); this is the in
 - [x] `02-pagination.md` — paginator + polish phase (2026-07-24)
 - [x] `03-skeleton.md` — skeleton container/item/text (2026-07-24)
 - [x] `04-accordion.md` — accordion + group + headless tier (2026-07-28)
-- [ ] `05-breadcrumb.md` — next up
-- [ ] `06-carousel.md`
+- [x] `05-breadcrumb.md` — breadcrumb + overflow + routed outlet (2026-07-28)
+- [ ] `06-carousel.md` — next up
 - [ ] `07-masonry.md`
 - [ ] `08-picture.md`
 - [ ] `09-query-error.md`

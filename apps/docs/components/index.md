@@ -74,6 +74,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 
 - [Accordion](/components/accordion) — disclosure headers with an animated collapse, single-open groups and arrow-key navigation.
 - [Bracket](/components/bracket) — tournament bracket renderer for single/double-elimination and swiss stages, with SVG connectors, journey highlighting and pluggable match/header cards.
+- [Breadcrumb](/components/breadcrumb) — template-authored trail with an overflow popover, loading crumbs and a routed-page outlet.
 - [Grid](/components/grid) — drag & resize dashboard grid with breakpoints, keyboard editing and backend serialization.
 - [Pagination](/components/pagination) — page-number paginator with ellipsis, jump controls and a headless tier.
 - [Scrollable](/components/scrollable) — scroll containers with buttons, masks, snap and drag scrolling.

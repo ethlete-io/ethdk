@@ -1,6 +1,33 @@
 # 05 — Breadcrumb
 
-**Status: planned, not started.** Size: S–M. Research done 2026-07-23 against
+**Status: shipped 2026-07-28.** `libs/components/src/lib/breadcrumb/` — headless `etBreadcrumb` +
+`etBreadcrumbItemTemplate` / `etBreadcrumbItem` / `etBreadcrumbSeparator` / `etBreadcrumbTemplate`,
+default `et-breadcrumb` + `et-breadcrumb-outlet`, `provideBreadcrumbManager`,
+`provideBreadcrumbLabels`, `BREADCRUMB_IMPORTS`, error codes ET37xx, stories, spec, docs page,
+changeset.
+
+Deviations from the plan below, all deliberate:
+
+- **Overflow is a toggletip, not a menu.** The hidden crumbs are the consumer's links, and a
+  `role="menu"` may only contain menu items — wrapping arbitrary anchors in `et-menu-item` would nest
+  interactive elements. The toggletip keeps them a plain list of links, moves focus in, and restores it
+  on Escape.
+- **Measure-once collapsing instead of cdk's shrink loop.** cdk decremented a visible-item count per
+  effect run, which only ever produced the binary all-or-first+menu+last shape anyway. This measures
+  the full trail's `scroll.width` the moment it stops fitting, then collapses whenever the available
+  width is below it — hysteresis, so a resize can't oscillate. Verified collapse at 500px → stays
+  collapsed while growing → expands at 700px (full trail needs 606px) → re-collapses.
+- **Crumb order comes from `contentChildren`, not self-registration.** Order _is_ the meaning of a
+  breadcrumb, and registration order goes stale when a `@for` moves a view. Sorting the templates'
+  anchor comment nodes by `compareDocumentPosition` was tried first and rejected: it disagrees between
+  jsdom and the browser (detached comment nodes compare arbitrarily).
+- **Added**: `aria-current="page"` on the last crumb (via `etBreadcrumbItem`), `<nav>`/`<ol>`/`<li>`
+  semantics, localizable labels (`provideBreadcrumbLabels`), and truncation of the current page once
+  even the collapsed trail doesn't fit.
+- **Dropped** the `offset` input: the toggletip positions itself, so there is no floating-ui type to
+  leak.
+
+Size: S–M. Research below done 2026-07-23 against
 `libs/cdk/src/lib/components/breadcrumb/`. Net-new in `libs/components`.
 
 ## What cdk ships today

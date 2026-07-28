@@ -51,6 +51,7 @@ Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU
 | 3400–3499 | Bracket            | [Bracket](/components/bracket)                     |
 | 3500–3599 | Table              | [Table](/components/table)                         |
 | 3600–3699 | Accordion          | [Accordion](/components/accordion)                 |
+| 3700–3799 | Breadcrumb         | [Breadcrumb](/components/breadcrumb)               |
 
 ::: info Codes below 1000
 Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web sockets). `ET1000`/`ET1001` therefore exist in both packages — the bracketed source in the message (`[SelectDirective]` vs. a query feature) tells them apart.
@@ -327,3 +328,12 @@ All accordion checks run in dev mode only, after the first render.
 | `ET3600` | An `etAccordionTrigger`, `etAccordionPanel` or slot template sits outside an accordion. | Move it inside the `[etAccordion]` element (e.g. `<et-accordion>`) it belongs to.               |
 | `ET3601` | An accordion rendered no `etAccordionTrigger`, so nothing can expand it.                | Add a trigger — ideally a `<button etAccordionTrigger>` inside a heading.                       |
 | `ET3602` | An accordion is open but has no `etAccordionPanel`.                                     | Add an `etAccordionPanel` element, or render it conditionally only while the accordion is open. |
+
+## Breadcrumb (ET37xx)
+
+All breadcrumb checks run in dev mode only, after the first render.
+
+| Code     | Cause                                                                               | Fix                                                                         |
+| -------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `ET3700` | An `etBreadcrumbItemTemplate` or `etBreadcrumbSeparator` sits outside a breadcrumb. | Move the `<ng-template>` inside the `[etBreadcrumb]` element it belongs to. |
+| `ET3701` | A breadcrumb has no crumb templates, so there is no trail to render.                | Declare one `<ng-template etBreadcrumbItemTemplate>` per crumb.             |
