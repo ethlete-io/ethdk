@@ -20,6 +20,7 @@ import {
 } from '@ethlete/query';
 import { EMPTY, filter, fromEvent, interval, map, merge, switchMap, tap } from 'rxjs';
 import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';
+import { queryDevtoolsShortcutLabel } from './query-devtools-shortcut';
 import { QueryDevtoolsToggleComponent } from './query-devtools-toggle.component';
 
 // The registry stores queries type-erased; the panel reads them structurally.
@@ -156,6 +157,8 @@ export class QueryDevtoolsComponent {
     { id: 'cache', label: 'Cache' },
     { id: 'events', label: 'Events' },
   ] satisfies { id: DevtoolsTab; label: string }[];
+
+  protected readonly shortcut = queryDevtoolsShortcutLabel();
 
   protected open = signal(this.persisted.open ?? false);
   protected panelHeight = signal(this.persisted.height ?? DEFAULT_HEIGHT);
@@ -352,9 +355,11 @@ export class QueryDevtoolsComponent {
     const doc = this.document;
 
     // Global toggle shortcut: Ctrl/Cmd + Alt + Q ("Q" for Query) — uncommon, no browser/OS conflict.
+    // Matched on `code` (the physical key), not `key`: on macOS, Option rewrites `key` to the layout's
+    // alternate glyph (Option+Q is "œ" on a US layout), so a `key === 'q'` test never fires there.
     fromEvent<KeyboardEvent>(doc, 'keydown')
       .pipe(
-        filter((e) => (e.ctrlKey || e.metaKey) && e.altKey && e.key.toLowerCase() === 'q'),
+        filter((e) => (e.ctrlKey || e.metaKey) && e.altKey && (e.code === 'KeyQ' || e.key.toLowerCase() === 'q')),
         tap((e) => {
           e.preventDefault();
           this.open.update((v) => !v);

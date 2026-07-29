@@ -1,6 +1,11 @@
-import { Component, computed, input, linkedSignal, ViewEncapsulation } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, computed, input, linkedSignal, signal, ViewEncapsulation } from '@angular/core';
+import { Subject, switchMap, tap, timer } from 'rxjs';
 
 type JsonKind = 'string' | 'number' | 'boolean' | 'null' | 'undefined' | 'array' | 'object';
+
+/** How long the copy button stays ticked after a successful write. */
+const COPIED_RESET_MS = 1200;
 
 const kindOf = (value: unknown): JsonKind => {
   if (value === null) return 'null';
@@ -19,21 +24,33 @@ const kindOf = (value: unknown): JsonKind => {
   template: `
     @if (isContainer()) {
       <div class="et-query-devtools-json-node">
-        <button
-          [attr.aria-expanded]="effectiveExpanded()"
-          (click)="toggle()"
-          class="et-query-devtools-json-row et-query-devtools-json-toggle"
-          type="button"
-        >
-          <span class="et-query-devtools-json-caret">{{ effectiveExpanded() ? '▾' : '▸' }}</span>
-          @if (nodeKey() !== null) {
-            <span [class.et-query-devtools-json-hit]="keyHit()" class="et-query-devtools-json-key">{{
-              nodeKey()
-            }}</span>
-            <span class="et-query-devtools-json-colon">:</span>
-          }
-          <span class="et-query-devtools-json-preview">{{ preview() }}</span>
-        </button>
+        <div class="et-query-devtools-json-row">
+          <button
+            [attr.aria-expanded]="effectiveExpanded()"
+            (click)="toggle()"
+            class="et-query-devtools-json-toggle"
+            type="button"
+          >
+            <span class="et-query-devtools-json-caret">{{ effectiveExpanded() ? '▾' : '▸' }}</span>
+            @if (nodeKey() !== null) {
+              <span [class.et-query-devtools-json-hit]="keyHit()" class="et-query-devtools-json-key">{{
+                nodeKey()
+              }}</span>
+              <span class="et-query-devtools-json-colon">:</span>
+            }
+            <span class="et-query-devtools-json-preview">{{ preview() }}</span>
+          </button>
+          <button
+            [attr.aria-label]="copyLabel()"
+            [title]="copyLabel()"
+            [class.et-query-devtools-json-copy--copied]="copied()"
+            (click)="copyValue()"
+            class="et-query-devtools-json-copy"
+            type="button"
+          >
+            {{ copied() ? '✓' : '⧉' }}
+          </button>
+        </div>
 
         @if (effectiveExpanded()) {
           <div class="et-query-devtools-json-children">
@@ -61,7 +78,16 @@ const kindOf = (value: unknown): JsonKind => {
         <span [class.et-query-devtools-json-hit]="valueHit()" class="et-query-devtools-json-value">{{
           display()
         }}</span>
-        <button (click)="copyValue()" class="et-query-devtools-json-copy" type="button" title="Copy value">⧉</button>
+        <button
+          [attr.aria-label]="copyLabel()"
+          [title]="copyLabel()"
+          [class.et-query-devtools-json-copy--copied]="copied()"
+          (click)="copyValue()"
+          class="et-query-devtools-json-copy"
+          type="button"
+        >
+          {{ copied() ? '✓' : '⧉' }}
+        </button>
       </div>
     }
   `,
@@ -114,6 +140,23 @@ export class QueryDevtoolsJsonComponent {
 
   protected effectiveExpanded = computed(() => (this.search() ? true : this.expanded()));
 
+  protected copied = signal(false);
+  private copiedReset$ = new Subject<void>();
+
+  protected copyLabel = computed(() => {
+    const value = this.value();
+
+    if (Array.isArray(value)) return `Copy array (${value.length} ${value.length === 1 ? 'item' : 'items'})`;
+
+    if (this.kind() === 'object') {
+      const count = Object.keys(value as object).length;
+
+      return `Copy object (${count} ${count === 1 ? 'key' : 'keys'})`;
+    }
+
+    return 'Copy value';
+  });
+
   protected preview = computed(() => {
     const value = this.value();
     if (Array.isArray(value)) return value.length ? `[…] ${value.length}` : '[]';
@@ -141,6 +184,17 @@ export class QueryDevtoolsJsonComponent {
     return !!term && this.display().toLowerCase().includes(term);
   });
 
+  constructor() {
+    // Each copy restarts the tick countdown; switchMap drops the pending reset of the previous one.
+    this.copiedReset$
+      .pipe(
+        switchMap(() => timer(COPIED_RESET_MS)),
+        tap(() => this.copied.set(false)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+  }
+
   protected childPath(key: string) {
     const path = this.path();
     return path ? `${path}.${key}` : key;
@@ -158,11 +212,33 @@ export class QueryDevtoolsJsonComponent {
     this.localExpanded.set(!this.localExpanded());
   }
 
+  /**
+   * Containers copy their whole subtree as JSON; leaves copy something pasteable — a raw string
+   * without the display quotes, so an id or url can go straight into a search box.
+   */
   protected copyValue() {
+    const value = this.value();
+    const kind = this.kind();
+
+    let text: string;
+
     try {
-      navigator.clipboard?.writeText(JSON.stringify(this.value(), null, 2));
+      if (kind === 'string') text = value as string;
+      else if (kind === 'undefined') text = 'undefined';
+      else text = JSON.stringify(value, null, 2);
     } catch {
-      // clipboard unavailable
+      // Circular references (or a BigInt / toJSON that throws) make the subtree unserializable.
+      return;
     }
+
+    navigator.clipboard
+      ?.writeText(text)
+      .then(() => this.flagCopied())
+      .catch(() => undefined);
+  }
+
+  private flagCopied() {
+    this.copied.set(true);
+    this.copiedReset$.next();
   }
 }

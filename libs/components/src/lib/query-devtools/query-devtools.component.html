@@ -36,7 +36,16 @@
         >
           ⌖ Inspect
         </button>
-        <button (click)="toggleOpen()" class="et-query-devtools-close" type="button" title="Close devtools">✕</button>
+        <button
+          (click)="toggleOpen()"
+          class="et-query-devtools-close-panel"
+          type="button"
+          title="Close devtools ({{ shortcut }})"
+        >
+          <span aria-hidden="true">✕</span>
+          Close
+          <kbd class="et-query-devtools-kbd">{{ shortcut }}</kbd>
+        </button>
       </div>
     </header>
 
@@ -46,10 +55,22 @@
         @case ('queries') {
           <div class="et-query-devtools-master-detail">
             <div class="et-query-devtools-list">
-              <div class="et-query-devtools-toolbar">
+              <div [class.et-query-devtools-toolbar--filtered]="!!inspectFilterIds()" class="et-query-devtools-toolbar">
                 @if (inspectFilterIds(); as ids) {
-                  <span class="et-query-devtools-filter-chip">⌖ inspected · {{ ids.length }}</span>
-                  <button (click)="clearInspectFilter()" class="et-query-devtools-btn" type="button">Reset</button>
+                  <span class="et-query-devtools-filter-chip">
+                    <span class="et-query-devtools-filter-icon" aria-hidden="true">⌖</span>
+                    Inspected element
+                    <span class="et-query-devtools-filter-count">{{ ids.length }}</span>
+                  </span>
+                  <button
+                    (click)="clearInspectFilter()"
+                    class="et-query-devtools-filter-clear"
+                    type="button"
+                    title="Clear the inspection filter and show all queries"
+                  >
+                    <span aria-hidden="true">✕</span>
+                    Clear
+                  </button>
                 } @else {
                   <label class="et-query-devtools-field">
                     <span>Client</span>
@@ -65,8 +86,8 @@
                       }
                     </select>
                   </label>
+                  <span class="et-query-devtools-count">{{ filteredQueries().length }}</span>
                 }
-                <span class="et-query-devtools-count">{{ filteredQueries().length }}</span>
               </div>
 
               @for (item of filteredQueries(); track item.entry.id) {
@@ -90,7 +111,7 @@
               } @empty {
                 @if (inspectFilterIds()) {
                   <p class="et-query-devtools-empty">
-                    The inspected element's queries are no longer registered. Reset the filter.
+                    The inspected element's queries are no longer registered. Clear the filter.
                   </p>
                 } @else {
                   <p class="et-query-devtools-empty">No queries registered.</p>

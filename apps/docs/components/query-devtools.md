@@ -54,6 +54,12 @@ the demo controls to drive real fixtures through every tab. Drag the panel's top
 edge to resize it. (The floating button is rendered in its own Shadow DOM so
 host-app CSS can't affect it.)
 
+Both the floating button and the panel's **Close** button print the shortcut for
+the current platform (`⌘⌥Q` on Apple, `Ctrl+Alt+Q` elsewhere), so it's
+discoverable without reading this page. The shortcut is matched on the physical
+key, which keeps it working on layouts where holding <kbd>Alt</kbd> rewrites the
+character the keyboard reports.
+
 ## Tabs
 
 | Tab           | Shows                                                                                                                                                                                                                                                                                                                                           |
@@ -72,7 +78,11 @@ The panel doesn't just display state — it acts on the live query objects your
 components are bound to, which the browser Network tab can't do:
 
 - **Value explorer** — a collapsible, searchable tree of the _transformed_ value
-  (args / response / error, post-`transformResponse`), with copy-to-clipboard.
+  (args / response / error, post-`transformResponse`). Every row copies to the
+  clipboard, including arrays and objects: a container copies its whole subtree as
+  formatted JSON, a leaf copies the bare value (a string without the display
+  quotes, so an id or url pastes straight into a search box). The button ticks
+  green to confirm.
 - **JIT editing** — edit a query's response and apply it via `setResponse()` (the
   UI re-renders instantly — great for optimistic / edge-case testing), or replay
   the query with edited args.
@@ -81,7 +91,9 @@ components are bound to, which the browser Network tab can't do:
 - **Cache actions** — refetch or evict individual cache entries and watch the
   freshness countdown.
 - **Inspect** — toggle inspect mode, then hover the live UI to highlight the query
-  a component created; click to jump straight to its detail.
+  a component created; click to jump straight to its detail. The Queries list then
+  shows an **Inspected element** banner with the number of matches, and **Clear**
+  restores the full list.
 
 ## Persistence
 

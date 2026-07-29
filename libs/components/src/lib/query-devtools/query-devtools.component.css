@@ -145,6 +145,39 @@
     font: inherit;
   }
 
+  /* The panel's own close button — a labelled pill rather than a bare glyph, since dismissing the
+     devtools shouldn't be the least discoverable control in the header. */
+  .et-query-devtools-close-panel {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    border: 1px solid var(--_et-qdt-border);
+    border-radius: 0.4rem;
+    background: var(--_et-qdt-hover);
+    color: var(--_et-qdt-fg);
+    cursor: pointer;
+    padding: 0.4rem 0.6rem 0.4rem 0.8rem;
+    font: inherit;
+  }
+
+  .et-query-devtools-close-panel:hover {
+    border-color: var(--_et-qdt-error);
+    color: var(--_et-qdt-error);
+  }
+
+  .et-query-devtools-kbd {
+    border-radius: 0.3rem;
+    background: var(--_et-qdt-hover);
+    box-shadow: inset 0 0 0 1px var(--_et-qdt-border);
+    color: var(--_et-qdt-muted);
+    padding: 0.15rem 0.4rem;
+    font: inherit;
+    font-size: 1.1rem;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
   .et-query-devtools-inspect-box {
     position: fixed;
     z-index: 2147483002;
@@ -221,15 +254,55 @@
     border-block-start: 1px solid var(--_et-qdt-border);
   }
 
+  /* The inspection filter reads as a state applied to the whole list, so it's a tinted banner with an
+     accent edge rather than a solid pill floating in the toolbar. */
   .et-query-devtools-filter-chip {
     display: inline-flex;
     align-items: center;
-    padding: 0.3rem 0.7rem;
+    gap: 0.6rem;
+    padding: 0.3rem 0.35rem 0.3rem 0.7rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--_et-qdt-accent) 16%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--_et-qdt-accent) 45%, transparent);
+    color: var(--_et-qdt-accent);
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .et-query-devtools-filter-icon {
+    font-size: 1.3rem;
+    line-height: 1;
+  }
+
+  .et-query-devtools-filter-count {
     border-radius: 999px;
     background: var(--_et-qdt-accent);
     color: #09090b;
-    font-size: 1.1rem;
-    font-weight: 600;
+    min-inline-size: 1.8rem;
+    padding: 0 0.5rem;
+    text-align: center;
+  }
+
+  .et-query-devtools-filter-clear {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--_et-qdt-border);
+    border-radius: 0.4rem;
+    background: transparent;
+    color: var(--_et-qdt-muted);
+    cursor: pointer;
+    padding: 0.3rem 0.6rem;
+    font: inherit;
+    font-size: 1.15rem;
+    line-height: 1.4;
+  }
+
+  .et-query-devtools-filter-clear:hover {
+    border-color: color-mix(in srgb, var(--_et-qdt-accent) 60%, transparent);
+    color: var(--_et-qdt-fg);
   }
 
   .et-query-devtools-scroll {
@@ -284,6 +357,17 @@
     position: sticky;
     inset-block-start: 0;
     background: var(--_et-qdt-bg);
+  }
+
+  /* Layered over the opaque base so the sticky toolbar still hides the rows scrolling under it; the
+     inset shadow draws the accent edge without shifting the toolbar's contents. */
+  .et-query-devtools-toolbar--filtered {
+    background:
+      linear-gradient(to right, color-mix(in srgb, var(--_et-qdt-accent) 12%, transparent), transparent 65%),
+      var(--_et-qdt-bg);
+    box-shadow:
+      inset 0.2rem 0 0 var(--_et-qdt-accent),
+      inset 0 -1px 0 color-mix(in srgb, var(--_et-qdt-accent) 30%, transparent);
   }
 
   .et-query-devtools-field {
@@ -776,6 +860,10 @@
 
   .et-query-devtools-json-toggle {
     appearance: none;
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    min-inline-size: 0;
     border: none;
     background: transparent;
     color: var(--_et-qdt-fg);
@@ -785,7 +873,8 @@
     padding: 0.1rem 0;
   }
 
-  .et-query-devtools-json-toggle:hover {
+  /* The whole container row highlights, not just the toggle — the copy button shares the row now. */
+  .et-query-devtools-json-node > .et-query-devtools-json-row:hover {
     background: var(--_et-qdt-hover);
   }
 
@@ -832,6 +921,8 @@
 
   .et-query-devtools-json-copy {
     appearance: none;
+    /* Sits inline, directly after the value / container preview it copies. */
+    flex: 0 0 auto;
     border: none;
     background: transparent;
     color: var(--_et-qdt-subtle);
@@ -840,7 +931,18 @@
     font: inherit;
   }
 
-  .et-query-devtools-json-row:hover .et-query-devtools-json-copy {
+  .et-query-devtools-json-copy:hover:not(.et-query-devtools-json-copy--copied) {
+    color: var(--_et-qdt-fg);
+  }
+
+  /* Kept visible while ticked, so the confirmation survives the pointer leaving the row. */
+  .et-query-devtools-json-row:hover .et-query-devtools-json-copy,
+  .et-query-devtools-json-copy:focus-visible,
+  .et-query-devtools-json-copy--copied {
     opacity: 1;
+  }
+
+  .et-query-devtools-json-copy--copied {
+    color: var(--_et-qdt-success);
   }
 }

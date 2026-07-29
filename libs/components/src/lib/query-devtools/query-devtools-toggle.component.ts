@@ -1,4 +1,5 @@
 import { Component, output, ViewEncapsulation } from '@angular/core';
+import { queryDevtoolsShortcutLabel } from './query-devtools-shortcut';
 
 /**
  * The floating toggle button for the query devtools. Rendered with `ShadowDom` encapsulation so the
@@ -9,13 +10,14 @@ import { Component, output, ViewEncapsulation } from '@angular/core';
 @Component({
   selector: 'et-query-devtools-toggle',
   template: `
-    <button (click)="openChange.emit()" type="button" title="Toggle query devtools (Ctrl/Cmd + Alt + Q)">
+    <button (click)="openChange.emit()" type="button" title="Open query devtools ({{ shortcut }})">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <ellipse cx="12" cy="6" rx="7.5" ry="3" />
         <path d="M4.5 6v6c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3V6" />
         <path d="M4.5 12v6c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3v-6" />
       </svg>
       <span class="label">Query</span>
+      <kbd>{{ shortcut }}</kbd>
     </button>
   `,
   // Shadow DOM is intentional: this always-visible floating button must be fully isolated from the
@@ -37,7 +39,7 @@ import { Component, output, ViewEncapsulation } from '@angular/core';
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 10px 16px 10px 14px;
+      padding: 10px 12px 10px 14px;
       border: none;
       border-radius: 999px;
       background: linear-gradient(135deg, #1f1f23, #2a2a30);
@@ -97,8 +99,24 @@ import { Component, output, ViewEncapsulation } from '@angular/core';
     .label {
       line-height: 1;
     }
+
+    kbd {
+      padding: 3px 6px;
+      border-radius: 5px;
+      background: rgb(255 255 255 / 0.07);
+      box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
+      color: #d4d4d8;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 1;
+      /* The Apple glyphs need no separator; the "Ctrl+Alt+Q" spelling is wider, hence the nowrap. */
+      white-space: nowrap;
+    }
   `,
 })
 export class QueryDevtoolsToggleComponent {
   public openChange = output<void>();
+
+  protected shortcut = queryDevtoolsShortcutLabel();
 }
