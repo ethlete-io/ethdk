@@ -148,6 +148,7 @@ Each plan file's own header is the detail (including deviations); this is the in
       stable columns + `isSettled()` (2026-07-30)
 - [x] `08-picture.md` — `et-picture` with art direction, placeholder/error slots, required `alt`, per-candidate
       base-URL joining (2026-07-30)
-- [ ] `09-query-error.md`
+- [x] `09-query-error.md` — themed panel + headless directive on the current client's normalized error, locale
+      i18n, slots, legacy adapter (2026-07-30)
 - [ ] `10-filter.md`
 - [ ] `90-parity-audits.md` — verdicts recorded; cdk deprecation roadmap still open

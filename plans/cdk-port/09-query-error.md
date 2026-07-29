@@ -1,8 +1,9 @@
 # 09 — Query error
 
-**Status: planned, not started.** Size: S–M. Research done 2026-07-23 against
-`libs/cdk/src/lib/components/query-error/` (~280 lines). Net-new in
-`libs/components`.
+**Status: DONE (2026-07-30).** Size: S (smaller than the S–M estimate — see below).
+Research done 2026-07-23 against `libs/cdk/src/lib/components/query-error/`
+(~280 lines). Shipped net-new in `libs/components/src/lib/query-error/`. cdk
+query-error untouched.
 
 ## What cdk ships today
 
@@ -14,44 +15,78 @@ button (`extractQuery(query).execute({ skipCache: true })`, retryability via
 `v2ShouldRetryRequest`). i18n = hardcoded EN/DE string tables in
 `@ethlete/query` selected by a `language` input. No CSS shipped.
 
-**Coupling verdict from research**: the `query` input + retry contract is
-bound to the **legacy** client's types (`RequestError`, `AnyV2Query`,
-`AnyLegacyQuery`, `extractQuery`, `v2ShouldRetryRequest` all live under
-`libs/query/src/lib/legacy/`), but the error-shape classifiers
-(`isClassValidatorError`, `isSymfonyFormViolationListError`,
-`isSymfonyListError`) and the EN/DE code→message tables live in the
-**current** `libs/query/src/lib/http/` layer — reusable as-is.
+## The finding that shrank the job
 
-## Rewrite decisions
+The plan assumed the classifiers had to be re-used and the error walked by hand.
+They don't: **the current query client already does all of it.**
+`createQueryErrorResponse` (in `libs/query/src/lib/http/query-error-response.ts`)
+runs the same shape classifiers cdk called, and `query.error()` returns the
+result with the retry policy's verdict already attached as `retryState`. So the
+directive reads a normalized error instead of producing one — which is also what
+makes it client-agnostic, since it never names a client's types.
 
-- **Architectural template**: follow
-  `libs/components/src/lib/stream/error/stream-player-error.component.ts` —
-  headless directive via `hostDirectives`, surface theming
-  (`ProvideSurfaceDirective`/`injectSurfaceThemes`), the components lib's
-  `ButtonComponent` and `IconDirective`, and `injectLocale()` for language
-  instead of a `language` input (cdk's EN/DE input is the weakest part of its
-  API — locale should come from context; keep the tables in `@ethlete/query`).
-- **Target the current query client first**: the `query`/error inputs accept
-  the current client's query handle + error shape; derive retryability from
-  the current client's retry logic. **Legacy support**: like the select/table
-  adapters, if a legacy binding is still needed, make it a separate thin
-  adapter rather than a union-typed input — decide based on whether consuming
-  apps still hold legacy queries in views that would use this component
-  (ask/check at implementation time).
-- Reuse the existing classifiers + i18n tables from
-  `libs/query/src/lib/http/query-error-response-utils.ts` — no duplication.
-- Rendering parity: title, single message vs `<ul>` list, title-dedup
-  heuristic, Retry button (with `skipCache`). Add proper semantics:
-  `role="alert"`/`aria-live="polite"` on appearance (cdk has none).
-- Ship themed default styling this time (cdk had none): error color from the
-  semantic color theming (`injectErrorTheme()` per the `theming` skill),
-  `@layer components`.
-- Slots for customization: replaceable title/actions templates so apps can
-  extend (e.g. "contact support" link) without forking.
+## What shipped
 
-## Deliverables
+| File                                      | Role                                                          |
+| ----------------------------------------- | ------------------------------------------------------------- |
+| `headless/query-error.directive.ts`       | State: title, messages, `isList`, `canRetry`, `retry()`       |
+| `headless/query-error-slots.directive.ts` | `etQueryErrorTitle` / `etQueryErrorActions`                   |
+| `query-error.component.ts/html/css`       | The themed default panel                                      |
+| `query-error-labels.ts`                   | Locale-derived strings + `provideQueryErrorLabels`            |
+| `query-error-legacy.ts`                   | `legacyQueryErrorSource`, `queryErrorResponseFromLegacyError` |
+| `query-error.types.ts`, `-errors.ts`      | `QueryErrorView`, `QueryErrorRetryTarget`; `ET4000`           |
 
-Headless directive + styled component, stories (single message, violation
-list, retryable 500, i18n/locale), docs page
-(`apps/docs/components/query-error.md`), changeset. cdk query-error stays
-untouched.
+Plus `apps/docs/components/query-error.md` (+ sidebar, overview, error codes), 5
+stories, a `minor` changeset, 10 unit tests.
+
+## Carried over as planned
+
+- Modelled on `stream-player-error`: headless directive via `hostDirectives`,
+  the components-lib `ButtonComponent` + `IconDirective`, surface tokens for
+  text.
+- **`injectLocale()` instead of a `language` input** — cdk's weakest API point.
+  EN/DE ship (those are the only tables `@ethlete/query` has); any other locale
+  goes through `provideQueryErrorLabels`.
+- Rendering parity: status title, single message vs `<ul>` list, the title-dedup
+  heuristic, retry that bypasses the cache.
+- **A11y added**: `role="alert"` on the host (cdk had none), `aria-hidden` icon,
+  real `<ul>` for violation lists.
+- **Themed styling added** (cdk shipped no CSS): the panel provides the app's
+  `type: 'error'` theme as a colour scope on its own host via
+  `injectErrorTheme()` + `ProvideColorDirective.forceColor`, so the tint, border
+  and icon all follow the app's theme and the retry button inherits it without
+  being told. `@layer components`, 7 public tokens.
+- **Slots**: replaceable title and actions row, error in scope in both.
+
+## Deviations (deliberate)
+
+- **Legacy support is an adapter, not a union input** (the decision asked for at
+  planning time; confirmed with the team 2026-07-30). `legacyQueryErrorSource`
+  converts a legacy `RequestError` by handing its `httpErrorResponse` to the
+  current client's normalizer — so both clients are described by one
+  classification path, and this one file is all there is to delete when the last
+  legacy query goes.
+  - The adapter takes the **error**, not the query, because legacy query state is
+    an `Observable` and how an app gets from `state$` to a signal is its own
+    choice.
+- **A third "useless message" case handled**: when a response carries no message
+  at all, the query client falls back to Angular's `HttpErrorResponse.message`
+  (`'Http failure response for /api/x: 500 Error'`). cdk never saw it because it
+  classified `detail` itself. Rendering it would put developer text in front of a
+  reader, so it is replaced by the status table's sentence. Found by a unit test,
+  not by inspection.
+- **`alwaysAllowRetry`** added: the policy is right nearly always, and an escape
+  hatch is cheaper than arguing with it.
+- `retryRequest` output (present-tense naming rule) fires with or without a
+  `query`, so a retry can be handled entirely by the consumer.
+
+## Verification
+
+- 10 unit tests: each response shape, the two dedup cases, the retry gate and its
+  cache-bypassing execute args, German locale, legacy conversion.
+- Driven headlessly in Storybook across all five stories: `role="alert"`,
+  `data-status`/`data-list`, violation list rendering, retry appearing only for
+  the 503 and calling `execute`, the 500-with-no-body case showing the status
+  sentence, the locale button switching both title and button label, both slots
+  replacing their default, and the colour scope resolving to the app's error
+  theme (`et-color--danger`, tint `rgb(220 38 38 / 0.08)`). No console errors.

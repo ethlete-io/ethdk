@@ -1,0 +1,100 @@
+@layer components {
+  @property --et-query-error-gap {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 8px;
+  }
+
+  @property --et-query-error-padding {
+    syntax: '*';
+    inherits: false;
+    initial-value: 20px;
+  }
+
+  @property --et-query-error-border-radius {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 12px;
+  }
+
+  @property --et-query-error-icon-size {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 24px;
+  }
+
+  @property --et-query-error-title-size {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 16px;
+  }
+
+  @property --et-query-error-title-weight {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 600;
+  }
+
+  @property --et-query-error-message-size {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 14px;
+  }
+
+  .et-query-error-host {
+    display: block;
+
+    .et-query-error-card {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--et-query-error-gap);
+      padding: var(--et-query-error-padding);
+      border-radius: var(--et-query-error-border-radius);
+      /* The tint is the error theme's own colour, so the panel reads as an error without a hardcoded red — and
+         follows whatever the app registered for `type: 'error'`. */
+      background: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 8%, transparent);
+      border: 1px solid color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 24%, transparent);
+    }
+
+    .et-query-error-icon {
+      inline-size: var(--et-query-error-icon-size);
+      block-size: var(--et-query-error-icon-size);
+      /* Ink rather than primary: this sits on a transparent tint, not on a filled surface. */
+      color: var(--et-theme-color-ink-solid, currentColor);
+    }
+
+    .et-query-error-title {
+      margin: 0;
+      font-size: var(--et-query-error-title-size);
+      font-weight: var(--et-query-error-title-weight);
+      color: var(--et-surface-color-solid, currentColor);
+    }
+
+    .et-query-error-message {
+      margin: 0;
+      font-size: var(--et-query-error-message-size);
+      color: var(--et-surface-color-muted-solid, currentColor);
+    }
+
+    .et-query-error-list {
+      margin: 0;
+      padding-inline-start: 1.5em;
+      font-size: var(--et-query-error-message-size);
+      color: var(--et-surface-color-muted-solid, currentColor);
+
+      .et-query-error-list-item {
+        /* Violation lists are read item by item, so they need a little air between them. */
+        margin-block: 0.15em;
+      }
+    }
+
+    .et-query-error-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--et-query-error-gap);
+      margin-block-start: 0.4rem;
+    }
+  }
+}

@@ -236,6 +236,7 @@ export default defineConfig({
           items: [
             { text: 'Focus Ring', link: '/components/focus-ring' },
             { text: 'Query devtools', link: '/components/query-devtools' },
+            { text: 'Query error', link: '/components/query-error' },
             { text: 'Error codes', link: '/components/error-codes' },
           ],
         },

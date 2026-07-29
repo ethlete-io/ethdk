@@ -359,3 +359,11 @@ All masonry checks run in dev mode only.
 | -------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | `ET3900` | An `etMasonryItem` sits outside an `[etMasonry]` element.        | Move it inside the masonry, which is what measures and positions it.                         |
 | `ET3901` | The masonry has children but none of them is an `etMasonryItem`. | Add the directive to each child — without it nothing positions them and they stay invisible. |
+
+## Query error (ET40xx)
+
+All query-error checks run in dev mode only, after the first render.
+
+| Code     | Cause                                                                                | Fix                                                                         |
+| -------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| `ET4000` | An `etQueryErrorTitle` or `etQueryErrorActions` template sits outside a query error. | Move the `<ng-template>` inside the `[etQueryError]` element it belongs to. |
