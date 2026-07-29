@@ -1,7 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, inject } from '@angular/core';
 import { BUTTON_IMPORTS } from '../button';
-import { CHEVRON_ICON, IconDirective, provideIcons } from '../icon';
+import { CHEVRON_ICON, ELLIPSIS_ICON, IconDirective, provideIcons } from '../icon';
 import { SKELETON_IMPORTS } from '../skeleton';
 import { TOGGLETIP_IMPORTS } from '../toggletip';
 import { BreadcrumbDirective } from './headless';
@@ -28,7 +28,7 @@ import { BreadcrumbDirective } from './headless';
   styleUrl: './breadcrumb.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS, IconDirective, NgTemplateOutlet, SKELETON_IMPORTS, TOGGLETIP_IMPORTS],
-  providers: [provideIcons(CHEVRON_ICON)],
+  providers: [provideIcons(CHEVRON_ICON, ELLIPSIS_ICON)],
   hostDirectives: [
     {
       directive: BreadcrumbDirective,

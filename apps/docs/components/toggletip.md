@@ -37,6 +37,7 @@ import { TOGGLETIP_IMPORTS } from '@ethlete/components';
 - `etToggletipTrigger` couples the toggletip to the button it sits on: the button reflects the open state as pressed, and a disabled button disables the toggletip. It requires both an `et-button` and an `etToggletip` on the same element (enforced in dev mode).
 - `etToggletipClose` on a button **inside** the content closes it.
 - `[data-toggletip-body]` / `[data-toggletip-actions]` are styling hooks — the actions row gets a top border.
+- `[data-toggletip-hug]` on any element in the content drops the panel's comfortable minimum width, so it hugs its widest row instead. For content that is a list of rows rather than a sentence or two — what the [breadcrumb](/components/breadcrumb#overflow) does with its hidden crumbs.
 
 ## Live demo
 

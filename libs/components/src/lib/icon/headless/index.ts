@@ -10,6 +10,7 @@ export * from './chevron-icon';
 export * from './clipboard-check-icon';
 export * from './clock-icon';
 export * from './code-icon';
+export * from './ellipsis-icon';
 export * from './ellipsis-vertical-icon';
 export * from './eye-icons';
 export * from './file-icon';

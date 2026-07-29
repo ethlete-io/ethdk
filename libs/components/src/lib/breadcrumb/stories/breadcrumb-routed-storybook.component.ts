@@ -14,18 +14,19 @@ import { BREADCRUMB_IMPORTS } from '../breadcrumb.imports';
   template: `
     <div [etProvideSurface]="surface()" class="text-medium flex flex-col gap-6 p-8 font-sans">
       <nav class="flex gap-4">
+        <a class="underline" routerLink="/">Home</a>
         <a class="underline" routerLink="/teams">Teams</a>
         <a class="underline" routerLink="/teams/chemie">Team</a>
         <a class="underline" routerLink="/teams/chemie/squad">Squad</a>
       </nav>
 
-      <div class="rounded-lg border border-white/15 p-4">
-        <et-breadcrumb-outlet />
-      </div>
+      <et-breadcrumb-outlet />
 
+      <!-- The shell's own crumb: the root, which is a route of its own — so following it actually goes
+           somewhere and the trail shortens to just this crumb. -->
       <ng-template etBreadcrumbSegment>
         <ng-template etBreadcrumbItemTemplate>
-          <a etBreadcrumbItem routerLink="/teams">Home</a>
+          <a etBreadcrumbItem routerLink="/">Home</a>
         </ng-template>
       </ng-template>
 
@@ -62,6 +63,14 @@ export class BreadcrumbTeamsLayoutComponent {}
   encapsulation: ViewEncapsulation.None,
 })
 export class BreadcrumbTeamsPageComponent {}
+
+/** The root view: it contributes no crumb of its own, so the shell's "Home" is the whole trail here. */
+@Component({
+  selector: 'et-sb-breadcrumb-page-home',
+  template: `<h2 class="m-0">Home</h2>`,
+  encapsulation: ViewEncapsulation.None,
+})
+export class BreadcrumbHomePageComponent {}
 
 /** A detail route: contributes exactly one crumb — the record's name, which only it can know. */
 @Component({

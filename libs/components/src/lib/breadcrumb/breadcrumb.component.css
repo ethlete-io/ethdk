@@ -11,6 +11,13 @@
     initial-value: 12px;
   }
 
+  /* The rounding shared by every hit area in the trail: the overflow trigger and the rows inside it. */
+  @property --et-breadcrumb-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 6px;
+  }
+
   /* The placeholder a `loading` crumb renders. A fixed width, because there is no label yet to size it
      from and a zero-width crumb would make the trail jump when the name arrives. */
   @property --et-breadcrumb-loading-width {
@@ -46,6 +53,13 @@
     white-space: nowrap;
   }
 
+  /* Laid out but not painted, for the one frame before the trail has been measured — see `isMeasuring` in
+     the directive. It keeps its space, so this reserves the row instead of flashing the full trail and
+     then replacing it with the collapsed one. */
+  .et-breadcrumb:where([data-measuring]) {
+    visibility: hidden;
+  }
+
   /* Collapsed and *still* too narrow (a long title on a phone): there is nothing left to move into the
      overflow, so the current page truncates rather than being clipped mid-word. The list may drop its
      natural width here because the full-trail width is already remembered — the directive stops
@@ -69,13 +83,20 @@
 
   .et-breadcrumb-item {
     color: inherit;
-    text-decoration: none;
-    border-radius: 4px;
+    border-radius: var(--et-breadcrumb-radius);
+    /* The underline is there from the start but invisible, so it can fade in with the colour instead of
+       snapping into existence under the pointer — and it never shifts the text either way. */
+    text-decoration: underline transparent;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    transition:
+      color 120ms ease,
+      text-decoration-color 120ms ease;
 
     /* Only the crumbs that go somewhere react to the pointer; the current page is text. */
     &:where(a, button):hover {
       color: var(--et-surface-color-solid, CanvasText);
-      text-decoration: underline;
+      text-decoration-color: currentColor;
     }
 
     &:where(a, button):focus-visible {
@@ -93,6 +114,7 @@
   .et-breadcrumb-separator {
     display: inline-flex;
     align-items: center;
+    flex: none;
     color: var(--et-surface-color-subtle-solid, GrayText);
   }
 
@@ -104,19 +126,64 @@
   }
 
   .et-breadcrumb-overflow-trigger {
-    --et-button-padding: 0 6px;
+    /* A round pill would be the one circle in a row of text; match the trail's own rounding. */
+    --et-icon-button-border-radius: var(--et-breadcrumb-radius);
 
-    /* The ellipsis sits high in its em box; nudging the label keeps the dots visually centred. */
-    line-height: 1;
+    /* Its box carries ~5px of padding around the glyph, so the *visual* gap to the neighbouring
+       chevrons would read as twice the gap between the text crumbs. Pull it back in without giving up
+       any of the hit area. */
+    margin-inline: -4px;
+  }
+
+  /* `mutedUntilPressed` already keeps the resting trigger neutral; this does the same for the open
+     state, where the icon-button would otherwise reach for the accent. Nothing in a trail is ever
+     "active" in that sense — an accent-filled control mid-trail is the loudest thing in a row of muted
+     text — so the open state is the same neutral tint, one step stronger, which is enough to read as
+     held open next to the panel it opened. */
+  .et-breadcrumb .et-breadcrumb-overflow-trigger[data-pressed='true'] {
+    background: color-mix(in srgb, var(--et-surface-interaction-solid) 16%, transparent);
+    color: var(--et-surface-color-solid, CanvasText);
+
+    @media (hover: hover) {
+      &:hover {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid) 24%, transparent);
+      }
+    }
+
+    &:active {
+      background: color-mix(in srgb, var(--et-surface-interaction-solid) 28%, transparent);
+    }
   }
 
   .et-breadcrumb-overflow-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin: 0;
+    gap: 2px;
+    /* The rows carry their own padding; pulling the list out by that much lets a row's hover fill reach
+       towards the panel edge like a menu row, while the labels stay aligned with the panel's padding. */
+    margin: -4px -8px;
     padding: 0;
     list-style: none;
+
+    /* Same crumb template as the trail, but here each one is a row: full-width, so the whole strip is
+       the target, with the fill doing the work the underline does inline. */
+    .et-breadcrumb-item {
+      display: block;
+      padding: 4px 8px;
+      color: var(--et-surface-color-solid, CanvasText);
+      transition:
+        background 120ms ease,
+        color 120ms ease;
+
+      &:where(a, button):hover {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+        text-decoration-color: transparent;
+      }
+
+      &:where(a, button):active {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid) 20%, transparent);
+      }
+    }
   }
 
   .et-breadcrumb-loading {

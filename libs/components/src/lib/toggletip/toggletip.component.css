@@ -75,6 +75,13 @@
     box-shadow: var(--_et-toggletip-shadow);
   }
 
+  /* The comfortable minimum above is for prose — a sentence or two of explanation reads badly in a narrow
+     column. Content that is already a list of its own rows (the breadcrumb's hidden crumbs) has no such
+     problem and just looks half-empty at 272px, so it can opt out and hug its widest row. */
+  .et-toggletip__surface:has([data-toggletip-hug]) {
+    min-inline-size: 0;
+  }
+
   .et-toggletip__content {
     position: relative;
     z-index: 1;

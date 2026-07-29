@@ -2,6 +2,7 @@ import { provideRouter, withHashLocation } from '@angular/router';
 import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular';
 import { provideBreadcrumbManager } from '../breadcrumb-manager';
 import {
+  BreadcrumbHomePageComponent,
   BreadcrumbRoutedStorybookComponent,
   BreadcrumbSquadPageComponent,
   BreadcrumbTeamPageComponent,
@@ -22,6 +23,8 @@ export default {
         // crumb, with the leaf views adding only theirs.
         provideRouter(
           [
+            // A root route of its own, so the shell's "Home" crumb has somewhere to go.
+            { path: '', pathMatch: 'full', component: BreadcrumbHomePageComponent },
             {
               path: 'teams',
               component: BreadcrumbTeamsLayoutComponent,
@@ -34,7 +37,7 @@ export default {
                 },
               ],
             },
-            { path: '**', redirectTo: 'teams' },
+            { path: '**', redirectTo: '' },
           ],
           withHashLocation(),
         ),

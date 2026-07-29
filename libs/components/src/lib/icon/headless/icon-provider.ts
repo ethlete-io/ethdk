@@ -103,6 +103,7 @@ export const ET_BUILT_IN_ICON_NAMES = [
   'et-clipboard-check',
   'et-clock',
   'et-code',
+  'et-ellipsis',
   'et-ellipsis-vertical',
   'et-eye',
   'et-eye-slash',

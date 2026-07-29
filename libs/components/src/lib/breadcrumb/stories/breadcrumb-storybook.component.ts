@@ -8,19 +8,19 @@ import { BREADCRUMB_IMPORTS } from '../breadcrumb.imports';
     <div [etProvideSurface]="surface()" class="text-medium flex flex-col gap-8 p-8 font-sans">
       <!-- The box is what the breadcrumb measures itself against: narrow it past the trail's natural
            width and the middle crumbs move into the overflow control. -->
-      <div [style.max-inline-size.px]="width()" class="rounded-lg border border-white/15 p-4">
+      <div [style.max-inline-size.px]="width()">
         <et-breadcrumb [collapse]="collapse()">
           <ng-template etBreadcrumbItemTemplate>
-            <a etBreadcrumbItem href="#">Home</a>
+            <a (click)="stayHere($event)" etBreadcrumbItem href="#">Home</a>
           </ng-template>
           <ng-template etBreadcrumbItemTemplate>
-            <a etBreadcrumbItem href="#">Competitions</a>
+            <a (click)="stayHere($event)" etBreadcrumbItem href="#">Competitions</a>
           </ng-template>
           <ng-template etBreadcrumbItemTemplate>
-            <a etBreadcrumbItem href="#">Regionalliga Nordost</a>
+            <a (click)="stayHere($event)" etBreadcrumbItem href="#">Regionalliga Nordost</a>
           </ng-template>
           <ng-template etBreadcrumbItemTemplate>
-            <a etBreadcrumbItem href="#">Matchday 14</a>
+            <a (click)="stayHere($event)" etBreadcrumbItem href="#">Matchday 14</a>
           </ng-template>
           <ng-template [loading]="loading()" etBreadcrumbItemTemplate>
             <span etBreadcrumbItem>Chemie Leipzig vs. Lok</span>
@@ -47,4 +47,10 @@ export class BreadcrumbStorybookComponent {
   public collapse = input(true);
   public loading = input(false);
   public separator = input<'chevron' | 'slash'>('chevron');
+
+  // Real crumbs are `routerLink`s (see the routed story); these are hrefs only so they behave like links
+  // without a route to go to, so the demo swallows the navigation.
+  protected stayHere(event: Event) {
+    event.preventDefault();
+  }
 }

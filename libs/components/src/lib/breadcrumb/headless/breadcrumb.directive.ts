@@ -1,13 +1,16 @@
 import {
   Directive,
+  ElementRef,
   afterNextRender,
   booleanAttribute,
   computed,
   contentChild,
   contentChildren,
   effect,
+  inject,
   input,
   linkedSignal,
+  signal,
   untracked,
 } from '@angular/core';
 import { RuntimeError, signalHostElementScrollState } from '@ethlete/core';
@@ -43,9 +46,11 @@ const MIN_COLLAPSIBLE_ITEMS = 3;
     role: 'navigation',
     '[attr.aria-label]': 'resolvedLabels().navigation',
     '[attr.data-collapsed]': 'isCollapsed() ? "" : null',
+    '[attr.data-measuring]': 'isMeasuring() ? "" : null',
   },
 })
 export class BreadcrumbDirective {
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private injectedLabels = injectBreadcrumbLabels();
 
   /**
@@ -97,6 +102,25 @@ export class BreadcrumbDirective {
   /** The space the trail has, from the reactive host dimensions (not a `clientWidth` read at call time). */
   private availableWidth = computed(() => this.scrollState().elementDimensions.client?.width ?? 0);
 
+  /**
+   * Whether the trail has been measured at least once. Sticky: a later trail change re-measures, but
+   * un-painting an already visible trail to do so would be a worse flash than the one this avoids.
+   */
+  private hasMeasured = signal(false);
+
+  /**
+   * Nothing can be known about whether the trail fits before it has been measured, and rendering the full
+   * trail on that guess is the flash on load: the browser paints the overflowing trail, then swaps it for
+   * the collapsed one. While this is true the trail takes its space but isn't painted — see the
+   * `[data-measuring]` rule in the CSS. Only while collapsing is possible at all; otherwise there is no
+   * decision pending and nothing to wait for.
+   *
+   * @internal
+   */
+  public isMeasuring = computed(
+    () => this.collapse() && this.items().length >= MIN_COLLAPSIBLE_ITEMS && !this.hasMeasured(),
+  );
+
   /** Whether the middle crumbs are currently hidden behind the overflow control. */
   public isCollapsed = computed(() => {
     if (!this.collapse() || this.items().length < MIN_COLLAPSIBLE_ITEMS) return false;
@@ -144,18 +168,23 @@ export class BreadcrumbDirective {
       const dimensions = this.scrollState().elementDimensions;
 
       untracked(() => {
-        // A measurement taken while collapsed describes the collapsed trail, so it must not overwrite
-        // the remembered full width — that is the number the trail is re-expanded against.
-        if (!this.collapse() || this.isCollapsed()) return;
-
         const client = dimensions.client?.width ?? 0;
         const scroll = dimensions.scroll?.width ?? 0;
 
-        // ignore pre-layout zeros, and anything that still fits
-        if (client === 0 || scroll <= client) return;
-
-        this.fullTrailWidth.set(scroll);
+        this.recordMeasurement(client, scroll);
       });
+    });
+
+    // The resize observer behind the signal above only delivers its first measurement after the trail has
+    // been laid out, which is a frame too late to decide what to paint. So take that first measurement
+    // here: a render hook runs after change detection but before the browser paints, so the collapsed
+    // trail is what gets painted rather than a corrected version of the full one.
+    afterNextRender({
+      earlyRead: () => {
+        const element = this.elementRef.nativeElement;
+
+        this.recordMeasurement(element.clientWidth, element.scrollWidth);
+      },
     });
 
     if (ngDevMode) {
@@ -169,5 +198,25 @@ export class BreadcrumbDirective {
         }
       });
     }
+  }
+
+  /**
+   * Takes one pair of host measurements as the trail's state: that it has been measured, and — if the full
+   * trail didn't fit — how wide it wants to be. Zero width means the element isn't laid out yet (or sits in
+   * something hidden), which is not a measurement of anything.
+   */
+  private recordMeasurement(client: number, scroll: number) {
+    if (client === 0) return;
+
+    this.hasMeasured.set(true);
+
+    // A measurement taken while collapsed describes the collapsed trail, so it must not overwrite the
+    // remembered full width — that is the number the trail is re-expanded against.
+    if (!this.collapse() || this.isCollapsed()) return;
+
+    // anything that still fits says nothing about the width the full trail needs
+    if (scroll <= client) return;
+
+    this.fullTrailWidth.set(scroll);
   }
 }

@@ -14,17 +14,18 @@
           [etToggletipAriaLabel]="breadcrumb.resolvedLabels().overflow"
           [attr.aria-label]="breadcrumb.resolvedLabels().overflow"
           class="et-breadcrumb-overflow-trigger"
-          et-button
+          et-icon-button
           etToggletipTrigger
-          size="sm"
+          mutedUntilPressed
+          size="xs"
           type="button"
           variant="transparent"
         >
-          …
+          <i etIcon="et-ellipsis"></i>
         </button>
 
         <ng-template #overflow>
-          <ol class="et-breadcrumb-overflow-list">
+          <ol class="et-breadcrumb-overflow-list" data-toggletip-hug>
             @for (item of slot.items; track $index) {
               <li>
                 <ng-container [ngTemplateOutlet]="crumb" [ngTemplateOutletContext]="{ $implicit: item }" />

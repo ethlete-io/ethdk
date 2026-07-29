@@ -201,7 +201,7 @@ Also available: `transformingFullScreenDialogToDialogOverlayStrategy` and `trans
 
 ### Anchored overlays and the arrow
 
-Anchored strategies position relative to `config.origin` using floating-ui (`placement`, `fallbackPlacements`, `offset`, `shift`, `autoHide`, …). With `arrow: true` (the `anchoredDialogOverlayStrategy` default) the pane renders an arrow pointing at the origin. The arrow takes its background and border from the [surface theme](/core/theming) so it reads as part of the panel — overridable via `--et-overlay-arrow-background` / `--et-overlay-arrow-border` — and is the same arrow used by menus, tooltips and toggletips.
+Anchored strategies position relative to `config.origin` using floating-ui (`placement`, `fallbackPlacements`, `offset`, `shift`, `autoHide`, …). With `arrow: true` (the `anchoredDialogOverlayStrategy` default) the pane renders an arrow pointing at the origin. The arrow takes its background and border from the [surface theme](/core/theming) so it reads as part of the panel — overridable via `--et-overlay-arrow-background` / `--et-overlay-arrow-border` — and is the same arrow used by menus, tooltips and toggletips. Half of it hangs off the pane, so its two bordered sides end exactly where the pane's own border line resumes and the two read as one outline.
 
 ## Color theme context
 
