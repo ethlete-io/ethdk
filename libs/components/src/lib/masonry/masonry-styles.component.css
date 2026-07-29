@@ -1,0 +1,82 @@
+@layer components {
+  @property --et-masonry-move-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 150ms;
+  }
+
+  @property --et-masonry-move-easing {
+    syntax: '*';
+    inherits: true;
+    initial-value: ease-out;
+  }
+
+  @property --et-masonry-appear-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 200ms;
+  }
+
+  /* Set per item by MasonryItemDirective. Declared so the item has a valid `translate` before its first
+     placement — an undefined var would drop the whole declaration. */
+  @property --_et-masonry-item-inline-offset {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+  }
+
+  @property --_et-masonry-item-block-offset {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+  }
+
+  .et-masonry {
+    display: block;
+    /* The containing block for the items. A consumer override to `static` would let them escape to the page,
+       which MasonryDirective checks for in dev mode. */
+    position: relative;
+  }
+
+  .et-masonry-item {
+    position: absolute;
+    top: 0;
+    /* Anchored at the inline start, so the offset below is measured from the correct side in both writing
+       directions. */
+    inset-inline-start: 0;
+    translate: var(--_et-masonry-item-inline-offset) var(--_et-masonry-item-block-offset);
+    /* Placed items are revealed by [data-positioned]; before that they would be a pile in the corner. */
+    opacity: 0;
+
+    /* `translate` is physical, so the inline offset has to travel the other way when the text does. */
+    &:dir(rtl) {
+      translate: calc(-1 * var(--_et-masonry-item-inline-offset)) var(--_et-masonry-item-block-offset);
+    }
+
+    &[data-positioned] {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .et-masonry-item {
+      transition: opacity var(--et-masonry-appear-duration) var(--ease-3, ease-out);
+    }
+
+    /* Items move between placements — when the columns change, when something above them resizes, when a
+       neighbour is removed. They must not animate *into* their first placement, which is what [data-can-move]
+       gates: the item sets it a frame after it is placed. */
+    .et-masonry-item[data-can-move] {
+      transition:
+        opacity var(--et-masonry-appear-duration) var(--ease-3, ease-out),
+        translate var(--et-masonry-move-duration) var(--et-masonry-move-easing);
+    }
+
+    /* While the container itself is being resized the columns change every frame, so a move transition would
+       be restarted every frame and the items would trail behind the layout. Moves snap until it stops; the
+       fade is unaffected. */
+    .et-masonry[data-resizing] .et-masonry-item[data-can-move] {
+      transition-property: opacity;
+    }
+  }
+}

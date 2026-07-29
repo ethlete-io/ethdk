@@ -144,7 +144,8 @@ Each plan file's own header is the detail (including deviations); this is the in
 - [x] `05-breadcrumb.md` — breadcrumb + overflow + routed outlet (2026-07-28)
 - [x] `06-carousel.md` — phase 1 (scrollable composition, autoplay) + phase 2 (template slides, seamless
       looping, the slide-progress transition system with both drivers, `dim` + `wipe`) (2026-07-28)
-- [ ] `07-masonry.md`
+- [x] `07-masonry.md` — signals-first JS engine (native CSS masonry still not Baseline), directives-only,
+      stable columns + `isSettled()` (2026-07-30)
 - [ ] `08-picture.md`
 - [ ] `09-query-error.md`
 - [ ] `10-filter.md`

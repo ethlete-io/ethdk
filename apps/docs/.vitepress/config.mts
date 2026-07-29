@@ -216,6 +216,7 @@ export default defineConfig({
             { text: 'Breadcrumb', link: '/components/breadcrumb' },
             { text: 'Carousel', link: '/components/carousel' },
             { text: 'Grid', link: '/components/grid' },
+            { text: 'Masonry', link: '/components/masonry' },
             { text: 'Pagination', link: '/components/pagination' },
             { text: 'Scrollable', link: '/components/scrollable' },
             { text: 'Table', link: '/components/table' },

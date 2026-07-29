@@ -350,3 +350,12 @@ All carousel checks run in dev mode only.
 | `ET3802` | Autoplay is on with no control to pause it (WCAG 2.2.2).                                 | Add a button with `etCarouselPlayToggle`, or use `<et-carousel>`, which renders one.    |
 | `ET3803` | `etCarousel` found no scrollable to move.                                                | Put it on, or around, an `[etScrollable]` element (or use `<et-carousel>`).             |
 | `ET3804` | `<et-carousel>` was given no `etCarouselSlide` template.                                 | Add one: `<ng-template [etCarouselSlide]="slides()" let-slide>…</ng-template>`.         |
+
+## Masonry (ET39xx)
+
+All masonry checks run in dev mode only.
+
+| Code     | Cause                                                            | Fix                                                                                          |
+| -------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `ET3900` | An `etMasonryItem` sits outside an `[etMasonry]` element.        | Move it inside the masonry, which is what measures and positions it.                         |
+| `ET3901` | The masonry has children but none of them is an `etMasonryItem`. | Add the directive to each child — without it nothing positions them and they stay invisible. |

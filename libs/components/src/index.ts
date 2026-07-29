@@ -10,6 +10,7 @@ export * from './lib/forms';
 export * from './lib/grid';
 export * from './lib/icon';
 export * from './lib/loader';
+export * from './lib/masonry';
 export * from './lib/menu';
 export * from './lib/notification';
 export * from './lib/overlay';

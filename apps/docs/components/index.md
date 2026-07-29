@@ -77,6 +77,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 - [Breadcrumb](/components/breadcrumb) — template-authored trail with an overflow popover, loading crumbs and a routed-page outlet.
 - [Carousel](/components/carousel) — scroll-snapping slide track with multi-item views, autoplay and scroll-driven transitions.
 - [Grid](/components/grid) — drag & resize dashboard grid with breakpoints, keyboard editing and backend serialization.
+- [Masonry](/components/masonry) — column-balancing layout for variable-height cards, with continuous measurement and stable columns.
 - [Pagination](/components/pagination) — page-number paginator with ellipsis, jump controls and a headless tier.
 - [Scrollable](/components/scrollable) — scroll containers with buttons, masks, snap and drag scrolling.
 - [Table](/components/table) — type-safe, light-by-default data table on CSS grid with a sticky header and empty state.
