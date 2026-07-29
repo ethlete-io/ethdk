@@ -1,0 +1,75 @@
+@layer components {
+  @property --et-floating-action-inset-inline-end {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 24px;
+  }
+
+  @property --et-floating-action-inset-block-end {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 24px;
+  }
+
+  @property --et-floating-action-z-index {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 10;
+  }
+
+  @property --et-floating-action-duration {
+    syntax: '<time>';
+    inherits: true;
+    initial-value: 200ms;
+  }
+
+  .et-floating-action {
+    display: block;
+
+    /* The trigger is the same element throughout — inline, floating, gone — so the tab order never changes and
+       assistive technology never sees a button appear or disappear. Only its position does. */
+    &:where([data-state='floating']) .et-floating-action-trigger,
+    &:where([data-state='hidden']) .et-floating-action-trigger {
+      position: fixed;
+      inset-inline-end: var(--et-floating-action-inset-inline-end);
+      /* Plus the home-bar inset on a phone, when there is one, so the button never sits under it. */
+      inset-block-end: calc(var(--et-floating-action-inset-block-end) + env(safe-area-inset-bottom, 0px));
+      z-index: var(--et-floating-action-z-index);
+    }
+
+    &:where([data-state='hidden']) .et-floating-action-trigger {
+      scale: 0;
+      /* Not merely invisible: a zero-scale button is still focusable, so tabbing would land on something the
+         reader cannot see. */
+      visibility: hidden;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .et-floating-action {
+      /* Scaling *in* is a keyframe rather than a transition: the first time the trigger detaches there is no
+         previous scale to animate from. */
+      &:where([data-state='floating']) .et-floating-action-trigger {
+        animation: et-floating-action-in var(--et-floating-action-duration) var(--ease-3, ease-out);
+      }
+
+      /* Out is a transition, and `visibility` is held back to the end of it so the scale-out stays watchable
+         while the button still becomes properly unfocusable afterwards. */
+      &:where([data-state='hidden']) .et-floating-action-trigger {
+        transition:
+          scale var(--et-floating-action-duration) var(--ease-3, ease-out),
+          visibility 0s linear var(--et-floating-action-duration);
+      }
+    }
+
+    @keyframes et-floating-action-in {
+      from {
+        scale: 0;
+      }
+
+      to {
+        scale: 1;
+      }
+    }
+  }
+}

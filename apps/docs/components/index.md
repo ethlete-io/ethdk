@@ -91,6 +91,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 
 ### Utilities
 
+- [Floating action](/components/floating-action) — keeps a trigger reachable after it scrolls away, pinned to the viewport corner while its region is in play.
 - [Focus ring](/components/focus-ring) — the shared keyboard-focus outline for custom interactive elements.
 - [Query error](/components/query-error) — the default rendering of a failed query: status title, message or violation list, and a retry when it's worth offering.
 - [Query devtools](/components/query-devtools) — in-app inspector for the `@ethlete/query` system (queries, stacks, sequences, auth, cache, events).

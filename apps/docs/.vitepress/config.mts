@@ -234,6 +234,7 @@ export default defineConfig({
         {
           text: 'Utilities',
           items: [
+            { text: 'Floating action', link: '/components/floating-action' },
             { text: 'Focus Ring', link: '/components/focus-ring' },
             { text: 'Query devtools', link: '/components/query-devtools' },
             { text: 'Query error', link: '/components/query-error' },

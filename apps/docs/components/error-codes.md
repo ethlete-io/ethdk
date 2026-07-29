@@ -367,3 +367,12 @@ All query-error checks run in dev mode only, after the first render.
 | Code     | Cause                                                                                | Fix                                                                         |
 | -------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
 | `ET4000` | An `etQueryErrorTitle` or `etQueryErrorActions` template sits outside a query error. | Move the `<ng-template>` inside the `[etQueryError]` element it belongs to. |
+
+## Floating action (ET41xx)
+
+All floating-action checks run in dev mode only, after the first render.
+
+| Code     | Cause                                                                | Fix                                                                             |
+| -------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `ET4100` | A floating-action part sits outside an `[etFloatingAction]` element. | Move it inside the coordinator element it belongs to.                           |
+| `ET4101` | A floating action has no `[etFloatingActionAnchor]`.                 | Wrap the trigger in an anchor element — it is what reports the scroll position. |

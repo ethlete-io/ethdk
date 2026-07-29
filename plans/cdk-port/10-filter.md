@@ -1,8 +1,46 @@
 # 10 — Rich filter (floating filter button)
 
-**Status: planned, not started.** Size: S. Research done 2026-07-23 against
-`libs/cdk/src/lib/components/filter/` (~290 lines — only `rich-filter/`
-exists).
+**Status: Layer 1 DONE (2026-07-30) as `floating-action`. Layer 2 in progress.**
+Size: S. Research done 2026-07-23 against `libs/cdk/src/lib/components/filter/`
+(~290 lines — only `rich-filter/` exists).
+
+## Layer 1 outcome (2026-07-30)
+
+Shipped as `libs/components/src/lib/floating-action/` — the name chosen with the
+team over `sticky-trigger` / `floating-trigger`, since the pattern is the FAB one
+and "floating action" says so.
+
+Renames: `et-rich-filter-host` → `[etFloatingAction]`, `et-rich-filter-button-slot`
+→ `[etFloatingActionAnchor]`, `etRichFilterButton` → `[etFloatingActionTrigger]`,
+`etRichFilterContent` → `[etFloatingActionScope]`, `etRichFilterTop` →
+`[etFloatingActionTop]`.
+
+Improvements over the cdk original:
+
+- **One derived `data-state`** (`inline` / `floating` / `hidden`) instead of cdk's
+  ten boolean state classes across two observed elements, with the combining left
+  to consumer CSS.
+- **The hidden trigger is properly unfocusable.** cdk scaled it to zero and left
+  it in the tab order, so tabbing landed on an invisible button. `visibility:
+hidden` is now applied, delayed to the end of the scale-out.
+- **Reduced motion** honoured (cdk animated unconditionally).
+- **Safe-area inset** added to the bottom offset, so the trigger clears a phone's
+  home bar.
+- `disabled` input, for turning the behaviour off per breakpoint/route without
+  unwinding the markup.
+- Structural CSS mounted via `injectStyleManager()`, so the directive-only
+  composition works — same pattern as masonry.
+
+**CSS-first alternative rejected, as the plan expected**: `position: sticky` can
+pin to an edge but cannot move an element to a viewport corner, and cannot express
+"and the region this acts on is still on screen" — which is the condition that
+stops a pinned button following the reader onto unrelated content. Two
+intersection observers it is.
+
+Verified headlessly: all three states reached (the story's page had to be
+lengthened before `hidden` was reachable at all — the results list could not
+scroll fully past), `position`/`scale`/`visibility` per state, a stable tab-order
+index across states, `scrollToTop()`, and `disabled` staying inline while scrolled.
 
 ## What it actually is (investigation result)
 
@@ -57,7 +95,7 @@ is this packaged pattern on top of them.
 - **Generalize the name, drop the "filter" branding**: a generic floating
   action trigger (filter buttons, back-to-top, "save changes" bars).
   Suggested: `floating-action` / `sticky-trigger` domain; do not carry over
-  `rich-filter` (it renders no filter).
+  `rich-filter` (it renders no filter). Stories could use a fab / extended fab.
 - Port is mostly mechanical: the intersection-driven state classes
   (`signalHostElementIntersection` + `signalHostClasses` are already in core),
   CSS moved to `@layer components` `.css` with `:where()` modifiers, keep
