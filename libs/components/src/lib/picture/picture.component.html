@@ -1,0 +1,47 @@
+<figure class="et-picture-figure">
+  <picture class="et-picture-picture">
+    @for (source of resolvedSources(); track source.srcset) {
+      <source
+        [attr.type]="source.type"
+        [attr.srcset]="source.srcset"
+        [attr.sizes]="source.sizes ?? sizes()"
+        [attr.media]="source.media"
+      />
+    }
+
+    @if (resolvedDefaultSource(); as source) {
+      <img
+        [attr.srcset]="source.srcset"
+        [attr.src]="defaultSrcUrl()"
+        [attr.sizes]="source.sizes ?? sizes()"
+        [attr.alt]="alt()"
+        [attr.width]="width()"
+        [attr.height]="height()"
+        [attr.loading]="priority() ? 'eager' : 'lazy'"
+        [attr.fetchpriority]="priority() ? 'high' : 'auto'"
+        [style.aspect-ratio]="aspectRatio()"
+        (load)="markLoaded()"
+        (error)="markFailed()"
+        class="et-picture-img"
+      />
+    }
+
+    <!-- Overlaid rather than swapped in: the img has to stay in the DOM to keep loading, and replacing it
+         would restart the request. -->
+    @if (state() === 'loading' && placeholder()) {
+      <span class="et-picture-slot" aria-hidden="true">
+        <ng-container [ngTemplateOutlet]="placeholder()!.templateRef" />
+      </span>
+    }
+
+    @if (state() === 'error' && errorSlot()) {
+      <span class="et-picture-slot">
+        <ng-container [ngTemplateOutlet]="errorSlot()!.templateRef" />
+      </span>
+    }
+  </picture>
+
+  @if (figcaption()) {
+    <figcaption class="et-picture-figcaption">{{ figcaption() }}</figcaption>
+  }
+</figure>

@@ -1,8 +1,8 @@
 # 08 — Picture
 
-**Status: planned, not started.** Size: S. Research done 2026-07-23 against
-`libs/cdk/src/lib/components/picture/` (~390 lines). Net-new in
-`libs/components` (no image component exists there).
+**Status: DONE (2026-07-30).** Size: S. Research done 2026-07-23 against
+`libs/cdk/src/lib/components/picture/` (~390 lines). Shipped net-new in
+`libs/components/src/lib/picture/`. cdk picture untouched.
 
 ## What cdk ships today
 
@@ -16,32 +16,73 @@ reservation, per-part `NgClass` inputs, `imgLoaded`/`imgError` outputs,
 already. **No CSS at all.** No blur-up placeholder, no aspect-ratio helper, no
 CDN resizing syntax (baseUrl is a plain prefix).
 
-## Rewrite decisions
+## What shipped
 
-- **Straightforward port with cleanups** — the feature is sound and small:
-  keep the DOM shape, `sources`/`defaultSrc` normalization + utils (port the
-  specs too), `hasPriority`, `provideImageConfig`, load/error outputs (expose
-  as signals too, e.g. `state: 'loading'|'loaded'|'error'`).
-- **Drop the four `NgClass` inputs** — that's a cdk-era styling escape hatch;
-  the components lib convention is global `et-` classes + `@layer components`,
-  so consumers can target `.et-picture img` etc. directly. Keep only if a
-  concrete consumer need surfaces.
-- **Add** (cheap, high-value):
-  - `aspectRatio` input → CSS `aspect-ratio` on the img (prevents CLS even
-    when only one dimension is known).
-  - Optional error/placeholder slot (projected template shown on `imgError` /
-    while loading) — cdk consumers had to build this around the outputs.
-- Evaluate whether part of the URL/srcset utility layer belongs in `core`
-  (framework-agnostic helpers) — decide during implementation; default is
-  keeping it all in the component's folder.
-- Consider `NgOptimizedImage` interop: document why we don't use it (multi
-  `<source>`/art-direction support, figure/caption, baseUrl config) or adopt
-  pieces if trivial. A one-paragraph docs note is enough.
-- Minimal structural CSS (`display:block`, img `max-width:100%`), wrapped in
-  `@layer components`; no colors involved.
+`libs/components/src/lib/picture/` — a single Tier 3 component plus two slot
+directives and the URL utilities. No headless tier: the component has no
+behavior to separate from its presentation (it renders markup and reports two
+DOM events), so a headless directive would hold nothing.
 
-## Deliverables
+| File                            | Role                                                            |
+| ------------------------------- | --------------------------------------------------------------- |
+| `picture.component.ts/html/css` | The component; structural CSS only, in `@layer components`      |
+| `picture-slots.directive.ts`    | `etPicturePlaceholder` / `etPictureError` template slots        |
+| `picture.utils.ts` (+ spec)     | srcset extraction, source/sizes normalization, base-URL joining |
+| `picture-config.ts`             | `providePictureConfig` / `injectPictureConfig`                  |
+| `picture.types.ts`              | `PictureSource`, `PictureConfig`, `PictureState`                |
 
-Component + utils (+ specs ported), stories (art direction via media sources,
-priority vs lazy, error placeholder, aspect ratio), docs page
-(`apps/docs/components/picture.md`), changeset. cdk picture stays untouched.
+Plus `apps/docs/components/picture.md` (+ sidebar, overview), 2 stories, a
+`minor` changeset. 15 unit tests.
+
+## Carried over as planned
+
+- DOM shape kept (`figure` > `picture` > `source*` + `img`, optional
+  `figcaption`), `sources`/`defaultSrc` normalization, mime-type inference,
+  `provideImageConfig` → `providePictureConfig`, load/error outputs.
+- **`NgClass` inputs dropped** — global `et-` classes + `@layer components` mean
+  a consumer targets `.et-picture-img` directly.
+- **`aspectRatio` added**, and the utils' specs ported and extended.
+- **Placeholder/error slots added** as `ng-template` directives, plus a
+  `state()` signal (`'loading' | 'loaded' | 'error'`) mirrored on the host as
+  `data-state`.
+- Utils stayed in the component's folder rather than moving to `core`: they are
+  `PictureSource`-shaped, i.e. this domain's types, and nothing else wants them.
+- `NgOptimizedImage` interop: documented as a tip on the docs page (it supports
+  no multiple `<source>`, so art direction and format negotiation are out of its
+  reach; use it for a plain CDN-loaded `<img>`).
+
+## Deviations (deliberate)
+
+- **`alt` is a required input.** cdk had it nullable. An image with no
+  alternative text is invisible to a screen reader, and an optional input is one
+  that gets forgotten; `alt=""` remains available and now reads as a deliberate
+  "this is decorative" rather than an omission.
+- **`hasPriority` → `priority`** — matches `NgOptimizedImage` and the attribute
+  it sets.
+- **`imgLoaded` → `imgLoad`** — the styleguide's present-tense output rule, and
+  the name of the DOM event it forwards.
+- **Two cdk base-URL bugs fixed** (both covered by new tests):
+  - the prefix was applied to the srcset **as one string**, so
+    `'a.jpg 1x, b.jpg 2x'` left the second candidate unresolved. Now applied per
+    candidate, descriptors preserved.
+  - a base URL ending in `/` and a path starting with `/` produced `host//path`.
+- The mime-inference failure logs a **dev-mode warning** rather than an
+  unconditional `console.error` — the browser copes without `type`, so it is not
+  an error, and it should not ship to production logs.
+
+## Verification
+
+- 15 unit tests over the URL utilities (including the two fixed bugs).
+- Driven headlessly in Storybook: art direction genuinely swaps the source
+  (`naturalWidth` 800×450 at a 900px viewport, 450×600 at 600px), `priority`
+  emits `loading="eager"`/`fetchpriority="high"`, the `<figure>` has no UA
+  margin, `aspect-ratio` lands on the img, the placeholder shows while the URL
+  is absent and clears once loaded (and returns when the URL is cleared —
+  covered by the `linkedSignal` reset), and the error slot renders with the
+  broken img hidden behind it.
+
+## Follow-up (not blocking)
+
+- No CDN resizing syntax (`baseUrl` is still a plain prefix). If an app wants
+  width-parameterized URLs, a `loader`-style hook on `PictureConfig` is the
+  natural next step — deliberately not guessed at here.

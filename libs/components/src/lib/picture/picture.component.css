@@ -1,0 +1,40 @@
+@layer components {
+  .et-picture {
+    display: block;
+
+    .et-picture-figure {
+      /* A <figure> carries a UA margin, which is never what a layout component wants. */
+      margin: 0;
+      display: block;
+    }
+
+    .et-picture-picture {
+      display: block;
+      /* The containing block for the placeholder / error slots. */
+      position: relative;
+    }
+
+    .et-picture-img {
+      display: block;
+      max-inline-size: 100%;
+      /* Given `width`/`height` for CLS, the intrinsic ratio has to be kept once CSS resizes the box. */
+      block-size: auto;
+    }
+
+    .et-picture-slot {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      /* Nothing is painted here by the component — the slot's content brings its own look. */
+      overflow: hidden;
+    }
+
+    /* A broken image still occupies its box behind the error slot, showing the UA's broken icon through it.
+       Only hidden when there is a slot to replace it: without one, the browser's own broken-image rendering
+       (which shows the alt text) is more useful than an empty box. */
+    &:where([data-state='error']):has(.et-picture-slot) .et-picture-img {
+      visibility: hidden;
+    }
+  }
+}

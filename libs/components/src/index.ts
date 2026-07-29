@@ -15,6 +15,7 @@ export * from './lib/menu';
 export * from './lib/notification';
 export * from './lib/overlay';
 export * from './lib/pagination';
+export * from './lib/picture';
 export * from './lib/query-devtools';
 export * from './lib/scrollable';
 export * from './lib/skeleton';

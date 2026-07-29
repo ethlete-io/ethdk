@@ -146,7 +146,8 @@ Each plan file's own header is the detail (including deviations); this is the in
       looping, the slide-progress transition system with both drivers, `dim` + `wipe`) (2026-07-28)
 - [x] `07-masonry.md` — signals-first JS engine (native CSS masonry still not Baseline), directives-only,
       stable columns + `isSettled()` (2026-07-30)
-- [ ] `08-picture.md`
+- [x] `08-picture.md` — `et-picture` with art direction, placeholder/error slots, required `alt`, per-candidate
+      base-URL joining (2026-07-30)
 - [ ] `09-query-error.md`
 - [ ] `10-filter.md`
 - [ ] `90-parity-audits.md` — verdicts recorded; cdk deprecation roadmap still open
