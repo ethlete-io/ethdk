@@ -1,6 +1,7 @@
 import { ApplicationRef, ComponentRef, EnvironmentInjector, createComponent } from '@angular/core';
-import { AngularRenderer, animationDebugLog, forceReflow, nextFrame } from '@ethlete/core';
+import { AngularRenderer, RuntimeError, animationDebugLog, forceReflow, nextFrame } from '@ethlete/core';
 import { filter, take, tap, timer } from 'rxjs';
+import { OVERLAY_ERROR_CODES } from '../overlay-errors';
 import { getOriginCoordinatesAndDimensions } from './overlay-origin';
 import { OverlayOriginCloneComponent } from './overlay-origin-clone.component';
 import { OverlayStrategyContext } from './overlay-strategy.types';
@@ -441,7 +442,11 @@ export const startFullscreenEnterAnimation = (options: {
   removeReducedAnimationClass(renderer, containerEl);
 
   if (!state.originElement) {
-    throw new Error('Origin element is required for full animation');
+    throw new RuntimeError(
+      OVERLAY_ERROR_CODES.MISSING_ANIMATION_ORIGIN,
+      '[startFullscreenEnterAnimation] The full-screen enter animation grows the overlay out of its origin element, so it cannot run without one. Pass `origin` in the overlay config, or let the strategy fall back to the reduced animation.',
+      { context },
+    );
   }
 
   const transforms = calculateViewportTransforms(state.originElement, document);

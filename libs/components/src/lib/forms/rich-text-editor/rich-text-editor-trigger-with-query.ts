@@ -107,6 +107,9 @@ export const createRichTextEditorTriggerWithQuery = <TCreator extends AnyQueryCr
         ),
         take(1),
         map((state) => {
+          // Deliberately a plain `Error`, not a coded `RuntimeError`: the triggers directive renders
+          // `error.message` verbatim as the popup's `role="alert"` text, so a `ET25xx: ` prefix would
+          // end up in front of the user.
           if (state.type === 'failure') throw new Error(toErrorMessage(state.error));
 
           return config.toItems(state.response);

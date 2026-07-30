@@ -124,6 +124,10 @@ export const cascaderFromQuery = <
         take(1),
         map((state) => {
           if (state.type === 'failure') {
+            // Deliberately a plain `Error`, not a coded `RuntimeError`: this message is the
+            // display-ready text for the column's error row (the cascader's default
+            // `toErrorMessage` shows `error.message` verbatim), so a `ET33xx: ` prefix would end up
+            // in front of the user.
             throw new Error(toErrorMessage(state.error));
           }
 

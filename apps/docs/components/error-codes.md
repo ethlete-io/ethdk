@@ -53,6 +53,10 @@ Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU
 | 3600–3699 | Accordion          | [Accordion](/components/accordion)                 |
 | 3700–3799 | Breadcrumb         | [Breadcrumb](/components/breadcrumb)               |
 | 3800–3899 | Carousel           | [Carousel](/components/carousel)                   |
+| 3900–3999 | Masonry            | [Masonry](/components/masonry)                     |
+| 4000–4099 | Query error        | [Query error](/components/query-error)             |
+| 4100–4199 | Floating action    | [Floating action](/components/floating-action)     |
+| 4200–4299 | Filter overlay     | [Filter overlay](/components/filter-overlay)       |
 
 ::: info Codes below 1000
 Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web sockets). `ET1000`/`ET1001` therefore exist in both packages — the bracketed source in the message (`[SelectDirective]` vs. a query feature) tells them apart.
@@ -154,6 +158,7 @@ The date input, date range input, [time picker](/components/time-picker), time i
 | `ET1206` | An overlay contains nested `<et-overlay-main>` elements or `etOverlayMain` directives.             | Keep exactly one main region per overlay.                                                     |
 | `ET1207` | An overlay definition's `injectRef()` was called outside a component opened via that definition.   | Call it only inside the component the definition opens.                                       |
 | `ET1208` | An `et-overlay-header`, `et-overlay-body`, or `et-overlay-footer` has no `etOverlayMain` ancestor. | Wrap them in an `<et-overlay-main>` element or a host carrying the `etOverlayMain` directive. |
+| `ET1209` | The full-screen enter animation ran without an origin element to grow out of.                      | Pass `origin` in the overlay config (the strategy otherwise uses its reduced animation).      |
 
 ## Menu (ET13xx)
 
