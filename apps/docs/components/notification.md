@@ -20,7 +20,6 @@ provideNotificationManager({
 | `defaultDuration`    | `{ success: 4000, info: 4000, loading: 0, error: 0 }` | Per-status auto-dismiss (0 = sticky)                                            |
 | `statusColorMapping` | —                                                     | Status → app-registered color theme name for buttons inside the toast           |
 | `controlsColor`      | —                                                     | Color theme for control elements (e.g. dismiss); falls back to the status color |
-| `dismissLabel`       | `'Dismiss'`                                           | aria-label of the close button                                                  |
 
 ## Opening notifications
 

@@ -12,6 +12,11 @@ import { createLabels } from '@ethlete/core';
 export type StreamLabels = {
   /** Announced by the loading overlay while a player is starting up. */
   loading: string;
+  /**
+   * `title` for an embedded player's iframe, given the platform's own name — announced in place of the
+   * frame's contents. The brand name is not translated; the wording around it is.
+   */
+  playerFrame: (platform: string) => string;
 
   /** The consent gate's heading. */
   consentHeading: string;
@@ -40,6 +45,7 @@ export type StreamLabels = {
 /** The built-in English labels. */
 export const DEFAULT_STREAM_LABELS: StreamLabels = {
   loading: 'Loading',
+  playerFrame: (platform) => `${platform} player`,
 
   consentHeading: 'Content blocked',
   consentDescription: 'Playback requires your consent. Third-party cookies and data may be used.',

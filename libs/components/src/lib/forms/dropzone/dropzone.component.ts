@@ -33,6 +33,7 @@ import { FormErrorComponent } from '../form-field/form-error.component';
 import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../form-field/headless';
 import { DropzoneEntry, DROPZONE_ENTRY_STATUSES, formatFileSize } from './headless/dropzone-entry';
 import { DropzoneDirective } from './headless/dropzone.directive';
+import { injectDropzoneLabels } from '../../forms/dropzone/dropzone-labels';
 
 @Component({
   selector: 'et-dropzone',
@@ -66,6 +67,8 @@ import { DropzoneDirective } from './headless/dropzone.directive';
   },
 })
 export class DropzoneComponent {
+  private dropzoneLabels = injectDropzoneLabels();
+
   protected dropzoneDir = inject(DropzoneDirective);
   public support = injectFormSupport();
   private injector = inject(Injector);
@@ -73,16 +76,16 @@ export class DropzoneComponent {
   private prefersReducedMotion = injectPrefersReducedMotion();
 
   /** Label of the retry button shown for failed uploads. */
-  public retryLabel = input('Retry');
+  public retryLabel = input<string | null>(null);
 
   /** Accessible label prefix of the remove button. The entry name is appended. */
-  public removeLabel = input('Remove');
+  public removeLabel = input<string | null>(null);
 
   /** Accessible label of the replace button shown in single mode. */
-  public replaceLabel = input('Replace file');
+  public replaceLabel = input<string | null>(null);
 
   /** Fallback error message shown when the upload error has no message. */
-  public uploadErrorLabel = input('failed to upload');
+  public uploadErrorLabel = input<string | null>(null);
 
   /** Overrides the built-in per-entry upload failure message (e.g. for i18n). */
   public uploadErrorMessage = input<((entry: DropzoneEntry) => string) | null>(null);
@@ -94,6 +97,18 @@ export class DropzoneComponent {
   private errorAnimatableRef = viewChild<AnimatableDirective>('errorAnimatable');
   private hintAnimatableRef = viewChild<AnimatableDirective>('hintAnimatable');
   private entryElements = viewChildren<ElementRef<HTMLElement>>('entryEl');
+
+  /** The string in effect: this instance's `retryLabel`, else the domain's label set. */
+  protected resolvedRetryLabel = computed(() => this.retryLabel() ?? this.dropzoneLabels().retry);
+
+  /** The string in effect: this instance's `removeLabel`, else the domain's label set. */
+  protected resolvedRemoveLabel = computed(() => this.removeLabel() ?? this.dropzoneLabels().remove);
+
+  /** The string in effect: this instance's `replaceLabel`, else the domain's label set. */
+  protected resolvedReplaceLabel = computed(() => this.replaceLabel() ?? this.dropzoneLabels().replaceFile);
+
+  /** The string in effect: this instance's `uploadErrorLabel`, else the domain's label set. */
+  public resolvedUploadErrorLabel = computed(() => this.uploadErrorLabel() ?? this.dropzoneLabels().uploadFailed);
   private removingEntryIds = new Set<string>();
   private filePickerOpen = false;
   public canAnimate = createCanAnimateSignal();
@@ -230,6 +245,8 @@ export class DropzoneComponent {
   private defaultUploadErrorMessage(entry: DropzoneEntry) {
     const serverMessage = entry.errorMessage();
 
-    return serverMessage ? `"${entry.name()}": ${serverMessage}` : `"${entry.name()}" ${this.uploadErrorLabel()}.`;
+    return serverMessage
+      ? `"${entry.name()}": ${serverMessage}`
+      : `"${entry.name()}" ${this.resolvedUploadErrorLabel()}.`;
   }
 }

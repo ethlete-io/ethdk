@@ -2,6 +2,7 @@ import { DestroyRef, Directive, booleanAttribute, computed, inject, input, model
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 import { TagInputFieldDirective } from './tag-input-field.directive';
+import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 
 const defaultNormalizeTag = (raw: string) => {
   const trimmed = raw.trim();
@@ -18,6 +19,8 @@ const defaultNormalizeTag = (raw: string) => {
   },
 })
 export class TagInputDirective implements FormValueControl<string[]>, FormFieldControl {
+  private formFieldLabels = injectFormFieldLabels();
+
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
 
@@ -48,7 +51,7 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
 
   public placeholder = input('');
   /** Field placeholder shown while `mixed` is set. */
-  public mixedLabel = input('Mixed');
+  public mixedLabel = input<string | null>(null);
 
   /**
    * What commits the pending text as a tag: multi-character entries are key names
@@ -60,6 +63,9 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
   public normalizeTag = input<(raw: string) => string | null>(defaultNormalizeTag);
   public maxTags = input<number | undefined>(undefined);
 
+  /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
+  public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
+
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
 
   /** The raw value normalized to the tags the control currently shows. Mixed has no effective tags. */
@@ -68,7 +74,7 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
   public hasValue = computed(() => this.mixed() || this.effectiveValues().length > 0);
 
   /** The placeholder the text field currently shows — `mixedLabel` while mixed. */
-  public effectivePlaceholder = computed(() => (this.mixed() ? this.mixedLabel() : this.placeholder()));
+  public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));
 
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.TAG_INPUT);

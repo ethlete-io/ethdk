@@ -2,6 +2,7 @@ import { DestroyRef, Directive, afterNextRender, computed, inject, input } from 
 import { RuntimeError, createComponentId } from '@ethlete/core';
 import { CASCADER_ERROR_CODES } from '../cascader-errors';
 import { CascaderDirective } from './cascader.directive';
+import { injectCascaderLabels } from '../cascader-labels';
 
 /** One level of the hierarchy — a `role="group"` of tree items. Nodes read their level from it. */
 @Directive({
@@ -14,6 +15,8 @@ import { CascaderDirective } from './cascader.directive';
   },
 })
 export class CascaderColumnDirective {
+  private cascaderLabels = injectCascaderLabels();
+
   public cascader = inject(CascaderDirective, { optional: true });
   private destroyRef = inject(DestroyRef);
 
@@ -26,7 +29,7 @@ export class CascaderColumnDirective {
     const index = this.columnIndex();
     const parent = this.cascader?.columns()[index]?.parent;
 
-    return parent ? parent.label : 'Options';
+    return parent ? parent.label : this.cascaderLabels().options;
   });
 
   constructor() {

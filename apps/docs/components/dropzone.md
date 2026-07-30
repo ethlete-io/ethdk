@@ -110,7 +110,7 @@ On `et-dropzone` (forwarded to the headless `etDropzone` directive):
 | `upload`   | `DropzoneUploadConfig` | —       | The upload workflow config (required).                   |
 | `multiple` | `boolean`              | `false` | Allow several files; the control value becomes an array. |
 
-The built-in texts are customizable: `retryLabel` (`'Retry'`), `removeLabel` (`'Remove'`) and `replaceLabel` (`'Replace file'`) feed the action buttons' accessible labels, and the upload failure message can be replaced (e.g. for i18n) via the `uploadErrorMessage` function input.
+The built-in texts all come from [`DROPZONE_LABELS`](/components/localization) — the drop prompt, `retry` / `remove` / `replaceFile` for the action buttons, and the `uploadFailed` wording. Per instance, the matching `retryLabel` / `removeLabel` / `replaceLabel` inputs override them, and `uploadErrorMessage` replaces the whole per-entry failure message.
 
 ## Validation
 

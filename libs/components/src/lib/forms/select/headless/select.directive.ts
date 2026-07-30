@@ -44,6 +44,7 @@ import { SelectTriggerDirective } from './select-trigger.directive';
 import { SelectValueDirective } from './select-value.directive';
 import { SelectViewportDirective } from './select-viewport.directive';
 import { SelectItem, SelectOptionData, SelectSelectedEntry } from './select.tokens';
+import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 
 export const SELECT_FILTER_MODES = {
   /** The select never filters — a search input is purely informational for the consumer. */
@@ -82,6 +83,8 @@ const defaultNormalizeCustomValue = (raw: string) => {
   },
 })
 export class SelectDirective implements FormValueControl<unknown>, FormFieldControl {
+  private formFieldLabels = injectFormFieldLabels();
+
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
@@ -100,7 +103,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   public name = input('');
   public placeholder = input('');
   /** Trigger text shown while `mixed` is set. */
-  public mixedLabel = input('Mixed');
+  public mixedLabel = input<string | null>(null);
 
   /**
    * Data-driven options: the select owns the option rows instead of the consumer projecting
@@ -165,6 +168,9 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
    * value selection.
    */
   public pickOption = output<unknown>();
+
+  /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
+  public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
 
   /**
    * An async option source pushed in by `[etSelectOptions]` (from `selectOptionsFromQuery` /
@@ -507,7 +513,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
    */
   public displayValue = computed(() => {
     if (this.mixed()) {
-      return this.mixedLabel();
+      return this.resolvedMixedLabel();
     }
 
     const labels = this.selectedEntries()

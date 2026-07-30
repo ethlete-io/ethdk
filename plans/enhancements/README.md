@@ -45,7 +45,14 @@ tokens in core. (Calendar event markers and month/year jump moved into plan
 - [x] 02 — consistency fixes _(done 2026-07-30; see the "found while
       implementing" notes in the plan — overlay animations are still ungated for
       reduced motion, and 2 of the 3 stray `throw`s were correctly left alone)_
-- [ ] 03 — i18n consolidation
+- [x] 03 — i18n consolidation _(done 2026-07-30; `createLabels` in core is the one shape, and all 22
+      domains use it. Found while implementing: the plan's "four mechanisms" undercounted — `GridConfig`
+      and the three stream configs carried strings next to a `transformer(text, locale)` hook that asked
+      apps to translate by matching the SDK's English, so those strings moved to label tokens and the
+      hooks went. Core's `TitleConfig`/`MetaConfig` keep theirs deliberately: those strings are the
+      app's, so there is no default to override. The plan's item 4 also undercounted the ad-hoc
+      `input()` defaults — ~60 across 15 domains, not 4 — and `mixed`/`clear` recurred often enough to
+      earn a shared `FORM_FIELD_LABELS`.)_
 - [ ] 04 — RTE essentials
 - [x] 05 — form-field character counter _(done 2026-07-30; schema `maxLength()`
       and async-validator `pending` both turned out to be auto-bound signal-forms

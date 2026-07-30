@@ -16,6 +16,7 @@ import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '..
 import { SLIDER_ERROR_CODES } from '../slider-errors';
 import { snapValueToStep, valueToPercent } from './internals/slider-engine';
 import { SLIDER_TOKEN, SliderHostBase, SliderThumbBase, SliderThumbLabelBase } from './slider.tokens';
+import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 
 @Directive({
   selector: '[etSlider]',
@@ -26,6 +27,8 @@ import { SLIDER_TOKEN, SliderHostBase, SliderThumbBase, SliderThumbLabelBase } f
   },
 })
 export class SliderDirective implements FormValueControl<number>, FormFieldControl, SliderHostBase {
+  private formFieldLabels = injectFormFieldLabels();
+
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
 
@@ -33,7 +36,7 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
   /** View state for a field whose source values disagree. The raw form value stays untouched. */
   public mixed = model(false);
   /** `aria-valuetext` the thumb announces while `mixed` is set. */
-  public mixedLabel = input('Mixed');
+  public mixedLabel = input<string | null>(null);
   public touched = model(false);
   public disabled = input(false, { transform: booleanAttribute });
   public readonly = input(false, { transform: booleanAttribute });
@@ -47,6 +50,9 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
   public min = input<number | undefined>(undefined);
   public max = input<number | undefined>(undefined);
   public step = input(1, { transform: numberAttribute });
+
+  /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
+  public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
 
   public effectiveMin = computed(() => this.min() ?? 0);
   public effectiveMax = computed(() => this.max() ?? 100);

@@ -1,7 +1,7 @@
 <div class="et-calendar-header">
   <button
     [disabled]="!calendar.canGoPrev()"
-    [attr.aria-label]="previousMonthLabel()"
+    [attr.aria-label]="resolvedPreviousMonthLabel()"
     (click)="calendar.previousMonth()"
     class="et-calendar-nav-button et-calendar-nav-button--previous"
     et-icon-button
@@ -15,7 +15,7 @@
 
   <button
     [disabled]="!calendar.canGoNext()"
-    [attr.aria-label]="nextMonthLabel()"
+    [attr.aria-label]="resolvedNextMonthLabel()"
     (click)="calendar.nextMonth()"
     class="et-calendar-nav-button et-calendar-nav-button--next"
     et-icon-button

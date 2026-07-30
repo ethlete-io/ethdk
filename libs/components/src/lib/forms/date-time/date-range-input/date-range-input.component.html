@@ -1,5 +1,5 @@
 <input
-  [attr.aria-label]="startAriaLabel()"
+  [attr.aria-label]="resolvedStartAriaLabel()"
   [etInputMask]="rangeInput.maskPattern()"
   class="et-date-range-input-field"
   etDateRangeInputField
@@ -11,7 +11,7 @@
 <span class="et-date-range-input-separator" aria-hidden="true">–</span>
 
 <input
-  [attr.aria-label]="endAriaLabel()"
+  [attr.aria-label]="resolvedEndAriaLabel()"
   [etInputMask]="rangeInput.maskPattern()"
   class="et-date-range-input-field"
   etDateRangeInputField
@@ -25,7 +25,7 @@
        mousedown is prevented so the field keeps focus (its blur would unmount this
        button before the click could land) -->
   <button
-    [attr.aria-label]="clearLabel()"
+    [attr.aria-label]="resolvedClearLabel()"
     (click)="handleClearClick($event)"
     (mousedown)="$event.preventDefault()"
     class="et-date-range-input-clear"
@@ -38,7 +38,7 @@
   </button>
 }
 
-<button [attr.aria-label]="pickerTriggerLabel()" class="et-date-range-input-picker-trigger" etDatePickerTrigger>
+<button [attr.aria-label]="resolvedPickerTriggerLabel()" class="et-date-range-input-picker-trigger" etDatePickerTrigger>
   <i etIcon="et-calendar"></i>
 </button>
 

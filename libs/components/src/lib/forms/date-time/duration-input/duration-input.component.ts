@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation, booleanAttribute, computed, inject, input } from '@angular/core';
 import { IconDirective, TIMES_ICON, provideIcons } from '../../../icon';
 import { DurationInputDirective, DurationInputFieldDirective } from './headless';
+import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 
 @Component({
   selector: 'et-duration-input',
@@ -36,11 +37,16 @@ import { DurationInputDirective, DurationInputFieldDirective } from './headless'
   },
 })
 export class DurationInputComponent {
+  private formFieldLabels = injectFormFieldLabels();
+
   protected durationInput = inject(DurationInputDirective);
 
   /** Shows a clear (×) control while a value or pending text is set and the field is in use. */
   public clearable = input(true, { transform: booleanAttribute });
-  public clearLabel = input('Clear');
+  public clearLabel = input<string | null>(null);
+
+  /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
+  protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
 
   // only while the field is in use — mirrors the select's clear affordance
   protected showClear = computed(

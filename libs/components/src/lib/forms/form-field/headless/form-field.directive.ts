@@ -67,7 +67,7 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
   public parseError = computed(() => this.registeredControl()?.parseError?.() ?? false);
 
   /** The control's parse-error message (shown when there's a parse error but no validation error). */
-  public parseErrorMessage = computed(() => this.registeredControl()?.parseErrorMessage?.() ?? null);
+  public parseErrorMessage = computed(() => this.registeredControl()?.resolvedParseErrorMessage?.() ?? null);
 
   public controlType = computed(() => this.registeredControl()?.controlType() ?? FORM_FIELD_CONTROL_TYPES.TEXT_INPUT);
 

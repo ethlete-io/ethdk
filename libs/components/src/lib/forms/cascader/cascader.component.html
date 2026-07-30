@@ -9,7 +9,7 @@
 
   @if (showClear()) {
     <button
-      [attr.aria-label]="clearLabel()"
+      [attr.aria-label]="resolvedClearLabel()"
       (click)="handleClearClick($event)"
       class="et-cascader-clear"
       animate.enter="et-cascader-clear--enter"
@@ -30,7 +30,7 @@
   <et-cascader-panel #panel>
     @if (cascader.canSearch()) {
       <div class="et-cascader-search">
-        <input [placeholder]="searchPlaceholder()" etCascaderSearch />
+        <input [placeholder]="resolvedSearchPlaceholder()" etCascaderSearch />
       </div>
     }
 
@@ -113,7 +113,7 @@
       type="button"
     >
       <i class="et-cascader-back-icon" etIcon="et-chevron" aria-hidden="true"></i>
-      {{ backLabel() }}
+      {{ resolvedBackLabel() }}
     </button>
 
     <span
@@ -167,7 +167,9 @@
           <span [etProvideColor]="errorColorTheme" class="et-cascader-state-error-message">{{
             cascader.searchState().error
           }}</span>
-          <button (click)="cascader.retrySearch()" et-text-button size="sm" type="button">Retry</button>
+          <button (click)="cascader.retrySearch()" et-text-button size="sm" type="button">
+            {{ cascaderLabels().retry }}
+          </button>
         </div>
       }
       @default {
@@ -196,7 +198,7 @@
             </button>
           }
         } @else {
-          <div class="et-cascader-state et-cascader-state--empty">No matches</div>
+          <div class="et-cascader-state et-cascader-state--empty">{{ cascaderLabels().noMatches }}</div>
         }
       }
     }
@@ -214,13 +216,15 @@
       @case ('loading') {
         <div class="et-cascader-state et-cascader-state--loading">
           <et-spinner diameter="16" strokeWidth="2" />
-          Loading…
+          {{ cascaderLabels().loading }}
         </div>
       }
       @case ('error') {
         <div class="et-cascader-state et-cascader-state--error" role="alert">
           <span [etProvideColor]="errorColorTheme" class="et-cascader-state-error-message">{{ column.error }}</span>
-          <button (click)="cascader.retryColumn(columnIndex)" et-text-button size="sm" type="button">Retry</button>
+          <button (click)="cascader.retryColumn(columnIndex)" et-text-button size="sm" type="button">
+            {{ cascaderLabels().retry }}
+          </button>
         </div>
       }
       @default {
@@ -237,7 +241,7 @@
             </button>
           }
         } @else {
-          <div class="et-cascader-state et-cascader-state--empty">No options</div>
+          <div class="et-cascader-state et-cascader-state--empty">{{ cascaderLabels().noOptions }}</div>
         }
       }
     }

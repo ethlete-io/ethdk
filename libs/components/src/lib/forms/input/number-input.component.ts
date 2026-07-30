@@ -3,6 +3,7 @@ import {
   afterNextRender,
   booleanAttribute,
   Component,
+  computed,
   DestroyRef,
   ElementRef,
   inject,
@@ -15,6 +16,7 @@ import { ColorInteractiveDirective } from '@ethlete/core';
 import { fromEvent, merge, Subscription, takeUntil, tap, timer } from 'rxjs';
 import { IconDirective, MINUS_ICON, PLUS_ICON, provideIcons } from '../../icon';
 import { NumberInputDirective } from './headless';
+import { injectInputLabels } from '../../forms/input/input-labels';
 
 const STEPPER_REPEAT_DELAY = 400;
 const STEPPER_REPEAT_INTERVAL = 75;
@@ -62,6 +64,8 @@ const STEPPER_REPEAT_INTERVAL = 75;
   },
 })
 export class NumberInputComponent {
+  private inputLabels = injectInputLabels();
+
   protected numberInputDir = inject(NumberInputDirective);
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
@@ -70,12 +74,18 @@ export class NumberInputComponent {
   public stepper = input(false, { transform: booleanAttribute });
 
   /** Accessible name of the increment stepper button. */
-  public incrementLabel = input('Increment');
+  public incrementLabel = input<string | null>(null);
 
   /** Accessible name of the decrement stepper button. */
-  public decrementLabel = input('Decrement');
+  public decrementLabel = input<string | null>(null);
 
   private nativeInput = viewChild<ElementRef<HTMLInputElement>>('nativeInput');
+
+  /** The string in effect: this instance's `incrementLabel`, else the domain's label set. */
+  protected resolvedIncrementLabel = computed(() => this.incrementLabel() ?? this.inputLabels().increment);
+
+  /** The string in effect: this instance's `decrementLabel`, else the domain's label set. */
+  protected resolvedDecrementLabel = computed(() => this.decrementLabel() ?? this.inputLabels().decrement);
 
   private repeatSub: Subscription | null = null;
 

@@ -64,9 +64,11 @@ For custom chip markup, compose the directives directly — `[etChip]` owns the 
 </span>
 ```
 
-| `[etChipRemove]` input | Type     | Default    | Description                        |
-| ---------------------- | -------- | ---------- | ---------------------------------- |
-| `removeLabel`          | `string` | `'Remove'` | The remove control's `aria-label`. |
+| `[etChipRemove]` input | Type             | Default  | Description                        |
+| ---------------------- | ---------------- | -------- | ---------------------------------- |
+| `removeLabel`          | `string \| null` | `null` ¹ | The remove control's `aria-label`. |
+
+¹ `null` falls through to [`CHIP_LABELS.remove`](/components/localization) (`'Remove'`).
 
 ## Accessibility
 

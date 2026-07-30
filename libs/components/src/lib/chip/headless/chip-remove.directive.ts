@@ -1,7 +1,8 @@
-import { Directive, ElementRef, afterNextRender, inject, input } from '@angular/core';
+import { afterNextRender, computed, Directive, ElementRef, inject, input } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { CHIP_ERROR_CODES } from './chip-errors';
 import { ChipDirective } from './chip.directive';
+import { injectChipLabels } from '../../chip/chip-labels';
 
 @Directive({
   selector: '[etChipRemove]',
@@ -13,15 +14,20 @@ import { ChipDirective } from './chip.directive';
     tabindex: '-1',
     '[attr.type]': 'IS_BUTTON ? "button" : null',
     '[attr.disabled]': 'IS_BUTTON && chip?.disabled() ? "" : null',
-    '[attr.aria-label]': 'removeLabel()',
+    '[attr.aria-label]': 'resolvedRemoveLabel()',
     '(click)': 'handleClick($event)',
   },
 })
 export class ChipRemoveDirective {
+  private chipLabels = injectChipLabels();
+
   protected chip = inject(ChipDirective, { optional: true });
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  public removeLabel = input('Remove');
+  public removeLabel = input<string | null>(null);
+
+  /** The string in effect: this instance's `removeLabel`, else the domain's label set. */
+  public resolvedRemoveLabel = computed(() => this.removeLabel() ?? this.chipLabels().remove);
 
   protected readonly IS_BUTTON = this.elementRef.nativeElement.tagName === 'BUTTON';
 

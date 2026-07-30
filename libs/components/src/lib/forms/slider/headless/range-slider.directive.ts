@@ -16,6 +16,7 @@ import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '..
 import { SLIDER_ERROR_CODES } from '../slider-errors';
 import { constrainRangeThumb, snapValueToStep, valueToPercent } from './internals/slider-engine';
 import { SLIDER_TOKEN, SliderHostBase, SliderThumbBase, SliderThumbLabelBase } from './slider.tokens';
+import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 
 export type RangeSliderValue = [number, number];
 
@@ -28,6 +29,8 @@ export type RangeSliderValue = [number, number];
   },
 })
 export class RangeSliderDirective implements FormValueControl<RangeSliderValue>, FormFieldControl, SliderHostBase {
+  private formFieldLabels = injectFormFieldLabels();
+
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
 
@@ -35,7 +38,7 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
   /** View state for a field whose source values disagree. The raw form value stays untouched. */
   public mixed = model(false);
   /** `aria-valuetext` both thumbs announce while `mixed` is set. */
-  public mixedLabel = input('Mixed');
+  public mixedLabel = input<string | null>(null);
   public touched = model(false);
   public disabled = input(false, { transform: booleanAttribute });
   public readonly = input(false, { transform: booleanAttribute });
@@ -52,6 +55,9 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
 
   /** Minimum gap kept between the two thumbs — should be a multiple of `step`. */
   public minDistance = input(0, { transform: numberAttribute });
+
+  /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
+  public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
 
   public effectiveMin = computed(() => this.minValue());
   public effectiveMax = computed(() => this.maxValue());

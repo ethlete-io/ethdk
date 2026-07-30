@@ -49,7 +49,7 @@
   @if (showClear()) {
     <!-- pointer-only, out of the tab order — keyboard users clear via Backspace / erasing -->
     <button
-      [attr.aria-label]="clearLabel()"
+      [attr.aria-label]="resolvedClearLabel()"
       (click)="handleClearClick($event)"
       class="et-select-clear"
       animate.enter="et-select-clear--enter"
@@ -114,7 +114,7 @@
     @if (select.customValueCandidate(); as candidate) {
       <et-select-option [value]="candidate" [label]="candidate" class="et-select-create-option" customValueOption>
         <i class="et-select-create-option-icon" etIcon="et-plus" aria-hidden="true"></i>
-        {{ createLabel() }} “{{ candidate }}”
+        {{ resolvedCreateLabel() }} “{{ candidate }}”
       </et-select-option>
     }
 
@@ -127,7 +127,7 @@
         } @else {
           <div class="et-select-state et-select-state--loading">
             <et-spinner class="et-select-state-spinner" diameter="16" strokeWidth="2" />
-            Loading…
+            {{ selectLabels().loading }}
           </div>
         }
       } @else if (select.error(); as error) {
@@ -145,14 +145,14 @@
         @if (select.registeredEmptyTemplate(); as emptyTemplate) {
           <ng-template [ngTemplateOutlet]="emptyTemplate.templateRef" />
         } @else {
-          <div class="et-select-state et-select-state--empty">No results</div>
+          <div class="et-select-state et-select-state--empty">{{ selectLabels().empty }}</div>
         }
       }
 
       @if (select.hasMoreItems() && !select.loading()) {
         <button (click)="select.requestLoadMore()" class="et-select-load-more" tabindex="-1" type="button">
           <i class="et-select-load-more-icon" etIcon="et-chevron" aria-hidden="true"></i>
-          {{ loadMoreLabel() }}
+          {{ resolvedLoadMoreLabel() }}
         </button>
       }
 
@@ -161,7 +161,7 @@
              through the consumer's own UI (e.g. a button next to the field) -->
         <button (click)="select.requestAddNew()" class="et-select-add-new" tabindex="-1" type="button">
           <i class="et-select-add-new-icon" etIcon="et-plus" aria-hidden="true"></i>
-          {{ addNewLabel() }}
+          {{ resolvedAddNewLabel() }}
         </button>
       }
     </div>

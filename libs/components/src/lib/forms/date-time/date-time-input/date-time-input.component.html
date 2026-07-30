@@ -11,7 +11,7 @@
        mousedown is prevented so the field keeps focus (its blur would unmount this
        button before the click could land) -->
   <button
-    [attr.aria-label]="clearLabel()"
+    [attr.aria-label]="resolvedClearLabel()"
     (click)="handleClearClick($event)"
     (mousedown)="$event.preventDefault()"
     class="et-date-time-input-clear"
@@ -24,7 +24,7 @@
   </button>
 }
 
-<button [attr.aria-label]="pickerTriggerLabel()" class="et-date-time-input-picker-trigger" etDatePickerTrigger>
+<button [attr.aria-label]="resolvedPickerTriggerLabel()" class="et-date-time-input-picker-trigger" etDatePickerTrigger>
   <i etIcon="et-calendar"></i>
 </button>
 
@@ -33,8 +33,8 @@
     <div class="et-date-time-input-panel">
       <div class="et-date-time-input-panel-tabs">
         <et-segmented-button-group [value]="activePane()" (valueChange)="setActivePane($event)">
-          <et-segmented-button value="date">{{ dateTabLabel() }}</et-segmented-button>
-          <et-segmented-button value="time">{{ timeTabLabel() }}</et-segmented-button>
+          <et-segmented-button value="date">{{ resolvedDateTabLabel() }}</et-segmented-button>
+          <et-segmented-button value="time">{{ resolvedTimeTabLabel() }}</et-segmented-button>
         </et-segmented-button-group>
       </div>
 

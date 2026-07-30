@@ -19,11 +19,11 @@ When one form edits several records at once and their current values differ, a c
 
 Every implementing control:
 
-| Member        | Type      | Notes                                                                           |
-| ------------- | --------- | ------------------------------------------------------------------------------- |
-| `mixed`       | `boolean` | Two-way bindable (`[(mixed)]`). Default `false`.                                |
-| `mixedChange` | output    | Emits when a user commit or clear resolves the state.                           |
-| `mixedLabel`  | `string`  | Default `'Mixed'`. Only on controls with a text display slot (see table below). |
+| Member        | Type             | Notes                                                                                                                                   |
+| ------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `mixed`       | `boolean`        | Two-way bindable (`[(mixed)]`). Default `false`.                                                                                        |
+| `mixedChange` | output           | Emits when a user commit or clear resolves the state.                                                                                   |
+| `mixedLabel`  | `string \| null` | Unset → [`FORM_FIELD_LABELS.mixed`](/components/localization) (`'Mixed'`). Only on controls with a text display slot (see table below). |
 
 ## Control coverage
 

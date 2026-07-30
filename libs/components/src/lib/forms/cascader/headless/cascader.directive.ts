@@ -43,6 +43,7 @@ import {
   toPathObservable,
   toSearchObservable,
 } from './internals/cascader-tree';
+import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 
 export const CASCADER_SELECTABLE_LEVELS = {
   /** Only terminal leaves commit a value (default). */
@@ -71,6 +72,8 @@ type CascaderSearchLike = {
   },
 })
 export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] | null>, FormFieldControl {
+  private formFieldLabels = injectFormFieldLabels();
+
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
@@ -92,7 +95,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   public name = input('');
   public placeholder = input('');
   /** Trigger text shown while `mixed` is set. */
-  public mixedLabel = input('Mixed');
+  public mixedLabel = input<string | null>(null);
 
   /** The hierarchical source browsed by the cascader. Required. */
   public dataSource = input<CascaderDataSource<T> | null>(null);
@@ -124,6 +127,9 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
 
   public afterOpen = output<void>();
   public afterClose = output<void>();
+
+  /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
+  public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
 
@@ -223,7 +229,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   public displayPath = computed(() => this.path().map((node) => node.label));
   public displayValue = computed(() => {
     if (this.mixed()) {
-      return this.mixedLabel();
+      return this.resolvedMixedLabel();
     }
 
     if (this.multiple()) {

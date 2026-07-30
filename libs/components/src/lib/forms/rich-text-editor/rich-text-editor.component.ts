@@ -159,9 +159,6 @@ export class RichTextEditorComponent {
     return defs;
   });
 
-  /** A tool button's accessible name, from the label set where this library owns the tool. */
-  protected toolLabel = (tool: RichTextEditorToolDefinition) => richTextEditorToolLabel(this.labels(), tool);
-
   /** The current block style option (used for the heading-menu trigger icon + label). */
   private currentHeading = computed(() =>
     this.headingOptions().find((option) => option.level === this.dir.headingLevel()),
@@ -209,6 +206,11 @@ export class RichTextEditorComponent {
 
       this.renderExternalValue(markdown);
     });
+  }
+
+  /** A tool button's accessible name, from the label set where this library owns the tool. */
+  protected toolLabel(tool: RichTextEditorToolDefinition) {
+    return richTextEditorToolLabel(this.labels(), tool);
   }
 
   protected syncValueFromDom() {

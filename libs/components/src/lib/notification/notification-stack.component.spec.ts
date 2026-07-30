@@ -26,7 +26,6 @@ describe('NotificationStackComponent', () => {
         provideNotificationManagerConfig({
           position: 'bottom-end',
           maxVisible: 3,
-          dismissLabel: 'Dismiss',
           defaultDuration: { success: 0, info: 0, loading: 0, error: 0 },
         }),
         { provide: NOTIFICATION_STACK_CONTEXT_TOKEN, useValue: mockContext },
@@ -46,7 +45,6 @@ describe('NotificationStackComponent', () => {
         managerConfig: {
           position: 'bottom-end',
           maxVisible: 3,
-          dismissLabel: 'Dismiss',
           defaultDuration: { success: 0, info: 0, loading: 0, error: 0 },
         },
       },
@@ -95,7 +93,6 @@ describe('NotificationStackComponent', () => {
         provideNotificationManagerConfig({
           position: 'top-end',
           maxVisible: 3,
-          dismissLabel: 'Dismiss',
           defaultDuration: { success: 0, info: 0, loading: 0, error: 0 },
         }),
         { provide: NOTIFICATION_STACK_CONTEXT_TOKEN, useValue: topContext },

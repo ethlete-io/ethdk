@@ -12,6 +12,7 @@ import {
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 import { RatingIconDirective } from './rating-icon.directive';
+import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 
 export type RatingIconState = 'full' | 'half' | 'empty';
 
@@ -44,6 +45,8 @@ export type RatingIconState = 'full' | 'half' | 'empty';
   },
 })
 export class RatingDirective implements FormValueControl<number | null>, FormFieldControl {
+  private formFieldLabels = injectFormFieldLabels();
+
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -52,7 +55,7 @@ export class RatingDirective implements FormValueControl<number | null>, FormFie
   /** View state for a field whose source values disagree. The raw form value stays untouched. */
   public mixed = model(false);
   /** `aria-valuetext` announced while `mixed` is set. */
-  public mixedLabel = input('Mixed');
+  public mixedLabel = input<string | null>(null);
   public touched = model(false);
   public disabled = input(false, { transform: booleanAttribute });
   public readonly = input(false, { transform: booleanAttribute });
@@ -67,6 +70,9 @@ export class RatingDirective implements FormValueControl<number | null>, FormFie
    */
   public max = input<number | undefined>(5);
   public allowHalf = input(false, { transform: booleanAttribute });
+
+  /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
+  public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
 
   public effectiveMax = computed(() => this.max() ?? 5);
 
@@ -97,7 +103,7 @@ export class RatingDirective implements FormValueControl<number | null>, FormFie
 
   protected valueText = computed(() => {
     if (this.mixed()) {
-      return this.mixedLabel();
+      return this.resolvedMixedLabel();
     }
 
     const value = this.value();

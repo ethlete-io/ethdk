@@ -28,7 +28,7 @@ export class ColorInputDirective extends TextFieldControlDirective implements Fo
   public swatchColor = computed(() => (this.mixed() ? null : this.resolvedColor()));
 
   /** The text the value slot renders — `mixedLabel` while mixed, never the hidden raw color. */
-  public displayValue = computed(() => (this.mixed() ? this.mixedLabel() : (this.value() ?? '')));
+  public displayValue = computed(() => (this.mixed() ? this.resolvedMixedLabel() : (this.value() ?? '')));
 
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.COLOR_INPUT);
 

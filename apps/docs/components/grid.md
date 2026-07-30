@@ -64,7 +64,7 @@ Override via the `breakpoints` input. `rowHeight` (default `100`) and `gap` (def
 
 In edit mode every item renders an actions component in its top corner — by default `et-grid-item-default-actions`, a small toolbar with a remove button. Replace it globally via `provideGridConfig({ actionsComponent: MyActionsComponent })`; the component receives the item's `itemId` and `data` as inputs and can call the grid's `removeItem()` (see the `GridItemActionsComponent` type). `et-grid-item-toolbar` is the styled toolbar shell (`--et-grid-item-toolbar-*` tokens) you can reuse in a custom actions component.
 
-`GridConfig` also carries the accessibility strings — `interactiveAriaLabel` (`'Interactive grid layout'`), `readonlyAriaLabel` (`'Grid layout'`), `removeActionAriaLabel` (`'Remove item'`) — and a `transformer(text, locale)` hook to run them through your i18n system.
+The accessibility strings live in `GRID_LABELS`, not in `GridConfig` — `interactiveGrid` (`'Interactive grid layout'`), `readonlyGrid` (`'Grid layout'`) and `removeItem` (`'Remove item'`), overridable with `provideGridLabels` like [every other domain](/components/localization).
 
 ## Backend integration
 
@@ -83,9 +83,9 @@ The `BackendIntegration` story shows the full round trip. A `<et-grid-debug />` 
 
 ## Accessibility
 
-- The grid host is a `role="region"` labelled from `GridConfig` — `interactiveAriaLabel` normally, `readonlyAriaLabel` when `readOnly` (both run through the config's `transformer` for i18n).
+- The grid host is a `role="region"` labelled from `GRID_LABELS` — `interactiveGrid` normally, `readonlyGrid` when `readOnly` (both [localizable](/components/localization)).
 - Each item is a focusable `role="group"` (`tabindex="0"`) with its `ariaLabel` input as the accessible name — set it per item, the default is a generic `'Grid item'`.
-- All editing is keyboard-reachable (see [Interaction](#interaction)); the drag handle reflects an active drag via `aria-grabbed`, and the default remove button is labelled by `removeActionAriaLabel`.
+- All editing is keyboard-reachable (see [Interaction](#interaction)); the drag handle reflects an active drag via `aria-grabbed`, and the default remove button is labelled by `GRID_LABELS.removeItem`.
 
 ## Theming
 

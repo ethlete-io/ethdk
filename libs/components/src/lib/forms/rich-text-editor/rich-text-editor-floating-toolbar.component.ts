@@ -48,10 +48,6 @@ export class RichTextEditorFloatingToolbarComponent {
   /** The editor's strings — the same set, since this toolbar is part of that editor. */
   protected labels = computed(() => this.editor().resolvedLabels());
 
-  /** A tool button's accessible name, from the label set. */
-  protected toolLabel = (token: string, tool: { label: string }) =>
-    richTextEditorToolLabel(this.labels(), { token, ...tool });
-
   /** The inline marks from the editor's configured tools — headings/lists stay in the static toolbar. */
   protected inlineTools = computed(() =>
     this.editor()
@@ -75,5 +71,10 @@ export class RichTextEditorFloatingToolbarComponent {
         }
       });
     });
+  }
+
+  /** A tool button's accessible name, from the label set. */
+  protected toolLabel(token: string, tool: { label: string }) {
+    return richTextEditorToolLabel(this.labels(), { token, ...tool });
   }
 }

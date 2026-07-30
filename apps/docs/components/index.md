@@ -75,6 +75,8 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 
 ## Guides
 
+- [Localization](/components/localization) — the one recipe for every user-facing string: the locale signal, the date-fns locale, and the label token each domain exposes.
+
 ### Floating & overlays
 
 - [Overlays](/components/overlays) — the overlay system: opening dialogs and sheets, content structure, responsive strategies, declarative popovers, and routing inside overlays.

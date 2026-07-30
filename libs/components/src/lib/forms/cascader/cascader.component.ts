@@ -15,6 +15,8 @@ import {
   CascaderSurfaceDirective,
   CascaderTriggerDirective,
 } from './headless';
+import { injectFormFieldLabels } from '../../forms/form-field/form-field-labels';
+import { injectCascaderLabels } from '../../forms/cascader/cascader-labels';
 
 @Component({
   selector: 'et-cascader',
@@ -69,15 +71,28 @@ import {
   },
 })
 export class CascaderComponent {
+  protected cascaderLabels = injectCascaderLabels();
+
+  private formFieldLabels = injectFormFieldLabels();
+
   protected cascader = inject<CascaderDirective>(CascaderDirective);
   protected errorColorTheme = injectErrorTheme();
 
   /** Shows a clear (×) control while a value is selected. */
   public clearable = input(true, { transform: booleanAttribute });
-  public clearLabel = input('Clear');
-  public backLabel = input('Back');
+  public clearLabel = input<string | null>(null);
+  public backLabel = input<string | null>(null);
   /** Placeholder of the panel's search input (shown when the data source has a `search` hook). */
-  public searchPlaceholder = input('Search');
+  public searchPlaceholder = input<string | null>(null);
+
+  /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
+  protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
+
+  /** The string in effect: this instance's `backLabel`, else the domain's label set. */
+  protected resolvedBackLabel = computed(() => this.backLabel() ?? this.cascaderLabels().back);
+
+  /** The string in effect: this instance's `searchPlaceholder`, else the domain's label set. */
+  protected resolvedSearchPlaceholder = computed(() => this.searchPlaceholder() ?? this.cascaderLabels().search);
 
   protected showClear = computed(
     () =>

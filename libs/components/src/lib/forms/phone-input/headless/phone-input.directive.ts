@@ -14,6 +14,7 @@ import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '..
 import { PHONE_COUNTRIES, matchCountryByDialCode, stripTrunkZero } from './phone-countries';
 import { PhoneInputFieldDirective } from './phone-input-field.directive';
 import { PhoneInputFlagDirective } from './phone-input-flag.directive';
+import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 
 const onlyDigits = (raw: string) => raw.replace(/\D/g, '');
 
@@ -25,6 +26,8 @@ const onlyDigits = (raw: string) => raw.replace(/\D/g, '');
   },
 })
 export class PhoneInputDirective implements FormValueControl<string>, FormFieldControl {
+  private formFieldLabels = injectFormFieldLabels();
+
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
 
@@ -41,17 +44,20 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
   public name = input('');
   public placeholder = input('');
   /** Field placeholder shown while `mixed` is set. */
-  public mixedLabel = input('Mixed');
+  public mixedLabel = input<string | null>(null);
 
   public defaultCountry = input('us');
   /** ISO codes listed on top of the country dropdown. */
   public preferredCountries = input<string[]>([]);
 
+  /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
+  public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
+
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
   public hasValue = computed(() => this.mixed() || this.value().length > 0);
 
   /** The placeholder the tel field currently shows — `mixedLabel` while mixed. */
-  public effectivePlaceholder = computed(() => (this.mixed() ? this.mixedLabel() : this.placeholder()));
+  public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));
 
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.PHONE_INPUT);

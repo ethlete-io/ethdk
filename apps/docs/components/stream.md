@@ -53,7 +53,7 @@ provideStreamConfig({
 });
 ```
 
-The built-in `et-stream-consent` shows a lock icon, heading/description and an accept button; texts are configurable via `provideStreamConsentConfig` and react to the app [locale](/core/providers#locale). Loading (`et-stream-player-loading`) and error (`et-stream-player-error`, with retry) overlays are equally replaceable via `provideStreamConfig`.
+The built-in `et-stream-consent` shows a lock icon, heading/description and an accept button; texts are configurable via `provideStreamLabels` and react to the app [locale](/core/providers#locale); `provideStreamConsentConfig` keeps only the accept button's color. Loading (`et-stream-player-loading`) and error (`et-stream-player-error`, with retry) overlays are equally replaceable via `provideStreamConfig`.
 
 ## Picture-in-picture
 
@@ -68,11 +68,29 @@ A slot's player can detach into a floating, draggable PiP window and hand back l
 
 <StoryEmbed id="components-stream-mixed--mixed-aspect-ratios" height="560px" />
 
+## Localization
+
+Every string the built-in chrome renders comes from `STREAM_LABELS` — the consent gate's
+heading/description/accept, the failure overlay's heading/description/retry, the PiP placeholder and
+its back button, the PiP window's close and focus controls, the loading overlay's announcement, and
+the `title` on iframes the library creates:
+
+```ts
+provideStreamLabels({
+  consentHeading: 'Inhalt blockiert',
+  consentAccept: 'Erlauben und abspielen',
+  errorRetry: 'Erneut versuchen',
+});
+```
+
+The `provideStreamConsentConfig` / `provideStreamPlayerErrorConfig` / `providePipSlotPlaceholderConfig`
+tokens keep only their button colors. See the [localization guide](/components/localization).
+
 ## Accessibility
 
 - The PiP chrome is fully operable: its focus/close/grid-toggle buttons carry `aria-label`s, and in grid mode each cell is a keyboard-activatable `role="button"` (<kbd>Enter</kbd>/<kbd>Space</kbd> selects the featured player).
-- The built-in overlays carry live-region semantics: the loading overlay is a `role="status"` region labelled "Loading", the error overlay announces via `role="alert"`, and the consent gate is a `role="group"` labelled by its heading. Custom replacements (via `provideStreamConfig`) should provide equivalents.
-- Iframes the library creates itself (Kick, SOOP, Dailymotion, TikTok) carry a descriptive `title`. The YouTube, Vimeo, Twitch and Facebook iframes are created by the platform SDKs and can't be titled from here — give those slots surrounding context (e.g. a heading).
+- The built-in overlays carry live-region semantics: the loading overlay is a `role="status"` region labelled from `STREAM_LABELS.loading`, the error overlay announces via `role="alert"`, and the consent gate is a `role="group"` labelled by its heading. Custom replacements (via `provideStreamConfig`) should provide equivalents.
+- Iframes the library creates itself (Kick, SOOP, Dailymotion, TikTok) carry a descriptive `title` from `STREAM_LABELS.playerFrame`. The YouTube, Vimeo, Twitch and Facebook iframes are created by the platform SDKs and can't be titled from here — give those slots surrounding context (e.g. a heading).
 
 ## Theming
 

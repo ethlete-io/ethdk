@@ -7,6 +7,7 @@ import { DatePickerInputDirective } from '../../internals/date-picker-input.dire
 import { formatDateValue, parseDateValue } from '../../internals/date-value';
 import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
 import { parseTimeText } from './internals/time-parse';
+import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
 
 /**
  * A time form control with a `string | null` value (a date-fns `valueFormat`
@@ -21,13 +22,18 @@ import { parseTimeText } from './internals/time-parse';
   providers: [{ provide: DATE_PICKER_HOST, useExisting: TimeInputDirective }],
 })
 export class TimeInputDirective extends DatePickerInputDirective implements FormValueControl<string | null> {
+  private dateTimeLabels = injectDateTimeLabels();
+
   public defaultValueFormat = injectTimeFormat();
 
   /** Message the form field shows when typed text can't be parsed as a time. */
-  public parseErrorMessage = input('Please enter a valid time');
+  public parseErrorMessage = input<string | null>(null);
 
   /** date-fns format shown in (and parsed from) the field. Locale-aware by default. */
   public displayFormat = input('p');
+
+  /** The string in effect: this instance's `parseErrorMessage`, else the domain's label set. */
+  public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidTime);
 
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.TIME_INPUT);
 

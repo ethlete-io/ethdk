@@ -8,6 +8,8 @@ import { SelectDirective, SelectSurfaceDirective, SelectTriggerDirective, Select
 import { SelectOptionComponent } from './select-option.component';
 import { SelectPanelComponent } from './select-panel.component';
 import { SelectVirtualOptionComponent } from './select-virtual-option.component';
+import { injectFormFieldLabels } from '../../forms/form-field/form-field-labels';
+import { injectSelectLabels } from '../../forms/select/select-labels';
 
 @Component({
   selector: 'et-select',
@@ -80,16 +82,32 @@ import { SelectVirtualOptionComponent } from './select-virtual-option.component'
   },
 })
 export class SelectComponent {
+  protected selectLabels = injectSelectLabels();
+
+  private formFieldLabels = injectFormFieldLabels();
+
   protected select = inject(SelectDirective);
   protected errorColorTheme = injectErrorTheme();
 
-  public loadMoreLabel = input('Load more');
-  public addNewLabel = input('Add new');
+  public loadMoreLabel = input<string | null>(null);
+  public addNewLabel = input<string | null>(null);
   /** Leading text of the "Create …" row rendered for `customValueCandidate`. */
-  public createLabel = input('Create');
+  public createLabel = input<string | null>(null);
   /** Shows a clear (×) control while a value is selected. */
   public clearable = input(true, { transform: booleanAttribute });
-  public clearLabel = input('Clear');
+  public clearLabel = input<string | null>(null);
+
+  /** The string in effect: this instance's `loadMoreLabel`, else the domain's label set. */
+  protected resolvedLoadMoreLabel = computed(() => this.loadMoreLabel() ?? this.selectLabels().loadMore);
+
+  /** The string in effect: this instance's `addNewLabel`, else the domain's label set. */
+  protected resolvedAddNewLabel = computed(() => this.addNewLabel() ?? this.selectLabels().addNew);
+
+  /** The string in effect: this instance's `createLabel`, else the domain's label set. */
+  protected resolvedCreateLabel = computed(() => this.createLabel() ?? this.selectLabels().create);
+
+  /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
+  protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
   protected mixedLabelId = createComponentId('et-select-mixed-label');
 
   // only while the field is in use — `focused` covers the trigger/search input having DOM

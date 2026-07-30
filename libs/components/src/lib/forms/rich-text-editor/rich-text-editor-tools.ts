@@ -1,6 +1,7 @@
 import { InjectionToken, Type } from '@angular/core';
 import { createStaticRootProvider } from '@ethlete/core';
 import { RichTextEditorDirective } from './headless/rich-text-editor.directive';
+import { DEFAULT_RICH_TEXT_EDITOR_LABELS } from './rich-text-editor-labels';
 
 /**
  * The formatting controls the rich text editor can render in its toolbar. `'divider'` renders a
@@ -71,7 +72,13 @@ export const provideRichTextEditorTools = (tools: readonly RichTextEditorTool[])
 
 export { injectRichTextEditorTools };
 
-/** Icon + label + wiring for a single toggle-button tool. */
+/**
+ * Icon + label + wiring for a single toggle-button tool.
+ *
+ * `label` is only the fallback: what the toolbar renders comes from `RICH_TEXT_EDITOR_LABELS`, keyed by
+ * the tool's token — which is why the built-in tables below read their labels from that set's defaults
+ * rather than repeating them.
+ */
 export type RichTextEditorToolButton = {
   icon: string;
   label: string;
@@ -85,43 +92,53 @@ export type RichTextEditorToolButton = {
 
 /** The toggle-button tools, keyed by token (`divider`/`heading` are rendered specially). */
 export const RICH_TEXT_EDITOR_TOOL_BUTTONS: Partial<Record<RichTextEditorTool, RichTextEditorToolButton>> = {
-  bold: { icon: 'et-bold', label: 'Bold', isActive: (e) => e.boldActive(), run: (e) => e.toggleBold() },
-  italic: { icon: 'et-italic', label: 'Italic', isActive: (e) => e.italicActive(), run: (e) => e.toggleItalic() },
+  bold: {
+    icon: 'et-bold',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.bold,
+    isActive: (e) => e.boldActive(),
+    run: (e) => e.toggleBold(),
+  },
+  italic: {
+    icon: 'et-italic',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.italic,
+    isActive: (e) => e.italicActive(),
+    run: (e) => e.toggleItalic(),
+  },
   strike: {
     icon: 'et-strikethrough',
-    label: 'Strikethrough',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.strike,
     isActive: (e) => e.strikeActive(),
     run: (e) => e.toggleStrikethrough(),
   },
   underline: {
     icon: 'et-underline',
-    label: 'Underline',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.underline,
     isActive: (e) => e.underlineActive(),
     run: (e) => e.toggleUnderline(),
   },
   code: {
     icon: 'et-code',
-    label: 'Inline code',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.code,
     isActive: (e) => e.codeActive(),
     run: (e) => e.toggleInlineCode(),
   },
   bulletedList: {
     icon: 'et-list-bulleted',
-    label: 'Bulleted list',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.bulletedList,
     isActive: (e) => e.unorderedListActive(),
     run: (e) => e.toggleUnorderedList(),
     isDisabled: (e) => e.inTableCell(),
   },
   numberedList: {
     icon: 'et-list-numbered',
-    label: 'Numbered list',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.numberedList,
     isActive: (e) => e.orderedListActive(),
     run: (e) => e.toggleOrderedList(),
     isDisabled: (e) => e.inTableCell(),
   },
   link: {
     icon: 'et-link',
-    label: 'Link',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.link,
     // Also pressed while the link editor popover is open, matching the menu-trigger tools.
     isActive: (e) => e.linkActive() || e.linkEditorOpen(),
     run: (e) => e.promptForLink(),
@@ -131,10 +148,10 @@ export const RICH_TEXT_EDITOR_TOOL_BUTTONS: Partial<Record<RichTextEditorTool, R
 
 /** Block-style options for the heading menu. `null` is a normal paragraph. */
 export const RICH_TEXT_EDITOR_HEADING_OPTIONS: readonly { level: number | null; label: string; icon: string }[] = [
-  { level: null, label: 'Normal', icon: 'et-paragraph' },
-  { level: 1, label: 'Heading 1', icon: 'et-heading-1' },
-  { level: 2, label: 'Heading 2', icon: 'et-heading-2' },
-  { level: 3, label: 'Heading 3', icon: 'et-heading-3' },
+  { level: null, label: DEFAULT_RICH_TEXT_EDITOR_LABELS.paragraph, icon: 'et-paragraph' },
+  { level: 1, label: DEFAULT_RICH_TEXT_EDITOR_LABELS.heading(1), icon: 'et-heading-1' },
+  { level: 2, label: DEFAULT_RICH_TEXT_EDITOR_LABELS.heading(2), icon: 'et-heading-2' },
+  { level: 3, label: DEFAULT_RICH_TEXT_EDITOR_LABELS.heading(3), icon: 'et-heading-3' },
 ];
 
 /**

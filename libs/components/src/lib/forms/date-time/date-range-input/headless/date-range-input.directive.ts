@@ -22,6 +22,8 @@ import { DATE_PICKER_HOST, DatePickerHost } from '../../picker/date-picker-host'
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { DateRangeInputFieldDirective } from './date-range-input-field.directive';
+import { injectFormFieldLabels } from '../../../../forms/form-field/form-field-labels';
+import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
 
 export type DateRangeValue = {
   start: string | null;
@@ -52,6 +54,10 @@ type SideState = {
   },
 })
 export class DateRangeInputDirective implements FormValueControl<DateRangeValue>, FormFieldControl, DatePickerHost {
+  private dateTimeLabels = injectDateTimeLabels();
+
+  private formFieldLabels = injectFormFieldLabels();
+
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
@@ -79,10 +85,10 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
    * date field cannot render arbitrary text, so the fields stay empty and the label
    * shows through the placeholder slot; it never enters the form value.
    */
-  public mixedLabel = input('Mixed');
+  public mixedLabel = input<string | null>(null);
 
   /** Message the form field shows when either side's typed text can't be parsed as a date. */
-  public parseErrorMessage = input('Please enter a valid date range');
+  public parseErrorMessage = input<string | null>(null);
 
   /** date-fns format of the string values. Defaults to the `DATE_FORMAT` token. */
   public valueFormat = input<string | undefined>(undefined);
@@ -106,6 +112,12 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
   public dateFilter = input<((date: Date) => boolean) | null>(null);
 
   public pickerOpen = model(false);
+
+  /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
+  public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
+
+  /** The string in effect: this instance's `parseErrorMessage`, else the domain's label set. */
+  public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidDateRange);
 
   public effectiveValueFormat = computed(() => this.valueFormat() ?? this.defaultValueFormat);
   public effectiveLocale = computed(() => this.locale() ?? this.defaultLocale);

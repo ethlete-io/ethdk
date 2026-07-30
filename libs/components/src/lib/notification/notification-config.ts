@@ -52,11 +52,6 @@ export type NotificationManagerConfig = {
    * Uses the notification's status color when not set.
    */
   controlsColor?: string;
-  /**
-   * Accessible label for the dismiss button.
-   * @default 'Dismiss'
-   */
-  dismissLabel: string;
 };
 
 export const DEFAULT_NOTIFICATION_MANAGER_CONFIG: NotificationManagerConfig = {
@@ -70,7 +65,6 @@ export const DEFAULT_NOTIFICATION_MANAGER_CONFIG: NotificationManagerConfig = {
   },
   statusColorMapping: undefined,
   controlsColor: undefined,
-  dismissLabel: 'Dismiss',
 };
 
 export const [provideNotificationManagerConfig, injectNotificationManagerConfig] = createStaticRootProvider(

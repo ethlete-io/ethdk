@@ -81,6 +81,8 @@ By default the script lands in `<body>` (Google's recommendation); switch with `
 
 All title and meta content runs through the configured transformers and re-applies when the [locale](/core/providers#locale) signal changes — so translated titles update in place.
 
+`transformer(text, locale)` is deliberately a different mechanism from the UI library's [label tokens](/components/localization): the strings here are **yours** (route titles, meta content), so there is no default wording to override — each one is handed to your translator instead. Label tokens exist for the opposite case, where the SDK wrote the string.
+
 ::: warning Deprecated: `SeoDirective`
 The old Observable-based `SeoDirective` (and its `SeoConfig` types) is deprecated and not SSR-safe. Use the binding functions above instead.
 :::

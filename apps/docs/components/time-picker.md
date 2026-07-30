@@ -29,7 +29,7 @@ On `et-time-picker` (forwarded from the headless `[etTimePicker]` directive):
 | ------- | -------------- | ----------------------------------------------------------------------------- |
 | `value` | `Date \| null` | The selected time of day, carried on a `Date`. `null` until a part is picked. |
 
-The component also takes `hoursLabel` / `minutesLabel` / `secondsLabel` / `periodLabel` (`string`) for the columns' `aria-label`s.
+The component also takes `hoursLabel` / `minutesLabel` / `secondsLabel` / `periodLabel` for the columns' `aria-label`s; unset, they read [`TIME_PICKER_LABELS`](/components/localization).
 
 The format decides the columns, not just their labels: `HH:mm` renders hour + minute columns, `HH:mm:ss` adds seconds, `h:mm a` switches to a 12-hour cycle with an AM/PM column. Localized tokens work too — `p` resolves per locale (12-hour in en-US, 24-hour in de).
 

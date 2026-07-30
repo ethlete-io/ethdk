@@ -25,7 +25,7 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
   public displayValue = computed(() => (this.mixed() ? '' : (this.value() ?? '')));
 
   /** The placeholder the native input renders — `mixedLabel` overrides the consumer placeholder while mixed. */
-  public effectivePlaceholder = computed(() => (this.mixed() ? this.mixedLabel() : this.placeholder()));
+  public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));
 
   /**
    * The native input element this directive controls. Set automatically when the

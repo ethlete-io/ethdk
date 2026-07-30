@@ -11,7 +11,7 @@
 
   <div
     #startThumb="etSliderThumb"
-    [label]="startLabel()"
+    [label]="resolvedStartLabel()"
     [style.--_et-slider-thumb-position]="startThumb.percent()"
     class="et-range-slider-thumb"
     etSliderThumb
@@ -25,7 +25,7 @@
 
   <div
     #endThumb="etSliderThumb"
-    [label]="endLabel()"
+    [label]="resolvedEndLabel()"
     [style.--_et-slider-thumb-position]="endThumb.percent()"
     class="et-range-slider-thumb"
     etSliderThumb

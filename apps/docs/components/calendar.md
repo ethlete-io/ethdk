@@ -32,7 +32,7 @@ On `et-calendar` (forwarded from the headless `[etCalendar]` directive):
 | `rangeValue`  | `{ start: Date \| null; end: Date \| null }` | The selection in `range` mode.                                |
 | `activeMonth` | `Date \| null`                               | The displayed month. `null` follows the selection (or today). |
 
-The component also takes `previousMonthLabel` / `nextMonthLabel` (`string`) for the nav buttons' `aria-label`s.
+The component also takes `previousMonthLabel` / `nextMonthLabel` for the nav buttons' `aria-label`s; unset, they read [`CALENDAR_LABELS`](/components/localization).
 
 Values are day-granular: the calendar writes dates at midnight local time and compares incoming values by day, ignoring any time-of-day.
 

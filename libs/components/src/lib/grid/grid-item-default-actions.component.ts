@@ -3,7 +3,6 @@ import { injectGridLabels } from './grid-labels';
 import { IconButtonComponent } from '../button/icon-button.component';
 import { ICON_IMPORTS, TIMES_ICON, provideIcons } from '../icon';
 import { GridItemToolbarComponent } from './grid-item-toolbar.component';
-import { injectGridConfig } from './headless/grid-config';
 import { GRID_TOKEN } from './headless/grid.tokens';
 
 @Component({
@@ -39,7 +38,6 @@ import { GRID_TOKEN } from './headless/grid.tokens';
 })
 export class GridItemDefaultActionsComponent {
   private grid = inject(GRID_TOKEN);
-  private gridConfig = injectGridConfig();
   private labels = injectGridLabels();
 
   public itemId = input.required<string>();

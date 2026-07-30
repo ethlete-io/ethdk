@@ -73,18 +73,22 @@ A date control combining typed entry with an anchored
 
 <StoryEmbed id="components-forms-date-input--default" height="560px" />
 
-| Input                 | Type                                | Default                       | Description                                                                  |
-| --------------------- | ----------------------------------- | ----------------------------- | ---------------------------------------------------------------------------- |
-| `valueFormat`         | `string`                            | `DATE_FORMAT` token           | date-fns format of the string value (token default: ISO 8601 with offset).   |
-| `displayFormat`       | `string`                            | `'P'`                         | date-fns format shown in and parsed from the field (locale-aware).           |
-| `locale`              | `Locale \| null` (date-fns)         | `DATE_LOCALE` token           | Display/parse locale.                                                        |
-| `minDate` / `maxDate` | `Date \| null`                      | `null`                        | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms). |
-| `dateFilter`          | `((date: Date) => boolean) \| null` | `null`                        | Forwarded to the picker calendar.                                            |
-| `pickerOpen`          | `boolean` (model)                   | `false`                       | The picker overlay's open state.                                             |
-| `pickerTriggerLabel`  | `string`                            | `'Open calendar'`             | `aria-label` of the suffix calendar button.                                  |
-| `parseErrorMessage`   | `string`                            | `'Please enter a valid date'` | Message shown below the field when typed text can't be parsed.               |
-| `clearable`           | `boolean`                           | `true`                        | Clear (×) button while the focused field has a value (label: `clearLabel`).  |
-| `mask`                | `boolean`                           | `false`                       | Opt-in typing mask derived from a fixed-width numeric `displayFormat`.       |
+| Input                 | Type                                | Default             | Description                                                                  |
+| --------------------- | ----------------------------------- | ------------------- | ---------------------------------------------------------------------------- |
+| `valueFormat`         | `string`                            | `DATE_FORMAT` token | date-fns format of the string value (token default: ISO 8601 with offset).   |
+| `displayFormat`       | `string`                            | `'P'`               | date-fns format shown in and parsed from the field (locale-aware).           |
+| `locale`              | `Locale \| null` (date-fns)         | `DATE_LOCALE` token | Display/parse locale.                                                        |
+| `minDate` / `maxDate` | `Date \| null`                      | `null`              | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms). |
+| `dateFilter`          | `((date: Date) => boolean) \| null` | `null`              | Forwarded to the picker calendar.                                            |
+| `pickerOpen`          | `boolean` (model)                   | `false`             | The picker overlay's open state.                                             |
+| `pickerTriggerLabel`  | `string \| null`                    | `null` ¹            | `aria-label` of the suffix calendar button.                                  |
+| `parseErrorMessage`   | `string \| null`                    | `null` ²            | Message shown below the field when typed text can't be parsed.               |
+| `clearable`           | `boolean`                           | `true`              | Clear (×) button while the focused field has a value (label: `clearLabel`).  |
+| `mask`                | `boolean`                           | `false`             | Opt-in typing mask derived from a fixed-width numeric `displayFormat`.       |
+
+¹ `null` falls through to [`DATE_TIME_LABELS`](/components/localization) (`'Open calendar'`, and the matching `openTimePicker` / `openDateTimePicker` for the other controls).
+² `null` falls through to [`DATE_TIME_LABELS`](/components/localization) — `invalidDate` here, and the matching `invalidTime` / `invalidDateTime` / `invalidDateRange` / `invalidDuration` for the other controls.
+³ `null` falls through to [`DATE_TIME_LABELS`](/components/localization) (`'Date'` / `'Time'`).
 
 Typed text is parsed **strictly** against `displayFormat` on blur/Enter. Picking
 a day writes `format(date, valueFormat)` and closes the picker (a named
@@ -188,7 +192,7 @@ Time tabs** switching between the two panes.
 | `minuteStep` / `secondStep`     | `number`                            | `5` / `1`                   | Forwarded to the time picker columns.                                             |
 | `pickerOpen`                    | `boolean` (model)                   | `false`                     | The picker overlay's open state.                                                  |
 | `pickerTriggerLabel`            | `string`                            | `'Open date & time picker'` | `aria-label` of the suffix calendar button.                                       |
-| `dateTabLabel` / `timeTabLabel` | `string`                            | `'Date'` / `'Time'`         | Labels of the pane tabs in the bottom sheet.                                      |
+| `dateTabLabel` / `timeTabLabel` | `string \| null`                    | `null` ³                    | Labels of the pane tabs in the bottom sheet.                                      |
 | `mask`                          | `boolean`                           | `false`                     | Opt-in typing mask — needs a fixed-width `displayFormat` like `dd.MM.yyyy HH:mm`. |
 
 Typed text is parsed **strictly** against `displayFormat` first, then leniently:
@@ -240,7 +244,7 @@ _smallest_ unit up (`130` → `01:30`) while a mask fills slots left-to-right
 
 All five controls implement the SDK-wide
 [mixed state contract](/components/mixed-state) and take a `mixedLabel` (default
-`'Mixed'`) shown in place of the value while mixed. See the
+unset → [`FORM_FIELD_LABELS.mixed`](/components/localization)) shown in place of the value while mixed. See the
 [Forms overview](/components/forms#mixed-values-bulk-editing) for the wiring
 recipe.
 

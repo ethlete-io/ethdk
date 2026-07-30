@@ -78,7 +78,7 @@ changes the value by `step` (an empty value starts from `0`), clamped to
 `min`/`max`, and the exhausted button disables at a bound. The buttons stay out
 of the tab order (the native input already steps with the arrow keys) and take
 `incrementLabel` / `decrementLabel` for their accessible names (defaults
-`'Increment'` / `'Decrement'`). Design token: `--et-number-input-stepper-size`
+unset → [`INPUT_LABELS`](/components/localization), `'Increment'` / `'Decrement'`). Design token: `--et-number-input-stepper-size`
 (default `16px`). See the `Stepper` story.
 
 ## Password input — `et-password-input` {#password-input}
@@ -96,7 +96,7 @@ value is a plain `string`; `autocomplete` defaults to `'current-password'` (set
 
 - **Reveal toggle** (on by default, `revealable`): an eye button switching the
   native `type` between `password`/`text`, exposed as `aria-pressed`. Its
-  accessible name is state-aware — `revealLabel` (default `'Show password'`)
+  accessible name is state-aware — `revealLabel` (unset → [`INPUT_LABELS.showPassword`](/components/localization), `'Show password'`)
   while hidden, `hideLabel` (default `'Hide password'`) while shown. The revealed
   state is also a two-way `revealed` model.
 - **Caps Lock warning** (opt-in, `capsLockWarning`): a `role="status"` warning
@@ -280,11 +280,13 @@ regional-indicator emoji.
 
 <StoryEmbed id="components-forms-phone-input--default" height="220px" />
 
-| Input                | Type       | Default            | Description                                            |
-| -------------------- | ---------- | ------------------ | ------------------------------------------------------ |
-| `defaultCountry`     | `string`   | `'us'`             | ISO alpha-2 country used while the value carries none. |
-| `preferredCountries` | `string[]` | `[]`               | Listed on top of the country dropdown.                 |
-| `countryLabel`       | `string`   | `'Select country'` | `aria-label` of the flag/dial-code country trigger.    |
+| Input                | Type             | Default  | Description                                            |
+| -------------------- | ---------------- | -------- | ------------------------------------------------------ |
+| `defaultCountry`     | `string`         | `'us'`   | ISO alpha-2 country used while the value carries none. |
+| `preferredCountries` | `string[]`       | `[]`     | Listed on top of the country dropdown.                 |
+| `countryLabel`       | `string \| null` | `null` ¹ | `aria-label` of the flag/dial-code country trigger.    |
+
+¹ `null` falls through to [`PHONE_INPUT_LABELS.selectCountry`](/components/localization) (`'Select country'`).
 
 Typing national digits builds the `+dial` value; a national trunk `0` is stripped
 (`0171…` with Germany active → `+49171…` — except for countries like Italy where
@@ -316,7 +318,7 @@ Every control on this page implements the SDK-wide
 [mixed state contract](/components/mixed-state) for editing several records at
 once. The text-slot controls (`et-input`, `et-number-input`,
 `et-password-input`, `et-textarea`, `et-color-input`, `et-tag-input`,
-`et-phone-input`) take a `mixedLabel` (default `'Mixed'`) shown in place of the
+`et-phone-input`) take a `mixedLabel` (unset → [`FORM_FIELD_LABELS.mixed`](/components/localization)) shown in place of the
 value while mixed; `et-otp-input` is not a bulk-edit field. See the
 [Forms overview](/components/forms#mixed-values-bulk-editing) for the shared
 wiring recipe.

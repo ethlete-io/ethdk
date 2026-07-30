@@ -1,6 +1,7 @@
 export * from './headless';
 export * from './notification-config';
 export * from './notification-errors';
+export * from './notification-labels';
 export * from './notification-manager';
 export * from './notification-ref';
 export * from './notification-stack-context.token';

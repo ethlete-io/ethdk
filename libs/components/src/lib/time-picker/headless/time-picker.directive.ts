@@ -3,6 +3,7 @@ import { Locale, setHours, setMilliseconds, setMinutes, setSeconds, startOfDay }
 import { injectDateLocale, injectTimeFormat } from '../../forms/date-time/date-time-formats';
 import { formatDateValue } from '../../forms/date-time/internals/date-value';
 import { deriveTimeFormatSpec, generateSteppedValues, getTimeParts } from './internals/time-format';
+import { injectTimePickerLabels } from '../../time-picker/time-picker-labels';
 
 export type TimePickerUnit = 'hour' | 'minute' | 'second' | 'period';
 
@@ -33,6 +34,8 @@ export type TimePickerColumn = {
   exportAs: 'etTimePicker',
 })
 export class TimePickerDirective {
+  private timePickerLabels = injectTimePickerLabels();
+
   private defaultFormat = injectTimeFormat();
   private defaultLocale = injectDateLocale();
 
@@ -42,13 +45,25 @@ export class TimePickerDirective {
   public minuteStep = input(5, { transform: numberAttribute });
   public secondStep = input(1, { transform: numberAttribute });
 
-  public hoursLabel = input('Hours');
-  public minutesLabel = input('Minutes');
-  public secondsLabel = input('Seconds');
-  public periodLabel = input('AM/PM');
+  public hoursLabel = input<string | null>(null);
+  public minutesLabel = input<string | null>(null);
+  public secondsLabel = input<string | null>(null);
+  public periodLabel = input<string | null>(null);
 
   /** The selected time of day, carried on a `Date`. Stays `null` until a part is picked. */
   public value = model<Date | null>(null);
+
+  /** The string in effect: this instance's `hoursLabel`, else the domain's label set. */
+  public resolvedHoursLabel = computed(() => this.hoursLabel() ?? this.timePickerLabels().hours);
+
+  /** The string in effect: this instance's `minutesLabel`, else the domain's label set. */
+  public resolvedMinutesLabel = computed(() => this.minutesLabel() ?? this.timePickerLabels().minutes);
+
+  /** The string in effect: this instance's `secondsLabel`, else the domain's label set. */
+  public resolvedSecondsLabel = computed(() => this.secondsLabel() ?? this.timePickerLabels().seconds);
+
+  /** The string in effect: this instance's `periodLabel`, else the domain's label set. */
+  public resolvedPeriodLabel = computed(() => this.periodLabel() ?? this.timePickerLabels().period);
 
   // the initial focus/scroll anchor while no value exists
   private now = new Date();
@@ -118,10 +133,10 @@ export class TimePickerDirective {
     const hourValues = generateSteppedValues({ end: spec.hourCycle === 12 ? 12 : 24, step: 1 });
 
     const columns: TimePickerColumn[] = [
-      { unit: 'hour', label: this.hoursLabel(), options: buildOptions('hour', hourValues) },
+      { unit: 'hour', label: this.resolvedHoursLabel(), options: buildOptions('hour', hourValues) },
       {
         unit: 'minute',
-        label: this.minutesLabel(),
+        label: this.resolvedMinutesLabel(),
         options: buildOptions(
           'minute',
           generateSteppedValues({ end: 60, step: this.minuteStep(), include: selected?.minute }),
@@ -132,7 +147,7 @@ export class TimePickerDirective {
     if (spec.showSeconds) {
       columns.push({
         unit: 'second',
-        label: this.secondsLabel(),
+        label: this.resolvedSecondsLabel(),
         options: buildOptions(
           'second',
           generateSteppedValues({ end: 60, step: this.secondStep(), include: selected?.second }),
@@ -145,7 +160,7 @@ export class TimePickerDirective {
 
       columns.push({
         unit: 'period',
-        label: this.periodLabel(),
+        label: this.resolvedPeriodLabel(),
         options: [0, 1].map<TimePickerOption>((period) => ({
           unit: 'period',
           value: period,

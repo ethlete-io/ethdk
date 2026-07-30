@@ -41,7 +41,18 @@ Override them app-wide with `provideViewportConfig({ breakpoints: { … } })` (s
 
 ## Locale
 
-`injectLocale()` returns `{ currentLocale: WritableSignal<string> }`, defaulting to `'en'`. Locale-aware pieces (e.g. the SEO title/meta transformers, the stream consent component) react to it; update it with `injectLocale().currentLocale.set('de')`.
+`injectLocale()` returns `{ currentLocale: WritableSignal<string> }`, defaulting to `'en'`. Everything locale-aware reacts to it, so switching language at runtime needs no reload; update it with `injectLocale().currentLocale.set('de')`.
+
+`createLabels(name, defaults)` is the shape built on top of it, and the only mechanism the UI library uses for strings it renders itself. It returns `[provide<Domain>Labels, inject<Domain>Labels, TOKEN]` — partial overrides in, a `Signal<Labels>` out, re-resolved whenever the locale changes. `defaults` may itself be a `(locale) => Labels` function for a domain that ships more than one language.
+
+```ts
+export const [provideWidgetLabels, injectWidgetLabels, WIDGET_LABELS] = createLabels<WidgetLabels>(
+  'WIDGET_LABELS',
+  DEFAULT_WIDGET_LABELS,
+);
+```
+
+See the [localization guide](/components/localization) for the full recipe and every token the UI library exposes.
 
 ## Focus-visible tracker
 

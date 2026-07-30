@@ -1,5 +1,9 @@
 import { Provider } from '@angular/core';
-import { RICH_TEXT_EDITOR_TOOL, RichTextEditorToolDefinition } from '../../rich-text-editor';
+import {
+  DEFAULT_RICH_TEXT_EDITOR_LABELS,
+  RICH_TEXT_EDITOR_TOOL,
+  RichTextEditorToolDefinition,
+} from '../../rich-text-editor';
 import { MultiLanguageRichTextEditorLanguageToolComponent } from './multi-language-rich-text-editor-language-tool.component';
 
 /** The toolbar token the language switcher renders for. Include it in the editor's `tools` to place
@@ -16,7 +20,8 @@ export const provideRichTextEditorLanguageTool = (): Provider => ({
   provide: RICH_TEXT_EDITOR_TOOL,
   useValue: {
     token: RICH_TEXT_EDITOR_LANGUAGE_TOOL,
-    label: 'Language',
+    // Only a fallback: the toolbar reads `language` from the label set, which is what a consumer localizes.
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.language,
     control: MultiLanguageRichTextEditorLanguageToolComponent,
   } satisfies RichTextEditorToolDefinition,
   multi: true,

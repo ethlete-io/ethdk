@@ -2,6 +2,7 @@ import {
   afterNextRender,
   booleanAttribute,
   Component,
+  computed,
   ElementRef,
   inject,
   input,
@@ -11,6 +12,7 @@ import {
 import { ColorInteractiveDirective } from '@ethlete/core';
 import { EYE_ICON, EYE_SLASH_ICON, IconDirective, provideIcons, TRIANGLE_EXCLAMATION_ICON } from '../../icon';
 import { PasswordInputDirective } from './headless';
+import { injectInputLabels } from '../../forms/input/input-labels';
 
 @Component({
   selector: 'et-password-input',
@@ -51,24 +53,35 @@ import { PasswordInputDirective } from './headless';
   },
 })
 export class PasswordInputComponent {
+  private inputLabels = injectInputLabels();
+
   protected passwordDir = inject(PasswordInputDirective);
 
   /** Whether the reveal (show/hide) toggle renders. */
   public revealable = input(true, { transform: booleanAttribute });
 
   /** Accessible name of the reveal toggle while the value is hidden (the "show" action). */
-  public revealLabel = input('Show password');
+  public revealLabel = input<string | null>(null);
 
   /** Accessible name of the reveal toggle while the value is shown (the "hide" action). */
-  public hideLabel = input('Hide password');
+  public hideLabel = input<string | null>(null);
 
   /** Show a warning indicator while the field is focused and Caps Lock is on. */
   public capsLockWarning = input(false, { transform: booleanAttribute });
 
   /** Accessible text of the Caps Lock warning. */
-  public capsLockLabel = input('Caps Lock is on');
+  public capsLockLabel = input<string | null>(null);
 
   private nativeInput = viewChild<ElementRef<HTMLInputElement>>('nativeInput');
+
+  /** The string in effect: this instance's `revealLabel`, else the domain's label set. */
+  protected resolvedRevealLabel = computed(() => this.revealLabel() ?? this.inputLabels().showPassword);
+
+  /** The string in effect: this instance's `hideLabel`, else the domain's label set. */
+  protected resolvedHideLabel = computed(() => this.hideLabel() ?? this.inputLabels().hidePassword);
+
+  /** The string in effect: this instance's `capsLockLabel`, else the domain's label set. */
+  protected resolvedCapsLockLabel = computed(() => this.capsLockLabel() ?? this.inputLabels().capsLockOn);
 
   constructor() {
     afterNextRender(() => {

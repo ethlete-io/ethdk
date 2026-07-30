@@ -6,6 +6,7 @@ import { injectDateFormat } from '../../date-time-formats';
 import { DatePickerInputDirective } from '../../internals/date-picker-input.directive';
 import { formatDateValue, parseDateValue } from '../../internals/date-value';
 import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
+import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
 
 /**
  * A date form control with a `string | null` value (a date-fns `valueFormat`
@@ -20,10 +21,12 @@ import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
   providers: [{ provide: DATE_PICKER_HOST, useExisting: DateInputDirective }],
 })
 export class DateInputDirective extends DatePickerInputDirective implements FormValueControl<string | null> {
+  private dateTimeLabels = injectDateTimeLabels();
+
   public defaultValueFormat = injectDateFormat();
 
   /** Message the form field shows when typed text can't be parsed as a date. */
-  public parseErrorMessage = input('Please enter a valid date');
+  public parseErrorMessage = input<string | null>(null);
 
   /** date-fns format shown in (and parsed from) the field. Locale-aware by default. */
   public displayFormat = input('P');
@@ -32,6 +35,9 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
   public minDate = input<Date | null>(null);
   public maxDate = input<Date | null>(null);
   public dateFilter = input<((date: Date) => boolean) | null>(null);
+
+  /** The string in effect: this instance's `parseErrorMessage`, else the domain's label set. */
+  public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidDate);
 
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.DATE_INPUT);
 

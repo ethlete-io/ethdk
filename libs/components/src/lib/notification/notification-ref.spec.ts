@@ -10,7 +10,6 @@ describe('createNotificationRef', () => {
           position: 'bottom-end',
           maxVisible: 3,
           defaultDuration: { success: 4000 },
-          dismissLabel: 'Dismiss',
         },
       },
     );
@@ -22,7 +21,6 @@ describe('createNotificationRef', () => {
           position: 'bottom-end',
           maxVisible: 3,
           defaultDuration: { success: 4000 },
-          dismissLabel: 'Dismiss',
         },
       },
     );
@@ -38,7 +36,6 @@ describe('createNotificationRef', () => {
         position: 'bottom-end',
         maxVisible: 3,
         defaultDuration: { success: 4000 },
-        dismissLabel: 'Dismiss',
       },
     });
 
@@ -55,7 +52,6 @@ describe('createNotificationRef', () => {
           position: 'bottom-end',
           maxVisible: 3,
           defaultDuration: { success: 4000 },
-          dismissLabel: 'Dismiss',
         },
       },
     );
@@ -72,7 +68,6 @@ describe('createNotificationRef', () => {
           position: 'bottom-end',
           maxVisible: 3,
           defaultDuration: { success: 0 },
-          dismissLabel: 'Dismiss',
         },
       },
     );

@@ -254,12 +254,14 @@ palette is a fixed set rather than a search.
 Import it via `RICH_TEXT_EDITOR_TOKEN_PALETTE_IMPORTS`. The **Token Palette** story under
 _Rich Text Editor/Triggers_ shows it live.
 
-| `et-rich-text-editor-token-palette` input | Type                      | Default          | Notes                                                         |
-| ----------------------------------------- | ------------------------- | ---------------- | ------------------------------------------------------------- |
-| `editor`                                  | `RichTextEditorDirective` | — (required)     | The editor to insert into (a template ref to its directive).  |
-| `triggers`                                | `RichTextEditorTrigger[]` | `[]`             | The triggers whose items become chips (use the same array).   |
-| `label`                                   | `string`                  | `'Insert token'` | Accessible name for the palette group.                        |
-| `focusEditorOnInsert`                     | `boolean`                 | `true`           | Focus the editor after inserting so the user can keep typing. |
+| `et-rich-text-editor-token-palette` input | Type                      | Default      | Notes                                                         |
+| ----------------------------------------- | ------------------------- | ------------ | ------------------------------------------------------------- |
+| `editor`                                  | `RichTextEditorDirective` | — (required) | The editor to insert into (a template ref to its directive).  |
+| `triggers`                                | `RichTextEditorTrigger[]` | `[]`         | The triggers whose items become chips (use the same array).   |
+| `label`                                   | `string \| null`          | `null` ¹     | Accessible name for the palette group.                        |
+| `focusEditorOnInsert`                     | `boolean`                 | `true`       | Focus the editor after inserting so the user can keep typing. |
+
+¹ `null` falls through to [`RICH_TEXT_EDITOR_LABELS.insertToken`](/components/localization) (`'Insert token'`).
 
 ## Multi-language rich text editor
 
@@ -311,6 +313,26 @@ demoForm = form(this.model, (s) => {
   requiredLanguages(s.translations, { codes: ['en', 'de'] });
 });
 ```
+
+## Localization
+
+Every string the editor renders — both toolbars' names, each tool, the block-style menu, the link
+editor's fields and actions, and the table/alignment menus — comes from `RICH_TEXT_EDITOR_LABELS`.
+Override it app-wide, or per editor with the `labels` input:
+
+```ts
+provideRichTextEditorLabels({
+  toolbar: 'Textformatierung',
+  bold: 'Fett',
+  heading: (level) => `Überschrift ${level}`,
+  linkEditorAdd: 'Link hinzufügen',
+});
+```
+
+The tool keys (`bold`, `italic`, `link`, `align`, `table`, `language`, …) are named after their tool
+tokens, which is how the toolbar looks a button's name up. A tool **your** app registers through
+`RICH_TEXT_EDITOR_TOOL` keeps the `label` on its own definition instead — you wrote that string, so
+it is already in your language. See the [localization guide](/components/localization).
 
 ## Accessibility
 

@@ -11,7 +11,7 @@
        mousedown is prevented so the field keeps focus (its blur would unmount this
        button before the click could land) -->
   <button
-    [attr.aria-label]="clearLabel()"
+    [attr.aria-label]="resolvedClearLabel()"
     (click)="handleClearClick($event)"
     (mousedown)="$event.preventDefault()"
     class="et-date-input-clear"
@@ -24,7 +24,7 @@
   </button>
 }
 
-<button [attr.aria-label]="pickerTriggerLabel()" class="et-date-input-picker-trigger" etDatePickerTrigger>
+<button [attr.aria-label]="resolvedPickerTriggerLabel()" class="et-date-input-picker-trigger" etDatePickerTrigger>
   <i etIcon="et-calendar"></i>
 </button>
 

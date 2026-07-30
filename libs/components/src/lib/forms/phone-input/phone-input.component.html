@@ -7,7 +7,7 @@
   etSelect
 >
   <button
-    [attr.aria-label]="countryLabel()"
+    [attr.aria-label]="resolvedCountryLabel()"
     [disabled]="phone.disabled()"
     class="et-phone-input-country-trigger"
     etSelectTrigger
@@ -26,7 +26,7 @@
   <ng-template etSelectSurface let-select>
     <et-select-panel class="et-phone-input-country-panel">
       <div class="et-phone-input-country-search">
-        <input etSelectSearch placeholder="Search countries" />
+        <input [placeholder]="phoneInputLabels().searchCountries" etSelectSearch />
       </div>
 
       <!-- the label carries the dial code too, so searching by "+49" / "49" works -->
@@ -48,7 +48,7 @@
       }
 
       @if (!select.visibleItems().length) {
-        <div class="et-select-state et-select-state--empty">No countries found</div>
+        <div class="et-select-state et-select-state--empty">{{ phoneInputLabels().noCountries }}</div>
       }
     </et-select-panel>
   </ng-template>
@@ -61,7 +61,7 @@
        mousedown is prevented so the field keeps focus (its blur would unmount this
        button before the click could land) -->
   <button
-    [attr.aria-label]="clearLabel()"
+    [attr.aria-label]="resolvedClearLabel()"
     (click)="handleClearClick($event)"
     (mousedown)="$event.preventDefault()"
     class="et-phone-input-clear"

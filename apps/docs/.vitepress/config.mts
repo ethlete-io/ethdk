@@ -169,7 +169,10 @@ export default defineConfig({
       '/components/': [
         {
           text: 'Components',
-          items: [{ text: 'Overview', link: '/components/' }],
+          items: [
+            { text: 'Overview', link: '/components/' },
+            { text: 'Localization', link: '/components/localization' },
+          ],
         },
         {
           text: 'Floating & overlays',

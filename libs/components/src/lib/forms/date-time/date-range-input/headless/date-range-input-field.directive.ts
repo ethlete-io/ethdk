@@ -155,7 +155,7 @@ export class DateRangeInputFieldDirective implements InputMaskHost {
 
     // while mixed both fields render empty and the mixed label shows through the placeholder
     if (this.rangeInput.mixed()) {
-      return this.rangeInput.mixedLabel();
+      return this.rangeInput.resolvedMixedLabel();
     }
 
     return this.side() === 'start' ? this.rangeInput.startPlaceholder() : this.rangeInput.endPlaceholder();

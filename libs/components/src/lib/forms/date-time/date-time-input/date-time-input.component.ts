@@ -19,6 +19,8 @@ import { DatePickerSurfaceDirective } from '../picker/date-picker-surface.direct
 import { DatePickerTriggerDirective } from '../picker/date-picker-trigger.directive';
 import { DateTimeInputPanesDirective } from './date-time-input-panes.directive';
 import { DateTimeInputDirective, DateTimeInputFieldDirective } from './headless';
+import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
+import { injectDateTimeLabels } from '../../../forms/date-time/date-time-labels';
 
 @Component({
   selector: 'et-date-time-input',
@@ -72,17 +74,35 @@ import { DateTimeInputDirective, DateTimeInputFieldDirective } from './headless'
   },
 })
 export class DateTimeInputComponent {
+  private dateTimeLabels = injectDateTimeLabels();
+
+  private formFieldLabels = injectFormFieldLabels();
+
   protected dateTimeInput = inject(DateTimeInputDirective);
 
-  public pickerTriggerLabel = input('Open date & time picker');
+  public pickerTriggerLabel = input<string | null>(null);
   public minuteStep = input(5, { transform: numberAttribute });
   public secondStep = input(1, { transform: numberAttribute });
   /** Labels of the pane tabs shown when the picker mounts as a bottom sheet. */
-  public dateTabLabel = input('Date');
-  public timeTabLabel = input('Time');
+  public dateTabLabel = input<string | null>(null);
+  public timeTabLabel = input<string | null>(null);
   /** Shows a clear (×) control while a value or pending text is set and the field is in use. */
   public clearable = input(true, { transform: booleanAttribute });
-  public clearLabel = input('Clear');
+  public clearLabel = input<string | null>(null);
+
+  /** The string in effect: this instance's `pickerTriggerLabel`, else the domain's label set. */
+  protected resolvedPickerTriggerLabel = computed(
+    () => this.pickerTriggerLabel() ?? this.dateTimeLabels().openDateTimePicker,
+  );
+
+  /** The string in effect: this instance's `dateTabLabel`, else the domain's label set. */
+  protected resolvedDateTabLabel = computed(() => this.dateTabLabel() ?? this.dateTimeLabels().dateTab);
+
+  /** The string in effect: this instance's `timeTabLabel`, else the domain's label set. */
+  protected resolvedTimeTabLabel = computed(() => this.timeTabLabel() ?? this.dateTimeLabels().timeTab);
+
+  /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
+  protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
 
   // only while the field is in use — mirrors the select's clear affordance
   protected showClear = computed(

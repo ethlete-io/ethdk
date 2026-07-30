@@ -54,8 +54,11 @@ export type FormFieldControl = {
   hasValue?: Signal<boolean>;
   /** True while the committed text can't be parsed (date/time/duration typed entry). */
   parseError?: Signal<boolean>;
-  /** User-facing message shown when `parseError` is set and there is no validation error. */
-  parseErrorMessage?: Signal<string>;
+  /**
+   * User-facing message shown when `parseError` is set and there is no validation error — the control's
+   * own `parseErrorMessage` input if it has one, else `DATE_TIME_LABELS`.
+   */
+  resolvedParseErrorMessage?: Signal<string>;
   /**
    * True when the control carries an author-supplied accessible name (its own `aria-label` /
    * `aria-labelledby`) independent of a projected `<et-label>`. The field's dev-time labelling

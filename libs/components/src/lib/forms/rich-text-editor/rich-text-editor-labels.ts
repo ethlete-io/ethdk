@@ -108,6 +108,10 @@ export type RichTextEditorLabels = {
   alignJustify: string;
   /** Toolbar tool: the opt-in table menu, and its trigger. */
   table: string;
+  /** Toolbar tool: the multi-language editor's language switcher. */
+  language: string;
+  /** Accessible name for the language switcher's trigger, given the active language's own name. */
+  languageTrigger: (currentLanguage: string) => string;
 };
 
 /** The built-in English labels. */
@@ -162,6 +166,8 @@ export const DEFAULT_RICH_TEXT_EDITOR_LABELS: RichTextEditorLabels = {
   alignRight: 'Align right',
   alignJustify: 'Justify',
   table: 'Table',
+  language: 'Language',
+  languageTrigger: (currentLanguage) => `Language: ${currentLanguage}`,
 };
 
 /**
@@ -187,10 +193,7 @@ export const [provideRichTextEditorLabels, injectRichTextEditorLabels, RICH_TEXT
  * The cast is the price of an extensible token: tool tokens are open strings, so no index signature can
  * describe "the built-in ones happen to be keys of {@link RichTextEditorLabels}".
  */
-export const richTextEditorToolLabel = (
-  labels: RichTextEditorLabels,
-  tool: { token: string; label: string },
-) => {
+export const richTextEditorToolLabel = (labels: RichTextEditorLabels, tool: { token: string; label: string }) => {
   const label = (labels as Record<string, unknown>)[tool.token];
 
   return typeof label === 'string' ? label : tool.label;

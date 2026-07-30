@@ -3,6 +3,8 @@ import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../../form-field/headless';
 import { deriveDurationFormatSpec, formatDuration, parseDuration } from './internals/duration-format';
 import { DurationInputFieldDirective } from './duration-input-field.directive';
+import { injectFormFieldLabels } from '../../../../forms/form-field/form-field-labels';
+import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
 
 /**
  * A duration form control whose value is a **total elapsed time in milliseconds**
@@ -18,6 +20,10 @@ import { DurationInputFieldDirective } from './duration-input-field.directive';
   },
 })
 export class DurationInputDirective implements FormValueControl<number | null>, FormFieldControl {
+  private dateTimeLabels = injectDateTimeLabels();
+
+  private formFieldLabels = injectFormFieldLabels();
+
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
 
@@ -37,13 +43,19 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
    * Field placeholder shown while `mixed` is set. Presentation only — the field stays
    * empty and the label shows through the placeholder slot; it never enters the form value.
    */
-  public mixedLabel = input('Mixed');
+  public mixedLabel = input<string | null>(null);
 
   /** Message the form field shows when typed text can't be parsed as a duration. */
-  public parseErrorMessage = input('Please enter a valid duration');
+  public parseErrorMessage = input<string | null>(null);
 
   /** The segment layout: `h`/`m`/`s`/`S` token runs plus separators. @default `'mm:ss'` */
   public durationFormat = input('mm:ss');
+
+  /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
+  public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
+
+  /** The string in effect: this instance's `parseErrorMessage`, else the domain's label set. */
+  public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidDuration);
 
   public spec = computed(() => deriveDurationFormatSpec(this.durationFormat()));
 
@@ -62,7 +74,7 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
   public hasValue = computed(() => this.mixed() || this.value() !== null || this.inputText().trim().length > 0);
 
   /** What the field renders as its placeholder — `mixedLabel` while mixed masks the value. */
-  public effectivePlaceholder = computed(() => (this.mixed() ? this.mixedLabel() : this.placeholder()));
+  public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));
 
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.DURATION_INPUT);

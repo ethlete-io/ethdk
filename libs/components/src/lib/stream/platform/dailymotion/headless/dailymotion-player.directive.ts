@@ -6,6 +6,7 @@ import { EMPTY, Observable } from 'rxjs';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../../stream.types';
 import { DailymotionPlayerParamsDirective } from './dailymotion-player-params.directive';
+import { injectStreamLabels } from '../../../stream-labels';
 
 export const DAILYMOTION_PLAYER_TOKEN = new InjectionToken<DailymotionPlayerDirective>('DAILYMOTION_PLAYER_TOKEN');
 
@@ -16,6 +17,8 @@ export const DAILYMOTION_PLAYER_TOKEN = new InjectionToken<DailymotionPlayerDire
   ],
 })
 export class DailymotionPlayerDirective implements StreamPlayer {
+  private streamLabels = injectStreamLabels();
+
   private platformId = inject(PLATFORM_ID);
   private params = inject(DailymotionPlayerParamsDirective);
   private el = injectHostElement();
@@ -48,7 +51,7 @@ export class DailymotionPlayerDirective implements StreamPlayer {
         const w = this.params.width();
         const h = this.params.height();
         iframe.src = `https://www.dailymotion.com/embed/video/${videoId}?${qs}`;
-        iframe.title = 'Dailymotion player';
+        iframe.title = this.streamLabels().playerFrame('Dailymotion');
         iframe.width = typeof w === 'number' ? String(w) : w;
         iframe.height = typeof h === 'number' ? String(h) : h;
         this.renderer.setStyle(iframe, { border: 'none' });

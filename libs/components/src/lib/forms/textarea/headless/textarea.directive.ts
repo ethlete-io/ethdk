@@ -47,7 +47,7 @@ export class TextareaDirective extends TextFieldControlDirective implements Form
   public displayValue = computed(() => (this.mixed() ? '' : this.value()));
 
   /** The placeholder the native textarea renders — `mixedLabel` overrides the consumer placeholder while mixed. */
-  public effectivePlaceholder = computed(() => (this.mixed() ? this.mixedLabel() : this.placeholder()));
+  public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));
 
   public effectiveResize = computed(() => (this.autosize() ? TEXTAREA_RESIZE_MODES.NONE : this.resize()));
 

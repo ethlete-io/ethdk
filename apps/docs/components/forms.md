@@ -168,7 +168,7 @@ explicitly controlled — external value writes never resolve it, so set it back
 `false` yourself once external data establishes one value. See the shared guide
 for the full contract, wiring recipe, and per-control presentation table.
 
-- **Text-slot controls take a `mixedLabel`** (default `'Mixed'`) shown in place
+- **Text-slot controls take a `mixedLabel`** (unset → [`FORM_FIELD_LABELS.mixed`](/components/localization), `'Mixed'`) shown in place
   of the value while mixed: `et-input`, `et-number-input`, `et-password-input`,
   `et-textarea` (placeholder), `et-color-input`, `et-tag-input`,
   `et-phone-input`, and the date/time family (`et-date-input`,

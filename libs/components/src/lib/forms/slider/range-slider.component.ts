@@ -1,9 +1,10 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, ElementRef, ViewEncapsulation, inject, input, viewChild } from '@angular/core';
+import { Component, computed, ElementRef, inject, input, viewChild, ViewEncapsulation } from '@angular/core';
 import { AnimatableDirective, ProvideColorDirective, createCanAnimateSignal } from '@ethlete/core';
 import { FormErrorComponent } from '../form-field/form-error.component';
 import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../form-field/headless';
 import { RangeSliderDirective, SliderThumbDirective, SliderThumbLabelContext, SliderTrackDirective } from './headless';
+import { injectSliderLabels } from '../../forms/slider/slider-labels';
 
 @Component({
   selector: 'et-range-slider',
@@ -53,19 +54,27 @@ import { RangeSliderDirective, SliderThumbDirective, SliderThumbLabelContext, Sl
   },
 })
 export class RangeSliderComponent {
+  private sliderLabels = injectSliderLabels();
+
   public support = injectFormSupport();
   protected slider = inject(RangeSliderDirective);
 
   /** Accessible name of the start thumb. */
-  public startLabel = input('Minimum');
+  public startLabel = input<string | null>(null);
 
   /** Accessible name of the end thumb. */
-  public endLabel = input('Maximum');
+  public endLabel = input<string | null>(null);
 
   private errorContentRef = viewChild<ElementRef<HTMLElement>>('errorContent');
   private hintContentRef = viewChild<ElementRef<HTMLElement>>('hintContent');
   private errorAnimatableRef = viewChild<AnimatableDirective>('errorAnimatable');
   private hintAnimatableRef = viewChild<AnimatableDirective>('hintAnimatable');
+
+  /** The string in effect: this instance's `startLabel`, else the domain's label set. */
+  protected resolvedStartLabel = computed(() => this.startLabel() ?? this.sliderLabels().minimum);
+
+  /** The string in effect: this instance's `endLabel`, else the domain's label set. */
+  protected resolvedEndLabel = computed(() => this.endLabel() ?? this.sliderLabels().maximum);
   public canAnimate = createCanAnimateSignal();
 
   constructor() {

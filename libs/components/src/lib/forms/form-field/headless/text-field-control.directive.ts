@@ -1,6 +1,7 @@
 import { booleanAttribute, computed, DestroyRef, Directive, inject, input, model, signal, Signal } from '@angular/core';
 import { ValidationError } from '@angular/forms/signals';
 import { FORM_FIELD_TOKEN, FormFieldControl, FormFieldControlType } from './form-field.tokens';
+import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 
 /**
  * Shared wiring for the native-input-backed controls that render inside the text-field shell
@@ -19,6 +20,8 @@ import { FORM_FIELD_TOKEN, FormFieldControl, FormFieldControlType } from './form
   },
 })
 export abstract class TextFieldControlDirective implements FormFieldControl {
+  private formFieldLabels = injectFormFieldLabels();
+
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
 
   public touched = model(false);
@@ -30,7 +33,8 @@ export abstract class TextFieldControlDirective implements FormFieldControl {
    */
   public mixed = model(false);
   /** Placeholder text shown while `mixed` is set — overrides the consumer placeholder. */
-  public mixedLabel = input('Mixed');
+  public mixedLabel = input<string | null>(null);
+
   public disabled = input(false, { transform: booleanAttribute });
   public readonly = input(false, { transform: booleanAttribute });
   // eslint-disable-next-line ethlete/no-native-html-input-name -- form-field hidden state deliberately mirrors the native attribute
@@ -67,6 +71,9 @@ export abstract class TextFieldControlDirective implements FormFieldControl {
    * id of a projected `<et-label>`.
    */
   public ariaLabelledby = input<string | null>(null, { alias: 'aria-labelledby' });
+
+  /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
+  public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
 

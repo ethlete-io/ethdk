@@ -71,7 +71,7 @@ Like `resolvePath`, the hook lives on the data source because the tree is lazy �
 
 Activating a result **commits the match and closes** — the trigger shows its full breadcrumb. If a match is a branch that can't be committed (leaf mode), activating it instead **jumps the columns to that branch** and clears the query, so browsing continues from there.
 
-The input takes focus when the panel opens, and typing anywhere in the tree routes into it (replacing the per-column typeahead). <kbd>ArrowDown</kbd> moves from the input into the results (or the tree while browsing), typing from a result returns to the input, and the first <kbd>Escape</kbd> clears the query — only a second one closes the panel. The default component labels the input via `searchPlaceholder` (default `Search`).
+The input takes focus when the panel opens, and typing anywhere in the tree routes into it (replacing the per-column typeahead). <kbd>ArrowDown</kbd> moves from the input into the results (or the tree while browsing), typing from a result returns to the input, and the first <kbd>Escape</kbd> clears the query — only a second one closes the panel. The default component labels the input via `searchPlaceholder` (unset → [`CASCADER_LABELS.search`](/components/localization), `Search`).
 
 ## Query-backed levels — `cascaderFromQuery`
 
@@ -132,19 +132,21 @@ Treat `mixed` as explicitly controlled state. Updating the raw form value from a
 
 On `et-cascader` (forwarded from the headless `[etCascader]` directive):
 
-| Input               | Type                            | Default   | Description                                                                                                                                                                            |
-| ------------------- | ------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dataSource`        | `CascaderDataSource<T> \| null` | `null`    | The hierarchy to browse (required to open).                                                                                                                                            |
-| `multiple`          | `boolean`                       | `false`   | [Multi-select](#multi-select): activations toggle values, the form value is a `T[]`.                                                                                                   |
-| `selectableLevels`  | `'leaf' \| 'any'`               | `'leaf'`  | `'leaf'` commits only terminal nodes; `'any'` also commits intermediate branches (see below).                                                                                          |
-| `compareWith`       | `(a: T, b: T) => boolean`       | `===`     | Value equality — override when values are objects.                                                                                                                                     |
-| `toErrorMessage`    | `(error: unknown) => string`    | see note  | Maps a `loadChildren` / `search` failure to the panel's error text. Default: an `Error`'s `message` verbatim, a generic fallback otherwise.                                            |
-| `mirrorPanelWidth`  | `boolean`                       | `false`   | Whether the panel matches the field width (off — columns size themselves).                                                                                                             |
-| `maxVisibleColumns` | `number`                        | `3`       | Columns shown side by side before older levels collapse into the [breadcrumb row](#deep-hierarchies) (min 1).                                                                          |
-| `mixed`             | `boolean`                       | `false`   | Presents an [unresolved bulk-edit selection](#mixed-values-in-bulk-editors) independently of `value`. Two-way bindable (`mixedChange`); a user commit or clear resolves it to `false`. |
-| `mixedLabel`        | `string`                        | `'Mixed'` | Trigger text shown while `mixed` is true.                                                                                                                                              |
-| `placeholder`       | `string`                        | `''`      | Shown on the trigger until a value is committed.                                                                                                                                       |
-| `searchPlaceholder` | `string`                        | `Search`  | Placeholder of the panel's [flat search](#flat-search) input (rendered only when the data source has a `search` hook).                                                                 |
+| Input               | Type                            | Default  | Description                                                                                                                                                                            |
+| ------------------- | ------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dataSource`        | `CascaderDataSource<T> \| null` | `null`   | The hierarchy to browse (required to open).                                                                                                                                            |
+| `multiple`          | `boolean`                       | `false`  | [Multi-select](#multi-select): activations toggle values, the form value is a `T[]`.                                                                                                   |
+| `selectableLevels`  | `'leaf' \| 'any'`               | `'leaf'` | `'leaf'` commits only terminal nodes; `'any'` also commits intermediate branches (see below).                                                                                          |
+| `compareWith`       | `(a: T, b: T) => boolean`       | `===`    | Value equality — override when values are objects.                                                                                                                                     |
+| `toErrorMessage`    | `(error: unknown) => string`    | see note | Maps a `loadChildren` / `search` failure to the panel's error text. Default: an `Error`'s `message` verbatim, a generic fallback otherwise.                                            |
+| `mirrorPanelWidth`  | `boolean`                       | `false`  | Whether the panel matches the field width (off — columns size themselves).                                                                                                             |
+| `maxVisibleColumns` | `number`                        | `3`      | Columns shown side by side before older levels collapse into the [breadcrumb row](#deep-hierarchies) (min 1).                                                                          |
+| `mixed`             | `boolean`                       | `false`  | Presents an [unresolved bulk-edit selection](#mixed-values-in-bulk-editors) independently of `value`. Two-way bindable (`mixedChange`); a user commit or clear resolves it to `false`. |
+| `mixedLabel`        | `string \| null`                | `null` ¹ | Trigger text shown while `mixed` is true.                                                                                                                                              |
+| `placeholder`       | `string`                        | `''`     | Shown on the trigger until a value is committed.                                                                                                                                       |
+| `searchPlaceholder` | `string \| null`                | `null` ¹ | Placeholder of the panel's [flat search](#flat-search) input (rendered only when the data source has a `search` hook).                                                                 |
+
+¹ `null` falls through to the domain's label set — [`FORM_FIELD_LABELS.mixed`](/components/localization) for `mixedLabel`, [`CASCADER_LABELS`](/components/localization) for `searchPlaceholder`, `backLabel` and the panel's loading/empty/retry states.
 
 The `value` model is the selected node's `value` (`T | null`; a `T[]` with [`multiple`](#multi-select)). The full chosen chain is exposed as `path` (`CascaderNode<T>[]`) and `pathValue` (`T[]`) computeds, and the trigger shows the breadcrumb (`Euro / Knockout stage / Final`) — or the joined labels in multi mode.
 

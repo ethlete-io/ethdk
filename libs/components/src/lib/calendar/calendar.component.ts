@@ -1,7 +1,8 @@
-import { Component, ViewEncapsulation, inject, input } from '@angular/core';
+import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
 import { IconButtonComponent } from '../button';
 import { CHEVRON_ICON, IconDirective, provideIcons } from '../icon';
 import { CalendarCellDirective, CalendarDirective, CalendarGridDirective } from './headless';
+import { injectCalendarLabels } from '../calendar/calendar-labels';
 
 @Component({
   selector: 'et-calendar',
@@ -22,8 +23,18 @@ import { CalendarCellDirective, CalendarDirective, CalendarGridDirective } from 
   },
 })
 export class CalendarComponent {
+  private calendarLabels = injectCalendarLabels();
+
   protected calendar = inject(CalendarDirective);
 
-  public previousMonthLabel = input('Previous month');
-  public nextMonthLabel = input('Next month');
+  public previousMonthLabel = input<string | null>(null);
+  public nextMonthLabel = input<string | null>(null);
+
+  /** The string in effect: this instance's `previousMonthLabel`, else the domain's label set. */
+  protected resolvedPreviousMonthLabel = computed(
+    () => this.previousMonthLabel() ?? this.calendarLabels().previousMonth,
+  );
+
+  /** The string in effect: this instance's `nextMonthLabel`, else the domain's label set. */
+  protected resolvedNextMonthLabel = computed(() => this.nextMonthLabel() ?? this.calendarLabels().nextMonth);
 }

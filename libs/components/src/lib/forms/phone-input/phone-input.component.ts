@@ -12,6 +12,8 @@ import {
   phoneCountryFlag,
   phoneCountryName,
 } from './headless';
+import { injectFormFieldLabels } from '../../forms/form-field/form-field-labels';
+import { injectPhoneInputLabels } from '../../forms/phone-input/phone-input-labels';
 
 @Component({
   selector: 'et-phone-input',
@@ -50,14 +52,24 @@ import {
   },
 })
 export class PhoneInputComponent {
+  protected phoneInputLabels = injectPhoneInputLabels();
+
+  private formFieldLabels = injectFormFieldLabels();
+
   protected phone = inject(PhoneInputDirective);
   private locale = injectLocale();
 
   /** Accessible name of the country-picker trigger — its only visible content is the flag + dial code. */
-  public countryLabel = input('Select country');
+  public countryLabel = input<string | null>(null);
   /** Shows a clear (×) control while a number is set and the field is in use. */
   public clearable = input(true, { transform: booleanAttribute });
-  public clearLabel = input('Clear');
+  public clearLabel = input<string | null>(null);
+
+  /** The string in effect: this instance's `countryLabel`, else the domain's label set. */
+  protected resolvedCountryLabel = computed(() => this.countryLabel() ?? this.phoneInputLabels().selectCountry);
+
+  /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
+  protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
 
   // only while the field is in use — mirrors the select's clear affordance
   protected showClear = computed(

@@ -28,7 +28,9 @@ On `et-slider` (forwarded from the headless `[etSlider]` directive):
 | `step`       | `number`              | `1`         | Snap grid, anchored at `min`. Keyboard steps, pointer commits and the displayed value all snap to it.    |
 | `disabled`   | `boolean`             | `false`     | Blocks all interaction and removes the thumb from the tab order.                                         |
 | `readonly`   | `boolean`             | `false`     | Focusable but not adjustable (`aria-readonly`).                                                          |
-| `mixedLabel` | `string`              | `'Mixed'`   | `aria-valuetext` the thumb announces while `mixed` is true.                                              |
+| `mixedLabel` | `string \| null`      | `null` ¹    | `aria-valuetext` the thumb announces while `mixed` is true.                                              |
+
+¹ `null` falls through to [`FORM_FIELD_LABELS.mixed`](/components/localization) (`'Mixed'`).
 
 The `value` model is a plain `number` (default `0`). Values outside the bounds or off the step grid are displayed clamped and snapped, but the model is only rewritten when the user interacts.
 
@@ -36,13 +38,16 @@ The `value` model is a plain `number` (default `0`). Values outside the bounds o
 
 `et-range-slider` models `[number, number]`. Because signal forms reserves `min`/`max` on a value control for validators typed like the value (here the tuple), the numeric track bounds are named `minValue` / `maxValue` instead:
 
-| Input                     | Type     | Default                   | Description                                                                          |
-| ------------------------- | -------- | ------------------------- | ------------------------------------------------------------------------------------ |
-| `minValue` / `maxValue`   | `number` | `0` / `100`               | Track bounds.                                                                        |
-| `step`                    | `number` | `1`                       | Snap grid.                                                                           |
-| `minDistance`             | `number` | `0`                       | Minimum gap kept between the thumbs — use a multiple of `step`. `0` lets them touch. |
-| `startLabel` / `endLabel` | `string` | `'Minimum'` / `'Maximum'` | Accessible name (`aria-label`) of each thumb.                                        |
-| `mixedLabel`              | `string` | `'Mixed'`                 | `aria-valuetext` both thumbs announce while `mixed` is true.                         |
+| Input                     | Type             | Default     | Description                                                                          |
+| ------------------------- | ---------------- | ----------- | ------------------------------------------------------------------------------------ |
+| `minValue` / `maxValue`   | `number`         | `0` / `100` | Track bounds.                                                                        |
+| `step`                    | `number`         | `1`         | Snap grid.                                                                           |
+| `minDistance`             | `number`         | `0`         | Minimum gap kept between the thumbs — use a multiple of `step`. `0` lets them touch. |
+| `startLabel` / `endLabel` | `string \| null` | `null` ²    | Accessible name (`aria-label`) of each thumb.                                        |
+| `mixedLabel`              | `string \| null` | `null` ¹    | `aria-valuetext` both thumbs announce while `mixed` is true.                         |
+
+¹ `null` falls through to [`FORM_FIELD_LABELS.mixed`](/components/localization) (`'Mixed'`).
+² `null` falls through to [`SLIDER_LABELS`](/components/localization) (`'Minimum'` / `'Maximum'`).
 
 A reversed tuple is normalized for display (`[80, 20]` renders as 20–80). Dragging or stepping a thumb never lets it cross its sibling; each thumb's `aria-valuemin`/`aria-valuemax` shrink to the sibling's position (± `minDistance`), so assistive tech announces the real limits.
 

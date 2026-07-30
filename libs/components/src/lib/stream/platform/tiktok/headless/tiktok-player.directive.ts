@@ -7,6 +7,7 @@ import { STREAM_ERROR_CODES } from '../../../stream-errors';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../../stream.types';
 import { TikTokPlayerParamsDirective } from './tiktok-player-params.directive';
+import { injectStreamLabels } from '../../../stream-labels';
 
 export const TIKTOK_PLAYER_TOKEN = new InjectionToken<TikTokPlayerDirective>('TIKTOK_PLAYER_TOKEN');
 
@@ -19,6 +20,8 @@ const TIKTOK_PLAYER_STATE = { INIT: -1, ENDED: 0, PLAYING: 1, PAUSED: 2, BUFFERI
   ],
 })
 export class TikTokPlayerDirective implements StreamPlayer {
+  private streamLabels = injectStreamLabels();
+
   private platformId = inject(PLATFORM_ID);
   private params = inject(TikTokPlayerParamsDirective);
   private el = injectHostElement();
@@ -50,7 +53,7 @@ export class TikTokPlayerDirective implements StreamPlayer {
         const h = this.params.height();
 
         iframe.src = `https://www.tiktok.com/player/v1/${videoId}?rel=0`;
-        iframe.title = 'TikTok player';
+        iframe.title = this.streamLabels().playerFrame('TikTok');
         iframe.width = typeof w === 'number' ? String(w) : w;
         iframe.height = typeof h === 'number' ? String(h) : h;
         this.renderer.setStyle(iframe, { border: 'none' });

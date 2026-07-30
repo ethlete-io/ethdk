@@ -1,7 +1,7 @@
 <div [autoFocus]="!hasTouchInput()" etMenu>
   <button
     [disabled]="disabled()"
-    [attr.aria-label]="'Language: ' + activeLabel()"
+    [attr.aria-label]="labels().languageTrigger(activeLabel())"
     [class.et-ml-rte-lang-trigger--flagged]="missingCount() > 0"
     (mousedown)="$event.preventDefault()"
     class="et-ml-rte-lang-trigger"

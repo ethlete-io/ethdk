@@ -64,7 +64,7 @@
         @if (entry.status() === 'error') {
           <button
             [disabled]="dropzoneDir.disabled()"
-            [attr.aria-label]="retryLabel() + ' ' + entry.name()"
+            [attr.aria-label]="resolvedRetryLabel() + ' ' + entry.name()"
             (click)="dropzoneDir.retryEntry(entry.id)"
             class="et-dropzone-retry-button"
             type="button"
@@ -77,7 +77,7 @@
         } @else {
           <button
             [disabled]="dropzoneDir.disabled()"
-            [attr.aria-label]="replaceLabel()"
+            [attr.aria-label]="resolvedReplaceLabel()"
             (click)="openFilePicker()"
             class="et-dropzone-replace-button"
             type="button"
@@ -90,7 +90,7 @@
         }
         <button
           [disabled]="dropzoneDir.disabled()"
-          [attr.aria-label]="removeLabel() + ' ' + entry.name()"
+          [attr.aria-label]="resolvedRemoveLabel() + ' ' + entry.name()"
           (click)="removeEntryAnimated(entry, entryEl)"
           class="et-dropzone-remove-button"
           type="button"
@@ -136,7 +136,7 @@
         @if (entry.status() === 'error') {
           <button
             [disabled]="dropzoneDir.disabled()"
-            [attr.aria-label]="retryLabel() + ' ' + entry.name()"
+            [attr.aria-label]="resolvedRetryLabel() + ' ' + entry.name()"
             (click)="dropzoneDir.retryEntry(entry.id)"
             class="et-dropzone-retry-button"
             type="button"
@@ -149,7 +149,7 @@
 
         <button
           [disabled]="dropzoneDir.disabled()"
-          [attr.aria-label]="removeLabel() + ' ' + entry.name()"
+          [attr.aria-label]="resolvedRemoveLabel() + ' ' + entry.name()"
           (click)="removeEntryAnimated(entry, entryEl)"
           class="et-dropzone-remove-button"
           type="button"

@@ -5,7 +5,7 @@
        mousedown is prevented so the field keeps focus (its blur would unmount this
        button before the click could land) -->
   <button
-    [attr.aria-label]="clearLabel()"
+    [attr.aria-label]="resolvedClearLabel()"
     (click)="handleClearClick($event)"
     (mousedown)="$event.preventDefault()"
     class="et-duration-input-clear"

@@ -6,6 +6,8 @@ import { DatePickerPanelComponent } from '../date-picker-panel.component';
 import { DatePickerSurfaceDirective } from '../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../picker/date-picker-trigger.directive';
 import { DateInputDirective, DateInputFieldDirective } from './headless';
+import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
+import { injectDateTimeLabels } from '../../../forms/date-time/date-time-labels';
 
 @Component({
   selector: 'et-date-input',
@@ -55,12 +57,24 @@ import { DateInputDirective, DateInputFieldDirective } from './headless';
   },
 })
 export class DateInputComponent {
+  private dateTimeLabels = injectDateTimeLabels();
+
+  private formFieldLabels = injectFormFieldLabels();
+
   protected dateInput = inject(DateInputDirective);
 
-  public pickerTriggerLabel = input('Open calendar');
+  public pickerTriggerLabel = input<string | null>(null);
   /** Shows a clear (×) control while a value or pending text is set and the field is in use. */
   public clearable = input(true, { transform: booleanAttribute });
-  public clearLabel = input('Clear');
+  public clearLabel = input<string | null>(null);
+
+  /** The string in effect: this instance's `pickerTriggerLabel`, else the domain's label set. */
+  protected resolvedPickerTriggerLabel = computed(
+    () => this.pickerTriggerLabel() ?? this.dateTimeLabels().openCalendar,
+  );
+
+  /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
+  protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
 
   // only while the field is in use — mirrors the select's clear affordance
   protected showClear = computed(

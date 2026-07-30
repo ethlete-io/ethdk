@@ -17,6 +17,7 @@ import { NotificationActionDirective } from './headless/notification-action.dire
 import { NotificationDismissDirective } from './headless/notification-dismiss.directive';
 import { NotificationDirective } from './headless/notification.directive';
 import { injectNotificationManagerConfig } from './notification-config';
+import { injectNotificationLabels } from './notification-labels';
 
 @Component({
   selector: 'et-notification',
@@ -61,6 +62,7 @@ export class NotificationComponent {
   private provideTheme = inject(ProvideColorDirective);
   private provideSurface = inject(ProvideSurfaceDirective);
   private managerConfig = injectNotificationManagerConfig();
+  private labels = injectNotificationLabels();
   private surfaceThemes = injectSurfaceThemes({ optional: true });
   private surfaceContextTracker = injectSurfaceContextTracker();
 
@@ -85,7 +87,7 @@ export class NotificationComponent {
     return this.managerConfig.controlsColor ?? this.resolvedColor();
   });
 
-  protected dismissLabel = computed(() => this.managerConfig.dismissLabel);
+  protected dismissLabel = computed(() => this.labels().dismiss);
 
   constructor() {
     effect(() => {

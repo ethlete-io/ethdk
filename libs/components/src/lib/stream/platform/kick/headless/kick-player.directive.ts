@@ -6,6 +6,7 @@ import { EMPTY, Observable } from 'rxjs';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../../stream.types';
 import { KickPlayerParamsDirective } from './kick-player-params.directive';
+import { injectStreamLabels } from '../../../stream-labels';
 
 export const KICK_PLAYER_TOKEN = new InjectionToken<KickPlayerDirective>('KICK_PLAYER_TOKEN');
 
@@ -16,6 +17,8 @@ export const KICK_PLAYER_TOKEN = new InjectionToken<KickPlayerDirective>('KICK_P
   ],
 })
 export class KickPlayerDirective implements StreamPlayer {
+  private streamLabels = injectStreamLabels();
+
   private platformId = inject(PLATFORM_ID);
   private document = inject(DOCUMENT);
   private params = inject(KickPlayerParamsDirective);
@@ -46,7 +49,7 @@ export class KickPlayerDirective implements StreamPlayer {
         if (this.params.muted()) qs.set('muted', 'true');
 
         iframe.src = `https://player.kick.com/${channel}?${qs}`;
-        iframe.title = 'Kick player';
+        iframe.title = this.streamLabels().playerFrame('Kick');
         iframe.width = String(this.params.width());
         iframe.height = String(this.params.height());
         this.renderer.setStyle(iframe, { border: 'none' });

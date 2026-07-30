@@ -6,6 +6,7 @@ import { EMPTY, Observable } from 'rxjs';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../../stream.types';
 import { SoopPlayerParamsDirective } from './soop-player-params.directive';
+import { injectStreamLabels } from '../../../stream-labels';
 
 export const SOOP_PLAYER_TOKEN = new InjectionToken<SoopPlayerDirective>('SOOP_PLAYER_TOKEN');
 
@@ -16,6 +17,8 @@ export const SOOP_PLAYER_TOKEN = new InjectionToken<SoopPlayerDirective>('SOOP_P
   ],
 })
 export class SoopPlayerDirective implements StreamPlayer {
+  private streamLabels = injectStreamLabels();
+
   private platformId = inject(PLATFORM_ID);
   private params = inject(SoopPlayerParamsDirective);
   private el = injectHostElement();
@@ -56,7 +59,7 @@ export class SoopPlayerDirective implements StreamPlayer {
           iframe.src = `https://vod.afreecatv.com/player/${params.videoId}`;
         }
 
-        iframe.title = 'SOOP player';
+        iframe.title = this.streamLabels().playerFrame('SOOP');
         iframe.width = typeof w === 'number' ? String(w) : w;
         iframe.height = typeof h === 'number' ? String(h) : h;
         this.renderer.setStyle(iframe, { border: 'none' });

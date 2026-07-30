@@ -19,6 +19,7 @@ import { injectDateLocale } from '../date-time-formats';
 import { DatePickerHost, DatePickerSurfaceBase, DatePickerTriggerBase } from '../picker/date-picker-host';
 import { createDatePickerOverlay } from './date-picker-overlay';
 import { maskPatternFromDisplayFormat } from './display-format-mask';
+import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 
 /** The registered text field a date-picker input focuses and anchors to. */
 export type DatePickerInputFieldBase = { focus(): void; elementRef: ElementRef<HTMLInputElement> };
@@ -41,6 +42,8 @@ export type DatePickerInputFieldBase = { focus(): void; elementRef: ElementRef<H
 export abstract class DatePickerInputDirective
   implements FormValueControl<string | null>, FormFieldControl, DatePickerHost
 {
+  private formFieldLabels = injectFormFieldLabels();
+
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private document = inject(DOCUMENT);
   public defaultLocale = injectDateLocale();
@@ -78,7 +81,7 @@ export abstract class DatePickerInputDirective
    * date field cannot render arbitrary text, so the field stays empty and the
    * label shows through the placeholder slot; it never enters the form value.
    */
-  public mixedLabel = input('Mixed');
+  public mixedLabel = input<string | null>(null);
 
   /** date-fns format of the string value. Defaults to the control's format token. */
   public valueFormat = input<string | undefined>(undefined);
@@ -95,6 +98,9 @@ export abstract class DatePickerInputDirective
   public mask = input(false, { transform: booleanAttribute });
 
   public pickerOpen = model(false);
+
+  /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
+  public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
 
   public effectiveValueFormat = computed(() => this.valueFormat() ?? this.defaultValueFormat);
   public effectiveLocale = computed(() => this.locale() ?? this.defaultLocale);
@@ -121,7 +127,7 @@ export abstract class DatePickerInputDirective
   public shouldDisplayError = computed(() => this.touched() && (this.invalid() || this.parseError()));
 
   /** What the field renders as its placeholder — `mixedLabel` while mixed masks the value. */
-  public effectivePlaceholder = computed(() => (this.mixed() ? this.mixedLabel() : this.placeholder()));
+  public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
 

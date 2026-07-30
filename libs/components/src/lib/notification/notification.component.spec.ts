@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
 import { provideNotificationManagerConfig } from './notification-config';
+import { provideNotificationLabels } from './notification-labels';
 import { NotificationRef, createNotificationRef } from './notification-ref';
 import { NotificationComponent } from './notification.component';
 
@@ -23,9 +24,9 @@ describe('NotificationComponent', () => {
         provideNotificationManagerConfig({
           position: 'bottom-end',
           maxVisible: 3,
-          dismissLabel: 'Close notification',
           defaultDuration: { success: 0, info: 0, loading: 0, error: 0 },
         }),
+        provideNotificationLabels({ dismiss: 'Close notification' }),
       ],
     });
 
@@ -41,7 +42,6 @@ describe('NotificationComponent', () => {
         managerConfig: {
           position: 'bottom-end',
           maxVisible: 3,
-          dismissLabel: 'Close notification',
           defaultDuration: { success: 0, info: 0, loading: 0, error: 0 },
         },
       },
