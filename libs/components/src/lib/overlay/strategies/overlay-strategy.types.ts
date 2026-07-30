@@ -110,9 +110,28 @@ export type OverlayDragToDismissConfig = {
   /**
    * The minimum velocity in pixels per second that the user must swipe to dismiss the overlay.
    *
+   * Doubles as the flick threshold when `snapPoints` are set: a release at or above it advances one
+   * snap point in the direction of the flick.
+   *
    * @default 150 // 150px/s
    */
   minVelocityToDismiss?: number;
+
+  /**
+   * Resting positions the overlay can be dragged between, as fractions of its own size along the
+   * dismiss axis — `0` is fully open, `0.5` is dragged halfway out. The docked position is always
+   * available whether or not it is listed, and values outside `[0, 1)` are ignored.
+   *
+   * With snap points set, a flick advances one point in its own direction and a slow release settles
+   * at the nearest one; either running past the last point dismisses the overlay. Leaving this unset
+   * keeps the plain two-state behavior driven by `minDistanceToDismiss`/`minVelocityToDismiss`.
+   *
+   * The overlay stays its full size at every snap point — only its offset changes. Content that
+   * should reflow or scroll differently at a partial position is the consumer's concern.
+   *
+   * @default undefined // no intermediate resting positions
+   */
+  snapPoints?: number[];
 };
 
 export type OverlayBreakpointConfig = {

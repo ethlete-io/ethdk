@@ -188,6 +188,30 @@ Every factory accepts a partial `OverlayBreakpointConfig` (sizes, classes, `drag
 
 `dragToDismiss.direction` takes either a physical direction (`'to-top'`, `'to-bottom'`, `'to-left'`, `'to-right'`) or a **logical** one (`'to-inline-start'`, `'to-inline-end'`). Logical values are resolved against the overlay container's computed `direction` when the gesture is attached, so they follow the writing direction the same way the `horizontal: 'start' | 'end'` position strategies do — a side sheet stays draggable toward the edge it is docked to under `dir="rtl"`. The side-sheet strategies use the logical values by default; physical values keep meaning exactly what they say.
 
+### How the gesture behaves
+
+The gesture runs on pointer events, so touch, pen and mouse take one code path. It only starts following the pointer after 8px of travel along the dismiss axis. That threshold is deliberate: within it the browser is still free to claim the gesture as a scroll, so a swipe that begins on scrolled overlay content scrolls that content instead of dragging the sheet. A gesture the browser does take over (or one that starts on an `input`, `button` or link) leaves the sheet where it was.
+
+On release the sheet either settles back or leaves, decided by `minDistanceToDismiss` (150px) and `minVelocityToDismiss` (150px/s) — either one is enough. Release velocity is measured over the last 100ms of the gesture rather than averaged across it, so a slow drag that ends in a flick dismisses, and a fast drag parked before release does not.
+
+Both the settle and the exit animate at the speed the pointer had when it let go, clamped to 100–350ms — the sheet is thrown, not handed to a fixed transition. Under `prefers-reduced-motion` the momentum handoff is skipped and the stylesheet's own durations apply.
+
+### Snap points
+
+`dragToDismiss.snapPoints` turns the two-state gesture into a multi-position one. Points are fractions of the sheet's own size along the dismiss axis, where `0` is fully docked:
+
+```ts
+this.overlayManager.open(ExampleOverlayComponent, {
+  strategies: bottomSheetOverlayStrategy({
+    dragToDismiss: { direction: 'to-bottom', snapPoints: [0, 0.4, 0.7] },
+  }),
+});
+```
+
+A flick advances one point in its own direction; a slow release settles at the nearest one. Running past the last point dismisses the sheet. The docked position is always available whether or not `0` is listed, and values outside `[0, 1)` are ignored.
+
+The sheet keeps its full size at every snap point — only its offset changes, so a sheet parked at `0.7` has 70% of its height below the viewport edge. Content that should reflow or scroll differently at a partial position is yours to handle.
+
 ### Responsive (transforming) strategies
 
 `strategies` is an array of `{ breakpoint?, strategy }` entries — the controller picks the entry matching the current `min-width` and **switches live on resize without remounting** the content. Breakpoint names come from the app's [viewport config](/core/providers#breakpoint-observer) (Tailwind-style `xs`–`2xl` by default). Presets cover the common pairs:

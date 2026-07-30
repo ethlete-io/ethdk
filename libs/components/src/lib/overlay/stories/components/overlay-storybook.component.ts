@@ -102,6 +102,9 @@ export class OverlayPopoverExampleComponent {}
           <button (click)="openTopSheet()" et-button size="sm">Top sheet</button>
           <button (click)="openLeftSheet()" et-button size="sm">Left sheet</button>
           <button (click)="openRightSheet()" et-button size="sm">Right sheet</button>
+          <button (click)="openSnappingBottomSheet()" et-button size="sm" variant="tonal">
+            Bottom sheet (snap points)
+          </button>
         </div>
       </section>
 
@@ -179,6 +182,18 @@ export class OverlayStorybookComponent {
 
   protected openBottomSheet() {
     this.open({ strategies: bottomSheetOverlayStrategy() });
+  }
+
+  /**
+   * Snap points are fractions of the sheet's own height, so `0.4` and `0.7` park it 40% and 70% of
+   * the way out. A flick moves one point at a time; flicking past the last one dismisses.
+   */
+  protected openSnappingBottomSheet() {
+    this.open({
+      strategies: bottomSheetOverlayStrategy({
+        dragToDismiss: { direction: 'to-bottom', snapPoints: [0, 0.4, 0.7] },
+      }),
+    });
   }
 
   protected openTopSheet() {
