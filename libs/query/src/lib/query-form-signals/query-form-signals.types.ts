@@ -65,8 +65,17 @@ export type QueryFieldDef<T> = {
   /** Transform a raw URL query-param value into the field's value type. */
   readonly queryParamToValue?: (raw: unknown) => T;
 
-  /** Transform the field's value into a raw URL query-param value. */
-  readonly valueToQueryParam?: (value: T) => unknown;
+  /**
+   * Transform the field's value into a raw URL query-param value.
+   *
+   * Declared with method syntax, and it has to be: as an arrow-typed property it makes `QueryFieldDef<T>`
+   * contravariant in `T`, so `QueryFieldDef<string>` is not assignable to `QueryFieldDef<unknown>` and therefore a
+   * concrete field map does not satisfy {@link QueryFormFields}. Inference papers over that, but it makes any
+   * generic API over a query form — `injectFilterOverlay<typeof MY_FIELDS>()`, or simply passing a
+   * `QueryFormSignals<typeof MY_FIELDS>` to something that takes a `QueryFormSignals<TFields>` — impossible to
+   * write. Method syntax is bivariant, which is the right call for a heterogeneous record like this.
+   */
+  valueToQueryParam?(value: T): unknown;
 };
 
 /**

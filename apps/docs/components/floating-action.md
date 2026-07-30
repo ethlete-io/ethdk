@@ -138,5 +138,6 @@ nothing from `@ethlete/query`. The renames: `et-rich-filter-host` → `[etFloati
 `etRichFilterContent` → `[etFloatingActionScope]`, `etRichFilterTop` → `[etFloatingActionTop]`.
 
 cdk exposed ten boolean state classes (`--is-above`, `--is-visible`, … for both observed elements) and left the
-combining to your CSS. This publishes the one derived answer as `data-state` instead.
+combining to your CSS. This publishes the one derived answer as `data-state` instead. For the filter panel that
+cdk's companion helper opened, see [filter overlay](/components/filter-overlay).
 :::

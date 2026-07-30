@@ -31,7 +31,7 @@ export type QueryErrorStoryShape = keyof typeof ERROR_BODIES;
   template: `
     <div [etProvideSurface]="surface()" class="text-medium flex flex-col gap-6 p-8 font-sans">
       <div class="flex flex-wrap items-center gap-3">
-        <button (click)="cycleLocale()" etButton size="xs" variant="transparent">
+        <button (click)="cycleLocale()" et-button size="xs" variant="transparent">
           Locale: {{ locale.currentLocale() }}
         </button>
         <span class="text-small opacity-60">
@@ -55,7 +55,7 @@ export type QueryErrorStoryShape = keyof typeof ERROR_BODIES;
           </ng-template>
 
           <ng-template etQueryErrorActions>
-            <button (click)="retries.set(retries() + 1)" etButton size="sm">Try again</button>
+            <button (click)="retries.set(retries() + 1)" et-button size="sm">Try again</button>
             <a class="text-small underline" href="#">Contact support</a>
           </ng-template>
         </et-query-error>

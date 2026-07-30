@@ -376,3 +376,11 @@ All floating-action checks run in dev mode only, after the first render.
 | -------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | `ET4100` | A floating-action part sits outside an `[etFloatingAction]` element. | Move it inside the coordinator element it belongs to.                           |
 | `ET4101` | A floating action has no `[etFloatingActionAnchor]`.                 | Wrap the trigger in an anchor element — it is what reports the scroll position. |
+
+## Filter overlay (ET42xx)
+
+Checked in dev mode only, after the first render.
+
+| Code     | Cause                                                                                | Fix                                                                                               |
+| -------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| `ET4200` | An `etFilterOverlaySubmit` or `etFilterOverlayReset` has no filter overlay above it. | Add `provideFilterOverlay({ … })` to the providers of the overlay component the control lives in. |

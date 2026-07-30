@@ -1,0 +1,3 @@
+export const FILTER_OVERLAY_ERROR_CODES = {
+  MISSING_FILTER_OVERLAY: 4200,
+} as const;

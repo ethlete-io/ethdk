@@ -150,5 +150,6 @@ Each plan file's own header is the detail (including deviations); this is the in
       base-URL joining (2026-07-30)
 - [x] `09-query-error.md` — themed panel + headless directive on the current client's normalized error, locale
       i18n, slots, legacy adapter (2026-07-30)
-- [ ] `10-filter.md`
+- [x] `10-filter.md` — Layer 1 `floating-action` + Layer 2 `filter-overlay` (draft/apply, preview-driven submit,
+      routed panel, badge) (2026-07-30)
 - [ ] `90-parity-audits.md` — verdicts recorded; cdk deprecation roadmap still open

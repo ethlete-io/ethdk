@@ -45,7 +45,7 @@ import { PictureSource } from '../picture.types';
           </ng-template>
         </et-picture>
 
-        <button (click)="toggleLateSource()" class="self-start" etButton size="xs" variant="transparent">
+        <button (click)="toggleLateSource()" class="self-start" et-button size="xs" variant="transparent">
           {{ lateSource() ? 'Clear the URL' : 'Deliver the URL' }}
         </button>
       </section>

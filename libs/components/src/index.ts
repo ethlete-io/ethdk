@@ -5,6 +5,7 @@ export * from './lib/button';
 export * from './lib/calendar';
 export * from './lib/carousel';
 export * from './lib/chip';
+export * from './lib/filter-overlay';
 export * from './lib/floating-action';
 export * from './lib/focus-ring';
 export * from './lib/forms';

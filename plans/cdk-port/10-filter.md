@@ -1,6 +1,6 @@
 # 10 — Rich filter (floating filter button)
 
-**Status: Layer 1 DONE (2026-07-30) as `floating-action`. Layer 2 in progress.**
+**Status: DONE (2026-07-30). Layer 1 as `floating-action`, Layer 2 as `filter-overlay`.**
 Size: S. Research done 2026-07-23 against `libs/cdk/src/lib/components/filter/`
 (~290 lines — only `rich-filter/` exists).
 
@@ -169,3 +169,76 @@ provider util + directives, story demonstrating a routed filter overlay with
 badge + apply/reset, docs page covering the full pattern (trigger → routed
 overlay → QueryForm → URL). Changesets per layer (can ship separately;
 Layer 1 first). cdk rich-filter stays untouched.
+
+## Layer 2 outcome (2026-07-30)
+
+Shipped as `libs/components/src/lib/filter-overlay/`: `provideFilterOverlay` /
+`injectFilterOverlay`, `filterOverlayPreviewFromQuery`, the
+`etFilterOverlaySubmit` / `etFilterOverlayReset` controls, locale-derived labels,
+`ET4200`. Plus `apps/docs/components/filter-overlay.md`, 2 stories, 13 unit
+tests, and a `minor` changeset.
+
+Kept from cdk, as the plan required: draft-clone isolation with explicit submit
+and dismiss-as-discard, `reset()`, the `FilterOverlayResult` contract, and the
+live-results-preview-driving-the-submit-button UX including its label thresholds
+(0 / 1 / n / more-than-N).
+
+Modernized as planned:
+
+- **Signal forms.** `queryForm` replaces cdk's `form` + `defaults`; the draft is
+  `queryForm.branch()` rather than `cloneFormGroup()`. `branch()` already existed
+  — the signals QueryForm was built with this pattern in mind (00's plan).
+  `submit()` writes back via `queryForm.setValue()`, so the `isResetBy` graph and
+  URL sync fire; verified by a test asserting `page` resets when `search` changes.
+- **Current query client.** `filterOverlayPreviewFromQuery` replaces
+  `searchPreviewQueryFn`'s `AnyV2Query`/`queryComputed`/`switchQueryState`. It is
+  a factory-of-a-factory so the query is created in the _overlay's_ injection
+  context; the shared adapter core from 01 Phase 0 was never extracted, and this
+  needs only the non-paginated slice (creator + `withArgs`), so it does not
+  depend on it.
+- **`injectLocale()`** instead of `locale: 'en' | 'de'`; `submitButton` still
+  overrides the resolver wholesale.
+- **Routed panel** demonstrated first-class: `provideFilterOverlay` in the
+  overlay's providers means every routed page injects the same draft. The story
+  is a three-page panel with the submit/reset buttons in the shell footer.
+- **Badge** fed by `activeFilterCount`.
+
+### Deviations and findings
+
+- **`reset()` needs no configured defaults** (cdk threw without them) — the query
+  form knows its own.
+- **cdk's no-preview bug fixed.** Its default resolver returned the _loading_
+  state when query state and total were both null, which is exactly the
+  no-preview case — so a filter overlay without a search preview had a
+  permanently disabled submit button. There is now an explicit `hasPreview`
+  branch. Covered by a test.
+- **`isPristine()` added, and it is what the reset button uses.**
+  `activeFilterCount` deliberately excludes navigation state (`search`, `page`,
+  `sort`), so a reader who has typed a search has nothing to show in a badge but
+  plenty to reset — using the count would have left reset disabled. Found while
+  writing the tests.
+- **`maxCountedHits`** is configurable (cdk hardcoded 250).
+- **Typed by the filters' value shape, not their field map.** Naming the field map
+  explicitly does not typecheck: `QueryFieldDef<T>` can hold a
+  `valueToQueryParam: (value: T) => unknown`, making it contravariant in `T`, so a
+  concrete field map does not satisfy `Record<string, QueryFieldDef<unknown>>`.
+  Fixed at the source in `@ethlete/query` (that member is now method-syntax, hence
+  bivariant — a `patch`), and the public API is typed via
+  `FilterOverlayValueOf<…>` so consumers never have to name either.
+- **Unsaved-changes guard integration deliberately not wired.** `hasChanges()` is
+  exposed, which is the input such a guard needs, but making dismissal prompt by
+  default would undo the "dismiss = discard" contract that is the point of the
+  pattern. A consumer can compose `createOverlayUnsavedChangesGuard` with
+  `hasChanges()` themselves.
+- `scrollToTop()` stays on the Layer 1 floating action, reachable from the trigger
+  after applying — no need to duplicate it here.
+- The story uses plain buttons rather than form controls for the draft fields: it
+  is about the draft/apply contract, and binding a draft field to an `<et-input>`
+  is the forms guides' subject. Docs show the `[formField]` form.
+
+### Also fixed in passing
+
+Every story added in this port sequence used `etButton` (the _headless_ button
+directive) with `variant`/`size`, which live on the `et-button` **component** — so
+those attributes were silently inert, and one `[variant]` binding logged NG0303.
+All five stories now use `et-button`.

@@ -41,7 +41,7 @@ const createCards = (count: number): Card[] =>
         @if (loadMore()) {
           <!-- The handshake an infinite scroll needs: appending while the current page is still being
                measured would pack the new cards against heights that are about to change. -->
-          <button [disabled]="!masonry.isSettled()" (click)="appendPage()" etButton>Load more</button>
+          <button [disabled]="!masonry.isSettled()" (click)="appendPage()" et-button>Load more</button>
         }
 
         <span class="text-small">
@@ -80,7 +80,7 @@ const createCards = (count: number): Card[] =>
                 <p class="m-0">{{ FILLER }} {{ FILLER }}</p>
               }
 
-              <button (click)="toggleExpanded(card.id)" etButton variant="transparent" size="xs">
+              <button (click)="toggleExpanded(card.id)" et-button variant="transparent" size="xs">
                 {{ expanded().has(card.id) ? 'Show less' : 'Show more' }}
               </button>
             </div>

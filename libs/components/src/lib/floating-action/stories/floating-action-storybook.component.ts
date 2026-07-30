@@ -23,7 +23,7 @@ import { FLOATING_ACTION_IMPORTS } from '../floating-action.imports';
         <!-- The anchor keeps the button's space in the flow. It has to be a separate element from the button:
              once the button is fixed it is always on screen, so observing it would oscillate. -->
         <div etFloatingActionAnchor>
-          <button (click)="applyFilters(floatingAction)" etButton etFloatingActionTrigger>
+          <button (click)="applyFilters(floatingAction)" et-button etFloatingActionTrigger>
             Filter ({{ applied() }})
           </button>
         </div>
