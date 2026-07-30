@@ -270,6 +270,10 @@
   .et-overlay-body {
     display: grid;
     overflow: auto;
+
+    /* Scrolling to either end stays in the overlay: without this, the leftover momentum scrolls the
+     page behind the backdrop, and on a sheet it competes with the drag-to-dismiss gesture. */
+    overscroll-behavior: contain;
     padding-inline: var(--et-overlay-padding-inline);
     padding-block: var(--et-overlay-body-padding-block);
     grid-template-columns: minmax(0, 1fr);

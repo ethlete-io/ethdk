@@ -17,6 +17,7 @@
     appearance: none;
     box-sizing: border-box;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
     line-height: var(--et-button-line-height);
     white-space: nowrap;
 

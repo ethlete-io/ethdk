@@ -49,6 +49,7 @@
     font-size: var(--et-select-option-font-size);
     cursor: pointer;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
     /* offscreen options skip layout and paint entirely — this is what keeps panels with
        thousands of options scrollable. The intrinsic size keeps the scrollbar stable. */
     content-visibility: auto;

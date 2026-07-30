@@ -24,6 +24,9 @@
     user-select: none;
     /* no double-tap-zoom wait on touch — taps activate immediately */
     touch-action: manipulation;
+    /* the grey WebKit/Blink flash duplicates our own :active state, and it is inherited, so setting
+     it here also covers the icons and labels inside */
+    -webkit-tap-highlight-color: transparent;
     line-height: var(--et-button-line-height);
     white-space: nowrap;
 

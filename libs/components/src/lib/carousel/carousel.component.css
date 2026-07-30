@@ -130,6 +130,7 @@
     border-radius: 50%;
     background: transparent;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
 
     /* Focus comes from the shared `etFocusRing`, so a dot looks focused the same way everything else does —
        at its standard offset, which draws the ring outside the autoplay one. It reaches over the neighbouring

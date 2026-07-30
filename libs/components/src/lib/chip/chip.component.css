@@ -55,6 +55,7 @@
     background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 14%, transparent);
     color: var(--et-surface-color-solid, currentColor);
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
 
     &:where([data-disabled]) {
       opacity: var(--et-chip-opacity-disabled);

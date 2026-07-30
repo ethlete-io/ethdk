@@ -165,6 +165,7 @@ export class TooltipDirective {
 
     this.overlayRef.set(overlayRef);
     this.syncHostDescription(tooltipId);
+    this.dismissOnOutsidePointer(overlayRef);
 
     overlayRef
       .afterClosed()
@@ -188,14 +189,17 @@ export class TooltipDirective {
   private setupHoverBehavior() {
     const hostElement = this.elementRef.nativeElement;
 
-    fromEvent(hostElement, 'mouseenter')
+    // Pointer events rather than mouse events so the `pointerType` is readable: mobile browsers
+    // synthesize a mouse enter around a tap, which pops a hover affordance the user never asked for
+    // and then leaves it hanging until they tap elsewhere. A pen genuinely hovers, so only touch is
+    // excluded — touch input is what the toggletip is for.
+    const leave$ = fromEvent<PointerEvent>(hostElement, 'pointerleave');
+
+    fromEvent<PointerEvent>(hostElement, 'pointerenter')
       .pipe(
+        filter((event) => event.pointerType !== 'touch'),
         tap(() => this.hasHover.set(true)),
-        switchMap(() =>
-          timer(this.showDelay()).pipe(
-            takeUntil(fromEvent(hostElement, 'mouseleave').pipe(tap(() => this.hasHover.set(false)))),
-          ),
-        ),
+        switchMap(() => timer(this.showDelay()).pipe(takeUntil(leave$.pipe(tap(() => this.hasHover.set(false)))))),
         takeUntilDestroyed(this.destroyRef),
         tap(() => {
           if (!this.hasHover()) {
@@ -207,7 +211,7 @@ export class TooltipDirective {
       )
       .subscribe();
 
-    fromEvent(hostElement, 'mouseleave')
+    leave$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap(() => {
@@ -216,6 +220,28 @@ export class TooltipDirective {
           if (!this.hasFocus()) {
             this.hide();
           }
+        }),
+      )
+      .subscribe();
+  }
+
+  /**
+   * A tooltip can outlive the hover that opened it — a `pointercancel`, a scroll that moves the
+   * trigger out from under the pointer, or a browser that synthesizes an enter with no matching
+   * leave. A press anywhere else is unambiguous, so treat it as a dismissal.
+   */
+  private dismissOnOutsidePointer(overlayRef: OverlayRef<TooltipComponent, unknown>) {
+    const hostElement = this.elementRef.nativeElement;
+
+    fromEvent<PointerEvent>(this.document, 'pointerdown', { capture: true })
+      .pipe(
+        takeUntil(overlayRef.afterClosed()),
+        takeUntilDestroyed(this.destroyRef),
+        filter((event) => !(event.target instanceof Node) || !hostElement.contains(event.target)),
+        tap(() => {
+          this.hasHover.set(false);
+          this.hasFocus.set(false);
+          this.hide();
         }),
       )
       .subscribe();

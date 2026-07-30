@@ -231,6 +231,10 @@
       position: relative;
       grid-row: 1 / 1;
       grid-column: 1 / 1;
+
+      /* Reaching either end must not hand the gesture to the page behind — that turns a flick
+       through a horizontal rail into a page scroll, or into pull-to-refresh on a vertical one. */
+      overscroll-behavior: contain;
     }
 
     & .et-scrollable-masks,

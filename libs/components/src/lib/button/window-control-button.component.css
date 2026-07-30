@@ -36,6 +36,7 @@
     appearance: none;
     box-sizing: border-box;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
     overflow: hidden;
 
     &[data-can-animate] {

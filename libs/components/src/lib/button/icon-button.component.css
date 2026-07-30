@@ -20,6 +20,7 @@
     appearance: none;
     box-sizing: border-box;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
     overflow: hidden;
     flex-shrink: 0;
 
