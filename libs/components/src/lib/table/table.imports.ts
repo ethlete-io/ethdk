@@ -1,6 +1,7 @@
 import { TableCellErrorTooltipDirective } from './table-cell-error-tooltip.directive';
 import { TableColumnChooserComponent } from './table-column-chooser.component';
 import { TableColumnMenuDirective } from './table-column-menu.directive';
+import { TableCsvExportDirective } from './table-csv-export.directive';
 import { TableFiltersDirective } from './table-filters.directive';
 import { TableFooterDirective } from './headless/table-footer.directive';
 import { TableReorderDirective } from './table-reorder.directive';
@@ -51,6 +52,12 @@ export const TABLE_COLUMN_MENU_IMPORTS = [TableColumnMenuDirective] as const;
  * docs for why a visibility list must not hang off a header control. Pulls in the menu system.
  */
 export const TABLE_COLUMN_CHOOSER_IMPORTS = [TableColumnChooserComponent] as const;
+
+/**
+ * Download the table as CSV from a button of your own (`etTableCsvExport`). No extra dependency — the
+ * serializer is a pure function you can also call directly ({@link exportTableToCsv}).
+ */
+export const TABLE_CSV_EXPORT_IMPORTS = [TableCsvExportDirective] as const;
 
 /** Drag-to-resize column widths (`etTableResize`). Pulls in the drag primitives. */
 export const TABLE_RESIZE_IMPORTS = [TableResizeDirective] as const;

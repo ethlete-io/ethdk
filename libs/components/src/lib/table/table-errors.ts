@@ -10,4 +10,6 @@ export const TABLE_ERROR_CODES = {
   TEMPLATE_OUTSIDE_TABLE: 3503,
   /** A column template was bound to a column that this table's `columns` record doesn't contain. */
   UNKNOWN_TEMPLATE_COLUMN: 3504,
+  /** A CSV export named a column key the table doesn't declare. */
+  UNKNOWN_EXPORT_COLUMN: 3505,
 } as const;

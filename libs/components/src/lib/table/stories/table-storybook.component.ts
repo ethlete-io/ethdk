@@ -1,6 +1,7 @@
-import { Component, computed, input, linkedSignal, signal, ViewEncapsulation } from '@angular/core';
+import { Component, computed, input, linkedSignal, signal, viewChild, ViewEncapsulation } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { AutoSurfaceDirective, ProvideSurfaceDirective } from '@ethlete/core';
+import { BUTTON_IMPORTS } from '../../button';
 import { CHIP_IMPORTS } from '../../chip';
 import { SKELETON_IMPORTS } from '../../skeleton';
 import { FORM_FIELD_IMPORTS } from '../../forms/form-field';
@@ -9,6 +10,7 @@ import { PAGINATION_IMPORTS } from '../../pagination';
 import {
   TABLE_COLUMN_CHOOSER_IMPORTS,
   TABLE_COLUMN_MENU_IMPORTS,
+  TABLE_CSV_EXPORT_IMPORTS,
   TABLE_FILTER_IMPORTS,
   TABLE_IMPORTS,
   TABLE_REORDER_IMPORTS,
@@ -17,6 +19,7 @@ import {
   TABLE_CELL_ERROR_TOOLTIP_IMPORTS,
   TABLE_VIRTUAL_SCROLL_IMPORTS,
 } from '../table.imports';
+import { TableSelectionDirective } from '../table-selection.directive';
 import { TableCellStateValue, TableColumns } from '../table.types';
 import { MANY_PEOPLE, PEOPLE, Person, Project, PROJECTS_BY_PERSON, ROLES } from './table-storybook.data';
 
@@ -33,6 +36,29 @@ import { MANY_PEOPLE, PEOPLE, Person, Project, PROJECTS_BY_PERSON, ROLES } from 
       [etProvideSurface]="surface()"
       class="text-medium p-8 font-sans"
     >
+      @if (csvExport() || columnMenu()) {
+        <div class="mb-2 flex items-center justify-end gap-2">
+          @if (csvExport()) {
+            <!-- The directive carries the options; the button only says when. export() takes overrides,
+                 which is how one directive serves both "everything" and "just the selection". -->
+            <button (click)="csv.export()" size="sm" variant="outline" et-button type="button">Export CSV</button>
+
+            @if (selectable()) {
+              <button
+                [disabled]="!selectedPeople().length"
+                (click)="csv.export({ rows: selectedPeople(), filename: 'people-selection.csv' })"
+                size="sm"
+                variant="outline"
+                et-button
+                type="button"
+              >
+                Export selection
+              </button>
+            }
+          }
+        </div>
+      }
+
       @if (columnMenu()) {
         <!-- Above the table, not in a header cell: a visibility list must not hang off the header it
              edits — hiding a column relays that header out and would drag the menu with it, and hiding
@@ -46,6 +72,8 @@ import { MANY_PEOPLE, PEOPLE, Person, Project, PROJECTS_BY_PERSON, ROLES } from 
       <!-- The table is its own scroll container: a bounded height (sticky/virtual demos) makes it scroll. -->
       <et-table
         #table
+        #selection="etTableSelection"
+        #csv="etTableCsvExport"
         [style.block-size.px]="constrainHeight() || virtualScroll() || paginated() ? 400 : null"
         [appearance]="appearance()"
         [density]="density()"
@@ -61,6 +89,7 @@ import { MANY_PEOPLE, PEOPLE, Person, Project, PROJECTS_BY_PERSON, ROLES } from 
         [etTableCellErrorTooltip]="{ enabled: cellStates() }"
         [etTableResize]="{ enabled: resizableColumns() }"
         [etTableColumnMenu]="{ enabled: columnMenu() }"
+        [etTableCsvExport]="{ filename: 'people.csv' }"
         [etTableReorder]="{ enabled: reorderable() }"
         [etTableSelection]="{ selection: selected, enabled: selectable() }"
         [etTableVirtualScroll]="{ enabled: virtualScroll() }"
@@ -192,6 +221,8 @@ import { MANY_PEOPLE, PEOPLE, Person, Project, PROJECTS_BY_PERSON, ROLES } from 
     TABLE_SELECTION_IMPORTS,
     TABLE_VIRTUAL_SCROLL_IMPORTS,
     TABLE_CELL_ERROR_TOOLTIP_IMPORTS,
+    TABLE_CSV_EXPORT_IMPORTS,
+    BUTTON_IMPORTS,
     AutoSurfaceDirective,
     ProvideSurfaceDirective,
     CHIP_IMPORTS,
@@ -224,9 +255,11 @@ export class TableStorybookComponent {
   public resizableColumns = input(false);
   public columnMenu = input(false);
   public selectable = input(false);
+  public csvExport = input(false);
   public appearance = input<'enclosed' | 'divided' | 'zebra' | 'grid' | 'bare'>('enclosed');
   public density = input<'sm' | 'md' | 'lg'>('md');
   public surface = input('dark');
+  protected selection = viewChild<TableSelectionDirective<Person>>('selection');
 
   // Page-size select is a signal form, mirroring how a real form would carry it.
   public pageSizeForm = form(linkedSignal(() => ({ pageSize: 10 })));
@@ -243,6 +276,7 @@ export class TableStorybookComponent {
     Viewer: 'Read only',
   };
   protected lastClicked = signal<Person | null>(null);
+  protected selectedPeople = computed(() => this.selection()?.selectedRows() ?? []);
   protected selected = signal<Set<unknown>>(new Set());
   // `compact` is `boolean | null` (no attribute transform), so it stays a property binding.
   protected readonly COMPACT_PAGER = true;
@@ -291,6 +325,10 @@ export class TableStorybookComponent {
       role: {
         header: 'Role',
         value: (person) => person.role,
+        // The Role cell is an et-chip template, which a CSV cannot hold — so the column says what its
+        // text form is. Without this the export would write the accessor's value, which happens to be
+        // right here; a cell built from several fields would need it to say anything at all.
+        exportValue: (person) => person.role,
         filterable: true,
         filterSearch: true,
         filterSelection: this.singleSelectFilter() ? 'single' : 'multiple',

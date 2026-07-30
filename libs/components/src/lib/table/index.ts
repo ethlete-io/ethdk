@@ -4,6 +4,7 @@ export * from './table-cell-error-tooltip.directive';
 export * from './table-column-chooser.component';
 export * from './table-column-menu-trigger.component';
 export * from './table-column-menu.directive';
+export * from './table-csv-export.directive';
 export * from './table-detail-styles.component';
 export * from './table-errors';
 export * from './table-expander-cell.component';

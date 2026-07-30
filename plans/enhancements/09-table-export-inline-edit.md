@@ -5,7 +5,7 @@ Three phases on top of the shipped green-field table (plan
 plugin/opt-in architecture so non-users don't pay (see
 `plans/table-tree-shaking.md` conventions).
 
-## Phase 1 — CSV export (S–M)
+## Phase 1 — CSV export (S–M) — **done 2026-07-31**
 
 Zero export surface exists today. Every mature grid ships it.
 
@@ -65,6 +65,38 @@ keyboard navigation arrives with the later interactive features."
   read-only display tables don't change tab behavior; when enabled, role
   semantics upgrade toward `grid` (verify against the table's current role
   structure — don't ship a half-`grid`).
+
+## Found while implementing (2026-07-31, phase 1 — CSV export)
+
+**The feature host can't see cell values, so the export isn't a feature.** `TableFeatureHost` hands
+features `TableColumnMeta`, which is `TableColumnDef` _minus_ `value`/`sortValue`/`filterValue` —
+deliberately, so the row type never leaks into the seam. An exporter needs exactly those. So the
+serializer is typed against a small structural `TableCsvSource<T>` (`rows()`, `visibleColumns()`,
+`allColumns()`) that `TableComponent` happens to satisfy: it stays a pure function, the headless layer
+never imports the component, and a test can pass a plain object. `etTableCsvExport` is a thin wrapper
+that injects the table and registers nothing.
+
+**`rows: 'selected'` was dropped in favour of `rows: readonly T[]`.** Resolving `'selected'` would mean
+either the host contract growing a selection-shaped member (which is what the register-don't-query
+architecture exists to avoid) or the export statically referencing `TableSelectionDirective` — which
+would drag the checkbox into every table that exports. `rows: selection.selectedRows()` is the same
+thing, typed, with no coupling, and it also covers "export my unfiltered data" and "export every page".
+
+**The download can't be a plain function** — `no-restricted-globals` and
+`ethlete/no-direct-dom-manipulation` both fire on `document.createElement`. It is therefore
+`injectTableCsvExport()`, called once in a field initializer, returning the function; it takes
+`DOCUMENT` and `injectRenderer()` and no-ops when the document has no `defaultView` (SSR). `tableToCsv`
+stays pure, which is what the tests exercise.
+
+**CSV injection is guarded by default.** A text field starting with `=`, `+`, `-`, `@`, tab or CR gets
+a `'` prefix, _unless_ the string is a finite number — so `-5` and `+1` are written as-is (they are
+inert) while `-5+A1` and `+cmd|' /C calc'!A0` are escaped. Not in the plan, but a library that writes
+user data into a file Excel opens should not ship the footgun; `formulaGuard: false` opts out.
+
+**Verified in a real browser** (`components-table--csv-export`, driven headlessly): the file downloads
+as `people.csv` with a `efbbbf` BOM and CRLF line endings, re-exporting after sorting Name descending
+reorders the file, the second button writes only the two ticked rows to `people-selection.csv`, and the
+anchor leaves nothing behind in the document.
 
 ## Verification & shipping
 

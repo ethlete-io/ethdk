@@ -29,6 +29,7 @@ export default {
     resizableColumns: false,
     columnMenu: false,
     selectable: false,
+    csvExport: false,
     surface: 'dark',
   },
   argTypes: {
@@ -55,6 +56,7 @@ export default {
     resizableColumns: { control: 'boolean' },
     columnMenu: { control: 'boolean' },
     selectable: { control: 'boolean' },
+    csvExport: { control: 'boolean' },
     surface: { control: 'text' },
   },
 } as Meta<TableStorybookComponent>;
@@ -371,6 +373,21 @@ export const Virtualized: Story = {
         story:
           'With `virtualScroll`, the table becomes its own scroll container and renders only the rows near ' +
           'the viewport — here 2,000 rows scroll smoothly with a handful in the DOM. Give the table a bounded height.',
+      },
+    },
+  },
+};
+
+export const CsvExport: Story = {
+  args: { csvExport: true, selectable: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The `etTableCsvExport` directive downloads the table as CSV from a button of your own. It writes the ' +
+          "visible columns in their displayed order and the table's own rows (client-filtered and sorted), so " +
+          'filtering, sorting, hiding or reordering a column changes the file. `export()` takes overrides — the ' +
+          'second button passes `rows: selection.selectedRows()` to export only what is ticked.',
       },
     },
   },

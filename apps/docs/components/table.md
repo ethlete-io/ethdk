@@ -32,6 +32,7 @@ the table. A table that doesn't import a feature never pays for its code.
 | Virtual scroll     | `TABLE_VIRTUAL_SCROLL_IMPORTS`     | `etTableVirtualScroll`      | the virtual-window utility                           |
 | Cell error tooltip | `TABLE_CELL_ERROR_TOOLTIP_IMPORTS` | `etTableCellErrorTooltip`   | the [tooltip](/components/tooltip) + overlay runtime |
 | State persistence  | `TABLE_STATE_PERSISTENCE_IMPORTS`  | `etTableStatePersistence`   | nothing (local/session storage)                      |
+| CSV export         | `TABLE_CSV_EXPORT_IMPORTS`         | `etTableCsvExport`          | nothing (a pure serializer)                          |
 
 ```html
 <et-table [data]="rows()" [columns]="COLUMNS" etTableFilters etTableResize />
@@ -1041,6 +1042,108 @@ Virtualization composes with [row expansion](#row-expansion) — expanded rows
 render within the window as you scroll to them. Because the window assumes a
 uniform row height, lists where many rows are expanded at once scroll most
 smoothly when expanded content is modest.
+
+## CSV export
+
+Import `TABLE_CSV_EXPORT_IMPORTS`, put `etTableCsvExport` on the table and call `export()`
+from a button of your own — the feature renders no UI, so the button is yours to place,
+label and translate:
+
+```ts
+@Component({
+  imports: [TABLE_IMPORTS, TABLE_CSV_EXPORT_IMPORTS, BUTTON_IMPORTS],
+  template: `
+    <et-table [data]="people()" [columns]="COLUMNS" [etTableCsvExport]="{ filename: 'people.csv' }" #csv="etTableCsvExport" />
+
+    <button et-button (click)="csv.export()">Export CSV</button>
+  `,
+})
+```
+
+By default it writes the **visible columns in their displayed order** — so hiding a column
+in the [chooser](#column-chooser) or [dragging one](#column-visibility-reordering) changes
+the file — and the table's **own rows**, client-filtered and sorted. What is off screen
+because of [virtualization](#virtualization) is still written; virtualization only decides
+what renders.
+
+<StoryEmbed id="components-table--csv-export" height="520px" />
+
+### What each cell says
+
+A cell's text comes from the column's `value` accessor. A column whose cell is an
+[`etTableCell` template](#custom-cells) needs an **`exportValue`** — a template renders DOM,
+which has no text form to serialize — as does a column whose `value` isn't a primitive:
+
+```ts
+protected readonly COLUMNS = {
+  name: { header: 'Name', value: (person) => person.name },
+  // rendered as a chip; the file gets the plain label
+  role: { header: 'Role', value: (person) => person.role, exportValue: (person) => person.role },
+  // several fields joined into one column
+  tags: { header: 'Tags', value: (person) => person.tags, exportValue: (person) => person.tags.join(' | ') },
+} satisfies TableColumns<Person>;
+```
+
+`exportValue` returns a `string | number | boolean | Date | null | undefined`. Dates are
+written as ISO 8601 (the only form that survives a spreadsheet's locale) and nullish
+becomes an empty field rather than the text `null`.
+
+### Options
+
+Pass them on the directive, or per call — `export(overrides)` wins over the bound config,
+so one directive can serve both an "export everything" and an "export the selection"
+button:
+
+```html
+<button (click)="csv.export({ rows: selection.selectedRows(), filename: 'selection.csv' })" et-button>
+  Export selection
+</button>
+```
+
+| Option         | Type                             | Default       | What it does                                                                     |
+| -------------- | -------------------------------- | ------------- | -------------------------------------------------------------------------------- |
+| `columns`      | `'visible' \| 'all' \| string[]` | `'visible'`   | `'all'` adds hidden columns; a key list writes exactly those, in the order given |
+| `rows`         | `readonly T[]`                   | table's rows  | Any list — a [selection](#selection), or your untouched data to ignore filters   |
+| `header`       | `boolean`                        | `true`        | Write the header row of column labels                                            |
+| `delimiter`    | `string`                         | `','`         | Use `';'` for locales where Excel expects it                                     |
+| `bom`          | `boolean`                        | `true`        | UTF-8 BOM, without which Excel mangles non-ASCII text                            |
+| `formulaGuard` | `boolean`                        | `true`        | See below                                                                        |
+| `filename`     | `string`                         | `'table.csv'` | `.csv` is appended when missing                                                  |
+
+`formulaGuard` prefixes a **text** field that starts with `=`, `+`, `-`, `@`, a tab or a
+carriage return with a `'`, so the spreadsheet shows it instead of running it. This is CSV
+injection: without it, a row someone else authored can execute when a colleague opens the
+file. Numbers, booleans and dates are never touched, and neither is a string that is simply
+a number (`-5`), so ordinary exports are unaffected.
+
+### Without the directive
+
+`injectTableCsvExport()` is the same thing from TypeScript — call it once in a field
+initializer, then from anywhere:
+
+```ts
+private exportCsv = injectTableCsvExport();
+protected table = viewChild.required(TableComponent);
+
+protected download() {
+  this.exportCsv(this.table(), { columns: 'all', delimiter: ';' });
+}
+```
+
+`tableToCsv(table, options)` builds the same file as a string without downloading it — for
+uploading it, putting it on the clipboard, or asserting on it in a test. Both are pure of
+any table dependency: they read the table through its columns and rows, so a test can pass
+a plain object.
+
+Two boundaries worth stating outright. **Excel's own `.xlsx` is not supported** — this
+writes CSV, and nothing else. And for a **server-paginated table** the table only ever holds
+the current page, so that is what gets written; fetching the rest is your job, since only
+you have the query. Pass the result as `rows`:
+
+```ts
+const all = await firstValueFrom(this.everyPage$);
+this.exportCsv(this.table(), { rows: all });
+```
 
 ## Table state
 

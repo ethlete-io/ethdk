@@ -8,6 +8,7 @@
 // of presentation, so putting them here would only invert the dependency. `table.types.ts` and
 // `table-errors.ts` also stay at the root — domain-wide infrastructure, per the architecture doc.
 export * from './table-column-state';
+export * from './table-csv-export';
 export * from './table-features';
 export * from './table-filter';
 export * from './table-footer.directive';

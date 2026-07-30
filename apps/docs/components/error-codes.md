@@ -317,12 +317,13 @@ Runtime errors from the bracket data pipeline and layout engine. They indicate a
 
 ## Table (ET35xx)
 
-| Code     | Cause                                                                              | Fix                                                                                    |
-| -------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `ET3501` | A table feature (e.g. `etTableFilters`) was used outside an `<et-table>`.          | Put the feature attribute on the `<et-table>` element itself.                          |
-| `ET3502` | Two features tried to window the rows (e.g. two virtual-scroll features).          | Use only one row-windowing feature per table.                                          |
-| `ET3503` | An `etTableCell` / `etTableHeaderCell` / `etTableFooterCell` sits outside a table. | Move the `<ng-template>` inside the `<et-table>` whose column it renders.              |
-| `ET3504` | A column template is bound to a column this table doesn't render.                  | Bind it to a column of the same `columns` record, e.g. `[etTableCell]="COLUMNS.role"`. |
+| Code     | Cause                                                                              | Fix                                                                                                |
+| -------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `ET3501` | A table feature (e.g. `etTableFilters`) was used outside an `<et-table>`.          | Put the feature attribute on the `<et-table>` element itself.                                      |
+| `ET3502` | Two features tried to window the rows (e.g. two virtual-scroll features).          | Use only one row-windowing feature per table.                                                      |
+| `ET3503` | An `etTableCell` / `etTableHeaderCell` / `etTableFooterCell` sits outside a table. | Move the `<ng-template>` inside the `<et-table>` whose column it renders.                          |
+| `ET3504` | A column template is bound to a column this table doesn't render.                  | Bind it to a column of the same `columns` record, e.g. `[etTableCell]="COLUMNS.role"`.             |
+| `ET3505` | A CSV export named a column key the table doesn't declare.                         | Check the key against the `columns` record, or drop the `columns` option to take the visible ones. |
 
 `ET3500` is retired: it flagged duplicate column keys, which the keyed
 `TableColumns` record makes impossible.

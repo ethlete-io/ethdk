@@ -3,6 +3,12 @@ import { Signal, TemplateRef } from '@angular/core';
 /** Horizontal alignment of a column's header and cells. */
 export type TableColumnAlign = 'start' | 'center' | 'end';
 
+/**
+ * What a column may hand back for export. Anything else needs an `exportValue` — a CSV field is
+ * text, and `String(anObject)` is not an answer anyone wants in a spreadsheet.
+ */
+export type TableCsvValue = string | number | boolean | Date | null | undefined;
+
 /** A comparable value a column can be sorted by. */
 export type TableSortValue = string | number | Date | boolean | null | undefined;
 
@@ -152,6 +158,13 @@ export type TableColumn<T, TValue = unknown> = {
 
   /** Comparable value to sort by. Defaults to `value`. Use when the display value isn't comparable. */
   sortValue?: (row: T) => TableSortValue;
+
+  /**
+   * The value a CSV export writes for this column. Defaults to `value`. Required for a column whose
+   * cell is an `etTableCell` template — a template renders DOM, which has no text form to export —
+   * and for one whose `value` isn't a primitive.
+   */
+  exportValue?: (row: T) => TableCsvValue;
 
   /** Show a filter menu on this column's header. Provide `filterOptions` for the choices. */
   filterable?: boolean;
