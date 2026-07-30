@@ -1,4 +1,13 @@
-import { afterNextRender, Component, ElementRef, inject, input, viewChild, ViewEncapsulation } from '@angular/core';
+import {
+  afterNextRender,
+  booleanAttribute,
+  Component,
+  ElementRef,
+  inject,
+  input,
+  viewChild,
+  ViewEncapsulation,
+} from '@angular/core';
 import { ColorInteractiveDirective } from '@ethlete/core';
 import { EYE_ICON, EYE_SLASH_ICON, IconDirective, provideIcons, TRIANGLE_EXCLAMATION_ICON } from '../../icon';
 import { PasswordInputDirective } from './headless';
@@ -43,7 +52,7 @@ export class PasswordInputComponent {
   protected passwordDir = inject(PasswordInputDirective);
 
   /** Whether the reveal (show/hide) toggle renders. */
-  public revealable = input(true);
+  public revealable = input(true, { transform: booleanAttribute });
 
   /** Accessible name of the reveal toggle while the value is hidden (the "show" action). */
   public revealLabel = input('Show password');
@@ -52,7 +61,7 @@ export class PasswordInputComponent {
   public hideLabel = input('Hide password');
 
   /** Show a warning indicator while the field is focused and Caps Lock is on. */
-  public capsLockWarning = input(false);
+  public capsLockWarning = input(false, { transform: booleanAttribute });
 
   /** Accessible text of the Caps Lock warning. */
   public capsLockLabel = input('Caps Lock is on');

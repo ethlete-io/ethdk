@@ -10,6 +10,41 @@ The active Angular UI library of the Ethlete SDK — overlays, menus, buttons, f
 Components take `color` / `surface` inputs, but the theme **names** are registered by your app (via the [surface/color theming providers](/core/theming)), not shipped by the SDK. Wherever these guides use names like `color="brand"` or `danger`, those are the themes this repo's Storybook registers — substitute your own. Semantic behavior (e.g. destructive menu items, form errors) resolves themes by `type` (like `type: 'error'`), so register one theme per semantic type you use.
 :::
 
+## Boolean and numeric inputs
+
+Boolean inputs (`multiple`, `clearable`, `autosize`, `divider`, …) use Angular's `booleanAttribute`
+transform, and numeric ones (`rows`, `length`, `gap`, `minuteStep`, …) use `numberAttribute`. So a
+static value needs no binding — write it as a plain attribute:
+
+```html
+<!-- preferred -->
+<et-tab disabled label="Admin">…</et-tab>
+<et-textarea rows="6" />
+
+<!-- unnecessary for static values -->
+<et-tab [disabled]="true" label="Admin">…</et-tab>
+```
+
+Presence alone means `true`, and the string `"false"` coerces to `false` (so `clearable="false"`
+works). Dynamic values still take a binding. The `@ethlete/eslint-plugin` rule
+[`prefer-static-boolean-properties`](/eslint/rules) flags the redundant form.
+
+::: warning Control state belongs in the schema, not the template
+On a form control bound to `[formField]`, the `disabled`, `readonly`, `required` and `invalid` inputs
+are written by the `[formField]` directive from the field's state. Setting them in the template too
+conflicts with that binding and errors — express them in the signal-forms schema instead
+(`disabled(...)`, `readonly(...)`, `required(...)`); see [Forms](/components/forms). The transform
+only matters on controls used standalone, without a field.
+:::
+
+Two groups deliberately **keep** their untransformed type, because `null` / `undefined` carries
+meaning and coercion would destroy it — bind these even for static values:
+
+- **Tri-state booleans** where "unset" defers to a default or to responsive behavior — e.g. the
+  overlay's `hasBackdrop`, `etMenuItem`'s `closeOnActivate`, `et-pagination`'s `compact`.
+- **Optional numbers** where `null` / `undefined` means "no bound" — e.g. the slider's `min` /
+  `max`, the textarea's `minRows` / `maxRows`, `et-pagination`'s `totalItems` / `pageSize`.
+
 ## Overriding component styles
 
 Component styles ship inside the `components` CSS cascade layer (`@layer components`).

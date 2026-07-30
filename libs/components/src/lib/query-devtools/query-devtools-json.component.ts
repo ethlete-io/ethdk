@@ -1,4 +1,4 @@
-import { Component, computed, input, linkedSignal, ViewEncapsulation } from '@angular/core';
+import { Component, computed, input, linkedSignal, numberAttribute, ViewEncapsulation } from '@angular/core';
 
 type JsonKind = 'string' | 'number' | 'boolean' | 'null' | 'undefined' | 'array' | 'object';
 
@@ -71,7 +71,7 @@ const kindOf = (value: unknown): JsonKind => {
 export class QueryDevtoolsJsonComponent {
   public value = input<unknown>();
   public nodeKey = input<string | null>(null);
-  public depth = input(0);
+  public depth = input(0, { transform: numberAttribute });
   /** Lowercased search term; when set, the tree auto-expands and matches are highlighted. */
   public search = input('');
 

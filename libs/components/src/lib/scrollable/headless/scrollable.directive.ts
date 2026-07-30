@@ -4,6 +4,7 @@ import {
   Signal,
   TemplateRef,
   afterNextRender,
+  booleanAttribute,
   computed,
   input,
   numberAttribute,
@@ -72,7 +73,7 @@ export class ScrollableDirective {
   });
   public scrollOrigin = input<ScrollableScrollOrigin>('auto');
   public scrollMargin = input(0, { transform: numberAttribute });
-  public renderScrollbars = input(false);
+  public renderScrollbars = input(false, { transform: booleanAttribute });
 
   // --- Internal template refs (set by Tier 3 template) ---
 

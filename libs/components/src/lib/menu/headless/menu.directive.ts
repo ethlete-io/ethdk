@@ -3,12 +3,14 @@ import {
   DestroyRef,
   Directive,
   afterNextRender,
+  booleanAttribute,
   computed,
   effect,
   inject,
   input,
   inputBinding,
   model,
+  numberAttribute,
   signal,
   untracked,
 } from '@angular/core';
@@ -57,14 +59,14 @@ export class MenuDirective {
   public offset = input<OffsetOptions | null | 'auto'>('auto');
   public viewportPadding = input<Padding | null>(8);
   /** Render an arrow pointing at the trigger. Trigger-anchored root menus only — submenus and context menus never render one. */
-  public arrow = input(true);
+  public arrow = input(true, { transform: booleanAttribute });
   public arrowPadding = input<Padding | null>(14);
   // eslint-disable-next-line ethlete/no-native-html-input-name -- mirrors the native autofocus behaviour on open
-  public autoFocus = input(true);
-  public hoverOpen = input(true);
-  public hoverOpenDelay = input(120);
-  public hoverCloseDelay = input(300);
-  public disabled = input(false);
+  public autoFocus = input(true, { transform: booleanAttribute });
+  public hoverOpen = input(true, { transform: booleanAttribute });
+  public hoverOpenDelay = input(120, { transform: numberAttribute });
+  public hoverCloseDelay = input(300, { transform: numberAttribute });
+  public disabled = input(false, { transform: booleanAttribute });
   public open = model(false);
 
   public root: MenuDirective = this.parent?.root ?? this;

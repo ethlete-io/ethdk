@@ -110,7 +110,7 @@ export class PaginationComponent {
   public pageSize = input<number | null>(null);
 
   /** Show a jump-to-page number field (useful for very large page counts). @default false */
-  public showJumpTo = input(false);
+  public showJumpTo = input(false, { transform: booleanAttribute });
 
   // The rendered list + its items, measured (untracked) to decide how many fit — see `slotsThatFit`.
   private listEl = viewChild<ElementRef<HTMLUListElement>>('paginationList');

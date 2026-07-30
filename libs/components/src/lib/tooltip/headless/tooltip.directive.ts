@@ -4,6 +4,7 @@ import {
   Directive,
   ElementRef,
   TemplateRef,
+  booleanAttribute,
   computed,
   effect,
   inject,
@@ -50,7 +51,7 @@ export class TooltipDirective {
   public arrowPadding = input<Padding | null>(8);
   public viewportPadding = input<Padding | null>(8);
   public showDelay = input(DEFAULT_TOOLTIP_DELAY);
-  public disabled = input(false, { alias: 'etTooltipDisabled' });
+  public disabled = input(false, { alias: 'etTooltipDisabled', transform: booleanAttribute });
 
   /** @internal */
   public overlayRef = signal<OverlayRef<TooltipComponent, unknown> | null>(null);

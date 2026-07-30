@@ -1,4 +1,15 @@
-import { Directive, ElementRef, afterNextRender, effect, inject, input, model, signal, untracked } from '@angular/core';
+import {
+  Directive,
+  ElementRef,
+  afterNextRender,
+  booleanAttribute,
+  effect,
+  inject,
+  input,
+  model,
+  signal,
+  untracked,
+} from '@angular/core';
 import { RuntimeError, canUseSessionMemory, createAutoSessionMemoryKey, createSessionMemory } from '@ethlete/core';
 import { TabBarDirective } from '../../headless/tab-bar.directive';
 import { TAB_ERROR_CODES } from '../../tab-errors';
@@ -16,7 +27,7 @@ export class TabGroupDirective {
   public tabBar = inject(TabBarDirective);
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  public preserveContent = input(true);
+  public preserveContent = input(true, { transform: booleanAttribute });
   public selectedIndex = model(0);
   public sessionMemoryKey = input<string | null>(null);
   private sessionMemoryAvailable = canUseSessionMemory();

@@ -9,6 +9,7 @@ import {
   ViewContainerRef,
   ViewEncapsulation,
   afterNextRender,
+  booleanAttribute,
   effect,
   inject,
   input,
@@ -71,7 +72,7 @@ export class OverlayContainerComponent {
   public component = input.required<Type<object>>();
   public componentBindings = input<Binding[] | undefined>(undefined);
 
-  public renderArrow = input(false);
+  public renderArrow = input(false, { transform: booleanAttribute });
 
   private contentOutlet = viewChild.required('contentOutlet', { read: ViewContainerRef });
   public animatedLifecycle = signal(inject(ANIMATED_LIFECYCLE_TOKEN));

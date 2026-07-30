@@ -24,10 +24,10 @@ export class MenuSelectionGroupDirective implements MenuSelectionGroupDirectiveB
   public value = model<unknown | unknown[] | null>(null);
   public touched = model(false);
   public multipleInput = input(false, { alias: 'multiple', transform: booleanAttribute });
-  public disabled = input(false);
-  public invalid = input(false);
+  public disabled = input(false, { transform: booleanAttribute });
+  public invalid = input(false, { transform: booleanAttribute });
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
-  public required = input(false);
+  public required = input(false, { transform: booleanAttribute });
   public name = input('');
 
   public multiple = computed(() => this.multipleOverride ?? this.multipleInput());

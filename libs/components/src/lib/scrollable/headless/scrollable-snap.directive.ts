@@ -1,4 +1,4 @@
-import { DOCUMENT, Directive, inject, input, signal } from '@angular/core';
+import { DOCUMENT, Directive, booleanAttribute, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { getScrollSnapTarget } from '@ethlete/core';
 import { EMPTY, combineLatest, debounceTime, filter, fromEvent, merge, switchMap, tap } from 'rxjs';
@@ -15,7 +15,7 @@ export class ScrollableSnapDirective {
   private scrollable = inject(ScrollableDirective);
   private document = inject(DOCUMENT);
 
-  public enabled = input(true);
+  public enabled = input(true, { transform: booleanAttribute });
   public snapOrigin = input<ScrollableScrollOrigin>('auto');
 
   /**

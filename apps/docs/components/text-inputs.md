@@ -90,7 +90,7 @@ value is a plain `string`; `autocomplete` defaults to `'current-password'` (set
 ```html
 <et-form-field>
   <et-label>Password</et-label>
-  <et-password-input #pw="etPasswordInput" [formField]="demoForm.password" [capsLockWarning]="true" />
+  <et-password-input #pw="etPasswordInput" [formField]="demoForm.password" capsLockWarning />
 </et-form-field>
 ```
 
@@ -204,7 +204,7 @@ autofill (`autocomplete="one-time-code"`) and native paste reliable. Value is th
 raw string.
 
 ```html
-<et-otp-input [formField]="demoForm.code" [length]="6" (complete)="verify($event)">
+<et-otp-input [formField]="demoForm.code" (complete)="verify($event)" length="6">
   <et-label>Verification code</et-label>
 </et-otp-input>
 ```

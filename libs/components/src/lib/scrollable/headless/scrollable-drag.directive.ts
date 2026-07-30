@@ -1,4 +1,4 @@
-import { Directive, inject, input } from '@angular/core';
+import { Directive, booleanAttribute, inject, input } from '@angular/core';
 import { useCursorDragScroll } from '@ethlete/core';
 import { ScrollableDirective } from './scrollable.directive';
 
@@ -8,7 +8,7 @@ import { ScrollableDirective } from './scrollable.directive';
 export class ScrollableDragDirective {
   private scrollable = inject(ScrollableDirective);
 
-  public enabled = input(true);
+  public enabled = input(true, { transform: booleanAttribute });
 
   public cursorDragScrollState = useCursorDragScroll(this.scrollable.getScrollContainerRef(), {
     enabled: this.enabled,

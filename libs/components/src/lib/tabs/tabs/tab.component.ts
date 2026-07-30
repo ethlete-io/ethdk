@@ -3,6 +3,7 @@ import {
   TemplateRef,
   ViewEncapsulation,
   afterNextRender,
+  booleanAttribute,
   contentChild,
   inject,
   input,
@@ -32,7 +33,7 @@ export class TabComponent {
 
   public label = input('');
   public icon = input<string | null>(null);
-  public disabled = input(false);
+  public disabled = input(false, { transform: booleanAttribute });
 
   public customLabel = contentChild(TabLabelDirective);
   /** @internal */

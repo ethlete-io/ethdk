@@ -1,4 +1,14 @@
-import { Component, ViewEncapsulation, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  ViewEncapsulation,
+  booleanAttribute,
+  computed,
+  effect,
+  inject,
+  input,
+  numberAttribute,
+  signal,
+} from '@angular/core';
 import { CALENDAR_IMPORTS } from '../../../calendar';
 import { CALENDAR_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../../icon';
 import { TIME_PICKER_IMPORTS } from '../../../time-picker';
@@ -65,13 +75,13 @@ export class DateTimeInputComponent {
   protected dateTimeInput = inject(DateTimeInputDirective);
 
   public pickerTriggerLabel = input('Open date & time picker');
-  public minuteStep = input(5);
-  public secondStep = input(1);
+  public minuteStep = input(5, { transform: numberAttribute });
+  public secondStep = input(1, { transform: numberAttribute });
   /** Labels of the pane tabs shown when the picker mounts as a bottom sheet. */
   public dateTabLabel = input('Date');
   public timeTabLabel = input('Time');
   /** Shows a clear (×) control while a value or pending text is set and the field is in use. */
-  public clearable = input(true);
+  public clearable = input(true, { transform: booleanAttribute });
   public clearLabel = input('Clear');
 
   // only while the field is in use — mirrors the select's clear affordance
