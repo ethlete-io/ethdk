@@ -126,6 +126,7 @@ export const ET_BUILT_IN_ICON_NAMES = [
   'et-pencil',
   'et-play',
   'et-plus',
+  'et-redo',
   'et-rotate-right',
   'et-star',
   'et-strikethrough',
@@ -133,6 +134,7 @@ export const ET_BUILT_IN_ICON_NAMES = [
   'et-times',
   'et-triangle-exclamation',
   'et-underline',
+  'et-undo',
   'et-upload',
 ] as const;
 

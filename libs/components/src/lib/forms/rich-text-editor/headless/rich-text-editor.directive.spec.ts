@@ -175,6 +175,147 @@ describe('RichTextEditorDirective', () => {
     });
   });
 
+  describe('history', () => {
+    let fixture: ComponentFixture<StandaloneEditorTestHost>;
+    let dir: RichTextEditorDirective;
+    let editable: HTMLElement;
+
+    /** Stands in for typing: rewrite the content, park the caret in it, then commit like the
+     *  editor's own `input` handler does. */
+    const write = (html: string, opts: { boundary?: boolean; caretAt?: number } = {}) => {
+      editable.innerHTML = html;
+
+      const text = editable.querySelector('p')?.firstChild;
+
+      if (text) {
+        const range = document.createRange();
+        range.setStart(text, opts.caretAt ?? (text.textContent ?? '').length);
+        range.collapse(true);
+        const selection = document.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+      }
+
+      dir.syncFromDom(opts.boundary ? { boundary: true } : undefined);
+    };
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({ imports: [StandaloneEditorTestHost] });
+      fixture = TestBed.createComponent(StandaloneEditorTestHost);
+      fixture.detectChanges();
+      dir = (fixture.debugElement.children[0] as DebugElement).injector.get(RichTextEditorDirective);
+
+      editable = document.createElement('div');
+      editable.contentEditable = 'true';
+      document.body.appendChild(editable);
+      dir.editorDom.root.set(editable);
+    });
+
+    afterEach(() => {
+      editable.remove();
+      document.getSelection()?.removeAllRanges();
+    });
+
+    it('has nothing to undo or redo before the first edit', () => {
+      expect(dir.canUndo()).toBe(false);
+      expect(dir.canRedo()).toBe(false);
+    });
+
+    it('takes a typing burst back as one step, breaking at word boundaries', () => {
+      write('<p>hel</p>');
+      write('<p>hello</p>');
+      write('<p>hello w</p>');
+      write('<p>hello world</p>');
+
+      dir.undo();
+      expect(dir.value()).toBe('hello');
+
+      dir.undo();
+      expect(dir.value()).toBe('');
+      expect(dir.canUndo()).toBe(false);
+
+      dir.redo();
+      expect(dir.value()).toBe('hello');
+      expect(editable.textContent).toBe('hello');
+    });
+
+    it('takes a normalized paste back in a single step', () => {
+      write('<p>start </p>');
+      dir.pasteHtml('<div style="color: red">pasted <b>bold</b></div>');
+
+      expect(dir.value()).toContain('**bold**');
+
+      dir.undo();
+      expect(dir.value()).toBe('start');
+      expect(editable.innerHTML).not.toContain('bold');
+
+      dir.redo();
+      expect(dir.value()).toContain('**bold**');
+    });
+
+    it('takes a command back in a single step', () => {
+      write('<p>hello</p>');
+
+      const range = document.createRange();
+      range.selectNodeContents(editable.querySelector('p') as HTMLElement);
+      const selection = document.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+
+      dir.toggleBold();
+
+      expect(dir.value()).toBe('**hello**');
+
+      dir.undo();
+      expect(dir.value()).toBe('hello');
+    });
+
+    it('restores the caret along with the value', () => {
+      write('<p>hello</p>');
+      write('<p>hello there</p>', { boundary: true, caretAt: 5 });
+
+      dir.undo();
+
+      const range = document.getSelection()?.getRangeAt(0);
+      expect(dir.value()).toBe('hello');
+      expect(range?.startContainer.textContent).toBe('hello');
+      expect(range?.startOffset).toBe(5);
+    });
+
+    it('starts a fresh history for a value the editor did not produce', () => {
+      write('<p>typed</p>');
+      expect(dir.canUndo()).toBe(true);
+
+      dir.renderExternalValue('replaced');
+
+      expect(dir.canUndo()).toBe(false);
+      expect(dir.canRedo()).toBe(false);
+      expect(editable.textContent).toBe('replaced');
+    });
+
+    it('does nothing at the ends of the stack', () => {
+      write('<p>only</p>');
+      dir.undo();
+      dir.undo();
+      expect(dir.value()).toBe('');
+
+      dir.redo();
+      dir.redo();
+      expect(dir.value()).toBe('only');
+    });
+
+    it('does not throw without an editable element', () => {
+      dir.editorDom.root.set(null);
+
+      expect(() => {
+        dir.undo();
+        dir.redo();
+        dir.recordHistorySelection();
+        dir.renderExternalValue('x');
+      }).not.toThrow();
+    });
+  });
+
   describe('insertToken', () => {
     let fixture: ComponentFixture<StandaloneEditorTestHost>;
     let dir: RichTextEditorDirective;

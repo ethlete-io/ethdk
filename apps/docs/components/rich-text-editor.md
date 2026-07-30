@@ -1,6 +1,6 @@
 # Rich text editor
 
-`et-rich-text-editor` is a Markdown-valued editor built on `contenteditable` (no ProseMirror dependency): the `value` model is **Markdown**, converted to/from HTML internally. It ships a static toolbar (block-style menu, bold, italic, underline, strikethrough, inline code, lists, links) plus a floating toolbar over the active selection, and uses the same field shell as the other [form controls](/components/forms). On touch devices, while editing, the toolbar automatically docks above the on-screen keyboard (the top is left to the platform's selection menu), so formatting stays reachable — tracking the keyboard through scrolling and same-origin iframe embeddings. The editable's font size is floored at 16px there, so iOS Safari doesn't zoom the page on focus.
+`et-rich-text-editor` is a Markdown-valued editor built on `contenteditable` (no ProseMirror dependency): the `value` model is **Markdown**, converted to/from HTML internally. It ships a static toolbar (undo/redo, block-style menu, bold, italic, underline, strikethrough, inline code, lists, links) plus a floating toolbar over the active selection, and uses the same field shell as the other [form controls](/components/forms). On touch devices, while editing, the toolbar automatically docks above the on-screen keyboard (the top is left to the platform's selection menu), so formatting stays reachable — tracking the keyboard through scrolling and same-origin iframe embeddings. The editable's font size is floored at 16px there, so iOS Safari doesn't zoom the page on focus.
 
 ## Importing
 
@@ -37,13 +37,36 @@ Typing Markdown converts live (disable with `autoformat="false"`):
 
 Autoformat is token-aware: characters registered as [trigger characters](#building-blocks-triggers) are reserved — with a `#` trigger configured, `# ` opens the autocomplete instead of becoming a heading — and all autoformat is suspended while a trigger popup is open.
 
+## Undo and redo
+
+The editor keeps its own history of the **Markdown value** and routes every undo affordance into it:
+<kbd>Ctrl/Cmd+Z</kbd>, <kbd>Ctrl+Y</kbd> / <kbd>Ctrl/Cmd+Shift+Z</kbd>, the platform's own undo (the
+macOS Edit menu, iOS shake-to-undo, an Android keyboard's undo key) and the `'undo'` / `'redo'`
+toolbar tools, which disable themselves at the ends of the stack.
+
+The browser's native `contenteditable` undo is deliberately never used. The editor rewrites the DOM
+behind that stack's back — pasted HTML is normalized through the Markdown pipeline, autoformat turns
+typed text into structure — so native undo can restore a DOM state the value model never had, or do
+nothing at all.
+
+- A burst of typing goes back **word by word**; each rewrite the editor performed itself (paste
+  normalization, an autoformat conversion, a toolbar command, a token insert) goes back in **one**
+  step.
+- The caret returns to where it sat in the restored state.
+- 100 states are kept; the oldest fall off the bottom.
+- Writing `value` from outside — a form reset, or the multi-language switcher moving to another
+  language — starts a **fresh** history, so undo can never reach back into a document the editor is
+  no longer showing.
+
+`canUndo()` / `canRedo()` and `undo()` / `redo()` are on the editor directive, for a custom toolbar.
+
 ## Choosing which tools appear
 
 The toolbar is data-driven. Pass a `tools` input with an ordered list of tokens to pick and order
-the controls. Tokens: `'bold'`, `'italic'`, `'underline'`, `'strike'`, `'code'` (inline code),
-`'heading'` (the Normal / Heading 1–3 menu), `'bulletedList'`, `'numberedList'`, `'link'`, plus the
-opt-in `'align'` and `'table'` (see below). `'divider'` renders a separator. Omit `tools` for the
-full default toolbar.
+the controls. Tokens: `'undo'`, `'redo'`, `'bold'`, `'italic'`, `'underline'`, `'strike'`, `'code'`
+(inline code), `'heading'` (the Normal / Heading 1–3 menu), `'bulletedList'`, `'numberedList'`,
+`'link'`, plus the opt-in `'align'` and `'table'` (see below). `'divider'` renders a separator. Omit
+`tools` for the full default toolbar.
 
 ```html
 <et-rich-text-editor
@@ -341,7 +364,8 @@ The editable region is a `role="textbox" aria-multiline="true"` and inherits the
 do for [text fields](/components/forms#validation-accessibility). Toolbar buttons expose their
 pressed state — buttons that open a menu or popover (block style, alignment, table, link) also show
 it while their popover is open (announced via `aria-expanded`, not `aria-pressed`, for the menu
-triggers). The floating toolbar is a pointer-only enhancement and never removes an action that
+triggers). Undo and redo are actions rather than toggles, so they never report a pressed state; they
+are `disabled` when there is nothing to take back or replay. The floating toolbar is a pointer-only enhancement and never removes an action that
 isn't also reachable from the always-visible static toolbar.
 
 The toolbar follows the [ARIA toolbar pattern](https://www.w3.org/WAI/ARIA/apg/patterns/toolbar/):

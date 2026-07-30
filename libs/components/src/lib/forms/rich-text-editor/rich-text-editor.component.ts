@@ -13,7 +13,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { injectHasTouchInput, injectRenderer, markdownToHtml } from '@ethlete/core';
+import { injectHasTouchInput, injectRenderer } from '@ethlete/core';
 import { fromEvent, merge, tap } from 'rxjs';
 import { BUTTON_IMPORTS } from '../../button';
 import {
@@ -29,8 +29,10 @@ import {
   LIST_NUMBERED_ICON,
   PARAGRAPH_ICON,
   provideIcons,
+  REDO_ICON,
   STRIKETHROUGH_ICON,
   UNDERLINE_ICON,
+  UNDO_ICON,
 } from '../../icon';
 import { MENU_IMPORTS } from '../../menu';
 import {
@@ -82,6 +84,8 @@ const NAVIGATION_KEYS = new Set([
       LIST_NUMBERED_ICON,
       LINK_ICON,
       PARAGRAPH_ICON,
+      UNDO_ICON,
+      REDO_ICON,
     ),
   ],
   hostDirectives: [
@@ -187,12 +191,15 @@ export class RichTextEditorComponent {
 
     afterNextRender(() => {
       this.dir.editorDom.root.set(this.editable().nativeElement ?? null);
-      this.renderExternalValue();
+      this.dir.renderExternalValue();
     });
 
     fromEvent(this.document, 'selectionchange')
       .pipe(
-        tap(() => this.dir.refreshActiveMarks()),
+        tap(() => {
+          this.dir.refreshActiveMarks();
+          this.dir.recordHistorySelection();
+        }),
         takeUntilDestroyed(),
       )
       .subscribe();
@@ -204,7 +211,7 @@ export class RichTextEditorComponent {
 
       if (markdown === this.dir.lastEmittedMarkdown) return;
 
-      this.renderExternalValue(markdown);
+      this.dir.renderExternalValue(markdown);
     });
   }
 
@@ -274,6 +281,22 @@ export class RichTextEditorComponent {
   }
 
   protected interceptEditorKeydown(event: KeyboardEvent) {
+    // History first, and always prevented: the native contenteditable undo stack must never run,
+    // since paste normalization and autoformat rewrite the DOM behind its back and it would restore
+    // a state the value model never had. Ctrl/Cmd+Z undoes, Ctrl+Y and Ctrl/Cmd+Shift+Z redo.
+    if ((event.ctrlKey || event.metaKey) && !event.altKey) {
+      const key = event.key.toLowerCase();
+
+      if (key === 'z' || key === 'y') {
+        event.preventDefault();
+
+        if (key === 'y' || event.shiftKey) this.dir.redo();
+        else this.dir.undo();
+
+        return;
+      }
+    }
+
     // moving the caret (or deleting) without typing abandons a pending stored-mark toggle
     if (NAVIGATION_KEYS.has(event.key)) {
       this.dir.clearPendingMarks();
@@ -287,7 +310,7 @@ export class RichTextEditorComponent {
 
       if (handled) {
         event.preventDefault();
-        this.dir.syncFromDom();
+        this.dir.syncFromDom({ boundary: true });
 
         return;
       }
@@ -297,7 +320,7 @@ export class RichTextEditorComponent {
     // edge starts a plain paragraph. Shift+Enter stays native (soft line break).
     if (event.key === 'Enter' && !event.shiftKey && this.dir.editorDom.handleEnter()) {
       event.preventDefault();
-      this.dir.syncFromDom();
+      this.dir.syncFromDom({ boundary: true });
 
       return;
     }
@@ -307,7 +330,7 @@ export class RichTextEditorComponent {
     for (const tool of this.registeredTools) {
       if (tool.keydown?.(this.dir, event)) {
         event.preventDefault();
-        this.dir.syncFromDom();
+        this.dir.syncFromDom({ boundary: true });
 
         return;
       }
@@ -356,6 +379,16 @@ export class RichTextEditorComponent {
         event.preventDefault();
         this.dir.toggleUnderline();
         break;
+      // The platform's own undo affordances — the macOS Edit menu, iOS shake-to-undo, the Android
+      // keyboard's undo key — never produce a keydown, but do arrive here.
+      case 'historyUndo':
+        event.preventDefault();
+        this.dir.undo();
+        break;
+      case 'historyRedo':
+        event.preventDefault();
+        this.dir.redo();
+        break;
       case 'insertText':
         // markdown autoformat: a space may convert a line-start prefix (`- `, `1. `, `# `), a
         // delimiter may close an inline run (`**bold**`, `` `code` ``, …) into its mark
@@ -392,19 +425,6 @@ export class RichTextEditorComponent {
       // only touch the DOM when the value changed so the per-render pass stays free
       if (button.tabIndex !== tabIndex) button.tabIndex = tabIndex;
     }
-  }
-
-  private renderExternalValue(markdown = this.dir.value()) {
-    const el = this.editable()?.nativeElement;
-
-    if (!el) return;
-
-    const codec = this.dir.tokenCodec();
-    const html = markdownToHtml(markdown);
-
-    el.innerHTML = codec ? codec.render(html) : html;
-    codec?.hydrate(el);
-    this.dir.lastEmittedMarkdown = markdown;
   }
 
   /** Track the visual viewport so the docked (fixed) toolbar sits right above the on-screen

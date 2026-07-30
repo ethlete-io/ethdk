@@ -9,6 +9,8 @@ import { DEFAULT_RICH_TEXT_EDITOR_LABELS } from './rich-text-editor-labels';
  * button. Consumers pick and order them via the `tools` input or {@link provideRichTextEditorTools}.
  */
 export const RICH_TEXT_EDITOR_TOOLS = {
+  UNDO: 'undo',
+  REDO: 'redo',
   BOLD: 'bold',
   ITALIC: 'italic',
   UNDERLINE: 'underline',
@@ -30,8 +32,11 @@ export const RICH_TEXT_EDITOR_TOOLS = {
  */
 export type RichTextEditorTool = (typeof RICH_TEXT_EDITOR_TOOLS)[keyof typeof RICH_TEXT_EDITOR_TOOLS] | (string & {});
 
-/** The default toolbar: the block-style menu first, then inline marks, lists and links. */
+/** The default toolbar: history, then the block-style menu, inline marks, lists and links. */
 export const DEFAULT_RICH_TEXT_EDITOR_TOOLS: readonly RichTextEditorTool[] = [
+  'undo',
+  'redo',
+  'divider',
   'heading',
   'divider',
   'bold',
@@ -92,6 +97,22 @@ export type RichTextEditorToolButton = {
 
 /** The toggle-button tools, keyed by token (`divider`/`heading` are rendered specially). */
 export const RICH_TEXT_EDITOR_TOOL_BUTTONS: Partial<Record<RichTextEditorTool, RichTextEditorToolButton>> = {
+  // Undo/redo are actions, not toggles: they never report an active state, and disable themselves
+  // at the ends of the history so the bar shows whether there is anything left to take back.
+  undo: {
+    icon: 'et-undo',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.undo,
+    isActive: () => false,
+    run: (e) => e.undo(),
+    isDisabled: (e) => !e.canUndo(),
+  },
+  redo: {
+    icon: 'et-redo',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.redo,
+    isActive: () => false,
+    run: (e) => e.redo(),
+    isDisabled: (e) => !e.canRedo(),
+  },
   bold: {
     icon: 'et-bold',
     label: DEFAULT_RICH_TEXT_EDITOR_LABELS.bold,

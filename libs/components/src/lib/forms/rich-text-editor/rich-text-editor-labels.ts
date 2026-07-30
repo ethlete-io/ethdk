@@ -78,6 +78,10 @@ export type RichTextEditorLabels = {
   /** Table menu entry: delete the whole table. */
   tableDeleteTable: string;
 
+  /** Toolbar tool: undo the last edit. */
+  undo: string;
+  /** Toolbar tool: reapply the last undone edit. */
+  redo: string;
   /** Toolbar tool: bold. */
   bold: string;
   /** Toolbar tool: italic. */
@@ -151,6 +155,8 @@ export const DEFAULT_RICH_TEXT_EDITOR_LABELS: RichTextEditorLabels = {
   tableDeleteColumn: 'Delete column',
   tableDeleteTable: 'Delete table',
 
+  undo: 'Undo',
+  redo: 'Redo',
   bold: 'Bold',
   italic: 'Italic',
   strike: 'Strikethrough',

@@ -14,6 +14,7 @@ import {
   InlineTag,
   provideRichTextEditorDom,
 } from './internals/rich-text-editor-dom';
+import { createRichTextEditorHistory, RichTextEditorHistoryEntry } from './internals/rich-text-editor-history';
 import {
   assertValidToken,
   buildChipElement,
@@ -64,6 +65,12 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
    */
   public labels = input<Partial<RichTextEditorLabels> | null>(null);
 
+  /**
+   * Snapshot undo/redo over the Markdown value. The native `contenteditable` stack is deliberately
+   * never used — see {@link createRichTextEditorHistory}.
+   */
+  private history = createRichTextEditorHistory();
+
   /** Resolved toolbar tools: the `tools` input if set, otherwise the provided/default config. */
   public resolvedTools = computed(() => this.tools() ?? this.toolsConfig.tools);
 
@@ -83,6 +90,13 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
   public hasValue = computed(() => this.value().trim().length > 0);
+
+  /** Whether {@link undo} would do anything: there is an edit left to take back, and the editor
+   *  can currently be edited at all. */
+  public canUndo = computed(() => this.canEdit() && this.history.canUndo());
+
+  /** Whether {@link redo} would do anything — see {@link canUndo}. */
+  public canRedo = computed(() => this.canEdit() && this.history.canRedo());
 
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.RICH_TEXT);
@@ -160,7 +174,15 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     el.focus();
   }
 
-  public syncFromDom() {
+  /**
+   * Reads the DOM back into `value` and refreshes the toolbar state — the single point every edit
+   * funnels through, which is also where the undo entry is recorded.
+   *
+   * @param opts.boundary Commit as its own history entry instead of extending the running typing
+   *   burst. Every programmatic rewrite (paste, autoformat, a tool, a token insert) passes `true`,
+   *   so a single undo takes the whole rewrite back.
+   */
+  public syncFromDom(opts?: { boundary?: boolean }) {
     const root = this.editorDom.root();
 
     if (!root) return;
@@ -169,7 +191,49 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
     this.lastEmittedMarkdown = markdown;
     this.value.set(markdown);
+    this.history.commit({ value: markdown, selection: this.editorDom.readSelectionOffsets() }, opts?.boundary);
     this.refreshActiveMarks();
+  }
+
+  /**
+   * @internal Keeps the newest history entry's caret current while the content doesn't change, so
+   * undoing an edit made after clicking elsewhere returns the caret to where the user actually was.
+   * A selection outside the editor is ignored rather than recorded as "no caret".
+   */
+  public recordHistorySelection() {
+    const offsets = this.editorDom.readSelectionOffsets();
+
+    if (offsets) this.history.recordSelection(offsets);
+  }
+
+  /**
+   * Restores the value from before the last edit. A burst of typing goes back a word at a time;
+   * every programmatic rewrite (paste normalization, autoformat, a tool, a token insert) goes back
+   * in one step.
+   */
+  public undo() {
+    if (!this.canEdit()) return;
+
+    this.applyHistoryEntry(this.history.undo());
+  }
+
+  /** Reapplies the last undone edit. */
+  public redo() {
+    if (!this.canEdit()) return;
+
+    this.applyHistoryEntry(this.history.redo());
+  }
+
+  /**
+   * @internal Renders a value the editor did not produce itself — a programmatic `value` write, a
+   * form reset, the multi-language switcher moving to another language — into the editable, and
+   * restarts the history from it: an outside write is a new document, so undo must not reach back
+   * into the previous one's states.
+   */
+  public renderExternalValue(markdown = this.value()) {
+    if (!this.writeValueToDom(markdown)) return;
+
+    this.history.reset(markdown);
   }
 
   public refreshActiveMarks() {
@@ -247,7 +311,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
           ? this.editorDom.applyInlineAutoformat(data, isReserved)
           : false;
 
-    if (handled) this.syncFromDom();
+    if (handled) this.syncFromDom({ boundary: true });
 
     return handled;
   }
@@ -339,7 +403,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     const handled = this.editorDom.handleBackspace();
 
     if (handled) {
-      this.syncFromDom();
+      this.syncFromDom({ boundary: true });
     }
 
     return handled;
@@ -373,7 +437,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
     if (codec && root) codec.hydrate(root);
 
-    this.syncFromDom();
+    this.syncFromDom({ boundary: true });
 
     return true;
   }
@@ -382,7 +446,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     if (this.disabled() || this.readonly() || !this.editorDom.root()) return;
 
     this.editorDom.insertToken(node);
-    this.syncFromDom();
+    this.syncFromDom({ boundary: true });
   }
 
   /**
@@ -455,7 +519,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
     if (hydrate) this.tokenCodec()?.hydrate(root);
 
-    this.syncFromDom();
+    this.syncFromDom({ boundary: true });
 
     // Focus last so the caret placed after the nbsp stays live. Skip when already focused —
     // re-focusing a contenteditable that holds the caret collapses the selection to its start.
@@ -523,12 +587,45 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   }
 
   private runCommand(command: () => void) {
-    if (this.disabled() || this.readonly() || !this.editorDom.root()) return;
+    if (!this.canEdit()) return;
 
     // restore the pre-tap selection when a toolbar interaction moved focus off the editor
     this.editorDom.restoreSelection();
 
     command();
-    this.syncFromDom();
+    // a command is a programmatic rewrite: one undo step, never merged into a typing burst
+    this.syncFromDom({ boundary: true });
+  }
+
+  private canEdit() {
+    return !this.disabled() && !this.readonly() && !!this.editorDom.root();
+  }
+
+  /** Restores a snapshot: the value into the DOM, then the caret it was taken with. */
+  private applyHistoryEntry(entry: RichTextEditorHistoryEntry | null) {
+    if (!entry) return;
+
+    this.clearPendingMarks();
+    this.writeValueToDom(entry.value);
+    this.value.set(entry.value);
+    this.editorDom.restoreSelectionOffsets(entry.selection);
+    this.refreshActiveMarks();
+  }
+
+  /** Writes Markdown into the editable, replacing its content. Returns `false` without a root. */
+  private writeValueToDom(markdown: string) {
+    const root = this.editorDom.root();
+
+    if (!root) return false;
+
+    const codec = this.tokenCodec();
+    const html = markdownToHtml(markdown);
+
+    root.innerHTML = codec ? codec.render(html) : html;
+    codec?.hydrate(root);
+    // the DOM now matches this value, so the render effect skips it as "already emitted"
+    this.lastEmittedMarkdown = markdown;
+
+    return true;
   }
 }

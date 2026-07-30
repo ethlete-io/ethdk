@@ -4,6 +4,7 @@ import { createProvider, injectRenderer } from '@ethlete/core';
 import { createRichTextEditorAutoformat } from './rich-text-editor-dom-autoformat';
 import { createRichTextEditorDomCore } from './rich-text-editor-dom-core';
 import { createRichTextEditorHeadings } from './rich-text-editor-dom-headings';
+import { createRichTextEditorDomHistory } from './rich-text-editor-dom-history';
 import { createRichTextEditorInlineMarks } from './rich-text-editor-dom-inline-marks';
 import { createRichTextEditorKeymap } from './rich-text-editor-dom-keymap';
 import { createRichTextEditorLinks } from './rich-text-editor-dom-links';
@@ -106,6 +107,7 @@ const richTextEditorDomFactory = () => {
   const autoformat = createRichTextEditorAutoformat(core, { lists, headings });
   const keymap = createRichTextEditorKeymap(core, { lists, headings });
   const paste = createRichTextEditorPaste(core);
+  const history = createRichTextEditorDomHistory(core);
 
   return {
     root: core.root,
@@ -131,6 +133,8 @@ const richTextEditorDomFactory = () => {
     handleBackspace: keymap.handleBackspace,
     handleEnter: keymap.handleEnter,
     codeExit: keymap.codeExit,
+    readSelectionOffsets: history.readSelectionOffsets,
+    restoreSelectionOffsets: history.restoreSelectionOffsets,
   };
 };
 
