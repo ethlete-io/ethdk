@@ -23,6 +23,8 @@ export type CalendarLabels = {
   switchToMultiYearView: string;
   /** Accessible label for the header button while the year grid is showing (it returns to the day grid). */
   switchToMonthView: string;
+  /** Names the week-number column, and prefixes each row's number (`Week 31`). */
+  week: string;
 };
 
 /** The built-in English labels. */
@@ -36,6 +38,7 @@ export const DEFAULT_CALENDAR_LABELS: CalendarLabels = {
   switchToYearView: 'Choose month and year',
   switchToMultiYearView: 'Choose year',
   switchToMonthView: 'Choose date',
+  week: 'Week',
 };
 
 /**

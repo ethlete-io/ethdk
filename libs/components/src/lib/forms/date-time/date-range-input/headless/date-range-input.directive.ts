@@ -137,6 +137,9 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
   /** Per-cell classes for the picker calendar — busy days, holidays, markers of your own. */
   public dateClass = input<CalendarDateClassFn | null>(null);
 
+  /** Renders the picker calendar's week-number column. */
+  public weekNumbers = input(false, { transform: booleanAttribute });
+
   public pickerOpen = model(false);
 
   /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */

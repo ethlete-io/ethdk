@@ -19,6 +19,7 @@ import { CALENDAR_IMPORTS } from '../calendar.imports';
           [precision]="precision()"
           [startView]="startView()"
           [dateClass]="dateClassFn()"
+          [weekNumbers]="weekNumbers()"
           [locale]="localeObject()"
           (monthSelect)="lastDrill.set('month ' + $event.toDateString())"
           (yearSelect)="lastDrill.set('year ' + $event.toDateString())"
@@ -38,6 +39,7 @@ import { CALENDAR_IMPORTS } from '../calendar.imports';
           [precision]="precision()"
           [startView]="startView()"
           [dateClass]="dateClassFn()"
+          [weekNumbers]="weekNumbers()"
           [locale]="localeObject()"
           (monthSelect)="lastDrill.set('month ' + $event.toDateString())"
           (yearSelect)="lastDrill.set('year ' + $event.toDateString())"
@@ -76,6 +78,7 @@ export class CalendarStorybookComponent {
   public startView = input<CalendarView>('month');
   /** Turns on a `dateClass` hook marking the 1st of each month and every 13th — the story owns the CSS. */
   public markDates = input(false);
+  public weekNumbers = input(false);
   public locale = input<'default' | 'de'>('default');
   public color = input('brand');
 

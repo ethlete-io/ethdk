@@ -78,6 +78,7 @@ A date control combining typed entry with an anchored
 | `valueFormat`         | `string`                                     | `DATE_FORMAT` token | date-fns format of the string value (token default: ISO 8601 with offset).   |
 | `displayFormat`       | `string \| null`                             | `null` ⁴            | date-fns format shown in and parsed from the field (locale-aware).           |
 | `precision`           | `'day' \| 'month' \| 'year'`                 | `'day'`             | Which unit the value names — `'month'` makes this a month picker.            |
+| `weekNumbers`         | `boolean`                                    | `false`             | Renders the picker calendar's week-number column.                            |
 | `locale`              | `Locale \| null` (date-fns)                  | `DATE_LOCALE` token | Display/parse locale.                                                        |
 | `minDate` / `maxDate` | `Date \| null`                               | `null`              | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms). |
 | `dateFilter`          | `((date: Date) => boolean) \| null`          | `null`              | Forwarded to the picker calendar.                                            |
@@ -134,7 +135,7 @@ commits exactly like the single date input.
 
 Options mirror the date input (`valueFormat`, `displayFormat`, `locale`, `mask`,
 `minDate`/`maxDate`/`dateFilter`, `startAt`, `startView`, `dateClass`, `precision`,
-`pickerOpen`), with
+`weekNumbers`, `pickerOpen`), with
 `startPlaceholder`/`endPlaceholder` and per-field `startAriaLabel`/`endAriaLabel`
 (defaults `'Start date'`/`'End date'`; the host is a `role="group"` labelled by
 the field label). The opt-in typing mask applies to both fields — each side is

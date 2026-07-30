@@ -5,6 +5,12 @@
     initial-value: 40px;
   }
 
+  @property --et-calendar-week-number-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 28px;
+  }
+
   .et-calendar {
     display: inline-flex;
     flex-direction: column;
@@ -138,10 +144,18 @@
       grid-area: weeks;
     }
 
+    /* zero unless the week-number column is rendered, so one width expression covers both cases and
+       the coarse grids can agree with the day grid without knowing why */
+    --_et-calendar-week-column: 0px;
+
+    &:where([data-week-numbers]) {
+      --_et-calendar-week-column: var(--et-calendar-week-number-size);
+    }
+
     .et-calendar-weekdays,
     .et-calendar-week {
       display: grid;
-      grid-template-columns: repeat(7, var(--et-calendar-cell-size));
+      grid-template-columns: var(--_et-calendar-week-column) repeat(7, var(--et-calendar-cell-size));
     }
 
     /* the month and year grids span the same width as the day grid, so drilling never resizes the
@@ -149,7 +163,7 @@
     .et-calendar-coarse-row {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      inline-size: calc(var(--et-calendar-cell-size) * 7);
+      inline-size: calc(var(--et-calendar-cell-size) * 7 + var(--_et-calendar-week-column));
     }
 
     /* one day cell tall, like every other row in this component: the month grid is three of them
@@ -197,6 +211,22 @@
       block-size: 32px;
       font-size: 12px;
       color: var(--et-surface-color-muted-solid);
+    }
+
+    /* quieter than the days it labels, and set apart by a rule rather than by weight so it cannot be
+       mistaken for a date */
+    .et-calendar-week-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-inline-end: 1px solid var(--et-surface-border-solid);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+      color: var(--et-surface-color-subtle-solid);
+    }
+
+    .et-calendar-week-number-heading {
+      border-inline-end: 1px solid var(--et-surface-border-solid);
     }
 
     .et-calendar-cell {

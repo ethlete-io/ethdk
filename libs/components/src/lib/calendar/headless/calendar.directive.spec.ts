@@ -458,6 +458,21 @@ describe('CalendarDirective', () => {
     });
   });
 
+  describe('week numbers', () => {
+    it('numbers the rows it renders, following the week start', () => {
+      // Monday-based July 2026 covers ISO weeks 27–31, starting with the row that begins June 29th
+      expect(calendar.weekNumbers()).toEqual([27, 28, 29, 30, 31]);
+      expect(calendar.weekNumbers()).toHaveLength(calendar.weeks().length);
+    });
+
+    it('renumbers when the visible month changes', () => {
+      host.activeMonth.set(new Date(2026, 0, 1));
+      fixture.detectChanges();
+
+      expect(calendar.weekNumbers()[0]).toBe(1);
+    });
+  });
+
   describe('precision', () => {
     const cellWithText = (text: string) => cells().find((cell) => cell.textContent?.trim() === text) ?? null;
 

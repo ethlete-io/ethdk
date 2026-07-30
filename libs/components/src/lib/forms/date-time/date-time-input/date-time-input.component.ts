@@ -67,6 +67,7 @@ import { injectDateTimeLabels } from '../../../forms/date-time/date-time-labels'
         'startAt',
         'startView',
         'dateClass',
+        'weekNumbers',
         'minTime',
         'maxTime',
         'timeFilter',

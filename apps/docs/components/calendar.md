@@ -41,6 +41,10 @@ On `et-calendar` (forwarded from the headless `[etCalendar]` directive):
 | `monthSelect` | `Date` | A month picked in the month grid, at its 1st.       |
 | `yearSelect`  | `Date` | A year picked in the year grid, at its January 1st. |
 
+`et-calendar` also takes **`weekNumbers`**, which renders a leading column of week numbers in the day grid. It is presentation, so it lives on the component rather than the headless directive — which exposes the numbers themselves as `calendar.weekNumbers()`, one per row of `weeks()`. They are localized, not always ISO: the row boundaries follow `firstDayOfWeek` and which week counts as the year's first follows the locale's `firstWeekContainsDate`, so the numbering always names the rows actually on screen. The column is a `rowheader` per row (`aria-label` `"Week 31"`) under a named-but-blank `columnheader`, and the three date inputs forward `weekNumbers` to their picker.
+
+<StoryEmbed id="components-calendar--week-numbers" height="420px" />
+
 The component also takes `previousMonthLabel` / `nextMonthLabel` for the nav buttons' `aria-label`s while the day grid is showing; unset — and in the coarser views, which have their own — they read [`CALENDAR_LABELS`](/components/localization).
 
 Values are day-granular: the calendar writes dates at midnight local time and compares incoming values by day, ignoring any time-of-day.
@@ -160,9 +164,10 @@ The coarse grids work the same way: `calendar.monthCells()` and `calendar.yearCe
 
 Selection and range-band colors come from the nearest [color theme](/core/theming) (`--et-theme-color-primary-solid`, `--et-theme-color-on-primary`, ink for the today ring); chrome uses surface tokens. Public design token:
 
-| Token                     | Default | Purpose                      |
-| ------------------------- | ------- | ---------------------------- |
-| `--et-calendar-cell-size` | `40px`  | Width/height of one day cell |
+| Token                            | Default | Purpose                         |
+| -------------------------------- | ------- | ------------------------------- |
+| `--et-calendar-cell-size`        | `40px`  | Width/height of one day cell    |
+| `--et-calendar-week-number-size` | `28px`  | Width of the week-number column |
 
 ## Error codes
 

@@ -50,6 +50,12 @@
 <div class="et-calendar-grid" etCalendarGrid>
   @if (calendar.view() === 'month') {
     <div class="et-calendar-weekdays" role="row">
+      @if (weekNumbers()) {
+        <!-- the column's own heading: named for assistive tech, blank on screen, which is what the
+             corner of a week-numbered calendar looks like everywhere -->
+        <span [attr.aria-label]="weekLabel()" class="et-calendar-week-number-heading" role="columnheader"></span>
+      }
+
       @for (weekday of calendar.weekdays(); track weekday.long) {
         <span [attr.aria-label]="weekday.long" class="et-calendar-weekday" role="columnheader">{{
           weekday.short
@@ -95,6 +101,15 @@
           @default {
             @for (week of calendar.weeks(); track $index) {
               <div class="et-calendar-week" role="row">
+                @if (weekNumbers()) {
+                  <span
+                    [attr.aria-label]="weekLabel() + ' ' + calendar.weekNumbers()[$index]"
+                    class="et-calendar-week-number"
+                    role="rowheader"
+                    >{{ calendar.weekNumbers()[$index] }}</span
+                  >
+                }
+
                 @for (cell of week; track cell.date.getTime()) {
                   <button [cell]="cell" class="et-calendar-cell" etCalendarCell type="button">
                     <span class="et-calendar-cell-content">{{ cell.label }}</span>

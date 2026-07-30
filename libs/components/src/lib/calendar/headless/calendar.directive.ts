@@ -6,6 +6,7 @@ import {
   endOfYear,
   format,
   getDate,
+  getWeek,
   isAfter,
   isBefore,
   isSameDay,
@@ -266,6 +267,21 @@ export class CalendarDirective {
 
       return source.unit > previous.source.unit ? 'forward' : 'backward';
     },
+  });
+
+  /**
+   * The week number of each row of {@link weeks}, by the same index. Localized rather than always
+   * ISO: which week is the year's first depends on the locale's `firstWeekContainsDate`, and the
+   * rows themselves start on {@link effectiveFirstDayOfWeek}, so the numbering has to follow both or
+   * it would name rows the calendar is not showing.
+   */
+  public weekNumbers = computed<number[]>(() => {
+    const weekStartsOn = this.effectiveFirstDayOfWeek();
+    const firstWeekContainsDate = this.effectiveLocale()?.options?.firstWeekContainsDate ?? 1;
+
+    return generateMonthGrid(this.visibleMonth(), weekStartsOn).map(([weekStart]) =>
+      getWeek(weekStart as Date, { weekStartsOn, firstWeekContainsDate }),
+    );
   });
 
   public weekdays = computed<CalendarWeekday[]>(() => {

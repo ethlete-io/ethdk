@@ -1,4 +1,4 @@
-import { Directive, computed, input, signal } from '@angular/core';
+import { booleanAttribute, computed, input, signal, Directive } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { setHours, setMinutes, setSeconds, startOfDay } from 'date-fns';
 import { FORM_FIELD_CONTROL_TYPES } from '../../../form-field/headless';
@@ -47,6 +47,9 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
 
   /** Per-cell classes for the picker calendar — busy days, holidays, markers of your own. */
   public dateClass = input<CalendarDateClassFn | null>(null);
+
+  /** Renders the picker calendar's week-number column. */
+  public weekNumbers = input(false, { transform: booleanAttribute });
 
   /**
    * Forwarded to the picker's time picker. Only the time of day of `minTime`/`maxTime`

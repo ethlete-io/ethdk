@@ -102,30 +102,30 @@ that provides labels needs no per-instance wiring at all.
 
 ### Every token
 
-| Token                     | Provide with                  | Covers                                                                   |
-| ------------------------- | ----------------------------- | ------------------------------------------------------------------------ |
-| `FORM_FIELD_LABELS`       | `provideFormFieldLabels`      | `mixed` and `clear` — shared by **every** form control                   |
-| `INPUT_LABELS`            | `provideInputLabels`          | Number steppers, password reveal, Caps Lock warning                      |
-| `DATE_TIME_LABELS`        | `provideDateTimeLabels`       | Picker triggers, range start/end, date/time tabs, parse errors           |
-| `CALENDAR_LABELS`         | `provideCalendarLabels`       | Step and zoom controls of each view (names come from `DATE_LOCALE`)      |
-| `TIME_PICKER_LABELS`      | `provideTimePickerLabels`     | Hours / minutes / seconds / AM-PM columns                                |
-| `SELECT_LABELS`           | `provideSelectLabels`         | Panel loading/empty state, load more, create-a-value                     |
-| `CASCADER_LABELS`         | `provideCascaderLabels`       | Column states, retry, back, search, root column heading                  |
-| `PHONE_INPUT_LABELS`      | `providePhoneInputLabels`     | Country selector and its search (country names come from `Intl`)         |
-| `SLIDER_LABELS`           | `provideSliderLabels`         | A range slider's two thumbs                                              |
-| `DROPZONE_LABELS`         | `provideDropzoneLabels`       | Drop prompt, entry actions, upload-failed wording, uploading status      |
-| `RICH_TEXT_EDITOR_LABELS` | `provideRichTextEditorLabels` | Toolbars, every tool, link editor, table/align tools, token popup        |
-| `CHIP_LABELS`             | `provideChipLabels`           | A removable chip's remove button                                         |
-| `TABLE_LABELS`            | `provideTableLabels`          | Empty/error text, sorting, filtering, column menu, selection             |
-| `PAGINATION_LABELS`       | `providePaginationLabels`     | Controls, page items, range readouts, jump-to-page                       |
-| `BREADCRUMB_LABELS`       | `provideBreadcrumbLabels`     | Landmark name, overflow control                                          |
-| `CAROUSEL_LABELS`         | `provideCarouselLabels`       | Region, slides, prev/next, play/pause, dots                              |
-| `GRID_LABELS`             | `provideGridLabels`           | Interactive/read-only grid names, item remove                            |
-| `LOADER_LABELS`           | `provideLoaderLabels`         | What spinners, brand loaders and skeletons announce                      |
-| `NOTIFICATION_LABELS`     | `provideNotificationLabels`   | The dismiss button                                                       |
-| `STREAM_LABELS`           | `provideStreamLabels`         | Consent gate, failure overlay, PiP placeholder and controls, frame title |
-| `QUERY_ERROR_LABELS`      | `provideQueryErrorLabels`     | Status titles/messages and retry — **English and German ship**           |
-| `FILTER_OVERLAY_LABELS`   | `provideFilterOverlayLabels`  | Result-count submit button and reset — **English and German ship**       |
+| Token                     | Provide with                  | Covers                                                                       |
+| ------------------------- | ----------------------------- | ---------------------------------------------------------------------------- |
+| `FORM_FIELD_LABELS`       | `provideFormFieldLabels`      | `mixed` and `clear` — shared by **every** form control                       |
+| `INPUT_LABELS`            | `provideInputLabels`          | Number steppers, password reveal, Caps Lock warning                          |
+| `DATE_TIME_LABELS`        | `provideDateTimeLabels`       | Picker triggers, range start/end, date/time tabs, parse errors               |
+| `CALENDAR_LABELS`         | `provideCalendarLabels`       | Step/zoom controls of each view, week column (names come from `DATE_LOCALE`) |
+| `TIME_PICKER_LABELS`      | `provideTimePickerLabels`     | Hours / minutes / seconds / AM-PM columns                                    |
+| `SELECT_LABELS`           | `provideSelectLabels`         | Panel loading/empty state, load more, create-a-value                         |
+| `CASCADER_LABELS`         | `provideCascaderLabels`       | Column states, retry, back, search, root column heading                      |
+| `PHONE_INPUT_LABELS`      | `providePhoneInputLabels`     | Country selector and its search (country names come from `Intl`)             |
+| `SLIDER_LABELS`           | `provideSliderLabels`         | A range slider's two thumbs                                                  |
+| `DROPZONE_LABELS`         | `provideDropzoneLabels`       | Drop prompt, entry actions, upload-failed wording, uploading status          |
+| `RICH_TEXT_EDITOR_LABELS` | `provideRichTextEditorLabels` | Toolbars, every tool, link editor, table/align tools, token popup            |
+| `CHIP_LABELS`             | `provideChipLabels`           | A removable chip's remove button                                             |
+| `TABLE_LABELS`            | `provideTableLabels`          | Empty/error text, sorting, filtering, column menu, selection                 |
+| `PAGINATION_LABELS`       | `providePaginationLabels`     | Controls, page items, range readouts, jump-to-page                           |
+| `BREADCRUMB_LABELS`       | `provideBreadcrumbLabels`     | Landmark name, overflow control                                              |
+| `CAROUSEL_LABELS`         | `provideCarouselLabels`       | Region, slides, prev/next, play/pause, dots                                  |
+| `GRID_LABELS`             | `provideGridLabels`           | Interactive/read-only grid names, item remove                                |
+| `LOADER_LABELS`           | `provideLoaderLabels`         | What spinners, brand loaders and skeletons announce                          |
+| `NOTIFICATION_LABELS`     | `provideNotificationLabels`   | The dismiss button                                                           |
+| `STREAM_LABELS`           | `provideStreamLabels`         | Consent gate, failure overlay, PiP placeholder and controls, frame title     |
+| `QUERY_ERROR_LABELS`      | `provideQueryErrorLabels`     | Status titles/messages and retry — **English and German ship**               |
+| `FILTER_OVERLAY_LABELS`   | `provideFilterOverlayLabels`  | Result-count submit button and reset — **English and German ship**           |
 
 ## Your own strings vs the library's
 

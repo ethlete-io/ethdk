@@ -1,4 +1,4 @@
-import { Directive, computed, input, signal } from '@angular/core';
+import { booleanAttribute, computed, input, signal, Directive } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { startOfDay } from 'date-fns';
 import { FORM_FIELD_CONTROL_TYPES } from '../../../form-field/headless';
@@ -63,6 +63,9 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
 
   /** Per-cell classes for the picker calendar — busy days, holidays, markers of your own. */
   public dateClass = input<CalendarDateClassFn | null>(null);
+
+  /** Renders the picker calendar's week-number column. */
+  public weekNumbers = input(false, { transform: booleanAttribute });
 
   /** The format in effect: this instance's `displayFormat`, else the one `precision` implies. */
   public effectiveDisplayFormat = computed(

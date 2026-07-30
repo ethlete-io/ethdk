@@ -51,6 +51,7 @@ import { injectDateTimeLabels } from '../../../forms/date-time/date-time-labels'
         'precision',
         'startView',
         'dateClass',
+        'weekNumbers',
         'pickerOpen',
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'pickerOpenChange'],

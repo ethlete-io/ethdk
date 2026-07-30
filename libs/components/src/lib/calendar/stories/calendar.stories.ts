@@ -13,6 +13,7 @@ export default {
     precision: { control: 'select', options: ['day', 'month', 'year'] },
     startView: { control: 'select', options: ['month', 'year', 'multiYear'] },
     markDates: { control: 'boolean' },
+    weekNumbers: { control: 'boolean' },
     locale: { control: 'select', options: ['default', 'de'] },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
   },
@@ -24,6 +25,7 @@ export default {
     precision: 'day',
     startView: 'month',
     markDates: false,
+    weekNumbers: false,
     locale: 'default',
     color: 'brand',
   },
@@ -67,6 +69,10 @@ export const YearPrecision: Story = {
 
 export const DateClass: Story = {
   args: { markDates: true },
+};
+
+export const WeekNumbers: Story = {
+  args: { weekNumbers: true },
 };
 
 export const German: Story = {
