@@ -53,19 +53,27 @@ tokens in core. (Calendar event markers and month/year jump moved into plan
       app's, so there is no default to override. The plan's item 4 also undercounted the ad-hoc
       `input()` defaults — ~60 across 15 domains, not 4 — and `mixed`/`clear` recurred often enough to
       earn a shared `FORM_FIELD_LABELS`.)_
-- [ ] 04 — RTE essentials _(phases 1 & 2 done 2026-07-30: undo/redo history, block quote + code
-      block tools, plus paste-time `#Label` → token-chip recognition on top. Phase 3 — image
-      embedding with an upload-handler API — is still open. See the plan's "found while implementing"
-      notes: coalescing had to become a value diff rather than a timer, quote depth applies to the
-      whole quote, and Chrome leaves block wrappers behind on select-all + delete.)_
+- [x] 04 — RTE essentials _(done 2026-07-30; all three phases. Phase 3 is `provideRichTextEditorImageTool`
+      — pick/paste/drop, an upload handler that also takes a `createDropzoneUpload` config for progress,
+      a value-invisible placeholder and an alt-text popover. See the plan's "found while implementing"
+      notes: core already round-tripped `![alt](url)`, what was broken was image **files** becoming
+      `blob:` URLs; and tool definitions gained `paste`/`drop`/`click` content hooks.)_
 - [x] 05 — form-field character counter _(done 2026-07-30; schema `maxLength()`
       and async-validator `pending` both turned out to be auto-bound signal-forms
       inputs — see the note in the plan, including the `hostDirectives` gotcha.
       Counting is opt-in per control family; only the text-field-base controls
       and `et-tag-input` declare the inputs so far.)_
-- [ ] 06 — slider vertical + ticks
-- [ ] 07 — date-time enhancements
-- [ ] 08 — notification upgrades
+- [x] 06 — slider vertical + ticks _(done 2026-07-30, `84a8d005`)_
+- [x] 07 — date-time enhancements _(done 2026-07-30; the plan's own backlog was pulled into scope and
+      built too — see §8 of the plan for the eight follow-up commits, incl. week numbers,
+      `mode="multiple"`, comparison ranges, range-selection strategies, a replaceable header and the
+      multi-month view. One open decision recorded there: rendering a foreign time zone.)_
+- [x] 08 — notification upgrades _(done 2026-07-30; all six items. `manager.promise()` also takes an
+      `@ethlete/query` query — `components` already depends on query — following its `executionState`
+      and, on request, its upload progress. See the plan's "found while implementing" notes: dedupe
+      needed a whole-config `replaceConfig` next to the merging `update()`, and the swipe exit rides
+      the existing leave animation via an `!important` override of the drag's inline transform rather
+      than animating itself.)_
 - [ ] 09 — table export + inline edit
 - [ ] 10 — quick wins
 - [ ] 11 — sport/match components
