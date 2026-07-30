@@ -46,7 +46,7 @@ anticipates inline editing. Missing: the edit UI + interaction flow.
   returns focus to the cell. Depends on Phase 3's cell focus model — build 3
   before or together with 2.
 
-## Phase 3 — arrow-key cell navigation (M) [prereq for Phase 2 UX]
+## Phase 3 — arrow-key cell navigation (M) [prereq for Phase 2 UX] — **done 2026-07-31**
 
 Docs self-acknowledge: only sortable headers are keyboard-operable; "Full grid
 keyboard navigation arrives with the later interactive features."
@@ -97,6 +97,39 @@ user data into a file Excel opens should not ship the footgun; `formulaGuard: fa
 as `people.csv` with a `efbbbf` BOM and CRLF line endings, re-exporting after sorting Name descending
 reorders the file, the second button writes only the two ticked rows to `people-selection.csv`, and the
 anchor leaves nothing behind in the document.
+
+## Found while implementing (2026-07-31, phase 3 — keyboard navigation)
+
+**The roving tabindex is not a template binding.** Putting it in the cell view model would rebuild
+every rendered row's VM on each arrow press. Instead the base table renders `tabindex="-1"` on body
+cells whenever a cell-navigation feature is registered (one boolean, `cellNavigation()`), and the
+feature moves the single `tabindex="0"` itself — two attribute writes per move, and it holds the
+element rather than querying for it. An `afterEveryRender` re-anchors the stop when a render destroyed
+the cell it was on, which is every scroll of a windowed table and every sort/filter/page change of any
+table; `isConnected` is how that is noticed.
+
+**Positions are arithmetic, not DOM traversal.** `ethlete/no-dom-query` bans `closest`/`querySelector`,
+so the feature follows the reorder directive's pattern: `event.composedPath()` matched against
+`bodyCellElements()` (every rendered data cell, rows major). The found index carries both coordinates —
+`row = renderedRowOffset() + floor(i / columns)`, `column = i % columns` — which is also exactly the
+mapping `bodyCellElementAt()` inverts. No `data-row-index` attribute was needed in the end.
+
+**Virtualization needed a new seam.** `TableRowWindow` gained an optional `scrollToIndex`, which the
+virtual-scroll directive fills from the window utility's own method. Without it a windowed table can
+only be navigated inside what is already rendered. The order is: ask the window to scroll, then focus in
+`afterNextRender` — the element does not exist before that render. Verified: 25×ArrowDown scrolls and
+keeps focus; Ctrl+End reaches the true last cell (scrollTop ~89 600 on the 2 000-row story).
+
+**Two deliberate changes to existing behaviour**, both documented: `rowInteractive` rows stop carrying
+`tabindex` while navigation is on (the body is one tab stop, not two), and lead cells (selection
+checkbox, expander) stay out of the arrow order — they are their own tab stops, reachable with Tab as
+before.
+
+**Drill-in can't be unit-tested here.** `Enter` resolves the cell's focusable content with core's
+`getFocusableElements`, which filters on `getClientRects()` — always empty in jsdom, so every element
+reads as unfocusable. The spec asserts the drilled-in _state_ instead (arrows belong to the control,
+Escape returns, the cell keeps the tab stop) and the Enter step is verified in a real browser
+(`components-table--keyboard-navigation`).
 
 ## Verification & shipping
 

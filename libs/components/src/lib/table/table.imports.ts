@@ -4,6 +4,7 @@ import { TableColumnMenuDirective } from './table-column-menu.directive';
 import { TableCsvExportDirective } from './table-csv-export.directive';
 import { TableFiltersDirective } from './table-filters.directive';
 import { TableFooterDirective } from './headless/table-footer.directive';
+import { TableKeyboardNavDirective } from './table-keyboard-nav.directive';
 import { TableReorderDirective } from './table-reorder.directive';
 import { TableResizeDirective } from './table-resize.directive';
 import { TableSelectionDirective } from './table-selection.directive';
@@ -58,6 +59,12 @@ export const TABLE_COLUMN_CHOOSER_IMPORTS = [TableColumnChooserComponent] as con
  * serializer is a pure function you can also call directly ({@link exportTableToCsv}).
  */
 export const TABLE_CSV_EXPORT_IMPORTS = [TableCsvExportDirective] as const;
+
+/**
+ * Arrow-key navigation over the body's cells (`etTableKeyboardNav`), following the ARIA grid pattern:
+ * the body becomes one tab stop. No extra dependency.
+ */
+export const TABLE_KEYBOARD_NAV_IMPORTS = [TableKeyboardNavDirective] as const;
 
 /** Drag-to-resize column widths (`etTableResize`). Pulls in the drag primitives. */
 export const TABLE_RESIZE_IMPORTS = [TableResizeDirective] as const;

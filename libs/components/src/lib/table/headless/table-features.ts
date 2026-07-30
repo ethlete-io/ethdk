@@ -107,7 +107,25 @@ export type TableRowWindow = {
   paddingStart: Signal<number>;
   paddingEnd: Signal<number>;
   offset: Signal<number>;
+  /**
+   * Scroll an absolute row index far enough into the viewport that it renders. Without this a windowed
+   * table can only be navigated within what is already on screen — keyboard navigation asks the window
+   * to bring the target row in, then focuses it once it exists.
+   */
+  scrollToIndex?: (index: number) => void;
   /** Whether the window is live — when false every row renders. See {@link TableHeaderAdornment.enabled}. */
+  enabled?: Signal<boolean>;
+};
+
+/**
+ * A feature's claim on cell-level focus (keyboard grid navigation). Registering it is what turns the
+ * body's cells into focus targets: the table renders `tabindex="-1"` on every one and stops making the
+ * row itself a tab stop, so the grid body becomes the single tab stop the ARIA grid pattern asks for.
+ * Which cell currently carries `tabindex="0"` is the feature's to place — see
+ * {@link TableFeatureHost.bodyCellElementAt}.
+ */
+export type TableCellNavigation = {
+  /** Whether the claim is live — see {@link TableHeaderAdornment.enabled}. */
   enabled?: Signal<boolean>;
 };
 
@@ -144,6 +162,8 @@ export type TableFeatureHost = {
   registerLeadColumn(column: TableLeadColumn): void;
   /** Window the rendered rows (virtual scrolling). Call once, from the feature's constructor. */
   registerRowWindow(window: TableRowWindow): void;
+  /** Take over cell focus (keyboard grid navigation). Call once, from the feature's constructor. */
+  registerCellNavigation(navigation: TableCellNavigation): void;
   /** Add a floating layer rendered after the grid (a drag ghost). Call once, from the constructor. */
   registerLayer(layer: TableLayer): void;
   /** Replace the mark drawn in failed cells. Call once, from the feature's constructor. */
@@ -171,6 +191,36 @@ export type TableFeatureHost = {
   rowIdentity(row: unknown): unknown;
   /** A rendered body cell, for a feature that needs to measure real row height. */
   firstBodyCellElement(): HTMLElement | null;
+
+  /**
+   * The rendered body cell at an absolute row index and a visible-column index, or `null` when that row
+   * is outside a virtual window's rendered range. Pair it with {@link scrollRowIntoView}, which is what
+   * makes the row exist in the first place.
+   */
+  bodyCellElementAt(rowIndex: number, columnIndex: number): HTMLElement | null;
+
+  /**
+   * Every rendered body cell, rows major — the list {@link bodyCellElementAt} indexes into. A feature
+   * that has to turn an event back into a cell finds it here (`event.composedPath()`), rather than
+   * walking the DOM.
+   */
+  bodyCellElements(): HTMLElement[];
+
+  /**
+   * Absolute index of the first rendered row — nonzero only while a window is in play. What turns a
+   * position within {@link bodyCellElements} back into an index into {@link rows}.
+   */
+  renderedRowOffset(): number;
+
+  /**
+   * Bring an absolute row index into the viewport — through the registered row window when there is
+   * one (which also renders it), else by scrolling the rendered row element into view. Returns whether
+   * a windowed scroll happened, i.e. whether the caller must wait for a render before the row exists.
+   */
+  scrollRowIntoView(rowIndex: number): boolean;
+
+  /** How many rows fit the scroll viewport — the step PageUp/PageDown moves by. At least 1. */
+  rowsPerPage(): number;
 
   /**
    * The table's host element — a feature is a directive on it, so this is also the element it can

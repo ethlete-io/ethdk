@@ -59,6 +59,9 @@ export class TableVirtualScrollDirective {
       paddingStart: this.window.paddingTop,
       paddingEnd: this.window.paddingBottom,
       offset: computed(() => this.window.range().start),
+      // Keyboard navigation asks for a row that may be outside the rendered range; the window can put
+      // it there, which nothing working from the DOM could.
+      scrollToIndex: (index) => this.window.scrollToIndex(index),
       enabled: computed(() => this.config().enabled ?? true),
     });
 

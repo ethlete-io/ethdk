@@ -30,6 +30,7 @@ export default {
     columnMenu: false,
     selectable: false,
     csvExport: false,
+    keyboardNav: false,
     surface: 'dark',
   },
   argTypes: {
@@ -57,6 +58,7 @@ export default {
     columnMenu: { control: 'boolean' },
     selectable: { control: 'boolean' },
     csvExport: { control: 'boolean' },
+    keyboardNav: { control: 'boolean' },
     surface: { control: 'text' },
   },
 } as Meta<TableStorybookComponent>;
@@ -388,6 +390,33 @@ export const CsvExport: Story = {
           "visible columns in their displayed order and the table's own rows (client-filtered and sorted), so " +
           'filtering, sorting, hiding or reordering a column changes the file. `export()` takes overrides — the ' +
           'second button passes `rows: selection.selectedRows()` to export only what is ticked.',
+      },
+    },
+  },
+};
+
+export const KeyboardNavigation: Story = {
+  args: { keyboardNav: true, rowCount: 12, columnMenu: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`etTableKeyboardNav` makes the body a single tab stop and moves cell focus with the arrows, ' +
+          'Home/End, Ctrl+Home/End and PageUp/PageDown — the ARIA grid pattern. Tab into the table, then ' +
+          'navigate; Enter drills into a cell that holds a control and Escape comes back out.',
+      },
+    },
+  },
+};
+
+export const VirtualizedKeyboardNavigation: Story = {
+  args: { keyboardNav: true, virtualScroll: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Navigation composes with virtualization: pressing ArrowDown (or PageDown, or Ctrl+End) past the ' +
+          'rendered window asks the window to scroll the target row in, then focuses it once it exists.',
       },
     },
   },

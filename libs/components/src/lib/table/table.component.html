@@ -173,7 +173,7 @@
         [class]="rowVm.classes"
         [class.et-table-row--stripe]="rowVm.stripe"
         [class.et-table-row--interactive]="rowInteractive()"
-        [attr.tabindex]="rowInteractive() ? 0 : null"
+        [attr.tabindex]="rowInteractive() && !cellNavigation() ? 0 : null"
         (click)="activateRow(rowVm.row, $event)"
         (keydown.enter)="activateRow(rowVm.row, $event)"
         (keydown.space)="activateRow(rowVm.row, $event)"
@@ -198,6 +198,7 @@
             #bodyCell
             [attr.data-align]="cell.align"
             [attr.data-col-key]="cell.key"
+            [attr.tabindex]="cellNavigation() ? -1 : null"
             [attr.data-state]="cell.state"
             [class.et-skeleton--animated]="cell.state === 'loading'"
             [class.et-table-sticky-start]="cell.stickyStart"

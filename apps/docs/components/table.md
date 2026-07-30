@@ -21,18 +21,19 @@ columns, the empty state and the footer slot. Anything that would drag a heavier
 dependency in ships as its own directive — import its array and put the attribute on
 the table. A table that doesn't import a feature never pays for its code.
 
-| Feature            | Import                             | Attribute                   | Brings in                                            |
-| ------------------ | ---------------------------------- | --------------------------- | ---------------------------------------------------- |
-| Filter menus       | `TABLE_FILTER_IMPORTS`             | `etTableFilters`            | the [menu](/components/menu) system                  |
-| Column menu        | `TABLE_COLUMN_MENU_IMPORTS`        | `etTableColumnMenu`         | the [menu](/components/menu) system                  |
-| Column chooser     | `TABLE_COLUMN_CHOOSER_IMPORTS`     | `<et-table-column-chooser>` | the [menu](/components/menu) system                  |
-| Column resize      | `TABLE_RESIZE_IMPORTS`             | `etTableResize`             | the drag primitives                                  |
-| Column reorder     | `TABLE_REORDER_IMPORTS`            | `etTableReorder`            | the drag primitives                                  |
-| Row selection      | `TABLE_SELECTION_IMPORTS`          | `etTableSelection`          | the [checkbox](/components/choice-inputs)            |
-| Virtual scroll     | `TABLE_VIRTUAL_SCROLL_IMPORTS`     | `etTableVirtualScroll`      | the virtual-window utility                           |
-| Cell error tooltip | `TABLE_CELL_ERROR_TOOLTIP_IMPORTS` | `etTableCellErrorTooltip`   | the [tooltip](/components/tooltip) + overlay runtime |
-| State persistence  | `TABLE_STATE_PERSISTENCE_IMPORTS`  | `etTableStatePersistence`   | nothing (local/session storage)                      |
-| CSV export         | `TABLE_CSV_EXPORT_IMPORTS`         | `etTableCsvExport`          | nothing (a pure serializer)                          |
+| Feature             | Import                             | Attribute                   | Brings in                                            |
+| ------------------- | ---------------------------------- | --------------------------- | ---------------------------------------------------- |
+| Filter menus        | `TABLE_FILTER_IMPORTS`             | `etTableFilters`            | the [menu](/components/menu) system                  |
+| Column menu         | `TABLE_COLUMN_MENU_IMPORTS`        | `etTableColumnMenu`         | the [menu](/components/menu) system                  |
+| Column chooser      | `TABLE_COLUMN_CHOOSER_IMPORTS`     | `<et-table-column-chooser>` | the [menu](/components/menu) system                  |
+| Column resize       | `TABLE_RESIZE_IMPORTS`             | `etTableResize`             | the drag primitives                                  |
+| Column reorder      | `TABLE_REORDER_IMPORTS`            | `etTableReorder`            | the drag primitives                                  |
+| Row selection       | `TABLE_SELECTION_IMPORTS`          | `etTableSelection`          | the [checkbox](/components/choice-inputs)            |
+| Virtual scroll      | `TABLE_VIRTUAL_SCROLL_IMPORTS`     | `etTableVirtualScroll`      | the virtual-window utility                           |
+| Cell error tooltip  | `TABLE_CELL_ERROR_TOOLTIP_IMPORTS` | `etTableCellErrorTooltip`   | the [tooltip](/components/tooltip) + overlay runtime |
+| State persistence   | `TABLE_STATE_PERSISTENCE_IMPORTS`  | `etTableStatePersistence`   | nothing (local/session storage)                      |
+| CSV export          | `TABLE_CSV_EXPORT_IMPORTS`         | `etTableCsvExport`          | nothing (a pure serializer)                          |
+| Keyboard navigation | `TABLE_KEYBOARD_NAV_IMPORTS`       | `etTableKeyboardNav`        | nothing                                              |
 
 ```html
 <et-table [data]="rows()" [columns]="COLUMNS" etTableFilters etTableResize />
@@ -1145,6 +1146,57 @@ const all = await firstValueFrom(this.everyPage$);
 this.exportCsv(this.table(), { rows: all });
 ```
 
+## Keyboard navigation
+
+`role="grid"` promises that the arrows move between cells. Import
+`TABLE_KEYBOARD_NAV_IMPORTS`, add `etTableKeyboardNav`, and the table keeps that promise:
+
+```html
+<et-table [data]="rows()" [columns]="COLUMNS" etTableKeyboardNav />
+```
+
+The body becomes a **single tab stop** — Tab moves onto the last-focused cell and Tab
+again leaves the table entirely, rather than walking every cell — and inside it:
+
+| Key                      | Moves to                                     |
+| ------------------------ | -------------------------------------------- |
+| `←` `→` `↑` `↓`          | the neighbouring cell (clamped at the edges) |
+| `Home` / `End`           | first / last cell of the row                 |
+| `Ctrl+Home` / `Ctrl+End` | first / last cell of the grid                |
+| `PageUp` / `PageDown`    | one viewport of rows up / down               |
+| `Enter`                  | into the cell's own control, if it has one   |
+| `Escape`                 | back out of that control, onto the cell      |
+
+<StoryEmbed id="components-table--keyboard-navigation" height="520px" />
+
+Clicking a cell moves the tab stop there too, so the arrows always carry on from where the
+user actually is.
+
+### Cells that hold controls
+
+`Enter` hands the keyboard to the first focusable thing in the cell — a link, a button, an
+[action cell](#action-cells) — and while focus is in there the arrows belong to that
+control, not to the grid. `Escape` gives the cell its focus back. This is what keeps a
+cell's own content operable without the grid stealing its keys.
+
+### With virtualization
+
+It composes with [virtual scrolling](#virtualization). A row the arrows ask for that isn't
+rendered is scrolled into the window first and focused once it exists — so `Ctrl+End` on a
+100 000-row table lands on the real last cell. The tab stop is re-anchored after any render
+that replaces the cell it was on, which is every scroll of a windowed table and every sort,
+filter or page change of any table.
+
+### What it changes
+
+Two things, both deliberate:
+
+- **`rowInteractive` rows stop being tab stops.** The grid body is one tab stop; a row that
+  was also one would make it two. The rows stay clickable, and their `rowClick` still fires.
+- **Leading utility cells are not in the arrow order.** The [selection](#selection) checkbox
+  and the [expander](#row-expansion) are their own tab stops, reachable with Tab as before —
+  the arrows walk the data columns.
+
 ## Table state
 
 `state()` is a serializable, versioned snapshot of the table's configurable
@@ -1292,8 +1344,10 @@ features and the column chooser get their strings.
 The table uses the ARIA grid pattern: `role="grid"` on the container, `role="row"`
 on each row, `role="columnheader"` on header cells and `role="gridcell"` on body
 cells. Sortable headers are real `<button>`s (keyboard-operable) and set
-`aria-sort` on their column header. Full grid keyboard navigation arrives with the
-later interactive features.
+`aria-sort` on their column header.
+
+Cell-by-cell keyboard navigation is [opt-in](#keyboard-navigation): without it Tab
+skips past the body, which is what a read-only display table usually wants.
 
 ## Theming
 

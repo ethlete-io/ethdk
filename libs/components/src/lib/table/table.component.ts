@@ -48,6 +48,7 @@ import {
   TableHeaderAdornment,
   TableLayer,
   TableLeadColumn,
+  TableCellNavigation,
   TableRowWindow,
   TableStateSlice,
 } from './headless/table-features';
@@ -130,6 +131,8 @@ type TableBodyCellVm<T> = TableStickyVm & {
 
 type TableBodyRowVm<T> = {
   row: T;
+  /** The row's absolute index in `rows()` — true even while a virtual window renders a slice. */
+  index: number;
   /** `rowIdentity`'s result — what `@for` tracks by. */
   key: unknown;
   classes: string;
@@ -469,6 +472,16 @@ export class TableComponent<T> {
 
   // A registered row window (virtual scrolling); `null` renders every row.
   private registeredRowWindow = signal<TableRowWindow | null>(null);
+
+  // A feature that owns cell focus (etTableKeyboardNav). While one is live the body's cells become the
+  // focus targets, which is the one thing the base has to know about: a focusable cell needs a
+  // `tabindex`, and the row must stop being a tab stop of its own or the body would have two.
+  private cellNavigationList = signal<TableCellNavigation[]>([]);
+
+  /** Whether a feature has taken over cell focus — see {@link registerCellNavigation}. */
+  public cellNavigation = computed(() =>
+    this.cellNavigationList().some((navigation) => navigation.enabled?.() ?? true),
+  );
 
   private rowWindow = computed(() => {
     const window = this.registeredRowWindow();
@@ -877,6 +890,7 @@ export class TableComponent<T> {
       return {
         row,
         key,
+        index: indexOffset + index,
         classes: leads
           .map((lead) => lead.lead.rowClass?.(row))
           .filter((className): className is string => !!className)
@@ -1209,9 +1223,75 @@ export class TableComponent<T> {
     this.layerList.update((layers) => [...layers, layer]);
   }
 
+  /**
+   * Called by an opt-in feature to take over cell focus (`etTableKeyboardNav`). Part of the feature
+   * contract; consumers never call this.
+   */
+  public registerCellNavigation(navigation: TableCellNavigation) {
+    this.cellNavigationList.update((list) => [...list, navigation]);
+  }
+
   /** A rendered body cell, for a feature measuring real row height. Part of the feature contract. */
   public firstBodyCellElement() {
     return this.bodyCells()[0]?.nativeElement ?? null;
+  }
+
+  /** Absolute index of the first rendered row. Part of the feature contract. */
+  public renderedRowOffset() {
+    return this.rowIndexOffset();
+  }
+
+  /** Every rendered body cell, rows major. Part of the feature contract. */
+  public bodyCellElements() {
+    return this.bodyCells().map((cell) => cell.nativeElement);
+  }
+
+  /**
+   * The rendered body cell at an absolute row index and visible-column index. Part of the feature
+   * contract. `null` when the row is outside a window's rendered range — ask {@link scrollRowIntoView}
+   * for it first.
+   */
+  public bodyCellElementAt(rowIndex: number, columnIndex: number) {
+    const columns = this.visibleColumns().length;
+    const rendered = rowIndex - this.rowIndexOffset();
+
+    if (rendered < 0 || rendered >= this.renderedRows().length) return null;
+    if (columnIndex < 0 || columnIndex >= columns) return null;
+
+    // `bodyCells` is every rendered data cell in DOM order, rows major — lead cells carry no `#bodyCell`
+    // ref, so the arithmetic doesn't have to know how many of them there are.
+    return this.bodyCells()[rendered * columns + columnIndex]?.nativeElement ?? null;
+  }
+
+  /**
+   * Bring an absolute row index into view. Part of the feature contract. Returns `true` when a
+   * registered window did it — the row is then only rendered after the next change detection, which is
+   * what the caller has to wait for.
+   */
+  public scrollRowIntoView(rowIndex: number) {
+    const window = this.rowWindow();
+
+    if (window?.scrollToIndex) {
+      window.scrollToIndex(rowIndex);
+
+      return true;
+    }
+
+    // Every row is rendered, so the element itself knows how to get on screen. `nearest` keeps a cell
+    // that is already visible exactly where it is instead of jumping it to an edge.
+    this.bodyCellElementAt(rowIndex, 0)?.parentElement?.scrollIntoView({ block: 'nearest' });
+
+    return false;
+  }
+
+  /** How many rows fit the scroll viewport. Part of the feature contract — the PageUp/PageDown step. */
+  public rowsPerPage() {
+    const rowHeight = this.measuredRowHeight() ?? this.firstBodyCellElement()?.offsetHeight ?? 0;
+    const viewport = this.elementRef.nativeElement.clientHeight;
+
+    if (!rowHeight || !viewport) return 1;
+
+    return Math.max(1, Math.floor(viewport / rowHeight) - 1);
   }
 
   /** Apply a previously captured {@link TableState} — column order, visibility, sort, filters and expanded rows. */

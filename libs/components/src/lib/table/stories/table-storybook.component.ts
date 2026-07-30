@@ -13,6 +13,7 @@ import {
   TABLE_CSV_EXPORT_IMPORTS,
   TABLE_FILTER_IMPORTS,
   TABLE_IMPORTS,
+  TABLE_KEYBOARD_NAV_IMPORTS,
   TABLE_REORDER_IMPORTS,
   TABLE_RESIZE_IMPORTS,
   TABLE_SELECTION_IMPORTS,
@@ -90,6 +91,7 @@ import { MANY_PEOPLE, PEOPLE, Person, Project, PROJECTS_BY_PERSON, ROLES } from 
         [etTableResize]="{ enabled: resizableColumns() }"
         [etTableColumnMenu]="{ enabled: columnMenu() }"
         [etTableCsvExport]="{ filename: 'people.csv' }"
+        [etTableKeyboardNav]="{ enabled: keyboardNav() }"
         [etTableReorder]="{ enabled: reorderable() }"
         [etTableSelection]="{ selection: selected, enabled: selectable() }"
         [etTableVirtualScroll]="{ enabled: virtualScroll() }"
@@ -106,6 +108,15 @@ import { MANY_PEOPLE, PEOPLE, Person, Project, PROJECTS_BY_PERSON, ROLES } from 
         <ng-template [etTableCell]="columns().role" let-value="value">
           <et-chip>{{ value }}</et-chip>
         </ng-template>
+
+        @if (keyboardNav()) {
+          <!-- A cell with a control in it, so Enter has somewhere to drill into and Escape somewhere to
+               come back from. The button is the cell's, not the row's: the arrows move between cells and
+               only Enter hands the keyboard over to what a cell holds. -->
+          <ng-template [etTableCell]="columns().joined" let-value>
+            <button (click)="lastClicked.set(null)" type="button" et-text-button>{{ value }}</button>
+          </ng-template>
+        }
 
         <!-- The Role cell is a chip, which is taller than a line of text, so its loading placeholder says
              so too — otherwise the table would grow when the data lands. The bone is chip-shaped: the
@@ -222,6 +233,7 @@ import { MANY_PEOPLE, PEOPLE, Person, Project, PROJECTS_BY_PERSON, ROLES } from 
     TABLE_VIRTUAL_SCROLL_IMPORTS,
     TABLE_CELL_ERROR_TOOLTIP_IMPORTS,
     TABLE_CSV_EXPORT_IMPORTS,
+    TABLE_KEYBOARD_NAV_IMPORTS,
     BUTTON_IMPORTS,
     AutoSurfaceDirective,
     ProvideSurfaceDirective,
@@ -256,6 +268,7 @@ export class TableStorybookComponent {
   public columnMenu = input(false);
   public selectable = input(false);
   public csvExport = input(false);
+  public keyboardNav = input(false);
   public appearance = input<'enclosed' | 'divided' | 'zebra' | 'grid' | 'bare'>('enclosed');
   public density = input<'sm' | 'md' | 'lg'>('md');
   public surface = input('dark');

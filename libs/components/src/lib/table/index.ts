@@ -7,6 +7,7 @@ export * from './table-column-menu.directive';
 export * from './table-csv-export.directive';
 export * from './table-detail-styles.component';
 export * from './table-errors';
+export * from './table-keyboard-nav.directive';
 export * from './table-expander-cell.component';
 export * from './table-filter-trigger.component';
 export * from './table-filters.directive';
