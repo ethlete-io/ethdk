@@ -6,7 +6,7 @@ export default {
   component: CalendarStorybookComponent,
   decorators: [moduleMetadata({ imports: [CalendarStorybookComponent] })],
   argTypes: {
-    mode: { control: 'select', options: ['single', 'range'] },
+    mode: { control: 'select', options: ['single', 'range', 'multiple'] },
     constrained: { control: 'boolean' },
     disableWeekends: { control: 'boolean' },
     startAtMonthOffset: { control: 'number' },
@@ -37,6 +37,10 @@ export const Default: Story = {};
 
 export const Range: Story = {
   args: { mode: 'range' },
+};
+
+export const Multiple: Story = {
+  args: { mode: 'multiple' },
 };
 
 export const DisabledDates: Story = {

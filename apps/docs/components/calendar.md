@@ -20,7 +20,7 @@ On `et-calendar` (forwarded from the headless `[etCalendar]` directive):
 
 | Input            | Type                                         | Default             | Description                                                                            |
 | ---------------- | -------------------------------------------- | ------------------- | -------------------------------------------------------------------------------------- |
-| `mode`           | `'single' \| 'range'`                        | `'single'`          | Selection model.                                                                       |
+| `mode`           | `'single' \| 'range' \| 'multiple'`          | `'single'`          | Selection model.                                                                       |
 | `min` / `max`    | `Date \| null`                               | `null`              | Selectable window; days outside are disabled and month navigation stops at the bounds. |
 | `dateFilter`     | `((date: Date) => boolean) \| null`          | `null`              | Return `false` to disable a date (e.g. weekends).                                      |
 | `startAt`        | `Date \| null`                               | `null`              | Where an empty calendar opens and which day it focuses first.                          |
@@ -30,11 +30,12 @@ On `et-calendar` (forwarded from the headless `[etCalendar]` directive):
 | `firstDayOfWeek` | `0–6`                                        | locale, else `1`    | `0` = Sunday. Defaults to the locale's week start, Monday without one.                 |
 | `locale`         | `Locale \| null` (date-fns)                  | `DATE_LOCALE` token | Weekday/month labels and cell `aria-label`s. Falls back to date-fns' built-in en-US.   |
 
-| Model         | Type                                         | Description                                                   |
-| ------------- | -------------------------------------------- | ------------------------------------------------------------- |
-| `value`       | `Date \| null`                               | The selection in `single` mode.                               |
-| `rangeValue`  | `{ start: Date \| null; end: Date \| null }` | The selection in `range` mode.                                |
-| `activeMonth` | `Date \| null`                               | The displayed month. `null` follows the selection (or today). |
+| Model           | Type                                         | Description                                                   |
+| --------------- | -------------------------------------------- | ------------------------------------------------------------- |
+| `value`         | `Date \| null`                               | The selection in `single` mode.                               |
+| `rangeValue`    | `{ start: Date \| null; end: Date \| null }` | The selection in `range` mode.                                |
+| `multipleValue` | `Date[]`                                     | The selection in `multiple` mode, ascending.                  |
+| `activeMonth`   | `Date \| null`                               | The displayed month. `null` follows the selection (or today). |
 
 | Output        | Type   | Description                                         |
 | ------------- | ------ | --------------------------------------------------- |
@@ -107,6 +108,18 @@ The returned classes are **your** CSS, which is unlayered and therefore wins ove
 The first click starts the range, a later-or-equal second click completes it, and an earlier one restarts it. While the end is pending, hovering (or moving keyboard focus) previews the band.
 
 <StoryEmbed id="components-calendar--range" height="420px" />
+
+## Multiple dates
+
+`mode="multiple"` collects unrelated dates in `multipleValue` instead of a single value or a range: each pick adds one, and picking it again takes it back out — which is the only way to unpick, so it has to be the same gesture. The array stays ascending, so a consumer never sorts it and the calendar opens on the earliest date picked.
+
+```html
+<et-calendar [(multipleValue)]="dates" mode="multiple" />
+```
+
+<StoryEmbed id="components-calendar--multiple" height="420px" />
+
+Nothing bands or previews here — the dates have no relationship to each other — and the grid carries `aria-multiselectable="true"` so assistive tech announces that more than one cell can be picked. It combines with `precision`: at `'month'` each pick toggles a whole month. The date inputs have no `multiple` equivalent; their value is one wire string, so a set of dates is the calendar's own surface.
 
 ## Disabled dates
 

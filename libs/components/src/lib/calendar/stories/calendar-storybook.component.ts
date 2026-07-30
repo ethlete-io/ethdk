@@ -2,14 +2,35 @@ import { Component, ViewEncapsulation, computed, input, signal } from '@angular/
 import { ProvideColorDirective } from '@ethlete/core';
 import { addDays, addMonths, startOfDay, startOfMonth } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { CalendarDateClassFn, CalendarPrecision, CalendarRange, CalendarView } from '../headless';
+import { CalendarDateClassFn, CalendarMode, CalendarPrecision, CalendarRange, CalendarView } from '../headless';
 import { CALENDAR_IMPORTS } from '../calendar.imports';
 
 @Component({
   selector: 'et-sb-calendar',
   template: `
     <div [etProvideColor]="color()" class="flex max-w-md flex-col items-start gap-4 p-8 font-sans">
-      @if (mode() === 'range') {
+      @if (mode() === 'multiple') {
+        <et-calendar
+          [(multipleValue)]="multipleValue"
+          [min]="minDate()"
+          [max]="maxDate()"
+          [dateFilter]="filterFn()"
+          [startAt]="startAtDate()"
+          [precision]="precision()"
+          [startView]="startView()"
+          [dateClass]="dateClassFn()"
+          [weekNumbers]="weekNumbers()"
+          [locale]="localeObject()"
+          (monthSelect)="lastDrill.set('month ' + $event.toDateString())"
+          (yearSelect)="lastDrill.set('year ' + $event.toDateString())"
+          mode="multiple"
+        />
+
+        <p class="text-sm opacity-60">
+          Picked ({{ multipleValue().length }}):
+          {{ pickedLabel() }}
+        </p>
+      } @else if (mode() === 'range') {
         <et-calendar
           [(rangeValue)]="rangeValue"
           [min]="minDate()"
@@ -69,7 +90,7 @@ import { CALENDAR_IMPORTS } from '../calendar.imports';
   `,
 })
 export class CalendarStorybookComponent {
-  public mode = input<'single' | 'range'>('single');
+  public mode = input<CalendarMode>('single');
   public constrained = input(false);
   public disableWeekends = input(false);
   /** Months from today the empty calendar should open at — the story turns it into a `Date`. */
@@ -84,6 +105,7 @@ export class CalendarStorybookComponent {
 
   public value = signal<Date | null>(null);
   public rangeValue = signal<CalendarRange>({ start: null, end: null });
+  public multipleValue = signal<Date[]>([]);
   protected lastDrill = signal<string | null>(null);
 
   protected minDate = computed(() => (this.constrained() ? startOfDay(addDays(new Date(), -7)) : null));
@@ -100,6 +122,12 @@ export class CalendarStorybookComponent {
   });
 
   protected localeObject = computed(() => (this.locale() === 'de' ? de : null));
+
+  protected pickedLabel = computed(() => {
+    const picked = this.multipleValue();
+
+    return picked.length === 0 ? 'none' : picked.map((date) => date.toDateString()).join(' · ');
+  });
 
   protected dateClassFn = computed<CalendarDateClassFn | null>(() => {
     if (!this.markDates()) {

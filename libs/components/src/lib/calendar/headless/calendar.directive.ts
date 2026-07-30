@@ -27,6 +27,7 @@ import { CalendarWeekStartsOn, generateMonthGrid } from './internals/calendar-mo
 import { resolveCalendarKeyboardDate } from './internals/calendar-keyboard';
 import {
   CALENDAR_MULTI_YEAR_PAGE_SIZE,
+  CALENDAR_UNIT_IS_SAME,
   CALENDAR_PRECISION_VIEW,
   CALENDAR_VIEW_DEPTH,
   CALENDAR_VIEW_UNIT,
@@ -50,7 +51,12 @@ export type { CalendarSelectionFlags } from './internals/calendar-selection';
 // calendar applies — the date inputs use it to make a typed month and a picked month one value
 export { startOfCalendarUnit } from './internals/calendar-view';
 
-export type CalendarMode = 'single' | 'range';
+/**
+ * How much a calendar can hold: one date, a range, or any number of unrelated ones. Each mode reads
+ * and writes its own model — {@link CalendarDirective.value}, `rangeValue`, `multipleValue` — so
+ * switching mode never has to reinterpret the other's value.
+ */
+export type CalendarMode = 'single' | 'range' | 'multiple';
 
 export type CalendarRange = {
   start: Date | null;
@@ -159,6 +165,8 @@ export class CalendarDirective {
   public value = model<Date | null>(null);
   /** Selected range in `range` mode. */
   public rangeValue = model<CalendarRange>({ start: null, end: null });
+  /** Selected dates in `multiple` mode, ascending. Each pick toggles one. */
+  public multipleValue = model<Date[]>([]);
   /** First of the displayed month. `null` follows the selection (or today). */
   public activeMonth = model<Date | null>(null);
 
@@ -182,10 +190,16 @@ export class CalendarDirective {
   );
 
   private anchorDate = computed(() => {
-    if (this.mode() === 'range') {
+    const mode = this.mode();
+
+    if (mode === 'range') {
       const range = this.rangeValue();
 
       return range.start ?? range.end ?? this.startAt() ?? this.today;
+    }
+
+    if (mode === 'multiple') {
+      return this.multipleValue()[0] ?? this.startAt() ?? this.today;
     }
 
     return this.value() ?? this.startAt() ?? this.today;
@@ -591,6 +605,7 @@ export class CalendarDirective {
     return createCalendarSelectionReader({
       mode: this.mode(),
       value: this.value(),
+      values: this.multipleValue(),
       rangeStart: this.rangeValue().start,
       rangeEnd: this.rangeValue().end,
       previewTo: this.hoveredDate() ?? this.focusedDate(),
@@ -607,11 +622,18 @@ export class CalendarDirective {
   private commitSelection(date: Date) {
     const precision = this.precision();
     const unitStart = startOfCalendarUnit(date, precision);
+    const mode = this.mode();
 
     this.moveFocus(unitStart);
 
-    if (this.mode() === 'single') {
+    if (mode === 'single') {
       this.value.set(unitStart);
+
+      return;
+    }
+
+    if (mode === 'multiple') {
+      this.toggleMultiple(unitStart);
 
       return;
     }
@@ -626,6 +648,25 @@ export class CalendarDirective {
 
     this.rangeValue.set({ start, end: unitStart });
     this.hoveredDate.set(null);
+  }
+
+  /**
+   * Adds a date to the `multiple` set, or takes it out again when it is already in — a second pick of
+   * the same cell is how a reader unpicks it. Kept ascending, so a consumer never has to sort by hand
+   * and the calendar's own anchor is the earliest date.
+   */
+  private toggleMultiple(unitStart: Date) {
+    const isSameUnit = CALENDAR_UNIT_IS_SAME[this.precision()];
+    const current = this.multipleValue();
+    const without = current.filter((picked) => !isSameUnit(picked, unitStart));
+
+    if (without.length !== current.length) {
+      this.multipleValue.set(without);
+
+      return;
+    }
+
+    this.multipleValue.set([...current, unitStart].sort((left, right) => left.getTime() - right.getTime()));
   }
 
   /** `dateClass`'s classes for one cell, normalized to a list. `null` when there is no hook. */

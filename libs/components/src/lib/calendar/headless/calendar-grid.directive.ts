@@ -14,6 +14,7 @@ import { CalendarDirective } from './calendar.directive';
   host: {
     role: 'grid',
     '[attr.aria-label]': 'calendar?.headerLabel()',
+    '[attr.aria-multiselectable]': "calendar?.mode() === 'multiple' ? true : null",
     '(keydown)': 'calendar?.handleKeydown($event)',
     '(focusin)': 'focusIsInside.set(true)',
     '(focusout)': 'handleFocusOut($event)',

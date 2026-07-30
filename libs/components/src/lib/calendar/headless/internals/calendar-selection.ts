@@ -15,9 +15,11 @@ export type CalendarSelectionFlags = {
 };
 
 export type CalendarSelectionState = {
-  mode: 'single' | 'range';
+  mode: 'single' | 'range' | 'multiple';
   /** The single value, or `null`. */
   value: Date | null;
+  /** Every date picked in `multiple` mode. */
+  values: readonly Date[];
   rangeStart: Date | null;
   rangeEnd: Date | null;
   /** Where the pending range currently previews to — the hovered cell, else the roving focus. */
@@ -42,6 +44,7 @@ export const createCalendarSelectionReader = (state: CalendarSelectionState) => 
   const isSameUnit = CALENDAR_UNIT_IS_SAME[state.unit];
   const normalize = (date: Date) => startOfCalendarUnit(date, state.unit);
   const isRange = state.mode === 'range';
+  const isMultiple = state.mode === 'multiple';
   const start = isRange && state.rangeStart !== null ? normalize(state.rangeStart) : null;
   const end = isRange && state.rangeEnd !== null ? normalize(state.rangeEnd) : null;
 
@@ -89,7 +92,11 @@ export const createCalendarSelectionReader = (state: CalendarSelectionState) => 
     const value = state.value;
 
     return {
-      selected: isRange ? rangeStart || rangeEnd : value !== null && isSameUnit(date, value),
+      selected: isMultiple
+        ? state.values.some((picked) => isSameUnit(date, picked))
+        : isRange
+          ? rangeStart || rangeEnd
+          : value !== null && isSameUnit(date, value),
       rangeStart,
       rangeEnd,
       inRange: start !== null && end !== null && isAfter(date, start) && isBefore(date, end),

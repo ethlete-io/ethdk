@@ -18,6 +18,7 @@ import {
       #cal="etCalendar"
       [(value)]="value"
       [(rangeValue)]="rangeValue"
+      [(multipleValue)]="multipleValue"
       [(activeMonth)]="activeMonth"
       [mode]="mode()"
       [min]="min()"
@@ -78,6 +79,7 @@ class HostComponent {
   dateClass = signal<CalendarDateClassFn | null>(null);
   value = signal<Date | null>(null);
   rangeValue = signal<CalendarRange>({ start: null, end: null });
+  multipleValue = signal<Date[]>([]);
   activeMonth = signal<Date | null>(new Date(2026, 6, 1));
   monthSelect = signal<Date | null>(null);
   yearSelect = signal<Date | null>(null);
@@ -455,6 +457,87 @@ describe('CalendarDirective', () => {
       fixture.detectChanges();
 
       expect(calendar.hoveredDate()).toBeNull();
+    });
+  });
+
+  describe("'multiple' mode", () => {
+    beforeEach(() => {
+      host.mode.set('multiple');
+      fixture.detectChanges();
+    });
+
+    it('collects each pick, ascending, and marks the grid multiselectable', () => {
+      expect(grid().getAttribute('aria-multiselectable')).toBe('true');
+
+      cellFor(16)?.click();
+      cellFor(3)?.click();
+      cellFor(21)?.click();
+      fixture.detectChanges();
+
+      expect(host.multipleValue()).toEqual([new Date(2026, 6, 3), new Date(2026, 6, 16), new Date(2026, 6, 21)]);
+      expect(cellFor(16)?.getAttribute('aria-selected')).toBe('true');
+      expect(cellFor(3)?.hasAttribute('data-selected')).toBe(true);
+      expect(cellFor(4)?.hasAttribute('data-selected')).toBe(false);
+    });
+
+    it('unpicks a date on a second pick', () => {
+      cellFor(16)?.click();
+      cellFor(21)?.click();
+      fixture.detectChanges();
+
+      cellFor(16)?.click();
+      fixture.detectChanges();
+
+      expect(host.multipleValue()).toEqual([new Date(2026, 6, 21)]);
+      expect(cellFor(16)?.hasAttribute('data-selected')).toBe(false);
+    });
+
+    it('never bands or previews — the dates are unrelated', () => {
+      cellFor(10)?.click();
+      fixture.detectChanges();
+
+      cellFor(13)?.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true }));
+      fixture.detectChanges();
+
+      expect(calendar.hoveredDate()).toBeNull();
+      expect(cellFor(12)?.hasAttribute('data-in-range')).toBe(false);
+      expect(cellFor(12)?.getAttribute('data-band')).toBeNull();
+    });
+
+    it('refuses a disabled date and leaves the set alone', () => {
+      host.min.set(new Date(2026, 6, 10));
+      fixture.detectChanges();
+
+      cellFor(9)?.click();
+      fixture.detectChanges();
+
+      expect(host.multipleValue()).toEqual([]);
+    });
+
+    it('toggles whole months at month precision', () => {
+      host.precision.set('month');
+      fixture.detectChanges();
+
+      const monthCell = (label: string) => cells().find((cell) => cell.textContent?.trim() === label) ?? null;
+
+      monthCell('Mar')?.click();
+      monthCell('Sep')?.click();
+      fixture.detectChanges();
+
+      expect(host.multipleValue()).toEqual([new Date(2026, 2, 1), new Date(2026, 8, 1)]);
+
+      monthCell('Mar')?.click();
+      fixture.detectChanges();
+
+      expect(host.multipleValue()).toEqual([new Date(2026, 8, 1)]);
+    });
+
+    it('opens at the earliest picked date', () => {
+      host.activeMonth.set(null);
+      host.multipleValue.set([new Date(2027, 1, 9), new Date(2026, 10, 4)]);
+      fixture.detectChanges();
+
+      expect(calendar.visibleMonth()).toEqual(new Date(2027, 1, 1));
     });
   });
 

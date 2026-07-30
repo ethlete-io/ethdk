@@ -27,9 +27,17 @@ import { injectCalendarLabels } from '../calendar/calendar-labels';
         'locale',
         'value',
         'rangeValue',
+        'multipleValue',
         'activeMonth',
       ],
-      outputs: ['valueChange', 'rangeValueChange', 'activeMonthChange', 'monthSelect', 'yearSelect'],
+      outputs: [
+        'valueChange',
+        'rangeValueChange',
+        'multipleValueChange',
+        'activeMonthChange',
+        'monthSelect',
+        'yearSelect',
+      ],
     },
   ],
   host: {
