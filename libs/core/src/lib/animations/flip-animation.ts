@@ -1,4 +1,5 @@
 import { combineLatest, Subject } from 'rxjs';
+import { matchesReducedMotion } from './animation-utils';
 
 type FlipAnimationGroupConfig = {
   /**
@@ -17,16 +18,26 @@ type FlipAnimationGroupConfig = {
    * @default 'cubic-bezier(0.4, 0, 0.2, 1)'
    */
   easing?: string;
+
+  /**
+   * Play the animation even when the user prefers reduced motion.
+   *
+   * Only set this for movement that carries meaning the user would otherwise miss — decorative
+   * movement should stay gated.
+   *
+   * @default false
+   */
+  ignoreReducedMotion?: boolean;
 };
 
 export const createFlipAnimationGroup = (config: FlipAnimationGroupConfig) => {
-  const { elements, duration = 250, easing = 'cubic-bezier(0.4, 0, 0.2, 1)' } = config;
+  const { elements, duration = 250, easing = 'cubic-bezier(0.4, 0, 0.2, 1)', ignoreReducedMotion } = config;
 
   const flips = elements.map((el) => {
     const element = 'element' in el ? el.element : el;
     const originElement = 'originElement' in el ? el.originElement : undefined;
 
-    return createFlipAnimation({ element, originElement, duration, easing });
+    return createFlipAnimation({ element, originElement, duration, easing, ignoreReducedMotion });
   });
 
   const onStart$ = combineLatest(flips.map((animation) => animation.onStart$));
@@ -78,10 +89,26 @@ export type FlipAnimationConfig = {
    * @default 'cubic-bezier(0.4, 0, 0.2, 1)'
    */
   easing?: string;
+
+  /**
+   * Play the animation even when the user prefers reduced motion.
+   *
+   * Only set this for movement that carries meaning the user would otherwise miss — decorative
+   * movement should stay gated.
+   *
+   * @default false
+   */
+  ignoreReducedMotion?: boolean;
 };
 
 export const createFlipAnimation = (config: FlipAnimationConfig) => {
-  const { element: el, originElement = el, duration = 250, easing = 'cubic-bezier(0.4, 0, 0.2, 1)' } = config;
+  const {
+    element: el,
+    originElement = el,
+    duration = 250,
+    easing = 'cubic-bezier(0.4, 0, 0.2, 1)',
+    ignoreReducedMotion = false,
+  } = config;
 
   let initialRect = originElement.getBoundingClientRect();
   let animation: Animation | null = null;
@@ -123,6 +150,11 @@ export const createFlipAnimation = (config: FlipAnimationConfig) => {
       scaleY: initialRect.height / lastRect.height,
     };
 
+    // Under reduced motion the element jumps straight to its final position. Collapsing the duration
+    // instead of bailing out keeps the `Animation` lifecycle intact, so callers that wait on
+    // `onFinish$` to clean up still get their event.
+    const effectiveDuration = !ignoreReducedMotion && matchesReducedMotion(el) ? 0 : duration;
+
     animation = el.animate(
       [
         {
@@ -138,7 +170,7 @@ export const createFlipAnimation = (config: FlipAnimationConfig) => {
         },
       ],
       {
-        duration,
+        duration: effectiveDuration,
         easing,
         fill: 'both',
       },
