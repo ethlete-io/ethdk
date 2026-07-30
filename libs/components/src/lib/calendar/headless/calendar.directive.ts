@@ -26,18 +26,28 @@ import { CalendarWeekStartsOn, generateMonthGrid } from './internals/calendar-mo
 import { resolveCalendarKeyboardDate } from './internals/calendar-keyboard';
 import {
   CALENDAR_MULTI_YEAR_PAGE_SIZE,
+  CALENDAR_PRECISION_VIEW,
   CALENDAR_VIEW_DEPTH,
+  CALENDAR_VIEW_UNIT,
   CalendarAvailability,
+  CalendarPrecision,
   CalendarView,
+  clampCalendarView,
   generateMultiYearGrid,
   generateYearGrid,
   hasSelectableDayIn,
   isInMultiYearPage,
   multiYearPageInterval,
   multiYearPageStart,
+  startOfCalendarUnit,
 } from './internals/calendar-view';
+import { createCalendarSelectionReader } from './internals/calendar-selection';
 
-export type { CalendarInterval, CalendarView } from './internals/calendar-view';
+export type { CalendarInterval, CalendarPrecision, CalendarView } from './internals/calendar-view';
+export type { CalendarSelectionFlags } from './internals/calendar-selection';
+// public because a control that writes dates at a precision needs the same normalization the
+// calendar applies — the date inputs use it to make a typed month and a picked month one value
+export { startOfCalendarUnit } from './internals/calendar-view';
 
 export type CalendarMode = 'single' | 'range';
 
@@ -121,9 +131,19 @@ export class CalendarDirective {
   public startAt = input<Date | null>(null);
 
   /**
+   * How precise a selection is. `'month'` makes this a month picker and
+   * `'year'` a year picker: the grid holding that unit is the finest one the
+   * calendar shows, picking a cell there writes the value, and the value is the
+   * start of the unit (`2026-07-01T00:00` for July 2026). Ranges band at the
+   * same unit.
+   */
+  public precision = input<CalendarPrecision>('day');
+
+  /**
    * Which grid the calendar opens on — `'year'` to have the reader pick a month
    * first, `'multiYear'` a year (a birth date, say). Writing {@link view}
-   * afterwards drills wherever you like; changing this resets it.
+   * afterwards drills wherever you like; changing this resets it. A view finer
+   * than {@link precision} clamps to the grid that selects.
    */
   public startView = input<CalendarView>('month');
 
@@ -147,7 +167,10 @@ export class CalendarDirective {
   public yearSelect = output<Date>();
 
   /** The grid on show. Writable, so a custom header can drill without going through {@link zoomOut}. */
-  public view = linkedSignal(() => this.startView());
+  public view = linkedSignal(() => clampCalendarView(this.startView(), this.precision()));
+
+  /** The finest grid this calendar shows — the one whose cells hold {@link precision}'s unit. */
+  public selectionView = computed(() => CALENDAR_PRECISION_VIEW[this.precision()]);
 
   private today = startOfDay(new Date());
 
@@ -285,19 +308,6 @@ export class CalendarDirective {
     }
   });
 
-  /** The dates a cell can read itself as selected from: the value, or the range's ends. */
-  private selectedDates = computed<Date[]>(() => {
-    if (this.mode() === 'range') {
-      const { start, end } = this.rangeValue();
-
-      return [start, end].filter((date): date is Date => date !== null);
-    }
-
-    const value = this.value();
-
-    return value === null ? [] : [value];
-  });
-
   /** Reused per coarse cell, so the day scan reads the bounds and the filter from one place. */
   private availability = computed<CalendarAvailability>(() => ({
     min: this.min(),
@@ -307,73 +317,24 @@ export class CalendarDirective {
 
   public weeks = computed<CalendarCell[][]>(() => {
     const month = this.visibleMonth();
-    const mode = this.mode();
-    const value = this.value();
-    const range = this.rangeValue();
     const focused = this.focusedDate();
     const locale = this.effectiveLocale();
     const labelOptions = locale ? { locale } : undefined;
-    const start = mode === 'range' && range.start ? startOfDay(range.start) : null;
-    const end = mode === 'range' && range.end ? startOfDay(range.end) : null;
-    let previewStart: Date | null = null;
-    let previewEnd: Date | null = null;
-
-    if (start !== null && end === null) {
-      const preview = startOfDay(this.hoveredDate() ?? focused);
-
-      previewStart = isBefore(preview, start) ? preview : start;
-      previewEnd = isBefore(preview, start) ? start : preview;
-    }
-
-    // the visual band spans the committed range, or the pending preview
-    let bandStart: Date | null = null;
-    let bandEnd: Date | null = null;
-
-    if (start !== null && end !== null && !isSameDay(start, end)) {
-      bandStart = start;
-      bandEnd = end;
-    } else if (previewStart !== null && previewEnd !== null && !isSameDay(previewStart, previewEnd)) {
-      bandStart = previewStart;
-      bandEnd = previewEnd;
-    }
+    const readSelection = this.selectionReader('month');
 
     return generateMonthGrid(month, this.effectiveFirstDayOfWeek()).map((week) =>
-      week.map((date) => {
-        const rangeStart = start !== null && isSameDay(date, start);
-        const rangeEnd = end !== null && isSameDay(date, end);
-
-        return {
-          date,
-          dayOfMonth: getDate(date),
-          label: `${getDate(date)}`,
-          ariaLabel: format(date, 'PPPP', labelOptions),
-          classes: this.resolveCellClasses(date, 'month'),
-          disabled: this.isDateDisabled(date),
-          today: isSameDay(date, this.today),
-          selected: mode === 'single' ? value !== null && isSameDay(date, value) : rangeStart || rangeEnd,
-          rangeStart,
-          rangeEnd,
-          inRange: start !== null && end !== null && isAfter(date, start) && isBefore(date, end),
-          inHoverPreview:
-            previewStart !== null &&
-            previewEnd !== null &&
-            !isSameDay(previewStart, previewEnd) &&
-            !isBefore(date, previewStart) &&
-            !isAfter(date, previewEnd),
-          band:
-            bandStart !== null && bandEnd !== null
-              ? isSameDay(date, bandStart)
-                ? ('start' as const)
-                : isSameDay(date, bandEnd)
-                  ? ('end' as const)
-                  : isAfter(date, bandStart) && isBefore(date, bandEnd)
-                    ? ('middle' as const)
-                    : null
-              : null,
-          outsideMonth: !isSameMonth(date, month),
-          focused: isSameDay(date, focused),
-        };
-      }),
+      week.map((date) => ({
+        date,
+        dayOfMonth: getDate(date),
+        label: `${getDate(date)}`,
+        ariaLabel: format(date, 'PPPP', labelOptions),
+        classes: this.resolveCellClasses(date, 'month'),
+        disabled: this.isDateDisabled(date),
+        today: isSameDay(date, this.today),
+        ...readSelection(date),
+        outsideMonth: !isSameMonth(date, month),
+        focused: isSameDay(date, focused),
+      })),
     );
   });
 
@@ -382,7 +343,7 @@ export class CalendarDirective {
     const locale = this.effectiveLocale();
     const labelOptions = locale ? { locale } : undefined;
     const focused = this.focusedDate();
-    const selected = this.selectedDates();
+    const readSelection = this.selectionReader('year');
 
     return generateYearGrid(this.visibleYear()).map((row) =>
       row.map((month) => ({
@@ -392,12 +353,7 @@ export class CalendarDirective {
         classes: this.resolveCellClasses(month, 'year'),
         disabled: this.isMonthDisabled(month),
         today: isSameMonth(month, this.today),
-        selected: selected.some((date) => isSameMonth(date, month)),
-        rangeStart: false,
-        rangeEnd: false,
-        inRange: false,
-        inHoverPreview: false,
-        band: null,
+        ...readSelection(month),
         focused: isSameMonth(month, focused),
       })),
     );
@@ -408,7 +364,7 @@ export class CalendarDirective {
     const locale = this.effectiveLocale();
     const labelOptions = locale ? { locale } : undefined;
     const focused = this.focusedDate();
-    const selected = this.selectedDates();
+    const readSelection = this.selectionReader('multiYear');
 
     return generateMultiYearGrid(this.multiYearPageStart()).map((row) =>
       row.map((year) => {
@@ -421,12 +377,7 @@ export class CalendarDirective {
           classes: this.resolveCellClasses(year, 'multiYear'),
           disabled: this.isYearDisabled(year),
           today: isSameYear(year, this.today),
-          selected: selected.some((date) => isSameYear(date, year)),
-          rangeStart: false,
-          rangeEnd: false,
-          inRange: false,
-          inHoverPreview: false,
-          band: null,
+          ...readSelection(year),
           focused: isSameYear(year, focused),
         };
       }),
@@ -445,7 +396,10 @@ export class CalendarDirective {
     return max === null || !isAfter(this.adjacentUnit(1).start, startOfDay(max));
   });
 
-  /** Whether the header can zoom out any further — false only once the year grid is showing. */
+  /**
+   * Whether the header can zoom out any further: false once the year grid is showing, and for a
+   * year-precision calendar, whose only grid that is.
+   */
   public canZoomOut = computed(() => this.view() !== 'multiYear');
 
   public isDateDisabled(date: Date) {
@@ -476,8 +430,10 @@ export class CalendarDirective {
   }
 
   /**
-   * Activates the focused cell of whichever view is showing: picks the date in the day grid, drills into
-   * the picked month or year otherwise. Coarse picks navigate — they never write a value.
+   * Activates the focused cell of whichever view is showing: writes the value when that grid is the
+   * one {@link precision} selects in, drills a level in otherwise. So a day-precision calendar
+   * selects in the day grid and treats a month or year pick as navigation, while a month-precision
+   * one selects the month itself.
    */
   public activateCell(date: Date) {
     switch (this.view()) {
@@ -501,29 +457,12 @@ export class CalendarDirective {
       return;
     }
 
-    this.moveFocus(day);
-
-    if (this.mode() === 'single') {
-      this.value.set(day);
-
-      return;
-    }
-
-    const { start, end } = this.rangeValue();
-
-    if (!start || end || isBefore(day, startOfDay(start))) {
-      this.rangeValue.set({ start: day, end: null });
-
-      return;
-    }
-
-    this.rangeValue.set({ start, end: day });
-    this.hoveredDate.set(null);
+    this.commitSelection(day);
   }
 
   /**
-   * Drills into a month from the month grid. The value is left alone: the reader narrowed down where to
-   * look, they have not picked a date yet.
+   * Picks a month in the month grid: writes it at month precision, drills into its day grid
+   * otherwise — the reader has narrowed down where to look, not picked a date yet.
    */
   public selectMonth(date: Date) {
     const month = startOfMonth(date);
@@ -533,11 +472,21 @@ export class CalendarDirective {
     }
 
     this.monthSelect.emit(month);
+
+    if (this.precision() === 'month') {
+      this.commitSelection(month);
+
+      return;
+    }
+
     this.activeMonth.set(month);
     this.view.set('month');
   }
 
-  /** Drills into a year from the year grid, keeping the month the reader was on. */
+  /**
+   * Picks a year in the year grid: writes it at year precision, drills into its months otherwise,
+   * keeping the month the reader was on.
+   */
   public selectYear(date: Date) {
     const year = startOfYear(date);
 
@@ -546,14 +495,21 @@ export class CalendarDirective {
     }
 
     this.yearSelect.emit(year);
+
+    if (this.precision() === 'year') {
+      this.commitSelection(year);
+
+      return;
+    }
+
     this.activeMonth.set(setYear(this.visibleMonth(), year.getFullYear()));
     this.view.set('year');
   }
 
   /**
    * Zooms the grid out one level — day grid → month grid → year grid — which is what the header label
-   * does. From the year grid, which has nothing coarser above it, it returns to the day grid, so the
-   * header is never a dead end for a reader who opened it by accident.
+   * does. From the year grid, which has nothing coarser above it, it returns to the finest grid this
+   * calendar has, so the header is never a dead end for a reader who opened it by accident.
    */
   public zoomOut() {
     switch (this.view()) {
@@ -562,7 +518,7 @@ export class CalendarDirective {
       case 'year':
         return this.view.set('multiYear');
       default:
-        return this.view.set('month');
+        return this.view.set(this.selectionView());
     }
   }
 
@@ -608,6 +564,52 @@ export class CalendarDirective {
 
     event.preventDefault();
     this.moveFocus(target);
+  }
+
+  /**
+   * Reads how a cell relates to the selection, comparing at the unit the given view's cells hold.
+   * One implementation for all three grids, which is what makes a month- or year-precision range
+   * band its own cells.
+   */
+  private selectionReader(view: CalendarView) {
+    return createCalendarSelectionReader({
+      mode: this.mode(),
+      value: this.value(),
+      rangeStart: this.rangeValue().start,
+      rangeEnd: this.rangeValue().end,
+      previewTo: this.hoveredDate() ?? this.focusedDate(),
+      unit: CALENDAR_VIEW_UNIT[view],
+    });
+  }
+
+  /**
+   * Writes a pick, whatever unit it names. Range mode: the first pick starts the range, a
+   * later-or-equal second completes it, an earlier one restarts it — compared at the precision's
+   * unit, so picking the range's own start month again completes a one-month range rather than
+   * restarting it.
+   */
+  private commitSelection(date: Date) {
+    const precision = this.precision();
+    const unitStart = startOfCalendarUnit(date, precision);
+
+    this.moveFocus(unitStart);
+
+    if (this.mode() === 'single') {
+      this.value.set(unitStart);
+
+      return;
+    }
+
+    const { start, end } = this.rangeValue();
+
+    if (start === null || end !== null || isBefore(unitStart, startOfCalendarUnit(start, precision))) {
+      this.rangeValue.set({ start: unitStart, end: null });
+
+      return;
+    }
+
+    this.rangeValue.set({ start, end: unitStart });
+    this.hoveredDate.set(null);
   }
 
   /** `dateClass`'s classes for one cell, normalized to a list. `null` when there is no hook. */

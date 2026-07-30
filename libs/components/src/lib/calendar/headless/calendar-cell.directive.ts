@@ -71,8 +71,13 @@ export class CalendarCellDirective {
   }
 
   protected handlePointerEnter() {
-    // only the day grid previews a range: a month or a year cell is a place to look, not an endpoint
-    if (this.calendar?.mode() === 'range' && this.calendar.view() === 'month' && !this.cell().disabled) {
+    // only the grid that selects previews a range — anywhere coarser, a cell is a place to look
+    // rather than an endpoint
+    if (
+      this.calendar?.mode() === 'range' &&
+      this.calendar.view() === this.calendar.selectionView() &&
+      !this.cell().disabled
+    ) {
       this.calendar.hoveredDate.set(this.cell().date);
     }
   }

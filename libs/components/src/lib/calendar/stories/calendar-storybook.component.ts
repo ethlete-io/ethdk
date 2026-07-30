@@ -2,7 +2,7 @@ import { Component, ViewEncapsulation, computed, input, signal } from '@angular/
 import { ProvideColorDirective } from '@ethlete/core';
 import { addDays, addMonths, startOfDay, startOfMonth } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { CalendarDateClassFn, CalendarRange, CalendarView } from '../headless';
+import { CalendarDateClassFn, CalendarPrecision, CalendarRange, CalendarView } from '../headless';
 import { CALENDAR_IMPORTS } from '../calendar.imports';
 
 @Component({
@@ -16,6 +16,7 @@ import { CALENDAR_IMPORTS } from '../calendar.imports';
           [max]="maxDate()"
           [dateFilter]="filterFn()"
           [startAt]="startAtDate()"
+          [precision]="precision()"
           [startView]="startView()"
           [dateClass]="dateClassFn()"
           [locale]="localeObject()"
@@ -34,6 +35,7 @@ import { CALENDAR_IMPORTS } from '../calendar.imports';
           [max]="maxDate()"
           [dateFilter]="filterFn()"
           [startAt]="startAtDate()"
+          [precision]="precision()"
           [startView]="startView()"
           [dateClass]="dateClassFn()"
           [locale]="localeObject()"
@@ -70,6 +72,7 @@ export class CalendarStorybookComponent {
   public disableWeekends = input(false);
   /** Months from today the empty calendar should open at — the story turns it into a `Date`. */
   public startAtMonthOffset = input<number | null>(null);
+  public precision = input<CalendarPrecision>('day');
   public startView = input<CalendarView>('month');
   /** Turns on a `dateClass` hook marking the 1st of each month and every 13th — the story owns the CSS. */
   public markDates = input(false);

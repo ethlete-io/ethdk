@@ -256,6 +256,14 @@
         padding-inline: 4px;
         border-radius: 999px;
       }
+
+      /* the range band is a ribbon behind the pills, so it takes their height rather than the row's —
+         a month-precision range bands month cells the same way a day range bands days */
+      &::before {
+        inset-block: 50% auto;
+        block-size: calc(var(--et-calendar-cell-size) - 6px);
+        translate: 0 -50%;
+      }
     }
   }
 

@@ -1,4 +1,15 @@
-import { addDays, addYears, isAfter, isBefore, startOfDay, startOfYear } from 'date-fns';
+import {
+  addDays,
+  addYears,
+  isAfter,
+  isBefore,
+  isSameDay,
+  isSameMonth,
+  isSameYear,
+  startOfDay,
+  startOfMonth,
+  startOfYear,
+} from 'date-fns';
 
 /**
  * Which grid the calendar is showing:
@@ -8,6 +19,42 @@ import { addDays, addYears, isAfter, isBefore, startOfDay, startOfYear } from 'd
  * - `multiYear` — the **year grid**: one page of {@link CALENDAR_MULTI_YEAR_PAGE_SIZE} years.
  */
 export type CalendarView = 'month' | 'year' | 'multiYear';
+
+/** How precise a selection is — which unit a picked value names, and which grid picks it. */
+export type CalendarPrecision = 'day' | 'month' | 'year';
+
+/** The view whose cells hold the precision's unit: that grid is where selection happens. */
+export const CALENDAR_PRECISION_VIEW: Record<CalendarPrecision, CalendarView> = {
+  day: 'month',
+  month: 'year',
+  year: 'multiYear',
+};
+
+/** The unit each view's cells hold — what a cell of that grid compares dates at. */
+export const CALENDAR_VIEW_UNIT: Record<CalendarView, CalendarPrecision> = {
+  month: 'day',
+  year: 'month',
+  multiYear: 'year',
+};
+
+/** Same-unit comparison per precision. */
+export const CALENDAR_UNIT_IS_SAME: Record<CalendarPrecision, (left: Date, right: Date) => boolean> = {
+  day: isSameDay,
+  month: isSameMonth,
+  year: isSameYear,
+};
+
+/** Start of the unit `date` falls in — what a selection at that precision writes. */
+export const startOfCalendarUnit = (date: Date, precision: CalendarPrecision) => {
+  switch (precision) {
+    case 'month':
+      return startOfMonth(date);
+    case 'year':
+      return startOfYear(date);
+    default:
+      return startOfDay(date);
+  }
+};
 
 /** A closed day-granular date interval — what a coarse cell covers. */
 export type CalendarInterval = {
@@ -26,6 +73,16 @@ export const CALENDAR_VIEW_DEPTH: Record<CalendarView, number> = {
   month: 0,
   year: 1,
   multiYear: 2,
+};
+
+/**
+ * `view` held at or outside the precision's own grid. A month-precision calendar has no day grid to
+ * show — its finest cell *is* a month — so anything finer clamps to the grid that selects.
+ */
+export const clampCalendarView = (view: CalendarView, precision: CalendarPrecision) => {
+  const floor = CALENDAR_PRECISION_VIEW[precision];
+
+  return CALENDAR_VIEW_DEPTH[view] < CALENDAR_VIEW_DEPTH[floor] ? floor : view;
 };
 
 const toRows = (cells: Date[]): Date[][] => {

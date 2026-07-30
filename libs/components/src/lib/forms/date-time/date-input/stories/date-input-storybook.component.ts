@@ -6,6 +6,7 @@ import { addDays, startOfDay } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { FORM_FIELD_IMPORTS } from '../../../form-field';
 import { DATE_INPUT_IMPORTS } from '../date-input.imports';
+import { CalendarPrecision } from '../../../../calendar/headless';
 
 @Component({
   selector: 'et-sb-date-input',
@@ -20,6 +21,7 @@ import { DATE_INPUT_IMPORTS } from '../date-input.imports';
           [placeholder]="placeholder()"
           [valueFormat]="valueFormat()"
           [displayFormat]="displayFormat()"
+          [precision]="precision()"
           [locale]="localeObject()"
           [mask]="mask()"
           [minDate]="minDate()"
@@ -48,7 +50,8 @@ export class DateInputStorybookComponent {
   public mixedLabel = input('Mixed');
   public showMixedState = input(false);
   public valueFormat = input<string | undefined>(undefined);
-  public displayFormat = input('P');
+  public displayFormat = input<string | null>(null);
+  public precision = input<CalendarPrecision>('day');
   public mask = input(false);
   public locale = input<'default' | 'de'>('default');
   public constrained = input(false);

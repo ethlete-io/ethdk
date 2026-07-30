@@ -17,6 +17,7 @@ export default {
     showMixedState: { control: false, table: { disable: true } },
     valueFormat: { control: 'text' },
     displayFormat: { control: 'text' },
+    precision: { control: 'select', options: ['day', 'month', 'year'] },
     mask: { control: 'boolean' },
     locale: { control: 'select', options: ['default', 'de'] },
     disabled: { control: 'boolean' },
@@ -34,7 +35,8 @@ export default {
     mixedLabel: 'Mixed',
     showMixedState: false,
     valueFormat: 'yyyy-MM-dd',
-    displayFormat: 'P',
+    displayFormat: null,
+    precision: 'day',
     mask: false,
     locale: 'default',
     disabled: false,
@@ -73,5 +75,15 @@ export const Mixed: Story = {
     mixedLabel: 'Mixed',
     showMixedState: true,
     hint: 'The hidden range stays intact and unshown; the mixed label is the placeholder in both fields. Committing either end starts a fresh range.',
+  },
+};
+
+export const MonthRange: Story = {
+  args: {
+    precision: 'month',
+    valueFormat: 'yyyy-MM',
+    startPlaceholder: 'mm/yyyy',
+    endPlaceholder: 'mm/yyyy',
+    hint: "A month range — 07/2025 – 03/2026 — banded across the picker's month grid",
   },
 };

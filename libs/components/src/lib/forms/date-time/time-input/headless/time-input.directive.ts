@@ -42,6 +42,9 @@ export class TimeInputDirective extends DatePickerInputDirective implements Form
   public maxTime = input<Date | null>(null);
   public timeFilter = input<((date: Date) => boolean) | null>(null);
 
+  /** No precision to derive from here — the input is the format in effect. */
+  public effectiveDisplayFormat = this.displayFormat;
+
   /** The string in effect: this instance's `parseErrorMessage`, else the domain's label set. */
   public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidTime);
 

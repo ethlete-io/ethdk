@@ -7,10 +7,19 @@ import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.dir
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { DateInputFieldDirective } from './date-input-field.directive';
 import { DateInputDirective } from './date-input.directive';
+import { CalendarPrecision } from '../../../../calendar/headless';
 
 @Component({
   template: `
-    <div [(value)]="value" [(mixed)]="mixed" [disabled]="disabled()" valueFormat="yyyy-MM-dd" etDateInput>
+    <div
+      [(value)]="value"
+      [(mixed)]="mixed"
+      [disabled]="disabled()"
+      [precision]="precision()"
+      [displayFormat]="displayFormat()"
+      valueFormat="yyyy-MM-dd"
+      etDateInput
+    >
       <input etDateInputField />
       <button class="open-picker" etDatePickerTrigger>open</button>
 
@@ -25,6 +34,8 @@ class DateInputTestHost {
   value = signal<string | null>(null);
   mixed = signal(false);
   disabled = signal(false);
+  precision = signal<CalendarPrecision>('day');
+  displayFormat = signal<string | null>(null);
   pickDate = new Date(2026, 6, 16);
 }
 
@@ -263,6 +274,67 @@ describe('DateInputDirective', () => {
       expect(host.mixed()).toBe(false);
       expect(host.value()).toBe('2026-07-16');
       expect(field.value).toBe('07/16/2026');
+    });
+  });
+  describe('precision', () => {
+    it('derives a month format and normalizes typed months to the 1st', () => {
+      host.precision.set('month');
+      tick();
+
+      expect(dateInput.effectiveDisplayFormat()).toBe('MM/yyyy');
+
+      typeAndBlur('07/2026');
+
+      // the 1st, not today's day of July — a coarse format cannot say which day it meant
+      expect(host.value()).toBe('2026-07-01');
+      expect(dateInput.parseError()).toBe(false);
+      expect(field.value).toBe('07/2026');
+    });
+
+    it('normalizes a picked date to the month at month precision', async () => {
+      host.precision.set('month');
+      tick();
+
+      await openPicker();
+      pickButton()?.click();
+      tick();
+
+      expect(host.value()).toBe('2026-07-01');
+    });
+
+    it('takes a bare year at year precision', () => {
+      host.precision.set('year');
+      tick();
+
+      expect(dateInput.effectiveDisplayFormat()).toBe('yyyy');
+
+      typeAndBlur('2031');
+
+      expect(host.value()).toBe('2031-01-01');
+      expect(field.value).toBe('2031');
+    });
+
+    it('refuses text the derived format cannot parse', () => {
+      host.precision.set('month');
+      tick();
+
+      typeAndBlur('07/16/2026');
+
+      expect(host.value()).toBeNull();
+      expect(dateInput.parseError()).toBe(true);
+    });
+
+    it('lets an explicit displayFormat win over the precision', () => {
+      host.precision.set('month');
+      host.displayFormat.set('MMMM yyyy');
+      tick();
+
+      expect(dateInput.effectiveDisplayFormat()).toBe('MMMM yyyy');
+
+      typeAndBlur('July 2026');
+
+      expect(host.value()).toBe('2026-07-01');
+      expect(field.value).toBe('July 2026');
     });
   });
 });

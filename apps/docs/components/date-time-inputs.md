@@ -76,7 +76,8 @@ A date control combining typed entry with an anchored
 | Input                 | Type                                         | Default             | Description                                                                  |
 | --------------------- | -------------------------------------------- | ------------------- | ---------------------------------------------------------------------------- |
 | `valueFormat`         | `string`                                     | `DATE_FORMAT` token | date-fns format of the string value (token default: ISO 8601 with offset).   |
-| `displayFormat`       | `string`                                     | `'P'`               | date-fns format shown in and parsed from the field (locale-aware).           |
+| `displayFormat`       | `string \| null`                             | `null` ⁴            | date-fns format shown in and parsed from the field (locale-aware).           |
+| `precision`           | `'day' \| 'month' \| 'year'`                 | `'day'`             | Which unit the value names — `'month'` makes this a month picker.            |
 | `locale`              | `Locale \| null` (date-fns)                  | `DATE_LOCALE` token | Display/parse locale.                                                        |
 | `minDate` / `maxDate` | `Date \| null`                               | `null`              | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms). |
 | `dateFilter`          | `((date: Date) => boolean) \| null`          | `null`              | Forwarded to the picker calendar.                                            |
@@ -92,6 +93,7 @@ A date control combining typed entry with an anchored
 ¹ `null` falls through to [`DATE_TIME_LABELS`](/components/localization) (`'Open calendar'`, and the matching `openTimePicker` / `openDateTimePicker` for the other controls).
 ² `null` falls through to [`DATE_TIME_LABELS`](/components/localization) — `invalidDate` here, and the matching `invalidTime` / `invalidDateTime` / `invalidDateRange` / `invalidDuration` for the other controls.
 ³ `null` falls through to [`DATE_TIME_LABELS`](/components/localization) (`'Date'` / `'Time'`).
+⁴ `null` derives the format from `precision`: the locale's short date (`'P'`) at day precision, that same pattern without its day at month precision, `'yyyy'` at year precision.
 
 Typed text is parsed **strictly** against `displayFormat` on blur/Enter. Picking
 a day writes `format(date, valueFormat)` and closes the picker (a named
@@ -100,6 +102,21 @@ a day writes `format(date, valueFormat)` and closes the picker (a named
 drilling only navigates, so the field commits on the day pick as always.
 
 <StoryEmbed id="components-forms-date-input--masked" height="360px" />
+
+### Precision {#precision}
+
+`precision` turns the control into a month or year picker. It changes three things together: the text format (so the field reads `07/2026` — and a typing mask can be derived from it, which `'P'` never allowed, since the derived pattern is fixed-width), the picker calendar's selecting grid, and the value, which is always the start of the unit whether it was typed or picked. Without that last part, `07/2026` parsed against `MM/yyyy` would inherit today's day of the month from date-fns' reference date.
+
+```html
+<et-form-field>
+  <et-label>Billing month</et-label>
+  <et-date-input [formField]="demoForm.month" precision="month" valueFormat="yyyy-MM" />
+</et-form-field>
+```
+
+<StoryEmbed id="components-forms-date-input--month-precision" height="360px" />
+
+Naming a `displayFormat` yourself still wins over the derived one. The range input takes `precision` the same way, for month ranges like `07/2025 – 03/2026`; see [the calendar's precision](/components/calendar#month-and-year-pickers) for how the picker behaves there. The date-time input has none — its value carries a time.
 
 ## Date range input — `et-date-range-input` {#date-range-input}
 
@@ -116,7 +133,7 @@ commits exactly like the single date input.
 ```
 
 Options mirror the date input (`valueFormat`, `displayFormat`, `locale`, `mask`,
-`minDate`/`maxDate`/`dateFilter`, `startAt`, `startView`, `dateClass`,
+`minDate`/`maxDate`/`dateFilter`, `startAt`, `startView`, `dateClass`, `precision`,
 `pickerOpen`), with
 `startPlaceholder`/`endPlaceholder` and per-field `startAriaLabel`/`endAriaLabel`
 (defaults `'Start date'`/`'End date'`; the host is a `role="group"` labelled by

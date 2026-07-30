@@ -7,6 +7,7 @@ import {
   CalendarDateClassFn,
   CalendarDirective,
   CalendarMode,
+  CalendarPrecision,
   CalendarRange,
   CalendarView,
 } from './calendar.directive';
@@ -23,6 +24,7 @@ import {
       [max]="max()"
       [dateFilter]="dateFilter()"
       [startAt]="startAt()"
+      [precision]="precision()"
       [startView]="startView()"
       [dateClass]="dateClass()"
       [firstDayOfWeek]="1"
@@ -71,6 +73,7 @@ class HostComponent {
   max = signal<Date | null>(null);
   dateFilter = signal<((date: Date) => boolean) | null>(null);
   startAt = signal<Date | null>(null);
+  precision = signal<CalendarPrecision>('day');
   startView = signal<CalendarView>('month');
   dateClass = signal<CalendarDateClassFn | null>(null);
   value = signal<Date | null>(null);
@@ -452,6 +455,128 @@ describe('CalendarDirective', () => {
       fixture.detectChanges();
 
       expect(calendar.hoveredDate()).toBeNull();
+    });
+  });
+
+  describe('precision', () => {
+    const cellWithText = (text: string) => cells().find((cell) => cell.textContent?.trim() === text) ?? null;
+
+    it('opens on the grid holding its unit and clamps a finer startView', () => {
+      host.precision.set('month');
+      fixture.detectChanges();
+
+      expect(calendar.view()).toBe('year');
+      expect(calendar.selectionView()).toBe('year');
+      expect(cells()).toHaveLength(12);
+
+      host.startView.set('month');
+      fixture.detectChanges();
+
+      expect(calendar.view()).toBe('year');
+    });
+
+    it('writes the month at month precision instead of drilling', () => {
+      host.precision.set('month');
+      fixture.detectChanges();
+
+      cellWithText('Mar')?.click();
+      fixture.detectChanges();
+
+      expect(host.value()).toEqual(new Date(2026, 2, 1));
+      expect(host.monthSelect()).toEqual(new Date(2026, 2, 1));
+      // still the month grid: there is nothing finer to drill into
+      expect(calendar.view()).toBe('year');
+      expect(cellWithText('Mar')?.hasAttribute('data-selected')).toBe(true);
+    });
+
+    it('writes the year at year precision', () => {
+      host.precision.set('year');
+      fixture.detectChanges();
+
+      expect(calendar.view()).toBe('multiYear');
+      expect(calendar.canZoomOut()).toBe(false);
+
+      cellWithText('2031')?.click();
+      fixture.detectChanges();
+
+      expect(host.value()).toEqual(new Date(2031, 0, 1));
+      expect(calendar.view()).toBe('multiYear');
+      expect(cellWithText('2031')?.hasAttribute('data-selected')).toBe(true);
+    });
+
+    it('zooms back to its own finest grid, not the day grid', () => {
+      host.precision.set('month');
+      fixture.detectChanges();
+
+      calendar.zoomOut();
+      fixture.detectChanges();
+
+      expect(calendar.view()).toBe('multiYear');
+
+      calendar.zoomOut();
+      fixture.detectChanges();
+
+      expect(calendar.view()).toBe('year');
+    });
+
+    it('bands a month range across month cells', () => {
+      host.mode.set('range');
+      host.precision.set('month');
+      fixture.detectChanges();
+
+      cellWithText('Mar')?.click();
+      fixture.detectChanges();
+
+      expect(host.rangeValue()).toEqual({ start: new Date(2026, 2, 1), end: null });
+
+      cellWithText('Jun')?.click();
+      fixture.detectChanges();
+
+      expect(host.rangeValue()).toEqual({ start: new Date(2026, 2, 1), end: new Date(2026, 5, 1) });
+      expect(cellWithText('Mar')?.getAttribute('data-band')).toBe('start');
+      expect(cellWithText('Apr')?.getAttribute('data-band')).toBe('middle');
+      expect(cellWithText('May')?.hasAttribute('data-in-range')).toBe(true);
+      expect(cellWithText('Jun')?.getAttribute('data-band')).toBe('end');
+      expect(cellWithText('Feb')?.getAttribute('data-band')).toBeNull();
+    });
+
+    it('previews a pending month range while hovering the month grid', () => {
+      host.mode.set('range');
+      host.precision.set('month');
+      fixture.detectChanges();
+
+      cellWithText('Mar')?.click();
+      fixture.detectChanges();
+
+      cellWithText('May')?.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true }));
+      fixture.detectChanges();
+
+      expect(cellWithText('Apr')?.hasAttribute('data-preview')).toBe(true);
+      expect(cellWithText('Jun')?.hasAttribute('data-preview')).toBe(false);
+    });
+
+    it('completes a one-month range when the start month is picked again', () => {
+      host.mode.set('range');
+      host.precision.set('month');
+      fixture.detectChanges();
+
+      cellWithText('Mar')?.click();
+      fixture.detectChanges();
+      cellWithText('Mar')?.click();
+      fixture.detectChanges();
+
+      expect(host.rangeValue()).toEqual({ start: new Date(2026, 2, 1), end: new Date(2026, 2, 1) });
+    });
+
+    it('still refuses a month with nothing selectable inside it', () => {
+      host.precision.set('month');
+      host.min.set(new Date(2026, 6, 10));
+      fixture.detectChanges();
+
+      cellWithText('Jun')?.click();
+      fixture.detectChanges();
+
+      expect(host.value()).toBeNull();
     });
   });
 

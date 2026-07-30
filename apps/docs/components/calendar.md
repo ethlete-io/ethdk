@@ -24,6 +24,7 @@ On `et-calendar` (forwarded from the headless `[etCalendar]` directive):
 | `min` / `max`    | `Date \| null`                               | `null`              | Selectable window; days outside are disabled and month navigation stops at the bounds. |
 | `dateFilter`     | `((date: Date) => boolean) \| null`          | `null`              | Return `false` to disable a date (e.g. weekends).                                      |
 | `startAt`        | `Date \| null`                               | `null`              | Where an empty calendar opens and which day it focuses first.                          |
+| `precision`      | `'day' \| 'month' \| 'year'`                 | `'day'`             | Which unit a selection names — `'month'` makes this a month picker.                    |
 | `startView`      | `'month' \| 'year' \| 'multiYear'`           | `'month'`           | Which grid the calendar opens on.                                                      |
 | `dateClass`      | `(date, view) => string \| string[] \| null` | `null`              | Extra classes per cell, in every view — markers of your own.                           |
 | `firstDayOfWeek` | `0–6`                                        | locale, else `1`    | `0` = Sunday. Defaults to the locale's week start, Monday without one.                 |
@@ -64,6 +65,23 @@ A coarse cell is disabled when **no** day inside it is selectable, so `min`/`max
 <StoryEmbed id="components-calendar--year-view" height="420px" />
 
 Selection and today's marker carry over unchanged: a coarse cell reads as selected when it contains the value (or a range end), and as today when it contains today. `monthSelect` / `yearSelect` fire on a coarse pick, for consumers that want to close a picker at month precision.
+
+## Month and year pickers
+
+`precision` says which unit a selection names. At `'month'` the month grid is the finest one the calendar has: picking a cell there writes the value instead of drilling, and the value is the start of the unit — July 2026 is `2026-07-01T00:00`. At `'year'` the year grid does the same job.
+
+```html
+<!-- a month picker -->
+<et-calendar [(value)]="month" precision="month" />
+```
+
+<StoryEmbed id="components-calendar--month-precision" height="420px" />
+
+Everything else follows the precision rather than the day: `startView` cannot open a grid finer than it, the header zooms back to the selecting grid rather than the day grid, and a range bands, previews and completes at that unit — so `03/2026 – 06/2026` is a four-cell band in the month grid, and picking the start month twice is a one-month range.
+
+<StoryEmbed id="components-calendar--month-range" height="420px" />
+
+`min`/`max`/`dateFilter` keep their day-level meaning: a month cell is selectable when _some_ day inside it is, which is the same rule that disables coarse cells while drilling. The date inputs take `precision` too, and derive their text format from it — see [date & time inputs](/components/date-time-inputs#precision).
 
 ## Per-date classes
 

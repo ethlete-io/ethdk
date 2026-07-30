@@ -24,7 +24,13 @@ import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.dir
 import { DateRangeInputFieldDirective } from './date-range-input-field.directive';
 import { injectFormFieldLabels } from '../../../../forms/form-field/form-field-labels';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
-import { CalendarDateClassFn, CalendarView } from '../../../../calendar/headless';
+import {
+  CalendarDateClassFn,
+  CalendarPrecision,
+  CalendarView,
+  startOfCalendarUnit,
+} from '../../../../calendar/headless';
+import { displayFormatForPrecision } from '../../internals/precision-format';
 
 export type DateRangeValue = {
   start: string | null;
@@ -93,8 +99,19 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
 
   /** date-fns format of the string values. Defaults to the `DATE_FORMAT` token. */
   public valueFormat = input<string | undefined>(undefined);
-  /** date-fns format shown in (and parsed from) the fields. Locale-aware by default. */
-  public displayFormat = input('P');
+  /**
+   * date-fns format shown in (and parsed from) the fields. Unset, it follows `precision`: the
+   * locale's short date at day precision, that same pattern without its day at month precision
+   * (`MM.yyyy`), the year alone at year precision.
+   */
+  public displayFormat = input<string | null>(null);
+
+  /**
+   * How precise the two dates are — `'month'` makes this a month range (`07/2025 – 03/2026`), a
+   * real reporting filter. Both ends are the start of their unit, and the picker calendar selects
+   * and bands in the grid holding it.
+   */
+  public precision = input<CalendarPrecision>('day');
   public locale = input<Locale | null>(null);
 
   /**
@@ -130,6 +147,11 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
 
   public effectiveValueFormat = computed(() => this.valueFormat() ?? this.defaultValueFormat);
   public effectiveLocale = computed(() => this.locale() ?? this.defaultLocale);
+
+  /** The format in effect: this instance's `displayFormat`, else the one `precision` implies. */
+  public effectiveDisplayFormat = computed(
+    () => this.displayFormat() ?? displayFormatForPrecision(this.precision(), this.effectiveLocale()),
+  );
 
   /** The side the focused field edits — the picker previews from here too. */
   public focusedSide = signal<DateRangeSide | null>(null);
@@ -180,8 +202,10 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
 
-  /** The `[etInputMask]` pattern derived from `displayFormat` — `null` while `mask` is off or the format is refused. */
-  public maskPattern = computed(() => (this.mask() ? maskPatternFromDisplayFormat(this.displayFormat()) : null));
+  /** The `[etInputMask]` pattern derived from the format in effect — `null` while `mask` is off or the format is refused. */
+  public maskPattern = computed(() =>
+    this.mask() ? maskPatternFromDisplayFormat(this.effectiveDisplayFormat()) : null,
+  );
 
   private overlay = createDatePickerOverlay({
     interactive: this.interactive,
@@ -208,7 +232,7 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
       effect(() => {
         if (this.mask() && this.maskPattern() === null) {
           console.warn(
-            `[et-${this.controlType()}] displayFormat "${this.displayFormat()}" is not fixed-width numeric, so no typing mask can be derived — the mask input is ignored.`,
+            `[et-${this.controlType()}] displayFormat "${this.effectiveDisplayFormat()}" is not fixed-width numeric, so no typing mask can be derived — the mask input is ignored.`,
           );
         }
       });
@@ -223,7 +247,7 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
     return this.sides[side].parseError();
   }
 
-  /** The committed value of one side rendered in `displayFormat`. */
+  /** The committed value of one side rendered in the format in effect. */
   public displayValue(side: DateRangeSide) {
     const date = side === 'start' ? this.startDate() : this.endDate();
 
@@ -231,7 +255,7 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
       return '';
     }
 
-    return formatDateValue(date, { format: this.displayFormat(), locale: this.effectiveLocale() }) ?? '';
+    return formatDateValue(date, { format: this.effectiveDisplayFormat(), locale: this.effectiveLocale() }) ?? '';
   }
 
   public activate() {
@@ -295,7 +319,7 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
     // reference midnight so a date-only `displayFormat` doesn't fold the current wall-clock
     // time into a time-bearing `valueFormat` — see the note in date-input's `commitInput`.
     const parsed = parseDateValue(raw, {
-      format: this.displayFormat(),
+      format: this.effectiveDisplayFormat(),
       locale: this.effectiveLocale(),
       referenceDate: startOfDay(new Date()),
     });
@@ -315,7 +339,11 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
     state.inputText.set('');
     state.parseError.set(false);
 
-    const formatted = formatDateValue(parsed, { format: this.effectiveValueFormat(), locale: this.effectiveLocale() });
+    // the unit start, so a typed month and a picked month are one value — see date-input's `writeDate`
+    const formatted = formatDateValue(startOfCalendarUnit(parsed, this.precision()), {
+      format: this.effectiveValueFormat(),
+      locale: this.effectiveLocale(),
+    });
 
     // replace semantics: the first resolving commit starts a fresh range — the hidden
     // other side must not leak into the new value
@@ -336,16 +364,16 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
     }
 
     const options = { format: this.effectiveValueFormat(), locale: this.effectiveLocale() };
+    const precision = this.precision();
+    const write = (date: Date | null) =>
+      date === null ? null : formatDateValue(startOfCalendarUnit(date, precision), options);
 
     for (const side of ['start', 'end'] as const) {
       this.sides[side].inputText.set('');
       this.sides[side].parseError.set(false);
     }
 
-    this.value.set({
-      start: range.start === null ? null : formatDateValue(range.start, options),
-      end: range.end === null ? null : formatDateValue(range.end, options),
-    });
+    this.value.set({ start: write(range.start), end: write(range.end) });
     // the calendar showed no selection while mixed, so this is the normal range-building
     // flow starting fresh — the first pick already replaces the whole hidden range
     this.mixed.set(false);

@@ -7,10 +7,18 @@ import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.dir
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
 import { DateRangeInputFieldDirective } from './date-range-input-field.directive';
 import { DateRangeInputDirective, DateRangeValue } from './date-range-input.directive';
+import { CalendarPrecision } from '../../../../calendar/headless';
 
 @Component({
   template: `
-    <div [(value)]="value" [(mixed)]="mixed" [disabled]="disabled()" valueFormat="yyyy-MM-dd" etDateRangeInput>
+    <div
+      [(value)]="value"
+      [(mixed)]="mixed"
+      [disabled]="disabled()"
+      [precision]="precision()"
+      valueFormat="yyyy-MM-dd"
+      etDateRangeInput
+    >
       <input class="start" etDateRangeInputField side="start" />
       <input class="end" etDateRangeInputField side="end" />
       <button class="open-picker" etDatePickerTrigger>open</button>
@@ -44,6 +52,7 @@ class DateRangeInputTestHost {
   value = signal<DateRangeValue>({ start: null, end: null });
   mixed = signal(false);
   disabled = signal(false);
+  precision = signal<CalendarPrecision>('day');
   pickStart = new Date(2026, 6, 8);
   pickEnd = new Date(2026, 6, 23);
 }
@@ -288,6 +297,44 @@ describe('DateRangeInputDirective', () => {
       expect(host.mixed()).toBe(false);
       expect(host.value()).toEqual({ start: '2026-07-08', end: null });
       expect(rangeInput.pickerOpen()).toBe(true);
+    });
+  });
+
+  describe('precision', () => {
+    it('derives a month format and normalizes both typed ends to the 1st', () => {
+      host.precision.set('month');
+      tick();
+
+      expect(rangeInput.effectiveDisplayFormat()).toBe('MM/yyyy');
+
+      typeAndBlur(startField, '07/2025');
+      typeAndBlur(endField, '03/2026');
+
+      expect(host.value()).toEqual({ start: '2025-07-01', end: '2026-03-01' });
+      expect(rangeInput.parseError()).toBe(false);
+      expect(startField.value).toBe('07/2025');
+      expect(endField.value).toBe('03/2026');
+    });
+
+    it('normalizes a picked month range', async () => {
+      host.precision.set('month');
+      tick();
+
+      await openPicker();
+      pane()?.querySelector<HTMLButtonElement>('.pick-full')?.click();
+      tick();
+
+      expect(host.value()).toEqual({ start: '2026-07-01', end: '2026-07-01' });
+    });
+
+    it('refuses a full date once the format is month-only', () => {
+      host.precision.set('month');
+      tick();
+
+      typeAndBlur(startField, '07/08/2026');
+
+      expect(host.value().start).toBeNull();
+      expect(rangeInput.startParseError()).toBe(true);
     });
   });
 });

@@ -20,6 +20,7 @@ import { injectCalendarLabels } from '../calendar/calendar-labels';
         'max',
         'dateFilter',
         'startAt',
+        'precision',
         'startView',
         'dateClass',
         'firstDayOfWeek',

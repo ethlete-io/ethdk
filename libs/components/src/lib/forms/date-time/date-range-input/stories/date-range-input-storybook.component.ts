@@ -6,6 +6,7 @@ import { de } from 'date-fns/locale';
 import { FORM_FIELD_IMPORTS } from '../../../form-field';
 import { DateRangeValue } from '../headless';
 import { DATE_RANGE_INPUT_IMPORTS } from '../date-range-input.imports';
+import { CalendarPrecision } from '../../../../calendar/headless';
 
 @Component({
   selector: 'et-sb-date-range-input',
@@ -21,6 +22,7 @@ import { DATE_RANGE_INPUT_IMPORTS } from '../date-range-input.imports';
           [endPlaceholder]="endPlaceholder()"
           [valueFormat]="valueFormat()"
           [displayFormat]="displayFormat()"
+          [precision]="precision()"
           [locale]="localeObject()"
           [mask]="mask()"
         />
@@ -49,7 +51,8 @@ export class DateRangeInputStorybookComponent {
   public mixedLabel = input('Mixed');
   public showMixedState = input(false);
   public valueFormat = input<string | undefined>('yyyy-MM-dd');
-  public displayFormat = input('P');
+  public displayFormat = input<string | null>(null);
+  public precision = input<CalendarPrecision>('day');
   public mask = input(false);
   public locale = input<'default' | 'de'>('default');
   public disabled = input(false);

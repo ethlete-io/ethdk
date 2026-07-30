@@ -15,6 +15,7 @@ export default {
     showMixedState: { control: false, table: { disable: true } },
     valueFormat: { control: 'text' },
     displayFormat: { control: 'text' },
+    precision: { control: 'select', options: ['day', 'month', 'year'] },
     mask: { control: 'boolean' },
     locale: { control: 'select', options: ['default', 'de'] },
     constrained: { control: 'boolean' },
@@ -32,7 +33,8 @@ export default {
     mixedLabel: 'Mixed',
     showMixedState: false,
     valueFormat: 'yyyy-MM-dd',
-    displayFormat: 'P',
+    displayFormat: null,
+    precision: 'day',
     mask: false,
     locale: 'default',
     constrained: false,
@@ -65,6 +67,24 @@ export const Masked: Story = {
     displayFormat: 'dd.MM.yyyy',
     placeholder: 'tt.mm.jjjj',
     hint: 'Typing is guided by the fixed-width display format — separators insert themselves',
+  },
+};
+
+export const MonthPrecision: Story = {
+  args: {
+    precision: 'month',
+    valueFormat: 'yyyy-MM',
+    placeholder: 'mm/yyyy',
+    hint: 'A month picker: the format comes from the precision, and the picker selects in its month grid',
+  },
+};
+
+export const YearPrecision: Story = {
+  args: {
+    precision: 'year',
+    valueFormat: 'yyyy',
+    placeholder: 'yyyy',
+    hint: 'A year picker — the calendar opens on its year grid and picks there',
   },
 };
 

@@ -7,7 +7,13 @@ import { DatePickerInputDirective } from '../../internals/date-picker-input.dire
 import { formatDateValue, parseDateValue } from '../../internals/date-value';
 import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
-import { CalendarDateClassFn, CalendarView } from '../../../../calendar/headless';
+import {
+  CalendarDateClassFn,
+  CalendarPrecision,
+  CalendarView,
+  startOfCalendarUnit,
+} from '../../../../calendar/headless';
+import { displayFormatForPrecision } from '../../internals/precision-format';
 
 /**
  * A date form control with a `string | null` value (a date-fns `valueFormat`
@@ -29,8 +35,21 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
   /** Message the form field shows when typed text can't be parsed as a date. */
   public parseErrorMessage = input<string | null>(null);
 
-  /** date-fns format shown in (and parsed from) the field. Locale-aware by default. */
-  public displayFormat = input('P');
+  /**
+   * date-fns format shown in (and parsed from) the field. Unset, it follows
+   * `precision`: the locale's short date at day precision, that same pattern
+   * without its day at month precision (`MM.yyyy`), the year alone at year
+   * precision.
+   */
+  public displayFormat = input<string | null>(null);
+
+  /**
+   * How precise a date this field takes — `'month'` makes it a month picker,
+   * `'year'` a year picker. The value is the start of the unit, the mask and
+   * placeholder follow the derived format, and the picker calendar selects in
+   * the grid holding that unit.
+   */
+  public precision = input<CalendarPrecision>('day');
 
   /** Forwarded to the picker calendar. (`min`/`max` are reserved by signal forms.) */
   public minDate = input<Date | null>(null);
@@ -44,6 +63,11 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
 
   /** Per-cell classes for the picker calendar — busy days, holidays, markers of your own. */
   public dateClass = input<CalendarDateClassFn | null>(null);
+
+  /** The format in effect: this instance's `displayFormat`, else the one `precision` implies. */
+  public effectiveDisplayFormat = computed(
+    () => this.displayFormat() ?? displayFormatForPrecision(this.precision(), this.effectiveLocale()),
+  );
 
   /** The string in effect: this instance's `parseErrorMessage`, else the domain's label set. */
   public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidDate);
@@ -67,7 +91,7 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
     return parseDateValue(value, { format: this.effectiveValueFormat(), locale: this.effectiveLocale() });
   });
 
-  /** The committed value rendered in `displayFormat`. */
+  /** The committed value rendered in the format in effect. */
   public displayValue = computed(() => {
     const date = this.date();
 
@@ -75,7 +99,7 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
       return '';
     }
 
-    return formatDateValue(date, { format: this.displayFormat(), locale: this.effectiveLocale() }) ?? '';
+    return formatDateValue(date, { format: this.effectiveDisplayFormat(), locale: this.effectiveLocale() }) ?? '';
   });
 
   /**
@@ -106,7 +130,7 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
     // wall-clock time into a time-bearing `valueFormat` while the same day picked in the
     // calendar (startOfDay) would not — two entry paths, two wire values for one date.
     const parsed = parseDateValue(raw, {
-      format: this.displayFormat(),
+      format: this.effectiveDisplayFormat(),
       locale: this.effectiveLocale(),
       referenceDate: startOfDay(new Date()),
     });
@@ -125,8 +149,7 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
 
     this.inputText.set('');
     this.parseError.set(false);
-    this.value.set(formatDateValue(parsed, { format: this.effectiveValueFormat(), locale: this.effectiveLocale() }));
-    this.mixed.set(false);
+    this.writeDate(parsed);
   }
 
   /** Commits a picker-selected date and closes the picker. */
@@ -137,9 +160,21 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
 
     this.inputText.set('');
     this.parseError.set(false);
-    this.value.set(formatDateValue(date, { format: this.effectiveValueFormat(), locale: this.effectiveLocale() }));
-    this.mixed.set(false);
+    this.writeDate(date);
     this.touched.set(true);
     this.closePicker();
+  }
+
+  /**
+   * Writes the wire value, at the start of `precision`'s unit. A coarse format cannot say which day
+   * it meant, so date-fns fills the missing units from the reference date — parsing `07.2026`
+   * against `MM.yyyy` yields *today's* day of July. Normalizing here is what makes a typed month and
+   * a picked month the same value.
+   */
+  private writeDate(date: Date) {
+    const unitStart = startOfCalendarUnit(date, this.precision());
+
+    this.value.set(formatDateValue(unitStart, { format: this.effectiveValueFormat(), locale: this.effectiveLocale() }));
+    this.mixed.set(false);
   }
 }

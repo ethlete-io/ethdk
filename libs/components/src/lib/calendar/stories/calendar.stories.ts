@@ -10,6 +10,7 @@ export default {
     constrained: { control: 'boolean' },
     disableWeekends: { control: 'boolean' },
     startAtMonthOffset: { control: 'number' },
+    precision: { control: 'select', options: ['day', 'month', 'year'] },
     startView: { control: 'select', options: ['month', 'year', 'multiYear'] },
     markDates: { control: 'boolean' },
     locale: { control: 'select', options: ['default', 'de'] },
@@ -20,6 +21,7 @@ export default {
     constrained: false,
     disableWeekends: false,
     startAtMonthOffset: null,
+    precision: 'day',
     startView: 'month',
     markDates: false,
     locale: 'default',
@@ -49,6 +51,18 @@ export const MonthView: Story = {
 
 export const YearView: Story = {
   args: { startView: 'multiYear' },
+};
+
+export const MonthPrecision: Story = {
+  args: { precision: 'month' },
+};
+
+export const MonthRange: Story = {
+  args: { precision: 'month', mode: 'range' },
+};
+
+export const YearPrecision: Story = {
+  args: { precision: 'year' },
 };
 
 export const DateClass: Story = {

@@ -52,8 +52,11 @@ export abstract class DatePickerInputDirective
   protected abstract defaultValueFormat: string;
   /** The form-field control-type tag (date-input / time-input / date-time-input). */
   public abstract controlType: Signal<FormFieldControlType>;
-  /** date-fns format shown in (and parsed from) the field — declared per control (locale-aware defaults). */
-  public abstract displayFormat: Signal<string>;
+  /**
+   * The date-fns format in effect for the field — declared per control. Usually its own
+   * `displayFormat` input; the date input derives one from `precision` when that is unset.
+   */
+  public abstract effectiveDisplayFormat: Signal<string>;
   /** The committed value rendered in `displayFormat` — computed per control from its own value conversion. */
   public abstract displayValue: Signal<string>;
 
@@ -131,8 +134,10 @@ export abstract class DatePickerInputDirective
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
 
-  /** The `[etInputMask]` pattern derived from `displayFormat` — `null` while `mask` is off or the format is refused. */
-  public maskPattern = computed(() => (this.mask() ? maskPatternFromDisplayFormat(this.displayFormat()) : null));
+  /** The `[etInputMask]` pattern derived from the format in effect — `null` while `mask` is off or the format is refused. */
+  public maskPattern = computed(() =>
+    this.mask() ? maskPatternFromDisplayFormat(this.effectiveDisplayFormat()) : null,
+  );
 
   private overlay = createDatePickerOverlay({
     interactive: this.interactive,
@@ -161,7 +166,7 @@ export abstract class DatePickerInputDirective
       effect(() => {
         if (this.mask() && this.maskPattern() === null) {
           console.warn(
-            `[et-${this.controlType()}] displayFormat "${this.displayFormat()}" is not fixed-width numeric, so no typing mask can be derived — the mask input is ignored.`,
+            `[et-${this.controlType()}] displayFormat "${this.effectiveDisplayFormat()}" is not fixed-width numeric, so no typing mask can be derived — the mask input is ignored.`,
           );
         }
       });
