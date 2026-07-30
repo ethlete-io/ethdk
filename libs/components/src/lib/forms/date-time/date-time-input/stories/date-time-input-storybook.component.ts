@@ -4,6 +4,11 @@ import { FormField, disabled, form, readonly, required } from '@angular/forms/si
 import { ProvideColorDirective } from '@ethlete/core';
 import { de } from 'date-fns/locale';
 import { FORM_FIELD_IMPORTS } from '../../../form-field';
+import {
+  TimeFilterPreset,
+  parseTimeOfDay,
+  resolveTimeFilterPreset,
+} from '../../../../time-picker/stories/time-filter-presets';
 import { DATE_TIME_INPUT_IMPORTS } from '../date-time-input.imports';
 
 @Component({
@@ -22,6 +27,9 @@ import { DATE_TIME_INPUT_IMPORTS } from '../date-time-input.imports';
           [locale]="localeObject()"
           [minuteStep]="minuteStep()"
           [secondStep]="secondStep()"
+          [minTime]="minTimeDate()"
+          [maxTime]="maxTimeDate()"
+          [timeFilter]="filterFn()"
         />
         @if (hint()) {
           <et-hint>{{ hint() }}</et-hint>
@@ -50,6 +58,10 @@ export class DateTimeInputStorybookComponent {
   public minuteStep = input(5);
   public secondStep = input(1);
   public locale = input<'default' | 'de'>('default');
+  /** `HH:mm` bounds — the story turns them into the `Date`s the input takes. */
+  public minTime = input<string | null>(null);
+  public maxTime = input<string | null>(null);
+  public filter = input<TimeFilterPreset>('none');
   public disabled = input(false);
   public readonly = input(false);
   public required = input(false);
@@ -58,6 +70,10 @@ export class DateTimeInputStorybookComponent {
   public mixedState = linkedSignal(() => this.mixed());
 
   protected localeObject = computed(() => (this.locale() === 'de' ? de : null));
+
+  protected minTimeDate = computed(() => parseTimeOfDay(this.minTime()));
+  protected maxTimeDate = computed(() => parseTimeOfDay(this.maxTime()));
+  protected filterFn = computed(() => resolveTimeFilterPreset(this.filter()));
 
   private formModel = linkedSignal(() => ({ value: this.value() }));
 

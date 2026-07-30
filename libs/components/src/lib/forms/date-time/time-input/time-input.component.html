@@ -36,6 +36,9 @@
       [locale]="timeInput.effectiveLocale()"
       [minuteStep]="minuteStep()"
       [secondStep]="secondStep()"
+      [min]="timeInput.minTime()"
+      [max]="timeInput.maxTime()"
+      [timeFilter]="timeInput.timeFilter()"
       (valueChange)="timeInput.selectTime($event)"
     />
   </et-date-picker-panel>

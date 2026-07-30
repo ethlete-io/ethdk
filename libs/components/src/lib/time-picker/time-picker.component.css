@@ -71,16 +71,33 @@
         color: var(--et-surface-color-solid);
       }
 
+      /* out of bounds or filtered out — still focusable (roving tabindex), just not pickable.
+         Ordered before the selected state so a value that later falls out of bounds still
+         reads as the current selection instead of vanishing into the dimmed rows. */
+      &:where([data-disabled]) {
+        background: transparent;
+        color: var(--et-surface-color-subtle-solid);
+        opacity: 0.4;
+        cursor: default;
+      }
+
       &:where([data-selected]) {
         background: var(--et-theme-color-primary-solid);
         color: var(--et-theme-color-on-primary);
         font-weight: 600;
+        opacity: 1;
       }
 
       @media (hover: hover) {
         &:hover {
           background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
           color: var(--et-surface-color-solid);
+        }
+
+        /* a disabled option must not light up under the pointer */
+        &:hover:where([data-disabled]:not([data-selected])) {
+          background: transparent;
+          color: var(--et-surface-color-subtle-solid);
         }
 
         /* hovering the selected option keeps its filled state */

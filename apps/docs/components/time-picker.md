@@ -18,12 +18,15 @@ import { TIME_PICKER_IMPORTS } from '@ethlete/components';
 
 On `et-time-picker` (forwarded from the headless `[etTimePicker]` directive):
 
-| Input        | Type                        | Default             | Description                                                                           |
-| ------------ | --------------------------- | ------------------- | ------------------------------------------------------------------------------------- |
-| `format`     | `string`                    | `TIME_FORMAT` token | date-fns time format the columns derive from (token default: `HH:mm`).                |
-| `locale`     | `Locale \| null` (date-fns) | `DATE_LOCALE` token | Expands localized format tokens (`p`, `pp`) and the AM/PM labels.                     |
-| `minuteStep` | `number`                    | `5`                 | Minute column granularity. An off-step selection is kept visible in the column.       |
-| `secondStep` | `number`                    | `1`                 | Seconds column granularity (the column only renders when the format carries seconds). |
+| Input        | Type                                | Default             | Description                                                                           |
+| ------------ | ----------------------------------- | ------------------- | ------------------------------------------------------------------------------------- |
+| `format`     | `string`                            | `TIME_FORMAT` token | date-fns time format the columns derive from (token default: `HH:mm`).                |
+| `locale`     | `Locale \| null` (date-fns)         | `DATE_LOCALE` token | Expands localized format tokens (`p`, `pp`) and the AM/PM labels.                     |
+| `minuteStep` | `number`                            | `5`                 | Minute column granularity. An off-step selection is kept visible in the column.       |
+| `secondStep` | `number`                            | `1`                 | Seconds column granularity (the column only renders when the format carries seconds). |
+| `min`        | `Date \| null`                      | `null`              | Earliest selectable time — only the time of day is read, so it applies every day.     |
+| `max`        | `Date \| null`                      | `null`              | Latest selectable time, same reading.                                                 |
+| `timeFilter` | `((date: Date) => boolean) \| null` | `null`              | Return `false` to make a time unselectable. Receives the full candidate timestamp.    |
 
 | Model   | Type           | Description                                                                   |
 | ------- | -------------- | ----------------------------------------------------------------------------- |
@@ -39,6 +42,29 @@ While no value is set, the columns anchor their focus and scroll position to "no
 
 <StoryEmbed id="components-time-picker--twelve-hour" height="360px" />
 
+## Bounds and filtering
+
+`min` / `max` bound the time of day (their date part is ignored, so one bound covers every day), and `timeFilter` rejects individual times. Options that fall out stay in place, dimmed and `aria-disabled` — they keep their position in the column so the list never reflows, and the keyboard model steps over them.
+
+```html
+<et-time-picker [(value)]="slot" [min]="openingTime" [max]="closingTime" [timeFilter]="notDuringLunch" />
+```
+
+```ts
+const notDuringLunch = (candidate: Date) => candidate.getHours() !== 12;
+```
+
+<StoryEmbed id="components-time-picker--opening-hours" height="360px" />
+
+Availability is computed per column, not per leaf option:
+
+- An **hour** is disabled only when no minute inside it is selectable, a **minute** only when no second inside it is, and an **AM/PM** option only when none of its twelve hours has a selectable time.
+- Picking a part keeps that part and moves the **finer** ones to the first value that works: with `min` at 09:40, clicking hour `9` commits `09:40`, not the out-of-bounds `09:00`.
+- `timeFilter` receives the whole timestamp (the candidate time of day on the current day), so opening hours can differ per weekday.
+- A value set from outside that falls out of bounds is still shown as the selection — bounds gate what a user can pick, they never rewrite the model.
+
+Typed entry in the [time input](/components/date-time-inputs#time-input) and [date-time input](/components/date-time-inputs#date-time-input) is deliberately **not** gated by these bounds — just like the calendar's `minDate`/`maxDate`, they shape the picker, and out-of-range values are a job for a schema validator.
+
 ## Keyboard
 
 Each column is a vertical listbox with a roving tabindex; selection follows focus.
@@ -48,6 +74,8 @@ Each column is a vertical listbox with a roving tabindex; selection follows focu
 | ArrowUp / ArrowDown | Previous / next option (wrapping — time is cyclic) |
 | Home / End          | First / last option                                |
 | Typing digits       | Jump to the matching option (`2`,`3` → 23)         |
+
+Disabled options are skipped by all of these — arrows walk to the next selectable option, Home/End go to the first/last selectable one, and a typed query that only matches disabled options selects nothing.
 
 ## Headless usage
 
@@ -65,12 +93,13 @@ Each column is a vertical listbox with a roving tabindex; selection follows focu
 </div>
 ```
 
-Each `TimePickerOption` carries `selected` / `focused` flags the option directive mirrors as `data-*` attributes for styling; the column keeps the focused option centered in its scrollport.
+Each `TimePickerOption` carries `selected` / `focused` / `disabled` flags the option directive mirrors as `data-*` attributes for styling; the column keeps the focused option centered in its scrollport.
 
 ## Accessibility
 
 - Each column is a labelled `role="listbox"` (`aria-orientation="vertical"`) whose options carry `aria-selected`; exactly one option per column is tabbable.
 - Arrow selection follows focus, so what's announced is always what's selected.
+- Unselectable options carry `aria-disabled` rather than the `disabled` attribute: the roving tabindex needs them focusable, so they are reachable and announced, just not pickable.
 - Disabled/readonly states belong to the hosting control (e.g. the time input) — the inline picker itself is always interactive.
 
 ## Theming

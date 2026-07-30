@@ -32,6 +32,16 @@ export class TimeInputDirective extends DatePickerInputDirective implements Form
   /** date-fns format shown in (and parsed from) the field. Locale-aware by default. */
   public displayFormat = input('p');
 
+  /**
+   * Forwarded to the picker's time picker. (`min`/`max` are reserved by signal forms.)
+   * Only the time of day of `minTime`/`maxTime` is read; `timeFilter` receives the full
+   * candidate timestamp. Bounds shape the picker — validate typed entry with a schema
+   * validator, exactly like the date inputs' `minDate`/`maxDate`.
+   */
+  public minTime = input<Date | null>(null);
+  public maxTime = input<Date | null>(null);
+  public timeFilter = input<((date: Date) => boolean) | null>(null);
+
   /** The string in effect: this instance's `parseErrorMessage`, else the domain's label set. */
   public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidTime);
 

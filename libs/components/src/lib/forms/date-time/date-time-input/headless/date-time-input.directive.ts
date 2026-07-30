@@ -39,6 +39,17 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
   public maxDate = input<Date | null>(null);
   public dateFilter = input<((date: Date) => boolean) | null>(null);
 
+  /**
+   * Forwarded to the picker's time picker. Only the time of day of `minTime`/`maxTime`
+   * is read, so the bound applies on every day; `timeFilter` receives the full candidate
+   * timestamp (the picked time of day on the committed day), so opening hours can differ
+   * per weekday. Bounds shape the picker — validate typed entry with a schema validator,
+   * exactly like `minDate`/`maxDate`.
+   */
+  public minTime = input<Date | null>(null);
+  public maxTime = input<Date | null>(null);
+  public timeFilter = input<((date: Date) => boolean) | null>(null);
+
   /** The string in effect: this instance's `parseErrorMessage`, else the domain's label set. */
   public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidDateTime);
 

@@ -2,6 +2,15 @@ import { Directive, computed, input, model, numberAttribute } from '@angular/cor
 import { Locale, setHours, setMilliseconds, setMinutes, setSeconds, startOfDay } from 'date-fns';
 import { injectDateLocale, injectTimeFormat } from '../../forms/date-time/date-time-formats';
 import { formatDateValue } from '../../forms/date-time/internals/date-value';
+import {
+  PartialTimeCandidate,
+  TimeAvailabilityOptions,
+  TimeCandidate,
+  findSelectableTime,
+  hasSelectableTime,
+  isTimeSelectable,
+  setTimeOfDay,
+} from './internals/time-availability';
 import { deriveTimeFormatSpec, generateSteppedValues, getTimeParts } from './internals/time-format';
 import { injectTimePickerLabels } from '../../time-picker/time-picker-labels';
 
@@ -13,6 +22,8 @@ export type TimePickerOption = {
   value: number;
   label: string;
   selected: boolean;
+  /** Out of bounds or filtered out — announced `aria-disabled`, skipped by the keyboard model. */
+  disabled: boolean;
   /** The column's roving-tabindex target (the selection, or the initial anchor while empty). */
   focused: boolean;
 };
@@ -21,6 +32,19 @@ export type TimePickerColumn = {
   unit: TimePickerUnit;
   label: string;
   options: TimePickerOption[];
+};
+
+/** The next option a `±1` keyboard step lands on, wrapping and skipping disabled ones. */
+const nextEnabledIndex = (options: readonly TimePickerOption[], walk: { from: number; step: number }) => {
+  for (let offset = 1; offset <= options.length; offset++) {
+    const index = (((walk.from + walk.step * offset) % options.length) + options.length) % options.length;
+
+    if (!options[index]?.disabled) {
+      return index;
+    }
+  }
+
+  return null;
 };
 
 /**
@@ -44,6 +68,16 @@ export class TimePickerDirective {
   public locale = input<Locale | null>(null);
   public minuteStep = input(5, { transform: numberAttribute });
   public secondStep = input(1, { transform: numberAttribute });
+
+  /** Earliest selectable time. Only the time of day is read, so the bound applies to every day. */
+  public min = input<Date | null>(null);
+  /** Latest selectable time. Only the time of day is read, so the bound applies to every day. */
+  public max = input<Date | null>(null);
+  /**
+   * Return `false` to make a time unselectable. Receives the full candidate timestamp
+   * (the picked time of day on the current day), so opening hours can differ per weekday.
+   */
+  public timeFilter = input<((date: Date) => boolean) | null>(null);
 
   public hoursLabel = input<string | null>(null);
   public minutesLabel = input<string | null>(null);
@@ -109,38 +143,87 @@ export class TimePickerDirective {
     ];
   });
 
+  /** The value's column values, or `null` while empty — hours in the format's cycle. */
+  private selectedParts = computed(() => {
+    const value = this.value();
+
+    return value !== null ? getTimeParts(value, this.formatSpec().hourCycle) : null;
+  });
+
+  private hourValues = computed(() =>
+    generateSteppedValues({ end: this.formatSpec().hourCycle === 12 ? 12 : 24, step: 1 }),
+  );
+
+  private minuteValues = computed(() =>
+    generateSteppedValues({ end: 60, step: this.minuteStep(), include: this.selectedParts()?.minute }),
+  );
+
+  private secondValues = computed(() =>
+    generateSteppedValues({ end: 60, step: this.secondStep(), include: this.selectedParts()?.second }),
+  );
+
+  /** Whether any bound or filter is in play — the unconstrained picker skips availability work entirely. */
+  private constrained = computed(() => this.min() !== null || this.max() !== null || this.timeFilter() !== null);
+
+  private availability = computed<TimeAvailabilityOptions>(() => {
+    const anchor = this.anchorTime();
+
+    return {
+      min: this.min(),
+      max: this.max(),
+      filter: this.timeFilter(),
+      day: startOfDay(anchor),
+      minuteValues: this.minuteValues(),
+      // without a seconds column the second never moves — the committed one is the only candidate
+      secondValues: this.formatSpec().showSeconds ? this.secondValues() : [anchor.getSeconds()],
+    };
+  });
+
   public columns = computed<TimePickerColumn[]>(() => {
     const spec = this.formatSpec();
-    const value = this.value();
-    const selected = value !== null ? getTimeParts(value, spec.hourCycle) : null;
+    const selected = this.selectedParts();
     const anchor = getTimeParts(this.anchorTime(), spec.hourCycle);
+    const anchor24 = getTimeParts(this.anchorTime(), 24);
+    const constrained = this.constrained();
+    const availability = this.availability();
 
-    const buildOptions = (unit: Exclude<TimePickerUnit, 'period'>, values: number[]) => {
+    const isDisabled = (fixed: PartialTimeCandidate) => constrained && !hasSelectableTime(fixed, availability);
+
+    const buildOptions = (
+      unit: Exclude<TimePickerUnit, 'period'>,
+      column: { values: number[]; fixedOf: (value: number) => PartialTimeCandidate },
+    ) => {
       const toLabel =
         unit === 'hour' && spec.hourCycle === 12
           ? (hour: number) => String(hour === 0 ? 12 : hour)
           : (part: number) => String(part).padStart(2, '0');
 
-      return values.map<TimePickerOption>((optionValue) => ({
+      return column.values.map<TimePickerOption>((optionValue) => ({
         unit,
         value: optionValue,
         label: toLabel(optionValue),
         selected: selected !== null && selected[unit] === optionValue,
+        disabled: isDisabled(column.fixedOf(optionValue)),
         focused: (selected ?? anchor)[unit] === optionValue,
       }));
     };
 
-    const hourValues = generateSteppedValues({ end: spec.hourCycle === 12 ? 12 : 24, step: 1 });
-
     const columns: TimePickerColumn[] = [
-      { unit: 'hour', label: this.resolvedHoursLabel(), options: buildOptions('hour', hourValues) },
+      {
+        unit: 'hour',
+        label: this.resolvedHoursLabel(),
+        options: buildOptions('hour', {
+          values: this.hourValues(),
+          fixedOf: (hour) => ({ hour: this.toHour24(hour, anchor24.period) }),
+        }),
+      },
       {
         unit: 'minute',
         label: this.resolvedMinutesLabel(),
-        options: buildOptions(
-          'minute',
-          generateSteppedValues({ end: 60, step: this.minuteStep(), include: selected?.minute }),
-        ),
+        options: buildOptions('minute', {
+          values: this.minuteValues(),
+          fixedOf: (minute) => ({ hour: anchor24.hour, minute }),
+        }),
       },
     ];
 
@@ -148,10 +231,10 @@ export class TimePickerDirective {
       columns.push({
         unit: 'second',
         label: this.resolvedSecondsLabel(),
-        options: buildOptions(
-          'second',
-          generateSteppedValues({ end: 60, step: this.secondStep(), include: selected?.second }),
-        ),
+        options: buildOptions('second', {
+          values: this.secondValues(),
+          fixedOf: (second) => ({ hour: anchor24.hour, minute: anchor24.minute, second }),
+        }),
       });
     }
 
@@ -166,6 +249,10 @@ export class TimePickerDirective {
           value: period,
           label: labels[period] ?? '',
           selected: selected !== null && selected.period === period,
+          // a half-day is out only when none of its twelve hours has a selectable time
+          disabled:
+            constrained &&
+            !this.hourValues().some((hour) => hasSelectableTime({ hour: hour + period * 12 }, availability)),
           focused: (selected ?? anchor).period === period,
         })),
       });
@@ -176,36 +263,26 @@ export class TimePickerDirective {
 
   /**
    * Commits one column's pick into the value. The first pick completes the
-   * anchor time (what the columns visibly focus) with the picked part.
+   * anchor time (what the columns visibly focus) with the picked part. Bounds
+   * and filters keep the result selectable: the picked part stays put and the
+   * finer units move to the first value that works.
    */
   public selectPart(unit: TimePickerUnit, optionValue: number) {
-    const spec = this.formatSpec();
-    const base = this.anchorTime();
-
-    switch (unit) {
-      case 'hour': {
-        const pmOffset = spec.hourCycle === 12 && getTimeParts(base, 12).period === 1 ? 12 : 0;
-
-        this.value.set(setHours(base, optionValue + pmOffset));
-
-        return;
-      }
-      case 'minute':
-        this.value.set(setMinutes(base, optionValue));
-
-        return;
-      case 'second':
-        this.value.set(setSeconds(base, optionValue));
-
-        return;
-      case 'period':
-        this.value.set(setHours(base, (base.getHours() % 12) + (optionValue === 1 ? 12 : 0)));
-
-        return;
+    if (this.optionsOf(unit).find((option) => option.value === optionValue)?.disabled) {
+      return;
     }
+
+    const target = this.candidateFor(unit, optionValue);
+    const resolved = this.constrained() ? this.resolveSelectable(unit, target) : target;
+
+    if (resolved === null) {
+      return;
+    }
+
+    this.value.set(setTimeOfDay(this.anchorTime(), resolved));
   }
 
-  /** @internal Moves a column's selection by `delta`, wrapping (time units are cyclic). */
+  /** @internal Moves a column's selection by `delta`, wrapping and skipping disabled options. */
   public selectRelative(unit: TimePickerUnit, delta: number) {
     const options = this.optionsOf(unit);
 
@@ -213,33 +290,97 @@ export class TimePickerDirective {
       return;
     }
 
-    const currentIndex = options.findIndex((option) => option.focused);
-    const next = options[(Math.max(currentIndex, 0) + delta + options.length) % options.length];
+    const step = delta < 0 ? -1 : 1;
+    const from = Math.max(
+      options.findIndex((option) => option.focused),
+      0,
+    );
 
-    if (next) {
-      this.selectPart(unit, next.value);
+    // walk `delta` enabled options; a fully disabled column simply never moves
+    let index = from;
+
+    for (let taken = 0; taken < Math.abs(delta); taken++) {
+      const next = nextEnabledIndex(options, { from: index, step });
+
+      if (next === null) {
+        return;
+      }
+
+      index = next;
     }
-  }
 
-  /** @internal */
-  public selectEdge(unit: TimePickerUnit, edge: 'start' | 'end') {
-    const options = this.optionsOf(unit);
-    const target = edge === 'start' ? options[0] : options[options.length - 1];
+    const target = options[index];
 
     if (target) {
       this.selectPart(unit, target.value);
     }
   }
 
-  /** @internal Type-to-jump: selects the first option matching the buffered query. */
+  /** @internal */
+  public selectEdge(unit: TimePickerUnit, edge: 'start' | 'end') {
+    const options = this.optionsOf(unit);
+    const enabled = options.filter((option) => !option.disabled);
+    const target = edge === 'start' ? enabled[0] : enabled[enabled.length - 1];
+
+    if (target) {
+      this.selectPart(unit, target.value);
+    }
+  }
+
+  /** @internal Type-to-jump: selects the first selectable option matching the buffered query. */
   public selectByQuery(unit: TimePickerUnit, query: string) {
     const match = this.optionsOf(unit).find(
-      (option) => option.label.toLowerCase().startsWith(query) || String(option.value).startsWith(query),
+      (option) =>
+        !option.disabled && (option.label.toLowerCase().startsWith(query) || String(option.value).startsWith(query)),
     );
 
     if (match) {
       this.selectPart(unit, match.value);
     }
+  }
+
+  /** The 24-hour value a column option stands for, given the half-day in effect. */
+  private toHour24(hour: number, period: 0 | 1) {
+    return this.formatSpec().hourCycle === 12 ? (hour % 12) + period * 12 : hour;
+  }
+
+  /** The time a pick aims at: the picked part, with every other part kept from the anchor. */
+  private candidateFor(unit: TimePickerUnit, optionValue: number): TimeCandidate {
+    const parts = getTimeParts(this.anchorTime(), 24);
+
+    switch (unit) {
+      case 'hour':
+        return { hour: this.toHour24(optionValue, parts.period), minute: parts.minute, second: parts.second };
+      case 'minute':
+        return { hour: parts.hour, minute: optionValue, second: parts.second };
+      case 'second':
+        return { hour: parts.hour, minute: parts.minute, second: optionValue };
+      case 'period':
+        return {
+          hour: (parts.hour % 12) + (optionValue === 1 ? 12 : 0),
+          minute: parts.minute,
+          second: parts.second,
+        };
+    }
+  }
+
+  /** The candidate itself when it is selectable, else the same pick with the finer units moved. */
+  private resolveSelectable(unit: TimePickerUnit, candidate: TimeCandidate) {
+    const availability = this.availability();
+
+    if (isTimeSelectable(candidate, availability)) {
+      return candidate;
+    }
+
+    // everything the pick did not touch may move; the picked part never does
+    const fixed: PartialTimeCandidate =
+      unit === 'second'
+        ? candidate
+        : unit === 'minute'
+          ? { hour: candidate.hour, minute: candidate.minute }
+          : { hour: candidate.hour };
+
+    return findSelectableTime(fixed, availability);
   }
 
   private optionsOf(unit: TimePickerUnit) {

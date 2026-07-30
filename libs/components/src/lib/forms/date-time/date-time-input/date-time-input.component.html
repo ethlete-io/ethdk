@@ -59,6 +59,9 @@
             [locale]="dateTimeInput.effectiveLocale()"
             [minuteStep]="minuteStep()"
             [secondStep]="secondStep()"
+            [min]="dateTimeInput.minTime()"
+            [max]="dateTimeInput.maxTime()"
+            [timeFilter]="dateTimeInput.timeFilter()"
             (valueChange)="dateTimeInput.selectTime($event)"
           />
         </div>

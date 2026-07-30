@@ -16,8 +16,11 @@ import { TimePickerOption, TimePickerDirective } from './time-picker.directive';
     type: 'button',
     role: 'option',
     '[attr.aria-selected]': 'option().selected',
+    // aria-disabled, not the disabled attribute: the roving tabindex needs the option focusable
+    '[attr.aria-disabled]': 'option().disabled || null',
     '[attr.tabindex]': 'option().focused ? 0 : -1',
     '[attr.data-selected]': "option().selected ? '' : null",
+    '[attr.data-disabled]': "option().disabled ? '' : null",
     '[attr.data-focused]': "option().focused ? '' : null",
     '(click)': 'timePicker?.selectPart(option().unit, option().value)',
   },

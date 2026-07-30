@@ -18,6 +18,9 @@ export default {
     minuteStep: { control: 'number' },
     secondStep: { control: 'number' },
     locale: { control: 'select', options: ['default', 'de'] },
+    minTime: { control: 'text' },
+    maxTime: { control: 'text' },
+    filter: { control: 'select', options: ['none', 'noLunchBreak', 'weekdayHours'] },
     disabled: { control: 'boolean' },
     readonly: { control: 'boolean' },
     required: { control: 'boolean' },
@@ -36,6 +39,9 @@ export default {
     minuteStep: 5,
     secondStep: 1,
     locale: 'default',
+    minTime: null,
+    maxTime: null,
+    filter: 'none',
     disabled: false,
     readonly: false,
     required: false,
@@ -57,6 +63,14 @@ export const CustomFormats: Story = {
     displayFormat: 'dd.MM.yyyy HH:mm',
     placeholder: 'dd.mm.yyyy hh:mm',
     hint: 'Custom wire and display formats',
+  },
+};
+
+export const OpeningHours: Story = {
+  args: {
+    value: '2026-07-16T10:00:00+02:00',
+    filter: 'weekdayHours',
+    hint: 'The time filter sees the picked day: 09:00–17:00 on weekdays, 10:00–14:00 on weekends',
   },
 };
 

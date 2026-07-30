@@ -146,15 +146,17 @@ with an anchored [time picker](/components/time-picker) overlay.
 </et-form-field>
 ```
 
-| Input                       | Type                        | Default              | Description                                                            |
-| --------------------------- | --------------------------- | -------------------- | ---------------------------------------------------------------------- |
-| `valueFormat`               | `string`                    | `TIME_FORMAT` token  | date-fns format of the string value (token default: `HH:mm`).          |
-| `displayFormat`             | `string`                    | `'p'`                | date-fns format shown in and parsed from the field (locale-aware).     |
-| `locale`                    | `Locale \| null` (date-fns) | `DATE_LOCALE` token  | Display/parse locale (also decides the picker's 12/24-hour layout).    |
-| `minuteStep` / `secondStep` | `number`                    | `5` / `1`            | Forwarded to the picker columns.                                       |
-| `pickerOpen`                | `boolean` (model)           | `false`              | The picker overlay's open state.                                       |
-| `pickerTriggerLabel`        | `string`                    | `'Open time picker'` | `aria-label` of the suffix clock button.                               |
-| `mask`                      | `boolean`                   | `false`              | Opt-in typing mask — needs a fixed-width `displayFormat` like `HH:mm`. |
+| Input                       | Type                                | Default              | Description                                                                |
+| --------------------------- | ----------------------------------- | -------------------- | -------------------------------------------------------------------------- |
+| `valueFormat`               | `string`                            | `TIME_FORMAT` token  | date-fns format of the string value (token default: `HH:mm`).              |
+| `displayFormat`             | `string`                            | `'p'`                | date-fns format shown in and parsed from the field (locale-aware).         |
+| `locale`                    | `Locale \| null` (date-fns)         | `DATE_LOCALE` token  | Display/parse locale (also decides the picker's 12/24-hour layout).        |
+| `minuteStep` / `secondStep` | `number`                            | `5` / `1`            | Forwarded to the picker columns.                                           |
+| `minTime` / `maxTime`       | `Date \| null`                      | `null`               | Bound the picker's time of day (`min`/`max` are reserved by signal forms). |
+| `timeFilter`                | `((date: Date) => boolean) \| null` | `null`               | Rejects individual times in the picker.                                    |
+| `pickerOpen`                | `boolean` (model)                   | `false`              | The picker overlay's open state.                                           |
+| `pickerTriggerLabel`        | `string`                            | `'Open time picker'` | `aria-label` of the suffix clock button.                                   |
+| `mask`                      | `boolean`                           | `false`              | Opt-in typing mask — needs a fixed-width `displayFormat` like `HH:mm`.     |
 
 Typed text is parsed against `displayFormat` first, then **leniently**: bare
 digit runs (`930` → 09:30, `0930`, `93015`), loose separators (`9.30`, `9 30`)
@@ -163,6 +165,15 @@ accepted even under a 12-hour display format. Picking parts writes
 `format(time, valueFormat)` and — unlike the calendar picker — **keeps the
 overlay open**, since a time takes one pick per column. See the `Default` and
 `With seconds` stories.
+
+`minTime` / `maxTime` / `timeFilter` are forwarded to the picker and follow its
+[bounds and filtering](/components/time-picker#bounds-and-filtering) rules — only the
+bounds' time of day is read, and unselectable options stay in place, dimmed. They shape
+the **picker** only: typed entry is not gated by them (the same split the date inputs make
+with `minDate`/`maxDate`), so pair them with a schema validator when the form must reject
+out-of-range times.
+
+<StoryEmbed id="components-forms-time-input--opening-hours" height="560px" />
 
 ## Date-time input — `et-date-time-input` {#date-time-input}
 
@@ -190,6 +201,8 @@ Time tabs** switching between the two panes.
 | `minDate` / `maxDate`           | `Date \| null`                      | `null`                      | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms).      |
 | `dateFilter`                    | `((date: Date) => boolean) \| null` | `null`                      | Forwarded to the picker calendar.                                                 |
 | `minuteStep` / `secondStep`     | `number`                            | `5` / `1`                   | Forwarded to the time picker columns.                                             |
+| `minTime` / `maxTime`           | `Date \| null`                      | `null`                      | Bound the time pane's time of day (see the time input).                           |
+| `timeFilter`                    | `((date: Date) => boolean) \| null` | `null`                      | Rejects individual times; receives the full candidate timestamp.                  |
 | `pickerOpen`                    | `boolean` (model)                   | `false`                     | The picker overlay's open state.                                                  |
 | `pickerTriggerLabel`            | `string`                            | `'Open date & time picker'` | `aria-label` of the suffix calendar button.                                       |
 | `dateTabLabel` / `timeTabLabel` | `string \| null`                    | `null` ³                    | Labels of the pane tabs in the bottom sheet.                                      |
@@ -199,6 +212,24 @@ Typed text is parsed **strictly** against `displayFormat` first, then leniently:
 the entry is split into a date and a time at any separator (the date against the
 locale's short `P` format, the time with the time input's lenient rules —
 `7/16/2026 930pm` commits), and a **bare date commits at midnight**. In the
+The date bounds (`minDate`/`maxDate`/`dateFilter`) and the time bounds
+(`minTime`/`maxTime`/`timeFilter`) are independent: the first gate the calendar pane, the
+second the time pane. Because `timeFilter` receives the full candidate timestamp — the
+picked time of day on the **committed day** — it is the hook for anything date-dependent,
+e.g. opening hours that differ on weekends:
+
+```ts
+const openingHours = (candidate: Date) => {
+  const weekend = candidate.getDay() === 0 || candidate.getDay() === 6;
+  const hour = candidate.getHours();
+
+  return weekend ? hour >= 10 && hour < 14 : hour >= 9 && hour < 17;
+};
+```
+
+<StoryEmbed id="components-forms-date-time-input--opening-hours" height="560px" />
+
+In the
 picker, selections **merge**: picking a day keeps the committed time of day,
 picking a time keeps the committed day — and neither closes the overlay. While
 the value is still empty, a first day pick commits the day **at midnight** (the

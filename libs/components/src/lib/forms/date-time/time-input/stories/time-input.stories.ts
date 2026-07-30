@@ -18,6 +18,9 @@ export default {
     minuteStep: { control: 'number' },
     secondStep: { control: 'number' },
     locale: { control: 'select', options: ['default', 'de'] },
+    minTime: { control: 'text' },
+    maxTime: { control: 'text' },
+    filter: { control: 'select', options: ['none', 'noLunchBreak', 'weekdayHours'] },
     disabled: { control: 'boolean' },
     readonly: { control: 'boolean' },
     required: { control: 'boolean' },
@@ -36,6 +39,9 @@ export default {
     minuteStep: 5,
     secondStep: 1,
     locale: 'default',
+    minTime: null,
+    maxTime: null,
+    filter: 'none',
     disabled: false,
     readonly: false,
     required: false,
@@ -53,6 +59,15 @@ export const Prefilled: Story = {
 
 export const WithSeconds: Story = {
   args: { valueFormat: 'HH:mm:ss', displayFormat: 'pp', secondStep: 15, hint: 'Seconds column from the pp format' },
+};
+
+export const OpeningHours: Story = {
+  args: {
+    minTime: '09:00',
+    maxTime: '17:30',
+    filter: 'noLunchBreak',
+    hint: 'The picker only offers 09:00–17:30, lunch hour excluded',
+  },
 };
 
 export const German: Story = {
