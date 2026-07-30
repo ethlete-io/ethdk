@@ -59,8 +59,10 @@ Same floating-ui anchoring as the tooltip, with an arrow:
 | `placement`          | `'top'` |
 | `fallbackPlacements` | —       |
 | `offset`             | `10`    |
-| `arrowPadding`       | `8`     |
+| `arrowPadding`       | `20`    |
 | `viewportPadding`    | `8`     |
+
+`arrowPadding` is how close the arrow's base may get to the panel's corners, and has to stay above the panel's corner radius (16px) — see [the tooltip's note](/components/tooltip#positioning).
 
 ## Tooltip or toggletip?
 

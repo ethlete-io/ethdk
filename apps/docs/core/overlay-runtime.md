@@ -46,7 +46,7 @@ If the mounted component exposes an `animatedLifecycle` signal (an [`AnimatedLif
 
 - `{ kind: 'center' }` — centered with a 16px viewport padding (the default).
 - `{ kind: 'global', horizontal?, vertical?, padding? }` — edge/corner placement; alignments are `'start' | 'center' | 'end' | 'stretch'` (default `'center'`), padding default `0`.
-- `{ kind: 'anchored', referenceElement, … }` — Floating-UI anchored positioning with `placement` (default `'bottom'`), `fallbackPlacements`, `offset` (default `8`), `viewportPadding` (default `8`), `arrowPadding` (default `4`), `shift` (default on), `autoResize`, `autoHide`, `autoCloseIfReferenceHidden` and `mirrorWidth`.
+- `{ kind: 'anchored', referenceElement, … }` — Floating-UI anchored positioning with `placement` (default `'bottom'`), `fallbackPlacements`, `offset` (default `8`), `viewportPadding` (default `8`), `arrowPadding` (default `12`, i.e. how close the arrow's base may get to the pane's corners — raise it for a pane whose corner radius is larger than that), `shift` (default on), `autoResize`, `autoHide`, `autoCloseIfReferenceHidden` and `mirrorWidth`.
 
 The active strategy can be swapped on a live overlay via `ref.updatePositionStrategy(strategy)` — this is how responsive overlays morph between dialog and bottom sheet.
 

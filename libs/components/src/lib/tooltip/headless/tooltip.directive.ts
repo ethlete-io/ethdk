@@ -48,7 +48,13 @@ export class TooltipDirective {
   public placement = input<Placement>('top');
   public fallbackPlacements = input<Placement[] | undefined>(undefined);
   public offset = input<OffsetOptions | null>(8);
-  public arrowPadding = input<Padding | null>(8);
+  /**
+   * How close the arrow may get to the panel's corners. Must clear the panel's border radius
+   * (`--_et-tooltip-radius`, 16px) or the arrow's base rides into the rounded corner — which is what
+   * happens on aligned placements (`bottom-end`, `left-start`, …) and whenever `shift` pushes a panel
+   * off center near a viewport edge.
+   */
+  public arrowPadding = input<Padding | null>(20);
   public viewportPadding = input<Padding | null>(8);
   public showDelay = input(DEFAULT_TOOLTIP_DELAY);
   public disabled = input(false, { alias: 'etTooltipDisabled', transform: booleanAttribute });

@@ -48,10 +48,12 @@ floating-ui anchored, with an arrow pointing at the trigger:
 | `placement`          | `'top'` |
 | `fallbackPlacements` | —       |
 | `offset`             | `8`     |
-| `arrowPadding`       | `8`     |
+| `arrowPadding`       | `20`    |
 | `viewportPadding`    | `8`     |
 
 The tooltip auto-flips and shifts to stay in the viewport, and auto-hides when its trigger is scrolled out of view.
+
+`arrowPadding` is how close the arrow's base may get to the panel's corners. It has to stay above the panel's corner radius (16px) — on aligned placements (`'bottom-end'`, `'left-start'`, …) and whenever a panel is shifted off center near a viewport edge, the arrow slides all the way to that limit, and a smaller value lets its base ride into the rounded corner.
 
 ## Accessibility
 

@@ -180,7 +180,10 @@ export const createAnchoredPositionCleanup = (
       middleware.push(
         arrow({
           element: arrowElement,
-          padding: strategy.arrowPadding ?? 4,
+          // keeps the arrow off a rounded pane corner by default: 12px covers the radius of the
+          // built-in boxed panes (--et-overlay-radius). Panes with a larger radius have to pass their
+          // own — an arrow whose base sits on the corner arc looks detached from the pane.
+          padding: strategy.arrowPadding ?? 12,
         }),
       );
     }
