@@ -23,10 +23,9 @@ Numbering is priority order, but plans are independent unless noted.
 | 11  | `11-sport-match-components.md`       | L–XL | Match card + live score animations, standout final card, standings, match list       |
 | 12  | `12-bracket-improvements.md`         | L    | Bracket↔list auto-switch, participant journeys + focus mode, mirrored double elim    |
 
-Dependencies: 08's swipe-to-dismiss builds on 01's gesture primitives (ship 08
-without it if 01 hasn't landed). 02 and 01 both touch
-`overlay-drag-to-dismiss.ts` — land 02's RTL direction fix as part of 01 if
-implemented together.
+Dependencies: 08's swipe-to-dismiss builds on 01's gesture primitives — 01 has
+landed, so reuse `createSwipeTracker`'s release velocity and the
+pointer-events/commit-threshold shape from `overlay-drag-to-dismiss.ts`.
 
 ## Future planning candidates (not planned yet — see findings §5)
 
@@ -38,7 +37,11 @@ tokens in core. (Calendar event markers and month/year jump moved into plan
 
 ## Progress
 
-- [ ] 01 — touch & gesture overhaul
+- [x] 01 — touch & gesture overhaul _(done 2026-07-30 except the touch-target
+      audit — see the "found while implementing" notes in the plan: `touch-action`
+      turned out unusable on a sheet whose body scrolls on the dismiss axis, so the
+      gesture is pointer-events + one non-passive `touchmove` for scroll
+      suppression; hit-area work deferred to its own device pass)_
 - [x] 02 — consistency fixes _(done 2026-07-30; see the "found while
       implementing" notes in the plan — overlay animations are still ungated for
       reduced motion, and 2 of the 3 stray `throw`s were correctly left alone)_

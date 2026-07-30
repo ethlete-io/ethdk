@@ -114,6 +114,52 @@ Haptics (`navigator.vibrate`) — note in findings §5. `useCursorDragScroll`
 pointer-events port — separate cheap task if wanted; touch fallback is native
 scroll, acceptable.
 
+## Found while implementing (2026-07-30)
+
+**`touch-action` on the sheet container is not usable.** Phase 2 planned to
+replace the non-passive `touchmove` + `preventDefault()` with declarative
+`touch-action: pan-x`/`pan-y`. It cannot work: `touch-action` is intersected up
+the ancestor chain, so `pan-x` on the container disables _vertical_ panning for
+everything inside it — including `.et-overlay-body`, which scrolls on the very
+axis a bottom sheet dismisses along. And `preventDefault()` on `pointermove` is
+ignored, so pointer events alone cannot suppress a scroll. The shipped design is
+therefore a deliberate hybrid: the gesture runs entirely on pointer events
+(single path, `setPointerCapture`, `pointercancel` handling), and one non-passive
+`touchmove` listener does nothing but `preventDefault()` _once the drag has
+committed_. That is strictly better than before, because the 8px pre-commit
+window is exactly the window in which the browser is still free to claim the
+gesture as a scroll — which is the disambiguation the old code got wrong by
+`preventDefault`ing the very first `touchmove`.
+
+**The commit threshold has to be direction-aware in both directions.** Committing
+only on travel toward dismissal (`travelled >= 8`) means a sheet parked at a snap
+point can never be dragged back in. Retreat travel counts only when
+`gestureStartOffset > 0`; fully docked, an upward drag on a bottom sheet stays out
+of the gesture's way. Caught in Storybook, not by reading the code.
+
+**No `OverlayStrategyContext` change was needed for the momentum channel.**
+`createSheetStrategy` owns both the drag handler and `onBeforeLeave`, so the
+handler reports release momentum through an `onDismiss` callback on
+`DragToDismissContext` and the strategy stashes it. Position continuity is
+already handled by the `!important` on `.et-animation-leave-to` (the inline drag
+transform is the transition's start value), so the leave hook only overrides
+`transition-duration`.
+
+**Touch-target audit deferred.** The other Phase 5 items shipped; the
+`≥ 44px` hit-area work did not. Every candidate either changes layout or steals
+neighbouring taps, and needs measuring on a device rather than reasoning:
+
+- slider — the whole `.et-slider-interaction` row is already the target (a track
+  tap glides the thumb), so the thumb's own 18px box limits nothing; the row is
+  28px tall and growing it moves the label/hint;
+- rating — icons sit adjacent in a flex row, so a symmetric 44px area makes each
+  star steal its neighbour's taps; only block-direction growth is safe, and that
+  changes the row height;
+- checkbox/radio — in practice the tap target is the whole `et-choice-field`
+  label row; the bare 20px box only matters for label-less uses (table
+  select-all), and a 44px overlay there would reach into adjacent rows.
+  Worth its own pass with `verify-in-mobile-emulator`.
+
 ## Verification
 
 `verify-in-storybook` for regression on all four sheet directions +
