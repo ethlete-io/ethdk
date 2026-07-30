@@ -1,5 +1,6 @@
 import { Directive, inject, input } from '@angular/core';
 import { injectPipManager } from '../../pip-manager';
+import { injectStreamLabels } from '../../stream-labels';
 import { StreamPipEntry } from '../../stream-manager.types';
 import { PIP_CHROME_REF_TOKEN } from './pip-chrome-ref.token';
 import { PIP_ENTRY_TOKEN } from './pip-entry.token';
@@ -9,7 +10,7 @@ import { PIP_ENTRY_TOKEN } from './pip-entry.token';
   host: {
     class: 'et-stream-pip-chrome__back',
     type: 'button',
-    'attr.aria-label': '"Focus"',
+    '[attr.aria-label]': 'labels().pipFocus',
     '(click)': 'back($event)',
   },
 })
@@ -17,6 +18,7 @@ export class PipBackDirective {
   private chrome = inject(PIP_CHROME_REF_TOKEN, { optional: true });
   private tokenEntry = inject(PIP_ENTRY_TOKEN, { optional: true });
   private pipManager = injectPipManager();
+  protected labels = injectStreamLabels();
 
   public entry = input<StreamPipEntry>();
 

@@ -1,11 +1,11 @@
 <!-- eslint-disable-next-line @angular-eslint/template/interactive-supports-focus -- ARIA toolbar pattern: the container only relays keys/focus for its roving tab stop; the buttons inside are the focusable controls -->
 <div
   #toolbar
+  [attr.aria-label]="labels().toolbar"
   (keydown)="handleToolbarKeydown($event)"
   (focusin)="handleToolbarFocusIn($event)"
   class="et-rte-toolbar"
   role="toolbar"
-  aria-label="Text formatting"
 >
   @for (tool of dir.resolvedTools(); track $index) {
     @switch (tool) {
@@ -17,7 +17,7 @@
           <button
             [disabled]="dir.disabled() || dir.readonly() || dir.headingToolDisabled()"
             [pressed]="headingMenu.open()"
-            [attr.aria-label]="'Text style: ' + currentHeadingLabel()"
+            [attr.aria-label]="labels().textStyle(currentHeadingLabel())"
             (mousedown)="$event.preventDefault()"
             emitAriaPressed="false"
             etMenuTrigger
@@ -36,7 +36,7 @@
                 (valueChange)="selectHeading($event)"
                 (mousedown)="$event.preventDefault()"
               >
-                @for (option of HEADING_OPTIONS; track option.label) {
+                @for (option of headingOptions(); track option.level) {
                   <!-- eslint-disable-next-line ethlete/prefer-static-boolean-properties -- closeOnActivate is tri-state (boolean | undefined); a transform would collapse its unset state -->
                   <et-menu-radio-item [value]="option.level" [closeOnActivate]="true" [icon]="option.icon">
                     {{ option.label }}
@@ -55,7 +55,7 @@
             <button
               [pressed]="def.isActive?.(dir) ?? false"
               [disabled]="dir.disabled() || dir.readonly() || (def.isDisabled?.(dir) ?? false)"
-              [attr.aria-label]="def.label"
+              [attr.aria-label]="toolLabel(def)"
               (mousedown)="$event.preventDefault()"
               (click)="def.run?.(dir)"
               mutedUntilPressed

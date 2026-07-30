@@ -20,6 +20,7 @@ import { injectOverlayManager } from '../../../overlay/overlay-manager';
 import { OverlayRef } from '../../../overlay/overlay-ref';
 import { OverlayStrategy, OverlayStrategyBreakpoint } from '../../../overlay/strategies';
 import { RICH_TEXT_EDITOR_ERROR_CODES } from '../rich-text-editor-errors';
+import { DEFAULT_RICH_TEXT_EDITOR_LABELS } from '../rich-text-editor-labels';
 import { RichTextEditorTokenPopupComponent } from '../rich-text-editor-token-popup.component';
 import { RichTextEditorTrigger, RichTextEditorTriggerItem } from '../rich-text-editor-trigger';
 import {
@@ -48,7 +49,14 @@ export class RichTextEditorTriggersDirective {
 
   public triggers = input<readonly RichTextEditorTrigger[]>([]);
 
-  public emptyLabel = input('No results');
+  /** Shown by the popup when a query matches nothing. `null` (the default) uses the editor's
+   *  `noResults` label. */
+  public emptyLabel = input<string | null>(null);
+
+  /** The string in effect: this instance's `emptyLabel`, else the editor's label set. */
+  private resolvedEmptyLabel = computed(
+    () => this.emptyLabel() ?? this.editor?.resolvedLabels().noResults ?? DEFAULT_RICH_TEXT_EDITOR_LABELS.noResults,
+  );
 
   private readonly listboxId = createComponentId('et-rte-token-popup');
 
@@ -387,7 +395,7 @@ export class RichTextEditorTriggersDirective {
         inputBinding('activeIndex', () => this.activeIndex()),
         inputBinding('loading', () => this.itemsState().loading),
         inputBinding('error', () => this.errorText()),
-        inputBinding('emptyLabel', () => this.emptyLabel()),
+        inputBinding('emptyLabel', () => this.resolvedEmptyLabel()),
         inputBinding('listboxId', () => this.listboxId),
         outputBinding<RichTextEditorTriggerItem>('selectItem', (item) => this.insertItem(item)),
         outputBinding<number>('activateItem', (index) => this.activeIndex.set(index)),

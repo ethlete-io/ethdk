@@ -1,4 +1,5 @@
 import { Provider } from '@angular/core';
+import { DEFAULT_RICH_TEXT_EDITOR_LABELS } from '../rich-text-editor-labels';
 import { RICH_TEXT_EDITOR_TOOL, RichTextEditorToolDefinition } from '../rich-text-editor-tools';
 import { RichTextEditorAlignToolComponent } from './rich-text-editor-align-tool.component';
 
@@ -11,7 +12,8 @@ export const provideRichTextEditorAlignmentTool = (): Provider => ({
   provide: RICH_TEXT_EDITOR_TOOL,
   useValue: {
     token: 'align',
-    label: 'Alignment',
+    // Only a fallback: the toolbar reads `align` from the label set, which is what a consumer localizes.
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.align,
     control: RichTextEditorAlignToolComponent,
   } satisfies RichTextEditorToolDefinition,
   multi: true,

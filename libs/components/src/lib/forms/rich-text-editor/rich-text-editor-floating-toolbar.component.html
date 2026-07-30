@@ -6,7 +6,7 @@
   @if (TOOL_BUTTONS[tool]; as def) {
     <button
       [pressed]="def.isActive(editor())"
-      [attr.aria-label]="def.label"
+      [attr.aria-label]="toolLabel(tool, def)"
       (mousedown)="$event.preventDefault()"
       (click)="def.run(editor())"
       mutedUntilPressed

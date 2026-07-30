@@ -1,4 +1,5 @@
-import { booleanAttribute, Component, input, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, computed, input, ViewEncapsulation } from '@angular/core';
+import { injectLoaderLabels } from '../loader';
 
 /**
  * A loading placeholder: a box (or several) standing in for content that hasn't arrived, with an
@@ -16,7 +17,7 @@ import { booleanAttribute, Component, input, ViewEncapsulation } from '@angular/
  */
 @Component({
   selector: 'et-skeleton',
-  template: `<span class="et-skeleton-ally-text">{{ loadingAllyText() }}</span
+  template: `<span class="et-skeleton-ally-text">{{ resolvedLoadingAllyText() }}</span
     ><ng-content />`,
   styleUrl: './skeleton.component.css',
   encapsulation: ViewEncapsulation.None,
@@ -28,11 +29,14 @@ import { booleanAttribute, Component, input, ViewEncapsulation } from '@angular/
   },
 })
 export class SkeletonComponent {
+  private labels = injectLoaderLabels();
+
   /**
    * What a screen reader announces in place of the shapes, which are `aria-hidden` — they carry no
-   * information, and reading "loading" once is the whole message.
+   * information, and reading "loading" once is the whole message. `null` (the default) uses
+   * `LOADER_LABELS`' `loadingContent`; set it for something more specific ("Loading results").
    */
-  public loadingAllyText = input('Loading…');
+  public loadingAllyText = input<string | null>(null);
 
   /**
    * Run the shimmer. Off leaves a static placeholder — the same shapes without motion, which is what
@@ -40,4 +44,7 @@ export class SkeletonComponent {
    * Independent of `prefers-reduced-motion`, which drops the shimmer regardless. @default true
    */
   public animated = input(true, { transform: booleanAttribute });
+
+  /** The announcement in effect: this instance's `loadingAllyText`, else `LOADER_LABELS`. */
+  protected resolvedLoadingAllyText = computed(() => this.loadingAllyText() ?? this.labels().loadingContent);
 }

@@ -5,4 +5,5 @@ export * from './grid-item-toolbar.component';
 export * from './grid-item-default-actions.component';
 export * from './grid-debug.component';
 export * from './grid-errors';
+export * from './grid-labels';
 export * from './grid.imports';

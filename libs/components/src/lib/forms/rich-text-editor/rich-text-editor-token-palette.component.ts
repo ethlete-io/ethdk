@@ -39,7 +39,7 @@ type RichTextEditorTokenPaletteGroup = {
   host: {
     class: 'et-rte-token-palette',
     role: 'group',
-    '[attr.aria-label]': 'label()',
+    '[attr.aria-label]': 'resolvedLabel()',
   },
 })
 export class RichTextEditorTokenPaletteComponent {
@@ -49,11 +49,14 @@ export class RichTextEditorTokenPaletteComponent {
   /** The triggers whose items become chip buttons. Use the same array as the editor's triggers. */
   public triggers = input<readonly RichTextEditorTrigger[]>([]);
 
-  /** Accessible name for the palette group. */
-  public label = input('Insert token');
+  /** Accessible name for the palette group. `null` (the default) uses the editor's `insertToken` label. */
+  public label = input<string | null>(null);
 
   /** Focus the editor after inserting so the user can keep typing. */
   public focusEditorOnInsert = input(true, { transform: booleanAttribute });
+
+  /** The name in effect: this instance's `label`, else the editor's label set. */
+  protected resolvedLabel = computed(() => this.label() ?? this.editor().resolvedLabels().insertToken);
 
   private groups = toSignal(
     toObservable(this.triggers).pipe(

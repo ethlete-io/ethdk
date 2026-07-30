@@ -1,5 +1,6 @@
 import { Provider } from '@angular/core';
 import { injectRenderer } from '@ethlete/core';
+import { DEFAULT_RICH_TEXT_EDITOR_LABELS } from '../rich-text-editor-labels';
 import { RICH_TEXT_EDITOR_TOOL, RichTextEditorToolDefinition } from '../rich-text-editor-tools';
 import { RichTextEditorTableToolComponent } from './rich-text-editor-table-tool.component';
 import { createTableNav } from './rich-text-editor-table.util';
@@ -19,7 +20,8 @@ export const provideRichTextEditorTableTool = (): Provider => ({
 
     return {
       token: 'table',
-      label: 'Table',
+      // Only a fallback: the toolbar reads `table` from the label set, which is what a consumer localizes.
+      label: DEFAULT_RICH_TEXT_EDITOR_LABELS.table,
       control: RichTextEditorTableToolComponent,
       keydown: (editor, event) =>
         nav.tab(editor.editorDom, event) ||

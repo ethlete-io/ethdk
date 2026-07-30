@@ -1,5 +1,5 @@
 import { Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
-import { injectLocale } from '@ethlete/core';
+import { injectGridLabels } from './grid-labels';
 import { IconButtonComponent } from '../button/icon-button.component';
 import { ICON_IMPORTS, TIMES_ICON, provideIcons } from '../icon';
 import { GridItemToolbarComponent } from './grid-item-toolbar.component';
@@ -40,14 +40,12 @@ import { GRID_TOKEN } from './headless/grid.tokens';
 export class GridItemDefaultActionsComponent {
   private grid = inject(GRID_TOKEN);
   private gridConfig = injectGridConfig();
-  private locale = injectLocale();
+  private labels = injectGridLabels();
 
   public itemId = input.required<string>();
   public data = input<unknown>();
 
-  protected removeAriaLabel = computed(() =>
-    this.gridConfig.transformer(this.gridConfig.removeActionAriaLabel, this.locale.currentLocale()),
-  );
+  protected removeAriaLabel = computed(() => this.labels().removeItem);
 
   protected remove() {
     this.grid.removeItem(this.itemId());

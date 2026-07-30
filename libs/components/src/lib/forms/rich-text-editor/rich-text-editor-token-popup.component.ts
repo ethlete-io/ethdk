@@ -53,7 +53,7 @@ export class RichTextEditorTokenPopupComponent {
   public activeIndex = input.required<number>();
   public loading = input(false, { transform: booleanAttribute });
   public error = input<string | null>(null);
-  public emptyLabel = input('No results');
+  public emptyLabel = input.required<string>();
   public listboxId = input.required<string>();
 
   public selectItem = output<RichTextEditorTriggerItem>();

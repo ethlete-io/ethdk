@@ -2,10 +2,10 @@ import { Component, ViewEncapsulation, computed, effect, inject, untracked, view
 import {
   ProvideSurfaceDirective,
   SURFACE_PROVIDER,
-  injectLocale,
   injectSurfaceThemes,
   resolveSurfaceByElevation,
 } from '@ethlete/core';
+import { injectStreamLabels } from '../stream-labels';
 import { ButtonComponent } from '../../button';
 import { ARROW_OUT_UP_RIGHT_ICON, IconDirective, provideIcons } from '../../icon';
 import { injectPipManager } from '../pip-manager';
@@ -122,7 +122,7 @@ export class PipSlotPlaceholderComponent {
   private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
   private pipManager = injectPipManager();
   private config = injectPipSlotPlaceholderConfig();
-  private locale = injectLocale();
+  private labels = injectStreamLabels();
   private surfaceThemes = injectSurfaceThemes({ optional: true });
   private bringBackDir = viewChild(PipBringBackDirective);
 
@@ -142,8 +142,8 @@ export class PipSlotPlaceholderComponent {
     return this.pipManager.pips().some((p) => p.playerId === playerId);
   });
 
-  public message = computed(() => this.config.transformer(this.config.message, this.locale.currentLocale()));
-  public backLabel = computed(() => this.config.transformer(this.config.backLabel, this.locale.currentLocale()));
+  public message = computed(() => this.labels().pipPlaceholderMessage);
+  public backLabel = computed(() => this.labels().pipPlaceholderBack);
   public backButtonColor = computed(() => this.config.backButtonColor);
 
   constructor() {

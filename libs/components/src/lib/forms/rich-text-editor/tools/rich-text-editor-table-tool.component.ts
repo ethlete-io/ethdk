@@ -50,6 +50,9 @@ export class RichTextEditorTableToolComponent {
   protected menu = viewChild.required(MenuDirective);
   protected pickerGrid = viewChild<ElementRef<HTMLElement>>('pickerGrid');
 
+  /** The editor's strings — the tool is part of that editor's toolbar. */
+  protected labels = computed(() => this.editor().resolvedLabels());
+
   private ops = createTableOps(this.renderer);
 
   protected readonly pickerRows = Array.from({ length: PICKER_ROWS }, (_, i) => i);
@@ -57,9 +60,11 @@ export class RichTextEditorTableToolComponent {
 
   protected hoverRows = signal(0);
   protected hoverCols = signal(0);
-  protected sizeLabel = computed(() =>
-    this.hoverRows() > 0 ? `${this.hoverRows()} × ${this.hoverCols()}` : 'Insert table',
-  );
+  protected sizeLabel = computed(() => {
+    const labels = this.labels();
+
+    return this.hoverRows() > 0 ? labels.tableSizePreview(this.hoverRows(), this.hoverCols()) : labels.tableInsert;
+  });
 
   /** Table context at the caret, recomputed when the menu opens (via `refreshContext`). */
   protected context = signal<TableContext | null>(null);

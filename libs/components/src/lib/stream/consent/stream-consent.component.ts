@@ -2,10 +2,10 @@ import { Component, ViewEncapsulation, computed, inject } from '@angular/core';
 import {
   ProvideSurfaceDirective,
   SURFACE_PROVIDER,
-  injectLocale,
   injectSurfaceThemes,
   resolveSurfaceByElevation,
 } from '@ethlete/core';
+import { injectStreamLabels } from '../stream-labels';
 import { ButtonComponent } from '../../button';
 import { IconDirective, LOCK_ICON, provideIcons } from '../../icon';
 import { StreamConsentAcceptDirective } from './headless/stream-consent-accept.directive';
@@ -153,7 +153,7 @@ let nextHeadingId = 0;
 export class StreamConsentComponent {
   private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
   private config = injectStreamConsentConfig();
-  private locale = injectLocale();
+  private labels = injectStreamLabels();
   private surfaceThemes = injectSurfaceThemes({ optional: true });
   protected readonly HEADING_ID = `et-stream-consent-heading-${nextHeadingId++}`;
 
@@ -167,8 +167,8 @@ export class StreamConsentComponent {
     return resolveSurfaceByElevation(themes, type, elevation)?.name ?? null;
   });
 
-  public heading = computed(() => this.config.transformer(this.config.heading, this.locale.currentLocale()));
-  public description = computed(() => this.config.transformer(this.config.description, this.locale.currentLocale()));
-  public acceptLabel = computed(() => this.config.transformer(this.config.acceptLabel, this.locale.currentLocale()));
+  public heading = computed(() => this.labels().consentHeading);
+  public description = computed(() => this.labels().consentDescription);
+  public acceptLabel = computed(() => this.labels().consentAccept);
   public acceptButtonColor = computed(() => this.config.acceptButtonColor);
 }

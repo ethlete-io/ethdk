@@ -41,16 +41,25 @@ export class RichTextEditorAlignToolComponent {
 
   public editor = input.required<RichTextEditorDirective>();
 
-  protected readonly OPTIONS: { value: TextAlign; label: string; icon: string }[] = [
-    { value: 'left', label: 'Align left', icon: 'et-align-left' },
-    { value: 'center', label: 'Align center', icon: 'et-align-center' },
-    { value: 'right', label: 'Align right', icon: 'et-align-right' },
-    { value: 'justify', label: 'Justify', icon: 'et-align-justify' },
-  ];
+  /** The editor's strings — the tool is part of that editor's toolbar. */
+  protected labels = computed(() => this.editor().resolvedLabels());
+
+  protected options = computed<{ value: TextAlign; label: string; icon: string }[]>(() => {
+    const labels = this.labels();
+
+    return [
+      { value: 'left', label: labels.alignLeft, icon: 'et-align-left' },
+      { value: 'center', label: labels.alignCenter, icon: 'et-align-center' },
+      { value: 'right', label: labels.alignRight, icon: 'et-align-right' },
+      { value: 'justify', label: labels.alignJustify, icon: 'et-align-justify' },
+    ];
+  });
 
   /** Alignment of the caret's block/cell — kept live so the trigger icon and menu stay in sync. */
   protected current = signal<TextAlign>('left');
-  protected currentIcon = computed(() => this.OPTIONS.find((o) => o.value === this.current())?.icon ?? 'et-align-left');
+  protected currentIcon = computed(
+    () => this.options().find((o) => o.value === this.current())?.icon ?? 'et-align-left',
+  );
   /** Also locked inside lists: `text-align` on a list has no Markdown form and would not survive
    *  serialization, so the tool disables there instead of silently losing the alignment. */
   protected disabled = computed(

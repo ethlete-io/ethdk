@@ -1,6 +1,7 @@
 import { NgComponentOutlet } from '@angular/common';
 import { Component, computed, effect, inject, ViewEncapsulation } from '@angular/core';
-import { injectLocale, RuntimeError } from '@ethlete/core';
+import { RuntimeError } from '@ethlete/core';
+import { injectGridLabels } from './grid-labels';
 import { GRID_ERROR_CODES } from './grid-errors';
 import { GridItemDefaultActionsComponent } from './grid-item-default-actions.component';
 import { GridItemComponent } from './grid-item.component';
@@ -120,7 +121,7 @@ import { positionToPixelRect } from './headless/internals';
 export class GridComponent {
   public grid = inject(GridDirective);
   private gridConfig = injectGridConfig();
-  private locale = injectLocale();
+  private labels = injectGridLabels();
 
   protected actionsComponent = computed(() => {
     const configured = this.gridConfig.actionsComponent;
@@ -136,8 +137,9 @@ export class GridComponent {
   });
 
   protected ariaLabel = computed(() => {
-    const label = this.grid.readOnly() ? this.gridConfig.readonlyAriaLabel : this.gridConfig.interactiveAriaLabel;
-    return this.gridConfig.transformer(label, this.locale.currentLocale());
+    const labels = this.labels();
+
+    return this.grid.readOnly() ? labels.readonlyGrid : labels.interactiveGrid;
   });
 
   protected ghostRect = computed(() => {

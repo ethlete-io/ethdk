@@ -78,6 +78,7 @@ export class RichTextEditorLinkEditorDirective {
         inputBinding('text', () => info.text),
         inputBinding('newTab', () => info.newTab),
         inputBinding('exists', () => info.exists),
+        inputBinding('labels', () => this.editor.resolvedLabels()),
         outputBinding<RichTextEditorLinkEditorValue>('saveLink', (value) => this.apply(value)),
         outputBinding<void>('removeLink', () => this.remove()),
         outputBinding<void>('dismiss', () => this.dismiss()),

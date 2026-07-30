@@ -2,6 +2,7 @@
   <button
     [disabled]="disabled()"
     [pressed]="alignMenu.open()"
+    [attr.aria-label]="labels().alignTrigger"
     (mousedown)="$event.preventDefault()"
     emitAriaPressed="false"
     etMenuTrigger
@@ -9,7 +10,6 @@
     size="sm"
     type="button"
     mutedUntilPressed
-    aria-label="Text alignment"
   >
     <i [etIcon]="currentIcon()"></i>
   </button>
@@ -17,7 +17,7 @@
   <ng-template etMenuSurface>
     <et-menu>
       <et-menu-radio-group [value]="current()" (valueChange)="select($event)" (mousedown)="$event.preventDefault()">
-        @for (option of OPTIONS; track option.value) {
+        @for (option of options(); track option.value) {
           <!-- eslint-disable-next-line ethlete/prefer-static-boolean-properties -- closeOnActivate is tri-state (boolean | undefined); a transform would collapse its unset state -->
           <et-menu-radio-item [value]="option.value" [closeOnActivate]="true" [icon]="option.icon">
             {{ option.label }}

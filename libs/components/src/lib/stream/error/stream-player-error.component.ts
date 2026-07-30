@@ -2,10 +2,10 @@ import { Component, ViewEncapsulation, computed, inject } from '@angular/core';
 import {
   ProvideSurfaceDirective,
   SURFACE_PROVIDER,
-  injectLocale,
   injectSurfaceThemes,
   resolveSurfaceByElevation,
 } from '@ethlete/core';
+import { injectStreamLabels } from '../stream-labels';
 import { ButtonComponent } from '../../button';
 import { IconDirective, TRIANGLE_EXCLAMATION_ICON, provideIcons } from '../../icon';
 import { STREAM_PLAYER_ERROR_TOKEN, StreamPlayerErrorDirective } from './headless/stream-player-error.directive';
@@ -151,7 +151,7 @@ export class StreamPlayerErrorComponent {
   private errorDirective = inject(STREAM_PLAYER_ERROR_TOKEN);
   private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
   private config = injectStreamPlayerErrorConfig();
-  private locale = injectLocale();
+  private labels = injectStreamLabels();
   private surfaceThemes = injectSurfaceThemes({ optional: true });
 
   public cardSurface = computed(() => {
@@ -164,9 +164,9 @@ export class StreamPlayerErrorComponent {
     return resolveSurfaceByElevation(themes, type, elevation)?.name ?? null;
   });
 
-  public heading = computed(() => this.config.transformer(this.config.heading, this.locale.currentLocale()));
-  public description = computed(() => this.config.transformer(this.config.description, this.locale.currentLocale()));
-  public retryLabel = computed(() => this.config.transformer(this.config.retryLabel, this.locale.currentLocale()));
+  public heading = computed(() => this.labels().errorHeading);
+  public description = computed(() => this.labels().errorDescription);
+  public retryLabel = computed(() => this.labels().errorRetry);
   public retryButtonColor = computed(() => this.config.retryButtonColor);
 
   public retry() {

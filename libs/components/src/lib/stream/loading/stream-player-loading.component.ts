@@ -1,5 +1,6 @@
 import { Component, ViewEncapsulation } from '@angular/core';
 import { SpinnerComponent } from '../../loader';
+import { injectStreamLabels } from '../stream-labels';
 import { injectStreamPlayerLoadingConfig } from './stream-player-loading-config';
 
 @Component({
@@ -10,7 +11,7 @@ import { injectStreamPlayerLoadingConfig } from './stream-player-loading-config'
   host: {
     class: 'et-stream-player-loading',
     role: 'status',
-    'aria-label': 'Loading',
+    '[attr.aria-label]': 'labels().loading',
   },
   styles: `
     .et-stream-player-loading {
@@ -31,5 +32,7 @@ import { injectStreamPlayerLoadingConfig } from './stream-player-loading-config'
   `,
 })
 export class StreamPlayerLoadingComponent {
+  protected labels = injectStreamLabels();
+
   protected config = injectStreamPlayerLoadingConfig();
 }

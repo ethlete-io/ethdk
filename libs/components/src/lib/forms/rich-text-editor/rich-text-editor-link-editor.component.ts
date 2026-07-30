@@ -17,6 +17,7 @@ import { CHECKBOX_IMPORTS } from '../checkbox';
 import { CHOICE_FIELD_IMPORTS } from '../choice-field';
 import { FORM_FIELD_IMPORTS } from '../form-field';
 import { INPUT_IMPORTS } from '../input';
+import { RichTextEditorLabels } from './rich-text-editor-labels';
 
 /** The payload the link editor emits on apply. */
 export type RichTextEditorLinkEditorValue = {
@@ -43,13 +44,16 @@ export type RichTextEditorLinkEditorValue = {
   host: {
     class: 'et-rte-link-editor',
     role: 'dialog',
-    'aria-label': 'Edit link',
+    '[attr.aria-label]': 'labels().linkEditor',
     '(keydown.escape)': 'dismiss.emit()',
   },
 })
 export class RichTextEditorLinkEditorComponent {
   private ownColorProvider = inject(ProvideColorDirective);
   private contextColorProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
+
+  /** The editor's strings, handed in by `[etRichTextEditorLinkEditor]` — the popover renders detached. */
+  public labels = input.required<RichTextEditorLabels>();
 
   public href = input('');
   public text = input('');
@@ -65,7 +69,7 @@ export class RichTextEditorLinkEditorComponent {
   protected textValue = linkedSignal(() => this.text());
   protected newTabValue = linkedSignal(() => this.newTab());
 
-  protected title = computed(() => (this.exists() ? 'Edit link' : 'Add link'));
+  protected title = computed(() => (this.exists() ? this.labels().linkEditorEdit : this.labels().linkEditorAdd));
 
   constructor() {
     // The popover mounts in a detached overlay pane. Its surface IS the overlay's own surface, so it

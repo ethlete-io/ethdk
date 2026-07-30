@@ -38,6 +38,7 @@ import {
   RichTextEditorFloatingToolbarDirective,
   RichTextEditorLinkEditorDirective,
 } from './headless';
+import { richTextEditorToolLabel } from './rich-text-editor-labels';
 import {
   RICH_TEXT_EDITOR_HEADING_OPTIONS,
   RICH_TEXT_EDITOR_TOOL,
@@ -98,6 +99,7 @@ const NAVIGATION_KEYS = new Set([
         'placeholder',
         'tools',
         'autoformat',
+        'labels',
       ],
       outputs: ['valueChange', 'touchedChange'],
     },
@@ -128,7 +130,19 @@ export class RichTextEditorComponent {
   protected toolbar = viewChild.required<ElementRef<HTMLElement>>('toolbar');
 
   protected readonly TOOLS = RICH_TEXT_EDITOR_TOOLS;
-  protected readonly HEADING_OPTIONS = RICH_TEXT_EDITOR_HEADING_OPTIONS;
+
+  /** The strings in effect, owned by the directive so the opt-in tools read the same set. */
+  protected labels = computed(() => this.dir.resolvedLabels());
+
+  /** The block-style menu's entries, named by the label set rather than by the option table. */
+  protected headingOptions = computed(() => {
+    const labels = this.labels();
+
+    return RICH_TEXT_EDITOR_HEADING_OPTIONS.map((option) => ({
+      ...option,
+      label: option.level === null ? labels.paragraph : labels.heading(option.level),
+    }));
+  });
 
   private registeredTools = inject(RICH_TEXT_EDITOR_TOOL, { optional: true }) ?? [];
 
@@ -145,12 +159,15 @@ export class RichTextEditorComponent {
     return defs;
   });
 
+  /** A tool button's accessible name, from the label set where this library owns the tool. */
+  protected toolLabel = (tool: RichTextEditorToolDefinition) => richTextEditorToolLabel(this.labels(), tool);
+
   /** The current block style option (used for the heading-menu trigger icon + label). */
   private currentHeading = computed(() =>
-    this.HEADING_OPTIONS.find((option) => option.level === this.dir.headingLevel()),
+    this.headingOptions().find((option) => option.level === this.dir.headingLevel()),
   );
 
-  protected currentHeadingLabel = computed(() => this.currentHeading()?.label ?? 'Normal');
+  protected currentHeadingLabel = computed(() => this.currentHeading()?.label ?? this.labels().paragraph);
   protected currentHeadingIcon = computed(() => this.currentHeading()?.icon ?? 'et-paragraph');
 
   /** Keeps the docked toolbar up briefly after a blur so opening a menu/link editor from it (which

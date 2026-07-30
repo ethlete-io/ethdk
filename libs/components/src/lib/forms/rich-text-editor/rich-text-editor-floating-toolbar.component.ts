@@ -12,6 +12,7 @@ import {
   UNDERLINE_ICON,
 } from '../../icon';
 import { RichTextEditorDirective } from './headless/rich-text-editor.directive';
+import { richTextEditorToolLabel } from './rich-text-editor-labels';
 import {
   RICH_TEXT_EDITOR_INLINE_TOOLS,
   RICH_TEXT_EDITOR_TOOL_BUTTONS,
@@ -29,7 +30,7 @@ import {
   host: {
     class: 'et-rte-floating-toolbar',
     role: 'toolbar',
-    'aria-label': 'Selection formatting',
+    '[attr.aria-label]': 'labels().selectionToolbar',
     // keep the caret/selection in the editor when the user clicks a button
     '(mousedown)': '$event.preventDefault()',
   },
@@ -43,6 +44,13 @@ export class RichTextEditorFloatingToolbarComponent {
 
   protected readonly TOOLS = RICH_TEXT_EDITOR_TOOLS;
   protected readonly TOOL_BUTTONS = RICH_TEXT_EDITOR_TOOL_BUTTONS;
+
+  /** The editor's strings — the same set, since this toolbar is part of that editor. */
+  protected labels = computed(() => this.editor().resolvedLabels());
+
+  /** A tool button's accessible name, from the label set. */
+  protected toolLabel = (token: string, tool: { label: string }) =>
+    richTextEditorToolLabel(this.labels(), { token, ...tool });
 
   /** The inline marks from the editor's configured tools — headings/lists stay in the static toolbar. */
   protected inlineTools = computed(() =>

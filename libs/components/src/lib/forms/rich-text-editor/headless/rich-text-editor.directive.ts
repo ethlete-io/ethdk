@@ -4,6 +4,7 @@ import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { htmlToMarkdown, injectRenderer, markdownToHtml, RuntimeError } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 import { RICH_TEXT_EDITOR_ERROR_CODES } from '../rich-text-editor-errors';
+import { injectRichTextEditorLabels, RichTextEditorLabels } from '../rich-text-editor-labels';
 import { RICH_TEXT_EDITOR_TOKEN_CODEC } from '../rich-text-editor-token-codec.token';
 import { injectRichTextEditorTools, RichTextEditorTool } from '../rich-text-editor-tools';
 import { RichTextEditorTriggerItem } from '../rich-text-editor-trigger';
@@ -31,6 +32,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   private document = inject(DOCUMENT);
   private renderer = injectRenderer();
   private toolsConfig = injectRichTextEditorTools();
+  private injectedLabels = injectRichTextEditorLabels();
 
   /** @internal */
   public editorDom = injectRichTextEditorDom();
@@ -56,8 +58,21 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
    *  convert into their marks. Registered token-trigger characters never autoformat. */
   public autoformat = input(true, { transform: booleanAttribute });
 
+  /**
+   * Per-instance overrides for the editor's strings, merged over the injected `RICH_TEXT_EDITOR_LABELS`.
+   * Prefer `provideRichTextEditorLabels` for app-wide localization; use this for a one-off wording.
+   */
+  public labels = input<Partial<RichTextEditorLabels> | null>(null);
+
   /** Resolved toolbar tools: the `tools` input if set, otherwise the provided/default config. */
   public resolvedTools = computed(() => this.tools() ?? this.toolsConfig.tools);
+
+  /**
+   * The strings in effect here: the injected label set with this instance's `labels` applied. Every part
+   * of the editor reads it through this — the toolbars, the link editor and the opt-in tools all reach
+   * the editor already.
+   */
+  public resolvedLabels = computed<RichTextEditorLabels>(() => ({ ...this.injectedLabels(), ...this.labels() }));
 
   /**
    * @internal Codec that (de)serializes `{{type:id}}` token chips. Installed by

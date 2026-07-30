@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
-import { provideStreamConsentConfig } from './stream-consent-config';
+import { provideStreamLabels } from '../stream-labels';
 import { StreamConsentComponent } from './stream-consent.component';
 
 describe('StreamConsentComponent', () => {
@@ -11,12 +11,10 @@ describe('StreamConsentComponent', () => {
     TestBed.configureTestingModule({
       imports: [StreamConsentComponent],
       providers: [
-        provideStreamConsentConfig({
-          heading: 'Consent required',
-          description: 'Please grant consent',
-          acceptLabel: 'Accept',
-          acceptButtonColor: null,
-          transformer: (text: string) => text,
+        provideStreamLabels({
+          consentHeading: 'Consent required',
+          consentDescription: 'Please grant consent',
+          consentAccept: 'Accept',
         }),
       ],
     });
