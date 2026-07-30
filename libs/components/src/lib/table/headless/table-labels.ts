@@ -1,5 +1,4 @@
-import { computed, inject, InjectionToken, Provider, Signal } from '@angular/core';
-import { injectLocale } from '@ethlete/core';
+import { createLabels, LabelsSource } from '@ethlete/core';
 
 /**
  * Every string the table and its features render or announce themselves. Defaults are English
@@ -104,22 +103,18 @@ export const DEFAULT_TABLE_LABELS: TableLabels = {
 };
 
 /**
- * A label set, or a function building one for the **active locale** — called again whenever
- * `injectLocale()`'s `currentLocale` changes, so a locale switch re-renders the table's wording
- * without reloading. This is the seam an app's i18n library plugs into (same idea as `TitleConfig`'s
- * locale-aware `transformer`).
+ * A label set, or a function building one for the **active locale**. See {@link LabelsSource}.
+ *
+ * @deprecated Use {@link LabelsSource}`<`{@link TableLabels}`>` — the shape is shared by every domain
+ * in this library now.
  */
-export type TableLabelsSource = Partial<TableLabels> | ((locale: string) => Partial<TableLabels>);
-
-/** What {@link provideTableLabels} stores. Read it through {@link injectTableLabels}, not directly. */
-export const TABLE_LABELS = new InjectionToken<TableLabelsSource>('TABLE_LABELS', {
-  providedIn: 'root',
-  factory: () => ({}),
-});
+export type TableLabelsSource = LabelsSource<TableLabels>;
 
 /**
- * Localize the table's strings for everything below this injector. Partial — whatever you leave out
- * keeps its {@link DEFAULT_TABLE_LABELS} value.
+ * Localize the table's strings for everything below this injector, and read the set in effect here as
+ * a signal: the defaults with the provided set (or the set its factory builds for the current locale)
+ * layered on top. Partial — whatever you leave out keeps its {@link DEFAULT_TABLE_LABELS} value. See
+ * {@link createLabels} for the shape, which every domain in this library shares.
  *
  * @example
  * // fixed wording
@@ -137,22 +132,7 @@ export const TABLE_LABELS = new InjectionToken<TableLabelsSource>('TABLE_LABELS'
  *   sortAction: (header, next) => translate(`table.sort.${next ?? 'clear'}`, locale, { header }),
  * }));
  */
-export const provideTableLabels = (labels: TableLabelsSource): Provider => ({
-  provide: TABLE_LABELS,
-  useValue: labels,
-});
-
-/**
- * The label set in effect here, as a signal: the defaults with the provided set (or the set its
- * factory builds for the current locale) layered on top. A signal because the locale can change at
- * runtime — read it in the template/computed, never destructure it once.
- */
-export const injectTableLabels = (): Signal<TableLabels> => {
-  const source = inject(TABLE_LABELS);
-  const { currentLocale } = injectLocale();
-
-  return computed(() => ({
-    ...DEFAULT_TABLE_LABELS,
-    ...(typeof source === 'function' ? source(currentLocale()) : source),
-  }));
-};
+export const [provideTableLabels, injectTableLabels, TABLE_LABELS] = createLabels<TableLabels>(
+  'TABLE_LABELS',
+  DEFAULT_TABLE_LABELS,
+);

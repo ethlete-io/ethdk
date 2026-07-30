@@ -1,4 +1,4 @@
-import { InjectionToken, Provider, inject } from '@angular/core';
+import { createLabels } from '@ethlete/core';
 import {
   parseHttpErrorCodeToMessageDe,
   parseHttpErrorCodeToMessageEn,
@@ -48,25 +48,15 @@ export const queryErrorLabelsForLocale = (locale: string): QueryErrorLabels =>
   locale.toLowerCase().startsWith('de') ? GERMAN_QUERY_ERROR_LABELS : DEFAULT_QUERY_ERROR_LABELS;
 
 /**
- * Overrides for the locale-derived labels. `null` (the default) means "use whatever the locale says", which is
- * the setup that needs no configuration.
- */
-export const QUERY_ERROR_LABELS = new InjectionToken<Partial<QueryErrorLabels> | null>('QUERY_ERROR_LABELS', {
-  providedIn: 'root',
-  factory: () => null,
-});
-
-/**
- * Localize a query error's strings for everything below this injector. Partial — whatever you leave out keeps
- * the value the current locale gives it, so this is also how you localize into a third language while keeping
- * English or German as the base.
+ * Localize a query error's strings for everything below this injector, and read the set in effect here as a
+ * signal. Partial — whatever you leave out keeps the value the current locale gives it, so this is also how you
+ * localize into a third language while keeping English or German as the base. See {@link createLabels} for the
+ * shape, which every domain in this library shares.
  *
  * @example
  * provideQueryErrorLabels({ retry: 'Réessayer', title: () => 'Une erreur est survenue' });
  */
-export const provideQueryErrorLabels = (labels: Partial<QueryErrorLabels>): Provider => ({
-  provide: QUERY_ERROR_LABELS,
-  useValue: labels,
-});
-
-export const injectQueryErrorLabels = () => inject(QUERY_ERROR_LABELS);
+export const [provideQueryErrorLabels, injectQueryErrorLabels, QUERY_ERROR_LABELS] = createLabels<QueryErrorLabels>(
+  'QUERY_ERROR_LABELS',
+  queryErrorLabelsForLocale,
+);

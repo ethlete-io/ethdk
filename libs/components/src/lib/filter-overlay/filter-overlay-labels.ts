@@ -1,4 +1,4 @@
-import { InjectionToken, Provider, inject } from '@angular/core';
+import { createLabels } from '@ethlete/core';
 import { FilterOverlaySubmitButton, FilterOverlaySubmitState } from './filter-overlay.types';
 
 /**
@@ -52,25 +52,16 @@ export const GERMAN_FILTER_OVERLAY_LABELS: FilterOverlayLabels = {
 export const filterOverlayLabelsForLocale = (locale: string): FilterOverlayLabels =>
   locale.toLowerCase().startsWith('de') ? GERMAN_FILTER_OVERLAY_LABELS : DEFAULT_FILTER_OVERLAY_LABELS;
 
-/** Overrides for the locale-derived labels. `null` means "use whatever the locale says". */
-export const FILTER_OVERLAY_LABELS = new InjectionToken<Partial<FilterOverlayLabels> | null>('FILTER_OVERLAY_LABELS', {
-  providedIn: 'root',
-  factory: () => null,
-});
-
 /**
- * Localize the filter overlay's strings below this injector. Partial — what you leave out keeps the value the
- * current locale gives it.
+ * Localize the filter overlay's strings below this injector, and read the set in effect here as a signal.
+ * Partial — what you leave out keeps the value the current locale gives it. See {@link createLabels} for the
+ * shape, which every domain in this library shares.
  *
  * @example
  * provideFilterOverlayLabels({ apply: 'Voir les résultats', reset: 'Réinitialiser' });
  */
-export const provideFilterOverlayLabels = (labels: Partial<FilterOverlayLabels>): Provider => ({
-  provide: FILTER_OVERLAY_LABELS,
-  useValue: labels,
-});
-
-export const injectFilterOverlayLabels = () => inject(FILTER_OVERLAY_LABELS);
+export const [provideFilterOverlayLabels, injectFilterOverlayLabels, FILTER_OVERLAY_LABELS] =
+  createLabels<FilterOverlayLabels>('FILTER_OVERLAY_LABELS', filterOverlayLabelsForLocale);
 
 /**
  * The submit button, worked out from the preview.

@@ -173,7 +173,7 @@ export class CarouselDirective {
   public scrollable = computed(() => this.attachedScrollable() ?? this.ownScrollable ?? this.contentScrollable());
 
   /** The strings in effect here: the injected label set with this instance's `labels` applied. */
-  public resolvedLabels = computed<CarouselLabels>(() => ({ ...this.injectedLabels, ...this.labels() }));
+  public resolvedLabels = computed<CarouselLabels>(() => ({ ...this.injectedLabels(), ...this.labels() }));
 
   /** @internal The slides, in registration order — used for their `N of M` labels and durations. */
   public items = signal<CarouselItemDirective[]>([]);

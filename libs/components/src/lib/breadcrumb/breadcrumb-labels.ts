@@ -1,4 +1,4 @@
-import { InjectionToken, Provider, inject } from '@angular/core';
+import { createLabels } from '@ethlete/core';
 
 /**
  * Every string the breadcrumb announces. It renders no text of its own — the crumbs are yours — so
@@ -18,22 +18,15 @@ export const DEFAULT_BREADCRUMB_LABELS: BreadcrumbLabels = {
   overflow: 'Show hidden levels',
 };
 
-/** The label set every breadcrumb in this injector uses. @default DEFAULT_BREADCRUMB_LABELS */
-export const BREADCRUMB_LABELS = new InjectionToken<BreadcrumbLabels>('BREADCRUMB_LABELS', {
-  providedIn: 'root',
-  factory: () => DEFAULT_BREADCRUMB_LABELS,
-});
-
 /**
- * Localize the breadcrumb's strings for everything below this injector. Partial — whatever you leave
- * out keeps its {@link DEFAULT_BREADCRUMB_LABELS} value.
+ * Localize the breadcrumb's strings for everything below this injector, and read the set in effect
+ * here as a signal. Partial — whatever you leave out keeps its {@link DEFAULT_BREADCRUMB_LABELS}
+ * value. See {@link createLabels} for the shape, which every domain in this library shares.
  *
  * @example
  * provideBreadcrumbLabels({ navigation: 'Brotkrumen', overflow: 'Ausgeblendete Ebenen anzeigen' });
  */
-export const provideBreadcrumbLabels = (labels: Partial<BreadcrumbLabels>): Provider => ({
-  provide: BREADCRUMB_LABELS,
-  useValue: { ...DEFAULT_BREADCRUMB_LABELS, ...labels },
-});
-
-export const injectBreadcrumbLabels = () => inject(BREADCRUMB_LABELS);
+export const [provideBreadcrumbLabels, injectBreadcrumbLabels, BREADCRUMB_LABELS] = createLabels<BreadcrumbLabels>(
+  'BREADCRUMB_LABELS',
+  DEFAULT_BREADCRUMB_LABELS,
+);

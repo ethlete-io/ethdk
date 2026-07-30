@@ -54,7 +54,7 @@ export class PaginationDirective {
   public labels = input<Partial<PaginationLabels> | null>(null);
 
   /** The strings in effect here: the injected label set with this instance's `labels` applied. */
-  public resolvedLabels = computed<PaginationLabels>(() => ({ ...this.injectedLabels, ...this.labels() }));
+  public resolvedLabels = computed<PaginationLabels>(() => ({ ...this.injectedLabels(), ...this.labels() }));
 
   /** The ordered items to render (page numbers, jump controls, ellipsis gaps). */
   public items = computed<PaginationItem[]>(() =>

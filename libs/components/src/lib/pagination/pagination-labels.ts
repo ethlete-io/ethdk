@@ -1,4 +1,4 @@
-import { inject, InjectionToken, Provider } from '@angular/core';
+import { createLabels } from '@ethlete/core';
 
 /** The item range a readout label describes — `start`/`end` are 1-based and inclusive. */
 export type PaginationRangeContext = {
@@ -58,15 +58,10 @@ export const DEFAULT_PAGINATION_LABELS: PaginationLabels = {
   jumpTo: 'Go to page',
 };
 
-/** The label set every paginator in this injector uses. @default DEFAULT_PAGINATION_LABELS */
-export const PAGINATION_LABELS = new InjectionToken<PaginationLabels>('PAGINATION_LABELS', {
-  providedIn: 'root',
-  factory: () => DEFAULT_PAGINATION_LABELS,
-});
-
 /**
- * Localize the paginator's strings for everything below this injector. Partial — whatever you leave
- * out keeps its {@link DEFAULT_PAGINATION_LABELS} value.
+ * Localize the paginator's strings for everything below this injector, and read the set in effect
+ * here as a signal. Partial — whatever you leave out keeps its {@link DEFAULT_PAGINATION_LABELS}
+ * value. See {@link createLabels} for the shape, which every domain in this library shares.
  *
  * @example
  * providePaginationLabels({
@@ -76,9 +71,7 @@ export const PAGINATION_LABELS = new InjectionToken<PaginationLabels>('PAGINATIO
  *   range: ({ start, end, totalItems }) => `Zeige ${start}–${end} von ${totalItems}`,
  * });
  */
-export const providePaginationLabels = (labels: Partial<PaginationLabels>): Provider => ({
-  provide: PAGINATION_LABELS,
-  useValue: { ...DEFAULT_PAGINATION_LABELS, ...labels },
-});
-
-export const injectPaginationLabels = () => inject(PAGINATION_LABELS);
+export const [providePaginationLabels, injectPaginationLabels, PAGINATION_LABELS] = createLabels<PaginationLabels>(
+  'PAGINATION_LABELS',
+  DEFAULT_PAGINATION_LABELS,
+);

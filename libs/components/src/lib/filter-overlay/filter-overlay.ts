@@ -1,11 +1,10 @@
 import { InjectionToken, Provider, Signal, computed, inject } from '@angular/core';
 import { FieldTree } from '@angular/forms/signals';
-import { equal, injectLocale } from '@ethlete/core';
+import { equal } from '@ethlete/core';
 import { QueryFormFields, QueryFormModel, QueryFormSignals } from '@ethlete/query';
 import { OVERLAY_REF, OverlayRef } from '../overlay';
 import {
   FilterOverlayLabels,
-  filterOverlayLabelsForLocale,
   injectFilterOverlayLabels,
   resolveFilterOverlaySubmitButton,
 } from './filter-overlay-labels';
@@ -107,8 +106,7 @@ const createFilterOverlay = <TFields extends QueryFormFields>(
   const overlayRef = inject<OverlayRef<object, FilterOverlayResult<QueryFormModel<TFields>>>>(OVERLAY_REF, {
     optional: true,
   });
-  const injectedLabels = injectFilterOverlayLabels();
-  const locale = injectLocale();
+  const labels = injectFilterOverlayLabels();
 
   const draft = config.queryForm.branch();
   const maxCountedHits = config.maxCountedHits ?? 250;
@@ -116,11 +114,6 @@ const createFilterOverlay = <TFields extends QueryFormFields>(
   // Called here, inside the overlay's injection context, which is why `preview` is a factory: a query created at
   // config time would belong to the page and outlive the overlay.
   const preview = config.preview?.(draft.value) ?? null;
-
-  const labels = computed<FilterOverlayLabels>(() => ({
-    ...filterOverlayLabelsForLocale(locale.currentLocale()),
-    ...injectedLabels,
-  }));
 
   const submitButton = computed(() => {
     const state: FilterOverlaySubmitState = {

@@ -1,4 +1,4 @@
-import { InjectionToken, Provider, inject } from '@angular/core';
+import { createLabels } from '@ethlete/core';
 
 /**
  * Every string the carousel announces or renders. Defaults are English
@@ -33,22 +33,15 @@ export const DEFAULT_CAROUSEL_LABELS: CarouselLabels = {
   goToSlide: (index) => `Go to slide ${index}`,
 };
 
-/** The label set every carousel in this injector uses. @default DEFAULT_CAROUSEL_LABELS */
-export const CAROUSEL_LABELS = new InjectionToken<CarouselLabels>('CAROUSEL_LABELS', {
-  providedIn: 'root',
-  factory: () => DEFAULT_CAROUSEL_LABELS,
-});
-
 /**
- * Localize the carousel's strings for everything below this injector. Partial — whatever you leave out
- * keeps its {@link DEFAULT_CAROUSEL_LABELS} value.
+ * Localize the carousel's strings for everything below this injector, and read the set in effect here
+ * as a signal. Partial — whatever you leave out keeps its {@link DEFAULT_CAROUSEL_LABELS} value. See
+ * {@link createLabels} for the shape, which every domain in this library shares.
  *
  * @example
  * provideCarouselLabels({ previous: 'Vorheriges Bild', next: 'Nächstes Bild' });
  */
-export const provideCarouselLabels = (labels: Partial<CarouselLabels>): Provider => ({
-  provide: CAROUSEL_LABELS,
-  useValue: { ...DEFAULT_CAROUSEL_LABELS, ...labels },
-});
-
-export const injectCarouselLabels = () => inject(CAROUSEL_LABELS);
+export const [provideCarouselLabels, injectCarouselLabels, CAROUSEL_LABELS] = createLabels<CarouselLabels>(
+  'CAROUSEL_LABELS',
+  DEFAULT_CAROUSEL_LABELS,
+);

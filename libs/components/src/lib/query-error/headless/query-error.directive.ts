@@ -1,7 +1,6 @@
 import { Directive, TemplateRef, booleanAttribute, computed, input, output, signal } from '@angular/core';
-import { injectLocale } from '@ethlete/core';
 import { QueryErrorResponse, queryErrorMessages } from '@ethlete/query';
-import { QueryErrorLabels, injectQueryErrorLabels, queryErrorLabelsForLocale } from '../query-error-labels';
+import { QueryErrorLabels, injectQueryErrorLabels } from '../query-error-labels';
 import { QueryErrorRetryTarget, QueryErrorView } from '../query-error.types';
 import { QueryErrorSlotContext } from './query-error-slots.directive';
 import { QUERY_ERROR_TOKEN } from './query-error.tokens';
@@ -40,7 +39,6 @@ const comparable = (text: string) => text.toLowerCase().replace(/\s/g, '').repla
 })
 export class QueryErrorDirective {
   private injectedLabels = injectQueryErrorLabels();
-  private locale = injectLocale();
 
   /**
    * The failed query's error, i.e. `query.error()`. `null` renders nothing, so this can be bound
@@ -77,11 +75,7 @@ export class QueryErrorDirective {
   public actionsSlot = signal<TemplateRef<QueryErrorSlotContext> | null>(null);
 
   /** The strings in effect: the locale's set, with the injected and per-instance overrides applied. */
-  public resolvedLabels = computed<QueryErrorLabels>(() => ({
-    ...queryErrorLabelsForLocale(this.locale.currentLocale()),
-    ...this.injectedLabels,
-    ...this.labels(),
-  }));
+  public resolvedLabels = computed<QueryErrorLabels>(() => ({ ...this.injectedLabels(), ...this.labels() }));
 
   /** The error as something to render, or `null` when there is no error. */
   public view = computed<QueryErrorView | null>(() => {
