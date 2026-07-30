@@ -76,7 +76,22 @@ import { CALENDAR_IMPORTS } from '../calendar.imports';
           [locale]="localeObject()"
           (monthSelect)="lastDrill.set('month ' + $event.toDateString())"
           (yearSelect)="lastDrill.set('year ' + $event.toDateString())"
-        />
+        >
+          @if (customHeader()) {
+            <!-- a header of the consumer's own: same state, own layout and wording -->
+            <ng-template etCalendarHeader let-calendar>
+              <div class="et-sb-calendar-header">
+                <button [disabled]="!calendar.canGoPrev()" (click)="calendar.previous()" type="button">Back</button>
+
+                <button (click)="calendar.zoomOut()" type="button">
+                  {{ calendar.headerLabel() }} ({{ calendar.view() }})
+                </button>
+
+                <button [disabled]="!calendar.canGoNext()" (click)="calendar.next()" type="button">Next</button>
+              </div>
+            </ng-template>
+          }
+        </et-calendar>
 
         <p class="text-sm opacity-60">Value: {{ value()?.toDateString() ?? 'null' }}</p>
       }
@@ -99,6 +114,30 @@ import { CALENDAR_IMPORTS } from '../calendar.imports';
       background: color-mix(in srgb, var(--et-theme-color-primary-solid) 18%, transparent);
       font-weight: 600;
     }
+
+    .et-sb-calendar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding-block-end: 8px;
+
+      & button {
+        padding: 4px 8px;
+        border: 1px solid var(--et-surface-border-solid);
+        border-radius: 6px;
+        background: transparent;
+        font: inherit;
+        font-size: 12px;
+        color: inherit;
+        cursor: pointer;
+      }
+
+      & button:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+    }
   `,
 })
 export class CalendarStorybookComponent {
@@ -116,6 +155,8 @@ export class CalendarStorybookComponent {
   public showComparison = input(false);
   /** Which range-selection strategy the range calendar uses. */
   public rangeStrategy = input<'default' | 'week' | 'fixed7'>('default');
+  /** Swaps the calendar's own header for a projected one. */
+  public customHeader = input(false);
   public locale = input<'default' | 'de'>('default');
   public color = input('brand');
 

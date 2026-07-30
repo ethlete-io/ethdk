@@ -255,6 +255,18 @@ export class CalendarDirective {
   public transitionKey = computed(() => `${this.view()}:${this.visibleUnitKey()}`);
 
   /**
+   * Flips whenever {@link transitionKey} changes. Re-creating the grid is how its enter transition
+   * runs, and a template gets there by rendering one of two identical `@if` branches: keying a
+   * one-item `@for` on the key would do the same thing, but Angular reports every such re-creation as
+   * NG0956 — a warning about an expensive mistake, which for one row of a calendar it is not, in every
+   * consumer's dev console on every step.
+   */
+  public transitionParity = linkedSignal<string, boolean>({
+    source: () => this.transitionKey(),
+    computation: (_key, previous) => (previous === undefined ? true : !previous.value),
+  });
+
+  /**
    * Roving-tabindex target. Re-anchors when the visible month changes without
    * containing it (keeping the day of month across month navigation).
    */

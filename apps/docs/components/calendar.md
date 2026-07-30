@@ -186,7 +186,25 @@ Moving focus past the edge of the visible unit navigates the calendar along with
 
 Stepping (buttons or keyboard) slides the new grid in from the travel direction; drilling fades it. Either way the grid on its way out crossfades under the one arriving — both share a single grid area for the length of the transition — and the header label travels with them. All of it stands down under `prefers-reduced-motion`. For custom transitions the headless directive exposes `navigationDirection` (`'forward' | 'backward' | 'zoomIn' | 'zoomOut' | null`), `visibleUnitKey` (the visible unit's identity, whichever view is showing) and `transitionKey` (that plus the view — what the default component tracks its `@for` by). `visibleMonthKey` still names the month specifically.
 
-## Headless usage
+## Custom header
+
+`et-calendar`'s header is replaceable on its own, so a consumer keeps the grid and its styling while wording and laying out the chrome themselves. Project an `ng-template etCalendarHeader`; it receives the headless directive, which is everything the default header uses:
+
+```html
+<et-calendar [(value)]="date">
+  <ng-template etCalendarHeader let-calendar>
+    <button [disabled]="!calendar.canGoPrev()" (click)="calendar.previous()">Back</button>
+    <h3>{{ calendar.headerLabel() }}</h3>
+    <button [disabled]="!calendar.canGoNext()" (click)="calendar.next()">Next</button>
+  </ng-template>
+</et-calendar>
+```
+
+<StoryEmbed id="components-calendar--custom-header" height="420px" />
+
+`headerLabel()`, `view`, `zoomOut()` / `canZoomOut()`, `previous()` / `next()`, `canGoPrev()` / `canGoNext()` and the models are all on it — see [headless usage](#headless-usage) for the full surface. The component also exposes the same directive as **`headless`** (`<et-calendar #cal>` then `cal.headless`), for chrome that sits _outside_ the calendar. Replacing the header means owning its accessibility too: the default one is a named `aria-live` region, so keep the label announced.
+
+## Headless usage {#headless-usage}
 
 `[etCalendar]` owns all state; `[etCalendarGrid]` (the keyboard + focus scope) and `[etCalendarCell]` (one per cell button) render however you like:
 

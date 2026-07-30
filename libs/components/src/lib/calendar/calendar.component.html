@@ -1,51 +1,55 @@
-<div class="et-calendar-header">
-  <button
-    [disabled]="!calendar.canGoPrev()"
-    [attr.aria-label]="resolvedPreviousLabel()"
-    (click)="calendar.previous()"
-    class="et-calendar-nav-button et-calendar-nav-button--previous"
-    et-icon-button
-    size="sm"
-    type="button"
-  >
-    <i etIcon="et-chevron"></i>
-  </button>
+<!-- the header is replaceable wholesale: a projected `ng-template etCalendarHeader` gets the
+     headless directive and renders instead of this, keeping the grid below -->
+@if (headerTemplate(); as header) {
+  <ng-container *ngTemplateOutlet="header.templateRef; context: { $implicit: calendar }" />
+} @else {
+  <div class="et-calendar-header">
+    <button
+      [disabled]="!calendar.canGoPrev()"
+      [attr.aria-label]="resolvedPreviousLabel()"
+      (click)="calendar.previous()"
+      class="et-calendar-nav-button et-calendar-nav-button--previous"
+      et-icon-button
+      size="sm"
+      type="button"
+    >
+      <i etIcon="et-chevron"></i>
+    </button>
 
-  <!-- the label is the zoom-out control: day grid → month grid → year grid, and back to the day grid
-       from there. The text is keyed on itself so a change transitions instead of swapping in place,
-       and it is the aria-live region, so stepping and drilling are both announced. -->
-  <button
-    [attr.aria-label]="resolvedZoomLabel()"
-    (click)="calendar.zoomOut()"
-    class="et-calendar-header-label"
-    type="button"
-  >
-    <span class="et-calendar-header-label-text" aria-live="polite">
-      @for (label of [calendar.headerLabel()]; track label) {
-        <span
-          [attr.data-nav]="calendar.navigationDirection()"
-          class="et-calendar-header-label-value"
-          animate.leave="et-calendar-header-label-value--leave"
-          >{{ label }}</span
-        >
-      }
-    </span>
+    <!-- the label is the zoom-out control: day grid → month grid → year grid, and back to the day grid
+         from there. It is the aria-live region, so stepping and drilling are both announced. -->
+    <button
+      [attr.aria-label]="resolvedZoomLabel()"
+      (click)="calendar.zoomOut()"
+      class="et-calendar-header-label"
+      type="button"
+    >
+      <!-- one of two identical branches, flipped on every change: re-creating the value is what runs
+           its enter transition. See `transitionParity`. -->
+      <span class="et-calendar-header-label-text" aria-live="polite">
+        @if (calendar.transitionParity()) {
+          <ng-container *ngTemplateOutlet="headerValue" />
+        } @else {
+          <ng-container *ngTemplateOutlet="headerValue" />
+        }
+      </span>
 
-    <i class="et-calendar-header-label-icon" etIcon="et-chevron"></i>
-  </button>
+      <i class="et-calendar-header-label-icon" etIcon="et-chevron"></i>
+    </button>
 
-  <button
-    [disabled]="!calendar.canGoNext()"
-    [attr.aria-label]="resolvedNextLabel()"
-    (click)="calendar.next()"
-    class="et-calendar-nav-button et-calendar-nav-button--next"
-    et-icon-button
-    size="sm"
-    type="button"
-  >
-    <i etIcon="et-chevron"></i>
-  </button>
-</div>
+    <button
+      [disabled]="!calendar.canGoNext()"
+      [attr.aria-label]="resolvedNextLabel()"
+      (click)="calendar.next()"
+      class="et-calendar-nav-button et-calendar-nav-button--next"
+      et-icon-button
+      size="sm"
+      type="button"
+    >
+      <i etIcon="et-chevron"></i>
+    </button>
+  </div>
+}
 
 <div class="et-calendar-grid" etCalendarGrid>
   @if (calendar.view() === 'month') {
@@ -64,62 +68,78 @@
     </div>
   }
 
-  <!-- keyed per visible unit and view, so navigating or drilling re-creates the rows and runs the
-       transition. Both grids share the viewport's single grid area for the length of it, which is
-       what lets the outgoing one fade out under the incoming one rather than disappear first. -->
+  <!-- Whichever grid is showing, rendered through one of two identical branches so that a change
+       re-creates it and its enter transition runs (see `transitionParity`). Both grids share the
+       viewport's single grid area for the length of the transition, which is what lets the outgoing
+       one fade out under the incoming one rather than disappear a frame before it arrives. -->
   <div class="et-calendar-weeks-viewport">
-    @for (transitionKey of [calendar.transitionKey()]; track transitionKey) {
-      <div
-        [attr.data-nav]="calendar.navigationDirection()"
-        class="et-calendar-weeks"
-        animate.leave="et-calendar-weeks--leave"
-        role="rowgroup"
-      >
-        @switch (calendar.view()) {
-          @case ('year') {
-            @for (row of calendar.monthCells(); track $index) {
-              <div class="et-calendar-coarse-row" role="row">
-                @for (cell of row; track cell.date.getTime()) {
-                  <button [cell]="cell" class="et-calendar-cell et-calendar-cell--coarse" etCalendarCell type="button">
-                    <span class="et-calendar-cell-content">{{ cell.label }}</span>
-                  </button>
-                }
-              </div>
-            }
-          }
-          @case ('multiYear') {
-            @for (row of calendar.yearCells(); track $index) {
-              <div class="et-calendar-coarse-row" role="row">
-                @for (cell of row; track cell.date.getTime()) {
-                  <button [cell]="cell" class="et-calendar-cell et-calendar-cell--coarse" etCalendarCell type="button">
-                    <span class="et-calendar-cell-content">{{ cell.label }}</span>
-                  </button>
-                }
-              </div>
-            }
-          }
-          @default {
-            @for (week of calendar.weeks(); track $index) {
-              <div class="et-calendar-week" role="row">
-                @if (weekNumbers()) {
-                  <span
-                    [attr.aria-label]="weekLabel() + ' ' + calendar.weekNumbers()[$index]"
-                    class="et-calendar-week-number"
-                    role="rowheader"
-                    >{{ calendar.weekNumbers()[$index] }}</span
-                  >
-                }
-
-                @for (cell of week; track cell.date.getTime()) {
-                  <button [cell]="cell" class="et-calendar-cell" etCalendarCell type="button">
-                    <span class="et-calendar-cell-content">{{ cell.label }}</span>
-                  </button>
-                }
-              </div>
-            }
-          }
-        }
-      </div>
+    @if (calendar.transitionParity()) {
+      <ng-container *ngTemplateOutlet="weeks" />
+    } @else {
+      <ng-container *ngTemplateOutlet="weeks" />
     }
   </div>
 </div>
+
+<ng-template #weeks>
+  <div
+    [attr.data-nav]="calendar.navigationDirection()"
+    class="et-calendar-weeks"
+    animate.leave="et-calendar-weeks--leave"
+    role="rowgroup"
+  >
+    @switch (calendar.view()) {
+      @case ('year') {
+        @for (row of calendar.monthCells(); track $index) {
+          <div class="et-calendar-coarse-row" role="row">
+            @for (cell of row; track cell.date.getTime()) {
+              <button [cell]="cell" class="et-calendar-cell et-calendar-cell--coarse" etCalendarCell type="button">
+                <span class="et-calendar-cell-content">{{ cell.label }}</span>
+              </button>
+            }
+          </div>
+        }
+      }
+      @case ('multiYear') {
+        @for (row of calendar.yearCells(); track $index) {
+          <div class="et-calendar-coarse-row" role="row">
+            @for (cell of row; track cell.date.getTime()) {
+              <button [cell]="cell" class="et-calendar-cell et-calendar-cell--coarse" etCalendarCell type="button">
+                <span class="et-calendar-cell-content">{{ cell.label }}</span>
+              </button>
+            }
+          </div>
+        }
+      }
+      @default {
+        @for (week of calendar.weeks(); track $index) {
+          <div class="et-calendar-week" role="row">
+            @if (weekNumbers()) {
+              <span
+                [attr.aria-label]="weekLabel() + ' ' + calendar.weekNumbers()[$index]"
+                class="et-calendar-week-number"
+                role="rowheader"
+                >{{ calendar.weekNumbers()[$index] }}</span
+              >
+            }
+
+            @for (cell of week; track cell.date.getTime()) {
+              <button [cell]="cell" class="et-calendar-cell" etCalendarCell type="button">
+                <span class="et-calendar-cell-content">{{ cell.label }}</span>
+              </button>
+            }
+          </div>
+        }
+      }
+    }
+  </div>
+</ng-template>
+
+<ng-template #headerValue>
+  <span
+    [attr.data-nav]="calendar.navigationDirection()"
+    class="et-calendar-header-label-value"
+    animate.leave="et-calendar-header-label-value--leave"
+    >{{ calendar.headerLabel() }}</span
+  >
+</ng-template>

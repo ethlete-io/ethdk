@@ -16,6 +16,7 @@ export default {
     weekNumbers: { control: 'boolean' },
     showComparison: { control: 'boolean' },
     rangeStrategy: { control: 'select', options: ['default', 'week', 'fixed7'] },
+    customHeader: { control: 'boolean' },
     locale: { control: 'select', options: ['default', 'de'] },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
   },
@@ -30,6 +31,7 @@ export default {
     weekNumbers: false,
     showComparison: false,
     rangeStrategy: 'default',
+    customHeader: false,
     locale: 'default',
     color: 'brand',
   },
@@ -93,6 +95,10 @@ export const DateClass: Story = {
 
 export const WeekNumbers: Story = {
   args: { weekNumbers: true },
+};
+
+export const CustomHeader: Story = {
+  args: { customHeader: true },
 };
 
 export const German: Story = {

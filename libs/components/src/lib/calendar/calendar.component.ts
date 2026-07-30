@@ -1,15 +1,17 @@
-import { booleanAttribute, Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, computed, contentChild, inject, input, ViewEncapsulation } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { IconButtonComponent } from '../button';
 import { CHEVRON_ICON, IconDirective, provideIcons } from '../icon';
 import { CalendarCellDirective, CalendarDirective, CalendarGridDirective } from './headless';
 import { injectCalendarLabels } from '../calendar/calendar-labels';
+import { CalendarHeaderDirective } from './calendar-header.directive';
 
 @Component({
   selector: 'et-calendar',
   templateUrl: './calendar.component.html',
   styleUrl: './calendar.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [CalendarCellDirective, CalendarGridDirective, IconButtonComponent, IconDirective],
+  imports: [CalendarCellDirective, CalendarGridDirective, IconButtonComponent, IconDirective, NgTemplateOutlet],
   providers: [provideIcons(CHEVRON_ICON)],
   hostDirectives: [
     {
@@ -52,7 +54,11 @@ import { injectCalendarLabels } from '../calendar/calendar-labels';
 export class CalendarComponent {
   private calendarLabels = injectCalendarLabels();
 
-  protected calendar = inject(CalendarDirective);
+  /**
+   * The headless directive behind this calendar — everything `[etCalendar]` exposes, for chrome of
+   * your own around or instead of the default header (`<et-calendar #cal>` then `cal.headless`).
+   */
+  public headless = inject(CalendarDirective);
 
   /**
    * Renders a leading column of week numbers in the day grid. The numbers themselves come from the
@@ -63,6 +69,11 @@ export class CalendarComponent {
   /** Only labels the nav buttons while the day grid is showing — the coarser views read the label set. */
   public previousMonthLabel = input<string | null>(null);
   public nextMonthLabel = input<string | null>(null);
+
+  /** A projected header template, which replaces the default one. */
+  protected headerTemplate = contentChild(CalendarHeaderDirective);
+
+  protected calendar = this.headless;
 
   /** The step-back button's label for the view on show; this instance's `previousMonthLabel` wins in the day grid. */
   protected resolvedPreviousLabel = computed(() => {
