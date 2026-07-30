@@ -159,7 +159,7 @@ A star rating implementing the slider pattern (`role="slider"`, one keyboard
 stop). Value is `number | null` — `null` means no rating.
 
 ```html
-<et-rating [formField]="demoForm.stars" [max]="5" [allowHalf]="true">
+<et-rating [formField]="demoForm.stars" [max]="5" allowHalf>
   <et-label>Rating</et-label>
   <et-hint>Optional</et-hint>
 </et-rating>

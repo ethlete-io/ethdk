@@ -26,7 +26,7 @@ providers: [
 ## Rendering
 
 ```html
-<et-grid [initialItems]="items()" [rowHeight]="100" [gap]="16" (layoutChange)="persist($event)" />
+<et-grid [initialItems]="items()" (layoutChange)="persist($event)" rowHeight="100" gap="16" />
 ```
 
 ```ts

@@ -1,4 +1,5 @@
 import {
+  booleanAttribute,
   Component,
   computed,
   effect,
@@ -52,9 +53,9 @@ export class RichTextEditorLinkEditorComponent {
 
   public href = input('');
   public text = input('');
-  public newTab = input(false);
+  public newTab = input(false, { transform: booleanAttribute });
   /** Whether the caret sits on an existing link (shows the Remove action + "Update"/"Add" wording). */
-  public exists = input(false);
+  public exists = input(false, { transform: booleanAttribute });
 
   public saveLink = output<RichTextEditorLinkEditorValue>();
   public removeLink = output<void>();

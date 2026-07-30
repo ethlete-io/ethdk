@@ -1,4 +1,13 @@
-import { afterNextRender, computed, DestroyRef, Directive, inject, input, signal } from '@angular/core';
+import {
+  afterNextRender,
+  booleanAttribute,
+  computed,
+  DestroyRef,
+  Directive,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { tap, timer } from 'rxjs';
 import { TabBarTriggerDirective } from './tab-bar-trigger.directive';
@@ -30,7 +39,7 @@ export class TabBarDirective {
   public orientation = input<TabBarOrientation>(TAB_BAR_ORIENTATIONS.HORIZONTAL);
   public fit = input<TabBarFit>(TAB_BAR_FITS.CONTENT);
   public variant = input<TabBarVariant>(TAB_BAR_VARIANTS.SECONDARY);
-  public divider = input(true);
+  public divider = input(true, { transform: booleanAttribute });
   /** @internal */
   public triggers = signal<TabBarTriggerDirective[]>([]);
   /** @internal */

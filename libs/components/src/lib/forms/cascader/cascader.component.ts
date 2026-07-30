@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
+import { Component, ViewEncapsulation, booleanAttribute, computed, inject, input } from '@angular/core';
 import { ColorInteractiveDirective, ProvideColorDirective, injectErrorTheme } from '@ethlete/core';
 import { TextButtonComponent } from '../../button';
 import { CHEVRON_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../icon';
@@ -73,7 +73,7 @@ export class CascaderComponent {
   protected errorColorTheme = injectErrorTheme();
 
   /** Shows a clear (×) control while a value is selected. */
-  public clearable = input(true);
+  public clearable = input(true, { transform: booleanAttribute });
   public clearLabel = input('Clear');
   public backLabel = input('Back');
   /** Placeholder of the panel's search input (shown when the data source has a `search` hook). */

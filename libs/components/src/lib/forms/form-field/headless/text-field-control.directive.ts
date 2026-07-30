@@ -31,11 +31,11 @@ export abstract class TextFieldControlDirective implements FormFieldControl {
   public mixed = model(false);
   /** Placeholder text shown while `mixed` is set — overrides the consumer placeholder. */
   public mixedLabel = input('Mixed');
-  public disabled = input(false);
-  public readonly = input(false);
+  public disabled = input(false, { transform: booleanAttribute });
+  public readonly = input(false, { transform: booleanAttribute });
   // eslint-disable-next-line ethlete/no-native-html-input-name -- form-field hidden state deliberately mirrors the native attribute
-  public hidden = input(false);
-  public invalid = input(false);
+  public hidden = input(false, { transform: booleanAttribute });
+  public invalid = input(false, { transform: booleanAttribute });
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   public required = input(false, { transform: booleanAttribute });
   public name = input('');
@@ -54,7 +54,7 @@ export abstract class TextFieldControlDirective implements FormFieldControl {
    * True while an async validator is in flight for the bound field — bound automatically by signal
    * forms because this input exists. The field shell surfaces it as its busy state.
    */
-  public pending = input(false);
+  public pending = input(false, { transform: booleanAttribute });
 
   /**
    * Author-supplied accessible name, forwarded onto the native control. Use this (or an

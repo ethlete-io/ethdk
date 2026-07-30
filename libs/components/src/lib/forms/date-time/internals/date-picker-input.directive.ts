@@ -66,11 +66,11 @@ export abstract class DatePickerInputDirective
   /** View state for a field whose source values disagree (bulk edit). The raw form value stays untouched. */
   public mixed = model(false);
   public touched = model(false);
-  public disabled = input(false);
-  public readonly = input(false);
-  public invalid = input(false);
+  public disabled = input(false, { transform: booleanAttribute });
+  public readonly = input(false, { transform: booleanAttribute });
+  public invalid = input(false, { transform: booleanAttribute });
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
-  public required = input(false);
+  public required = input(false, { transform: booleanAttribute });
   public name = input('');
   public placeholder = input('');
   /**

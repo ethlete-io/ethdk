@@ -1,4 +1,4 @@
-import { Component, computed, input, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, computed, input, ViewEncapsulation } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
 import { BUTTON_IMPORTS } from '../../button';
@@ -53,7 +53,7 @@ export class RichTextEditorTokenPaletteComponent {
   public label = input('Insert token');
 
   /** Focus the editor after inserting so the user can keep typing. */
-  public focusEditorOnInsert = input(true);
+  public focusEditorOnInsert = input(true, { transform: booleanAttribute });
 
   private groups = toSignal(
     toObservable(this.triggers).pipe(

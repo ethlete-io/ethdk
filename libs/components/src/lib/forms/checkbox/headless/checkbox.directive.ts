@@ -1,4 +1,14 @@
-import { computed, DestroyRef, Directive, ElementRef, inject, input, model, signal } from '@angular/core';
+import {
+  booleanAttribute,
+  computed,
+  DestroyRef,
+  Directive,
+  ElementRef,
+  inject,
+  input,
+  model,
+  signal,
+} from '@angular/core';
 import { FormCheckboxControl, ValidationError } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 
@@ -30,12 +40,12 @@ export class CheckboxDirective implements FormCheckboxControl, FormFieldControl 
   public checked = model(false);
   public indeterminate = model(false);
   public touched = model(false);
-  public disabled = input(false);
+  public disabled = input(false, { transform: booleanAttribute });
   /** View-only: keeps the normal look and focusability but blocks toggling (unlike `disabled`). */
-  public readonly = input(false);
-  public invalid = input(false);
+  public readonly = input(false, { transform: booleanAttribute });
+  public invalid = input(false, { transform: booleanAttribute });
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
-  public required = input(false);
+  public required = input(false, { transform: booleanAttribute });
   public name = input('');
 
   public ariaChecked = computed(() => {

@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
+import { Component, ViewEncapsulation, booleanAttribute, computed, inject, input } from '@angular/core';
 import { CALENDAR_IMPORTS } from '../../../calendar';
 import { CALENDAR_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../../icon';
 import { InputMaskDirective } from '../../masked-input/headless';
@@ -65,7 +65,7 @@ export class DateRangeInputComponent {
   public pickerTriggerLabel = input('Open calendar');
 
   /** Shows a clear (×) control while a value is set and the field is in use. */
-  public clearable = input(true);
+  public clearable = input(true, { transform: booleanAttribute });
   public clearLabel = input('Clear');
 
   // only while the field is in use — mirrors the single date input's clear affordance

@@ -1,4 +1,15 @@
-import { DestroyRef, Directive, afterNextRender, computed, inject, input, model, signal } from '@angular/core';
+import {
+  DestroyRef,
+  Directive,
+  afterNextRender,
+  booleanAttribute,
+  computed,
+  inject,
+  input,
+  model,
+  numberAttribute,
+  signal,
+} from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { RuntimeError } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
@@ -26,21 +37,21 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
   /** `aria-valuetext` both thumbs announce while `mixed` is set. */
   public mixedLabel = input('Mixed');
   public touched = model(false);
-  public disabled = input(false);
-  public readonly = input(false);
-  public invalid = input(false);
+  public disabled = input(false, { transform: booleanAttribute });
+  public readonly = input(false, { transform: booleanAttribute });
+  public invalid = input(false, { transform: booleanAttribute });
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
-  public required = input(false);
+  public required = input(false, { transform: booleanAttribute });
   public name = input('');
 
   // The signal-forms `FormValueControl` contract reserves `min`/`max` and types them as the
   // value shape (here the tuple), so the numeric track bounds need their own names.
-  public minValue = input(0);
-  public maxValue = input(100);
-  public step = input(1);
+  public minValue = input(0, { transform: numberAttribute });
+  public maxValue = input(100, { transform: numberAttribute });
+  public step = input(1, { transform: numberAttribute });
 
   /** Minimum gap kept between the two thumbs — should be a multiple of `step`. */
-  public minDistance = input(0);
+  public minDistance = input(0, { transform: numberAttribute });
 
   public effectiveMin = computed(() => this.minValue());
   public effectiveMax = computed(() => this.maxValue());

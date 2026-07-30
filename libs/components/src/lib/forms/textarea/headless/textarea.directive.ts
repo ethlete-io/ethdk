@@ -1,4 +1,16 @@
-import { computed, Directive, effect, ElementRef, inject, input, model, signal, untracked } from '@angular/core';
+import {
+  booleanAttribute,
+  computed,
+  Directive,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  model,
+  numberAttribute,
+  signal,
+  untracked,
+} from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { injectRenderer, signalElementDimensions } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, TextFieldControlDirective } from '../../form-field/headless';
@@ -21,8 +33,8 @@ export class TextareaDirective extends TextFieldControlDirective implements Form
 
   public placeholder = input('');
   public autocomplete = input('');
-  public rows = input(3);
-  public autosize = input(true);
+  public rows = input(3, { transform: numberAttribute });
+  public autosize = input(true, { transform: booleanAttribute });
   public minRows = input<number | null>(null);
   public maxRows = input<number | null>(null);
   /** Only applied when `autosize` is off; an autosizing textarea is never manually resizable. */

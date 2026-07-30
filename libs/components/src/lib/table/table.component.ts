@@ -15,6 +15,7 @@ import {
   isDevMode,
   linkedSignal,
   model,
+  numberAttribute,
   output,
   signal,
   TemplateRef,
@@ -292,7 +293,7 @@ export class TableComponent<T> {
   public loading = input(false, { transform: booleanAttribute });
 
   /** How many placeholder rows to draw while loading with no rows yet. @default 5 */
-  public loadingRows = input(5);
+  public loadingRows = input(5, { transform: numberAttribute });
 
   /**
    * The load's failure, if any — anything non-nullish counts (an `HttpErrorResponse`, a message, a
@@ -344,7 +345,7 @@ export class TableComponent<T> {
   public sort = model<TableSort[]>([]);
 
   /** Allow more than one column to be sorted at once. @default false */
-  public multiSort = input(false);
+  public multiSort = input(false, { transform: booleanAttribute });
 
   /**
    * `'client'` sorts the rows in the browser via {@link sortRows}; `'server'`

@@ -1,5 +1,6 @@
 import {
   afterNextRender,
+  booleanAttribute,
   computed,
   DestroyRef,
   Directive,
@@ -71,17 +72,17 @@ export class DropzoneDirective<TValue = unknown>
 
   public value = model<TValue | TValue[] | null>(null);
   public touched = model(false);
-  public disabled = input(false);
-  public invalid = input(false);
+  public disabled = input(false, { transform: booleanAttribute });
+  public invalid = input(false, { transform: booleanAttribute });
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
-  public required = input(false);
+  public required = input(false, { transform: booleanAttribute });
   public name = input('');
 
   /** The upload workflow configuration. Create it via `createDropzoneUpload()`. */
   public upload = input.required<AnyDropzoneUploadConfig<TValue>>();
 
   /** Whether multiple files can be uploaded. The control value becomes an array. */
-  public multiple = input(false);
+  public multiple = input(false, { transform: booleanAttribute });
 
   /** Emits all files of a selection that were rejected, with the reason per file. */
   public filesReject = output<DropzoneFileRejection[]>();

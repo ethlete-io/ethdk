@@ -3,6 +3,7 @@ import {
   Directive,
   ElementRef,
   afterNextRender,
+  booleanAttribute,
   computed,
   effect,
   inject,
@@ -38,7 +39,7 @@ export class TabBarTriggerDirective {
   private scrollable = inject(ScrollableDirective, { optional: true });
   protected tabBar = inject(TAB_BAR_TOKEN, { optional: true });
 
-  public disabled = input(false);
+  public disabled = input(false, { transform: booleanAttribute });
 
   public readonly ID = `et-tab-trigger-${nextTriggerId++}`;
 

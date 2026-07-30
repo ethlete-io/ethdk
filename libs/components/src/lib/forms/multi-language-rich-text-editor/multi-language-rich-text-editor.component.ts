@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
 import { DEFAULT_RICH_TEXT_EDITOR_TOOLS, RICH_TEXT_EDITOR_IMPORTS, RichTextEditorTool } from '../rich-text-editor';
 import { MultiLanguageRichTextEditorDirective } from './headless/multi-language-rich-text-editor.directive';
 import {
@@ -26,7 +26,7 @@ export class MultiLanguageRichTextEditorComponent {
   protected dir = inject(MultiLanguageRichTextEditorDirective);
 
   public placeholder = input('');
-  public autoformat = input(true);
+  public autoformat = input(true, { transform: booleanAttribute });
 
   /** Formatting tools for the embedded editor (the language switcher is prepended automatically).
    *  `null` uses the default toolbar. */

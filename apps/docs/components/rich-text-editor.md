@@ -30,7 +30,7 @@ Pasted HTML is normalized into the editor's own schema before it is inserted: th
 
 ## Markdown autoformat while typing
 
-Typing Markdown converts live (disable with `[autoformat]="false"`):
+Typing Markdown converts live (disable with `autoformat="false"`):
 
 - **Blocks** — a space after a line-start prefix converts the line: `-` / `*` / `+` start a bulleted list, `1.` a numbered list, `#`–`###` a heading of that level. Only when the prefix is the entire line so far, and never inside list items, table cells or code.
 - **Inline** — typing the closing delimiter converts the run and leaves the caret _outside_ the mark: `**bold**`, `*italic*`, `` `code` ``, `~~strike~~`, `__bold__`, `_italic_` (underscores never fire inside a word, so `snake_case` stays literal).

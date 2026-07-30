@@ -2,6 +2,7 @@ import {
   DestroyRef,
   Directive,
   afterNextRender,
+  booleanAttribute,
   computed,
   effect,
   inject,
@@ -41,14 +42,14 @@ export class OverlayDirective {
   // eslint-disable-next-line ethlete/no-native-html-input-name -- deliberately sets the overlay's ARIA role
   public role = input<OverlayRole | undefined>(undefined);
   public open = model(false);
-  public disabled = input(false);
-  public disableClose = input(false);
+  public disabled = input(false, { transform: booleanAttribute });
+  public disableClose = input(false, { transform: booleanAttribute });
   // eslint-disable-next-line ethlete/no-native-html-input-name -- mirrors the native autofocus behaviour on open
   public autoFocus = input<OverlayAutoFocusTarget | string | false | undefined>(undefined);
-  public restoreFocus = input(true);
+  public restoreFocus = input(true, { transform: booleanAttribute });
   public hasBackdrop = input<boolean | undefined>(undefined);
-  public closeOnEscape = input(true);
-  public closeOnOutsidePointer = input(true);
+  public closeOnEscape = input(true, { transform: booleanAttribute });
+  public closeOnOutsidePointer = input(true, { transform: booleanAttribute });
   public hostClass = input<string | string[] | undefined>(undefined);
   public backdropClass = input<string | string[] | undefined>(undefined);
   public panelClass = input<string | string[] | undefined>(undefined);
@@ -56,11 +57,11 @@ export class OverlayDirective {
   public fallbackPlacements = input<Placement[] | undefined>(undefined);
   public offset = input<OffsetOptions | null>(8);
   public viewportPadding = input<Padding | null>(8);
-  public autoResize = input(false);
-  public shift = input(true);
-  public autoHide = input(false);
-  public autoCloseIfReferenceHidden = input(false);
-  public mirrorWidth = input(false);
+  public autoResize = input(false, { transform: booleanAttribute });
+  public shift = input(true, { transform: booleanAttribute });
+  public autoHide = input(false, { transform: booleanAttribute });
+  public autoCloseIfReferenceHidden = input(false, { transform: booleanAttribute });
+  public mirrorWidth = input(false, { transform: booleanAttribute });
 
   /** @internal */
   public registeredAnchor = signal<OverlayAnchorDirective | null>(null);

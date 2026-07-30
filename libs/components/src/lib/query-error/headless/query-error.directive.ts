@@ -1,4 +1,4 @@
-import { Directive, TemplateRef, computed, input, output, signal } from '@angular/core';
+import { Directive, TemplateRef, booleanAttribute, computed, input, output, signal } from '@angular/core';
 import { injectLocale } from '@ethlete/core';
 import { QueryErrorResponse, queryErrorMessages } from '@ethlete/query';
 import { QueryErrorLabels, injectQueryErrorLabels, queryErrorLabelsForLocale } from '../query-error-labels';
@@ -59,7 +59,7 @@ export class QueryErrorDirective {
    * offering to try again invites the reader to waste their time. Turn it on for a query whose failure really
    * can be transient in a way the policy can't see. @default false
    */
-  public alwaysAllowRetry = input(false);
+  public alwaysAllowRetry = input(false, { transform: booleanAttribute });
 
   /** Per-instance label overrides, merged over the locale's set and any `provideQueryErrorLabels`. */
   public labels = input<Partial<QueryErrorLabels> | null>(null);

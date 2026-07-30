@@ -1,4 +1,5 @@
 import {
+  booleanAttribute,
   Component,
   effect,
   inject,
@@ -50,7 +51,7 @@ export class RichTextEditorTokenPopupComponent {
 
   public items = input.required<RichTextEditorTriggerItem[]>();
   public activeIndex = input.required<number>();
-  public loading = input(false);
+  public loading = input(false, { transform: booleanAttribute });
   public error = input<string | null>(null);
   public emptyLabel = input('No results');
   public listboxId = input.required<string>();

@@ -93,10 +93,10 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   public open = model(false);
   public multiple = input(false, { transform: booleanAttribute });
   public disabled = input(false, { transform: booleanAttribute });
-  public readonly = input(false);
-  public invalid = input(false);
+  public readonly = input(false, { transform: booleanAttribute });
+  public invalid = input(false, { transform: booleanAttribute });
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
-  public required = input(false);
+  public required = input(false, { transform: booleanAttribute });
   public name = input('');
   public placeholder = input('');
   /** Trigger text shown while `mixed` is set. */
@@ -114,7 +114,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
   public filterModeInput = input<SelectFilterMode>(SELECT_FILTER_MODES.INTERNAL, { alias: 'filterMode' });
   /** Enter with a search query that matches no option commits the raw query string as the value. */
-  public allowCustomValues = input(false);
+  public allowCustomValues = input(false, { transform: booleanAttribute });
   /**
    * Single characters that commit the pending search query as a custom value the moment they
    * are typed (e.g. `[',']`), and split pasted text in multi mode. Only with `allowCustomValues`.
@@ -126,17 +126,17 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
    * Commits a pending search query as a custom value when the panel closes (Tab, outside
    * click) instead of discarding it. An Escape close never commits — it clears the query first.
    */
-  public commitCustomValueOnClose = input(false);
+  public commitCustomValueOnClose = input(false, { transform: booleanAttribute });
   /** Maximum number of selected values (multi select) — further adds are ignored. */
   public maxSelection = input<number | undefined>(undefined);
   /** Renders an "Add new" row in `et-select`'s panel — clicking it emits `addNew`. */
   public allowAddNew = input(false, { transform: booleanAttribute });
   /** Async option state — rendered by `et-select` as a loading row inside the panel. */
-  public loadingInput = input(false, { alias: 'loading' });
+  public loadingInput = input(false, { alias: 'loading', transform: booleanAttribute });
   /** Async option state — rendered by `et-select` as an error row inside the panel. */
   public errorInput = input<string | null>(null, { alias: 'error' });
   /** Async option state — `et-select` renders a load-more control emitting `loadMore`. */
-  public hasMoreItemsInput = input(false, { alias: 'hasMoreItems' });
+  public hasMoreItemsInput = input(false, { alias: 'hasMoreItems', transform: booleanAttribute });
   /** Whether the panel mirrors the anchor's width. Off for compact triggers (e.g. a country picker). */
   public mirrorPanelWidth = input(true, { transform: booleanAttribute });
   /**

@@ -1,4 +1,4 @@
-import { Directive, computed, input, model } from '@angular/core';
+import { Directive, computed, input, model, numberAttribute } from '@angular/core';
 import { Locale, setHours, setMilliseconds, setMinutes, setSeconds, startOfDay } from 'date-fns';
 import { injectDateLocale, injectTimeFormat } from '../../forms/date-time/date-time-formats';
 import { formatDateValue } from '../../forms/date-time/internals/date-value';
@@ -39,8 +39,8 @@ export class TimePickerDirective {
   /** date-fns time format the column layout derives from. Defaults to the `TIME_FORMAT` token. */
   public format = input<string | undefined>(undefined);
   public locale = input<Locale | null>(null);
-  public minuteStep = input(5);
-  public secondStep = input(1);
+  public minuteStep = input(5, { transform: numberAttribute });
+  public secondStep = input(1, { transform: numberAttribute });
 
   public hoursLabel = input('Hours');
   public minutesLabel = input('Minutes');

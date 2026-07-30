@@ -1,4 +1,4 @@
-import { Directive, input } from '@angular/core';
+import { Directive, booleanAttribute, input } from '@angular/core';
 
 @Directive({
   selector: `[etScrollableIgnoreChild]`,
@@ -7,5 +7,5 @@ import { Directive, input } from '@angular/core';
   },
 })
 export class ScrollableIgnoreChildDirective {
-  public enabled = input(true);
+  public enabled = input(true, { transform: booleanAttribute });
 }
