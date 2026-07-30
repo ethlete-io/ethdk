@@ -1,6 +1,7 @@
 import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
 import { disabled, form, FormField, readonly, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
+import { CHECK_ICON, ICON_IMPORTS, LOCK_ICON, provideIcons } from '../../../icon';
 import {
   FORM_FIELD_APPEARANCES,
   FORM_FIELD_FILLS,
@@ -27,6 +28,9 @@ import { INPUT_IMPORTS } from '../input.imports';
         @if (showPrefix()) {
           <span etInputPrefix>@</span>
         }
+        @if (showPrefixIcon()) {
+          <i etIcon="et-lock" etInputPrefix></i>
+        }
         <et-input
           [(mixed)]="mixedState"
           [formField]="demoForm.value"
@@ -37,6 +41,9 @@ import { INPUT_IMPORTS } from '../input.imports';
         />
         @if (showSuffix()) {
           <span etInputSuffix>.com</span>
+        }
+        @if (showSuffixIcon()) {
+          <i etIcon="et-check" etInputSuffix></i>
         }
         @if (hint()) {
           <et-hint>{{ hint() }}</et-hint>
@@ -55,11 +62,13 @@ import { INPUT_IMPORTS } from '../input.imports';
   imports: [
     ...FORM_FIELD_IMPORTS,
     ...INPUT_IMPORTS,
+    ...ICON_IMPORTS,
     InputPrefixDirective,
     InputSuffixDirective,
     FormField,
     ProvideColorDirective,
   ],
+  providers: [provideIcons(LOCK_ICON, CHECK_ICON)],
 })
 export class FormFieldInputStorybookComponent {
   public appearance = input<FormFieldAppearance>(FORM_FIELD_APPEARANCES.BOX);
@@ -81,6 +90,8 @@ export class FormFieldInputStorybookComponent {
   public required = input(false);
   public showPrefix = input(false);
   public showSuffix = input(false);
+  public showPrefixIcon = input(false);
+  public showSuffixIcon = input(false);
   public color = input('brand');
 
   public mixedState = linkedSignal(() => this.mixed());

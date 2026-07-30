@@ -36,6 +36,53 @@ There is deliberately **no size or color input** — the SVGs use `width/height=
 
 Dev mode validates every registered SVG for this: it must have `xmlns`, `width/height="100%"`, and no hardcoded colors (opt out per usage with `allowHardcodedColor` for intentionally multi-colored artwork).
 
+### Inside SDK components the size is already set
+
+The `size-*` class above is only needed for a **standalone** icon. Every SDK component with an
+icon slot sizes (and colors) the projected icon itself — pass a bare `<i etIcon="…">` and leave
+the class off, otherwise you fight the component's own rule:
+
+```html
+<!-- correct: the button decides how big its icon is -->
+<button et-button size="sm">Save <i etIcon="et-arrow-right"></i></button>
+
+<!-- wrong: an explicit size overrides the size the button picked for its `size` -->
+<button et-button size="sm">Save <i class="size-6" etIcon="et-arrow-right"></i></button>
+```
+
+What each slot resolves to:
+
+| Slot                                                                       | Icon size                                          |
+| -------------------------------------------------------------------------- | -------------------------------------------------- |
+| [`[et-button]`](/components/button), `[et-text-button]`                    | `1em` — scales with the button's font size         |
+| [`[et-icon-button]`](/components/button), `[et-fab]`                       | from the `size` input (`xs` 1.4rem → `xl` 2.8rem)  |
+| [`[et-menu-item]`](/components/menu) and menu selection items              | `--et-menu-item-icon-size` (default `16px`)        |
+| [`[etInputPrefix]` / `[etInputSuffix]`](/components/forms#the-field-shell) | `--et-form-field-affix-icon-size` (default `16px`) |
+| Window control buttons, chip remove, select option check                   | the component's own token                          |
+
+Form field affixes take either a text glyph (`@`, `€`, `.com`) or an icon — no size class needed
+either way:
+
+```html
+<et-form-field appearance="box">
+  <et-label>API key</et-label>
+  <i etIcon="et-lock" etInputPrefix></i>
+  <et-input [formField]="form.apiKey" />
+  <i etIcon="et-check" etInputSuffix></i>
+</et-form-field>
+```
+
+<StoryEmbed id="components-forms-input--icon-affixes" height="200px" />
+
+Only a **direct** child of the affix is sized this way — an icon nested inside an affix control
+(an `[et-icon-button]` suffix, say) keeps the size that control gives it.
+
+The same holds for the built-in `et-*` icons the SDK renders as chrome — the select arrow and
+clear button, the password reveal toggle, the number input steppers, the date/time picker
+triggers, the calendar and scrollable chevrons. Those sizes come from the surrounding component,
+so an icon you swap in via [`provideIconOverrides()`](#overriding-the-built-in-icons) needs no
+sizing either.
+
 ## Typed icon names
 
 The `etIcon` input is typed against the augmentable `EthleteIconNameRegistry` interface — augment it (or use the [generator below](#generating-icons)) to get string-literal completion for your app's icon set instead of plain `string`.

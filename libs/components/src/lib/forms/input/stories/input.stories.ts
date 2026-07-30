@@ -23,6 +23,8 @@ export default {
     required: { control: 'boolean' },
     showPrefix: { control: 'boolean' },
     showSuffix: { control: 'boolean' },
+    showPrefixIcon: { control: 'boolean' },
+    showSuffixIcon: { control: 'boolean' },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
   },
   args: {
@@ -43,6 +45,8 @@ export default {
     required: false,
     showPrefix: false,
     showSuffix: false,
+    showPrefixIcon: false,
+    showSuffixIcon: false,
     color: 'brand',
   },
 } as Meta<FormFieldInputStorybookComponent>;
@@ -62,6 +66,19 @@ export const NoLabel: Story = {
     label: '',
     ariaLabel: 'Search',
     placeholder: 'Search…',
+  },
+};
+
+/**
+ * An affix takes a text glyph or an `[etIcon]`. Icons need no size class — the field shell sizes
+ * them via `--et-form-field-affix-icon-size` (16px), matching the other in-field icons.
+ */
+export const IconAffixes: Story = {
+  args: {
+    label: 'API key',
+    placeholder: 'sk-…',
+    showPrefixIcon: true,
+    showSuffixIcon: true,
   },
 };
 

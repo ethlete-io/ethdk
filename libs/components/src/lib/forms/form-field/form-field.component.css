@@ -47,6 +47,12 @@
     initial-value: 8px;
   }
 
+  @property --et-form-field-affix-icon-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 16px;
+  }
+
   @property --et-form-field-control-disabled-opacity {
     syntax: '<number>';
     inherits: true;
@@ -233,6 +239,16 @@
 
       > * {
         pointer-events: none;
+      }
+
+      /* an affix holds either a text glyph (`@`, `€`, `.com`) or an icon — an `[etIcon]` has no
+         intrinsic size, so the shell gives it the same size as the other in-field icons (select
+         arrow, clear buttons). Only a *direct* child: an icon nested in an affix control (e.g. an
+         `et-icon-button` suffix) is already sized by that control. */
+      > .et-icon {
+        flex: none;
+        inline-size: var(--et-form-field-affix-icon-size);
+        block-size: var(--et-form-field-affix-icon-size);
       }
 
       > :is(

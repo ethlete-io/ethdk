@@ -88,6 +88,10 @@ control registers itself into it via DI — no manual wiring:
 
 <StoryEmbed id="components-forms-input--default" height="320px" />
 
+An affix takes a text glyph or an [`[etIcon]`](/components/icon#inside-sdk-components-the-size-is-already-set) —
+the shell sizes a directly-projected icon via `--et-form-field-affix-icon-size` (`16px`), so no
+size class is needed.
+
 Field shell variants (as `data-*`-reflected inputs on `et-form-field`):
 
 | Input        | Values                                                            | Default         |
@@ -289,9 +293,9 @@ provideFormErrorMessageResolver((error) => {
 
 The field shell declares public design tokens; override them in your CSS scope:
 
-| Component       | Tokens                                                                                                                                                                                                                                                                                           |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `et-form-field` | `--et-form-field-gap`, `-control-border-radius` / `-border-width` / `-padding-block` / `-padding-inline` / `-font-size` / `-line-height` / `-affix-gap` / `-disabled-opacity` / `-min-height`, `-label-font-size`, `-error-font-size`, `-hint-font-size`, `-support-duration`, `-support-offset` |
+| Component       | Tokens                                                                                                                                                                                                                                                                                                               |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `et-form-field` | `--et-form-field-gap`, `-control-border-radius` / `-border-width` / `-padding-block` / `-padding-inline` / `-font-size` / `-line-height` / `-affix-gap` / `-disabled-opacity` / `-min-height`, `-affix-icon-size`, `-label-font-size`, `-error-font-size`, `-hint-font-size`, `-support-duration`, `-support-offset` |
 
 Per-control tokens live in each control guide:
 [text inputs](/components/text-inputs#theming),
