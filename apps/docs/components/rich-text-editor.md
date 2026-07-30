@@ -208,20 +208,30 @@ it stays as literal text and the popup only opens at a word boundary — so `use
 email never triggers, and pressing <kbd>Escape</kbd> dismisses the popup so you can keep typing the
 literal character.
 
-| `RichTextEditorTrigger` field | Type                                                 | Default | Notes                                                                                              |
-| ----------------------------- | ---------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------- |
-| `char`                        | `string`                                             | —       | Character that opens the popup (unique per editor).                                                |
-| `type`                        | `string`                                             | —       | Namespaces the token (<code v-pre>{{type:id}}</code>); must match `[a-z][a-z0-9-]*` and be unique. |
-| `items`                       | array \| `(query) => items \| Promise \| Observable` | —       | Static arrays are filtered client-side; function sources own their filtering.                      |
-| `resolveItem`                 | `(id) => item \| null \| Promise \| Observable`      | —       | Resolves a stored id to a chip label; omit to show the raw id.                                     |
-| `allowSpaces`                 | `boolean`                                            | `false` | Keep the popup open when the query contains spaces.                                                |
-| `minQueryLength`              | `number`                                             | `0`     | Minimum query length before items are requested.                                                   |
-| `debounceTime`                | `number`                                             | `150`   | Debounce (ms) applied to async function sources.                                                   |
+| `RichTextEditorTrigger` field | Type                                                 | Default | Notes                                                                                                           |
+| ----------------------------- | ---------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------- |
+| `char`                        | `string`                                             | —       | Character that opens the popup (unique per editor).                                                             |
+| `type`                        | `string`                                             | —       | Namespaces the token (<code v-pre>{{type:id}}</code>); must match `[a-z][a-z0-9-]*` and be unique.              |
+| `items`                       | array \| `(query) => items \| Promise \| Observable` | —       | Static arrays are filtered client-side; function sources own their filtering.                                   |
+| `resolveItem`                 | `(id) => item \| null \| Promise \| Observable`      | —       | Resolves a stored id to a chip label. With a static `items` list it is optional — that list already answers it. |
+| `allowSpaces`                 | `boolean`                                            | `false` | Keep the popup open when the query contains spaces.                                                             |
+| `minQueryLength`              | `number`                                             | `0`     | Minimum query length before items are requested.                                                                |
+| `debounceTime`                | `number`                                             | `150`   | Debounce (ms) applied to async function sources.                                                                |
 
 Item ids must match `[A-Za-z0-9._:-]+` so the <code v-pre>{{type:id}}</code> token round-trips through Markdown
 untouched (a dev-mode error is thrown otherwise). To render stored token values as chips in a
 read-only/display context **without** the interactive picker, provide
 `provideRichTextEditorTokenRendering(triggers)` on that component instead of the directive.
+
+**Pasted text becomes chips again.** Text that spells a token out the way it reads — `#First name`,
+the trigger character plus an item's label (or its id, case-insensitively) — is recognized on paste
+and inserted as a real chip, for both HTML and plain-text clipboards. That covers the round trip
+through anything that flattened chips to text: a plain-text copy, an email template, a spreadsheet
+cell. Only triggers with a **static `items` list** can be matched — a search source has nothing to
+look through synchronously — and a run must sit at a word boundary, so `#Emails` and `user#Email`
+stay literal. Set `parsePastedTokens="false"` on `etRichTextEditorTriggers` to keep such text
+literal. Nothing else about a plain-text paste changes: it is still inserted verbatim, Markdown in it
+is never interpreted.
 
 ### Backing a trigger with `@ethlete/query`
 

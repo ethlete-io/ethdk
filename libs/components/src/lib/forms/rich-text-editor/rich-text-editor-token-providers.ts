@@ -7,7 +7,8 @@ import { RichTextEditorTrigger } from './rich-text-editor-trigger';
  * Renders stored `{{type:id}}` tokens as labelled chips in a display/read-only editor without
  * pulling in the interactive trigger machinery (detection, popup, floating-ui). Provide it on the
  * component/route that shows editor values, passing the same triggers used to author them (only
- * `type` and `resolveItem` are consulted here).
+ * `type`, `char` and the labels are consulted here — from `resolveItem`, or from a static `items`
+ * list where the trigger has one).
  *
  * ```ts
  * providers: [provideRichTextEditorTokenRendering([

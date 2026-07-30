@@ -24,18 +24,21 @@ const TOKEN_MARKDOWN_RE = /\{\{([a-z][a-z0-9-]*):([A-Za-z0-9._:-]+)\}\}/g;
 /** The type, id and label needed to render a token chip, plus the optional trigger char to show. */
 export type RichTextEditorTokenChip = { type: string; id: string; label: string; prefix?: string };
 
-const escapeHtml = (value: string) =>
+/** @internal Escapes text for interpolation into editor HTML (chips, pasted plain text). */
+export const escapeHtmlText = (value: string) =>
   value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** The Markdown/text form of a token — inert to `markdownToHtml`/`htmlToMarkdown`. */
 export const tokenMarkdown = (type: string, id: string) => `{{${type}:${id}}}`;
 
 /** Builds the chip HTML string used when rendering a stored value into the editor. */
 export const buildChipHtml = ({ type, id, label, prefix }: RichTextEditorTokenChip) =>
-  `<span class="${TOKEN_CHIP_CLASS}" ${TOKEN_CHIP_ATTR} ${TOKEN_TYPE_ATTR}="${escapeHtml(type)}" ` +
-  `${TOKEN_ID_ATTR}="${escapeHtml(id)}" contenteditable="false">` +
-  (prefix ? `<span class="${TOKEN_PREFIX_CLASS}">${escapeHtml(prefix)}</span>` : '') +
-  `<span class="${TOKEN_LABEL_CLASS}">${escapeHtml(label)}</span></span>`;
+  `<span class="${TOKEN_CHIP_CLASS}" ${TOKEN_CHIP_ATTR} ${TOKEN_TYPE_ATTR}="${escapeHtmlText(type)}" ` +
+  `${TOKEN_ID_ATTR}="${escapeHtmlText(id)}" contenteditable="false">` +
+  (prefix ? `<span class="${TOKEN_PREFIX_CLASS}">${escapeHtmlText(prefix)}</span>` : '') +
+  `<span class="${TOKEN_LABEL_CLASS}">${escapeHtmlText(label)}</span></span>`;
 
 /**
  * Builds a live chip element (the DOM counterpart of {@link buildChipHtml}) for insertion into the
@@ -118,6 +121,14 @@ export type RichTextEditorTokenCodec = {
    * `insertToken` API.
    */
   resolveChip: (type: string, id: string) => RichTextEditorTokenChip;
+  /**
+   * Recognizes tokens written the way they read — `#User Name`: a trigger char followed by an
+   * item's label (or its id) — and returns the text with those runs replaced by `{{type:id}}`, so
+   * pasted text becomes chips again. Only triggers with a static `items` list can be matched: a
+   * function source (search-as-you-type) has nothing to look through synchronously. Returns the
+   * input unchanged when nothing matched.
+   */
+  parseTokenText: (text: string) => string;
 };
 
 export const createRichTextEditorTokenCodec = (
@@ -126,17 +137,21 @@ export const createRichTextEditorTokenCodec = (
   const triggerFor = (type: string) => triggers().find((trigger) => trigger.type === type) ?? null;
 
   const resolveSyncLabel = (type: string, id: string): string | null => {
-    const resolver = triggerFor(type)?.resolveItem;
+    const trigger = triggerFor(type);
 
-    if (!resolver) return null;
+    if (!trigger) return null;
 
-    const resolved = resolver(id);
+    const resolved = trigger.resolveItem?.(id);
 
-    if (isPromiseLike<RichTextEditorTriggerItem | null>(resolved) || isObservable(resolved)) {
-      return null;
+    if (resolved && !isPromiseLike<RichTextEditorTriggerItem | null>(resolved) && !isObservable(resolved)) {
+      return resolved.label;
     }
 
-    return resolved?.label ?? null;
+    // A static list is its own resolver, so a trigger that has one needn't declare `resolveItem`
+    // twice (and it covers the wait for an async resolver, which patches the label afterwards).
+    if (!Array.isArray(trigger.items)) return null;
+
+    return trigger.items.find((item) => item.id === id)?.label ?? null;
   };
 
   const serialize = (root: HTMLElement) => {
@@ -197,5 +212,46 @@ export const createRichTextEditorTokenCodec = (
     prefix: triggerFor(type)?.char ?? '',
   });
 
-  return { serialize, render, hydrate, resolveChip };
+  const parseTokenText = (text: string) => {
+    let out = text;
+
+    for (const trigger of triggers()) {
+      // a function source is a search: there is no list to match a pasted label against
+      const items = Array.isArray(trigger.items) ? trigger.items : null;
+
+      if (!items?.length) continue;
+
+      // Both forms a token can appear as in text, keyed lowercase: its label (what a chip shows)
+      // and its id (what a plain-text export may carry). First writer wins on a collision.
+      const byText = new Map<string, string>();
+
+      for (const item of items) {
+        if (item.disabled) continue;
+
+        for (const candidate of [item.label, item.id]) {
+          const key = candidate?.trim().toLowerCase();
+
+          if (key && !byText.has(key)) byText.set(key, item.id);
+        }
+      }
+
+      if (byText.size === 0) continue;
+
+      // Longest first, so `#User Name` wins over an item merely labelled `User`. The run must start
+      // at a word boundary and end at one, so `#Emails` is not read as `#Email`.
+      const alternatives = [...byText.keys()].sort((a, b) => b.length - a.length).map(escapeRegExp);
+      const pattern = new RegExp(`(^|[^\\w])${escapeRegExp(trigger.char)}(${alternatives.join('|')})(?!\\w)`, 'gi');
+
+      out = out.replace(pattern, (match, ...groups: string[]) => {
+        const [before = '', matched = ''] = groups;
+        const id = byText.get(matched.toLowerCase());
+
+        return id ? `${before}${tokenMarkdown(trigger.type, id)}` : match;
+      });
+    }
+
+    return out;
+  };
+
+  return { serialize, render, hydrate, resolveChip, parseTokenText };
 };

@@ -53,7 +53,11 @@ tokens in core. (Calendar event markers and month/year jump moved into plan
       app's, so there is no default to override. The plan's item 4 also undercounted the ad-hoc
       `input()` defaults — ~60 across 15 domains, not 4 — and `mixed`/`clear` recurred often enough to
       earn a shared `FORM_FIELD_LABELS`.)_
-- [ ] 04 — RTE essentials
+- [ ] 04 — RTE essentials _(phases 1 & 2 done 2026-07-30: undo/redo history, block quote + code
+      block tools, plus paste-time `#Label` → token-chip recognition on top. Phase 3 — image
+      embedding with an upload-handler API — is still open. See the plan's "found while implementing"
+      notes: coalescing had to become a value diff rather than a timer, quote depth applies to the
+      whole quote, and Chrome leaves block wrappers behind on select-all + delete.)_
 - [x] 05 — form-field character counter _(done 2026-07-30; schema `maxLength()`
       and async-validator `pending` both turned out to be auto-bound signal-forms
       inputs — see the note in the plan, including the `hostDirectives` gotcha.

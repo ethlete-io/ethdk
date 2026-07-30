@@ -19,6 +19,7 @@ import { createRichTextEditorHistory, RichTextEditorHistoryEntry } from './inter
 import {
   assertValidToken,
   buildChipElement,
+  escapeHtmlText,
   RichTextEditorTokenChip,
   RichTextEditorTokenCodec,
 } from './internals/rich-text-editor-token';
@@ -165,6 +166,12 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
   /** @internal `true` while a token-trigger popup run is active — suspends all autoformat. */
   public autoformatSuppressed = signal(false);
+
+  /**
+   * @internal Whether pasted text that spells a token out (`#User Name`) is turned back into a chip.
+   * Set from `[etRichTextEditorTriggers]`'s `parsePastedTokens` input; on by default.
+   */
+  public parsePastedTokens = signal(true);
 
   /** @internal */
   public lastEmittedMarkdown: string | null = null;
@@ -465,7 +472,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
     codec?.serialize(body);
 
-    const markdown = htmlToMarkdown(body.innerHTML);
+    const markdown = this.parseTokenText(htmlToMarkdown(body.innerHTML));
 
     if (!markdown) return false;
 
@@ -476,6 +483,35 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     const root = this.editorDom.root();
 
     if (codec && root) codec.hydrate(root);
+
+    this.syncFromDom({ boundary: true });
+
+    return true;
+  }
+
+  /**
+   * Inserts plain clipboard text, recognizing tokens written the way they read — `#User Name` — and
+   * turning them back into chips. Everything else stays literal (Markdown in plain text is never
+   * interpreted), and with nothing to recognize this returns `false` so the browser inserts the
+   * text itself, exactly as before.
+   */
+  public pasteText(text: string) {
+    const codec = this.tokenCodec();
+
+    if (!codec || !this.canEdit()) return false;
+
+    const parsed = this.parseTokenText(text);
+
+    if (parsed === text) return false;
+
+    this.clearPendingMarks();
+
+    // escape first: only the recognized tokens become markup, the rest of the text stays text
+    this.editorDom.insertNormalizedHtml(codec.render(escapeHtmlText(parsed).replace(/\n/g, '<br>')));
+
+    const root = this.editorDom.root();
+
+    if (root) codec.hydrate(root);
 
     this.syncFromDom({ boundary: true });
 
@@ -529,6 +565,13 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
     // Keep the codec's trigger-char prefix, but honor the caller's already-resolved label (no hydrate).
     this.insertChip({ ...codec.resolveChip(type, item.id), label: item.label }, { focus: opts?.focus, hydrate: false });
+  }
+
+  /** Token text (`#User Name`) → `{{type:id}}`, unless the app turned the recognition off. */
+  private parseTokenText(text: string) {
+    if (!this.parsePastedTokens()) return text;
+
+    return this.tokenCodec()?.parseTokenText(text) ?? text;
   }
 
   private requireTokenCodec(): RichTextEditorTokenCodec | null {

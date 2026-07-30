@@ -1,5 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import {
+  booleanAttribute,
   computed,
   DestroyRef,
   Directive,
@@ -48,6 +49,15 @@ export class RichTextEditorTriggersDirective {
   private destroyRef = inject(DestroyRef);
 
   public triggers = input<readonly RichTextEditorTrigger[]>([]);
+
+  /**
+   * Recognize tokens in pasted text that spell themselves out — `#User Name`, a trigger char plus an
+   * item's label or id — and insert them as chips instead of literal text. Matches only against
+   * triggers with a static `items` list. Turn it off to keep such text literal.
+   *
+   * @default true
+   */
+  public parsePastedTokens = input(true, { transform: booleanAttribute });
 
   /** Shown by the popup when a query matches nothing. `null` (the default) uses the editor's
    *  `noResults` label. */
@@ -110,6 +120,11 @@ export class RichTextEditorTriggersDirective {
       const suppressed = this.activeMatch() !== null;
 
       untracked(() => editor.autoformatSuppressed.set(suppressed));
+    });
+    effect(() => {
+      const parse = this.parsePastedTokens();
+
+      untracked(() => editor.parsePastedTokens.set(parse));
     });
 
     if (ngDevMode) {

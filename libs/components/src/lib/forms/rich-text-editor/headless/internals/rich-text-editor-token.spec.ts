@@ -68,6 +68,58 @@ describe('rich text editor token codec', () => {
     expect(htmlToMarkdown(serializeToString(rendered))).toBe(md);
   });
 
+  describe('parseTokenText', () => {
+    const MERGE_FIELDS = [
+      { id: 'firstName', label: 'User Name' },
+      { id: 'user', label: 'User' },
+      { id: 'email', label: 'Email' },
+      { id: 'retired', label: 'Retired', disabled: true },
+    ];
+    const parser = createRichTextEditorTokenCodec(() => [
+      { char: '#', type: 'block', items: MERGE_FIELDS },
+      // a search source has no list to match against
+      { char: '@', type: 'mention', items: () => [{ id: 'u1', label: 'Someone' }] },
+    ]);
+
+    it('turns a trigger char plus a label into token markdown', () => {
+      expect(parser.parseTokenText('Hi #User Name, mail #Email please')).toBe(
+        'Hi {{block:firstName}}, mail {{block:email}} please',
+      );
+    });
+
+    it('prefers the longest label so a shorter one does not win', () => {
+      expect(parser.parseTokenText('#User Name')).toBe('{{block:firstName}}');
+      expect(parser.parseTokenText('#User')).toBe('{{block:user}}');
+    });
+
+    it('accepts the id form and ignores case', () => {
+      expect(parser.parseTokenText('#firstName and #EMAIL')).toBe('{{block:firstName}} and {{block:email}}');
+    });
+
+    it('only matches at word boundaries', () => {
+      expect(parser.parseTokenText('#Emails')).toBe('#Emails');
+      expect(parser.parseTokenText('mail#Email')).toBe('mail#Email');
+      expect(parser.parseTokenText('(#Email)')).toBe('({{block:email}})');
+    });
+
+    it('leaves disabled items, unknown labels and search-sourced triggers alone', () => {
+      expect(parser.parseTokenText('#Retired #Nothing @Someone')).toBe('#Retired #Nothing @Someone');
+    });
+
+    it('renders what it parsed as a chip', () => {
+      const html = parser.render(parser.parseTokenText('#Email'));
+
+      expect(html).toContain('data-token-id="email"');
+      expect(html).toContain('>Email</span>');
+    });
+
+    it('returns the text unchanged when there is nothing to recognize', () => {
+      const text = 'plain text with a # and an @ in it';
+
+      expect(parser.parseTokenText(text)).toBe(text);
+    });
+  });
+
   it('is idempotent (serialize ∘ render) across fuzzed type/id/label combinations', () => {
     const letters = 'abcdefghijklmnopqrstuvwxyz';
     const typeChars = `${letters}0123456789-`;

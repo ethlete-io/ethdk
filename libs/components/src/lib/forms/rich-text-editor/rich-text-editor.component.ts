@@ -367,11 +367,18 @@ export class RichTextEditorComponent {
   protected interceptPaste(event: ClipboardEvent) {
     const html = event.clipboardData?.getData('text/html');
 
-    // a plain-text paste is already schema-safe — the browser inserts it as text
-    if (!html) return;
+    if (html) {
+      event.preventDefault();
+      this.dir.pasteHtml(html);
 
-    event.preventDefault();
-    this.dir.pasteHtml(html);
+      return;
+    }
+
+    // A plain-text paste is already schema-safe — the browser inserts it as text. The exception is
+    // text spelling out a token (`#User Name`), which only the editor can turn back into a chip.
+    const text = event.clipboardData?.getData('text/plain');
+
+    if (text && this.dir.pasteText(text)) event.preventDefault();
   }
 
   protected interceptFormattingCommand(event: InputEvent) {

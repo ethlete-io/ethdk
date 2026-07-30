@@ -68,6 +68,51 @@ Text color/highlight (no Markdown syntax; deliberate), word/char count
 (covered conceptually by `05-form-field-character-counter.md` if ever needed),
 horizontal-rule tool exists already (`divider` in the tool union).
 
+## Found while implementing (2026-07-30, phases 1 & 2)
+
+**Undo granularity is a value-level diff, not a keystroke counter.** The history commits at
+`syncFromDom`, the one point every edit funnels through, and coalesces by comparing the previous
+value with the new one: a commit whose inserted chunk crosses whitespace starts a new entry, every
+other non-programmatic commit extends the current one. Time alone (the planned ~500 ms) is not enough
+— a trailing space is trimmed out of the Markdown value, so the space keystroke commits _nothing_ and
+the whitespace only shows up in the diff of the _next_ character. Undo therefore lands exactly on
+word boundaries; the first attempt (closing the burst _after_ the whitespace commit) landed one
+character past them.
+
+**Selection has to be stored as text offsets.** Undo re-renders the editable from the value, so a
+saved `Range` points at detached nodes. `Range.toString().length` from the root to the caret is the
+cheapest reliable metric, and a text-node walk restores it (`rich-text-editor-dom-history.ts`).
+
+**External writes reset the stack, which is what makes the multi-language wrapper correct.** That
+wrapper is _one_ editor whose `value` swaps per language — verified in Storybook that undo after a
+language switch cannot pull the previous language's text into the current one.
+
+**Blockquote nesting needed `@ethlete/core` first.** `markdownToHtml`/`htmlToMarkdown` flattened
+`>>` (one non-greedy regex can't match balanced nesting), so both directions now scan by depth,
+mirroring the existing list helpers.
+
+**Quote depth applies to the whole quote, not to one line.** A quote's lines are `<br>`-separated
+inside one `<blockquote>` — the shape `markdownToHtml` produces, and the shape a re-render must
+therefore keep. Per-line nesting would need per-line elements, which the value can't express. So
+Tab/Shift+Tab move the quote, not the line: a documented deviation from "consistent with
+list-nesting behavior".
+
+**Enter inside a quote had to be taken over.** Chrome splits the `<blockquote>` in two, which
+serializes as two quotes; the editor inserts a line break inside the one quote instead (plus the
+trailing `<br>` that gives the new empty line a line box, and empty text nodes `Range.insertNode`
+leaves behind have to be skipped when cleaning that up).
+
+**Select-all + delete inside a block leaves its wrapper behind.** Chrome keeps `<pre>` (minus its
+`<code>`) and an empty `<blockquote>`, and the caret then goes on typing literal code with every tool
+disabled and no way out. Both are repaired on the native input path only, keyed on a shape the editor
+itself never produces (a `<pre>` without `<code>`, a childless quote). Only Storybook found this.
+
+**Also shipped (user request, not in the plan):** pasted text that spells a token out — `#First
+name`, the trigger char plus an item's label or id — is recognized and inserted as a chip, for HTML
+and plain-text clipboards alike (`parsePastedTokens` on `etRichTextEditorTriggers` opts out). It fell
+out of the paste pipeline the same phase touched. A trigger with a static `items` list also no longer
+needs `resolveItem` just to render chip labels.
+
 ## Verification & shipping
 
 Stories per phase (undo across paste+autoformat is the critical story —
