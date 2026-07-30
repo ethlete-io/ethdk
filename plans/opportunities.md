@@ -4,6 +4,11 @@ Research done 2026-07-23 (source-verified scans of `libs/components` +
 `libs/core`). Complements `plans/cdk-port/` — nothing here overlaps those
 plans. Unprioritized backlog; pick items into real plans as needed.
 
+> A second research pass (2026-07-30) covering gaps _inside_ existing
+> components — touch/gesture, RTL/i18n/a11y consistency, per-domain feature
+> gaps — lives in `plans/enhancements/` (findings in `00-research-findings.md`,
+> ten implementation plans alongside).
+
 ## New components (none exist today; verified)
 
 High value (table-stakes for app teams):
@@ -76,6 +81,19 @@ otp-input, `container-type` in stream/pip.
   `mixed-state-contract`). No CDK-`ComponentHarness`-style drivers — every
   spec talks to the DOM directly. Worth considering as more controls land;
   not urgent.
+
+## Next major — removal checklist
+
+Nothing else tracks this, so it lives here until a real changelog/migration doc
+exists.
+
+- **`core/seo.directive.ts` — remove.** Already `@deprecated`, and the only real
+  SSR crash risk left in `core`: bare `document` access at lines 98–154, no
+  `DOCUMENT` injection, no guard. Deliberately **not** fixed in place
+  (`plans/enhancements/02-consistency-fixes.md` §5) — patching a directive that
+  is scheduled for deletion is wasted work. The other `core` global-access
+  stragglers (`scrolling/scrollable.ts`, `animations/animation-utils.ts`) were
+  guarded instead, since they stay.
 
 ## Tech debt notes (codebase is very clean — 3 TODOs total)
 
