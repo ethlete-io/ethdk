@@ -109,6 +109,16 @@
       border-color: var(--et-theme-color-primary-solid);
     }
 
+    /* Inside a card, focus is answered by the panel's accent ring and border. The plain variant's neutral
+       box border would sit inside that ring in a different colour, reading as two signals for one state —
+       so the box follows the accent here, the way `et-radio`'s circle does in the same preset. Repeats the
+       `:not()` guards above to match their weight, then wins on source order. */
+    :where(et-choice-field[data-variant='card'])
+      &:focus-visible:not([aria-checked='true']):not([aria-checked='mixed'])
+      .et-checkbox-box {
+      border-color: var(--et-theme-color-primary-solid);
+    }
+
     &:active:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']):not([aria-checked='mixed'])
       .et-checkbox-box,
     &.et-focus-ring--active:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']):not(

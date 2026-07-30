@@ -1,6 +1,6 @@
 import { Component, computed, input, linkedSignal, signal, ViewEncapsulation } from '@angular/core';
 import { form, FormField, readonly, required } from '@angular/forms/signals';
-import { CHOICE_FIELD_IMPORTS } from '../../choice-field';
+import { CHOICE_FIELD_IMPORTS, ChoiceFieldVariant } from '../../choice-field';
 import { FormFieldSize } from '../../form-field';
 import { SWITCH_IMPORTS } from '../switch.imports';
 
@@ -8,17 +8,17 @@ import { SWITCH_IMPORTS } from '../switch.imports';
   selector: 'et-sb-form-field-switch',
   template: `
     <div class="flex max-w-md flex-col gap-4 p-8 font-sans">
-      <et-choice-field [size]="size()">
+      <et-choice-field [size]="size()" [variant]="variant()">
         <et-switch [formField]="demoForm.notifications" />
         <et-label>Enable notifications</et-label>
       </et-choice-field>
 
-      <et-choice-field [size]="size()">
+      <et-choice-field [size]="size()" [variant]="variant()">
         <et-switch [formField]="demoForm.darkMode" />
         <et-label>Dark mode</et-label>
       </et-choice-field>
 
-      <et-choice-field [size]="size()">
+      <et-choice-field [size]="size()" [variant]="variant()">
         <et-switch [formField]="demoForm.acceptTerms" />
         <et-label>Accept terms</et-label>
       </et-choice-field>
@@ -34,6 +34,7 @@ import { SWITCH_IMPORTS } from '../switch.imports';
 export class FormFieldSwitchStorybookComponent {
   public size = input<FormFieldSize>('md');
   public readonly = input(false);
+  public variant = input<ChoiceFieldVariant>('plain');
 
   private formModel = signal({
     notifications: true,

@@ -12,10 +12,12 @@ export default {
     mixed: { control: 'boolean' },
     showMixedState: { control: false, table: { disable: true } },
     disabled: { control: 'boolean' },
+    readonly: { control: 'boolean' },
     required: { control: 'boolean' },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
     groupControl: { control: 'boolean' },
+    variant: { control: 'radio', options: ['plain', 'card'] },
   },
   args: {
     label: 'Select toppings',
@@ -24,10 +26,12 @@ export default {
     mixed: false,
     showMixedState: false,
     disabled: false,
+    readonly: false,
     required: false,
     color: 'brand',
     size: 'md',
     groupControl: false,
+    variant: 'plain',
   },
 } as Meta<CheckboxGroupStorybookComponent>;
 
@@ -48,5 +52,23 @@ export const GroupControl: Story = {
   args: {
     groupControl: true,
     hint: 'The headless [etSelectionListControl] renders a tri-state select-all: unchecked, mixed, checked',
+  },
+};
+
+export const Readonly: Story = {
+  args: { readonly: true },
+};
+
+export const Card: Story = {
+  args: { variant: 'card', label: 'Pick your toppings', value: ['pepperoni'] },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The card preset: the whole panel is the target, label leading and control trailing, with room for an ' +
+          '`<et-description>` under each label. Identical to the radio group card, so a multi- and a ' +
+          'single-select list of cards read the same.',
+      },
+    },
   },
 };

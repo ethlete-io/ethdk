@@ -100,14 +100,23 @@ and the headless layer offers a tri-state "select all" control
 
 ### Card presets {#card-presets}
 
-`et-radio` and `et-choice-field` take `variant="card"`: the option becomes a
-full-width clickable panel with the label leading and the control trailing, and
-the selection shows on the panel's border as well as in the control.
+`et-radio`, `et-checkbox-option` and `et-choice-field` take `variant="card"`: the
+option becomes a full-width clickable panel with the label leading and the
+control trailing, and the selection shows on the panel's border as well as in the
+control.
 
 In this variant the **label carries the selection too** — muted until the option
-is chosen, full strength once it is. Hover and focus are answered by the panel
-(its border picks up the accent at 40%), not by the label, so an unselected card
-under the cursor never reads as selected.
+is chosen, full strength once it is. Hover and focus are answered by the panel,
+not by the label, so an unselected card under the cursor never reads as selected.
+
+The panel's chrome follows the **`et-form-field` frame**: a neutral border at
+rest, `--et-surface-interaction-hover-solid` on hover and
+`--et-surface-interaction-active-solid` on press, the accent on focus, and the
+accent while selected. There is no tinted fill — the background stays the
+surface, so a selected card differs from its neighbours by its border alone.
+Because each card is `[etColorInteractive]`, a **selected** card's border also
+tracks the theme's hover / focus / active shade instead of freezing at the
+resting accent.
 
 Reach for it when the options are few and consequential — a plan, a shipping
 speed — and each deserves room for an `et-description`. A 20px circle is a small
@@ -126,6 +135,10 @@ thing to aim at; a card is a large one.
 
 <StoryEmbed id="components-forms-selection-list-radio-group--card" height="320px" />
 
+`et-checkbox-option` takes the same preset — swap `et-radio-group` for
+`et-checkbox-group` above and a multi-select list of cards renders identically
+(see the `Checkbox group / Card` story).
+
 For a checkbox or switch the preset lives on the **wrapper**, `et-choice-field`,
 because that is what holds the label — so both controls get it from one place.
 The wrapper learns the control's checked state with `:has()`.
@@ -138,8 +151,18 @@ The wrapper learns the control's checked state with `:has()`.
 </et-choice-field>
 ```
 
-Tokens: `--et-radio-card-padding` / `-border-radius` / `-border-width`, and the
-same three under `--et-choice-field-card-*`.
+::: tip The whole panel really is the control
+`et-radio` and `et-checkbox-option` **are** the panel, so nothing extra is
+needed. In `et-choice-field` the panel is a wrapper `div`, so the preset stretches
+the projected control's own hit area over it instead of forwarding clicks — which
+keeps one activation path, and with it one cursor, one `:hover` treatment, and the
+control's own `readonly` (clicks land, nothing toggles) and `disabled` (the panel
+dims as a unit and shows `not-allowed`) behavior.
+:::
+
+Tokens: `--et-radio-card-padding` / `-border-radius` / `-border-width`, the same
+three under `--et-checkbox-option-card-*` and `--et-choice-field-card-*`, plus
+`--et-choice-field-card-disabled-opacity` (default `0.5`).
 
 ### Segmented button: tabs variant {#segmented-tabs}
 

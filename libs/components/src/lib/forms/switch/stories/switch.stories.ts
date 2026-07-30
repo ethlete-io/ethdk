@@ -12,10 +12,12 @@ export default {
   argTypes: {
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
     readonly: { control: 'boolean' },
+    variant: { control: 'radio', options: ['plain', 'card'] },
   },
   args: {
     size: 'md',
     readonly: false,
+    variant: 'plain',
   },
 } as Meta<FormFieldSwitchStorybookComponent>;
 
@@ -25,6 +27,19 @@ export const Default: Story = {};
 
 export const Readonly: Story = {
   args: { readonly: true },
+};
+
+export const Card: Story = {
+  args: { variant: 'card' },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The card preset lives on `et-choice-field`, so the switch gets it from the same place the checkbox ' +
+          'does — the whole panel is the target and the selection shows on its border.',
+      },
+    },
+  },
 };
 
 export const Indeterminate: StoryObj<SwitchIndeterminateStorybookComponent> = {

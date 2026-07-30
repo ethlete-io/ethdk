@@ -107,6 +107,11 @@ raises the surface elevation for its contents (and for overlays anchored inside
 it, such as the rich text editor's autocomplete). A `transparent` field stays
 flush with its parent surface.
 
+The hover treatment belongs to the **frame and the label** — the two boxes that
+activate the control — not to the whole field. The field's box also spans the
+label band, the gap and the hint/counter row, so a pointer resting next to the
+counter leaves the frame at rest.
+
 Every value control distinguishes **read-only** from **disabled**: a read-only
 control (from a `readonly(...)` schema) keeps its normal box and stays focusable
 but drops every interactive affordance — no hover/focus change, full-contrast

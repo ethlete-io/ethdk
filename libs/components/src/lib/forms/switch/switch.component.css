@@ -83,6 +83,12 @@
       outline-offset: 2px;
     }
 
+    /* Inside a card the focus ring belongs to the whole panel (the choice field draws it), so the track
+       must not draw a second one nested inside it. */
+    :where(et-choice-field[data-variant='card']) &:focus-visible .et-switch-track {
+      outline: none;
+    }
+
     .et-switch-thumb {
       /* Off state: a smaller, muted thumb centered in the track. It grows to
        --et-switch-thumb-size and takes the on-primary color when checked. */

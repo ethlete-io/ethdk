@@ -1,11 +1,12 @@
 import { JsonPipe } from '@angular/common';
 import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
-import { disabled, form, FormField, required } from '@angular/forms/signals';
+import { disabled, form, FormField, readonly, required } from '@angular/forms/signals';
 import { ColorInteractiveDirective, ProvideColorDirective } from '@ethlete/core';
+import { DescriptionComponent } from '../../../description';
 import { FormFieldSize, HintComponent, LabelDirective } from '../../../form-field';
 import { SelectionListControlDirective } from '../../headless';
 import { CheckboxGroupComponent } from '../checkbox-group.component';
-import { CheckboxOptionComponent } from '../checkbox-option.component';
+import { CheckboxOptionComponent, CheckboxOptionVariant } from '../checkbox-option.component';
 
 @Component({
   selector: 'et-sb-checkbox-group',
@@ -33,7 +34,12 @@ import { CheckboxOptionComponent } from '../checkbox-option.component';
         }
 
         @for (option of options(); track option.value) {
-          <et-checkbox-option [value]="option.value">{{ option.label }}</et-checkbox-option>
+          <et-checkbox-option [value]="option.value" [variant]="variant()">
+            {{ option.label }}
+            @if (variant() === 'card' && option.description) {
+              <et-description>{{ option.description }}</et-description>
+            }
+          </et-checkbox-option>
         }
         @if (hint()) {
           <et-hint>{{ hint() }}</et-hint>
@@ -59,6 +65,7 @@ import { CheckboxOptionComponent } from '../checkbox-option.component';
     LabelDirective,
     SelectionListControlDirective,
     ColorInteractiveDirective,
+    DescriptionComponent,
   ],
   styles: `
     /* story-only styling for the headless select-all control, mirroring the option look */
@@ -167,11 +174,13 @@ export class CheckboxGroupStorybookComponent {
   public color = input('brand');
   public size = input<FormFieldSize>('md');
   public groupControl = input(false);
+  public variant = input<CheckboxOptionVariant>('plain');
+  public readonly = input(false);
 
-  public options = input([
-    { value: 'cheese', label: 'Cheese' },
-    { value: 'pepperoni', label: 'Pepperoni' },
-    { value: 'mushrooms', label: 'Mushrooms' },
+  public options = input<{ value: string; label: string; description?: string }[]>([
+    { value: 'cheese', label: 'Cheese', description: 'Mozzarella, and plenty of it.' },
+    { value: 'pepperoni', label: 'Pepperoni', description: 'Spicy, and the house favourite.' },
+    { value: 'mushrooms', label: 'Mushrooms', description: 'Chestnut, sliced thin.' },
   ]);
 
   public mixedState = linkedSignal(() => this.mixed());
@@ -180,6 +189,7 @@ export class CheckboxGroupStorybookComponent {
 
   public demoForm = form(this.formModel, (s) => {
     disabled(s, () => this.disabled());
+    readonly(s, () => this.readonly());
     required(s.toppings, { when: () => this.required(), message: 'Please select at least one' });
   });
 }

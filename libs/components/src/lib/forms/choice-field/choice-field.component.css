@@ -53,6 +53,12 @@
     initial-value: 1px;
   }
 
+  @property --et-choice-field-card-disabled-opacity {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 0.5;
+  }
+
   et-choice-field {
     display: flex;
     flex-direction: column;
@@ -227,32 +233,83 @@
        glance rather than only by its control, and `:has()` is how the wrapper learns the control's state — the
        control owns `aria-checked`, not this element. */
     &:where([data-variant='card']) {
+      /* A card fills its container rather than hugging its label, so a stack of them reads as one list of equal
+         panels — `fit-content` (the plain variant's width) made every card a different width. */
+      width: auto;
+
+      /* The panel dims as one unit while disabled, so the control must not dim a second time on top of it. */
+      --et-checkbox-opacity-disabled: 1;
+      --et-switch-opacity-disabled: 1;
+
       .et-choice-field-control {
         /* Label leading, control trailing, which is how a settings row reads. */
         flex-direction: row-reverse;
         justify-content: space-between;
+        position: relative;
         padding: var(--et-choice-field-card-padding);
         border-radius: var(--et-choice-field-card-border-radius);
         background-color: var(--et-surface-background-solid, transparent);
         border: var(--et-choice-field-card-border-width) solid var(--et-surface-border-solid, currentColor);
-        cursor: pointer;
 
-        &:has([aria-checked='true']) {
-          border-color: var(--et-theme-color-primary-solid, currentColor);
-          background-color: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 8%, transparent);
+        /* The panel's chrome answers interaction the way a form field's frame does: a neutral border on
+           hover/press, the accent on focus. Every state guard sits in `:where()`, so all of these rules carry
+           the same (element-only) specificity and source order decides between them — which is what lets the
+           checked rule below keep a chosen card's accent border while it is hovered. */
+        @media (hover: hover) {
+          &:where(:hover:not(:has([aria-disabled='true'])):not(:has([data-readonly]))) {
+            border-color: var(--et-surface-interaction-hover-solid, currentColor);
+          }
         }
 
-        @media (hover: hover) {
-          /* Not while checked: a hover hint at 40% would otherwise override the full-strength selected border, so
-             hovering the chosen card would make it look less chosen. */
-          &:hover:not(:has([aria-disabled='true'])):not(:has([data-readonly])):not(:has([aria-checked='true'])) {
-            border-color: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 40%, transparent);
-          }
+        &:where(:active:not(:has([aria-disabled='true'])):not(:has([data-readonly]))) {
+          border-color: var(--et-surface-interaction-active-solid, currentColor);
+        }
+
+        /* Declared after hover/active so a chosen card stays accented under the cursor — and because the panel
+           carries `etColorInteractive`, that accent is itself the theme's hover/active shade while the pointer
+           is on it, instead of a mix that would read as less chosen than the resting state. */
+        &:where(:has(:is([aria-checked='true'], [aria-checked='mixed']))) {
+          border-color: var(--et-theme-color-primary-solid, currentColor);
+        }
+
+        &:where(:has(:focus-visible)) {
+          border-color: var(--et-theme-color-primary-solid, currentColor);
+          outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+          outline-offset: 2px;
+        }
+
+        &:where(:has([aria-disabled='true'])) {
+          cursor: not-allowed;
+          opacity: var(--et-choice-field-card-disabled-opacity);
         }
       }
 
-      /* The panel's border and tint already answer hover and focus, which frees the label to carry selection —
-         and requires it to: the shared hover/focus rules above brighten the label on every variant, so without
+      /* "The whole panel is the target" is implemented by stretching the CONTROL's own hit area over the panel,
+         rather than by forwarding panel clicks to it. That keeps a single activation path, so cursor, `:hover`,
+         readonly (clicks land but cannot toggle) and disabled (`pointer-events: none`, which hands the panel's
+         `not-allowed` back) all remain the control's business — a second click handler on this `div` would have
+         had to re-derive every one of them, and would double-toggle over the control and the label.
+
+         The insets are negative by the border width because an absolutely positioned box resolves `inset`
+         against its containing block's PADDING box: at `inset: 0` the panel's own border ring was the one strip
+         of the card that neither clicked nor took the control's hover — the pointer was on the visible edge of
+         the card and nothing happened. */
+      .et-choice-field-control-slot > *::after {
+        content: '';
+        position: absolute;
+        inset: calc(-1 * var(--et-choice-field-card-border-width));
+        /* so the hit area is the card's shape, not a rectangle poking out past its rounded corners */
+        border-radius: var(--et-choice-field-card-border-radius);
+      }
+
+      /* The focus ring belongs to the whole panel here, not to the 20px control inside it — two rings, one
+         nested in the other, read as a rendering glitch. */
+      .et-choice-field-control-slot > :focus-visible {
+        outline: none;
+      }
+
+      /* The panel's border already answers hover and focus, which frees the label to carry selection — and
+         requires it to: the shared hover/focus rules above brighten the label on every variant, so without
          this an unselected card under the cursor read exactly like a selected one. Muted until chosen, full
          strength once chosen. Both rules stay inside `:where()` so the disabled label colour still wins. */
       .et-choice-field-label-area {
@@ -265,10 +322,19 @@
         color: var(--et-surface-color-solid, currentColor);
       }
 
+      /* The plain variant indents its support text to clear the leading control. A card has no leading control
+         to clear — the indent just detached the hint from the panel it describes, so it goes flush with the
+         panel's edge (same as the hint under a group of cards). */
+      .et-choice-field-errors,
+      .et-choice-field-hint {
+        padding-inline-start: 0;
+      }
+
       &[data-can-animate] .et-choice-field-control {
         transition:
           border-color 150ms ease,
-          background-color 150ms ease;
+          background-color 150ms ease,
+          opacity 150ms ease;
       }
     }
   }

@@ -184,22 +184,33 @@
         color: var(--et-surface-color-solid, currentColor);
       }
 
+      /* The panel's chrome answers interaction the way a form field's frame does: a neutral border on
+         hover/press, the accent on focus. Every state guard sits in `:where()`, so all of these rules carry the
+         same (element-only) specificity and source order decides between them — which is what lets the checked
+         rule below keep a chosen card's accent border while it is hovered. */
       @media (hover: hover) {
-        /* Not while checked: a hover hint at 40% would otherwise override the full-strength selected border, so
-           hovering the chosen card would make it look less chosen. */
-        &:hover:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']) {
-          border-color: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 40%, transparent);
+        &:where(:hover:not([aria-disabled='true']):not([data-readonly])) {
+          border-color: var(--et-surface-interaction-hover-solid, currentColor);
         }
       }
 
-      /* The border carries the selection, so the panel reads as chosen at a glance rather than only by its dot. */
-      &[aria-checked='true'] {
-        border-color: var(--et-theme-color-primary-solid, currentColor);
-        background-color: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 8%, transparent);
+      &:where(:active:not([aria-disabled='true']):not([data-readonly])) {
+        border-color: var(--et-surface-interaction-active-solid, currentColor);
       }
 
-      /* The focus ring belongs to the whole card here, not to the circle inside it. */
+      /* The border carries the selection, so the panel reads as chosen at a glance rather than only by its dot.
+         Declared after hover/active so a chosen card stays accented under the cursor — and because the host
+         carries `etColorInteractive`, that accent is itself the theme's hover/active shade while the pointer is
+         on it, instead of a mix that would read as less chosen than the resting state. */
+      &:where([aria-checked='true']) {
+        border-color: var(--et-theme-color-primary-solid, currentColor);
+      }
+
+      /* The focus ring belongs to the whole card here, not to the circle inside it. Left outside `:where()`
+         because the circle's own ring (declared for the plain variant, at element+pseudo+class weight) has to
+         lose to the reset below. */
       &:focus-visible {
+        border-color: var(--et-theme-color-primary-solid, currentColor);
         outline: 2px solid var(--et-theme-color-primary-solid);
         outline-offset: 2px;
 

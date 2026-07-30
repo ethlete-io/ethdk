@@ -2,6 +2,7 @@ import { Component, ElementRef, input, viewChild, ViewEncapsulation } from '@ang
 import {
   AnimatableDirective,
   ColorInteractiveContainerDirective,
+  ColorInteractiveDirective,
   ColorInteractiveExcludeDirective,
   createCanAnimateSignal,
   ProvideColorDirective,
@@ -26,6 +27,7 @@ export type ChoiceFieldVariant = (typeof CHOICE_FIELD_VARIANTS)[keyof typeof CHO
   imports: [
     AnimatableDirective,
     ColorInteractiveContainerDirective,
+    ColorInteractiveDirective,
     ColorInteractiveExcludeDirective,
     FormErrorComponent,
     ProvideColorDirective,

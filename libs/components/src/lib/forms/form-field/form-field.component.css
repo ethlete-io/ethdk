@@ -423,20 +423,26 @@
         white-space: nowrap;
       }
 
-      /* no hover feedback while readonly or disabled — the frame's pointer-events: none
-         (disabled) doesn't stop the field host itself from matching :hover */
+      /* Hover follows the FRAME and the label — the two boxes that activate the control — not the host.
+         The host's box also spans the label band, the `--et-form-field-gap` between frame and support, and
+         the whole hint/counter row, so keying on `:hover` lit the frame up while the pointer was resting
+         visibly outside it (next to the counter, most obviously). Readonly and disabled get no hover
+         feedback at all: the frame's `pointer-events: none` (disabled) does not stop an ancestor from
+         matching `:hover`, so it has to be excluded here. */
       @media (hover: hover) {
-        &:where(:hover:not([data-readonly]):not([data-disabled]):not(:has(.et-color-interactive-exclude:hover)))
+        &:where(:not([data-readonly]):not([data-disabled]):not(:has(.et-color-interactive-exclude:hover))):where(
+            :has(.et-form-field-control-frame:hover),
+            :has(.et-form-field-label-area:hover)
+          ) {
           .et-form-field-control-frame {
-          border-color: var(--et-surface-interaction-hover-solid, currentColor);
-        }
+            border-color: var(--et-surface-interaction-hover-solid, currentColor);
+          }
 
-        &:where(:hover:not([data-readonly]):not([data-disabled]):not(:has(.et-color-interactive-exclude:hover)))
           .et-form-field-label-area,
-        &:where(:hover:not([data-readonly]):not([data-disabled]):not(:has(.et-color-interactive-exclude:hover)))
           .et-form-field-affix {
-          color: var(--et-surface-color-solid, currentColor);
-          opacity: 1;
+            color: var(--et-surface-color-solid, currentColor);
+            opacity: 1;
+          }
         }
       }
 
