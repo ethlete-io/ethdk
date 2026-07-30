@@ -50,7 +50,7 @@ On `et-calendar` (forwarded from the headless `[etCalendar]` directive):
 
 The component also takes `previousMonthLabel` / `nextMonthLabel` for the nav buttons' `aria-label`s while the day grid is showing; unset — and in the coarser views, which have their own — they read [`CALENDAR_LABELS`](/components/localization).
 
-Values are day-granular: the calendar writes dates at midnight local time and compares incoming values by day, ignoring any time-of-day.
+Values are day-granular: the calendar writes dates at midnight local time and compares incoming values by day, ignoring any time-of-day. **Local** is the whole story — every comparison and every label is the runtime's own zone, and there is no zoned mode; see [time zones](/components/date-time-inputs#time-zones) for what that means for stored values and how to keep a calendar date from drifting.
 
 `startAt` decides where an **empty** calendar opens — e.g. next month for a booking form — and which day takes the initial roving focus. A selection always wins over it, as does an explicit `activeMonth`; without any of the three, the calendar opens on today. The date inputs forward it as `startAt` too.
 

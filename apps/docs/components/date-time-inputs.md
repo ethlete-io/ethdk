@@ -119,6 +119,36 @@ drilling only navigates, so the field commits on the day pick as always.
 
 Naming a `displayFormat` yourself still wins over the derived one. The range input takes `precision` the same way, for month ranges like `07/2025 – 03/2026`; see [the calendar's precision](/components/calendar#month-and-year-pickers) for how the picker behaves there. The date-time input has none — its value carries a time.
 
+### Time zones {#time-zones}
+
+Every `Date` in this family is read and written in the **runtime's own zone**. date-fns' `startOfDay`,
+`isSameDay` and `format` all work on local wall-clock time, so "the 30th" means the 30th where the
+browser is, and the default `valueFormat` (`yyyy-MM-dd'T'HH:mm:ssxxx`) writes that instant with the
+local offset.
+
+That is right for _an instant_ — when something happened — and wrong for _a date someone chose_. A
+value of `2026-07-30T00:00:00+02:00` read in a browser set to UTC is July 29th at 22:00, so the picker
+highlights the 29th. Nothing is broken; the two readings disagree because the value pinned an instant
+when what was meant was a day.
+
+**If the value is a calendar date, store it as one.** `valueFormat="yyyy-MM-dd"` (or `precision`'s
+`yyyy-MM` / `yyyy`) writes no time and no offset, so it reads back as the same day in every zone:
+
+```html
+<et-date-input [formField]="demoForm.date" valueFormat="yyyy-MM-dd" />
+```
+
+If the value genuinely is an instant in a zone that is not the reader's — a booking in the venue's
+zone, say — convert at the boundary: turn the stored instant into a `Date` whose _local_ wall-clock
+reading matches that zone's, hand that to the control, and convert back on commit. The controls stay
+in local time throughout, which keeps one rule for the whole family.
+
+Rendering a foreign zone's calendar directly is deliberately not supported: every day boundary,
+`isSameDay` comparison and time-picker column would have to be evaluated in that zone, which means
+zoned arithmetic through the calendar, the time picker and all four inputs, a zoned date dependency,
+and a different answer to what a committed value means. That is a project, not an option — say so if
+you need it.
+
 ## Date range input — `et-date-range-input` {#date-range-input}
 
 One registered form control containing two text inputs (start – end) that share a
