@@ -2,7 +2,7 @@ import { Component, ViewEncapsulation, computed, input, signal } from '@angular/
 import { ProvideColorDirective } from '@ethlete/core';
 import { addDays, addMonths, startOfDay, startOfMonth } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { CalendarRange } from '../headless';
+import { CalendarDateClassFn, CalendarRange, CalendarView } from '../headless';
 import { CALENDAR_IMPORTS } from '../calendar.imports';
 
 @Component({
@@ -16,7 +16,11 @@ import { CALENDAR_IMPORTS } from '../calendar.imports';
           [max]="maxDate()"
           [dateFilter]="filterFn()"
           [startAt]="startAtDate()"
+          [startView]="startView()"
+          [dateClass]="dateClassFn()"
           [locale]="localeObject()"
+          (monthSelect)="lastDrill.set('month ' + $event.toDateString())"
+          (yearSelect)="lastDrill.set('year ' + $event.toDateString())"
           mode="range"
         />
 
@@ -30,15 +34,35 @@ import { CALENDAR_IMPORTS } from '../calendar.imports';
           [max]="maxDate()"
           [dateFilter]="filterFn()"
           [startAt]="startAtDate()"
+          [startView]="startView()"
+          [dateClass]="dateClassFn()"
           [locale]="localeObject()"
+          (monthSelect)="lastDrill.set('month ' + $event.toDateString())"
+          (yearSelect)="lastDrill.set('year ' + $event.toDateString())"
         />
 
         <p class="text-sm opacity-60">Value: {{ value()?.toDateString() ?? 'null' }}</p>
+      }
+
+      @if (lastDrill()) {
+        <p class="text-sm opacity-60">Drilled into: {{ lastDrill() }}</p>
       }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [...CALENDAR_IMPORTS, ProvideColorDirective],
+  // Consumer CSS, which is what `dateClass` returns: unlayered, so it wins over the component's own
+  // styles without any escalation.
+  styles: `
+    .et-sb-calendar-busy .et-calendar-cell-content {
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--et-theme-color-primary-solid) 60%, transparent);
+    }
+
+    .et-sb-calendar-holiday .et-calendar-cell-content {
+      background: color-mix(in srgb, var(--et-theme-color-primary-solid) 18%, transparent);
+      font-weight: 600;
+    }
+  `,
 })
 export class CalendarStorybookComponent {
   public mode = input<'single' | 'range'>('single');
@@ -46,11 +70,15 @@ export class CalendarStorybookComponent {
   public disableWeekends = input(false);
   /** Months from today the empty calendar should open at — the story turns it into a `Date`. */
   public startAtMonthOffset = input<number | null>(null);
+  public startView = input<CalendarView>('month');
+  /** Turns on a `dateClass` hook marking the 1st of each month and every 13th — the story owns the CSS. */
+  public markDates = input(false);
   public locale = input<'default' | 'de'>('default');
   public color = input('brand');
 
   public value = signal<Date | null>(null);
   public rangeValue = signal<CalendarRange>({ start: null, end: null });
+  protected lastDrill = signal<string | null>(null);
 
   protected minDate = computed(() => (this.constrained() ? startOfDay(addDays(new Date(), -7)) : null));
   protected maxDate = computed(() => (this.constrained() ? startOfDay(addDays(new Date(), 60)) : null));
@@ -66,4 +94,27 @@ export class CalendarStorybookComponent {
   });
 
   protected localeObject = computed(() => (this.locale() === 'de' ? de : null));
+
+  protected dateClassFn = computed<CalendarDateClassFn | null>(() => {
+    if (!this.markDates()) {
+      return null;
+    }
+
+    // the same hook serves every view, which is what the second argument is for
+    return (date, view) => {
+      if (view === 'multiYear') {
+        return date.getFullYear() % 5 === 0 ? 'et-sb-calendar-holiday' : null;
+      }
+
+      if (view === 'year') {
+        return date.getMonth() === 0 ? 'et-sb-calendar-holiday' : null;
+      }
+
+      if (date.getDate() === 1) {
+        return 'et-sb-calendar-holiday';
+      }
+
+      return date.getDate() === 13 ? ['et-sb-calendar-busy'] : null;
+    };
+  });
 }

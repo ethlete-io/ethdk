@@ -9,12 +9,33 @@ export type CalendarLabels = {
   previousMonth: string;
   /** Accessible label for the control that steps forward a month. */
   nextMonth: string;
+  /** Accessible label for the step-back control while the month grid is showing. */
+  previousYear: string;
+  /** Accessible label for the step-forward control while the month grid is showing. */
+  nextYear: string;
+  /** Accessible label for the step-back control while the year grid is showing. */
+  previousYearRange: string;
+  /** Accessible label for the step-forward control while the year grid is showing. */
+  nextYearRange: string;
+  /** Accessible label for the header button while the day grid is showing (it opens the month grid). */
+  switchToYearView: string;
+  /** Accessible label for the header button while the month grid is showing (it opens the year grid). */
+  switchToMultiYearView: string;
+  /** Accessible label for the header button while the year grid is showing (it returns to the day grid). */
+  switchToMonthView: string;
 };
 
 /** The built-in English labels. */
 export const DEFAULT_CALENDAR_LABELS: CalendarLabels = {
   previousMonth: 'Previous month',
   nextMonth: 'Next month',
+  previousYear: 'Previous year',
+  nextYear: 'Next year',
+  previousYearRange: 'Previous years',
+  nextYearRange: 'Next years',
+  switchToYearView: 'Choose month and year',
+  switchToMultiYearView: 'Choose year',
+  switchToMonthView: 'Choose date',
 };
 
 /**

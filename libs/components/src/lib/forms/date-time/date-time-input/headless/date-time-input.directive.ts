@@ -8,6 +8,7 @@ import { formatDateValue, parseDateValue } from '../../internals/date-value';
 import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
 import { parseDateTimeText } from './internals/date-time-parse';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
+import { CalendarDateClassFn, CalendarView } from '../../../../calendar/headless';
 
 /**
  * A combined date & time form control with a `string | null` value (a date-fns
@@ -40,6 +41,12 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
   public dateFilter = input<((date: Date) => boolean) | null>(null);
   /** Month the picker calendar opens at while the value is empty. */
   public startAt = input<Date | null>(null);
+
+  /** Which grid the picker calendar opens on — `'year'` to pick a month first, `'multiYear'` a year. */
+  public startView = input<CalendarView>('month');
+
+  /** Per-cell classes for the picker calendar — busy days, holidays, markers of your own. */
+  public dateClass = input<CalendarDateClassFn | null>(null);
 
   /**
    * Forwarded to the picker's time picker. Only the time of day of `minTime`/`maxTime`

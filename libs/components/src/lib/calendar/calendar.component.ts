@@ -20,17 +20,20 @@ import { injectCalendarLabels } from '../calendar/calendar-labels';
         'max',
         'dateFilter',
         'startAt',
+        'startView',
+        'dateClass',
         'firstDayOfWeek',
         'locale',
         'value',
         'rangeValue',
         'activeMonth',
       ],
-      outputs: ['valueChange', 'rangeValueChange', 'activeMonthChange'],
+      outputs: ['valueChange', 'rangeValueChange', 'activeMonthChange', 'monthSelect', 'yearSelect'],
     },
   ],
   host: {
     class: 'et-calendar',
+    '[attr.data-view]': 'calendar.view()',
   },
 })
 export class CalendarComponent {
@@ -38,14 +41,49 @@ export class CalendarComponent {
 
   protected calendar = inject(CalendarDirective);
 
+  /** Only labels the nav buttons while the day grid is showing — the coarser views read the label set. */
   public previousMonthLabel = input<string | null>(null);
   public nextMonthLabel = input<string | null>(null);
 
-  /** The string in effect: this instance's `previousMonthLabel`, else the domain's label set. */
-  protected resolvedPreviousMonthLabel = computed(
-    () => this.previousMonthLabel() ?? this.calendarLabels().previousMonth,
-  );
+  /** The step-back button's label for the view on show; this instance's `previousMonthLabel` wins in the day grid. */
+  protected resolvedPreviousLabel = computed(() => {
+    const labels = this.calendarLabels();
 
-  /** The string in effect: this instance's `nextMonthLabel`, else the domain's label set. */
-  protected resolvedNextMonthLabel = computed(() => this.nextMonthLabel() ?? this.calendarLabels().nextMonth);
+    switch (this.calendar.view()) {
+      case 'year':
+        return labels.previousYear;
+      case 'multiYear':
+        return labels.previousYearRange;
+      default:
+        return this.previousMonthLabel() ?? labels.previousMonth;
+    }
+  });
+
+  /** The step-forward button's label for the view on show. */
+  protected resolvedNextLabel = computed(() => {
+    const labels = this.calendarLabels();
+
+    switch (this.calendar.view()) {
+      case 'year':
+        return labels.nextYear;
+      case 'multiYear':
+        return labels.nextYearRange;
+      default:
+        return this.nextMonthLabel() ?? labels.nextMonth;
+    }
+  });
+
+  /** The header button's label: where it takes the reader from the view on show. */
+  protected resolvedZoomLabel = computed(() => {
+    const labels = this.calendarLabels();
+
+    switch (this.calendar.view()) {
+      case 'year':
+        return labels.switchToMultiYearView;
+      case 'multiYear':
+        return labels.switchToMonthView;
+      default:
+        return labels.switchToYearView;
+    }
+  });
 }

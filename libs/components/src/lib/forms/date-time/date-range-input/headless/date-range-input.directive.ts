@@ -24,6 +24,7 @@ import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.dir
 import { DateRangeInputFieldDirective } from './date-range-input-field.directive';
 import { injectFormFieldLabels } from '../../../../forms/form-field/form-field-labels';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
+import { CalendarDateClassFn, CalendarView } from '../../../../calendar/headless';
 
 export type DateRangeValue = {
   start: string | null;
@@ -112,6 +113,12 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
   public dateFilter = input<((date: Date) => boolean) | null>(null);
   /** Month the picker calendar opens at while the range is empty. */
   public startAt = input<Date | null>(null);
+
+  /** Which grid the picker calendar opens on — `'year'` to pick a month first, `'multiYear'` a year. */
+  public startView = input<CalendarView>('month');
+
+  /** Per-cell classes for the picker calendar — busy days, holidays, markers of your own. */
+  public dateClass = input<CalendarDateClassFn | null>(null);
 
   public pickerOpen = model(false);
 

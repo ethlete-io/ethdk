@@ -10,6 +10,8 @@ export default {
     constrained: { control: 'boolean' },
     disableWeekends: { control: 'boolean' },
     startAtMonthOffset: { control: 'number' },
+    startView: { control: 'select', options: ['month', 'year', 'multiYear'] },
+    markDates: { control: 'boolean' },
     locale: { control: 'select', options: ['default', 'de'] },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
   },
@@ -18,6 +20,8 @@ export default {
     constrained: false,
     disableWeekends: false,
     startAtMonthOffset: null,
+    startView: 'month',
+    markDates: false,
     locale: 'default',
     color: 'brand',
   },
@@ -37,6 +41,18 @@ export const DisabledDates: Story = {
 
 export const StartAt: Story = {
   args: { startAtMonthOffset: 2 },
+};
+
+export const MonthView: Story = {
+  args: { startView: 'year' },
+};
+
+export const YearView: Story = {
+  args: { startView: 'multiYear' },
+};
+
+export const DateClass: Story = {
+  args: { markDates: true },
 };
 
 export const German: Story = {

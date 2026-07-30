@@ -4,16 +4,16 @@ import { CALENDAR_ERROR_CODES } from '../calendar-errors';
 import { CalendarDirective } from './calendar.directive';
 
 /**
- * The ARIA grid hosting the week rows: routes the keyboard model to the
- * calendar and tracks whether focus is inside (cells only pull DOM focus
- * along while the user is actually keyboard-navigating the grid).
+ * The ARIA grid hosting the cell rows of whichever view is showing: routes the
+ * keyboard model to the calendar and tracks whether focus is inside (cells only
+ * pull DOM focus along while the user is actually keyboard-navigating the grid).
  */
 @Directive({
   selector: '[etCalendarGrid]',
   exportAs: 'etCalendarGrid',
   host: {
     role: 'grid',
-    '[attr.aria-label]': 'calendar?.visibleMonthLabel()',
+    '[attr.aria-label]': 'calendar?.headerLabel()',
     '(keydown)': 'calendar?.handleKeydown($event)',
     '(focusin)': 'focusIsInside.set(true)',
     '(focusout)': 'handleFocusOut($event)',

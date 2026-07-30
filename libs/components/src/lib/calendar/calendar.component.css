@@ -17,12 +17,49 @@
       gap: 4px;
     }
 
+    /* the label is a button (it zooms the grid out), so it has to shed the chrome a button comes with
+       and keep reading as the heading it is */
     .et-calendar-header-label {
+      display: inline-flex;
       flex: 1;
-      text-align: center;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 4px 8px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      font: inherit;
       font-size: 14px;
       font-weight: 600;
       color: var(--et-surface-color-solid);
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+
+      @media (hover: hover) {
+        &:hover {
+          background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
+        }
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--et-theme-color-primary-solid);
+        outline-offset: 1px;
+      }
+    }
+
+    /* points down at the day grid, and up once the reader is as far out as the year grid. Sized
+       explicitly: the icon renders an SVG that fills whatever box it is given. */
+    .et-calendar-header-label-icon {
+      flex: none;
+      inline-size: 12px;
+      block-size: 12px;
+      rotate: 180deg;
+    }
+
+    &:where([data-view='multiYear']) .et-calendar-header-label-icon {
+      rotate: 0deg;
     }
 
     /* chrome comes from et-icon-button — only the chevron orientation is ours */
@@ -40,8 +77,26 @@
       grid-template-columns: repeat(7, var(--et-calendar-cell-size));
     }
 
-    /* re-created per month (keyed @for) — navigation slides the new rows in from
-       the travel direction; the attribute is unset on first render, so opening
+    /* the month and year grids span the same width as the day grid, so drilling never resizes the
+       calendar sideways */
+    .et-calendar-coarse-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      inline-size: calc(var(--et-calendar-cell-size) * 7);
+    }
+
+    /* three rows of months and six of years both come to six day-cells tall, which keeps the two
+       coarse grids the same height as each other */
+    &:where([data-view='year']) .et-calendar-coarse-row {
+      block-size: calc(var(--et-calendar-cell-size) * 2);
+    }
+
+    &:where([data-view='multiYear']) .et-calendar-coarse-row {
+      block-size: var(--et-calendar-cell-size);
+    }
+
+    /* re-created per visible unit and view (keyed @for) — stepping slides the new rows in from the
+       travel direction, drilling fades them, and the attribute is unset on first render so opening
        the calendar itself does not animate */
     .et-calendar-weeks {
       &:where([data-nav='forward']) {
@@ -50,6 +105,12 @@
 
       &:where([data-nav='backward']) {
         animation: et-calendar-weeks-in-backward 200ms ease;
+      }
+
+      /* a plain fade in both directions: the grid it replaces holds a different unit, and sliding or
+         scaling that would suggest a spatial relationship the two do not have */
+      &:where([data-nav='zoomIn'], [data-nav='zoomOut']) {
+        animation: et-calendar-weeks-in-zoom 160ms ease;
       }
     }
 
@@ -180,6 +241,22 @@
         }
       }
     }
+
+    /* A month or a year cell. Every state above it applies unchanged — that is the point of the coarse
+       cells carrying the same flags — so this only resizes: the cell fills its column, and its label is
+       a word rather than a digit or two, which the day grid's circle cannot hold. After the base rules,
+       because it overrides them at the same weight. */
+    .et-calendar-cell--coarse {
+      block-size: 100%;
+
+      .et-calendar-cell-content {
+        inline-size: calc(100% - 6px);
+        /* one day cell tall, whatever the row is: a pill centred in the row, not an oval filling it */
+        block-size: calc(var(--et-calendar-cell-size) - 6px);
+        padding-inline: 4px;
+        border-radius: 999px;
+      }
+    }
   }
 
   @keyframes et-calendar-weeks-in-forward {
@@ -193,6 +270,12 @@
     from {
       opacity: 0;
       transform: translateX(-14px);
+    }
+  }
+
+  @keyframes et-calendar-weeks-in-zoom {
+    from {
+      opacity: 0;
     }
   }
 

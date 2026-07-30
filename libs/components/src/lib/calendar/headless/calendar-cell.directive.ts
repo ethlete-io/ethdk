@@ -1,18 +1,20 @@
-import { Directive, ElementRef, afterNextRender, effect, inject, input } from '@angular/core';
+import { Directive, ElementRef, afterNextRender, computed, effect, inject, input } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { CALENDAR_ERROR_CODES } from '../calendar-errors';
 import { CalendarGridDirective } from './calendar-grid.directive';
-import { CalendarCell, CalendarDirective } from './calendar.directive';
+import { CalendarCellBase, CalendarDirective } from './calendar.directive';
 
 /**
- * One day cell (place it on the cell's `<button>`): ARIA/data attributes,
- * selection on activation, hover preview, and the roving-tabindex focus pull.
+ * One cell of whichever grid is showing — a day, a month or a year (place it on
+ * the cell's `<button>`): ARIA/data attributes, activation, hover preview, and
+ * the roving-tabindex focus pull.
  */
 @Directive({
   selector: '[etCalendarCell]',
   exportAs: 'etCalendarCell',
   host: {
     role: 'gridcell',
+    '[class]': 'dynamicClasses()',
     '[attr.tabindex]': 'cell().focused ? 0 : -1',
     '[attr.aria-label]': 'cell().ariaLabel',
     '[attr.aria-selected]': 'cell().selected',
@@ -27,7 +29,7 @@ import { CalendarCell, CalendarDirective } from './calendar.directive';
     '[attr.data-preview]': "cell().inHoverPreview ? '' : null",
     '[attr.data-band]': 'cell().band',
     '[attr.data-outside-month]': "cell().outsideMonth ? '' : null",
-    '(click)': 'calendar?.selectDate(cell().date)',
+    '(click)': 'calendar?.activateCell(cell().date)',
     '(pointerenter)': 'handlePointerEnter()',
   },
 })
@@ -36,7 +38,17 @@ export class CalendarCellDirective {
   private grid = inject(CalendarGridDirective, { optional: true });
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  public cell = input.required<CalendarCell>();
+  public cell = input.required<CalendarCellBase>();
+
+  /**
+   * `dateClass`'s classes, as a map rather than a list so the element's static classes survive the
+   * binding — and so a class the hook stops returning is taken back off.
+   */
+  protected dynamicClasses = computed(() => {
+    const classes = this.cell().classes;
+
+    return classes === null ? {} : Object.fromEntries(classes.map((className) => [className, true]));
+  });
 
   constructor() {
     if (ngDevMode) {
@@ -59,7 +71,8 @@ export class CalendarCellDirective {
   }
 
   protected handlePointerEnter() {
-    if (this.calendar?.mode() === 'range' && !this.cell().disabled) {
+    // only the day grid previews a range: a month or a year cell is a place to look, not an endpoint
+    if (this.calendar?.mode() === 'range' && this.calendar.view() === 'month' && !this.cell().disabled) {
       this.calendar.hoveredDate.set(this.cell().date);
     }
   }
