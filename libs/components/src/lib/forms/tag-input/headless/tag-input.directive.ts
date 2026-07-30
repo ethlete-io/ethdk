@@ -31,6 +31,21 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   public required = input(false);
   public name = input('');
+
+  /**
+   * The bound field's `maxLength()` limit — for an array value that is the maximum number of tags.
+   * Signal forms binds it automatically because this input exists, so `<et-counter />` picks the
+   * limit up from the schema. Display only: the tag input does not refuse tags past it, so the
+   * validator is still the thing that reports the violation.
+   */
+  public maxLength = input<number | undefined>(undefined);
+
+  /**
+   * True while an async validator is in flight for the bound field — bound automatically by signal
+   * forms because this input exists. The field shell surfaces it as its busy state.
+   */
+  public pending = input(false);
+
   public placeholder = input('');
   /** Field placeholder shown while `mixed` is set. */
   public mixedLabel = input('Mixed');

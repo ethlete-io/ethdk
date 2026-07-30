@@ -2,6 +2,7 @@ import { afterNextRender, computed, Directive, effect, signal } from '@angular/c
 import { RuntimeError } from '@ethlete/core';
 import { FORM_FIELD_ERROR_CODES } from './form-field-errors';
 import {
+  CounterComponentBase,
   FORM_FIELD_CONTROL_TYPES,
   FORM_FIELD_TOKEN,
   FormFieldControl,
@@ -22,6 +23,9 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
 
   /** @internal */
   public registeredHint = signal<HintComponentBase | null>(null);
+
+  /** @internal */
+  public registeredCounter = signal<CounterComponentBase | null>(null);
 
   /** @internal */
   public registeredLabel = signal<LabelDirectiveBase | null>(null);
@@ -66,6 +70,15 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
   public parseErrorMessage = computed(() => this.registeredControl()?.parseErrorMessage?.() ?? null);
 
   public controlType = computed(() => this.registeredControl()?.controlType() ?? FORM_FIELD_CONTROL_TYPES.TEXT_INPUT);
+
+  /** The registered control's value — the counter measures this. */
+  public controlValue = computed<unknown>(() => this.registeredControl()?.value?.() ?? null);
+
+  /** The bound field's schema `maxLength()`, when signal forms bound one into the control. */
+  public controlMaxLength = computed(() => this.registeredControl()?.maxLength?.());
+
+  /** Whether an async validator is currently in flight for the bound field. */
+  public isPending = computed(() => this.registeredControl()?.pending?.() ?? false);
 
   public focused = computed(() => this.registeredControl()?.focused?.() ?? false);
 
@@ -181,6 +194,22 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
   public unregisterHint(hint: HintComponentBase) {
     if (this.registeredHint() === hint) {
       this.registeredHint.set(null);
+    }
+  }
+
+  /** @internal */
+  public registerCounter(counter: CounterComponentBase) {
+    if (this.registeredCounter() === counter) {
+      return;
+    }
+
+    this.registeredCounter.set(counter);
+  }
+
+  /** @internal */
+  public unregisterCounter(counter: CounterComponentBase) {
+    if (this.registeredCounter() === counter) {
+      this.registeredCounter.set(null);
     }
   }
 

@@ -1,0 +1,30 @@
+@layer components {
+  .et-counter {
+    display: block;
+    flex: none;
+    font-size: var(--et-form-field-hint-font-size);
+    color: var(--et-surface-color-muted-solid, currentColor);
+    /* digits keep a constant width so the count doesn't jitter as it grows */
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+
+    /* The count is the one part of the support row that must not move as digits change, so it never
+       animates with the hint/error swap and never wraps. */
+    &:where([data-over-limit]) {
+      color: var(--et-theme-color-primary-solid);
+      font-weight: var(--et-form-field-counter-over-limit-font-weight, 600);
+    }
+  }
+
+  .et-counter-announcement {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+}

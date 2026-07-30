@@ -22,6 +22,8 @@ import { TagInputDirective, TagInputFieldDirective } from './headless';
         'errors',
         'required',
         'name',
+        'maxLength',
+        'pending',
         'placeholder',
         'mixedLabel',
         'separators',

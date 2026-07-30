@@ -612,9 +612,35 @@
       block-size: 0;
     }
 
+    /* Subtle by design: a pending async validator is background work, not a blocking state. */
+    .et-form-field-busy-spinner {
+      flex: none;
+      color: var(--et-surface-color-muted-solid, currentColor);
+    }
+
+    /* Hint/error at the inline-start, counter pinned at the inline-end — the two live in separate
+       boxes because only the former swaps. */
+    .et-form-field-support-row {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--et-form-field-support-gap, 0.8rem);
+    }
+
     .et-form-field-support-stack {
       position: relative;
       display: grid;
+      flex: 1 1 auto;
+      min-inline-size: 0;
+    }
+
+    .et-form-field-support-counter {
+      flex: none;
+      margin-inline-start: auto;
+      padding-inline-end: calc(var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width));
+
+      &[hidden] {
+        display: none;
+      }
     }
 
     .et-form-field-support-content {

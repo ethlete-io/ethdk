@@ -20,49 +20,70 @@
 
     <div class="et-form-field-affix et-form-field-suffix">
       <ng-content select="[etInputSuffix]" />
+
+      <!-- After the consumer's own suffix, never instead of it — a pending async validator must not
+       displace a clear button or a reveal toggle. -->
+      @if (isBusy()) {
+        <et-spinner class="et-form-field-busy-spinner" diameter="16" strokeWidth="2" />
+      }
     </div>
   </div>
 </div>
 
 @if (shouldRenderSupport()) {
   <div [style.block-size.px]="supportHeight()" class="et-form-field-support" etColorInteractiveExclude>
-    <div class="et-form-field-support-stack">
-      @if (shouldRenderError()) {
-        <div
-          #errorContent
-          #errorAnimatable="etAnimatable"
-          [id]="formFieldDir.errorId()"
-          [attr.aria-atomic]="errorActive() ? 'true' : null"
-          [attr.aria-hidden]="!errorActive() ? 'true' : null"
-          [attr.aria-live]="errorActive() ? 'polite' : null"
-          [attr.data-active]="errorActive() || null"
-          [attr.data-direction]="errorDirection()"
-          [attr.data-state]="errorState()"
-          [etProvideColor]="errorColorTheme"
-          class="et-form-field-support-content et-form-field-errors"
-          etAnimatable
-        >
-          @for (error of visibleErrors(); track $index) {
-            <et-form-error [error]="error" />
-          }
-        </div>
-      }
+    <div class="et-form-field-support-row">
+      <div class="et-form-field-support-stack">
+        @if (shouldRenderError()) {
+          <div
+            #errorContent
+            #errorAnimatable="etAnimatable"
+            [id]="formFieldDir.errorId()"
+            [attr.aria-atomic]="errorActive() ? 'true' : null"
+            [attr.aria-hidden]="!errorActive() ? 'true' : null"
+            [attr.aria-live]="errorActive() ? 'polite' : null"
+            [attr.data-active]="errorActive() || null"
+            [attr.data-direction]="errorDirection()"
+            [attr.data-state]="errorState()"
+            [etProvideColor]="errorColorTheme"
+            class="et-form-field-support-content et-form-field-errors"
+            etAnimatable
+          >
+            @for (error of visibleErrors(); track $index) {
+              <et-form-error [error]="error" />
+            }
+          </div>
+        }
 
-      @if (shouldRenderHint()) {
-        <div
-          #hintContent
-          #hintAnimatable="etAnimatable"
-          [id]="formFieldDir.hintId()"
-          [attr.aria-hidden]="!hintActive() ? 'true' : null"
-          [attr.data-active]="hintActive() || null"
-          [attr.data-direction]="hintDirection()"
-          [attr.data-state]="hintState()"
-          class="et-form-field-support-content et-form-field-hint"
-          etAnimatable
-        >
-          <ng-content select="et-hint" />
-        </div>
-      }
+        @if (shouldRenderHint()) {
+          <div
+            #hintContent
+            #hintAnimatable="etAnimatable"
+            [id]="formFieldDir.hintId()"
+            [attr.aria-hidden]="!hintActive() ? 'true' : null"
+            [attr.data-active]="hintActive() || null"
+            [attr.data-direction]="hintDirection()"
+            [attr.data-state]="hintState()"
+            class="et-form-field-support-content et-form-field-hint"
+            etAnimatable
+          >
+            <ng-content select="et-hint" />
+          </div>
+        }
+      </div>
+
+      <!-- Persistent, and outside the swapping stack: a reader who just crossed the limit needs the
+       error and the count that caused it at the same time. Carries the error theme so the counter's
+       own over-limit styling can reach the semantic error color even before the field shows an
+       error (an untouched field is not yet in its error state). -->
+      <div
+        #counterContent
+        [etProvideColor]="errorColorTheme"
+        [hidden]="!formFieldDir.registeredCounter()"
+        class="et-form-field-support-counter"
+      >
+        <ng-content select="et-counter" />
+      </div>
     </div>
   </div>
 }

@@ -27,6 +27,8 @@ import { PasswordInputDirective } from './headless';
         'errors',
         'required',
         'name',
+        'maxLength',
+        'pending',
         'aria-label',
         'aria-labelledby',
       ],

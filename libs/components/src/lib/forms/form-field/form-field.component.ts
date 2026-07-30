@@ -1,4 +1,5 @@
 import {
+  booleanAttribute,
   Component,
   computed,
   effect,
@@ -26,6 +27,7 @@ import {
   SURFACE_PROVIDER,
 } from '@ethlete/core';
 import { EMPTY, filter, switchMap, tap } from 'rxjs';
+import { SpinnerComponent } from '../../loader';
 import { FormErrorComponent } from './form-error.component';
 import {
   FORM_FIELD_APPEARANCES,
@@ -52,7 +54,13 @@ import {
   templateUrl: './form-field.component.html',
   styleUrl: './form-field.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [AnimatableDirective, ColorInteractiveExcludeDirective, FormErrorComponent, ProvideColorDirective],
+  imports: [
+    AnimatableDirective,
+    ColorInteractiveExcludeDirective,
+    FormErrorComponent,
+    ProvideColorDirective,
+    SpinnerComponent,
+  ],
   hostDirectives: [
     FormFieldDirective,
     { directive: ProvideColorDirective, inputs: ['etProvideColor:color'] },
@@ -67,6 +75,8 @@ import {
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-control-type]': 'formFieldDir.controlType()',
     '[attr.data-error]': 'displaysError() || null',
+    '[attr.aria-busy]': 'isBusy() ? "true" : null',
+    '[attr.data-busy]': 'isBusy() || null',
     '[attr.data-expanded]': 'formFieldDir.usesTextFieldShell() && formFieldDir.expanded() ? "" : null',
     // stands in for `:focus-visible` when the focused element is a non-editable trigger (a
     // tabindex div opened by pointer never matches `:focus-visible`), keeping the focused frame
@@ -99,15 +109,26 @@ export class FormFieldComponent {
   public labelMode = input<FormFieldLabelMode>(FORM_FIELD_LABEL_MODES.STATIC);
   public size = input<FormFieldSize>(FORM_FIELD_SIZES.MD);
 
+  /**
+   * Forces the busy state on. The field already shows it while an async validator is in flight for
+   * the bound field; use this for work the form doesn't know about (saving, a lookup of your own).
+   */
+  public busy = input(false, { transform: booleanAttribute });
+
   protected errorContent = viewChild<ElementRef<HTMLElement>>('errorContent');
   protected hintContent = viewChild<ElementRef<HTMLElement>>('hintContent');
+  public counterContent = viewChild<ElementRef<HTMLElement>>('counterContent');
   private controlFrame = viewChild<ElementRef<HTMLElement>>('controlFrame');
   public prefixEl = viewChild<ElementRef<HTMLElement>>('prefixEl');
   protected errorAnimatable = viewChild<AnimatableDirective>('errorAnimatable');
   protected hintAnimatable = viewChild<AnimatableDirective>('hintAnimatable');
 
+  /** Whether the field is showing its busy affordance — a pending async validator, or `[busy]`. */
+  public isBusy = computed(() => this.busy() || this.formFieldDir.isPending());
+
   private errorDimensions = signalElementDimensions(this.errorContent);
   private hintDimensions = signalElementDimensions(this.hintContent);
+  private counterDimensions = signalElementDimensions(this.counterContent);
   private prefixDimensions = signalElementDimensions(this.prefixEl);
 
   private supportPresentation = signal<SupportPresentationState>(INITIAL_SUPPORT_PRESENTATION_STATE);
@@ -184,7 +205,10 @@ export class FormFieldComponent {
   protected shouldRenderSupport = computed(() => {
     const presentation = this.supportPresentation();
 
+    // A counter alone is reason enough to open the support region — it is persistent, so unlike the
+    // hint and error it isn't part of the swapping state machine.
     return (
+      !!this.formFieldDir.registeredCounter() ||
       presentation.renderedState !== SUPPORT_CONTENT_STATE.NONE ||
       presentation.leavingState !== SUPPORT_CONTENT_STATE.NONE
     );
@@ -226,14 +250,22 @@ export class FormFieldComponent {
   protected hintDirection = computed(() => this.supportPresentation().hintDirection);
 
   protected supportHeight = computed(() => {
-    switch (this.semanticSupportState()) {
-      case SUPPORT_CONTENT_STATE.ERROR:
-        return this.errorDimensions().offset?.height ?? 0;
-      case SUPPORT_CONTENT_STATE.HINT:
-        return this.hintDimensions().offset?.height ?? 0;
-      default:
-        return 0;
-    }
+    const stackHeight = (() => {
+      switch (this.semanticSupportState()) {
+        case SUPPORT_CONTENT_STATE.ERROR:
+          return this.errorDimensions().offset?.height ?? 0;
+        case SUPPORT_CONTENT_STATE.HINT:
+          return this.hintDimensions().offset?.height ?? 0;
+        default:
+          return 0;
+      }
+    })();
+
+    // The support region animates its own height, so a counter with no hint or error still has to
+    // contribute one — otherwise the row it sits in would be clipped to zero.
+    const counterHeight = this.formFieldDir.registeredCounter() ? (this.counterDimensions().offset?.height ?? 0) : 0;
+
+    return Math.max(stackHeight, counterHeight);
   });
 
   constructor() {

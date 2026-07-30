@@ -1,3 +1,4 @@
+export * from './counter.component';
 export * from './form-error.component';
 export * from './form-field.component';
 export * from './form-field.imports';

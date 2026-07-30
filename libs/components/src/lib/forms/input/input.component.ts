@@ -25,6 +25,8 @@ import { InputDirective } from './headless';
         'errors',
         'required',
         'name',
+        'maxLength',
+        'pending',
         'aria-label',
         'aria-labelledby',
       ],

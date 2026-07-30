@@ -46,6 +46,8 @@ const STEPPER_REPEAT_INTERVAL = 75;
         'errors',
         'required',
         'name',
+        'maxLength',
+        'pending',
         'aria-label',
         'aria-labelledby',
       ],

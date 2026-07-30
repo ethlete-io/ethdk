@@ -63,10 +63,31 @@ export type FormFieldControl = {
    * `<et-label>` for labelling leave this unset.
    */
   hasCustomAccessibleName?: Signal<boolean>;
+  /**
+   * The control's current value. `et-counter` derives the length it displays from this — a string's
+   * `length`, an array's/set's element count, or whatever the counter's `lengthOf` says.
+   */
+  value?: Signal<unknown>;
+  /**
+   * The bound field's `maxLength()` limit. Signal forms binds this automatically into any control
+   * that declares a `maxLength` input, so `et-counter` gets its limit from the schema without the
+   * consumer repeating it. Note the controls deliberately do **not** forward it to the native
+   * `maxlength` attribute — hard-truncating input would stop the validator from ever reporting the
+   * over-limit error the counter is there to make visible.
+   */
+  maxLength?: Signal<number | undefined>;
+  /**
+   * True while an async validator is in flight for the bound field — bound automatically by signal
+   * forms into any control declaring a `pending` input. Surfaces as the field's busy state.
+   */
+  pending?: Signal<boolean>;
   activate(): void;
 };
 
 export type HintComponentBase = object;
+
+/** A projected `et-counter`. The field only needs to know one is present to make room for it. */
+export type CounterComponentBase = object;
 
 export const FORM_FIELD_TOKEN = new InjectionToken<FormFieldDirectiveBase>('FORM_FIELD_TOKEN');
 
@@ -75,10 +96,17 @@ export type FormFieldDirectiveBase = {
   unregisterControl(control: FormFieldControl): void;
   registerHint(hint: HintComponentBase): void;
   unregisterHint(hint: HintComponentBase): void;
+  registerCounter(counter: CounterComponentBase): void;
+  unregisterCounter(counter: CounterComponentBase): void;
   unregisterLabel(label: LabelDirectiveBase): void;
   registeredControl: WritableSignal<FormFieldControl | null>;
   registeredHint: WritableSignal<HintComponentBase | null>;
+  registeredCounter: WritableSignal<CounterComponentBase | null>;
   registeredLabel: WritableSignal<LabelDirectiveBase | null>;
+  /** The registered control's value, for the counter to measure. */
+  controlValue: Signal<unknown>;
+  /** The bound field's schema `maxLength()`, when it has one. */
+  controlMaxLength: Signal<number | undefined>;
   /** The field's visible control frame — the box overlay-based controls anchor their panels to. */
   controlFrameElement: WritableSignal<HTMLElement | null>;
   activate(): void;

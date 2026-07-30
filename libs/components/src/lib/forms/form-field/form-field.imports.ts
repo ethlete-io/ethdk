@@ -1,3 +1,4 @@
+import { CounterComponent } from './counter.component';
 import { FormFieldComponent } from './form-field.component';
 import { FormFieldDirective, LabelDirective } from './headless';
 import { HintComponent } from './hint.component';
@@ -8,6 +9,7 @@ export const FORM_FIELD_IMPORTS = [
   FormFieldDirective,
   LabelDirective,
   HintComponent,
+  CounterComponent,
   InputPrefixDirective,
   InputSuffixDirective,
 ] as const;

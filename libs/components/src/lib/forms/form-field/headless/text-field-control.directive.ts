@@ -41,6 +41,22 @@ export abstract class TextFieldControlDirective implements FormFieldControl {
   public name = input('');
 
   /**
+   * The bound field's `maxLength()` limit, bound automatically by signal forms because this input
+   * exists — so `<et-counter />` needs no `[max]` for a schema-validated field.
+   *
+   * Deliberately **not** forwarded to the native `maxlength` attribute: hard-truncating typed input
+   * would stop the validator from ever reporting the over-limit error the counter exists to surface.
+   * Set `maxlength` yourself on the control if you want the browser to clamp instead.
+   */
+  public maxLength = input<number | undefined>(undefined);
+
+  /**
+   * True while an async validator is in flight for the bound field — bound automatically by signal
+   * forms because this input exists. The field shell surfaces it as its busy state.
+   */
+  public pending = input(false);
+
+  /**
    * Author-supplied accessible name, forwarded onto the native control. Use this (or an
    * `<et-label>`) when the field has no visible label — a placeholder is not an accessible name.
    */
