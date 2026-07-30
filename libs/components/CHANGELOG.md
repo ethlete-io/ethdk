@@ -1,5 +1,106 @@
 # Changelog
 
+## 1.0.0-next.32
+
+### Major Changes
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`e052061`](https://github.com/ethlete-io/ethdk/commit/e0520614647b784f19ad55a4d7f6df47acec154e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Localization: one mechanism for every string the library renders. `createLabels` (core) backs a
+  `provide<Domain>Labels` / `inject<Domain>Labels` pair per domain — 22 of them, all locale-reactive and
+  signal-shaped. See the [localization guide](https://ethlete-sdk-docs-next.web.app/components/localization).
+
+  - New tokens make the rich text editor, stream, grid, loader, chip, calendar, time picker, dropzone,
+    select, cascader, phone input, slider, date/time and notification strings overridable.
+  - **Breaking:** `inject*Labels()` now returns a signal; the string fields left `StreamConsentConfig`,
+    `StreamPlayerErrorConfig`, `PipSlotPlaceholderConfig`, `GridConfig` and `NotificationManagerConfig`
+    (with their `transformer` hooks); per-instance label inputs default to `null` instead of English.
+  - Fixes the PiP close/back buttons, which set an attribute literally named `attr.aria-label`.
+
+### Minor Changes
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`57494e0`](https://github.com/ethlete-io/ethdk/commit/57494e0834708ef1d397829074e20e35bc5d8acd) Thanks [@github-actions](https://github.com/apps/github-actions)! - Boolean and numeric inputs now coerce attribute values via `booleanAttribute` / `numberAttribute`,
+  so static values need no binding — `<et-tab disabled>`, `<et-textarea rows="6">`. Inputs where
+  `null`/`undefined` means "unset" (the slider's `min`/`max`, the overlay's `hasBackdrop`, …) are
+  deliberately left untransformed.
+
+- [`2a5a48d`](https://github.com/ethlete-io/ethdk/commit/2a5a48dba8899d4b17b4139cf829ccb5d2daab4e) Thanks [@TomTomB](https://github.com/TomTomB)! - Card presets: `et-checkbox-option` now takes `variant="card"` too. Cards drop the tinted fill and
+  follow the form-field frame for hover/press/focus, a selected card's border tracks the theme's
+  interaction shades, `et-choice-field` cards are clickable across the whole panel including its
+  border, and disabled / readonly cards no longer offer a pointer cursor. `et-form-field`'s hover
+  treatment now follows the frame and label instead of the whole field, so the hint/counter row no
+  longer triggers it.
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`bc8aca7`](https://github.com/ethlete-io/ethdk/commit/bc8aca76900a47a3faed4ad2be2ce2ab7b70b27d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Filter overlay: new `provideFilterOverlay` / `injectFilterOverlay` — a filter panel that drafts the page's query
+  form, reports how many results the draft would return on its submit button, and applies on submit or discards on
+  dismiss. Replaces cdk's `FilterOverlayService`, rebuilt on signal forms and the current query client.
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`4fb18af`](https://github.com/ethlete-io/ethdk/commit/4fb18afb4159a1a301c66c98029e7af1d46a02ad) Thanks [@github-actions](https://github.com/apps/github-actions)! - Floating action: new `etFloatingAction` family — a trigger that pins itself to the viewport corner once its place
+  in the page scrolls away, and stands down once the region it acts on is gone. Replaces cdk's `rich-filter`, which
+  rendered no filter UI; the three states are published as one `data-state`.
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`c1db7e3`](https://github.com/ethlete-io/ethdk/commit/c1db7e3e8cf15d9dc192e51de699f0de8ee6fcbb) Thanks [@github-actions](https://github.com/apps/github-actions)! - Masonry: new `etMasonry` / `etMasonryItem` directives — column-balancing layout for variable-height cards.
+  Items are measured continuously, so late-loading content reflows, and they keep their column when one grows.
+  Gate infinite scroll on `isSettled()`.
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`3a6d9ad`](https://github.com/ethlete-io/ethdk/commit/3a6d9ad0130b6141add15c2660c976b61455e5a4) Thanks [@github-actions](https://github.com/apps/github-actions)! - Picture: new `et-picture` — responsive `<picture>` with art direction, format negotiation, `priority` hints,
+  `aspectRatio` for reserving space, and `etPicturePlaceholder` / `etPictureError` slots. `providePictureConfig`
+  prefixes relative srcsets per candidate.
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`38f6af1`](https://github.com/ethlete-io/ethdk/commit/38f6af115c7a5107b268c44597dc5b871503d9d9) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query error: new `<et-query-error>` and `[etQueryError]` — status title, message or violation list, and a retry
+  button when the retry policy says it's worth offering. Themed with the app's `type: 'error'` theme, localized via
+  `injectLocale()`, with `etQueryErrorTitle` / `etQueryErrorActions` slots. `legacyQueryErrorSource` bridges a V2
+  query.
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`d93dce3`](https://github.com/ethlete-io/ethdk/commit/d93dce3520e882a4cd4c6217d8a4cceedf74167c) Thanks [@github-actions](https://github.com/apps/github-actions)! - Form field: add `<et-counter />` — an `x / N` character counter in the support region, at the inline-end of the hint/error and persistent alongside them. It takes its limit from the bound field's schema `maxLength()`, or an explicit `[max]`, and counts array values (so it counts tags in an `et-tag-input`) via `lengthOf`.
+
+  The field also shows a subtle busy spinner and `aria-busy` while an async validator is pending, plus `[busy]` on `et-form-field` to force it.
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`38bb816`](https://github.com/ethlete-io/ethdk/commit/38bb8165006c4ebfba6a34623468ded140002188) Thanks [@github-actions](https://github.com/apps/github-actions)! - Card presets and a tabs variant: `et-radio` and `et-choice-field` take `variant="card"` (full-width clickable
+  panel, label leading, selection on the border and label), and `et-segmented-button-group` takes `variant="tabs"` (underlined
+  selection instead of a filled pill). Closes the last cdk parity gaps.
+
+  `@ethlete/core` adds `injectRouterNavigationState<T>()` for reading the state a navigation was given.
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`4624559`](https://github.com/ethlete-io/ethdk/commit/4624559c81ed9b6efffc539b8f1dd0db0556420c) Thanks [@github-actions](https://github.com/apps/github-actions)! - RTL and reduced-motion consistency pass:
+
+  - Side sheets and the notification stack dock, animate and drag toward their logical inline edge under `dir="rtl"` — `dragToDismiss.direction` gains `'to-inline-start'` / `'to-inline-end'`.
+  - `createFlipAnimation` and the PiP animations now skip to their end state under `prefers-reduced-motion`; `ignoreReducedMotion` opts out, and `matchesReducedMotion()` is exported for helpers with no injection context.
+  - The full-screen overlay animation throws `ET1209` when it has no origin element, instead of a bare `Error`.
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`fde4349`](https://github.com/ethlete-io/ethdk/commit/fde4349c2557d6f35d43e7eab09536a6b30524b4) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overhaul the sheet drag-to-dismiss gesture. It runs on pointer events now (one path
+  for touch, pen and mouse) and waits for 8px of travel along the dismiss axis before
+  following the pointer, so a swipe starting on scrolled overlay content scrolls it
+  instead of hijacking the sheet. Both the snap-back and the exit animate at the speed
+  the pointer had when it let go, clamped to 100–350ms and skipped under
+  `prefers-reduced-motion`. New `dragToDismiss.snapPoints` parks the sheet at fractions
+  of its own size, advancing one point per flick and dismissing past the last one.
+
+### Patch Changes
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`894c821`](https://github.com/ethlete-io/ethdk/commit/894c821c80df962f4c3cce986fb68f88ae26955d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Breadcrumb: leaner chrome — a neutral `et-ellipsis` overflow button that stays neutral while open, menu-like
+  rows in its popover, and no flash of the full trail before it collapses on load. Adds
+  `--et-breadcrumb-radius` and the `[data-toggletip-hug]` hook for content-width toggletips.
+
+  Overlay: the anchored arrow now meets the pane's border line instead of leaving an unbordered wedge at its
+  base — menus, tooltips and toggletips included.
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`b06ed44`](https://github.com/ethlete-io/ethdk/commit/b06ed44db47a52d2a07a4d9a6b3bd3b04011decb) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay: the anchored arrow no longer rides into a pane's rounded corner on aligned placements or when a pane
+  shifts near a viewport edge. `arrowPadding` now measures the arrow's actual base, so it means "how close the
+  arrow may get to the corners" — tooltip and toggletip default to `20` (was `8`), a bare anchored strategy to
+  `12` (was `4`).
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`bd369da`](https://github.com/ethlete-io/ethdk/commit/bd369da0b898096411d65c352220a26b48ec7a67) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query devtools: arrays and objects in the value explorer now copy too — a container copies its
+  subtree as JSON, a leaf copies the bare value. The toggle and close buttons print the platform's
+  open/close shortcut, which now also fires on macOS. The inspect filter reads as a labelled banner
+  instead of a bare pill.
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`b0a0869`](https://github.com/ethlete-io/ethdk/commit/b0a08696a0bcad9f120f8c58599b33d82d0fc61d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Touch quality fixes: the overlay body and scrollable containers keep overscroll to
+  themselves (`overscroll-behavior: contain`), so reaching an end no longer scrolls the
+  page behind them or triggers pull-to-refresh. Buttons, chips, menu items, select
+  options, calendar cells and carousel dots drop the grey tap-highlight flash that
+  duplicated their own `:active` state. Tooltips no longer open from touch input —
+  mobile browsers synthesize a hover around a tap, which popped a tooltip nobody asked
+  for — and any open tooltip now closes on a press elsewhere.
+
 ## 1.0.0-next.31
 
 ### Minor Changes

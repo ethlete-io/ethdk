@@ -1,5 +1,17 @@
 # @ethlete/query
 
+## 6.0.0-next.22
+
+### Minor Changes
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`dcd8585`](https://github.com/ethlete-io/ethdk/commit/dcd8585423c4d0a66d968016a6e88b03c87b168a) Thanks [@github-actions](https://github.com/apps/github-actions)! - Error normalization: reduce an HTML error page (a proxy's `502`, a maintenance page) to its heading and message text instead of using the raw markup as the message. Exposes `isHtmlErrorPayload`, `htmlErrorPayload` and `extractHtmlErrorMessage`.
+
+### Patch Changes
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`bc8aca7`](https://github.com/ethlete-io/ethdk/commit/bc8aca76900a47a3faed4ad2be2ce2ab7b70b27d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Filter overlay: new `provideFilterOverlay` / `injectFilterOverlay` — a filter panel that drafts the page's query
+  form, reports how many results the draft would return on its submit button, and applies on submit or discards on
+  dismiss. Replaces cdk's `FilterOverlayService`, rebuilt on signal forms and the current query client.
+
 ## 6.0.0-next.21
 
 ### Patch Changes
