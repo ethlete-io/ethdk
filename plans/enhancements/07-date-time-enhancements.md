@@ -3,10 +3,11 @@
 Additions to the date-time family. §4–5 (view drilling + partial precision)
 were added 2026-07-30 after reviewing Material's datepicker
 (https://material.angular.dev/components/datepicker/overview) — §6 records the
-smaller Material-inspired items. Explicitly NOT in scope (backlog, findings
-§5): multi-month calendar view, `'multiple'` discrete-dates mode, week
-numbers, timezone display. (Event markers moved from backlog into §6's
+smaller Material-inspired items. (Event markers moved from backlog into §6's
 `dateClass` hook — a class hook covers most marker use cases cheaply.)
+
+**2026-07-30, later: the whole backlog was pulled into scope and built** — see §8.
+Nothing in the original "NOT in scope" list is outstanding.
 
 ## 1. Date-range presets / quick-picks
 
@@ -124,10 +125,9 @@ it first-class since we own the input masks too.
   `applyAndClose` and §2's Today button — design the footer slot once).
 - **Alt+ArrowDown** opens the picker from the input (Escape already closes
   the overlay — verify).
-- Recorded as backlog, not planned: comparison ranges (`comparisonStart/End`
+- Was recorded as backlog, not planned: comparison ranges (`comparisonStart/End`
   banding), pluggable range selection strategy (e.g. snap-to-week), custom
-  calendar header component (headless tier may already cover — verify before
-  building anything).
+  calendar header component. All three are built — see §8.
 
 ## 7. Documented rough edge to fix if cheap (investigate, don't force)
 
@@ -144,3 +144,45 @@ drilling (header zoom-out, keyboard per view), month picker + month-range
 picker, `dateClass` markers, confirmation actions. Docs:
 `date-time-inputs.md` + `calendar.md` + `time-picker.md`. Changeset:
 `@ethlete/components` (minor).
+
+## 8. The former backlog (built 2026-07-30)
+
+Everything the plan had deferred, in the order it shipped. Each is its own commit
+with a changeset and docs.
+
+- **Header and transition polish** (`120ff4a5e`) — the header label transitions with
+  the grid it names, the caret is pinned so a longer label cannot move it, it has a
+  press state, grids crossfade through one shared grid area, and a picker panel
+  reserves the day grid's six-row worst case so neither paging nor drilling resizes
+  it. The month/year grids use the day grid's row height, centred in that box.
+- **Week numbers** (`cbd68e028`) — `weekNumbers` on `et-calendar` plus
+  `calendar.weekNumbers()` on the headless tier, localized (not always ISO), a
+  `rowheader` per row, `--et-calendar-week-number-size`, forwarded by the three date
+  inputs. New `CALENDAR_LABELS.week`.
+- **`mode="multiple"`** (`8692c2c8d`) — a `Date[]` model of its own, ascending, where
+  a second pick unpicks; `aria-multiselectable`; toggles whole months at month
+  precision. No date-input equivalent (one wire string).
+- **Comparison ranges** (`06a6ba288`) — `comparisonStart`/`comparisonEnd` band a
+  compared period as a bar _under_ the cells, so an overlap with the selection reads
+  as both. New `'single'` band position. Also fixed the week-number column declaring
+  a zero-width track in every calendar without one, which collapsed the first cell of
+  each row.
+- **Range-selection strategies** (`c41beec18`) — `rangeSelectionStrategy`, with
+  `createWeekRangeStrategy` and `createFixedLengthRangeStrategy` built in and the
+  default rule expressed as one. `CalendarRange` moved to
+  `headless/calendar-range-strategy.ts` (same public path).
+- **Replaceable header** (`739e93a9b`) — `ng-template etCalendarHeader` renders instead
+  of the component's own header, receiving the headless directive, which `et-calendar`
+  also exposes as `headless`. Also stopped the NG0956 dev warning the keyed one-item
+  `@for` caused on every navigation (now alternating `@if` branches via
+  `transitionParity`).
+- **Time zones** (`a08e29db4`, docs only) — the contract written down: every `Date` is
+  local wall-clock, `valueFormat="yyyy-MM-dd"` is the fix for calendar dates, and
+  rendering a _foreign_ zone is out of scope with the reason (zoned arithmetic through
+  calendar + time picker + all four inputs, a new dependency, different value
+  semantics). **Open decision** if that is ever wanted.
+- **Multi-month view** (`8ff506229`) — `monthsShown` renders consecutive months side by
+  side with one keyboard scope, one selection and a band through the seam; steps by a
+  single month; spilled-in days left to the month that owns them; coarse grids stay
+  single, centred in the reserved width. Not forwarded by the date inputs (their picker
+  has to fit a phone).
