@@ -1,5 +1,44 @@
 # @ethlete/core
 
+## 5.0.0-next.36
+
+### Minor Changes
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`e052061`](https://github.com/ethlete-io/ethdk/commit/e0520614647b784f19ad55a4d7f6df47acec154e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Localization: one mechanism for every string the library renders. `createLabels` (core) backs a
+  `provide<Domain>Labels` / `inject<Domain>Labels` pair per domain — 22 of them, all locale-reactive and
+  signal-shaped. See the [localization guide](https://ethlete-sdk-docs-next.web.app/components/localization).
+
+  - New tokens make the rich text editor, stream, grid, loader, chip, calendar, time picker, dropzone,
+    select, cascader, phone input, slider, date/time and notification strings overridable.
+  - **Breaking:** `inject*Labels()` now returns a signal; the string fields left `StreamConsentConfig`,
+    `StreamPlayerErrorConfig`, `PipSlotPlaceholderConfig`, `GridConfig` and `NotificationManagerConfig`
+    (with their `transformer` hooks); per-instance label inputs default to `null` instead of English.
+  - Fixes the PiP close/back buttons, which set an attribute literally named `attr.aria-label`.
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`38bb816`](https://github.com/ethlete-io/ethdk/commit/38bb8165006c4ebfba6a34623468ded140002188) Thanks [@github-actions](https://github.com/apps/github-actions)! - Card presets and a tabs variant: `et-radio` and `et-choice-field` take `variant="card"` (full-width clickable
+  panel, label leading, selection on the border and label), and `et-segmented-button-group` takes `variant="tabs"` (underlined
+  selection instead of a filled pill). Closes the last cdk parity gaps.
+
+  `@ethlete/core` adds `injectRouterNavigationState<T>()` for reading the state a navigation was given.
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`4624559`](https://github.com/ethlete-io/ethdk/commit/4624559c81ed9b6efffc539b8f1dd0db0556420c) Thanks [@github-actions](https://github.com/apps/github-actions)! - RTL and reduced-motion consistency pass:
+
+  - Side sheets and the notification stack dock, animate and drag toward their logical inline edge under `dir="rtl"` — `dragToDismiss.direction` gains `'to-inline-start'` / `'to-inline-end'`.
+  - `createFlipAnimation` and the PiP animations now skip to their end state under `prefers-reduced-motion`; `ignoreReducedMotion` opts out, and `matchesReducedMotion()` is exported for helpers with no injection context.
+  - The full-screen overlay animation throws `ET1209` when it has no origin element, instead of a bare `Error`.
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`f6061e1`](https://github.com/ethlete-io/ethdk/commit/f6061e162aacd3c847ad1a9c9c9ef13d2e494b7f) Thanks [@github-actions](https://github.com/apps/github-actions)! - `createSwipeTracker` now reports the release velocity — measured over the trailing
+  100ms of the gesture (`SWIPE_VELOCITY_WINDOW_MS`) — in `pixelPerSecondX/Y` instead
+  of the whole-gesture average. A slow drag ending in a flick reports the flick, and a
+  flick parked before release reports ~0.
+
+### Patch Changes
+
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`b06ed44`](https://github.com/ethlete-io/ethdk/commit/b06ed44db47a52d2a07a4d9a6b3bd3b04011decb) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay: the anchored arrow no longer rides into a pane's rounded corner on aligned placements or when a pane
+  shifts near a viewport edge. `arrowPadding` now measures the arrow's actual base, so it means "how close the
+  arrow may get to the corners" — tooltip and toggletip default to `20` (was `8`), a bare anchored strategy to
+  `12` (was `4`).
+
 ## 5.0.0-next.35
 
 ### Minor Changes
