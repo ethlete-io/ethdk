@@ -1,4 +1,5 @@
-import { Component, DestroyRef, ViewEncapsulation, inject } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Component, DestroyRef, ViewEncapsulation, effect, inject, input } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { take, tap, timer } from 'rxjs';
 import { BUTTON_IMPORTS } from '../../../button';
@@ -43,7 +44,23 @@ const TOTAL_TICKS = TOTAL_MS / TICK_MS;
 })
 export class NotificationStorybookComponent {
   private destroyRef = inject(DestroyRef);
+  private document = inject(DOCUMENT);
   protected manager = injectNotificationManager();
+
+  /**
+   * The stack is appended to the body, so it inherits its writing direction from the document root —
+   * not from this component. Toggling it here is the only way to see the `start`/`end` positions and
+   * the slide-in animation flip.
+   */
+  public direction = input<'' | 'rtl'>('');
+
+  constructor() {
+    const root = this.document.documentElement;
+    const initialDir = root.dir;
+
+    effect(() => (root.dir = this.direction() || initialDir));
+    this.destroyRef.onDestroy(() => (root.dir = initialDir));
+  }
 
   public openSuccess() {
     this.manager.open({

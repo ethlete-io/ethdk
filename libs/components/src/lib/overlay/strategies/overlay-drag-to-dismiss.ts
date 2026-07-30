@@ -9,7 +9,11 @@ import {
 import { Subject, fromEvent, merge, takeUntil, tap, timer } from 'rxjs';
 import { OverlayRef } from '../overlay-ref';
 import { isTouchEvent } from './overlay-origin';
-import { OverlayDragToDismissConfig } from './overlay-strategy.types';
+import {
+  OverlayDragToDismissConfig,
+  OverlayDragToDismissDirection,
+  OverlayDragToDismissPhysicalDirection,
+} from './overlay-strategy.types';
 
 export type DragToDismissContext = {
   element: HTMLElement;
@@ -22,9 +26,32 @@ export type DragToDismissRef = {
   unsubscribe: () => void;
 };
 
+/** The config with its direction resolved to a physical one, so the gesture math stays direction-agnostic. */
+type ResolvedDragToDismissConfig = Omit<OverlayDragToDismissConfig, 'direction'> & {
+  direction: OverlayDragToDismissPhysicalDirection;
+};
+
+/**
+ * Maps a logical direction onto the physical axis it points at for the element's writing direction.
+ * Physical directions are returned as-is — they mean what they say in every writing direction.
+ */
+const resolvePhysicalDirection = (
+  direction: OverlayDragToDismissDirection,
+  el: HTMLElement,
+): OverlayDragToDismissPhysicalDirection => {
+  if (direction !== 'to-inline-start' && direction !== 'to-inline-end') {
+    return direction;
+  }
+
+  const isRtl = getComputedStyle(el).direction === 'rtl';
+  const pointsToStart = direction === 'to-inline-start';
+
+  return pointsToStart === isRtl ? 'to-right' : 'to-left';
+};
+
 const defaultSwipeMoveStyleInterpolator = (
   event: SwipeUpdateEvent,
-  config: OverlayDragToDismissConfig,
+  config: ResolvedDragToDismissConfig,
 ): Record<string, string> => {
   const { direction } = config;
   const { movementX, movementY } = event;
@@ -50,7 +77,7 @@ const defaultSwipeMoveStyleInterpolator = (
 
 const defaultSwipeEndStyleInterpolator = (
   event: SwipeEndEvent,
-  config: OverlayDragToDismissConfig,
+  config: ResolvedDragToDismissConfig,
 ): {
   transform: string;
   transition: string;
@@ -109,7 +136,7 @@ const defaultSwipeEndStyleInterpolator = (
 
 const recursiveFindScrollableParent = (
   el: HTMLElement,
-  direction: OverlayDragToDismissConfig['direction'],
+  direction: OverlayDragToDismissPhysicalDirection,
 ): HTMLElement | null => {
   if (!el) return null;
 
@@ -130,7 +157,7 @@ const recursiveFindScrollableParent = (
 
 const shouldCancelDragForScrollableElement = (
   scrollableElement: HTMLElement,
-  direction: OverlayDragToDismissConfig['direction'],
+  direction: OverlayDragToDismissPhysicalDirection,
 ) => {
   if (direction === 'to-bottom') {
     return scrollableElement.scrollTop !== 0;
@@ -148,7 +175,11 @@ const shouldCancelDragForScrollableElement = (
  * Returns a cleanup function to disable the feature.
  */
 export const enableDragToDismiss = (context: DragToDismissContext): DragToDismissRef => {
-  const { element: el, overlayRef, config, renderer } = context;
+  const { element: el, overlayRef, renderer } = context;
+  const config: ResolvedDragToDismissConfig = {
+    ...context.config,
+    direction: resolvePhysicalDirection(context.config.direction, el),
+  };
   const document = el.ownerDocument;
   const stop$ = new Subject<void>();
 

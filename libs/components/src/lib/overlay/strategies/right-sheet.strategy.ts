@@ -12,7 +12,7 @@ export const [provideRightSheetStrategyDefaults, injectRightSheetStrategyDefault
       containerClass: 'et-overlay--right-sheet',
       positionStrategy: () => ({ kind: 'global', horizontal: 'end' }),
       dragToDismiss: {
-        direction: 'to-right',
+        direction: 'to-inline-end',
       },
     },
     {

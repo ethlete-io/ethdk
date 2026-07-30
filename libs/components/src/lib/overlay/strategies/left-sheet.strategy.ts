@@ -12,7 +12,7 @@ export const [provideLeftSheetStrategyDefaults, injectLeftSheetStrategyDefaults]
       containerClass: 'et-overlay--left-sheet',
       positionStrategy: () => ({ kind: 'global', horizontal: 'start' }),
       dragToDismiss: {
-        direction: 'to-left',
+        direction: 'to-inline-start',
       },
     },
     {

@@ -9,8 +9,18 @@ export default {
     moduleMetadata({ imports: [OverlayStorybookComponent] }),
     applicationConfig({ providers: [provideOverlay()] }),
   ],
+  argTypes: {
+    direction: { control: 'select', options: ['', 'rtl'] },
+  },
+  args: {
+    direction: '',
+  },
 } as Meta<OverlayStorybookComponent>;
 
 type Story = StoryObj<OverlayStorybookComponent>;
 
 export const Default: Story = {};
+
+export const RightToLeft: Story = {
+  args: { direction: 'rtl' },
+};

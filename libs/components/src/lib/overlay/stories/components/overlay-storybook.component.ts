@@ -1,4 +1,5 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Component, DestroyRef, ViewEncapsulation, effect, inject, input } from '@angular/core';
 import { Breakpoint } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../../../button';
 import { OverlayConfig } from '../../overlay-config';
@@ -137,7 +138,23 @@ export class OverlayPopoverExampleComponent {}
 })
 export class OverlayStorybookComponent {
   private overlayManager = injectOverlayManager();
+  private document = inject(DOCUMENT);
+
+  /**
+   * Overlays are portaled to the body, so they inherit their writing direction from the document
+   * root — not from this component. Toggling it here is the only way to see a side sheet dock,
+   * animate and drag toward the inline-start/end edge under `dir="rtl"`.
+   */
+  public direction = input<'' | 'rtl'>('');
   private readonly TRANSFORM_BREAKPOINT: Breakpoint = 'md';
+
+  constructor() {
+    const root = this.document.documentElement;
+    const initialDir = root.dir;
+
+    effect(() => (root.dir = this.direction() || initialDir));
+    inject(DestroyRef).onDestroy(() => (root.dir = initialDir));
+  }
 
   protected openDialog() {
     this.open({ strategies: dialogOverlayStrategy() });

@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation, input } from '@angular/core';
 import { provideNotificationManager } from '../../notification-manager';
 import { NotificationStorybookComponent } from './notification-storybook.component';
 
@@ -9,9 +9,11 @@ const statusColorMapping = {
   loading: 'brand',
 };
 
+/** Each wrapper only exists to provide a stack position; `direction` is forwarded so the RTL stories
+ * can flip the document root and show the `start`/`end` positions swapping edges. */
 @Component({
   selector: 'et-sb-notification-bottom-end',
-  template: `<et-sb-notification />`,
+  template: `<et-sb-notification [direction]="direction()" />`,
   encapsulation: ViewEncapsulation.None,
   imports: [NotificationStorybookComponent],
   providers: [
@@ -21,11 +23,13 @@ const statusColorMapping = {
     }),
   ],
 })
-export class NotificationBottomEndStorybookComponent {}
+export class NotificationBottomEndStorybookComponent {
+  public direction = input<'' | 'rtl'>('');
+}
 
 @Component({
   selector: 'et-sb-notification-bottom-center',
-  template: `<et-sb-notification />`,
+  template: `<et-sb-notification [direction]="direction()" />`,
   encapsulation: ViewEncapsulation.None,
   imports: [NotificationStorybookComponent],
   providers: [
@@ -35,11 +39,13 @@ export class NotificationBottomEndStorybookComponent {}
     }),
   ],
 })
-export class NotificationBottomCenterStorybookComponent {}
+export class NotificationBottomCenterStorybookComponent {
+  public direction = input<'' | 'rtl'>('');
+}
 
 @Component({
   selector: 'et-sb-notification-bottom-start',
-  template: `<et-sb-notification />`,
+  template: `<et-sb-notification [direction]="direction()" />`,
   encapsulation: ViewEncapsulation.None,
   imports: [NotificationStorybookComponent],
   providers: [
@@ -49,11 +55,13 @@ export class NotificationBottomCenterStorybookComponent {}
     }),
   ],
 })
-export class NotificationBottomStartStorybookComponent {}
+export class NotificationBottomStartStorybookComponent {
+  public direction = input<'' | 'rtl'>('');
+}
 
 @Component({
   selector: 'et-sb-notification-top-end',
-  template: `<et-sb-notification />`,
+  template: `<et-sb-notification [direction]="direction()" />`,
   encapsulation: ViewEncapsulation.None,
   imports: [NotificationStorybookComponent],
   providers: [
@@ -63,11 +71,13 @@ export class NotificationBottomStartStorybookComponent {}
     }),
   ],
 })
-export class NotificationTopEndStorybookComponent {}
+export class NotificationTopEndStorybookComponent {
+  public direction = input<'' | 'rtl'>('');
+}
 
 @Component({
   selector: 'et-sb-notification-top-center',
-  template: `<et-sb-notification />`,
+  template: `<et-sb-notification [direction]="direction()" />`,
   encapsulation: ViewEncapsulation.None,
   imports: [NotificationStorybookComponent],
   providers: [
@@ -77,11 +87,13 @@ export class NotificationTopEndStorybookComponent {}
     }),
   ],
 })
-export class NotificationTopCenterStorybookComponent {}
+export class NotificationTopCenterStorybookComponent {
+  public direction = input<'' | 'rtl'>('');
+}
 
 @Component({
   selector: 'et-sb-notification-top-start',
-  template: `<et-sb-notification />`,
+  template: `<et-sb-notification [direction]="direction()" />`,
   encapsulation: ViewEncapsulation.None,
   imports: [NotificationStorybookComponent],
   providers: [
@@ -91,4 +103,6 @@ export class NotificationTopCenterStorybookComponent {}
     }),
   ],
 })
-export class NotificationTopStartStorybookComponent {}
+export class NotificationTopStartStorybookComponent {
+  public direction = input<'' | 'rtl'>('');
+}

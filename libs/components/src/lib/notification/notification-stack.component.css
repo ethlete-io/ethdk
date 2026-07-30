@@ -1,4 +1,9 @@
 @layer components {
+  /* `start`/`end` in the position names are logical, so the insets are too — the stack docks to the
+     inline-start/end edge and flips under `dir="rtl"`. `align-items: flex-start/flex-end` is already
+     logical (it resolves against the writing direction), so it needs no counterpart. The `center`
+     positions stay on physical `left` + a symmetric translate: centering is direction-agnostic and
+     the physical form is the idiom. */
   .et-notification-stack {
     position: fixed;
     display: flex;
@@ -10,58 +15,58 @@
 
     /* default: bottom-end */
     bottom: 1rem;
-    right: 1rem;
+    inset-inline-end: 1rem;
 
     &[data-position='bottom-center'] {
       bottom: 1rem;
-      right: 50%;
-      left: auto;
       top: auto;
+      inset-inline: auto;
+      left: 50%;
       align-items: center;
-      transform: translateX(50%);
+      transform: translateX(-50%);
     }
 
     &[data-position='bottom-start'] {
       bottom: 1rem;
-      left: 1rem;
-      right: auto;
       top: auto;
+      inset-inline-start: 1rem;
+      inset-inline-end: auto;
       align-items: flex-start;
       transform: none;
     }
 
     &[data-position='bottom-end'] {
       bottom: 1rem;
-      right: 1rem;
-      left: auto;
       top: auto;
+      inset-inline-start: auto;
+      inset-inline-end: 1rem;
       align-items: flex-end;
       transform: none;
     }
 
     &[data-position='top-center'] {
       top: 1rem;
-      right: 50%;
       bottom: auto;
-      left: auto;
+      inset-inline: auto;
+      left: 50%;
       align-items: center;
-      transform: translateX(50%);
+      transform: translateX(-50%);
     }
 
     &[data-position='top-start'] {
       top: 1rem;
-      left: 1rem;
       bottom: auto;
-      right: auto;
+      inset-inline-start: 1rem;
+      inset-inline-end: auto;
       align-items: flex-start;
       transform: none;
     }
 
     &[data-position='top-end'] {
       top: 1rem;
-      right: 1rem;
       bottom: auto;
-      left: auto;
+      inset-inline-start: auto;
+      inset-inline-end: 1rem;
       align-items: flex-end;
       transform: none;
     }

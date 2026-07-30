@@ -86,9 +86,19 @@ export type OverlayStrategyBreakpoint = {
   strategy: OverlayStrategy;
 };
 
+/** A drag direction expressed in physical terms. Unaffected by the writing direction. */
+export type OverlayDragToDismissPhysicalDirection = 'to-top' | 'to-bottom' | 'to-left' | 'to-right';
+
+/**
+ * A drag direction. The logical values (`to-inline-start`/`to-inline-end`) are resolved to their
+ * physical counterpart when the gesture is set up, using the overlay container's computed
+ * `direction` — so they follow the writing direction like the logical position strategies do.
+ */
+export type OverlayDragToDismissDirection = OverlayDragToDismissPhysicalDirection | 'to-inline-start' | 'to-inline-end';
+
 export type OverlayDragToDismissConfig = {
   /** Direction in which the overlay can be dragged. */
-  direction: 'to-top' | 'to-bottom' | 'to-left' | 'to-right';
+  direction: OverlayDragToDismissDirection;
 
   /**
    * The minimum distance in pixels that the user must swipe to dismiss the overlay.

@@ -47,3 +47,14 @@ export const TopStart: { render: StoryFn; decorators: unknown[] } = {
   render: () => ({ template: `<et-sb-notification-top-start />` }),
   decorators: [moduleMetadata({ imports: [NotificationTopStartStorybookComponent] })],
 };
+
+/** `bottom-end` under `dir="rtl"` — the stack docks to the physical left and slides in from there. */
+export const BottomEndRightToLeft: { render: StoryFn } = {
+  render: () => ({ template: `<et-sb-notification-bottom-end direction="rtl" />` }),
+};
+
+/** The mirror image: `bottom-start` in RTL docks to the physical right. */
+export const BottomStartRightToLeft: { render: StoryFn; decorators: unknown[] } = {
+  render: () => ({ template: `<et-sb-notification-bottom-start direction="rtl" />` }),
+  decorators: [moduleMetadata({ imports: [NotificationBottomStartStorybookComponent] })],
+};

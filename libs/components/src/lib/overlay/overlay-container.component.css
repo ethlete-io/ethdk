@@ -445,10 +445,21 @@
       box-shadow: 0 -50px 0 0 var(--_et-overlay-overshoot-fill);
     }
 
+    /* Side sheets dock to a *logical* inline edge (the position strategy uses `start`/`end`), but
+     `translateX` and the overshoot shadow are physical — so the slide axis is driven by a sign that
+     flips with the writing direction. `-1` slides toward the physical left, `1` toward the right.
+     This has to agree with the drag-to-dismiss gesture, which resolves its logical direction the
+     same way (see `resolvePhysicalDirection` in `overlay-drag-to-dismiss.ts`). */
     &.et-overlay--left-sheet {
+      --_et-overlay-sheet-slide-sign: -1;
+
+      &:dir(rtl) {
+        --_et-overlay-sheet-slide-sign: 1;
+      }
+
       &.et-animation-enter-from,
       &.et-animation-leave-to {
-        transform: translateX(-100%) !important;
+        transform: translateX(calc(100% * var(--_et-overlay-sheet-slide-sign))) !important;
       }
 
       &.et-animation-enter-active {
@@ -463,13 +474,19 @@
         transition: transform 150ms var(--ease-in-5);
       }
 
-      box-shadow: -50px 0 0 0 var(--_et-overlay-overshoot-fill);
+      box-shadow: calc(50px * var(--_et-overlay-sheet-slide-sign)) 0 0 0 var(--_et-overlay-overshoot-fill);
     }
 
     &.et-overlay--right-sheet {
+      --_et-overlay-sheet-slide-sign: 1;
+
+      &:dir(rtl) {
+        --_et-overlay-sheet-slide-sign: -1;
+      }
+
       &.et-animation-enter-from,
       &.et-animation-leave-to {
-        transform: translateX(100%) !important;
+        transform: translateX(calc(100% * var(--_et-overlay-sheet-slide-sign))) !important;
       }
 
       &.et-animation-enter-active {
@@ -484,7 +501,7 @@
         transition: transform 150ms var(--ease-in-5);
       }
 
-      box-shadow: 50px 0 0 0 var(--_et-overlay-overshoot-fill);
+      box-shadow: calc(50px * var(--_et-overlay-sheet-slide-sign)) 0 0 0 var(--_et-overlay-overshoot-fill);
     }
 
     &.et-overlay--dialog {

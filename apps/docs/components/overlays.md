@@ -184,6 +184,10 @@ A strategy controls the overlay's position, sizing, classes and animation. Pass 
 
 Every factory accepts a partial `OverlayBreakpointConfig` (sizes, classes, `dragToDismiss`, `hasBackdrop`, `arrow`, …).
 
+### Drag-to-dismiss direction
+
+`dragToDismiss.direction` takes either a physical direction (`'to-top'`, `'to-bottom'`, `'to-left'`, `'to-right'`) or a **logical** one (`'to-inline-start'`, `'to-inline-end'`). Logical values are resolved against the overlay container's computed `direction` when the gesture is attached, so they follow the writing direction the same way the `horizontal: 'start' | 'end'` position strategies do — a side sheet stays draggable toward the edge it is docked to under `dir="rtl"`. The side-sheet strategies use the logical values by default; physical values keep meaning exactly what they say.
+
 ### Responsive (transforming) strategies
 
 `strategies` is an array of `{ breakpoint?, strategy }` entries — the controller picks the entry matching the current `min-width` and **switches live on resize without remounting** the content. Breakpoint names come from the app's [viewport config](/core/providers#breakpoint-observer) (Tailwind-style `xs`–`2xl` by default). Presets cover the common pairs:

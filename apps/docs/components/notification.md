@@ -15,7 +15,7 @@ provideNotificationManager({
 
 | Config option        | Default                                               | Notes                                                                           |
 | -------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `position`           | `'bottom-end'`                                        | `bottom/top` × `start/center/end`                                               |
+| `position`           | `'bottom-end'`                                        | `bottom/top` × `start/center/end` — `start`/`end` are logical (see below)       |
 | `maxVisible`         | `3`                                                   | Opening past the cap auto-dismisses the oldest                                  |
 | `defaultDuration`    | `{ success: 4000, info: 4000, loading: 0, error: 0 }` | Per-status auto-dismiss (0 = sticky)                                            |
 | `statusColorMapping` | —                                                     | Status → app-registered color theme name for buttons inside the toast           |
@@ -63,6 +63,14 @@ The ref also offers `dismiss()`, `pauseTimer()` / `resumeTimer()` (hover and foc
 ## Live demo
 
 <StoryEmbed id="components-notification--bottom-end" height="480px" />
+
+## Right-to-left
+
+`start` and `end` in the position names are **logical**: the stack docks to the inline-start/inline-end edge and follows the writing direction, so `bottom-end` sits bottom-left under `dir="rtl"`. The toast's slide-in offset and its status accent border flip with it. Because the stack renders into `document.body` it inherits the direction from the document root — setting `dir` on a subtree of your app does not affect it.
+
+<StoryEmbed id="components-notification--bottom-end-right-to-left" height="480px" />
+
+The `center` positions are unaffected — centering has no inline side.
 
 ## Behavior & accessibility
 

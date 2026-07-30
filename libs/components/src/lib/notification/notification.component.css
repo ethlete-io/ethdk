@@ -95,14 +95,25 @@
     box-shadow: var(--et-notification-shadow);
     min-width: var(--et-notification-min-width);
     max-width: var(--et-notification-max-width);
-    border-left: var(--et-notification-border-width) solid var(--et-theme-color-primary-solid, #d1d5db);
+    border-inline-start: var(--et-notification-border-width) solid var(--et-theme-color-primary-solid, #d1d5db);
     font-family: inherit;
     font-size: var(--et-notification-font-size);
     line-height: var(--et-notification-line-height);
 
+    /* The notification slides in from the inline edge its stack is docked to. `translateX` is
+       physical, so the offset carries a sign that flips with the writing direction — same pattern as
+       the side-sheet strategies. `--_et-notification-slide-x` picks the edge, the sign picks the
+       physical axis for it. */
+    --_et-notification-slide-x: 1rem;
+    --_et-notification-dir-sign: 1;
+
+    &:dir(rtl) {
+      --_et-notification-dir-sign: -1;
+    }
+
     &.et-animation-enter-from {
       opacity: 0;
-      transform: translateX(1rem);
+      transform: translateX(calc(var(--_et-notification-slide-x) * var(--_et-notification-dir-sign)));
     }
 
     &.et-animation-enter-active {
@@ -119,17 +130,14 @@
 
     &.et-animation-leave-to {
       opacity: 0;
-      transform: translateX(1rem);
+      transform: translateX(calc(var(--_et-notification-slide-x) * var(--_et-notification-dir-sign)));
     }
   }
 
-  /* start positions: slide in/out from the left */
+  /* start positions: slide in/out from the inline-start edge */
   .et-notification-stack[data-position='bottom-start'] .et-notification,
   .et-notification-stack[data-position='top-start'] .et-notification {
-    &.et-animation-enter-from,
-    &.et-animation-leave-to {
-      transform: translateX(-1rem);
-    }
+    --_et-notification-slide-x: -1rem;
   }
 
   /* bottom-center: slide in/out upward from below */
