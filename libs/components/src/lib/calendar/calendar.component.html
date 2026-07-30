@@ -52,20 +52,11 @@
 }
 
 <div class="et-calendar-grid" etCalendarGrid>
-  @if (calendar.view() === 'month') {
-    <div class="et-calendar-weekdays" role="row">
-      @if (weekNumbers()) {
-        <!-- the column's own heading: named for assistive tech, blank on screen, which is what the
-             corner of a week-numbered calendar looks like everywhere -->
-        <span [attr.aria-label]="weekLabel()" class="et-calendar-week-number-heading" role="columnheader"></span>
-      }
-
-      @for (weekday of calendar.weekdays(); track weekday.long) {
-        <span [attr.aria-label]="weekday.long" class="et-calendar-weekday" role="columnheader">{{
-          weekday.short
-        }}</span>
-      }
-    </div>
+  <!-- One month keeps its day names above the transition, so navigating slides the weeks under a
+       heading that holds still. Several months each carry their own inside their column, where the
+       whole span transitions together. -->
+  @if (calendar.view() === 'month' && calendar.monthsShown() === 1) {
+    <ng-container *ngTemplateOutlet="weekdayRow" />
   }
 
   <!-- Whichever grid is showing, rendered through one of two identical branches so that a change
@@ -112,24 +103,43 @@
         }
       }
       @default {
-        @for (week of calendar.weeks(); track $index) {
-          <div class="et-calendar-week" role="row">
-            @if (weekNumbers()) {
-              <span
-                [attr.aria-label]="weekLabel() + ' ' + calendar.weekNumbers()[$index]"
-                class="et-calendar-week-number"
-                role="rowheader"
-                >{{ calendar.weekNumbers()[$index] }}</span
-              >
-            }
+        <div class="et-calendar-months">
+          @for (page of calendar.monthPages(); track page.key) {
+            <div class="et-calendar-month" role="rowgroup">
+              @if (calendar.monthsShown() > 1) {
+                <!-- the span's own header cannot name each month, so each column says which it is -->
+                <div class="et-calendar-month-label">{{ page.label }}</div>
 
-            @for (cell of week; track cell.date.getTime()) {
-              <button [cell]="cell" class="et-calendar-cell" etCalendarCell type="button">
-                <span class="et-calendar-cell-content">{{ cell.label }}</span>
-              </button>
-            }
-          </div>
-        }
+                <ng-container *ngTemplateOutlet="weekdayRow" />
+              }
+
+              @for (week of page.weeks; track $index) {
+                <div class="et-calendar-week" role="row">
+                  @if (weekNumbers()) {
+                    <span
+                      [attr.aria-label]="weekLabel() + ' ' + page.weekNumbers[$index]"
+                      class="et-calendar-week-number"
+                      role="rowheader"
+                      >{{ page.weekNumbers[$index] }}</span
+                    >
+                  }
+
+                  @for (cell of week; track cell.date.getTime()) {
+                    @if (cell.outsideMonth && calendar.monthsShown() > 1) {
+                      <!-- the neighbouring month renders this day itself: two cells for one date would
+                           be two ways to pick it, and two claims on the roving focus -->
+                      <span class="et-calendar-cell et-calendar-cell--empty" aria-hidden="true"></span>
+                    } @else {
+                      <button [cell]="cell" class="et-calendar-cell" etCalendarCell type="button">
+                        <span class="et-calendar-cell-content">{{ cell.label }}</span>
+                      </button>
+                    }
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
       }
     }
   </div>
@@ -142,4 +152,18 @@
     animate.leave="et-calendar-header-label-value--leave"
     >{{ calendar.headerLabel() }}</span
   >
+</ng-template>
+
+<ng-template #weekdayRow>
+  <div class="et-calendar-weekdays" role="row">
+    @if (weekNumbers()) {
+      <!-- the column's own heading: named for assistive tech, blank on screen, which is what the
+           corner of a week-numbered calendar looks like everywhere -->
+      <span [attr.aria-label]="weekLabel()" class="et-calendar-week-number-heading" role="columnheader"></span>
+    }
+
+    @for (weekday of calendar.weekdays(); track weekday.long) {
+      <span [attr.aria-label]="weekday.long" class="et-calendar-weekday" role="columnheader">{{ weekday.short }}</span>
+    }
+  </div>
 </ng-template>

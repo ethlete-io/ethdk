@@ -22,6 +22,7 @@ import { CalendarHeaderDirective } from './calendar-header.directive';
         'max',
         'dateFilter',
         'startAt',
+        'monthsShown',
         'precision',
         'startView',
         'dateClass',
@@ -49,6 +50,8 @@ import { CalendarHeaderDirective } from './calendar-header.directive';
     class: 'et-calendar',
     '[attr.data-view]': 'calendar.view()',
     '[attr.data-week-numbers]': "weekNumbers() ? '' : null",
+    // the grid widths are CSS, and the count they have to agree on is state
+    '[style.--_et-calendar-months]': 'calendar.monthsShown()',
   },
 })
 export class CalendarComponent {

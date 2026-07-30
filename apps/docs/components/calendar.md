@@ -25,6 +25,7 @@ On `et-calendar` (forwarded from the headless `[etCalendar]` directive):
 | `dateFilter`                        | `((date: Date) => boolean) \| null`          | `null`              | Return `false` to disable a date (e.g. weekends).                                      |
 | `startAt`                           | `Date \| null`                               | `null`              | Where an empty calendar opens and which day it focuses first.                          |
 | `precision`                         | `'day' \| 'month' \| 'year'`                 | `'day'`             | Which unit a selection names — `'month'` makes this a month picker.                    |
+| `monthsShown`                       | `number`                                     | `1`                 | How many consecutive months the day grid shows side by side.                           |
 | `startView`                         | `'month' \| 'year' \| 'multiYear'`           | `'month'`           | Which grid the calendar opens on.                                                      |
 | `dateClass`                         | `(date, view) => string \| string[] \| null` | `null`              | Extra classes per cell, in every view — markers of your own.                           |
 | `rangeSelectionStrategy`            | `CalendarRangeSelectionStrategy \| null`     | `null`              | What a pick means in `range` mode — snap to weeks, fixed spans, your own.              |
@@ -110,6 +111,22 @@ The returned classes are **your** CSS, which is unlayered and therefore wins ove
 The first click starts the range, a later-or-equal second click completes it, and an earlier one restarts it. While the end is pending, hovering (or moving keyboard focus) previews the band.
 
 <StoryEmbed id="components-calendar--range" height="420px" />
+
+## Several months at once
+
+`monthsShown` renders consecutive months side by side — two of them is the classic range picker, where a range that spans the turn of a month is one gesture instead of a pick, a navigation and a second pick.
+
+```html
+<et-calendar [(rangeValue)]="range" [monthsShown]="2" mode="range" />
+```
+
+<StoryEmbed id="components-calendar--two-months" height="480px" />
+
+Everything is shared across the span rather than repeated: one keyboard scope with a single roving cell, one selection, and a band that runs on through the seam. The header names the whole span (`July – August 2026`, or both years once it crosses one), each column says which month it is, and stepping moves by **one** month so the window slides rather than paging — which is what makes a range across the seam reachable in the first place.
+
+Two details fall out of showing neighbouring months together. The days that spill in from an adjacent month are left to the month that owns them, since two cells for one date would be two ways to pick it and two claims on the roving focus; the empty slots keep the columns lined up. And the coarser grids stay single — drilling out shows one month grid or one year page whatever this says, centred in the width the span reserves, so nothing resizes.
+
+It needs the room: two months at the default cell size is about 580px. The date inputs deliberately do **not** forward it, because their picker has to fit a phone as a bottom sheet — a responsive count is the consuming app's call, from its own breakpoint.
 
 ## Range selection strategies
 
@@ -223,6 +240,8 @@ Stepping (buttons or keyboard) slides the new grid in from the travel direction;
 ```
 
 Each `CalendarCell` carries the flags (`selected`, `inRange`, `band`, `outsideMonth`, `today`, `disabled`, `focused`, …) the cell directive mirrors as `data-*` attributes for styling, plus `label` (the cell's own text) and `classes` (`dateClass`'s).
+
+With `monthsShown` above one, `calendar.monthPages()` is the whole span — one entry per month, each with its `month`, `label`, `weeks` and `weekNumbers` — and `weeks()` is the first of them.
 
 The coarse grids work the same way: `calendar.monthCells()` and `calendar.yearCells()` are rows of `CalendarCellBase` — every field above except the day grid's `dayOfMonth`/`outsideMonth` — which the same `[etCalendarCell]` accepts. Read `calendar.view()` to pick a grid, `headerLabel()` for the header, and drive it with `zoomOut()`, `previous()`/`next()`, or `view.set(…)`; `activateCell(date)` does whatever the view on show should do with a cell (select the day, or drill in), which is what the cell directive calls on click.
 

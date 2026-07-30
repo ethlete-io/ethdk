@@ -1,4 +1,4 @@
-import { Directive, computed, input, linkedSignal, model, output, signal } from '@angular/core';
+import { Directive, computed, input, linkedSignal, model, numberAttribute, output, signal } from '@angular/core';
 import {
   addMonths,
   addYears,
@@ -106,6 +106,19 @@ export type CalendarCell = CalendarCellBase & {
   outsideMonth: boolean;
 };
 
+/** One month of a day grid — several of them when {@link CalendarDirective.monthsShown} says so. */
+export type CalendarMonthPage = {
+  /** First day of the month this page holds. */
+  month: Date;
+  /** Value identity of the month, for template tracking. */
+  key: number;
+  /** The month's own name, for a per-page caption. */
+  label: string;
+  weeks: CalendarCell[][];
+  /** The week number of each row, by the same index. */
+  weekNumbers: number[];
+};
+
 export type CalendarWeekday = {
   short: string;
   long: string;
@@ -139,6 +152,13 @@ export class CalendarDirective {
    * explicit `activeMonth`; without either, the calendar falls back to today.
    */
   public startAt = input<Date | null>(null);
+
+  /**
+   * How many consecutive months the day grid shows side by side — two for the classic range picker.
+   * The coarser grids are unaffected: drilling out shows one month grid or one year page whatever
+   * this says. Wide surfaces only; a picker that has to fit a phone should leave it at one.
+   */
+  public monthsShown = input(1, { transform: (value: unknown) => Math.max(1, Math.trunc(numberAttribute(value, 1))) });
 
   /**
    * How precise a selection is. `'month'` makes this a month picker and
@@ -315,21 +335,6 @@ export class CalendarDirective {
     },
   });
 
-  /**
-   * The week number of each row of {@link weeks}, by the same index. Localized rather than always
-   * ISO: which week is the year's first depends on the locale's `firstWeekContainsDate`, and the
-   * rows themselves start on {@link effectiveFirstDayOfWeek}, so the numbering has to follow both or
-   * it would name rows the calendar is not showing.
-   */
-  public weekNumbers = computed<number[]>(() => {
-    const weekStartsOn = this.effectiveFirstDayOfWeek();
-    const firstWeekContainsDate = this.effectiveLocale()?.options?.firstWeekContainsDate ?? 1;
-
-    return generateMonthGrid(this.visibleMonth(), weekStartsOn).map(([weekStart]) =>
-      getWeek(weekStart as Date, { weekStartsOn, firstWeekContainsDate }),
-    );
-  });
-
   public weekdays = computed<CalendarWeekday[]>(() => {
     const locale = this.effectiveLocale();
     const options = locale ? { locale } : undefined;
@@ -351,6 +356,70 @@ export class CalendarDirective {
     return format(this.visibleMonth(), 'LLLL yyyy', locale ? { locale } : undefined);
   });
 
+  /** Reused per coarse cell, so the day scan reads the bounds and the filter from one place. */
+  private availability = computed<CalendarAvailability>(() => ({
+    min: this.min(),
+    max: this.max(),
+    isDateSelectable: (date: Date) => !this.isDateDisabled(date),
+  }));
+
+  /**
+   * Every month on show, first to last — one unless {@link monthsShown} says otherwise. One selection
+   * reader serves all of them, which is what carries a range band across the seam between two months.
+   */
+  public monthPages = computed<CalendarMonthPage[]>(() => {
+    const firstMonth = this.visibleMonth();
+    const focused = this.focusedDate();
+    const locale = this.effectiveLocale();
+    const labelOptions = locale ? { locale } : undefined;
+    const weekStartsOn = this.effectiveFirstDayOfWeek();
+    const firstWeekContainsDate = locale?.options?.firstWeekContainsDate ?? 1;
+    const readSelection = this.selectionReader('month');
+
+    return Array.from({ length: this.monthsShown() }, (_, offset) => {
+      const month = addMonths(firstMonth, offset);
+      const grid = generateMonthGrid(month, weekStartsOn);
+
+      return {
+        month,
+        key: month.getTime(),
+        label: format(month, 'LLLL yyyy', labelOptions),
+        weekNumbers: grid.map(([weekStart]) => getWeek(weekStart as Date, { weekStartsOn, firstWeekContainsDate })),
+        weeks: grid.map((week) =>
+          week.map((date) => ({
+            date,
+            dayOfMonth: getDate(date),
+            label: `${getDate(date)}`,
+            ariaLabel: format(date, 'PPPP', labelOptions),
+            classes: this.resolveCellClasses(date, 'month'),
+            disabled: this.isDateDisabled(date),
+            today: isSameDay(date, this.today),
+            ...readSelection(date),
+            outsideMonth: !isSameMonth(date, month),
+            // one roving target across the whole span: an outside-month cell never claims it, or two
+            // grids would fight over the same date
+            focused: isSameDay(date, focused) && isSameMonth(date, month),
+          })),
+        ),
+      };
+    });
+  });
+
+  /**
+   * The week number of each row of {@link weeks}, by the same index — every month on show carries its
+   * own on {@link monthPages}. Localized rather than always ISO: which week is the year's first depends
+   * on the locale's `firstWeekContainsDate`, and the rows themselves start on
+   * {@link effectiveFirstDayOfWeek}, so the numbering has to follow both or it would name rows the
+   * calendar is not showing.
+   */
+  public weekNumbers = computed<number[]>(() => this.monthPages()[0]?.weekNumbers ?? []);
+
+  /** The first month's day grid. The whole span is {@link monthPages}. */
+  public weeks = computed<CalendarCell[][]>(() => this.monthPages()[0]?.weeks ?? []);
+
+  /** The last month on show — the same as {@link visibleMonth} unless several are shown. */
+  public lastVisibleMonth = computed(() => addMonths(this.visibleMonth(), this.monthsShown() - 1));
+
   /** What the header names: the month, the year, or the year page's span. */
   public headerLabel = computed(() => {
     const locale = this.effectiveLocale();
@@ -365,39 +434,21 @@ export class CalendarDirective {
 
         return `${format(pageStart, 'yyyy', options)} – ${format(pageEnd, 'yyyy', options)}`;
       }
-      default:
-        return this.visibleMonthLabel();
+      default: {
+        const first = this.visibleMonth();
+        const last = this.lastVisibleMonth();
+
+        if (isSameMonth(first, last)) {
+          return this.visibleMonthLabel();
+        }
+
+        // "July – August 2026" while one year covers the span, "December 2026 – January 2027" once it
+        // does not: naming the year twice for two months of the same one is noise
+        return isSameYear(first, last)
+          ? `${format(first, 'LLLL', options)} – ${format(last, 'LLLL yyyy', options)}`
+          : `${format(first, 'LLLL yyyy', options)} – ${format(last, 'LLLL yyyy', options)}`;
+      }
     }
-  });
-
-  /** Reused per coarse cell, so the day scan reads the bounds and the filter from one place. */
-  private availability = computed<CalendarAvailability>(() => ({
-    min: this.min(),
-    max: this.max(),
-    isDateSelectable: (date: Date) => !this.isDateDisabled(date),
-  }));
-
-  public weeks = computed<CalendarCell[][]>(() => {
-    const month = this.visibleMonth();
-    const focused = this.focusedDate();
-    const locale = this.effectiveLocale();
-    const labelOptions = locale ? { locale } : undefined;
-    const readSelection = this.selectionReader('month');
-
-    return generateMonthGrid(month, this.effectiveFirstDayOfWeek()).map((week) =>
-      week.map((date) => ({
-        date,
-        dayOfMonth: getDate(date),
-        label: `${getDate(date)}`,
-        ariaLabel: format(date, 'PPPP', labelOptions),
-        classes: this.resolveCellClasses(date, 'month'),
-        disabled: this.isDateDisabled(date),
-        today: isSameDay(date, this.today),
-        ...readSelection(date),
-        outsideMonth: !isSameMonth(date, month),
-        focused: isSameDay(date, focused),
-      })),
-    );
   });
 
   /** The 12 months of the visible year, as rows of four — the month grid's cells. */
@@ -757,7 +808,10 @@ export class CalendarDirective {
     }
   }
 
-  /** The unit one step away in the current view — what the nav guards test against the bounds. */
+  /**
+   * The unit one step away in the current view — what the nav guards test against the bounds. With
+   * several months on show, a step off the end leaves from the last of them, not the first.
+   */
   private adjacentUnit(step: 1 | -1) {
     const month = this.visibleMonth();
 
@@ -770,7 +824,8 @@ export class CalendarDirective {
       case 'multiYear':
         return multiYearPageInterval(addYears(this.multiYearPageStart(), step * CALENDAR_MULTI_YEAR_PAGE_SIZE));
       default: {
-        const stepped = addMonths(month, step);
+        const from = step === 1 ? this.lastVisibleMonth() : month;
+        const stepped = addMonths(from, step);
 
         return { start: startOfMonth(stepped), end: endOfMonth(stepped) };
       }
@@ -780,24 +835,34 @@ export class CalendarDirective {
   private moveFocus(date: Date) {
     const day = startOfDay(date);
 
-    // the visible unit follows the roving focus out of itself — in every view, since the focused date
-    // stays a full date and only the step size differs
+    // The span follows the roving focus out of itself — in every view, since the focused date stays a
+    // full date and only the step size differs. Where several months are on show it shifts by as little
+    // as it takes to cover the new focus, so the reader keeps the months either side of it.
     if (!this.isInVisibleUnit(day)) {
-      this.activeMonth.set(startOfMonth(day));
+      const month = startOfMonth(day);
+
+      this.activeMonth.set(
+        this.view() === 'month' && isAfter(month, this.lastVisibleMonth())
+          ? addMonths(month, 1 - this.monthsShown())
+          : month,
+      );
     }
 
     this.focusedDate.set(day);
   }
 
-  /** Whether a date falls inside the unit the current view is showing. */
+  /** Whether a date falls inside what the current view is showing — the whole span in the day grid. */
   private isInVisibleUnit(date: Date) {
     switch (this.view()) {
       case 'year':
         return isSameYear(date, this.visibleYear());
       case 'multiYear':
         return isInMultiYearPage(date, this.multiYearPageStart());
-      default:
-        return isSameMonth(date, this.visibleMonth());
+      default: {
+        const month = startOfMonth(date);
+
+        return !isBefore(month, this.visibleMonth()) && !isAfter(month, this.lastVisibleMonth());
+      }
     }
   }
 }

@@ -17,6 +17,7 @@ export default {
     showComparison: { control: 'boolean' },
     rangeStrategy: { control: 'select', options: ['default', 'week', 'fixed7'] },
     customHeader: { control: 'boolean' },
+    monthsShown: { control: { type: 'number', min: 1, max: 3 } },
     locale: { control: 'select', options: ['default', 'de'] },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
   },
@@ -32,6 +33,7 @@ export default {
     showComparison: false,
     rangeStrategy: 'default',
     customHeader: false,
+    monthsShown: 1,
     locale: 'default',
     color: 'brand',
   },
@@ -43,6 +45,10 @@ export const Default: Story = {};
 
 export const Range: Story = {
   args: { mode: 'range' },
+};
+
+export const TwoMonths: Story = {
+  args: { monthsShown: 2, mode: 'range' },
 };
 
 export const Multiple: Story = {

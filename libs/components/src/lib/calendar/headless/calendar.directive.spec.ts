@@ -28,6 +28,7 @@ import {
       [dateFilter]="dateFilter()"
       [startAt]="startAt()"
       [precision]="precision()"
+      [monthsShown]="monthsShown()"
       [startView]="startView()"
       [dateClass]="dateClass()"
       [rangeSelectionStrategy]="rangeStrategy()"
@@ -59,12 +60,18 @@ import {
             }
           }
           @default {
-            @for (week of cal.weeks(); track $index) {
-              <div role="row">
-                @for (cell of week; track cell.date.getTime()) {
-                  <button [cell]="cell" class="cell" etCalendarCell type="button">{{ cell.label }}</button>
-                }
-              </div>
+            @for (page of cal.monthPages(); track page.key) {
+              @for (week of page.weeks; track $index) {
+                <div role="row">
+                  @for (cell of week; track cell.date.getTime()) {
+                    @if (cell.outsideMonth && cal.monthsShown() > 1) {
+                      <span class="empty"></span>
+                    } @else {
+                      <button [cell]="cell" class="cell" etCalendarCell type="button">{{ cell.label }}</button>
+                    }
+                  }
+                </div>
+              }
             }
           }
         }
@@ -80,6 +87,7 @@ class HostComponent {
   dateFilter = signal<((date: Date) => boolean) | null>(null);
   startAt = signal<Date | null>(null);
   precision = signal<CalendarPrecision>('day');
+  monthsShown = signal(1);
   startView = signal<CalendarView>('month');
   dateClass = signal<CalendarDateClassFn | null>(null);
   rangeStrategy = signal<CalendarRangeSelectionStrategy | null>(null);
@@ -684,6 +692,119 @@ describe('CalendarDirective', () => {
       fixture.detectChanges();
 
       expect(calendar.visibleMonth()).toEqual(new Date(2027, 1, 1));
+    });
+  });
+
+  describe('several months at once', () => {
+    beforeEach(() => {
+      host.monthsShown.set(2);
+      fixture.detectChanges();
+    });
+
+    it('renders the span, names it, and leaves the neighbouring month’s days to it', () => {
+      expect(calendar.monthPages()).toHaveLength(2);
+      expect(calendar.monthPages()[0]?.label).toBe('July 2026');
+      expect(calendar.monthPages()[1]?.label).toBe('August 2026');
+      expect(calendar.headerLabel()).toBe('July – August 2026');
+      expect(calendar.lastVisibleMonth()).toEqual(new Date(2026, 7, 1));
+
+      // August 1st belongs to August's grid, and July's own trailing cell for it is not rendered
+      const first = cells().filter((cell) => cell.textContent?.trim() === '1');
+
+      expect(first).toHaveLength(2); // July 1st and August 1st, one each
+      expect(calendar.weeks()).toEqual(calendar.monthPages()[0]?.weeks);
+    });
+
+    it('names the span across a year boundary in full', () => {
+      host.activeMonth.set(new Date(2026, 11, 1));
+      fixture.detectChanges();
+
+      expect(calendar.headerLabel()).toBe('December 2026 – January 2027');
+    });
+
+    it('steps by one month, so the span slides rather than paging', () => {
+      calendar.next();
+      fixture.detectChanges();
+
+      expect(calendar.visibleMonth()).toEqual(new Date(2026, 7, 1));
+      expect(calendar.lastVisibleMonth()).toEqual(new Date(2026, 8, 1));
+    });
+
+    it('guards the step against the bounds from the right end of the span', () => {
+      host.max.set(new Date(2026, 8, 15));
+      fixture.detectChanges();
+
+      // September is still reachable: the span ends in August
+      expect(calendar.canGoNext()).toBe(true);
+
+      calendar.next();
+      fixture.detectChanges();
+
+      expect(calendar.canGoNext()).toBe(false);
+    });
+
+    it('keeps one roving target across the whole span', () => {
+      calendar.focusedDate.set(new Date(2026, 7, 12));
+      fixture.detectChanges();
+
+      const focused = cells().filter((cell) => cell.tabIndex === 0);
+
+      expect(focused).toHaveLength(1);
+      expect(focused[0]?.textContent?.trim()).toBe('12');
+    });
+
+    it('only shifts the span once focus leaves it entirely', () => {
+      calendar.focusedDate.set(new Date(2026, 6, 31));
+      fixture.detectChanges();
+
+      keydown('ArrowRight');
+
+      // August 1st is already on show, so nothing moves
+      expect(calendar.visibleMonth()).toEqual(new Date(2026, 6, 1));
+      expect(calendar.focusedDate()).toEqual(new Date(2026, 7, 1));
+
+      calendar.focusedDate.set(new Date(2026, 7, 31));
+      fixture.detectChanges();
+
+      keydown('ArrowRight');
+
+      // September is not: the span slides by the one month it takes to cover it
+      expect(calendar.visibleMonth()).toEqual(new Date(2026, 7, 1));
+      expect(calendar.lastVisibleMonth()).toEqual(new Date(2026, 8, 1));
+      expect(calendar.focusedDate()).toEqual(new Date(2026, 8, 1));
+    });
+
+    it('bands a range across the seam between two months', () => {
+      host.mode.set('range');
+      fixture.detectChanges();
+
+      const julyCell = (label: string) =>
+        cells().find((cell) => cell.textContent?.trim() === label && !cell.hasAttribute('data-outside-month')) ?? null;
+
+      julyCell('28')?.click();
+      fixture.detectChanges();
+
+      const augustCells = cells().filter((cell) => cell.textContent?.trim() === '3');
+
+      augustCells.at(-1)?.click();
+      fixture.detectChanges();
+
+      expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 28), end: new Date(2026, 7, 3) });
+      // the band runs on through the end of July and into August
+      expect(julyCell('30')?.hasAttribute('data-in-range')).toBe(true);
+      expect(
+        cells()
+          .filter((cell) => cell.textContent?.trim() === '1')
+          .at(-1)
+          ?.hasAttribute('data-in-range'),
+      ).toBe(true);
+    });
+
+    it('shows one coarse grid however many months the day grid has', () => {
+      calendar.zoomOut();
+      fixture.detectChanges();
+
+      expect(cells()).toHaveLength(12);
     });
   });
 

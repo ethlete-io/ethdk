@@ -138,6 +138,13 @@
       flex: 1;
       grid-template-areas: 'weeks';
       align-content: start;
+      /* the widest thing the calendar can show, which is the day grid's span: reserving it means the
+         coarser grids centre in that width instead of narrowing the whole calendar on a drill */
+      justify-items: center;
+      min-inline-size: calc(
+        (var(--et-calendar-cell-size) * 7 + var(--_et-calendar-week-column)) * var(--_et-calendar-months, 1) + 16px *
+          (var(--_et-calendar-months, 1) - 1)
+      );
     }
 
     .et-calendar-weeks {
@@ -163,6 +170,25 @@
       & .et-calendar-week {
         grid-template-columns: var(--et-calendar-week-number-size) repeat(7, var(--et-calendar-cell-size));
       }
+    }
+
+    /* the months on show, side by side, each its own column of weeks */
+    .et-calendar-months {
+      display: flex;
+      gap: 16px;
+    }
+
+    .et-calendar-month-label {
+      padding-block-end: 4px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--et-surface-color-solid);
+    }
+
+    /* holds a day the neighbouring month renders: it keeps the seven columns lined up and nothing else */
+    .et-calendar-cell--empty {
+      pointer-events: none;
     }
 
     /* the month and year grids span the same width as the day grid, so drilling never resizes the

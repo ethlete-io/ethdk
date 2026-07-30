@@ -25,6 +25,7 @@ import { CALENDAR_IMPORTS } from '../calendar.imports';
           [max]="maxDate()"
           [dateFilter]="filterFn()"
           [startAt]="startAtDate()"
+          [monthsShown]="monthsShown()"
           [precision]="precision()"
           [startView]="startView()"
           [dateClass]="dateClassFn()"
@@ -46,6 +47,7 @@ import { CALENDAR_IMPORTS } from '../calendar.imports';
           [max]="maxDate()"
           [dateFilter]="filterFn()"
           [startAt]="startAtDate()"
+          [monthsShown]="monthsShown()"
           [precision]="precision()"
           [startView]="startView()"
           [dateClass]="dateClassFn()"
@@ -69,6 +71,7 @@ import { CALENDAR_IMPORTS } from '../calendar.imports';
           [max]="maxDate()"
           [dateFilter]="filterFn()"
           [startAt]="startAtDate()"
+          [monthsShown]="monthsShown()"
           [precision]="precision()"
           [startView]="startView()"
           [dateClass]="dateClassFn()"
@@ -157,6 +160,7 @@ export class CalendarStorybookComponent {
   public rangeStrategy = input<'default' | 'week' | 'fixed7'>('default');
   /** Swaps the calendar's own header for a projected one. */
   public customHeader = input(false);
+  public monthsShown = input(1);
   public locale = input<'default' | 'de'>('default');
   public color = input('brand');
 
