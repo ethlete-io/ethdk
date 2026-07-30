@@ -10,6 +10,7 @@ export * from './query-context';
 export * from './query-creator';
 export * from './query-creator-templates';
 export * from './query-dependencies';
+export * from './query-error-html-utils';
 export * from './query-error-response';
 export * from './query-error-response-utils';
 export * from './query-errors';

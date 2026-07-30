@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { extractHtmlErrorMessage, htmlErrorPayload } from './query-error-html-utils';
 import {
   isClassValidatorError,
   isSymfonyFormViolationListError,
@@ -72,8 +73,18 @@ export const createQueryErrorResponse = (error: unknown): QueryErrorResponse => 
 
   const detail = err.error;
   const errorList: QueryErrorResponseItem[] = [];
+  const html = htmlErrorPayload(detail);
 
-  if (isClassValidatorError(detail)) {
+  if (html) {
+    // An HTML error page (a proxy's 502, a maintenance page) is never shown as-is: keep the sentence inside it
+    // and drop the markup. A page with no readable text leaves the list empty, which falls back to the
+    // HttpErrorResponse's own message below — still better than a wall of tags.
+    const message = extractHtmlErrorMessage(html);
+
+    if (message) {
+      errorList.push({ message });
+    }
+  } else if (isClassValidatorError(detail)) {
     for (const error of detail.message) {
       errorList.push({ message: error });
     }

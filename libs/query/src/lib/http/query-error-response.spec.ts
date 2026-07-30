@@ -59,6 +59,29 @@ describe('createQueryErrorResponse', () => {
     if (!result.isList) expect(result.error.message).toBe('just a string');
   });
 
+  it('should reduce an html error page to its message', () => {
+    const error = new HttpErrorResponse({
+      status: 503,
+      error:
+        '<!DOCTYPE html><html><head><title>Service Temporarily Unavailable</title></head><body><h1>Service Temporarily Unavailable</h1><p>The server is currently restarting.</p></body></html>',
+    });
+    const result = createQueryErrorResponse(error);
+    expect(result.isList).toBe(false);
+    if (!result.isList) {
+      expect(result.error.message).toBe('Service Temporarily Unavailable: The server is currently restarting.');
+    }
+  });
+
+  it('should fall back to the http message when an html error page has no text', () => {
+    const error = new HttpErrorResponse({ status: 503, error: '<!DOCTYPE html><html><body></body></html>' });
+    const result = createQueryErrorResponse(error);
+    expect(result.isList).toBe(false);
+    if (!result.isList) {
+      expect(result.error.message).toBe(error.message);
+      expect(result.error.message).not.toContain('<');
+    }
+  });
+
   it('should return a single error when only one message is present', () => {
     const error = new HttpErrorResponse({
       status: 400,

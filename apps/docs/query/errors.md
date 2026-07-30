@@ -6,6 +6,19 @@ Failed requests resolve to a **`QueryErrorResponse`** on [`query.error()`](/quer
 
 The normalizer understands class-validator errors, Symfony violation lists/list errors, `{ message }`, `{ detail }`, plain strings and string arrays — so templates can render error messages without caring about the backend flavor.
 
+### HTML error pages
+
+Not every failure answers with JSON: a proxy's `502`, a load balancer's maintenance page or a platform's "service temporarily unavailable" arrive as a full HTML document. Rendering that as the message would dump markup into the UI, so the normalizer picks the readable text out of it instead:
+
+- the first **heading** (or the `<title>` when the page has none), plus the first **paragraph** that says something new — `Service Temporarily Unavailable: The server is currently restarting.`
+- unusually structured pages fall back to the page's flattened text; `<script>`/`<style>` contents never make it in,
+- the result is always **plain text** (entities decoded, tags dropped, capped at 300 characters), so bind it as text — never as `innerHTML`,
+- a page with no readable text at all leaves the `HttpErrorResponse`'s own message in place.
+
+Parsing is string-based, not `DOMParser`-based, so it works during SSR and the markup never touches a DOM. Both shapes that carry a page are covered: the raw string body of a failed response, and the `{ error, text }` wrapper Angular's XHR backend produces when a `200` response fails to parse as JSON (a proxy page served with a success status).
+
+Reach for the underlying helpers if you handle a body yourself: **`isHtmlErrorPayload(value)`** (strict — a message containing a stray `<` is not markup), **`htmlErrorPayload(body)`** (unwraps either shape, `null` otherwise) and **`extractHtmlErrorMessage(html)`**.
+
 ### Rendering error messages
 
 The single/list split exists because that is how APIs answer; UI almost never wants to branch on it. `queryErrorMessages(error)` flattens both into a plain `string[]` (empty for `null`), and `queryErrorMessage(error)` takes the first one:
