@@ -59,9 +59,13 @@ export class CarouselAutoplayDirective {
   private isDocumentVisible = injectIsDocumentVisible();
 
   /**
-   * Turn autoplay off without removing the directive — what `<et-carousel>`'s `autoplay` input flips, and
-   * the same escape hatch `etScrollableSnap` has. A disabled autoplay never plays and never asks for a
-   * pause control. @default true
+   * Turn autoplay off without removing the directive — the same escape hatch `etScrollableSnap` has. A
+   * disabled autoplay never plays and never asks for a pause control.
+   *
+   * `true` by default because putting the directive on an element *is* the opt-in. `<et-carousel>` is the
+   * exception — it always carries the directive, so it cannot let this default stand; see
+   * {@link enabledOverride}. Read {@link isEnabled} for what is actually in effect.
+   * @default true
    */
   public enabled = input(true, { transform: booleanAttribute });
 
@@ -86,6 +90,21 @@ export class CarouselAutoplayDirective {
   /** Start playing as soon as the carousel is ready. Off waits for `start()` (or the play control). @default true */
   public playOnInit = input(true, { transform: booleanAttribute });
   private hostIntersection = signalHostElementIntersection();
+
+  /**
+   * @internal Set by `<et-carousel>` from its own `autoplay` input, which is opt-in and so defaults to
+   * `false`.
+   *
+   * The component attaches this directive unconditionally — its host listeners have to cover the controls as
+   * well as the track, so it cannot be conditional — which meant every `<et-carousel>` that did not say
+   * `[autoplay]="false"` was playing, against what both this directive and the component document. A
+   * `hostDirectives` alias forwards an input but cannot change its default, so the component takes the value
+   * over entirely and pushes it here. `null` leaves {@link enabled} in charge, which is the headless case.
+   */
+  public enabledOverride = signal<boolean | null>(null);
+
+  /** Whether autoplay is switched on at all — this instance's `enabled`, or what `<et-carousel>` set. */
+  public isEnabled = computed(() => this.enabledOverride() ?? this.enabled());
 
   /** @internal Set by `etCarouselPlayToggle`, and checked in dev mode: autoplay without a pause control fails WCAG 2.2.2. */
   public pauseControl = signal<unknown | null>(null);
@@ -130,7 +149,7 @@ export class CarouselAutoplayDirective {
 
   /** Why autoplay is not running, or `null` while it is. Useful for a "paused" affordance. */
   public pauseReason = computed<CarouselAutoplayPauseReason | null>(() => {
-    if (!this.enabled()) return 'disabled';
+    if (!this.isEnabled()) return 'disabled';
     if (this.isStopped()) return 'stopped';
     if (this.prefersReducedMotion()) return 'reduced-motion';
     if ((this.carousel?.count() ?? 0) < 2) return 'no-slides';
@@ -185,7 +204,7 @@ export class CarouselAutoplayDirective {
           );
         }
 
-        if (this.enabled() && !this.pauseControl()) {
+        if (this.isEnabled() && !this.pauseControl()) {
           throw new RuntimeError(
             CAROUSEL_ERROR_CODES.AUTOPLAY_WITHOUT_PAUSE_CONTROL,
             '[CarouselAutoplayDirective] A carousel that advances on its own needs a control to stop it (WCAG 2.2.2). ' +

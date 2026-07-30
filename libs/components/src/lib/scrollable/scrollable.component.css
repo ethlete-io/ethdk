@@ -48,6 +48,49 @@
       }
     }
 
+    /* --- Snap ---
+
+       Native CSS scroll snap, driven by the `snap` / `snap-origin` attributes `etScrollableSnap` sets. The
+       browser folds it into the fling on the compositor, so a swipe decelerates onto a child and stops —
+       there is no settle delay and no second animation afterwards to correct it.
+
+       `snapOrigin="auto"` is `proximity`, which is what "take whichever edge the child is already nearest"
+       becomes in CSS: snap when the gesture ended close to a child, otherwise leave the track alone. An
+       explicit origin is `mandatory`, because asking for a resting place means asking for it every time.
+
+       Only children that count as items get a snap position. The scroll observer's two sentinels sit in the
+       first and last item's grid cells and would otherwise add a snap point on top of theirs.
+
+       `snap-suspended` is what keeps native snap and JavaScript from fighting over the offset. `mandatory`
+       does not just bias where a scroll ends — it overrules a programmatic offset outright and silently — so
+       anything writing one (a cursor drag, a carousel crossing its loop seam) holds snapping off while it
+       does. See `ScrollableDirective.suspendSnap`. */
+    &:where([snap]) {
+      --_et-scrollable-snap-strictness: mandatory;
+      --_et-scrollable-snap-align: start;
+      /* Centring reads the child's midpoint against the container's, which no margin enters into. */
+      --_et-scrollable-snap-margin: var(--_et-scrollable-scroll-margin, 0px);
+
+      &:where([snap-origin='auto']) {
+        --_et-scrollable-snap-strictness: proximity;
+      }
+
+      &:where([snap-origin='center']) {
+        --_et-scrollable-snap-align: center;
+        --_et-scrollable-snap-margin: 0px;
+      }
+
+      &:where([snap-origin='end']) {
+        --_et-scrollable-snap-align: end;
+      }
+
+      & .et-scrollable-container > *:not([etScrollableIgnoreChild]) {
+        scroll-snap-align: var(--_et-scrollable-snap-align);
+        scroll-margin-inline: var(--_et-scrollable-snap-margin);
+        scroll-margin-block: var(--_et-scrollable-snap-margin);
+      }
+    }
+
     /* --- Horizontal (default) --- */
 
     &[direction='horizontal'],
@@ -67,6 +110,10 @@
           grid-column: var(--item-count) / var(--item-count);
           grid-row: 1 / 1;
         }
+      }
+
+      &:where([snap]:not([snap-suspended])) .et-scrollable-container {
+        scroll-snap-type: x var(--_et-scrollable-snap-strictness);
       }
 
       & .et-scrollable-mask {
@@ -144,6 +191,10 @@
           grid-row: var(--item-count) / var(--item-count);
           grid-column: 1 / 1;
         }
+      }
+
+      &:where([snap]:not([snap-suspended])) .et-scrollable-container {
+        scroll-snap-type: y var(--_et-scrollable-snap-strictness);
       }
 
       & .et-scrollable-mask {

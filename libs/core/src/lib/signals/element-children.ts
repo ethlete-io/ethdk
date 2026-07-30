@@ -3,11 +3,26 @@ import { SignalElementBindingType, buildElementSignal, firstElementSignal } from
 import { signalElementMutations } from './element-mutations';
 import { signalIsRendered } from './render-utils';
 
-export const signalElementChildren = (el: SignalElementBindingType) => {
+export type SignalElementChildrenOptions = {
+  /**
+   * What the underlying `MutationObserver` watches for. The default is deliberately broad, because any DOM
+   * change *might* change which children an element has.
+   *
+   * Narrow it wherever the consumer knows better. `attributes: true` in particular makes every inline style
+   * or class write anywhere in the subtree re-run this — which for a scroll container whose descendants are
+   * written to per animation frame is a change detection tick per frame for nothing. Pass an
+   * `attributeFilter` (or drop `attributes`) in that case.
+   */
+  mutations?: MutationObserverInit;
+};
+
+const DEFAULT_CHILDREN_MUTATIONS: MutationObserverInit = { childList: true, subtree: true, attributes: true };
+
+export const signalElementChildren = (el: SignalElementBindingType, options?: SignalElementChildrenOptions) => {
   const elements = buildElementSignal(el);
   const firstEl = firstElementSignal(elements);
   const isRendered = signalIsRendered();
-  const elementMutations = signalElementMutations(elements, { childList: true, subtree: true, attributes: true });
+  const elementMutations = signalElementMutations(elements, options?.mutations ?? DEFAULT_CHILDREN_MUTATIONS);
 
   return computed(
     () => {

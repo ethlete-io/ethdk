@@ -84,11 +84,14 @@ type CarouselSlideView = {
       inputs: ['loop', 'labels', 'slideAlign', 'transition', 'transitionDriver'],
     },
     {
-      // `autoplay` is this directive's `enabled`: the carousel always has the directive, and the input
-      // decides whether it ever plays. Its host listeners then cover the controls too, so hovering the
-      // pause button pauses just as hovering a slide does.
+      // Always attached, never conditional: its host listeners have to cover the controls as well as the
+      // track, so that hovering the pause button pauses just as hovering a slide does. Which is why
+      // `autoplay` is this component's own input rather than an alias of the directive's `enabled` — an
+      // alias forwards a value but cannot change a default, and the directive's default is `true` (putting
+      // it on an element is the opt-in). Aliased, every `<et-carousel>` that didn't say
+      // `[autoplay]="false"` played.
       directive: CarouselAutoplayDirective,
-      inputs: ['enabled: autoplay', 'autoplayTime', 'pauseOnHover', 'pauseOnFocus', 'pauseOnOffScreen', 'playOnInit'],
+      inputs: ['autoplayTime', 'pauseOnHover', 'pauseOnFocus', 'pauseOnOffScreen', 'playOnInit'],
     },
   ],
   host: {
@@ -109,6 +112,12 @@ export class CarouselComponent {
    */
   public itemSize = input<ScrollableItemSize | Record<string, ScrollableItemSize>>('full');
 
+  /**
+   * Advance the carousel on its own. Opt-in, and it renders the pause control that requires (WCAG 2.2.2)
+   * along with the countdown ring around the active dot. @default false
+   */
+  public autoplay = input(false, { transform: booleanAttribute });
+
   /** Render the previous/next controls. @default true */
   public showControls = input(true, { transform: booleanAttribute });
 
@@ -121,7 +130,7 @@ export class CarouselComponent {
   /** @internal Held low for the first frames, so the chrome's transitions don't run on arrival. */
   public canAnimate = createCanAnimateSignal();
 
-  protected isAutoplayEnabled = computed(() => this.autoplayDirective.enabled());
+  protected isAutoplayEnabled = computed(() => this.autoplayDirective.isEnabled());
 
   /** Whether a slide is counting down right now — which is when the progress ring exists. */
   protected isAutoplayRunning = computed(() => this.autoplayDirective.isPlaying());
@@ -186,6 +195,10 @@ export class CarouselComponent {
     // the *directive's* signal — the one place that can see the track — which only an effect can do.
     // eslint-disable-next-line ethlete/prefer-linked-signal
     effect(() => this.carousel.attachedScrollable.set(this.track()));
+
+    // Same shape, and the reason `autoplay` is ours rather than an alias — see the hostDirectives note.
+    // eslint-disable-next-line ethlete/prefer-linked-signal
+    effect(() => this.autoplayDirective.enabledOverride.set(this.autoplay()));
 
     if (ngDevMode) {
       afterNextRender(() => {

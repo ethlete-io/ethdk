@@ -51,13 +51,19 @@
             <!-- Rendered for every dot while autoplay is on, rather than only for the one counting down, so
                  it has somewhere to fade in from and out to. The countdown keyframes are applied by
                  `data-counting` instead, which starts them fresh every time the attribute lands — the same
-                 restart the timer does, so the ring and the timer still cannot drift apart. -->
+                 restart the timer does, so the ring and the timer still cannot drift apart.
+
+                 The two inner spans are the countdown itself: a half-disc sweeping each half of the circle,
+                 which is what lets the ring close by `rotate` alone. See the CSS. -->
             @if (isAutoplayEnabled()) {
               <span
                 [style.--_et-carousel-autoplay-duration.ms]="autoplayDuration()"
                 class="et-carousel-dot-progress"
                 aria-hidden="true"
-              ></span>
+              >
+                <span class="et-carousel-dot-progress-half"></span>
+                <span class="et-carousel-dot-progress-half"></span>
+              </span>
             }
           </button>
         }

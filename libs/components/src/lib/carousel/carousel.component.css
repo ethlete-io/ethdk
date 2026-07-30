@@ -175,10 +175,6 @@
     border-radius: 50%;
     opacity: 0;
     scale: 0.55;
-    background: conic-gradient(
-      var(--et-theme-color-primary-solid, currentColor) var(--_et-carousel-progress),
-      transparent 0
-    );
     /* `closest-side` puts 100% at the radius, so this keeps the outermost ring-width and drops the rest —
        one ring, one token, no radius arithmetic to get wrong. */
     mask: radial-gradient(
@@ -186,6 +182,67 @@
       transparent calc(100% - var(--et-carousel-dot-ring-width)),
       black calc(100% - var(--et-carousel-dot-ring-width))
     );
+  }
+
+  /* The countdown, as two rotations rather than a growing gradient.
+
+     It was a `conic-gradient` whose angle came from an animated registered property, which reads beautifully
+     and cannot be composited: a gradient has to be re-rasterized for every value, and animating a registered
+     property recalculates the element's style every frame whether or not the value actually changed. Idle, a
+     counting-down ring cost ~1120 paints and ~510 style recalculations over nine seconds. Stepping the
+     property halved the paints and did nothing at all for the recalculations — the recalculation is the
+     animation existing, not the value moving.
+
+     So nothing here animates a custom property or a paint-only property. Each half of the circle holds a
+     half-disc pinned to the centre, rotating from `-180deg` (entirely in the other half, clipped away) to
+     `0deg` (filling this one), and its own half clips it. The first sweeps the right half over the first half
+     of the slide's duration; the second the left half over the second, via a delay. `rotate` is composited, so
+     the whole countdown runs off the main thread: ~120 paints and ~45 recalculations over the same nine
+     seconds, which is the floor — what the page costs with no ring at all. */
+  .et-carousel-dot-progress-half {
+    position: absolute;
+    inset-block: 0;
+    inline-size: 50%;
+    /* Its own half is the window; the disc inside is only visible where it has swept into it. */
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--et-theme-color-primary-solid, currentColor);
+      rotate: -180deg;
+    }
+
+    /* Right half: the disc is a circle's right half, hinged on its left edge — the circle's centre. */
+    &:first-child {
+      inset-inline-start: 50%;
+
+      &::before {
+        border-radius: 0 100% 100% 0 / 0 50% 50% 0;
+        transform-origin: 0 50%;
+      }
+    }
+
+    /* Left half, hinged on its right edge — the same centre. */
+    &:last-child {
+      inset-inline-start: 0;
+
+      &::before {
+        border-radius: 100% 0 0 100% / 50% 0 0 50%;
+        transform-origin: 100% 50%;
+      }
+    }
+  }
+
+  @keyframes et-carousel-autoplay-sweep {
+    from {
+      rotate: -180deg;
+    }
+
+    to {
+      rotate: 0deg;
+    }
   }
 
   .et-carousel-dot {
@@ -205,12 +262,21 @@
       scale: 0.55;
     }
 
-    /* Counting down: the ring and its track grow into place, and the countdown keyframes start from 0. */
+    /* Counting down: the ring and its track grow into place, and the sweeps start from the beginning. */
     &:where([data-counting]) {
       & .et-carousel-dot-progress {
         opacity: 1;
         scale: 1;
-        animation: et-carousel-autoplay-progress var(--_et-carousel-autoplay-duration, 5000ms) linear forwards;
+      }
+
+      /* Each sweep covers half the circle, so each runs for half the slide's duration and the second waits
+         for the first. */
+      & .et-carousel-dot-progress-half::before {
+        animation: et-carousel-autoplay-sweep calc(var(--_et-carousel-autoplay-duration, 5000ms) / 2) linear forwards;
+      }
+
+      & .et-carousel-dot-progress-half:last-child::before {
+        animation-delay: calc(var(--_et-carousel-autoplay-duration, 5000ms) / 2);
       }
 
       &::after {
@@ -279,24 +345,6 @@
       opacity: 1;
       scale: 1;
       rotate: 0deg;
-    }
-  }
-
-  /* `--_et-carousel-progress` is animated rather than the gradient itself: a registered percentage
-     interpolates, a conic-gradient does not. */
-  @property --_et-carousel-progress {
-    syntax: '<percentage>';
-    inherits: false;
-    initial-value: 0%;
-  }
-
-  @keyframes et-carousel-autoplay-progress {
-    from {
-      --_et-carousel-progress: 0%;
-    }
-
-    to {
-      --_et-carousel-progress: 100%;
     }
   }
 

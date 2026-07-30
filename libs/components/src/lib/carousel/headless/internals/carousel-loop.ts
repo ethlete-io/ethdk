@@ -14,11 +14,12 @@ export type CarouselLoopConfig = {
 };
 
 type LoopGeometry = {
+  scrollable: ScrollableDirective;
   container: HTMLElement;
   horizontal: boolean;
   /** The track's children, clones included, so a scroll offset can be read as a position among them. */
   children: HTMLElement[];
-  /** The real slides' combined length, gaps included. */
+  /** The real slides' combined length, gaps included — `0` when there are no clones, so no seam to cross. */
   trackLength: number;
   /** The scroll offset at which a child sits where `slideAlign` says it should. */
   restingOffsetOf: (child: HTMLElement) => number;
@@ -32,11 +33,11 @@ const sizeOf = (element: HTMLElement, horizontal: boolean) => (horizontal ? elem
  * Which child the track is resting on: the one whose resting offset is nearest the current scroll offset.
  *
  * Deliberately "nearest" rather than a comparison against the first real slide's position. The offset the
- * track actually comes to rest at is not exactly the computed one — the scrollable re-snaps after any
- * programmatic scroll, and it measures with bounding rects, which a transition scaling the slides shifts by
- * a few pixels. A threshold tight enough to catch the seam would fire on that jitter and teleport a whole
- * track for nothing, and one loose enough to survive it would miss the seam. Nearest has no threshold to get
- * wrong: the children are a slide apart, so a few pixels either way cannot change the answer.
+ * track actually comes to rest at is not exactly the computed one — CSS scroll snap resolves against the
+ * slides' *painted* boxes, which a transition scaling them shifts by a few pixels, and a fling can be left
+ * fractions of a pixel out. A threshold tight enough to catch the seam would fire on that jitter and teleport
+ * a whole track for nothing, and one loose enough to survive it would miss the seam. Nearest has no threshold
+ * to get wrong: the children are a slide apart, so a few pixels either way cannot change the answer.
  */
 const restingChildIndex = ({ container, children, horizontal, restingOffsetOf }: LoopGeometry) => {
   const scroll = horizontal ? container.scrollLeft : container.scrollTop;
@@ -56,16 +57,23 @@ const restingChildIndex = ({ container, children, horizontal, restingOffsetOf }:
   return nearest;
 };
 
-const scrollTo = (geometry: Pick<LoopGeometry, 'container' | 'horizontal'>, offset: number) =>
-  geometry.container.scroll(
-    geometry.horizontal ? { left: offset, behavior: 'instant' } : { top: offset, behavior: 'instant' },
-  );
+/**
+ * Move the scroll offset to exactly this number.
+ *
+ * Through the scrollable rather than the element, because the track snaps: `scroll-snap-type: mandatory` does
+ * not merely bias where a scroll settles, it overrules a programmatic offset outright and silently. The
+ * teleport's offset happens to *be* a snap position — the track repeats with a period of `count` slides, so a
+ * slide and its clone are the same distance from their snap point — but "happens to be" is not a thing to
+ * stake a seamless loop on. See `ScrollableDirective.suspendSnap`.
+ */
+const scrollTo = ({ scrollable, horizontal }: Pick<LoopGeometry, 'scrollable' | 'horizontal'>, offset: number) =>
+  scrollable.scrollToOffsetUnsnapped(horizontal ? { left: offset } : { top: offset });
 
 /**
  * Keeps a looping carousel's scroll offset inside the real slides by shifting it a whole track's length
  * whenever it drifts into the clones — the one way to cross the seam on a native scroller without showing
- * it. `teleport()` is called once the scrolling has settled (see `useCarouselScrollSettled`) — never during
- * it, or the jump would be visible.
+ * it. `readSettled().crossSeam()` is called once the scrolling has settled (see `useCarouselScrollSettled`)
+ * — never during it, or the jump would be visible.
  *
  * The measurements are layout offsets (`offsetLeft`/`offsetTop`) rather than bounding rects on purpose: a
  * transition may be scaling the slides, and a rect would then report the scaled box while the scroll
@@ -91,22 +99,14 @@ export const useCarouselLoop = (config: CarouselLoopConfig) => {
     const cloneCount = config.cloneCount();
     const count = config.count();
 
-    if (!scrollable || !scrollContainer || !cloneCount || !count) return null;
+    if (!scrollable || !scrollContainer || !count) return null;
 
     const children = scrollable.scrollableChildren();
 
     // Mid-render the children signal can disagree with the counts; measuring then would be nonsense.
     if (children.length !== count + cloneCount * 2) return null;
 
-    const firstReal = children[cloneCount];
-    const firstTrailing = children[cloneCount + count];
-
-    if (!firstReal || !firstTrailing) return null;
-
     const horizontal = scrollable.direction() !== 'vertical';
-    const trackLength = offsetOf(firstTrailing, horizontal) - offsetOf(firstReal, horizontal);
-
-    if (trackLength <= 0) return null;
 
     // Centred slides rest half a viewport earlier than start-aligned ones, and by a different amount per
     // slide when `itemSize="auto"` makes them different widths — so it is a function of the child, not a
@@ -116,27 +116,74 @@ export const useCarouselLoop = (config: CarouselLoopConfig) => {
     const restingOffsetOf = (child: HTMLElement) =>
       centred ? offsetOf(child, horizontal) - (viewport - sizeOf(child, horizontal)) / 2 : offsetOf(child, horizontal);
 
-    return { container: scrollContainer, horizontal, children, trackLength, restingOffsetOf };
+    // Without clones there is no seam to cross, but the resting child is still worth knowing — it is how the
+    // carousel tells its own navigation's arrival apart from any other settling of the scroll.
+    const firstReal = children[cloneCount];
+    const firstTrailing = children[cloneCount + count];
+    const trackLength =
+      cloneCount && firstReal && firstTrailing
+        ? offsetOf(firstTrailing, horizontal) - offsetOf(firstReal, horizontal)
+        : 0;
+
+    return {
+      scrollable,
+      container: scrollContainer,
+      horizontal,
+      children,
+      trackLength: trackLength > 0 ? trackLength : 0,
+      restingOffsetOf,
+    };
   };
 
-  const teleport = () => {
+  /**
+   * The state of the track at rest, read in one pass.
+   *
+   * One pass matters because the caller needs two things from it — which child the track landed on, and then
+   * whether to cross the seam — and every read of it is a forced layout plus an `offsetLeft` for every child,
+   * clones included. Asking twice measured the same unchanged geometry twice, at the one moment in a gesture
+   * where the main thread is least free: the frame the scrolling stops.
+   */
+  const readSettled = () => {
     const geometry = readGeometry();
 
-    if (!geometry) return;
+    if (!geometry) return null;
 
-    const { container: scrollContainer, horizontal, trackLength } = geometry;
-    const cloneCount = config.cloneCount();
     const resting = restingChildIndex(geometry);
-    const scroll = horizontal ? scrollContainer.scrollLeft : scrollContainer.scrollTop;
 
-    // One shift is always enough: the clones on either side never span more than a full track, so adding or
-    // subtracting one lands back inside the real run. And it lands on the *same picture*: the track repeats
-    // every `count` slides, so a child and the clone a track away are the same slide at the same size.
-    if (resting < cloneCount) {
-      scrollTo(geometry, scroll + trackLength);
-    } else if (resting >= cloneCount + config.count()) {
-      scrollTo(geometry, scroll - trackLength);
-    }
+    return {
+      /** Which child of the track, clones included, the scroll offset is nearest. */
+      resting,
+
+      /**
+       * Shift the scroll offset a whole track's length if it has come to rest in the clones — the one way to
+       * cross the seam on a native scroller without showing it. Never call it mid-scroll.
+       *
+       * One shift is always enough: the clones on either side never span more than a full track, so adding or
+       * subtracting one lands back inside the real run. And it lands on the *same picture*: the track repeats
+       * every `count` slides, so a child and the clone a track away are the same slide at the same size.
+       */
+      crossSeam: () => {
+        const { container: scrollContainer, horizontal, trackLength } = geometry;
+        const cloneCount = config.cloneCount();
+        const scroll = horizontal ? scrollContainer.scrollLeft : scrollContainer.scrollTop;
+
+        if (!trackLength) return false;
+
+        if (resting < cloneCount) {
+          scrollTo(geometry, scroll + trackLength);
+
+          return true;
+        }
+
+        if (resting >= cloneCount + config.count()) {
+          scrollTo(geometry, scroll - trackLength);
+
+          return true;
+        }
+
+        return false;
+      },
+    };
   };
 
   effect(() => {
@@ -171,21 +218,14 @@ export const useCarouselLoop = (config: CarouselLoopConfig) => {
       const geometry = readGeometry();
       const target = geometry?.children[cloneCount + Math.min(lastRealIndex, count - 1)];
 
-      if (!geometry || !target) return;
+      // No measurable track length with clones present means the slides have no layout yet — every offset
+      // reads as 0, so there is no resting place to put the carousel on. The children signal will fire again
+      // once they do.
+      if (!geometry || !geometry.trackLength || !target) return;
 
       scrollTo(geometry, geometry.restingOffsetOf(target));
     });
   });
 
-  /**
-   * Which child the track is resting nearest right now, or `null` while the geometry can't be read. The
-   * caller uses it to tell its own navigation apart from anything else that settles the scroll.
-   */
-  const restingDomIndex = () => {
-    const geometry = readGeometry();
-
-    return geometry ? restingChildIndex(geometry) : null;
-  };
-
-  return { teleport, restingDomIndex };
+  return { readSettled };
 };

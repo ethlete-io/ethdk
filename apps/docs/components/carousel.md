@@ -78,8 +78,8 @@ On `<et-carousel>`:
 | `slideAlign`       | `'start'` | Where the current slide rests: `'start'` or `'center'` — see [Alignment](#alignment).         |
 | `autoplay`         | `false`   | Advance on its own. Renders the required pause control.                                       |
 | `autoplayTime`     | `5000`    | Milliseconds per slide.                                                                       |
-| `transition`       | `'none'`  | `'dim'` or `'wipe'` — see [Transitions](#transitions).                                        |
-| `transitionDriver` | `'auto'`  | What fills the progress property the transitions read.                                        |
+| `transition`       | `'none'`  | `'dim'`, `'wipe'` or `'custom'` — see [Transitions](#transitions).                            |
+| `transitionDriver` | `'auto'`  | What drives the transition — see [Two drivers](#two-drivers).                                 |
 | `showControls`     | `true`    | Render the previous/next controls.                                                            |
 | `showDots`         | `true`    | Render the slide dots (which double as the autoplay progress indicator).                      |
 | `labels`           | `null`    | Per-instance string overrides; prefer `provideCarouselLabels` app-wide.                       |
@@ -114,7 +114,7 @@ with its neighbours peeking either side rather than a row that happens to be cut
 
 It makes no difference at `itemSize="full"`, where a slide fills the track either way. Centring the first
 or last slide needs content beyond it, so it comes into its own on a looping carousel — which is also
-where the transitions read best, since the progress every effect reads is measured from the centre.
+where the transitions read best, since every effect is measured from the centre.
 
 ## Looping
 
@@ -128,6 +128,11 @@ pointer to come up. Where `scrollend` is missing, a quiet stretch of `scroll` ev
 The distance is **measured**, not computed from `itemSize`, because `itemSize="auto"` lets every slide
 be a different width; it is exact regardless, since the track repeats with a period of one full set of
 slides.
+
+The shift is written with the track's [snapping suspended](/components/scrollable#snapping-and-programmatic-scrolling),
+because `scroll-snap-type: mandatory` would otherwise be free to overrule the offset. The offset happens to be
+a snap position — a slide and its clone sit the same distance from theirs — but a seamless loop is not
+something to stake on "happens to".
 
 What this means in practice:
 
@@ -168,16 +173,15 @@ after it.
 
 ## Transitions
 
-Every transition reads **one number**: `--et-carousel-slide-progress`, a registered custom property on
-each slide that runs from `-1` just before the slide enters the track's viewport, through `0` at
-centred, to `1` once it has left. Because it tracks _position_ rather than an "active" flag, an effect
-follows a drag and reverses when you drag back.
+Every transition follows the slide's **position** rather than an "active" flag, which is what makes it track
+a drag and reverse when you drag back instead of stepping when a flag flips.
 
-| `transition` | What it does                                                                      |
-| ------------ | --------------------------------------------------------------------------------- |
-| `'none'`     | The plain scroll. The default, and injects none of the transition CSS.            |
-| `'dim'`      | Fades and shrinks the slides either side of the current one.                      |
-| `'wipe'`     | Two stationary slides either side of one sweeping edge. Needs one slide per view. |
+| `transition` | What it does                                                                             |
+| ------------ | ---------------------------------------------------------------------------------------- |
+| `'none'`     | The plain scroll. The default, and injects none of the transition CSS.                   |
+| `'dim'`      | Fades and shrinks the slides either side of the current one.                             |
+| `'wipe'`     | Two stationary slides either side of one sweeping edge. Needs one slide per view.        |
+| `'custom'`   | No effect of its own — fills `--et-carousel-slide-progress` for CSS of yours. See below. |
 
 ```html
 <et-carousel itemSize="half" transition="dim">…</et-carousel>
@@ -185,10 +189,17 @@ follows a drag and reverses when you drag back.
 
 `wipe` is the `@ethlete/cdk` carousel's `mask-slide` rebuilt against position instead of a class flip, and
 it is all three parts of it: the wipe itself, the 125px push of the two slides against each other, and the
-brightness dip on whichever is leaving. What makes it a _wipe_ rather than a sliding crop is that each
+dip in brightness on whichever is leaving. What makes it a _wipe_ rather than a sliding crop is that each
 slide's content is pinned to the track while the slide's own box keeps scrolling and clips it — so the
 reader sees two still pictures and one moving boundary. Drag slowly and it tracks the finger; drag back and
 it reverses.
+
+The brightness dip is drawn as a veil over the slide (a black overlay whose opacity follows the position)
+rather than as a `filter` on it. A filter has to re-rasterize everything underneath it whenever its value
+changes, which on a slide-sized layer is a full repaint per frame — measured at ~1800 paints over eight
+swipes, three and a half times what the same carousel costs without it, and the reason the wipe showed torn
+half-drawn tiles on a phone. Override `--et-carousel-wipe-dim-color` if a slide should recede towards
+something other than black.
 
 It applies only where the track shows one slide per view. With the content pinned to the track, a slide
 whose box is partly on screen at rest would have its content outside that box and show as blank — so a
@@ -196,44 +207,62 @@ peeking layout wants `dim`.
 
 <StoryEmbed id="components-carousel--wipe-transition" height="440px" />
 
-### Two drivers, one variable
+### Two drivers
 
-`transitionDriver` decides what fills the property, so an effect looks the same in every browser:
+`transitionDriver` decides what drives the movement, so an effect looks the same in every browser:
 
-| Value               | What fills the property                                                                                   |
+| Value               | What drives it                                                                                            |
 | ------------------- | --------------------------------------------------------------------------------------------------------- |
 | `'auto'`            | The default: `'scroll-timeline'` where the browser has scroll-driven animations, `'js'` where it doesn't. |
-| `'scroll-timeline'` | A `@keyframes` animation on each slide's own `view(inline)` timeline. No JavaScript at all.               |
+| `'scroll-timeline'` | Keyframes on each slide's own `view(inline)` timeline. No JavaScript at all.                              |
 | `'js'`              | A passive `scroll` listener batched into a frame. The fallback for Firefox, as of this writing.           |
-| `'none'`            | Nothing fills it, so no effect runs — for a page that would rather have the plain scroll.                 |
+| `'none'`            | Nothing runs — for a page that would rather have the plain scroll.                                        |
+
+Under `'scroll-timeline'` the built-in effects are keyframes over `opacity`, `scale` and `translate`, which a
+browser can hand to the compositor. Under `'js'` they are `calc()` over `--et-carousel-slide-progress`, which
+the driver writes each frame — the same numbers over the same range, so the two are indistinguishable to look
+at, but only the first can be composited. The
+[JS transition driver](https://ethlete-sdk.web.app/?path=/story/components-carousel--js-transition-driver)
+story runs them side by side.
 
 The JS driver measures the slides once per layout change, so a frame costs one scroll-offset read for
 the whole track, and slides whose progress has settled (anything off screen sits at ±1) stop being
-written at all. The two drivers are checked against each other in the
-[JS transition driver](https://ethlete-sdk.web.app/?path=/story/components-carousel--js-transition-driver)
-story — they should be indistinguishable.
+written at all.
 
-`prefers-reduced-motion` resolves the driver to `'none'` whatever you ask for. Nothing then writes the
-property, so the effects don't apply at all and the slides are left entirely alone — rather than pinned
+`prefers-reduced-motion` resolves the driver to `'none'` whatever you ask for. Nothing then drives the
+slides, so the effects don't apply at all and the slides are left entirely alone — rather than pinned
 at whatever their centred values happen to be.
 
 ### Writing your own effect
 
-The property is registered (and inheriting, so slide _content_ can read it too), and the host reports
-`data-transition` and `data-transition-driver`. That is enough to hang your own effect on the same
-input, with no driver of your own:
+`transition="custom"` fills `--et-carousel-slide-progress`, a registered custom property on each slide that
+runs from `-1` just before the slide enters the track's viewport, through `0` at centred, to `1` once it has
+left. It inherits, so slide _content_ can read it too, and the host reports `data-transition` and
+`data-transition-driver`. That is enough to hang your own effect on it, with no driver of your own:
+
+```html
+<et-carousel transition="custom" itemSize="full">…</et-carousel>
+```
 
 ```css
 /* only while a driver is actually running, so reduced motion turns this off too */
-[data-transition-driver='scroll-timeline'] [data-transition='parallax'] .et-carousel-item img,
-[data-transition-driver='js'] [data-transition='parallax'] .et-carousel-item img {
+[data-transition-driver='scroll-timeline'] [data-transition='custom'] .et-carousel-item img,
+[data-transition-driver='js'] [data-transition='custom'] .et-carousel-item img {
   translate: calc(var(--et-carousel-slide-progress) * -20%);
 }
 ```
 
+It is its own `transition` value rather than something `dim` and `wipe` also do, because that property is the
+expensive part of the whole system. It inherits, so changing it on a slide invalidates the style of
+everything inside that slide, and a scroll changes it every frame. Measured over eight swipes on a
+six-times-throttled CPU: animating the property cost **263ms** of style recalculation and the `calc()` rules
+that read it cost **3ms** — the number was never the cheap part. The built-ins therefore don't go through it,
+and asking for it is what makes it worth paying for.
+
 ## Autoplay
 
-`autoplay` advances the carousel and draws the countdown as a ring closing around the active dot. It
+`autoplay` advances the carousel and draws the countdown as a ring closing around the active dot. It is
+opt-in on `<et-carousel>` and off by default. It
 pauses whenever moving the page under the reader would be rude, and reports which of those is
 happening via `pauseReason()`:
 
@@ -277,6 +306,16 @@ focus pause: it lives inside the carousel, so pressing play would otherwise be c
 still resting on the button that was just pressed, and autoplay could never be restarted. Hovering a
 _slide_ pauses as it should. The
 [Autoplay](https://ethlete-sdk.web.app/?path=/story/components-carousel--autoplay) story shows it live.
+
+On the headless `etCarouselAutoplay`, `enabled` defaults to `true` — putting the directive on an element
+_is_ the opt-in there — so read `isEnabled()` for what is actually in effect. `<et-carousel>` always carries
+the directive and so cannot let that default stand; its own `autoplay` input takes the value over.
+
+The countdown ring closes by rotating two half-discs, one per half of the circle, rather than by animating
+the angle of a `conic-gradient`. `rotate` is composited; a gradient is not — it has to be re-rasterized for
+every value, and animating a registered property recalculates style every frame whether the value moved or
+not. Idle, the gradient version cost ~1120 paints and ~510 style recalculations over nine seconds; the
+rotations cost ~139 and ~89, which is within measurement noise of rendering no ring at all.
 
 ## Headless
 
@@ -350,16 +389,17 @@ progress ring take the primary accent, inactive dots a neutral tint. Geometry is
 | `--et-carousel-dot-ring-width`  | `2.5px` | how thick that ring is drawn                                                                         |
 | `--et-carousel-edge-fade`       | `32px`  | how far the track's edges fade where a centred peeking layout cuts a slide off; `0px` for a hard cut |
 
-`wipe` has two knobs of its own, both matching what cdk's `mask-slide` used:
+`wipe` has knobs of its own, matching what cdk's `mask-slide` used:
 
-| Property                   | Default | Applies to                                                                |
-| -------------------------- | ------- | ------------------------------------------------------------------------- |
-| `--et-carousel-wipe-shift` | `125px` | how far the two slides are pushed against each other; `0` for a pure wipe |
-| `--et-carousel-wipe-dim`   | `0.5`   | how dark a slide goes as it leaves                                        |
+| Property                       | Default | Applies to                                                                |
+| ------------------------------ | ------- | ------------------------------------------------------------------------- |
+| `--et-carousel-wipe-shift`     | `125px` | how far the two slides are pushed against each other; `0` for a pure wipe |
+| `--et-carousel-wipe-dim`       | `0.5`   | how dark a slide goes as it leaves                                        |
+| `--et-carousel-wipe-dim-color` | `#000`  | what it darkens _with_ — the veil's colour                                |
 
-`--et-carousel-slide-progress` (`<number>`, inherits) is the transitions' input rather than a knob to
-set — read it, don't write it. The transition CSS is only injected once a carousel asks for a
-`transition`, so the default carousel carries none of it.
+`--et-carousel-slide-progress` (`<number>`, inherits) is an input to read rather than a knob to set, and only
+`transition="custom"` fills it — see [writing your own effect](#writing-your-own-effect). The transition CSS
+is only injected once a carousel asks for a `transition`, so the default carousel carries none of it.
 
 Slide sizing, spacing and the scroll behaviour itself are the [scrollable's](/components/scrollable)
 to configure.

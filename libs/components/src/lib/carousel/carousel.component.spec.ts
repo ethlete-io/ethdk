@@ -40,7 +40,7 @@ class CarouselHostComponent {
   public loop = signal(false);
   public itemSize = signal('full');
   public slideAlign = signal<'start' | 'center'>('start');
-  public transition = signal<'none' | 'dim' | 'wipe'>('none');
+  public transition = signal<'none' | 'dim' | 'wipe' | 'custom'>('none');
   public transitionDriver = signal<'auto' | 'scroll-timeline' | 'js' | 'none'>('auto');
   public autoplayTimeFor = signal<((slide: Slide, index: number) => number | null) | null>(null);
 }
@@ -136,6 +136,36 @@ describe('CarouselComponent', () => {
     const fixture = createHost();
 
     expect(host(fixture).querySelector('et-carousel')?.getAttribute('aria-label')).toBe('Karussell');
+  });
+
+  it('does not autoplay unless asked to', () => {
+    // `<et-carousel>` always carries the autoplay directive, whose own `enabled` defaults to true because
+    // putting it on an element is the opt-in. The component has to override that, or every carousel plays.
+    TestBed.resetTestingModule();
+
+    @Component({
+      selector: 'et-test-carousel-bare',
+      template: `
+        <et-carousel>
+          <ng-template [etCarouselSlide]="slides" let-slide>
+            <span>{{ slide.title }}</span>
+          </ng-template>
+        </et-carousel>
+      `,
+      imports: [CAROUSEL_IMPORTS],
+    })
+    class BareHostComponent {
+      public autoplayDirective = viewChild.required(CarouselComponent, { read: CarouselAutoplayDirective });
+      public slides: Slide[] = [{ title: 'one' }, { title: 'two' }];
+    }
+
+    const fixture = TestBed.createComponent(BareHostComponent);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.autoplayDirective().isEnabled()).toBe(false);
+    expect(fixture.componentInstance.autoplayDirective().pauseReason()).toBe('disabled');
+    // and so no pause control is required, and none is rendered
+    expect((fixture.nativeElement as HTMLElement).querySelector('[etCarouselPlayToggle]')).toBeNull();
   });
 
   it('renders no play control while autoplay is off, and one that reports the state while it is on', () => {
@@ -375,14 +405,31 @@ describe('CarouselComponent', () => {
 
     it('centres the current slide when asked to, and tells the track to snap that way', () => {
       const fixture = createHost();
+      const track = host(fixture).querySelector('et-scrollable');
 
-      expect(host(fixture).querySelector('et-scrollable')?.getAttribute('snapOrigin')).toBeNull();
+      // the snapping is CSS reading these attributes, so they are the whole of the wiring
+      expect(track?.hasAttribute('snap')).toBe(true);
+      expect(track?.getAttribute('snap-origin')).toBe('start');
 
       fixture.componentInstance.slideAlign.set('center');
       fixture.detectChanges();
 
       // the alignment is the carousel's, and the track has to snap the same way or the two would fight
       expect(fixture.componentInstance.carousel().slideAlign()).toBe('center');
+      expect(track?.getAttribute('snap-origin')).toBe('center');
+    });
+
+    it('reports a custom transition so a consumer can hang their own effect on the progress property', () => {
+      const fixture = createHost();
+
+      fixture.componentInstance.transition.set('custom');
+      fixture.detectChanges();
+
+      const carousel = host(fixture).querySelector('et-carousel');
+
+      expect(carousel?.getAttribute('data-transition')).toBe('custom');
+      // a driver has to be running, or nothing would fill the property
+      expect(fixture.componentInstance.carousel().resolvedTransitionDriver()).not.toBe('none');
     });
 
     it('turns the driver off when asked for none, whatever the effect', () => {

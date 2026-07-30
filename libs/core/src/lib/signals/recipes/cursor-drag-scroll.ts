@@ -14,6 +14,16 @@ export type CursorDragScrollOptions = {
 
   /** The allowed scroll direction. */
   allowedDirection?: MaybeSignal<CursorDragScrollDirection>;
+
+  /**
+   * Whether the element overflows in the allowed direction — there is nothing to drag if it does not.
+   *
+   * Measured here when it isn't supplied, which means a MutationObserver and a ResizeObserver of its own.
+   * Hand it over wherever the caller already knows: a scrollable that tracks its own scroll state was ending
+   * up with two observers watching the same element for the same thing, and both of them re-measured
+   * `scrollWidth` — a forced layout — on every inline style written anywhere inside it.
+   */
+  canScroll?: Signal<boolean>;
 };
 
 /** The deadzone in pixels after which the cursor drag scroll will take effect. */
@@ -32,7 +42,6 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
   const element = firstElementSignal(elements);
   const destroyRef = inject(DestroyRef);
   const { enabled = signal(true), allowedDirection = 'both' } = options ?? {};
-  const scrollState = signalElementScrollState(elements);
   const renderer = injectRenderer();
   const isDragging = signal(false);
   const isInitDragging = signal(false);
@@ -41,8 +50,15 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
   const dragAmount = signal({ x: 0, y: 0 });
   const document = inject(DOCUMENT);
 
-  const canScroll = computed(() => {
-    const currentScrollState = scrollState();
+  // Only measured when the caller hasn't already: this costs a MutationObserver and a ResizeObserver.
+  const suppliedCanScroll = options?.canScroll;
+  const measuredScrollState = suppliedCanScroll ? null : signalElementScrollState(elements);
+
+  const measuredCanScroll = computed(() => {
+    const currentScrollState = measuredScrollState?.();
+
+    if (!currentScrollState) return false;
+
     const direction = maybeSignalValue(allowedDirection);
 
     switch (direction) {
@@ -54,6 +70,8 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
         return currentScrollState.canScrollVertically;
     }
   });
+
+  const canScroll = suppliedCanScroll ?? measuredCanScroll;
 
   // Cleanup if the element the cursor drag scroll is bound to gets changed
   effect(() => {

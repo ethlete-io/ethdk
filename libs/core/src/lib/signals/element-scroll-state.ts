@@ -8,7 +8,19 @@ import { signalIsRendered } from './render-utils';
 export type SignalElementScrollStateOptions = {
   /** The initial scroll position to scroll to. Once a truthy value get's emitted, all further values will be ignored. */
   initialScrollPosition?: Signal<ScrollToOptions | null>;
+
+  /**
+   * What the underlying `MutationObserver` watches for — a proxy for "the content may have changed size, so
+   * re-measure whether it still overflows". The default is deliberately broad.
+   *
+   * Narrow it wherever the consumer knows better. `attributes: true` means every inline style or class write
+   * anywhere in the subtree re-runs the measurement, and the measurement reads `scrollWidth`/`scrollHeight`
+   * — so a descendant written to per animation frame buys a forced layout per frame.
+   */
+  mutations?: MutationObserverInit;
 };
+
+const DEFAULT_SCROLL_STATE_MUTATIONS: MutationObserverInit = { childList: true, subtree: true, attributes: true };
 
 export type ElementScrollState = {
   canScroll: boolean;
@@ -30,7 +42,7 @@ export const signalElementScrollState = (el: SignalElementBindingType, options?:
   const elements = buildElementSignal(el);
   const observedEl = firstElementSignal(elements);
   const elementDimensions = signalElementDimensions(elements);
-  const elementMutations = signalElementMutations(elements, { childList: true, subtree: true, attributes: true });
+  const elementMutations = signalElementMutations(elements, options?.mutations ?? DEFAULT_SCROLL_STATE_MUTATIONS);
   const isRendered = signalIsRendered();
 
   const initialScrollPosition = options?.initialScrollPosition;

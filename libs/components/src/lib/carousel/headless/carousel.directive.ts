@@ -34,6 +34,7 @@ export const CAROUSEL_TRANSITIONS = {
   NONE: 'none',
   DIM: 'dim',
   WIPE: 'wipe',
+  CUSTOM: 'custom',
 } as const;
 
 export type CarouselTransition = (typeof CAROUSEL_TRANSITIONS)[keyof typeof CAROUSEL_TRANSITIONS];
@@ -136,10 +137,15 @@ export class CarouselDirective {
    * The look of the movement. `'none'` is the plain scroll; `'dim'` fades and shrinks the slides either
    * side of the current one; `'wipe'` uncovers each slide from the edge it is travelling towards.
    *
-   * Every effect is CSS reading one number — `--et-carousel-slide-progress`, which runs from `-1` before
-   * a slide enters through `0` at centred to `1` once it has left. That is what makes them track a drag
-   * rather than step when an "active" flag flips, and what lets you write your own against the same
-   * property. `transitionDriver` decides what fills it. @default 'none'
+   * Every effect follows the slide's *position* rather than an "active" flag, which is what makes it track a
+   * drag and reverse when you drag back rather than stepping when a flag flips.
+   *
+   * `'custom'` applies no effect and instead fills `--et-carousel-slide-progress` — `-1` before a slide
+   * enters, `0` at centred, `1` once it has left — for CSS of your own to read. It is a separate value rather
+   * than something the built-in effects also do, because that property *inherits*, so filling it restyles
+   * everything inside every slide on every frame: it measured eight times the style cost of the built-in
+   * effects, which are keyframes over composited properties instead. Worth paying for when you are using it,
+   * not otherwise. `transitionDriver` decides what fills it. @default 'none'
    */
   public transition = input<CarouselTransition>('none');
 
@@ -344,30 +350,36 @@ export class CarouselDirective {
       activeIndex: this.activeIndex,
     });
 
+    const slideProgress = useCarouselSlideProgress({
+      scrollable: this.scrollable,
+      enabled: computed(() => this.resolvedTransitionDriver() === 'js'),
+    });
+
     useCarouselScrollSettled({
       scrollable: this.scrollable,
       onSettled: () => {
+        // One geometry read for both of the questions below — reading it costs a forced layout and an
+        // offset per child, and this runs on the frame the scrolling stops.
+        const settled = loop.readSettled();
         const requested = this.requestedDomIndex();
 
         // A navigation that steps more than one slide covers the rest instantly first, and that instant
         // scroll settles too — acting on it would teleport out from under the animation still to come. So a
         // settle that has not arrived at the requested child is not this navigation's; the scroll that is
         // still running will settle again.
-        if (requested !== null && loop.restingDomIndex() !== requested) return;
+        if (requested !== null && settled && settled.resting !== requested) return;
 
         // Trust the intersections again before crossing the seam: the teleport moves the track under the
         // very index that was pending, so holding on to it would name the wrong child.
         this.requestedDomIndex.set(null);
 
-        if (this.isLooping()) loop.teleport();
+        // The JS driver fills the progress property from a scroll listener batched into a frame, and a
+        // teleport is a whole track's worth of movement that no scroll event preceded — so it is told at
+        // once rather than a frame later. See `flush`.
+        if (settled?.crossSeam()) slideProgress.flush();
       },
       // The reader is scrolling for themselves now, so whatever a button asked for is no longer the plan.
       onPointerDown: () => this.requestedDomIndex.set(null),
-    });
-
-    useCarouselSlideProgress({
-      scrollable: this.scrollable,
-      enabled: computed(() => this.resolvedTransitionDriver() === 'js'),
     });
 
     // The transition CSS is mounted rather than shipped, so `transition="none"` — the default — injects

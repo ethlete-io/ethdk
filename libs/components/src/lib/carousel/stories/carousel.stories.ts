@@ -38,7 +38,7 @@ export default {
     autoplayTime: { control: { type: 'range', min: 1000, max: 10000, step: 500 } },
     showControls: { control: 'boolean' },
     showDots: { control: 'boolean' },
-    transition: { control: 'radio', options: ['none', 'dim', 'wipe'] },
+    transition: { control: 'radio', options: ['none', 'dim', 'wipe', 'custom'] },
     transitionDriver: { control: 'radio', options: ['auto', 'scroll-timeline', 'js', 'none'] },
     slideAlign: { control: 'radio', options: ['start', 'center'] },
     surface: { control: 'text' },
@@ -102,10 +102,11 @@ export const DimTransition: Story = {
     docs: {
       description: {
         story:
-          'Every transition is CSS reading one number: `--et-carousel-slide-progress`, which runs from `-1` ' +
-          'before a slide enters through `0` at centred to `1` once it has left. `dim` fades and shrinks the ' +
-          'slides either side of the current one. Because the number tracks position rather than an "active" ' +
-          'flag, the effect follows a drag instead of snapping when the flag flips.',
+          'Every transition follows the slide\'s position rather than an "active" flag, so it tracks a drag and ' +
+          'reverses when you drag back instead of stepping when a flag flips. `dim` fades and shrinks the slides ' +
+          "either side of the current one, as keyframes over `opacity` and `scale` along each slide's own " +
+          '`view()` timeline — properties a browser can hand to the compositor, which routing them through an ' +
+          'inherited custom property could not be.',
       },
     },
   },
@@ -137,11 +138,12 @@ export const JsTransitionDriver: Story = {
     docs: {
       description: {
         story:
-          'The same effect, filled the other way. `transitionDriver="auto"` (the default) animates the progress ' +
-          "property along each slide's own `view(inline)` timeline where the browser has one and writes it from " +
-          'a passive scroll listener batched into a frame where it does not (Firefox, as of this writing). ' +
-          'Forcing `"js"` here shows the fallback path on a browser that would have used the timeline — it ' +
-          'should be indistinguishable.',
+          'The same effect, driven the other way. `transitionDriver="auto"` (the default) animates composited ' +
+          "properties along each slide's own `view(inline)` timeline where the browser has scroll-driven " +
+          'animations, and falls back to `calc()` over `--et-carousel-slide-progress`, written from a passive ' +
+          'scroll listener batched into a frame, where it does not (Firefox, as of this writing). Forcing ' +
+          '`"js"` here shows that fallback on a browser that would have used the timeline — it should be ' +
+          'indistinguishable to look at, even though only the timeline can be composited.',
       },
     },
   },

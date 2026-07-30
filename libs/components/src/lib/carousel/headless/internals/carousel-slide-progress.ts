@@ -149,4 +149,20 @@ export const useCarouselSlideProgress = (config: CarouselSlideProgressConfig) =>
     .subscribe();
 
   inject(DestroyRef).onDestroy(() => cancelFrame());
+
+  /**
+   * Write the progress values for the offset the track is at *now*, rather than on the next frame.
+   *
+   * For the caller that moves the scroll offset without scrolling — the loop's teleport — which is the one
+   * case where waiting a frame is visible. The teleport shifts the track a whole length in one go; a frame
+   * still holding the values from before it puts every slide's content a whole track away from the box that
+   * clips it, and `wipe` then draws a slide as a blank rectangle for that frame. That is the black flash at
+   * the seam. Cheap enough to be unconditional: it is one `scrollLeft` read and, at most, one write per slide.
+   */
+  const flush = () => {
+    cancelFrame();
+    write();
+  };
+
+  return { flush };
 };
