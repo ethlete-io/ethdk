@@ -172,6 +172,18 @@
         min-inline-size: 0;
       }
 
+      /* Same trade as the border: the panel is large enough that the label can carry selection, so a list of
+         cards is scannable without reading every dot. 500 keeps the label above its `<et-description>` now that
+         an unchosen card's label shares the description's muted colour. */
+      .et-radio-label {
+        font-weight: 500;
+        color: var(--et-surface-color-muted-solid, currentColor);
+      }
+
+      &:where([aria-checked='true']) .et-radio-label {
+        color: var(--et-surface-color-solid, currentColor);
+      }
+
       @media (hover: hover) {
         /* Not while checked: a hover hint at 40% would otherwise override the full-strength selected border, so
            hovering the chosen card would make it look less chosen. */
@@ -205,6 +217,10 @@
         transition:
           border-color var(--et-radio-transition-duration) ease,
           background-color var(--et-radio-transition-duration) ease;
+
+        .et-radio-label {
+          transition: color var(--et-radio-transition-duration) ease;
+        }
       }
     }
   }

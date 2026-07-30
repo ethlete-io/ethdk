@@ -104,6 +104,11 @@ and the headless layer offers a tri-state "select all" control
 full-width clickable panel with the label leading and the control trailing, and
 the selection shows on the panel's border as well as in the control.
 
+In this variant the **label carries the selection too** — muted until the option
+is chosen, full strength once it is. Hover and focus are answered by the panel
+(its border picks up the accent at 40%), not by the label, so an unselected card
+under the cursor never reads as selected.
+
 Reach for it when the options are few and consequential — a plan, a shipping
 speed — and each deserves room for an `et-description`. A 20px circle is a small
 thing to aim at; a card is a large one.

@@ -251,9 +251,18 @@
         }
       }
 
+      /* The panel's border and tint already answer hover and focus, which frees the label to carry selection —
+         and requires it to: the shared hover/focus rules above brighten the label on every variant, so without
+         this an unselected card under the cursor read exactly like a selected one. Muted until chosen, full
+         strength once chosen. Both rules stay inside `:where()` so the disabled label colour still wins. */
       .et-choice-field-label-area {
         flex: 1;
         min-inline-size: 0;
+        color: var(--et-surface-color-muted-solid, currentColor);
+      }
+
+      &:where(:has(:is([aria-checked='true'], [aria-checked='mixed']))) .et-choice-field-label-area {
+        color: var(--et-surface-color-solid, currentColor);
       }
 
       &[data-can-animate] .et-choice-field-control {
