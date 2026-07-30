@@ -54,7 +54,7 @@ export abstract class TextFieldControlDirective implements FormFieldControl {
    * True while an async validator is in flight for the bound field — bound automatically by signal
    * forms because this input exists. The field shell surfaces it as its busy state.
    */
-  public pending = input(false);
+  public pending = input(false, { transform: booleanAttribute });
 
   /**
    * Author-supplied accessible name, forwarded onto the native control. Use this (or an
