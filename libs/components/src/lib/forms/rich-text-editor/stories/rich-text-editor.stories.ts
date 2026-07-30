@@ -40,7 +40,7 @@ export const Default: Story = {};
 export const WithMarkdown: Story = {
   args: {
     value:
-      '# Main heading\n\nA short intro with **bold**, *italic* and ~~strikethrough~~.\n\n## A subheading\n\n- First item\n- Second item\n\nA [link](https://example.com) too.',
+      '# Main heading\n\nA short intro with **bold**, *italic* and ~~strikethrough~~.\n\n## A subheading\n\n- First item\n- Second item\n\n> A quoted line from the coach.\n> > And a nested quote.\n\n```\nconst goals = 3;\nif (goals > 2) win();\n```\n\nA [link](https://example.com) too.',
   },
 };
 

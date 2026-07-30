@@ -96,6 +96,10 @@ export type RichTextEditorLabels = {
   bulletedList: string;
   /** Toolbar tool: numbered list. */
   numberedList: string;
+  /** Toolbar tool: block quote. */
+  blockquote: string;
+  /** Toolbar tool: fenced code block. */
+  codeBlock: string;
   /** Toolbar tool: link. */
   link: string;
   /** Toolbar tool: the opt-in alignment menu. */
@@ -164,6 +168,8 @@ export const DEFAULT_RICH_TEXT_EDITOR_LABELS: RichTextEditorLabels = {
   code: 'Inline code',
   bulletedList: 'Bulleted list',
   numberedList: 'Numbered list',
+  blockquote: 'Block quote',
+  codeBlock: 'Code block',
   link: 'Link',
   align: 'Alignment',
   alignTrigger: 'Text alignment',

@@ -1,15 +1,22 @@
+import { RichTextEditorDomBlockquote } from './rich-text-editor-dom-blockquote';
+import { RichTextEditorDomCodeBlock } from './rich-text-editor-dom-code-block';
 import { HEADING_SELECTOR, RichTextEditorDomCore, HeadingTag, InlineTag } from './rich-text-editor-dom-core';
 import { RichTextEditorDomHeadings } from './rich-text-editor-dom-headings';
 import { RichTextEditorDomLists } from './rich-text-editor-dom-lists';
 
 /**
- * Markdown-as-you-type: block prefixes (`- `, `1. `, `# `) convert the line, and completed inline
- * delimiter runs (`**bold**`, `` `code` ``, …) convert into their mark. Both respect characters
- * reserved by the token-trigger system.
+ * Markdown-as-you-type: block prefixes (`- `, `1. `, `# `, `> `, ```` ``` ````) convert the line,
+ * and completed inline delimiter runs (`**bold**`, `` `code` ``, …) convert into their mark. Both
+ * respect characters reserved by the token-trigger system.
  */
 export const createRichTextEditorAutoformat = (
   core: RichTextEditorDomCore,
-  deps: { lists: RichTextEditorDomLists; headings: RichTextEditorDomHeadings },
+  deps: {
+    lists: RichTextEditorDomLists;
+    headings: RichTextEditorDomHeadings;
+    blockquote: RichTextEditorDomBlockquote;
+    codeBlock: RichTextEditorDomCodeBlock;
+  },
 ) => {
   const {
     doc,
@@ -24,6 +31,8 @@ export const createRichTextEditorAutoformat = (
   } = core;
   const { toggleList } = deps.lists;
   const { toggleHeading } = deps.headings;
+  const { toggleBlockquote } = deps.blockquote;
+  const { toggleCodeBlock } = deps.codeBlock;
 
   /**
    * Markdown block autoformat: typing a space right after a line-start markdown prefix converts the
@@ -63,6 +72,11 @@ export const createRichTextEditorAutoformat = (
       action = () => toggleList('ol');
     } else if (/^#{1,3}$/.test(prefix) && !isReserved('#')) {
       action = () => toggleHeading(`h${prefix.length}` as HeadingTag);
+    } else if (prefix === '```') {
+      action = toggleCodeBlock;
+    } else if (prefix === '>' && !isReserved('>') && !closestWithin(range.startContainer, 'blockquote')) {
+      // inside a quote the same prefix would toggle it back off, so it only starts one
+      action = toggleBlockquote;
     }
 
     if (!action) return false;

@@ -384,6 +384,23 @@ describe('htmlToMarkdown', () => {
     expect(htmlToMarkdown(markdownToHtml('> line one\n> line two'))).toBe('> line one\n> line two');
   });
 
+  it('nests block quotes, one > per level', () => {
+    expect(htmlToMarkdown('<blockquote>outer<blockquote>inner</blockquote></blockquote>')).toBe(
+      '> outer\n> > inner',
+    );
+    expect(markdownToHtml('> outer\n> > inner')).toBe('<blockquote>outer<blockquote>inner</blockquote></blockquote>');
+    expect(htmlToMarkdown(markdownToHtml('> a\n> > b\n> > > c'))).toBe('> a\n> > b\n> > > c');
+  });
+
+  it('keeps an empty block quote in the value', () => {
+    expect(htmlToMarkdown('<blockquote><br></blockquote>')).toBe('>');
+    expect(markdownToHtml('>')).toBe('<blockquote><br></blockquote>');
+  });
+
+  it('treats a paragraph boundary inside a block quote as a line break', () => {
+    expect(htmlToMarkdown('<blockquote><p>a</p><p>b</p></blockquote>')).toBe('> a\n> b');
+  });
+
   it('treats div boundaries as paragraph boundaries (clipboard html)', () => {
     expect(htmlToMarkdown('<div>first</div><div>second</div>')).toBe('first\n\nsecond');
     expect(htmlToMarkdown('<div><span>a</span></div><p>b</p>')).toBe('a\n\nb');

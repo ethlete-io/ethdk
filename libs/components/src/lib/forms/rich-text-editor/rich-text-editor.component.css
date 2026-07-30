@@ -29,6 +29,24 @@
     initial-value: 8px;
   }
 
+  @property --et-rich-text-editor-quote-indent {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-rich-text-editor-quote-bar-width {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 2px;
+  }
+
+  @property --et-rich-text-editor-code-block-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 6px;
+  }
+
   @property --et-rich-text-editor-token-radius {
     syntax: '<length>';
     inherits: true;
@@ -175,7 +193,9 @@
 
       p + p,
       ul,
-      ol {
+      ol,
+      blockquote,
+      pre {
         margin-block-start: var(--et-rich-text-editor-content-gap);
       }
 
@@ -271,6 +291,40 @@
         background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 14%, transparent);
         font-family: var(--et-font-family-mono, ui-monospace, monospace);
         font-size: 0.9em;
+      }
+
+      blockquote {
+        margin-inline: 0;
+        margin-block-end: 0;
+        padding-inline-start: var(--et-rich-text-editor-quote-indent);
+        border-inline-start: var(--et-rich-text-editor-quote-bar-width) solid
+          color-mix(in srgb, var(--et-surface-border-solid, currentColor) 80%, transparent);
+        color: color-mix(in srgb, currentColor 82%, transparent);
+      }
+
+      /* a quote inside a quote (`>>`) gets its own bar, so nesting depth stays readable */
+      blockquote blockquote {
+        margin-block-start: var(--et-rich-text-editor-content-gap);
+      }
+
+      pre {
+        margin-block-end: 0;
+        padding: 8px 10px;
+        border-radius: var(--et-rich-text-editor-code-block-radius);
+        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 10%, transparent);
+        font-family: var(--et-font-family-mono, ui-monospace, monospace);
+        font-size: 0.9em;
+        /* pre-wrap, not pre: newlines are the block's content (Enter inserts one), but a long line
+           must wrap instead of scrolling the field sideways */
+        white-space: pre-wrap;
+      }
+
+      /* the fence is the block — its inner <code> must not paint the inline-code chip on top */
+      pre code {
+        padding: 0;
+        border-radius: 0;
+        background: none;
+        font-size: inherit;
       }
 
       table {

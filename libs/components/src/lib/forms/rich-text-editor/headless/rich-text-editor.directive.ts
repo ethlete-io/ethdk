@@ -13,6 +13,7 @@ import {
   injectRichTextEditorDom,
   InlineTag,
   provideRichTextEditorDom,
+  RichTextMarkStates,
 } from './internals/rich-text-editor-dom';
 import { createRichTextEditorHistory, RichTextEditorHistoryEntry } from './internals/rich-text-editor-history';
 import {
@@ -112,6 +113,11 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   public unorderedListActive = signal(false);
   public orderedListActive = signal(false);
   public linkActive = signal(false);
+  public blockquoteActive = signal(false);
+
+  /** Whether the caret sits in a fenced code block, where the value is literal text: no inline
+   *  marks, no block structure and no autoformat apply there, so those tools disable themselves. */
+  public codeBlockActive = signal(false);
 
   public headingLevel = signal<number | null>(null);
 
@@ -121,10 +127,28 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   public inTableCell = signal(false);
 
   /** The heading (block-style) tool is unavailable where a heading can't apply: inside table
-   *  cells (no GFM form) and inside list items (a heading would not survive list serialization). */
+   *  cells (no GFM form), inside list items (a heading would not survive list serialization), and
+   *  inside a quote or code block (which serialize as lines of text). */
   public headingToolDisabled = computed(
-    () => this.inTableCell() || this.unorderedListActive() || this.orderedListActive(),
+    () =>
+      this.inTableCell() ||
+      this.unorderedListActive() ||
+      this.orderedListActive() ||
+      this.blockquoteActive() ||
+      this.codeBlockActive(),
   );
+
+  private inList = computed(() => this.unorderedListActive() || this.orderedListActive());
+
+  /** Lists have no serialized form inside a table cell (inline content only) or inside a quote or
+   *  code block (both serialize as lines of text). */
+  public listToolDisabled = computed(() => this.inTableCell() || this.blockquoteActive() || this.codeBlockActive());
+
+  /** The quote tool applies to plain blocks — and to an existing quote, to lift it back out. */
+  public blockquoteToolDisabled = computed(() => this.inTableCell() || this.codeBlockActive() || this.inList());
+
+  /** Same rule as the quote tool: a fence can neither hold another block nor live inside one. */
+  public codeBlockToolDisabled = computed(() => this.inTableCell() || this.blockquoteActive() || this.inList());
 
   /**
    * @internal Inline marks queued for the next typed text while the selection is collapsed ("stored
@@ -187,6 +211,13 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
     if (!root) return;
 
+    // A native edit can leave the wrapper of a code block or quote behind after its content was
+    // deleted whole — only the browser produces those, so this only runs on the native input path.
+    if (!opts?.boundary) {
+      this.editorDom.repairCodeBlock();
+      this.editorDom.repairEmptyQuotes();
+    }
+
     const markdown = htmlToMarkdown(this.serializeCleanHtml(root));
 
     this.lastEmittedMarkdown = markdown;
@@ -245,8 +276,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
       const states = this.editorDom.markStates();
 
       this.reflectMarks(pending);
-      this.headingLevel.set(states?.heading ?? null);
-      this.inTableCell.set(states?.tableCell ?? false);
+      this.reflectBlockStates(states);
 
       return;
     }
@@ -261,8 +291,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     this.unorderedListActive.set(states?.unorderedList ?? false);
     this.orderedListActive.set(states?.orderedList ?? false);
     this.linkActive.set(states?.link ?? false);
-    this.headingLevel.set(states?.heading ?? null);
-    this.inTableCell.set(states?.tableCell ?? false);
+    this.reflectBlockStates(states);
   }
 
   public toggleBold() {
@@ -342,6 +371,17 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     this.runCommand(() => this.editorDom.toggleList('ol'));
   }
 
+  /** Quotes the selected blocks as `> ` lines, or lifts the caret's quote out one nesting level. */
+  public toggleBlockquote() {
+    this.runCommand(() => this.editorDom.toggleBlockquote());
+  }
+
+  /** Turns the selected blocks into a fenced code block, or a code block back into paragraphs. Only
+   *  the text survives either way — a fence is literal, so it carries no inline markup. */
+  public toggleCodeBlock() {
+    this.runCommand(() => this.editorDom.toggleCodeBlock());
+  }
+
   public toggleHeading(level: number) {
     this.runCommand(() => this.editorDom.toggleHeading(`h${level}` as HeadingTag));
   }
@@ -373,7 +413,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   }
 
   public promptForLink() {
-    if (this.disabled() || this.readonly()) return;
+    if (this.disabled() || this.readonly() || this.codeBlockActive()) return;
 
     const open = this.openLinkEditor();
 
@@ -562,6 +602,10 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     // a tap on the (docked) toolbar can move focus off the editor on touch; restore the selection
     this.editorDom.restoreSelection();
 
+    // inside a fenced code block every mark would be literal text — read it off the DOM rather
+    // than the signal, so a keyboard shortcut fired before the next selectionchange is covered too
+    if (this.editorDom.markStates()?.codeBlock) return;
+
     const selection = this.editorDom.getSelection();
 
     if (selection && !selection.range.collapsed) {
@@ -576,6 +620,15 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
     this.pendingMarks.set(next);
     this.reflectMarks(next);
+  }
+
+  /** The block context the caret sits in — read the same way whether or not stored marks are
+   *  pending, since a pending mark only ever changes the inline state. */
+  private reflectBlockStates(states: RichTextMarkStates | null) {
+    this.blockquoteActive.set(states?.blockquote ?? false);
+    this.codeBlockActive.set(states?.codeBlock ?? false);
+    this.headingLevel.set(states?.heading ?? null);
+    this.inTableCell.set(states?.tableCell ?? false);
   }
 
   private reflectMarks(tags: InlineTag[]) {

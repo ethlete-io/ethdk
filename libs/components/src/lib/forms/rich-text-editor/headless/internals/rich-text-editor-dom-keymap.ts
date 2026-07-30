@@ -1,25 +1,39 @@
+import { RichTextEditorDomBlockquote } from './rich-text-editor-dom-blockquote';
+import { RichTextEditorDomCodeBlock } from './rich-text-editor-dom-code-block';
 import { RichTextEditorDomCore } from './rich-text-editor-dom-core';
 import { RichTextEditorDomHeadings } from './rich-text-editor-dom-headings';
 import { RichTextEditorDomLists } from './rich-text-editor-dom-lists';
 
 /**
  * Key behaviors that need editor-schema awareness beyond the browser's contenteditable defaults:
- * Backspace on empty blocks (list exit, merge into a previous list, table-adjacent first line),
- * Enter on empty list items / heading edges, and arrow keys stepping out of inline code.
+ * Backspace on empty blocks (list exit, merge into a previous list, table-adjacent first line,
+ * empty code block), Enter on empty list items / heading edges / the last line of a quote or code
+ * block, newlines inside a code block, and arrow keys stepping out of inline code.
  */
 export const createRichTextEditorKeymap = (
   core: RichTextEditorDomCore,
-  deps: { lists: RichTextEditorDomLists; headings: RichTextEditorDomHeadings },
+  deps: {
+    lists: RichTextEditorDomLists;
+    headings: RichTextEditorDomHeadings;
+    blockquote: RichTextEditorDomBlockquote;
+    codeBlock: RichTextEditorDomCodeBlock;
+  },
 ) => {
   const { doc, renderer, root, getSelection, closestWithin, collapseInto, isBlockEmpty } = core;
   const { exitListItem, mergeParagraphIntoPreviousList } = deps.lists;
   const { headingEnter } = deps.headings;
+  const { blockquoteEnter } = deps.blockquote;
+  const { codeBlockEnter, codeBlockBackspace } = deps.codeBlock;
 
   const handleBackspace = () => {
     const editable = getSelection();
 
     if (!editable || !editable.range.collapsed) {
       return false;
+    }
+
+    if (codeBlockBackspace()) {
+      return true;
     }
 
     const node = editable.range.startContainer;
@@ -68,10 +82,16 @@ export const createRichTextEditorKeymap = (
   };
 
   /** Enter on an empty list item steps it out one nesting level (or leaves the list at the top),
-   *  instead of inserting another empty item; Enter at a heading's edge starts a paragraph.
-   *  Returns `true` when handled. */
+   *  instead of inserting another empty item; inside a code block it inserts a newline (and on the
+   *  empty last line leaves the block), on a quote's empty last line it leaves the quote, and at a
+   *  heading's edge it starts a paragraph. Returns `true` when handled. */
   const handleEnter = () => {
     const editable = getSelection();
+
+    // a code block owns Enter outright — a fence holds newlines, not blocks
+    if (codeBlockEnter()) {
+      return true;
+    }
 
     if (!editable || !editable.range.collapsed) {
       return false;
@@ -85,7 +105,7 @@ export const createRichTextEditorKeymap = (
       return true;
     }
 
-    return headingEnter();
+    return blockquoteEnter() || headingEnter();
   };
 
   /**

@@ -1,6 +1,6 @@
 # Rich text editor
 
-`et-rich-text-editor` is a Markdown-valued editor built on `contenteditable` (no ProseMirror dependency): the `value` model is **Markdown**, converted to/from HTML internally. It ships a static toolbar (undo/redo, block-style menu, bold, italic, underline, strikethrough, inline code, lists, links) plus a floating toolbar over the active selection, and uses the same field shell as the other [form controls](/components/forms). On touch devices, while editing, the toolbar automatically docks above the on-screen keyboard (the top is left to the platform's selection menu), so formatting stays reachable — tracking the keyboard through scrolling and same-origin iframe embeddings. The editable's font size is floored at 16px there, so iOS Safari doesn't zoom the page on focus.
+`et-rich-text-editor` is a Markdown-valued editor built on `contenteditable` (no ProseMirror dependency): the `value` model is **Markdown**, converted to/from HTML internally. It ships a static toolbar (undo/redo, block-style menu, bold, italic, underline, strikethrough, inline code, lists, quotes, code blocks, links) plus a floating toolbar over the active selection, and uses the same field shell as the other [form controls](/components/forms). On touch devices, while editing, the toolbar automatically docks above the on-screen keyboard (the top is left to the platform's selection menu), so formatting stays reachable — tracking the keyboard through scrolling and same-origin iframe embeddings. The editable's font size is floored at 16px there, so iOS Safari doesn't zoom the page on focus.
 
 ## Importing
 
@@ -32,7 +32,7 @@ Pasted HTML is normalized into the editor's own schema before it is inserted: th
 
 Typing Markdown converts live (disable with `autoformat="false"`):
 
-- **Blocks** — a space after a line-start prefix converts the line: `-` / `*` / `+` start a bulleted list, `1.` a numbered list, `#`–`###` a heading of that level. Only when the prefix is the entire line so far, and never inside list items, table cells or code.
+- **Blocks** — a space after a line-start prefix converts the line: `-` / `*` / `+` start a bulleted list, `1.` a numbered list, `#`–`###` a heading of that level, `>` a block quote, ` ``` ` a code block. Only when the prefix is the entire line so far, and never inside list items, table cells or code.
 - **Inline** — typing the closing delimiter converts the run and leaves the caret _outside_ the mark: `**bold**`, `*italic*`, `` `code` ``, `~~strike~~`, `__bold__`, `_italic_` (underscores never fire inside a word, so `snake_case` stays literal).
 
 Autoformat is token-aware: characters registered as [trigger characters](#building-blocks-triggers) are reserved — with a `#` trigger configured, `# ` opens the autocomplete instead of becoming a heading — and all autoformat is suspended while a trigger popup is open.
@@ -65,8 +65,8 @@ nothing at all.
 The toolbar is data-driven. Pass a `tools` input with an ordered list of tokens to pick and order
 the controls. Tokens: `'undo'`, `'redo'`, `'bold'`, `'italic'`, `'underline'`, `'strike'`, `'code'`
 (inline code), `'heading'` (the Normal / Heading 1–3 menu), `'bulletedList'`, `'numberedList'`,
-`'link'`, plus the opt-in `'align'` and `'table'` (see below). `'divider'` renders a separator. Omit
-`tools` for the full default toolbar.
+`'blockquote'`, `'codeBlock'`, `'link'`, plus the opt-in `'align'` and `'table'` (see below).
+`'divider'` renders a separator. Omit `tools` for the full default toolbar.
 
 ```html
 <et-rich-text-editor
@@ -89,6 +89,28 @@ providers: [provideRichTextEditorTools(['heading', 'divider', 'bold', 'italic', 
 
 Underline and inline code round-trip through the Markdown value (underline as native `<u>`, since
 Markdown has no underline syntax).
+
+## Block quotes and code blocks
+
+Both round-trip as ordinary GFM — `> ` lines and a ` ``` ` fence — and both are reachable from the
+toolbar (`'blockquote'` / `'codeBlock'`) or by typing their prefix (see
+[autoformat](#markdown-autoformat-while-typing)).
+
+**Quotes.** <kbd>Enter</kbd> adds a line to the quote (the whole quote stays one block, matching the
+Markdown it serializes to); a second <kbd>Enter</kbd> on the now-empty last line leaves it, like
+lists. <kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> change the quote's nesting depth (`>` ↔ `>>`), and at
+the top level Shift+Tab lifts the content back out. Depth applies to the whole quote rather than to a
+single line, since a quote's lines are one block.
+
+**Code blocks.** Everything inside is literal text: no inline marks, no headings or lists, no
+autoformat and no [token triggers](#building-blocks-triggers) — those tools disable themselves while
+the caret is in one. <kbd>Enter</kbd> inserts a newline instead of a new block, <kbd>Escape</kbd>
+moves the caret to a paragraph after the block (so the keyboard is never stuck in it), and
+<kbd>Backspace</kbd> in an empty one removes it. Converting text into a fence keeps only its text —
+a fence has no markup to carry.
+
+Neither can hold the other, and neither can hold a list or table (their Markdown wouldn't survive),
+so those tools disable themselves accordingly.
 
 ## Links
 
@@ -379,12 +401,12 @@ editor content instead of stepping through every button.
 Public design tokens, overridable in your CSS scope — all colors resolve through the
 [surface/color theme systems](/core/theming):
 
-| Component                            | Tokens                                                                                                                                             |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `et-rich-text-editor`                | `--et-rich-text-editor-toolbar-gap`, `-toolbar-padding`, `-button-radius`, `-min-height`, `-content-gap`, `-token-radius`, `-token-padding-inline` |
-| `et-rich-text-editor-link-editor`    | `--et-rich-text-editor-link-editor-width`, `-radius`, `-gap`, `-padding`                                                                           |
-| `et-rich-text-editor-token-palette`  | `--et-rich-text-editor-token-palette-gap` (buttons follow the `et-button` `tonal` variant)                                                         |
-| `et-multi-language-rich-text-editor` | `--et-multi-language-rich-text-editor-badge-size` (plus every `et-rich-text-editor` token, inherited by the embedded editor)                       |
+| Component                            | Tokens                                                                                                                                                                                                        |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `et-rich-text-editor`                | `--et-rich-text-editor-toolbar-gap`, `-toolbar-padding`, `-button-radius`, `-min-height`, `-content-gap`, `-quote-indent`, `-quote-bar-width`, `-code-block-radius`, `-token-radius`, `-token-padding-inline` |
+| `et-rich-text-editor-link-editor`    | `--et-rich-text-editor-link-editor-width`, `-radius`, `-gap`, `-padding`                                                                                                                                      |
+| `et-rich-text-editor-token-palette`  | `--et-rich-text-editor-token-palette-gap` (buttons follow the `et-button` `tonal` variant)                                                                                                                    |
+| `et-multi-language-rich-text-editor` | `--et-multi-language-rich-text-editor-badge-size` (plus every `et-rich-text-editor` token, inherited by the embedded editor)                                                                                  |
 
 ## Error codes
 

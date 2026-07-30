@@ -564,6 +564,197 @@ describe('RichTextEditorDom', () => {
     });
   });
 
+  describe('toggleBlockquote', () => {
+    it('quotes the covered paragraphs as one quote, a line each', () => {
+      const { root, dom } = setup('<p>one</p><p>two</p>');
+      const [p1, p2] = Array.from(root.children);
+      select(p1?.firstChild as Node, 0, p2?.firstChild as Node, 3);
+
+      dom.toggleBlockquote();
+
+      expect(root.innerHTML).toBe('<blockquote>one<br>two</blockquote>');
+    });
+
+    it('lifts a quote back to paragraphs when toggled again, splitting on its line breaks', () => {
+      const { root, dom } = setup('<blockquote>one<br>two</blockquote>');
+      const quote = root.firstChild as HTMLElement;
+      select(quote.firstChild as Node, 0, quote.firstChild as Node, 3);
+
+      dom.toggleBlockquote();
+
+      expect(root.innerHTML).toBe('<p>one</p><p>two</p>');
+    });
+
+    it('starts an empty quote with a line box when the editor is empty', () => {
+      const { root, dom } = setup('');
+      select(root, 0, root, 0);
+
+      dom.toggleBlockquote();
+
+      expect(root.innerHTML).toBe('<blockquote><br></blockquote>');
+    });
+
+    it('leaves a list or table alone', () => {
+      const { root, dom } = setup('<ul><li>one</li></ul>');
+      const li = root.querySelector('li') as HTMLElement;
+      select(li.firstChild as Node, 0, li.firstChild as Node, 3);
+
+      dom.toggleBlockquote();
+
+      expect(root.innerHTML).toBe('<ul><li>one</li></ul>');
+    });
+
+    it('nests and un-nests a quote with indent/outdent', () => {
+      const { root, dom } = setup('<blockquote>one</blockquote>');
+      const quote = root.firstChild as HTMLElement;
+      select(quote.firstChild as Node, 1, quote.firstChild as Node, 1);
+
+      expect(dom.indentBlockquote()).toBe(true);
+      expect(root.innerHTML).toBe('<blockquote><blockquote>one</blockquote></blockquote>');
+
+      expect(dom.outdentBlockquote()).toBe(true);
+      expect(root.innerHTML).toBe('<blockquote>one</blockquote>');
+    });
+
+    it('outdents out of the quote entirely at the top level', () => {
+      const { root, dom } = setup('<blockquote>one</blockquote>');
+      const quote = root.firstChild as HTMLElement;
+      select(quote.firstChild as Node, 1, quote.firstChild as Node, 1);
+
+      expect(dom.outdentBlockquote()).toBe(true);
+      expect(root.innerHTML).toBe('<p>one</p>');
+    });
+
+    it('keeps the lines above when lifting a nested quote', () => {
+      const { root, dom } = setup('<blockquote>one<br><blockquote>two</blockquote></blockquote>');
+      const inner = root.querySelector('blockquote blockquote') as HTMLElement;
+      select(inner.firstChild as Node, 1, inner.firstChild as Node, 1);
+
+      expect(dom.outdentBlockquote()).toBe(true);
+      expect(root.innerHTML).toBe('<blockquote>one<br>two</blockquote>');
+    });
+
+    it('breaks the line inside the quote on Enter instead of splitting it in two', () => {
+      const { root, dom } = setup('<blockquote>one</blockquote>');
+      const quote = root.firstChild as HTMLElement;
+      select(quote.firstChild as Node, 2, quote.firstChild as Node, 2);
+
+      expect(dom.handleEnter()).toBe(true);
+      expect(root.innerHTML).toBe('<blockquote>on<br>e</blockquote>');
+      expect(root.querySelectorAll('blockquote').length).toBe(1);
+    });
+
+    it('leaves the quote on a second Enter, once the last line is empty', () => {
+      const { root, dom } = setup('<blockquote>one</blockquote>');
+      const quote = root.firstChild as HTMLElement;
+      select(quote.firstChild as Node, 3, quote.firstChild as Node, 3);
+
+      // the first Enter opens an empty last line (with the trailing break that gives it a line box)
+      expect(dom.handleEnter()).toBe(true);
+      expect(root.innerHTML).toBe('<blockquote>one<br><br></blockquote>');
+
+      expect(dom.handleEnter()).toBe(true);
+      expect(root.innerHTML).toBe('<blockquote>one</blockquote><p><br></p>');
+    });
+
+    it('takes an emptied quote with it when leaving', () => {
+      const { root, dom } = setup('<blockquote><br></blockquote>');
+      const quote = root.firstChild as HTMLElement;
+      select(quote, 0, quote, 0);
+
+      expect(dom.handleEnter()).toBe(true);
+      expect(root.innerHTML).toBe('<p><br></p>');
+    });
+
+    it('turns a code block the browser emptied back into a paragraph', () => {
+      // what Chrome leaves behind when the whole content of a code block is selected and deleted
+      const { root, dom } = setup('<pre><br></pre>');
+      const pre = root.firstChild as HTMLElement;
+      select(pre, 0, pre, 0);
+
+      expect(dom.repairCodeBlock()).toBe(true);
+      expect(root.innerHTML).toBe('<p><br></p>');
+    });
+  });
+
+  describe('toggleCodeBlock', () => {
+    it('turns the covered blocks into one fenced block of plain text', () => {
+      const { root, dom } = setup('<p>one</p><p><strong>two</strong></p>');
+      const [p1, p2] = Array.from(root.children);
+      select(p1?.firstChild as Node, 0, p2?.firstChild as Node, 1);
+
+      dom.toggleCodeBlock();
+
+      expect(root.innerHTML).toBe('<pre><code>one\ntwo</code></pre>');
+    });
+
+    it('turns a code block back into a paragraph per line', () => {
+      const { root, dom } = setup('<pre><code>one\ntwo</code></pre>');
+      const code = root.querySelector('code') as HTMLElement;
+      select(code.firstChild as Node, 0, code.firstChild as Node, 3);
+
+      dom.toggleCodeBlock();
+
+      expect(root.innerHTML).toBe('<p>one</p><p>two</p>');
+    });
+
+    it('starts an empty code block with a newline so the caret has a line', () => {
+      const { root, dom } = setup('');
+      select(root, 0, root, 0);
+
+      dom.toggleCodeBlock();
+
+      expect(root.innerHTML).toBe('<pre><code>\n</code></pre>');
+    });
+
+    it('inserts a newline on Enter instead of a new block', () => {
+      const { root, dom } = setup('<pre><code>one</code></pre>');
+      const code = root.querySelector('code') as HTMLElement;
+      select(code.firstChild as Node, 3, code.firstChild as Node, 3);
+
+      expect(dom.handleEnter()).toBe(true);
+      expect((root.querySelector('code') as HTMLElement).textContent).toBe('one\n\n');
+      expect(root.querySelector('p')).toBeNull();
+    });
+
+    it('leaves the code block on Enter when the last line is already empty', () => {
+      const { root, dom } = setup('<pre><code>one\n\n</code></pre>');
+      const code = root.querySelector('code') as HTMLElement;
+      select(code.firstChild as Node, 5, code.firstChild as Node, 5);
+
+      expect(dom.handleEnter()).toBe(true);
+      expect(root.innerHTML).toBe('<pre><code>one</code></pre><p><br></p>');
+    });
+
+    it('removes an empty code block on Backspace', () => {
+      const { root, dom } = setup('<pre><code>\n</code></pre>');
+      const code = root.querySelector('code') as HTMLElement;
+      select(code.firstChild as Node, 0, code.firstChild as Node, 0);
+
+      expect(dom.handleBackspace()).toBe(true);
+      expect(root.innerHTML).toBe('<p><br></p>');
+    });
+
+    it('exits to a paragraph after the block', () => {
+      const { root, dom } = setup('<pre><code>one</code></pre>');
+      const code = root.querySelector('code') as HTMLElement;
+      select(code.firstChild as Node, 1, code.firstChild as Node, 1);
+
+      expect(dom.exitCodeBlock()).toBe(true);
+      expect(root.innerHTML).toBe('<pre><code>one</code></pre><p><br></p>');
+    });
+
+    it('reports the code-block context without reporting inline code', () => {
+      const { root, dom } = setup('<pre><code>one</code></pre>');
+      const code = root.querySelector('code') as HTMLElement;
+      select(code.firstChild as Node, 1, code.firstChild as Node, 1);
+
+      expect(dom.markStates()?.codeBlock).toBe(true);
+      expect(dom.markStates()?.code).toBe(false);
+      expect(root.querySelector('pre')).not.toBeNull();
+    });
+  });
+
   describe('applyLink / removeLink', () => {
     it('wraps the selection in an anchor', () => {
       const { root, dom } = setup('hello');
@@ -808,6 +999,28 @@ describe('RichTextEditorDom', () => {
 
       expect(dom.applyBlockAutoformat(noneReserved)).toBe(true);
       expect(root.innerHTML).toBe('<h2><br></h2>');
+    });
+
+    it('converts "> " into a block quote, but not inside one', () => {
+      const { root, dom } = setup('<p>&gt;</p>');
+      caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
+
+      expect(dom.applyBlockAutoformat(noneReserved)).toBe(true);
+      expect(root.innerHTML).toBe('<blockquote><br></blockquote>');
+
+      const quote = root.firstChild as HTMLElement;
+      quote.innerHTML = '&gt;';
+      caretAtEndOf(quote.firstChild as Node);
+
+      expect(dom.applyBlockAutoformat(noneReserved)).toBe(false);
+    });
+
+    it('converts "``` " into a fenced code block', () => {
+      const { root, dom } = setup('<p>```</p>');
+      caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
+
+      expect(dom.applyBlockAutoformat(noneReserved)).toBe(true);
+      expect(root.innerHTML).toBe('<pre><code>\n</code></pre>');
     });
 
     it('keeps existing text after the prefix as the converted block content', () => {

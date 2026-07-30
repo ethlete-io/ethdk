@@ -24,10 +24,16 @@ export type RichTextMarkStates = {
   italic: boolean;
   strike: boolean;
   underline: boolean;
+  /** Inline code only — the caret being inside a fenced code block reports {@link codeBlock}. */
   code: boolean;
   unorderedList: boolean;
   orderedList: boolean;
   link: boolean;
+  /** Whether the selection starts inside a block quote (at any nesting level). */
+  blockquote: boolean;
+  /** Whether the selection starts inside a fenced code block, where the value is literal text —
+   *  no inline marks, no block structure, and no autoformat. */
+  codeBlock: boolean;
   /** Heading level of the block the selection starts in, or `null` when it is not a heading. */
   heading: number | null;
   /** Whether the selection starts inside a table cell — where block tools (headings, lists) have
@@ -324,16 +330,19 @@ export const createRichTextEditorDomCore = (doc: Document, renderer: EditorRende
 
     const node = resolveStartNode(editable.range);
     const headingEl = closestWithin(node, HEADING_SELECTOR);
+    const codeBlock = !!closestWithin(node, 'pre');
 
     return {
       bold: !!closestWithin(node, 'strong'),
       italic: !!closestWithin(node, 'em'),
       strike: !!closestWithin(node, 'del'),
       underline: !!closestWithin(node, 'u'),
-      code: !!closestWithin(node, 'code'),
+      code: !codeBlock && !!closestWithin(node, 'code'),
       unorderedList: !!closestWithin(node, 'ul'),
       orderedList: !!closestWithin(node, 'ol'),
       link: !!closestWithin(node, 'a'),
+      blockquote: !!closestWithin(node, 'blockquote'),
+      codeBlock,
       heading: headingEl ? Number(headingEl.tagName[1]) : null,
       tableCell: !!closestWithin(node, 'td, th'),
     };

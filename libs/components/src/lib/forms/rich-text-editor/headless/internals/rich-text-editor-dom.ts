@@ -2,6 +2,8 @@ import { DOCUMENT } from '@angular/common';
 import { inject } from '@angular/core';
 import { createProvider, injectRenderer } from '@ethlete/core';
 import { createRichTextEditorAutoformat } from './rich-text-editor-dom-autoformat';
+import { createRichTextEditorBlockquote } from './rich-text-editor-dom-blockquote';
+import { createRichTextEditorCodeBlock } from './rich-text-editor-dom-code-block';
 import { createRichTextEditorDomCore } from './rich-text-editor-dom-core';
 import { createRichTextEditorHeadings } from './rich-text-editor-dom-headings';
 import { createRichTextEditorDomHistory } from './rich-text-editor-dom-history';
@@ -104,8 +106,10 @@ const richTextEditorDomFactory = () => {
   const lists = createRichTextEditorLists(core);
   const headings = createRichTextEditorHeadings(core);
   const links = createRichTextEditorLinks(core);
-  const autoformat = createRichTextEditorAutoformat(core, { lists, headings });
-  const keymap = createRichTextEditorKeymap(core, { lists, headings });
+  const blockquote = createRichTextEditorBlockquote(core);
+  const codeBlock = createRichTextEditorCodeBlock(core);
+  const autoformat = createRichTextEditorAutoformat(core, { lists, headings, blockquote, codeBlock });
+  const keymap = createRichTextEditorKeymap(core, { lists, headings, blockquote, codeBlock });
   const paste = createRichTextEditorPaste(core);
   const history = createRichTextEditorDomHistory(core);
 
@@ -124,6 +128,13 @@ const richTextEditorDomFactory = () => {
     indentListItem: lists.indentListItem,
     outdentListItem: lists.outdentListItem,
     toggleHeading: headings.toggleHeading,
+    toggleBlockquote: blockquote.toggleBlockquote,
+    repairEmptyQuotes: blockquote.repairEmptyQuotes,
+    indentBlockquote: blockquote.indentBlockquote,
+    outdentBlockquote: blockquote.outdentBlockquote,
+    toggleCodeBlock: codeBlock.toggleCodeBlock,
+    exitCodeBlock: codeBlock.exitCodeBlock,
+    repairCodeBlock: codeBlock.repairCodeBlock,
     applyLink: links.applyLink,
     readActiveLink: links.readActiveLink,
     removeLink: links.removeLink,

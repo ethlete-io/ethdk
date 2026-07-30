@@ -204,6 +204,97 @@ const findListItems = (inner: string): string[] => {
   return items;
 };
 
+/** The first top-level `<blockquote>` in `html`, matched with balanced nesting. */
+const findBlockquote = (html: string): { start: number; end: number; inner: string } | null => {
+  const open = /<blockquote\b[^>]*>/i.exec(html);
+
+  if (!open) return null;
+
+  const innerStart = open.index + open[0].length;
+  const tag = /<(\/?)blockquote\b[^>]*>/gi;
+  tag.lastIndex = innerStart;
+
+  let depth = 1;
+  let match: RegExpExecArray | null;
+
+  while ((match = tag.exec(html))) {
+    depth += match[1] ? -1 : 1;
+
+    if (depth === 0) {
+      return { start: open.index, end: tag.lastIndex, inner: html.slice(innerStart, match.index) };
+    }
+  }
+
+  return null;
+};
+
+/** The lines of quoted text in a blockquote's own (non-nested) HTML, each with its `> ` prefix.
+ *  `<br>` and paragraph boundaries are the line breaks — the tag-strip would swallow them. */
+const quotedLines = (html: string, prefix: string): string[] => {
+  const text = stripTags(html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p\s*>/gi, '\n')).trim();
+
+  return text ? text.split('\n').map((line) => `${prefix}${line.trim()}`) : [];
+};
+
+/** Serializes a blockquote's inner HTML to Markdown, one `>` per nesting level. */
+const blockquoteToMarkdown = (inner: string, depth: number): string => {
+  const prefix = '> '.repeat(depth + 1);
+  const lines: string[] = [];
+  let rest = inner;
+
+  for (let nested = findBlockquote(rest); nested; nested = findBlockquote(rest)) {
+    lines.push(...quotedLines(rest.slice(0, nested.start), prefix));
+    lines.push(blockquoteToMarkdown(nested.inner, depth + 1));
+    rest = rest.slice(nested.end);
+  }
+
+  lines.push(...quotedLines(rest, prefix));
+
+  // An empty quote still needs its marker, or it would vanish from the value entirely.
+  return lines.length > 0 ? lines.join('\n') : prefix.trim();
+};
+
+/** Builds a `<blockquote>` from `> `-prefixed lines, recursing into runs of deeper (`>>`) lines. */
+const buildBlockquoteHtml = (lines: string[]): string => {
+  let html = '';
+  let run: string[] = [];
+
+  const flushRun = () => {
+    if (run.length > 0) html += run.map(processInline).join('<br>');
+    run = [];
+  };
+
+  for (let i = 0; i < lines.length;) {
+    const stripped = (lines[i] ?? '').replace(/^>[ \t]?/, '');
+
+    if (!stripped.startsWith('>')) {
+      run.push(stripped);
+      i++;
+      continue;
+    }
+
+    flushRun();
+
+    const nested: string[] = [];
+
+    while (i < lines.length) {
+      const line = (lines[i] ?? '').replace(/^>[ \t]?/, '');
+
+      if (!line.startsWith('>')) break;
+
+      nested.push(line);
+      i++;
+    }
+
+    html += buildBlockquoteHtml(nested);
+  }
+
+  flushRun();
+
+  // `<br>` so an empty quote has a line box the caret can sit in (the editor writes this HTML live)
+  return `<blockquote>${html || '<br>'}</blockquote>`;
+};
+
 /** Serializes a list's inner HTML to Markdown, indenting nested lists two spaces per level. */
 const listToMarkdown = (inner: string, ordered: boolean, depth: number): string => {
   const indent = '  '.repeat(depth);
@@ -345,14 +436,8 @@ export const markdownToHtml = (markdown: string): string => {
       }
 
       // Blockquote — each line runs through the inline pass on its own (processInline escapes raw
-      // HTML, so joining first would escape the <br> separators too)
-      if (/^> /.test(trimmed)) {
-        const content = trimmed
-          .split('\n')
-          .map((l) => processInline(l.replace(/^>\s?/, '')))
-          .join('<br>');
-        return `<blockquote>${content}</blockquote>`;
-      }
+      // HTML, so joining first would escape the <br> separators too), and a `>>` run nests
+      if (/^>/.test(trimmed)) return buildBlockquoteHtml(trimmed.split('\n'));
 
       // List (unordered/ordered, with indentation-based nesting)
       if (/^([-*+]|\d+\.)\s/.test(trimmed)) {
@@ -452,16 +537,11 @@ export const htmlToMarkdown = (html: string): string => {
   const underlines: string[] = [];
   md = md.replace(/<u[^>]*>([\s\S]*?)<\/u>/gi, (_, inner: string) => makePlaceholder('U', underlines.push(inner) - 1));
 
-  // Block quotes — <br> line breaks become one quoted line each (stripTags would swallow them)
-  md = md.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (_, content: string) => {
-    return (
-      stripTags(content.replace(/<br\s*\/?>/gi, '\n'))
-        .trim()
-        .split('\n')
-        .map((line) => `> ${line.trim()}`)
-        .join('\n') + '\n'
-    );
-  });
+  // Block quotes — replace each top-level <blockquote> with its recursively-serialized Markdown, so
+  // a quote inside a quote becomes `>>` (regex alone can't match balanced nesting).
+  for (let quote = findBlockquote(md); quote; quote = findBlockquote(md)) {
+    md = `${md.slice(0, quote.start)}\n${blockquoteToMarkdown(quote.inner, 0)}\n${md.slice(quote.end)}`;
+  }
 
   // Lists — replace each top-level list with its recursively-serialized Markdown (handles nesting).
   for (let list = findList(md); list; list = findList(md)) {

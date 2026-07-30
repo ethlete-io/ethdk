@@ -18,6 +18,7 @@ import { fromEvent, merge, tap } from 'rxjs';
 import { BUTTON_IMPORTS } from '../../button';
 import {
   BOLD_ICON,
+  CODE_BLOCK_ICON,
   CODE_ICON,
   HEADING_1_ICON,
   HEADING_2_ICON,
@@ -29,6 +30,7 @@ import {
   LIST_NUMBERED_ICON,
   PARAGRAPH_ICON,
   provideIcons,
+  QUOTE_ICON,
   REDO_ICON,
   STRIKETHROUGH_ICON,
   UNDERLINE_ICON,
@@ -84,6 +86,8 @@ const NAVIGATION_KEYS = new Set([
       LIST_NUMBERED_ICON,
       LINK_ICON,
       PARAGRAPH_ICON,
+      QUOTE_ICON,
+      CODE_BLOCK_ICON,
       UNDO_ICON,
       REDO_ICON,
     ),
@@ -302,11 +306,13 @@ export class RichTextEditorComponent {
       this.dir.clearPendingMarks();
     }
 
-    // Tab / Shift+Tab nest / un-nest the current list item. Outside a list this falls through to
-    // the tool keydown hooks below (the table tool moves between cells) and only then to the
-    // default focus move.
+    // Tab / Shift+Tab nest / un-nest the current list item, or change a quote's nesting depth.
+    // Outside both this falls through to the tool keydown hooks below (the table tool moves between
+    // cells) and only then to the default focus move.
     if (event.key === 'Tab') {
-      const handled = event.shiftKey ? this.dir.editorDom.outdentListItem() : this.dir.editorDom.indentListItem();
+      const handled = event.shiftKey
+        ? this.dir.editorDom.outdentListItem() || this.dir.editorDom.outdentBlockquote()
+        : this.dir.editorDom.indentListItem() || this.dir.editorDom.indentBlockquote();
 
       if (handled) {
         event.preventDefault();
@@ -314,6 +320,15 @@ export class RichTextEditorComponent {
 
         return;
       }
+    }
+
+    // Escape inside a code block moves the caret to a paragraph after it — everything typed in
+    // there is literal, so there is no other way out with the keyboard alone.
+    if (event.key === 'Escape' && this.dir.codeBlockActive() && this.dir.editorDom.exitCodeBlock()) {
+      event.preventDefault();
+      this.dir.syncFromDom({ boundary: true });
+
+      return;
     }
 
     // Enter on an empty list item steps out of the list one level at a time; Enter at a heading's
