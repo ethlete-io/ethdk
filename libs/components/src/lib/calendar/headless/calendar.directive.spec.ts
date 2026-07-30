@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
 import { CalendarCellDirective } from './calendar-cell.directive';
+import { createFixedLengthRangeStrategy, createWeekRangeStrategy } from './calendar-range-strategy';
 import { CalendarGridDirective } from './calendar-grid.directive';
 import {
   CalendarDateClassFn,
@@ -9,6 +10,7 @@ import {
   CalendarMode,
   CalendarPrecision,
   CalendarRange,
+  CalendarRangeSelectionStrategy,
   CalendarView,
 } from './calendar.directive';
 
@@ -28,6 +30,7 @@ import {
       [precision]="precision()"
       [startView]="startView()"
       [dateClass]="dateClass()"
+      [rangeSelectionStrategy]="rangeStrategy()"
       [comparisonStart]="comparisonStart()"
       [comparisonEnd]="comparisonEnd()"
       [firstDayOfWeek]="1"
@@ -79,6 +82,7 @@ class HostComponent {
   precision = signal<CalendarPrecision>('day');
   startView = signal<CalendarView>('month');
   dateClass = signal<CalendarDateClassFn | null>(null);
+  rangeStrategy = signal<CalendarRangeSelectionStrategy | null>(null);
   comparisonStart = signal<Date | null>(null);
   comparisonEnd = signal<Date | null>(null);
   value = signal<Date | null>(null);
@@ -461,6 +465,82 @@ describe('CalendarDirective', () => {
       fixture.detectChanges();
 
       expect(calendar.hoveredDate()).toBeNull();
+    });
+  });
+
+  describe('range selection strategy', () => {
+    beforeEach(() => {
+      host.mode.set('range');
+      fixture.detectChanges();
+    });
+
+    it('snaps a pick to its whole week, and previews the week under the pointer', () => {
+      host.rangeStrategy.set(createWeekRangeStrategy({ weekStartsOn: 1 }));
+      fixture.detectChanges();
+
+      cellFor(16)?.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true }));
+      fixture.detectChanges();
+
+      // the whole Monday-13th week bands before anything is picked at all
+      expect(cellFor(13)?.getAttribute('data-band')).toBe('start');
+      expect(cellFor(19)?.getAttribute('data-band')).toBe('end');
+      expect(cellFor(20)?.getAttribute('data-band')).toBeNull();
+
+      cellFor(16)?.click();
+      fixture.detectChanges();
+
+      expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 13), end: null });
+    });
+
+    it('closes on the second pick, at the end of its week', () => {
+      host.rangeStrategy.set(createWeekRangeStrategy({ weekStartsOn: 1 }));
+      fixture.detectChanges();
+
+      cellFor(16)?.click();
+      cellFor(22)?.click();
+      fixture.detectChanges();
+
+      expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 13), end: new Date(2026, 6, 26) });
+      expect(cellFor(13)?.hasAttribute('data-range-start')).toBe(true);
+      expect(cellFor(26)?.hasAttribute('data-range-end')).toBe(true);
+    });
+
+    it('takes a fixed span from wherever the pick lands, closing the range at once', () => {
+      host.rangeStrategy.set(createFixedLengthRangeStrategy({ days: 7 }));
+      fixture.detectChanges();
+
+      cellFor(10)?.click();
+      fixture.detectChanges();
+
+      expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 10), end: new Date(2026, 6, 16) });
+      expect(cellFor(16)?.hasAttribute('data-range-end')).toBe(true);
+
+      cellFor(20)?.click();
+      fixture.detectChanges();
+
+      expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 20), end: new Date(2026, 6, 26) });
+    });
+
+    it('normalizes a strategy result to the calendar precision', () => {
+      host.precision.set('month');
+      host.rangeStrategy.set(createFixedLengthRangeStrategy({ days: 40 }));
+      fixture.detectChanges();
+
+      const monthCell = (label: string) => cells().find((cell) => cell.textContent?.trim() === label) ?? null;
+
+      monthCell('Mar')?.click();
+      fixture.detectChanges();
+
+      // March 1st plus 39 days is April 9th, which at month precision is April
+      expect(host.rangeValue()).toEqual({ start: new Date(2026, 2, 1), end: new Date(2026, 3, 1) });
+    });
+
+    it('keeps the built-in rule when no strategy is named', () => {
+      cellFor(10)?.click();
+      cellFor(14)?.click();
+      fixture.detectChanges();
+
+      expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 10), end: new Date(2026, 6, 14) });
     });
   });
 

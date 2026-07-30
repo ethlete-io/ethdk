@@ -2,7 +2,16 @@ import { Component, ViewEncapsulation, computed, input, signal } from '@angular/
 import { ProvideColorDirective } from '@ethlete/core';
 import { addDays, addMonths, startOfDay, startOfMonth } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { CalendarDateClassFn, CalendarMode, CalendarPrecision, CalendarRange, CalendarView } from '../headless';
+import {
+  CalendarDateClassFn,
+  CalendarMode,
+  CalendarPrecision,
+  CalendarRange,
+  CalendarRangeSelectionStrategy,
+  CalendarView,
+  createFixedLengthRangeStrategy,
+  createWeekRangeStrategy,
+} from '../headless';
 import { CALENDAR_IMPORTS } from '../calendar.imports';
 
 @Component({
@@ -41,6 +50,7 @@ import { CALENDAR_IMPORTS } from '../calendar.imports';
           [startView]="startView()"
           [dateClass]="dateClassFn()"
           [weekNumbers]="weekNumbers()"
+          [rangeSelectionStrategy]="rangeStrategyFn()"
           [comparisonStart]="comparisonStart()"
           [comparisonEnd]="comparisonEnd()"
           [locale]="localeObject()"
@@ -104,6 +114,8 @@ export class CalendarStorybookComponent {
   public weekNumbers = input(false);
   /** Bands the seven days before the month's 10th as a comparison period. */
   public showComparison = input(false);
+  /** Which range-selection strategy the range calendar uses. */
+  public rangeStrategy = input<'default' | 'week' | 'fixed7'>('default');
   public locale = input<'default' | 'de'>('default');
   public color = input('brand');
 
@@ -126,6 +138,17 @@ export class CalendarStorybookComponent {
   });
 
   protected localeObject = computed(() => (this.locale() === 'de' ? de : null));
+
+  protected rangeStrategyFn = computed<CalendarRangeSelectionStrategy | null>(() => {
+    switch (this.rangeStrategy()) {
+      case 'week':
+        return createWeekRangeStrategy({ weekStartsOn: this.localeObject()?.options?.weekStartsOn ?? 1 });
+      case 'fixed7':
+        return createFixedLengthRangeStrategy({ days: 7 });
+      default:
+        return null;
+    }
+  });
 
   /** The seven days running up to the visible month's 10th — a stand-in for "the previous period". */
   protected comparisonStart = computed(() => (this.showComparison() ? startOfDay(new Date(2026, 6, 3)) : null));

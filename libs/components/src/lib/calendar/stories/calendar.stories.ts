@@ -15,6 +15,7 @@ export default {
     markDates: { control: 'boolean' },
     weekNumbers: { control: 'boolean' },
     showComparison: { control: 'boolean' },
+    rangeStrategy: { control: 'select', options: ['default', 'week', 'fixed7'] },
     locale: { control: 'select', options: ['default', 'de'] },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
   },
@@ -28,6 +29,7 @@ export default {
     markDates: false,
     weekNumbers: false,
     showComparison: false,
+    rangeStrategy: 'default',
     locale: 'default',
     color: 'brand',
   },
@@ -43,6 +45,14 @@ export const Range: Story = {
 
 export const Multiple: Story = {
   args: { mode: 'multiple' },
+};
+
+export const WeekRange: Story = {
+  args: { mode: 'range', rangeStrategy: 'week' },
+};
+
+export const FixedLengthRange: Story = {
+  args: { mode: 'range', rangeStrategy: 'fixed7' },
 };
 
 export const ComparisonRange: Story = {

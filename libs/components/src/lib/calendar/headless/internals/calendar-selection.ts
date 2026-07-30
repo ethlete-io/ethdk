@@ -31,8 +31,12 @@ export type CalendarSelectionState = {
   values: readonly Date[];
   rangeStart: Date | null;
   rangeEnd: Date | null;
-  /** Where the pending range currently previews to — the hovered cell, else the roving focus. */
-  previewTo: Date;
+  /**
+   * The range to band while nothing is committed yet — already resolved by whichever selection
+   * strategy is in play, since what a hover should promise is that strategy's business.
+   */
+  previewStart: Date | null;
+  previewEnd: Date | null;
   /** A second range to band behind the selection, for "against the previous period" comparisons. */
   comparisonStart: Date | null;
   comparisonEnd: Date | null;
@@ -60,15 +64,8 @@ export const createCalendarSelectionReader = (state: CalendarSelectionState) => 
   const start = isRange && state.rangeStart !== null ? normalize(state.rangeStart) : null;
   const end = isRange && state.rangeEnd !== null ? normalize(state.rangeEnd) : null;
 
-  let previewStart: Date | null = null;
-  let previewEnd: Date | null = null;
-
-  if (start !== null && end === null) {
-    const preview = normalize(state.previewTo);
-
-    previewStart = isBefore(preview, start) ? preview : start;
-    previewEnd = isBefore(preview, start) ? start : preview;
-  }
+  const previewStart = isRange && state.previewStart !== null ? normalize(state.previewStart) : null;
+  const previewEnd = isRange && state.previewEnd !== null ? normalize(state.previewEnd) : null;
 
   // the visual band spans the committed range, or the pending preview
   let bandStart: Date | null = null;

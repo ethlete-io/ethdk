@@ -44,8 +44,14 @@ import {
   startOfCalendarUnit,
 } from './internals/calendar-view';
 import { CalendarBandPosition, createCalendarSelectionReader } from './internals/calendar-selection';
+import {
+  CalendarRange,
+  CalendarRangeSelectionStrategy,
+  DEFAULT_CALENDAR_RANGE_STRATEGY,
+} from './calendar-range-strategy';
 
 export type { CalendarInterval, CalendarPrecision, CalendarView } from './internals/calendar-view';
+export type { CalendarRange, CalendarRangeSelectionStrategy } from './calendar-range-strategy';
 export type { CalendarBandPosition, CalendarSelectionFlags } from './internals/calendar-selection';
 // public because a control that writes dates at a precision needs the same normalization the
 // calendar applies — the date inputs use it to make a typed month and a picked month one value
@@ -57,11 +63,6 @@ export { startOfCalendarUnit } from './internals/calendar-view';
  * switching mode never has to reinterpret the other's value.
  */
 export type CalendarMode = 'single' | 'range' | 'multiple';
-
-export type CalendarRange = {
-  start: Date | null;
-  end: Date | null;
-};
 
 /** Extra classes for one cell. The returned classes are the consumer's own CSS, so they are unlayered and win over the component's styles. */
 export type CalendarDateClassFn = (date: Date, view: CalendarView) => string | string[] | null;
@@ -162,6 +163,14 @@ export class CalendarDirective {
    * says which unit `date` starts.
    */
   public dateClass = input<CalendarDateClassFn | null>(null);
+
+  /**
+   * What a pick means in `range` mode. Unset, the calendar's own rule applies: the first pick opens
+   * the range, a later-or-equal second closes it, an earlier one starts over. Name a strategy to
+   * snap to whole weeks, take a fixed number of days from wherever the reader clicks, or anything
+   * else — see {@link createWeekRangeStrategy} and {@link createFixedLengthRangeStrategy}.
+   */
+  public rangeSelectionStrategy = input<CalendarRangeSelectionStrategy | null>(null);
 
   /**
    * A second range to band behind the selection: the period the current one is
@@ -443,6 +452,31 @@ export class CalendarDirective {
    */
   public canZoomOut = computed(() => this.view() !== 'multiYear');
 
+  /** The strategy in play: the consumer's, else the calendar's own rule. */
+  private effectiveRangeStrategy = computed(() => this.rangeSelectionStrategy() ?? DEFAULT_CALENDAR_RANGE_STRATEGY);
+
+  /**
+   * What the band should promise while the reader is only hovering (or has moved keyboard focus).
+   * A strategy that does not say gets what its own `select` would produce, which is the honest
+   * default: the preview shows what the pick would do.
+   */
+  private previewRange = computed<CalendarRange>(() => {
+    if (this.mode() !== 'range') {
+      return { start: null, end: null };
+    }
+
+    const strategy = this.effectiveRangeStrategy();
+    const at = this.hoveredDate() ?? this.focusedDate();
+    const current = this.rangeValue();
+
+    return (
+      (strategy.preview ? strategy.preview(at, current) : strategy.select(at, current)) ?? {
+        start: null,
+        end: null,
+      }
+    );
+  });
+
   public isDateDisabled(date: Date) {
     const min = this.min();
     const max = this.max();
@@ -619,7 +653,8 @@ export class CalendarDirective {
       values: this.multipleValue(),
       rangeStart: this.rangeValue().start,
       rangeEnd: this.rangeValue().end,
-      previewTo: this.hoveredDate() ?? this.focusedDate(),
+      previewStart: this.previewRange().start,
+      previewEnd: this.previewRange().end,
       comparisonStart: this.comparisonStart(),
       comparisonEnd: this.comparisonEnd(),
       unit: CALENDAR_VIEW_UNIT[view],
@@ -651,16 +686,19 @@ export class CalendarDirective {
       return;
     }
 
-    const { start, end } = this.rangeValue();
+    const current = this.rangeValue();
+    const next = this.effectiveRangeStrategy().select(unitStart, current);
+    // a strategy works in days; the calendar's precision is what the value has to land on
+    const resolved = {
+      start: next.start === null ? null : startOfCalendarUnit(next.start, precision),
+      end: next.end === null ? null : startOfCalendarUnit(next.end, precision),
+    };
 
-    if (start === null || end !== null || isBefore(unitStart, startOfCalendarUnit(start, precision))) {
-      this.rangeValue.set({ start: unitStart, end: null });
+    this.rangeValue.set(resolved);
 
-      return;
+    if (resolved.end !== null) {
+      this.hoveredDate.set(null);
     }
-
-    this.rangeValue.set({ start, end: unitStart });
-    this.hoveredDate.set(null);
   }
 
   /**

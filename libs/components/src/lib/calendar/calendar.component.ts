@@ -23,6 +23,7 @@ import { injectCalendarLabels } from '../calendar/calendar-labels';
         'precision',
         'startView',
         'dateClass',
+        'rangeSelectionStrategy',
         'comparisonStart',
         'comparisonEnd',
         'firstDayOfWeek',

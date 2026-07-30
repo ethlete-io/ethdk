@@ -27,6 +27,7 @@ On `et-calendar` (forwarded from the headless `[etCalendar]` directive):
 | `precision`                         | `'day' \| 'month' \| 'year'`                 | `'day'`             | Which unit a selection names — `'month'` makes this a month picker.                    |
 | `startView`                         | `'month' \| 'year' \| 'multiYear'`           | `'month'`           | Which grid the calendar opens on.                                                      |
 | `dateClass`                         | `(date, view) => string \| string[] \| null` | `null`              | Extra classes per cell, in every view — markers of your own.                           |
+| `rangeSelectionStrategy`            | `CalendarRangeSelectionStrategy \| null`     | `null`              | What a pick means in `range` mode — snap to weeks, fixed spans, your own.              |
 | `comparisonStart` / `comparisonEnd` | `Date \| null`                               | `null`              | A second period banded behind the selection, for "vs. previous" comparisons.           |
 | `firstDayOfWeek`                    | `0–6`                                        | locale, else `1`    | `0` = Sunday. Defaults to the locale's week start, Monday without one.                 |
 | `locale`                            | `Locale \| null` (date-fns)                  | `DATE_LOCALE` token | Weekday/month labels and cell `aria-label`s. Falls back to date-fns' built-in en-US.   |
@@ -109,6 +110,29 @@ The returned classes are **your** CSS, which is unlayered and therefore wins ove
 The first click starts the range, a later-or-equal second click completes it, and an earlier one restarts it. While the end is pending, hovering (or moving keyboard focus) previews the band.
 
 <StoryEmbed id="components-calendar--range" height="420px" />
+
+## Range selection strategies
+
+What a pick means in `range` mode is a strategy, and the calendar's own rule — open on the first pick, close on a later-or-equal one, start over on an earlier one — is just the default. `rangeSelectionStrategy` replaces it:
+
+```ts
+import { createWeekRangeStrategy, createFixedLengthRangeStrategy } from '@ethlete/components';
+
+protected weeks = createWeekRangeStrategy({ weekStartsOn: 1 });
+protected sevenDays = createFixedLengthRangeStrategy({ days: 7 });
+```
+
+| Strategy                                    | A pick means                                                                   |
+| ------------------------------------------- | ------------------------------------------------------------------------------ |
+| default (unset)                             | Open the range, then close it on a later-or-equal pick.                        |
+| `createWeekRangeStrategy({ weekStartsOn })` | Open at the start of that week, close at the end of the second pick's week.    |
+| `createFixedLengthRangeStrategy({ days })`  | A complete range of `days` days from wherever it landed — one pick, no second. |
+
+<StoryEmbed id="components-calendar--week-range" height="420px" />
+
+A strategy is two pure functions of `(date, currentRange)`: `select` returns the range a pick produces (an open `end: null` leaves it half-built), and the optional `preview` returns what to band while the reader is only hovering or has moved keyboard focus there. Leaving `preview` out means the band promises exactly what the pick would do, which is usually right; the week strategy overrides it so hovering bands whole weeks from the start, making the snap visible _before_ it happens rather than surprising after. The result is normalized to the calendar's [`precision`](#month-and-year-pickers), so a strategy can work in days without knowing about coarser calendars. The date range input forwards the input.
+
+<StoryEmbed id="components-calendar--fixed-length-range" height="420px" />
 
 ## Multiple dates
 

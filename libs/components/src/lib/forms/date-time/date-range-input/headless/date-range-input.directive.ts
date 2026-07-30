@@ -27,6 +27,7 @@ import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labe
 import {
   CalendarDateClassFn,
   CalendarPrecision,
+  CalendarRangeSelectionStrategy,
   CalendarView,
   startOfCalendarUnit,
 } from '../../../../calendar/headless';
@@ -139,6 +140,12 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
 
   /** Renders the picker calendar's week-number column. */
   public weekNumbers = input(false, { transform: booleanAttribute });
+
+  /**
+   * What a pick means in the picker calendar — snap to whole weeks, take a fixed number of days.
+   * Unset, the usual open-then-close rule applies.
+   */
+  public rangeSelectionStrategy = input<CalendarRangeSelectionStrategy | null>(null);
 
   /**
    * A period to band behind the selected range in the picker — "vs. the previous 30 days". Purely
