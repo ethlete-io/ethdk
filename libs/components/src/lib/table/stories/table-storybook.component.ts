@@ -297,6 +297,11 @@ export class TableStorybookComponent {
 
   protected rows = computed(() => {
     if (this.empty()) return [];
+    // One non-ASCII name when exporting, so the CSV's auto-BOM rule has something to react to.
+    if (this.csvExport())
+      return PEOPLE.slice(0, this.rowCount()).map((person, index) =>
+        index === 1 ? { ...person, name: 'Jürgen Habermas' } : person,
+      );
 
     return this.virtualScroll() ? MANY_PEOPLE : PEOPLE.slice(0, this.rowCount());
   });

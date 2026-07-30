@@ -1107,9 +1107,29 @@ button:
 | `rows`         | `readonly T[]`                   | table's rows  | Any list — a [selection](#selection), or your untouched data to ignore filters   |
 | `header`       | `boolean`                        | `true`        | Write the header row of column labels                                            |
 | `delimiter`    | `string`                         | `','`         | Use `';'` for locales where Excel expects it                                     |
-| `bom`          | `boolean`                        | `true`        | UTF-8 BOM, without which Excel mangles non-ASCII text                            |
+| `bom`          | `boolean \| 'auto'`              | `'auto'`      | UTF-8 BOM — see below                                                            |
 | `formulaGuard` | `boolean`                        | `true`        | See below                                                                        |
 | `filename`     | `string`                         | `'table.csv'` | `.csv` is appended when missing                                                  |
+
+### The BOM
+
+A UTF-8 BOM is what tells **Excel** the file is UTF-8. Without one Excel reads a CSV in the
+system's legacy code page, and `Jürgen` arrives as `JÃ¼rgen`. The catch is that not every
+reader strips the marker: a text editor on the wrong encoding, most hand-rolled CSV parsers —
+and Google Sheets — surface it as a literal `ï»¿` glued to the first header cell.
+
+So the default is `'auto'`: the BOM is written **only when the file actually contains a
+non-ASCII character**, which is the only case where it changes anything. A pure-ASCII CSV
+reads identically with or without one, so it simply doesn't get it — no stray `ï»¿`, in any
+reader. Pass `bom: true` or `bom: false` to force it.
+
+One residue worth knowing: a file that _does_ carry non-ASCII text still gets the BOM, so
+opening that one in Google Sheets shows `ï»¿` on the first header. Sheets assumes UTF-8
+anyway and never needed the marker — if your exports are headed there rather than to Excel,
+set `bom: false` on the directive and be done with it.
+
+`tableToCsv()` never adds a BOM: it hands back a string, and how that gets encoded is the
+caller's business.
 
 `formulaGuard` prefixes a **text** field that starts with `=`, `+`, `-`, `@`, a tab or a
 carriage return with a `'`, so the spreadsheet shows it instead of running it. This is CSV

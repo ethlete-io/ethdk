@@ -44,11 +44,16 @@ export type TableCsvExportOptions<T> = {
   delimiter?: string;
 
   /**
-   * Prefix the file with a UTF-8 BOM. Excel reads a BOM-less CSV in the system's legacy code page,
-   * which turns every non-ASCII character into mojibake; nothing else minds the BOM.
-   * @default true
+   * Prefix the file with a UTF-8 BOM. It is what tells Excel the file is UTF-8 — without it Excel reads
+   * a CSV in the system's legacy code page, and every non-ASCII character becomes mojibake.
+   *
+   * `'auto'` writes one only when the file actually contains a non-ASCII character, which is the only
+   * time it changes anything: a pure-ASCII CSV reads identically either way, so the marker would only
+   * show up as `ï»¿` in the readers that don't strip it (text editors on the wrong encoding, most
+   * hand-rolled parsers). `true` and `false` force it.
+   * @default 'auto'
    */
-  bom?: boolean;
+  bom?: boolean | 'auto';
 
   /**
    * Prefix a text field that starts with `=`, `+`, `-`, `@`, a tab or a carriage return with a `'`,
@@ -67,6 +72,14 @@ export type TableCsvExportOptions<T> = {
 
 // What tells Excel the file is UTF-8; see `bom`.
 const UTF8_BOM = '\uFEFF';
+
+// Anything above ASCII, which is the only content the BOM changes anything for — see `bom`. Written as
+// a positive range so it carries no control characters of its own (and so CRLF isn't a match).
+const NON_ASCII = /[\u0080-\uFFFF]/;
+
+/** Whether this file gets a BOM, under the `bom` option's three settings. */
+const needsBom = (csv: string, bom: boolean | 'auto' | undefined) =>
+  (bom ?? 'auto') === 'auto' ? NON_ASCII.test(csv) : bom === true;
 
 // Fields a spreadsheet would evaluate rather than display. Tab and CR are in the list because both
 // Excel and Sheets skip leading whitespace before deciding.
@@ -192,7 +205,7 @@ export const injectTableCsvExport = () => {
 
     const name = options.filename ?? 'table.csv';
     const filename = name.toLowerCase().endsWith('.csv') ? name : `${name}.csv`;
-    const parts = (options.bom ?? true) ? [UTF8_BOM, csv] : [csv];
+    const parts = needsBom(csv, options.bom) ? [UTF8_BOM, csv] : [csv];
     const url = view.URL.createObjectURL(new view.Blob(parts, { type: 'text/csv;charset=utf-8' }));
     const link = renderer.createElement('a');
 
