@@ -4,6 +4,24 @@
   <div class="et-slider-rail" aria-hidden="true"></div>
   <div [style.--_et-slider-fill-end]="slider.thumbPercents()[0] ?? 0" class="et-slider-fill" aria-hidden="true"></div>
 
+  @if (slider.markStops().length) {
+    <!-- the accessible value lives on the thumb — tick labels are decoration -->
+    <div class="et-slider-marks" aria-hidden="true">
+      @for (mark of slider.markStops(); track mark.value) {
+        <span
+          [attr.data-active]="mark.active || null"
+          [attr.data-et-slider-mark-value]="mark.value"
+          [style.--_et-slider-mark-position]="mark.percent"
+          class="et-slider-mark"
+        >
+          @if (mark.label) {
+            <span class="et-slider-mark-label">{{ mark.label }}</span>
+          }
+        </span>
+      }
+    </div>
+  }
+
   <div
     #thumb="etSliderThumb"
     [style.--_et-slider-thumb-position]="thumb.percent()"

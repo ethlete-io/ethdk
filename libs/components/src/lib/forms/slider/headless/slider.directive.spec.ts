@@ -5,6 +5,7 @@ import '../../../../test-helpers';
 import { LabelDirective } from '../../form-field/headless';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { SLIDER_IMPORTS } from '../slider.imports';
+import { SliderMarks, SliderOrientation } from './slider.tokens';
 
 const TEST_COLOR_THEMES = [
   {
@@ -52,6 +53,9 @@ const TEST_COLOR_THEMES = [
       [min]="min()"
       [max]="max()"
       [step]="step()"
+      [orientation]="orientation()"
+      [marks]="marks()"
+      [snapToMarks]="snapToMarks()"
       [disabled]="disabled()"
       [readonly]="readonly()"
       [touched]="touched()"
@@ -72,11 +76,15 @@ class SliderTestHost {
   min = signal<number | undefined>(undefined);
   max = signal<number | undefined>(undefined);
   step = signal(1);
+  orientation = signal<SliderOrientation>('horizontal');
+  marks = signal<SliderMarks>(false);
+  snapToMarks = signal(false);
   disabled = signal(false);
   readonly = signal(false);
 }
 
 const TRACK_RECT = { left: 0, width: 100, top: 0, height: 28, right: 100, bottom: 28, x: 0, y: 28 } as DOMRect;
+const VERTICAL_TRACK_RECT = { left: 0, width: 28, top: 0, height: 100, right: 28, bottom: 100, x: 0, y: 0 } as DOMRect;
 
 describe('SliderDirective', () => {
   let fixture: ComponentFixture<SliderTestHost>;
@@ -90,8 +98,10 @@ describe('SliderDirective', () => {
     fixture.detectChanges();
   };
 
-  const pointer = (type: string, clientX: number) => {
-    track().dispatchEvent(new MouseEvent(type, { clientX, bubbles: true, button: 0 }));
+  const marks = () => Array.from(host.querySelectorAll<HTMLElement>('.et-slider-mark'));
+
+  const pointer = (type: string, clientX: number, clientY = 0) => {
+    track().dispatchEvent(new MouseEvent(type, { clientX, clientY, bubbles: true, button: 0 }));
     fixture.detectChanges();
   };
 
@@ -223,6 +233,162 @@ describe('SliderDirective', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.touched()).toBe(true);
+  });
+
+  describe('vertical orientation', () => {
+    beforeEach(() => {
+      fixture.componentInstance.orientation.set('vertical');
+      fixture.detectChanges();
+      track().getBoundingClientRect = () => VERTICAL_TRACK_RECT;
+    });
+
+    it('exposes the orientation on the host and the thumb', () => {
+      expect(host.getAttribute('data-orientation')).toBe('vertical');
+      expect(thumb().getAttribute('aria-orientation')).toBe('vertical');
+    });
+
+    it('swaps the blocked touch axis on the track and the thumb', () => {
+      expect(track().style.touchAction).toBe('pan-x');
+      expect(thumb().style.touchAction).toBe('pan-x');
+
+      fixture.componentInstance.orientation.set('horizontal');
+      fixture.detectChanges();
+
+      expect(track().style.touchAction).toBe('pan-y');
+      expect(thumb().style.touchAction).toBe('pan-y');
+    });
+
+    it('maps pointer positions bottom→up', () => {
+      pointer('pointerdown', 0, 100);
+      expect(fixture.componentInstance.value()).toBe(0);
+
+      pointer('pointermove', 0, 70);
+      expect(fixture.componentInstance.value()).toBe(30);
+
+      pointer('pointerup', 0, 0);
+      expect(fixture.componentInstance.value()).toBe(100);
+    });
+
+    it('keeps ArrowUp/ArrowDown incrementing and decrementing', () => {
+      keydown('ArrowUp');
+      expect(fixture.componentInstance.value()).toBe(1);
+
+      keydown('ArrowDown');
+      expect(fixture.componentInstance.value()).toBe(0);
+
+      keydown('End');
+      expect(fixture.componentInstance.value()).toBe(100);
+    });
+  });
+
+  describe('marks', () => {
+    it('renders no ticks by default', () => {
+      expect(marks().length).toBe(0);
+      expect(host.hasAttribute('data-mark-labels')).toBe(false);
+    });
+
+    it('renders a tick per step and flags the ones inside the fill', () => {
+      fixture.componentInstance.step.set(25);
+      fixture.componentInstance.marks.set(true);
+      fixture.componentInstance.value.set(50);
+      fixture.detectChanges();
+
+      expect(marks().map((mark) => mark.style.getPropertyValue('--_et-slider-mark-position'))).toEqual([
+        '0',
+        '25',
+        '50',
+        '75',
+        '100',
+      ]);
+      expect(marks().map((mark) => mark.hasAttribute('data-active'))).toEqual([true, true, true, false, false]);
+    });
+
+    it('renders labelled ticks aria-hidden and flags the host so the labels get room', () => {
+      fixture.componentInstance.marks.set([{ value: 0, label: 'Low' }, { value: 50 }, { value: 100, label: 'High' }]);
+      fixture.detectChanges();
+
+      expect(host.querySelector('.et-slider-marks')!.getAttribute('aria-hidden')).toBe('true');
+      expect(marks().map((mark) => mark.textContent)).toEqual(['Low', '', 'High']);
+      expect(host.hasAttribute('data-mark-labels')).toBe(true);
+    });
+
+    it('activates no tick while mixed', () => {
+      fixture.componentInstance.marks.set(true);
+      fixture.componentInstance.step.set(50);
+      fixture.componentInstance.value.set(100);
+      fixture.componentInstance.mixed.set(true);
+      fixture.detectChanges();
+
+      expect(marks().some((mark) => mark.hasAttribute('data-active'))).toBe(false);
+    });
+
+    it('commits the exact stop when the pointer goes down on a tick', () => {
+      fixture.componentInstance.marks.set([{ value: 33 }]);
+      fixture.detectChanges();
+
+      marks()[0]!.dispatchEvent(new MouseEvent('pointerdown', { clientX: 0, bubbles: true, button: 0 }));
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.value()).toBe(33);
+    });
+
+    describe('snapToMarks', () => {
+      beforeEach(() => {
+        fixture.componentInstance.marks.set([
+          { value: 0, label: 'Low' },
+          { value: 20, label: 'Medium' },
+          { value: 80, label: 'High' },
+        ]);
+        fixture.componentInstance.snapToMarks.set(true);
+        fixture.detectChanges();
+      });
+
+      it('displays the nearest mark instead of the step grid', () => {
+        fixture.componentInstance.value.set(45);
+        fixture.detectChanges();
+
+        expect(thumb().getAttribute('aria-valuenow')).toBe('20');
+      });
+
+      it('announces the mark label as the accessible value', () => {
+        fixture.componentInstance.value.set(80);
+        fixture.detectChanges();
+
+        expect(thumb().getAttribute('aria-valuetext')).toBe('High');
+
+        fixture.componentInstance.snapToMarks.set(false);
+        fixture.detectChanges();
+
+        expect(thumb().hasAttribute('aria-valuetext')).toBe(false);
+      });
+
+      it('steps from mark to mark with the keyboard', () => {
+        keydown('ArrowRight');
+        expect(fixture.componentInstance.value()).toBe(20);
+
+        keydown('ArrowUp');
+        expect(fixture.componentInstance.value()).toBe(80);
+
+        keydown('ArrowUp');
+        expect(fixture.componentInstance.value()).toBe(80);
+
+        keydown('PageDown');
+        expect(fixture.componentInstance.value()).toBe(0);
+
+        keydown('End');
+        expect(fixture.componentInstance.value()).toBe(80);
+      });
+
+      it('snaps pointer commits onto the marks', () => {
+        pointer('pointerdown', 45);
+        expect(fixture.componentInstance.value()).toBe(20);
+
+        pointer('pointermove', 60);
+        expect(fixture.componentInstance.value()).toBe(80);
+
+        pointer('pointerup', 60);
+      });
+    });
   });
 
   describe('mixed', () => {

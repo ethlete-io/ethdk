@@ -3,6 +3,7 @@ import { FormField, disabled, form, readonly } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import { LabelDirective } from '../../form-field';
 import { HintComponent } from '../../form-field/hint.component';
+import { SliderMarks, SliderOrientation } from '../headless';
 import { SLIDER_IMPORTS } from '../slider.imports';
 
 @Component({
@@ -16,6 +17,9 @@ import { SLIDER_IMPORTS } from '../slider.imports';
         [min]="min()"
         [max]="max()"
         [step]="step()"
+        [orientation]="orientation()"
+        [marks]="marks()"
+        [snapToMarks]="snapToMarks()"
       >
         <et-label>{{ label() }}</et-label>
         @if (hint()) {
@@ -49,6 +53,9 @@ export class SliderStorybookComponent {
   public min = input(0);
   public max = input(100);
   public step = input(1);
+  public orientation = input<SliderOrientation>('horizontal');
+  public marks = input<SliderMarks>(false);
+  public snapToMarks = input(false);
   public disabled = input(false);
   public readonly = input(false);
   public showValueLabel = input(false);

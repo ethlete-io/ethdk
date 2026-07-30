@@ -14,14 +14,16 @@ const PAGE_STEP_MULTIPLIER = 10;
   exportAs: 'etSliderThumb',
   host: {
     role: 'slider',
-    'aria-orientation': 'horizontal',
+    // a vertical thumb pans the page horizontally instead — the drag axis is the blocked one
+    '[style.touch-action]': 'vertical() ? "pan-x" : "pan-y"',
+    '[attr.aria-orientation]': 'slider?.orientation() ?? "horizontal"',
     '[attr.tabindex]': 'slider?.disabled() ? -1 : 0',
     '[attr.aria-valuemin]': 'ariaMin()',
     '[attr.aria-valuemax]': 'ariaMax()',
     // a removed aria-valuenow is the ARIA-sanctioned "indeterminate value" — the valuetext
     // then carries the mixed label so assistive tech announces the bulk-edit state
     '[attr.aria-valuenow]': 'slider?.mixed() ? null : value()',
-    '[attr.aria-valuetext]': 'slider?.mixed() ? slider?.resolvedMixedLabel() : null',
+    '[attr.aria-valuetext]': 'slider?.thumbValueText(index())',
     '[attr.aria-label]': 'label() || null',
     '[attr.aria-labelledby]': 'label() ? null : slider?.labelId()',
     '[attr.aria-describedby]': 'slider?.describedBy()',
@@ -54,6 +56,8 @@ export class SliderThumbDirective implements SliderThumbBase {
   public percent = computed(() => this.slider?.thumbPercents()[this.index()] ?? 0);
 
   public dragging = computed(() => this.slider !== null && this.slider.draggingThumbIndex() === this.index());
+
+  protected vertical = computed(() => this.slider?.orientation() === 'vertical');
 
   protected ariaMin = computed(() => this.slider?.thumbAriaBounds(this.index()).min ?? 0);
   protected ariaMax = computed(() => this.slider?.thumbAriaBounds(this.index()).max ?? 100);
@@ -90,46 +94,47 @@ export class SliderThumbDirective implements SliderThumbBase {
       return;
     }
 
-    const step = slider.step();
     const index = this.index();
     const value = this.value();
-    // direction-aware horizontal keys: ArrowRight always moves the thumb visually right
-    const horizontalSign = getComputedStyle(this.elementRef.nativeElement).direction === 'rtl' ? -1 : 1;
+    // direction-aware horizontal keys: ArrowRight always moves the thumb visually right.
+    // A vertical track is never mirrored, so RTL leaves its arrow mapping alone.
+    const horizontalSign =
+      !this.vertical() && getComputedStyle(this.elementRef.nativeElement).direction === 'rtl' ? -1 : 1;
 
     switch (event.key) {
       case 'ArrowRight': {
         event.preventDefault();
-        slider.commitThumbValue(index, value + step * horizontalSign);
+        slider.commitThumbValue(index, slider.adjacentValue(value, horizontalSign));
 
         return;
       }
       case 'ArrowLeft': {
         event.preventDefault();
-        slider.commitThumbValue(index, value - step * horizontalSign);
+        slider.commitThumbValue(index, slider.adjacentValue(value, -horizontalSign));
 
         return;
       }
       case 'ArrowUp': {
         event.preventDefault();
-        slider.commitThumbValue(index, value + step);
+        slider.commitThumbValue(index, slider.adjacentValue(value, 1));
 
         return;
       }
       case 'ArrowDown': {
         event.preventDefault();
-        slider.commitThumbValue(index, value - step);
+        slider.commitThumbValue(index, slider.adjacentValue(value, -1));
 
         return;
       }
       case 'PageUp': {
         event.preventDefault();
-        slider.commitThumbValue(index, value + step * PAGE_STEP_MULTIPLIER);
+        slider.commitThumbValue(index, slider.adjacentValue(value, PAGE_STEP_MULTIPLIER));
 
         return;
       }
       case 'PageDown': {
         event.preventDefault();
-        slider.commitThumbValue(index, value - step * PAGE_STEP_MULTIPLIER);
+        slider.commitThumbValue(index, slider.adjacentValue(value, -PAGE_STEP_MULTIPLIER));
 
         return;
       }

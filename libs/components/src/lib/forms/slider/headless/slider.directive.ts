@@ -14,8 +14,22 @@ import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { RuntimeError } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 import { SLIDER_ERROR_CODES } from '../slider-errors';
-import { snapValueToStep, valueToPercent } from './internals/slider-engine';
-import { SLIDER_TOKEN, SliderHostBase, SliderThumbBase, SliderThumbLabelBase } from './slider.tokens';
+import {
+  adjacentMarkValue,
+  resolveMarks,
+  snapValueToMarks,
+  snapValueToStep,
+  toMarkStops,
+  valueToPercent,
+} from './internals/slider-engine';
+import {
+  SLIDER_TOKEN,
+  SliderHostBase,
+  SliderMarks,
+  SliderOrientation,
+  SliderThumbBase,
+  SliderThumbLabelBase,
+} from './slider.tokens';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 
 @Directive({
@@ -24,6 +38,7 @@ import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labe
   providers: [{ provide: SLIDER_TOKEN, useExisting: SliderDirective }],
   host: {
     '[attr.data-mixed]': 'mixed() || null',
+    '[attr.data-orientation]': 'orientation()',
   },
 })
 export class SliderDirective implements FormValueControl<number>, FormFieldControl, SliderHostBase {
@@ -50,6 +65,15 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
   public min = input<number | undefined>(undefined);
   public max = input<number | undefined>(undefined);
   public step = input(1, { transform: numberAttribute });
+
+  /** Axis the slider runs along. A vertical slider runs bottom→up and is not mirrored in RTL. */
+  public orientation = input<SliderOrientation>('horizontal');
+
+  /** Tick stops: `true` for one per `step`, or an explicit list of (optionally labelled) values. */
+  public marks = input<SliderMarks>(false);
+
+  /** Snaps commits onto the marks instead of the `step` grid. No effect without `marks`. */
+  public snapToMarks = input(false, { transform: booleanAttribute });
 
   /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
   public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
@@ -78,14 +102,27 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
 
   private bounds = computed(() => ({ min: this.effectiveMin(), max: this.effectiveMax(), step: this.step() }));
 
+  private resolvedMarks = computed(() => resolveMarks(this.marks(), this.bounds()));
+
+  /** The mark grid commits snap to, or empty when `snapToMarks` is off. */
+  private snapMarkValues = computed(() => (this.snapToMarks() ? this.resolvedMarks().map((mark) => mark.value) : []));
+
   // while mixed, the thumb parks at the track start so the DOM (position, ARIA) exposes
   // nothing of the hidden raw value — the keyboard model then also steps from the minimum
   public thumbValues = computed<readonly number[]>(() =>
-    this.mixed() ? [this.effectiveMin()] : [snapValueToStep(this.value(), this.bounds())],
+    this.mixed() ? [this.effectiveMin()] : [this.snapValue(this.value())],
   );
 
   public thumbPercents = computed<readonly number[]>(() =>
     this.thumbValues().map((value) => valueToPercent(value, this.bounds())),
+  );
+
+  public markStops = computed(() =>
+    toMarkStops(this.resolvedMarks(), {
+      bounds: this.bounds(),
+      // a parked thumb fills nothing — no tick may read as active while mixed
+      activeRange: this.mixed() ? null : [this.effectiveMin(), this.thumbValues()[0] ?? this.effectiveMin()],
+    }),
   );
 
   constructor() {
@@ -116,6 +153,29 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
     return { min: this.effectiveMin(), max: this.effectiveMax() };
   }
 
+  public thumbValueText(index: number) {
+    void index;
+
+    if (this.mixed()) {
+      return this.resolvedMixedLabel();
+    }
+
+    // only a mark-snapped slider can be sure the thumb sits on a labelled stop
+    if (!this.snapToMarks()) {
+      return null;
+    }
+
+    const value = this.thumbValues()[0];
+
+    return this.resolvedMarks().find((mark) => mark.value === value)?.label ?? null;
+  }
+
+  public adjacentValue(value: number, steps: number) {
+    const markValues = this.snapMarkValues();
+
+    return markValues.length ? adjacentMarkValue(value, { markValues, steps }) : value + steps * this.step();
+  }
+
   public commitThumbValue(index: number, value: number) {
     // the single slider has one thumb — `index` only exists to satisfy the shared host contract
     void index;
@@ -124,7 +184,7 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
       return;
     }
 
-    const snapped = snapValueToStep(value, this.bounds());
+    const snapped = this.snapValue(value);
 
     // only user interactions route through here — the first commit resolves mixed even
     // when the chosen value happens to equal the hidden raw one (replace semantics)
@@ -147,5 +207,11 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
   /** @internal */
   public unregisterThumb(thumb: SliderThumbBase) {
     this.thumbs.update((thumbs) => thumbs.filter((registered) => registered !== thumb));
+  }
+
+  private snapValue(value: number) {
+    const markValues = this.snapMarkValues();
+
+    return markValues.length ? snapValueToMarks(value, { markValues }) : snapValueToStep(value, this.bounds());
   }
 }

@@ -14,8 +14,23 @@ import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { RuntimeError } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 import { SLIDER_ERROR_CODES } from '../slider-errors';
-import { constrainRangeThumb, snapValueToStep, valueToPercent } from './internals/slider-engine';
-import { SLIDER_TOKEN, SliderHostBase, SliderThumbBase, SliderThumbLabelBase } from './slider.tokens';
+import {
+  adjacentMarkValue,
+  constrainRangeThumb,
+  resolveMarks,
+  snapValueToMarks,
+  snapValueToStep,
+  toMarkStops,
+  valueToPercent,
+} from './internals/slider-engine';
+import {
+  SLIDER_TOKEN,
+  SliderHostBase,
+  SliderMarks,
+  SliderOrientation,
+  SliderThumbBase,
+  SliderThumbLabelBase,
+} from './slider.tokens';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 
 export type RangeSliderValue = [number, number];
@@ -26,6 +41,7 @@ export type RangeSliderValue = [number, number];
   providers: [{ provide: SLIDER_TOKEN, useExisting: RangeSliderDirective }],
   host: {
     '[attr.data-mixed]': 'mixed() || null',
+    '[attr.data-orientation]': 'orientation()',
   },
 })
 export class RangeSliderDirective implements FormValueControl<RangeSliderValue>, FormFieldControl, SliderHostBase {
@@ -56,6 +72,15 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
   /** Minimum gap kept between the two thumbs — should be a multiple of `step`. */
   public minDistance = input(0, { transform: numberAttribute });
 
+  /** Axis the slider runs along. A vertical slider runs bottom→up and is not mirrored in RTL. */
+  public orientation = input<SliderOrientation>('horizontal');
+
+  /** Tick stops: `true` for one per `step`, or an explicit list of (optionally labelled) values. */
+  public marks = input<SliderMarks>(false);
+
+  /** Snaps commits onto the marks instead of the `step` grid. No effect without `marks`. */
+  public snapToMarks = input(false, { transform: booleanAttribute });
+
   /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */
   public resolvedMixedLabel = computed(() => this.mixedLabel() ?? this.formFieldLabels().mixed);
 
@@ -83,6 +108,11 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
 
   private bounds = computed(() => ({ min: this.effectiveMin(), max: this.effectiveMax(), step: this.step() }));
 
+  private resolvedMarks = computed(() => resolveMarks(this.marks(), this.bounds()));
+
+  /** The mark grid commits snap to, or empty when `snapToMarks` is off. */
+  private snapMarkValues = computed(() => (this.snapToMarks() ? this.resolvedMarks().map((mark) => mark.value) : []));
+
   // while mixed, both thumbs park at the track start so the DOM (positions, ARIA) exposes
   // nothing of the hidden raw range — the keyboard model then also steps from the minimum
   public thumbValues = computed<readonly number[]>(() => {
@@ -92,8 +122,7 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
       return [min, min];
     }
 
-    const bounds = this.bounds();
-    const snapped = this.value().map((end) => snapValueToStep(end, bounds));
+    const snapped = this.value().map((end) => this.snapValue(end));
 
     return [Math.min(...snapped), Math.max(...snapped)];
   });
@@ -101,6 +130,16 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
   public thumbPercents = computed<readonly number[]>(() =>
     this.thumbValues().map((value) => valueToPercent(value, this.bounds())),
   );
+
+  public markStops = computed(() => {
+    const [start, end] = this.thumbValues();
+
+    return toMarkStops(this.resolvedMarks(), {
+      bounds: this.bounds(),
+      // parked thumbs fill nothing — no tick may read as active while mixed
+      activeRange: this.mixed() || start === undefined || end === undefined ? null : [start, end],
+    });
+  });
 
   constructor() {
     this.formField?.registerControl(this);
@@ -139,6 +178,27 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
       : { min: start + this.minDistance(), max: this.effectiveMax() };
   }
 
+  public thumbValueText(index: number) {
+    if (this.mixed()) {
+      return this.resolvedMixedLabel();
+    }
+
+    // only a mark-snapped slider can be sure the thumb sits on a labelled stop
+    if (!this.snapToMarks()) {
+      return null;
+    }
+
+    const value = this.thumbValues()[index];
+
+    return this.resolvedMarks().find((mark) => mark.value === value)?.label ?? null;
+  }
+
+  public adjacentValue(value: number, steps: number) {
+    const markValues = this.snapMarkValues();
+
+    return markValues.length ? adjacentMarkValue(value, { markValues, steps }) : value + steps * this.step();
+  }
+
   public commitThumbValue(index: number, value: number) {
     if (!this.interactive()) {
       return;
@@ -148,12 +208,7 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
     // by writing a fresh range: the chosen value on its end, the default bound on the other
     if (this.mixed()) {
       const otherBound = index === 0 ? this.effectiveMax() : this.effectiveMin();
-      const constrained = constrainRangeThumb(snapValueToStep(value, this.bounds()), {
-        end: index === 0 ? 'start' : 'end',
-        otherValue: otherBound,
-        minDistance: this.minDistance(),
-      });
-      const snapped = snapValueToStep(constrained, this.bounds());
+      const snapped = this.constrainAndSnap(value, { index, otherValue: otherBound });
 
       this.mixed.set(false);
       this.value.set(index === 0 ? [snapped, otherBound] : [otherBound, snapped]);
@@ -162,13 +217,7 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
     }
 
     const current = this.thumbValues() as RangeSliderValue;
-    const otherIndex = index === 0 ? 1 : 0;
-    const constrained = constrainRangeThumb(snapValueToStep(value, this.bounds()), {
-      end: index === 0 ? 'start' : 'end',
-      otherValue: current[otherIndex],
-      minDistance: this.minDistance(),
-    });
-    const snapped = snapValueToStep(constrained, this.bounds());
+    const snapped = this.constrainAndSnap(value, { index, otherValue: current[index === 0 ? 1 : 0] });
 
     if (snapped === current[index]) {
       return;
@@ -189,5 +238,29 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
   /** @internal */
   public unregisterThumb(thumb: SliderThumbBase) {
     this.thumbs.update((thumbs) => thumbs.filter((registered) => registered !== thumb));
+  }
+
+  private snapValue(value: number) {
+    const markValues = this.snapMarkValues();
+
+    return markValues.length ? snapValueToMarks(value, { markValues }) : snapValueToStep(value, this.bounds());
+  }
+
+  /**
+   * Snaps `value`, keeps it clear of the sibling, then snaps again — the sibling limit itself
+   * need not sit on the grid, so the second snap moves away from the sibling, never across it.
+   */
+  private constrainAndSnap(value: number, thumb: { index: number; otherValue: number }) {
+    const end = thumb.index === 0 ? 'start' : 'end';
+    const constrained = constrainRangeThumb(this.snapValue(value), {
+      end,
+      otherValue: thumb.otherValue,
+      minDistance: this.minDistance(),
+    });
+    const markValues = this.snapMarkValues();
+
+    return markValues.length
+      ? snapValueToMarks(constrained, { markValues, direction: end === 'start' ? 'down' : 'up' })
+      : snapValueToStep(constrained, this.bounds());
   }
 }

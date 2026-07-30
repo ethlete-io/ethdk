@@ -1,19 +1,34 @@
-import { Directive, ElementRef, afterNextRender, inject } from '@angular/core';
+import { Directive, ElementRef, afterNextRender, computed, inject } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { SLIDER_ERROR_CODES } from '../slider-errors';
 import { nearestThumbIndex, valueFromPointerPosition } from './internals/slider-engine';
-import { SLIDER_TOKEN } from './slider.tokens';
+import { SLIDER_MARK_VALUE_ATTRIBUTE, SLIDER_TOKEN } from './slider.tokens';
+
+/** The exact stop a tick element under the pointer carries, or `null` for a plain track position. */
+const markValueUnderPointer = (event: PointerEvent) => {
+  const target = event.target;
+
+  if (!(target instanceof Element)) {
+    return null;
+  }
+
+  // eslint-disable-next-line ethlete/no-dom-query -- pointer hit-testing: the pressed node may be any descendant of a tick (e.g. its label), and ticks are plain markup carrying no directive token
+  const mark = target.closest(`[${SLIDER_MARK_VALUE_ATTRIBUTE}]`);
+  const value = mark ? Number(mark.getAttribute(SLIDER_MARK_VALUE_ATTRIBUTE)) : NaN;
+
+  return Number.isFinite(value) ? value : null;
+};
 
 /**
- * The pointer surface of a slider: its rect maps horizontal pointer positions onto
- * the value range. Place the thumbs inside it so their pointer events bubble here.
+ * The pointer surface of a slider: its rect maps pointer positions along the slider's
+ * axis onto the value range. Place the thumbs inside it so their pointer events bubble here.
  */
 @Directive({
   selector: '[etSliderTrack]',
   exportAs: 'etSliderTrack',
   host: {
-    // horizontal drags adjust the slider, vertical page scrolling stays native
-    '[style.touch-action]': '"pan-y"',
+    // drags along the slider axis adjust it, page scrolling on the other axis stays native
+    '[style.touch-action]': 'vertical() ? "pan-x" : "pan-y"',
     '(pointerdown)': 'handlePointerDown($event)',
     '(pointermove)': 'handlePointerMove($event)',
     '(pointerup)': 'handlePointerUp($event)',
@@ -23,6 +38,8 @@ import { SLIDER_TOKEN } from './slider.tokens';
 export class SliderTrackDirective {
   private slider = inject(SLIDER_TOKEN, { optional: true });
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  protected vertical = computed(() => this.slider?.orientation() === 'vertical');
 
   constructor() {
     if (ngDevMode) {
@@ -44,7 +61,8 @@ export class SliderTrackDirective {
       return;
     }
 
-    const value = this.valueFromEvent(event);
+    // a tap that starts on a tick commits that tick exactly, not the value under the pointer
+    const value = markValueUnderPointer(event) ?? this.valueFromEvent(event);
     const index = nearestThumbIndex(value, slider.thumbValues());
 
     slider.draggingThumbIndex.set(index);
@@ -99,8 +117,10 @@ export class SliderTrackDirective {
 
     return valueFromPointerPosition({
       clientX: event.clientX,
+      clientY: event.clientY,
       trackRect: element.getBoundingClientRect(),
       rtl: getComputedStyle(element).direction === 'rtl',
+      orientation: slider.orientation(),
       bounds: { min: slider.effectiveMin(), max: slider.effectiveMax(), step: slider.step() },
     });
   }

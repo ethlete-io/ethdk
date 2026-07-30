@@ -15,6 +15,9 @@ export default {
     min: { control: 'number' },
     max: { control: 'number' },
     step: { control: 'number' },
+    orientation: { control: 'inline-radio', options: ['horizontal', 'vertical'] },
+    marks: { control: 'object' },
+    snapToMarks: { control: 'boolean' },
     disabled: { control: 'boolean' },
     readonly: { control: 'boolean' },
     showValueLabel: { control: 'boolean' },
@@ -31,6 +34,9 @@ export default {
     min: 0,
     max: 100,
     step: 1,
+    orientation: 'horizontal',
+    marks: false,
+    snapToMarks: false,
     disabled: false,
     readonly: false,
     showValueLabel: false,
@@ -49,6 +55,44 @@ export const Steps: Story = {
 
 export const ValueLabel: Story = {
   args: { showValueLabel: true },
+};
+
+export const Vertical: Story = {
+  args: { orientation: 'vertical', showValueLabel: true },
+};
+
+export const Marks: Story = {
+  args: { step: 10, marks: true, hint: 'A tick at every step' },
+};
+
+export const LabelledMarks: Story = {
+  args: {
+    label: 'Quality',
+    value: 1,
+    max: 2,
+    marks: [
+      { value: 0, label: 'Low' },
+      { value: 1, label: 'Medium' },
+      { value: 2, label: 'High' },
+    ],
+    snapToMarks: true,
+    hint: 'Values snap to the marks; the thumb announces the label',
+  },
+};
+
+export const VerticalMarks: Story = {
+  args: {
+    orientation: 'vertical',
+    label: 'Quality',
+    value: 1,
+    max: 2,
+    marks: [
+      { value: 0, label: 'Low' },
+      { value: 1, label: 'Medium' },
+      { value: 2, label: 'High' },
+    ],
+    snapToMarks: true,
+  },
 };
 
 export const Mixed: Story = {

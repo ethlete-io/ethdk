@@ -5,6 +5,7 @@ import '../../../../test-helpers';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { RangeSliderValue } from './range-slider.directive';
 import { SLIDER_IMPORTS } from '../slider.imports';
+import { SliderMarks, SliderOrientation } from './slider.tokens';
 
 const TEST_COLOR_THEMES = [
   {
@@ -53,6 +54,9 @@ const TEST_COLOR_THEMES = [
       [maxValue]="maxValue()"
       [step]="step()"
       [minDistance]="minDistance()"
+      [orientation]="orientation()"
+      [marks]="marks()"
+      [snapToMarks]="snapToMarks()"
       [disabled]="disabled()"
       (valueChange)="value.set($event)"
       (mixedChange)="mixed.set($event)"
@@ -68,10 +72,14 @@ class RangeSliderTestHost {
   maxValue = signal(100);
   step = signal(1);
   minDistance = signal(0);
+  orientation = signal<SliderOrientation>('horizontal');
+  marks = signal<SliderMarks>(false);
+  snapToMarks = signal(false);
   disabled = signal(false);
 }
 
 const TRACK_RECT = { left: 0, width: 100, top: 0, height: 28, right: 100, bottom: 28, x: 0, y: 28 } as DOMRect;
+const VERTICAL_TRACK_RECT = { left: 0, width: 28, top: 0, height: 100, right: 28, bottom: 100, x: 0, y: 0 } as DOMRect;
 
 describe('RangeSliderDirective', () => {
   let fixture: ComponentFixture<RangeSliderTestHost>;
@@ -85,8 +93,10 @@ describe('RangeSliderDirective', () => {
     fixture.detectChanges();
   };
 
-  const pointer = (type: string, clientX: number) => {
-    track().dispatchEvent(new MouseEvent(type, { clientX, bubbles: true, button: 0 }));
+  const marks = () => Array.from(host.querySelectorAll<HTMLElement>('.et-range-slider-mark'));
+
+  const pointer = (type: string, clientX: number, clientY = 0) => {
+    track().dispatchEvent(new MouseEvent(type, { clientX, clientY, bubbles: true, button: 0 }));
     fixture.detectChanges();
   };
 
@@ -177,6 +187,69 @@ describe('RangeSliderDirective', () => {
     keydown(0, 'ArrowRight');
     pointer('pointerdown', 50);
     expect(fixture.componentInstance.value()).toEqual([20, 80]);
+  });
+
+  describe('vertical orientation', () => {
+    beforeEach(() => {
+      fixture.componentInstance.orientation.set('vertical');
+      fixture.detectChanges();
+      track().getBoundingClientRect = () => VERTICAL_TRACK_RECT;
+    });
+
+    it('exposes the orientation on the host and both thumbs', () => {
+      expect(host.getAttribute('data-orientation')).toBe('vertical');
+
+      for (const thumb of thumbs()) {
+        expect(thumb.getAttribute('aria-orientation')).toBe('vertical');
+        expect(thumb.style.touchAction).toBe('pan-x');
+      }
+    });
+
+    it('moves the nearest thumb bottom→up without letting the thumbs cross', () => {
+      pointer('pointerdown', 0, 75);
+      expect(fixture.componentInstance.value()).toEqual([25, 80]);
+
+      pointer('pointermove', 0, 0);
+      expect(fixture.componentInstance.value()).toEqual([80, 80]);
+
+      pointer('pointerup', 0, 0);
+      expect(host.hasAttribute('data-dragging')).toBe(false);
+    });
+  });
+
+  describe('marks', () => {
+    it('flags the ticks between the thumbs as active', () => {
+      fixture.componentInstance.marks.set(true);
+      fixture.componentInstance.step.set(25);
+      fixture.detectChanges();
+
+      // the [20, 80] value snaps onto the step grid first — the 25/50/75 ticks are inside the fill
+      expect(marks().map((mark) => mark.hasAttribute('data-active'))).toEqual([false, true, true, true, false]);
+    });
+
+    it('snaps both thumbs onto the marks while honoring minDistance', () => {
+      fixture.componentInstance.marks.set([{ value: 0 }, { value: 25 }, { value: 50 }, { value: 75 }, { value: 100 }]);
+      fixture.componentInstance.snapToMarks.set(true);
+      fixture.componentInstance.minDistance.set(25);
+      fixture.componentInstance.value.set([25, 75]);
+      fixture.detectChanges();
+
+      // End would jump to 100 — the sibling limit stops it at 50, which is itself a mark
+      keydown(0, 'End');
+      expect(fixture.componentInstance.value()).toEqual([50, 75]);
+
+      fixture.componentInstance.value.set([25, 75]);
+      fixture.detectChanges();
+
+      // a pointer at 60 snaps the nearest thumb (the end one) down to the 50 mark
+      pointer('pointerdown', 60);
+      expect(fixture.componentInstance.value()).toEqual([25, 50]);
+      pointer('pointerup', 60);
+
+      // one more mark down would breach the minimum distance
+      keydown(1, 'ArrowDown');
+      expect(fixture.componentInstance.value()).toEqual([25, 50]);
+    });
   });
 
   describe('mixed', () => {

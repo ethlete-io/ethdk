@@ -1,7 +1,11 @@
 import {
+  adjacentMarkValue,
   constrainRangeThumb,
   nearestThumbIndex,
+  resolveMarks,
+  snapValueToMarks,
   snapValueToStep,
+  toMarkStops,
   valueFromPointerPosition,
   valueToPercent,
 } from './slider-engine';
@@ -50,47 +54,72 @@ describe('slider-engine', () => {
   });
 
   describe('valueFromPointerPosition', () => {
-    const trackRect = { left: 100, width: 200 };
+    const trackRect = { left: 100, top: 50, width: 200, height: 200 };
+    const base = {
+      clientX: 0,
+      clientY: 0,
+      trackRect,
+      rtl: false,
+      orientation: 'horizontal' as const,
+      bounds: { min: 0, max: 100, step: 1 },
+    };
 
     it('resolves the snapped value under the pointer', () => {
-      expect(
-        valueFromPointerPosition({ clientX: 100, trackRect, rtl: false, bounds: { min: 0, max: 100, step: 1 } }),
-      ).toBe(0);
-      expect(
-        valueFromPointerPosition({ clientX: 200, trackRect, rtl: false, bounds: { min: 0, max: 100, step: 1 } }),
-      ).toBe(50);
-      expect(
-        valueFromPointerPosition({ clientX: 231, trackRect, rtl: false, bounds: { min: 0, max: 100, step: 10 } }),
-      ).toBe(70);
+      expect(valueFromPointerPosition({ ...base, clientX: 100 })).toBe(0);
+      expect(valueFromPointerPosition({ ...base, clientX: 200 })).toBe(50);
+      expect(valueFromPointerPosition({ ...base, clientX: 231, bounds: { min: 0, max: 100, step: 10 } })).toBe(70);
     });
 
     it('clamps pointer positions outside the track', () => {
-      expect(
-        valueFromPointerPosition({ clientX: 0, trackRect, rtl: false, bounds: { min: 0, max: 100, step: 1 } }),
-      ).toBe(0);
-      expect(
-        valueFromPointerPosition({ clientX: 999, trackRect, rtl: false, bounds: { min: 0, max: 100, step: 1 } }),
-      ).toBe(100);
+      expect(valueFromPointerPosition({ ...base, clientX: 0 })).toBe(0);
+      expect(valueFromPointerPosition({ ...base, clientX: 999 })).toBe(100);
     });
 
     it('mirrors the position in RTL', () => {
-      expect(
-        valueFromPointerPosition({ clientX: 100, trackRect, rtl: true, bounds: { min: 0, max: 100, step: 1 } }),
-      ).toBe(100);
-      expect(
-        valueFromPointerPosition({ clientX: 250, trackRect, rtl: true, bounds: { min: 0, max: 100, step: 1 } }),
-      ).toBe(25);
+      expect(valueFromPointerPosition({ ...base, clientX: 100, rtl: true })).toBe(100);
+      expect(valueFromPointerPosition({ ...base, clientX: 250, rtl: true })).toBe(25);
     });
 
     it('falls back to min for a zero-width track', () => {
       expect(
         valueFromPointerPosition({
+          ...base,
           clientX: 50,
-          trackRect: { left: 0, width: 0 },
-          rtl: false,
+          trackRect: { left: 0, top: 0, width: 0, height: 0 },
           bounds: { min: 10, max: 100, step: 1 },
         }),
       ).toBe(10);
+    });
+
+    describe('vertical', () => {
+      const vertical = { ...base, orientation: 'vertical' as const };
+
+      it('runs bottom→up', () => {
+        expect(valueFromPointerPosition({ ...vertical, clientY: 250 })).toBe(0);
+        expect(valueFromPointerPosition({ ...vertical, clientY: 150 })).toBe(50);
+        expect(valueFromPointerPosition({ ...vertical, clientY: 50 })).toBe(100);
+      });
+
+      it('clamps pointer positions outside the track and ignores the X axis', () => {
+        expect(valueFromPointerPosition({ ...vertical, clientX: 9999, clientY: 999 })).toBe(0);
+        expect(valueFromPointerPosition({ ...vertical, clientX: -9999, clientY: -999 })).toBe(100);
+      });
+
+      it('is not mirrored in RTL', () => {
+        expect(valueFromPointerPosition({ ...vertical, clientY: 150, rtl: true })).toBe(50);
+        expect(valueFromPointerPosition({ ...vertical, clientY: 250, rtl: true })).toBe(0);
+      });
+
+      it('falls back to min for a zero-height track', () => {
+        expect(
+          valueFromPointerPosition({
+            ...vertical,
+            clientY: 50,
+            trackRect: { left: 0, top: 0, width: 200, height: 0 },
+            bounds: { min: 10, max: 100, step: 1 },
+          }),
+        ).toBe(10);
+      });
     });
   });
 
@@ -123,6 +152,101 @@ describe('slider-engine', () => {
 
     it('lets thumbs touch when no distance is required', () => {
       expect(constrainRangeThumb(60, { end: 'start', otherValue: 60, minDistance: 0 })).toBe(60);
+    });
+  });
+
+  describe('resolveMarks', () => {
+    it('is empty when marks are off or the bounds are empty', () => {
+      expect(resolveMarks(false, { min: 0, max: 100, step: 10 })).toEqual([]);
+      expect(resolveMarks(true, { min: 10, max: 10, step: 1 })).toEqual([]);
+      expect(resolveMarks(true, { min: 0, max: 100, step: 0 })).toEqual([]);
+    });
+
+    it('derives one tick per step from `true`', () => {
+      expect(resolveMarks(true, { min: 0, max: 100, step: 25 })).toEqual([
+        { value: 0 },
+        { value: 25 },
+        { value: 50 },
+        { value: 75 },
+        { value: 100 },
+      ]);
+    });
+
+    it('still ticks a max that sits off the step grid', () => {
+      expect(resolveMarks(true, { min: 0, max: 95, step: 50 })).toEqual([{ value: 0 }, { value: 50 }, { value: 95 }]);
+    });
+
+    it('throws in dev mode when `true` would generate too many ticks', () => {
+      expect(() => resolveMarks(true, { min: 0, max: 100, step: 0.1 })).toThrow(/marks="true"/);
+    });
+
+    it('sorts, de-duplicates and drops out-of-bounds entries of an explicit list', () => {
+      expect(
+        resolveMarks([{ value: 80 }, { value: 200 }, { value: 20, label: 'Low' }, { value: 80, label: 'dupe' }], {
+          min: 0,
+          max: 100,
+          step: 1,
+        }),
+      ).toEqual([{ value: 20, label: 'Low' }, { value: 80 }]);
+    });
+  });
+
+  describe('toMarkStops', () => {
+    const marks = [{ value: 0 }, { value: 50, label: 'Half' }, { value: 100 }];
+
+    it('positions the marks and flags the ones inside the active range', () => {
+      expect(toMarkStops(marks, { bounds: { min: 0, max: 200 }, activeRange: [0, 50] })).toEqual([
+        { value: 0, percent: 0, active: true },
+        { value: 50, label: 'Half', percent: 25, active: true },
+        { value: 100, percent: 50, active: false },
+      ]);
+    });
+
+    it('flags nothing without an active range', () => {
+      expect(
+        toMarkStops(marks, { bounds: { min: 0, max: 100 }, activeRange: null }).every((stop) => !stop.active),
+      ).toBe(true);
+    });
+  });
+
+  describe('snapValueToMarks', () => {
+    const markValues = [0, 20, 80, 100];
+
+    it('snaps to the nearest mark', () => {
+      expect(snapValueToMarks(9, { markValues })).toBe(0);
+      expect(snapValueToMarks(11, { markValues })).toBe(20);
+      expect(snapValueToMarks(999, { markValues })).toBe(100);
+    });
+
+    it('restricts the result to marks below or above the value', () => {
+      expect(snapValueToMarks(79, { markValues, direction: 'down' })).toBe(20);
+      expect(snapValueToMarks(79, { markValues, direction: 'up' })).toBe(80);
+      expect(snapValueToMarks(80, { markValues, direction: 'down' })).toBe(80);
+      expect(snapValueToMarks(80, { markValues, direction: 'up' })).toBe(80);
+    });
+
+    it('falls back to the closest end when no mark satisfies the direction', () => {
+      expect(snapValueToMarks(-5, { markValues, direction: 'down' })).toBe(0);
+      expect(snapValueToMarks(150, { markValues, direction: 'up' })).toBe(100);
+    });
+
+    it('leaves the value alone when there are no marks', () => {
+      expect(snapValueToMarks(42, { markValues: [] })).toBe(42);
+    });
+  });
+
+  describe('adjacentMarkValue', () => {
+    const markValues = [0, 20, 80, 100];
+
+    it('moves whole marks and clamps at the ends', () => {
+      expect(adjacentMarkValue(20, { markValues, steps: 1 })).toBe(80);
+      expect(adjacentMarkValue(20, { markValues, steps: -1 })).toBe(0);
+      expect(adjacentMarkValue(20, { markValues, steps: -10 })).toBe(0);
+      expect(adjacentMarkValue(20, { markValues, steps: 10 })).toBe(100);
+    });
+
+    it('starts from the mark nearest the value', () => {
+      expect(adjacentMarkValue(19, { markValues, steps: 1 })).toBe(80);
     });
   });
 });

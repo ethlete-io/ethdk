@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, ElementRef, ViewEncapsulation, inject, viewChild } from '@angular/core';
+import { Component, ElementRef, ViewEncapsulation, computed, inject, viewChild } from '@angular/core';
 import { AnimatableDirective, ProvideColorDirective, createCanAnimateSignal } from '@ethlete/core';
 import { FormErrorComponent } from '../form-field/form-error.component';
 import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../form-field/headless';
@@ -37,6 +37,9 @@ import { SliderDirective, SliderThumbDirective, SliderThumbLabelContext, SliderT
         'min',
         'max',
         'step',
+        'orientation',
+        'marks',
+        'snapToMarks',
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange'],
     },
@@ -49,6 +52,7 @@ import { SliderDirective, SliderThumbDirective, SliderThumbLabelContext, SliderT
     '[attr.data-disabled]': 'slider.disabled() || null',
     '[attr.data-readonly]': 'slider.readonly() || null',
     '[attr.data-dragging]': 'slider.draggingThumbIndex() !== null || null',
+    '[attr.data-mark-labels]': 'hasMarkLabels() || null',
   },
 })
 export class SliderComponent {
@@ -59,6 +63,9 @@ export class SliderComponent {
   private hintContentRef = viewChild<ElementRef<HTMLElement>>('hintContent');
   private errorAnimatableRef = viewChild<AnimatableDirective>('errorAnimatable');
   private hintAnimatableRef = viewChild<AnimatableDirective>('hintAnimatable');
+
+  /** Labelled ticks need room next to the track — the stylesheet reserves it off this flag. */
+  protected hasMarkLabels = computed(() => this.slider.markStops().some((mark) => !!mark.label));
   public canAnimate = createCanAnimateSignal();
 
   constructor() {

@@ -4,7 +4,7 @@ import { FormField, disabled, form, readonly } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import { LabelDirective } from '../../form-field';
 import { HintComponent } from '../../form-field/hint.component';
-import { RangeSliderValue } from '../headless';
+import { RangeSliderValue, SliderMarks, SliderOrientation } from '../headless';
 import { SLIDER_IMPORTS } from '../slider.imports';
 
 @Component({
@@ -19,6 +19,9 @@ import { SLIDER_IMPORTS } from '../slider.imports';
         [maxValue]="maxValue()"
         [step]="step()"
         [minDistance]="minDistance()"
+        [orientation]="orientation()"
+        [marks]="marks()"
+        [snapToMarks]="snapToMarks()"
         [startLabel]="startLabel()"
         [endLabel]="endLabel()"
       >
@@ -55,6 +58,9 @@ export class RangeSliderStorybookComponent {
   public maxValue = input(100);
   public step = input(1);
   public minDistance = input(0);
+  public orientation = input<SliderOrientation>('horizontal');
+  public marks = input<SliderMarks>(false);
+  public snapToMarks = input(false);
   public startLabel = input('Minimum');
   public endLabel = input('Maximum');
   public disabled = input(false);

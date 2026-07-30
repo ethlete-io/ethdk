@@ -118,6 +118,7 @@ The date input, date range input, [time picker](/components/time-picker), time i
 | `ET3101` | `etSliderTrack` is not inside an `[etSlider]` / `[etRangeSlider]` element.                                   | Move the track inside the slider root.                                             |
 | `ET3102` | `ng-template[etSliderThumbLabel]` is not inside an `[etSlider]` / `[etRangeSlider]` element.                 | Move the label template inside the slider root.                                    |
 | `ET3103` | The slider has the wrong number of thumbs (`[etSlider]` expects exactly one, `[etRangeSlider]` exactly two). | Add/remove `etSliderThumb` elements, or switch between `etSlider`/`etRangeSlider`. |
+| `ET3104` | `marks="true"` would generate more than 200 ticks for the current `step` and bounds.                         | Raise the `step` or pass an explicit `marks` array.                                |
 
 ## Cascader (ET33xx)
 

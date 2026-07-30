@@ -39,6 +39,9 @@ import { injectSliderLabels } from '../../forms/slider/slider-labels';
         'maxValue',
         'step',
         'minDistance',
+        'orientation',
+        'marks',
+        'snapToMarks',
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange'],
     },
@@ -51,6 +54,7 @@ import { injectSliderLabels } from '../../forms/slider/slider-labels';
     '[attr.data-disabled]': 'slider.disabled() || null',
     '[attr.data-readonly]': 'slider.readonly() || null',
     '[attr.data-dragging]': 'slider.draggingThumbIndex() !== null || null',
+    '[attr.data-mark-labels]': 'hasMarkLabels() || null',
   },
 })
 export class RangeSliderComponent {
@@ -75,6 +79,9 @@ export class RangeSliderComponent {
 
   /** The string in effect: this instance's `endLabel`, else the domain's label set. */
   protected resolvedEndLabel = computed(() => this.endLabel() ?? this.sliderLabels().maximum);
+
+  /** Labelled ticks need room next to the track — the stylesheet reserves it off this flag. */
+  protected hasMarkLabels = computed(() => this.slider.markStops().some((mark) => !!mark.label));
   public canAnimate = createCanAnimateSignal();
 
   constructor() {
