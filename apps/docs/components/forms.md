@@ -38,27 +38,27 @@ Each control family ships its own imports array — combine the field shell with
 the controls you use. The field-shell array is shared by every text-based
 control:
 
-| Array                      | Contains                                                                  |
-| -------------------------- | ------------------------------------------------------------------------- |
-| `FORM_FIELD_IMPORTS`       | `et-form-field`, `et-label`, `et-hint`, `etInputPrefix` / `etInputSuffix` |
-| `INPUT_IMPORTS`            | `et-input`                                                                |
-| `NUMBER_INPUT_IMPORTS`     | `et-number-input`                                                         |
-| `PASSWORD_INPUT_IMPORTS`   | `et-password-input`                                                       |
-| `TEXTAREA_IMPORTS`         | `et-textarea`                                                             |
-| `COLOR_INPUT_IMPORTS`      | `et-color-input`                                                          |
-| `MASKED_INPUT_IMPORTS`     | `etInputMask` (layers onto `et-input`)                                    |
-| `CHECKBOX_IMPORTS`         | `et-checkbox`                                                             |
-| `SWITCH_IMPORTS`           | `et-switch`                                                               |
-| `CHOICE_FIELD_IMPORTS`     | `et-choice-field` + label/hint chrome                                     |
-| `RATING_IMPORTS`           | `et-rating`                                                               |
-| `OTP_INPUT_IMPORTS`        | `et-otp-input`                                                            |
-| `TAG_INPUT_IMPORTS`        | `et-tag-input`                                                            |
-| `PHONE_INPUT_IMPORTS`      | `et-phone-input`                                                          |
-| `DATE_INPUT_IMPORTS`       | `et-date-input`                                                           |
-| `DATE_RANGE_INPUT_IMPORTS` | `et-date-range-input`                                                     |
-| `TIME_INPUT_IMPORTS`       | `et-time-input`                                                           |
-| `DATE_TIME_INPUT_IMPORTS`  | `et-date-time-input`                                                      |
-| `DURATION_INPUT_IMPORTS`   | `et-duration-input`                                                       |
+| Array                      | Contains                                                                                |
+| -------------------------- | --------------------------------------------------------------------------------------- |
+| `FORM_FIELD_IMPORTS`       | `et-form-field`, `et-label`, `et-hint`, `et-counter`, `etInputPrefix` / `etInputSuffix` |
+| `INPUT_IMPORTS`            | `et-input`                                                                              |
+| `NUMBER_INPUT_IMPORTS`     | `et-number-input`                                                                       |
+| `PASSWORD_INPUT_IMPORTS`   | `et-password-input`                                                                     |
+| `TEXTAREA_IMPORTS`         | `et-textarea`                                                                           |
+| `COLOR_INPUT_IMPORTS`      | `et-color-input`                                                                        |
+| `MASKED_INPUT_IMPORTS`     | `etInputMask` (layers onto `et-input`)                                                  |
+| `CHECKBOX_IMPORTS`         | `et-checkbox`                                                                           |
+| `SWITCH_IMPORTS`           | `et-switch`                                                                             |
+| `CHOICE_FIELD_IMPORTS`     | `et-choice-field` + label/hint chrome                                                   |
+| `RATING_IMPORTS`           | `et-rating`                                                                             |
+| `OTP_INPUT_IMPORTS`        | `et-otp-input`                                                                          |
+| `TAG_INPUT_IMPORTS`        | `et-tag-input`                                                                          |
+| `PHONE_INPUT_IMPORTS`      | `et-phone-input`                                                                        |
+| `DATE_INPUT_IMPORTS`       | `et-date-input`                                                                         |
+| `DATE_RANGE_INPUT_IMPORTS` | `et-date-range-input`                                                                   |
+| `TIME_INPUT_IMPORTS`       | `et-time-input`                                                                         |
+| `DATE_TIME_INPUT_IMPORTS`  | `et-date-time-input`                                                                    |
+| `DURATION_INPUT_IMPORTS`   | `et-duration-input`                                                                     |
 
 ```ts
 import { FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
@@ -113,6 +113,49 @@ but drops every interactive affordance — no hover/focus change, full-contrast
 value — so it reads as view-only content; **disabled** stays dimmed. The choice
 controls use `et-choice-field` instead of `et-form-field` — see
 [Choice & rating](/components/choice-inputs).
+
+### Character counter
+
+Project an `<et-counter />` to get an `x / N` count at the inline-end of the support region. It takes its limit from the bound field's `maxLength()` — signal forms binds the schema limit into the control, so you don't repeat it:
+
+```ts
+const bioForm = form(model, (s) => {
+  maxLength(s.bio, 180, { message: 'Keep the bio under 180 characters' });
+});
+```
+
+```html
+<et-form-field>
+  <et-label>Bio</et-label>
+  <et-textarea [formField]="bioForm.bio" />
+  <et-hint>Shown on your profile.</et-hint>
+  <et-counter />
+</et-form-field>
+```
+
+<StoryEmbed id="components-forms-form-field-counter--with-hint" height="360px" />
+
+| Input      | Type                         | Notes                                                                                         |
+| ---------- | ---------------------------- | --------------------------------------------------------------------------------------------- |
+| `max`      | `number \| undefined`        | Wins over the schema's `maxLength()`. Use it for an unvalidated or softer limit.              |
+| `lengthOf` | `(value: unknown) => number` | How the value is measured. Defaults to string length / array & set size / stringified length. |
+
+The counter is **persistent** — unlike the hint, it does not swap out when an error appears, so a reader who just crossed the limit sees the message and the count that caused it together. Past the limit it takes `data-over-limit` and the [semantic error color](/core/theming).
+
+Because the default `lengthOf` counts array elements, the same element counts tags in an `et-tag-input`. The controls deliberately do **not** forward `maxLength` to the native `maxlength` attribute: truncating typed input would stop the validator from ever reporting the violation the counter exists to make visible. Set `maxlength` on the control yourself if you want the browser to clamp instead.
+
+Counting is opt-in per control family: a control declaring a `maxLength` input receives the schema limit. The controls built on the shared text-field base (`et-input`, `et-number-input`, `et-password-input`, `et-color-input`, `et-textarea`) and `et-tag-input` do; others fall back to an explicit `[max]`.
+
+### Busy state
+
+A field shows a small spinner after your own suffix, plus `aria-busy`, while an async validator is in flight for the bound field — no wiring needed, for the same reason the counter needs none:
+
+```html
+<!-- spinner appears while the handle is being checked -->
+<et-input [formField]="handleForm.handle" />
+```
+
+Set `[busy]="true"` on `et-form-field` for work the form doesn't know about (a save, a lookup of your own). It's deliberately subtle — a spinner, no text, and nothing blocks.
 
 ## Mixed values (bulk editing)
 

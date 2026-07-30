@@ -39,10 +39,16 @@ tokens in core. (Calendar event markers and month/year jump moved into plan
 ## Progress
 
 - [ ] 01 — touch & gesture overhaul
-- [ ] 02 — consistency fixes
+- [x] 02 — consistency fixes _(done 2026-07-30; see the "found while
+      implementing" notes in the plan — overlay animations are still ungated for
+      reduced motion, and 2 of the 3 stray `throw`s were correctly left alone)_
 - [ ] 03 — i18n consolidation
 - [ ] 04 — RTE essentials
-- [ ] 05 — form-field character counter
+- [x] 05 — form-field character counter _(done 2026-07-30; schema `maxLength()`
+      and async-validator `pending` both turned out to be auto-bound signal-forms
+      inputs — see the note in the plan, including the `hostDirectives` gotcha.
+      Counting is opt-in per control family; only the text-field-base controls
+      and `et-tag-input` declare the inputs so far.)_
 - [ ] 06 — slider vertical + ticks
 - [ ] 07 — date-time enhancements
 - [ ] 08 — notification upgrades

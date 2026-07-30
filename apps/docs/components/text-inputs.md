@@ -125,6 +125,8 @@ resizable).
 </et-form-field>
 ```
 
+A textarea is the usual home for an [`<et-counter />`](/components/forms#character-counter) — it picks its limit up from the schema's `maxLength()`.
+
 ## Color input
 
 `et-color-input` wraps the native color picker: a swatch plus the picked hex
@@ -258,6 +260,8 @@ Pending text also commits on blur; <kbd>Backspace</kbd> on the empty field
 removes the last tag; pastes split on separator characters and newlines. The
 chips are pointer-removable (`×`, out of the tab order) — see the
 [chip](/components/chip) guide.
+
+An [`<et-counter />`](/components/forms#character-counter) counts tags rather than characters here, since the default measure is the array's length. Note the two limits differ in kind: `maxTags` **refuses** further tags, while a schema `maxLength()` lets them through and reports a validation error — pair the counter with the latter when you want the user to see they've gone over.
 
 ## Phone input — `et-phone-input` {#phone-input}
 

@@ -22,6 +22,21 @@ Design:
      signal-forms exposes it introspectably — investigate first; if not
      cleanly reachable, skip auto-derivation (don't hack into validator
      internals).
+
+     **Investigated: cleanly reachable, and it's a first-class API.** Signal
+     forms _pushes_ the limit rather than exposing it for pulling — a control
+     that declares a `maxLength` input gets the schema's `maxLength()` bound
+     into it automatically by the `Field` directive (same mechanism as
+     `required`/`disabled`/`errors`). Same for `pending`, which is exactly what
+     the busy state below needed. Both are now declared on
+     `TextFieldControlDirective` and re-exposed through each control component's
+     `hostDirectives` inputs list. **Gotcha:** declaring the input on the
+     headless directive is not enough — the `Field` directive binds against the
+     _component_ the `[formField]` sits on, so the name must also be in that
+     component's `hostDirectives` inputs array or the value never arrives.
+     Deliberately not forwarded to the native `maxlength` attribute: truncating
+     input would stop the validator from ever reporting the violation the counter
+     exists to surface.
 - Current length comes from the registered control's value signal
   (string → `.length`; array values like tag-input → count; expose a
   `lengthOf` input fn for custom types).
