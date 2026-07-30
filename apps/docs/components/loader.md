@@ -46,6 +46,17 @@ The animated Ethlete "E" for full-page or initial loading states. No inputs — 
 
 <StoryEmbed id="components-loader-brand-loader--default" height="240px" />
 
+## Motion
+
+All three keep animating under `prefers-reduced-motion: reduce`. This is a **deliberate
+exemption**: the motion _is_ the message — a frozen spinner or a static indeterminate bar reads as
+"stuck", not as "loading". The same reasoning is why the [skeleton](/components/skeleton#motion)
+goes the other way: it has a shape to fall back on, so its shimmer is dropped entirely.
+
+Most other motion in the library is gated and skips to its end state: notification transitions, FLIP
+reordering (tabs underline, segmented button, grid, dropzone, PiP), carousel autoplay and slide
+transitions, and calendar/accordion size animations.
+
 ## Accessibility
 
 All three render `role="progressbar"`; spinner and progress bar expose `aria-valuenow` / `-valuemin` / `-valuemax` only in determinate mode (indeterminate drops them, as the pattern requires). The brand loader ships an `aria-label="Loading"`; the spinner and progress bar have **no accessible name by default** — add an `aria-label` when they stand alone rather than inside an already-labelled context (like a button's `loading` state, which sets `aria-busy` on the button).

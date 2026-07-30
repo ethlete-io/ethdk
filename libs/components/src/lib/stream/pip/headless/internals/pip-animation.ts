@@ -1,5 +1,14 @@
-import { AngularRenderer } from '@ethlete/core';
+import { AngularRenderer, matchesReducedMotion } from '@ethlete/core';
 import { take, tap, timer } from 'rxjs';
+
+/**
+ * Collapses a duration to an instant jump when the user prefers reduced motion.
+ *
+ * Every animation here does bookkeeping in `onfinish` — reparenting the player, restoring inline
+ * styles, chaining the next phase — so skipping the `animate()` call outright would strand the
+ * element mid-transition. Zeroing the duration keeps the lifecycle and drops only the motion.
+ */
+const motionDuration = (duration: number, el: Element) => (matchesReducedMotion(el) ? 0 : duration);
 
 export const animateWithFixedWrapper = (config: {
   playerEl: HTMLElement;
@@ -47,7 +56,7 @@ export const animateWithFixedWrapper = (config: {
       { transformOrigin: 'top left', transform: 'none' },
       { transformOrigin: 'top left', transform: finalTransform },
     ],
-    { duration, easing },
+    { duration: motionDuration(duration, wrapper), easing },
   );
 
   let done = false;
@@ -85,7 +94,7 @@ export const animateElementTo = (config: {
       { transform: mk(fromRect), transformOrigin: 'top left', composite: 'replace' },
       { transform: mk(toRect), transformOrigin: 'top left', composite: 'replace' },
     ],
-    { duration, easing },
+    { duration: motionDuration(duration, el), easing },
   );
 };
 
@@ -99,7 +108,7 @@ export const animatePulse = (el: HTMLElement) => {
       { transform: 'scale(1.06)', offset: 0.82 },
       { transform: 'scale(1)', offset: 1 },
     ],
-    { duration: 600, easing: 'ease-out', fill: 'none' },
+    { duration: motionDuration(600, el), easing: 'ease-out', fill: 'none' },
   );
 };
 
@@ -109,7 +118,7 @@ export const animateScaleFadeIn = (el: HTMLElement) => {
       { transform: 'scale(0.85)', opacity: '0' },
       { transform: 'scale(1)', opacity: '1' },
     ],
-    { duration: 200, easing: 'ease-out' },
+    { duration: motionDuration(200, el), easing: 'ease-out' },
   );
 };
 
@@ -119,7 +128,7 @@ export const animateScaleFadeOut = (el: HTMLElement, config: { onFinish: () => v
       { transform: 'scale(1)', opacity: '1' },
       { transform: 'scale(0.85)', opacity: '0' },
     ],
-    { duration: 160, easing: 'ease-in', fill: 'forwards' },
+    { duration: motionDuration(160, el), easing: 'ease-in', fill: 'forwards' },
   );
   anim.onfinish = () => config.onFinish();
 };
@@ -197,7 +206,7 @@ export const animateNewPipInSingleMode = (config: NewPipAnimationConfig) => {
         opacity: '1',
       },
     ],
-    { duration: holdDuration, fill: 'forwards' },
+    { duration: motionDuration(holdDuration, cell), fill: 'forwards' },
   );
 
   phase1.onfinish = () => {
@@ -230,7 +239,7 @@ export const animateNewPipInSingleMode = (config: NewPipAnimationConfig) => {
         { transform: 'scale(1.5)', offset: 0.4 },
         { transform: 'scale(1)', offset: 1 },
       ],
-      { duration: 400, easing: 'cubic-bezier(0.4,0,0.2,1)', fill: 'none' },
+      { duration: motionDuration(400, gridBtn), easing: 'cubic-bezier(0.4,0,0.2,1)', fill: 'none' },
     );
 
     const phase2 = cell.animate(
@@ -246,7 +255,7 @@ export const animateNewPipInSingleMode = (config: NewPipAnimationConfig) => {
           opacity: '0',
         },
       ],
-      { duration: flyDuration, easing: 'ease-in', fill: 'none' },
+      { duration: motionDuration(flyDuration, cell), easing: 'ease-in', fill: 'none' },
     );
 
     phase2.onfinish = () => {

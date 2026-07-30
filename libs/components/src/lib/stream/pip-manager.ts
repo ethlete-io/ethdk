@@ -1,5 +1,5 @@
 import { DOCUMENT, computed, inject, signal } from '@angular/core';
-import { createRootProvider, injectRenderer, injectViewportSize } from '@ethlete/core';
+import { createRootProvider, injectRenderer, injectViewportSize, matchesReducedMotion } from '@ethlete/core';
 import { animateWithFixedWrapper } from './pip/headless/internals/pip-animation';
 import { DEFAULT_PIP_CHROME_CONFIG } from './pip/pip-chrome.config';
 import { injectStreamManager } from './stream-manager';
@@ -135,7 +135,9 @@ export const [providePipManager, injectPipManager] = createRootProvider(
               { transform: 'scale(0.85)', opacity: '0' },
               { transform: 'scale(1)', opacity: '1' },
             ],
-            { duration: 200, easing: 'ease-out' },
+            // Zeroed rather than skipped under reduced motion so `onfinish` still clears the
+            // animating-out bookkeeping below.
+            { duration: matchesReducedMotion(playerEl) ? 0 : 200, easing: 'ease-out' },
           );
           anim.onfinish = () => {
             animatingOutIds.delete(playerId);
