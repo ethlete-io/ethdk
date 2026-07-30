@@ -26,7 +26,7 @@ import { FORM_FIELD_IMPORTS, RICH_TEXT_EDITOR_IMPORTS } from '@ethlete/component
 
 The editable region is a `role="textbox" aria-multiline="true"` with full invalid/described-by wiring. In a list, **Tab** / **Shift+Tab** nest and un-nest the current item (marker style cycles by depth), and **Enter** / **Backspace** on an empty item step out one level at a time. **Enter** at the start or end of a heading begins a plain paragraph instead of continuing the heading (mid-heading it splits, as everywhere else); **Shift+Enter** is always a soft line break.
 
-Pasted HTML is normalized into the editor's own schema before it is inserted: the clipboard markup is reduced through the Markdown pipeline, so foreign tags, inline styles, classes and scripts never enter the editor — only formatting the editor itself can produce survives (token chips copied from an editor keep their identity). Plain-text pastes stay literal text.
+Pasted HTML is normalized into the editor's own schema before it is inserted: the clipboard markup is reduced through the Markdown pipeline, so foreign tags, inline styles, classes and scripts never enter the editor — only formatting the editor itself can produce survives (token chips copied from an editor keep their identity). Plain-text pastes stay literal text — the one exception being text that spells out a [token](#building-blocks-triggers).
 
 ## Markdown autoformat while typing
 
