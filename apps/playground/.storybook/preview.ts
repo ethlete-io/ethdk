@@ -11,6 +11,27 @@ import { THEMES } from '../src/themes';
 
 const STORYBOOK_ROOT_SELECTOR = 'ethlete-sb-root';
 
+/**
+ * Opt this document into the VirtualKeyboard API when the story URL asks for it (`&vk=1`), so the
+ * keyboard-aware components (the rich text editor's docked toolbar) can be checked on a device against
+ * `env(keyboard-inset-*)` — the browser's own keyboard geometry — instead of viewport arithmetic.
+ *
+ * Behind a flag rather than always on, for two reasons: opting in also turns off the browser's
+ * scroll-the-focused-field-into-view (that becomes the page's job), and leaving it off keeps the
+ * default, harder path — which is what most apps run — the one stories are verified against. It only
+ * has an effect when the story is opened directly (`/iframe.html?id=…`), since the API belongs to the
+ * top-level document, not to Storybook's preview iframe inside the manager.
+ */
+const maybeEnableVirtualKeyboardOverlay = () => {
+  if (!new URLSearchParams(location.search).has('vk')) return;
+
+  const virtualKeyboard = (navigator as Navigator & { virtualKeyboard?: { overlaysContent: boolean } }).virtualKeyboard;
+
+  if (virtualKeyboard) virtualKeyboard.overlaysContent = true;
+};
+
+maybeEnableVirtualKeyboardOverlay();
+
 const syncStorybookDocumentStyles = (documentRef: Document, rootElement?: HTMLElement | null) => {
   const hostElement = rootElement ?? documentRef.querySelector(STORYBOOK_ROOT_SELECTOR);
 

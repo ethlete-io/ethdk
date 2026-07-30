@@ -24,13 +24,15 @@ export const RICH_TEXT_EDITOR_TOOLS = {
   CODE_BLOCK: 'codeBlock',
   LINK: 'link',
   TABLE: 'table',
+  IMAGE: 'image',
   DIVIDER: 'divider',
 } as const;
 
 /**
- * A toolbar tool token. The `align` and `table` tools are opt-in — they only render when their
- * provider (`provideRichTextEditorAlignmentTool` / `provideRichTextEditorTableTool`) is present, so
- * their code tree-shakes away otherwise. `(string & {})` keeps the union open for custom tools.
+ * A toolbar tool token. The `align`, `table` and `image` tools are opt-in — they only render when
+ * their provider (`provideRichTextEditorAlignmentTool` / `provideRichTextEditorTableTool` /
+ * `provideRichTextEditorImageTool`) is present, so their code tree-shakes away otherwise.
+ * `(string & {})` keeps the union open for custom tools.
  */
 export type RichTextEditorTool = (typeof RICH_TEXT_EDITOR_TOOLS)[keyof typeof RICH_TEXT_EDITOR_TOOLS] | (string & {});
 
@@ -226,6 +228,34 @@ export type RichTextEditorToolDefinition = {
    * editor then calls `preventDefault()` and syncs its value from the DOM.
    */
   keydown?: (editor: RichTextEditorDirective, event: KeyboardEvent) => boolean;
+
+  /**
+   * Intercepts a paste into the editor content **before** the editor's own HTML/text handling — the
+   * hook for a payload only this tool understands (the image tool takes the clipboard's image
+   * files). Return `true` when it was handled; the editor then calls `preventDefault()`.
+   */
+  paste?: (editor: RichTextEditorDirective, event: ClipboardEvent) => boolean;
+
+  /**
+   * Intercepts a drop into the editor content. Return `true` when it was handled; the editor then
+   * calls `preventDefault()`, so the browser never inserts the dropped payload itself.
+   */
+  drop?: (editor: RichTextEditorDirective, event: DragEvent) => boolean;
+
+  /**
+   * Intercepts a click inside the editor content — for content this tool owns and lets the user act
+   * on (clicking an image opens its popover). Return `true` when it was handled.
+   */
+  click?: (editor: RichTextEditorDirective, event: MouseEvent) => boolean;
+
+  /**
+   * Normalizes the editor's content into the shape this tool needs, after every render and every
+   * value sync — the hook for structure the Markdown cannot carry (the image tool marks image blocks
+   * `contenteditable="false"` and keeps a line after a trailing image). It must be **value-neutral**
+   * and idempotent: whatever it changes has to serialize to the same Markdown, or the editor would
+   * write a value it never got.
+   */
+  normalize?: (root: HTMLElement) => void;
 };
 
 /** Multi-provider token opt-in tools register their {@link RichTextEditorToolDefinition} into. */

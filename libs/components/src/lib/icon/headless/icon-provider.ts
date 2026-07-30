@@ -118,6 +118,7 @@ export const ET_BUILT_IN_ICON_NAMES = [
   'et-heading-1',
   'et-heading-2',
   'et-heading-3',
+  'et-image',
   'et-italic',
   'et-link',
   'et-list-bulleted',

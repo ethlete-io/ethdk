@@ -6,7 +6,7 @@ import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '..
 import { RICH_TEXT_EDITOR_ERROR_CODES } from '../rich-text-editor-errors';
 import { injectRichTextEditorLabels, RichTextEditorLabels } from '../rich-text-editor-labels';
 import { RICH_TEXT_EDITOR_TOKEN_CODEC } from '../rich-text-editor-token-codec.token';
-import { injectRichTextEditorTools, RichTextEditorTool } from '../rich-text-editor-tools';
+import { RICH_TEXT_EDITOR_TOOL, injectRichTextEditorTools, RichTextEditorTool } from '../rich-text-editor-tools';
 import { RichTextEditorTriggerItem } from '../rich-text-editor-trigger';
 import {
   HeadingTag,
@@ -36,6 +36,9 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   private renderer = injectRenderer();
   private toolsConfig = injectRichTextEditorTools();
   private injectedLabels = injectRichTextEditorLabels();
+
+  /** Opt-in tools, for their content normalizers — see {@link RichTextEditorToolDefinition.normalize}. */
+  private registeredTools = inject(RICH_TEXT_EDITOR_TOOL, { optional: true });
 
   /** @internal */
   public editorDom = injectRichTextEditorDom();
@@ -226,6 +229,10 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     }
 
     const markdown = htmlToMarkdown(this.serializeCleanHtml(root));
+
+    // Value-neutral structure a tool needs back (image blocks are atoms, and cannot end the
+    // document) — applied after reading, so it can never change what was read.
+    this.normalizeContent(root);
 
     this.lastEmittedMarkdown = markdown;
     this.value.set(markdown);
@@ -609,6 +616,11 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     if ((focus ?? true) && root.ownerDocument.activeElement !== root) root.focus();
   }
 
+  /** Runs the provided tools' content normalizers over the editable. */
+  private normalizeContent(root: HTMLElement) {
+    for (const tool of this.registeredTools ?? []) tool.normalize?.(root);
+  }
+
   private serializeCleanHtml(root: HTMLElement) {
     const clone = root.cloneNode(true) as HTMLElement;
 
@@ -719,6 +731,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
     root.innerHTML = codec ? codec.render(html) : html;
     codec?.hydrate(root);
+    this.normalizeContent(root);
     // the DOM now matches this value, so the render effect skips it as "already emitted"
     this.lastEmittedMarkdown = markdown;
 

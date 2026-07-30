@@ -1,5 +1,6 @@
 export * from './headless';
 export * from './rich-text-editor-floating-toolbar.component';
+export * from './rich-text-editor-image-editor.component';
 export * from './rich-text-editor-labels';
 export * from './rich-text-editor-link-editor.component';
 export * from './rich-text-editor-token-codec.token';
@@ -11,6 +12,9 @@ export * from './rich-text-editor-tools';
 export * from './rich-text-editor-trigger';
 export * from './tools/rich-text-editor-align.provider';
 export * from './tools/rich-text-editor-align-tool.component';
+export * from './tools/rich-text-editor-image.provider';
+export * from './tools/rich-text-editor-image-tool.component';
+export * from './tools/rich-text-editor-image-upload';
 export * from './tools/rich-text-editor-table.provider';
 export * from './tools/rich-text-editor-table-tool.component';
 export * from './rich-text-editor-trigger-with-query';

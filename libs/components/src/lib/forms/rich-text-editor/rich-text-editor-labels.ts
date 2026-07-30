@@ -50,6 +50,25 @@ export type RichTextEditorLabels = {
   /** The link editor's confirm action while editing an existing link. */
   linkUpdate: string;
 
+  /** Accessible label for the image popover. */
+  imageEditor: string;
+  /** Accessible label for the image popover's close button. */
+  imageEditorClose: string;
+  /** Label for the image popover's alt-text field. */
+  imageAltLabel: string;
+  /** Placeholder for the image popover's alt-text field. */
+  imageAltPlaceholder: string;
+  /** Hint under the image popover's alt-text field. */
+  imageAltHint: string;
+  /** The image popover's action that takes the image out of the document. */
+  imageRemove: string;
+  /** The image popover's confirm action. */
+  imageUpdate: string;
+  /** Accessible name of the placeholder shown while an image uploads. */
+  imageUploading: string;
+  /** Accessible name of the placeholder left behind by a failed upload. */
+  imageUploadFailed: string;
+
   /** The token palette's trigger. */
   insertToken: string;
   /** Shown by a token popup or palette that has nothing to offer. */
@@ -116,6 +135,8 @@ export type RichTextEditorLabels = {
   alignJustify: string;
   /** Toolbar tool: the opt-in table menu, and its trigger. */
   table: string;
+  /** Toolbar tool: the opt-in image tool. */
+  image: string;
   /** Toolbar tool: the multi-language editor's language switcher. */
   language: string;
   /** Accessible name for the language switcher's trigger, given the active language's own name. */
@@ -143,6 +164,16 @@ export const DEFAULT_RICH_TEXT_EDITOR_LABELS: RichTextEditorLabels = {
   linkRemove: 'Remove',
   linkAdd: 'Add',
   linkUpdate: 'Update',
+
+  imageEditor: 'Image',
+  imageEditorClose: 'Close',
+  imageAltLabel: 'Alt text',
+  imageAltPlaceholder: 'Describe the image',
+  imageAltHint: 'Leave empty if the image is decorative',
+  imageRemove: 'Remove',
+  imageUpdate: 'Update',
+  imageUploading: 'Uploading image…',
+  imageUploadFailed: 'Image upload failed',
 
   insertToken: 'Insert token',
   noResults: 'No results',
@@ -178,6 +209,7 @@ export const DEFAULT_RICH_TEXT_EDITOR_LABELS: RichTextEditorLabels = {
   alignRight: 'Align right',
   alignJustify: 'Justify',
   table: 'Table',
+  image: 'Image',
   language: 'Language',
   languageTrigger: (currentLanguage) => `Language: ${currentLanguage}`,
 };

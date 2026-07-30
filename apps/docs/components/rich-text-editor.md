@@ -65,7 +65,7 @@ nothing at all.
 The toolbar is data-driven. Pass a `tools` input with an ordered list of tokens to pick and order
 the controls. Tokens: `'undo'`, `'redo'`, `'bold'`, `'italic'`, `'underline'`, `'strike'`, `'code'`
 (inline code), `'heading'` (the Normal / Heading 1–3 menu), `'bulletedList'`, `'numberedList'`,
-`'blockquote'`, `'codeBlock'`, `'link'`, plus the opt-in `'align'` and `'table'` (see below).
+`'blockquote'`, `'codeBlock'`, `'link'`, plus the opt-in `'align'`, `'table'` and `'image'` (see below).
 `'divider'` renders a separator. Omit `tools` for the full default toolbar.
 
 ```html
@@ -128,7 +128,7 @@ selection (floating) toolbar, and pre-fills from the link under the caret when e
 responsive: an arrow'd popover anchored to the selection on wider screens, and a top sheet (pinned
 above the on-screen keyboard) on small/touch screens.
 
-## Opt-in tools: tables and alignment
+## Opt-in tools: tables, alignment and images
 
 The heavier tools are opt-in so their code (and UI) tree-shakes away when unused. Add the provider
 and include its token in `tools`:
@@ -163,7 +163,81 @@ providers: [provideRichTextEditorTableTool(), provideRichTextEditorAlignmentTool
 <StoryEmbed id="components-forms-rich-text-editor--with-table-and-alignment" height="440px" />
 
 To register your own tool, provide a `RichTextEditorToolDefinition` (a toggle button, or a custom
-control component) through the `RICH_TEXT_EDITOR_TOOL` multi-provider token.
+control component) through the `RICH_TEXT_EDITOR_TOOL` multi-provider token. Besides the button, a
+definition can hook the content itself — `keydown`, `paste`, `drop` and `click` all run for every
+provided tool, whether or not its token is in the visible toolbar, because they act on content rather
+than on a button (that is how table caret navigation and image paste/drop work).
+
+## Images
+
+The `'image'` tool is opt-in too, and it carries no transport: you supply the upload, it embeds the
+URL you resolve to.
+
+```ts
+import { provideRichTextEditorImageTool } from '@ethlete/components';
+
+providers: [
+  provideRichTextEditorImageTool({
+    upload: (file) => this.api.uploadImage(file).pipe(map((res) => res.url)),
+    maxSize: 5 * 1024 * 1024,
+    onFailure: ({ file, reason }) =>
+      this.notifications.open({ status: 'error', title: `${file.name} could not be added (${reason})` }),
+  }),
+];
+```
+
+| Option      | Type                                              | Notes                                                                                                     |
+| ----------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `upload`    | `(file) => Observable<string> \| Promise<string>` | Resolve to the image's URL. Also takes a [dropzone upload config](#upload-progress)                       |
+| `accept`    | `string`                                          | File-picker `accept`, and the filter for pasted/dropped files. Default `'image/*'`                        |
+| `maxSize`   | `number`                                          | Largest file accepted, in bytes                                                                           |
+| `onFailure` | `(failure) => void`                               | `{ file, reason, error?, message? }` — `reason` is `'unsupported-type' \| 'too-large' \| 'upload-failed'` |
+
+Three ways in, all of them going through your handler: the toolbar button (which opens the file
+dialog), **pasting** an image file, and **dropping** one. Images are stored as GFM `![alt](url)`, are
+always block-level (that is the only shape the Markdown round-trips), and the URL you resolve to must
+be an ordinary `http(s)`/relative one — the Markdown pipeline deliberately refuses `data:` URLs, so a
+data URI would not survive a re-render.
+
+While a file uploads, a placeholder takes the image's place — a block the size of an image, with the
+upload's progress on it (see below) — and **the caret moves to the line below it right away**, so
+writing continues under the image from the moment the upload starts. On success the image replaces the
+placeholder where it stands, without disturbing the caret; on failure the placeholder shows that
+briefly, removes itself and calls `onFailure`. **The value never sees the placeholder** — it carries no
+text, so an upload in flight leaves the Markdown (and the undo history) untouched, and a single undo
+takes the finished image back out.
+
+An embedded image is an **atom**: its block is not editable, so the caret cannot sit beside it in what
+looks like a line of text, and a document never ends on one (there is always a line after it to type
+on). Clicking it opens the popover; <kbd>Backspace</kbd> from the line below removes it.
+
+Clicking an image opens the image popover: the **alt text**, and the action that removes the image
+again. The toolbar button opens the same popover when the caret is already on an image. Like the link
+editor, it is an anchored card on wider screens and a top sheet on phones.
+
+<StoryEmbed id="components-forms-rich-text-editor--images" height="520px" />
+
+### Upload progress
+
+A plain `upload` function has no progress to report, so the placeholder spins. To show a percentage,
+hand it a **dropzone upload config** instead — the same `createDropzoneUpload` used by
+[the dropzone](/components/dropzone), which runs the upload as a query and reports its progress:
+
+```ts
+provideRichTextEditorImageTool({
+  upload: createDropzoneUpload({
+    // `reportProgress: true` on the creator is what makes the progress events flow
+    queryCreator: postImage,
+    selectValue: (response) => response.url,
+  }),
+});
+```
+
+### Without the image tool
+
+Image **files** are refused: pasting or dropping one into a `contenteditable` otherwise has the
+browser embed it as a `blob:` URL — a URL that dies with the tab and would be saved into your value.
+Pasted _markup_ that references an image by URL still keeps it, with or without the tool.
 
 ## Building blocks (`#`/`@`/… triggers)
 
@@ -406,6 +480,25 @@ triggers). Undo and redo are actions rather than toggles, so they never report a
 are `disabled` when there is nothing to take back or replay. The floating toolbar is a pointer-only enhancement and never removes an action that
 isn't also reachable from the always-visible static toolbar.
 
+An embedded image carries the **alt text** from its popover — empty means decorative, which is the
+right answer often enough to be the default. While one uploads, its placeholder is a `role="img"`
+whose name says so, and a failed upload says that instead before it disappears.
+
+On touch devices the toolbar docks above the on-screen keyboard while the editor is being edited (the
+platform's own selection menu owns the top of the screen). Give your app's viewport meta
+`interactive-widget=resizes-content` and that placement is exact and free:
+
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content" />
+```
+
+Chrome's default (`resizes-visual`) leaves the layout viewport at full height when the keyboard opens,
+so anything `position: fixed; bottom: 0` ends up _behind_ the keyboard — measured on Android Chrome: a
+628px layout viewport with only 272px visible, i.e. a fixed bar 356px out of sight. The editor
+therefore measures the keyboard from `visualViewport` and offsets the bar itself, which is also what
+iOS Safari needs. With the meta above, that measurement resolves to zero and the plain fixed position
+does the work.
+
 The toolbar follows the [ARIA toolbar pattern](https://www.w3.org/WAI/ARIA/apg/patterns/toolbar/):
 it is a single tab stop. Tab moves focus into it (onto the last-used button),
 <kbd>ArrowLeft</kbd>/<kbd>ArrowRight</kbd> move between buttons (wrapping at the ends,
@@ -417,12 +510,13 @@ editor content instead of stepping through every button.
 Public design tokens, overridable in your CSS scope — all colors resolve through the
 [surface/color theme systems](/core/theming):
 
-| Component                            | Tokens                                                                                                                                                                                                        |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `et-rich-text-editor`                | `--et-rich-text-editor-toolbar-gap`, `-toolbar-padding`, `-button-radius`, `-min-height`, `-content-gap`, `-quote-indent`, `-quote-bar-width`, `-code-block-radius`, `-token-radius`, `-token-padding-inline` |
-| `et-rich-text-editor-link-editor`    | `--et-rich-text-editor-link-editor-width`, `-radius`, `-gap`, `-padding`                                                                                                                                      |
-| `et-rich-text-editor-token-palette`  | `--et-rich-text-editor-token-palette-gap` (buttons follow the `et-button` `tonal` variant)                                                                                                                    |
-| `et-multi-language-rich-text-editor` | `--et-multi-language-rich-text-editor-badge-size` (plus every `et-rich-text-editor` token, inherited by the embedded editor)                                                                                  |
+| Component                            | Tokens                                                                                                                                                                                                                                                 |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `et-rich-text-editor`                | `--et-rich-text-editor-toolbar-gap`, `-toolbar-padding`, `-button-radius`, `-min-height`, `-content-gap`, `-quote-indent`, `-quote-bar-width`, `-code-block-radius`, `-image-radius`, `-image-upload-height`, `-token-radius`, `-token-padding-inline` |
+| `et-rich-text-editor-link-editor`    | `--et-rich-text-editor-link-editor-width`, `-radius`, `-gap`, `-padding`                                                                                                                                                                               |
+| `et-rich-text-editor-image-editor`   | `--et-rich-text-editor-image-editor-width`, `-radius`, `-gap`, `-padding`, `-thumb-size`                                                                                                                                                               |
+| `et-rich-text-editor-token-palette`  | `--et-rich-text-editor-token-palette-gap` (buttons follow the `et-button` `tonal` variant)                                                                                                                                                             |
+| `et-multi-language-rich-text-editor` | `--et-multi-language-rich-text-editor-badge-size` (plus every `et-rich-text-editor` token, inherited by the embedded editor)                                                                                                                           |
 
 ## Error codes
 

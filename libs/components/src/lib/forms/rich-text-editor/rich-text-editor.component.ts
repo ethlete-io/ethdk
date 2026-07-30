@@ -12,9 +12,9 @@ import {
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { injectHasTouchInput, injectRenderer } from '@ethlete/core';
-import { fromEvent, merge, tap } from 'rxjs';
+import { EMPTY, fromEvent, interval, merge, switchMap, tap } from 'rxjs';
 import { BUTTON_IMPORTS } from '../../button';
 import {
   BOLD_ICON,
@@ -50,6 +50,9 @@ import {
   RICH_TEXT_EDITOR_TOOLS,
   RichTextEditorToolDefinition,
 } from './rich-text-editor-tools';
+
+/** How often the docked toolbar re-checks where the keyboard is, to recover a missed viewport event. */
+const DOCKED_TOOLBAR_POLL_MS = 500;
 
 /** Caret-navigation / deletion keys that should drop any pending stored-mark toggle. */
 const NAVIGATION_KEYS = new Set([
@@ -379,6 +382,24 @@ export class RichTextEditorComponent {
   }
 
   protected interceptPaste(event: ClipboardEvent) {
+    // Tools own their payloads first: the image tool takes the clipboard's image files, which the
+    // HTML/text branches below cannot represent.
+    for (const tool of this.registeredTools) {
+      if (tool.paste?.(this.dir, event)) {
+        event.preventDefault();
+
+        return;
+      }
+    }
+
+    // Files nobody claimed: the browser would insert them itself, and for an image that means a
+    // `blob:` URL in the value — one that dies with the tab. Provide the image tool to keep them.
+    if (event.clipboardData?.files.length && !event.clipboardData.getData('text/html')) {
+      event.preventDefault();
+
+      return;
+    }
+
     const html = event.clipboardData?.getData('text/html');
 
     if (html) {
@@ -393,6 +414,30 @@ export class RichTextEditorComponent {
     const text = event.clipboardData?.getData('text/plain');
 
     if (text && this.dir.pasteText(text)) event.preventDefault();
+  }
+
+  /**
+   * Dropped content, in the same order as a paste: a tool that owns the payload takes it (the image
+   * tool uploads image files), and anything left that carries files is refused — dropping a file on a
+   * `contenteditable` otherwise has the browser embed it as a `blob:` URL, which outlives nothing.
+   */
+  protected interceptDrop(event: DragEvent) {
+    for (const tool of this.registeredTools) {
+      if (tool.drop?.(this.dir, event)) {
+        event.preventDefault();
+
+        return;
+      }
+    }
+
+    if (event.dataTransfer?.files.length) event.preventDefault();
+  }
+
+  /** Lets a tool act on the content it owns — clicking an image opens the image tool's popover. */
+  protected interceptClick(event: MouseEvent) {
+    for (const tool of this.registeredTools) {
+      if (tool.click?.(this.dir, event)) return;
+    }
   }
 
   protected interceptFormattingCommand(event: InputEvent) {
@@ -568,6 +613,20 @@ export class RichTextEditorComponent {
     this.destroyRef.onDestroy(() => {
       if (rafId !== null) view.cancelAnimationFrame(rafId);
     });
+
+    // The event stream is not guaranteed to be complete: a soft keyboard can change height without a
+    // viewport event (Gboard switching layout, a suggestion row appearing), and inside an embedded
+    // frame the event may land while the ancestor layout is still moving. Either leaves the bar parked
+    // for a keyboard that is no longer there — floating over the content instead of sitting on it. So
+    // re-measure on a slow timer for as long as the bar is actually docked: one rect read every
+    // POLL_MS, no rAF loop and no change detection, and a stale position heals within half a second.
+    toObservable(this.dockedToolbar)
+      .pipe(
+        switchMap((docked) => (docked ? interval(DOCKED_TOOLBAR_POLL_MS) : EMPTY)),
+        tap(() => apply()),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
 
     const viewports = topViewport ? [viewport, topViewport] : [viewport];
     // window scroll too: a root scroll pans the keyboard-tracking fixed rect without necessarily

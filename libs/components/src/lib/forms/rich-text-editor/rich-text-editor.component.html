@@ -86,6 +86,8 @@
   (beforeinput)="interceptFormattingCommand($event)"
   (keydown)="interceptEditorKeydown($event)"
   (paste)="interceptPaste($event)"
+  (drop)="interceptDrop($event)"
+  (click)="interceptClick($event)"
   (pointerdown)="dir.clearPendingMarks()"
   (focus)="dir.focused.set(true)"
   (blur)="dir.focused.set(false); dir.touched.set(true)"

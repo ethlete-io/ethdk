@@ -1,0 +1,169 @@
+@layer components {
+  @property --et-rich-text-editor-image-editor-width {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 288px;
+  }
+
+  @property --et-rich-text-editor-image-editor-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-rich-text-editor-image-editor-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
+  @property --et-rich-text-editor-image-editor-padding {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 14px;
+  }
+
+  @property --et-rich-text-editor-image-editor-thumb-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 40px;
+  }
+
+  /* The popover chrome deliberately mirrors the link editor's (same overlay strategies, same card):
+     the two are the same kind of thing to a user, and each component carries its own stylesheet, so
+     the rules cannot be shared without a third component whose only job is to hold them. */
+  .et-overlay.et-rte-image-editor-overlay {
+    background: var(--et-surface-background-solid, var(--et-surface-2, rgb(30 30 30)));
+    border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.24);
+  }
+
+  .et-overlay.et-rte-image-editor-overlay.et-overlay--anchored-dialog {
+    inline-size: var(--et-rich-text-editor-image-editor-width);
+    max-inline-size: calc(100vw - 32px);
+    border-radius: var(--et-rich-text-editor-image-editor-radius);
+  }
+
+  /* A short fade plus a nudge away from the image it points at, instead of the anchored-dialog
+     default's spring scale — same reasoning (and timings) as the link editor's. */
+  .et-overlay.et-with-default-animation.et-rte-image-editor-overlay.et-overlay--anchored-dialog {
+    --_et-rte-image-editor-nudge-x: 0px;
+    --_et-rte-image-editor-nudge-y: 0px;
+
+    &:where([data-overlay-placement^='top']) {
+      --_et-rte-image-editor-nudge-y: 0.45rem;
+    }
+
+    &:where([data-overlay-placement^='bottom']) {
+      --_et-rte-image-editor-nudge-y: -0.45rem;
+    }
+
+    &:where([data-overlay-placement^='left']) {
+      --_et-rte-image-editor-nudge-x: 0.45rem;
+    }
+
+    &:where([data-overlay-placement^='right']) {
+      --_et-rte-image-editor-nudge-x: -0.45rem;
+    }
+
+    &.et-animation-enter-from,
+    &.et-animation-leave-to {
+      opacity: 0;
+      transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0)
+        translate(var(--_et-rte-image-editor-nudge-x), var(--_et-rte-image-editor-nudge-y)) !important;
+    }
+
+    &.et-animation-enter-active {
+      transition:
+        transform 200ms ease,
+        opacity 200ms ease;
+    }
+
+    &.et-animation-leave-active {
+      transition:
+        transform 140ms ease,
+        opacity 140ms ease;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-overlay.et-with-default-animation.et-rte-image-editor-overlay.et-overlay--anchored-dialog {
+      --_et-rte-image-editor-nudge-x: 0px;
+      --_et-rte-image-editor-nudge-y: 0px;
+
+      &.et-animation-enter-active,
+      &.et-animation-leave-active {
+        transition-duration: 0ms;
+      }
+    }
+  }
+
+  .et-overlay.et-rte-image-editor-overlay.et-overlay--top-sheet {
+    border-end-start-radius: var(--et-rich-text-editor-image-editor-radius);
+    border-end-end-radius: var(--et-rich-text-editor-image-editor-radius);
+  }
+
+  .et-rte-image-editor {
+    display: flex;
+    flex-direction: column;
+    gap: var(--et-rich-text-editor-image-editor-gap);
+    inline-size: 100%;
+    box-sizing: border-box;
+    padding: var(--et-rich-text-editor-image-editor-padding);
+    color: var(--et-surface-color-solid, currentColor);
+  }
+
+  .et-rte-image-editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-block-end: 2px;
+  }
+
+  .et-rte-image-editor-title {
+    font-weight: 600;
+    font-size: 1.4rem;
+  }
+
+  .et-rte-image-editor-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-inline-size: 0;
+  }
+
+  .et-rte-image-editor-thumb {
+    flex: none;
+    inline-size: var(--et-rich-text-editor-image-editor-thumb-size);
+    block-size: var(--et-rich-text-editor-image-editor-thumb-size);
+    border-radius: 6px;
+    object-fit: cover;
+    background: color-mix(in srgb, var(--et-surface-interaction-solid, #888) 12%, transparent);
+  }
+
+  .et-rte-image-editor-file {
+    overflow: hidden;
+    color: var(--et-surface-color-muted-solid, inherit);
+    font-size: 1.2rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .et-overlay--top-sheet .et-rte-image-editor {
+    gap: 16px;
+    padding: 16px;
+    padding-block-end: max(16px, env(safe-area-inset-bottom));
+  }
+
+  .et-overlay--top-sheet .et-rte-image-editor-title {
+    font-size: 1.6rem;
+  }
+
+  .et-rte-image-editor-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+}

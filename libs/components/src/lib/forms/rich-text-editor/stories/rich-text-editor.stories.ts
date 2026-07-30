@@ -1,10 +1,20 @@
-import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { richTextEditorImageDemoInterceptor } from './rich-text-editor-image-demo.utils';
+import {
+  RichTextEditorImageFailureStorybookComponent,
+  RichTextEditorImageStorybookComponent,
+} from './rich-text-editor-image-storybook.component';
 import { FormFieldRichTextEditorStorybookComponent } from './rich-text-editor-storybook.component';
 
 export default {
   title: 'Components/Forms/Rich Text Editor',
   component: FormFieldRichTextEditorStorybookComponent,
-  decorators: [moduleMetadata({ imports: [FormFieldRichTextEditorStorybookComponent] })],
+  decorators: [
+    // The image stories upload through a query; the interceptor fakes that endpoint in-browser.
+    applicationConfig({ providers: [provideHttpClient(withInterceptors([richTextEditorImageDemoInterceptor]))] }),
+    moduleMetadata({ imports: [FormFieldRichTextEditorStorybookComponent] }),
+  ],
   argTypes: {
     appearance: { control: 'select', options: ['box', 'underline'] },
     fill: { control: 'select', options: ['transparent', 'filled'] },
@@ -63,4 +73,16 @@ export const WithTableAndAlignment: Story = {
     value:
       '<h2 style="text-align: center">Standings</h2>\n\n| Team | Points |\n| --- | --- |\n| Berlin | 42 |\n| Hamburg | 39 |\n\n<p style="text-align: right">A right-aligned paragraph after the table.</p>',
   },
+};
+
+/** The opt-in image tool: pick, paste or drop an image, uploaded through a query with live progress. */
+export const Images: { render: () => { template: string }; decorators: unknown[] } = {
+  render: () => ({ template: `<et-sb-rich-text-editor-image />` }),
+  decorators: [moduleMetadata({ imports: [RichTextEditorImageStorybookComponent] })],
+};
+
+/** The same tool against an endpoint that always fails — the placeholder shows it, then removes itself. */
+export const ImageUploadFailure: { render: () => { template: string }; decorators: unknown[] } = {
+  render: () => ({ template: `<et-sb-rich-text-editor-image-failure />` }),
+  decorators: [moduleMetadata({ imports: [RichTextEditorImageFailureStorybookComponent] })],
 };

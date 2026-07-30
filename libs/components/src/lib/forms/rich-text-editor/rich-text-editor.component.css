@@ -47,6 +47,18 @@
     initial-value: 6px;
   }
 
+  @property --et-rich-text-editor-image-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 6px;
+  }
+
+  @property --et-rich-text-editor-image-upload-height {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 140px;
+  }
+
   @property --et-rich-text-editor-token-radius {
     syntax: '<length>';
     inherits: true;
@@ -88,13 +100,21 @@
 
     /* On touch the toolbar is a full-width bar fixed above the on-screen keyboard (the OS selection
        menu owns the top). It never sits at the top: it's hidden until the editor is active, then
-       fades/slides in rather than popping. `inset-block-end` is driven by JS from `visualViewport`
-       and deliberately has NO transition — it must track the viewport instantly as the page scrolls
-       (a transition would make it lag a frame behind the keyboard). */
+       fades/slides in rather than popping.
+
+       The keyboard is cleared by *padding*, not by `inset-block-end`: the box itself always reaches the
+       bottom of the layout viewport and the measured inset (driven by JS from `visualViewport`) pushes
+       the tools up out of the keyboard's way. The difference matters where the measurement cannot be
+       exact — Chrome for Android reports a visible viewport one tab-group-strip too short while a tab
+       belongs to a tab group, and nothing in the page can tell — because the bar's own background
+       covers whatever is between it and the keyboard instead of letting page content show through a
+       gap. Everything below the tools is behind the keyboard (or behind browser chrome), so nobody can
+       reach it. The padding deliberately has NO transition: it must track the viewport instantly as the
+       page scrolls (a transition would make it lag a frame behind the keyboard). */
     &.et-rich-text-editor--touch .et-rte-toolbar {
       position: fixed;
       inset-inline: 0;
-      inset-block-end: var(--_et-rte-keyboard-inset, 0px);
+      inset-block-end: 0;
       z-index: 60;
       flex-wrap: nowrap;
       overflow-x: auto;
@@ -102,7 +122,14 @@
       overscroll-behavior-x: contain;
       -webkit-overflow-scrolling: touch;
       padding-inline: 8px;
-      padding-block: 6px;
+      padding-block-start: 6px;
+      /* Two sources, whichever is available, and never both: `env(keyboard-inset-height)` is the
+         browser telling us exactly where the keyboard is — but only for a page that opted into the
+         VirtualKeyboard API (`navigator.virtualKeyboard.overlaysContent = true`), which is also what
+         stops the viewport from resizing, so the measured inset is 0 there. Without that opt-in (or
+         in a browser without the API) the env var falls back to 0 and the measurement carries it.
+         `max()` needs no feature detection and cannot place the bar too low. */
+      padding-block-end: calc(6px + max(var(--_et-rte-keyboard-inset, 0px), env(keyboard-inset-height, 0px)));
       background: var(--et-surface-background-solid, var(--et-surface-2, rgb(24 24 24)));
       border-block-end: none;
       border-block-start: var(--et-form-field-control-border-width, 1px) solid
@@ -345,6 +372,86 @@
         background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
       }
 
+      /* Images are block-level (the only shape `![alt](url)` round-trips), and clickable: the image
+         tool opens its popover from a click, so they keep a pointer cursor. */
+      img {
+        display: block;
+        max-inline-size: 100%;
+        block-size: auto;
+        margin-block: var(--et-rich-text-editor-content-gap);
+        border-radius: var(--et-rich-text-editor-image-radius);
+        cursor: pointer;
+      }
+
+      /* The upload placeholder the image tool leaves at the caret while a file uploads. It stands in
+         for the image, so it takes an image's room rather than a character's — but it carries no text
+         (that is what keeps it out of the editor's value), so everything it says is drawn here from
+         its attributes: a spinning ring, the label plus percentage, a progress bar along the bottom,
+         and a failed state that removes itself shortly after.
+
+         It is a `<span>` set to `display: block` on purpose: a real block element (`<p>`, `<div>`)
+         would serialize as a paragraph boundary, and this must serialize as nothing at all. */
+      .et-rte-image-upload {
+        display: block;
+        position: relative;
+        block-size: var(--et-rich-text-editor-image-upload-height);
+        margin-block: var(--et-rich-text-editor-content-gap);
+        border-radius: var(--et-rich-text-editor-image-radius);
+        outline: 1px dashed color-mix(in srgb, currentColor 24%, transparent);
+        outline-offset: -1px;
+        background:
+          linear-gradient(to right, var(--et-theme-color-primary-solid, currentColor) 0 0) no-repeat left bottom /
+            var(--_et-rte-image-progress, 0%) 3px,
+          color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
+        user-select: all;
+
+        /* The spinner, above the label. */
+        &::before {
+          content: '';
+          position: absolute;
+          inset-inline: 0;
+          inset-block-start: calc(50% - 1.9em);
+          margin-inline: auto;
+          inline-size: 1.8em;
+          block-size: 1.8em;
+          border: 2px solid color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 28%, transparent);
+          border-block-start-color: var(--et-theme-color-primary-solid, currentColor);
+          border-radius: 50%;
+          animation: et-rte-image-upload-spin 800ms linear infinite;
+        }
+
+        /* The state, read straight off the accessible name so it needs no text node of its own. */
+        &::after {
+          content: attr(aria-label);
+          position: absolute;
+          inset-inline: 0;
+          inset-block-start: calc(50% + 0.4em);
+          color: var(--et-surface-color-muted-solid, inherit);
+          font-size: 1.2rem;
+          text-align: center;
+        }
+
+        &[data-progress]::after {
+          content: attr(aria-label) ' · ' attr(data-progress) '%';
+          font-variant-numeric: tabular-nums;
+        }
+
+        &[data-state='error'] {
+          outline-color: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 40%, transparent);
+          background: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 10%, transparent);
+
+          /* A failed upload is not still working — the ring stops and becomes a cross. */
+          &::before {
+            border: none;
+            border-radius: 0;
+            background:
+              linear-gradient(to bottom right, transparent 44%, currentColor 44% 56%, transparent 56%),
+              linear-gradient(to bottom left, transparent 44%, currentColor 44% 56%, transparent 56%);
+            animation: none;
+          }
+        }
+      }
+
       .et-rte-token {
         --_et-rte-token-accent: var(--et-theme-color-primary-solid, var(--et-surface-interaction-solid, currentColor));
 
@@ -364,6 +471,18 @@
         margin-inline-end: 1px;
         opacity: 0.65;
       }
+    }
+  }
+
+  @keyframes et-rte-image-upload-spin {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-rte-content .et-rte-image-upload::before {
+      animation: none;
     }
   }
 }

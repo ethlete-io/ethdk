@@ -1,0 +1,35 @@
+<div class="et-rte-image-editor-header">
+  <span class="et-rte-image-editor-title">{{ labels().imageEditor }}</span>
+  <button
+    [attr.aria-label]="labels().imageEditorClose"
+    (click)="dismiss.emit()"
+    et-icon-button
+    size="sm"
+    type="button"
+    variant="transparent"
+    mutedUntilPressed
+  >
+    <i etIcon="et-times"></i>
+  </button>
+</div>
+
+<div class="et-rte-image-editor-preview">
+  <img [src]="src()" [alt]="altValue()" class="et-rte-image-editor-thumb" />
+  <span class="et-rte-image-editor-file">{{ fileName() }}</span>
+</div>
+
+<et-form-field size="sm">
+  <et-label>{{ labels().imageAltLabel }}</et-label>
+  <et-input
+    [value]="altValue()"
+    [placeholder]="labels().imageAltPlaceholder"
+    (valueChange)="altValue.set($event)"
+    (keydown.enter)="saveOnEnter($event)"
+  />
+  <et-hint>{{ labels().imageAltHint }}</et-hint>
+</et-form-field>
+
+<div class="et-rte-image-editor-actions">
+  <button (click)="removeImage.emit()" et-text-button size="sm" type="button">{{ labels().imageRemove }}</button>
+  <button (click)="save()" et-button size="sm" type="button">{{ labels().imageUpdate }}</button>
+</div>

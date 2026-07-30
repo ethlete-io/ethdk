@@ -27,6 +27,7 @@ export * from './heading-3-icon';
 export * from './icon-errors';
 export * from './icon-provider';
 export * from './icon.directive';
+export * from './image-icon';
 export * from './italic-icon';
 export * from './link-icon';
 export * from './list-bulleted-icon';
