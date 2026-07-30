@@ -2,9 +2,10 @@ import { JsonPipe } from '@angular/common';
 import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
 import { disabled, form, FormField, readonly, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
+import { DescriptionComponent } from '../../../description';
 import { FormFieldSize, HintComponent, LabelDirective } from '../../../form-field';
 import { RadioGroupComponent } from '../radio-group.component';
-import { RadioComponent } from '../radio.component';
+import { RadioComponent, RadioVariant } from '../radio.component';
 
 @Component({
   selector: 'et-sb-radio-group',
@@ -14,7 +15,12 @@ import { RadioComponent } from '../radio.component';
         <et-label>{{ label() }}</et-label>
 
         @for (option of options(); track option.value) {
-          <et-radio [value]="option.value">{{ option.label }}</et-radio>
+          <et-radio [value]="option.value" [variant]="variant()">
+            {{ option.label }}
+            @if (variant() === 'card' && option.description) {
+              <et-description>{{ option.description }}</et-description>
+            }
+          </et-radio>
         }
         @if (hint()) {
           <et-hint>{{ hint() }}</et-hint>
@@ -38,6 +44,7 @@ import { RadioComponent } from '../radio.component';
     ProvideColorDirective,
     HintComponent,
     LabelDirective,
+    DescriptionComponent,
   ],
 })
 export class RadioGroupStorybookComponent {
@@ -51,11 +58,12 @@ export class RadioGroupStorybookComponent {
   public required = input(false);
   public color = input('brand');
   public size = input<FormFieldSize>('md');
+  public variant = input<RadioVariant>('plain');
 
-  public options = input([
-    { value: 'red', label: 'Red' },
-    { value: 'green', label: 'Green' },
-    { value: 'blue', label: 'Blue' },
+  public options = input<{ value: string; label: string; description?: string }[]>([
+    { value: 'red', label: 'Red', description: 'Warm, and hard to miss.' },
+    { value: 'green', label: 'Green', description: 'Calm, and easy on the eyes.' },
+    { value: 'blue', label: 'Blue', description: 'Cool, and the default nearly everywhere.' },
   ]);
 
   public mixedState = linkedSignal(() => this.mixed());

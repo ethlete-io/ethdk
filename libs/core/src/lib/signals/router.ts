@@ -328,3 +328,30 @@ export const injectPathParamChanges = memoizeSignal(() => {
     return changes;
   });
 });
+
+/**
+ * The state handed to the navigation that is currently in progress, i.e. what
+ * `router.navigate(…, { state })` passed — typed to whatever you expect.
+ *
+ * Read **synchronously**, in a constructor or a resolver, and deliberately not a signal: navigation state exists
+ * only for the duration of the navigation that carries it. By the time an effect flushed, the navigation would be
+ * over and the answer always `null`. Returns `null` when there is no navigation in flight or it carried no state —
+ * which is the normal case for a page arrived at by typing its URL, so always handle it.
+ *
+ * Use it for the things a URL should not carry: a "you were redirected because…" reason, a pre-fetched object the
+ * previous page already had, a scroll intent. Anything the page needs to survive a reload belongs in the URL.
+ *
+ * @example
+ * type CheckoutNavState = { fromCart: boolean };
+ *
+ * export class CheckoutComponent {
+ *   private navState = injectRouterNavigationState<CheckoutNavState>();
+ *
+ *   protected cameFromCart = this.navState?.fromCart ?? false;
+ * }
+ */
+export const injectRouterNavigationState = <T>(): T | null => {
+  const router = inject(Router);
+
+  return (router.getCurrentNavigation()?.extras.state as T | undefined) ?? null;
+};

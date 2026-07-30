@@ -1,14 +1,14 @@
 import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
 import { disabled, form, FormField, readonly, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
-import { CHOICE_FIELD_IMPORTS } from '../../choice-field';
+import { CHOICE_FIELD_IMPORTS, ChoiceFieldVariant } from '../../choice-field';
 import { CHECKBOX_IMPORTS } from '../checkbox.imports';
 
 @Component({
   selector: 'et-sb-form-field-checkbox',
   template: `
     <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
-      <et-choice-field>
+      <et-choice-field [variant]="variant()">
         <et-checkbox [(indeterminate)]="indeterminateState" [formField]="demoForm.acceptTerms" />
         <et-label>I accept the terms and conditions</et-label>
         @if (hint()) {
@@ -16,9 +16,9 @@ import { CHECKBOX_IMPORTS } from '../checkbox.imports';
         }
       </et-choice-field>
 
-      <et-choice-field>
+      <et-choice-field [variant]="variant()">
         <et-checkbox [formField]="demoForm.acceptTermsChecked" />
-        <et-label>I accept the terms and conditions</et-label>
+        <et-label>Send me product updates</et-label>
         @if (hint()) {
           <et-hint>{{ hint() }}</et-hint>
         }
@@ -35,6 +35,7 @@ export class FormFieldCheckboxStorybookComponent {
   public readonly = input(false);
   public required = input(false);
   public indeterminate = input(false);
+  public variant = input<ChoiceFieldVariant>('plain');
 
   public indeterminateState = linkedSignal(() => this.indeterminate());
 

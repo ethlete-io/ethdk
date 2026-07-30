@@ -3,14 +3,19 @@ import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core
 import { disabled, form, FormField, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import { FormFieldSize, HintComponent, LabelDirective } from '../../../form-field';
-import { SegmentedButtonGroupComponent } from '../segmented-button-group.component';
+import { SegmentedButtonGroupComponent, SegmentedButtonGroupVariant } from '../segmented-button-group.component';
 import { SegmentedButtonComponent } from '../segmented-button.component';
 
 @Component({
   selector: 'et-sb-segmented-button-group',
   template: `
     <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
-      <et-segmented-button-group [(mixed)]="mixedState" [formField]="demoForm.viewMode" [size]="size()">
+      <et-segmented-button-group
+        [(mixed)]="mixedState"
+        [variant]="variant()"
+        [formField]="demoForm.viewMode"
+        [size]="size()"
+      >
         <et-label>{{ label() }}</et-label>
 
         @for (option of options(); track option.value) {
@@ -49,6 +54,7 @@ export class SegmentedButtonGroupStorybookComponent {
   public disabled = input(false);
   public required = input(false);
   public color = input('brand');
+  public variant = input<SegmentedButtonGroupVariant>('pill');
   public size = input<FormFieldSize>('md');
 
   public options = input([

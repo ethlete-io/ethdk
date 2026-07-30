@@ -98,6 +98,61 @@ and the headless layer offers a tri-state "select all" control
 (`[etSelectionListControl]`). See the `Radio group`, `Checkbox group` and
 `Segmented button group` stories.
 
+### Card presets {#card-presets}
+
+`et-radio` and `et-choice-field` take `variant="card"`: the option becomes a
+full-width clickable panel with the label leading and the control trailing, and
+the selection shows on the panel's border as well as in the control.
+
+Reach for it when the options are few and consequential — a plan, a shipping
+speed — and each deserves room for an `et-description`. A 20px circle is a small
+thing to aim at; a card is a large one.
+
+```html
+<et-radio-group [formField]="demoForm.plan">
+  <et-label>Plan</et-label>
+
+  <et-radio value="team" variant="card">
+    Team
+    <et-description>Everything in Solo, plus shared workspaces.</et-description>
+  </et-radio>
+</et-radio-group>
+```
+
+<StoryEmbed id="components-forms-selection-list-radio-group--card" height="320px" />
+
+For a checkbox or switch the preset lives on the **wrapper**, `et-choice-field`,
+because that is what holds the label — so both controls get it from one place.
+The wrapper learns the control's checked state with `:has()`.
+
+```html
+<et-choice-field variant="card">
+  <et-checkbox [formField]="demoForm.acceptTerms" />
+  <et-label>I accept the terms</et-label>
+  <et-hint>You can withdraw consent at any time.</et-hint>
+</et-choice-field>
+```
+
+Tokens: `--et-radio-card-padding` / `-border-radius` / `-border-width`, and the
+same three under `--et-choice-field-card-*`.
+
+### Segmented button: tabs variant {#segmented-tabs}
+
+`et-segmented-button-group` takes `variant="tabs"`, which underlines the selected
+segment instead of filling it and drops the tonal track for a baseline rule. The
+same element the FLIP animation moves becomes the underline, so the selection
+still slides between segments.
+
+<StoryEmbed id="components-forms-selection-list-segmented-button-group--tabs" height="220px" />
+
+::: warning It is still a selection control
+The tabs variant only changes how the selection is drawn. The group is still a
+`radiogroup` bound to a form field. If your segments are **routes**, or panels of
+content that should be linkable and announced as tabs, use
+[tabs](/components/tabs) instead — this variant is for a filter that happens to
+look like tabs.
+:::
+
 ## Rating — `et-rating` {#rating}
 
 A star rating implementing the slider pattern (`role="slider"`, one keyboard

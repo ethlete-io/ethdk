@@ -16,6 +16,7 @@ export default {
     required: { control: 'boolean' },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
+    variant: { control: 'radio', options: ['plain', 'card'] },
   },
   args: {
     label: 'Favorite color',
@@ -28,6 +29,7 @@ export default {
     required: false,
     color: 'brand',
     size: 'md',
+    variant: 'plain',
   },
 } as Meta<RadioGroupStorybookComponent>;
 
@@ -46,4 +48,18 @@ export const Mixed: Story = {
 
 export const Readonly: Story = {
   args: { readonly: true },
+};
+
+export const Card: Story = {
+  args: { variant: 'card', label: 'Pick a colour' },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The card preset: the whole panel is the target, label leading and control trailing, with room for an ' +
+          '`<et-description>` under each label. For a short list of consequential choices — a plan, a shipping ' +
+          'speed — where a 20px circle is a small thing to aim at.',
+      },
+    },
+  },
 };

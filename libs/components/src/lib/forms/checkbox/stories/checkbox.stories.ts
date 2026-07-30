@@ -6,6 +6,7 @@ export default {
   component: FormFieldCheckboxStorybookComponent,
   decorators: [moduleMetadata({ imports: [FormFieldCheckboxStorybookComponent] })],
   argTypes: {
+    variant: { control: 'radio', options: ['plain', 'card'] },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
     hint: { control: 'text' },
     disabled: { control: 'boolean' },
@@ -14,6 +15,7 @@ export default {
     indeterminate: { control: 'boolean' },
   },
   args: {
+    variant: 'plain',
     color: 'brand',
     hint: '',
     disabled: false,
@@ -33,4 +35,18 @@ export const Readonly: Story = {
 
 export const Indeterminate: Story = {
   args: { indeterminate: true, hint: 'Tri-state: toggling an indeterminate checkbox resolves it to checked' },
+};
+
+export const Card: Story = {
+  args: { variant: 'card', hint: 'Cards give each option room for a hint.' },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The card preset lives on `et-choice-field`, not on the control, so a switch gets it too. The whole ' +
+          'panel is clickable and the checked state shows on its border — `:has()` is how the wrapper learns the ' +
+          "control's state.",
+      },
+    },
+  },
 };

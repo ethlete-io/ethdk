@@ -35,6 +35,24 @@
     initial-value: 12px;
   }
 
+  @property --et-choice-field-card-padding {
+    syntax: '*';
+    inherits: true;
+    initial-value: 16px;
+  }
+
+  @property --et-choice-field-card-border-radius {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 10px;
+  }
+
+  @property --et-choice-field-card-border-width {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 1px;
+  }
+
   et-choice-field {
     display: flex;
     flex-direction: column;
@@ -202,6 +220,46 @@
           opacity: 0;
           transform: translateY(calc(-1 * var(--et-choice-field-support-offset)));
         }
+      }
+    }
+
+    /* The card preset: the whole panel is the target. The checked border is what makes a chosen card readable at a
+       glance rather than only by its control, and `:has()` is how the wrapper learns the control's state — the
+       control owns `aria-checked`, not this element. */
+    &:where([data-variant='card']) {
+      .et-choice-field-control {
+        /* Label leading, control trailing, which is how a settings row reads. */
+        flex-direction: row-reverse;
+        justify-content: space-between;
+        padding: var(--et-choice-field-card-padding);
+        border-radius: var(--et-choice-field-card-border-radius);
+        background-color: var(--et-surface-background-solid, transparent);
+        border: var(--et-choice-field-card-border-width) solid var(--et-surface-border-solid, currentColor);
+        cursor: pointer;
+
+        &:has([aria-checked='true']) {
+          border-color: var(--et-theme-color-primary-solid, currentColor);
+          background-color: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 8%, transparent);
+        }
+
+        @media (hover: hover) {
+          /* Not while checked: a hover hint at 40% would otherwise override the full-strength selected border, so
+             hovering the chosen card would make it look less chosen. */
+          &:hover:not(:has([aria-disabled='true'])):not(:has([data-readonly])):not(:has([aria-checked='true'])) {
+            border-color: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 40%, transparent);
+          }
+        }
+      }
+
+      .et-choice-field-label-area {
+        flex: 1;
+        min-inline-size: 0;
+      }
+
+      &[data-can-animate] .et-choice-field-control {
+        transition:
+          border-color 150ms ease,
+          background-color 150ms ease;
       }
     }
   }

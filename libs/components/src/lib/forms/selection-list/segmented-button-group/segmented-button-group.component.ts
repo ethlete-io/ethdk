@@ -5,6 +5,15 @@ import { FORM_FIELD_SIZES, FormFieldSize } from '../../form-field/form-field.var
 import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../../form-field/headless';
 import { SelectionListDirective } from '../headless';
 
+/** How a segmented button group presents its selection. See {@link SegmentedButtonGroupComponent.variant}. */
+export const SEGMENTED_BUTTON_GROUP_VARIANTS = {
+  PILL: 'pill',
+  TABS: 'tabs',
+} as const;
+
+export type SegmentedButtonGroupVariant =
+  (typeof SEGMENTED_BUTTON_GROUP_VARIANTS)[keyof typeof SEGMENTED_BUTTON_GROUP_VARIANTS];
+
 @Component({
   selector: 'et-segmented-button-group',
   templateUrl: './segmented-button-group.component.html',
@@ -24,6 +33,7 @@ import { SelectionListDirective } from '../headless';
   host: {
     class: 'et-segmented-button-group',
     '[attr.data-size]': 'size()',
+    '[attr.data-variant]': 'variant()',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-error]': 'support.displaysError() || null',
   },
@@ -31,6 +41,16 @@ import { SelectionListDirective } from '../headless';
 export class SegmentedButtonGroupComponent {
   public support = injectFormSupport();
   public size = input<FormFieldSize>(FORM_FIELD_SIZES.MD);
+
+  /**
+   * How the selection is drawn. `'pill'` fills the selected segment; `'tabs'` underlines it instead, for a group
+   * that reads as a set of views rather than a set of values.
+   *
+   * It is still a **selection control**, not navigation — it binds to a form field and announces itself as a radio
+   * group. If the segments correspond to routes, or to panels of content that should be linkable, reach for
+   * [tabs](/components/tabs) instead; this variant is for a filter that happens to look like tabs. @default 'pill'
+   */
+  public variant = input<SegmentedButtonGroupVariant>(SEGMENTED_BUTTON_GROUP_VARIANTS.PILL);
 
   private errorContentRef = viewChild<ElementRef<HTMLElement>>('errorContent');
   private hintContentRef = viewChild<ElementRef<HTMLElement>>('hintContent');

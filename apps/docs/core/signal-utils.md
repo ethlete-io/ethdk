@@ -68,6 +68,10 @@ The single-value helpers accept `{ transform }` (Angular-input-style) — e.g. `
 
 For synchronous, non-injected use inside `router.events` handlers there are `createRouterState(router)` and `createRoute(router)`.
 
+`injectRouterNavigationState<T>()` reads the state a navigation was given — what `router.navigate(…, { state })` passed. It returns `T | null` **synchronously** and is deliberately not a signal: navigation state exists only for the duration of the navigation carrying it, so by the time an effect flushed the answer would always be `null`. Call it in a constructor or a resolver, and always handle `null` — a page arrived at by typing its URL has no navigation state.
+
+Use it for what a URL should not carry (a "you were redirected because…" reason, an object the previous page already had, a scroll intent). Anything that must survive a reload belongs in the URL.
+
 ## Form control values
 
 `controlValueSignal(control, options?)` turns an `AbstractControl` (or a signal of one) into a `Signal` of its **raw** value — including disabled controls — deduplicated by deep equality. Options: `debounceTime` and `debounceFirst` (default `false`: the initial value is emitted immediately). `controlValueSignalWithPrevious` yields `[previous, current]` tuples.

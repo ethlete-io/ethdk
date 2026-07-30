@@ -11,6 +11,12 @@
     initial-value: 6px;
   }
 
+  @property --et-segmented-button-tab-underline-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 3px;
+  }
+
   @property --et-segmented-button-border-radius {
     syntax: '<length>';
     inherits: true;
@@ -101,6 +107,24 @@
 
     @media (prefers-reduced-motion: reduce) {
       --et-segmented-button-transition-duration: 1ms;
+    }
+
+    /* Tabs variant: the same element the FLIP animation moves becomes an underline instead of a pill, so the
+       selection still slides between segments — only its shape changes. */
+    :where(et-segmented-button-group[data-variant='tabs']) & {
+      border-radius: 0;
+
+      .et-segmented-button-bg {
+        inset: auto 0 0 0;
+        block-size: var(--et-segmented-button-tab-underline-size);
+        border-radius: var(--et-segmented-button-tab-underline-size);
+      }
+
+      /* On a pill the label sits on the fill and needs the contrasting colour; on an underline it sits on the
+         surface, so it takes the accent itself. */
+      &[aria-checked='true'] {
+        color: var(--et-theme-color-ink-solid, currentColor);
+      }
     }
   }
 }

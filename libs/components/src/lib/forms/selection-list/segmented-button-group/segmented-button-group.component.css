@@ -98,6 +98,21 @@
       box-shadow: inset 0 0 0 1px var(--et-theme-color-primary-solid);
     }
 
+    /* Tabs variant: no track. The filled track is what makes a pill group read as one control with a slot in it;
+       tabs read as a row of labels over a rule, so the container gives up its background and padding and takes a
+       baseline instead. */
+    &:where([data-variant='tabs']) .et-segmented-button-group-buttons {
+      gap: 0;
+      padding: 0;
+      border-radius: 0;
+      background-color: transparent;
+      box-shadow: inset 0 -1px 0 0 var(--et-surface-border-solid, currentColor);
+    }
+
+    &:where([data-variant='tabs'])[data-error] .et-segmented-button-group-buttons {
+      box-shadow: inset 0 -1px 0 0 var(--et-theme-color-primary-solid);
+    }
+
     /* an unresolved bulk-edit selection: no segment reads as pressed (normally impossible), so
        the dashed accent track (not a muted/grey one, which would read as disabled) hints at the
        provisional state. Consumers restyle via [data-mixed]. */
