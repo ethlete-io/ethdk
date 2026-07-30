@@ -100,6 +100,8 @@ export const ET_BUILT_IN_ICON_NAMES = [
   'et-calendar',
   'et-check',
   'et-chevron',
+  'et-circle-check',
+  'et-circle-info',
   'et-clipboard-check',
   'et-clock',
   'et-code',

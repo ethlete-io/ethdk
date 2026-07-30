@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { Component, DestroyRef, ViewEncapsulation, effect, inject, input } from '@angular/core';
+import { Component, DestroyRef, ViewEncapsulation, effect, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { take, tap, timer } from 'rxjs';
 import { BUTTON_IMPORTS } from '../../../button';
@@ -33,10 +33,21 @@ const TOTAL_TICKS = TOTAL_MS / TICK_MS;
 
       <div class="flex flex-wrap gap-2">
         <button (click)="openWithAction()" et-button size="sm" variant="tonal">With action</button>
+        <button (click)="openWithTwoActions()" et-button size="sm" variant="tonal">Two actions</button>
         <button (click)="openWithMessage()" et-button size="sm" variant="tonal">With message</button>
         <button (click)="openWithUpdate()" et-button size="sm" variant="tonal">Loading → Success</button>
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <button (click)="openDeduped()" et-button size="sm" variant="outline">
+          Same id (clicked {{ dedupeClicks() }}×)
+        </button>
+        <button (click)="openWithCustomIcon()" et-button size="sm" variant="outline">Custom icon</button>
+        <button (click)="openWithoutIcon()" et-button size="sm" variant="outline">No icon</button>
         <button (click)="manager.dismissAll()" et-button size="sm" variant="transparent">Dismiss all</button>
       </div>
+
+      <p class="m-0 text-xs text-slate-500">Drag a notification toward the edge its stack sits on to flick it away.</p>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -53,6 +64,8 @@ export class NotificationStorybookComponent {
    * the slide-in animation flip.
    */
   public direction = input<'' | 'rtl'>('');
+
+  protected dedupeClicks = signal(0);
 
   constructor() {
     const root = this.document.documentElement;
@@ -97,6 +110,37 @@ export class NotificationStorybookComponent {
       message: 'report-q4-final-v2.pdf was moved to trash.',
       action: { label: 'Undo', handler: () => alert('Undo!') },
     });
+  }
+
+  public openWithTwoActions() {
+    this.manager.open({
+      status: 'info',
+      title: 'Delete this file?',
+      message: 'report-q4-final-v2.pdf will be moved to trash.',
+      action: { label: 'Delete', handler: () => alert('Deleted!') },
+      secondaryAction: { label: 'Keep', handler: () => undefined },
+    });
+  }
+
+  /** Every click lands on the same notification instead of stacking a fifth "message sent" toast. */
+  public openDeduped() {
+    this.dedupeClicks.update((clicks) => clicks + 1);
+
+    this.manager.open({
+      id: 'deduped',
+      status: 'success',
+      title: 'Message sent',
+      message: `${this.dedupeClicks()} message${this.dedupeClicks() === 1 ? '' : 's'} sent so far.`,
+      duration: 0,
+    });
+  }
+
+  public openWithCustomIcon() {
+    this.manager.open({ status: 'info', title: 'Time is up', icon: 'et-clock' });
+  }
+
+  public openWithoutIcon() {
+    this.manager.open({ status: 'success', title: 'Changes saved', icon: null });
   }
 
   public openWithMessage() {

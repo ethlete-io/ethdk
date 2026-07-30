@@ -85,9 +85,18 @@
     initial-value: 3px;
   }
 
+  @property --et-notification-icon-size {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 16px;
+  }
+
   .et-notification {
     display: block;
     pointer-events: all;
+    /* Fades under a swipe. Set inline by the gesture, so the leave/enter rules — which are more
+       specific — still win when the notification animates in or out. */
+    opacity: var(--_et-notification-swipe-opacity, 1);
     background: var(--et-surface-background-solid, #fff);
     color: var(--et-surface-color-solid, #111);
     border-radius: var(--et-notification-border-radius);
@@ -134,6 +143,16 @@
     }
   }
 
+  /* A notification thrown away by the swipe gesture leaves in the direction it was thrown, from
+     wherever the finger left it. `!important` is what lets the leave transition override the
+     gesture's own inline transform — the same mechanism the sheet overlays use. */
+  .et-notification[data-swiped-away] {
+    &.et-animation-leave-to {
+      transform: translateX(var(--_et-notification-swipe-exit-x, 0px)) !important;
+      opacity: 0;
+    }
+  }
+
   /* start positions: slide in/out from the inline-start edge */
   .et-notification-stack[data-position='bottom-start'] .et-notification,
   .et-notification-stack[data-position='top-start'] .et-notification {
@@ -166,6 +185,15 @@
   .et-notification-spinner {
     flex-shrink: 0;
     --et-spinner-color: var(--et-theme-color-primary-solid, currentColor);
+  }
+
+  /* The status glyph reads in the status color, which the manager's `statusColorMapping` resolves —
+     the same source the spinner and the accent border use. */
+  .et-notification-icon {
+    flex-shrink: 0;
+    width: var(--et-notification-icon-size);
+    height: var(--et-notification-icon-size);
+    color: var(--et-theme-color-primary-solid, currentColor);
   }
 
   .et-notification-title {
@@ -202,7 +230,17 @@
   }
 
   .et-notification-footer {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
     margin-top: 0.8rem;
+  }
+
+  /* The quieter half of an action pair: same shape as the primary action, neutral instead of accented.
+     Scoped through `.et-notification` to outweigh the text button's own `color` — the two stylesheets
+     share a layer, so their relative order depends on which component renders first. */
+  .et-notification .et-notification-secondary-action {
+    color: var(--et-surface-color-muted-solid, inherit);
   }
 
   @media (prefers-reduced-motion: reduce) {

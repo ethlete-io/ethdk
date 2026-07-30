@@ -16,7 +16,7 @@ export const createNotificationRef = (
   config: NotificationConfig,
   { managerConfig, beforeChange }: { managerConfig: NotificationManagerConfig; beforeChange?: () => void },
 ) => {
-  const id = `${ID_PREFIX}${uniqueId++}`;
+  const id = config.id ?? `${ID_PREFIX}${uniqueId++}`;
 
   const entryState = signal<NotificationEntry>({
     id,
@@ -70,26 +70,46 @@ export const createNotificationRef = (
       .subscribe();
   };
 
-  const update = (partial: Partial<NotificationConfig>) => {
+  /** Whether swapping `current` for `next` can change the notification's box, and thus needs a FLIP capture. */
+  const mightResize = (next: NotificationConfig, current: NotificationConfig) =>
+    next.status !== current.status ||
+    next.title !== current.title ||
+    next.message !== current.message ||
+    next.action !== current.action ||
+    next.secondaryAction !== current.secondaryAction ||
+    (next.progress === undefined) !== (current.progress === undefined);
+
+  const applyConfig = (next: NotificationConfig) => {
     const current = entryState().config;
 
-    const mightResize =
-      ('status' in partial && partial.status !== current.status) ||
-      ('title' in partial && partial.title !== current.title) ||
-      ('message' in partial && partial.message !== current.message) ||
-      ('action' in partial && partial.action !== current.action) ||
-      ('progress' in partial && (partial.progress === undefined) !== (current.progress === undefined));
+    if (mightResize(next, current)) beforeChange?.();
 
-    if (mightResize) beforeChange?.();
+    entryState.update((e) => ({ ...e, config: next }));
+    startTimer(next);
+  };
+
+  const update = (partial: Partial<NotificationConfig>) => {
+    const current = entryState().config;
 
     const needsDurationReset =
       partial.status !== undefined && partial.status !== current.status && !('duration' in partial);
 
     const base: NotificationConfig = needsDurationReset ? { ...current, duration: undefined } : current;
-    const updated: NotificationConfig = { ...base, ...partial };
 
-    entryState.update((e) => ({ ...e, config: updated }));
-    startTimer(updated);
+    applyConfig({ ...base, ...partial });
+  };
+
+  /**
+   * @internal Swaps the whole config, so keys the new one leaves out go back to unset — what an
+   * `open()` that lands on a live id means, as opposed to {@link update}'s merge. Ignored once the
+   * notification is on its way out: a dismissed notification stays dismissed.
+   */
+  const replaceConfig = (next: NotificationConfig) => {
+    const entry = entryState();
+    if (entry.isDismissing || entry.isDismissed) return;
+
+    // Identity is the one thing a replacement cannot change — it is what found this notification.
+    applyConfig({ ...next, id: entry.config.id });
   };
 
   const dismiss = () => {
@@ -118,6 +138,7 @@ export const createNotificationRef = (
     id,
     entry: entryState.asReadonly(),
     update,
+    replaceConfig,
     dismiss,
     pauseTimer,
     resumeTimer,

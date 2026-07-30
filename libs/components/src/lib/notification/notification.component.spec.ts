@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
-import { provideNotificationManagerConfig } from './notification-config';
+import { NotificationConfig, provideNotificationManagerConfig } from './notification-config';
 import { provideNotificationLabels } from './notification-labels';
 import { NotificationRef, createNotificationRef } from './notification-ref';
 import { NotificationComponent } from './notification.component';
@@ -102,5 +102,89 @@ describe('NotificationComponent', () => {
 
   it('uses the configured dismiss label on the dismiss button', () => {
     expect(host.querySelector('.et-notification-dismiss-btn')?.getAttribute('aria-label')).toBe('Close notification');
+  });
+
+  it('renders the status icon, hidden from assistive tech', () => {
+    const icon = host.querySelector('.et-notification-icon');
+
+    expect(icon?.classList).toContain('et-icon--et-triangle-exclamation');
+    expect(icon?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  describe('icons', () => {
+    const renderWith = (config: Partial<NotificationConfig>) => {
+      const iconRef = createNotificationRef(
+        { status: 'success', title: 'Saved', ...config },
+        { managerConfig: { position: 'bottom-end', maxVisible: 3, defaultDuration: {} } },
+      );
+
+      const iconFixture = TestBed.createComponent(NotificationComponent);
+      iconFixture.componentRef.setInput('ref', iconRef);
+      iconFixture.detectChanges();
+
+      return iconFixture.nativeElement as HTMLElement;
+    };
+
+    it('takes the icon from the status', () => {
+      expect(renderWith({}).querySelector('.et-notification-icon')?.classList).toContain('et-icon--et-circle-check');
+    });
+
+    it('lets the notification name its own icon', () => {
+      expect(renderWith({ icon: 'et-times' }).querySelector('.et-notification-icon')?.classList).toContain(
+        'et-icon--et-times',
+      );
+    });
+
+    it('renders no icon at all for `icon: null`', () => {
+      expect(renderWith({ icon: null }).querySelector('.et-notification-icon')).toBeNull();
+    });
+
+    it('renders the spinner for a loading notification, and an icon in its place when one is named', () => {
+      expect(renderWith({ status: 'loading' }).querySelector('et-spinner')).not.toBeNull();
+      expect(renderWith({ status: 'loading' }).querySelector('.et-notification-icon')).toBeNull();
+
+      const withIcon = renderWith({ status: 'loading', icon: 'et-circle-info' });
+
+      expect(withIcon.querySelector('et-spinner')).toBeNull();
+      expect(withIcon.querySelector('.et-notification-icon')).not.toBeNull();
+    });
+  });
+
+  describe('secondary action', () => {
+    it('renders both actions and runs the one that was clicked', () => {
+      const handlers = { primary: vi.fn(), secondary: vi.fn() };
+      const pairRef = createNotificationRef(
+        {
+          status: 'info',
+          title: 'Delete file?',
+          action: { label: 'Delete', handler: handlers.primary },
+          secondaryAction: { label: 'Keep', handler: handlers.secondary, dismiss: false },
+        },
+        { managerConfig: { position: 'bottom-end', maxVisible: 3, defaultDuration: {} } },
+      );
+
+      const pairFixture = TestBed.createComponent(NotificationComponent);
+      pairFixture.componentRef.setInput('ref', pairRef);
+      pairFixture.detectChanges();
+
+      const buttons = (pairFixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
+        '.et-notification-footer button',
+      );
+
+      expect([...buttons].map((button) => button.textContent?.trim())).toEqual(['Delete', 'Keep']);
+
+      // `dismiss: false` keeps the notification up — the action is not done with it.
+      buttons[1]?.click();
+      pairFixture.detectChanges();
+
+      expect(handlers.secondary).toHaveBeenCalledTimes(1);
+      expect(pairRef.entry().isDismissing).toBe(false);
+
+      buttons[0]?.click();
+      pairFixture.detectChanges();
+
+      expect(handlers.primary).toHaveBeenCalledTimes(1);
+      expect(pairRef.entry().isDismissing).toBe(true);
+    });
   });
 });

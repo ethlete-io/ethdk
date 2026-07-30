@@ -10,13 +10,21 @@ import {
 } from '@ethlete/core';
 import { IconButtonComponent } from '../button/icon-button.component';
 import { TextButtonComponent } from '../button/text-button.component';
-import { ICON_IMPORTS, TIMES_ICON, provideIcons } from '../icon';
+import {
+  CIRCLE_CHECK_ICON,
+  CIRCLE_INFO_ICON,
+  ICON_IMPORTS,
+  TIMES_ICON,
+  TRIANGLE_EXCLAMATION_ICON,
+  provideIcons,
+} from '../icon';
 import { ProgressBarComponent } from '../loader/progress-bar/progress-bar.component';
 import { SpinnerComponent } from '../loader/spinner/spinner.component';
 import { NotificationActionDirective } from './headless/notification-action.directive';
 import { NotificationDismissDirective } from './headless/notification-dismiss.directive';
+import { NotificationSwipeToDismissDirective } from './headless/notification-swipe-to-dismiss.directive';
 import { NotificationDirective } from './headless/notification.directive';
-import { injectNotificationManagerConfig } from './notification-config';
+import { injectNotificationManagerConfig, resolveNotificationStatusIcon } from './notification-config';
 import { injectNotificationLabels } from './notification-labels';
 
 @Component({
@@ -33,9 +41,10 @@ import { injectNotificationLabels } from './notification-labels';
     TextButtonComponent,
     ...ICON_IMPORTS,
   ],
-  providers: [provideIcons(TIMES_ICON)],
+  providers: [provideIcons(TIMES_ICON, CIRCLE_CHECK_ICON, CIRCLE_INFO_ICON, TRIANGLE_EXCLAMATION_ICON)],
   hostDirectives: [
     { directive: NotificationDirective, inputs: ['ref'] },
+    NotificationSwipeToDismissDirective,
     AnimatedLifecycleDirective,
     {
       directive: ProvideColorDirective,
@@ -88,6 +97,19 @@ export class NotificationComponent {
   });
 
   protected dismissLabel = computed(() => this.labels().dismiss);
+
+  /**
+   * The glyph in front of the title: the notification's own `icon` if it names one (or opts out with
+   * `null`), otherwise the one its status carries. `loading` has none by default and renders its
+   * spinner instead.
+   */
+  protected statusIcon = computed(() => {
+    const own = this.notification.icon();
+
+    if (own !== undefined) return own;
+
+    return resolveNotificationStatusIcon(this.managerConfig, this.notification.status());
+  });
 
   constructor() {
     effect(() => {

@@ -28,11 +28,16 @@ export class NotificationDirective {
   public title = computed(() => this.entry().config.title);
   public message = computed(() => this.entry().config.message);
   public action = computed(() => this.entry().config.action);
+  public secondaryAction = computed(() => this.entry().config.secondaryAction);
   public progress = computed(() => this.entry().config.progress);
+
+  /** The notification's own icon override — `undefined` leaves the icon to its status, `null` means none. */
+  public icon = computed(() => this.entry().config.icon);
+
   public ariaRole = computed(() => (this.status() === 'error' ? 'alert' : 'status'));
 
-  /** @internal */
-  public registeredAction = signal<NotificationActionDirective | null>(null);
+  /** @internal Every action element inside this notification — one per slot at most, in registration order. */
+  public registeredActions = signal<NotificationActionDirective[]>([]);
   /** @internal */
   public registeredDismiss = signal<NotificationDismissDirective | null>(null);
 

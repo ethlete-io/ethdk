@@ -62,7 +62,7 @@ describe('NotificationDirective', () => {
       .query(By.directive(NotificationDismissDirective))
       .injector.get(NotificationDismissDirective);
 
-    expect(notificationDirective.registeredAction()).toBe(actionDirective);
+    expect(notificationDirective.registeredActions()).toEqual([actionDirective]);
     expect(notificationDirective.registeredDismiss()).toBe(dismissDirective);
   });
 

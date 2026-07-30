@@ -1,18 +1,30 @@
-import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { Meta, StoryFn, applicationConfig, moduleMetadata } from '@storybook/angular';
+import { CLOCK_ICON, provideIconOverrides } from '../../icon';
 import {
   NotificationBottomCenterStorybookComponent,
   NotificationBottomEndStorybookComponent,
   NotificationBottomStartStorybookComponent,
+  NotificationPromiseStorybookComponent,
   NotificationStorybookComponent,
   NotificationTopCenterStorybookComponent,
   NotificationTopEndStorybookComponent,
   NotificationTopStartStorybookComponent,
+  notificationPromiseDemoInterceptor,
 } from './components';
 
 export default {
   title: 'Components/Notification',
   component: NotificationStorybookComponent,
   decorators: [
+    // The stack renders from the manager's own (root) injector, so a per-notification `icon` name has
+    // to be registered app-wide — which is what `provideIconOverrides` is for.
+    applicationConfig({
+      providers: [
+        provideIconOverrides(CLOCK_ICON),
+        provideHttpClient(withInterceptors([notificationPromiseDemoInterceptor])),
+      ],
+    }),
     moduleMetadata({
       imports: [NotificationBottomEndStorybookComponent],
     }),
@@ -21,6 +33,12 @@ export default {
 
 export const BottomEnd: { render: StoryFn } = {
   render: () => ({ template: `<et-sb-notification-bottom-end />` }),
+};
+
+/** `manager.promise()` following a promise, an observable and an `@ethlete/query` query. */
+export const PromiseApi: { render: StoryFn; decorators: unknown[] } = {
+  render: () => ({ template: `<et-sb-notification-promise />` }),
+  decorators: [moduleMetadata({ imports: [NotificationPromiseStorybookComponent] })],
 };
 
 export const BottomCenter: { render: StoryFn; decorators: unknown[] } = {

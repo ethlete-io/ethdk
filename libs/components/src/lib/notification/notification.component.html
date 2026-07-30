@@ -1,6 +1,8 @@
 <div class="et-notification-content">
   <div class="et-notification-header">
-    @if (notification.isLoading()) {
+    @if (statusIcon(); as icon) {
+      <i [etIcon]="icon" class="et-notification-icon"></i>
+    } @else if (notification.isLoading()) {
       <et-spinner class="et-notification-spinner" diameter="16" strokeWidth="2" />
     }
 
@@ -27,11 +29,23 @@
     <et-progress-bar [value]="notification.progress()!" class="et-notification-progress-bar" />
   }
 
-  @if (notification.action()) {
+  @if (notification.action() || notification.secondaryAction()) {
     <div class="et-notification-footer">
-      <button et-text-button etNotificationAction size="xs" type="button">
-        {{ notification.action()!.label }}
-      </button>
+      @if (notification.action(); as action) {
+        <button et-text-button etNotificationAction size="xs" type="button">{{ action.label }}</button>
+      }
+
+      @if (notification.secondaryAction(); as secondaryAction) {
+        <button
+          class="et-notification-secondary-action"
+          et-text-button
+          etNotificationAction="secondary"
+          size="xs"
+          type="button"
+        >
+          {{ secondaryAction.label }}
+        </button>
+      }
     </div>
   }
 </div>

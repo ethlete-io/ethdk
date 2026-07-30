@@ -20,12 +20,21 @@ import {
   injectNotificationManagerConfig,
   provideNotificationManagerConfig,
 } from './notification-config';
+import { NotificationPromiseFn, createNotificationPromiseFn } from './notification-promise';
 import { NotificationRef, createNotificationRef } from './notification-ref';
 import { NOTIFICATION_STACK_CONTEXT_TOKEN } from './notification-stack-context.token';
 import { NotificationStackComponent } from './notification-stack.component';
 
 export type NotificationManager = {
+  /**
+   * Opens a notification and returns its ref. A {@link NotificationConfig.id} that is already on
+   * screen replaces that notification in place instead of stacking a duplicate.
+   */
   open: (config: NotificationConfig) => NotificationRef;
+
+  /** Opens a `loading` notification that follows a promise, observable or query — see {@link NotificationPromiseFn}. */
+  promise: NotificationPromiseFn;
+
   dismissAll: () => void;
   notifications: Signal<NotificationRef[]>;
   visibleNotifications: Signal<NotificationRef[]>;
@@ -99,6 +108,23 @@ export const [provideNotificationManagerInstance, injectNotificationManager] = c
     destroyRef.onDestroy(destroyStack);
 
     const open = (config: NotificationConfig): NotificationRef => {
+      const sameId = config.id ? notifications().find((r) => r.id === config.id) : undefined;
+
+      if (sameId) {
+        const entry = sameId.entry();
+
+        if (!entry.isDismissing && !entry.isDismissed) {
+          sameId.replaceConfig(config);
+
+          return sameId;
+        }
+
+        // That id is already leaving. Drop it now rather than let it animate out beside its
+        // replacement — the stack tracks items by id, so two of them may not coexist.
+        sameId.markDismissed();
+        notifications.update((n) => n.filter((r) => r !== sameId));
+      }
+
       const currentActive = notifications().filter((r) => !r.entry().isDismissing && !r.entry().isDismissed);
       if (currentActive.length >= managerConfig.maxVisible) {
         currentActive[0]?.dismiss();
@@ -111,12 +137,15 @@ export const [provideNotificationManagerInstance, injectNotificationManager] = c
       return ref;
     };
 
+    const promise = createNotificationPromiseFn({ open, injector: envInjector });
+
     const dismissAll = () => {
       notifications().forEach((r) => r.dismiss());
     };
 
     return {
       open,
+      promise,
       dismissAll,
       notifications: notifications.asReadonly(),
       visibleNotifications,

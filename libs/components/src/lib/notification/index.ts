@@ -3,6 +3,7 @@ export * from './notification-config';
 export * from './notification-errors';
 export * from './notification-labels';
 export * from './notification-manager';
+export * from './notification-promise';
 export * from './notification-ref';
 export * from './notification-stack-context.token';
 export * from './notification.component';

@@ -206,10 +206,11 @@ The date input, date range input, [time picker](/components/time-picker), time i
 
 ## Notification (ET17xx)
 
-| Code     | Cause                                                                | Fix                                              |
-| -------- | -------------------------------------------------------------------- | ------------------------------------------------ |
-| `ET1700` | `etNotificationAction` is not inside an `[etNotification]` element.  | Move the action inside the notification.         |
-| `ET1701` | `etNotificationDismiss` is not inside an `[etNotification]` element. | Move the dismiss button inside the notification. |
+| Code     | Cause                                                                       | Fix                                                 |
+| -------- | --------------------------------------------------------------------------- | --------------------------------------------------- |
+| `ET1700` | `etNotificationAction` is not inside an `[etNotification]` element.         | Move the action inside the notification.            |
+| `ET1701` | `etNotificationDismiss` is not inside an `[etNotification]` element.        | Move the dismiss button inside the notification.    |
+| `ET1702` | `etNotificationSwipeToDismiss` is not inside an `[etNotification]` element. | Put the gesture on the notification element itself. |
 
 ## Icon (ET18xx)
 

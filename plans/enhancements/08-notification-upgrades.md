@@ -68,6 +68,48 @@ Covered by `02-consistency-fixes.md` §2 — coordinate, don't duplicate.
 Per-notification position override and queue-instead-of-evict (current
 evict-oldest is a fine design choice) — recorded in findings §5.
 
+## Found while implementing (2026-07-30 — all six items done)
+
+- **Queries are in the sugar API after all.** `components` already depends on
+  `@ethlete/query`, so `promise()` takes a promise, an observable _or_ a query
+  (`ReadonlyQuery`), overloaded so the error callback is typed
+  `QueryErrorResponse` for the query case and `unknown` otherwise. A query is
+  _followed_, never executed: an `effect` on `executionState()` settles on the
+  first terminal state, and declaring `progress` in the `loading` content opts
+  the toast into mirroring the request's upload progress. `execute()` returns
+  `void`, hence "execute, then hand the query over in the same turn".
+- **Observables settle on completion with their last value** (`lastValueFrom`
+  semantics, empty completion = failure). Dismissing a notification never
+  unsubscribes — that would cancel the caller's HTTP request.
+- **`update()` merges, an id collision must replace.** Dedupe needed a second,
+  internal path on the ref (`replaceConfig`) that swaps the whole config so keys
+  the new `open()` leaves out actually go back to unset, keeping the ref's own
+  identity. The same path is what the promise API uses to settle.
+- **Two refs may never share an id** (the stack's `@for` tracks by it), so an
+  `open()` landing on an id that is already animating out drops that one
+  immediately instead of letting the pair coexist.
+- **The swipe reuses the sheet's `!important` trick, not a hand-rolled exit.**
+  The gesture leaves its inline transform in place and the `[data-swiped-away]`
+  leave-to rule overrides it with `!important`, so the existing
+  animated-lifecycle drives the exit (and `markDismissed`) — animating the exit
+  manually and dismissing afterwards would leave the lifecycle waiting for a
+  transition that never runs. Momentum is handed over as an inline
+  `transition-duration`, exactly like `applyDismissMomentum`. The drag's fade
+  goes through a CSS var (`--_et-notification-swipe-opacity`) so the
+  higher-specificity enter/leave rules still win.
+- **`touch-action: pan-y` really is enough here** (unlike the sheet, per plan
+  01): a toast never scrolls on its own dismiss axis, so no non-passive
+  `touchmove` is needed. `pointerdown` also pauses the auto-dismiss timer —
+  touch has no hover to pause it.
+- **Actions register as a list.** `NotificationDirective.registeredAction`
+  became `registeredActions`, and the action directive takes its slot from its
+  own attribute value (`etNotificationAction="secondary"`); `slot` as a member
+  name is banned by lint (native HTML attribute).
+- Storybook's preview bundle carries a **stale ts-checker error** from
+  `calendar.directive.ts` (the type it complains about does have the member —
+  `nx build components` is clean). It only matters because the error overlay
+  swallows clicks in Playwright; hide it and drive on.
+
 ## Verification & shipping
 
 Stories: promise flow (success + failure), dedupe id (repeat clicks), two
