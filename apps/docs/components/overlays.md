@@ -2,6 +2,17 @@
 
 The overlay system is the foundation for everything floating in `@ethlete/components` — dialogs, sheets, popovers, and internally also [menus](/components/menu), [tooltips](/components/tooltip) and [toggletips](/components/toggletip). It renders a component (or template) in a detached pane, positions it (centered, anchored, or strategy-driven), and manages backdrop, focus, dismissal and animations. Under the hood it drives the [overlay runtime](/core/overlay-runtime) from `@ethlete/core` — relevant only if you're building your own floating primitive.
 
+::: warning Prefer overlay openers — don't call the manager directly
+Almost no app code should reach for `overlayManager.open()`. Define the overlay once with
+`defineOverlay` + `createOverlayOpener` and open **that** — it removes the repeated config,
+handles subscription cleanup, and gives you typed data in and results out. See
+[Overlay openers](/components/overlay-openers).
+
+This page documents the layer underneath: the manager, config and refs an opener wraps. Read it
+to understand what the openers do, or for the rare overlay opened from exactly one place with no
+lifecycle callbacks.
+:::
+
 ## Setup
 
 Call `provideOverlay()` once at bootstrap — it registers the scroll blocker that locks body scroll while overlays are open:
@@ -34,9 +45,7 @@ export class ExampleComponent {
 }
 ```
 
-::: tip Prefer overlay openers
-For overlays opened from more than one place — or anything with lifecycle callbacks — use the [overlay opener API](/components/overlay-openers) (`defineOverlay` + `createOverlayOpener`) instead of calling the manager directly. It removes the repeated config and handles subscription cleanup for you.
-:::
+Again: this is the raw layer — in app code, prefer an [overlay opener](/components/overlay-openers) over the snippet above.
 
 Defaults worth knowing:
 

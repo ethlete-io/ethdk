@@ -79,8 +79,8 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 
 ### Floating & overlays
 
-- [Overlays](/components/overlays) — the overlay system: opening dialogs and sheets, content structure, responsive strategies, declarative popovers, and routing inside overlays.
-- [Overlay openers](/components/overlay-openers) — defining overlays, opening them from code or templates, config merging, and URL-driven (query param) overlays.
+- [Overlay openers](/components/overlay-openers) — **start here** for anything you open from app code: defining overlays, opening them from code or templates, config merging, and URL-driven (query param) overlays.
+- [Overlays](/components/overlays) — the layer underneath: the manager, content structure, responsive strategies, declarative popovers, and routing inside overlays.
 - [Menu](/components/menu) — dropdown, context and submenus with keyboard navigation, selection and search.
 - [Tooltip](/components/tooltip) — hover/focus-triggered descriptive text.
 - [Toggletip](/components/toggletip) — click-triggered popovers with interactive content.

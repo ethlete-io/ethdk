@@ -177,8 +177,8 @@ export default defineConfig({
         {
           text: 'Floating & overlays',
           items: [
-            { text: 'Overlays', link: '/components/overlays' },
             { text: 'Overlay Openers', link: '/components/overlay-openers' },
+            { text: 'Overlays', link: '/components/overlays' },
             { text: 'Menu', link: '/components/menu' },
             { text: 'Tooltip', link: '/components/tooltip' },
             { text: 'Toggletip', link: '/components/toggletip' },
