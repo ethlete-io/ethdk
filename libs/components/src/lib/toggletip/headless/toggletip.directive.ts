@@ -3,6 +3,7 @@ import {
   Directive,
   ElementRef,
   TemplateRef,
+  booleanAttribute,
   computed,
   effect,
   inject,
@@ -51,7 +52,7 @@ export class ToggletipDirective {
   public offset = input<OffsetOptions | null>(10);
   public arrowPadding = input<Padding | null>(8);
   public viewportPadding = input<Padding | null>(8);
-  public disabled = input(false, { alias: 'etToggletipDisabled' });
+  public disabled = input(false, { alias: 'etToggletipDisabled', transform: booleanAttribute });
   public open = model(false, { alias: 'etToggletipOpen' });
 
   /** @internal */

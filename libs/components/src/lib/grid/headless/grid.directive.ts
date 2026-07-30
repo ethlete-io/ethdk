@@ -9,6 +9,7 @@ import {
   inject,
   Injector,
   input,
+  numberAttribute,
   output,
   signal,
   untracked,
@@ -139,8 +140,8 @@ export class GridDirective {
   private reducedMotion = injectPrefersReducedMotion();
 
   public breakpoints = input<GridBreakpointConfig[]>(DEFAULT_BREAKPOINTS);
-  public rowHeight = input(100);
-  public gap = input(16);
+  public rowHeight = input(100, { transform: numberAttribute });
+  public gap = input(16, { transform: numberAttribute });
   public initialItems = input<GridItemConfig[]>([]);
   public readOnly = input(false, { transform: booleanAttribute });
 

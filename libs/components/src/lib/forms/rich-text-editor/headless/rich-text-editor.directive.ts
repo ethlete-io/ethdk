@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { computed, DestroyRef, Directive, inject, input, model, signal } from '@angular/core';
+import { booleanAttribute, computed, DestroyRef, Directive, inject, input, model, signal } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { htmlToMarkdown, injectRenderer, markdownToHtml, RuntimeError } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
@@ -37,13 +37,13 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
   public value = model('');
   public touched = model(false);
-  public disabled = input(false);
-  public readonly = input(false);
+  public disabled = input(false, { transform: booleanAttribute });
+  public readonly = input(false, { transform: booleanAttribute });
   // eslint-disable-next-line ethlete/no-native-html-input-name
-  public hidden = input(false);
-  public invalid = input(false);
+  public hidden = input(false, { transform: booleanAttribute });
+  public invalid = input(false, { transform: booleanAttribute });
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
-  public required = input(false);
+  public required = input(false, { transform: booleanAttribute });
   public name = input('');
   public placeholder = input('');
 
@@ -54,7 +54,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   /** Markdown autoformat while typing: `- `, `1. ` and `# `–`### ` at a line start convert into
    *  lists/headings, and closing `**bold**`, `*italic*`, `` `code` ``, `~~strike~~`, `__`/`_` runs
    *  convert into their marks. Registered token-trigger characters never autoformat. */
-  public autoformat = input(true);
+  public autoformat = input(true, { transform: booleanAttribute });
 
   /** Resolved toolbar tools: the `tools` input if set, otherwise the provided/default config. */
   public resolvedTools = computed(() => this.tools() ?? this.toolsConfig.tools);

@@ -1,4 +1,16 @@
-import { DestroyRef, Directive, ElementRef, computed, inject, input, model, output, signal } from '@angular/core';
+import {
+  DestroyRef,
+  Directive,
+  ElementRef,
+  booleanAttribute,
+  computed,
+  inject,
+  input,
+  model,
+  numberAttribute,
+  output,
+  signal,
+} from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 
@@ -19,19 +31,19 @@ export class OtpInputDirective implements FormValueControl<string>, FormFieldCon
 
   public value = model('');
   public touched = model(false);
-  public disabled = input(false);
-  public readonly = input(false);
-  public invalid = input(false);
+  public disabled = input(false, { transform: booleanAttribute });
+  public readonly = input(false, { transform: booleanAttribute });
+  public invalid = input(false, { transform: booleanAttribute });
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
-  public required = input(false);
+  public required = input(false, { transform: booleanAttribute });
   public name = input('');
 
   /** Number of characters/segments. */
-  public length = input(6);
+  public length = input(6, { transform: numberAttribute });
   /** Which characters are accepted — anything else is stripped (also from pastes). */
   public charset = input<OtpInputCharset>('numeric');
   /** Renders dots instead of the typed characters (PIN entry). */
-  public masked = input(false);
+  public masked = input(false, { transform: booleanAttribute });
 
   /** Emits once each time the value reaches the full length. */
   public complete = output<string>();

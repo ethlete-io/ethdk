@@ -1,4 +1,4 @@
-import { computed, Directive, input, model } from '@angular/core';
+import { booleanAttribute, computed, Directive, input, model, numberAttribute } from '@angular/core';
 import { clamp } from '@ethlete/core';
 import { paginate } from '../paginate';
 import { injectPaginationLabels, PaginationLabels } from '../pagination-labels';
@@ -25,19 +25,19 @@ export class PaginationDirective {
   public page = model(1);
 
   /** Total number of pages. */
-  public totalPages = input(1);
+  public totalPages = input(1, { transform: numberAttribute });
 
   /** Pages shown on each side of the current page. @default 1 */
-  public siblingCount = input(1);
+  public siblingCount = input(1, { transform: numberAttribute });
 
   /** Pages shown at each edge before an ellipsis. @default 1 */
-  public boundaryCount = input(1);
+  public boundaryCount = input(1, { transform: numberAttribute });
 
   /** Omit the first/last jump controls. @default false */
-  public hideFirstLast = input(false);
+  public hideFirstLast = input(false, { transform: booleanAttribute });
 
   /** Omit the previous/next controls. @default false */
-  public hidePreviousNext = input(false);
+  public hidePreviousNext = input(false, { transform: booleanAttribute });
 
   /**
    * Accessible label for the navigation landmark. `null` (the default) uses the resolved

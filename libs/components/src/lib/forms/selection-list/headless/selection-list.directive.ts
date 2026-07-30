@@ -40,12 +40,12 @@ export class SelectionListDirective implements SelectionListDirectiveBase, FormF
   public mixed = model(false);
   public touched = model(false);
   public multipleInput = input(false, { alias: 'multiple', transform: booleanAttribute });
-  public disabled = input(false);
+  public disabled = input(false, { transform: booleanAttribute });
   /** View-only: options keep their normal look and focusability but cannot be (de)selected. */
-  public readonly = input(false);
-  public invalid = input(false);
+  public readonly = input(false, { transform: booleanAttribute });
+  public invalid = input(false, { transform: booleanAttribute });
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
-  public required = input(false);
+  public required = input(false, { transform: booleanAttribute });
   public name = input('');
 
   public multiple = computed(() => this.multipleOverride ?? this.multipleInput());

@@ -1,4 +1,12 @@
-import { Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
+import {
+  Component,
+  ViewEncapsulation,
+  booleanAttribute,
+  computed,
+  inject,
+  input,
+  numberAttribute,
+} from '@angular/core';
 import { CLOCK_ICON, IconDirective, TIMES_ICON, provideIcons } from '../../../icon';
 import { TIME_PICKER_IMPORTS } from '../../../time-picker';
 import { InputMaskDirective } from '../../masked-input/headless';
@@ -55,10 +63,10 @@ export class TimeInputComponent {
   protected timeInput = inject(TimeInputDirective);
 
   public pickerTriggerLabel = input('Open time picker');
-  public minuteStep = input(5);
-  public secondStep = input(1);
+  public minuteStep = input(5, { transform: numberAttribute });
+  public secondStep = input(1, { transform: numberAttribute });
   /** Shows a clear (×) control while a value or pending text is set and the field is in use. */
-  public clearable = input(true);
+  public clearable = input(true, { transform: booleanAttribute });
   public clearLabel = input('Clear');
 
   // only while the field is in use — mirrors the select's clear affordance

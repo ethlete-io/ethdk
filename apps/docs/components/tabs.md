@@ -15,7 +15,7 @@ Two flavors sharing one accessible tab-bar engine: **content tabs** (`et-tab-gro
     <div class="p-4">Home content</div>
   </et-tab>
 
-  <et-tab [disabled]="true" label="Admin">…</et-tab>
+  <et-tab disabled label="Admin">…</et-tab>
 </et-tab-group>
 ```
 

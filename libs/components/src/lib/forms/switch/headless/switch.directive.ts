@@ -48,10 +48,10 @@ export class SwitchDirective implements FormFieldControl {
   public touched = model(false);
   public disabled = input(false, { transform: booleanAttribute });
   /** View-only: keeps the normal look and focusability but blocks toggling (unlike `disabled`). */
-  public readonly = input(false);
-  public invalid = input(false);
+  public readonly = input(false, { transform: booleanAttribute });
+  public invalid = input(false, { transform: booleanAttribute });
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
-  public required = input(false);
+  public required = input(false, { transform: booleanAttribute });
   public name = input('');
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());

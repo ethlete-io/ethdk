@@ -82,13 +82,13 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   public mixed = model(false);
   public touched = model(false);
   public open = model(false);
-  public disabled = input(false);
-  public readonly = input(false);
+  public disabled = input(false, { transform: booleanAttribute });
+  public readonly = input(false, { transform: booleanAttribute });
   /** Multi-select: node activations toggle values instead of committing-and-closing. */
   public multiple = input(false, { transform: booleanAttribute });
-  public invalid = input(false);
+  public invalid = input(false, { transform: booleanAttribute });
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
-  public required = input(false);
+  public required = input(false, { transform: booleanAttribute });
   public name = input('');
   public placeholder = input('');
   /** Trigger text shown while `mixed` is set. */
@@ -113,7 +113,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   );
 
   /** Whether the overlay panel mirrors the anchor's width (off — columns size themselves). */
-  public mirrorPanelWidth = input(false);
+  public mirrorPanelWidth = input(false, { transform: booleanAttribute });
 
   /**
    * How many columns the browse view shows side by side before older levels collapse into the

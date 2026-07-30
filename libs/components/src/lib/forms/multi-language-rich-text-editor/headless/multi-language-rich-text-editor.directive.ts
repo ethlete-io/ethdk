@@ -1,4 +1,4 @@
-import { computed, Directive, effect, input, linkedSignal, model } from '@angular/core';
+import { booleanAttribute, computed, Directive, effect, input, linkedSignal, model } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { RuntimeError } from '@ethlete/core';
 import {
@@ -13,11 +13,11 @@ import { MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES } from '../multi-language-r
 export class MultiLanguageRichTextEditorDirective implements FormValueControl<MultiLanguageRichTextEditorValue> {
   public value = model<MultiLanguageRichTextEditorValue>({});
   public touched = model(false);
-  public disabled = input(false);
-  public readonly = input(false);
-  public invalid = input(false);
+  public disabled = input(false, { transform: booleanAttribute });
+  public readonly = input(false, { transform: booleanAttribute });
+  public invalid = input(false, { transform: booleanAttribute });
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
-  public required = input(false);
+  public required = input(false, { transform: booleanAttribute });
   public name = input('');
 
   /** The languages to offer, in switcher order. Consumer-provided — no languages are hard-wired. */

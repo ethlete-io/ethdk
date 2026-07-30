@@ -1,4 +1,14 @@
-import { DestroyRef, Directive, ElementRef, afterNextRender, computed, inject, input, model } from '@angular/core';
+import {
+  DestroyRef,
+  Directive,
+  ElementRef,
+  afterNextRender,
+  booleanAttribute,
+  computed,
+  inject,
+  input,
+  model,
+} from '@angular/core';
 import { outputToObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ValidationError } from '@angular/forms/signals';
 import { tap } from 'rxjs';
@@ -30,10 +40,10 @@ export class MenuSelectionItemDirective {
   public checked = model(false);
   public indeterminate = model(false);
   public touched = model(false);
-  public disabled = input(false);
-  public invalid = input(false);
+  public disabled = input(false, { transform: booleanAttribute });
+  public invalid = input(false, { transform: booleanAttribute });
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
-  public required = input(false);
+  public required = input(false, { transform: booleanAttribute });
   public name = input('');
 
   public kind = computed<MenuSelectionItemKind>(() => {

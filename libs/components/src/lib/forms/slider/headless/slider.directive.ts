@@ -1,4 +1,15 @@
-import { DestroyRef, Directive, afterNextRender, computed, inject, input, model, signal } from '@angular/core';
+import {
+  DestroyRef,
+  Directive,
+  afterNextRender,
+  booleanAttribute,
+  computed,
+  inject,
+  input,
+  model,
+  numberAttribute,
+  signal,
+} from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { RuntimeError } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
@@ -24,18 +35,18 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
   /** `aria-valuetext` the thumb announces while `mixed` is set. */
   public mixedLabel = input('Mixed');
   public touched = model(false);
-  public disabled = input(false);
-  public readonly = input(false);
-  public invalid = input(false);
+  public disabled = input(false, { transform: booleanAttribute });
+  public readonly = input(false, { transform: booleanAttribute });
+  public invalid = input(false, { transform: booleanAttribute });
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
-  public required = input(false);
+  public required = input(false, { transform: booleanAttribute });
   public name = input('');
 
   // `min`/`max` satisfy the signal-forms `FormValueControl` contract (`NonNullable<TValue> | undefined`),
   // so schema `min(...)` / `max(...)` validators bind straight into these inputs.
   public min = input<number | undefined>(undefined);
   public max = input<number | undefined>(undefined);
-  public step = input(1);
+  public step = input(1, { transform: numberAttribute });
 
   public effectiveMin = computed(() => this.min() ?? 0);
   public effectiveMax = computed(() => this.max() ?? 100);

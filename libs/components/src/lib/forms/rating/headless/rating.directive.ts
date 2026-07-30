@@ -1,4 +1,14 @@
-import { DestroyRef, Directive, ElementRef, computed, inject, input, model, signal } from '@angular/core';
+import {
+  DestroyRef,
+  Directive,
+  ElementRef,
+  booleanAttribute,
+  computed,
+  inject,
+  input,
+  model,
+  signal,
+} from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 import { RatingIconDirective } from './rating-icon.directive';
@@ -44,11 +54,11 @@ export class RatingDirective implements FormValueControl<number | null>, FormFie
   /** `aria-valuetext` announced while `mixed` is set. */
   public mixedLabel = input('Mixed');
   public touched = model(false);
-  public disabled = input(false);
-  public readonly = input(false);
-  public invalid = input(false);
+  public disabled = input(false, { transform: booleanAttribute });
+  public readonly = input(false, { transform: booleanAttribute });
+  public invalid = input(false, { transform: booleanAttribute });
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
-  public required = input(false);
+  public required = input(false, { transform: booleanAttribute });
   public name = input('');
 
   /**
@@ -56,7 +66,7 @@ export class RatingDirective implements FormValueControl<number | null>, FormFie
    * a schema `max(...)` validator binds straight into this input.
    */
   public max = input<number | undefined>(5);
-  public allowHalf = input(false);
+  public allowHalf = input(false, { transform: booleanAttribute });
 
   public effectiveMax = computed(() => this.max() ?? 5);
 
