@@ -28,6 +28,8 @@ import {
       [precision]="precision()"
       [startView]="startView()"
       [dateClass]="dateClass()"
+      [comparisonStart]="comparisonStart()"
+      [comparisonEnd]="comparisonEnd()"
       [firstDayOfWeek]="1"
       (monthSelect)="monthSelect.set($event)"
       (yearSelect)="yearSelect.set($event)"
@@ -77,6 +79,8 @@ class HostComponent {
   precision = signal<CalendarPrecision>('day');
   startView = signal<CalendarView>('month');
   dateClass = signal<CalendarDateClassFn | null>(null);
+  comparisonStart = signal<Date | null>(null);
+  comparisonEnd = signal<Date | null>(null);
   value = signal<Date | null>(null);
   rangeValue = signal<CalendarRange>({ start: null, end: null });
   multipleValue = signal<Date[]>([]);
@@ -457,6 +461,68 @@ describe('CalendarDirective', () => {
       fixture.detectChanges();
 
       expect(calendar.hoveredDate()).toBeNull();
+    });
+  });
+
+  describe('comparison range', () => {
+    it('bands the compared period alongside the selection', () => {
+      host.mode.set('range');
+      host.comparisonStart.set(new Date(2026, 6, 3));
+      host.comparisonEnd.set(new Date(2026, 6, 9));
+      fixture.detectChanges();
+
+      expect(cellFor(3)?.getAttribute('data-comparison-band')).toBe('start');
+      expect(cellFor(6)?.getAttribute('data-comparison-band')).toBe('middle');
+      expect(cellFor(9)?.getAttribute('data-comparison-band')).toBe('end');
+      expect(cellFor(10)?.getAttribute('data-comparison-band')).toBeNull();
+
+      // and it is presentation only: the value is untouched and its cells still select
+      expect(host.rangeValue()).toEqual({ start: null, end: null });
+
+      cellFor(6)?.click();
+      fixture.detectChanges();
+
+      expect(host.rangeValue().start).toEqual(new Date(2026, 6, 6));
+      expect(cellFor(6)?.getAttribute('data-comparison-band')).toBe('middle');
+    });
+
+    it('reads the two ends as an interval either way round', () => {
+      host.comparisonStart.set(new Date(2026, 6, 9));
+      host.comparisonEnd.set(new Date(2026, 6, 3));
+      fixture.detectChanges();
+
+      expect(cellFor(3)?.getAttribute('data-comparison-band')).toBe('start');
+      expect(cellFor(9)?.getAttribute('data-comparison-band')).toBe('end');
+    });
+
+    it('bands a one-day comparison period as a single cell', () => {
+      host.comparisonStart.set(new Date(2026, 6, 15));
+      host.comparisonEnd.set(new Date(2026, 6, 15));
+      fixture.detectChanges();
+
+      expect(cellFor(15)?.getAttribute('data-comparison-band')).toBe('single');
+      expect(cellFor(14)?.getAttribute('data-comparison-band')).toBeNull();
+    });
+
+    it('needs both ends before it bands anything', () => {
+      host.comparisonStart.set(new Date(2026, 6, 3));
+      fixture.detectChanges();
+
+      expect(cellFor(3)?.getAttribute('data-comparison-band')).toBeNull();
+    });
+
+    it('bands whole months at month precision', () => {
+      host.precision.set('month');
+      host.comparisonStart.set(new Date(2026, 1, 14));
+      host.comparisonEnd.set(new Date(2026, 3, 2));
+      fixture.detectChanges();
+
+      const monthCell = (label: string) => cells().find((cell) => cell.textContent?.trim() === label) ?? null;
+
+      expect(monthCell('Feb')?.getAttribute('data-comparison-band')).toBe('start');
+      expect(monthCell('Mar')?.getAttribute('data-comparison-band')).toBe('middle');
+      expect(monthCell('Apr')?.getAttribute('data-comparison-band')).toBe('end');
+      expect(monthCell('May')?.getAttribute('data-comparison-band')).toBeNull();
     });
   });
 

@@ -135,7 +135,8 @@ commits exactly like the single date input.
 
 Options mirror the date input (`valueFormat`, `displayFormat`, `locale`, `mask`,
 `minDate`/`maxDate`/`dateFilter`, `startAt`, `startView`, `dateClass`, `precision`,
-`weekNumbers`, `pickerOpen`), with
+`weekNumbers`, `pickerOpen`), plus `comparisonStart`/`comparisonEnd` for the picker's
+[comparison band](/components/calendar#comparison-ranges), with
 `startPlaceholder`/`endPlaceholder` and per-field `startAriaLabel`/`endAriaLabel`
 (defaults `'Start date'`/`'End date'`; the host is a `role="group"` labelled by
 the field label). The opt-in typing mask applies to both fields — each side is

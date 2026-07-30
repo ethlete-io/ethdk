@@ -140,6 +140,13 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
   /** Renders the picker calendar's week-number column. */
   public weekNumbers = input(false, { transform: booleanAttribute });
 
+  /**
+   * A period to band behind the selected range in the picker — "vs. the previous 30 days". Purely
+   * presentational: it never enters the value and its cells stay selectable.
+   */
+  public comparisonStart = input<Date | null>(null);
+  public comparisonEnd = input<Date | null>(null);
+
   public pickerOpen = model(false);
 
   /** The string in effect: this instance's `mixedLabel`, else `FORM_FIELD_LABELS`. */

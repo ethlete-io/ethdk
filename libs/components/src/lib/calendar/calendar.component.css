@@ -144,18 +144,25 @@
       grid-area: weeks;
     }
 
-    /* zero unless the week-number column is rendered, so one width expression covers both cases and
-       the coarse grids can agree with the day grid without knowing why */
+    /* zero unless the week-number column is rendered, which is what lets the coarse grids match the
+       day grid's width without knowing whether it has one */
     --_et-calendar-week-column: 0px;
-
-    &:where([data-week-numbers]) {
-      --_et-calendar-week-column: var(--et-calendar-week-number-size);
-    }
 
     .et-calendar-weekdays,
     .et-calendar-week {
       display: grid;
-      grid-template-columns: var(--_et-calendar-week-column) repeat(7, var(--et-calendar-cell-size));
+      grid-template-columns: repeat(7, var(--et-calendar-cell-size));
+    }
+
+    /* a real extra column rather than a zero-width one in every calendar: a 0px track still counts,
+       so the days would land one column short of their own and the first of each row would collapse */
+    &:where([data-week-numbers]) {
+      --_et-calendar-week-column: var(--et-calendar-week-number-size);
+
+      & .et-calendar-weekdays,
+      & .et-calendar-week {
+        grid-template-columns: var(--et-calendar-week-number-size) repeat(7, var(--et-calendar-cell-size));
+      }
     }
 
     /* the month and year grids span the same width as the day grid, so drilling never resizes the
@@ -266,6 +273,41 @@
 
       &:where([data-band='end'])::before {
         inset-inline-end: 50%;
+      }
+
+      /* The comparison range: a bar under the cells rather than a second band behind them. A band
+         would have to compete with the selection's for the same space and colour, and the whole point
+         of the two is being read together — where they overlap, the bar simply runs under the band. */
+      &::after {
+        content: '';
+        position: absolute;
+        inset-block-end: 1px;
+        inset-inline: 0;
+        display: none;
+        block-size: 3px;
+        background: var(--et-surface-color-muted-solid);
+      }
+
+      &:where([data-comparison-band])::after {
+        display: block;
+      }
+
+      &:where([data-comparison-band='start'])::after {
+        inset-inline-start: 50%;
+        border-start-start-radius: 999px;
+        border-end-start-radius: 999px;
+      }
+
+      &:where([data-comparison-band='end'])::after {
+        inset-inline-end: 50%;
+        border-start-end-radius: 999px;
+        border-end-end-radius: 999px;
+      }
+
+      /* a one-cell comparison period is both ends at once: inset from both sides, rounded on both */
+      &:where([data-comparison-band='single'])::after {
+        inset-inline: 25%;
+        border-radius: 999px;
       }
 
       .et-calendar-cell-content {

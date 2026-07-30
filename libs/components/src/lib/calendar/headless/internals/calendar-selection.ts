@@ -11,8 +11,17 @@ export type CalendarSelectionFlags = {
   /** Between the pending range start and the hovered/focused cell. */
   inHoverPreview: boolean;
   /** Presentational position inside the committed or previewed range band. */
-  band: 'start' | 'middle' | 'end' | null;
+  band: CalendarBandPosition;
+  /** The same, for the comparison range — the period the selection is being measured against. */
+  comparisonBand: CalendarBandPosition;
 };
+
+/**
+ * Where a cell sits in a band. `'single'` is a band one cell wide — both its ends at once, which a
+ * one-day comparison period is. The selection band never reports it: a range whose ends are the same
+ * cell is drawn as a plain selected cell instead.
+ */
+export type CalendarBandPosition = 'start' | 'middle' | 'end' | 'single' | null;
 
 export type CalendarSelectionState = {
   mode: 'single' | 'range' | 'multiple';
@@ -24,6 +33,9 @@ export type CalendarSelectionState = {
   rangeEnd: Date | null;
   /** Where the pending range currently previews to — the hovered cell, else the roving focus. */
   previewTo: Date;
+  /** A second range to band behind the selection, for "against the previous period" comparisons. */
+  comparisonStart: Date | null;
+  comparisonEnd: Date | null;
   /** The unit the grid's cells hold, which is what every comparison here happens at. */
   unit: CalendarPrecision;
 };
@@ -70,21 +82,40 @@ export const createCalendarSelectionReader = (state: CalendarSelectionState) => 
     bandEnd = previewEnd;
   }
 
-  const bandFor = (date: Date): CalendarSelectionFlags['band'] => {
-    if (bandStart === null || bandEnd === null) {
-      return null;
+  /** One band's reader: which end of it a cell is, or whether it is somewhere in the middle. */
+  const bandReader = (from: Date | null, to: Date | null) => {
+    if (from === null || to === null) {
+      return () => null;
     }
 
-    if (isSameUnit(date, bandStart)) {
-      return 'start';
-    }
+    const isOneCell = isSameUnit(from, to);
 
-    if (isSameUnit(date, bandEnd)) {
-      return 'end';
-    }
+    return (date: Date): CalendarBandPosition => {
+      if (isSameUnit(date, from)) {
+        return isOneCell ? 'single' : 'start';
+      }
 
-    return isAfter(date, bandStart) && isBefore(date, bandEnd) ? 'middle' : null;
+      if (isSameUnit(date, to)) {
+        return 'end';
+      }
+
+      return isAfter(date, from) && isBefore(date, to) ? 'middle' : null;
+    };
   };
+
+  const bandFor = bandReader(bandStart, bandEnd);
+
+  // The comparison range is not a selection: it bands whatever it covers, one cell or many, since a
+  // single-day comparison period still has to show. Read as an interval either way round, because
+  // nothing about it is being built up by a reader who could get the order wrong on purpose.
+  let comparisonFrom = state.comparisonStart === null ? null : normalize(state.comparisonStart);
+  let comparisonTo = state.comparisonEnd === null ? null : normalize(state.comparisonEnd);
+
+  if (comparisonFrom !== null && comparisonTo !== null && isBefore(comparisonTo, comparisonFrom)) {
+    [comparisonFrom, comparisonTo] = [comparisonTo, comparisonFrom];
+  }
+
+  const comparisonFor = bandReader(comparisonFrom, comparisonTo);
 
   return (date: Date): CalendarSelectionFlags => {
     const rangeStart = start !== null && isSameUnit(date, start);
@@ -107,6 +138,7 @@ export const createCalendarSelectionReader = (state: CalendarSelectionState) => 
         !isBefore(date, previewStart) &&
         !isAfter(date, previewEnd),
       band: bandFor(date),
+      comparisonBand: comparisonFor(date),
     };
   };
 };

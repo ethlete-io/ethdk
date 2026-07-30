@@ -14,6 +14,7 @@ export default {
     startView: { control: 'select', options: ['month', 'year', 'multiYear'] },
     markDates: { control: 'boolean' },
     weekNumbers: { control: 'boolean' },
+    showComparison: { control: 'boolean' },
     locale: { control: 'select', options: ['default', 'de'] },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
   },
@@ -26,6 +27,7 @@ export default {
     startView: 'month',
     markDates: false,
     weekNumbers: false,
+    showComparison: false,
     locale: 'default',
     color: 'brand',
   },
@@ -41,6 +43,10 @@ export const Range: Story = {
 
 export const Multiple: Story = {
   args: { mode: 'multiple' },
+};
+
+export const ComparisonRange: Story = {
+  args: { mode: 'range', showComparison: true },
 };
 
 export const DisabledDates: Story = {

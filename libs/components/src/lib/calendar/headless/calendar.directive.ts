@@ -43,10 +43,10 @@ import {
   multiYearPageStart,
   startOfCalendarUnit,
 } from './internals/calendar-view';
-import { createCalendarSelectionReader } from './internals/calendar-selection';
+import { CalendarBandPosition, createCalendarSelectionReader } from './internals/calendar-selection';
 
 export type { CalendarInterval, CalendarPrecision, CalendarView } from './internals/calendar-view';
-export type { CalendarSelectionFlags } from './internals/calendar-selection';
+export type { CalendarBandPosition, CalendarSelectionFlags } from './internals/calendar-selection';
 // public because a control that writes dates at a precision needs the same normalization the
 // calendar applies — the date inputs use it to make a typed month and a picked month one value
 export { startOfCalendarUnit } from './internals/calendar-view';
@@ -89,7 +89,9 @@ export type CalendarCellBase = {
   /** Between the pending range start and the hovered/focused date. */
   inHoverPreview: boolean;
   /** Presentational position inside the committed or previewed range band. */
-  band: 'start' | 'middle' | 'end' | null;
+  band: CalendarBandPosition;
+  /** The same, for the comparison range. */
+  comparisonBand: CalendarBandPosition;
   /** Roving-tabindex target. */
   focused: boolean;
   /** `dateClass`'s classes for this cell, or `null` when there is no hook. */
@@ -160,6 +162,15 @@ export class CalendarDirective {
    * says which unit `date` starts.
    */
   public dateClass = input<CalendarDateClassFn | null>(null);
+
+  /**
+   * A second range to band behind the selection: the period the current one is
+   * being compared against ("vs. the previous 30 days"). Presentation only —
+   * these cells stay as selectable as any other, and picking never writes here.
+   * Given the two the wrong way round, they are read as an interval anyway.
+   */
+  public comparisonStart = input<Date | null>(null);
+  public comparisonEnd = input<Date | null>(null);
 
   /** Selected date in `single` mode. */
   public value = model<Date | null>(null);
@@ -609,6 +620,8 @@ export class CalendarDirective {
       rangeStart: this.rangeValue().start,
       rangeEnd: this.rangeValue().end,
       previewTo: this.hoveredDate() ?? this.focusedDate(),
+      comparisonStart: this.comparisonStart(),
+      comparisonEnd: this.comparisonEnd(),
       unit: CALENDAR_VIEW_UNIT[view],
     });
   }

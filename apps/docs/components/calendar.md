@@ -18,17 +18,18 @@ import { CALENDAR_IMPORTS } from '@ethlete/components';
 
 On `et-calendar` (forwarded from the headless `[etCalendar]` directive):
 
-| Input            | Type                                         | Default             | Description                                                                            |
-| ---------------- | -------------------------------------------- | ------------------- | -------------------------------------------------------------------------------------- |
-| `mode`           | `'single' \| 'range' \| 'multiple'`          | `'single'`          | Selection model.                                                                       |
-| `min` / `max`    | `Date \| null`                               | `null`              | Selectable window; days outside are disabled and month navigation stops at the bounds. |
-| `dateFilter`     | `((date: Date) => boolean) \| null`          | `null`              | Return `false` to disable a date (e.g. weekends).                                      |
-| `startAt`        | `Date \| null`                               | `null`              | Where an empty calendar opens and which day it focuses first.                          |
-| `precision`      | `'day' \| 'month' \| 'year'`                 | `'day'`             | Which unit a selection names — `'month'` makes this a month picker.                    |
-| `startView`      | `'month' \| 'year' \| 'multiYear'`           | `'month'`           | Which grid the calendar opens on.                                                      |
-| `dateClass`      | `(date, view) => string \| string[] \| null` | `null`              | Extra classes per cell, in every view — markers of your own.                           |
-| `firstDayOfWeek` | `0–6`                                        | locale, else `1`    | `0` = Sunday. Defaults to the locale's week start, Monday without one.                 |
-| `locale`         | `Locale \| null` (date-fns)                  | `DATE_LOCALE` token | Weekday/month labels and cell `aria-label`s. Falls back to date-fns' built-in en-US.   |
+| Input                               | Type                                         | Default             | Description                                                                            |
+| ----------------------------------- | -------------------------------------------- | ------------------- | -------------------------------------------------------------------------------------- |
+| `mode`                              | `'single' \| 'range' \| 'multiple'`          | `'single'`          | Selection model.                                                                       |
+| `min` / `max`                       | `Date \| null`                               | `null`              | Selectable window; days outside are disabled and month navigation stops at the bounds. |
+| `dateFilter`                        | `((date: Date) => boolean) \| null`          | `null`              | Return `false` to disable a date (e.g. weekends).                                      |
+| `startAt`                           | `Date \| null`                               | `null`              | Where an empty calendar opens and which day it focuses first.                          |
+| `precision`                         | `'day' \| 'month' \| 'year'`                 | `'day'`             | Which unit a selection names — `'month'` makes this a month picker.                    |
+| `startView`                         | `'month' \| 'year' \| 'multiYear'`           | `'month'`           | Which grid the calendar opens on.                                                      |
+| `dateClass`                         | `(date, view) => string \| string[] \| null` | `null`              | Extra classes per cell, in every view — markers of your own.                           |
+| `comparisonStart` / `comparisonEnd` | `Date \| null`                               | `null`              | A second period banded behind the selection, for "vs. previous" comparisons.           |
+| `firstDayOfWeek`                    | `0–6`                                        | locale, else `1`    | `0` = Sunday. Defaults to the locale's week start, Monday without one.                 |
+| `locale`                            | `Locale \| null` (date-fns)                  | `DATE_LOCALE` token | Weekday/month labels and cell `aria-label`s. Falls back to date-fns' built-in en-US.   |
 
 | Model           | Type                                         | Description                                                   |
 | --------------- | -------------------------------------------- | ------------------------------------------------------------- |
@@ -120,6 +121,23 @@ The first click starts the range, a later-or-equal second click completes it, an
 <StoryEmbed id="components-calendar--multiple" height="420px" />
 
 Nothing bands or previews here — the dates have no relationship to each other — and the grid carries `aria-multiselectable="true"` so assistive tech announces that more than one cell can be picked. It combines with `precision`: at `'month'` each pick toggles a whole month. The date inputs have no `multiple` equivalent; their value is one wire string, so a set of dates is the calendar's own surface.
+
+## Comparison ranges
+
+`comparisonStart` / `comparisonEnd` band a second period behind the selection — the one a report is measuring against ("vs. the previous 30 days"). It is presentation only: those cells stay as selectable as any other, picking never writes to it, and the two ends are read as an interval whichever way round you pass them.
+
+```html
+<et-calendar
+  [(rangeValue)]="range"
+  [comparisonStart]="previous().start"
+  [comparisonEnd]="previous().end"
+  mode="range"
+/>
+```
+
+<StoryEmbed id="components-calendar--comparison-range" height="420px" />
+
+It is drawn as a bar under the cells rather than a second band behind them, so where the two periods overlap the bar simply runs under the selection's band — which is the case the pattern exists to show. Cells carry `data-comparison-band` (`start` / `middle` / `end` / `single`, the last for a one-day period) next to the selection's own `data-band`, so a custom template can draw it differently. The band is visual: pair it with a legend if the comparison needs naming for assistive tech. The date range input forwards both inputs to its picker.
 
 ## Disabled dates
 

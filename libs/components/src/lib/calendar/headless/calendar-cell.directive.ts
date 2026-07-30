@@ -28,6 +28,7 @@ import { CalendarCellBase, CalendarDirective } from './calendar.directive';
     '[attr.data-in-range]': "cell().inRange ? '' : null",
     '[attr.data-preview]': "cell().inHoverPreview ? '' : null",
     '[attr.data-band]': 'cell().band',
+    '[attr.data-comparison-band]': 'cell().comparisonBand',
     '[attr.data-outside-month]': "cell().outsideMonth ? '' : null",
     '(click)': 'calendar?.activateCell(cell().date)',
     '(pointerenter)': 'handlePointerEnter()',

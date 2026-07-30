@@ -41,6 +41,8 @@ import { CALENDAR_IMPORTS } from '../calendar.imports';
           [startView]="startView()"
           [dateClass]="dateClassFn()"
           [weekNumbers]="weekNumbers()"
+          [comparisonStart]="comparisonStart()"
+          [comparisonEnd]="comparisonEnd()"
           [locale]="localeObject()"
           (monthSelect)="lastDrill.set('month ' + $event.toDateString())"
           (yearSelect)="lastDrill.set('year ' + $event.toDateString())"
@@ -100,6 +102,8 @@ export class CalendarStorybookComponent {
   /** Turns on a `dateClass` hook marking the 1st of each month and every 13th — the story owns the CSS. */
   public markDates = input(false);
   public weekNumbers = input(false);
+  /** Bands the seven days before the month's 10th as a comparison period. */
+  public showComparison = input(false);
   public locale = input<'default' | 'de'>('default');
   public color = input('brand');
 
@@ -122,6 +126,11 @@ export class CalendarStorybookComponent {
   });
 
   protected localeObject = computed(() => (this.locale() === 'de' ? de : null));
+
+  /** The seven days running up to the visible month's 10th — a stand-in for "the previous period". */
+  protected comparisonStart = computed(() => (this.showComparison() ? startOfDay(new Date(2026, 6, 3)) : null));
+
+  protected comparisonEnd = computed(() => (this.showComparison() ? startOfDay(new Date(2026, 6, 9)) : null));
 
   protected pickedLabel = computed(() => {
     const picked = this.multipleValue();
