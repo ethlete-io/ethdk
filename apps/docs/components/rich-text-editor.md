@@ -104,10 +104,15 @@ single line, since a quote's lines are one block.
 
 **Code blocks.** Everything inside is literal text: no inline marks, no headings or lists, no
 autoformat and no [token triggers](#building-blocks-triggers) — those tools disable themselves while
-the caret is in one. <kbd>Enter</kbd> inserts a newline instead of a new block, <kbd>Escape</kbd>
-moves the caret to a paragraph after the block (so the keyboard is never stuck in it), and
+the caret is in one. <kbd>Enter</kbd> inserts a newline instead of a new block, and
 <kbd>Backspace</kbd> in an empty one removes it. Converting text into a fence keeps only its text —
 a fence has no markup to carry.
+
+There are three ways out of a fence, so a code block that ends the content is never a keyboard trap:
+a second <kbd>Enter</kbd> on the now-empty last line leaves it (like quotes and lists, dropping the
+blank line it was typed on), <kbd>ArrowDown</kbd> off the last line creates the paragraph it would
+move to, and <kbd>Escape</kbd> moves the caret to a paragraph after the block from anywhere inside.
+With a block already after the fence, <kbd>ArrowDown</kbd> just moves into it as usual.
 
 Neither can hold the other, and neither can hold a list or table (their Markdown wouldn't survive),
 so those tools disable themselves accordingly.

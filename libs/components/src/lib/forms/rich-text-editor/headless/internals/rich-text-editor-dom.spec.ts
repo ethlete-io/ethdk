@@ -726,6 +726,43 @@ describe('RichTextEditorDom', () => {
       expect(root.innerHTML).toBe('<pre><code>one</code></pre><p><br></p>');
     });
 
+    it('leaves the code block on a second Enter, from where the first one left the caret', () => {
+      const { root, dom } = setup('<pre><code>one</code></pre>');
+      const code = root.querySelector('code') as HTMLElement;
+      select(code.firstChild as Node, 3, code.firstChild as Node, 3);
+
+      // the first Enter opens the empty last line; the caret sits *between* the two newlines, since
+      // the trailing one is what gives that line a line box
+      expect(dom.handleEnter()).toBe(true);
+
+      expect(dom.handleEnter()).toBe(true);
+      expect(root.innerHTML).toBe('<pre><code>one</code></pre><p><br></p>');
+    });
+
+    it('creates a paragraph on ArrowDown off the last line of a trailing code block', () => {
+      const { root, dom } = setup('<pre><code>one\ntwo</code></pre>');
+      const code = root.querySelector('code') as HTMLElement;
+      select(code.firstChild as Node, 7, code.firstChild as Node, 7);
+
+      expect(dom.codeBlockArrowDown()).toBe(true);
+      expect(root.innerHTML).toBe('<pre><code>one\ntwo</code></pre><p><br></p>');
+    });
+
+    it('leaves ArrowDown alone above the last line, or with a block already after', () => {
+      const { root, dom } = setup('<pre><code>one\ntwo</code></pre>');
+      const code = root.querySelector('code') as HTMLElement;
+      select(code.firstChild as Node, 3, code.firstChild as Node, 3);
+
+      expect(dom.codeBlockArrowDown()).toBe(false);
+
+      const { root: root2, dom: dom2 } = setup('<pre><code>one</code></pre><p>after</p>');
+      const code2 = root2.querySelector('code') as HTMLElement;
+      select(code2.firstChild as Node, 3, code2.firstChild as Node, 3);
+
+      expect(dom2.codeBlockArrowDown()).toBe(false);
+      expect(root.querySelectorAll('p').length).toBe(0);
+    });
+
     it('removes an empty code block on Backspace', () => {
       const { root, dom } = setup('<pre><code>\n</code></pre>');
       const code = root.querySelector('code') as HTMLElement;

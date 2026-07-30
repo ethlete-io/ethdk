@@ -331,6 +331,15 @@ export class RichTextEditorComponent {
       return;
     }
 
+    // ArrowDown off the last line of a code block that ends the content creates the line it would
+    // move to — the exit people reach for before they think of Escape.
+    if (event.key === 'ArrowDown' && this.dir.codeBlockActive() && this.dir.editorDom.codeBlockArrowDown()) {
+      event.preventDefault();
+      this.dir.syncFromDom({ boundary: true });
+
+      return;
+    }
+
     // Enter on an empty list item steps out of the list one level at a time; Enter at a heading's
     // edge starts a plain paragraph. Shift+Enter stays native (soft line break).
     if (event.key === 'Enter' && !event.shiftKey && this.dir.editorDom.handleEnter()) {

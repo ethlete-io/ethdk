@@ -27,14 +27,34 @@ export const createRichTextEditorCodeBlock = (core: RichTextEditorDomCore) => {
     return first instanceof HTMLElement && first.tagName === 'CODE' ? first : pre;
   };
 
+  /** The code text on either side of the caret — which line it is on and whether that line is empty
+   *  both follow from these. */
+  const textAround = (host: HTMLElement, range: Range) => {
+    const start = doc.createRange();
+    start.selectNodeContents(host);
+    start.setEnd(range.startContainer, range.startOffset);
+
+    const end = doc.createRange();
+    end.selectNodeContents(host);
+    end.setStart(range.endContainer, range.endOffset);
+
+    return { before: start.toString(), after: end.toString() };
+  };
+
   /** Whether the caret sits at the very end of the code text — where a newline needs a second one
    *  to render a line box the caret can occupy. */
-  const atEnd = (host: HTMLElement, range: Range) => {
-    const probe = doc.createRange();
-    probe.selectNodeContents(host);
-    probe.setStart(range.endContainer, range.endOffset);
+  const atEnd = (host: HTMLElement, range: Range) => textAround(host, range).after.length === 0;
 
-    return probe.toString().length === 0;
+  /**
+   * Whether the caret is on the block's last line. The trailing newline that gives an empty last
+   * line its line box sits *after* the caret (see {@link codeBlockEnter}), so a lone `\n` still
+   * counts as being on the last line — otherwise the line the caret visibly occupies would never
+   * be recognized as the last one.
+   */
+  const onLastLine = (host: HTMLElement, range: Range) => {
+    const { after } = textAround(host, range);
+
+    return after === '' || after === '\n';
   };
 
   /**
@@ -107,9 +127,10 @@ export const createRichTextEditorCodeBlock = (core: RichTextEditorDomCore) => {
     const { range } = editable;
     const host = codeHost(pre);
     const text = host.textContent ?? '';
+    const { before } = textAround(host, range);
 
     // an already-empty last line means the user wants out
-    if (range.collapsed && atEnd(host, range) && (text === '\n' || text.endsWith('\n\n'))) {
+    if (range.collapsed && onLastLine(host, range) && (before === '' || before.endsWith('\n'))) {
       const paragraph = renderer.createElement('p');
       renderer.appendChild(paragraph, renderer.createElement('br'));
 
@@ -136,6 +157,29 @@ export const createRichTextEditorCodeBlock = (core: RichTextEditorDomCore) => {
 
     range.insertNode(newline);
     collapseInto(newline, 1);
+
+    return true;
+  };
+
+  /**
+   * ArrowDown on the last line of a code block that ends the content: there is no line below to
+   * move to, so create the paragraph the caret is reaching for. Nothing else can produce one — a
+   * code block at the end of the document would otherwise be a keyboard trap for anyone who doesn't
+   * know about {@link exitCodeBlock}'s Escape. With a block after it the browser's own ArrowDown
+   * already lands there, so this stays out of the way. Returns `true` when handled.
+   */
+  const codeBlockArrowDown = () => {
+    const editable = getSelection();
+    const el = root();
+    const pre = codeAtCaret();
+
+    if (!editable || !el || !pre || !editable.range.collapsed) return false;
+    if (pre.nextElementSibling || !onLastLine(codeHost(pre), editable.range)) return false;
+
+    const paragraph = renderer.createElement('p');
+    renderer.appendChild(paragraph, renderer.createElement('br'));
+    renderer.insertBefore(el, paragraph, pre.nextSibling);
+    collapseInto(paragraph, 0);
 
     return true;
   };
@@ -215,7 +259,14 @@ export const createRichTextEditorCodeBlock = (core: RichTextEditorDomCore) => {
     return true;
   };
 
-  return { toggleCodeBlock, codeBlockEnter, exitCodeBlock, codeBlockBackspace, repairCodeBlock };
+  return {
+    toggleCodeBlock,
+    codeBlockEnter,
+    codeBlockArrowDown,
+    exitCodeBlock,
+    codeBlockBackspace,
+    repairCodeBlock,
+  };
 };
 
 export type RichTextEditorDomCodeBlock = ReturnType<typeof createRichTextEditorCodeBlock>;
