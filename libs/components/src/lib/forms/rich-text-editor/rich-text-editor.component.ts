@@ -331,9 +331,14 @@ export class RichTextEditorComponent {
       return;
     }
 
-    // ArrowDown off the last line of a code block that ends the content creates the line it would
-    // move to — the exit people reach for before they think of Escape.
-    if (event.key === 'ArrowDown' && this.dir.codeBlockActive() && this.dir.editorDom.codeBlockArrowDown()) {
+    // ArrowDown off the last line of a code block that ends the content — or ArrowUp off the first
+    // line of one that starts it — creates the line it would move to: the exit people reach for
+    // before they think of Escape, and at the top edge the only one there is.
+    if (
+      (event.key === 'ArrowDown' || event.key === 'ArrowUp') &&
+      this.dir.codeBlockActive() &&
+      this.dir.editorDom.codeBlockArrowStep(event.key)
+    ) {
       event.preventDefault();
       this.dir.syncFromDom({ boundary: true });
 

@@ -133,7 +133,7 @@ const richTextEditorDomFactory = () => {
     indentBlockquote: blockquote.indentBlockquote,
     outdentBlockquote: blockquote.outdentBlockquote,
     toggleCodeBlock: codeBlock.toggleCodeBlock,
-    codeBlockArrowDown: codeBlock.codeBlockArrowDown,
+    codeBlockArrowStep: codeBlock.codeBlockArrowStep,
     exitCodeBlock: codeBlock.exitCodeBlock,
     repairCodeBlock: codeBlock.repairCodeBlock,
     applyLink: links.applyLink,

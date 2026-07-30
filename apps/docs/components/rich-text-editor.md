@@ -108,11 +108,12 @@ the caret is in one. <kbd>Enter</kbd> inserts a newline instead of a new block, 
 <kbd>Backspace</kbd> in an empty one removes it. Converting text into a fence keeps only its text —
 a fence has no markup to carry.
 
-There are three ways out of a fence, so a code block that ends the content is never a keyboard trap:
-a second <kbd>Enter</kbd> on the now-empty last line leaves it (like quotes and lists, dropping the
-blank line it was typed on), <kbd>ArrowDown</kbd> off the last line creates the paragraph it would
-move to, and <kbd>Escape</kbd> moves the caret to a paragraph after the block from anywhere inside.
-With a block already after the fence, <kbd>ArrowDown</kbd> just moves into it as usual.
+There are three ways out of a fence, so a code block is never a keyboard trap — not even flush
+against the start or end of the content, where there is no line to move to: a second <kbd>Enter</kbd>
+on the now-empty last line leaves it (like quotes and lists, dropping the blank line it was typed
+on), <kbd>ArrowDown</kbd> off the last line and <kbd>ArrowUp</kbd> off the first one create the
+paragraph they would move to, and <kbd>Escape</kbd> moves the caret to a paragraph after the block
+from anywhere inside. With a block already on that side, the arrow keys just move into it as usual.
 
 Neither can hold the other, and neither can hold a list or table (their Markdown wouldn't survive),
 so those tools disable themselves accordingly.

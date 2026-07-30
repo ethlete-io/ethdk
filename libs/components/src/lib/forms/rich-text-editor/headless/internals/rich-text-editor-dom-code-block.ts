@@ -57,6 +57,9 @@ export const createRichTextEditorCodeBlock = (core: RichTextEditorDomCore) => {
     return after === '' || after === '\n';
   };
 
+  /** Whether the caret is on the block's first line — nothing but this line's own text before it. */
+  const onFirstLine = (host: HTMLElement, range: Range) => !textAround(host, range).before.includes('\n');
+
   /**
    * Turns the selected blocks into one code block, or a code block back into paragraphs. Only the
    * text survives the conversion in either direction — a fence has no inline markup.
@@ -162,23 +165,31 @@ export const createRichTextEditorCodeBlock = (core: RichTextEditorDomCore) => {
   };
 
   /**
-   * ArrowDown on the last line of a code block that ends the content: there is no line below to
-   * move to, so create the paragraph the caret is reaching for. Nothing else can produce one — a
-   * code block at the end of the document would otherwise be a keyboard trap for anyone who doesn't
-   * know about {@link exitCodeBlock}'s Escape. With a block after it the browser's own ArrowDown
-   * already lands there, so this stays out of the way. Returns `true` when handled.
+   * ArrowDown on the last line of a code block that ends the content — or ArrowUp on the first line
+   * of one that starts it: there is no line that way to move to, so create the paragraph the caret is
+   * reaching for. Nothing else can produce one at either edge, so a code block flush against the
+   * start or end of the content would otherwise be a keyboard trap for anyone who doesn't know about
+   * {@link exitCodeBlock}'s Escape (which only ever exits downward). With a block already on that
+   * side the browser's own arrow key lands there, so this stays out of the way. Returns `true` when
+   * handled.
    */
-  const codeBlockArrowDown = () => {
+  const codeBlockArrowStep = (key: 'ArrowUp' | 'ArrowDown') => {
     const editable = getSelection();
     const el = root();
     const pre = codeAtCaret();
 
     if (!editable || !el || !pre || !editable.range.collapsed) return false;
-    if (pre.nextElementSibling || !onLastLine(codeHost(pre), editable.range)) return false;
+
+    const up = key === 'ArrowUp';
+    const host = codeHost(pre);
+    const neighbor = up ? pre.previousElementSibling : pre.nextElementSibling;
+    const atEdge = up ? onFirstLine(host, editable.range) : onLastLine(host, editable.range);
+
+    if (neighbor || !atEdge) return false;
 
     const paragraph = renderer.createElement('p');
     renderer.appendChild(paragraph, renderer.createElement('br'));
-    renderer.insertBefore(el, paragraph, pre.nextSibling);
+    renderer.insertBefore(el, paragraph, up ? pre : pre.nextSibling);
     collapseInto(paragraph, 0);
 
     return true;
@@ -262,7 +273,7 @@ export const createRichTextEditorCodeBlock = (core: RichTextEditorDomCore) => {
   return {
     toggleCodeBlock,
     codeBlockEnter,
-    codeBlockArrowDown,
+    codeBlockArrowStep,
     exitCodeBlock,
     codeBlockBackspace,
     repairCodeBlock,
