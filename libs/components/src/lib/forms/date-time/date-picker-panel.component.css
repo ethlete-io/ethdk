@@ -57,6 +57,15 @@
     &.et-date-picker-panel--resizing {
       overflow: clip;
     }
+
+    /* A month spans 4–6 week rows and the coarser grids have their own row counts, so a picker whose
+       height followed its content would move on every page and every drill — with the sheet that
+       means its top edge sliding under the reader's thumb. Reserving the tallest case once holds all
+       of it still; the day grid stays top-aligned in the box and the month and year grids centre in
+       it (see calendar.component.css). */
+    .et-calendar-grid {
+      min-block-size: calc(32px + 6 * var(--et-calendar-cell-size));
+    }
   }
 
   /* below the md breakpoint the picker mounts as a bottom sheet: the panel becomes
@@ -97,10 +106,8 @@
       justify-content: center;
     }
 
-    /* months span 4–6 week rows — reserve the 6-row height (plus the 32px weekday
-       row) so the sheet's top edge never jumps on month navigation */
-    .et-calendar-grid {
-      min-block-size: calc(32px + 6 * var(--et-calendar-cell-size));
-    }
+    /* months span 4–6 week rows — reserve the 6-row height (plus the 32px weekday row, which only
+       the day grid renders) so the sheet's top edge never jumps on month navigation, and drilling
+       to the month or year grid does not resize the sheet either */
   }
 }

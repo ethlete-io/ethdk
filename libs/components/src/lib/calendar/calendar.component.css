@@ -18,14 +18,16 @@
     }
 
     /* the label is a button (it zooms the grid out), so it has to shed the chrome a button comes with
-       and keep reading as the heading it is */
+       and keep reading as the heading it is. Padding is symmetric — the caret sits inside the
+       trailing side rather than in flow, so the text stays centred in the header and the caret
+       stays put however long the label gets */
     .et-calendar-header-label {
+      position: relative;
       display: inline-flex;
       flex: 1;
       align-items: center;
       justify-content: center;
-      gap: 2px;
-      padding: 4px 8px;
+      padding: 4px 22px;
       border: none;
       border-radius: 8px;
       background: transparent;
@@ -34,6 +36,7 @@
       font-weight: 600;
       color: var(--et-surface-color-solid);
       cursor: pointer;
+      transition: background-color 140ms var(--ease-3, ease-out);
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
 
@@ -43,19 +46,62 @@
         }
       }
 
+      /* the press state is the only interaction feedback a touch device ever shows */
+      &:active {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid) 22%, transparent);
+      }
+
       &:focus-visible {
         outline: 2px solid var(--et-theme-color-primary-solid);
         outline-offset: 1px;
       }
     }
 
+    /* the label's own box: the transitioning values stack in it, so it is the positioning context
+       for the outgoing one */
+    .et-calendar-header-label-text {
+      position: relative;
+      display: inline-grid;
+      grid-template-areas: 'label';
+      justify-items: center;
+      white-space: nowrap;
+    }
+
+    .et-calendar-header-label-value {
+      grid-area: label;
+
+      &:where([data-nav='forward']) {
+        animation: et-calendar-label-in-forward 200ms ease;
+      }
+
+      &:where([data-nav='backward']) {
+        animation: et-calendar-label-in-backward 200ms ease;
+      }
+
+      &:where([data-nav='zoomIn'], [data-nav='zoomOut']) {
+        animation: et-calendar-label-in-zoom 160ms ease;
+      }
+    }
+
+    /* out of flow while it leaves, so the incoming value alone decides the label's width */
+    .et-calendar-header-label-value--leave {
+      position: absolute;
+      inset-block: 0;
+      animation: et-calendar-label-out 140ms ease forwards;
+    }
+
     /* points down at the day grid, and up once the reader is as far out as the year grid. Sized
        explicitly: the icon renders an SVG that fills whatever box it is given. */
     .et-calendar-header-label-icon {
-      flex: none;
+      position: absolute;
+      inset-inline-end: 6px;
+      inset-block-start: 50%;
       inline-size: 12px;
       block-size: 12px;
       rotate: 180deg;
+      translate: 0 -50%;
+      transition: rotate 200ms var(--ease-3, ease-out);
+      opacity: 0.7;
     }
 
     &:where([data-view='multiYear']) .et-calendar-header-label-icon {
@@ -69,6 +115,27 @@
 
     .et-calendar-nav-button--next .et-icon {
       rotate: 90deg;
+    }
+
+    /* a column so the rows can take the height a reserved grid box gives them (the picker reserves
+       six week rows so its size cannot jump on month navigation) */
+    .et-calendar-grid {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* one grid area, which every grid on its way in or out shares: that is what makes the change a
+       crossfade rather than a swap, and it means the outgoing grid cannot shift the layout either */
+    .et-calendar-weeks-viewport {
+      position: relative;
+      display: grid;
+      flex: 1;
+      grid-template-areas: 'weeks';
+      align-content: start;
+    }
+
+    .et-calendar-weeks {
+      grid-area: weeks;
     }
 
     .et-calendar-weekdays,
@@ -85,14 +152,16 @@
       inline-size: calc(var(--et-calendar-cell-size) * 7);
     }
 
-    /* three rows of months and six of years both come to six day-cells tall, which keeps the two
-       coarse grids the same height as each other */
-    &:where([data-view='year']) .et-calendar-coarse-row {
-      block-size: calc(var(--et-calendar-cell-size) * 2);
+    /* one day cell tall, like every other row in this component: the month grid is three of them
+       and the year grid six */
+    .et-calendar-coarse-row {
+      block-size: var(--et-calendar-cell-size);
     }
 
-    &:where([data-view='multiYear']) .et-calendar-coarse-row {
-      block-size: var(--et-calendar-cell-size);
+    /* both have a fixed row count, so where the picker reserves the day grid's taller box they sit
+       centred in it instead of leaving the whole remainder at the bottom */
+    &:where([data-view='year'], [data-view='multiYear']) .et-calendar-weeks-viewport {
+      align-content: center;
     }
 
     /* re-created per visible unit and view (keyed @for) — stepping slides the new rows in from the
@@ -112,6 +181,13 @@
       &:where([data-nav='zoomIn'], [data-nav='zoomOut']) {
         animation: et-calendar-weeks-in-zoom 160ms ease;
       }
+    }
+
+    /* the outgoing grid, still stacked in the viewport's one area: it dissolves while the new one
+       arrives, and takes no clicks on the way out */
+    .et-calendar-weeks--leave {
+      animation: et-calendar-weeks-out 140ms ease forwards;
+      pointer-events: none;
     }
 
     .et-calendar-weekday {
@@ -251,7 +327,6 @@
 
       .et-calendar-cell-content {
         inline-size: calc(100% - 6px);
-        /* one day cell tall, whatever the row is: a pill centred in the row, not an oval filling it */
         block-size: calc(var(--et-calendar-cell-size) - 6px);
         padding-inline: 4px;
         border-radius: 999px;
@@ -260,9 +335,7 @@
       /* the range band is a ribbon behind the pills, so it takes their height rather than the row's —
          a month-precision range bands month cells the same way a day range bands days */
       &::before {
-        inset-block: 50% auto;
-        block-size: calc(var(--et-calendar-cell-size) - 6px);
-        translate: 0 -50%;
+        inset-block: 3px;
       }
     }
   }
@@ -287,9 +360,51 @@
     }
   }
 
+  @keyframes et-calendar-weeks-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  /* the label travels with the grid it names — the same 200ms, the same direction, 6px of it */
+  @keyframes et-calendar-label-in-forward {
+    from {
+      opacity: 0;
+      transform: translateX(6px);
+    }
+  }
+
+  @keyframes et-calendar-label-in-backward {
+    from {
+      opacity: 0;
+      transform: translateX(-6px);
+    }
+  }
+
+  @keyframes et-calendar-label-in-zoom {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes et-calendar-label-out {
+    to {
+      opacity: 0;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .et-calendar .et-calendar-weeks {
-      animation: none;
+    .et-calendar {
+      & .et-calendar-weeks,
+      & .et-calendar-weeks--leave,
+      & .et-calendar-header-label-value,
+      & .et-calendar-header-label-value--leave {
+        animation: none;
+      }
+
+      & .et-calendar-header-label-icon {
+        transition: none;
+      }
     }
   }
 }

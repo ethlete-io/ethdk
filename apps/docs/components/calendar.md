@@ -64,6 +64,8 @@ A coarse cell is disabled when **no** day inside it is selectable, so `min`/`max
 
 <StoryEmbed id="components-calendar--year-view" height="420px" />
 
+Inside a date picker the panel reserves the day grid's tallest case (six week rows), so neither paging a month nor drilling a view resizes it — the month and year grids centre in that height. A bare `<et-calendar>` sizes to whichever grid is showing.
+
 Selection and today's marker carry over unchanged: a coarse cell reads as selected when it contains the value (or a range end), and as today when it contains today. `monthSelect` / `yearSelect` fire on a coarse pick, for consumers that want to close a picker at month precision.
 
 ## Month and year pickers
@@ -123,7 +125,7 @@ Every view uses the same model in its own unit — arrows move by cell, PageUp/P
 
 Moving focus past the edge of the visible unit navigates the calendar along with it. The focused date stays a full date in every view — only the step size changes — so drilling in and back out keeps the day the reader was on.
 
-Stepping (buttons or keyboard) slides the new grid in from the travel direction; drilling fades it. Both are skipped under `prefers-reduced-motion`. For custom transitions the headless directive exposes `navigationDirection` (`'forward' | 'backward' | 'zoomIn' | 'zoomOut' | null`), `visibleUnitKey` (the visible unit's identity, whichever view is showing) and `transitionKey` (that plus the view — what the default component tracks its `@for` by). `visibleMonthKey` still names the month specifically.
+Stepping (buttons or keyboard) slides the new grid in from the travel direction; drilling fades it. Either way the grid on its way out crossfades under the one arriving — both share a single grid area for the length of the transition — and the header label travels with them. All of it stands down under `prefers-reduced-motion`. For custom transitions the headless directive exposes `navigationDirection` (`'forward' | 'backward' | 'zoomIn' | 'zoomOut' | null`), `visibleUnitKey` (the visible unit's identity, whichever view is showing) and `transitionKey` (that plus the view — what the default component tracks its `@for` by). `visibleMonthKey` still names the month specifically.
 
 ## Headless usage
 
@@ -151,7 +153,7 @@ The coarse grids work the same way: `calendar.monthCells()` and `calendar.yearCe
 
 - The grid follows the ARIA grid pattern: `role="grid"` with `row`/`columnheader`/`gridcell` structure and a roving tabindex — exactly one cell is tabbable.
 - Cells carry a full localized date as `aria-label`, `aria-selected`, `aria-current="date"` on today and `aria-disabled` on disabled days (which stay focusable).
-- The header label is a `button` (it zooms the grid out) and `aria-live="polite"`, so stepping and drilling are both announced; its `aria-label` says where it leads. The grid's own `aria-label` follows the visible unit.
+- The header label is a `button` (it zooms the grid out) whose text is an `aria-live="polite"` region, so stepping and drilling are both announced; its `aria-label` says where it leads. The grid's own `aria-label` follows the visible unit.
 - Coarse cells are `gridcell`s like the days, with the month or year as `aria-label`, `aria-selected` when they contain the value and `aria-disabled` when they hold no selectable day.
 
 ## Theming

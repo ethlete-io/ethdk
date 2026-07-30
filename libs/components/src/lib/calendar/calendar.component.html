@@ -12,15 +12,25 @@
   </button>
 
   <!-- the label is the zoom-out control: day grid → month grid → year grid, and back to the day grid
-       from there. aria-live so stepping and drilling are both announced. -->
+       from there. The text is keyed on itself so a change transitions instead of swapping in place,
+       and it is the aria-live region, so stepping and drilling are both announced. -->
   <button
     [attr.aria-label]="resolvedZoomLabel()"
     (click)="calendar.zoomOut()"
     class="et-calendar-header-label"
-    aria-live="polite"
     type="button"
   >
-    {{ calendar.headerLabel() }}
+    <span class="et-calendar-header-label-text" aria-live="polite">
+      @for (label of [calendar.headerLabel()]; track label) {
+        <span
+          [attr.data-nav]="calendar.navigationDirection()"
+          class="et-calendar-header-label-value"
+          animate.leave="et-calendar-header-label-value--leave"
+          >{{ label }}</span
+        >
+      }
+    </span>
+
     <i class="et-calendar-header-label-icon" etIcon="et-chevron"></i>
   </button>
 
@@ -48,44 +58,53 @@
     </div>
   }
 
-  <!-- keyed per visible unit and view, so navigating or drilling re-creates the rows and runs the transition -->
-  @for (transitionKey of [calendar.transitionKey()]; track transitionKey) {
-    <div [attr.data-nav]="calendar.navigationDirection()" class="et-calendar-weeks" role="rowgroup">
-      @switch (calendar.view()) {
-        @case ('year') {
-          @for (row of calendar.monthCells(); track $index) {
-            <div class="et-calendar-coarse-row" role="row">
-              @for (cell of row; track cell.date.getTime()) {
-                <button [cell]="cell" class="et-calendar-cell et-calendar-cell--coarse" etCalendarCell type="button">
-                  <span class="et-calendar-cell-content">{{ cell.label }}</span>
-                </button>
-              }
-            </div>
+  <!-- keyed per visible unit and view, so navigating or drilling re-creates the rows and runs the
+       transition. Both grids share the viewport's single grid area for the length of it, which is
+       what lets the outgoing one fade out under the incoming one rather than disappear first. -->
+  <div class="et-calendar-weeks-viewport">
+    @for (transitionKey of [calendar.transitionKey()]; track transitionKey) {
+      <div
+        [attr.data-nav]="calendar.navigationDirection()"
+        class="et-calendar-weeks"
+        animate.leave="et-calendar-weeks--leave"
+        role="rowgroup"
+      >
+        @switch (calendar.view()) {
+          @case ('year') {
+            @for (row of calendar.monthCells(); track $index) {
+              <div class="et-calendar-coarse-row" role="row">
+                @for (cell of row; track cell.date.getTime()) {
+                  <button [cell]="cell" class="et-calendar-cell et-calendar-cell--coarse" etCalendarCell type="button">
+                    <span class="et-calendar-cell-content">{{ cell.label }}</span>
+                  </button>
+                }
+              </div>
+            }
+          }
+          @case ('multiYear') {
+            @for (row of calendar.yearCells(); track $index) {
+              <div class="et-calendar-coarse-row" role="row">
+                @for (cell of row; track cell.date.getTime()) {
+                  <button [cell]="cell" class="et-calendar-cell et-calendar-cell--coarse" etCalendarCell type="button">
+                    <span class="et-calendar-cell-content">{{ cell.label }}</span>
+                  </button>
+                }
+              </div>
+            }
+          }
+          @default {
+            @for (week of calendar.weeks(); track $index) {
+              <div class="et-calendar-week" role="row">
+                @for (cell of week; track cell.date.getTime()) {
+                  <button [cell]="cell" class="et-calendar-cell" etCalendarCell type="button">
+                    <span class="et-calendar-cell-content">{{ cell.label }}</span>
+                  </button>
+                }
+              </div>
+            }
           }
         }
-        @case ('multiYear') {
-          @for (row of calendar.yearCells(); track $index) {
-            <div class="et-calendar-coarse-row" role="row">
-              @for (cell of row; track cell.date.getTime()) {
-                <button [cell]="cell" class="et-calendar-cell et-calendar-cell--coarse" etCalendarCell type="button">
-                  <span class="et-calendar-cell-content">{{ cell.label }}</span>
-                </button>
-              }
-            </div>
-          }
-        }
-        @default {
-          @for (week of calendar.weeks(); track $index) {
-            <div class="et-calendar-week" role="row">
-              @for (cell of week; track cell.date.getTime()) {
-                <button [cell]="cell" class="et-calendar-cell" etCalendarCell type="button">
-                  <span class="et-calendar-cell-content">{{ cell.label }}</span>
-                </button>
-              }
-            </div>
-          }
-        }
-      }
-    </div>
-  }
+      </div>
+    }
+  </div>
 </div>
