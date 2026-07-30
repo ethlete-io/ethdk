@@ -85,4 +85,61 @@ describe('createSwipeTracker', () => {
     expect(end.movementX).toBe(0);
     expect(end.movementY).toBe(0);
   });
+
+  describe('release velocity', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it('should report the trailing flick, not the whole-gesture average', () => {
+      const tracker = createSwipeTracker(mouseEvent(0, 0));
+
+      // 20px over 900ms of slow dragging — an average of ~22px/s...
+      for (let i = 1; i <= 9; i++) {
+        vi.advanceTimersByTime(100);
+        tracker.update(mouseEvent(0, i * 2));
+      }
+
+      // ...then a 60px flick over the final 50ms.
+      vi.advanceTimersByTime(50);
+      tracker.update(mouseEvent(0, 78));
+
+      expect(tracker.end().pixelPerSecondY).toBeCloseTo(1200, 0);
+    });
+
+    it('should report no velocity when the pointer is held still before release', () => {
+      const tracker = createSwipeTracker(mouseEvent(0, 0));
+
+      vi.advanceTimersByTime(50);
+      tracker.update(mouseEvent(0, 200));
+
+      // Stationary pointers emit no move events, so the flick falls out of the trailing window.
+      vi.advanceTimersByTime(500);
+
+      const end = tracker.end();
+
+      expect(end.pixelPerSecondY).toBe(0);
+      expect(end.movementY).toBe(200);
+    });
+
+    it('should report the reversal when the gesture changes direction at the end', () => {
+      const tracker = createSwipeTracker(mouseEvent(0, 0));
+
+      vi.advanceTimersByTime(200);
+      tracker.update(mouseEvent(0, 100));
+      vi.advanceTimersByTime(50);
+      tracker.update(mouseEvent(0, 70));
+
+      const end = tracker.end();
+
+      expect(end.pixelPerSecondY).toBeCloseTo(-600, 0);
+      expect(end.positivePixelPerSecondY).toBeCloseTo(600, 0);
+      expect(end.movementY).toBe(70);
+    });
+
+    it('should report no velocity for a gesture that never moved', () => {
+      const tracker = createSwipeTracker(mouseEvent(0, 0));
+
+      expect(tracker.end().pixelPerSecondY).toBe(0);
+    });
+  });
 });
