@@ -76,6 +76,13 @@ export class CalendarDirective {
   public firstDayOfWeek = input<CalendarWeekStartsOn | undefined>(undefined);
   public locale = input<Locale | null>(null);
 
+  /**
+   * Where an empty calendar opens (and which day it focuses first) — e.g. next
+   * month for a booking form. A selection always wins over it, as does an
+   * explicit `activeMonth`; without either, the calendar falls back to today.
+   */
+  public startAt = input<Date | null>(null);
+
   /** Selected date in `single` mode. */
   public value = model<Date | null>(null);
   /** Selected range in `range` mode. */
@@ -95,10 +102,10 @@ export class CalendarDirective {
     if (this.mode() === 'range') {
       const range = this.rangeValue();
 
-      return range.start ?? range.end ?? this.today;
+      return range.start ?? range.end ?? this.startAt() ?? this.today;
     }
 
-    return this.value() ?? this.today;
+    return this.value() ?? this.startAt() ?? this.today;
   });
 
   public visibleMonth = computed(() => startOfMonth(this.activeMonth() ?? this.anchorDate()));

@@ -344,6 +344,15 @@ export class TimePickerDirective {
     return this.formatSpec().hourCycle === 12 ? (hour % 12) + period * 12 : hour;
   }
 
+  /** The twelve hours of `from`'s half-day, closest to `from` first. */
+  private halfDayHours(from: number) {
+    const base = from >= 12 ? 12 : 0;
+
+    return Array.from({ length: 12 }, (_, index) => base + index).sort(
+      (first, second) => Math.abs(first - from) - Math.abs(second - from),
+    );
+  }
+
   /** The time a pick aims at: the picked part, with every other part kept from the anchor. */
   private candidateFor(unit: TimePickerUnit, optionValue: number): TimeCandidate {
     const parts = getTimeParts(this.anchorTime(), 24);
@@ -364,12 +373,26 @@ export class TimePickerDirective {
     }
   }
 
-  /** The candidate itself when it is selectable, else the same pick with the finer units moved. */
+  /** The candidate itself when it is selectable, else the same pick with the unpicked units moved. */
   private resolveSelectable(unit: TimePickerUnit, candidate: TimeCandidate) {
     const availability = this.availability();
 
     if (isTimeSelectable(candidate, availability)) {
       return candidate;
+    }
+
+    // an AM/PM pick chooses a half-day, not an hour: keeping the clock position (10 AM → 10 PM)
+    // is only the preference, so the hour may move inside the picked half — closest first
+    if (unit === 'period') {
+      for (const hour of this.halfDayHours(candidate.hour)) {
+        const found = findSelectableTime({ hour }, availability);
+
+        if (found !== null) {
+          return found;
+        }
+      }
+
+      return null;
     }
 
     // everything the pick did not touch may move; the picked part never does

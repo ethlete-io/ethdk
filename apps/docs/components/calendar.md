@@ -23,6 +23,7 @@ On `et-calendar` (forwarded from the headless `[etCalendar]` directive):
 | `mode`           | `'single' \| 'range'`               | `'single'`          | Selection model.                                                                       |
 | `min` / `max`    | `Date \| null`                      | `null`              | Selectable window; days outside are disabled and month navigation stops at the bounds. |
 | `dateFilter`     | `((date: Date) => boolean) \| null` | `null`              | Return `false` to disable a date (e.g. weekends).                                      |
+| `startAt`        | `Date \| null`                      | `null`              | Where an empty calendar opens and which day it focuses first.                          |
 | `firstDayOfWeek` | `0–6`                               | locale, else `1`    | `0` = Sunday. Defaults to the locale's week start, Monday without one.                 |
 | `locale`         | `Locale \| null` (date-fns)         | `DATE_LOCALE` token | Weekday/month labels and cell `aria-label`s. Falls back to date-fns' built-in en-US.   |
 
@@ -35,6 +36,10 @@ On `et-calendar` (forwarded from the headless `[etCalendar]` directive):
 The component also takes `previousMonthLabel` / `nextMonthLabel` for the nav buttons' `aria-label`s; unset, they read [`CALENDAR_LABELS`](/components/localization).
 
 Values are day-granular: the calendar writes dates at midnight local time and compares incoming values by day, ignoring any time-of-day.
+
+`startAt` decides where an **empty** calendar opens — e.g. next month for a booking form — and which day takes the initial roving focus. A selection always wins over it, as does an explicit `activeMonth`; without any of the three, the calendar opens on today. The date inputs forward it as `startAt` too.
+
+<StoryEmbed id="components-calendar--start-at" height="420px" />
 
 ## Range selection
 

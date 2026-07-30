@@ -110,6 +110,8 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
   public minDate = input<Date | null>(null);
   public maxDate = input<Date | null>(null);
   public dateFilter = input<((date: Date) => boolean) | null>(null);
+  /** Month the picker calendar opens at while the range is empty. */
+  public startAt = input<Date | null>(null);
 
   public pickerOpen = model(false);
 

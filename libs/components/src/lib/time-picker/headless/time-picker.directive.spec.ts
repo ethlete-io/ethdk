@@ -319,6 +319,26 @@ describe('TimePickerDirective', () => {
       expect(host.value()?.getHours()).toBe(12);
     });
 
+    it('moves the hour inside the picked half-day when the clock position is closed', async () => {
+      host.format.set('h:mm a');
+      host.value.set(new Date(2026, 6, 17, 10, 0));
+      host.timeFilter.set((date) => date.getHours() >= 9 && date.getHours() < 17);
+      tick();
+      await fixture.whenStable();
+
+      // 10 PM is closed, so the pick lands on the closest open PM hour instead of doing nothing
+      optionButton('period', 1)?.click();
+      tick();
+
+      expect([host.value()?.getHours(), host.value()?.getMinutes()]).toEqual([16, 0]);
+
+      optionButton('period', 0)?.click();
+      tick();
+
+      // 4 AM is closed too — back to the closest open AM hour
+      expect(host.value()?.getHours()).toBe(9);
+    });
+
     it('disables a half-day with no selectable hour', async () => {
       host.format.set('h:mm a');
       host.min.set(new Date(2026, 6, 17, 13));

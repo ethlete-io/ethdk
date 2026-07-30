@@ -14,7 +14,18 @@ import { injectCalendarLabels } from '../calendar/calendar-labels';
   hostDirectives: [
     {
       directive: CalendarDirective,
-      inputs: ['mode', 'min', 'max', 'dateFilter', 'firstDayOfWeek', 'locale', 'value', 'rangeValue', 'activeMonth'],
+      inputs: [
+        'mode',
+        'min',
+        'max',
+        'dateFilter',
+        'startAt',
+        'firstDayOfWeek',
+        'locale',
+        'value',
+        'rangeValue',
+        'activeMonth',
+      ],
       outputs: ['valueChange', 'rangeValueChange', 'activeMonthChange'],
     },
   ],

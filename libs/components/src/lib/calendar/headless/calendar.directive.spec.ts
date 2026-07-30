@@ -16,6 +16,7 @@ import { CalendarDirective, CalendarMode, CalendarRange } from './calendar.direc
       [min]="min()"
       [max]="max()"
       [dateFilter]="dateFilter()"
+      [startAt]="startAt()"
       [firstDayOfWeek]="1"
       etCalendar
     >
@@ -37,6 +38,7 @@ class HostComponent {
   min = signal<Date | null>(null);
   max = signal<Date | null>(null);
   dateFilter = signal<((date: Date) => boolean) | null>(null);
+  startAt = signal<Date | null>(null);
   value = signal<Date | null>(null);
   rangeValue = signal<CalendarRange>({ start: null, end: null });
   activeMonth = signal<Date | null>(new Date(2026, 6, 1));
@@ -206,6 +208,29 @@ describe('CalendarDirective', () => {
 
     expect(calendar.canGoPrev()).toBe(false);
     expect(calendar.canGoNext()).toBe(false);
+  });
+
+  it('opens an empty calendar at startAt and focuses its day', () => {
+    host.activeMonth.set(null);
+    host.startAt.set(new Date(2027, 2, 12));
+    fixture.detectChanges();
+
+    expect(calendar.visibleMonth()).toEqual(new Date(2027, 2, 1));
+    expect(focusedCell()?.textContent?.trim()).toBe('12');
+  });
+
+  it('lets a value and an explicit activeMonth win over startAt', () => {
+    host.activeMonth.set(null);
+    host.startAt.set(new Date(2027, 2, 12));
+    host.value.set(new Date(2026, 6, 8));
+    fixture.detectChanges();
+
+    expect(calendar.visibleMonth()).toEqual(new Date(2026, 6, 1));
+
+    host.activeMonth.set(new Date(2025, 0, 1));
+    fixture.detectChanges();
+
+    expect(calendar.visibleMonth()).toEqual(new Date(2025, 0, 1));
   });
 
   it('marks today with aria-current', () => {

@@ -1,6 +1,6 @@
 import { Component, ViewEncapsulation, computed, input, signal } from '@angular/core';
 import { ProvideColorDirective } from '@ethlete/core';
-import { addDays, startOfDay } from 'date-fns';
+import { addDays, addMonths, startOfDay, startOfMonth } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { CalendarRange } from '../headless';
 import { CALENDAR_IMPORTS } from '../calendar.imports';
@@ -15,6 +15,7 @@ import { CALENDAR_IMPORTS } from '../calendar.imports';
           [min]="minDate()"
           [max]="maxDate()"
           [dateFilter]="filterFn()"
+          [startAt]="startAtDate()"
           [locale]="localeObject()"
           mode="range"
         />
@@ -28,6 +29,7 @@ import { CALENDAR_IMPORTS } from '../calendar.imports';
           [min]="minDate()"
           [max]="maxDate()"
           [dateFilter]="filterFn()"
+          [startAt]="startAtDate()"
           [locale]="localeObject()"
         />
 
@@ -42,6 +44,8 @@ export class CalendarStorybookComponent {
   public mode = input<'single' | 'range'>('single');
   public constrained = input(false);
   public disableWeekends = input(false);
+  /** Months from today the empty calendar should open at — the story turns it into a `Date`. */
+  public startAtMonthOffset = input<number | null>(null);
   public locale = input<'default' | 'de'>('default');
   public color = input('brand');
 
@@ -54,6 +58,12 @@ export class CalendarStorybookComponent {
   protected filterFn = computed(() =>
     this.disableWeekends() ? (date: Date) => date.getDay() !== 0 && date.getDay() !== 6 : null,
   );
+
+  protected startAtDate = computed(() => {
+    const offset = this.startAtMonthOffset();
+
+    return offset === null ? null : startOfMonth(addMonths(new Date(), offset));
+  });
 
   protected localeObject = computed(() => (this.locale() === 'de' ? de : null));
 }

@@ -9,6 +9,7 @@ export default {
     mode: { control: 'select', options: ['single', 'range'] },
     constrained: { control: 'boolean' },
     disableWeekends: { control: 'boolean' },
+    startAtMonthOffset: { control: 'number' },
     locale: { control: 'select', options: ['default', 'de'] },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
   },
@@ -16,6 +17,7 @@ export default {
     mode: 'single',
     constrained: false,
     disableWeekends: false,
+    startAtMonthOffset: null,
     locale: 'default',
     color: 'brand',
   },
@@ -31,6 +33,10 @@ export const Range: Story = {
 
 export const DisabledDates: Story = {
   args: { constrained: true, disableWeekends: true },
+};
+
+export const StartAt: Story = {
+  args: { startAtMonthOffset: 2 },
 };
 
 export const German: Story = {

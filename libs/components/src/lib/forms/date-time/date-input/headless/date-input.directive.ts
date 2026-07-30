@@ -35,6 +35,8 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
   public minDate = input<Date | null>(null);
   public maxDate = input<Date | null>(null);
   public dateFilter = input<((date: Date) => boolean) | null>(null);
+  /** Month the picker calendar opens at while the value is empty. */
+  public startAt = input<Date | null>(null);
 
   /** The string in effect: this instance's `parseErrorMessage`, else the domain's label set. */
   public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidDate);

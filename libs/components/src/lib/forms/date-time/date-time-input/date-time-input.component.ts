@@ -64,6 +64,7 @@ import { injectDateTimeLabels } from '../../../forms/date-time/date-time-labels'
         'minDate',
         'maxDate',
         'dateFilter',
+        'startAt',
         'minTime',
         'maxTime',
         'timeFilter',

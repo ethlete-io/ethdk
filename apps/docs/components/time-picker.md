@@ -60,6 +60,7 @@ Availability is computed per column, not per leaf option:
 
 - An **hour** is disabled only when no minute inside it is selectable, a **minute** only when no second inside it is, and an **AM/PM** option only when none of its twelve hours has a selectable time.
 - Picking a part keeps that part and moves the **finer** ones to the first value that works: with `min` at 09:40, clicking hour `9` commits `09:40`, not the out-of-bounds `09:00`.
+- An **AM/PM** pick chooses a half-day, not an hour, so the hour may move inside it as well — closest to the current clock position first. Picking PM at 10:00 AM under 09:00–17:00 opening hours commits 4 PM rather than doing nothing.
 - `timeFilter` receives the whole timestamp (the candidate time of day on the current day), so opening hours can differ per weekday.
 - A value set from outside that falls out of bounds is still shown as the selection — bounds gate what a user can pick, they never rewrite the model.
 

@@ -38,6 +38,8 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
   public minDate = input<Date | null>(null);
   public maxDate = input<Date | null>(null);
   public dateFilter = input<((date: Date) => boolean) | null>(null);
+  /** Month the picker calendar opens at while the value is empty. */
+  public startAt = input<Date | null>(null);
 
   /**
    * Forwarded to the picker's time picker. Only the time of day of `minTime`/`maxTime`

@@ -80,6 +80,7 @@ A date control combining typed entry with an anchored
 | `locale`              | `Locale \| null` (date-fns)         | `DATE_LOCALE` token | Display/parse locale.                                                        |
 | `minDate` / `maxDate` | `Date \| null`                      | `null`              | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms). |
 | `dateFilter`          | `((date: Date) => boolean) \| null` | `null`              | Forwarded to the picker calendar.                                            |
+| `startAt`             | `Date \| null`                      | `null`              | Month the picker calendar opens at while the value is empty.                 |
 | `pickerOpen`          | `boolean` (model)                   | `false`             | The picker overlay's open state.                                             |
 | `pickerTriggerLabel`  | `string \| null`                    | `null` ¹            | `aria-label` of the suffix calendar button.                                  |
 | `parseErrorMessage`   | `string \| null`                    | `null` ²            | Message shown below the field when typed text can't be parsed.               |
@@ -111,7 +112,7 @@ commits exactly like the single date input.
 ```
 
 Options mirror the date input (`valueFormat`, `displayFormat`, `locale`, `mask`,
-`minDate`/`maxDate`/`dateFilter`, `pickerOpen`), with
+`minDate`/`maxDate`/`dateFilter`, `startAt`, `pickerOpen`), with
 `startPlaceholder`/`endPlaceholder` and per-field `startAriaLabel`/`endAriaLabel`
 (defaults `'Start date'`/`'End date'`; the host is a `role="group"` labelled by
 the field label). The opt-in typing mask applies to both fields — each side is
@@ -200,6 +201,7 @@ Time tabs** switching between the two panes.
 | `locale`                        | `Locale \| null` (date-fns)         | `DATE_LOCALE` token         | Display/parse locale (also decides the time picker's 12/24-hour layout).          |
 | `minDate` / `maxDate`           | `Date \| null`                      | `null`                      | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms).      |
 | `dateFilter`                    | `((date: Date) => boolean) \| null` | `null`                      | Forwarded to the picker calendar.                                                 |
+| `startAt`                       | `Date \| null`                      | `null`                      | Month the picker calendar opens at while the value is empty.                      |
 | `minuteStep` / `secondStep`     | `number`                            | `5` / `1`                   | Forwarded to the time picker columns.                                             |
 | `minTime` / `maxTime`           | `Date \| null`                      | `null`                      | Bound the time pane's time of day (see the time input).                           |
 | `timeFilter`                    | `((date: Date) => boolean) \| null` | `null`                      | Rejects individual times; receives the full candidate timestamp.                  |

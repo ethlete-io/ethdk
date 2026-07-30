@@ -48,6 +48,7 @@ import { injectDateTimeLabels } from '../../../forms/date-time/date-time-labels'
         'minDate',
         'maxDate',
         'dateFilter',
+        'startAt',
         'pickerOpen',
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'pickerOpenChange'],
