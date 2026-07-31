@@ -21,7 +21,14 @@ import { NormalizedMatch, NormalizedMatchParticipant } from '../match.types';
         <a class="text-small opacity-60" href="#">All matches</a>
       </div>
 
-      <et-scrollable [itemSize]="{ default: 'full', md: 'half', lg: 'third' }" scrollableRole="list" snap>
+      <!-- The gap lives on the scroll container, which is what scrollableClass targets — the scrollable reads
+           its computed value to work out how wide a half/third-width child is. -->
+      <et-scrollable
+        [itemSize]="{ xs: 'full', md: 'half', lg: 'third' }"
+        scrollableClass="gap-3"
+        scrollableRole="list"
+        snap
+      >
         <!-- The wrapper carries the list semantics: the card owns its own role (a labelled group), so asking
              it to also be a listitem would just be overwritten. -->
         @for (match of matches(); track match.id) {
@@ -95,7 +102,10 @@ export class SportRecipesMatchRailStorybookComponent {
               class="flex flex-col gap-3 rounded-xl p-4"
               style="background: var(--et-surface-background-solid); border: 1px solid var(--et-surface-border-solid)"
             >
-              <et-match-participant [participant]="participant" showSeed />
+              <!-- On an anchor: the whole participant is the link, named after the participant rather than
+                   after its emblem's alt text plus the same name again. -->
+              <!-- eslint-disable-next-line @angular-eslint/template/elements-content -->
+              <a [participant]="participant" (click)="stayHere($event)" et-match-participant href="#" showSeed></a>
               <span class="text-small opacity-60">10 matches · 8 wins</span>
             </div>
           }
@@ -126,6 +136,11 @@ export class SportRecipesEntityCardsStorybookComponent {
 
   protected readonly BANNER = BANNER_SRC;
   protected readonly PARTICIPANTS = RECIPE_PARTICIPANTS;
+
+  // Real cards are `routerLink`s; this is an href only so it behaves like one without a route to go to.
+  protected stayHere(event: Event) {
+    event.preventDefault();
+  }
 }
 
 // Below the components on purpose: an interpolated template literal above an inline `template:` breaks the

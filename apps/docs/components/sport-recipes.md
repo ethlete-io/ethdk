@@ -24,7 +24,7 @@ pass-through inputs and nothing else.
   <a routerLink="/matches">All matches</a>
 </div>
 
-<et-scrollable [itemSize]="{ default: 'full', md: 'half', lg: 'third' }" scrollableRole="list" snap>
+<et-scrollable [itemSize]="{ xs: 'full', md: 'half', lg: 'third' }" scrollableClass="gap-3" scrollableRole="list" snap>
   @for (match of matches(); track match.id) {
   <div [etScrollableActiveChild]="match.status === 'live'" role="listitem">
     <a [match]="match" [routerLink]="['/matches', match.id]" class="grid h-full" et-match-card></a>
@@ -33,8 +33,10 @@ pass-through inputs and nothing else.
 </et-scrollable>
 ```
 
-Three details worth keeping:
+Four details worth keeping:
 
+- **The gap goes on the scroll container**, via `scrollableClass` — `et-scrollable` reads its computed value
+  to work out how wide a half- or third-width child is, so there is no `gap` input to set instead.
 - **`etScrollableActiveChild` on the live match** — the rail opens on the match that's being played rather
   than at the start of the week.
 - **The wrapper carries `role="listitem"`**, not the card. The card owns its own role (a labelled group), so
@@ -68,9 +70,10 @@ card is a team card with a flag in the emblem slot; a squad list is a column of 
 ```
 
 ```html
-<!-- team, player or nation: the participant primitive already draws the emblem, name, subtitle and seed -->
+<!-- team, player or nation: the participant primitive already draws the emblem, name, subtitle and seed.
+     On an <a> it becomes the link itself, named after the participant. -->
 <div class="entity-card">
-  <et-match-participant [participant]="participant" showSeed />
+  <a [participant]="participant" [routerLink]="['/teams', participant.id]" et-match-participant showSeed></a>
   <span class="entity-card-meta">{{ record }}</span>
 </div>
 
@@ -83,7 +86,8 @@ card is a team card with a flag in the emblem slot; a squad list is a column of 
 
 `et-match-participant` is doing the work here: the emblem frame keeps its size whether or not an image
 arrived, `subtitle` gives you the org under the roster name, and `loading` draws its own bones so the card
-doesn't need a second layout for the pending state.
+doesn't need a second layout for the pending state. On an `<a>` or `<button>` it also names itself after the
+participant — without that the link would read "FC Berlin emblem FC Berlin".
 
 ## Where the real components are
 
