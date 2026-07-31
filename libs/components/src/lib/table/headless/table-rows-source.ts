@@ -32,6 +32,13 @@ export type TableRowsSource<TRow> = {
   loading?: Signal<boolean>;
   /** The failure, if any — feeds the table's `error` (any non-nullish value counts). */
   error?: Signal<unknown>;
+  /**
+   * How many rows the server holds in total, when the source knows — `null` while it doesn't. Nothing
+   * renders it; it is what lets a [CSV export](/components/table#exporting-more-than-the-loaded-page)
+   * notice that the table is holding 20 of 4 312 rows and say so instead of writing a plausible,
+   * wrong file. {@link TableRowsFromQuery} already provides it.
+   */
+  total?: Signal<number | null>;
   /** The server-side sort, if the source owns it. */
   sort?: Signal<TableSort[]>;
   /** The server-side filters, if the source owns them. */

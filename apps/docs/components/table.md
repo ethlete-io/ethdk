@@ -1102,15 +1102,17 @@ button:
 </button>
 ```
 
-| Option         | Type                             | Default       | What it does                                                                     |
-| -------------- | -------------------------------- | ------------- | -------------------------------------------------------------------------------- |
-| `columns`      | `'visible' \| 'all' \| string[]` | `'visible'`   | `'all'` adds hidden columns; a key list writes exactly those, in the order given |
-| `rows`         | `readonly T[]`                   | table's rows  | Any list — a [selection](#selection), or your untouched data to ignore filters   |
-| `header`       | `boolean`                        | `true`        | Write the header row of column labels                                            |
-| `delimiter`    | `string`                         | `','`         | Use `';'` for locales where Excel expects it                                     |
-| `bom`          | `boolean \| 'auto'`              | `'auto'`      | UTF-8 BOM — see below                                                            |
-| `formulaGuard` | `boolean`                        | `true`        | See below                                                                        |
-| `filename`     | `string`                         | `'table.csv'` | `.csv` is appended when missing                                                  |
+| Option         | Type                             | Default       | What it does                                                                                                          |
+| -------------- | -------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `columns`      | `'visible' \| 'all' \| string[]` | `'visible'`   | `'all'` adds hidden columns; a key list writes exactly those, in the order given                                      |
+| `rows`         | `readonly T[]` \| a **provider** | table's rows  | Any list — a [selection](#selection) — or a function fetching them, see [below](#exporting-more-than-the-loaded-page) |
+| `file`         | query \| promise \| observable   | —             | A CSV the **server** built — see [below](#exporting-more-than-the-loaded-page)                                        |
+| `partial`      | `boolean`                        | `false`       | Write only the loaded page, on purpose — see [below](#exporting-more-than-the-loaded-page)                            |
+| `header`       | `boolean`                        | `true`        | Write the header row of column labels                                                                                 |
+| `delimiter`    | `string`                         | `','`         | Use `';'` for locales where Excel expects it                                                                          |
+| `bom`          | `boolean \| 'auto'`              | `'auto'`      | UTF-8 BOM — see below                                                                                                 |
+| `formulaGuard` | `boolean`                        | `true`        | See below                                                                                                             |
+| `filename`     | `string`                         | `'table.csv'` | `.csv` is appended when missing                                                                                       |
 
 ### The BOM
 
@@ -1148,7 +1150,8 @@ private exportCsv = injectTableCsvExport();
 protected table = viewChild.required(TableComponent);
 
 protected download() {
-  this.exportCsv(this.table(), { columns: 'all', delimiter: ';' });
+  // Nothing is written until you subscribe — see below.
+  this.exportCsv(this.table(), { columns: 'all', delimiter: ';' }).subscribe();
 }
 ```
 
@@ -1157,15 +1160,90 @@ uploading it, putting it on the clipboard, or asserting on it in a test. Both ar
 any table dependency: they read the table through its columns and rows, so a test can pass
 a plain object.
 
-Two boundaries worth stating outright. **Excel's own `.xlsx` is not supported** — this
-writes CSV, and nothing else. And for a **server-paginated table** the table only ever holds
-the current page, so that is what gets written; fetching the rest is your job, since only
-you have the query. Pass the result as `rows`:
+One boundary worth stating outright: **Excel's own `.xlsx` is not supported** — this writes
+CSV, and nothing else.
+
+### Exporting more than the loaded page
+
+A **server-paginated** table only ever holds the current page. An export that says nothing
+would write page 3 of 200 as if it were the data — a plausible, wrong file, which is worse
+than an error. So when the table's [`rowsSource`](#server-side-rows-query) reports a
+`total`, the export checks it and throws **`ET3506`** in dev mode rather than write it.
+Production stays silent and writes the page.
+
+<StoryEmbed id="components-table--csv-export-beyond-the-page" height="480px" />
+
+There are three honest answers, in the order they matter in practice.
+
+**1. The server built the file.** Backends usually grow a `GET /people/export?filters=…`
+that returns the whole dataset as `text/csv`, and it is the best answer: nothing is
+serialized client-side, and the server already has the query. Pass it as `file` — an
+`@ethlete/query` query, a promise, or an observable resolving to a `Blob` or a string:
+
+```html
+<button [disabled]="csv.exporting()" (click)="exportAll()" et-button>Export everything</button>
+```
 
 ```ts
-const all = await firstValueFrom(this.everyPage$);
-this.exportCsv(this.table(), { rows: all });
+protected exportQuery = createQuery(…);
+protected csv = viewChild.required(TableCsvExportDirective);
+
+protected exportAll() {
+  // The query is *followed*, never executed — trigger it yourself, as you would anywhere else.
+  this.exportQuery.execute({ args: { queryParams: this.filters() } });
+  this.csv().export({ file: this.exportQuery, filename: 'people.csv' });
+}
 ```
+
+The file is saved exactly as it came: the server chose the columns, the delimiter and the
+encoding, so this side adds no BOM and applies no options. Passing `file` together with
+`rows`, `columns`, `header`, `delimiter`, `formulaGuard` or `bom` is a dev-mode error
+(`ET3507`) rather than a silently ignored option.
+
+**2. Walk the pages.** Without such an endpoint, `tableCsvRowsFromPages` fetches every page
+in order and concatenates them, producing exactly what `rows` consumes:
+
+```ts
+protected allPeople = tableCsvRowsFromPages<Person>({
+  fetchPage: (page) => this.http.get<Person[]>('/people', { params: { page, size: 200 } }),
+  // Optional. The default stops at the first page that comes back empty.
+  hasMore: (rows) => rows.length === 200,
+});
+```
+
+```html
+<button [disabled]="csv.exporting()" (click)="csv.export({ rows: allPeople })" et-button>
+  {{ csv.exporting() ? 'Exporting…' : 'Export all pages' }}
+</button>
+```
+
+It makes N round trips for a file the server could stream in one, and holds the whole
+dataset in memory to do it — prefer route 1 where it exists.
+
+**3. Say you meant the page.** `partial: true` is the opt-in for a deliberate "export what
+is on screen", and what an explicit second button passes:
+
+```html
+<button (click)="csv.export({ partial: true, filename: 'people-page.csv' })" et-button>Export this page</button>
+```
+
+Exporting a **selection** needs none of this: a selection is by definition rows the table is
+already holding, so an explicit `rows` list never warns.
+
+#### Waiting, and the busy state
+
+`rows` as a provider and `file` both have to fetch, so an export is no longer instant. The
+directive's `export()` stays fire-and-forget — it starts the work, keeps `exporting()` true
+while it runs, and stops with the component — so a `(click)` handler is still the whole call
+site. Bind `exporting()` to the button's `disabled` and its label. An export of rows the
+table already holds writes the file in the same tick, so `exporting()` never flickers on for
+it. A failure reaches the app's `ErrorHandler`.
+
+`injectTableCsvExport()` is the composable form: it returns an **observable that writes the
+file on subscribe**, so nothing happens until you subscribe and the export can be piped,
+cancelled and retried like any other request. `toCsv()` likewise returns an observable of the
+string, because `rows` may be a provider it has to wait for; it has no `file` equivalent,
+since the whole point of `file` is that this side never builds the string.
 
 ## Keyboard navigation
 

@@ -829,6 +829,14 @@ export class TableComponent<T> {
   /** Whether rows are loading: the `loading` input, or a bound {@link rowsSource} with a request out. */
   public resolvedLoading = computed(() => this.loading() || (this.rowsSource()?.loading?.() ?? false));
 
+  /**
+   * How many rows exist in total, when a bound {@link rowsSource} knows — `null` for a table given its
+   * rows outright, which by definition holds all of them. Nothing renders it: it exists so a
+   * [CSV export](/components/table#exporting-more-than-the-loaded-page) can tell that it would write
+   * one page of many.
+   */
+  public totalRows = computed(() => this.rowsSource()?.total?.() ?? null);
+
   /** Loading with nothing to show yet: placeholder rows stand in for the rows that are coming. */
   protected showPlaceholderRows = computed(() => this.resolvedLoading() && !this.hasError() && !this.rows().length);
 

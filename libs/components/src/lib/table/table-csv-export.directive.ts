@@ -1,6 +1,13 @@
-import { Directive, inject, input } from '@angular/core';
+import { computed, DestroyRef, Directive, inject, input, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize, map } from 'rxjs';
 import { RuntimeError } from '@ethlete/core';
-import { injectTableCsvExport, TableCsvExportOptions, tableToCsv } from './headless/table-csv-export';
+import {
+  injectTableCsvExport,
+  resolveTableCsvRows,
+  TableCsvExportOptions,
+  tableToCsv,
+} from './headless/table-csv-export';
 import { TABLE_ERROR_CODES } from './table-errors';
 import { TableComponent } from './table.component';
 
@@ -42,6 +49,7 @@ const csvExportConfig = <T>(value: TableCsvExportConfig<T> | '') => (value === '
 export class TableCsvExportDirective<T> {
   private table = injectHostTable<T>();
   private download = injectTableCsvExport();
+  private destroyRef = inject(DestroyRef);
 
   /** See {@link TableCsvExportConfig}. */
   public config = input({} as TableCsvExportConfig<T>, {
@@ -49,17 +57,48 @@ export class TableCsvExportDirective<T> {
     transform: csvExportConfig<T>,
   });
 
+  // Counted rather than a boolean: two buttons can be clicked before the first fetch comes back, and
+  // the second finishing must not un-busy the first.
+  private running = signal(0);
+
   /**
-   * Build and download the file. Anything passed here wins over the bound config, so one directive
-   * can serve an "export all" and an "export selection" button.
+   * Whether an export is in flight — bind it to the button's `disabled` and its spinner. Only ever
+   * true for an export that has to fetch first (a `rows` provider, or `file`); a table exporting the
+   * rows it already holds writes the file in the same tick.
+   */
+  public exporting = computed(() => this.running() > 0);
+
+  /**
+   * Build and download the file, now. Anything passed here wins over the bound config, so one
+   * directive can serve an "export all" and an "export selection" button.
+   *
+   * Fire-and-forget, so a `(click)` handler is the whole call site: it starts the work, keeps
+   * {@link exporting} true while it runs, and stops with the directive. A failure reaches the app's
+   * `ErrorHandler` — use {@link injectTableCsvExport} directly for an export you want to compose,
+   * cancel or recover from yourself.
    */
   public export(overrides: TableCsvExportOptions<T> = {}) {
-    this.download(this.table, { ...this.config(), ...overrides });
+    this.running.update((count) => count + 1);
+
+    this.download(this.table, { ...this.config(), ...overrides })
+      .pipe(
+        finalize(() => this.running.update((count) => count - 1)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
-  /** The same CSV as a string, without downloading it — to upload it, or to put it on the clipboard. */
+  /**
+   * The same CSV as a string, without downloading it — to upload it, or to put it on the clipboard.
+   * An observable rather than a string because `rows` may be a provider it has to wait for. `file`
+   * has no meaning here: the whole point of it is that this side never builds the string.
+   */
   public toCsv(overrides: TableCsvExportOptions<T> = {}) {
-    return tableToCsv(this.table, { ...this.config(), ...overrides });
+    const options = { ...this.config(), ...overrides };
+
+    return resolveTableCsvRows(options.rows, () => this.table.rows()).pipe(
+      map((rows) => tableToCsv(this.table, { ...options, rows })),
+    );
   }
 }
 

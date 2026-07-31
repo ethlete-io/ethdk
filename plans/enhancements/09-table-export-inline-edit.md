@@ -179,7 +179,7 @@ commits and the cell shows the pending bar and then the saved value, `Tab` commi
 column's editor, a failing save marks the cell, and `Enter` on a non-editable column still does
 nothing but drill. The editor sits inside the cell without changing the row height.
 
-## Phase 4 — export beyond the loaded page (M) — **designed 2026-07-31, not built**
+## Phase 4 — export beyond the loaded page (M) — **done 2026-07-31**
 
 Phase 1 exports what the table holds. For a server-paginated table that is one page, silently — the
 user clicks Export on page 3 of 200 and gets a plausible-looking, wrong file. Three routes out, in the
@@ -213,6 +213,47 @@ and exports the page. `partial: true` is the opt-in, and is also what an explici
 button in the docs' two-button pattern passes.
 
 Selection export needs no change: the selection is by definition what is loaded.
+
+## Found while implementing (2026-07-31, phase 4 — export beyond the loaded page)
+
+**The plan said "awaitable"; the styleguide says no `async`/`await`.** `ethlete`'s
+`no-restricted-syntax` bans both outright — RxJS for all async work — which the first pass ignored and
+lint caught. So the whole thing is observable-native instead: `injectTableCsvExport()` returns an
+`Observable<void>` that writes the file **on subscribe**, `toCsv()` an `Observable<string>`, and
+`tableCsvRowsFromPages` walks its pages with `expand` rather than a `for` loop with `await`. It came
+out better than the promise version would have: an export can now be piped, cancelled and retried like
+any other request.
+
+**The directive stays fire-and-forget.** A `(click)="csv.export()"` handler cannot subscribe, so
+`export()` keeps returning nothing — it subscribes itself, under `takeUntilDestroyed`, and drives
+`exporting` from a counter (two buttons can be clicked before the first fetch returns, and the second
+finishing must not un-busy the first) via `finalize`. `injectTableCsvExport()` is the composable form
+for anyone who needs the stream. `subscribe()` stays empty per the styleguide; the saving happens in
+`tap`.
+
+**Laziness had to be deliberate, and a test caught that it wasn't.** The first version resolved the
+`rows` provider while _building_ the observable, so `[etTableCsvExport]="{ rows: allPeople }"` would
+have fetched every page on any call that constructed the export. Both the rows and the file are
+wrapped in `defer` now — which also matters for `file`, since `toObservable` would otherwise stand up
+an effect for a query nobody went on to subscribe to.
+
+**`tableToCsv` got a narrower options type.** `rows` widened to `readonly T[] | provider`, but the
+pure serializer can only ever write a list it is handed. It therefore takes `TableCsvSerializeOptions`
+(the sync subset) while the download takes `TableCsvExportOptions` (that, plus `rows` as a provider,
+plus `file`, `partial`, `bom`, `filename`). Nothing downstream noticed: `bom` and `filename` were
+already download-only.
+
+**Two error codes, not one.** `ET3506` is the plan's partial-export guard. `ET3507` is new: `file`
+passed alongside `rows`/`columns`/`header`/`delimiter`/`formulaGuard`/`bom`, which cannot mean
+anything — the server already wrote that file. It throws on the way in rather than through the stream,
+so the stack points at the call. `ET3506` throws inside the pipe, because it needs the resolved row
+count.
+
+**Verified in a real browser** (`components-table--csv-export-beyond-the-page`, driven headlessly):
+the table renders one page of 4 out of 40, "Export this page" writes 5 lines, "Export all pages" walks
+all ten pages and writes 41, the button reads "Exporting…" and both buttons are disabled while it runs
+and enabled after, and the plain export throws `ET3506` naming "4 of 40 rows". The phase-1 story still
+exports its BOM'd file and its selection unchanged.
 
 ## Verification & shipping
 

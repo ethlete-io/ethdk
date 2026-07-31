@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { form, FormField } from '@angular/forms/signals';
-import { tap, timer } from 'rxjs';
+import { map, tap, timer } from 'rxjs';
 import { AutoSurfaceDirective, ProvideSurfaceDirective } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../../button';
 import { CHIP_IMPORTS } from '../../chip';
@@ -37,10 +37,15 @@ import {
 import { TableSelectionDirective } from '../table-selection.directive';
 import { TableCellStateValue, TableColumns } from '../table.types';
 import { TableCellEditCommit } from '../table-inline-edit.directive';
+import { tableCsvRowsFromPages, TableRowsSource } from '../headless';
 import { MANY_PEOPLE, PEOPLE, Person, Project, PROJECTS_BY_PERSON, ROLES } from './table-storybook.data';
 
 /** How long the demo's pretend save takes, so the cell's pending state is actually visible. */
 const SAVE_LATENCY_MS = 900;
+
+/** Rows per page for the server-paginated export demo, and how slow that pretend server is. */
+const SERVER_PAGE_SIZE = 4;
+const SERVER_LATENCY_MS = 500;
 
 // Written without interpolation on purpose: an interpolated template literal above a component's inline
 // template desynchronises the Angular language service's scanner — see ethlete/no-template-literal-before-inline-template.
@@ -90,6 +95,34 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
                 Export selection
               </button>
             }
+
+            @if (serverPaged()) {
+              <!-- The table holds one page, so this button is the whole dataset: a provider walks the
+                   pages and the export waits for it. The exporting signal is what makes the wait visible. -->
+              <button
+                [disabled]="csv.exporting()"
+                (click)="csv.export({ rows: allPeople, filename: 'people-all.csv' })"
+                size="sm"
+                variant="outline"
+                et-button
+                type="button"
+              >
+                {{ csv.exporting() ? 'Exporting…' : 'Export all pages' }}
+              </button>
+
+              <!-- And this one is the page, said out loud. Without partial:true the export throws ET3506
+                   rather than write a plausible, wrong file. -->
+              <button
+                [disabled]="csv.exporting()"
+                (click)="csv.export({ partial: true, filename: 'people-page.csv' })"
+                size="sm"
+                variant="outline"
+                et-button
+                type="button"
+              >
+                Export this page
+              </button>
+            }
           }
         </div>
       }
@@ -113,6 +146,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
         [appearance]="appearance()"
         [density]="density()"
         [data]="displayRows()"
+        [rowsSource]="serverPaged() ? serverRows : undefined"
         [columns]="columns()"
         [multiSort]="multiSort()"
         [rowInteractive]="rowInteractive()"
@@ -247,6 +281,15 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
         <p class="text-small mt-4 opacity-70">Last clicked: {{ lastClicked()?.name ?? '—' }}</p>
       }
 
+      @if (serverPaged()) {
+        <p class="text-small mt-4 opacity-70">
+          The rows come from a "server" that hands over one page of {{ SERVER_PAGE_SIZE }} out of {{ PEOPLE_COUNT }}.
+          "Export all pages" walks every page before writing the file; "Export this page" writes the
+          {{ SERVER_PAGE_SIZE }} rows on screen and says so. An export that said neither throws ET3506 in dev rather
+          than write a file that looks like the whole dataset.
+        </p>
+      }
+
       @if (inlineEdit()) {
         <p class="text-small mt-4 opacity-70">
           Double-click a Name or Email cell — or focus one and press Enter — to edit it. Enter saves, Escape restores,
@@ -335,6 +378,7 @@ export class TableStorybookComponent {
   public csvExport = input(false);
   public keyboardNav = input(false);
   public inlineEdit = input(false);
+  public serverPaged = input(false);
   public appearance = input<'enclosed' | 'divided' | 'zebra' | 'grid' | 'bare'>('enclosed');
   public density = input<'sm' | 'md' | 'lg'>('md');
   public surface = input('dark');
@@ -346,6 +390,27 @@ export class TableStorybookComponent {
   // Reset to the first page whenever the page size changes; the paginator drives it otherwise.
   protected page = linkedSignal<number, number>({ source: () => this.pageSize(), computation: () => 1 });
   protected readonly PEOPLE_COUNT = PEOPLE.length;
+  protected readonly SERVER_PAGE_SIZE = SERVER_PAGE_SIZE;
+
+  /**
+   * A hand-rolled `rowsSource`, standing in for `tableRowsFromQuery`: one page of rows plus the total
+   * the server reported. The total is the whole point here — it is what lets the export tell that the
+   * table is holding 4 of {@link PEOPLE_COUNT} rows.
+   */
+  protected serverRows: TableRowsSource<Person> = {
+    rows: computed(() => PEOPLE.slice(0, SERVER_PAGE_SIZE)),
+    total: computed(() => PEOPLE.length),
+  };
+
+  /**
+   * "Everything", for a backend with no export endpoint of its own: the adapter walks the pages one at
+   * a time and the export waits for the lot. The latency is there so the button's busy state is
+   * actually visible.
+   */
+  protected allPeople = tableCsvRowsFromPages<Person>({
+    fetchPage: (page) =>
+      timer(SERVER_LATENCY_MS).pipe(map(() => PEOPLE.slice((page - 1) * SERVER_PAGE_SIZE, page * SERVER_PAGE_SIZE))),
+  });
   /** A bone the size of the chip it stands in for — 24px tall, pill-shaped, roughly a role's width. */
   protected readonly CHIP_SKELETON_STYLE = 'inline-size: 64px; block-size: 24px; --et-skeleton-radius: 999px';
   /** Demo copy for the templated filter options — the kind of subtitle a real app would resolve. */

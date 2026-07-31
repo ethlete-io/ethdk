@@ -12,4 +12,8 @@ export const TABLE_ERROR_CODES = {
   UNKNOWN_TEMPLATE_COLUMN: 3504,
   /** A CSV export named a column key the table doesn't declare. */
   UNKNOWN_EXPORT_COLUMN: 3505,
+  /** A CSV export would write fewer rows than the table's source says exist — see `partial`. */
+  PARTIAL_EXPORT: 3506,
+  /** A CSV export was given both a server-built `file` and options that only apply to a built one. */
+  CONFLICTING_EXPORT_OPTIONS: 3507,
 } as const;

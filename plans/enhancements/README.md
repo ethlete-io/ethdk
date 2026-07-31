@@ -74,7 +74,13 @@ tokens in core. (Calendar event markers and month/year jump moved into plan
       needed a whole-config `replaceConfig` next to the merging `update()`, and the swipe exit rides
       the existing leave animation via an `!important` override of the drag's inline transform rather
       than animating itself.)_
-- [ ] 09 — table export + inline edit
+- [x] 09 — table export + inline edit _(done 2026-07-31; all four phases — CSV export, inline cell
+      editing, arrow-key grid navigation, and export beyond the loaded page. See the plan's four "found
+      while implementing" sections: the export is typed against a structural source rather than the
+      feature seam (which deliberately hides cell values), editing hands the consumer a signal-forms
+      field instead of inventing a cell-editor interface, `Enter` is settled between editing and
+      navigation through the table, and phase 4 came out observable-native because the styleguide bans
+      async/await.)_
 - [ ] 10 — quick wins
 - [ ] 11 — sport/match components
 - [ ] 12 — bracket improvements (depends on 11)

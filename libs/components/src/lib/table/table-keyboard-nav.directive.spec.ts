@@ -47,8 +47,9 @@ const create = () => {
 };
 
 const host = (fixture: ComponentFixture<HostComponent>) => fixture.nativeElement as HTMLElement;
-const cells = (fixture: ComponentFixture<HostComponent>) =>
-  [...host(fixture).querySelectorAll<HTMLElement>('.et-table-row > .et-table-cell')];
+const cells = (fixture: ComponentFixture<HostComponent>) => [
+  ...host(fixture).querySelectorAll<HTMLElement>('.et-table-row > .et-table-cell'),
+];
 
 /** The focused cell as `row,column` text, so an expectation reads like the grid. */
 const focused = (fixture: ComponentFixture<HostComponent>) => {

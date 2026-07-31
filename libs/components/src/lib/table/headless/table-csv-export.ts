@@ -1,5 +1,8 @@
-import { DOCUMENT, inject, isDevMode } from '@angular/core';
+import { DOCUMENT, inject, Injector, isDevMode } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { injectRenderer, RuntimeError } from '@ethlete/core';
+import { QueryArgs, ReadonlyQuery } from '@ethlete/query';
+import { defer, filter, from, isObservable, map, Observable, of, take, tap } from 'rxjs';
 import { TABLE_ERROR_CODES } from '../table-errors';
 import { TableColumnDef } from '../table.types';
 
@@ -15,10 +18,26 @@ export type TableCsvSource<T> = {
   visibleColumns: () => readonly TableColumnDef<T>[];
   /** Every declared column in display order, hidden ones included. */
   allColumns: () => readonly TableColumnDef<T>[];
+  /** How many rows exist in total, when the table's source knows — see {@link TableCsvExportOptions.partial}. */
+  totalRows?: () => number | null;
 };
 
-/** Options for {@link tableToCsv} and {@link exportTableToCsv}. */
-export type TableCsvExportOptions<T> = {
+/**
+ * A source of rows the export has to wait for — an "export everything" request, or
+ * {@link tableCsvRowsFromPages} walking a paginated endpoint. It is called when the export runs, not
+ * before, so a button that is never clicked fetches nothing.
+ */
+export type TableCsvRowsProvider<T> = () => Promise<readonly T[]> | Observable<readonly T[]>;
+
+/**
+ * A finished CSV the server built. Anything resolving to a `Blob` or a string will do: a promise, an
+ * observable, or an `@ethlete/query` query — which is **followed, never executed**, so trigger it
+ * yourself (or let a GET auto-execute) and the export saves the response it settles on.
+ */
+export type TableCsvExportFile = ReadonlyQuery<QueryArgs> | PromiseLike<Blob | string> | Observable<Blob | string>;
+
+/** Options for {@link tableToCsv} — the synchronous serializer, which only ever writes rows it is handed. */
+export type TableCsvSerializeOptions<T> = {
   /**
    * Which columns to write, and in which order: `'visible'` follows what the table shows (column
    * chooser + reorder), `'all'` adds the hidden ones, and an explicit key list writes exactly those,
@@ -32,8 +51,7 @@ export type TableCsvExportOptions<T> = {
    * is looking at, including the parts virtualization or a footer's paging keeps off screen.
    *
    * Pass your own list for anything else: `selection.selectedRows()` for the selection, or the
-   * untouched data to ignore the active filters. For a server-paginated table the table only ever
-   * holds the current page — fetching the rest is the consumer's job, since only they have the query.
+   * untouched data to ignore the active filters.
    */
   rows?: readonly T[];
 
@@ -42,6 +60,43 @@ export type TableCsvExportOptions<T> = {
 
   /** Field separator. `';'` is what Excel expects in locales that use `,` as the decimal mark. @default ',' */
   delimiter?: string;
+
+  /**
+   * Prefix a text field that starts with `=`, `+`, `-`, `@`, a tab or a carriage return with a `'`,
+   * so a spreadsheet treats it as text instead of a formula. This is CSV injection: without it, a
+   * row someone else authored can execute in the reader's spreadsheet when they open the file.
+   *
+   * Only text is guarded — numbers, booleans and dates are written as-is, as is a string that is
+   * simply a negative number. Turn it off only when the file is not headed for a spreadsheet.
+   * @default true
+   */
+  formulaGuard?: boolean;
+};
+
+/** Options for {@link exportTableToCsv} — everything {@link TableCsvSerializeOptions} has, plus the file. */
+export type TableCsvExportOptions<T> = Omit<TableCsvSerializeOptions<T>, 'rows'> & {
+  /**
+   * The rows to write — see {@link TableCsvSerializeOptions.rows}, plus a **provider** for rows the
+   * export has to go and get: a function returning a promise or an observable of them. That is how a
+   * server-paginated table exports more than the page it is holding, either from an "everything"
+   * request of your own or through {@link tableCsvRowsFromPages}.
+   *
+   * `export()` resolves once the file has been written, and the directive's `exporting` signal is true
+   * meanwhile, so the button can show that it is working.
+   */
+  rows?: readonly T[] | TableCsvRowsProvider<T>;
+
+  /**
+   * A CSV the **server** built — the usual answer for "export the whole dataset", since the backend
+   * already has the query and the file needs no client-side serialization at all. Takes an
+   * `@ethlete/query` query (followed, not executed), a promise or an observable resolving to a `Blob`
+   * or a string; it is saved under `filename`.
+   *
+   * Mutually exclusive with everything that describes how to *build* a file — `rows`, `columns`,
+   * `header`, `delimiter`, `formulaGuard`, `bom` — which cannot apply to one the server already wrote.
+   * Passing both is a dev-mode error (`ET3507`) rather than a silently ignored option.
+   */
+  file?: TableCsvExportFile;
 
   /**
    * Prefix the file with a UTF-8 BOM. It is what tells Excel the file is UTF-8 — without it Excel reads
@@ -56,17 +111,18 @@ export type TableCsvExportOptions<T> = {
   bom?: boolean | 'auto';
 
   /**
-   * Prefix a text field that starts with `=`, `+`, `-`, `@`, a tab or a carriage return with a `'`,
-   * so a spreadsheet treats it as text instead of a formula. This is CSV injection: without it, a
-   * row someone else authored can execute in the reader's spreadsheet when they open the file.
+   * Write only the rows the table is holding, on purpose. A server-paginated table holds one page, so
+   * an export that says nothing would quietly write page 3 of 200 as if it were the data — in dev mode
+   * that throws `ET3506` instead. This is the opt-in that says you meant it, and what an explicit
+   * "Export this page" button passes.
    *
-   * Only text is guarded — numbers, booleans and dates are written as-is, as is a string that is
-   * simply a negative number. Turn it off only when the file is not headed for a spreadsheet.
-   * @default true
+   * Only relevant when the table's rows come from a source that reports a `total`; a table given its
+   * rows outright holds all of them and never warns.
+   * @default false
    */
-  formulaGuard?: boolean;
+  partial?: boolean;
 
-  /** Downloaded file name; `.csv` is appended when missing. Ignored by {@link tableToCsv}. @default 'table.csv' */
+  /** Downloaded file name; `.csv` is appended when missing. @default 'table.csv' */
   filename?: string;
 };
 
@@ -155,7 +211,7 @@ const resolveColumns = <T>(table: TableCsvSource<T>, columns: TableCsvExportOpti
  * @example
  * const csv = tableToCsv(this.table(), { columns: 'all', delimiter: ';' });
  */
-export const tableToCsv = <T>(table: TableCsvSource<T>, options: TableCsvExportOptions<T> = {}) => {
+export const tableToCsv = <T>(table: TableCsvSource<T>, options: TableCsvSerializeOptions<T> = {}) => {
   const field: FieldConfig = { delimiter: options.delimiter ?? ',', formulaGuard: options.formulaGuard ?? true };
   const columns = resolveColumns(table, options.columns);
   const rows = options.rows ?? table.rows();
@@ -175,11 +231,116 @@ export const tableToCsv = <T>(table: TableCsvSource<T>, options: TableCsvExportO
   return lines.join('\r\n');
 };
 
+// Duck-typed rather than `instanceof`: `@ethlete/query`'s query is a plain object, and this is the
+// same test `notification-promise.ts` uses to tell one from a promise.
+const isQuery = (file: TableCsvExportFile): file is ReadonlyQuery<QueryArgs> =>
+  typeof file === 'object' && file !== null && 'executionState' in file;
+
+/**
+ * A query's settled response, without executing it — the caller triggered it (or it is a GET that
+ * auto-executes), and this only watches. Errors with the failure. A query that already carries a
+ * response emits on subscribe.
+ */
+const queryToSource = (query: ReadonlyQuery<QueryArgs>, injector: Injector) =>
+  toObservable(query.executionState, { injector }).pipe(
+    filter((state) => !!state && state.type !== 'loading'),
+    take(1),
+    map((state) => {
+      if (state?.type !== 'success') throw state?.error;
+
+      return state.response as Blob | string;
+    }),
+  );
+
+// Deferred like the rows below: building an export must not start anything, and `toObservable` would
+// otherwise stand up an effect for a query nobody went on to subscribe to.
+const fileToSource = (file: TableCsvExportFile, injector: Injector) =>
+  defer(() => {
+    if (isQuery(file)) return queryToSource(file, injector);
+    if (isObservable(file)) return file.pipe(take(1));
+
+    return from(file);
+  });
+
+/**
+ * The `rows` option as an actual list: as given, from the provider it may be, or the table's own.
+ * A provider's observable carries one list, so the first emission is the answer. Shared by the
+ * download and by the directive's `toCsv`.
+ *
+ * @internal
+ */
+export const resolveTableCsvRows = <T>(
+  rows: readonly T[] | TableCsvRowsProvider<T> | undefined,
+  fallback: () => readonly T[],
+): Observable<readonly T[]> =>
+  // Deferred, so building an export requests nothing: the provider runs — and the table's rows are
+  // read — when someone subscribes, which is also what makes a retry fetch again rather than replay.
+  defer(() => {
+    if (rows === undefined) return of(fallback());
+    if (typeof rows !== 'function') return of(rows);
+
+    const produced = rows();
+
+    return isObservable(produced) ? produced.pipe(take(1)) : from(produced);
+  });
+
+/**
+ * Refuse the combination that cannot mean anything: the server already wrote the file, so nothing
+ * describing how to build one can apply to it. Silently ignoring `columns` here would look like the
+ * option was broken.
+ */
+const assertFileOptions = <T>(options: TableCsvExportOptions<T>) => {
+  const ignored = (['rows', 'columns', 'header', 'delimiter', 'formulaGuard', 'bom'] as const).filter(
+    (key) => options[key] !== undefined,
+  );
+
+  if (!ignored.length || !isDevMode()) return;
+
+  throw new RuntimeError(
+    TABLE_ERROR_CODES.CONFLICTING_EXPORT_OPTIONS,
+    `[et-table] CSV export was given \`file\` together with ${ignored.map((key) => `\`${key}\``).join(', ')}. The server already built that file, so there is nothing here to apply them to — drop them, or drop \`file\` and let the table serialize the rows.`,
+  );
+};
+
+/**
+ * Refuse to write a plausible, wrong file. A server-paginated table holds one page; exporting it
+ * without saying so hands the user "the data" when it is 20 rows of 4 312. Dev mode only — in
+ * production the page is written rather than nothing at all.
+ */
+const assertNotPartial = <T>({
+  options,
+  table,
+  written,
+}: {
+  options: TableCsvExportOptions<T>;
+  table: TableCsvSource<T>;
+  /** How many rows the file is about to hold. */
+  written: number;
+}) => {
+  // An explicit row list (a selection, a fetched-everything provider) is already deliberate, and
+  // `partial` is the opt-in for the rest.
+  if (options.rows !== undefined || options.partial || !isDevMode()) return;
+
+  const total = table.totalRows?.() ?? null;
+
+  if (total === null || written >= total) return;
+
+  throw new RuntimeError(
+    TABLE_ERROR_CODES.PARTIAL_EXPORT,
+    `[et-table] CSV export would write ${written} of ${total} rows — this table's rows come from a server and it is holding one page. Pass \`rows\` (a list, or a provider such as \`tableCsvRowsFromPages\`), or \`file\` for a server-built export, or \`partial: true\` to write the loaded page on purpose.`,
+  );
+};
+
 /**
  * The CSV as a file the browser downloads. Call it once from an injection context — a field
  * initializer — and the function it hands back can then be called from anywhere, including a click
  * handler. It is `inject()`-based because a download is DOM work, which this library does through the
  * document and renderer it was given rather than through the globals.
+ *
+ * It hands back an observable that writes the file on subscribe and completes — **nothing happens
+ * until you subscribe**. That is what lets an export whose rows have to be fetched (`rows` as a
+ * provider, or `file`) be composed, cancelled and retried like any other request;
+ * {@link TableCsvExportDirective.export} is the fire-and-forget version for a button.
  *
  * A no-op where there is no browser (server-side rendering), so a toolbar button needs no platform
  * check of its own. Use {@link tableToCsv} to get the same file as a string instead.
@@ -189,27 +350,25 @@ export const tableToCsv = <T>(table: TableCsvSource<T>, options: TableCsvExportO
  * protected table = viewChild.required(TableComponent);
  *
  * protected download() {
- *   this.exportCsv(this.table(), { filename: 'people.csv' });
+ *   this.exportCsv(this.table(), { filename: 'people.csv' }).subscribe();
  * }
  */
 export const injectTableCsvExport = () => {
   const document = inject(DOCUMENT);
   const renderer = injectRenderer();
+  const injector = inject(Injector);
 
-  return <T>(table: TableCsvSource<T>, options: TableCsvExportOptions<T> = {}) => {
-    const csv = tableToCsv(table, options);
+  const save = (parts: BlobPart[], filename: string) => {
     // No window means no browser: server-side there is nothing to hand a file to.
     const view = document.defaultView;
 
     if (!view) return;
 
-    const name = options.filename ?? 'table.csv';
-    const filename = name.toLowerCase().endsWith('.csv') ? name : `${name}.csv`;
-    const parts = needsBom(csv, options.bom) ? [UTF8_BOM, csv] : [csv];
+    const name = filename.toLowerCase().endsWith('.csv') ? filename : `${filename}.csv`;
     const url = view.URL.createObjectURL(new view.Blob(parts, { type: 'text/csv;charset=utf-8' }));
     const link = renderer.createElement('a');
 
-    renderer.setProperties(link, { href: url, download: filename, rel: 'noopener' });
+    renderer.setProperties(link, { href: url, download: name, rel: 'noopener' });
     renderer.setStyle(link, { display: 'none' });
 
     // Firefox only follows the click of an anchor that is in the document.
@@ -219,5 +378,29 @@ export const injectTableCsvExport = () => {
 
     // The blob would otherwise be held until the tab closes; the click has already read it.
     view.URL.revokeObjectURL(url);
+  };
+
+  return <T>(table: TableCsvSource<T>, options: TableCsvExportOptions<T> = {}): Observable<void> => {
+    const filename = options.filename ?? 'table.csv';
+
+    if (options.file) {
+      // Thrown on the way in rather than through the stream: this is a mistake in the call, so the
+      // stack should point at the call.
+      assertFileOptions(options);
+
+      return fileToSource(options.file, injector).pipe(
+        // Saved as it came: the server decided the columns, the delimiter and the encoding, and a BOM
+        // this side would be a second one prepended to a file that may already carry its own.
+        tap((file) => save([file], filename)),
+        map(() => undefined),
+      );
+    }
+
+    return resolveTableCsvRows(options.rows, () => table.rows()).pipe(
+      tap((rows) => assertNotPartial({ options, table, written: rows.length })),
+      map((rows) => tableToCsv(table, { ...options, rows })),
+      tap((csv) => save(needsBom(csv, options.bom) ? [UTF8_BOM, csv] : [csv], filename)),
+      map(() => undefined),
+    );
   };
 };

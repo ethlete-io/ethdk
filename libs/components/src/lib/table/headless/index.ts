@@ -9,6 +9,7 @@
 // `table-errors.ts` also stay at the root — domain-wide infrastructure, per the architecture doc.
 export * from './table-column-state';
 export * from './table-csv-export';
+export * from './table-csv-rows-from-pages';
 export * from './table-features';
 export * from './table-filter';
 export * from './table-footer.directive';

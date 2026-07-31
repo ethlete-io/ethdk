@@ -32,6 +32,7 @@ export default {
     csvExport: false,
     keyboardNav: false,
     inlineEdit: false,
+    serverPaged: false,
     surface: 'dark',
   },
   argTypes: {
@@ -61,6 +62,7 @@ export default {
     csvExport: { control: 'boolean' },
     keyboardNav: { control: 'boolean' },
     inlineEdit: { control: 'boolean' },
+    serverPaged: { control: 'boolean' },
     surface: { control: 'text' },
   },
 } as Meta<TableStorybookComponent>;
@@ -392,6 +394,23 @@ export const CsvExport: Story = {
           "visible columns in their displayed order and the table's own rows (client-filtered and sorted), so " +
           'filtering, sorting, hiding or reordering a column changes the file. `export()` takes overrides — the ' +
           'second button passes `rows: selection.selectedRows()` to export only what is ticked.',
+      },
+    },
+  },
+};
+
+export const CsvExportBeyondThePage: Story = {
+  args: { csvExport: true, serverPaged: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'A server-paginated table holds one page, so an export that says nothing would write a plausible, ' +
+          'wrong file. When the table’s `rowsSource` reports a `total`, the export notices and throws `ET3506` ' +
+          'in dev mode instead. The two buttons are the two honest answers: `rows: tableCsvRowsFromPages(…)` ' +
+          'walks every page before writing (with `exporting()` driving the busy state), and `partial: true` ' +
+          'writes the loaded page on purpose. A backend with its own export endpoint skips both — pass its ' +
+          'query, promise or observable as `file` and the server’s CSV is saved as it came.',
       },
     },
   },
