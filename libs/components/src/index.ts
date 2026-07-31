@@ -23,6 +23,7 @@ export * from './lib/query-devtools';
 export * from './lib/query-error';
 export * from './lib/scrollable';
 export * from './lib/skeleton';
+export * from './lib/standings';
 export * from './lib/stream';
 export * from './lib/table';
 export * from './lib/tabs';

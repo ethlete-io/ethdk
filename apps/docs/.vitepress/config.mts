@@ -223,6 +223,7 @@ export default defineConfig({
             { text: 'Match', link: '/components/match' },
             { text: 'Pagination', link: '/components/pagination' },
             { text: 'Scrollable', link: '/components/scrollable' },
+            { text: 'Standings', link: '/components/standings' },
             { text: 'Table', link: '/components/table' },
             { text: 'Tabs', link: '/components/tabs' },
           ],

@@ -1,0 +1,221 @@
+@layer components {
+  @property --et-standings-row-height {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 44px;
+  }
+
+  @property --et-standings-cell-padding-inline {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 8px;
+  }
+
+  @property --et-standings-zone-bar-width {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 3px;
+  }
+
+  @property --et-standings-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 13px;
+  }
+
+  .et-standings {
+    container-type: inline-size;
+    container-name: et-standings;
+    display: block;
+    box-sizing: border-box;
+    color: var(--et-surface-color-solid, currentColor);
+  }
+
+  .et-standings-content {
+    /* The detail columns are the first thing to go when the table runs out of room: a table read sideways
+       is worse than a table with fewer columns. */
+    --_et-standings-detail-display: none;
+    --_et-standings-form-display: none;
+  }
+
+  @container et-standings (min-inline-size: 560px) {
+    .et-standings-content {
+      --_et-standings-detail-display: table-cell;
+    }
+  }
+
+  @container et-standings (min-inline-size: 720px) {
+    .et-standings-content {
+      --_et-standings-form-display: table-cell;
+    }
+  }
+
+  .et-standings-table {
+    inline-size: 100%;
+    font-size: var(--et-standings-font-size);
+    border-collapse: collapse;
+    text-align: start;
+  }
+
+  /* Kept in the accessibility tree, out of the design: the table's own heading is usually already on the
+     page above it, and two of them read as a mistake. */
+  .et-standings-caption {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    border: 0;
+    clip-path: inset(50%);
+  }
+
+  .et-standings-cell {
+    padding-block: 0;
+    padding-inline: var(--et-standings-cell-padding-inline);
+    font-weight: inherit;
+    text-align: end;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  .et-standings-cell:where([data-column='position']) {
+    position: relative;
+    inline-size: 1px;
+    padding-inline-start: calc(var(--et-standings-cell-padding-inline) + var(--et-standings-zone-bar-width));
+    color: var(--et-surface-color-muted-solid, currentColor);
+    font-variant-numeric: tabular-nums;
+    text-align: start;
+  }
+
+  .et-standings-cell:where([data-column='participant']) {
+    inline-size: 100%;
+    min-inline-size: 0;
+    text-align: start;
+  }
+
+  .et-standings-cell:where([data-column='detail']) {
+    display: var(--_et-standings-detail-display);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .et-standings-cell:where([data-column='form']) {
+    display: var(--_et-standings-form-display);
+  }
+
+  .et-standings-cell:where([data-column='points']) {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .et-standings-head-row .et-standings-cell {
+    block-size: var(--et-standings-row-height);
+    color: var(--et-surface-color-muted-solid, currentColor);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-block-end: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+  }
+
+  .et-standings-row .et-standings-cell {
+    block-size: var(--et-standings-row-height);
+    border-block-end: 1px solid color-mix(in srgb, var(--et-surface-border-solid, gray) 60%, transparent);
+  }
+
+  /* A band's colour comes from the theme the row is scoped to, which the consumer names — so "advancing"
+     looks like whatever their app decided, and this file names no colour at all. */
+  .et-standings-row:where([data-zone]) {
+    background: color-mix(in srgb, var(--et-theme-color-primary-solid, transparent) 7%, transparent);
+  }
+
+  .et-standings-row:where([data-zone]) .et-standings-cell:where([data-column='position'])::before {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: var(--et-standings-zone-bar-width);
+    background: var(--et-theme-color-primary-solid, currentColor);
+    content: '';
+  }
+
+  .et-standings-row:where([data-highlighted]) {
+    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 12%, transparent);
+  }
+
+  .et-standings-row:where([data-highlighted]) .et-standings-cell {
+    font-weight: 600;
+  }
+
+  .et-standings-row:where([data-highlighted]) .et-standings-cell:where([data-column='position']) {
+    color: var(--et-surface-color-solid, currentColor);
+  }
+
+  /* The band's meaning in words, for assistive tech only: colour alone can't carry it, and the legend
+     below is a separate element a row-by-row reader never reaches. */
+  .et-standings-zone-note {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    overflow: hidden;
+    white-space: nowrap;
+    clip-path: inset(50%);
+  }
+
+  .et-standings-content .et-standings-participant {
+    --et-match-participant-emblem-size: 24px;
+    --et-match-participant-gap: 8px;
+    --et-match-participant-font-size: var(--et-standings-font-size);
+    min-inline-size: 0;
+  }
+
+  .et-standings-form {
+    display: flex;
+    gap: 3px;
+  }
+
+  .et-standings-form-result {
+    inline-size: 8px;
+    block-size: 8px;
+    border-radius: 2px;
+  }
+
+  /* Won / drew / lost, from the surface tokens rather than a green-amber-red this file invents: the shape
+     of the streak is what the column is for, and each dot is labelled for assistive tech anyway. */
+  .et-standings-form-result:where([data-result='win']) {
+    background: var(--et-surface-color-solid, currentColor);
+  }
+
+  .et-standings-form-result:where([data-result='tie']) {
+    background: color-mix(in srgb, var(--et-surface-color-solid, gray) 45%, transparent);
+  }
+
+  .et-standings-form-result:where([data-result='loss']) {
+    background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 25%, transparent);
+  }
+
+  .et-standings-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    margin: 0;
+    padding: 10px var(--et-standings-cell-padding-inline) 0;
+    font-size: 11px;
+    color: var(--et-surface-color-muted-solid, currentColor);
+    list-style: none;
+  }
+
+  .et-standings-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .et-standings-legend-swatch {
+    flex: none;
+    inline-size: 10px;
+    block-size: 3px;
+    background: var(--et-theme-color-primary-solid, currentColor);
+    border-radius: 2px;
+  }
+}

@@ -1,0 +1,113 @@
+<!-- Everything density-dependent lives on this element rather than the host: a container query can only
+     style descendants of its container, and the host is the container. -->
+<div class="et-standings-content">
+  <table class="et-standings-table">
+    <caption class="et-standings-caption">
+      {{
+        standings.resolvedLabels().caption
+      }}
+    </caption>
+
+    <thead>
+      <tr class="et-standings-head-row">
+        <th [attr.abbr]="labels().positionFull" class="et-standings-cell" data-column="position" scope="col">
+          {{ labels().position }}
+        </th>
+        <th class="et-standings-cell" data-column="participant" scope="col">{{ labels().participant }}</th>
+        <th [attr.abbr]="labels().playedFull" class="et-standings-cell" data-column="detail" scope="col">
+          {{ labels().played }}
+        </th>
+        <th [attr.abbr]="labels().winsFull" class="et-standings-cell" data-column="detail" scope="col">
+          {{ labels().wins }}
+        </th>
+        <th [attr.abbr]="labels().tiesFull" class="et-standings-cell" data-column="detail" scope="col">
+          {{ labels().ties }}
+        </th>
+        <th [attr.abbr]="labels().lossesFull" class="et-standings-cell" data-column="detail" scope="col">
+          {{ labels().losses }}
+        </th>
+        @if (standings.hasDifference()) {
+          <th [attr.abbr]="labels().differenceFull" class="et-standings-cell" data-column="detail" scope="col">
+            {{ labels().difference }}
+          </th>
+        }
+        <th [attr.abbr]="labels().pointsFull" class="et-standings-cell" data-column="points" scope="col">
+          {{ labels().points }}
+        </th>
+        @if (standings.hasForm()) {
+          <th [attr.abbr]="labels().formFull" class="et-standings-cell" data-column="form" scope="col">
+            {{ labels().form }}
+          </th>
+        }
+      </tr>
+    </thead>
+
+    <tbody>
+      @for (renderRow of standings.renderRows(); track renderRow.row.id) {
+        <tr
+          [etProvideColor]="renderRow.zone?.color ?? null"
+          [attr.data-zone]="renderRow.zone ? '' : null"
+          [attr.data-highlighted]="renderRow.isHighlighted ? '' : null"
+          [attr.aria-current]="renderRow.isHighlighted ? 'true' : null"
+          class="et-standings-row"
+        >
+          <!-- A row header, not a cell: the position is what identifies the row to a screen reader. -->
+          <th class="et-standings-cell" data-column="position" scope="row">
+            {{ renderRow.row.position }}
+            @if (renderRow.zone; as zone) {
+              <!-- The band's meaning in text, so the banding isn't colour-only. -->
+              <span class="et-standings-zone-note">{{ zone.label }}</span>
+            }
+            @if (renderRow.isHighlighted) {
+              <span class="et-standings-zone-note">{{ labels().highlightedRow }}</span>
+            }
+          </th>
+
+          <td class="et-standings-cell" data-column="participant">
+            <et-match-participant [participant]="renderRow.row.participant" class="et-standings-participant" />
+          </td>
+
+          <td class="et-standings-cell" data-column="detail">{{ renderRow.row.played }}</td>
+          <td class="et-standings-cell" data-column="detail">{{ renderRow.row.wins }}</td>
+          <td class="et-standings-cell" data-column="detail">{{ renderRow.row.ties }}</td>
+          <td class="et-standings-cell" data-column="detail">{{ renderRow.row.losses }}</td>
+
+          @if (standings.hasDifference()) {
+            <td class="et-standings-cell" data-column="detail">{{ differenceText(renderRow.row.difference) }}</td>
+          }
+
+          <td class="et-standings-cell" data-column="points">{{ renderRow.row.points }}</td>
+
+          @if (standings.hasForm()) {
+            <td class="et-standings-cell" data-column="form">
+              @if (renderRow.row.form; as form) {
+                <span class="et-standings-form">
+                  @for (result of form; track $index) {
+                    <span
+                      [attr.aria-label]="labels().formResult(result)"
+                      [attr.data-result]="result"
+                      class="et-standings-form-result"
+                    ></span>
+                  }
+                </span>
+              }
+            </td>
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  @if (standings.legendZones(); as zones) {
+    @if (zones.length) {
+      <ul [attr.aria-label]="labels().legend" class="et-standings-legend">
+        @for (zone of zones; track zone.label) {
+          <li class="et-standings-legend-item">
+            <span [etProvideColor]="zone.color" class="et-standings-legend-swatch" aria-hidden="true"></span>
+            {{ zone.label }}
+          </li>
+        }
+      </ul>
+    }
+  }
+</div>

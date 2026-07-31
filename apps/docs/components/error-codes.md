@@ -58,6 +58,7 @@ Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU
 | 4100–4199 | Floating action    | [Floating action](/components/floating-action)     |
 | 4200–4299 | Filter overlay     | [Filter overlay](/components/filter-overlay)       |
 | 4300–4399 | Match              | [Match](/components/match)                         |
+| 4400–4499 | Standings          | [Standings](/components/standings)                 |
 
 ::: info Codes below 1000
 Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web sockets). `ET1000`/`ET1001` therefore exist in both packages — the bracketed source in the message (`[SelectDirective]` vs. a query feature) tells them apart.
@@ -404,3 +405,11 @@ Checked in dev mode only, after the first render.
 | Code     | Cause                                                                                                | Fix                                                                                  |
 | -------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | `ET4300` | An `etMatchCardScore`, `etMatchCardMeta` or `etMatchCardGameScores` has no `[etMatchCard]` above it. | Move the part inside the card element (`<et-match-card>` or your own `etMatchCard`). |
+
+## Standings (ET44xx)
+
+Checked in dev mode only, after the first render.
+
+| Code     | Cause                                                     | Fix                                        |
+| -------- | --------------------------------------------------------- | ------------------------------------------ |
+| `ET4400` | Two `zones` cover the same position, so a row is in both. | Give every zone its own `from`–`to` range. |

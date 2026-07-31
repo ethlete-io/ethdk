@@ -117,6 +117,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 - [Masonry](/components/masonry) — column-balancing layout for variable-height cards, with continuous measurement and stable columns.
 - [Match](/components/match) — container-adaptive match card and participant primitive, fed by a normalized view-model any backend can map into.
 - [Pagination](/components/pagination) — page-number paginator with ellipsis, jump controls and a headless tier.
+- [Standings](/components/standings) — league and group table with position zones, a legend that can't drift from them, and column-dropping density.
 - [Scrollable](/components/scrollable) — scroll containers with buttons, masks, snap and drag scrolling.
 - [Table](/components/table) — type-safe, light-by-default data table on CSS grid with a sticky header and empty state.
 - [Tabs](/components/tabs) — content tabs and router-driven nav tabs.
