@@ -9,6 +9,10 @@ import type { QueryKey } from '../query-repository';
  * Bump this whenever {@link QuerySyncMessage} changes in a way an older tab could misread. Skew
  * *within* one version (a response body whose shape changed server-side) is accepted risk, the same
  * as it is for the bearer auth token sync.
+ *
+ * Adding a whole new message *type* is not such a change and must not bump it: an older tab already
+ * drops what it does not recognize (see {@link unwrapQuerySyncMessage}), whereas a bump would make it
+ * drop the types it does know as well.
  */
 export const QUERY_SYNC_PROTOCOL_VERSION = 1;
 
@@ -37,7 +41,18 @@ export type QuerySyncMutationMessage = {
   url: string;
 };
 
-export type QuerySyncMessage = QuerySyncResponseMessage | QuerySyncMutationMessage;
+/** Another tab was told to invalidate queries, explicitly. */
+export type QuerySyncInvalidateMessage = {
+  type: 'invalidate';
+
+  /**
+   * The absolute URL the invalidation was narrowed to, or `null` for every query in use. Already
+   * resolved by the tab that sent it — the two tabs run the same client, so its `baseUrl` is ours.
+   */
+  url: string | null;
+};
+
+export type QuerySyncMessage = QuerySyncResponseMessage | QuerySyncMutationMessage | QuerySyncInvalidateMessage;
 
 /** What actually travels over the channel: a message plus the protocol version that produced it. */
 export type QuerySyncEnvelope = QuerySyncMessage & { v: number };
@@ -76,6 +91,10 @@ export const unwrapQuerySyncMessage = (data: unknown): QuerySyncMessage | null =
 
   if (type === 'mutation' && typeof method === 'string' && typeof url === 'string') {
     return { type: 'mutation', method: method as QueryMethod, url };
+  }
+
+  if (type === 'invalidate' && (typeof url === 'string' || url === null)) {
+    return { type: 'invalidate', url };
   }
 
   return null;

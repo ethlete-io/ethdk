@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { DestroyRef, ErrorHandler, inject, Injector, PLATFORM_ID } from '@angular/core';
 import { createRootProvider, ProviderResult } from '@ethlete/core';
 import { BuildQueryStringConfig } from '../legacy';
+import { createQueryInvalidationFilter, QueryInvalidationOptions, resolveInvalidationUrl } from './query-invalidation';
 import { createIndexedDbQueryPersistenceAdapter } from './persistence/query-persistence-indexed-db';
 import { QueryPersistenceConfig } from './persistence/query-persistence-config';
 import { createQueryPersistenceEngine, QueryPersistenceEngine } from './persistence/query-persistence-engine';
@@ -172,8 +173,34 @@ export type QueryClient = {
    *
    * Only cacheable requests are refreshed: re-firing a mutation nobody asked for would be a far worse
    * surprise than a stale read.
+   *
+   * @see QueryClient.invalidateQueries for the case where the *data* went stale rather than the
+   * request, which is the one that also concerns the user's other tabs.
    */
   refreshQueriesInUse: () => void;
+
+  /**
+   * Re-executes the queries this client has consumers for whose data the caller knows to be out of
+   * date — after a mutation, or a push message saying something changed server-side — and tells the
+   * user's other tabs to do the same.
+   *
+   * Narrow it by `url`, by `filter`, or leave it open to invalidate everything in use:
+   *
+   * @example
+   * await createPlayer.execute({ body });
+   *
+   * client.invalidateQueries({ url: '/players' }); // /players, /players/1, /players?page=2
+   * client.invalidateQueries(); // everything on screen, here and in the other tabs
+   *
+   * Same set as {@link QueryClient.refreshQueriesInUse}: cacheable entries with at least one
+   * consumer, cache bypassed, in-flight requests restarted. Entries sitting out their `keepUnusedFor`
+   * window are deliberately left alone — they revalidate on their own when a consumer binds again,
+   * and refreshing what nobody is looking at is how an invalidation turns into a request storm.
+   *
+   * Reaching the other tabs needs {@link CreateQueryClientConfigOptions.multiTabSync} (on by default);
+   * without it this is a local call, and `otherTabs: false` makes it one deliberately.
+   */
+  invalidateQueries: (options?: QueryInvalidationOptions) => void;
 
   /**
    * Removes every response this client persisted (see
@@ -288,6 +315,15 @@ export const createQueryClient = (options: CreateQueryClientConfigOptions): Quer
         repository,
         baseUrl: options.baseUrl,
         refreshQueriesInUse: () => repository.refreshInUse(),
+        invalidateQueries: (invalidation) => {
+          const url = invalidation?.url ? resolveInvalidationUrl(options.baseUrl, invalidation.url) : null;
+
+          repository.refreshInUse(createQueryInvalidationFilter({ url, filter: invalidation?.filter }));
+
+          // The resolved URL is what travels: the other tabs are the same client, so they would
+          // resolve it identically, and a message that needs no interpretation cannot drift.
+          if (invalidation?.otherTabs ?? true) sync?.postInvalidation(url);
+        },
         clearPersistedQueries: () => persistenceEngine?.clear() ?? Promise.resolve(),
         whenPersistenceReady: persistenceEngine?.whenReady ?? Promise.resolve(),
         subtle: { sync, persistence: persistenceEngine },

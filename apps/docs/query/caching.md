@@ -67,6 +67,30 @@ It bypasses the freshness window and restarts requests that are still in flight,
 
 This is what v2's `setDefaultHeaders({ refreshQueriesInUse: true })` did implicitly.
 
+## Invalidating after a change
+
+When the _data_ went stale rather than the request — you mutated something, or a push message said someone else did — `invalidateQueries()` re-runs the affected queries here **and in the user's other tabs**:
+
+```ts
+await createPlayer.execute({ body });
+
+injectApi().invalidateQueries({ url: '/players' });
+```
+
+It refreshes the same set as `refreshQueriesInUse()` — cacheable entries with at least one consumer, cache bypassed, in-flight requests restarted — narrowed by what you pass:
+
+| Option      | Default | Description                                                                                                     |
+| ----------- | ------- | --------------------------------------------------------------------------------------------------------------- |
+| `url`       | —       | Invalidate one part of the API. Relative values resolve against `baseUrl`, like a route.                        |
+| `filter`    | —       | Narrow further on the built `{ method, url }` of each query. Runs after `url`. **This tab only** — see below.   |
+| `otherTabs` | `true`  | Whether the user's other tabs invalidate too. Needs [multi-tab sync](/query/multi-tab); ignored when it is off. |
+
+`url` matching is boundary aware rather than a plain prefix test, so `/players` covers `/players`, `/players/1` and `/players?page=2` — but not `/players-archive`. Passing nothing invalidates everything in use.
+
+Entries sitting out their `keepUnusedFor` window are deliberately left alone. They revalidate on their own when a consumer binds again, and refreshing what nobody is looking at is how an invalidation turns into a request storm.
+
+A `filter` is a function, so it cannot cross a `BroadcastChannel`: the other tabs narrow by `url` alone and invalidate a superset. Pair it with `otherTabs: false` when the two must agree.
+
 ## See it live
 
 In the demo, the mocked backend sends `cache-control: max-age=20` (a 10s freshness window after halving). `requestNumber` only increments when the server is actually hit — `execute (allowCache)` within the window serves the cache:

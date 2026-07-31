@@ -105,6 +105,25 @@ multiTabSync: {
 The mutating tab itself is untouched. Refreshing locally after a mutation stays the app's job, as it
 is without sync — auto-refreshing there would double-fetch in every app that already handles it.
 
+## Invalidating on purpose
+
+The three above happen on their own. When the app knows what went stale — it just mutated something,
+or a push message said someone else did — [`invalidateQueries()`](/query/caching#invalidating-after-a-change)
+says so explicitly, and the message reaches every tab:
+
+```ts
+await createPlayer.execute({ body });
+
+injectApi().invalidateQueries({ url: '/players' });
+```
+
+Unlike the mutation heuristic this also refreshes the tab it was called in — it is the app talking,
+not the client guessing from a request it happened to see — and `refreshOnMutation: false` does not
+opt out of it. `otherTabs: false` keeps a single invalidation local.
+
+What travels is the resolved URL, never the `filter` function: the receiving tabs narrow by URL alone
+and invalidate a superset of what the calling tab did.
+
 ## Configuration
 
 ```ts

@@ -21,6 +21,7 @@ import { createQuery, Query, QueryArgs } from '../query';
 import { createQueryClient, QueryClientRef } from '../query-client';
 import { QueryMethod } from '../query-creator';
 import { withArgs, withPolling } from '../query-features';
+import { QueryInvalidationOptions } from '../query-invalidation';
 import { QueryMultiTabSyncConfig } from './query-sync-config';
 
 /** One channel name for every client in a spec, so two clients behave as two tabs of one app. */
@@ -331,6 +332,118 @@ describe('multi tab sync', () => {
 
       expect(tabB.query.loading()).toBeNull();
       expect(bus.posted.filter((message) => (message.data as { url?: string }).url !== undefined)).toEqual([]);
+    });
+  });
+
+  describe('explicit invalidation', () => {
+    /** What an app calls after a mutation it knows the scope of. */
+    const invalidate = (client: QueryClientRef, options?: QueryInvalidationOptions) => {
+      TestBed.inject(client[2]).invalidateQueries(options);
+      TestBed.tick();
+
+      return flushMultiTabSync();
+    };
+
+    it('refreshes the matching query in every tab', async () => {
+      const tabAClient = createTab();
+      const tabA = mountQuery(tabAClient, { route: '/players' });
+      const tabB = mountQuery(createTab(), { route: '/players' });
+
+      await flushAll({ version: 1 });
+      await invalidate(tabAClient, { url: '/players' });
+
+      // Unlike the mutation heuristic, this one refreshes the calling tab as well: it is the app
+      // saying the data is stale, not the client guessing from a request it happened to see.
+      expect(tabA.query.loading()).not.toBeNull();
+      expect(tabB.query.loading()).not.toBeNull();
+
+      await flushAll({ version: 2 });
+
+      expect(tabA.query.response()).toEqual({ version: 2 });
+      expect(tabB.query.response()).toEqual({ version: 2 });
+    });
+
+    it('refreshes everything in use when nothing narrows it', async () => {
+      const tabAClient = createTab();
+      const tabBClient = createTab();
+
+      const players = mountQuery(tabBClient, { route: '/players' });
+      const teams = mountQuery(tabBClient, { route: '/teams' });
+
+      await flushAll({ version: 1 });
+      await invalidate(tabAClient);
+
+      expect(players.query.loading()).not.toBeNull();
+      expect(teams.query.loading()).not.toBeNull();
+
+      await flushAll({ version: 2 });
+    });
+
+    it('matches on path boundaries, not on the raw prefix', async () => {
+      const tabAClient = createTab();
+      const tabBClient = createTab();
+
+      const players = mountQuery(tabBClient, { route: '/players' });
+      const player = mountQuery(tabBClient, { route: '/players/1' });
+      const archive = mountQuery(tabBClient, { route: '/players-archive' });
+
+      await flushAll({ version: 1 });
+      await invalidate(tabAClient, { url: '/players' });
+
+      expect(players.query.loading()).not.toBeNull();
+      expect(player.query.loading()).not.toBeNull();
+      expect(archive.query.loading()).toBeNull();
+
+      await flushAll({ version: 2 });
+    });
+
+    it('stays in the calling tab with otherTabs off', async () => {
+      const tabAClient = createTab();
+      const tabA = mountQuery(tabAClient, { route: '/players' });
+      const tabB = mountQuery(createTab(), { route: '/players' });
+
+      await flushAll({ version: 1 });
+      await invalidate(tabAClient, { otherTabs: false });
+
+      expect(tabA.query.loading()).not.toBeNull();
+      expect(tabB.query.loading()).toBeNull();
+
+      await flushAll({ version: 2 });
+    });
+
+    it('narrows the calling tab further with a filter the others do not get', async () => {
+      const tabAClient = createTab();
+      const tabBClient = createTab();
+
+      const players = mountQuery(tabAClient, { route: '/players' });
+      const teams = mountQuery(tabAClient, { route: '/teams' });
+      const otherTabTeams = mountQuery(tabBClient, { route: '/teams' });
+
+      await flushAll({ version: 1 });
+      await invalidate(tabAClient, { filter: (query) => query.url.endsWith('/players') });
+
+      expect(players.query.loading()).not.toBeNull();
+      expect(teams.query.loading()).toBeNull();
+
+      // A function cannot cross the channel, so the other tab invalidates what is left: everything.
+      expect(otherTabTeams.query.loading()).not.toBeNull();
+
+      await flushAll({ version: 2 });
+    });
+
+    it('does nothing across tabs when multiTabSync is off', async () => {
+      const tabAClient = createTab(false);
+      const tabA = mountQuery(tabAClient, { route: '/players' });
+      const tabB = mountQuery(createTab(false), { route: '/players' });
+
+      await flushAll({ version: 1 });
+      await invalidate(tabAClient);
+
+      expect(tabA.query.loading()).not.toBeNull();
+      expect(tabB.query.loading()).toBeNull();
+      expect(bus.posted).toEqual([]);
+
+      await flushAll({ version: 2 });
     });
   });
 

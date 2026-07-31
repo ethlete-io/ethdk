@@ -1,4 +1,5 @@
 import { shouldCacheQuery } from '../query-cache-utils';
+import { createQueryInvalidationFilter } from '../query-invalidation';
 import { QueryRepository, QueryRepositoryEvent } from '../query-repository';
 import { QueryKeyLockManager } from './query-key-lock-manager';
 import { QueryMultiTabSyncConfig } from './query-sync-config';
@@ -22,6 +23,12 @@ export type QuerySyncEngine = {
 
   /** Elects the one tab responsible for a cache key. */
   lockManager: QueryKeyLockManager;
+
+  /**
+   * Tells the other tabs to refresh the queries they have in use below `url`, or all of them for
+   * `null`. What {@link QueryClient.invalidateQueries} broadcasts.
+   */
+  postInvalidation: (url: string | null) => void;
 
   /** Stops broadcasting and listening, and closes the channel. */
   destroy: () => void;
@@ -79,12 +86,22 @@ export const createQuerySyncEngine = (options: CreateQuerySyncEngineOptions): Qu
       return;
     }
 
+    // An invalidation is something the other tab's app code asked for explicitly, so unlike the
+    // mutation heuristic it is not something `refreshOnMutation: false` opts out of.
+    if (message.type === 'invalidate') {
+      repository.refreshInUse(createQueryInvalidationFilter({ url: message.url }));
+
+      return;
+    }
+
     if (!refreshOnMutation) return;
 
     const mutation = { method: message.method, url: message.url };
 
     repository.refreshInUse(mutationFilter ? (request) => mutationFilter(mutation, request) : undefined);
   };
+
+  const postInvalidation = (url: string | null) => transport.post({ type: 'invalidate', url });
 
   const eventSubscription = repository.events$.subscribe(broadcast);
   const unlisten = transport.listen(apply);
@@ -95,5 +112,5 @@ export const createQuerySyncEngine = (options: CreateQuerySyncEngineOptions): Qu
     transport.destroy();
   };
 
-  return { isPollingDedupeEnabled, lockManager, destroy };
+  return { isPollingDedupeEnabled, lockManager, postInvalidation, destroy };
 };
