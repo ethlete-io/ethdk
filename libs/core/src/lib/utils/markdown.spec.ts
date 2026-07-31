@@ -385,9 +385,7 @@ describe('htmlToMarkdown', () => {
   });
 
   it('nests block quotes, one > per level', () => {
-    expect(htmlToMarkdown('<blockquote>outer<blockquote>inner</blockquote></blockquote>')).toBe(
-      '> outer\n> > inner',
-    );
+    expect(htmlToMarkdown('<blockquote>outer<blockquote>inner</blockquote></blockquote>')).toBe('> outer\n> > inner');
     expect(markdownToHtml('> outer\n> > inner')).toBe('<blockquote>outer<blockquote>inner</blockquote></blockquote>');
     expect(htmlToMarkdown(markdownToHtml('> a\n> > b\n> > > c'))).toBe('> a\n> > b\n> > > c');
   });
