@@ -52,6 +52,22 @@ export class BreadcrumbItemTemplateDirective {
   public loading = input(false, { transform: booleanAttribute });
 
   /**
+   * This crumb's plain-text name for **structured data** — read only by
+   * [`etBreadcrumbSeo`](/components/breadcrumb#seo-structured-data), never rendered. It has to be
+   * stated because a crumb's visible content is a template: it may be an icon, a chip, or markup with
+   * no single text form, and `schema.org` wants a string.
+   */
+  public name = input<string | null>(null);
+
+  /**
+   * This crumb's **absolute** URL for structured data, same story as {@link name}. Absolute because
+   * that is what `schema.org` asks for, and because a `routerLink` is a path — the crumb knows its
+   * route, only the app knows its origin. Omit it on the last crumb: the page it names is the page the
+   * markup is on.
+   */
+  public url = input<string | null>(null);
+
+  /**
    * @internal Whether this is the last crumb — the current page, which is what `aria-current` goes on.
    * Pushed here by whatever renders the trail: the crumb can't work it out itself, since the trail it
    * ends up in may be composed from segments it knows nothing about.

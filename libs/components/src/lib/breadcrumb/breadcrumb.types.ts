@@ -12,6 +12,16 @@ export type BreadcrumbCrumb = {
   /** Whether to render a placeholder instead, because the crumb's label hasn't arrived yet. */
   loading: Signal<boolean>;
 
+  /**
+   * Plain-text name for structured data, when the crumb states one — see `etBreadcrumbSeo`. Optional
+   * so a hand-rolled crumb object stays as small as it was; a crumb without it is left out of the
+   * emitted `BreadcrumbList`.
+   */
+  name?: Signal<string | null>;
+
+  /** Absolute URL for structured data. Omitted on the last crumb, which is the current page. */
+  url?: Signal<string | null>;
+
   /** @internal Set by whatever renders the trail: the last crumb is the current page (`aria-current`). */
   isLast: WritableSignal<boolean>;
 };

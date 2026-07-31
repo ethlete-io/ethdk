@@ -52,8 +52,9 @@ keeps its slot until the name arrives.
 | `collapse` | `true`  | Move the middle crumbs into the overflow control when the trail doesn't fit. Off leaves your CSS in charge. |
 | `labels`   | `null`  | Per-instance overrides for the accessible labels, merged over the provided `BREADCRUMB_LABELS`.             |
 
-`etBreadcrumbItemTemplate` takes `loading` (default `false`); `etBreadcrumbSegment` takes `order`
-(default `null`); `et-breadcrumb-outlet` takes `collapse` and `labels` and forwards them.
+`etBreadcrumbItemTemplate` takes `loading` (default `false`) plus `name`/`url` for
+[structured data](#seo-structured-data); `etBreadcrumbSegment` takes `order` (default `null`);
+`et-breadcrumb-outlet` takes `collapse` and `labels` and forwards them.
 
 ## Overflow
 
@@ -194,6 +195,52 @@ it lands inside — which is how a shell-wide separator is set:
 ```
 
 <StoryEmbed id="components-breadcrumb--routed-outlet" height="360px" />
+
+## SEO: structured data
+
+A breadcrumb is one of the few components with a direct search-result payoff: `schema.org`'s
+**BreadcrumbList** is what turns a bare URL in a result into a readable trail. Import
+`BREADCRUMB_SEO_IMPORTS` and add `etBreadcrumbSeo`:
+
+```html
+<et-breadcrumb etBreadcrumbSeo>
+  <ng-template etBreadcrumbItemTemplate name="Home" url="https://example.com/">
+    <a etBreadcrumbItem routerLink="/">Home</a>
+  </ng-template>
+  <ng-template etBreadcrumbItemTemplate name="Teams" url="https://example.com/teams">
+    <a etBreadcrumbItem routerLink="/teams">Teams</a>
+  </ng-template>
+  <!-- the current page: named, but with no url -->
+  <ng-template [name]="team.name()" etBreadcrumbItemTemplate>
+    <span etBreadcrumbItem>{{ team.name() }}</span>
+  </ng-template>
+</et-breadcrumb>
+```
+
+<StoryEmbed id="components-breadcrumb--structured-data" height="420px" />
+
+**The crumbs state their `name` and `url`; nothing is scraped from the DOM.** A crumb's content is a
+template — it may be an icon, a chip, or markup with no single text form — and its `routerLink` is a
+path, where `schema.org` asks for an absolute URL. Only the app knows both.
+
+The rules it applies:
+
+- **Crumbs still `loading` are skipped**, and so are crumbs with no `name`. A `BreadcrumbList` with a
+  placeholder in it is worse than a shorter one; positions are renumbered so the list stays `1..n`.
+- **The last crumb needs no `url`** — it is the page the markup sits on, which is what Google's
+  breadcrumb guidance asks for.
+- **Collapsing doesn't change it.** The markup describes `items()`, not what currently fits on
+  screen: whether the middle crumbs are behind the overflow control is a layout decision.
+- **Fewer than two named crumbs emits nothing.** A one-item trail tells a crawler nothing it can't
+  already see.
+
+It works the same on `<et-breadcrumb-outlet>`, where the trail is composed from routed segments — put
+the attribute on the outlet and each segment's crumbs supply their own `name`/`url`.
+
+`[etBreadcrumbSeo]="false"` turns it off without removing the directive, for a page that shouldn't
+publish a trail. It ships separately from the breadcrumb so an app doing no head management never
+pulls core's structured-data store into its bundle — the same split as
+[`etPaginationSeo`](/components/pagination#links-mode-seo).
 
 ## Localization
 

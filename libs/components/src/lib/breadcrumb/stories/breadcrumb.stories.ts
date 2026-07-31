@@ -44,11 +44,12 @@ export default {
       ],
     }),
   ],
-  args: { width: 640, collapse: true, loading: false, separator: 'chevron', surface: 'dark' },
+  args: { width: 640, collapse: true, loading: false, seo: false, separator: 'chevron', surface: 'dark' },
   argTypes: {
     width: { control: { type: 'range', min: 200, max: 900, step: 10 } },
     collapse: { control: 'boolean' },
     loading: { control: 'boolean' },
+    seo: { control: 'boolean' },
     separator: { control: 'radio', options: ['chevron', 'slash'] },
     surface: { control: 'text' },
   },
@@ -67,6 +68,23 @@ export const Collapsed: Story = {
           'Too narrow for the full trail: the middle crumbs move into a toggletip behind the ellipsis, ' +
           'while the first crumb and the current page stay visible. Widen it and they come back — the ' +
           'width the full trail needs is measured once, so it never flickers between the two states.',
+      },
+    },
+  },
+};
+
+export const StructuredData: Story = {
+  args: { seo: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`etBreadcrumbSeo` emits a `schema.org` **BreadcrumbList** as JSON-LD, which is what earns a site ' +
+          'the breadcrumb line in a search result instead of a bare URL. It reads the `name` and `url` each ' +
+          'crumb states rather than the rendered DOM — a crumb is a template with no single text form, and ' +
+          'a `routerLink` is a path where schema.org wants an absolute URL. The last crumb states no `url`: ' +
+          'it is the page the markup is on. Collapse the trail with the `width` control and the emitted ' +
+          'list stays whole — collapsing is a layout decision, not a change to the trail.',
       },
     },
   },

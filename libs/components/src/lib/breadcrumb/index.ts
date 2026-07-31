@@ -6,3 +6,4 @@ export * from './breadcrumb.component';
 export * from './breadcrumb.imports';
 export * from './breadcrumb.types';
 export * from './headless';
+export * from './seo';
