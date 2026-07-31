@@ -50,5 +50,30 @@
     .et-bracket-journey-active {
       opacity: 1 !important;
     }
+
+    /* Where the run ended. The cell stays lit — it is part of the journey — but the row that lost is
+       struck through and faded, so a path that stops mid-bracket reads as an exit rather than as
+       missing data. Only ever one row of the two: the attribute is matched per participant. */
+    .et-bracket-journey-eliminated {
+      opacity: 0.55;
+      text-decoration: line-through;
+      text-decoration-thickness: 1px;
+    }
+
+    .et-bracket-journey-endpoint {
+      outline: 1px dashed var(--et-bracket-line-color, var(--et-surface-border-solid, rgb(255 255 255 / 0.1)));
+      outline-offset: 2px;
+      border-radius: var(--et-match-card-border-radius, 10px);
+    }
+  }
+
+  /* Pinned. A hover is a glance and fades as the pointer moves on, so half opacity is enough of a
+     distinction; a pin persists and is usually the answer to "where did they get to", which is worth
+     pushing the rest of the bracket further back for. */
+  .et-bracket-host--journey-focused {
+    path,
+    .et-bracket-element--match {
+      opacity: 0.25;
+    }
   }
 }

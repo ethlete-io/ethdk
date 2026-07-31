@@ -4,8 +4,8 @@
 (synchronous or deferred/async lower brackets), and swiss-with-elimination stages — as
 an absolutely-positioned grid of match cards wired together with SVG connector lines. You
 feed it a `BracketDataSource` (build one from your API with the bundled integrations) and
-it computes the layout, draws the connectors, and highlights a participant's journey on
-hover.
+it computes the layout, draws the connectors, and traces a participant's journey through the
+tournament on hover or on demand.
 
 Import `BRACKET_IMPORTS` (or `BracketComponent` directly). App-wide defaults for the
 layout inputs can be set once with `provideBracketConfig({ ... })`.
@@ -69,35 +69,36 @@ your app).
 All layout inputs are numbers (px) unless noted and can be defaulted app-wide via
 `provideBracketConfig`. Defaults below are the component's fallbacks.
 
-| Input                     | Default           | Purpose                                                                    |
-| ------------------------- | ----------------- | -------------------------------------------------------------------------- |
-| `source`                  | — (required)      | The resolved `BracketDataSource`.                                          |
-| `layout`                  | `'left-to-right'` | `'left-to-right'` or `'mirrored'` (finals in the centre).                  |
-| `columnWidth`             | `250`             | Width of a round column.                                                   |
-| `matchHeight`             | `75`              | Height of a match card.                                                    |
-| `columnGap`               | `60`              | Horizontal gap between round columns.                                      |
-| `rowGap`                  | `30`              | Vertical gap between matches in a column.                                  |
-| `rowRoundGap`             | `20`              | Vertical gap between the upper/lower halves of a double-elimination round. |
-| `finalColumnWidth`        | `360`             | Width of the final column — sized for the shipped final card.              |
-| `finalMatchHeight`        | `200`             | Height of the final match card — likewise.                                 |
-| `roundHeaderHeight`       | `50`              | Height of the round-header row.                                            |
-| `roundHeaderGap`          | `20`              | Gap between the header row and the first match.                            |
-| `hideRoundHeaders`        | `false`           | Drop the header row entirely.                                              |
-| `lineWidth`               | `2`               | Connector stroke width.                                                    |
-| `lineStartingCurveAmount` | `10`              | Curve radius where a connector leaves a match.                             |
-| `lineEndingCurveAmount`   | `0`               | Curve radius where a connector meets the next match.                       |
-| `lineDashArray`           | `0`               | Connector dash length (`0` = solid).                                       |
-| `lineDashOffset`          | `0`               | Connector dash offset.                                                     |
-| `disableJourneyHighlight` | `false`           | Turn off hover journey highlighting.                                       |
-| `swissGroupPadding`       | `10`              | Padding inside a swiss group border box.                                   |
-| `swissGroupBorderRadius`  | `12`              | Corner radius of a swiss group border box.                                 |
-| `swissColors`             | —                 | Per-group-type colors (see [Swiss](#swiss)).                               |
-| `showContinueElement`     | `false`           | Append a "continue" column (see [Continue element](#continue-element)).    |
-| `continueColumnWidth`     | `250`             | Width of the continue column.                                              |
-| `continueElementHeight`   | `75`              | Height of the continue card.                                               |
-| `continueLineDashArray`   | `6`               | Dash length for the continue connectors.                                   |
-| `matchNormalizer`         | —                 | How to read your match data, for the default cards (see below).            |
-| `roundHeaderLevel`        | `3`               | `aria-level` the default round headers announce themselves at.             |
+| Input                     | Default           | Purpose                                                                              |
+| ------------------------- | ----------------- | ------------------------------------------------------------------------------------ |
+| `source`                  | — (required)      | The resolved `BracketDataSource`.                                                    |
+| `layout`                  | `'left-to-right'` | `'left-to-right'` or `'mirrored'` (finals in the centre).                            |
+| `columnWidth`             | `250`             | Width of a round column.                                                             |
+| `matchHeight`             | `75`              | Height of a match card.                                                              |
+| `columnGap`               | `60`              | Horizontal gap between round columns.                                                |
+| `rowGap`                  | `30`              | Vertical gap between matches in a column.                                            |
+| `rowRoundGap`             | `20`              | Vertical gap between the upper/lower halves of a double-elimination round.           |
+| `finalColumnWidth`        | `360`             | Width of the final column — sized for the shipped final card.                        |
+| `finalMatchHeight`        | `200`             | Height of the final match card — likewise.                                           |
+| `roundHeaderHeight`       | `50`              | Height of the round-header row.                                                      |
+| `roundHeaderGap`          | `20`              | Gap between the header row and the first match.                                      |
+| `hideRoundHeaders`        | `false`           | Drop the header row entirely.                                                        |
+| `lineWidth`               | `2`               | Connector stroke width.                                                              |
+| `lineStartingCurveAmount` | `10`              | Curve radius where a connector leaves a match.                                       |
+| `lineEndingCurveAmount`   | `0`               | Curve radius where a connector meets the next match.                                 |
+| `lineDashArray`           | `0`               | Connector dash length (`0` = solid).                                                 |
+| `lineDashOffset`          | `0`               | Connector dash offset.                                                               |
+| `disableJourneyHighlight` | `false`           | Turn off journey highlighting and pinning entirely.                                  |
+| `focusedParticipantId`    | `null`            | Two-way. Pins a participant's journey — see [Participant focus](#participant-focus). |
+| `swissGroupPadding`       | `10`              | Padding inside a swiss group border box.                                             |
+| `swissGroupBorderRadius`  | `12`              | Corner radius of a swiss group border box.                                           |
+| `swissColors`             | —                 | Per-group-type colors (see [Swiss](#swiss)).                                         |
+| `showContinueElement`     | `false`           | Append a "continue" column (see [Continue element](#continue-element)).              |
+| `continueColumnWidth`     | `250`             | Width of the continue column.                                                        |
+| `continueElementHeight`   | `75`              | Height of the continue card.                                                         |
+| `continueLineDashArray`   | `6`               | Dash length for the continue connectors.                                             |
+| `matchNormalizer`         | —                 | How to read your match data, for the default cards (see below).                      |
+| `roundHeaderLevel`        | `3`               | `aria-level` the default round headers announce themselves at.                       |
 
 ## Default cards
 
@@ -245,9 +246,8 @@ swissColors = {
 
 When a stage feeds into a later competition phase, set `showContinueElement` (left-to-right
 layout only) to append a trailing column whose card receives the matches whose winners
-advance. Useful for "→ playoffs" hand-offs.
-
-<StoryEmbed id="components-bracket--double-elimination-with-continue" height="560px" />
+advance. Useful for "→ playoffs" hand-offs. The
+`components-bracket--double-elimination-with-continue` story shows one.
 
 ## Narrow screens
 
@@ -258,10 +258,58 @@ list of rounds, and `bracketFitsWidth(source, config, availableWidth)` decides w
 
 ## Journey highlight
 
-Hovering a match or its connector dims the rest of the bracket and highlights that
-participant's full path through the tournament. It runs outside Angular on pointer events
-and adds `et-bracket-host--journey-hover` / `et-bracket-journey-active` classes. Disable it
-with `disableJourneyHighlight`.
+Pointing at the bracket dims the rest of it and lights a participant's path through the
+tournament. What gets lit depends on what you point at:
+
+| Under the pointer                | Lit                               |
+| -------------------------------- | --------------------------------- |
+| One side of a card               | That participant's journey alone. |
+| Card chrome, or a connector line | Both participants of that match.  |
+
+Tabbing to a card that is a [link](#making-cells-navigate) previews both journeys the same way,
+via `:focus-visible`. All of it runs outside Angular on pointer events and adds
+`et-bracket-host--journey-hover` plus `et-bracket-journey-active` on each cell and connector on
+the path. Turn the whole thing off with `disableJourneyHighlight`.
+
+### Where a journey ends
+
+A participant's path stops at the match they went out in, and that match says so: it gets a dashed
+`et-bracket-journey-endpoint` outline, and the losing row inside it is struck through
+(`et-bracket-journey-eliminated`). "Out" means every match of theirs is decided and the last one is
+a loss — so a pending lower-bracket match keeps them in, and a champion who dropped a set in the
+winners bracket is never marked.
+
+### Per-participant hit-testing needs a marked row
+
+Single-participant highlighting works because each participant's row carries
+`data-participant-id`. [`et-match-card`](/components/match) sets it, so the shipped cards and
+anything built on the card get it for free. A card of your own opts in by setting the same
+attribute on the element that represents each side; without it the card behaves as it always
+did — hovering anywhere on it lights both journeys.
+
+## Participant focus
+
+Hover is nothing on a touch screen, so a journey can also be **pinned**: bind
+`focusedParticipantId` and that participant's path stays lit, with the rest of the bracket dimmed
+harder than on hover (`et-bracket-host--journey-focused`).
+
+It is deliberately **driven from outside**. A card's click belongs to the card — it is usually a
+link to a match page — so the bracket never pins on a tap, and the affordance is yours: a
+participants legend beside the bracket, a search box, a query param. That is also the keyboard and
+screen-reader path, since a list of buttons is navigable in a way an absolutely-positioned grid
+is not.
+
+```html
+<button (click)="focusedTeamId.set(team.id)" et-button type="button">{{ team.name }}</button>
+
+<et-bracket [(focusedParticipantId)]="focusedTeamId" [source]="source()" />
+```
+
+The bracket drops the pin on <kbd>Escape</kbd> (anywhere on the page, while pinned) and on a click
+that lands past the cells, writing the `null` back through the model — bind it two-way, or listen
+to `(focusedParticipantIdChange)` for URL sync and analytics.
+
+<StoryEmbed id="components-bracket--participant-focus" height="520px" />
 
 ## Accessibility
 
@@ -278,9 +326,13 @@ semantics live in the cards, and the shipped ones carry them:
 - **The continue cell is a labelled group**, since its visible text is a fragment.
 - **The final names its champion** in text, so the result doesn't depend on reading emphasis.
 - **Nothing is a click target by default.** Cells navigate only if you supply a
-  [card that links](#making-cells-navigate), and then the whole card is one correctly-named link.
-- Journey highlighting is a pointer-only affordance and is not required to understand the
-  bracket.
+  [card that links](#making-cells-navigate), and then the whole card is one correctly-named link —
+  and the only tab stop in its cell. Nothing inside a card is ever a second one.
+- **A journey can be followed without a pointer.** Hover highlighting is still a pointer
+  affordance, but [pinning](#participant-focus) is not: `focusedParticipantId` is driven by a
+  control of yours — a participants list is the usual one — which is reachable by keyboard and
+  announced as what it is. <kbd>Escape</kbd> clears the pin. The information is in the cards
+  either way; the highlight only makes one path easier to trace.
 
 A card of your own is responsible for its own semantics — the layout engine adds none.
 

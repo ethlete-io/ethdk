@@ -28,7 +28,11 @@
 
           @let highlightClass = element.type === 'match' ? element.classes : '';
 
+          <!-- The cell names its match so a journey can say where it ended — see journey-highlight.ts. -->
+          @let matchId = element.type === 'match' ? element.match.id : null;
+
           <li
+            [attr.data-match-id]="matchId"
             [style.width.px]="element.dimensions.width"
             [style.height.px]="element.dimensions.height"
             [style.top.px]="element.dimensions.top - round.dimensions.top"

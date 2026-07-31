@@ -1,4 +1,13 @@
-import { booleanAttribute, Component, input, numberAttribute, ViewEncapsulation } from '@angular/core';
+import {
+  booleanAttribute,
+  Component,
+  computed,
+  input,
+  numberAttribute,
+  signal,
+  ViewEncapsulation,
+} from '@angular/core';
+import { BUTTON_IMPORTS } from '../../button';
 import { SCROLLABLE_IMPORTS } from '../../scrollable/scrollable.imports';
 import { BracketComponent } from '../bracket.component';
 import { BracketSwissColors } from '../bracket.config';
@@ -6,7 +15,7 @@ import { BRACKET_DATA_LAYOUT, BracketDataLayout } from '../core/layout';
 import { BracketDataSource } from '../integrations/base';
 import { BracketMatch, BracketRound } from '../linked/bracket';
 import { BracketRoundSwissGroup } from '../linked/swiss';
-import { demoMatchNormalizer } from './demo-match-normalizer';
+import { demoMatchNormalizer, demoParticipant } from './demo-match-normalizer';
 
 /**
  * Demo custom final-match card, wired via the `finalMatchComponent` input to show that
@@ -49,8 +58,27 @@ export class StorybookFinalMatchComponent<TRoundData = unknown, TMatchData = unk
 @Component({
   selector: 'et-sb-bracket',
   template: `
+    @if (withParticipantList()) {
+      <!-- The supported pin affordance: a control *outside* the bracket driving focusedParticipantId.
+           Nothing inside a card is a click target, so this is what touch and keyboard users get. -->
+      <div class="mb-4 flex flex-wrap gap-2">
+        @for (participant of participants(); track participant.id) {
+          <button
+            [variant]="focusedParticipantId() === participant.id ? 'filled' : 'outline'"
+            (click)="toggleFocus(participant.id)"
+            et-button
+            size="sm"
+            type="button"
+          >
+            {{ participant.name }}
+          </button>
+        }
+      </div>
+    }
+
     <et-scrollable stickyButtons>
       <et-bracket
+        [(focusedParticipantId)]="focusedParticipantId"
         [source]="source()"
         [matchNormalizer]="MATCH_NORMALIZER"
         [finalMatchComponent]="customFinalCard() ? FINAL_MATCH_COMPONENT : undefined"
@@ -82,7 +110,7 @@ export class StorybookFinalMatchComponent<TRoundData = unknown, TMatchData = unk
     </et-scrollable>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BracketComponent, ...SCROLLABLE_IMPORTS],
+  imports: [BracketComponent, BUTTON_IMPORTS, ...SCROLLABLE_IMPORTS],
 })
 export class StorybookBracketComponent {
   public source = input.required<BracketDataSource<unknown, unknown>>();
@@ -119,8 +147,26 @@ export class StorybookBracketComponent {
   public customFinalCard = input(false, { transform: booleanAttribute });
   public roundHeaderLevel = input(3, { transform: numberAttribute });
 
+  /** Render the participants legend that pins a journey — the focus-mode demo. */
+  public withParticipantList = input(false, { transform: booleanAttribute });
+
+  protected focusedParticipantId = signal<string | null>(null);
+
+  /** Every participant in the source, in first-appearance order, named the way the cards name them. */
+  protected participants = computed(() => {
+    const ids = new Set(this.source().matches.flatMap((match) => [match.home, match.away]));
+
+    return Array.from(ids)
+      .map((id) => demoParticipant(id))
+      .filter((participant) => !!participant);
+  });
+
   protected readonly FINAL_MATCH_COMPONENT = StorybookFinalMatchComponent;
 
   /** The story data carries no payload, so this derives its cards from the bracket's own structure. */
   protected readonly MATCH_NORMALIZER = demoMatchNormalizer;
+
+  protected toggleFocus(participantId: string) {
+    this.focusedParticipantId.update((current) => (current === participantId ? null : participantId));
+  }
 }

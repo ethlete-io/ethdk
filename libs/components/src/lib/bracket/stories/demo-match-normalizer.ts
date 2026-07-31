@@ -66,7 +66,7 @@ const crest = (config: { label: string; fill: string }) =>
   );
 
 /** `null` in, `null` out — a bracket slot whose feeder hasn't finished is a TBD, not an error. */
-const demoParticipant = (id: string | null) => {
+export const demoParticipant = (id: string | null) => {
   if (!id) return null;
 
   const team = DEMO_TEAMS[hash(id) % DEMO_TEAMS.length];

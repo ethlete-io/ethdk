@@ -37,6 +37,7 @@ export default {
     continueLineDashArray: { control: { type: 'number' } },
     customFinalCard: { control: { type: 'boolean' } },
     roundHeaderLevel: { control: { type: 'number' } },
+    withParticipantList: { control: { type: 'boolean' } },
   },
   args: {
     columnGap: 60,
@@ -63,6 +64,7 @@ export default {
     continueLineDashArray: 6,
     customFinalCard: false,
     roundHeaderLevel: 3,
+    withParticipantList: false,
   },
 } as Meta<StorybookBracketComponent>;
 
@@ -127,6 +129,18 @@ export const DoubleEliminationWithContinue = {
     // No grand final — the winners of the last winners/losers rounds advance to a later stage.
     source: generateDoubleEliminationBracket({ participantCount: 8, includeFinal: false }),
     showContinueElement: true,
+  },
+};
+
+/**
+ * Focus mode: the legend above the bracket drives `focusedParticipantId`, which is how touch and
+ * keyboard users pin a journey. Escape, or a click past the cells, drops the pin.
+ */
+export const ParticipantFocus = {
+  render: Template,
+  args: {
+    source: generateSingleEliminationBracket(8),
+    withParticipantList: true,
   },
 };
 

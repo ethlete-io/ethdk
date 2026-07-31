@@ -7,8 +7,10 @@ import {
   ElementRef,
   inject,
   input,
+  model,
   NgZone,
   numberAttribute,
+  signal,
   Type,
   ViewEncapsulation,
 } from '@angular/core';
@@ -23,7 +25,11 @@ import {
   FinalizedBracketElement,
 } from './drawing/grid';
 import { BracketDataSource } from './integrations';
-import { setupJourneyHighlight as setupJourneyHighlightListeners } from './journey-highlight';
+import {
+  createBracketJourneyParticipants,
+  JourneyHighlightController,
+  setupJourneyHighlight as setupJourneyHighlightListeners,
+} from './journey-highlight';
 import { createBracket, generateBracketRoundSwissGroupMaps } from './linked';
 import { BRACKET_CARD_CONTEXT, BracketMatchNormalizer } from './bracket-card-context';
 import { resolveBracketComponents } from './bracket-components';
@@ -126,6 +132,20 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
     transform: numberAttribute,
   });
 
+  /**
+   * The participant whose journey stays lit, by their id in the source — the pinned counterpart to the
+   * hover highlight, and the only one touch and keyboard users get.
+   *
+   * Two-way, and **driven from outside**: a participants list beside the bracket, a query param, a
+   * search box. The bracket never pins on a card tap — a card's click belongs to the card — but it does
+   * drop the pin when <kbd>Escape</kbd> is pressed inside it or a click lands past the cells, and writes
+   * the `null` back through this model.
+   *
+   * @example
+   * <et-bracket [(focusedParticipantId)]="focusedTeamId" [source]="source()" />
+   */
+  public focusedParticipantId = model<string | null>(null);
+
   /** @internal The normalizer in effect, read by the default cards through `BRACKET_CARD_CONTEXT`. */
   public resolvedMatchNormalizer = computed<BracketMatchNormalizer | null>(
     () => this.matchNormalizer() ?? this.config.matchNormalizer ?? null,
@@ -136,9 +156,13 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
   private elementId = createComponentId('et-bracket');
 
+  private journeyController = signal<JourneyHighlightController | null>(null);
+
   public bracketData = computed(() => createBracket(this.source(), { layout: this.layout() }));
 
   public swissGroups = computed(() => generateBracketRoundSwissGroupMaps(this.bracketData()));
+
+  private journeyParticipants = computed(() => createBracketJourneyParticipants(this.bracketData()));
 
   public bracketGrid = computed(() => {
     const bracketData = this.bracketData();
@@ -248,13 +272,31 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
     const host = elementRef.nativeElement;
 
     effect((onCleanup) => {
-      if (this.disableJourneyHighlight()) return;
+      if (this.disableJourneyHighlight()) {
+        this.journeyController.set(null);
 
-      const teardown = ngZone.runOutsideAngular(() => setupJourneyHighlightListeners(host, renderer));
+        return;
+      }
+
+      const controller = ngZone.runOutsideAngular(() =>
+        setupJourneyHighlightListeners({
+          host,
+          renderer,
+          participants: this.journeyParticipants,
+          // The bracket only ever *drops* the pin (Escape, a click past the cards), and does it from
+          // outside Angular — so the write back into the model has to re-enter.
+          onFocusChange: (participantId) => ngZone.run(() => this.focusedParticipantId.set(participantId)),
+        }),
+      );
+
+      this.journeyController.set(controller);
 
       // via onCleanup, not a returned function: effect() ignores what the callback returns, so the
       // listeners would stack up on every re-run and outlive the component.
-      onCleanup(() => teardown());
+      onCleanup(() => controller.destroy());
     });
+
+    // A signal rather than a local, so a controller rebuilt by the effect above re-applies the pin.
+    effect(() => this.journeyController()?.setFocused(this.focusedParticipantId()));
   }
 }

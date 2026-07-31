@@ -19,7 +19,9 @@
   }
 
   <div class="et-match-card-sides">
-    <div class="et-match-card-side" data-side="home">
+    <!-- `data-participant-id` names which side is whose, for anything around the card that reasons about
+         a participant rather than a match — the bracket's journey highlight is the first such thing. -->
+    <div [attr.data-participant-id]="card.match().home?.id ?? null" class="et-match-card-side" data-side="home">
       <et-match-participant
         [participant]="card.match().home"
         [compact]="card.showsShortNames()"
@@ -47,7 +49,7 @@
          between them: the score separator, or "vs" when there is no result yet. -->
     <span class="et-match-card-versus" aria-hidden="true">{{ card.separatorText() }}</span>
 
-    <div class="et-match-card-side" data-side="away">
+    <div [attr.data-participant-id]="card.match().away?.id ?? null" class="et-match-card-side" data-side="away">
       <et-match-participant
         [participant]="card.match().away"
         [compact]="card.showsShortNames()"

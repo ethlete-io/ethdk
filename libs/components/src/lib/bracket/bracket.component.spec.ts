@@ -1,0 +1,146 @@
+import { Component, signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import '../../test-helpers';
+import { NormalizedMatch } from '../match';
+import { BracketMatchNormalizer } from './bracket-card-context';
+import { BracketComponent } from './bracket.component';
+import { BracketDataSource } from './integrations';
+import { generateSingleEliminationBracket } from './stories/generate-bracket';
+
+const normalizer: BracketMatchNormalizer = (match): NormalizedMatch => ({
+  id: match.id,
+  status: 'finished',
+  startTime: null,
+  home: { id: match.home?.id ?? 'h', name: 'Home', code: 'HOM', subtitle: null, emblem: null, seed: null },
+  away: { id: match.away?.id ?? 'a', name: 'Away', code: 'AWY', subtitle: null, emblem: null, seed: null },
+  homeScore: 2,
+  awayScore: 1,
+  resultKind: 'score',
+  gameScores: null,
+  winnerSide: 'home',
+  label: null,
+});
+
+@Component({
+  template: `<et-bracket
+    [(focusedParticipantId)]="focusedParticipantId"
+    [source]="source()"
+    [matchNormalizer]="NORMALIZER"
+  />`,
+  imports: [BracketComponent],
+})
+class HostComponent {
+  // Signals, not plain fields: a plain field never refreshes a signal input.
+  public source = signal<BracketDataSource<null, null>>(generateSingleEliminationBracket(8));
+  public focusedParticipantId = signal<string | null>(null);
+
+  protected readonly NORMALIZER = normalizer;
+}
+
+describe('BracketComponent participant focus', () => {
+  let fixture: ComponentFixture<HostComponent>;
+  let host: HostComponent;
+  let bracket: HTMLElement;
+
+  const activeMatchIds = () =>
+    Array.from(bracket.querySelectorAll('.et-bracket-element--match.et-bracket-journey-active')).map((el) =>
+      el.getAttribute('data-match-id'),
+    );
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [HostComponent] }).compileComponents();
+
+    fixture = TestBed.createComponent(HostComponent);
+    host = fixture.componentInstance;
+    fixture.detectChanges();
+    bracket = fixture.nativeElement.querySelector('.et-bracket-host');
+  });
+
+  it('marks every cell of a pinned participant, and says so on the host', () => {
+    // `p1` is the generator's top seed, who wins out — three matches, one per round.
+    host.focusedParticipantId.set('p1');
+    fixture.detectChanges();
+
+    expect(bracket.classList).toContain('et-bracket-host--journey-hover');
+    expect(bracket.classList).toContain('et-bracket-host--journey-focused');
+    expect(activeMatchIds()).toEqual(['se-r0-m0', 'se-r1-m0', 'se-r2-m0']);
+  });
+
+  it('crosses out the row a participant went out in', () => {
+    host.focusedParticipantId.set('p2');
+    fixture.detectChanges();
+
+    const endpoint = bracket.querySelector('.et-bracket-journey-endpoint');
+
+    expect(endpoint?.getAttribute('data-match-id')).toBe('se-r0-m0');
+    expect(bracket.querySelector('.et-bracket-journey-eliminated')?.getAttribute('data-participant-id')).toBe('p2');
+  });
+
+  it('drops the pin on Escape and writes the null back through the model', () => {
+    host.focusedParticipantId.set('p1');
+    fixture.detectChanges();
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+
+    expect(host.focusedParticipantId()).toBeNull();
+    expect(bracket.classList).not.toContain('et-bracket-host--journey-focused');
+  });
+
+  it('leaves the pin alone for any other key', () => {
+    host.focusedParticipantId.set('p1');
+    fixture.detectChanges();
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    fixture.detectChanges();
+
+    expect(host.focusedParticipantId()).toBe('p1');
+  });
+
+  it('drops the pin when a click lands past the cells', () => {
+    host.focusedParticipantId.set('p1');
+    fixture.detectChanges();
+
+    bracket.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fixture.detectChanges();
+
+    expect(host.focusedParticipantId()).toBeNull();
+  });
+
+  it('keeps the pin when the click was the card doing its job', () => {
+    host.focusedParticipantId.set('p1');
+    fixture.detectChanges();
+
+    bracket.querySelector('[data-match-id="se-r1-m0"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fixture.detectChanges();
+
+    expect(host.focusedParticipantId()).toBe('p1');
+  });
+
+  it('draws nothing once the journey highlight is off', async () => {
+    TestBed.resetTestingModule();
+
+    @Component({
+      template: `<et-bracket
+        [source]="source"
+        [matchNormalizer]="NORMALIZER"
+        disableJourneyHighlight
+        focusedParticipantId="p1"
+      />`,
+      imports: [BracketComponent],
+    })
+    class DisabledHostComponent {
+      public source = generateSingleEliminationBracket(8);
+
+      protected readonly NORMALIZER = normalizer;
+    }
+
+    await TestBed.configureTestingModule({ imports: [DisabledHostComponent] }).compileComponents();
+
+    const disabled = TestBed.createComponent(DisabledHostComponent);
+
+    disabled.detectChanges();
+
+    expect(disabled.nativeElement.querySelectorAll('.et-bracket-journey-active').length).toBe(0);
+  });
+});
