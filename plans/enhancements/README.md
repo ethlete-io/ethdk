@@ -89,5 +89,5 @@ tokens in core. (Calendar event markers and month/year jump moved into plan
       selection lists needed no DOM wrapper: the label and support block are pushed onto their own
       lines with `flex-basis: 100%`, so an option stays a direct child of the group. The radio group
       already bound all four arrow keys, so item 5's keyboard note needed no change.)_
-- [ ] 11 — sport/match components
+- [x] 11 — sport/match components
 - [ ] 12 — bracket improvements (depends on 11)
