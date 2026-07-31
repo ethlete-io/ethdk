@@ -155,11 +155,22 @@ export class AccordionDirective {
     this.isOpen.set(false);
   }
 
-  /** Expand or collapse the panel. No-op while `disabled`. */
+  /**
+   * Expand or collapse the panel — what the trigger calls. No-op while `disabled`, and no-op when this
+   * is the last open panel of a group with `preventCloseLast`.
+   */
   public toggle() {
     if (this.disabled()) return;
 
-    this.isOpen.set(!this.isOpen());
+    if (this.isOpen()) {
+      if (this.group && !this.group.canCollapse(this)) return;
+
+      this.isOpen.set(false);
+
+      return;
+    }
+
+    this.isOpen.set(true);
   }
 
   /** @internal Call from the trigger's constructor — it takes over the teardown from the caller's `DestroyRef`. */

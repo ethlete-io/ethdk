@@ -9,7 +9,7 @@ import { AccordionDirective, AccordionGroupDirective } from './headless';
 @Component({
   selector: 'et-test-accordion-host',
   template: `
-    <et-accordion-group [autoCloseOthers]="autoCloseOthers()">
+    <et-accordion-group [autoCloseOthers]="autoCloseOthers()" [preventCloseLast]="preventCloseLast()">
       @for (section of sections(); track section) {
         <et-accordion [label]="section" [isOpenByDefault]="section === openByDefault()"
           >{{ section }} body</et-accordion
@@ -25,6 +25,7 @@ class AccordionHostComponent {
 
   public sections = signal(['first', 'second', 'third']);
   public autoCloseOthers = signal(false);
+  public preventCloseLast = signal(false);
   public openByDefault = signal<string | null>(null);
 }
 
@@ -200,6 +201,95 @@ describe('AccordionGroupComponent', () => {
     group.openAll();
     fixture.detectChanges();
     expect(openStates(fixture)).toEqual([false, false, false]);
+  });
+
+  describe('preventCloseLast', () => {
+    const withLastOpen = () => {
+      const fixture = createHost();
+
+      fixture.componentInstance.preventCloseLast.set(true);
+      fixture.detectChanges();
+
+      fixture.componentInstance.group().accordions()[0]?.open();
+      fixture.detectChanges();
+
+      return fixture;
+    };
+
+    it('refuses to collapse the only open panel', () => {
+      const fixture = withLastOpen();
+
+      fixture.componentInstance.group().accordions()[0]?.toggle();
+      fixture.detectChanges();
+
+      expect(openStates(fixture)).toEqual([true, false, false]);
+    });
+
+    it('still collapses one while another is open', () => {
+      const fixture = withLastOpen();
+      const [first, second] = fixture.componentInstance.group().accordions();
+
+      second?.open();
+      fixture.detectChanges();
+
+      first?.toggle();
+      fixture.detectChanges();
+
+      expect(openStates(fixture)).toEqual([false, true, false]);
+    });
+
+    it('leaves an all-closed group alone rather than forcing one open', () => {
+      const fixture = createHost();
+
+      fixture.componentInstance.preventCloseLast.set(true);
+      fixture.detectChanges();
+
+      expect(openStates(fixture)).toEqual([false, false, false]);
+    });
+
+    it('holds exactly one open together with autoCloseOthers', () => {
+      const fixture = withLastOpen();
+
+      fixture.componentInstance.autoCloseOthers.set(true);
+      fixture.detectChanges();
+
+      const [first, , third] = fixture.componentInstance.group().accordions();
+
+      third?.toggle();
+      fixture.detectChanges();
+      expect(openStates(fixture)).toEqual([false, false, true]);
+
+      third?.toggle();
+      fixture.detectChanges();
+      expect(openStates(fixture)).toEqual([false, false, true]);
+      expect(first?.isOpen()).toBe(false);
+    });
+
+    it('gates the toggle, not the state: close() and closeAll() still work', () => {
+      const fixture = withLastOpen();
+
+      fixture.componentInstance.group().accordions()[0]?.close();
+      fixture.detectChanges();
+      expect(openStates(fixture)).toEqual([false, false, false]);
+
+      fixture.componentInstance.group().accordions()[1]?.open();
+      fixture.detectChanges();
+      fixture.componentInstance.group().closeAll();
+      fixture.detectChanges();
+      expect(openStates(fixture)).toEqual([false, false, false]);
+    });
+
+    it('is off by default, so the last panel closes as it always did', () => {
+      const fixture = createHost();
+      const [first] = fixture.componentInstance.group().accordions();
+
+      first?.open();
+      fixture.detectChanges();
+      first?.toggle();
+      fixture.detectChanges();
+
+      expect(openStates(fixture)).toEqual([false, false, false]);
+    });
   });
 
   it('moves focus between headers with the arrow keys, wrapping around', () => {

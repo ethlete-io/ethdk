@@ -6,7 +6,11 @@ import { ACCORDION_IMPORTS } from '../accordion.imports';
   selector: 'et-sb-accordion',
   template: `
     <div [etProvideSurface]="surface()" class="text-medium flex flex-col gap-8 p-8 font-sans">
-      <et-accordion-group [autoCloseOthers]="autoCloseOthers()" [style.max-inline-size.px]="560">
+      <et-accordion-group
+        [autoCloseOthers]="autoCloseOthers()"
+        [preventCloseLast]="preventCloseLast()"
+        [style.max-inline-size.px]="560"
+      >
         <et-accordion label="How long does shipping take?" isOpenByDefault>
           Orders leave the warehouse within a day and arrive in two to four working days. Everything after that is the
           courier's estimate, which you get by mail as soon as the parcel is scanned.
@@ -34,6 +38,7 @@ import { ACCORDION_IMPORTS } from '../accordion.imports';
 export class AccordionStorybookComponent {
   public surface = input('dark');
   public autoCloseOthers = input(false);
+  public preventCloseLast = input(false);
 }
 
 let creationOrder = 0;

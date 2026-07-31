@@ -19,7 +19,7 @@ import { AccordionGroupDirective } from './headless';
   hostDirectives: [
     {
       directive: AccordionGroupDirective,
-      inputs: ['autoCloseOthers', 'arrowKeyNavigation'],
+      inputs: ['autoCloseOthers', 'preventCloseLast', 'arrowKeyNavigation'],
     },
   ],
   host: {

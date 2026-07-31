@@ -19,8 +19,12 @@ export default {
       ],
     }),
   ],
-  args: { autoCloseOthers: false, surface: 'dark' },
-  argTypes: { autoCloseOthers: { control: 'boolean' }, surface: { control: 'text' } },
+  args: { autoCloseOthers: false, preventCloseLast: false, surface: 'dark' },
+  argTypes: {
+    autoCloseOthers: { control: 'boolean' },
+    preventCloseLast: { control: 'boolean' },
+    surface: { control: 'text' },
+  },
 } as Meta<AccordionStorybookComponent>;
 
 type Story = StoryObj<AccordionStorybookComponent>;
@@ -35,6 +39,22 @@ export const SingleOpen: Story = {
         story:
           '`autoCloseOthers` on the group keeps at most one panel open. Off (the default) lets a reader ' +
           'compare two sections side by side; on keeps the headers from being pushed off screen by long panels.',
+      },
+    },
+  },
+};
+
+export const AlwaysOneOpen: Story = {
+  args: { autoCloseOthers: true, preventCloseLast: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`preventCloseLast` keeps at *least* one panel open: clicking the open header does nothing. With ' +
+          '`autoCloseOthers` alongside it, the group behaves like a radio set — exactly one section open at a ' +
+          'time. The header keeps `aria-expanded="true"` and is deliberately **not** `aria-disabled`: the ' +
+          'control works fine, it is the collapse that is momentarily inert, and announcing the header as ' +
+          'disabled would be a lie the moment another panel opens.',
       },
     },
   },

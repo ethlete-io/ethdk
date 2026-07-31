@@ -34,6 +34,19 @@ export class AccordionGroupDirective {
   public autoCloseOthers = input(false, { transform: booleanAttribute });
 
   /**
+   * Keep at least one panel open: collapsing the last open one does nothing. Pair it with
+   * `autoCloseOthers` for a radio-like group where exactly one section is open at a time.
+   *
+   * It gates the user's own toggle — the trigger, and `toggle()`. `close()`, `closeAll()` and writing
+   * `[(isOpen)]` still collapse the panel, the same way they ignore `disabled`: this is about what the
+   * header does when clicked, not a lock on the state.
+   *
+   * A group that starts with nothing open stays that way until the user opens something; it does not
+   * force a panel open to satisfy the rule.
+   */
+  public preventCloseLast = input(false, { transform: booleanAttribute });
+
+  /**
    * Move focus between headers with `ArrowUp`/`ArrowDown` (and jump with `Home`/`End`), as the ARIA
    * accordion pattern suggests. Turn off if the surrounding UI needs those keys — a group inside a
    * scroll container that pages with the arrow keys, for instance. @default true
@@ -86,6 +99,19 @@ export class AccordionGroupDirective {
     for (const accordion of this.accordions()) {
       accordion.open();
     }
+  }
+
+  /**
+   * @internal Whether an accordion's own toggle may collapse it — see {@link preventCloseLast}. Asked
+   * by the accordion rather than enforced from here, because "the user tried to close it" is only
+   * visible at the toggle; from the group's side a closed panel is just a closed panel.
+   */
+  public canCollapse(accordion: AccordionDirective) {
+    if (!this.preventCloseLast()) return true;
+
+    const open = this.accordions().filter((candidate) => candidate.isOpen());
+
+    return open.length > 1 || !open.includes(accordion);
   }
 
   /** @internal */

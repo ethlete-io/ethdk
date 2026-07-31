@@ -49,12 +49,39 @@ import { ACCORDION_IMPORTS } from '@ethlete/components';
 | Input                | Default | Description                                                                        |
 | -------------------- | ------- | ---------------------------------------------------------------------------------- |
 | `autoCloseOthers`    | `false` | Keep at most one panel open — expanding one collapses the rest.                    |
+| `preventCloseLast`   | `false` | Keep at least one panel open — collapsing the last open one does nothing.          |
 | `arrowKeyNavigation` | `true`  | Move focus between headers with `ArrowUp`/`ArrowDown`, and jump with `Home`/`End`. |
 
 Leaving `autoCloseOthers` off lets a reader compare two sections side by side; turn it
 on when the panels are long enough that several open at once push the headers off
 screen. When two accordions both start open under `autoCloseOthers`, the first in DOM
 order wins.
+
+### Always keeping one open
+
+`preventCloseLast` is the other half: clicking the header of the only open panel does
+nothing. Together with `autoCloseOthers` the group behaves like a radio set — exactly one
+section open at a time, which is the right shape for a set of mutually exclusive views.
+
+```html
+<et-accordion-group autoCloseOthers preventCloseLast>…</et-accordion-group>
+```
+
+<StoryEmbed id="components-accordion--always-one-open" height="360px" />
+
+Two things it deliberately does not do:
+
+- **It doesn't mark the header `aria-disabled`.** The control isn't disabled — it works, and
+  it will collapse the moment another panel is open. Announcing it as disabled would be wrong
+  a second later, and it would also stop conveying `aria-expanded="true"`, which is the state
+  that actually matters here.
+- **It doesn't force a panel open.** A group that starts with everything closed stays that
+  way until the user opens something; the rule is about not losing the last one, not about
+  guaranteeing one from the start. Use `isOpenByDefault` on a panel if you want one.
+
+It gates the header's own toggle. `close()`, `closeAll()` and writing `[(isOpen)]` still
+collapse the panel — the same way they ignore `disabled` — so a "collapse everything" control
+keeps working.
 
 The group's directive also exposes `openAll()` and `closeAll()` for a "expand
 everything" control — grab it with `#group="etAccordionGroup"`. `openAll()` does
