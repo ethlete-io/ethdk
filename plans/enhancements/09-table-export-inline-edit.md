@@ -131,6 +131,41 @@ reads as unfocusable. The spec asserts the drilled-in _state_ instead (arrows be
 Escape returns, the cell keeps the tab stop) and the Enter step is verified in a real browser
 (`components-table--keyboard-navigation`).
 
+## Phase 4 — export beyond the loaded page (M) — **designed 2026-07-31, not built**
+
+Phase 1 exports what the table holds. For a server-paginated table that is one page, silently — the
+user clicks Export on page 3 of 200 and gets a plausible-looking, wrong file. Three routes out, in the
+order they matter in practice:
+
+**1. A server-side export endpoint (the common case).** Backends usually grow a
+`GET /people/export?filters=…` that returns the whole dataset as `text/csv`. Nothing is serialized
+client-side there — the file already exists. Add an option that takes a **v3 (`@ethlete/query`)
+query**, a promise or an observable resolving to `Blob | string`, and saves it under `filename`.
+Follow the query rather than execute it, exactly as `notification-promise.ts` does (duck-typed on
+`'executionState' in query`, see `isQuery` there); `components` already depends on `query`, so this
+costs no new dependency. Mutually exclusive with `rows`/`columns`/`delimiter` — dev error if both are
+given, since those options cannot apply to a file the server wrote.
+
+**2. An all-pages adapter, for backends without such an endpoint.** A small
+`tableCsvRowsFromPages({ fetchPage, hasMore })` helper that loops a page fetcher and concatenates,
+so every consumer doesn't hand-roll it. It produces exactly what route 3's `rows` provider consumes.
+
+**3. `rows` accepts an async provider.** Widen it from `readonly T[]` to
+`readonly T[] | (() => Promise<readonly T[]> | Observable<readonly T[]>)`. `export()` becomes
+awaitable and the directive exposes an `exporting` signal so the button can disable and show a
+spinner while the pages come in. The existing array form (a selection) is unchanged.
+
+**Plus: make the partial export deliberate rather than accidental.**
+`TableRowsSource` has no total, but `TableRowsFromQuery` already computes one
+(`total: Signal<number | null>`) — adding an optional `total?: Signal<number | null>` to
+`TableRowsSource` is satisfied structurally by what already ships. With it, the export can tell it
+holds 20 of 4 312 rows and, **in dev mode only**, throw `ET3506`: "CSV export would write 20 of 4312
+rows — pass `rows`, or `partial: true` to export the loaded page on purpose." Production stays silent
+and exports the page. `partial: true` is the opt-in, and is also what an explicit "Export this page"
+button in the docs' two-button pattern passes.
+
+Selection export needs no change: the selection is by definition what is loaded.
+
 ## Verification & shipping
 
 Storybook: export story (download assertion via Playwright), editing story
