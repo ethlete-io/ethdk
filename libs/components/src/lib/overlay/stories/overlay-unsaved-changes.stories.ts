@@ -1,6 +1,9 @@
-import { Component, inject, signal, ViewEncapsulation } from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal, ViewEncapsulation } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { provideRouter } from '@angular/router';
+import { applyFaviconOverlay } from '@ethlete/core';
 import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
-import { tap } from 'rxjs';
+import { concatWith, fromEvent, interval, map, take, tap, timer } from 'rxjs';
 import { BUTTON_IMPORTS } from '../../button';
 import { injectOverlayManager } from '../overlay-manager';
 import { OVERLAY_REF } from '../overlay-ref';
@@ -61,6 +64,11 @@ class ConfirmDiscardComponent {
             Try Escape or the Close button — while there are unsaved changes you'll be asked to confirm. Save
             re-baselines, so closing right after a save won't prompt.
           </p>
+          <p class="text-small text-white/50">
+            The browser tab is guarded too: reloading or closing this page while there are unsaved changes triggers the
+            browser's own confirmation, the tab title carries a dot (blinking once you switch to another tab), and the
+            favicon gets a badge.
+          </p>
         </div>
       </div>
 
@@ -75,19 +83,36 @@ class ConfirmDiscardComponent {
 })
 class EditItemOverlayComponent {
   private overlays = injectOverlayManager();
+  private destroyRef = inject(DestroyRef);
   protected overlayRef = inject(OVERLAY_REF);
 
   protected title = signal('Weekly report');
 
   protected guard = createOverlayUnsavedChangesGuard<string>({
     source: this.title,
-    confirm: () =>
-      this.overlays
-        .open<ConfirmDiscardComponent, boolean>(ConfirmDiscardComponent, {
-          strategies: dialogOverlayStrategy({ width: 400 }),
-          panelClass: 'et-sb-overlay-panel',
-        })
-        .afterClosed(),
+    confirm: (_, { signal }) => {
+      const ref = this.overlays.open<ConfirmDiscardComponent, boolean>(ConfirmDiscardComponent, {
+        strategies: dialogOverlayStrategy({ width: 400 }),
+        panelClass: 'et-sb-overlay-panel',
+      });
+
+      // The session can end while the dialog is up (a logout redirects to the login page) — close it
+      // instead of leaving it stranded there.
+      fromEvent(signal, 'abort')
+        .pipe(
+          take(1),
+          tap(() => ref.close(false)),
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe();
+
+      return ref.afterClosed();
+    },
+    tab: {
+      titleMarker: true,
+      flash: true,
+      favicon: true,
+    },
   });
 
   protected save() {
@@ -108,6 +133,18 @@ class EditItemOverlayComponent {
       @if (lastResult() !== undefined) {
         <p class="text-small text-white/50">Last close result: {{ lastResult() }}</p>
       }
+
+      <hr class="w-full border-white/10" />
+
+      <p class="text-medium text-white/70">
+        Pending work can claim the tab too — a favicon ring is as close as the web gets to tab progress.
+      </p>
+      <button [disabled]="uploadProgress() !== null" (click)="simulateUpload()" et-button variant="outline">
+        Simulate an upload
+      </button>
+      @if (uploadProgress() !== null) {
+        <p class="text-small text-white/50">Uploading — favicon at {{ uploadProgress() }}%</p>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -122,8 +159,33 @@ class EditItemOverlayComponent {
 })
 class OverlayUnsavedChangesStorybookComponent {
   private overlays = injectOverlayManager();
+  private destroyRef = inject(DestroyRef);
 
   protected lastResult = signal<string | undefined>(undefined);
+  protected uploadProgress = signal<number | null>(null);
+
+  constructor() {
+    applyFaviconOverlay(
+      computed(() => {
+        const progress = this.uploadProgress();
+
+        return progress === null ? null : { kind: 'progress' as const, value: progress };
+      }),
+    );
+  }
+
+  protected simulateUpload() {
+    interval(300)
+      .pipe(
+        take(11),
+        map((tick) => tick * 10),
+        // …then let the finished ring linger for a moment before the favicon is restored.
+        concatWith(timer(600).pipe(map(() => null))),
+        takeUntilDestroyed(this.destroyRef),
+        tap((progress) => this.uploadProgress.set(progress)),
+      )
+      .subscribe();
+  }
 
   protected open() {
     this.overlays
@@ -142,7 +204,8 @@ export default {
   component: OverlayUnsavedChangesStorybookComponent,
   decorators: [
     moduleMetadata({ imports: [OverlayUnsavedChangesStorybookComponent] }),
-    applicationConfig({ providers: [provideOverlay()] }),
+    // The title marker goes through the core title store, which needs a router.
+    applicationConfig({ providers: [provideOverlay(), provideRouter([])] }),
   ],
 } as Meta<OverlayUnsavedChangesStorybookComponent>;
 

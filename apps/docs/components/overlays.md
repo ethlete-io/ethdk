@@ -96,7 +96,11 @@ export class EditItemOverlayComponent {
 
   private guard = createOverlayUnsavedChangesGuard({
     source: this.form, // a signal-forms FieldTree (also: Signal<FieldTree | null>, AbstractControl, WritableSignal)
-    confirm: () => this.overlays.open(ConfirmDiscardComponent).afterClosed(), // truthy = discard
+    confirm: (value, { signal }) => {
+      const ref = this.overlays.open(ConfirmDiscardComponent); // truthy result = discard
+      signal.addEventListener('abort', () => ref.close(false)); // the session ended — don't strand it
+      return ref.afterClosed();
+    },
   });
 
   protected save() {
@@ -111,6 +115,8 @@ export class EditItemOverlayComponent {
 - **`confirm`** is required per call site and runs **only** when there are actual changes. Return a boolean, `Promise`, or `Observable` — a truthy result allows the discard.
 - **`refreshDefaultValue()`** re-baselines to the current value; call it after a save that keeps the overlay open. **`restoreDefaultValue()`** reverts the form to the baseline.
 - **`dismissSources`** opts individual sources out (`{ outsidePointer, escape, closeCall, drag }`, all `true` by default). With `disableClose`, only a programmatic `close()` can reach the guard.
+- **`tab`** — while the form is dirty the guard also locks the **browser tab** (`beforeunload`), since closing or reloading the tab bypasses the overlay runtime entirely. Opt into a tab title marker, a blinking marker, a favicon dot or an app badge, or disable it with `tab: false` — see [Guarding the browser tab](/core/utilities#unsaved-changes-tab).
+- **Only one confirm shows at a time**, app-wide, and a logout releases the guard instead of stranding the dialog over the login page — wire `confirm`'s `signal` to close your dialog, see [Sessions ending underneath a guard](/core/utilities#unsaved-changes-coordinator).
 - The guard auto-cleans up on injector destroy; call `guard.destroy()` to stop guarding earlier.
 
 For route-level protection (a form on a page rather than in an overlay) use [`createUnsavedChangesGuard`](/core/utilities#unsaved-changes) from `@ethlete/core`, which adds a `canDeactivate` bridge.

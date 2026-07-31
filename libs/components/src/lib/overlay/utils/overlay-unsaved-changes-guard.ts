@@ -34,6 +34,9 @@ export type OverlayUnsavedChangesGuardRef<T> = UnsavedChangesTrackerRef<T> & {
  * unsaved changes: it runs the `confirm` and only then re-issues the close. Call from an overlay
  * content component's injection context.
  *
+ * Being a tracker, it also locks the browser tab while there are changes (`beforeunload`) — configure
+ * or disable that via the inherited `tab` option.
+ *
  * ```ts
  * guard = createOverlayUnsavedChangesGuard({
  *   source: this.form,                     // a signal-forms FieldTree
@@ -76,6 +79,12 @@ export const createOverlayUnsavedChangesGuard = <T>(
 
   const unregister = overlayRef.registerCloseGuard((event) => {
     if (!guarded[event.source]) {
+      return true;
+    }
+
+    // The session ended underneath the overlay (logout): the edits are unrecoverable, so let it close
+    // instead of prompting over a page the user is being redirected away from.
+    if (tracker.isAbandoned()) {
       return true;
     }
 
