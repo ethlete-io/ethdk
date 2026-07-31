@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
-import { NormalizedMatch } from '../match';
+import { MatchCardSize, NormalizedMatch } from '../match';
 import { BRACKET_CARD_CONTEXT, BracketCardContext, BracketMatchNormalizer } from './bracket-card-context';
 import { BracketDefaultContinueComponent } from './bracket-default-continue.component';
 import { BracketDefaultFinalMatchComponent } from './bracket-default-final-match.component';
@@ -40,6 +40,7 @@ const provideCardContext = (options: { normalizer?: BracketMatchNormalizer | nul
     // `??` would swallow a deliberate `null` — which is the case worth testing.
     resolvedMatchNormalizer: signal(options.normalizer === undefined ? () => normalized() : options.normalizer),
     resolvedRoundHeaderLevel: signal(options.headerLevel ?? 3),
+    resolvedFinalMatchCardSize: signal<MatchCardSize>('auto'),
   };
 
   return { provide: BRACKET_CARD_CONTEXT, useValue: context };

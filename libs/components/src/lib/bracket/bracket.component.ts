@@ -24,6 +24,7 @@ import {
   FinalizedBracketElement,
 } from './drawing/grid';
 import { BracketDataSource } from './integrations';
+import { MATCH_CARD_SIZES, MatchCardSize } from '../match';
 import {
   createBracketJourneyParticipants,
   JourneyHighlightController,
@@ -174,6 +175,12 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
   /** @internal The heading level in effect, read by the default round headers. */
   public resolvedRoundHeaderLevel = computed(() => this.roundHeaderLevel());
+
+  /**
+   * @internal Left to the card: a grid cell's width is this component's decision, and `finalColumnWidth`
+   * is how a consumer asks for a smaller final.
+   */
+  public resolvedFinalMatchCardSize = computed<MatchCardSize>(() => MATCH_CARD_SIZES.AUTO);
 
   private elementId = createComponentId('et-bracket');
 

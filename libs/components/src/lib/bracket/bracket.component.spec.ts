@@ -66,6 +66,10 @@ describe('BracketComponent participant focus', () => {
     expect(activeMatchIds()).toEqual(['se-r0-m0', 'se-r1-m0', 'se-r2-m0']);
   });
 
+  it('leaves the final card to measure its own cell', () => {
+    expect(bracket.querySelector('.et-bracket-final-card')?.getAttribute('data-size')).toBe('auto');
+  });
+
   it('crosses out the row a participant went out in', () => {
     host.focusedParticipantId.set('p2');
     fixture.detectChanges();

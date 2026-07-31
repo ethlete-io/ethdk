@@ -101,7 +101,9 @@ export class StorybookBracketRoundsListComponent {
   imports: [BracketComponent, BracketRoundsListComponent, ...SCROLLABLE_IMPORTS],
   host: {
     class: 'block',
-    '[style.inline-size.px]': 'containerWidth()',
+    // `max-inline-size`, not `inline-size`: a demo about fitting the space available must not be wider
+    // than the screen showing it, or the page scrolls sideways and shows the opposite of the point.
+    '[style.max-inline-size.px]': 'containerWidth()',
   },
 })
 export class StorybookBracketAdaptiveComponent {

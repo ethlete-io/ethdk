@@ -9,6 +9,7 @@ import {
   TournamentMode,
 } from './core';
 import { BracketContinueComponent, BracketMatchComponent, BracketRoundHeaderComponent } from './drawing/grid';
+import { MATCH_CARD_SIZES, MatchCardSize } from '../match';
 import { BracketDataSource } from './integrations';
 import {
   BracketMatch,
@@ -118,6 +119,13 @@ export class BracketRoundsListComponent<TRoundData = unknown, TMatchData = unkno
 
   /** @internal The heading level in effect, read by the default round headers. */
   public resolvedRoundHeaderLevel = computed(() => this.roundHeaderLevel());
+
+  /**
+   * @internal The featured card, pinned. A list row is as wide as the page it sits in, and an unpinned
+   * final measuring that would flip to the wide side-by-side arrangement past 560px while every dense
+   * row above it stayed as it was.
+   */
+  public resolvedFinalMatchCardSize = computed<MatchCardSize>(() => MATCH_CARD_SIZES.EXPANDED);
 
   /**
    * Always built left-to-right: the mirrored layout splits a round in two halves with synthetic ids,

@@ -1,7 +1,13 @@
-import { Component, computed, input, ViewEncapsulation } from '@angular/core';
+import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
 import { ICON_IMPORTS, provideIcons, TROPHY_ICON } from '../icon';
-import { injectMatchLabels, MATCH_CARD_IMPORTS, matchParticipantDisplayName } from '../match';
-import { createNormalizedBracketMatch } from './bracket-card-context';
+import {
+  injectMatchLabels,
+  MATCH_CARD_IMPORTS,
+  MATCH_CARD_SIZES,
+  MatchCardSize,
+  matchParticipantDisplayName,
+} from '../match';
+import { BRACKET_CARD_CONTEXT, createNormalizedBracketMatch } from './bracket-card-context';
 import { injectBracketLabels } from './bracket-labels';
 import { BracketMatch, BracketRound, BracketRoundSwissGroup } from './linked';
 
@@ -27,9 +33,10 @@ import { BracketMatch, BracketRound, BracketRoundSwissGroup } from './linked';
         <span class="et-bracket-final-round">{{ bracketRound().name }}</span>
       </div>
 
-      <!-- No pinned size: the default final column is wide enough for the featured card, and a narrower
-           one should land on the dense row rather than crop a card it can't fit. -->
-      <et-match-card [match]="match" class="et-bracket-final-card" />
+      <!-- The size comes from the host: auto in the grid, where the final column is wide enough for the
+           featured card and a narrower one should land on the dense row rather than crop; pinned in a
+           rounds list, where the row is as wide as the page. -->
+      <et-match-card [match]="match" [size]="cardSize()" class="et-bracket-final-card" />
 
       <p class="et-bracket-final-champion">{{ championText() }}</p>
     }
@@ -46,12 +53,17 @@ import { BracketMatch, BracketRound, BracketRoundSwissGroup } from './linked';
 export class BracketDefaultFinalMatchComponent<TRoundData = unknown, TMatchData = unknown> {
   private bracketLabels = injectBracketLabels();
   private matchLabels = injectMatchLabels();
+  private cardContext = inject(BRACKET_CARD_CONTEXT, { optional: true });
 
   public bracketRound = input.required<BracketRound<TRoundData, TMatchData>>();
   public bracketMatch = input.required<BracketMatch<TRoundData, TMatchData>>();
   public bracketRoundSwissGroup = input.required<BracketRoundSwissGroup<TRoundData, TMatchData> | null>();
 
   protected normalizedMatch = createNormalizedBracketMatch(this.bracketMatch);
+
+  protected cardSize = computed<MatchCardSize>(
+    () => this.cardContext?.resolvedFinalMatchCardSize() ?? MATCH_CARD_SIZES.AUTO,
+  );
 
   protected readonly TROPHY = TROPHY_ICON.name;
 

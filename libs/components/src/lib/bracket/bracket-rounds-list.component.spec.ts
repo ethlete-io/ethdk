@@ -111,6 +111,11 @@ describe('BracketRoundsListComponent', () => {
     expect(finalCards[0].textContent).toContain('Bracket reset');
   });
 
+  it('pins the final card so a wide list cannot flip it to the side-by-side arrangement', () => {
+    // A list row is as wide as the page; only the grid, whose cells have a chosen width, leaves this open.
+    expect(fixture.nativeElement.querySelector('.et-bracket-final-card').getAttribute('data-size')).toBe('expanded');
+  });
+
   it('narrows to a single round when selectedRoundId is set', () => {
     host.selectedRoundId.set('se-r1');
     fixture.detectChanges();

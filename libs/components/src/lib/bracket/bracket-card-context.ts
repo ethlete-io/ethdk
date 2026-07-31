@@ -1,6 +1,6 @@
 import { afterNextRender, computed, inject, InjectionToken, Signal } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
-import { NormalizedMatch } from '../match';
+import { MatchCardSize, NormalizedMatch } from '../match';
 import { BRACKET_ERROR_CODES } from './bracket-errors';
 import { BracketMatch } from './linked';
 
@@ -33,6 +33,15 @@ export type BracketCardContext = {
   resolvedMatchNormalizer: Signal<BracketMatchNormalizer | null>;
   /** The `aria-level` the default round headers announce themselves at. */
   resolvedRoundHeaderLevel: Signal<number>;
+  /**
+   * The `size` the default **final** card pins its `et-match-card` to.
+   *
+   * `'auto'` in the grid, where a cell has a deliberate width and letting the card measure it is the
+   * point — a narrow final column should land on the dense row rather than crop. A list row is instead
+   * as wide as the page, so an unpinned final would flip to the wide side-by-side arrangement past
+   * 560px while every row above it stayed dense.
+   */
+  resolvedFinalMatchCardSize: Signal<MatchCardSize>;
 };
 
 export const BRACKET_CARD_CONTEXT = new InjectionToken<BracketCardContext>('BRACKET_CARD_CONTEXT');
