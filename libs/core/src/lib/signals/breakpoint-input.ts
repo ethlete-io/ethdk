@@ -25,7 +25,24 @@ const BREAKPOINT_KEY_SET = new Set<string>(BREAKPOINT_ORDER);
 const isBreakpointMap = (value: unknown): value is BreakpointMap<unknown> => {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
   const keys = Object.keys(value);
-  return keys.length > 0 && keys.every((k) => BREAKPOINT_KEY_SET.has(k));
+
+  if (keys.length === 0) return false;
+
+  const invalidKeys = keys.filter((key) => !BREAKPOINT_KEY_SET.has(key));
+
+  if (!invalidKeys.length) return true;
+
+  // One bad key makes the whole map inert — it stops being a breakpoint map and becomes a plain value, which
+  // for an attribute binding means `[object Object]` and no effect at all. Silent, and expensive to find.
+  if (ngDevMode && invalidKeys.length < keys.length) {
+    console.warn(
+      `[ethlete] A breakpoint map used the unknown key(s) ${invalidKeys.map((key) => `"${key}"`).join(', ')}, so ` +
+        `the whole map was ignored. Valid keys are ${BREAKPOINT_ORDER.join(', ')} — there is no "default"; the ` +
+        'smallest breakpoint is the fallback.',
+    );
+  }
+
+  return false;
 };
 
 const resolveFromMap = <T>(map: BreakpointMap<T>, bp: Breakpoint, defaultValue: T): T => {

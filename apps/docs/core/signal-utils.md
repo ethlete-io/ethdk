@@ -46,6 +46,10 @@ export class MyGridComponent {
 
 `provideBreakpointInstance(ComponentClass)` in the component's `providers` is required for the transforms to re-resolve when the breakpoint changes. For a signal you already hold, `injectBreakpointInput(signal, defaultValue)` resolves it into a plain `Signal<T>`.
 
+::: warning The keys are `xs sm md lg xl 2xl` — and only those
+A map with **one** unrecognized key stops being a breakpoint map entirely: it is passed through as a plain value, which for an attribute binding means `[object Object]` and no effect at all. There is no `default` key — the smallest breakpoint you specify is the fallback, so write `{ xs: 'full', lg: 'third' }`. Dev mode warns when a map has some valid keys and some not.
+:::
+
 ## Router signals
 
 Committed router state as signals — safe to read in child-component constructors, with SSR-aware initial values:
