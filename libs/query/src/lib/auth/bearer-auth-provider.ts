@@ -9,7 +9,7 @@ import {
   signal,
   WritableSignal,
 } from '@angular/core';
-import { createRootProvider, isObject, ProviderResult } from '@ethlete/core';
+import { createRootProvider, injectUnsavedChangesCoordinator, isObject, ProviderResult } from '@ethlete/core';
 import { Observable, Subject } from 'rxjs';
 import { getQueryClientName, isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools';
 import {
@@ -528,6 +528,7 @@ const createBearerAuthProviderImpl = <
   const injector = inject(Injector);
   const destroyRef = inject(DestroyRef);
   const queryClient = config.queryClientRef[1]();
+  const unsavedChanges = injectUnsavedChangesCoordinator();
 
   const accessToken = signal<string | null>(null);
   const refreshToken = signal<string | null>(null);
@@ -574,6 +575,11 @@ const createBearerAuthProviderImpl = <
     latestExecutedQuery.set(null);
     latestNonInternalQuery.set(null);
     executionState.set({ type: 'logout', state: 'success' });
+
+    // Unsaved edits can no longer be saved once the session is gone. Guarding them past this point
+    // only strands a "discard your changes?" dialog over the login page the app redirects to, and
+    // leaves the tab locked against closing. See `injectUnsavedChangesCoordinator`.
+    unsavedChanges.abandonAll('logout');
   };
 
   const isLeader = createLeaderElection(config);

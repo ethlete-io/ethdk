@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { getCookie, getDomain, injectRoute } from '@ethlete/core';
+import { createUnsavedChangesTracker, getCookie, getDomain, injectRoute } from '@ethlete/core';
 import { createPostQuery, createQueryClient, QueryClientRef } from '../http';
 import { createBearerAuthProvider } from './bearer-auth-provider';
 import { withAuthenticationQuery, withRefreshQuery } from './bearer-auth-query-builders';
@@ -468,6 +468,46 @@ describe('createBearerAuthProvider', () => {
 
         expect(provider.isAuthenticated()).toBe(false);
       });
+    });
+
+    it('should abandon unsaved-changes guards so their dialogs and tab locks are released', async () => {
+      const postQuery = createPostQuery(queryClientRef);
+      const login = postQuery<{
+        body: { username: string };
+        response: { token: string; refresh_token: string };
+      }>('/auth/login');
+
+      const [, injectAuthProvider] = createBearerAuthProvider({
+        name: 'test-auth',
+        queryClientRef,
+        queries: [
+          withAuthenticationQuery('login', {
+            queryCreator: login,
+            extractTokens: (response) => ({ accessToken: response.token, refreshToken: response.refresh_token }),
+          }),
+        ],
+      });
+
+      const draft = signal('untouched');
+      const confirm = vi.fn(() => false);
+
+      const { provider, tracker } = TestBed.runInInjectionContext(() => ({
+        provider: injectAuthProvider(),
+        tracker: createUnsavedChangesTracker({ source: draft, confirm }),
+      }));
+
+      TestBed.tick();
+      draft.set('edited');
+      TestBed.tick();
+
+      expect(tracker.hasChanges()).toBe(true);
+
+      provider.logout();
+
+      expect(tracker.isAbandoned()).toBe(true);
+      // The edits can't be saved anymore, so the guard passes instead of prompting over the login page.
+      await expect(tracker.runCheck()).resolves.toBe(true);
+      expect(confirm).not.toHaveBeenCalled();
     });
   });
 

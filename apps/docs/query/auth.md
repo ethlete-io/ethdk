@@ -71,6 +71,8 @@ A secure query executed before login does **not** fail — it parks until `acces
 
 `logout()` is the mirror image: it drops the tokens, tears down every secure cache entry, **and** resets the secure queries still bound to them. A component that stays mounted across a logout stops showing the previous user's data on its own.
 
+It also **abandons every unsaved-changes guard** (`injectUnsavedChangesCoordinator().abandonAll('logout')`). Without that, logging out with a dirty form left a "discard your changes?" dialog floating over the login page the app had already redirected to, and a tab that still refused to close — over edits that can no longer be saved anyway. Guards created after a re-login work normally again; see [Sessions ending underneath a guard](/core/utilities#unsaved-changes-coordinator) for how to close your own confirm dialog when it happens.
+
 ## Execution state
 
 `executionState()` is the single place to watch what the provider is doing. Its `type` is either one of your query keys or one of the four internal operations, and `state` moves `loading → success | error`:
