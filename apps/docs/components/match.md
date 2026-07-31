@@ -1,7 +1,8 @@
 # Match
 
 A match card and the participant primitive it is built from — the two pieces every sport and esport UI repeats:
-a fixture list, a results table, a [bracket](/components/bracket) cell, a "today's matches" rail. The card draws
+a fixture list, a results table, a [bracket](/components/bracket) cell, a
+["today's matches" rail](/components/sport-recipes#today-s-matches-rail). The card draws
 both sides with their emblems, the score or the kick-off, a live badge, the per-game breakdown of a series, and
 the winner emphasized once there is one.
 

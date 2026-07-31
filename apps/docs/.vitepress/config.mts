@@ -224,6 +224,7 @@ export default defineConfig({
             { text: 'Pagination', link: '/components/pagination' },
             { text: 'Scrollable', link: '/components/scrollable' },
             { text: 'Standings', link: '/components/standings' },
+            { text: 'Sport UI recipes', link: '/components/sport-recipes' },
             { text: 'Table', link: '/components/table' },
             { text: 'Tabs', link: '/components/tabs' },
           ],
