@@ -57,6 +57,7 @@ Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU
 | 4000–4099 | Query error        | [Query error](/components/query-error)             |
 | 4100–4199 | Floating action    | [Floating action](/components/floating-action)     |
 | 4200–4299 | Filter overlay     | [Filter overlay](/components/filter-overlay)       |
+| 4300–4399 | Match              | [Match](/components/match)                         |
 
 ::: info Codes below 1000
 Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web sockets). `ET1000`/`ET1001` therefore exist in both packages — the bracketed source in the message (`[SelectDirective]` vs. a query feature) tells them apart.
