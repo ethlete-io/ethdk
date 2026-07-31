@@ -22,7 +22,23 @@
     align-items: center;
     gap: var(--et-match-participant-gap);
     min-inline-size: 0;
+    /* Set rather than inherited, so this on an `<a>` doesn't come out link-blue and underlined. */
     color: var(--et-surface-color-solid, currentColor);
+    text-decoration: none;
+  }
+
+  /* On an `<a>` or a `<button>`: the name is what the pointer is aiming at, so that is what reacts. */
+  .et-match-participant:where([data-interactive]) {
+    cursor: pointer;
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    text-align: start;
+  }
+
+  .et-match-participant:where([data-interactive]):hover .et-match-participant-name {
+    text-decoration: underline;
   }
 
   /* A fixed frame whether or not there is an emblem, so a row of participants lines up and a late

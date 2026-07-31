@@ -245,12 +245,25 @@ worth reaching for in a roster, a standings cell or a filter chip's content:
 <et-match-participant [participant]="player()" showSeed />
 ```
 
+**It takes an attribute form too**, so the whole thing can be one click target — a player card that opens a
+profile, a team row that filters a list:
+
+```html
+<a [participant]="player()" [routerLink]="['/players', player().id]" et-match-participant showSeed></a>
+```
+
+It detects an `<a>` or `<button>` host itself: the host is then named after the participant (without that, the
+link reads "FC Berlin emblem FC Berlin"), takes the shared [focus ring](/components/focus-ring), underlines
+its name on hover, and loses the button chrome. `interactive` forces it for a host that is a click target some
+other way.
+
 | Input         | Type                                 | Default | What it does                                                          |
 | ------------- | ------------------------------------ | ------- | --------------------------------------------------------------------- |
 | `participant` | `NormalizedMatchParticipant \| null` | `null`  | `null` renders the `tbd` label against an empty emblem frame.         |
 | `compact`     | `boolean`                            | `false` | Prefer the short `code` over the full name, and drop the subtitle.    |
 | `showSeed`    | `boolean`                            | `false` | Show the seeding position beside the name.                            |
 | `loading`     | `boolean`                            | `false` | Draw [skeleton](/components/skeleton) bones instead of an empty slot. |
+| `interactive` | `boolean \| null`                    | `null`  | `null` infers it from the host tag (`<a>` / `<button>`).              |
 | `labels`      | `Partial<MatchLabels> \| null`       | `null`  | Per-instance string overrides.                                        |
 
 `loading` and a `null` participant are different states on purpose: a `null` participant is a decided

@@ -32,6 +32,18 @@ class HostComponent {
   public loading = signal(false);
 }
 
+@Component({
+  template: `
+    <!-- The primitive renders its own content and its own name, neither visible to the linter. -->
+    <!-- eslint-disable-next-line @angular-eslint/template/elements-content -->
+    <a [participant]="participant()" et-match-participant href="#"></a>
+  `,
+  imports: [MatchParticipantComponent],
+})
+class LinkHostComponent {
+  public participant = signal<NormalizedMatchParticipant | null>(TEAM);
+}
+
 const create = () => {
   const fixture = TestBed.createComponent(HostComponent);
 
@@ -166,6 +178,31 @@ describe('MatchParticipantComponent', () => {
       fixture.detectChanges();
 
       expect(host(fixture).querySelector('.et-match-participant-subtitle')).toBeNull();
+    });
+  });
+
+  describe('on an interactive host', () => {
+    const link = () => {
+      const fixture = TestBed.createComponent(LinkHostComponent);
+
+      fixture.detectChanges();
+
+      return fixture;
+    };
+
+    it('marks itself interactive from the host tag alone', () => {
+      const anchor = (link().nativeElement as HTMLElement).querySelector('a');
+
+      expect(anchor?.hasAttribute('data-interactive')).toBe(true);
+      expect(anchor?.classList.contains('et-focus-ring')).toBe(true);
+    });
+
+    it('names itself after the participant, so the link is not its emblem alt plus the same name', () => {
+      expect((link().nativeElement as HTMLElement).querySelector('a')?.getAttribute('aria-label')).toBe('FC Berlin');
+    });
+
+    it('stays unnamed when it is only a span, where the surrounding text is the name', () => {
+      expect(host(create()).querySelector('et-match-participant')?.hasAttribute('aria-label')).toBe(false);
     });
   });
 
