@@ -90,13 +90,19 @@ tokens in core. (Calendar event markers and month/year jump moved into plan
       lines with `flex-basis: 100%`, so an option stays a direct child of the group. The radio group
       already bound all four arrow keys, so item 5's keyboard note needed no change.)_
 - [x] 11 — sport/match components
-- [ ] 12 — bracket improvements (depends on 11) _(three of four areas done 2026-07-31: the rounds list
-      and `bracketFitsWidth`, participant-level journeys with their elimination endpoint, and focus mode
-      — plus §4's compact density. **Mirrored double elimination is the one thing left.** Found while
-      implementing: the pin is driven from outside and never rides on a card tap, so §3's option (c) was
-      dropped and `participantFocusChange` with it — a `model` already emits its own change event, and
-      two events for one change is worse API than one. `et-bracket-adaptive` stayed unbuilt for the same
-      kind of reason: with `signalHostElementDimensions` the switch is four lines, and a wrapper would
-      have had to forward every layout input of both representations to earn its place. The layout
-      inputs became overrides (`undefined` when unbound) so the density preset has somewhere to sit
-      between them and the defaults.)_
+- [x] 12 — bracket improvements _(done 2026-07-31; all four areas. Found while implementing: mirrored
+      double elimination has **no real-world convention** — every reference draws double elim
+      left-to-right with losers below — so rather than invent one, mirroring became a property of the
+      column sequence: both brackets fold and converge on the rounds too small to halve, with the finals
+      in the middle. The outbound side of a fold is an ordinary bracket with half the matches, so the
+      ratio/padding/span maths were reused unchanged and the way back is that side mirrored sub-column
+      for sub-column. Mirroring trades height for width (32 teams: `1640×1720` → `2880×880`), so it is
+      not the answer to a too-wide bracket — density and the rounds list are. Two latent bugs surfaced:
+      a connector carried both of a match's participants instead of the one who advanced along it, and
+      the "wire the lower round at the same index" heuristic mis-wired a centre round once a fold put a
+      right-hand half past the finals. The pin is driven from outside and never rides on a card tap, so
+      §3's option (c) was dropped and `participantFocusChange` with it — a `model` already emits its own
+      change event. `et-bracket-adaptive` stayed unbuilt: with `signalHostElementDimensions` the switch
+      is four lines, and a wrapper would have had to forward every layout input of both representations
+      to earn its place. The layout inputs became overrides (`undefined` when unbound) so the density
+      preset has somewhere to sit between them and the defaults.)_

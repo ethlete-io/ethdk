@@ -132,6 +132,57 @@ export const DoubleEliminationWithContinue = {
   },
 };
 
+/** Folded in half: each round that can be halved is drawn on both sides of the final. */
+export const MirroredSingleElimination = {
+  render: Template,
+  args: {
+    source: generateSingleEliminationBracket(16),
+    layout: BRACKET_DATA_LAYOUT.MIRRORED,
+  },
+};
+
+/**
+ * A folded double elimination. Both brackets fold, converging on the rounds too small to halve, with the
+ * finals in the middle — so the losers bracket's way back crosses under them, since it runs longer than
+ * the winners bracket.
+ */
+export const MirroredDoubleElimination = {
+  render: Template,
+  args: {
+    source: generateDoubleEliminationBracket({ participantCount: 8, includeFinal: true }),
+    layout: BRACKET_DATA_LAYOUT.MIRRORED,
+  },
+};
+
+/** The fold with a front-truncated winners bracket and a third-place playoff — the awkward shapes. */
+export const MirroredDoubleEliminationPartial = {
+  render: Template,
+  args: {
+    source: generateDoubleEliminationBracket({
+      participantCount: 8,
+      partial: true,
+      includeFinal: true,
+      includeThirdPlace: true,
+    }),
+    layout: BRACKET_DATA_LAYOUT.MIRRORED,
+  },
+};
+
+/** Folded and compact: the two ways of making a bracket fit, together. */
+export const MirroredCompact = {
+  render: Template,
+  args: {
+    source: generateSingleEliminationBracket(16),
+    layout: BRACKET_DATA_LAYOUT.MIRRORED,
+    columnWidth: 140,
+    matchHeight: 52,
+    finalColumnWidth: 200,
+    finalMatchHeight: 132,
+    columnGap: 32,
+    rowGap: 16,
+  },
+};
+
 /**
  * Focus mode: the legend above the bracket drives `focusedParticipantId`, which is how touch and
  * keyboard users pin a journey. Escape, or a click past the cells, drops the pin.

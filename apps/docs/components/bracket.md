@@ -73,7 +73,7 @@ shipped default listed below. The resolved set is on the component as `settings(
 | Input                     | Default           | Purpose                                                                              |
 | ------------------------- | ----------------- | ------------------------------------------------------------------------------------ |
 | `source`                  | — (required)      | The resolved `BracketDataSource`.                                                    |
-| `layout`                  | `'left-to-right'` | `'left-to-right'` or `'mirrored'` (finals in the centre).                            |
+| `layout`                  | `'left-to-right'` | `'left-to-right'` or `'mirrored'` — see [Mirrored layout](#mirrored-layout).         |
 | `density`                 | `'default'`       | `'default'` or `'compact'` — see [Density](#density).                                |
 | `columnWidth`             | `250`             | Width of a round column.                                                             |
 | `matchHeight`             | `75`              | Height of a match card.                                                              |
@@ -222,7 +222,9 @@ export class MatchCardComponent {
 
 Upper and lower brackets, the grand final and reverse (bracket-reset) final are laid out
 automatically from the round `type`s. Deferred/async lower brackets (where lower-bracket
-rounds resolve later than their upper-bracket feeders) are supported and align correctly.
+rounds resolve later than their upper-bracket feeders) are supported and align correctly, as is a
+front-truncated winners bracket whose opening round is played elsewhere. It also
+[folds](#double-elimination-folds-too).
 
 <StoryEmbed id="components-bracket--double-elimination" height="520px" />
 
@@ -242,7 +244,7 @@ swissColors = {
 };
 ```
 
-<StoryEmbed id="components-bracket--swiss" height="560px" />
+The `components-bracket--swiss` story shows a full stage.
 
 ## Continue element
 
@@ -250,6 +252,35 @@ When a stage feeds into a later competition phase, set `showContinueElement` (le
 layout only) to append a trailing column whose card receives the matches whose winners
 advance. Useful for "→ playoffs" hand-offs. The
 `components-bracket--double-elimination-with-continue` story shows one.
+
+## Mirrored layout
+
+`layout="mirrored"` folds the bracket in half. Every round that can be halved — one with an even number
+of matches — is drawn twice, once on each side, and the two sides converge on the rounds too small to
+halve, with the final in the middle. Elimination brackets only; a swiss stage has no fold to make and
+throws [`ET3400`](/components/error-codes#bracket-et34xx).
+
+**It trades height for width, not the other way round.** A 32-team single elimination is `1640×1720`
+left-to-right and `2880×880` folded: roughly twice as wide and half as tall. That is what a poster, a
+broadcast graphic or a page that scrolls badly downwards wants — it is _not_ the answer to a bracket
+that is too wide, which is what [density](#density) and the
+[rounds list](/components/bracket-rounds-list) are for.
+
+<StoryEmbed id="components-bracket--mirrored-single-elimination" height="420px" />
+
+### Double elimination folds too
+
+Both brackets fold, and each column keeps its winners-over-losers pairing, so the whole canvas mirrors
+rather than the two brackets mirroring separately. Two things follow from the losers bracket running
+longer than the winners bracket, and both are correct rather than worth working around:
+
+- **The middle is a run of columns, not one column** — the late rounds of both brackets, which are the
+  narrow ones, plus the grand final and the bracket reset.
+- **The losers bracket's way back crosses under the finals.** Its fold closes further out than the
+  winners bracket's, so that one connector is long. It lands on the right cells; it just has further to go.
+
+A round that cannot be halved has no second copy, so an odd first round simply never folds — the bracket
+comes out left-to-right with the final at the end, which is the honest answer rather than an error.
 
 ## Density
 
