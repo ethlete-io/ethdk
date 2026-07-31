@@ -90,4 +90,13 @@ tokens in core. (Calendar event markers and month/year jump moved into plan
       lines with `flex-basis: 100%`, so an option stays a direct child of the group. The radio group
       already bound all four arrow keys, so item 5's keyboard note needed no change.)_
 - [x] 11 — sport/match components
-- [ ] 12 — bracket improvements (depends on 11)
+- [ ] 12 — bracket improvements (depends on 11) _(three of four areas done 2026-07-31: the rounds list
+      and `bracketFitsWidth`, participant-level journeys with their elimination endpoint, and focus mode
+      — plus §4's compact density. **Mirrored double elimination is the one thing left.** Found while
+      implementing: the pin is driven from outside and never rides on a card tap, so §3's option (c) was
+      dropped and `participantFocusChange` with it — a `model` already emits its own change event, and
+      two events for one change is worse API than one. `et-bracket-adaptive` stayed unbuilt for the same
+      kind of reason: with `signalHostElementDimensions` the switch is four lines, and a wrapper would
+      have had to forward every layout input of both representations to earn its place. The layout
+      inputs became overrides (`undefined` when unbound) so the density preset has somewhere to sit
+      between them and the defaults.)_
