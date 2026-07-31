@@ -54,6 +54,14 @@ export type BracketRoundType =
   SingleEliminationBracketRoundType | DoubleEliminationBracketRoundType | SwissBracketRoundType | GroupBracketRoundType;
 
 export type BracketRoundBase<TRoundData> = {
+  /**
+   * How deep this round sits in its own bracket — 0 for the opening round, counted separately for the
+   * upper and lower halves of a double elimination.
+   *
+   * **Both halves of a mirrored round share it.** That is what makes it the fold's coordinate: a
+   * mirrored layout draws each depth twice, once on each side, so the depth is the only thing that says
+   * which right-hand column belongs opposite which left-hand one.
+   */
   logicalIndex: number;
   type: BracketRoundType;
   id: BracketRoundId;
@@ -104,6 +112,9 @@ export const createRoundsMapBase = <TRoundData, TMatchData>(
 
     const matches = source.matches.filter((m) => m.roundId === round.id);
     const roundId = round.id as BracketRoundId;
+    // An odd match count cannot be halved, so the round stays whole and lands in the middle of the fold.
+    // That is why a mirrored bracket converges on its late rounds without anything having to say so:
+    // those are the rounds down to one match.
     const shouldSplitRound = shouldSplitRoundsInTwo && matches.length % 2 === 0;
     const isFirstRound = roundIndex === 0;
     const isLastRound = roundIndex === orderedRounds.length - 1;
@@ -116,46 +127,43 @@ export const createRoundsMapBase = <TRoundData, TMatchData>(
         .findIndex((r) => r.type === round.type) ===
       orderedRounds.length - roundIndex - 1;
 
+    const depth =
+      isLowerBracket || isCommonDoubleEliminationRound ? currentLowerBracketIndex : currentUpperBracketIndex;
+
     if (shouldSplitRound) {
       const firstHalfRoundId = `${roundId}--half-1` as BracketRoundId;
       const secondHalfRoundId = `${roundId}--half-2` as BracketRoundId;
       const firstHalfMatchesMaxIndex = matches.length / 2 - 1;
 
-      const bracketRoundFirstHalf: BracketRoundWithRelationsBase<TRoundData> = {
+      // Both halves are the same round at the same depth, drawn on either side of the fold — so they
+      // carry the same `logicalIndex`, which is what pairs a right-hand column with its left-hand twin.
+      const halfBase = {
         type: round.type,
-        id: firstHalfRoundId,
-        shortId: `${roundIndex}-left` as BracketRoundShortId,
-        logicalIndex:
-          isLowerBracket || isCommonDoubleEliminationRound ? currentLowerBracketIndex : currentUpperBracketIndex,
+        logicalIndex: depth,
         data: round.data,
-        position: ((isLowerBracket || isCommonDoubleEliminationRound
-          ? currentLowerBracketIndex
-          : currentUpperBracketIndex) + 1) as BracketRoundPosition,
+        position: (depth + 1) as BracketRoundPosition,
         name: round.name,
         matchCount: matches.length / 2,
-        matchIds: matches.slice(0, firstHalfMatchesMaxIndex + 1).map((m) => m.id as BracketMatchId),
-        mirrorRoundType: BRACKET_ROUND_MIRROR_TYPE.LEFT,
         isFirstRound,
         isLastRound,
         isFirstOfType,
         isLastOfType,
       };
 
+      const bracketRoundFirstHalf: BracketRoundWithRelationsBase<TRoundData> = {
+        ...halfBase,
+        id: firstHalfRoundId,
+        shortId: `${roundIndex}-left` as BracketRoundShortId,
+        matchIds: matches.slice(0, firstHalfMatchesMaxIndex + 1).map((m) => m.id as BracketMatchId),
+        mirrorRoundType: BRACKET_ROUND_MIRROR_TYPE.LEFT,
+      };
+
       const bracketRoundSecondHalf: BracketRoundWithRelationsBase<TRoundData> = {
-        type: round.type,
+        ...halfBase,
         id: secondHalfRoundId,
         shortId: `${roundIndex}-right` as BracketRoundShortId,
-        logicalIndex: -1,
-        data: round.data,
-        position: -1 as BracketRoundPosition,
-        name: round.name,
-        matchCount: matches.length / 2,
         matchIds: matches.slice(firstHalfMatchesMaxIndex + 1).map((m) => m.id as BracketMatchId),
         mirrorRoundType: BRACKET_ROUND_MIRROR_TYPE.RIGHT,
-        isFirstRound,
-        isLastRound,
-        isFirstOfType,
-        isLastOfType,
       };
 
       map.set(firstHalfRoundId, bracketRoundFirstHalf);
@@ -166,12 +174,9 @@ export const createRoundsMapBase = <TRoundData, TMatchData>(
         type: round.type,
         id: roundId,
         shortId: `${roundIndex}` as BracketRoundShortId,
-        logicalIndex:
-          isLowerBracket || isCommonDoubleEliminationRound ? currentLowerBracketIndex : currentUpperBracketIndex,
+        logicalIndex: depth,
         data: round.data,
-        position: ((isLowerBracket || isCommonDoubleEliminationRound
-          ? currentLowerBracketIndex
-          : currentUpperBracketIndex) + 1) as BracketRoundPosition,
+        position: (depth + 1) as BracketRoundPosition,
         name: round.name,
         matchCount: matches.length,
         matchIds: matches.map((m) => m.id as BracketMatchId),
@@ -192,15 +197,14 @@ export const createRoundsMapBase = <TRoundData, TMatchData>(
     }
   }
 
+  // The right halves close the map, deepest first, so walking it in order walks the fold: out along the
+  // left side, through the rounds too small to halve, and back along the right. `splitRoundsRest` was
+  // built by unshifting, so it is already in that order — and each half keeps the depth of its twin
+  // rather than being renumbered past the last round, which is what lets a builder pair the two sides.
   if (splitRoundsRest.length) {
-    const lastRound = map.last();
+    if (!map.last()) throw new RuntimeError(BRACKET_ERROR_CODES.ROUND_RELATION_INVALID, 'Last round not found');
 
-    if (!lastRound) throw new RuntimeError(BRACKET_ERROR_CODES.ROUND_RELATION_INVALID, 'Last round not found');
-
-    for (const [splitRoundIndex, splitRound] of splitRoundsRest.entries()) {
-      splitRound.logicalIndex = lastRound.logicalIndex + splitRoundIndex + 1;
-      splitRound.position = (lastRound.position + splitRoundIndex + 1) as BracketRoundPosition;
-
+    for (const splitRound of splitRoundsRest) {
       map.set(splitRound.id, splitRound);
     }
   }
