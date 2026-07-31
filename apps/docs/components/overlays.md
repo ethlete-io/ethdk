@@ -155,6 +155,19 @@ The header, body, and footer must have an `etOverlayMain` ancestor — either an
 | `OverlayTitleDirective`  | `[etOverlayTitle]`                     | Wires the overlay's `aria-labelledby` to the title element                                                               |
 | `OverlayCloseDirective`  | `[etOverlayClose]`                     | Click closes the nearest overlay; the bound value becomes the close result                                               |
 
+Spacing is tokenized, so an overlay can retune it per instance via `panelClass` without restyling the pieces:
+
+| Token                                     | Default | Applies to                                                         |
+| ----------------------------------------- | ------- | ------------------------------------------------------------------ |
+| `--et-overlay-padding-inline`             | `16px`  | Inline padding of header, body and footer                          |
+| `--et-overlay-padding-block`              | `16px`  | Block padding at the pane's outer edges (header start, footer end) |
+| `--et-overlay-header-padding-block-end`   | `16px`  | Gap between the header and the body                                |
+| `--et-overlay-body-padding-block`         | `0`     | Block padding inside the scrolling body                            |
+| `--et-overlay-footer-padding-block-start` | `16px`  | Gap between the body and the footer                                |
+| `--et-overlay-body-min-block-size`        | `100px` | Floor for the body's row before the pane starts scrolling          |
+
+`--et-overlay-body-padding-block` is applied to the body's inner wrapper rather than to the scroll container itself, so its end value is part of the scrollable area: content scrolled to the bottom stops that far short of the edge instead of ending flush against the divider, which would clip the last child's border and focus ring.
+
 ### Pane surface
 
 The boxed overlay kinds — `dialog`, `anchoredDialog`, the four sheets and the full-screen dialog — paint a default surface on the pane itself, so plain content (header/body/footer) needs no styling of its own. The colors come from the [surface theme](/core/theming) at the pane's elevation:
