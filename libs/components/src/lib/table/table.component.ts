@@ -48,6 +48,7 @@ import {
   TableHeaderAdornment,
   TableLayer,
   TableLeadColumn,
+  TableCellEditing,
   TableCellNavigation,
   TableRowWindow,
   TableStateSlice,
@@ -127,6 +128,11 @@ type TableBodyCellVm<T> = TableStickyVm & {
   value: unknown;
   /** Context for a cell template, built here so the template outlet binds one object. */
   context: TableCellContext<T, unknown>;
+  /**
+   * The column's edit template and the editing feature's context, while this is the one cell in edit
+   * mode. `null` for every other cell, which is every cell of a table without the feature.
+   */
+  edit: { template: TemplateRef<unknown>; context: object } | null;
 };
 
 type TableBodyRowVm<T> = {
@@ -483,6 +489,12 @@ export class TableComponent<T> {
     this.cellNavigationList().some((navigation) => navigation.enabled?.() ?? true),
   );
 
+  // A feature that edits cells in place (etTableInlineEdit). The base knows only which cell is open and
+  // what to render in it — the session, the draft and the commit are all the feature's.
+  private cellEditingList = signal<TableCellEditing[]>([]);
+
+  private cellEditing = computed(() => this.cellEditingList().find((editing) => editing.enabled?.() ?? true) ?? null);
+
   private rowWindow = computed(() => {
     const window = this.registeredRowWindow();
 
@@ -573,6 +585,7 @@ export class TableComponent<T> {
       footer: new Map(),
       filterOption: new Map(),
       cellSkeleton: new Map(),
+      cellEdit: new Map(),
     };
 
     for (const registration of this.columnTemplateList()) {
@@ -881,6 +894,9 @@ export class TableComponent<T> {
     const indexOffset = this.rowIndexOffset();
     const toggledKey = this.userToggledKey();
     const expandable = this.expandable();
+    // At most one cell is ever open, so the edit templates are only looked up once there is one.
+    const editing = this.cellEditing()?.cell() ?? null;
+    const editTemplates = editing ? this.columnTemplates().cellEdit : null;
 
     return this.renderedRows().map((row, index) => {
       const key = this.rowIdentity(row);
@@ -906,6 +922,10 @@ export class TableComponent<T> {
           // The callback may answer with the bare state or with a message alongside it.
           const answer = cellState?.(row, column.key) ?? null;
           const state = typeof answer === 'string' ? answer : (answer?.state ?? null);
+          const editTemplate =
+            editing && editing.row === key && editing.column === column.key
+              ? (editTemplates?.get(column.key) ?? null)
+              : null;
 
           return {
             ...this.stickyVmOf(column, { offsets, suppressed }),
@@ -916,6 +936,7 @@ export class TableComponent<T> {
             template: templates.get(column.key) ?? null,
             value,
             context: { $implicit: row, value, index: indexOffset + index },
+            edit: editTemplate && editing ? { template: editTemplate, context: editing.context } : null,
           };
         }),
       };
@@ -1229,6 +1250,23 @@ export class TableComponent<T> {
    */
   public registerCellNavigation(navigation: TableCellNavigation) {
     this.cellNavigationList.update((list) => [...list, navigation]);
+  }
+
+  /**
+   * Called by an opt-in feature to edit cells in place (`etTableInlineEdit`). Part of the feature
+   * contract; consumers never call this.
+   */
+  public registerCellEditing(editing: TableCellEditing) {
+    this.cellEditingList.update((list) => [...list, editing]);
+  }
+
+  /**
+   * Offer a cell to a registered editing feature. Part of the feature contract — it is how
+   * `etTableKeyboardNav` hands `Enter` over to `etTableInlineEdit` without either knowing about the
+   * other. `false` when nothing took it.
+   */
+  public editCell(rowIndex: number, columnIndex: number) {
+    return this.cellEditing()?.editCell(rowIndex, columnIndex) ?? false;
   }
 
   /** A rendered body cell, for a feature measuring real row height. Part of the feature contract. */

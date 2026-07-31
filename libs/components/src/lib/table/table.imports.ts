@@ -4,6 +4,7 @@ import { TableColumnMenuDirective } from './table-column-menu.directive';
 import { TableCsvExportDirective } from './table-csv-export.directive';
 import { TableFiltersDirective } from './table-filters.directive';
 import { TableFooterDirective } from './headless/table-footer.directive';
+import { TableInlineEditDirective } from './table-inline-edit.directive';
 import { TableKeyboardNavDirective } from './table-keyboard-nav.directive';
 import { TableReorderDirective } from './table-reorder.directive';
 import { TableResizeDirective } from './table-resize.directive';
@@ -11,6 +12,7 @@ import { TableSelectionDirective } from './table-selection.directive';
 import { TableStatePersistenceDirective } from './headless/table-state-persistence.directive';
 import {
   TableCellDirective,
+  TableCellEditDirective,
   TableCellSkeletonDirective,
   TableFilterOptionDirective,
   TableFooterCellDirective,
@@ -65,6 +67,13 @@ export const TABLE_CSV_EXPORT_IMPORTS = [TableCsvExportDirective] as const;
  * the body becomes one tab stop. No extra dependency.
  */
 export const TABLE_KEYBOARD_NAV_IMPORTS = [TableKeyboardNavDirective] as const;
+
+/**
+ * Inline cell editing (`etTableInlineEdit`), plus the `etTableCellEdit` template that supplies a
+ * column's editor. No extra dependency of its own — the editor is whichever control you put in the
+ * template. Pair it with {@link TABLE_KEYBOARD_NAV_IMPORTS} for the `Enter`-to-edit flow.
+ */
+export const TABLE_INLINE_EDIT_IMPORTS = [TableInlineEditDirective, TableCellEditDirective] as const;
 
 /** Drag-to-resize column widths (`etTableResize`). Pulls in the drag primitives. */
 export const TABLE_RESIZE_IMPORTS = [TableResizeDirective] as const;

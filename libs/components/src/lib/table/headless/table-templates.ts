@@ -5,6 +5,7 @@ import { TableComponent } from '../table.component';
 import {
   AnyTableColumn,
   TableCellContext,
+  TableCellEditContext,
   TableCellSkeletonContext,
   TableColumn,
   TableColumnTemplate,
@@ -170,6 +171,41 @@ export class TableCellSkeletonDirective<T> {
     _directive: TableCellSkeletonDirective<T>,
     _context: unknown,
   ): _context is TableCellSkeletonContext {
+    return true;
+  }
+}
+
+/**
+ * The editor one column's cells swap to while they are being edited in place — what makes a column
+ * marked `editable` actually editable. Needs `etTableInlineEdit` on the table.
+ *
+ * `let-field` is the draft, as a signal-forms field: bind it with `[formField]` and the control saves
+ * into it, exactly as it would in a form. `let-row` is the row and `let-value` the value editing started
+ * from. Committing is the table's (Enter, Tab); the template only renders the control.
+ *
+ * @example
+ * <ng-template [etTableCellEdit]="COLUMNS.name" let-field="field">
+ *   <et-form-field size="sm">
+ *     <et-input [formField]="field" aria-label="Name" />
+ *   </et-form-field>
+ * </ng-template>
+ */
+@Directive({
+  selector: 'ng-template[etTableCellEdit]',
+  exportAs: 'etTableCellEdit',
+})
+export class TableCellEditDirective<T, TValue> {
+  /** The column whose cells this template edits. */
+  public column = input.required<TableColumn<T, TValue>>({ alias: 'etTableCellEdit' });
+
+  constructor() {
+    registerColumnTemplate({ slot: 'cellEdit', name: 'etTableCellEdit', column: this.column });
+  }
+
+  public static ngTemplateContextGuard<T, TValue>(
+    _directive: TableCellEditDirective<T, TValue>,
+    _context: unknown,
+  ): _context is TableCellEditContext<T, TValue> {
     return true;
   }
 }

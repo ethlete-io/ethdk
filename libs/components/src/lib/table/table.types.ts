@@ -1,4 +1,5 @@
 import { Signal, TemplateRef } from '@angular/core';
+import { FieldTree } from '@angular/forms/signals';
 
 /** Horizontal alignment of a column's header and cells. */
 export type TableColumnAlign = 'start' | 'center' | 'end';
@@ -46,7 +47,7 @@ export type TableFilter = {
 };
 
 /** Which of a column's slots a registered template fills. */
-export type TableTemplateSlot = 'cell' | 'header' | 'footer' | 'filterOption' | 'cellSkeleton';
+export type TableTemplateSlot = 'cell' | 'header' | 'footer' | 'filterOption' | 'cellSkeleton' | 'cellEdit';
 
 /**
  * How many of a column's filter options can be picked at once: `'multiple'` (the default) is a
@@ -90,6 +91,22 @@ export type TableCellContext<T, TValue> = {
   value: TValue;
   /** The zero-based row index within the currently rendered rows. */
   index: number;
+};
+
+/**
+ * The context passed to a column's edit template (`etTableCellEdit`) while that cell is being edited.
+ *
+ * `field` is the draft the feature holds for this one edit — a signal-forms field, so the control is
+ * bound the way every control in this library is bound (`[formField]`), with no cell-editor abstraction
+ * in between. It starts at the cell's current value; committing hands whatever it holds to `commit`.
+ */
+export type TableCellEditContext<T, TValue> = {
+  /** The row being edited. */
+  $implicit: T;
+  /** The draft field to bind the editor to with `[formField]`. */
+  field: FieldTree<TValue>;
+  /** The cell's value as it was when the edit started — what Escape restores. */
+  value: TValue;
 };
 
 /** The context passed to a filter option template — the option being rendered. */
@@ -165,6 +182,13 @@ export type TableColumn<T, TValue = unknown> = {
    * and for one whose `value` isn't a primitive.
    */
   exportValue?: (row: T) => TableCsvValue;
+
+  /**
+   * Let this column's cells be edited in place. Needs `etTableInlineEdit` on the table and an
+   * `etTableCellEdit` template for the column — the template is the editor, so a column marked
+   * `editable` without one stays read-only.
+   */
+  editable?: boolean;
 
   /** Show a filter menu on this column's header. Provide `filterOptions` for the choices. */
   filterable?: boolean;

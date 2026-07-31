@@ -175,9 +175,11 @@ export class TableKeyboardNavDirective {
     event.preventDefault();
 
     if (next === 'drill') {
-      // Enter opens whatever the cell holds. A cell with nothing focusable in it has nothing to open,
-      // so the event is left alone — a `rowInteractive` table's own row handler still sees it.
-      this.drillInto(hit.cell);
+      // Enter opens whatever the cell holds. Inline editing is offered it first — through the table, so
+      // neither feature references the other — and an editable cell becomes an editor instead. A cell
+      // with nothing focusable in it has nothing to open, so the event is left alone: a `rowInteractive`
+      // table's own row handler still sees it.
+      if (!this.table.editCell(hit.position.row, hit.position.column)) this.drillInto(hit.cell);
 
       return;
     }

@@ -200,6 +200,7 @@
             [attr.data-col-key]="cell.key"
             [attr.tabindex]="cellNavigation() ? -1 : null"
             [attr.data-state]="cell.state"
+            [class.et-table-cell--editing]="cell.edit"
             [class.et-skeleton--animated]="cell.state === 'loading'"
             [class.et-table-sticky-start]="cell.stickyStart"
             [class.et-table-sticky-end]="cell.stickyEnd"
@@ -208,7 +209,11 @@
             class="et-table-cell"
             role="gridcell"
           >
-            @if (cell.state === 'loading') {
+            @if (cell.edit; as edit) {
+              <!-- The one cell in edit mode: the column's etTableCellEdit template, rendered with the
+                   editing feature's own context (the draft field). See registerCellEditing. -->
+              <ng-container *ngTemplateOutlet="edit.template; context: edit.context" />
+            } @else if (cell.state === 'loading') {
               <!-- A cell that is loading on its own (an inline edit saving) shows a placeholder instead of
                    its value; the row around it stays readable. -->
               <et-skeleton-item shape="text" />

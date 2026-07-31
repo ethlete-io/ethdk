@@ -130,6 +130,32 @@ export type TableCellNavigation = {
 };
 
 /**
+ * A feature's claim on editing a cell in place (inline editing). Registering it lets the table swap a
+ * cell's content for the column's `etTableCellEdit` template while that one cell is being edited, and
+ * gives keyboard navigation somewhere to hand `Enter` — see {@link TableFeatureHost.editCell}.
+ *
+ * The feature owns the session (which cell, the draft, commit/cancel); the table only renders it.
+ */
+export type TableCellEditing = {
+  /**
+   * The cell currently in edit mode, or `null`. `row` is the row's {@link TableFeatureHost.rowIdentity},
+   * `column` its key, and `context` what the column's edit template is rendered with (the feature builds
+   * it, since only the feature holds the draft).
+   */
+  cell: Signal<{ row: unknown; column: string; context: object } | null>;
+
+  /**
+   * Put a cell into edit mode, addressed the way {@link TableFeatureHost.bodyCellElementAt} addresses
+   * it. Returns whether the feature took it — `false` for a column that isn't editable, which is what
+   * lets `Enter` fall through to its usual job of drilling into the cell's content.
+   */
+  editCell(rowIndex: number, columnIndex: number): boolean;
+
+  /** Whether the claim is live — see {@link TableHeaderAdornment.enabled}. */
+  enabled?: Signal<boolean>;
+};
+
+/**
  * A feature's own serializable state, contributed to the table's {@link TableState} under `key`.
  *
  * The base table owns column order/visibility/width, sort, filters and expansion because they must
@@ -164,6 +190,8 @@ export type TableFeatureHost = {
   registerRowWindow(window: TableRowWindow): void;
   /** Take over cell focus (keyboard grid navigation). Call once, from the feature's constructor. */
   registerCellNavigation(navigation: TableCellNavigation): void;
+  /** Take over editing a cell in place. Call once, from the feature's constructor. */
+  registerCellEditing(editing: TableCellEditing): void;
   /** Add a floating layer rendered after the grid (a drag ghost). Call once, from the constructor. */
   registerLayer(layer: TableLayer): void;
   /** Replace the mark drawn in failed cells. Call once, from the feature's constructor. */
@@ -221,6 +249,17 @@ export type TableFeatureHost = {
 
   /** How many rows fit the scroll viewport — the step PageUp/PageDown moves by. At least 1. */
   rowsPerPage(): number;
+
+  /**
+   * Hand a cell to a registered editing feature, if one wants it — see {@link TableCellEditing.editCell}.
+   * Returns `false` when nothing took it (no feature, or the column isn't editable), which is the
+   * signal for the caller to do whatever it would have done with the key otherwise.
+   *
+   * This is the contract between keyboard navigation and inline editing over `Enter`: navigation asks
+   * first and only drills into the cell's content when the answer is no. Neither feature references the
+   * other — both go through the table, as every other pair of features does.
+   */
+  editCell(rowIndex: number, columnIndex: number): boolean;
 
   /**
    * The table's host element — a feature is a directive on it, so this is also the element it can

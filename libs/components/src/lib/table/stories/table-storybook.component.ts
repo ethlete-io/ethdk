@@ -1,10 +1,23 @@
-import { Component, computed, input, linkedSignal, signal, viewChild, ViewEncapsulation } from '@angular/core';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  input,
+  linkedSignal,
+  signal,
+  viewChild,
+  ViewEncapsulation,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { form, FormField } from '@angular/forms/signals';
+import { tap, timer } from 'rxjs';
 import { AutoSurfaceDirective, ProvideSurfaceDirective } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../../button';
 import { CHIP_IMPORTS } from '../../chip';
 import { SKELETON_IMPORTS } from '../../skeleton';
 import { FORM_FIELD_IMPORTS } from '../../forms/form-field';
+import { INPUT_IMPORTS } from '../../forms/input';
 import { SELECT_IMPORTS } from '../../forms/select';
 import { PAGINATION_IMPORTS } from '../../pagination';
 import {
@@ -13,6 +26,7 @@ import {
   TABLE_CSV_EXPORT_IMPORTS,
   TABLE_FILTER_IMPORTS,
   TABLE_IMPORTS,
+  TABLE_INLINE_EDIT_IMPORTS,
   TABLE_KEYBOARD_NAV_IMPORTS,
   TABLE_REORDER_IMPORTS,
   TABLE_RESIZE_IMPORTS,
@@ -22,7 +36,27 @@ import {
 } from '../table.imports';
 import { TableSelectionDirective } from '../table-selection.directive';
 import { TableCellStateValue, TableColumns } from '../table.types';
+import { TableCellEditCommit } from '../table-inline-edit.directive';
 import { MANY_PEOPLE, PEOPLE, Person, Project, PROJECTS_BY_PERSON, ROLES } from './table-storybook.data';
+
+/** How long the demo's pretend save takes, so the cell's pending state is actually visible. */
+const SAVE_LATENCY_MS = 900;
+
+// Written without interpolation on purpose: an interpolated template literal above a component's inline
+// template desynchronises the Angular language service's scanner — see ethlete/no-template-literal-before-inline-template.
+/** One cell's identity across the demo's three maps. */
+const cellId = (personId: number, column: string) => personId + ':' + column;
+
+/** What the demo's failing save reports, shown on the cell's error mark. */
+const failureMessage = (value: string) => 'Could not save "' + value + '": 409 conflict';
+
+const omit = (source: ReadonlyMap<string, string>, key: string) => {
+  const rest = new Map(source);
+
+  rest.delete(key);
+
+  return rest;
+};
 
 @Component({
   selector: 'et-sb-table',
@@ -86,16 +120,18 @@ import { MANY_PEOPLE, PEOPLE, Person, Project, PROJECTS_BY_PERSON, ROLES } from 
         [expandedRowTemplate]="expandable() ? detail : undefined"
         [loading]="loading()"
         [error]="failed() ? 'Request failed with status 500' : null"
-        [cellState]="cellStates() ? cellStateOf : undefined"
-        [etTableCellErrorTooltip]="{ enabled: cellStates() }"
+        [cellState]="cellStates() || inlineEdit() ? cellStateOf() : undefined"
+        [etTableCellErrorTooltip]="{ enabled: cellStates() || inlineEdit() }"
         [etTableResize]="{ enabled: resizableColumns() }"
         [etTableColumnMenu]="{ enabled: columnMenu() }"
         [etTableCsvExport]="{ filename: 'people.csv' }"
-        [etTableKeyboardNav]="{ enabled: keyboardNav() }"
+        [etTableInlineEdit]="{ enabled: inlineEdit() }"
+        [etTableKeyboardNav]="{ enabled: keyboardNav() || inlineEdit() }"
         [etTableReorder]="{ enabled: reorderable() }"
         [etTableSelection]="{ selection: selected, enabled: selectable() }"
         [etTableVirtualScroll]="{ enabled: virtualScroll() }"
         [labels]="{ empty: 'No people found' }"
+        (cellCommit)="saveCell($event)"
         (rowClick)="lastClicked.set($event)"
         etTableFilters
       >
@@ -115,6 +151,24 @@ import { MANY_PEOPLE, PEOPLE, Person, Project, PROJECTS_BY_PERSON, ROLES } from 
                only Enter hands the keyboard over to what a cell holds. -->
           <ng-template [etTableCell]="columns().joined" let-value>
             <button (click)="lastClicked.set(null)" type="button" et-text-button>{{ value }}</button>
+          </ng-template>
+        }
+
+        @if (inlineEdit()) {
+          <!-- The editor is a plain form field bound to the draft the feature hands the template — no
+               cell-editor interface, the same [formField] every control in the library takes. The field
+               names itself: a form field with neither a projected label nor an aria-label throws ET2201,
+               and a column header is not an accessible name. -->
+          <ng-template [etTableCellEdit]="columns().name" let-field="field">
+            <et-form-field appearance="box" size="sm">
+              <et-input [formField]="field" aria-label="Name" />
+            </et-form-field>
+          </ng-template>
+
+          <ng-template [etTableCellEdit]="columns().email" let-field="field">
+            <et-form-field appearance="box" size="sm">
+              <et-input [formField]="field" type="email" aria-label="Email" />
+            </et-form-field>
           </ng-template>
         }
 
@@ -192,6 +246,14 @@ import { MANY_PEOPLE, PEOPLE, Person, Project, PROJECTS_BY_PERSON, ROLES } from 
       @if (rowInteractive()) {
         <p class="text-small mt-4 opacity-70">Last clicked: {{ lastClicked()?.name ?? '—' }}</p>
       }
+
+      @if (inlineEdit()) {
+        <p class="text-small mt-4 opacity-70">
+          Double-click a Name or Email cell — or focus one and press Enter — to edit it. Enter saves, Escape restores,
+          Tab saves and moves on. Saving takes a moment (the cell shows a bar); typing
+          <code>fail</code> makes the request fail, which marks the cell.
+        </p>
+      }
     </div>
 
     <ng-template #detail let-person>
@@ -234,6 +296,8 @@ import { MANY_PEOPLE, PEOPLE, Person, Project, PROJECTS_BY_PERSON, ROLES } from 
     TABLE_CELL_ERROR_TOOLTIP_IMPORTS,
     TABLE_CSV_EXPORT_IMPORTS,
     TABLE_KEYBOARD_NAV_IMPORTS,
+    TABLE_INLINE_EDIT_IMPORTS,
+    INPUT_IMPORTS,
     BUTTON_IMPORTS,
     AutoSurfaceDirective,
     ProvideSurfaceDirective,
@@ -246,6 +310,7 @@ import { MANY_PEOPLE, PEOPLE, Person, Project, PROJECTS_BY_PERSON, ROLES } from 
   ],
 })
 export class TableStorybookComponent {
+  private destroyRef = inject(DestroyRef);
   public rowCount = input(6);
   public constrainHeight = input(false);
   public empty = input(false);
@@ -269,6 +334,7 @@ export class TableStorybookComponent {
   public selectable = input(false);
   public csvExport = input(false);
   public keyboardNav = input(false);
+  public inlineEdit = input(false);
   public appearance = input<'enclosed' | 'divided' | 'zebra' | 'grid' | 'bare'>('enclosed');
   public density = input<'sm' | 'md' | 'lg'>('md');
   public surface = input('dark');
@@ -289,6 +355,12 @@ export class TableStorybookComponent {
     Viewer: 'Read only',
   };
   protected lastClicked = signal<Person | null>(null);
+  /** Committed edits, by cell — the demo's "server". */
+  protected edits = signal<ReadonlyMap<string, string>>(new Map());
+  /** Cells whose save is in flight, which `cellStateOf` reports as `'loading'`. */
+  public saving = signal<ReadonlySet<string>>(new Set());
+  /** Cells whose save failed, with the message the error mark shows. */
+  public failures = signal<ReadonlyMap<string, string>>(new Map());
   protected selectedPeople = computed(() => this.selection()?.selectedRows() ?? []);
   protected selected = signal<Set<unknown>>(new Set());
   // `compact` is `boolean | null` (no attribute transform), so it stays a property binding.
@@ -303,7 +375,20 @@ export class TableStorybookComponent {
         index === 1 ? { ...person, name: 'Jürgen Habermas' } : person,
       );
 
-    return this.virtualScroll() ? MANY_PEOPLE : PEOPLE.slice(0, this.rowCount());
+    if (this.virtualScroll()) return MANY_PEOPLE;
+
+    const rows = PEOPLE.slice(0, this.rowCount());
+    const edits = this.edits();
+
+    if (!edits.size) return rows;
+
+    // What a real app gets back from its own store after the save landed — the table is told about an
+    // edit through its data, exactly as it is told about anything else.
+    return rows.map((person) => ({
+      ...person,
+      name: edits.get(cellId(person.id, 'name')) ?? person.name,
+      email: edits.get(cellId(person.id, 'email')) ?? person.email,
+    }));
   });
 
   // What the table actually renders: a client-side page slice when the paginated footer demo is on.
@@ -325,11 +410,15 @@ export class TableStorybookComponent {
     // column wide squeezes the rest to nothing and their cell padding bursts out of the empty tracks.
     // 96px is the table's own default floor — see MIN_COLUMN_WIDTH.
     const sticky = this.stickyColumns();
+    // `editable` alone does nothing: a column is only editable once it also has an etTableCellEdit
+    // template, so the flag can be left on and gated by whether the demo renders the templates.
+    const editable = this.inlineEdit();
     return {
       name: {
         header: 'Name',
         value: (person) => person.name,
         sortable: true,
+        editable,
         width: sticky ? '220px' : 'minmax(96px, 2fr)',
         sticky: sticky ? 'start' : undefined,
       },
@@ -337,6 +426,7 @@ export class TableStorybookComponent {
         header: 'Email',
         value: (person) => person.email,
         sortable: true,
+        editable,
         width: sticky ? '280px' : 'minmax(96px, 2fr)',
         group: grouped ? 'Contact' : undefined,
       },
@@ -374,18 +464,60 @@ export class TableStorybookComponent {
     hours: { header: 'Hours', value: (project) => `${project.hours} h`, sortable: true, align: 'end' },
   } satisfies TableColumns<Project>;
 
+  // What an inline edit drives from its save request: `cellState` is the table's, the request is the
+  // app's, and this is where the two meet. A computed *returning* the callback, so the reference the
+  // table holds only changes when the demo's save state does — a fresh closure per pass would make the
+  // table rebuild every cell on every change detection.
+  protected cellStateOf = computed(() => {
+    const saving = this.saving();
+    const failures = this.failures();
+    const editing = this.inlineEdit();
+
+    return (person: Person, key: string): TableCellStateValue | null => {
+      const cell = cellId(person.id, key);
+
+      if (saving.has(cell)) return 'loading';
+
+      const failure = failures.get(cell);
+
+      if (failure) return { state: 'error', message: failure };
+
+      // The static demo states, for the story that shows the two states without editing anything.
+      if (!editing) {
+        if (person.id === 2 && key === 'email') return 'loading';
+
+        if (person.id === 4 && key === 'role')
+          return { state: 'error', message: 'Role could not be saved: 409 conflict' };
+      }
+
+      return null;
+    };
+  });
+
   // Stable identity so selection/expansion key by id rather than row reference.
   protected rowKey(person: Person) {
     return person.id;
   }
 
-  // What an inline edit would drive from its save request: one cell mid-save, one that failed. Passed
-  // as a plain function (no `this`), so the binding stays a stable reference.
-  protected cellStateOf(person: Person, key: string): TableCellStateValue | null {
-    if (person.id === 2 && key === 'email') return 'loading';
-    if (person.id === 4 && key === 'role') return { state: 'error', message: 'Role could not be saved: 409 conflict' };
+  /**
+   * Stand-in for the save request an app would fire. The feature has already closed the editor; from
+   * here on the cell's pending and error states are `cellState`'s, driven by these two signals.
+   */
+  protected saveCell(change: TableCellEditCommit<Person>) {
+    const next = String(change.next ?? '');
+    const cell = cellId(change.row.id, change.column);
 
-    return null;
+    if (next === change.previous) return;
+
+    this.failures.update((failures) => omit(failures, cell));
+    this.saving.update((saving) => new Set(saving).add(cell));
+
+    timer(SAVE_LATENCY_MS)
+      .pipe(
+        tap(() => this.settle(cell, next)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
   protected projectKey(project: Project) {
@@ -396,5 +528,26 @@ export class TableStorybookComponent {
   // PROJECTS_BY_PERSON) — the nested table's `data` never changes identity while the row stays open.
   protected subRows(person: Person) {
     return PROJECTS_BY_PERSON.get(person.id) ?? [];
+  }
+
+  // The pretend request coming back: the cell stops pending, and either the edit landed or it didn't.
+  private settle(cell: string, next: string) {
+    this.saving.update((saving) => {
+      const rest = new Set(saving);
+
+      rest.delete(cell);
+
+      return rest;
+    });
+
+    // A deliberate failure mode, so the story can show the error state as the result of a real edit
+    // rather than as a hardcoded one.
+    if (next.toLowerCase().includes('fail')) {
+      this.failures.update((failures) => new Map(failures).set(cell, failureMessage(next)));
+
+      return;
+    }
+
+    this.edits.update((edits) => new Map(edits).set(cell, next));
   }
 }

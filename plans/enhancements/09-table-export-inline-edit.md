@@ -25,7 +25,7 @@ Zero export surface exists today. Every mature grid ships it.
   server-paginated tables "all rows" is the consumer's job (they have the
   query) — the helper exports what the table has. Document this boundary.
 
-## Phase 2 — inline cell editing (L)
+## Phase 2 — inline cell editing (L) — **done 2026-07-31**
 
 `table.types.ts:56-65` (`cellState`/`TableCellStateValue`) already models
 per-cell loading/error for externally-driven edits — the comment literally
@@ -130,6 +130,54 @@ before.
 reads as unfocusable. The spec asserts the drilled-in _state_ instead (arrows belong to the control,
 Escape returns, the cell keeps the tab stop) and the Enter step is verified in a real browser
 (`components-table--keyboard-navigation`).
+
+## Found while implementing (2026-07-31, phase 2 — inline editing)
+
+**The feature owns the draft, and hands it to the template as a signal-forms field.** The plan said
+"lean on signal-forms instead of inventing a cell-editor abstraction", but something still has to
+produce the `next` value the commit event promises. A consumer-owned model can't: the feature would
+have no way to read it. So `etTableInlineEdit` holds one `signal` + one `form()` — one, not one per
+session, because only one cell is ever open — and passes the resulting field through the
+`etTableCellEdit` template's context. The consumer writes `[formField]="field"` and nothing else. The
+context guard types it as `FieldTree<TValue>` from the bound column, so the field arrives correctly
+typed even though the directive's own draft is `unknown`.
+
+**Enter is settled through the table, not between the features.** Navigation's `Enter` used to drill
+into a cell's content unconditionally. It now asks `TableFeatureHost.editCell(row, column)` first and
+only drills when nothing takes it — so neither directive references the other, and a table with only
+one of them behaves exactly as before.
+
+**That handoff has an ordering hazard, and it bit.** Both directives listen for `keydown` on
+`<et-table>`, and Angular — not the template — picks which host listener runs first. With navigation
+first, it opens the editor _from the very event_ that then reaches the editing directive's own
+listener, which read it as "commit" and closed the editor in the same keystroke. It passed every unit
+test, because the spec's imports happened to order the directives the other way; the story's did not.
+The fix is that `Enter` and `Tab` are only commit keys when they come from **inside** the editor
+(`event.target !== cell`) — the keystroke that opens an editor is always dispatched on the cell, and
+edit mode moves focus into the control. `Escape` is deliberately exempt: it must get out from the cell
+too, or an editor with nothing focusable in it would be a trap. `NavFirstHostComponent` in the spec
+pins the order that broke it.
+
+**Committing is explicit — there is no commit-on-blur.** Every grid does it, and it is wrong here: a
+control whose UI lives in an overlay (a select's panel, a date picker) legitimately moves focus out of
+the cell, and a blur-commit would save on opening the panel. Enter, Tab and opening another cell are
+the commits; documented as such.
+
+**Tab moves within the row only.** Wrapping into the next row would mean scrolling a virtualized table
+to a row that isn't rendered and then focusing it after a render — navigation already has that
+machinery and duplicating it here for a data-entry key was not worth a second copy. At the row's edge
+the cell simply keeps focus, so the next Tab leaves the grid like it would from any other cell.
+
+**The feature makes a cell focusable if nothing else has.** Editing does not require
+`etTableKeyboardNav`, but after a commit focus has to go somewhere better than `<body>`. It writes
+`tabindex="-1"` on the cell it is returning focus to when the cell has none — invisible to the tab
+order, and a no-op when navigation is on.
+
+**Verified in a real browser** (`components-table--inline-editing`): double-click and `Enter` both
+open the editor with the cell's value, `Escape` restores and returns focus to the cell, `Enter`
+commits and the cell shows the pending bar and then the saved value, `Tab` commits and opens the next
+column's editor, a failing save marks the cell, and `Enter` on a non-editable column still does
+nothing but drill. The editor sits inside the cell without changing the row height.
 
 ## Phase 4 — export beyond the loaded page (M) — **designed 2026-07-31, not built**
 

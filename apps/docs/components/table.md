@@ -34,6 +34,7 @@ the table. A table that doesn't import a feature never pays for its code.
 | State persistence   | `TABLE_STATE_PERSISTENCE_IMPORTS`  | `etTableStatePersistence`   | nothing (local/session storage)                      |
 | CSV export          | `TABLE_CSV_EXPORT_IMPORTS`         | `etTableCsvExport`          | nothing (a pure serializer)                          |
 | Keyboard navigation | `TABLE_KEYBOARD_NAV_IMPORTS`       | `etTableKeyboardNav`        | nothing                                              |
+| Inline cell editing | `TABLE_INLINE_EDIT_IMPORTS`        | `etTableInlineEdit`         | nothing (the editor is your own control)             |
 
 ```html
 <et-table [data]="rows()" [columns]="COLUMNS" etTableFilters etTableResize />
@@ -1216,6 +1217,113 @@ Two things, both deliberate:
 - **Leading utility cells are not in the arrow order.** The [selection](#selection) checkbox
   and the [expander](#row-expansion) are their own tab stops, reachable with Tab as before —
   the arrows walk the data columns.
+
+## Inline cell editing
+
+Import `TABLE_INLINE_EDIT_IMPORTS`, mark a column `editable`, and give it an
+`etTableCellEdit` template. That template **is** the editor — while the cell is being
+edited the table renders it in place of the value:
+
+```ts
+const COLUMNS = {
+  name: { header: 'Name', value: (person: Person) => person.name, editable: true },
+  email: { header: 'Email', value: (person: Person) => person.email, editable: true },
+  role: { header: 'Role', value: (person: Person) => person.role },
+} satisfies TableColumns<Person>;
+```
+
+```html
+<et-table [data]="people()" [columns]="COLUMNS" (cellCommit)="save($event)" etTableInlineEdit etTableKeyboardNav>
+  <ng-template [etTableCellEdit]="COLUMNS.name" let-field="field">
+    <et-form-field size="sm">
+      <et-input [formField]="field" aria-label="Name" />
+    </et-form-field>
+  </ng-template>
+</et-table>
+```
+
+`let-field` is the draft, as a **signal-forms field** — bind it with `[formField]` exactly
+as you would in a form. There is no cell-editor interface to implement: every control in
+this library is already signal-forms native, so any of them can be an editor.
+
+<StoryEmbed id="components-table--inline-editing" height="560px" />
+
+A column marked `editable` with no `etTableCellEdit` template stays read-only, so the flag
+is safe to leave on while the template is behind an `@if`.
+
+### The flow
+
+| Key / gesture       | Does                                                            |
+| ------------------- | --------------------------------------------------------------- |
+| double-click        | starts editing that cell                                        |
+| `Enter`             | starts editing the focused cell, and saves the one being edited |
+| `Escape`            | cancels, restoring the value                                    |
+| `Tab` / `Shift+Tab` | saves and moves to the next cell in the row, editing it too     |
+
+**One cell is in edit mode at a time.** Opening another one saves the first — abandoning
+what someone just typed is not what moving on means. Row-edit mode (a whole row of editors
+with one Save button) is not part of this feature.
+
+`Enter` needs cell focus, which is [keyboard navigation](#keyboard-navigation) — pair
+`etTableKeyboardNav` with it for the full flow. Without it the double-click path still
+works. The two features agree on `Enter` through the table: navigation offers the cell to
+the editor first and only [drills into the cell's content](#cells-that-hold-controls) when
+the column isn't editable.
+
+Committing is explicit. Clicking away from the table does **not** save — a control whose UI
+lives in an overlay (a select's panel) moves focus out of the cell legitimately, and
+guessing would throw the edit away. Use `Enter`, `Tab`, or open another cell.
+
+### Saving is yours
+
+`cellCommit` **reports** the change; it does not write to your data:
+
+```ts
+type TableCellEditCommit<T> = {
+  row: T;
+  /** the column's key */
+  column: string;
+  previous: unknown;
+  next: unknown;
+};
+```
+
+Perform the mutation, and report its progress back through the table's
+[`cellState`](#per-cell-states) — that is what draws the cell's pending bar and its error
+mark, so a failed save is visible on the cell it belongs to instead of in a toast:
+
+```ts
+protected save(change: TableCellEditCommit<Person>) {
+  const cell = `${change.row.id}:${change.column}`;
+
+  this.saving.update((saving) => new Set(saving).add(cell));
+
+  this.api.patch(change.row.id, { [change.column]: change.next }).subscribe({
+    next: () => this.settle(cell),
+    error: (error) => this.fail(cell, error.message),
+  });
+}
+
+// bound as [cellState]
+protected cellStateOf = (person: Person, key: string): TableCellStateValue | null => { … };
+```
+
+`cellCancel` fires for an abandoned edit — `Escape`, or the edited row leaving the table
+(a refetch, a filter, a page change), which closes the editor rather than leaving the draft
+floating over whatever row moved into that position.
+
+### Gating individual cells
+
+`editableCell` narrows `editable` per cell — a row the current user may not change, a field
+that locks once it has a value:
+
+```html
+<et-table [etTableInlineEdit]="{ editableCell: canEdit }" … />
+```
+
+```ts
+protected canEdit = (person: Person, column: string) => person.id !== LOCKED_ID;
+```
 
 ## Table state
 

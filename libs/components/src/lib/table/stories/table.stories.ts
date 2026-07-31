@@ -31,6 +31,7 @@ export default {
     selectable: false,
     csvExport: false,
     keyboardNav: false,
+    inlineEdit: false,
     surface: 'dark',
   },
   argTypes: {
@@ -59,6 +60,7 @@ export default {
     selectable: { control: 'boolean' },
     csvExport: { control: 'boolean' },
     keyboardNav: { control: 'boolean' },
+    inlineEdit: { control: 'boolean' },
     surface: { control: 'text' },
   },
 } as Meta<TableStorybookComponent>;
@@ -404,6 +406,24 @@ export const KeyboardNavigation: Story = {
           '`etTableKeyboardNav` makes the body a single tab stop and moves cell focus with the arrows, ' +
           'Home/End, Ctrl+Home/End and PageUp/PageDown — the ARIA grid pattern. Tab into the table, then ' +
           'navigate; Enter drills into a cell that holds a control and Escape comes back out.',
+      },
+    },
+  },
+};
+
+export const InlineEditing: Story = {
+  args: { inlineEdit: true, rowCount: 6 },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`etTableInlineEdit` swaps an `editable` column’s cell for the `etTableCellEdit` template while it is ' +
+          'being edited. Double-click a Name or Email cell, or focus one and press Enter; Enter saves, Escape ' +
+          'restores, Tab saves and moves to the next cell in the row. The editor is a plain `et-input` bound with ' +
+          '`[formField]` to the draft the feature hands the template — there is no cell-editor interface. ' +
+          'Committing only *reports* the change: this demo runs a pretend request and reports its progress back ' +
+          'through the table’s `cellState`, which is what draws the pending bar and the error mark. Type `fail` ' +
+          'into a cell to see the failure path.',
       },
     },
   },
