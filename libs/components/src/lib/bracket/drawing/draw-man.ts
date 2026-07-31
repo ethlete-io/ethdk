@@ -1,6 +1,8 @@
 import { BRACKET_ROUND_MIRROR_TYPE, COMMON_BRACKET_ROUND_TYPE } from '../core';
 import { CurveOptions, curvePath } from './curve';
-import { ComputedBracketGrid, Dimensions, isBracketContinueMatch } from './grid';
+import { Dimensions } from './grid/core/types';
+import { ComputedBracketGrid } from './grid/types';
+import { isBracketContinueMatch } from './grid/prebuild/bracket-continue-master-column';
 import { linePath } from './line';
 import { BracketPosition } from './math';
 import { path, PathOptions } from './path';

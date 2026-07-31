@@ -1,7 +1,8 @@
 import { BracketDataSource } from './integrations';
-import { createBracket } from './linked';
+import { createBracket } from './linked/bracket';
 import { resolveBracketComponents } from './bracket-components';
-import { computeBracketGrid, createBracketGridConfig, resolveBracketLayoutSettings } from './bracket-grid';
+import { createBracketGridConfig, resolveBracketLayoutSettings } from './bracket-grid';
+import { resolveBracketLayout } from './bracket-layout';
 import { BracketConfig } from './bracket.config';
 
 /**
@@ -16,20 +17,25 @@ import { BracketConfig } from './bracket.config';
  * predicts — but it is not free, so key it on the source rather than on the observed width.
  *
  * @param source The same source you would pass to `<et-bracket>`.
- * @param config The layout settings the bracket will run with — the object you pass to
- *   `provideBracketConfig`, or the subset you bind as inputs. Anything left out uses `BRACKET_DEFAULTS`.
+ * @param config The settings the bracket will run with — the object you pass to
+ *   `provideBracketConfig`, or the subset you bind as inputs, **including its `layouts`** (the width
+ *   of a bracket is the layout's answer). Anything else left out uses `BRACKET_DEFAULTS`.
  *
  * @example
- * const naturalWidth = bracketNaturalWidth(source, { columnWidth: 200 });
+ * const naturalWidth = bracketNaturalWidth(source, {
+ *   layouts: [singleEliminationBracketLayout()],
+ *   columnWidth: 200,
+ * });
  */
 export const bracketNaturalWidth = <TRoundData, TMatchData>(
   source: BracketDataSource<TRoundData, TMatchData>,
   config: BracketConfig<TRoundData, TMatchData> = {},
 ) => {
+  const layout = resolveBracketLayout(config.layouts, source.mode);
   const settings = resolveBracketLayoutSettings(config);
-  const bracketData = createBracket(source, { layout: settings.layout });
-  const components = resolveBracketComponents({}, config, source.mode);
-  const grid = computeBracketGrid(bracketData, createBracketGridConfig(settings), components);
+  const bracketData = createBracket(source, { layout: layout.dataLayout });
+  const components = resolveBracketComponents({}, config, layout.components);
+  const grid = layout.createGrid(bracketData, createBracketGridConfig(settings, layout.dataLayout), components);
 
   return grid.raw.grid.dimensions.width;
 };

@@ -5,7 +5,11 @@ import { NormalizedMatch } from '../match';
 import { BracketMatchNormalizer } from './bracket-card-context';
 import { BracketComponent } from './bracket.component';
 import { BracketDataSource } from './integrations';
+import { singleEliminationBracketLayout } from './layouts';
 import { generateSingleEliminationBracket } from './stories/generate-bracket';
+
+/** What the fixtures render: a single-elimination source needs exactly this one registered. */
+const LAYOUTS = [singleEliminationBracketLayout()];
 
 const normalizer: BracketMatchNormalizer = (match): NormalizedMatch => ({
   id: match.id,
@@ -25,6 +29,7 @@ const normalizer: BracketMatchNormalizer = (match): NormalizedMatch => ({
   template: `<et-bracket
     [(focusedParticipantId)]="focusedParticipantId"
     [source]="source()"
+    [layouts]="LAYOUTS"
     [matchNormalizer]="NORMALIZER"
   />`,
   imports: [BracketComponent],
@@ -33,6 +38,8 @@ class HostComponent {
   // Signals, not plain fields: a plain field never refreshes a signal input.
   public source = signal<BracketDataSource<null, null>>(generateSingleEliminationBracket(8));
   public focusedParticipantId = signal<string | null>(null);
+
+  protected readonly LAYOUTS = LAYOUTS;
 
   protected readonly NORMALIZER = normalizer;
 }
@@ -127,6 +134,7 @@ describe('BracketComponent participant focus', () => {
     @Component({
       template: `<et-bracket
         [source]="source"
+        [layouts]="LAYOUTS"
         [matchNormalizer]="NORMALIZER"
         disableJourneyHighlight
         focusedParticipantId="p1"
@@ -135,6 +143,8 @@ describe('BracketComponent participant focus', () => {
     })
     class DisabledHostComponent {
       public source = generateSingleEliminationBracket(8);
+
+      protected readonly LAYOUTS = LAYOUTS;
 
       protected readonly NORMALIZER = normalizer;
     }

@@ -1,19 +1,33 @@
 import { resolveBracketComponents } from '../bracket-components';
-import { computeBracketGrid, createBracketGridConfig, resolveBracketLayoutSettings } from '../bracket-grid';
+import { createBracketGridConfig, resolveBracketLayoutSettings } from '../bracket-grid';
+import { resolveBracketLayout } from '../bracket-layout';
 import { BRACKET_DATA_LAYOUT, BracketDataLayout } from '../core';
 import { BracketDataSource } from '../integrations';
+import {
+  doubleEliminationBracketLayout,
+  mirroredDoubleEliminationBracketLayout,
+  mirroredSingleEliminationBracketLayout,
+  singleEliminationBracketLayout,
+} from '../layouts';
 import { createBracket } from '../linked';
 import { generateDoubleEliminationBracket, generateSingleEliminationBracket } from '../stories/generate-bracket';
 import { drawMan } from './draw-man';
 
+/** One registry per fold, so a source resolves to the layout drawing it that way. */
+const LAYOUTS = {
+  [BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT]: [singleEliminationBracketLayout(), doubleEliminationBracketLayout()],
+  [BRACKET_DATA_LAYOUT.MIRRORED]: [mirroredSingleEliminationBracketLayout(), mirroredDoubleEliminationBracketLayout()],
+};
+
 /** Every connector the bracket draws, by the participant short-ids on it. */
-const connectors = (source: BracketDataSource<null, null>, layout: BracketDataLayout) => {
-  const settings = resolveBracketLayoutSettings({ layout });
-  const bracketData = createBracket(source, { layout });
-  const bracketGrid = computeBracketGrid(
+const connectors = (source: BracketDataSource<null, null>, dataLayout: BracketDataLayout) => {
+  const layout = resolveBracketLayout(LAYOUTS[dataLayout], source.mode);
+  const settings = resolveBracketLayoutSettings({});
+  const bracketData = createBracket(source, { layout: layout.dataLayout });
+  const bracketGrid = layout.createGrid(
     bracketData,
-    createBracketGridConfig(settings),
-    resolveBracketComponents({}, {}, source.mode),
+    createBracketGridConfig(settings, layout.dataLayout),
+    resolveBracketComponents({}, {}, undefined),
   );
 
   const svg = drawMan({

@@ -1,7 +1,6 @@
-// codes 3400-3499
+// codes 3400-3499 (3400 was LAYOUT_MODE_UNSUPPORTED, retired when layouts became explicit values —
+// an unsupported layout×mode combination no longer exists as a factory)
 export const BRACKET_ERROR_CODES = {
-  /** The requested `layout` cannot be rendered for the source's tournament `mode`. */
-  LAYOUT_MODE_UNSUPPORTED: 3400,
   /** The source has no rounds/matches to render. */
   SOURCE_EMPTY: 3401,
   /** An integration received a tournament mode it does not support. */
@@ -26,4 +25,6 @@ export const BRACKET_ERROR_CODES = {
   DATA_LOOKUP_FAILED: 3411,
   /** The default cards are rendering but no `matchNormalizer` was registered to feed them. */
   MISSING_MATCH_NORMALIZER: 3412,
+  /** No registered {@link BracketLayout} matches the source's tournament `mode`. */
+  LAYOUT_NOT_REGISTERED: 3413,
 } as const;

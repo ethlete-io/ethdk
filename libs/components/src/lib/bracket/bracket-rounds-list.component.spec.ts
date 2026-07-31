@@ -8,7 +8,11 @@ import { provideBracketLabels } from './bracket-labels';
 import { BracketRoundsListComponent } from './bracket-rounds-list.component';
 import { BracketMatch, BracketRound, BracketRoundSwissGroup } from './linked';
 import { BracketDataSource } from './integrations';
+import { doubleEliminationBracketLayout, singleEliminationBracketLayout } from './layouts';
 import { generateDoubleEliminationBracket, generateSingleEliminationBracket } from './stories/generate-bracket';
+
+/** The modes the fixtures below use — a source nothing here matches would throw ET3413. */
+const LAYOUTS = [singleEliminationBracketLayout(), doubleEliminationBracketLayout()];
 
 const normalizer: BracketMatchNormalizer = (match): NormalizedMatch => ({
   id: match.id,
@@ -39,6 +43,7 @@ class TestMatchComponent {
   template: `
     <et-bracket-rounds-list
       [source]="source()"
+      [layouts]="LAYOUTS"
       [matchNormalizer]="NORMALIZER"
       [selectedRoundId]="selectedRoundId()"
       [matchComponent]="matchComponent()"
@@ -51,6 +56,8 @@ class HostComponent {
   public source = signal<BracketDataSource<null, null>>(generateSingleEliminationBracket(8));
   public selectedRoundId = signal<string | null>(null);
   public matchComponent = signal<typeof TestMatchComponent | undefined>(undefined);
+
+  protected readonly LAYOUTS = LAYOUTS;
 
   protected readonly NORMALIZER = normalizer;
 }
@@ -154,40 +161,48 @@ describe('bracketNaturalWidth', () => {
     const source = generateSingleEliminationBracket(8);
 
     // 2 ordinary columns + the wider final column + 2 gaps.
-    expect(bracketNaturalWidth(source, { columnWidth: 200, finalColumnWidth: 300, columnGap: 50 })).toBe(800);
+    expect(
+      bracketNaturalWidth(source, { layouts: LAYOUTS, columnWidth: 200, finalColumnWidth: 300, columnGap: 50 }),
+    ).toBe(800);
   });
 
   it('grows with the column width', () => {
     const source = generateSingleEliminationBracket(8);
 
-    expect(bracketNaturalWidth(source, { columnWidth: 300 })).toBeGreaterThan(
-      bracketNaturalWidth(source, { columnWidth: 200 }),
+    expect(bracketNaturalWidth(source, { layouts: LAYOUTS, columnWidth: 300 })).toBeGreaterThan(
+      bracketNaturalWidth(source, { layouts: LAYOUTS, columnWidth: 200 }),
     );
   });
 
   it('draws narrower at compact density', () => {
     const source = generateSingleEliminationBracket(8);
 
-    expect(bracketNaturalWidth(source, { density: 'compact' })).toBeLessThan(bracketNaturalWidth(source));
+    expect(bracketNaturalWidth(source, { layouts: LAYOUTS, density: 'compact' })).toBeLessThan(
+      bracketNaturalWidth(source, { layouts: LAYOUTS }),
+    );
   });
 
   it('lets an explicit setting win over the density preset', () => {
     const source = generateSingleEliminationBracket(8);
 
     // Two 400px columns and the preset's 200px final, with the preset's 32px gaps.
-    expect(bracketNaturalWidth(source, { density: 'compact', columnWidth: 400 })).toBe(1064);
+    expect(bracketNaturalWidth(source, { layouts: LAYOUTS, density: 'compact', columnWidth: 400 })).toBe(1064);
   });
 
   it('needs more room for a double-elimination source than a single-elimination one', () => {
-    expect(bracketNaturalWidth(generateDoubleEliminationBracket({ participantCount: 8 }))).toBeGreaterThan(
-      bracketNaturalWidth(generateSingleEliminationBracket(8)),
-    );
+    expect(
+      bracketNaturalWidth(generateDoubleEliminationBracket({ participantCount: 8 }), { layouts: LAYOUTS }),
+    ).toBeGreaterThan(bracketNaturalWidth(generateSingleEliminationBracket(8), { layouts: LAYOUTS }));
+  });
+
+  it('throws ET3413 when no layout is registered for the source', () => {
+    expect(() => bracketNaturalWidth(generateSingleEliminationBracket(8))).toThrow(/ET3413/);
   });
 });
 
 describe('bracketFitsWidth', () => {
   const source = generateSingleEliminationBracket(8);
-  const config = { columnWidth: 200, finalColumnWidth: 300, columnGap: 50 };
+  const config = { layouts: LAYOUTS, columnWidth: 200, finalColumnWidth: 300, columnGap: 50 };
 
   it('fits at exactly its natural width', () => {
     expect(bracketFitsWidth(source, config, 800)).toBe(true);

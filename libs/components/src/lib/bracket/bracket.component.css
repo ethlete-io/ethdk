@@ -33,12 +33,8 @@
       transition: opacity 0.2s;
     }
 
-    .et-bracket-swiss-group-border {
-      color: var(
-        --et-bracket-swiss-group-border-color,
-        var(--et-bracket-line-color, var(--et-surface-border-solid, rgb(255 255 255 / 0.1)))
-      );
-    }
+    /* The swiss group border color lives in BracketSwissStylesComponent, mounted by swissBracketLayout() —
+       a bracket that never draws groups never injects it. */
   }
 
   .et-bracket-host--journey-hover {

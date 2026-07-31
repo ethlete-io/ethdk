@@ -6,7 +6,9 @@ phone, an article column, or a match-day page. It takes the same `BracketDataSou
 the same cards through the same `provideBracketConfig`, and reads your matches through the same
 [`matchNormalizer`](/components/bracket#the-normalizer).
 
-Import `BRACKET_IMPORTS` (or `BracketRoundsListComponent` directly).
+Import `BRACKET_IMPORTS` (or `BracketRoundsListComponent` directly), and register the same
+[layouts](/components/bracket#layouts) the grid needs — the list draws no connectors, but it asks the
+matching layout how to group and section the rounds (see [What it draws](#what-it-draws)).
 
 ::: tip This is not only a fallback
 A list of "who plays whom this round" is the right thing on a match-day page however much room
@@ -42,24 +44,33 @@ export class MatchDayComponent {
 - **The final card for the deciding round** — the same rule the grid applies, so a double-elimination
   bracket with a bracket reset crowns the reset, not the grand final.
 
+The last three are the active [layout](/components/bracket#layouts)'s answers, not the list's:
+`doubleEliminationBracketLayout()` is what knows a round belongs under "Lower bracket",
+`swissBracketLayout()` is what splits a round into standings groups, and a layout may also carry its own
+default cards. So the list resolves a layout for the source's `mode` exactly as `<et-bracket>` does —
+from `provideBracketConfig({ layouts })` or its own `layouts` input — and throws
+[`ET3413`](/components/error-codes#bracket-et34xx) when none matches. Registering the mirrored variant
+of a layout changes nothing here: a fold is a statement about a canvas, and a list has none.
+
 What it drops is everything a narrow column can't show: the SVG connectors and the
 [journey highlight](/components/bracket#journey-highlight) that rides on them. The layout inputs
 (`columnWidth`, gaps, line geometry) are meaningless here and are not accepted.
 
 ## Options
 
-| Input                  | Default      | Purpose                                                                     |
-| ---------------------- | ------------ | --------------------------------------------------------------------------- |
-| `source`               | — (required) | The resolved `BracketDataSource` — the same one `<et-bracket>` takes.       |
-| `selectedRoundId`      | `null`       | Render only this round, by its id in the source. `null` stacks every round. |
-| `hideRoundHeaders`     | `false`      | Drop the per-round headers.                                                 |
-| `roundHeaderLevel`     | `3`          | `aria-level` the default round headers announce themselves at.              |
-| `matchNormalizer`      | —            | How to read your match data, for the default cards.                         |
-| `matchComponent`       | —            | Your own cell for ordinary matches.                                         |
-| `finalMatchComponent`  | —            | Your own cell for the deciding round.                                       |
-| `roundHeaderComponent` | —            | Your own round header.                                                      |
+| Input                  | Default      | Purpose                                                                               |
+| ---------------------- | ------------ | ------------------------------------------------------------------------------------- |
+| `source`               | — (required) | The resolved `BracketDataSource` — the same one `<et-bracket>` takes.                 |
+| `layouts`              | —            | Replaces the registered [layout](/components/bracket#layouts) list for this instance. |
+| `selectedRoundId`      | `null`       | Render only this round, by its id in the source. `null` stacks every round.           |
+| `hideRoundHeaders`     | `false`      | Drop the per-round headers.                                                           |
+| `roundHeaderLevel`     | `3`          | `aria-level` the default round headers announce themselves at.                        |
+| `matchNormalizer`      | —            | How to read your match data, for the default cards.                                   |
+| `matchComponent`       | —            | Your own cell for ordinary matches.                                                   |
+| `finalMatchComponent`  | —            | Your own cell for the deciding round.                                                 |
+| `roundHeaderComponent` | —            | Your own round header.                                                                |
 
-`hideRoundHeaders`, `roundHeaderLevel` and the four component slots also come from
+`layouts`, `hideRoundHeaders`, `roundHeaderLevel` and the four component slots also come from
 `provideBracketConfig` when you don't bind them, so a config registered for the bracket already
 applies here.
 
@@ -96,13 +107,19 @@ answer is to swap representation rather than to shrink. Two exported helpers mak
 
 | Helper                                             | Returns                                                               |
 | -------------------------------------------------- | --------------------------------------------------------------------- |
-| `bracketNaturalWidth(source, config?)`             | How wide `<et-bracket>` would draw this source, in px.                |
+| `bracketNaturalWidth(source, config)`              | How wide `<et-bracket>` would draw this source, in px.                |
 | `bracketFitsWidth(source, config, availableWidth)` | Whether that width fits — `bracketNaturalWidth(…) <= availableWidth`. |
 
 Both lay the bracket out for real rather than estimating from the round count, because a
 double-elimination grid's width is not a multiple of anything: a wider final column, a continue
 column and front-padded rounds all move it. Pass the same layout settings the bracket will run
 with, or the prediction is about a different bracket.
+
+That includes the **`layouts`**: the width of a bracket is the layout's answer — a folded bracket is
+roughly twice as wide as the same source drawn left to right — so `config.layouts` must hold a layout
+for the source's `mode`, or the helpers throw
+[`ET3413`](/components/error-codes#bracket-et34xx) just as rendering would. One config object shared
+between the provider, the helper and the component is the way to keep them honest.
 
 ```ts
 @Component({
@@ -111,10 +128,10 @@ with, or the prediction is about a different bracket.
   template: `
     @if (fitsBracket()) {
       <et-scrollable stickyButtons>
-        <et-bracket [source]="source()" [columnWidth]="BRACKET_CONFIG.columnWidth" />
+        <et-bracket [source]="source()" [layouts]="BRACKET_CONFIG.layouts" [columnWidth]="BRACKET_CONFIG.columnWidth" />
       </et-scrollable>
     } @else {
-      <et-bracket-rounds-list [source]="source()" />
+      <et-bracket-rounds-list [source]="source()" [layouts]="BRACKET_CONFIG.layouts" />
     }
   `,
   host: { class: 'block' },
@@ -126,7 +143,12 @@ export class AppBracketComponent {
 
   public source = input.required<BracketDataSource<unknown, unknown>>();
 
-  protected readonly BRACKET_CONFIG: BracketConfig = { columnWidth: 220 };
+  // One object: what the helper predicts and what the components draw can't drift apart.
+  // (Registered app-wide with provideBracketConfig instead, the `layouts` bindings drop out.)
+  protected readonly BRACKET_CONFIG: BracketConfig = {
+    layouts: [singleEliminationBracketLayout(), doubleEliminationBracketLayout()],
+    columnWidth: 220,
+  };
 
   protected fitsBracket = computed(() =>
     bracketFitsWidth(this.source(), this.BRACKET_CONFIG, this.dimensions().client?.width ?? 0),
@@ -172,5 +194,7 @@ Colors come from the ambient [surface theme](/core/theming) — the section head
 ## Error codes
 
 The list throws the bracket domain's codes; see
-[`ET34xx`](/components/error-codes#bracket-et34xx). Most relevantly it needs the same
-`matchNormalizer` the grid's default cards need ([`ET3412`](/components/error-codes#bracket-et34xx)).
+[`ET34xx`](/components/error-codes#bracket-et34xx). Most relevantly it needs the same registered
+[layout](/components/bracket#layouts) for the source's mode
+([`ET3413`](/components/error-codes#bracket-et34xx)) and the same `matchNormalizer` the grid's default
+cards need ([`ET3412`](/components/error-codes#bracket-et34xx)).

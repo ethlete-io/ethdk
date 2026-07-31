@@ -1,26 +1,12 @@
 import { createStaticRootProvider } from '@ethlete/core';
 import { BracketMatchNormalizer } from './bracket-card-context';
 import { BRACKET_DENSITY, BracketDensity } from './bracket-density';
-import { BRACKET_DATA_LAYOUT, BracketDataLayout } from './core';
-import { BracketContinueComponent, BracketMatchComponent, BracketRoundHeaderComponent } from './drawing/grid';
-import { BracketSwissGroupColorType } from './linked';
-
-/**
- * Colors for the swiss group borders and connection lines, keyed by the group color type
- * (see getSwissGroupColorType). Connection lines are drawn in the neutral color and fade
- * into the target group color on the last portion before touching its border.
- * Any CSS color value is allowed. Missing entries fall back to the connector/border color
- * (the `--et-bracket-line-color` / `--et-bracket-swiss-group-border-color` custom properties,
- * which default to `--et-surface-border-solid`).
- */
-export type BracketSwissColors = Partial<Record<BracketSwissGroupColorType, string>>;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type BracketSwissConfig<TRoundData = any, TMatchData = any> = {
-  roundHeaderComponent?: BracketRoundHeaderComponent<TRoundData, TMatchData>;
-  matchComponent?: BracketMatchComponent<TRoundData, TMatchData>;
-  colors?: BracketSwissColors;
-};
+import { BracketLayout } from './bracket-layout';
+import {
+  BracketContinueComponent,
+  BracketMatchComponent,
+  BracketRoundHeaderComponent,
+} from './drawing/grid/core/types';
 
 /**
  * Default values for the et-bracket component inputs. Inputs set on the component
@@ -28,6 +14,16 @@ export type BracketSwissConfig<TRoundData = any, TMatchData = any> = {
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type BracketConfig<TRoundData = any, TMatchData = any> = {
+  /**
+   * The ways of drawing a bracket this app ships, one per tournament mode — see {@link BracketLayout}.
+   * Only the factories you call here end up in your bundle; a source whose mode has no entry throws
+   * `ET3413`. A host's `layouts` input replaces this list entirely for that instance.
+   *
+   * @example
+   * provideBracketConfig({ layouts: [singleEliminationBracketLayout(), swissBracketLayout()] });
+   */
+  layouts?: readonly BracketLayout<TRoundData, TMatchData>[];
+
   columnWidth?: number;
   matchHeight?: number;
   finalMatchHeight?: number;
@@ -45,7 +41,6 @@ export type BracketConfig<TRoundData = any, TMatchData = any> = {
   disableJourneyHighlight?: boolean;
   swissGroupPadding?: number;
   swissGroupBorderRadius?: number;
-  layout?: BracketDataLayout;
   /**
    * The size everything is drawn at — `'default'`, or `'compact'` for a bracket in an article column or
    * a phone. A preset under everything else: any setting above still wins over it. See
@@ -73,18 +68,20 @@ export type BracketConfig<TRoundData = any, TMatchData = any> = {
    * sits in your page's heading outline — a bracket under an `<h2>` section wants `3`.
    */
   roundHeaderLevel?: number;
-
-  /** Swiss specific overrides. These win over the top level component defaults. */
-  swiss?: BracketSwissConfig<TRoundData, TMatchData>;
 };
 
 /**
  * The settings that describe how a bracket is *drawn*, as opposed to what draws it — everything in
- * {@link BracketConfig} except the component slots, the normalizer and the swiss overrides.
+ * {@link BracketConfig} except the layouts, the component slots and the normalizer.
  */
 export type BracketLayoutConfig = Omit<
   BracketConfig,
-  'roundHeaderComponent' | 'matchComponent' | 'finalMatchComponent' | 'continueComponent' | 'matchNormalizer' | 'swiss'
+  | 'layouts'
+  | 'roundHeaderComponent'
+  | 'matchComponent'
+  | 'finalMatchComponent'
+  | 'continueComponent'
+  | 'matchNormalizer'
 >;
 
 /**
@@ -116,7 +113,6 @@ export const BRACKET_DEFAULTS: Required<BracketLayoutConfig> = {
   disableJourneyHighlight: false,
   swissGroupPadding: 10,
   swissGroupBorderRadius: 12,
-  layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT,
   density: BRACKET_DENSITY.DEFAULT,
   hideRoundHeaders: false,
   showContinueElement: false,

@@ -1,26 +1,19 @@
 import { NgComponentOutlet } from '@angular/common';
 import { booleanAttribute, Component, computed, input, numberAttribute, Type, ViewEncapsulation } from '@angular/core';
+import { BRACKET_DATA_LAYOUT } from './core';
 import {
-  BRACKET_DATA_LAYOUT,
-  BracketRoundType,
-  COMMON_BRACKET_ROUND_TYPE,
-  DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
-  TOURNAMENT_MODE,
-  TournamentMode,
-} from './core';
-import { BracketContinueComponent, BracketMatchComponent, BracketRoundHeaderComponent } from './drawing/grid';
+  BracketContinueComponent,
+  BracketMatchComponent,
+  BracketRoundHeaderComponent,
+} from './drawing/grid/core/types';
 import { MATCH_CARD_SIZES, MatchCardSize } from '../match';
 import { BracketDataSource } from './integrations';
-import {
-  BracketMatch,
-  BracketRound,
-  BracketRoundSwissGroup,
-  createBracket,
-  generateBracketRoundSwissGroupMaps,
-} from './linked';
+import { BracketMatch, BracketRound, createBracket } from './linked/bracket';
+import { BracketRoundSwissGroup } from './linked/swiss';
 import { BRACKET_CARD_CONTEXT, BracketMatchNormalizer } from './bracket-card-context';
 import { resolveBracketComponents, usesBracketFinalCard } from './bracket-components';
 import { injectBracketLabels } from './bracket-labels';
+import { BracketLayout, resolveBracketLayout } from './bracket-layout';
 import { BRACKET_DEFAULTS, injectBracketConfig } from './bracket.config';
 
 /**
@@ -37,10 +30,10 @@ export type BracketRoundsListBlock<TRoundData, TMatchData> = {
 
 /**
  * A run of rounds under a shared heading. Double elimination has three — the winners bracket, the losers
- * bracket, and the deciding rounds; every other mode is one unnamed section.
+ * bracket, and the deciding rounds; a layout without a `listSection` hook is one unnamed section.
  */
 export type BracketRoundsListSection<TRoundData, TMatchData> = {
-  id: 'all' | 'upper' | 'lower' | 'finals';
+  id: string;
   /** `null` for the single section of a source that needs no dividing. */
   name: string | null;
   blocks: BracketRoundsListBlock<TRoundData, TMatchData>[];
@@ -90,6 +83,14 @@ export class BracketRoundsListComponent<TRoundData = unknown, TMatchData = unkno
    */
   public selectedRoundId = input<string | null>(null);
 
+  /**
+   * The layouts this instance may draw with, replacing the `provideBracketConfig` list entirely —
+   * see {@link BracketLayout}. The list draws no grid, but it asks the matching layout how to group
+   * (swiss standings groups) and section (double elimination's brackets) the rounds, and which cards
+   * are its defaults. A source nothing matches throws `ET3413`, same as `<et-bracket>`.
+   */
+  public layouts = input<readonly BracketLayout<TRoundData, TMatchData>[] | undefined>(undefined);
+
   public hideRoundHeaders = input(this.config.hideRoundHeaders ?? BRACKET_DEFAULTS.hideRoundHeaders, {
     transform: booleanAttribute,
   });
@@ -128,8 +129,21 @@ export class BracketRoundsListComponent<TRoundData = unknown, TMatchData = unkno
   public resolvedFinalMatchCardSize = computed<MatchCardSize>(() => MATCH_CARD_SIZES.EXPANDED);
 
   /**
-   * Always built left-to-right: the mirrored layout splits a round in two halves with synthetic ids,
-   * which is a statement about where cells sit on a canvas and means nothing in a list.
+   * The layout answering for this source — see the `layouts` input. Resolved even though the list draws
+   * no grid: the grouping/sectioning hooks and the per-layout cards live on it, and a mode the app never
+   * registered should fail the same loud way in both representations.
+   */
+  private resolvedLayout = computed(() =>
+    resolveBracketLayout<TRoundData, TMatchData>(
+      this.layouts() ?? (this.config.layouts as readonly BracketLayout<TRoundData, TMatchData>[] | undefined),
+      this.source().mode,
+    ),
+  );
+
+  /**
+   * Always built left-to-right, whatever the layout's own fold is: a mirrored layout splits a round in
+   * two halves with synthetic ids, which is a statement about where cells sit on a canvas and means
+   * nothing in a list.
    */
   public bracketData = computed(() => createBracket(this.source(), { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT }));
 
@@ -144,20 +158,22 @@ export class BracketRoundsListComponent<TRoundData = unknown, TMatchData = unkno
         finalMatch: this.finalMatchComponent(),
       },
       this.config,
-      this.bracketData().mode,
+      this.resolvedLayout().components,
     ),
   );
 
   protected sections = computed<BracketRoundsListSection<TRoundData, TMatchData>[]>(() => {
+    const layout = this.resolvedLayout();
     const bracket = this.bracketData();
-    const swissGroups = generateBracketRoundSwissGroupMaps(bracket);
+    const swissGroups = layout.listGrouping?.(bracket) ?? null;
     const selectedRoundId = this.selectedRoundId();
+    const labels = this.labels();
     const sections = new Map<string, BracketRoundsListSection<TRoundData, TMatchData>>();
 
     for (const round of bracket.rounds.values()) {
       if (selectedRoundId !== null && round.id !== selectedRoundId) continue;
 
-      const { id, name } = this.sectionOf(round.type, bracket.mode);
+      const { id, name } = layout.listSection?.(round, bracket, labels) ?? { id: 'all', name: null };
       const section = sections.get(id) ?? { id, name, blocks: [] };
 
       sections.set(id, section);
@@ -203,30 +219,5 @@ export class BracketRoundsListComponent<TRoundData = unknown, TMatchData = unkno
 
   protected roundHeaderComponentFor(): Type<unknown> {
     return this.components().roundHeader as Type<unknown>;
-  }
-
-  private sectionOf(
-    roundType: BracketRoundType,
-    mode: TournamentMode,
-  ): Pick<BracketRoundsListSection<TRoundData, TMatchData>, 'id' | 'name'> {
-    if (mode !== TOURNAMENT_MODE.DOUBLE_ELIMINATION) return { id: 'all', name: null };
-
-    const labels = this.labels();
-
-    switch (roundType) {
-      case DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET:
-        return { id: 'upper', name: labels.upperBracketSection };
-
-      case DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET:
-        return { id: 'lower', name: labels.lowerBracketSection };
-
-      // The grand final, the bracket reset and the third-place playoff — everything a double elimination
-      // source has left once the two brackets are accounted for.
-      case COMMON_BRACKET_ROUND_TYPE.FINAL:
-      case DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL:
-      case COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE:
-      default:
-        return { id: 'finals', name: labels.finalsSection };
-    }
   }
 }

@@ -11,12 +11,35 @@ import { BUTTON_IMPORTS } from '../../button';
 import { SCROLLABLE_IMPORTS } from '../../scrollable/scrollable.imports';
 import { BRACKET_DENSITY, BracketDensity } from '../bracket-density';
 import { BracketComponent } from '../bracket.component';
-import { BracketSwissColors } from '../bracket.config';
 import { BRACKET_DATA_LAYOUT, BracketDataLayout } from '../core/layout';
 import { BracketDataSource } from '../integrations/base';
+import {
+  doubleEliminationBracketLayout,
+  mirroredDoubleEliminationBracketLayout,
+  mirroredSingleEliminationBracketLayout,
+  singleEliminationBracketLayout,
+  swissBracketLayout,
+} from '../layouts';
 import { BracketMatch, BracketRound } from '../linked/bracket';
-import { BracketRoundSwissGroup } from '../linked/swiss';
+import { BracketRoundSwissGroup, BracketSwissColors } from '../linked/swiss';
 import { demoMatchNormalizer, demoParticipant } from './demo-match-normalizer';
+
+/**
+ * Every layout the stories can draw, created once — the `layout` control picks between these two lists
+ * rather than binding a removed input. Swiss has no mirrored variant, so a swiss source under the
+ * mirrored control simply renders as normal swiss.
+ */
+const LEFT_TO_RIGHT_LAYOUTS = [
+  singleEliminationBracketLayout(),
+  doubleEliminationBracketLayout(),
+  swissBracketLayout(),
+];
+
+const MIRRORED_LAYOUTS = [
+  mirroredSingleEliminationBracketLayout(),
+  mirroredDoubleEliminationBracketLayout(),
+  swissBracketLayout(),
+];
 
 /**
  * Demo custom final-match card, wired via the `finalMatchComponent` input to show that
@@ -65,7 +88,12 @@ export class StorybookFinalMatchComponent<TRoundData = unknown, TMatchData = unk
   template: `
     <div [style.max-inline-size.px]="containerWidth()">
       <et-scrollable stickyButtons>
-        <et-bracket [source]="source()" [density]="density()" [matchNormalizer]="MATCH_NORMALIZER" />
+        <et-bracket
+          [source]="source()"
+          [layouts]="LAYOUTS"
+          [density]="density()"
+          [matchNormalizer]="MATCH_NORMALIZER"
+        />
       </et-scrollable>
     </div>
   `,
@@ -79,6 +107,8 @@ export class StorybookBracketDensityComponent {
 
   /** Stands in for the article column the compact bracket is meant to fit. */
   public containerWidth = input(760, { transform: numberAttribute });
+
+  protected readonly LAYOUTS = LEFT_TO_RIGHT_LAYOUTS;
 
   protected readonly MATCH_NORMALIZER = demoMatchNormalizer;
 }
@@ -122,7 +152,7 @@ export class StorybookBracketDensityComponent {
         [lineDashArray]="lineDashArray()"
         [lineDashOffset]="lineDashOffset()"
         [disableJourneyHighlight]="disableJourneyHighlight()"
-        [layout]="layout()"
+        [layouts]="layouts()"
         [hideRoundHeaders]="hideRoundHeaders()"
         [finalColumnWidth]="finalColumnWidth()"
         [finalMatchHeight]="finalMatchHeight()"
@@ -159,6 +189,10 @@ export class StorybookBracketComponent {
   public roundHeaderGap = input(20, { transform: numberAttribute });
   public swissGroupPadding = input(10, { transform: numberAttribute });
 
+  /**
+   * The story control for the fold. There is no `layout` input on `et-bracket` any more — the fold is a
+   * property of the registered layout, so this picks which set of layout factories gets bound.
+   */
   public layout = input<BracketDataLayout>(BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT);
 
   public hideRoundHeaders = input(false, { transform: booleanAttribute });
@@ -179,6 +213,11 @@ export class StorybookBracketComponent {
   public withParticipantList = input(false, { transform: booleanAttribute });
 
   protected focusedParticipantId = signal<string | null>(null);
+
+  /** What the `layout` control resolves to: the mirrored factories, or the plain ones. */
+  protected layouts = computed(() =>
+    this.layout() === BRACKET_DATA_LAYOUT.MIRRORED ? MIRRORED_LAYOUTS : LEFT_TO_RIGHT_LAYOUTS,
+  );
 
   /** Every participant in the source, in first-appearance order, named the way the cards name them. */
   protected participants = computed(() => {

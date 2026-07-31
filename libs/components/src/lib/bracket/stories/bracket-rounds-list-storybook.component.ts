@@ -15,10 +15,17 @@ import { BracketRoundsListComponent } from '../bracket-rounds-list.component';
 import { BracketComponent } from '../bracket.component';
 import { BracketConfig } from '../bracket.config';
 import { BracketDataSource } from '../integrations/base';
+import { doubleEliminationBracketLayout, singleEliminationBracketLayout, swissBracketLayout } from '../layouts';
 import { demoMatchNormalizer } from './demo-match-normalizer';
 
-/** The layout settings both representations run with, so the fit test predicts the bracket that renders. */
-const DEMO_BRACKET_CONFIG: BracketConfig = { columnWidth: 220, matchHeight: 75 };
+/** Every mode the stories feed these demos, created once and bound to both representations. */
+const DEMO_LAYOUTS = [singleEliminationBracketLayout(), doubleEliminationBracketLayout(), swissBracketLayout()];
+
+/**
+ * The layout settings both representations run with, so the fit test predicts the bracket that renders —
+ * `layouts` included, since how wide a bracket draws is the layout's answer.
+ */
+const DEMO_BRACKET_CONFIG: BracketConfig = { layouts: DEMO_LAYOUTS, columnWidth: 220, matchHeight: 75 };
 
 @Component({
   selector: 'et-sb-bracket-rounds-list',
@@ -52,6 +59,7 @@ const DEMO_BRACKET_CONFIG: BracketConfig = { columnWidth: 220, matchHeight: 75 }
 
       <et-bracket-rounds-list
         [source]="source()"
+        [layouts]="LAYOUTS"
         [matchNormalizer]="MATCH_NORMALIZER"
         [selectedRoundId]="selectedRoundId()"
         [hideRoundHeaders]="hideRoundHeaders()"
@@ -78,6 +86,8 @@ export class StorybookBracketRoundsListComponent {
 
   protected rounds = computed(() => this.source().rounds);
 
+  protected readonly LAYOUTS = DEMO_LAYOUTS;
+
   protected readonly MATCH_NORMALIZER = demoMatchNormalizer;
 }
 
@@ -91,10 +101,10 @@ export class StorybookBracketRoundsListComponent {
 
     @if (fitsBracket()) {
       <et-scrollable stickyButtons>
-        <et-bracket [source]="source()" [matchNormalizer]="MATCH_NORMALIZER" [columnWidth]="220" />
+        <et-bracket [source]="source()" [layouts]="LAYOUTS" [matchNormalizer]="MATCH_NORMALIZER" [columnWidth]="220" />
       </et-scrollable>
     } @else {
-      <et-bracket-rounds-list [source]="source()" [matchNormalizer]="MATCH_NORMALIZER" />
+      <et-bracket-rounds-list [source]="source()" [layouts]="LAYOUTS" [matchNormalizer]="MATCH_NORMALIZER" />
     }
   `,
   encapsulation: ViewEncapsulation.None,
@@ -120,6 +130,8 @@ export class StorybookBracketAdaptiveComponent {
   protected naturalWidth = computed(() => Math.round(bracketNaturalWidth(this.source(), DEMO_BRACKET_CONFIG)));
 
   protected fitsBracket = computed(() => bracketFitsWidth(this.source(), DEMO_BRACKET_CONFIG, this.availableWidth()));
+
+  protected readonly LAYOUTS = DEMO_LAYOUTS;
 
   protected readonly MATCH_NORMALIZER = demoMatchNormalizer;
 }

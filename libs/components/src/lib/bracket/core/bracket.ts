@@ -1,6 +1,6 @@
 import { BracketDataSource } from '../integrations';
 import { BracketMap } from './bracket-map';
-import { BracketDataLayout, canRenderLayoutInTournamentMode } from './layout';
+import { BracketDataLayout } from './layout';
 import { BracketMatchId, BracketMatchWithRelationsBase, createMatchesMapBase } from './match';
 import { MatchParticipantId, BracketParticipantWithRelationsBase, createParticipantsMapBase } from './participant';
 import {
@@ -11,8 +11,6 @@ import {
   createRoundsMapBase,
 } from './round';
 import { TournamentMode } from './tournament';
-import { RuntimeError } from '@ethlete/core';
-import { BRACKET_ERROR_CODES } from '../bracket-errors';
 
 export type BracketBase<TRoundData, TMatchData> = {
   rounds: BracketMap<BracketRoundId, BracketRoundWithRelationsBase<TRoundData>>;
@@ -51,13 +49,6 @@ export const createBracketBase = <TRoundData, TMatchData>(
   source: BracketDataSource<TRoundData, TMatchData>,
   options: GenerateBracketDataOptions,
 ) => {
-  if (!canRenderLayoutInTournamentMode(options.layout, source.mode)) {
-    throw new RuntimeError(
-      BRACKET_ERROR_CODES.LAYOUT_MODE_UNSUPPORTED,
-      `Cannot render layout ${options.layout} in mode ${source.mode}`,
-    );
-  }
-
   const normalizedSource = sortSourceMatchesByRoundOrder(source);
 
   const participants = createParticipantsMapBase(normalizedSource);

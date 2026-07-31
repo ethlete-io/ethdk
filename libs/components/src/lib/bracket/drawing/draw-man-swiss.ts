@@ -1,8 +1,8 @@
 import { BracketRoundId } from '../core';
-import { BracketSwissGroupColorType, getSwissGroupColorType } from '../linked';
-import { BracketSwissColors } from '../bracket.config';
+import { BracketSwissColors, BracketSwissGroupColorType, getSwissGroupColorType } from '../linked/swiss';
 import { curvePath } from './curve';
-import { ComputedBracketGrid, FinalizedBracketElement, FinalizedMatchBracketElement } from './grid';
+import { FinalizedBracketElement, FinalizedMatchBracketElement } from './grid/core/bracket-finalizer';
+import { ComputedBracketGrid } from './grid/types';
 import { linePath } from './line';
 import { BracketPosition } from './math';
 import { PathOptions } from './path';

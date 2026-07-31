@@ -46,6 +46,16 @@ export const BRACKET_SWISS_GROUP_COLOR_TYPE = {
 export type BracketSwissGroupColorType =
   (typeof BRACKET_SWISS_GROUP_COLOR_TYPE)[keyof typeof BRACKET_SWISS_GROUP_COLOR_TYPE];
 
+/**
+ * Colors for the swiss group borders and connection lines, keyed by the group color type
+ * (see {@link getSwissGroupColorType}). Connection lines are drawn in the neutral color and fade
+ * into the target group color on the last portion before touching its border.
+ * Any CSS color value is allowed. Missing entries fall back to the connector/border color
+ * (the `--et-bracket-line-color` / `--et-bracket-swiss-group-border-color` custom properties,
+ * which default to `--et-surface-border-solid`).
+ */
+export type BracketSwissColors = Partial<Record<BracketSwissGroupColorType, string>>;
+
 export const getSwissGroupColorType = (wins: number, losses: number): BracketSwissGroupColorType => {
   if (wins === 0 && losses === 0) return BRACKET_SWISS_GROUP_COLOR_TYPE.NEUTRAL;
   if (losses === SWISS_ELIMINATE_LOSSES - 1) return BRACKET_SWISS_GROUP_COLOR_TYPE.NEGATIVE;

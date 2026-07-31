@@ -304,7 +304,6 @@ Runtime errors from the bracket data pipeline and layout engine. They indicate a
 
 | Code     | Cause                                                                        | Fix                                                                                                                                 |
 | -------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `ET3400` | The requested `layout` can't be rendered for the source's tournament `mode`. | Only single-elimination supports `mirrored`; use `left-to-right` for the others.                                                    |
 | `ET3401` | The source has no rounds/matches to render.                                  | Provide a non-empty `BracketDataSource`.                                                                                            |
 | `ET3402` | An integration received an unsupported tournament mode.                      | Use a supported mode (`single-elimination`, `double-elimination`, swiss-with-elimination).                                          |
 | `ET3403` | Two rounds in the source share an id.                                        | Give every round a unique `id`.                                                                                                     |
@@ -317,6 +316,7 @@ Runtime errors from the bracket data pipeline and layout engine. They indicate a
 | `ET3410` | A match's resolved winner id isn't among its participants.                   | Set `winner` to `'home'`/`'away'`/`null` matching the match's `home`/`away`.                                                        |
 | `ET3411` | A required key was missing from an internal bracket lookup.                  | Ensure every match `roundId` references an existing round.                                                                          |
 | `ET3412` | The default cards are rendering but no `matchNormalizer` was registered.     | Add `provideBracketConfig({ matchNormalizer })` — the Ethlete feed ships `normalizeEthleteBracketMatch` — or supply your own cards. |
+| `ET3413` | No registered bracket layout matches the source's tournament `mode`.         | Add the mode's factory (e.g. `doubleEliminationBracketLayout()`) to `provideBracketConfig({ layouts })` or to the `layouts` input.  |
 
 ## Table (ET35xx)
 

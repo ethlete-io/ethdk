@@ -1,15 +1,3 @@
-import { TOURNAMENT_MODE, TournamentMode } from './tournament';
-
-export const canRenderLayoutInTournamentMode = (layout: BracketDataLayout, mode: TournamentMode) => {
-  switch (mode) {
-    case TOURNAMENT_MODE.SINGLE_ELIMINATION:
-    case TOURNAMENT_MODE.DOUBLE_ELIMINATION:
-      return layout === BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT || layout === BRACKET_DATA_LAYOUT.MIRRORED;
-    default:
-      return layout === BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT;
-  }
-};
-
 export const BRACKET_DATA_LAYOUT = {
   LEFT_TO_RIGHT: 'left-to-right',
 
@@ -18,7 +6,8 @@ export const BRACKET_DATA_LAYOUT = {
    * rounds too small to halve. Halves the height and roughly doubles the width, which is what a poster
    * or a broadcast graphic wants.
    *
-   * Elimination brackets only. A swiss stage has no fold to make — it throws `ET3400`.
+   * Carried by the mirrored layout factories — a layout that has no fold to make (swiss) simply has no
+   * mirrored variant.
    */
   MIRRORED: 'mirrored',
 } as const;

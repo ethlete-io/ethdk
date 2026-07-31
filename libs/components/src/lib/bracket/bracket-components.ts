@@ -1,16 +1,11 @@
-import {
-  COMMON_BRACKET_ROUND_TYPE,
-  DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
-  TOURNAMENT_MODE,
-  TournamentMode,
-} from './core';
+import { COMMON_BRACKET_ROUND_TYPE, DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE } from './core';
 import {
   BracketComponents,
   BracketContinueComponent,
   BracketMatchComponent,
   BracketRoundHeaderComponent,
-} from './drawing/grid';
-import { Bracket, BracketRound } from './linked';
+} from './drawing/grid/core/types';
+import { Bracket, BracketRound } from './linked/bracket';
 import { BracketDefaultContinueComponent } from './bracket-default-continue.component';
 import { BracketDefaultFinalMatchComponent } from './bracket-default-final-match.component';
 import { BracketDefaultMatchComponent } from './bracket-default-match.component';
@@ -30,8 +25,9 @@ export type BracketComponentOverrides<TRoundData, TMatchData> = {
 };
 
 /**
- * Which component draws each kind of cell: the host's own inputs first, the swiss overrides of
- * `provideBracketConfig` second (swiss sources only), its top-level ones third, the shipped defaults last.
+ * Which component draws each kind of cell: the host's own inputs first, the active layout's cards
+ * second (`swissBracketLayout({ matchComponent })`), `provideBracketConfig` third, the shipped
+ * defaults last.
  *
  * Shared so that every representation of a bracket — the grid and the rounds list — picks the same card
  * for the same source.
@@ -41,22 +37,23 @@ export type BracketComponentOverrides<TRoundData, TMatchData> = {
 export const resolveBracketComponents = <TRoundData, TMatchData>(
   overrides: BracketComponentOverrides<TRoundData, TMatchData>,
   config: BracketConfig<TRoundData, TMatchData>,
-  mode: TournamentMode,
-  // eslint-disable-next-line max-params -- mirrors the grid builders' (overrides, config, mode) shape
-): BracketComponents<TRoundData, TMatchData> => {
-  const swiss = mode === TOURNAMENT_MODE.SWISS_WITH_ELIMINATION ? config.swiss : undefined;
-
-  return {
-    match: overrides.match ?? swiss?.matchComponent ?? config.matchComponent ?? BracketDefaultMatchComponent,
-    finalMatch: overrides.finalMatch ?? config.finalMatchComponent ?? BracketDefaultFinalMatchComponent,
-    roundHeader:
-      overrides.roundHeader ??
-      swiss?.roundHeaderComponent ??
-      config.roundHeaderComponent ??
-      BracketDefaultRoundHeaderComponent,
-    continue: overrides.continue ?? config.continueComponent ?? BracketDefaultContinueComponent,
-  };
-};
+  layoutComponents: BracketComponentOverrides<TRoundData, TMatchData> | undefined,
+  // eslint-disable-next-line max-params -- the precedence chain, one argument per link
+): BracketComponents<TRoundData, TMatchData> => ({
+  match: overrides.match ?? layoutComponents?.match ?? config.matchComponent ?? BracketDefaultMatchComponent,
+  finalMatch:
+    overrides.finalMatch ??
+    layoutComponents?.finalMatch ??
+    config.finalMatchComponent ??
+    BracketDefaultFinalMatchComponent,
+  roundHeader:
+    overrides.roundHeader ??
+    layoutComponents?.roundHeader ??
+    config.roundHeaderComponent ??
+    BracketDefaultRoundHeaderComponent,
+  continue:
+    overrides.continue ?? layoutComponents?.continue ?? config.continueComponent ?? BracketDefaultContinueComponent,
+});
 
 /**
  * Whether a round's matches get the *final* card rather than the ordinary one.

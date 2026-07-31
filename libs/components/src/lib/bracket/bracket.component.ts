@@ -14,15 +14,13 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
-import { createComponentId, injectRenderer } from '@ethlete/core';
-import { BracketDataLayout, TOURNAMENT_MODE } from './core';
-import { drawMan, drawSwissMan } from './drawing';
+import { createComponentId, injectRenderer, injectStyleManager } from '@ethlete/core';
+import { FinalizedBracketElement } from './drawing/grid/core/bracket-finalizer';
 import {
   BracketContinueComponent,
   BracketMatchComponent,
   BracketRoundHeaderComponent,
-  FinalizedBracketElement,
-} from './drawing/grid';
+} from './drawing/grid/core/types';
 import { BracketDataSource } from './integrations';
 import { MATCH_CARD_SIZES, MatchCardSize } from '../match';
 import {
@@ -30,18 +28,20 @@ import {
   JourneyHighlightController,
   setupJourneyHighlight as setupJourneyHighlightListeners,
 } from './journey-highlight';
-import { createBracket, generateBracketRoundSwissGroupMaps } from './linked';
+import { createBracket } from './linked/bracket';
+import { BracketSwissColors } from './linked/swiss';
 import { BRACKET_CARD_CONTEXT, BracketMatchNormalizer } from './bracket-card-context';
 import { resolveBracketComponents } from './bracket-components';
 import { BracketDensity } from './bracket-density';
-import { computeBracketGrid, createBracketGridConfig, resolveBracketLayoutSettings } from './bracket-grid';
+import { createBracketGridConfig, resolveBracketLayoutSettings } from './bracket-grid';
 import {
   OptionalBooleanInput,
   optionalBooleanAttribute,
   OptionalNumberInput,
   optionalNumberAttribute,
 } from './bracket-input-transforms';
-import { BRACKET_DEFAULTS, BracketSwissColors, injectBracketConfig } from './bracket.config';
+import { BracketLayout, resolveBracketLayout } from './bracket-layout';
+import { BRACKET_DEFAULTS, injectBracketConfig } from './bracket.config';
 
 @Component({
   selector: 'et-bracket',
@@ -110,9 +110,17 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   public swissGroupBorderRadius = input<number | undefined, OptionalNumberInput>(undefined, {
     transform: optionalNumberAttribute,
   });
-  public swissColors = input<BracketSwissColors | undefined>(this.config.swiss?.colors);
+  public swissColors = input<BracketSwissColors | undefined>(undefined);
 
-  public layout = input<BracketDataLayout | undefined>(undefined);
+  /**
+   * The layouts this instance may draw with, replacing the `provideBracketConfig` list entirely —
+   * see {@link BracketLayout}. The first entry whose `mode` matches the source draws it; a source
+   * nothing matches throws `ET3413`.
+   *
+   * @example
+   * <et-bracket [layouts]="layouts" [source]="source()" />
+   */
+  public layouts = input<readonly BracketLayout<TRoundData, TMatchData>[] | undefined>(undefined);
 
   /**
    * The size everything is drawn at. `'compact'` is roughly two thirds of the default — a column narrow
@@ -212,7 +220,6 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
       disableJourneyHighlight: this.disableJourneyHighlight() ?? this.config.disableJourneyHighlight,
       swissGroupPadding: this.swissGroupPadding() ?? this.config.swissGroupPadding,
       swissGroupBorderRadius: this.swissGroupBorderRadius() ?? this.config.swissGroupBorderRadius,
-      layout: this.layout() ?? this.config.layout,
       hideRoundHeaders: this.hideRoundHeaders() ?? this.config.hideRoundHeaders,
       showContinueElement: this.showContinueElement() ?? this.config.showContinueElement,
       continueColumnWidth: this.continueColumnWidth() ?? this.config.continueColumnWidth,
@@ -222,15 +229,25 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
     }),
   );
 
-  public bracketData = computed(() => createBracket(this.source(), { layout: this.settings().layout }));
+  /**
+   * The layout drawing this source: the first entry of the `layouts` input — or, when that is unbound,
+   * of `provideBracketConfig` — whose `mode` matches. Throws `ET3413` when nothing matches.
+   */
+  private resolvedLayout = computed(() =>
+    resolveBracketLayout<TRoundData, TMatchData>(
+      this.layouts() ?? (this.config.layouts as readonly BracketLayout<TRoundData, TMatchData>[] | undefined),
+      this.source().mode,
+    ),
+  );
 
-  public swissGroups = computed(() => generateBracketRoundSwissGroupMaps(this.bracketData()));
+  public bracketData = computed(() => createBracket(this.source(), { layout: this.resolvedLayout().dataLayout }));
 
   private journeyParticipants = computed(() => createBracketJourneyParticipants(this.bracketData()));
 
   public bracketGrid = computed(() => {
+    const layout = this.resolvedLayout();
     const bracketData = this.bracketData();
-    const options = createBracketGridConfig(this.settings());
+    const options = createBracketGridConfig(this.settings(), layout.dataLayout);
 
     const components = resolveBracketComponents(
       {
@@ -240,10 +257,10 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
         continue: this.continueComponent(),
       },
       this.config,
-      bracketData.mode,
+      layout.components,
     );
 
-    return computeBracketGrid(bracketData, options, components);
+    return layout.createGrid(bracketData, options, components);
   });
 
   public drawManData = computed(() => {
@@ -251,51 +268,11 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
     if (!bracketGrid) return '';
 
-    const settings = this.settings();
-
-    if (this.bracketData().mode === TOURNAMENT_MODE.SWISS_WITH_ELIMINATION) {
-      return drawSwissMan({
-        bracketGrid,
-        curve: {
-          lineStartingCurveAmount: settings.lineStartingCurveAmount,
-        },
-        path: {
-          dashArray: settings.lineDashArray,
-          dashOffset: settings.lineDashOffset,
-          width: settings.lineWidth,
-        },
-        groupBorder: {
-          padding: settings.swissGroupPadding,
-          radius: settings.swissGroupBorderRadius,
-          width: settings.lineWidth,
-        },
-        colors: this.swissColors(),
-        idPrefix: this.elementId,
-      });
-    }
-
-    return drawMan({
-      columnGap: settings.columnGap,
-      upperLowerGap: settings.rowRoundGap,
-      columnWidth: settings.columnWidth,
-      matchHeight: settings.matchHeight,
-      roundHeaderHeight: settings.hideRoundHeaders ? 0 : settings.roundHeaderHeight,
-      rowGap: settings.rowGap,
-      bracketGrid,
-      curve: {
-        lineEndingCurveAmount: settings.lineEndingCurveAmount,
-        lineStartingCurveAmount: settings.lineStartingCurveAmount,
-      },
-      path: {
-        dashArray: settings.lineDashArray,
-        dashOffset: settings.lineDashOffset,
-        width: settings.lineWidth,
-      },
-      continuePath: {
-        dashArray: settings.continueLineDashArray,
-        dashOffset: settings.lineDashOffset,
-        width: settings.lineWidth,
-      },
+    return this.resolvedLayout().drawEdges({
+      grid: bracketGrid,
+      settings: this.settings(),
+      idPrefix: this.elementId,
+      colors: this.swissColors(),
     });
   });
 
@@ -303,6 +280,7 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
   constructor() {
     this.setupJourneyHighlight();
+    this.setupLayoutStyles();
   }
 
   /**
@@ -311,6 +289,20 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
    */
   protected componentFor(element: FinalizedBracketElement<TRoundData, TMatchData>): Type<unknown> {
     return element.component as Type<unknown>;
+  }
+
+  /**
+   * CSS an optional layout brings along (the swiss group border) mounts app-wide on first use — the
+   * style manager dedupes by type, so a page of swiss brackets injects one `<style>`.
+   */
+  private setupLayoutStyles() {
+    const styleManager = injectStyleManager();
+
+    effect(() => {
+      for (const styles of this.resolvedLayout().styles ?? []) {
+        styleManager.mount(styles);
+      }
+    });
   }
 
   private setupJourneyHighlight() {
