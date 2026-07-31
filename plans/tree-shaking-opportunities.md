@@ -14,13 +14,15 @@ inventory). Measurement tooling is committed under `tools/treeshake/` (see its R
   reactive-forms `query-form/` (superseded by `query-form-signals`). Current gen = `http/`, `auth/`,
   `gql/`, `ws/`, `devtools/`, `pipes/`, `query-form-signals/`.
 - **Breaking changes are fine in `components` and `query`.**
-- **Breaking `@ethlete/core` requires a migration generator / AI-assisted migration** (Nx-style).
-  The infra already exists: each lib ships Nx generators (`generators/generators.json` as
-  ng-package assets); precedents are `@ethlete/core:migrate-to-v5` (which already contains a
-  `create-provider.ts` codemod to build on) and `@ethlete/query:migrate-to-query-v3` (with
-  `--projects` scoping and the "write `*-migration-tasks.md` with stable ids for what the codemod
-  couldn't finish" AI-handoff pattern). No `ng update`/`migrations.json` — this repo uses Nx
-  generators deliberately.
+- **Breaking `@ethlete/core` needs a migration generator / AI-assisted migration** (Nx-style) —
+  and since the whole SDK is currently in a changesets **major pre-release** (`.changeset/pre.json`,
+  tag `next`), there is **no deprecation cycle**: change the API outright and ship the generator in
+  the same release. The infra already exists: each lib ships Nx generators
+  (`generators/generators.json` as ng-package assets); precedents are `@ethlete/core:migrate-to-v5`
+  (which already contains a `create-provider.ts` codemod to build on) and
+  `@ethlete/query:migrate-to-query-v3` (with `--projects` scoping and the "write
+  `*-migration-tasks.md` with stable ids for what the codemod couldn't finish" AI-handoff pattern).
+  No `ng update`/`migrations.json` — this repo uses Nx generators deliberately.
 
 ## Why bundles are big: the mechanics (verified, not guessed)
 
@@ -75,14 +77,25 @@ overlay **18.2 kB base + 16.7–20.5 kB per strategy** · table (already split i
 `export const [provideX, injectX] = createRootProvider(...)` at ~70–88 top-level call sites across
 core/components/query. Unshakeable by construction (see mechanics 3).
 
-**Fix (recommended, additive — no consumer breakage):** new single-binding helpers in core (e.g.
-`defineProvider` / `defineLabels`, or per-binding creators so each exported symbol is one
-`/*#__PURE__*/`-annotatable call: token, provide fn, inject fn as three pure statements). Port all
-internal call sites in core/components/query — the **exported `provideX`/`injectX` names don't
-change**, so this is invisible to apps. Keep the tuple factories exported but `@deprecated`.
-Classification: INTERNAL for the sweep; the deprecation is BREAKING-core **later** — ship a
-`migrate-provider-shape` generator (extend the existing `create-provider.ts` codemod) before any
-removal in the next core major. Worth: core −5.6 kB, query −5.7 kB, components **−79 kB** floor.
+**Fix (breaking now — we are in the major pre-release, no deprecation):** replace the tuple
+factories with single-binding helpers in core — a descriptor creator plus per-binding extractors,
+so each exported symbol is one `/*#__PURE__*/`-annotatable call:
+
+```ts
+const BRACKET_CONFIG = /* @__PURE__ */ defineStaticRootProvider<BracketConfig>({}, { name: 'BracketConfig' });
+export const provideBracketConfig = /* @__PURE__ */ providerFn(BRACKET_CONFIG);
+export const injectBracketConfig = /* @__PURE__ */ injectorFn(BRACKET_CONFIG);
+```
+
+Token exports must also go through a pure extractor (`tokenFn(DEF)`) — a bare
+`export const X = DEF.token` is a member access and is retained. **Delete**
+`createProvider`/`createStaticProvider`/`createRootProvider`/`createStaticRootProvider`/`createLabels`
+in the same change (BREAKING-core) and port all internal call sites in core/components/query — the
+exported `provideX`/`injectX` names don't change, so app code only breaks where it called the
+factories itself. Ship a **`migrate-provider-shape` Nx generator** in the same release (extend
+`migrate-to-v5`'s `create-provider.ts` codemod; the rewrite is mechanical:
+`const [a, b, c] = createX(args)` → descriptor + extractor statements). Worth: core −5.6 kB,
+query −5.7 kB, components **−79 kB** floor.
 
 ### 2. PURE-annotate the 49 single-binding factory calls (non-breaking, cheap)
 
@@ -139,19 +152,39 @@ opt-in features like `withPolling` (note: sync shipped recently; check
   HTTP-status tables (`libs/query/src/lib/pipes/parse-http-error-code-{de,en}.ts`, 14.2 kB min)
   into every components bundle — make languages opt-in or lazy.
 
+## Regression guards (ship alongside fix 1, keep forever)
+
+1. **Lint rule** in `@ethlete/eslint-plugin` (e.g. `ethlete/no-impure-top-level-provider`): ban
+   top-level array/object destructuring whose initializer is a call expression, and require the
+   pure annotation on top-level single-binding factory calls in library source. Without this the
+   idiom creeps back one file at a time and nobody notices until the next audit.
+2. **Size goldens, Angular-style.** Angular's repo keeps checked-in expected payload sizes
+   (`goldens/size-tracking/integration-payloads.json`); CI builds the test apps, compares against
+   the golden within a tolerance, and fails on unexplained growth — a golden update is a
+   deliberate, reviewable commit. The analog here: `tools/treeshake/goldens.json` holding expected
+   gz bytes per entry (the three package floors + one real entry per big domain: bracket+SE, table,
+   form-field+input, select, overlay+dialog, RTE, query client), plus a `check-goldens.mjs` that
+   runs the existing pipeline and fails past a tolerance (~2 % or 512 B, whichever is larger —
+   FESM linking is deterministic but dependency bumps move bytes), and an `--update` flag that
+   rewrites the file. Wire it as an Nx target (e.g. `nx run repo:bundle-goldens`) in CI for
+   affected libs; builds of `core`+`query`+`components` plus linking cost ~1-2 min. Record the
+   goldens for the first time **after** fixes 1+2 land so the guarded state is the good state.
+
 ## Execution order (each phase independently shippable, measured before/after)
 
-1. **Fix 1 sweep** (core helpers + all internal call sites) + changesets (core minor: additive
-   helpers + deprecation; components/query patch: internal). Acceptance: floors ≤ 7/13/11 kB
-   (core/query/components).
+1. **Fix 1 sweep, breaking** — new single-binding helpers in core, delete the tuple factories,
+   port all internal call sites, ship the `migrate-provider-shape` generator and the lint rule in
+   the same change. Changesets: core major (already in pre mode), components/query patch
+   (internal). Acceptance: floors ≤ 7/13/11 kB (core/query/components), generator green on a
+   fixture app, lint rule catches a reintroduced tuple.
 2. **Fix 2 annotations** (+ FESM-survival verification). Acceptance: floors ≈ 1.1/0.9/4.9 kB.
+   Then **record the initial size goldens** and wire the CI check.
 3. **Query internal moves** (fix 4 first half). Acceptance: no legacy modules in the current-gen
    module graph (`tools/treeshake/dump-bundle.mjs` grep).
 4. **Retention chains** (fix 3), one feature per changeset, biggest first (RTE menu, overlay
    strategies registration, notification stack, stream defaults). BREAKING-components allowed.
+   Update the goldens with each shipped cut.
 5. **Opt-ins** (fix 5) as follow-ups, each measurement-gated.
-6. **Deprecation endgame**: `migrate-provider-shape` generator, then tuple-factory removal in the
-   next core major.
 
 Every phase: `npx nx build core query components`, run `tools/treeshake/measure-bundle.mjs` on the
 floor + feature entries, record numbers in this file, `nx test` + `nx lint --fix` + changeset per
