@@ -1,3 +1,4 @@
+export * from './favicon-binding';
 export * from './head-binding';
 export * as JsonLD from './json-ld';
 export * from './link-binding';

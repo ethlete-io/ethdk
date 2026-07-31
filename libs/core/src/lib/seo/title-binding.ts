@@ -53,13 +53,16 @@ export const [provideTitleStore, injectTitleStore] = createRootProvider(
   () => {
     const config = injectTitleConfig();
     const titleParts = signal<Map<symbol, TitlePart>>(new Map());
+    const titleMarkers = signal<Map<symbol, string>>(new Map());
     const { currentLocale } = injectLocale();
     const titleService = inject(Title);
     const isRouterInitialized = injectIsRouterInitialized();
 
-    const defaultTitle = config.defaultTitle ?? titleService.getTitle();
+    // Falls back on an empty configured default too, so a store created lazily (e.g. by a title
+    // marker) doesn't wipe a title that came from `index.html`.
+    const defaultTitle = config.defaultTitle || titleService.getTitle();
 
-    const title = computed(() => {
+    const composedTitle = computed(() => {
       const partsMap = titleParts();
 
       if (!partsMap.size || !isRouterInitialized()) {
@@ -90,6 +93,22 @@ export const [provideTitleStore, injectTitleStore] = createRootProvider(
       return finalTextParts.join(` ${config.divider} `);
     });
 
+    /**
+     * The composed title with any markers prefixed — what actually lands in `document.title`.
+     * Markers sit outside the divider logic, so `● Page | App` rather than `● | Page | App`.
+     */
+    const title = computed(() => {
+      // Deduplicated: two forms with unsaved changes should read as one marker, not two.
+      const markers = Array.from(new Set(titleMarkers().values()));
+      const composed = composedTitle();
+
+      if (!markers.length) {
+        return composed;
+      }
+
+      return `${markers.join(' ')} ${composed}`.trim();
+    });
+
     const addPart = (id: symbol, part: TitlePart) => {
       titleParts.update((parts) => new Map(parts).set(id, part));
     };
@@ -102,12 +121,24 @@ export const [provideTitleStore, injectTitleStore] = createRootProvider(
       });
     };
 
+    const addMarker = (id: symbol, marker: string) => {
+      titleMarkers.update((markers) => new Map(markers).set(id, marker));
+    };
+
+    const removeMarker = (id: symbol) => {
+      titleMarkers.update((markers) => {
+        const newMarkers = new Map(markers);
+        newMarkers.delete(id);
+        return newMarkers;
+      });
+    };
+
     effect(() => {
       const titleText = title();
       titleService.setTitle(titleText);
     });
 
-    return { title, addPart, removePart };
+    return { title, addPart, removePart, addMarker, removeMarker };
   },
   { name: 'Title Store' },
 );
@@ -124,5 +155,22 @@ export const applyHeadTitleBinding = (
     (value) => titleStore.addPart(partId, { text: `${value}`, ...options }),
     () => titleStore.removePart(partId),
     (value): value is string | number => value !== null && value !== undefined && value !== '',
+  );
+};
+
+/**
+ * Prefix the tab title with a short marker (`● Page | App`) while the binding has a value — the
+ * unsaved-changes dot, a pending-count badge, and the like. The marker is removed when the binding
+ * goes empty and on destroy. Unlike a title part, it is not joined by the divider.
+ */
+export const applyHeadTitleMarker = (binding: MaybeSignal<string | null | undefined>) => {
+  const titleStore = injectTitleStore();
+  const markerId = Symbol('title-marker');
+
+  applyHeadBinding(
+    binding,
+    (value) => titleStore.addMarker(markerId, value),
+    () => titleStore.removeMarker(markerId),
+    (value): value is string => value !== null && value !== undefined && value !== '',
   );
 };

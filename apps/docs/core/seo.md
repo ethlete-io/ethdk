@@ -34,6 +34,41 @@ provideTitleConfig({ suffixPart: { text: 'Ethlete SDK' } }),
 
 Pass `{ useAsStart: true }` to make a part the leftmost segment, discarding parts registered before it.
 
+### Title markers {#title-markers}
+
+`applyHeadTitleMarker(binding)` prefixes a short marker onto the composed title while the binding has a value — the unsaved-changes dot, a pending count, and the like. Markers sit **outside** the divider logic (`● Editor | Ethlete SDK`, not `● | Editor | …`), identical markers are deduplicated, and a marker is removed when the binding goes empty or the injector is destroyed.
+
+```ts
+applyHeadTitleMarker(computed(() => (this.hasUnsavedWork() ? '●' : null)));
+```
+
+The [unsaved-changes tab guard](/core/utilities#unsaved-changes-tab) uses the same mechanism via its `titleMarker` option, so the marker only works in apps whose title is owned by this store.
+
+## Favicon overlays {#favicon}
+
+`applyFaviconOverlay(binding)` draws on top of the site's favicon while the binding has a value, and restores the original icon when it goes empty (or the injector is destroyed):
+
+```ts
+// a dot in the corner — "something is unsaved / unread here"
+applyFaviconOverlay(computed(() => (this.hasUnsavedWork() ? { kind: 'dot' } : null)));
+
+// a ring around the icon, 0–100
+applyFaviconOverlay(computed(() => (this.saving() ? { kind: 'progress', value: this.percent() } : null)));
+```
+
+| Overlay      | Fields                                   | Notes                                                             |
+| ------------ | ---------------------------------------- | ----------------------------------------------------------------- |
+| `'dot'`      | `color?`                                 | Badge punched into the bottom-right corner.                       |
+| `'progress'` | `value` (0–100), `color?`, `trackColor?` | Ring around the icon. Wins over a `dot` when both are registered. |
+
+`color` defaults to `--et-theme-color-primary-solid`, read off the root element at draw time, so the overlay follows the app's [color theme](/core/theming).
+
+This is the only real answer to "show progress on the tab": no browser exposes taskbar or tab progress. Notes:
+
+- The base icon is read from `<link rel="icon">` and drawn onto a 64×64 canvas. A **cross-origin** icon without CORS headers taints the canvas — the favicon is then left untouched rather than broken. An icon the browser can't decode is skipped and the overlay draws on an empty canvas.
+- If the page has no icon link at all, one is created and removed again on restore.
+- SSR-safe: nothing is drawn on the server.
+
 ## Meta tags
 
 `applyMetaBinding(config)` is the generic form; shortcuts exist for the common cases:

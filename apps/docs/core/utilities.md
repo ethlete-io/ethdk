@@ -53,13 +53,83 @@ Subscribe to host-element events from an injection context, cleaned up on destro
 
 Guard a form against accidentally discarding edits. Call these from an injection context.
 
-- **`createUnsavedChangesTracker({ source, confirm, defaultValue?, compareFn? })`** — the framework-agnostic core. It snapshots a baseline and exposes `hasChanges` (a `Signal<boolean>`), `runCheck()` (resolves `true` when clean or the user confirmed the discard), plus `refreshDefaultValue()` / `restoreDefaultValue()` and the `defaultValue` signal.
+- **`createUnsavedChangesTracker({ source, confirm, defaultValue?, compareFn?, tab? })`** — the framework-agnostic core. It snapshots a baseline and exposes `hasChanges` (a `Signal<boolean>`), `runCheck()` (resolves `true` when clean or the user confirmed the discard), plus `refreshDefaultValue()` / `restoreDefaultValue()` and the `defaultValue` signal.
   - `source` accepts a signal-forms **`FieldTree`** (first-class), a **`Signal<FieldTree | null>`** for late/async forms (the first non-null value auto-baselines), an **`AbstractControl`** (migration path, bridged via `controlValueSignal`), or a plain **`WritableSignal`**.
   - Changes are a **deep-equal snapshot** against the baseline — editing then reverting a field is clean again, deliberately unlike signal-forms' `dirty()` ("was edited").
-  - `confirm` is **required per call site** and runs only when there are changes; return a boolean, `Promise`, or `Observable` (normalized to `Promise<boolean>`). It typically opens a confirm dialog.
+  - `confirm` is **required per call site** and runs only when there are changes; return a boolean, `Promise`, or `Observable` (normalized to `Promise<boolean>`). It typically opens a confirm dialog. Its second argument carries an `AbortSignal` — see [Sessions ending underneath a guard](#unsaved-changes-coordinator).
   - `refreshDefaultValue()` re-baselines to the current value — call it after a save that keeps the view open.
+  - `isAbandoned` reads `true` once the guard was switched off because the session ended (see below).
 - **`createUnsavedChangesGuard(config)`** — the router / manual flavor: the tracker above plus a **`canDeactivate()`** method (`CanDeactivateFn`-compatible) for Angular route guards.
 - For overlays, use **`createOverlayUnsavedChangesGuard`** from `@ethlete/components`, which wires the tracker to the overlay's close events automatically — see [Overlays › Guarding against accidental dismissal](/components/overlays#guarding-against-accidental-dismissal).
+
+### Guarding the browser tab {#unsaved-changes-tab}
+
+An in-app guard is only half the protection: <kbd>Ctrl</kbd>+<kbd>W</kbd>, <kbd>F5</kbd> and the tab's × bypass both the router and the overlay runtime. So **every tracker also locks the tab** while `hasChanges()` is `true` — the browser shows its own "Leave site?" confirmation. Configure it with the `tab` option:
+
+```ts
+guard = createUnsavedChangesGuard({
+  source: this.form,
+  confirm: () => this.confirmDiscard(),
+  tab: {
+    lock: true, // default — `beforeunload` confirmation
+    titleMarker: true, // '● Editor | My App' while dirty
+    flash: true, // blink that marker while the tab is in the background
+    favicon: true, // dot on the favicon
+    badge: true, // app badge for installed PWAs
+  },
+});
+```
+
+| `tab` option  | Default | Description                                                                                                                                                                                                                             |
+| ------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lock`        | `true`  | The `beforeunload` confirmation before the tab is closed, reloaded, or navigated away from.                                                                                                                                             |
+| `titleMarker` | `false` | Prefix the tab title with a marker while dirty — `true` uses `'●'` (`UNSAVED_CHANGES_TITLE_MARKER`), a string is used as-is. Goes through the [title store](/core/seo#title-markers), so the app's title must be owned by it.           |
+| `flash`       | `false` | Blink the marker (and the favicon dot) — `true`, or `{ interval?, whenHidden? }`. Implies `titleMarker`. Only blinks while the tab is **backgrounded** unless `whenHidden: false`; `interval` defaults to `1000` ms.                    |
+| `favicon`     | `false` | Draw a dot on the favicon — `true` or `{ color }`. See [Favicon overlays](/core/seo#favicon).                                                                                                                                           |
+| `badge`       | `false` | Set an app badge while dirty (`navigator.setAppBadge`) — `true` shows a dot, a number shows that count. Only visible for **installed** apps (PWA / desktop shortcut) and a silent no-op elsewhere. Counts from several trackers add up. |
+
+Pass `tab: false` to leave the tab alone entirely. `tracker.tab` exposes the guard (`null` when disabled) so you can `tab.destroy()` it early — e.g. right before a deliberate `location.reload()`.
+
+Notes on the lock:
+
+- The wording of the prompt **cannot be customized** — browsers ignore any returned string. Your `confirm` dialog still handles in-app dismissals; this is the last-resort net.
+- Browsers only show it once the user has interacted with the page (sticky activation), so a programmatic `window.close()` on an untouched page goes through.
+- The listener is registered **only while there are changes**, so a clean page stays eligible for the back/forward cache.
+
+Notes on flashing: there is **no browser API for demanding attention** on a tab (no "flash the taskbar", no `requestAttention()`), so blinking the title/favicon is the whole toolbox. Browsers clamp timers in hidden tabs to about a second, which is why the interval floor is effectively 1000 ms. The lock itself never blinks, only the marker.
+
+**`createUnsavedChangesTabLock({ hasChanges, lock?, titleMarker?, flash?, favicon?, badge? })`** is the same guard standalone, for "unsaved" state that isn't a form at all — pending uploads, a queued draft, an in-flight mutation:
+
+```ts
+createUnsavedChangesTabLock({
+  hasChanges: computed(() => this.uploads().some((upload) => upload.pending)),
+  titleMarker: true,
+  flash: true,
+});
+```
+
+For **tab progress** — an upload's percentage rather than a yes/no marker — there is likewise no taskbar API. Draw it on the favicon with [`applyFaviconOverlay`](/core/seo#favicon), or put it in the title (`applyHeadTitleMarker(computed(() => `${percent()}%`))`).
+
+### Sessions ending underneath a guard {#unsaved-changes-coordinator}
+
+Every tracker registers with a root-provided coordinator, `injectUnsavedChangesCoordinator()`, which solves the two problems that only show up once several guards exist in one app:
+
+- **One confirm at a time.** A page form, an overlay form and a route guard can all want a decision in the same tick. A check that starts while another confirm is on screen **adopts that decision** instead of stacking a second "discard your changes?" dialog. `isCheckPending` reads whether one is up.
+- **The session ending mid-confirm.** `abandonAll(reason?)` resolves the pending check as "discard allowed", aborts its `AbortSignal`, and switches every live guard off: further `runCheck()`s pass and the tab locks release. `@ethlete/query`'s auth provider calls it on `logout()`, which fixes the classic mess — pressing logout with a dirty form used to leave a dead confirm dialog floating over the login page, plus a tab that still refused to close. Trackers created afterwards (post re-login) guard normally again.
+
+Because the confirm dialog belongs to your app, closing it is your call — wire the abort signal:
+
+```ts
+confirm: (value, { signal }) => {
+  const ref = this.overlays.open(ConfirmDiscardComponent);
+
+  signal.addEventListener('abort', () => ref.close(false));
+
+  return ref.afterClosed();
+};
+```
+
+Call `abandonAll()` yourself for anything else that ends a session: an inactivity timeout, a hard workspace switch, a forced re-auth.
 
 ## Storage
 

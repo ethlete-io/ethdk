@@ -100,7 +100,7 @@ describe('unsaved-changes', () => {
       TestBed.tick();
 
       await expect(tracker.runCheck()).resolves.toBe(true);
-      expect(confirm).toHaveBeenCalledWith({ name: 'Grace' });
+      expect(confirm).toHaveBeenCalledWith({ name: 'Grace' }, expect.objectContaining({ signal: expect.anything() }));
     });
 
     it('normalizes a Promise confirm result', async () => {

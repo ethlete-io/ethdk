@@ -1,14 +1,31 @@
-import { assertInInjectionContext, computed, effect, signal, Signal, untracked } from '@angular/core';
+import {
+  assertInInjectionContext,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  signal,
+  Signal,
+  untracked,
+} from '@angular/core';
 import { catchError, defaultIfEmpty, firstValueFrom, isObservable, map, Observable, of, take } from 'rxjs';
 import { equal } from '../utils';
+import { injectUnsavedChangesCoordinator, UnsavedChangesConfirmContext } from './unsaved-changes-coordinator';
 import { normalizeUnsavedChangesSource, UnsavedChangesSource } from './unsaved-changes-source';
+import { createUnsavedChangesTabLock, UnsavedChangesTabConfig, UnsavedChangesTabLockRef } from './unsaved-changes-tab';
 
 /**
  * Decides whether a value with unsaved changes may be discarded. Called with the current value when
  * (and only when) changes exist. Return a truthy value / resolved Promise / emitted Observable value
  * to allow the discard, falsy to keep the changes. Typically opens a confirm dialog.
+ *
+ * The second argument carries an {@link UnsavedChangesConfirmContext.signal} that aborts when the
+ * session ends underneath the confirm (a logout) — close your dialog when it fires.
  */
-export type UnsavedChangesConfirmFn<T> = (value: T) => boolean | Promise<boolean> | Observable<boolean> | unknown;
+export type UnsavedChangesConfirmFn<T> = (
+  value: T,
+  context: UnsavedChangesConfirmContext,
+) => boolean | Promise<boolean> | Observable<boolean> | unknown;
 
 export type CreateUnsavedChangesTrackerConfig<T> = {
   /** The form / value to watch. See {@link UnsavedChangesSource}. */
@@ -34,11 +51,30 @@ export type CreateUnsavedChangesTrackerConfig<T> = {
    * (which means "was edited", so typing then deleting stays dirty — here it's clean again).
    */
   compareFn?: (current: T, defaultValue: T) => boolean;
+
+  /**
+   * How the tracker guards the browser tab itself. The `beforeunload` lock — the browser's confirm
+   * prompt before the tab is closed or reloaded — is **on by default**, since a guard that only
+   * covers in-app navigation still loses the edits to <kbd>Ctrl</kbd>+<kbd>W</kbd>.
+   *
+   * Pass an object to also opt into a tab title marker or an app badge, or `false` to leave the tab
+   * alone entirely. See {@link UnsavedChangesTabConfig}.
+   * @default { lock: true }
+   */
+  tab?: UnsavedChangesTabConfig | false;
 };
 
 export type UnsavedChangesTrackerRef<T> = {
   /** Whether the current value differs from the default. */
   hasChanges: Signal<boolean>;
+
+  /**
+   * Whether this guard was switched off because the session ended underneath it (a logout, or an
+   * explicit `injectUnsavedChangesCoordinator().abandonAll()`). An abandoned tracker still reports
+   * `hasChanges`, but `runCheck()` passes without confirming and the tab lock is released — the edits
+   * cannot be saved anymore, so blocking on them only strands the user.
+   */
+  isAbandoned: Signal<boolean>;
 
   /** The current baseline. `null` until a value (or explicit default) exists. */
   defaultValue: Signal<T | null>;
@@ -46,6 +82,9 @@ export type UnsavedChangesTrackerRef<T> = {
   /**
    * Resolves `true` if there are no changes or the user confirmed the discard, `false` otherwise.
    * Normalizes the `confirm` return (value / Promise / Observable) to a `Promise<boolean>`.
+   *
+   * Only one confirm runs app-wide: a check that starts while another tracker's confirm is on screen
+   * adopts that decision instead of opening a second dialog.
    */
   runCheck: () => Promise<boolean>;
 
@@ -54,6 +93,13 @@ export type UnsavedChangesTrackerRef<T> = {
 
   /** Write the default back onto the source (revert edits). No-op if there is no default yet. */
   restoreDefaultValue: () => void;
+
+  /**
+   * The tab guard (`beforeunload` lock, title marker, app badge) driven by `hasChanges` — `null` when
+   * the tracker was created with `tab: false`. Call `tab.destroy()` to release it before the
+   * injector is destroyed, e.g. right before a deliberate `location.reload()`.
+   */
+  tab: UnsavedChangesTabLockRef | null;
 };
 
 const toBooleanPromise = (result: boolean | Promise<boolean> | Observable<boolean> | unknown): Promise<boolean> => {
@@ -79,6 +125,13 @@ const toBooleanPromise = (result: boolean | Promise<boolean> | Observable<boolea
  * The framework-agnostic core of the unsaved-changes family: snapshots a default value, tracks
  * whether the watched form/value differs from it, and runs an async confirm before a discard.
  * Call from an injection context (a field initializer or constructor).
+ *
+ * While there are changes the browser tab is locked too (`beforeunload`), so closing or reloading the
+ * tab needs a confirmation — see the `tab` config for the title-marker / app-badge extras and for
+ * opting out.
+ *
+ * Every tracker registers with the app-wide {@link injectUnsavedChangesCoordinator}, which keeps a
+ * single confirm on screen at a time and switches all guards off when the session ends (logout).
  *
  * Overlay and router flavors (`createOverlayUnsavedChangesGuard`, `createUnsavedChangesGuard`) build
  * on this — use them when you want the guard wired to a close/navigation event automatically.
@@ -127,12 +180,27 @@ export const createUnsavedChangesTracker = <T>(
     return !(compareFn ? compareFn(current, defaultValue) : equal(current, defaultValue));
   });
 
+  const tab = config.tab === false ? null : createUnsavedChangesTabLock({ ...config.tab, hasChanges });
+
+  const coordinator = injectUnsavedChangesCoordinator();
+  const _isAbandoned = signal(false);
+
+  const unregister = coordinator.register({
+    abandon: () => {
+      _isAbandoned.set(true);
+      // The session is gone: stop holding the tab hostage over edits that can no longer be saved.
+      tab?.destroy();
+    },
+  });
+
+  inject(DestroyRef).onDestroy(unregister);
+
   const runCheck = (): Promise<boolean> => {
-    if (!untracked(hasChanges)) {
+    if (untracked(_isAbandoned) || !untracked(hasChanges)) {
       return Promise.resolve(true);
     }
 
-    return toBooleanPromise(confirm(untracked(normalized.value) as T));
+    return coordinator.runCheck((context) => toBooleanPromise(confirm(untracked(normalized.value) as T, context)));
   };
 
   const refreshDefaultValue = () => _defaultValue.set(untracked(normalized.value));
@@ -147,9 +215,11 @@ export const createUnsavedChangesTracker = <T>(
 
   return {
     hasChanges,
+    isAbandoned: _isAbandoned.asReadonly(),
     defaultValue: _defaultValue.asReadonly(),
     runCheck,
     refreshDefaultValue,
     restoreDefaultValue,
+    tab,
   };
 };
