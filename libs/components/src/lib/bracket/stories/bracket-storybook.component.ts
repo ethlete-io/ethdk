@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { BUTTON_IMPORTS } from '../../button';
 import { SCROLLABLE_IMPORTS } from '../../scrollable/scrollable.imports';
+import { BRACKET_DENSITY, BracketDensity } from '../bracket-density';
 import { BracketComponent } from '../bracket.component';
 import { BracketSwissColors } from '../bracket.config';
 import { BRACKET_DATA_LAYOUT, BracketDataLayout } from '../core/layout';
@@ -53,6 +54,33 @@ export class StorybookFinalMatchComponent<TRoundData = unknown, TMatchData = unk
   public bracketRound = input.required<BracketRound<TRoundData, TMatchData>>();
   public bracketMatch = input.required<BracketMatch<TRoundData, TMatchData>>();
   public bracketRoundSwissGroup = input.required<BracketRoundSwissGroup<TRoundData, TMatchData> | null>();
+}
+
+/**
+ * The density demo, which binds nothing but `density` — the whole point is that one input resizes the
+ * bracket, and every explicit layout binding would override the preset it is meant to show.
+ */
+@Component({
+  selector: 'et-sb-bracket-density',
+  template: `
+    <div [style.max-inline-size.px]="containerWidth()">
+      <et-scrollable stickyButtons>
+        <et-bracket [source]="source()" [density]="density()" [matchNormalizer]="MATCH_NORMALIZER" />
+      </et-scrollable>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [BracketComponent, ...SCROLLABLE_IMPORTS],
+})
+export class StorybookBracketDensityComponent {
+  public source = input.required<BracketDataSource<unknown, unknown>>();
+
+  public density = input<BracketDensity>(BRACKET_DENSITY.DEFAULT);
+
+  /** Stands in for the article column the compact bracket is meant to fit. */
+  public containerWidth = input(760, { transform: numberAttribute });
+
+  protected readonly MATCH_NORMALIZER = demoMatchNormalizer;
 }
 
 @Component({

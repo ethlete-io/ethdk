@@ -44,7 +44,9 @@
   /* A fixed frame whether or not there is an emblem, so a row of participants lines up and a late
      image doesn't shove the name sideways. */
   .et-match-participant-emblem {
-    display: grid;
+    /* A var so the densest card can drop the frame entirely — `display: none` rather than a zero size,
+       which would still hold the row's gap open. */
+    display: var(--_et-match-participant-emblem-display, grid);
     place-items: center;
     flex: none;
     inline-size: var(--et-match-participant-emblem-size);

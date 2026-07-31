@@ -8,55 +8,44 @@ import {
   createSwissGrid,
 } from './drawing/grid';
 import { Bracket } from './linked';
-import { BRACKET_DEFAULTS, BracketConfig } from './bracket.config';
+import { BRACKET_DENSITY_PRESETS } from './bracket-density';
+import { BRACKET_DEFAULTS, BracketLayoutConfig } from './bracket.config';
 import { BRACKET_DATA_LAYOUT } from './core/layout';
 
 /**
- * Every layout setting the grid builders need, already resolved to a concrete value — no `undefined`,
- * no "fall back to the config". A component resolves this from its inputs; a standalone helper resolves
- * it from a {@link BracketConfig} with {@link resolveBracketLayoutSettings}.
+ * Every layout setting, resolved to a concrete value — no `undefined`, no "fall back to the config".
+ * Produced by {@link resolveBracketLayoutSettings}.
  *
  * @internal
  */
-export type BracketLayoutSettings = Pick<
-  Required<BracketConfig>,
-  | 'columnWidth'
-  | 'matchHeight'
-  | 'finalMatchHeight'
-  | 'finalColumnWidth'
-  | 'roundHeaderHeight'
-  | 'roundHeaderGap'
-  | 'columnGap'
-  | 'rowGap'
-  | 'rowRoundGap'
-  | 'lineWidth'
-  | 'layout'
-  | 'hideRoundHeaders'
-  | 'showContinueElement'
-  | 'continueColumnWidth'
-  | 'continueElementHeight'
-  | 'swissGroupPadding'
->;
+export type BracketLayoutSettings = Required<BracketLayoutConfig>;
 
-/** Fills a partial {@link BracketConfig} out with {@link BRACKET_DEFAULTS}. @internal */
-export const resolveBracketLayoutSettings = (config: BracketConfig): BracketLayoutSettings => ({
-  columnWidth: config.columnWidth ?? BRACKET_DEFAULTS.columnWidth,
-  matchHeight: config.matchHeight ?? BRACKET_DEFAULTS.matchHeight,
-  finalMatchHeight: config.finalMatchHeight ?? BRACKET_DEFAULTS.finalMatchHeight,
-  finalColumnWidth: config.finalColumnWidth ?? BRACKET_DEFAULTS.finalColumnWidth,
-  roundHeaderHeight: config.roundHeaderHeight ?? BRACKET_DEFAULTS.roundHeaderHeight,
-  roundHeaderGap: config.roundHeaderGap ?? BRACKET_DEFAULTS.roundHeaderGap,
-  columnGap: config.columnGap ?? BRACKET_DEFAULTS.columnGap,
-  rowGap: config.rowGap ?? BRACKET_DEFAULTS.rowGap,
-  rowRoundGap: config.rowRoundGap ?? BRACKET_DEFAULTS.rowRoundGap,
-  lineWidth: config.lineWidth ?? BRACKET_DEFAULTS.lineWidth,
-  layout: config.layout ?? BRACKET_DEFAULTS.layout,
-  hideRoundHeaders: config.hideRoundHeaders ?? BRACKET_DEFAULTS.hideRoundHeaders,
-  showContinueElement: config.showContinueElement ?? BRACKET_DEFAULTS.showContinueElement,
-  continueColumnWidth: config.continueColumnWidth ?? BRACKET_DEFAULTS.continueColumnWidth,
-  continueElementHeight: config.continueElementHeight ?? BRACKET_DEFAULTS.continueElementHeight,
-  swissGroupPadding: config.swissGroupPadding ?? BRACKET_DEFAULTS.swissGroupPadding,
-});
+const LAYOUT_KEYS = Object.keys(BRACKET_DEFAULTS) as (keyof BracketLayoutSettings)[];
+
+/**
+ * Resolves a partial config in the order the bracket documents: what you set, then the density preset,
+ * then {@link BRACKET_DEFAULTS}.
+ *
+ * @internal
+ */
+export const resolveBracketLayoutSettings = (config: BracketLayoutConfig): BracketLayoutSettings => {
+  const settings: BracketLayoutSettings = {
+    ...BRACKET_DEFAULTS,
+    ...BRACKET_DENSITY_PRESETS[config.density ?? BRACKET_DEFAULTS.density],
+  };
+
+  // Key by key rather than one spread: a config carrying an explicit `undefined` (which is what an
+  // unbound component input hands over) must leave the preset's value standing, not clobber it.
+  for (const key of LAYOUT_KEYS) {
+    const value = config[key];
+
+    if (value !== undefined) {
+      (settings as Record<string, unknown>)[key] = value;
+    }
+  }
+
+  return settings;
+};
 
 /**
  * Translates the resolved settings into what the grid builders take — the two differ where a flag zeroes

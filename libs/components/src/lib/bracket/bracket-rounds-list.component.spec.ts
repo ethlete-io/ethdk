@@ -160,6 +160,19 @@ describe('bracketNaturalWidth', () => {
     );
   });
 
+  it('draws narrower at compact density', () => {
+    const source = generateSingleEliminationBracket(8);
+
+    expect(bracketNaturalWidth(source, { density: 'compact' })).toBeLessThan(bracketNaturalWidth(source));
+  });
+
+  it('lets an explicit setting win over the density preset', () => {
+    const source = generateSingleEliminationBracket(8);
+
+    // Two 400px columns and the preset's 200px final, with the preset's 32px gaps.
+    expect(bracketNaturalWidth(source, { density: 'compact', columnWidth: 400 })).toBe(1064);
+  });
+
   it('needs more room for a double-elimination source than a single-elimination one', () => {
     expect(bracketNaturalWidth(generateDoubleEliminationBracket({ participantCount: 8 }))).toBeGreaterThan(
       bracketNaturalWidth(generateSingleEliminationBracket(8)),

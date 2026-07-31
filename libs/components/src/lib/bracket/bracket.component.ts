@@ -1,6 +1,5 @@
 import { NgComponentOutlet } from '@angular/common';
 import {
-  booleanAttribute,
   Component,
   computed,
   effect,
@@ -33,7 +32,14 @@ import {
 import { createBracket, generateBracketRoundSwissGroupMaps } from './linked';
 import { BRACKET_CARD_CONTEXT, BracketMatchNormalizer } from './bracket-card-context';
 import { resolveBracketComponents } from './bracket-components';
-import { computeBracketGrid, createBracketGridConfig } from './bracket-grid';
+import { BracketDensity } from './bracket-density';
+import { computeBracketGrid, createBracketGridConfig, resolveBracketLayoutSettings } from './bracket-grid';
+import {
+  OptionalBooleanInput,
+  optionalBooleanAttribute,
+  OptionalNumberInput,
+  optionalNumberAttribute,
+} from './bracket-input-transforms';
 import { BRACKET_DEFAULTS, BracketSwissColors, injectBracketConfig } from './bracket.config';
 
 @Component({
@@ -55,65 +61,80 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
   public source = input.required<BracketDataSource<TRoundData, TMatchData>>();
 
-  public columnWidth = input(this.config.columnWidth ?? BRACKET_DEFAULTS.columnWidth, { transform: numberAttribute });
-  public matchHeight = input(this.config.matchHeight ?? BRACKET_DEFAULTS.matchHeight, { transform: numberAttribute });
-  public finalMatchHeight = input(this.config.finalMatchHeight ?? BRACKET_DEFAULTS.finalMatchHeight, {
-    transform: numberAttribute,
+  // Every layout input is an *override*, left `undefined` when unbound: what draws is resolved in
+  // `settings`, where an unset input falls through to the density preset and then to the shipped
+  // default. Binding `undefined` deliberately is therefore the same as not binding at all.
+  public columnWidth = input<number | undefined, OptionalNumberInput>(undefined, {
+    transform: optionalNumberAttribute,
   });
-  public finalColumnWidth = input(this.config.finalColumnWidth ?? BRACKET_DEFAULTS.finalColumnWidth, {
-    transform: numberAttribute,
+  public matchHeight = input<number | undefined, OptionalNumberInput>(undefined, {
+    transform: optionalNumberAttribute,
   });
-  public roundHeaderHeight = input(this.config.roundHeaderHeight ?? BRACKET_DEFAULTS.roundHeaderHeight, {
-    transform: numberAttribute,
+  public finalMatchHeight = input<number | undefined, OptionalNumberInput>(undefined, {
+    transform: optionalNumberAttribute,
   });
-  public roundHeaderGap = input(this.config.roundHeaderGap ?? BRACKET_DEFAULTS.roundHeaderGap, {
-    transform: numberAttribute,
+  public finalColumnWidth = input<number | undefined, OptionalNumberInput>(undefined, {
+    transform: optionalNumberAttribute,
   });
-  public columnGap = input(this.config.columnGap ?? BRACKET_DEFAULTS.columnGap, { transform: numberAttribute });
-  public rowGap = input(this.config.rowGap ?? BRACKET_DEFAULTS.rowGap, { transform: numberAttribute });
-  public rowRoundGap = input(this.config.rowRoundGap ?? BRACKET_DEFAULTS.rowRoundGap, { transform: numberAttribute });
-  public lineStartingCurveAmount = input(
-    this.config.lineStartingCurveAmount ?? BRACKET_DEFAULTS.lineStartingCurveAmount,
-    { transform: numberAttribute },
-  );
-  public lineEndingCurveAmount = input(this.config.lineEndingCurveAmount ?? BRACKET_DEFAULTS.lineEndingCurveAmount, {
-    transform: numberAttribute,
+  public roundHeaderHeight = input<number | undefined, OptionalNumberInput>(undefined, {
+    transform: optionalNumberAttribute,
   });
-  public lineWidth = input(this.config.lineWidth ?? BRACKET_DEFAULTS.lineWidth, { transform: numberAttribute });
-  public lineDashArray = input(this.config.lineDashArray ?? BRACKET_DEFAULTS.lineDashArray, {
-    transform: numberAttribute,
+  public roundHeaderGap = input<number | undefined, OptionalNumberInput>(undefined, {
+    transform: optionalNumberAttribute,
   });
-  public lineDashOffset = input(this.config.lineDashOffset ?? BRACKET_DEFAULTS.lineDashOffset, {
-    transform: numberAttribute,
+  public columnGap = input<number | undefined, OptionalNumberInput>(undefined, { transform: optionalNumberAttribute });
+  public rowGap = input<number | undefined, OptionalNumberInput>(undefined, { transform: optionalNumberAttribute });
+  public rowRoundGap = input<number | undefined, OptionalNumberInput>(undefined, {
+    transform: optionalNumberAttribute,
   });
-  public disableJourneyHighlight = input(
-    this.config.disableJourneyHighlight ?? BRACKET_DEFAULTS.disableJourneyHighlight,
-    { transform: booleanAttribute },
-  );
-  public swissGroupPadding = input(this.config.swissGroupPadding ?? BRACKET_DEFAULTS.swissGroupPadding, {
-    transform: numberAttribute,
+  public lineStartingCurveAmount = input<number | undefined, OptionalNumberInput>(undefined, {
+    transform: optionalNumberAttribute,
   });
-  public swissGroupBorderRadius = input(this.config.swissGroupBorderRadius ?? BRACKET_DEFAULTS.swissGroupBorderRadius, {
-    transform: numberAttribute,
+  public lineEndingCurveAmount = input<number | undefined, OptionalNumberInput>(undefined, {
+    transform: optionalNumberAttribute,
+  });
+  public lineWidth = input<number | undefined, OptionalNumberInput>(undefined, { transform: optionalNumberAttribute });
+  public lineDashArray = input<number | undefined, OptionalNumberInput>(undefined, {
+    transform: optionalNumberAttribute,
+  });
+  public lineDashOffset = input<number | undefined, OptionalNumberInput>(undefined, {
+    transform: optionalNumberAttribute,
+  });
+  public disableJourneyHighlight = input<boolean | undefined, OptionalBooleanInput>(undefined, {
+    transform: optionalBooleanAttribute,
+  });
+  public swissGroupPadding = input<number | undefined, OptionalNumberInput>(undefined, {
+    transform: optionalNumberAttribute,
+  });
+  public swissGroupBorderRadius = input<number | undefined, OptionalNumberInput>(undefined, {
+    transform: optionalNumberAttribute,
   });
   public swissColors = input<BracketSwissColors | undefined>(this.config.swiss?.colors);
 
-  public layout = input<BracketDataLayout>(this.config.layout ?? BRACKET_DEFAULTS.layout);
-  public hideRoundHeaders = input(this.config.hideRoundHeaders ?? BRACKET_DEFAULTS.hideRoundHeaders, {
-    transform: booleanAttribute,
+  public layout = input<BracketDataLayout | undefined>(undefined);
+
+  /**
+   * The size everything is drawn at. `'compact'` is roughly two thirds of the default — a column narrow
+   * enough that the cards inside it drop to codes and a score, which is what fits a full bracket into an
+   * article column. Anything you set yourself still wins over it.
+   */
+  public density = input<BracketDensity | undefined>(undefined);
+
+  public hideRoundHeaders = input<boolean | undefined, OptionalBooleanInput>(undefined, {
+    transform: optionalBooleanAttribute,
   });
 
-  public showContinueElement = input(this.config.showContinueElement ?? BRACKET_DEFAULTS.showContinueElement, {
-    transform: booleanAttribute,
+  public showContinueElement = input<boolean | undefined, OptionalBooleanInput>(undefined, {
+    transform: optionalBooleanAttribute,
   });
-  public continueColumnWidth = input(this.config.continueColumnWidth ?? BRACKET_DEFAULTS.continueColumnWidth, {
-    transform: numberAttribute,
+  public continueColumnWidth = input<number | undefined, OptionalNumberInput>(undefined, {
+    transform: optionalNumberAttribute,
   });
-  public continueElementHeight = input(this.config.continueElementHeight ?? BRACKET_DEFAULTS.continueElementHeight, {
-    transform: numberAttribute,
+  public continueElementHeight = input<number | undefined, OptionalNumberInput>(undefined, {
+    transform: optionalNumberAttribute,
   });
-  public continueLineDashArray = input(this.config.continueLineDashArray ?? BRACKET_DEFAULTS.continueLineDashArray, {
-    transform: numberAttribute,
+  public continueLineDashArray = input<number | undefined, OptionalNumberInput>(undefined, {
+    transform: optionalNumberAttribute,
   });
 
   public roundHeaderComponent = input<BracketRoundHeaderComponent<TRoundData, TMatchData> | undefined>();
@@ -158,7 +179,43 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
   private journeyController = signal<JourneyHighlightController | null>(null);
 
-  public bracketData = computed(() => createBracket(this.source(), { layout: this.layout() }));
+  /**
+   * Every layout value in effect: this component's inputs first, `provideBracketConfig` second, the
+   * density preset third, the shipped defaults last. Read this rather than the inputs — an input alone
+   * is only half the answer.
+   */
+  public settings = computed(() =>
+    resolveBracketLayoutSettings({
+      ...this.config,
+      density: this.density() ?? this.config.density,
+      columnWidth: this.columnWidth() ?? this.config.columnWidth,
+      matchHeight: this.matchHeight() ?? this.config.matchHeight,
+      finalMatchHeight: this.finalMatchHeight() ?? this.config.finalMatchHeight,
+      finalColumnWidth: this.finalColumnWidth() ?? this.config.finalColumnWidth,
+      roundHeaderHeight: this.roundHeaderHeight() ?? this.config.roundHeaderHeight,
+      roundHeaderGap: this.roundHeaderGap() ?? this.config.roundHeaderGap,
+      columnGap: this.columnGap() ?? this.config.columnGap,
+      rowGap: this.rowGap() ?? this.config.rowGap,
+      rowRoundGap: this.rowRoundGap() ?? this.config.rowRoundGap,
+      lineStartingCurveAmount: this.lineStartingCurveAmount() ?? this.config.lineStartingCurveAmount,
+      lineEndingCurveAmount: this.lineEndingCurveAmount() ?? this.config.lineEndingCurveAmount,
+      lineWidth: this.lineWidth() ?? this.config.lineWidth,
+      lineDashArray: this.lineDashArray() ?? this.config.lineDashArray,
+      lineDashOffset: this.lineDashOffset() ?? this.config.lineDashOffset,
+      disableJourneyHighlight: this.disableJourneyHighlight() ?? this.config.disableJourneyHighlight,
+      swissGroupPadding: this.swissGroupPadding() ?? this.config.swissGroupPadding,
+      swissGroupBorderRadius: this.swissGroupBorderRadius() ?? this.config.swissGroupBorderRadius,
+      layout: this.layout() ?? this.config.layout,
+      hideRoundHeaders: this.hideRoundHeaders() ?? this.config.hideRoundHeaders,
+      showContinueElement: this.showContinueElement() ?? this.config.showContinueElement,
+      continueColumnWidth: this.continueColumnWidth() ?? this.config.continueColumnWidth,
+      continueElementHeight: this.continueElementHeight() ?? this.config.continueElementHeight,
+      continueLineDashArray: this.continueLineDashArray() ?? this.config.continueLineDashArray,
+      roundHeaderLevel: this.roundHeaderLevel(),
+    }),
+  );
+
+  public bracketData = computed(() => createBracket(this.source(), { layout: this.settings().layout }));
 
   public swissGroups = computed(() => generateBracketRoundSwissGroupMaps(this.bracketData()));
 
@@ -166,25 +223,7 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
   public bracketGrid = computed(() => {
     const bracketData = this.bracketData();
-
-    const options = createBracketGridConfig({
-      columnGap: this.columnGap(),
-      rowRoundGap: this.rowRoundGap(),
-      columnWidth: this.columnWidth(),
-      matchHeight: this.matchHeight(),
-      roundHeaderHeight: this.roundHeaderHeight(),
-      rowGap: this.rowGap(),
-      layout: this.layout(),
-      finalMatchHeight: this.finalMatchHeight(),
-      finalColumnWidth: this.finalColumnWidth(),
-      roundHeaderGap: this.roundHeaderGap(),
-      hideRoundHeaders: this.hideRoundHeaders(),
-      swissGroupPadding: this.swissGroupPadding(),
-      lineWidth: this.lineWidth(),
-      showContinueElement: this.showContinueElement(),
-      continueColumnWidth: this.continueColumnWidth(),
-      continueElementHeight: this.continueElementHeight(),
-    });
+    const options = createBracketGridConfig(this.settings());
 
     const components = resolveBracketComponents(
       {
@@ -205,21 +244,23 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
     if (!bracketGrid) return '';
 
+    const settings = this.settings();
+
     if (this.bracketData().mode === TOURNAMENT_MODE.SWISS_WITH_ELIMINATION) {
       return drawSwissMan({
         bracketGrid,
         curve: {
-          lineStartingCurveAmount: this.lineStartingCurveAmount(),
+          lineStartingCurveAmount: settings.lineStartingCurveAmount,
         },
         path: {
-          dashArray: this.lineDashArray(),
-          dashOffset: this.lineDashOffset(),
-          width: this.lineWidth(),
+          dashArray: settings.lineDashArray,
+          dashOffset: settings.lineDashOffset,
+          width: settings.lineWidth,
         },
         groupBorder: {
-          padding: this.swissGroupPadding(),
-          radius: this.swissGroupBorderRadius(),
-          width: this.lineWidth(),
+          padding: settings.swissGroupPadding,
+          radius: settings.swissGroupBorderRadius,
+          width: settings.lineWidth,
         },
         colors: this.swissColors(),
         idPrefix: this.elementId,
@@ -227,26 +268,26 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
     }
 
     return drawMan({
-      columnGap: this.columnGap(),
-      upperLowerGap: this.rowRoundGap(),
-      columnWidth: this.columnWidth(),
-      matchHeight: this.matchHeight(),
-      roundHeaderHeight: this.hideRoundHeaders() ? 0 : this.roundHeaderHeight(),
-      rowGap: this.rowGap(),
+      columnGap: settings.columnGap,
+      upperLowerGap: settings.rowRoundGap,
+      columnWidth: settings.columnWidth,
+      matchHeight: settings.matchHeight,
+      roundHeaderHeight: settings.hideRoundHeaders ? 0 : settings.roundHeaderHeight,
+      rowGap: settings.rowGap,
       bracketGrid,
       curve: {
-        lineEndingCurveAmount: this.lineEndingCurveAmount(),
-        lineStartingCurveAmount: this.lineStartingCurveAmount(),
+        lineEndingCurveAmount: settings.lineEndingCurveAmount,
+        lineStartingCurveAmount: settings.lineStartingCurveAmount,
       },
       path: {
-        dashArray: this.lineDashArray(),
-        dashOffset: this.lineDashOffset(),
-        width: this.lineWidth(),
+        dashArray: settings.lineDashArray,
+        dashOffset: settings.lineDashOffset,
+        width: settings.lineWidth,
       },
       continuePath: {
-        dashArray: this.continueLineDashArray(),
-        dashOffset: this.lineDashOffset(),
-        width: this.lineWidth(),
+        dashArray: settings.continueLineDashArray,
+        dashOffset: settings.lineDashOffset,
+        width: settings.lineWidth,
       },
     });
   });
@@ -272,7 +313,7 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
     const host = elementRef.nativeElement;
 
     effect((onCleanup) => {
-      if (this.disableJourneyHighlight()) {
+      if (this.settings().disableJourneyHighlight) {
         this.journeyController.set(null);
 
         return;

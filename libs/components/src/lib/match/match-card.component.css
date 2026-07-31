@@ -76,6 +76,31 @@
     initial-value: 20px;
   }
 
+  /* The third density, below the dense row: a code and a number. See the minimal threshold below. */
+  @property --et-match-card-minimal-padding {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 6px;
+  }
+
+  @property --et-match-card-minimal-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 3px;
+  }
+
+  @property --et-match-card-minimal-name-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 11px;
+  }
+
+  @property --et-match-card-minimal-score-font-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 12px;
+  }
+
   .et-match-card {
     container-type: inline-size;
     container-name: et-match-card;
@@ -117,6 +142,22 @@
      and face each other across the middle. The thresholds are constants, not tokens: a container query
      condition may not contain `var()`, so there is nothing to point a custom property at. Pin the layout
      with the `size` input instead, and tune each one through the tokens above. */
+  /* Below the dense row there is one density left: a code and a number. A bracket at `density="compact"`
+     gives a cell about 150px, and an emblem, a name and a score is one thing too many for it — so the
+     emblems go and the type shrinks, which is the difference between a six-round bracket fitting an
+     article column and not. Applies to a pinned `compact` too, since compact means "the dense row" and
+     this is that row with nothing left to remove. */
+  @container et-match-card (max-inline-size: 149px) {
+    .et-match-card:where([data-size='auto']) .et-match-card-content,
+    .et-match-card:where([data-size='compact']) .et-match-card-content {
+      --_et-match-card-padding: var(--et-match-card-minimal-padding);
+      --_et-match-card-gap: var(--et-match-card-minimal-gap);
+      --_et-match-card-name-font-size: var(--et-match-card-minimal-name-font-size);
+      --_et-match-card-score-font-size: var(--et-match-card-minimal-score-font-size);
+      --_et-match-participant-emblem-display: none;
+    }
+  }
+
   @container et-match-card (min-inline-size: 320px) {
     .et-match-card:where([data-size='auto']) .et-match-card-content {
       --_et-match-card-padding: var(--et-match-card-expanded-padding);

@@ -6,6 +6,7 @@ export * from './core';
 export * from './integrations';
 export * from './linked';
 export * from './bracket-card-context';
+export * from './bracket-density';
 export * from './bracket-errors';
 export * from './bracket-fits-width';
 export * from './bracket-labels';

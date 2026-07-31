@@ -1,5 +1,6 @@
 import { createStaticRootProvider } from '@ethlete/core';
 import { BracketMatchNormalizer } from './bracket-card-context';
+import { BRACKET_DENSITY, BracketDensity } from './bracket-density';
 import { BRACKET_DATA_LAYOUT, BracketDataLayout } from './core';
 import { BracketContinueComponent, BracketMatchComponent, BracketRoundHeaderComponent } from './drawing/grid';
 import { BracketSwissGroupColorType } from './linked';
@@ -45,6 +46,12 @@ export type BracketConfig<TRoundData = any, TMatchData = any> = {
   swissGroupPadding?: number;
   swissGroupBorderRadius?: number;
   layout?: BracketDataLayout;
+  /**
+   * The size everything is drawn at — `'default'`, or `'compact'` for a bracket in an article column or
+   * a phone. A preset under everything else: any setting above still wins over it. See
+   * {@link BRACKET_DENSITY_PRESETS}.
+   */
+  density?: BracketDensity;
   hideRoundHeaders?: boolean;
   showContinueElement?: boolean;
   continueColumnWidth?: number;
@@ -72,24 +79,23 @@ export type BracketConfig<TRoundData = any, TMatchData = any> = {
 };
 
 /**
- * The value every {@link BracketConfig} setting falls back to when neither an input nor
- * `provideBracketConfig` supplies one.
+ * The settings that describe how a bracket is *drawn*, as opposed to what draws it — everything in
+ * {@link BracketConfig} except the component slots, the normalizer and the swiss overrides.
+ */
+export type BracketLayoutConfig = Omit<
+  BracketConfig,
+  'roundHeaderComponent' | 'matchComponent' | 'finalMatchComponent' | 'continueComponent' | 'matchNormalizer' | 'swiss'
+>;
+
+/**
+ * The value every {@link BracketLayoutConfig} setting falls back to when neither an input, a density
+ * preset nor `provideBracketConfig` supplies one.
  *
  * It exists so the component and the standalone helpers that have to predict its layout
  * ({@link bracketNaturalWidth}) can never drift apart — the type makes leaving a new setting out a
  * compile error.
  */
-export const BRACKET_DEFAULTS: Required<
-  Omit<
-    BracketConfig,
-    | 'roundHeaderComponent'
-    | 'matchComponent'
-    | 'finalMatchComponent'
-    | 'continueComponent'
-    | 'matchNormalizer'
-    | 'swiss'
-  >
-> = {
+export const BRACKET_DEFAULTS: Required<BracketLayoutConfig> = {
   columnWidth: 250,
   matchHeight: 75,
   // Sized for the shipped final card, which is a header, an expanded match card and a champion line
@@ -111,6 +117,7 @@ export const BRACKET_DEFAULTS: Required<
   swissGroupPadding: 10,
   swissGroupBorderRadius: 12,
   layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT,
+  density: BRACKET_DENSITY.DEFAULT,
   hideRoundHeaders: false,
   showContinueElement: false,
   continueColumnWidth: 250,

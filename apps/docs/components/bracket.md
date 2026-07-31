@@ -66,13 +66,15 @@ your app).
 
 ## Options
 
-All layout inputs are numbers (px) unless noted and can be defaulted app-wide via
-`provideBracketConfig`. Defaults below are the component's fallbacks.
+All layout inputs are numbers (px) unless noted. Each is an **override**: leave one unbound and its
+value comes from `provideBracketConfig`, then from the [density](#density) preset, then from the
+shipped default listed below. The resolved set is on the component as `settings()`.
 
 | Input                     | Default           | Purpose                                                                              |
 | ------------------------- | ----------------- | ------------------------------------------------------------------------------------ |
 | `source`                  | — (required)      | The resolved `BracketDataSource`.                                                    |
 | `layout`                  | `'left-to-right'` | `'left-to-right'` or `'mirrored'` (finals in the centre).                            |
+| `density`                 | `'default'`       | `'default'` or `'compact'` — see [Density](#density).                                |
 | `columnWidth`             | `250`             | Width of a round column.                                                             |
 | `matchHeight`             | `75`              | Height of a match card.                                                              |
 | `columnGap`               | `60`              | Horizontal gap between round columns.                                                |
@@ -248,6 +250,30 @@ When a stage feeds into a later competition phase, set `showContinueElement` (le
 layout only) to append a trailing column whose card receives the matches whose winners
 advance. Useful for "→ playoffs" hand-offs. The
 `components-bracket--double-elimination-with-continue` story shows one.
+
+## Density
+
+`density` resizes the whole bracket from one input:
+
+| Density     | Column  | Match height | What the cards draw                |
+| ----------- | ------- | ------------ | ---------------------------------- |
+| `'default'` | `250px` | `75px`       | Emblem, short code, score.         |
+| `'compact'` | `140px` | `52px`       | Short code and score — no emblems. |
+
+The cards are not told which density they are in: `compact`'s column is narrower than
+[`et-match-card`](/components/match)'s own 150px threshold, so each card measures itself and drops to
+its minimal row. One consequence worth knowing — set `columnWidth` below 150px at any density and the
+same thing happens.
+
+A density is a **preset, not a mode**: it sits under `provideBracketConfig`, which sits under the
+inputs. `density="compact"` with `[columnWidth]="180"` is a compact bracket with 180px columns.
+
+```html
+<!-- a full double-elimination bracket inside an article column -->
+<et-bracket [source]="source()" density="compact" />
+```
+
+<StoryEmbed id="components-bracket-density--compact-double-elimination" height="520px" />
 
 ## Narrow screens
 
