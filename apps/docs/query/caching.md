@@ -10,6 +10,8 @@ All [queries](/query/queries) of a client share one **query repository** — an 
 
 Two queries with the same key share one in-flight request and one response — ten components rendering the same `getUser` query cause exactly one HTTP request. Entries are reference-counted: when the last consumer is destroyed, the entry is released — either kept for a while (see below) or aborted and evicted straight away.
 
+Deduplication reaches across tabs too: [multi-tab sync](/query/multi-tab) is on by default, so a response fetched in one tab updates the same cache key in the others, and a polled key is polled by one tab on behalf of all of them.
+
 ## Keeping unused entries around
 
 An entry that lost its last consumer is **kept for `keepUnusedFor` milliseconds (5 minutes by default)** instead of being thrown away. If a query mounts again within that window — a list page reached via browser back navigation, a component that remounts — it binds to the existing entry and **renders the previous response immediately** while revalidating in the background, rather than starting from an empty loading state:
@@ -22,7 +24,7 @@ export const client = createQueryClient({
 });
 
 // per query, overriding the client
-export const getHugeReport = client.get({ route: '/report', keepUnusedFor: 0 });
+export const getHugeReport = createGetQuery(client)<ReportQueryArgs>('/report', { keepUnusedFor: 0 });
 ```
 
 Unlike the freshness TTL below, this is independent of `cache-control` — so it also applies to private/authenticated responses, where the header-derived TTL does nothing.
@@ -60,7 +62,7 @@ previewToken.set(token);
 injectApi().refreshQueriesInUse();
 ```
 
-It bypasses the freshness window and restarts requests that are still in flight, so the new value applies everywhere. Only `GET` / `HEAD` / `OPTIONS` entries that still have consumers are refreshed: re-firing a mutation nobody asked for would be a far worse surprise than a stale read, and entries sitting out their `keepUnusedFor` window revalidate on their own when a consumer binds again.
+It bypasses the freshness window and restarts requests that are still in flight, so the new value applies everywhere. Only **cacheable** entries that still have consumers are refreshed — `GET` / `HEAD` / `OPTIONS`, plus a [GraphQL query over POST](/query/gql): re-firing a mutation nobody asked for would be a far worse surprise than a stale read, and entries sitting out their `keepUnusedFor` window revalidate on their own when a consumer binds again.
 
 This is what v2's `setDefaultHeaders({ refreshQueriesInUse: true })` did implicitly.
 

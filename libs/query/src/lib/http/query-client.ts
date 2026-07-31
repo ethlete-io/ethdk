@@ -1,10 +1,14 @@
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { ErrorHandler, inject, Injector, PLATFORM_ID } from '@angular/core';
+import { DestroyRef, ErrorHandler, inject, Injector, PLATFORM_ID } from '@angular/core';
 import { createRootProvider, ProviderResult } from '@ethlete/core';
 import { BuildQueryStringConfig } from '../legacy';
 import { createQueryRepository, QueryRepository } from './query-repository';
 import { ShouldRetryRequestFn } from './query-retry-utils';
+import { createQueryKeyLockManager } from './sync/query-key-lock-manager';
+import { QueryMultiTabSyncConfig } from './sync/query-sync-config';
+import { createQuerySyncEngine, QuerySyncEngine } from './sync/query-sync-engine';
+import { createQuerySyncTransport } from './sync/query-sync-transport';
 
 export type CacheAdapterFn = (headers: HttpHeaders) => number | null;
 
@@ -82,6 +86,43 @@ export type CreateQueryClientConfigOptions = {
    * @default 300000 (5 minutes)
    */
   keepUnusedFor?: number;
+
+  /**
+   * Coordinates this client with its own instances in the user's **other tabs**, over a
+   * `BroadcastChannel` and the Web Locks API. Three things happen once it is on:
+   *
+   * 1. a successful read is shared, so the same query shows the same data in every tab without a
+   *    second request,
+   * 2. the same cache key polled in several tabs is polled by one of them, the others being fed the
+   *    result,
+   * 3. a successful mutation in one tab refreshes what the other tabs currently have on screen.
+   *
+   * On by default: a user with several tabs open is the normal case, and all three behaviors are what
+   * they would expect to happen. Pass an object to configure the parts individually, or `false` to
+   * keep every tab entirely on its own. Always inert on the server, and a no-op in a browser without
+   * `BroadcastChannel`.
+   *
+   * The one thing it requires is that response bodies survive a structured clone, which JSON always
+   * does; a body that cannot be cloned is warned about in dev mode and simply not shared. Individual
+   * queries can stay tab-local via {@link BaseQueryCreatorOptions.multiTabSync} — worth doing for very
+   * large payloads on a short polling interval.
+   *
+   * @default true
+   */
+  multiTabSync?: boolean | QueryMultiTabSyncConfig;
+};
+
+/**
+ * Advanced client internals. **Not part of the general public contract** — do not build application
+ * logic on top of these.
+ */
+export type QueryClientSubtle = {
+  /**
+   * The multi-tab sync engine, or `null` when this client has no
+   * {@link CreateQueryClientConfigOptions.multiTabSync} (or runs on the server). Query features reach
+   * it through `deps.client`.
+   */
+  sync: QuerySyncEngine | null;
 };
 
 export type QueryClient = {
@@ -99,10 +140,13 @@ export type QueryClient = {
    * the new value only affects *subsequent* requests, so anything already resolved keeps data
    * fetched under the old one until this is called.
    *
-   * Only GET / HEAD / OPTIONS requests are refreshed: re-firing a mutation nobody asked for would
-   * be a far worse surprise than a stale read.
+   * Only cacheable requests are refreshed: re-firing a mutation nobody asked for would be a far worse
+   * surprise than a stale read.
    */
   refreshQueriesInUse: () => void;
+
+  /** Advanced client internals. */
+  subtle: QueryClientSubtle;
 };
 
 export type QueryClientRef = ProviderResult<QueryClient>;
@@ -115,19 +159,41 @@ export const createQueryClient = (options: CreateQueryClientConfigOptions): Quer
       const httpClient = inject(HttpClient);
       const ngErrorHandler = inject(ErrorHandler);
       const injector = inject(Injector);
+      const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
       const repository = createQueryRepository({
         ...options,
         // Retaining unused entries on the server would pin response bodies (and a pending timer) inside
         // a per-request injector for the whole window, so retention is browser only.
-        retentionEnabled: isPlatformBrowser(inject(PLATFORM_ID)),
+        retentionEnabled: isBrowser,
         dependencies: { httpClient, ngErrorHandler, injector },
       });
+
+      const { multiTabSync = true } = options;
+      const syncConfig = multiTabSync === false ? null : multiTabSync === true ? {} : multiTabSync;
+      const channelName = syncConfig?.channelName ?? `et-query-sync-${options.name}`;
+
+      // Same server guard as retention above: there are no other tabs to talk to, and a per-request
+      // injector must not open a channel it would then have to remember to close.
+      const sync =
+        isBrowser && syncConfig
+          ? createQuerySyncEngine({
+              config: syncConfig,
+              repository,
+              transport: createQuerySyncTransport(channelName),
+              // Keyed off the channel, not the client name: the channel is what says "these clients
+              // are the same client, in different tabs", so the locks have to agree with it.
+              lockManager: createQueryKeyLockManager(`et-query-poll:${channelName}`),
+            })
+          : null;
+
+      if (sync) inject(DestroyRef).onDestroy(sync.destroy);
 
       const client: QueryClient = {
         repository,
         baseUrl: options.baseUrl,
         refreshQueriesInUse: () => repository.refreshInUse(),
+        subtle: { sync },
       };
 
       return client;

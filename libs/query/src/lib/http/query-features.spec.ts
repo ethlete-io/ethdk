@@ -86,6 +86,7 @@ describe('query features', () => {
       shouldAutoExecuteMethod: true,
       shouldAutoExecute: false,
       hasRouteFunction: false,
+      isMultiTabSyncEnabled: true,
       method: 'GET',
     };
 
@@ -203,6 +204,7 @@ describe('query features', () => {
       shouldAutoExecuteMethod: true,
       shouldAutoExecute: false,
       hasRouteFunction: false,
+      isMultiTabSyncEnabled: true,
       method: 'GET',
     };
 
@@ -381,6 +383,7 @@ describe('query features', () => {
       shouldAutoExecuteMethod: true,
       shouldAutoExecute: false,
       hasRouteFunction: false,
+      isMultiTabSyncEnabled: true,
       onlyManualExecution: true,
       method: 'GET',
     };

@@ -38,6 +38,8 @@ Re-executes the query on an interval. The interval restarts when args change, an
 
 Only for `GET`/`HEAD`/`OPTIONS` queries — anything else throws.
 
+Because [multi-tab sync](/query/multi-tab#polling-dedup) is on by default, the same query polled in several tabs is polled by one of them; the rest keep their interval but skip each tick and receive the data instead. Set `multiTabSync: { dedupePolling: false }` on the client if you want every tab to poll for itself.
+
 ## withAutoRefresh
 
 Re-executes the query whenever one of the given signals changes:

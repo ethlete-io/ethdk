@@ -1,5 +1,5 @@
 import { EnvironmentProviders, isDevMode, makeEnvironmentProviders, Signal, signal } from '@angular/core';
-import type { AnyCreateQueryClientResult } from '../http/query-client';
+import type { AnyCreateQueryClientResult, QueryClient } from '../http/query-client';
 import type { CreateQueryCreatorOptions, QueryConfig } from '../http/query-creator';
 import type { QueryFeatureType } from '../http/query-features';
 import type { QueryRepository } from '../http/query-repository';
@@ -48,6 +48,12 @@ export type QueryDevtoolsEntryMeta = {
 
   /** The owning client's repository, where known (queries and auth providers). */
   repository?: QueryRepository;
+
+  /**
+   * The owning client itself, where known (queries and auth providers). Read for state that hangs off
+   * the client rather than the repository — the multi-tab sync engine, in particular.
+   */
+  client?: QueryClient;
 
   /**
    * The DOM element of the component/directive that created a query, when available. Used by the

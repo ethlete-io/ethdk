@@ -14,7 +14,9 @@ import {
   withPollingUsedOnUnsupportedHttpMethod,
 } from './query-errors';
 import { InternalQueryExecute } from './query-execute';
+import { QueryKey } from './query-repository';
 import { QueryState } from './query-state';
+import { QueryKeyLockHold } from './sync/query-key-lock-manager';
 
 /**
  * Returning this inside a withArgs feature will reset the query args to null.
@@ -44,6 +46,9 @@ export type QueryFeatureFlags = {
   shouldAutoExecute: boolean;
   hasRouteFunction: boolean;
   onlyManualExecution?: boolean;
+
+  /** @see BaseQueryCreatorOptions.multiTabSync */
+  isMultiTabSyncEnabled: boolean;
 
   /** Human readable method name */
   method: string;
@@ -147,6 +152,12 @@ export type WithPollingFeatureOptions = {
  * The interval will be cleared when the query is destroyed.
  * The interval will be reset when the arguments of the query change.
  *
+ * With {@link CreateQueryClientConfigOptions.multiTabSync} enabled, the same query polled in several
+ * tabs is only polled by *one* of them — the other tabs keep their interval running but skip each
+ * tick, and get the data through response sharing instead. Which tab does the work is decided per
+ * cache key via the Web Locks API, so it moves on its own when that tab is closed or goes into the
+ * background.
+ *
  * @throws If the query is not eligible for auto execution (e.g. a POST request)
  */
 export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeatureOptions) => {
@@ -158,6 +169,49 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
       }
 
       let intervalId: number | null = null;
+
+      const sync = context.deps.client.subtle.sync;
+      const lockManager = sync?.isPollingDedupeEnabled && context.flags.isMultiTabSyncEnabled ? sync.lockManager : null;
+
+      // Only ever set while dedup is active. A tick runs unless we know another tab is taking care of
+      // it, so a key we do not have a hold for yet (nothing executed so far) still polls.
+      let hold: QueryKeyLockHold | null = null;
+      let heldKey: QueryKey | null = null;
+
+      const acquire = (key: QueryKey | null) => {
+        hold?.release();
+        heldKey = key;
+        hold = key === null || !lockManager ? null : lockManager.hold(key);
+      };
+
+      if (lockManager) {
+        // The cache key follows the args, but only the repository can derive it — so this tracks the
+        // key the last execution resolved to rather than the args themselves.
+        nestedEffect(
+          () => {
+            const key = context.execute.currentRepositoryKey();
+
+            untracked(() => acquire(key));
+          },
+          { injector: context.deps.injector },
+        );
+
+        // A hidden tab gets its timers throttled to about once a minute, which would starve the
+        // visible tabs waiting behind it. Giving the lock up and asking again puts this tab behind
+        // anyone already queued — and hands it straight back if nobody else wants the key.
+        const handOverWhenHidden = () => {
+          if (!document.hidden || !hold?.isHolder()) return;
+
+          acquire(heldKey);
+        };
+
+        document.addEventListener('visibilitychange', handOverWhenHidden);
+
+        context.deps.destroyRef.onDestroy(() => {
+          document.removeEventListener('visibilitychange', handOverWhenHidden);
+          hold?.release();
+        });
+      }
 
       nestedEffect(
         () => {
@@ -175,6 +229,10 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
             }
 
             intervalId = window.setInterval(() => {
+              // The interval keeps running while another tab is the holder, so leadership arriving
+              // mid-flight needs no restart and `executeInitially`/interval semantics stay identical.
+              if (hold && !hold.isHolder()) return;
+
               context.execute({ args });
             }, options.interval);
           });

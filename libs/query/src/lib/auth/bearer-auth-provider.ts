@@ -642,6 +642,7 @@ const createBearerAuthProviderImpl = <
         clientName: getQueryClientName(config.queryClientRef),
         clientBaseUrl: queryClient.baseUrl,
         repository: queryClient.repository,
+        client: queryClient,
       },
     });
 

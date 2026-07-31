@@ -25,6 +25,17 @@ export type QueryRepositoryEvent =
       key: QueryKey;
       isSecure: boolean;
       request: HttpRequest<QueryArgs>;
+
+      /**
+       * Whether the request is held in the cache under a key every tab derives identically (a hash of
+       * route + args) rather than a per-request UUID. `false` for mutations and anything else
+       * uncacheable — which is exactly what tells the multi-tab sync engine whether a settled request
+       * is a shareable read or a mutation other tabs should react to.
+       */
+      isCached: boolean;
+
+      /** @see BaseQueryCreatorOptions.multiTabSync */
+      isMultiTabSyncEnabled: boolean;
     }
   | {
       /**
@@ -127,6 +138,24 @@ export type QueryRepositorySubtle = {
 };
 
 /**
+ * Narrows which in-use entries a {@link QueryRepository.refreshInUse} call refreshes. Returning
+ * `false` leaves the entry alone.
+ */
+export type QueryRepositoryRefreshFilterFn = (request: HttpRequest<QueryArgs>) => boolean;
+
+/** @see QueryRepository.applyExternalResponse */
+export type ApplyExternalResponseOptions = {
+  /** The cache key the response belongs to. */
+  key: QueryKey;
+
+  /** The response body, as received from the other tab. */
+  body: unknown;
+
+  /** Timestamp (ms) at which the response goes stale, or `null` when it has no freshness window. */
+  expiresAt: number | null;
+};
+
+/**
  * The query repository is responsible for managing all requests and their consumers.
  * It will cache requests if they can be cached and reuse them if they are already cached.
  * It will also destroy requests if there are no more consumers left.
@@ -146,9 +175,26 @@ export type QueryRepository = {
    * in-flight requests. Entries kept only for their `keepUnusedFor` window are skipped — nobody is
    * looking at them, and they revalidate on their own when a consumer binds again.
    *
+   * Pass a filter to narrow it down to a subset of those entries.
+   *
    * @see QueryClient.refreshQueriesInUse
    */
-  refreshInUse: () => void;
+  refreshInUse: (filter?: QueryRepositoryRefreshFilterFn) => void;
+
+  /**
+   * Writes a response that another tab received onto the matching cache entry, so the same query
+   * shows the same data everywhere without a second network request.
+   *
+   * Returns whether it was applied. It is skipped when
+   * - no entry exists for the key: cold entries are never seeded on speculation, that would be
+   *   unbounded memory for data nobody in this tab is looking at,
+   * - the entry's creator opted out of {@link BaseQueryCreatorOptions.multiTabSync},
+   * - or the entry has a request in flight, which is at least as fresh and overwrites this anyway.
+   *
+   * Entries sitting out their `keepUnusedFor` window without consumers *are* updated — it costs
+   * nothing and means a returning consumer renders data that is current rather than merely recent.
+   */
+  applyExternalResponse: (options: ApplyExternalResponseOptions) => boolean;
 
   /** Observable stream of repository events (errors, successes, etc.) */
   events$: Observable<QueryRepositoryEvent>;
@@ -174,6 +220,12 @@ type DestroyListenerMapItem = {
   isSecure: boolean;
   eventSubscription?: { unsubscribe: () => void };
 
+  /** Whether the entry lives under a cache key other tabs derive identically. */
+  isCached: boolean;
+
+  /** @see BaseQueryCreatorOptions.multiTabSync */
+  isMultiTabSyncEnabled: boolean;
+
   /** How long this entry survives without consumers. `0` destroys it immediately. */
   keepUnusedFor: number;
 
@@ -182,6 +234,22 @@ type DestroyListenerMapItem = {
 
   /** Pending eviction of an unused entry, cancelled as soon as a consumer binds again. */
   evictTimer?: ReturnType<typeof setTimeout>;
+};
+
+type BindEntryOptions = {
+  key: QueryKey;
+  consumerDestroyRef: DestroyRef;
+  request: HttpRequest<QueryArgs>;
+  isSecure: boolean;
+
+  /**
+   * Whether the entry may be shared with other consumers of the same key. Uncacheable requests get a
+   * per-request UUID key and are never reused.
+   */
+  isCached: boolean;
+
+  isMultiTabSyncEnabled: boolean;
+  keepUnusedFor: number;
 };
 
 export type QueryRepositoryDependencies = {
@@ -269,6 +337,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
 
     const trackingKey = cacheKey || generateUuid();
     const keepUnusedFor = resolveKeepUnusedFor(creatorOptions, shouldCache);
+    const isMultiTabSyncEnabled = creatorOptions?.multiTabSync !== false;
 
     const previousKey = options.previousKey;
 
@@ -284,7 +353,15 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
         // makes it live, so the pending eviction must go.
         cancelEviction(cacheEntry);
 
-        bind(cacheKey, options.consumerDestroyRef, cacheEntry.request, options.isSecure ?? false, true, keepUnusedFor);
+        bind({
+          key: cacheKey,
+          consumerDestroyRef: options.consumerDestroyRef,
+          request: cacheEntry.request,
+          isSecure: options.isSecure ?? false,
+          isCached: true,
+          isMultiTabSyncEnabled,
+          keepUnusedFor,
+        });
 
         if (!runQueryOptions?.allowCache || cacheEntry.request.isStale()) {
           cacheEntry.request.execute({ allowCache: runQueryOptions?.allowCache });
@@ -307,7 +384,15 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
 
     request.execute();
 
-    bind(trackingKey, options.consumerDestroyRef, request, options.isSecure ?? false, shouldCache, keepUnusedFor);
+    bind({
+      key: trackingKey,
+      consumerDestroyRef: options.consumerDestroyRef,
+      request,
+      isSecure: options.isSecure ?? false,
+      isCached: shouldCache,
+      isMultiTabSyncEnabled,
+      keepUnusedFor,
+    });
 
     return { key: trackingKey, request };
   };
@@ -386,30 +471,41 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     eventsSubject.next({ type: 'unbind-all-secure' });
   };
 
-  const refreshInUse = () => {
+  const refreshInUse = (filter?: QueryRepositoryRefreshFilterFn) => {
     for (const cacheEntry of cache.values()) {
       if (cacheEntry.consumers.size === 0) continue;
 
-      // Re-firing a mutation would be a side effect nobody asked for, so only reads are refreshed.
-      if (!shouldCacheQuery(cacheEntry.request.method)) continue;
+      // Re-firing a mutation would be a side effect nobody asked for, so only reads are refreshed —
+      // "read" meaning cacheable, which also covers a GQL query transported via POST that opted into
+      // the cache explicitly.
+      if (!cacheEntry.isCached) continue;
+
+      if (filter && !filter(cacheEntry.request)) continue;
 
       cacheEntry.request.execute({ force: true });
     }
   };
 
-  const bind = (
-    key: QueryKey,
-    consumerDestroyRef: DestroyRef,
-    request: HttpRequest<QueryArgs>,
-    isSecure: boolean,
-    allowReuse: boolean,
-    keepUnusedFor: number,
-  ) => {
+  const applyExternalResponse = (options: ApplyExternalResponseOptions) => {
+    const cacheEntry = cache.get(options.key);
+
+    if (!cacheEntry || !cacheEntry.isMultiTabSyncEnabled) return false;
+
+    if (cacheEntry.request.loading()) return false;
+
+    cacheEntry.request.subtle.applyExternalResponse({ body: options.body, expiresAt: options.expiresAt });
+
+    return true;
+  };
+
+  const bind = (options: BindEntryOptions) => {
+    const { key, consumerDestroyRef, request, isSecure, isCached, isMultiTabSyncEnabled, keepUnusedFor } = options;
+
     const destroyListener = consumerDestroyRef.onDestroy(() => unbind(key, consumerDestroyRef));
 
     const cacheEntry = cache.get(key);
 
-    if (cacheEntry && allowReuse) {
+    if (cacheEntry && isCached) {
       cacheEntry.consumers.set(consumerDestroyRef, destroyListener);
     } else {
       const consumers: Map<DestroyRef, DestroyCleanupCallback> = new Map([]);
@@ -425,7 +521,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
             eventsSubject.next({ type: 'request-error', error: event.error.raw, key, isSecure, request });
           }
         } else if (event.type === HttpEventType.Response) {
-          eventsSubject.next({ type: 'request-success', key, isSecure, request });
+          eventsSubject.next({ type: 'request-success', key, isSecure, request, isCached, isMultiTabSyncEnabled });
         }
       });
 
@@ -435,6 +531,8 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
         isSecure,
         eventSubscription,
         keepUnusedFor,
+        isCached,
+        isMultiTabSyncEnabled,
       });
     }
 
@@ -464,6 +562,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     unbind,
     unbindAllSecure,
     refreshInUse,
+    applyExternalResponse,
     events$: eventsSubject.asObservable(),
     subtle: {
       cacheEntries,

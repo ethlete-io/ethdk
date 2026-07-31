@@ -77,6 +77,20 @@ export type BaseQueryCreatorOptions<TArgs extends QueryArgs = QueryArgs> = {
    */
   keepUnusedFor?: number;
 
+  /**
+   * Whether this query takes part in the client's multi-tab sync, when the client has it enabled at
+   * all. Set to `false` to keep the query tab-local: its responses are neither broadcast to nor
+   * accepted from other tabs, and — because dedup is only safe while the suppressed tab still gets
+   * the data — every tab polls it itself again.
+   *
+   * The case for opting out is payload cost: every shared response is structured-cloned per receiving
+   * tab, so a very large body polled at a short interval is better left alone. Has no effect unless
+   * the client sets {@link CreateQueryClientConfigOptions.multiTabSync}.
+   *
+   * @default true
+   */
+  multiTabSync?: boolean;
+
   /** Advanced query creator features. **WARNING!** Incorrectly using these features will likely **BREAK** your application. You have been warned! */
   subtle?: BaseQueryCreatorOptionsSubtle;
 };

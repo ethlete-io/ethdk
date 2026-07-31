@@ -1178,7 +1178,10 @@ describe('createBearerAuthProvider', () => {
 
       TestBed.runInInjectionContext(() => {
         injectAuthProvider();
-        expect(globalThis.BroadcastChannel).not.toHaveBeenCalled();
+
+        // Named rather than "never called": the query client opens a channel of its own for its
+        // multi-tab sync, which is a separate opt-out.
+        expect(globalThis.BroadcastChannel).not.toHaveBeenCalledWith('ethlete-auth-sync');
       });
     });
 

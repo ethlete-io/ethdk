@@ -66,6 +66,7 @@ export const getQueryFeatureUsage = <TArgs extends QueryArgs>(
     shouldAutoExecute,
     hasRouteFunction,
     onlyManualExecution: queryConfig.onlyManualExecution,
+    isMultiTabSyncEnabled: creator?.multiTabSync !== false,
     method: isCreateGqlQueryOptions(options)
       ? `GQL ${options.creatorInternals.method}`
       : options.creatorInternals.method,
@@ -238,6 +239,7 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
           queryConfig: options.queryConfig,
           creator: options.creator,
           repository: deps.client.repository,
+          client: deps.client,
           element: deps.hostElement,
           gqlQuery: (options.creatorInternals as { query?: string }).query,
         },

@@ -481,5 +481,127 @@ describe('createQueryRepository — keepUnusedFor (unused entry retention)', () 
 
       httpTesting.verify();
     });
+
+    it('re-executes a cacheable POST that opted into the repository cache', () => {
+      const repo = createRepo();
+
+      repo.request({
+        consumerDestroyRef: destroyRef,
+        method: 'POST',
+        route: '/graphql',
+        creatorOptions: { subtle: { useQueryRepositoryCache: true } },
+      });
+      flushAll();
+
+      repo.refreshInUse();
+
+      expect(httpTesting.match(() => true)).toHaveLength(1);
+    });
+
+    it('only refreshes the entries a filter accepts', () => {
+      const repo = createRepo();
+
+      repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/players' });
+      repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/teams' });
+      flushAll();
+
+      repo.refreshInUse((request) => request.url.endsWith('/teams'));
+
+      expect(httpTesting.match(() => true).map((req) => req.request.url)).toEqual(['https://example.com/teams']);
+    });
+  });
+
+  describe('applyExternalResponse', () => {
+    it('writes the response of another tab onto the matching entry', () => {
+      const repo = createRepo();
+
+      const entry = repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/test' });
+      flushAll({ from: 'this tab' });
+
+      const applied = repo.applyExternalResponse({ key: entry.key, body: { from: 'other tab' }, expiresAt: 5_000 });
+
+      expect(applied).toBe(true);
+      expect(entry.request.response()).toEqual({ from: 'other tab' });
+      expect(entry.request.expiresAt()).toBe(5_000);
+      httpTesting.verify();
+    });
+
+    it('does not emit a request event, so it cannot bounce back to the other tab', () => {
+      const repo = createRepo();
+      const events: QueryRepositoryEvent[] = [];
+
+      const entry = repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/test' });
+      flushAll();
+
+      repo.events$.subscribe((event) => events.push(event));
+      repo.applyExternalResponse({ key: entry.key, body: { ok: false }, expiresAt: null });
+
+      expect(events).toEqual([]);
+    });
+
+    it('clears a previous error', () => {
+      const repo = createRepo();
+      const errorSpy = vi.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => undefined);
+
+      const entry = repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/test' });
+
+      for (const req of httpTesting.match(() => true)) {
+        req.flush({ nope: true }, { status: 500, statusText: 'Server Error' });
+      }
+      TestBed.tick();
+
+      expect(entry.request.error()).not.toBeNull();
+
+      repo.applyExternalResponse({ key: entry.key, body: { ok: true }, expiresAt: null });
+
+      expect(entry.request.error()).toBeNull();
+      expect(entry.request.response()).toEqual({ ok: true });
+
+      errorSpy.mockRestore();
+    });
+
+    it('ignores a key this tab does not hold', () => {
+      const repo = createRepo();
+
+      expect(repo.applyExternalResponse({ key: 'never-seen', body: { ok: true }, expiresAt: null })).toBe(false);
+      expect(repo.subtle.cacheEntries()).toEqual([]);
+    });
+
+    it('skips an entry with a request in flight', () => {
+      const repo = createRepo();
+
+      const entry = repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/test' });
+
+      expect(repo.applyExternalResponse({ key: entry.key, body: { ok: false }, expiresAt: null })).toBe(false);
+      expect(entry.request.response()).toBeNull();
+
+      flushAll();
+    });
+
+    it('still updates an entry that is only being retained', () => {
+      const repo = createRepo({ keepUnusedFor: 600_000 });
+
+      const entry = repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/test' });
+      flushAll();
+      repo.unbind(entry.key, destroyRef);
+
+      expect(repo.applyExternalResponse({ key: entry.key, body: { fresh: true }, expiresAt: null })).toBe(true);
+      expect(entry.request.response()).toEqual({ fresh: true });
+    });
+
+    it('skips an entry whose creator opted out of multi tab sync', () => {
+      const repo = createRepo();
+
+      const entry = repo.request({
+        consumerDestroyRef: destroyRef,
+        method: 'GET',
+        route: '/test',
+        creatorOptions: { multiTabSync: false },
+      });
+      flushAll({ from: 'this tab' });
+
+      expect(repo.applyExternalResponse({ key: entry.key, body: { from: 'other tab' }, expiresAt: null })).toBe(false);
+      expect(entry.request.response()).toEqual({ from: 'this tab' });
+    });
   });
 });

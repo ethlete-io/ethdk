@@ -112,6 +112,8 @@ Refresh failures retry on transient statuses (`0, 408, 425, 429, 500, 502, 503, 
 
 On by default (`multiTabSync`): tokens and logout are synchronized across tabs via a `BroadcastChannel` (`'ethlete-auth-sync'`) with leader election, so only one tab performs proactive refreshes. Pass `multiTabSync: false` to disable, or an options object to tune `syncTokens`, `syncLogout` and `leaderElection` individually.
 
+This is separate from — and independent of — the query client's own [multi-tab sync](/query/multi-tab), which shares responses and deduplicates polling. Both are on by default and configured separately: this one is about the session, that one about data. They complement each other — because logout tears down secure entries in every tab, a shared response can never outlive the session it was fetched in.
+
 ## Features
 
 Optional behaviors passed to the provider's `features` array (each usable once — a duplicate throws):

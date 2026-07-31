@@ -99,6 +99,7 @@ export default defineConfig({
             { text: 'Query features', link: '/query/features' },
             { text: 'Dependent queries', link: '/query/dependent-queries' },
             { text: 'Caching & deduplication', link: '/query/caching' },
+            { text: 'Multi-tab sync', link: '/query/multi-tab' },
             { text: 'Query stacks & pagination', link: '/query/stacks' },
             { text: 'Query forms', link: '/query/query-forms' },
             { text: 'Errors & retries', link: '/query/errors' },

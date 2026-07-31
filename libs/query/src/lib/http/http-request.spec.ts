@@ -641,4 +641,35 @@ describe('createHttpRequest', () => {
       testReq2.flush(responseBody);
     });
   });
+
+  describe('subtle.applyExternalResponse', () => {
+    it('should update the state signals without emitting an event', () => {
+      const events: unknown[] = [];
+
+      const expiresAt = Date.now() + 60_000;
+
+      req.events$.subscribe((event) => events.push(event));
+      req.subtle.applyExternalResponse({ body: { from: 'another tab' }, expiresAt });
+
+      expect(req.response()).toEqual({ from: 'another tab' });
+      expect(req.expiresAt()).toBe(expiresAt);
+      expect(req.isStale()).toBe(false);
+      expect(req.error()).toBeNull();
+
+      // The whole loop prevention: the repository's `request-success` event hangs off this stream, and
+      // that event is what broadcasts to the other tabs in the first place.
+      expect(events).toEqual([]);
+      expect(req.currentEvent()).toBeNull();
+    });
+
+    it('should leave an in-flight request loading', () => {
+      req.execute();
+
+      req.subtle.applyExternalResponse({ body: { from: 'another tab' }, expiresAt: null });
+
+      expect(req.loading()).not.toBeNull();
+
+      testingController.expectOne('https://example.com/test').flush(responseBody);
+    });
+  });
 });

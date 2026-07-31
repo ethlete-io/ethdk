@@ -20,6 +20,7 @@ load-bearing facts so you don't re-derive them from source.
 | `apps/docs/query/http.md` | REST creators, typing requests, response transforms, upload progress |
 | `apps/docs/query/auth.md` | Bearer auth: login/refresh, auto token refresh, multi-tab sync |
 | `apps/docs/query/caching.md` · `stacks.md` · `errors.md` · `gql.md` · `ws.md` | Caching/dedup, pagination, error/retry, GraphQL, WebSockets |
+| `apps/docs/query/multi-tab.md` | Opt-in cross-tab sync: shared responses, per-key polling election, mutation fan-out |
 | `apps/docs/query/legacy.md` | The maintenance-mode `V2QueryClient` |
 
 ## Two generations — use the current one

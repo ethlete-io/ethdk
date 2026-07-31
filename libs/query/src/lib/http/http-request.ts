@@ -93,6 +93,34 @@ export type HttpRequestLoadingProgressState = {
   remainingTime: number | null;
 };
 
+/**
+ * Advanced request internals. **Not part of the general public contract** — do not build
+ * application logic on top of these.
+ */
+export type HttpRequestSubtle<TArgs extends QueryArgs> = {
+  /**
+   * Adopts a response this request never made itself — the same request settled in another tab and
+   * its result arrived over the multi-tab sync channel.
+   *
+   * Deliberately silent: it writes the state signals but emits nothing on {@link HttpRequest.events$}
+   * (and leaves {@link HttpRequest.currentEvent} alone), because that stream means "this request
+   * settled over HTTP". The repository's `request-success` event — which is what broadcasts in the
+   * first place — hangs off it, so emitting here would bounce the response back and forth between
+   * tabs forever. The cost is that event-driven features (`withSuccessHandling`, `withLogging`) stay
+   * quiet for shared responses; everything signal-driven updates as usual.
+   *
+   * `loading` is left untouched: the caller is responsible for not applying over an in-flight
+   * request, and clearing it here would claim a request finished when it has not.
+   */
+  applyExternalResponse: (options: { body: ResponseType<TArgs>; expiresAt: number | null }) => void;
+
+  /**
+   * When this request last adopted a response from another tab, or `null` if it never did. Read by the
+   * query devtools to show which entries are being kept up to date from elsewhere.
+   */
+  lastExternalResponseAt: Signal<number | null>;
+};
+
 export type HttpRequest<TArgs extends QueryArgs> = {
   /** The HTTP method of the request. */
   method: QueryMethod;
@@ -145,6 +173,9 @@ export type HttpRequest<TArgs extends QueryArgs> = {
    * cacheable / has no freshness window. Exposed for devtools freshness countdowns.
    */
   expiresAt: Signal<number | null>;
+
+  /** Advanced request internals. */
+  subtle: HttpRequestSubtle<TArgs>;
 };
 
 /** A custom error event since the Angular http client does not provide a specific event for errors */
@@ -356,6 +387,15 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     loading.set(state);
   };
 
+  const lastExternalResponseAt = signal<number | null>(null);
+
+  const applyExternalResponse = (externalResponse: { body: ResponseType<TArgs>; expiresAt: number | null }) => {
+    response.set(externalResponse.body);
+    expiresIn.set(externalResponse.expiresAt);
+    error.set(null);
+    lastExternalResponseAt.set(Date.now());
+  };
+
   const httpRequest: HttpRequest<TArgs> = {
     method: options.method,
     url: options.fullPath,
@@ -368,6 +408,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     events$: event$.asObservable(),
     isStale,
     expiresAt: expiresIn.asReadonly(),
+    subtle: { applyExternalResponse, lastExternalResponseAt: lastExternalResponseAt.asReadonly() },
   };
 
   return httpRequest;
