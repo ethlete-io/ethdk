@@ -1,6 +1,6 @@
 import { createStaticRootProvider } from '@ethlete/core';
 import { BracketMatchNormalizer } from './bracket-card-context';
-import { BracketDataLayout } from './core';
+import { BRACKET_DATA_LAYOUT, BracketDataLayout } from './core';
 import { BracketContinueComponent, BracketMatchComponent, BracketRoundHeaderComponent } from './drawing/grid';
 import { BracketSwissGroupColorType } from './linked';
 
@@ -69,6 +69,54 @@ export type BracketConfig<TRoundData = any, TMatchData = any> = {
 
   /** Swiss specific overrides. These win over the top level component defaults. */
   swiss?: BracketSwissConfig<TRoundData, TMatchData>;
+};
+
+/**
+ * The value every {@link BracketConfig} setting falls back to when neither an input nor
+ * `provideBracketConfig` supplies one.
+ *
+ * It exists so the component and the standalone helpers that have to predict its layout
+ * ({@link bracketNaturalWidth}) can never drift apart — the type makes leaving a new setting out a
+ * compile error.
+ */
+export const BRACKET_DEFAULTS: Required<
+  Omit<
+    BracketConfig,
+    | 'roundHeaderComponent'
+    | 'matchComponent'
+    | 'finalMatchComponent'
+    | 'continueComponent'
+    | 'matchNormalizer'
+    | 'swiss'
+  >
+> = {
+  columnWidth: 250,
+  matchHeight: 75,
+  // Sized for the shipped final card, which is a header, an expanded match card and a champion line
+  // stacked — the previous 300×75 fitted the debug placeholder and nothing else. A custom final card that
+  // wants the old box sets these back.
+  finalMatchHeight: 200,
+  finalColumnWidth: 360,
+  roundHeaderHeight: 50,
+  roundHeaderGap: 20,
+  columnGap: 60,
+  rowGap: 30,
+  rowRoundGap: 20,
+  lineStartingCurveAmount: 10,
+  lineEndingCurveAmount: 0,
+  lineWidth: 2,
+  lineDashArray: 0,
+  lineDashOffset: 0,
+  disableJourneyHighlight: false,
+  swissGroupPadding: 10,
+  swissGroupBorderRadius: 12,
+  layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT,
+  hideRoundHeaders: false,
+  showContinueElement: false,
+  continueColumnWidth: 250,
+  continueElementHeight: 75,
+  continueLineDashArray: 6,
+  roundHeaderLevel: 3,
 };
 
 export const [provideBracketConfig, injectBracketConfig] = createStaticRootProvider<BracketConfig>(

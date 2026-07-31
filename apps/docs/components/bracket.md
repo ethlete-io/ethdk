@@ -249,6 +249,13 @@ advance. Useful for "→ playoffs" hand-offs.
 
 <StoryEmbed id="components-bracket--double-elimination-with-continue" height="560px" />
 
+## Narrow screens
+
+A bracket is as wide as its rounds make it, and no amount of shrinking makes a 32-team grid
+readable on a phone. The answer is to swap representation:
+[`<et-bracket-rounds-list>`](/components/bracket-rounds-list) draws the same source as a vertical
+list of rounds, and `bracketFitsWidth(source, config, availableWidth)` decides when to use it.
+
 ## Journey highlight
 
 Hovering a match or its connector dims the rest of the bracket and highlights that

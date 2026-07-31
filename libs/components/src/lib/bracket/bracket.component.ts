@@ -14,28 +14,21 @@ import {
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { createComponentId, injectRenderer } from '@ethlete/core';
-import { BRACKET_DATA_LAYOUT, BracketDataLayout, TOURNAMENT_MODE } from './core';
+import { BracketDataLayout, TOURNAMENT_MODE } from './core';
 import { drawMan, drawSwissMan } from './drawing';
 import {
-  BracketComponents,
   BracketContinueComponent,
   BracketMatchComponent,
   BracketRoundHeaderComponent,
-  CreateBracketGridConfig,
-  createDoubleEliminationGrid,
-  createSingleEliminationGrid,
-  createSwissGrid,
   FinalizedBracketElement,
 } from './drawing/grid';
 import { BracketDataSource } from './integrations';
 import { setupJourneyHighlight as setupJourneyHighlightListeners } from './journey-highlight';
 import { createBracket, generateBracketRoundSwissGroupMaps } from './linked';
 import { BRACKET_CARD_CONTEXT, BracketMatchNormalizer } from './bracket-card-context';
-import { BracketDefaultContinueComponent } from './bracket-default-continue.component';
-import { BracketDefaultFinalMatchComponent } from './bracket-default-final-match.component';
-import { BracketDefaultMatchComponent } from './bracket-default-match.component';
-import { BracketDefaultRoundHeaderComponent } from './bracket-default-round-header.component';
-import { BracketSwissColors, injectBracketConfig } from './bracket.config';
+import { resolveBracketComponents } from './bracket-components';
+import { computeBracketGrid, createBracketGridConfig } from './bracket-grid';
+import { BRACKET_DEFAULTS, BracketSwissColors, injectBracketConfig } from './bracket.config';
 
 @Component({
   selector: 'et-bracket',
@@ -56,35 +49,66 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
   public source = input.required<BracketDataSource<TRoundData, TMatchData>>();
 
-  public columnWidth = input(this.config.columnWidth ?? 250, { transform: numberAttribute });
-  public matchHeight = input(this.config.matchHeight ?? 75, { transform: numberAttribute });
-  // Sized for the shipped final card, which is a header, an expanded match card and a champion line
-  // stacked — the previous 300×75 fitted the debug placeholder and nothing else. A custom final card that
-  // wants the old box sets these back.
-  public finalMatchHeight = input(this.config.finalMatchHeight ?? 200, { transform: numberAttribute });
-  public finalColumnWidth = input(this.config.finalColumnWidth ?? 360, { transform: numberAttribute });
-  public roundHeaderHeight = input(this.config.roundHeaderHeight ?? 50, { transform: numberAttribute });
-  public roundHeaderGap = input(this.config.roundHeaderGap ?? 20, { transform: numberAttribute });
-  public columnGap = input(this.config.columnGap ?? 60, { transform: numberAttribute });
-  public rowGap = input(this.config.rowGap ?? 30, { transform: numberAttribute });
-  public rowRoundGap = input(this.config.rowRoundGap ?? 20, { transform: numberAttribute });
-  public lineStartingCurveAmount = input(this.config.lineStartingCurveAmount ?? 10, { transform: numberAttribute });
-  public lineEndingCurveAmount = input(this.config.lineEndingCurveAmount ?? 0, { transform: numberAttribute });
-  public lineWidth = input(this.config.lineWidth ?? 2, { transform: numberAttribute });
-  public lineDashArray = input(this.config.lineDashArray ?? 0, { transform: numberAttribute });
-  public lineDashOffset = input(this.config.lineDashOffset ?? 0, { transform: numberAttribute });
-  public disableJourneyHighlight = input(this.config.disableJourneyHighlight ?? false, { transform: booleanAttribute });
-  public swissGroupPadding = input(this.config.swissGroupPadding ?? 10, { transform: numberAttribute });
-  public swissGroupBorderRadius = input(this.config.swissGroupBorderRadius ?? 12, { transform: numberAttribute });
+  public columnWidth = input(this.config.columnWidth ?? BRACKET_DEFAULTS.columnWidth, { transform: numberAttribute });
+  public matchHeight = input(this.config.matchHeight ?? BRACKET_DEFAULTS.matchHeight, { transform: numberAttribute });
+  public finalMatchHeight = input(this.config.finalMatchHeight ?? BRACKET_DEFAULTS.finalMatchHeight, {
+    transform: numberAttribute,
+  });
+  public finalColumnWidth = input(this.config.finalColumnWidth ?? BRACKET_DEFAULTS.finalColumnWidth, {
+    transform: numberAttribute,
+  });
+  public roundHeaderHeight = input(this.config.roundHeaderHeight ?? BRACKET_DEFAULTS.roundHeaderHeight, {
+    transform: numberAttribute,
+  });
+  public roundHeaderGap = input(this.config.roundHeaderGap ?? BRACKET_DEFAULTS.roundHeaderGap, {
+    transform: numberAttribute,
+  });
+  public columnGap = input(this.config.columnGap ?? BRACKET_DEFAULTS.columnGap, { transform: numberAttribute });
+  public rowGap = input(this.config.rowGap ?? BRACKET_DEFAULTS.rowGap, { transform: numberAttribute });
+  public rowRoundGap = input(this.config.rowRoundGap ?? BRACKET_DEFAULTS.rowRoundGap, { transform: numberAttribute });
+  public lineStartingCurveAmount = input(
+    this.config.lineStartingCurveAmount ?? BRACKET_DEFAULTS.lineStartingCurveAmount,
+    { transform: numberAttribute },
+  );
+  public lineEndingCurveAmount = input(this.config.lineEndingCurveAmount ?? BRACKET_DEFAULTS.lineEndingCurveAmount, {
+    transform: numberAttribute,
+  });
+  public lineWidth = input(this.config.lineWidth ?? BRACKET_DEFAULTS.lineWidth, { transform: numberAttribute });
+  public lineDashArray = input(this.config.lineDashArray ?? BRACKET_DEFAULTS.lineDashArray, {
+    transform: numberAttribute,
+  });
+  public lineDashOffset = input(this.config.lineDashOffset ?? BRACKET_DEFAULTS.lineDashOffset, {
+    transform: numberAttribute,
+  });
+  public disableJourneyHighlight = input(
+    this.config.disableJourneyHighlight ?? BRACKET_DEFAULTS.disableJourneyHighlight,
+    { transform: booleanAttribute },
+  );
+  public swissGroupPadding = input(this.config.swissGroupPadding ?? BRACKET_DEFAULTS.swissGroupPadding, {
+    transform: numberAttribute,
+  });
+  public swissGroupBorderRadius = input(this.config.swissGroupBorderRadius ?? BRACKET_DEFAULTS.swissGroupBorderRadius, {
+    transform: numberAttribute,
+  });
   public swissColors = input<BracketSwissColors | undefined>(this.config.swiss?.colors);
 
-  public layout = input<BracketDataLayout>(this.config.layout ?? BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT);
-  public hideRoundHeaders = input(this.config.hideRoundHeaders ?? false, { transform: booleanAttribute });
+  public layout = input<BracketDataLayout>(this.config.layout ?? BRACKET_DEFAULTS.layout);
+  public hideRoundHeaders = input(this.config.hideRoundHeaders ?? BRACKET_DEFAULTS.hideRoundHeaders, {
+    transform: booleanAttribute,
+  });
 
-  public showContinueElement = input(this.config.showContinueElement ?? false, { transform: booleanAttribute });
-  public continueColumnWidth = input(this.config.continueColumnWidth ?? 250, { transform: numberAttribute });
-  public continueElementHeight = input(this.config.continueElementHeight ?? 75, { transform: numberAttribute });
-  public continueLineDashArray = input(this.config.continueLineDashArray ?? 6, { transform: numberAttribute });
+  public showContinueElement = input(this.config.showContinueElement ?? BRACKET_DEFAULTS.showContinueElement, {
+    transform: booleanAttribute,
+  });
+  public continueColumnWidth = input(this.config.continueColumnWidth ?? BRACKET_DEFAULTS.continueColumnWidth, {
+    transform: numberAttribute,
+  });
+  public continueElementHeight = input(this.config.continueElementHeight ?? BRACKET_DEFAULTS.continueElementHeight, {
+    transform: numberAttribute,
+  });
+  public continueLineDashArray = input(this.config.continueLineDashArray ?? BRACKET_DEFAULTS.continueLineDashArray, {
+    transform: numberAttribute,
+  });
 
   public roundHeaderComponent = input<BracketRoundHeaderComponent<TRoundData, TMatchData> | undefined>();
   public matchComponent = input<BracketMatchComponent<TRoundData, TMatchData> | undefined>();
@@ -98,7 +122,9 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   public matchNormalizer = input<BracketMatchNormalizer<TRoundData, TMatchData> | undefined>();
 
   /** The `aria-level` the default round headers announce themselves at. @default 3 */
-  public roundHeaderLevel = input(this.config.roundHeaderLevel ?? 3, { transform: numberAttribute });
+  public roundHeaderLevel = input(this.config.roundHeaderLevel ?? BRACKET_DEFAULTS.roundHeaderLevel, {
+    transform: numberAttribute,
+  });
 
   /** @internal The normalizer in effect, read by the default cards through `BRACKET_CARD_CONTEXT`. */
   public resolvedMatchNormalizer = computed<BracketMatchNormalizer | null>(
@@ -117,56 +143,37 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   public bracketGrid = computed(() => {
     const bracketData = this.bracketData();
 
-    const options: CreateBracketGridConfig = {
-      includeRoundHeaders: !this.hideRoundHeaders(),
+    const options = createBracketGridConfig({
       columnGap: this.columnGap(),
       rowRoundGap: this.rowRoundGap(),
       columnWidth: this.columnWidth(),
       matchHeight: this.matchHeight(),
-      roundHeaderHeight: this.hideRoundHeaders() ? 0 : this.roundHeaderHeight(),
+      roundHeaderHeight: this.roundHeaderHeight(),
       rowGap: this.rowGap(),
       layout: this.layout(),
       finalMatchHeight: this.finalMatchHeight(),
       finalColumnWidth: this.finalColumnWidth(),
-      roundHeaderGap: this.hideRoundHeaders() ? 0 : this.roundHeaderGap(),
+      roundHeaderGap: this.roundHeaderGap(),
+      hideRoundHeaders: this.hideRoundHeaders(),
       swissGroupPadding: this.swissGroupPadding(),
-      swissGroupBorderWidth: this.lineWidth(),
-      continueElement:
-        this.showContinueElement() && this.layout() === BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT
-          ? {
-              columnWidth: this.continueColumnWidth(),
-              elementHeight: this.continueElementHeight(),
-            }
-          : null,
-    };
+      lineWidth: this.lineWidth(),
+      showContinueElement: this.showContinueElement(),
+      continueColumnWidth: this.continueColumnWidth(),
+      continueElementHeight: this.continueElementHeight(),
+    });
 
-    const swissConfig = bracketData.mode === TOURNAMENT_MODE.SWISS_WITH_ELIMINATION ? this.config.swiss : undefined;
+    const components = resolveBracketComponents(
+      {
+        roundHeader: this.roundHeaderComponent(),
+        match: this.matchComponent(),
+        finalMatch: this.finalMatchComponent(),
+        continue: this.continueComponent(),
+      },
+      this.config,
+      bracketData.mode,
+    );
 
-    const components: BracketComponents<TRoundData, TMatchData> = {
-      match:
-        this.matchComponent() ??
-        swissConfig?.matchComponent ??
-        this.config.matchComponent ??
-        BracketDefaultMatchComponent,
-      finalMatch: this.finalMatchComponent() ?? this.config.finalMatchComponent ?? BracketDefaultFinalMatchComponent,
-      roundHeader:
-        this.roundHeaderComponent() ??
-        swissConfig?.roundHeaderComponent ??
-        this.config.roundHeaderComponent ??
-        BracketDefaultRoundHeaderComponent,
-      continue: this.continueComponent() ?? this.config.continueComponent ?? BracketDefaultContinueComponent,
-    };
-
-    switch (bracketData.mode) {
-      case TOURNAMENT_MODE.DOUBLE_ELIMINATION:
-        return createDoubleEliminationGrid(bracketData, options, components);
-
-      case TOURNAMENT_MODE.SINGLE_ELIMINATION:
-        return createSingleEliminationGrid(bracketData, options, components);
-
-      case TOURNAMENT_MODE.SWISS_WITH_ELIMINATION:
-        return createSwissGrid(bracketData, options, components);
-    }
+    return computeBracketGrid(bracketData, options, components);
   });
 
   public drawManData = computed(() => {

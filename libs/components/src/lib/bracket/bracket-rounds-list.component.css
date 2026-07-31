@@ -1,0 +1,75 @@
+@layer components {
+  @property --et-bracket-rounds-list-section-gap {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 32px;
+  }
+
+  @property --et-bracket-rounds-list-round-gap {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 20px;
+  }
+
+  @property --et-bracket-rounds-list-match-gap {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 8px;
+  }
+
+  .et-bracket-rounds-list-host {
+    display: flex;
+    flex-direction: column;
+    gap: var(--et-bracket-rounds-list-section-gap);
+  }
+
+  .et-bracket-rounds-list-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--et-bracket-rounds-list-round-gap);
+  }
+
+  .et-bracket-rounds-list-section-name {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--et-surface-color-muted-solid, currentColor);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .et-bracket-rounds-list-block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--et-bracket-rounds-list-match-gap);
+  }
+
+  /*
+   * The round header components are written for a fixed-height cell in the grid (`block-size: 100%`,
+   * centered text) — in a list they head a column of matches, so the box is content-sized and the text
+   * runs from the start edge.
+   */
+  .et-bracket-rounds-list-round-header {
+    .et-bracket-default-round-header-host {
+      align-items: start;
+      block-size: auto;
+      padding-inline: 0;
+      text-align: start;
+    }
+  }
+
+  .et-bracket-rounds-list-matches {
+    display: flex;
+    flex-direction: column;
+    gap: var(--et-bracket-rounds-list-match-gap);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .et-bracket-rounds-list-match {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+}

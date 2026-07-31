@@ -18,6 +18,12 @@ export type BracketLabels = {
   champion: (participant: string) => string;
   /** Announced on the final's card while it is still to be played. */
   championPending: string;
+  /** Heads the winners-bracket rounds in a double-elimination `et-bracket-rounds-list`. */
+  upperBracketSection: string;
+  /** Heads the losers-bracket rounds in a double-elimination `et-bracket-rounds-list`. */
+  lowerBracketSection: string;
+  /** Heads the deciding rounds — grand final, bracket reset, third place — in a rounds list. */
+  finalsSection: string;
 };
 
 /** The built-in English labels. */
@@ -27,6 +33,9 @@ export const DEFAULT_BRACKET_LABELS: BracketLabels = {
   continueLabel: (winners) => `${winners} ${winners === 1 ? 'winner' : 'winners'} advance to the next stage`,
   champion: (participant) => `Champion: ${participant}`,
   championPending: 'Champion not decided yet',
+  upperBracketSection: 'Upper bracket',
+  lowerBracketSection: 'Lower bracket',
+  finalsSection: 'Finals',
 };
 
 /**

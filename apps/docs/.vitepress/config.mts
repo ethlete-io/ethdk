@@ -217,6 +217,7 @@ export default defineConfig({
           items: [
             { text: 'Accordion', link: '/components/accordion' },
             { text: 'Bracket', link: '/components/bracket' },
+            { text: 'Bracket rounds list', link: '/components/bracket-rounds-list' },
             { text: 'Breadcrumb', link: '/components/breadcrumb' },
             { text: 'Carousel', link: '/components/carousel' },
             { text: 'Grid', link: '/components/grid' },

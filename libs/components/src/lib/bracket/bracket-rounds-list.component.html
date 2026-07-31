@@ -1,0 +1,41 @@
+@for (section of sections(); track section.id) {
+  <section [attr.data-section]="section.id" class="et-bracket-rounds-list-section">
+    @if (section.name; as name) {
+      <span [attr.aria-level]="sectionHeadingLevel()" class="et-bracket-rounds-list-section-name" role="heading">
+        {{ name }}
+      </span>
+    }
+
+    @for (block of section.blocks; track block.id) {
+      <div class="et-bracket-rounds-list-block">
+        @if (!hideRoundHeaders()) {
+          <div class="et-bracket-rounds-list-round-header">
+            <ng-container
+              *ngComponentOutlet="
+                roundHeaderComponentFor();
+                inputs: { bracketRound: block.round, bracketRoundSwissGroup: block.swissGroup }
+              "
+            />
+          </div>
+        }
+
+        <ul class="et-bracket-rounds-list-matches">
+          @for (match of block.matches; track match.id) {
+            <li class="et-bracket-rounds-list-match">
+              <ng-container
+                *ngComponentOutlet="
+                  matchComponentFor(block);
+                  inputs: {
+                    bracketRound: block.round,
+                    bracketMatch: match,
+                    bracketRoundSwissGroup: block.swissGroup,
+                  }
+                "
+              />
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  </section>
+}
