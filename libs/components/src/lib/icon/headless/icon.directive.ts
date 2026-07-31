@@ -25,7 +25,11 @@ const SVG_COLOR_ATTRIBUTES = ['fill', 'stroke', 'stop-color', 'stop-opacity'];
   ],
   host: {
     '[innerHTML]': 'iconSrc()',
-    'aria-hidden': 'true',
+    // Decorative by default — an icon almost always repeats a label right next to it, and announcing
+    // it again is noise. A `label` flips it to a real image with a name; see the input.
+    '[attr.aria-hidden]': 'label() ? null : "true"',
+    '[attr.role]': 'label() ? "img" : null',
+    '[attr.aria-label]': 'label()',
     '[class]': 'hostClasses()',
     style: 'display: flex; align-items: center; justify-content: center;',
   },
@@ -40,6 +44,19 @@ export class IconDirective {
   public variant: InputSignal<RegisteredIconVariant | undefined> = input<RegisteredIconVariant | undefined>(undefined);
 
   public allowHardcodedColor = input(false, { transform: booleanAttribute });
+
+  /**
+   * Give the icon an accessible name, for the case where it **is** the content rather than decoration:
+   * a status glyph alone in a table cell, a lone icon button's only child, a checkmark that is the
+   * whole answer.
+   *
+   * Without it the icon is `aria-hidden` — the right default, since an icon normally sits beside the
+   * text it illustrates and repeating it is noise. With it the host becomes `role="img"` with this as
+   * its `aria-label`, so the meaning survives for a screen reader.
+   *
+   * Name what the icon **means**, not what it depicts: `'Verified'`, not `'checkmark'`.
+   */
+  public label = input<string | null>(null);
 
   // App-level overrides win over the icons a component self-registers, keyed by name/variant.
   // Names absent from the override map keep their built-in default.

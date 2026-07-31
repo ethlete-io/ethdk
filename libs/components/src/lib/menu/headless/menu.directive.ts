@@ -64,6 +64,16 @@ export class MenuDirective {
   // eslint-disable-next-line ethlete/no-native-html-input-name -- mirrors the native autofocus behaviour on open
   public autoFocus = input(true, { transform: booleanAttribute });
   public hoverOpen = input(true, { transform: booleanAttribute });
+  /**
+   * Wrap around at the ends: `ArrowDown` on the last item goes to the first. Turn it off for a long
+   * menu, where wrapping reads as a jump to somewhere unrelated rather than as continuing — the
+   * arrows then simply stop at the ends.
+   *
+   * Does not apply to a menu with a search field: there the ends hand focus back to the field, which
+   * is a more useful destination than either wrapping or stopping.
+   * @default true
+   */
+  public loop = input(true, { transform: booleanAttribute });
   public hoverOpenDelay = input(120, { transform: numberAttribute });
   public hoverCloseDelay = input(300, { transform: numberAttribute });
   public disabled = input(false, { transform: booleanAttribute });
@@ -563,6 +573,12 @@ export class MenuDirective {
       this.activeItem.set(null);
       search.focus();
 
+      return;
+    }
+
+    // Past an end with `loop` off, there is nowhere to go — the active item stays where it is rather
+    // than jumping to the other end of the menu.
+    if (!this.loop() && (nextIndex < 0 || nextIndex >= items.length)) {
       return;
     }
 

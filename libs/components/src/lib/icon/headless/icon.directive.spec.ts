@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
 import * as iconExports from './index';
@@ -16,11 +16,12 @@ const VALID_ICON_2 = {
 };
 
 @Component({
-  template: `<span [etIcon]="name"></span>`,
+  template: `<span [etIcon]="name" [label]="label()"></span>`,
   imports: [IconDirective],
 })
 class IconTestHost {
   name = VALID_ICON.name;
+  label = signal<string | null>(null);
 }
 
 describe('IconDirective', () => {
@@ -40,6 +41,30 @@ describe('IconDirective', () => {
     it('sets aria-hidden to true', () => {
       fixture.detectChanges();
       expect(span.getAttribute('aria-hidden')).toBe('true');
+      expect(span.hasAttribute('role')).toBe(false);
+    });
+
+    // An icon usually repeats the label beside it, so hidden is the right default — but a lone status
+    // glyph is the content, and then it needs a name of its own.
+    it('becomes a named image when given a label', () => {
+      fixture.componentInstance.label.set('Verified');
+      fixture.detectChanges();
+
+      expect(span.getAttribute('role')).toBe('img');
+      expect(span.getAttribute('aria-label')).toBe('Verified');
+      // Both at once would hide the very name that was just given.
+      expect(span.hasAttribute('aria-hidden')).toBe(false);
+    });
+
+    it('goes back to decorative when the label is taken away', () => {
+      fixture.componentInstance.label.set('Verified');
+      fixture.detectChanges();
+      fixture.componentInstance.label.set(null);
+      fixture.detectChanges();
+
+      expect(span.getAttribute('aria-hidden')).toBe('true');
+      expect(span.hasAttribute('role')).toBe(false);
+      expect(span.hasAttribute('aria-label')).toBe(false);
     });
 
     it('sets icon-name class', () => {

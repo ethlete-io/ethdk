@@ -142,22 +142,23 @@ Inputs on `[etMenu]`:
 | `viewportPadding`    | `8`            | Clearance against the viewport edge                                                                                                    |
 | `arrow`              | `true`         | Floating arrow pointing at the trigger (root, trigger-anchored menus only); `arrowPadding` (default `14`) keeps it off rounded corners |
 | `hoverOpen`          | `true`         | Submenu hover-open with `hoverOpenDelay` (120ms) / `hoverCloseDelay` (300ms)                                                           |
+| `loop`               | `true`         | Wrap the arrow keys at the ends. Off makes them stop instead — better for a long menu, where wrapping reads as a jump somewhere else.  |
 | `autoFocus`          | `true`         | Focus the panel/first item on open                                                                                                     |
 | `open`               | `model(false)` | Two-way open state; methods `show()`, `hide()`, `toggle()`, `closeAll()`, `openAt(point)`                                              |
 | `disabled`           | `false`        | Ignores open requests (trigger clicks, hover, `openAt`) while set                                                                      |
 
 ### Keyboard
 
-| Key                              | Action                                                      |
-| -------------------------------- | ----------------------------------------------------------- |
-| <kbd>↓</kbd> / <kbd>↑</kbd>      | Move the active item (wraps; integrates the search input)   |
-| <kbd>→</kbd> / <kbd>←</kbd>      | Open / close a submenu level                                |
-| <kbd>Home</kbd> / <kbd>End</kbd> | First / last item                                           |
-| <kbd>Enter</kbd>                 | Activate (selects and dismisses)                            |
-| <kbd>Space</kbd>                 | Activate (selection items toggle and keep the menu open)    |
-| <kbd>Esc</kbd>                   | Close the current level                                     |
-| <kbd>Tab</kbd>                   | Close the whole menu tree                                   |
-| Printable keys                   | Typeahead — or forwarded into the search input when present |
+| Key                              | Action                                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------ |
+| <kbd>↓</kbd> / <kbd>↑</kbd>      | Move the active item (wraps unless `loop` is off; integrates the search input) |
+| <kbd>→</kbd> / <kbd>←</kbd>      | Open / close a submenu level                                                   |
+| <kbd>Home</kbd> / <kbd>End</kbd> | First / last item                                                              |
+| <kbd>Enter</kbd>                 | Activate (selects and dismisses)                                               |
+| <kbd>Space</kbd>                 | Activate (selection items toggle and keep the menu open)                       |
+| <kbd>Esc</kbd>                   | Close the current level                                                        |
+| <kbd>Tab</kbd>                   | Close the whole menu tree                                                      |
+| Printable keys                   | Typeahead — or forwarded into the search input when present                    |
 
 ## Accessibility
 

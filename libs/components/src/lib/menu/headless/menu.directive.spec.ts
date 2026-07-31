@@ -10,7 +10,7 @@ import { MenuDirective } from './menu.directive';
 
 @Component({
   template: `
-    <div etMenu>
+    <div [loop]="loop()" etMenu>
       <button class="root-trigger" etMenuTrigger type="button">Open menu</button>
 
       <ng-template etMenuSurface>
@@ -53,6 +53,7 @@ class MenuDirectiveTestHost {
   clicked: string[] = [];
   bravoDisabled = signal(false);
   extraLabels = signal<string[]>([]);
+  loop = signal(true);
 }
 
 const keydown = (element: Element, key: string) =>
@@ -136,6 +137,28 @@ describe('MenuDirective', () => {
     expect(document.activeElement).toBe(alpha);
     expect(alpha.getAttribute('tabindex')).toBe('0');
     expect(query('.item-bravo').getAttribute('tabindex')).toBe('-1');
+  });
+
+  it('stops at the ends instead of wrapping when loop is off', async () => {
+    fixture.componentInstance.loop.set(false);
+    fixture.detectChanges();
+
+    await openMenu();
+
+    const alpha = query('.item-alpha');
+    const last = query('.submenu-trigger');
+
+    keydown(alpha, 'ArrowUp');
+    tick();
+    expect(document.activeElement).toBe(alpha);
+
+    keydown(alpha, 'End');
+    tick();
+    expect(document.activeElement).toBe(last);
+
+    keydown(last, 'ArrowDown');
+    tick();
+    expect(document.activeElement).toBe(last);
   });
 
   it('moves the active item with arrow keys, wrapping at the edges and skipping disabled items', async () => {
