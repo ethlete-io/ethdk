@@ -72,7 +72,7 @@ A coarse cell is disabled when **no** day inside it is selectable, so `min`/`max
 
 <StoryEmbed id="components-calendar--year-view" height="420px" />
 
-Inside a date picker the panel reserves the day grid's tallest case (six week rows), so neither paging a month nor drilling a view resizes it — the month and year grids centre in that height. A bare `<et-calendar>` sizes to whichever grid is showing.
+In a date picker's **bottom sheet** the panel reserves the day grid's tallest case (six week rows), so neither paging a month nor drilling a view moves it: a sheet grows upwards, so a height change would slide its top edge under the reader's thumb. The month and year grids centre in that reserved height. The anchored panel on wider screens, and a bare `<et-calendar>`, size themselves to whichever grid is showing.
 
 Selection and today's marker carry over unchanged: a coarse cell reads as selected when it contains the value (or a range end), and as today when it contains today. `monthSelect` / `yearSelect` fire on a coarse pick, for consumers that want to close a picker at month precision.
 

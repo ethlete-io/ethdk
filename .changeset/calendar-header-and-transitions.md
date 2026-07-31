@@ -21,7 +21,8 @@ Calendar: a header that holds still, and grids that cross over rather than cut.
 - **The month and year grids use the same row height as the day grid** — one cell tall, not two —
   and sit centred in whatever height the picker reserves, so the month grid is a tidy 4×3 instead of
   three rows floating in a box with the remainder at the bottom.
-- **A date picker no longer changes size at all**: the panel reserves the day grid's six-row worst
-  case, so neither paging a month nor drilling a view moves it. In the bottom sheet that is the
-  difference between a top edge that holds still and one that slides under the reader's thumb; on
-  the desktop panel it also settles the 4-, 5- and 6-week months, which used to resize it.
+- **The picker's bottom sheet no longer changes size**: it reserves the day grid's six-row worst case,
+  so neither paging a month nor drilling a view moves it. A sheet grows upwards from the bottom of the
+  screen, so any height change slides its top edge — and everything under the reader's thumb with it.
+  The anchored panel on wider screens still sizes itself to whatever is showing, which is what it has
+  always done: it grows downwards from a field, where a resize costs nothing.
