@@ -46,6 +46,7 @@ export * from './strikethrough-icon';
 export * from './table-icon';
 export * from './times-icon';
 export * from './triangle-exclamation-icon';
+export * from './trophy-icon';
 export * from './underline-icon';
 export * from './undo-redo-icons';
 export * from './upload-icon';

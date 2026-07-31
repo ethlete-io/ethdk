@@ -30,7 +30,9 @@ import {
 import { BracketDataSource } from './integrations';
 import { setupJourneyHighlight as setupJourneyHighlightListeners } from './journey-highlight';
 import { createBracket, generateBracketRoundSwissGroupMaps } from './linked';
+import { BRACKET_CARD_CONTEXT, BracketMatchNormalizer } from './bracket-card-context';
 import { BracketDefaultContinueComponent } from './bracket-default-continue.component';
+import { BracketDefaultFinalMatchComponent } from './bracket-default-final-match.component';
 import { BracketDefaultMatchComponent } from './bracket-default-match.component';
 import { BracketDefaultRoundHeaderComponent } from './bracket-default-round-header.component';
 import { BracketSwissColors, injectBracketConfig } from './bracket.config';
@@ -41,6 +43,9 @@ import { BracketSwissColors, injectBracketConfig } from './bracket.config';
   styleUrl: './bracket.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [NgComponentOutlet],
+  // What the default cards read: this component resolves each value from its own input first and the
+  // app-wide config second, so a card never has to know where a setting came from.
+  providers: [{ provide: BRACKET_CARD_CONTEXT, useExisting: BracketComponent }],
   host: {
     class: 'et-bracket-host',
   },
@@ -53,8 +58,11 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
   public columnWidth = input(this.config.columnWidth ?? 250, { transform: numberAttribute });
   public matchHeight = input(this.config.matchHeight ?? 75, { transform: numberAttribute });
-  public finalMatchHeight = input(this.config.finalMatchHeight ?? 75, { transform: numberAttribute });
-  public finalColumnWidth = input(this.config.finalColumnWidth ?? 300, { transform: numberAttribute });
+  // Sized for the shipped final card, which is a header, an expanded match card and a champion line
+  // stacked — the previous 300×75 fitted the debug placeholder and nothing else. A custom final card that
+  // wants the old box sets these back.
+  public finalMatchHeight = input(this.config.finalMatchHeight ?? 200, { transform: numberAttribute });
+  public finalColumnWidth = input(this.config.finalColumnWidth ?? 360, { transform: numberAttribute });
   public roundHeaderHeight = input(this.config.roundHeaderHeight ?? 50, { transform: numberAttribute });
   public roundHeaderGap = input(this.config.roundHeaderGap ?? 20, { transform: numberAttribute });
   public columnGap = input(this.config.columnGap ?? 60, { transform: numberAttribute });
@@ -82,6 +90,24 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   public matchComponent = input<BracketMatchComponent<TRoundData, TMatchData> | undefined>();
   public finalMatchComponent = input<BracketMatchComponent<TRoundData, TMatchData> | undefined>();
   public continueComponent = input<BracketContinueComponent<TRoundData, TMatchData> | undefined>();
+
+  /**
+   * How to read your match data, for the **default** cards — see {@link BracketMatchNormalizer}. Cards of
+   * your own get the match through their inputs and need none of this.
+   */
+  public matchNormalizer = input<BracketMatchNormalizer<TRoundData, TMatchData> | undefined>();
+
+  /** The `aria-level` the default round headers announce themselves at. @default 3 */
+  public roundHeaderLevel = input(this.config.roundHeaderLevel ?? 3, { transform: numberAttribute });
+
+  /** @internal The normalizer in effect, read by the default cards through `BRACKET_CARD_CONTEXT`. */
+  public resolvedMatchNormalizer = computed<BracketMatchNormalizer | null>(
+    () => this.matchNormalizer() ?? this.config.matchNormalizer ?? null,
+  );
+
+  /** @internal The heading level in effect, read by the default round headers. */
+  public resolvedRoundHeaderLevel = computed(() => this.roundHeaderLevel());
+
   private elementId = createComponentId('et-bracket');
 
   public bracketData = computed(() => createBracket(this.source(), { layout: this.layout() }));
@@ -122,7 +148,7 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
         swissConfig?.matchComponent ??
         this.config.matchComponent ??
         BracketDefaultMatchComponent,
-      finalMatch: this.finalMatchComponent() ?? this.config.finalMatchComponent ?? BracketDefaultMatchComponent,
+      finalMatch: this.finalMatchComponent() ?? this.config.finalMatchComponent ?? BracketDefaultFinalMatchComponent,
       roundHeader:
         this.roundHeaderComponent() ??
         swissConfig?.roundHeaderComponent ??

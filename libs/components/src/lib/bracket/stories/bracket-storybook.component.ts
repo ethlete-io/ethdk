@@ -6,6 +6,7 @@ import { BRACKET_DATA_LAYOUT, BracketDataLayout } from '../core/layout';
 import { BracketDataSource } from '../integrations/base';
 import { BracketMatch, BracketRound } from '../linked/bracket';
 import { BracketRoundSwissGroup } from '../linked/swiss';
+import { demoMatchNormalizer } from './demo-match-normalizer';
 
 /**
  * Demo custom final-match card, wired via the `finalMatchComponent` input to show that
@@ -51,7 +52,9 @@ export class StorybookFinalMatchComponent<TRoundData = unknown, TMatchData = unk
     <et-scrollable stickyButtons>
       <et-bracket
         [source]="source()"
-        [finalMatchComponent]="FINAL_MATCH_COMPONENT"
+        [matchNormalizer]="MATCH_NORMALIZER"
+        [finalMatchComponent]="customFinalCard() ? FINAL_MATCH_COMPONENT : undefined"
+        [roundHeaderLevel]="roundHeaderLevel()"
         [columnWidth]="columnWidth()"
         [matchHeight]="matchHeight()"
         [roundHeaderHeight]="roundHeaderHeight()"
@@ -112,5 +115,12 @@ export class StorybookBracketComponent {
 
   public swissColors = input<BracketSwissColors | undefined>(undefined);
 
+  /** Swap the shipped final card for the demo custom one, to show the override still works. */
+  public customFinalCard = input(false, { transform: booleanAttribute });
+  public roundHeaderLevel = input(3, { transform: numberAttribute });
+
   protected readonly FINAL_MATCH_COMPONENT = StorybookFinalMatchComponent;
+
+  /** The story data carries no payload, so this derives its cards from the bracket's own structure. */
+  protected readonly MATCH_NORMALIZER = demoMatchNormalizer;
 }

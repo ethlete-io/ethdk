@@ -138,6 +138,7 @@ export const ET_BUILT_IN_ICON_NAMES = [
   'et-table',
   'et-times',
   'et-triangle-exclamation',
+  'et-trophy',
   'et-underline',
   'et-undo',
   'et-upload',

@@ -24,4 +24,6 @@ export const BRACKET_ERROR_CODES = {
   WINNER_NOT_FOUND: 3410,
   /** A required key was missing from an internal bracket lookup map. */
   DATA_LOOKUP_FAILED: 3411,
+  /** The default cards are rendering but no `matchNormalizer` was registered to feed them. */
+  MISSING_MATCH_NORMALIZER: 3412,
 } as const;

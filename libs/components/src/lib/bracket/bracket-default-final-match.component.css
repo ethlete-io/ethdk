@@ -1,0 +1,76 @@
+@layer components {
+  /* The frame is the whole distinction: an accent border and a soft glow in the color theme in scope, so a
+     bracket rendered inside a branded scope crowns its winner in that brand rather than in a colour this
+     file picked. Everything else is the standard card. */
+  .et-bracket-final-host {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    align-content: center;
+    box-sizing: border-box;
+    inline-size: 100%;
+    block-size: 100%;
+    gap: 6px;
+    padding: 10px;
+    background: color-mix(in srgb, var(--et-theme-color-primary-solid, transparent) 6%, transparent);
+    border: 1px solid color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 45%, transparent);
+    border-radius: calc(var(--et-match-card-border-radius, 10px) + 4px);
+    box-shadow: 0 0 24px -8px color-mix(in srgb, var(--et-theme-color-primary-solid, transparent) 50%, transparent);
+  }
+
+  .et-bracket-final-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-inline-size: 0;
+    color: var(--et-theme-color-ink-solid, currentColor);
+  }
+
+  .et-bracket-final-trophy {
+    display: block;
+    flex: none;
+    inline-size: 14px;
+    block-size: 14px;
+  }
+
+  .et-bracket-final-round {
+    overflow: hidden;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* Transparent inside the frame: two stacked borders around the same match reads as a mistake. */
+  .et-bracket-final-host .et-bracket-final-card {
+    display: grid;
+    block-size: 100%;
+    min-inline-size: 0;
+  }
+
+  .et-bracket-final-host .et-bracket-final-card .et-match-card-content {
+    padding-inline: 0;
+    background: transparent;
+    border-color: transparent;
+  }
+
+  .et-bracket-final-champion {
+    margin: 0;
+    overflow: hidden;
+    font-size: 11px;
+    line-height: 1.3;
+    color: var(--et-surface-color-muted-solid, currentColor);
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Decided: the champion line is the answer everyone came for, so it stops being a caption. */
+  .et-bracket-final-host:where([data-decided]) .et-bracket-final-champion {
+    font-weight: 600;
+    color: var(--et-theme-color-ink-solid, currentColor);
+  }
+}

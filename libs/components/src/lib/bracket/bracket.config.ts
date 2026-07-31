@@ -1,4 +1,5 @@
 import { createStaticRootProvider } from '@ethlete/core';
+import { BracketMatchNormalizer } from './bracket-card-context';
 import { BracketDataLayout } from './core';
 import { BracketContinueComponent, BracketMatchComponent, BracketRoundHeaderComponent } from './drawing/grid';
 import { BracketSwissGroupColorType } from './linked';
@@ -54,6 +55,17 @@ export type BracketConfig<TRoundData = any, TMatchData = any> = {
   matchComponent?: BracketMatchComponent<TRoundData, TMatchData>;
   finalMatchComponent?: BracketMatchComponent<TRoundData, TMatchData>;
   continueComponent?: BracketContinueComponent<TRoundData, TMatchData>;
+
+  /**
+   * How to read your match data — required by the **default** cards, ignored by cards of your own. See
+   * {@link BracketMatchNormalizer}; the Ethlete integration ships a ready-made one.
+   */
+  matchNormalizer?: BracketMatchNormalizer<TRoundData, TMatchData>;
+  /**
+   * The `aria-level` the default round headers announce themselves at. Match it to where the bracket
+   * sits in your page's heading outline — a bracket under an `<h2>` section wants `3`.
+   */
+  roundHeaderLevel?: number;
 
   /** Swiss specific overrides. These win over the top level component defaults. */
   swiss?: BracketSwissConfig<TRoundData, TMatchData>;

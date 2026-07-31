@@ -35,6 +35,8 @@ export default {
     continueColumnWidth: { control: { type: 'number' } },
     continueElementHeight: { control: { type: 'number' } },
     continueLineDashArray: { control: { type: 'number' } },
+    customFinalCard: { control: { type: 'boolean' } },
+    roundHeaderLevel: { control: { type: 'number' } },
   },
   args: {
     columnGap: 60,
@@ -59,6 +61,8 @@ export default {
     continueColumnWidth: 250,
     continueElementHeight: 75,
     continueLineDashArray: 6,
+    customFinalCard: false,
+    roundHeaderLevel: 3,
   },
 } as Meta<StorybookBracketComponent>;
 

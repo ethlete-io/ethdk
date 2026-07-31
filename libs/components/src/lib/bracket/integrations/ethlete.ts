@@ -15,6 +15,8 @@ import {
 } from '../core';
 import { BracketDataSource, BracketMatchSource, BracketRoundSource } from './base';
 import { RuntimeError } from '@ethlete/core';
+import { normalizeEthleteMatch } from '../../match';
+import { BracketMatchNormalizer } from '../bracket-card-context';
 import { BRACKET_ERROR_CODES } from '../bracket-errors';
 
 export const generateRoundTypeFromEthleteRoundType = (
@@ -146,3 +148,15 @@ export const generateBracketDataForEthlete = (source: RoundStageStructureWithMat
 
   return bracketData;
 };
+
+/**
+ * The normalizer the bracket's default cards need, for a source built by
+ * {@link generateBracketDataForEthlete} — the two halves of the same integration, kept apart because the
+ * layout engine has no business knowing what a `MatchListView` is.
+ *
+ * @example
+ * provideBracketConfig({ matchNormalizer: normalizeEthleteBracketMatch });
+ */
+export const normalizeEthleteBracketMatch: BracketMatchNormalizer<RoundStageStructureView, MatchListViewUnion> = (
+  match,
+) => normalizeEthleteMatch(match.data);

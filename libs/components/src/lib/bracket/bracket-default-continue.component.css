@@ -1,0 +1,29 @@
+@layer components {
+  /* Dashed to match its connector, which the engine also dashes: this column is a hand-off, not a match. */
+  .et-bracket-default-continue-host {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    box-sizing: border-box;
+    inline-size: 100%;
+    block-size: 100%;
+    padding: 10px;
+    color: var(--et-surface-color-muted-solid, currentColor);
+    border: 1px dashed var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    border-radius: var(--et-match-card-border-radius, 10px);
+  }
+
+  .et-bracket-default-continue-icon {
+    display: block;
+    inline-size: 18px;
+    block-size: 18px;
+  }
+
+  .et-bracket-default-continue-text {
+    font-size: 12px;
+    line-height: 1.3;
+    text-align: center;
+  }
+}

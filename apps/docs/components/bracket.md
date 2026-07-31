@@ -10,14 +10,12 @@ hover.
 Import `BRACKET_IMPORTS` (or `BracketComponent` directly). App-wide defaults for the
 layout inputs can be set once with `provideBracketConfig({ ... })`.
 
-::: warning Work in progress — cards are placeholders
-The round-header, match, final-match and continue **cards currently render as barebones
-debug placeholders** (plain boxes showing ids/names). The layout engine, data
-integrations, connectors, journey highlight and swiss grouping are complete; the
-opinionated default cards are not yet built. Supply your own via the
-`matchComponent` / `finalMatchComponent` / `roundHeaderComponent` / `continueComponent`
-inputs (or `provideBracketConfig`) until the defaults land — see
-[Custom cards](#custom-cards).
+::: warning The default cards need a `matchNormalizer`
+The bracket carries your match payload from the data source to the cards untouched, so the
+**shipped cards need one function that says how to read it**. Register it once and the
+defaults work; leave it out and they render nothing (dev mode throws
+[`ET3412`](/components/error-codes#bracket-et34xx)). See
+[Default cards](#default-cards).
 :::
 
 ## Usage
@@ -80,8 +78,8 @@ All layout inputs are numbers (px) unless noted and can be defaulted app-wide vi
 | `columnGap`               | `60`              | Horizontal gap between round columns.                                      |
 | `rowGap`                  | `30`              | Vertical gap between matches in a column.                                  |
 | `rowRoundGap`             | `20`              | Vertical gap between the upper/lower halves of a double-elimination round. |
-| `finalColumnWidth`        | `300`             | Width of the final column.                                                 |
-| `finalMatchHeight`        | `75`              | Height of the final match card.                                            |
+| `finalColumnWidth`        | `360`             | Width of the final column — sized for the shipped final card.              |
+| `finalMatchHeight`        | `200`             | Height of the final match card — likewise.                                 |
 | `roundHeaderHeight`       | `50`              | Height of the round-header row.                                            |
 | `roundHeaderGap`          | `20`              | Gap between the header row and the first match.                            |
 | `hideRoundHeaders`        | `false`           | Drop the header row entirely.                                              |
@@ -98,11 +96,101 @@ All layout inputs are numbers (px) unless noted and can be defaulted app-wide vi
 | `continueColumnWidth`     | `250`             | Width of the continue column.                                              |
 | `continueElementHeight`   | `75`              | Height of the continue card.                                               |
 | `continueLineDashArray`   | `6`               | Dash length for the continue connectors.                                   |
+| `matchNormalizer`         | —                 | How to read your match data, for the default cards (see below).            |
+| `roundHeaderLevel`        | `3`               | `aria-level` the default round headers announce themselves at.             |
+
+## Default cards
+
+Four cards ship with the bracket, and all three match-bearing ones are built on
+[`et-match-card`](/components/match):
+
+| Slot         | Default                                                                                                                 |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| Match        | A compact match card — two rows, short codes, the winner emphasized with an accent bar                                  |
+| Final match  | A distinct hero cell: the round's name under a trophy, an accent frame in the color theme in scope, and a champion line |
+| Round header | The round's name, its swiss group's name where there is one, and its match count — as a real heading                    |
+| Continue     | "N winners advance", with an accessible label of its own                                                                |
+
+### The normalizer
+
+The bracket never looks inside your match payload — it hands `TMatchData` from the data source
+to the cards and stays out of it. So the default cards need one function that turns a match into
+the [normalized shape](/components/match#any-backend-the-normalized-match) they draw:
+
+```ts
+import { normalizeEthleteBracketMatch, provideBracketConfig } from '@ethlete/components';
+
+// for an @ethlete/types feed, the normalizer ships with the integration
+provideBracketConfig({ matchNormalizer: normalizeEthleteBracketMatch });
+```
+
+Any other backend writes its own. It receives the **whole linked match**, not just `data`, so a
+payload that holds nothing presentational is not a dead end — participant ids, `winnerSide`,
+`status` and the round are all there to build a card from:
+
+```ts
+provideBracketConfig({
+  matchNormalizer: (match) => ({
+    id: match.id,
+    status: match.status === 'completed' ? 'finished' : 'scheduled',
+    startTime: match.data.kickOff ? new Date(match.data.kickOff) : null,
+    home: myParticipant(match.data.home),
+    away: myParticipant(match.data.away),
+    homeScore: match.data.homeGoals ?? null,
+    awayScore: match.data.awayGoals ?? null,
+    resultKind: 'score',
+    gameScores: null,
+    winnerSide: match.winnerSide,
+    label: null,
+  }),
+});
+```
+
+`[matchNormalizer]` on `<et-bracket>` overrides the provider for one bracket.
+
+### Making cells navigate
+
+The default match card is **not** a link: the bracket can't know your routes and won't guess. A
+bracket whose cells navigate wants a `matchComponent` of its own, which is the match card on an
+anchor — the whole card becomes the link, correctly named, for free:
+
+```ts
+@Component({
+  selector: 'app-bracket-match',
+  imports: [MATCH_CARD_IMPORTS, RouterLink],
+  template: `
+    @if (normalized(); as match) {
+      <a [match]="match" [routerLink]="['/matches', match.id]" et-match-card size="compact"></a>
+    }
+  `,
+})
+export class BracketMatchComponent {
+  bracketRound = input.required<BracketRound<RoundData, MatchData>>();
+  bracketMatch = input.required<BracketMatch<RoundData, MatchData>>();
+  bracketRoundSwissGroup = input.required<BracketRoundSwissGroup<RoundData, MatchData> | null>();
+
+  protected normalized = computed(() => myNormalizer(this.bracketMatch()));
+}
+```
+
+### Localization
+
+The cards' own strings — the match count, "N winners advance", the champion line — come from
+`provideBracketLabels()`. Everything inside a match card (TBD, Live, the composed accessible
+name) comes from [`provideMatchLabels()`](/components/match#localization).
+
+| Label             | Default                                          |
+| ----------------- | ------------------------------------------------ |
+| `roundMatchCount` | `(n) => '<n> matches'`                           |
+| `winnersAdvance`  | `(n) => '<n> winners advance'`                   |
+| `continueLabel`   | `(n) => '<n> winners advance to the next stage'` |
+| `champion`        | `(name) => 'Champion: <name>'`                   |
+| `championPending` | `'Champion not decided yet'`                     |
 
 ## Custom cards
 
 Each slot is an Angular component rendered per element via `ngComponentOutlet`. Provide
-your own to replace the [placeholder defaults](#bracket):
+your own to replace any default:
 
 | Input                  | Receives (all `input.required`)                          |
 | ---------------------- | -------------------------------------------------------- |
@@ -126,12 +214,6 @@ export class MatchCardComponent {
 ```html
 <et-bracket [source]="source" [matchComponent]="MatchCardComponent" [finalMatchComponent]="FinalCardComponent" />
 ```
-
-<!-- TODO(bracket): ship opinionated default cards (match, final match, round header, continue)
-     using the surface/color theming tokens, then replace the "cards are placeholders" warning
-     above with real screenshots/embeds and document each card's slots + tokens here. Until then
-     the default components in libs/components/src/lib/bracket/bracket-default-*.component.ts are
-     intentionally barebones debug boxes. -->
 
 ## Double elimination
 
@@ -176,15 +258,24 @@ with `disableJourneyHighlight`.
 
 ## Accessibility
 
-<!-- TODO(bracket): the placeholder cards carry no roles/labels yet. When the default cards
-     land, give matches accessible names (participants + score + status), expose the bracket
-     as a navigable structure, and document keyboard interaction here. -->
+The layout host is presentational — absolutely-positioned `ul`/`li` scaffolding — so the
+semantics live in the cards, and the shipped ones carry them:
 
-The layout host is presentational (absolutely-positioned `ul`/`li` scaffolding). Accessible
-semantics — participant names, scores, result status, and keyboard traversal — belong to the
-match/header cards; the barebones defaults don't provide them yet, so **supply accessible
-custom cards for production use**. Journey highlighting is a pointer-only affordance and is
-not required to understand the bracket.
+- **Every match announces itself as one thing.** The default cards are
+  [`et-match-card`](/components/match#accessibility)s, so each cell has a composed accessible
+  name ("Neon Esports vs. Rote Löwen Pankow, 2 : 1, Finished") rather than a handful of loose
+  fragments, and score changes are announced once through a polite live region.
+- **The columns are real headings.** The default round header is `role="heading"` with an
+  `aria-level` from `roundHeaderLevel` (default `3`) — set it to match where the bracket sits in
+  your page's outline, and a screen reader can then walk the bracket by round.
+- **The continue cell is a labelled group**, since its visible text is a fragment.
+- **The final names its champion** in text, so the result doesn't depend on reading emphasis.
+- **Nothing is a click target by default.** Cells navigate only if you supply a
+  [card that links](#making-cells-navigate), and then the whole card is one correctly-named link.
+- Journey highlighting is a pointer-only affordance and is not required to understand the
+  bracket.
+
+A card of your own is responsible for its own semantics — the layout engine adds none.
 
 ## Theming
 
@@ -235,5 +326,7 @@ Also note:
 - The **fifa.gg integration** (`generateBracketDataForGg`, `GgData`) was **not** ported — it
   was app-specific. Convert start-of-stage payloads to a `BracketDataSource` in your app, or
   use `generateBracketDataForEthlete`.
-- The default match/round-header/continue cards are still barebones placeholders (see the
-  work-in-progress note at the top); supply custom cards for production.
+- The default cards are real now (the cdk's were debug boxes) and are built on
+  [`et-match-card`](/components/match) — which is why they need a
+  [`matchNormalizer`](#the-normalizer). `finalColumnWidth` / `finalMatchHeight` default to
+  `360` / `200` to fit the shipped final card; a custom final card can set them back.

@@ -1,0 +1,21 @@
+@layer components {
+  /* The cell is sized by the grid engine (`columnWidth` × `matchHeight`); the card fills it, and the
+     card's own container query then picks the density that width affords. */
+  .et-bracket-default-match-host {
+    display: block;
+    box-sizing: border-box;
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .et-bracket-default-match-host .et-bracket-default-match-card {
+    /* The engine's `matchHeight` is the contract for how tall a cell is, so the card takes all of it
+       rather than sizing to its own content and leaving the connectors pointing at nothing. `grid` over
+       the card's own `block` so its single child stretches with it. */
+    display: grid;
+    block-size: 100%;
+    /* Overridden from the card's own 180px floor: a bracket column may legitimately be narrower, and here
+       the column width is deliberate rather than accidental. */
+    min-inline-size: 0;
+  }
+}
