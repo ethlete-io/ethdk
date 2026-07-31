@@ -460,7 +460,7 @@
                 <div class="et-query-devtools-card-head">
                   <strong class="et-query-devtools-mono">{{ client.baseUrl || client.name }}</strong>
                   <span class="et-query-devtools-count">{{ client.entries.length }} entries</span>
-                  @if (client.client?.subtle.persistence) {
+                  @if (client.client?.subtle?.persistence) {
                     <span class="et-query-devtools-count">{{ persistedCount(client.client!) }} on disk</span>
                     <button (click)="clearPersistedQueries(client.client!)" class="et-query-devtools-btn" type="button">
                       Clear disk
