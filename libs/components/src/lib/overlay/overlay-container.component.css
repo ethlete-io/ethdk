@@ -287,7 +287,6 @@
      page behind the backdrop, and on a sheet it competes with the drag-to-dismiss gesture. */
     overscroll-behavior: contain;
     padding-inline: var(--et-overlay-padding-inline);
-    padding-block: var(--et-overlay-body-padding-block);
     grid-template-columns: minmax(0, 1fr);
     grid-auto-rows: minmax(0, 1fr);
 
@@ -320,6 +319,15 @@
     .et-overlay-body-container {
       position: relative;
       min-block-size: min-content;
+
+      /* The body's block padding lives on this container, not on the scroll container itself. The body
+       lays the container out in a `minmax(0, 1fr)` row, so content taller than the overlay overflows
+       that row — and a scroll container's own padding-block-end does not extend the scrollable area
+       past an overflowing item, it just gets painted underneath it. Consumers setting
+       `--et-overlay-body-padding-block` would see the padding in devtools while scrolling still ended
+       flush on the last child, clipping its border and focus ring. The container's padding is part of
+       the box the scrollable overflow is measured from, so the space is really reachable. */
+      padding-block: var(--et-overlay-body-padding-block);
 
       .et-overlay-body-start-element,
       .et-overlay-body-end-element {
