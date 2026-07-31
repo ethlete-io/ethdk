@@ -36,6 +36,33 @@ export type QueryRepositoryEvent =
 
       /** @see BaseQueryCreatorOptions.multiTabSync */
       isMultiTabSyncEnabled: boolean;
+
+      /**
+       * Whether this response may be written to the client's persisted store. Already accounts for
+       * secure requests needing an explicit opt-in.
+       *
+       * @see BaseQueryCreatorOptions.persistence
+       */
+      isPersistEnabled: boolean;
+    }
+  | {
+      /**
+       * A cache entry was created — the query behind it had nothing to bind to, so this is the moment a
+       * response from a previous session can still be of use. The persistence engine answers it by
+       * reading the key back from disk.
+       *
+       * Only ever emitted for entries that did not exist before; a consumer binding to an entry that is
+       * already there is not one of these.
+       */
+      type: 'entry-created';
+
+      key: QueryKey;
+
+      /** @see QueryRepositoryEvent.isCached */
+      isCached: boolean;
+
+      /** @see QueryRepositoryEvent.isPersistEnabled */
+      isPersistEnabled: boolean;
     }
   | {
       /**
@@ -155,6 +182,21 @@ export type ApplyExternalResponseOptions = {
   expiresAt: number | null;
 };
 
+/** @see QueryRepository.applyPersistedResponse */
+export type ApplyPersistedResponseOptions = {
+  /** The cache key the response belongs to. */
+  key: QueryKey;
+
+  /** The response body, as it was read back from the store. */
+  body: unknown;
+
+  /**
+   * Timestamp (ms) at which the response goes stale, as it was when the response was persisted — so
+   * usually in the past, which is exactly right: the entry revalidates and the data is shown meanwhile.
+   */
+  expiresAt: number | null;
+};
+
 /**
  * The query repository is responsible for managing all requests and their consumers.
  * It will cache requests if they can be cached and reuse them if they are already cached.
@@ -196,6 +238,23 @@ export type QueryRepository = {
    */
   applyExternalResponse: (options: ApplyExternalResponseOptions) => boolean;
 
+  /**
+   * Writes a response from a previous session — read back from the client's persisted store — onto a
+   * cache entry that has nothing of its own yet.
+   *
+   * Returns whether it was applied. It is skipped when
+   * - no entry exists for the key: the entry was destroyed again while the store was being read,
+   * - the entry's creator opted out of {@link BaseQueryCreatorOptions.persistence},
+   * - or the entry already holds a response — from its own request, or from another tab. Persisted data
+   *   only ever fills a gap; it never replaces something newer.
+   *
+   * Note that the entry's request is *not* stopped: hydration happens while it is already in flight, so
+   * persisted data is always shown alongside a revalidation rather than instead of one. An entry whose
+   * request already failed keeps its error, which is what makes the offline case honest — the data is
+   * from disk, and the attempt to refresh it did fail.
+   */
+  applyPersistedResponse: (options: ApplyPersistedResponseOptions) => boolean;
+
   /** Observable stream of repository events (errors, successes, etc.) */
   events$: Observable<QueryRepositoryEvent>;
 
@@ -226,6 +285,9 @@ type DestroyListenerMapItem = {
   /** @see BaseQueryCreatorOptions.multiTabSync */
   isMultiTabSyncEnabled: boolean;
 
+  /** @see QueryRepositoryEvent.isPersistEnabled */
+  isPersistEnabled: boolean;
+
   /** How long this entry survives without consumers. `0` destroys it immediately. */
   keepUnusedFor: number;
 
@@ -249,6 +311,7 @@ type BindEntryOptions = {
   isCached: boolean;
 
   isMultiTabSyncEnabled: boolean;
+  isPersistEnabled: boolean;
   keepUnusedFor: number;
 };
 
@@ -338,6 +401,13 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     const trackingKey = cacheKey || generateUuid();
     const keepUnusedFor = resolveKeepUnusedFor(creatorOptions, shouldCache);
     const isMultiTabSyncEnabled = creatorOptions?.multiTabSync !== false;
+    const isSecure = options.isSecure ?? false;
+
+    // A secure response needs an explicit `persistence: true` to reach the disk: leaving an
+    // authenticated user's data there is a decision per endpoint, not a default. Everything else
+    // persists unless it opted out.
+    const isPersistEnabled =
+      creatorOptions?.persistence === true || (creatorOptions?.persistence !== false && !isSecure);
 
     const previousKey = options.previousKey;
 
@@ -357,9 +427,10 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
           key: cacheKey,
           consumerDestroyRef: options.consumerDestroyRef,
           request: cacheEntry.request,
-          isSecure: options.isSecure ?? false,
+          isSecure,
           isCached: true,
           isMultiTabSyncEnabled,
+          isPersistEnabled,
           keepUnusedFor,
         });
 
@@ -388,11 +459,17 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       key: trackingKey,
       consumerDestroyRef: options.consumerDestroyRef,
       request,
-      isSecure: options.isSecure ?? false,
+      isSecure,
       isCached: shouldCache,
       isMultiTabSyncEnabled,
+      isPersistEnabled,
       keepUnusedFor,
     });
+
+    // Announced after the entry is bound and its request is on its way, because the one thing that acts
+    // on it — hydration from the persisted store — is only ever allowed to fill a gap this request has
+    // not filled itself.
+    eventsSubject.next({ type: 'entry-created', key: trackingKey, isCached: shouldCache, isPersistEnabled });
 
     return { key: trackingKey, request };
   };
@@ -498,8 +575,31 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     return true;
   };
 
+  const applyPersistedResponse = (options: ApplyPersistedResponseOptions) => {
+    const cacheEntry = cache.get(options.key);
+
+    if (!cacheEntry || !cacheEntry.isPersistEnabled) return false;
+
+    // The store is read asynchronously, so by now the request may well have settled, or another tab may
+    // have fed the entry. Either way what is here is newer than what was on disk.
+    if (cacheEntry.request.response() !== null) return false;
+
+    cacheEntry.request.subtle.applyPersistedResponse({ body: options.body, expiresAt: options.expiresAt });
+
+    return true;
+  };
+
   const bind = (options: BindEntryOptions) => {
-    const { key, consumerDestroyRef, request, isSecure, isCached, isMultiTabSyncEnabled, keepUnusedFor } = options;
+    const {
+      key,
+      consumerDestroyRef,
+      request,
+      isSecure,
+      isCached,
+      isMultiTabSyncEnabled,
+      isPersistEnabled,
+      keepUnusedFor,
+    } = options;
 
     const destroyListener = consumerDestroyRef.onDestroy(() => unbind(key, consumerDestroyRef));
 
@@ -521,7 +621,15 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
             eventsSubject.next({ type: 'request-error', error: event.error.raw, key, isSecure, request });
           }
         } else if (event.type === HttpEventType.Response) {
-          eventsSubject.next({ type: 'request-success', key, isSecure, request, isCached, isMultiTabSyncEnabled });
+          eventsSubject.next({
+            type: 'request-success',
+            key,
+            isSecure,
+            request,
+            isCached,
+            isMultiTabSyncEnabled,
+            isPersistEnabled,
+          });
         }
       });
 
@@ -533,6 +641,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
         keepUnusedFor,
         isCached,
         isMultiTabSyncEnabled,
+        isPersistEnabled,
       });
     }
 
@@ -563,6 +672,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     unbindAllSecure,
     refreshInUse,
     applyExternalResponse,
+    applyPersistedResponse,
     events$: eventsSubject.asObservable(),
     subtle: {
       cacheEntries,

@@ -46,6 +46,9 @@ Entries sitting out their [`keepUnusedFor` window](/query/caching#keeping-unused
 without consumers **are** updated. It costs nothing, and it means a back navigation renders data that
 is current rather than merely recent.
 
+Adopting a shared response is silent, which also means the receiving tab does not write it to the
+[persisted store](/query/persistence): the tab that made the request is the only one that does.
+
 ### Polling dedup
 
 [`withPolling`](/query/features#withpolling) in several tabs polls from **one** of them; the others

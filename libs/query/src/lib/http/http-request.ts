@@ -119,6 +119,27 @@ export type HttpRequestSubtle<TArgs extends QueryArgs> = {
    * query devtools to show which entries are being kept up to date from elsewhere.
    */
   lastExternalResponseAt: Signal<number | null>;
+
+  /**
+   * Adopts a response from a previous session, read back from the client's persisted store while this
+   * request is on its way — so a reload (or a cold start with no network) renders the last known data
+   * instead of an empty loading state.
+   *
+   * Silent for the same reason as {@link applyExternalResponse}: `events$` means "this request settled
+   * over HTTP", and the repository's `request-success` hangs off it, so emitting here would both
+   * re-persist and broadcast a disk read.
+   *
+   * Unlike `applyExternalResponse` it leaves {@link HttpRequest.error} alone. Hydration commonly
+   * happens *after* the request it revalidates with has already failed — that is the offline case — and
+   * clearing the error there would report a failed revalidation as a success.
+   */
+  applyPersistedResponse: (options: { body: ResponseType<TArgs>; expiresAt: number | null }) => void;
+
+  /**
+   * When this request adopted a response from the persisted store, or `null` if it never did. Read by
+   * the query devtools to show which entries are showing data from a previous session.
+   */
+  lastPersistedResponseAt: Signal<number | null>;
 };
 
 export type HttpRequest<TArgs extends QueryArgs> = {
@@ -396,6 +417,14 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     lastExternalResponseAt.set(Date.now());
   };
 
+  const lastPersistedResponseAt = signal<number | null>(null);
+
+  const applyPersistedResponse = (persistedResponse: { body: ResponseType<TArgs>; expiresAt: number | null }) => {
+    response.set(persistedResponse.body);
+    expiresIn.set(persistedResponse.expiresAt);
+    lastPersistedResponseAt.set(Date.now());
+  };
+
   const httpRequest: HttpRequest<TArgs> = {
     method: options.method,
     url: options.fullPath,
@@ -408,7 +437,12 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
     events$: event$.asObservable(),
     isStale,
     expiresAt: expiresIn.asReadonly(),
-    subtle: { applyExternalResponse, lastExternalResponseAt: lastExternalResponseAt.asReadonly() },
+    subtle: {
+      applyExternalResponse,
+      lastExternalResponseAt: lastExternalResponseAt.asReadonly(),
+      applyPersistedResponse,
+      lastPersistedResponseAt: lastPersistedResponseAt.asReadonly(),
+    },
   };
 
   return httpRequest;

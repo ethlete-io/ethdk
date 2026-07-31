@@ -186,7 +186,10 @@ describe('createQueryRepository', () => {
       TestBed.tick();
 
       const types = events.map((e) => e.type);
-      expect(types).toEqual(['request-error', 'request-success']);
+
+      // The entry announces itself once, when it is created — a retry of the same request must not
+      // produce a second one, nor any event beyond the two terminal ones.
+      expect(types).toEqual(['entry-created', 'request-error', 'request-success']);
     });
   });
 });

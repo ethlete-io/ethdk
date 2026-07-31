@@ -3,6 +3,9 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { DestroyRef, ErrorHandler, inject, Injector, PLATFORM_ID } from '@angular/core';
 import { createRootProvider, ProviderResult } from '@ethlete/core';
 import { BuildQueryStringConfig } from '../legacy';
+import { createIndexedDbQueryPersistenceAdapter } from './persistence/query-persistence-indexed-db';
+import { QueryPersistenceConfig } from './persistence/query-persistence-config';
+import { createQueryPersistenceEngine, QueryPersistenceEngine } from './persistence/query-persistence-engine';
 import { createQueryRepository, QueryRepository } from './query-repository';
 import { ShouldRetryRequestFn } from './query-retry-utils';
 import { createQueryKeyLockManager } from './sync/query-key-lock-manager';
@@ -110,6 +113,27 @@ export type CreateQueryClientConfigOptions = {
    * @default true
    */
   multiTabSync?: boolean | QueryMultiTabSyncConfig;
+
+  /**
+   * Keeps this client's successful reads on disk (IndexedDB), so a reload renders the last known data
+   * right away instead of a loading state — and so does a cold start with no network at all.
+   *
+   * A hydrated response is **always** revalidated: persisted data fills a cache entry while its request
+   * is already on its way, and never replaces something newer. What the user sees is last week's list
+   * immediately, then this week's a moment later; offline, they see last week's list plus the error.
+   *
+   * On by default, and bounded by design: only successful reads are stored, **secure responses need an
+   * explicit {@link BaseQueryCreatorOptions.persistence} on the query** (and are removed again on
+   * logout), nothing older than `maxAge` is ever shown, and at most `maxEntries` responses are kept.
+   * Pass an object to tune those, or `false` to keep everything in memory as before. Always inert on the
+   * server and in a browser without IndexedDB.
+   *
+   * Bump {@link QueryPersistenceConfig.version} in the commit that changes what a response looks like —
+   * that is what stops a returning user's disk copy from reaching code that can no longer read it.
+   *
+   * @default true
+   */
+  persistence?: boolean | QueryPersistenceConfig;
 };
 
 /**
@@ -123,6 +147,12 @@ export type QueryClientSubtle = {
    * it through `deps.client`.
    */
   sync: QuerySyncEngine | null;
+
+  /**
+   * The persisted response store, or `null` when this client has no
+   * {@link CreateQueryClientConfigOptions.persistence} (or runs on the server).
+   */
+  persistence: QueryPersistenceEngine | null;
 };
 
 export type QueryClient = {
@@ -144,6 +174,30 @@ export type QueryClient = {
    * surprise than a stale read.
    */
   refreshQueriesInUse: () => void;
+
+  /**
+   * Removes every response this client persisted (see
+   * {@link CreateQueryClientConfigOptions.persistence}). Resolves once the store is empty; a no-op when
+   * persistence is off.
+   *
+   * What it is for is a switch of *who* is using the app — a different user logging in on a shared
+   * device — where the previous session's public data should not be waiting for them. A logout already
+   * removes persisted **secure** responses on its own.
+   */
+  clearPersistedQueries: () => Promise<void>;
+
+  /**
+   * Resolves once persisted responses are available to hydrate cache entries with, or right away when
+   * persistence is off or the code runs on the server.
+   *
+   * Nothing needs to await this — a query created before it resolves is hydrated as soon as it does.
+   * It exists for the app that would rather delay its first paint than show a loading state it knows it
+   * has data for.
+   *
+   * @example
+   * provideAppInitializer(() => injectMyClient().whenPersistenceReady)
+   */
+  whenPersistenceReady: Promise<void>;
 
   /** Advanced client internals. */
   subtle: QueryClientSubtle;
@@ -187,13 +241,56 @@ export const createQueryClient = (options: CreateQueryClientConfigOptions): Quer
             })
           : null;
 
-      if (sync) inject(DestroyRef).onDestroy(sync.destroy);
+      const destroyRef = inject(DestroyRef);
+
+      if (sync) destroyRef.onDestroy(sync.destroy);
+
+      const { persistence = true } = options;
+      const persistenceConfig = persistence === false ? null : persistence === true ? {} : persistence;
+
+      // Same server guard once more: a per-request injector has no disk to read and no session to
+      // remember, and `transferCache` already covers the SSR hand-off to the browser.
+      const persistenceEngine =
+        isBrowser && persistenceConfig
+          ? createQueryPersistenceEngine({
+              config: persistenceConfig,
+              repository,
+              adapter:
+                (typeof persistenceConfig.adapter === 'function'
+                  ? persistenceConfig.adapter()
+                  : persistenceConfig.adapter) ??
+                createIndexedDbQueryPersistenceAdapter({
+                  storageName: persistenceConfig.storageName ?? `et-query-persistence-${options.name}`,
+                }),
+            })
+          : null;
+
+      if (persistenceEngine) {
+        // Writes are coalesced, so the tab going away is the one moment they cannot wait: a reload right
+        // after a fetch is exactly the case persistence exists for. `visibilitychange` is what fires
+        // reliably on mobile, where `pagehide` sometimes does not.
+        const flush = () => void persistenceEngine.flush();
+        const flushWhenHidden = () => {
+          if (document.visibilityState === 'hidden') flush();
+        };
+
+        document.addEventListener('visibilitychange', flushWhenHidden);
+        window.addEventListener('pagehide', flush);
+
+        destroyRef.onDestroy(() => {
+          document.removeEventListener('visibilitychange', flushWhenHidden);
+          window.removeEventListener('pagehide', flush);
+          persistenceEngine.destroy();
+        });
+      }
 
       const client: QueryClient = {
         repository,
         baseUrl: options.baseUrl,
         refreshQueriesInUse: () => repository.refreshInUse(),
-        subtle: { sync },
+        clearPersistedQueries: () => persistenceEngine?.clear() ?? Promise.resolve(),
+        whenPersistenceReady: persistenceEngine?.whenReady ?? Promise.resolve(),
+        subtle: { sync, persistence: persistenceEngine },
       };
 
       return client;

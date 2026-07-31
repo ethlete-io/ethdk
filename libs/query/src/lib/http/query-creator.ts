@@ -91,6 +91,23 @@ export type BaseQueryCreatorOptions<TArgs extends QueryArgs = QueryArgs> = {
    */
   multiTabSync?: boolean;
 
+  /**
+   * Whether this query's responses may be kept on disk, when the client has
+   * {@link CreateQueryClientConfigOptions.persistence} enabled at all.
+   *
+   * Three states, because secure queries start on the other side of the default:
+   * - left unset, a **public** query persists and a **secure** (authenticated) one does not — putting a
+   *   logged in user's data on the device is a decision per endpoint, not a blanket one,
+   * - `true` persists it either way. On a secure query this is the opt-in; pair it with the knowledge
+   *   that a logout removes every persisted secure response again,
+   * - `false` keeps the query memory-only. Worth it for very large payloads, for data that must not be
+   *   shown stale even for the moment it takes to revalidate, and for anything the app considers too
+   *   sensitive to store.
+   *
+   * @default true for public queries, false for secure ones
+   */
+  persistence?: boolean;
+
   /** Advanced query creator features. **WARNING!** Incorrectly using these features will likely **BREAK** your application. You have been warned! */
   subtle?: BaseQueryCreatorOptionsSubtle;
 };

@@ -100,6 +100,7 @@ export default defineConfig({
             { text: 'Dependent queries', link: '/query/dependent-queries' },
             { text: 'Caching & deduplication', link: '/query/caching' },
             { text: 'Multi-tab sync', link: '/query/multi-tab' },
+            { text: 'Persisted responses', link: '/query/persistence' },
             { text: 'Query stacks & pagination', link: '/query/stacks' },
             { text: 'Query forms', link: '/query/query-forms' },
             { text: 'Errors & retries', link: '/query/errors' },

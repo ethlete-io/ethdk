@@ -1,6 +1,6 @@
 # Caching & deduplication
 
-All [queries](/query/queries) of a client share one **query repository** — an in-memory cache that deduplicates identical requests and tracks response freshness.
+All [queries](/query/queries) of a client share one **query repository** — an in-memory cache that deduplicates identical requests and tracks response freshness. Successful reads are also kept on disk, so a reload does not start from nothing — see [persisted responses](/query/persistence).
 
 ## What is cached
 
@@ -45,6 +45,7 @@ Details worth knowing:
 - At most **50 unused entries per client** are kept; beyond that the least recently orphaned are dropped. This matters for queries whose args change often (a search field produces a new cache key per keystroke).
 - Retention is **browser only** — on the server entries are always released immediately, so an SSR request never pins response bodies.
 - Logging out clears retained authenticated entries along with the live ones.
+- This is a **memory** window, unrelated to how long a response may live on disk ([`maxAge`](/query/persistence#three-windows-three-different-jobs)). An entry released here can still be hydrated from the store the next time the query mounts cold.
 - This pairs with [`setupScrollRestoration`](/core/signal-utils#restoring-the-offset-on-back-forward): a list that renders its rows on the first frame back reaches its full height immediately, so the saved scroll offset is restored without waiting out a refetch.
 
 ## Freshness
