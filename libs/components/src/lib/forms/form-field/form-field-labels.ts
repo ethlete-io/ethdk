@@ -13,12 +13,15 @@ export type FormFieldLabels = {
   mixed: string;
   /** Accessible label for a control's clear-value button. */
   clear: string;
+  /** The select-all row above a checkbox group (`<et-checkbox-group-select-all>`). */
+  selectAll: string;
 };
 
 /** The built-in English labels. */
 export const DEFAULT_FORM_FIELD_LABELS: FormFieldLabels = {
   mixed: 'Mixed',
   clear: 'Clear',
+  selectAll: 'Select all',
 };
 
 /**
@@ -27,7 +30,7 @@ export const DEFAULT_FORM_FIELD_LABELS: FormFieldLabels = {
  * {@link createLabels} for the shape, which every domain in this library shares.
  *
  * @example
- * provideFormFieldLabels({ mixed: 'Gemischt', clear: 'Leeren' });
+ * provideFormFieldLabels({ mixed: 'Gemischt', clear: 'Leeren', selectAll: 'Alle auswählen' });
  */
 export const [provideFormFieldLabels, injectFormFieldLabels, FORM_FIELD_LABELS] = createLabels<FormFieldLabels>(
   'FORM_FIELD_LABELS',

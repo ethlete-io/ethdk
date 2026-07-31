@@ -17,6 +17,7 @@ export default {
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
     groupControl: { control: 'boolean' },
+    orientation: { control: 'inline-radio', options: ['vertical', 'horizontal'] },
     variant: { control: 'radio', options: ['plain', 'card'] },
   },
   args: {
@@ -31,6 +32,7 @@ export default {
     color: 'brand',
     size: 'md',
     groupControl: false,
+    orientation: 'vertical',
     variant: 'plain',
   },
 } as Meta<CheckboxGroupStorybookComponent>;
@@ -51,7 +53,34 @@ export const Mixed: Story = {
 export const GroupControl: Story = {
   args: {
     groupControl: true,
-    hint: 'The headless [etSelectionListControl] renders a tri-state select-all: unchecked, mixed, checked',
+    hint: 'One control over all of them: unchecked, mixed, checked',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`<et-checkbox-group-select-all>` is the prebuilt select-all row — the tri-state logic of the ' +
+          'headless `etSelectionListControl` plus the markup and the mixed mark. It is a real ' +
+          '`role="checkbox"` with `aria-checked="mixed"`, not an option: a listbox option has no mixed ' +
+          'state, and "some of these are on" is exactly what this control has to be able to say.',
+      },
+    },
+  },
+};
+
+export const Horizontal: Story = {
+  args: { orientation: 'horizontal', label: 'Sizes' },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`orientation="horizontal"` flows the options in a wrapping row. The group’s label and its ' +
+          'error/hint block keep their own lines above and below — only the options move, and an option is ' +
+          'still a direct child of the group, so nothing about the projected DOM changes. Vertical stays the ' +
+          'default: it scans better and gives each option a full-width hit area. All four arrow keys move ' +
+          'between options either way.',
+      },
+    },
   },
 };
 

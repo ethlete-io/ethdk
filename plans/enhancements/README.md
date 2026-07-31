@@ -81,6 +81,13 @@ tokens in core. (Calendar event markers and month/year jump moved into plan
       field instead of inventing a cell-editor interface, `Enter` is settled between editing and
       navigation through the table, and phase 4 came out observable-native because the styleguide bans
       async/await.)_
-- [ ] 10 — quick wins
+- [x] 10 — quick wins _(done 2026-07-31; all seven. Found while implementing: the breadcrumb's crumbs
+      are opaque templates, so `etBreadcrumbSeo` has them state their own `name`/`url` rather than
+      scraping the DOM — and building it surfaced a real bug in core's `applyStructuredDataBinding`,
+      which wrote its JSON into a `text` attribute and emitted an empty script. The page-size select is
+      a native `<select>` and a separate component, since page size is the app's state. Horizontal
+      selection lists needed no DOM wrapper: the label and support block are pushed onto their own
+      lines with `flex-basis: 100%`, so an option stays a direct child of the group. The radio group
+      already bound all four arrow keys, so item 5's keyboard note needed no change.)_
 - [ ] 11 — sport/match components
 - [ ] 12 — bracket improvements (depends on 11)

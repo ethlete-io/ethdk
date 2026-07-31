@@ -4,14 +4,22 @@ import { disabled, form, FormField, readonly, required } from '@angular/forms/si
 import { ProvideColorDirective } from '@ethlete/core';
 import { DescriptionComponent } from '../../../description';
 import { FormFieldSize, HintComponent, LabelDirective } from '../../../form-field';
+import { SelectionListOrientation } from '../../selection-list.types';
 import { RadioGroupComponent } from '../radio-group.component';
 import { RadioComponent, RadioVariant } from '../radio.component';
 
 @Component({
   selector: 'et-sb-radio-group',
   template: `
-    <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-4 p-8 font-sans">
-      <et-radio-group [(mixed)]="mixedState" [formField]="demoForm.color" [size]="size()">
+    <!-- Frame width in px, not Tailwind's rem-based max-w-* scale: this playground runs a 62.5% root
+         font, which shrinks max-w-md to ~280px and would make the horizontal row wrap after two
+         options regardless of how much room a real app has. -->
+    <div
+      [style.max-inline-size.px]="orientation() === 'horizontal' ? 560 : 448"
+      [etProvideColor]="color()"
+      class="flex flex-col gap-4 p-8 font-sans"
+    >
+      <et-radio-group [(mixed)]="mixedState" [formField]="demoForm.color" [size]="size()" [orientation]="orientation()">
         <et-label>{{ label() }}</et-label>
 
         @for (option of options(); track option.value) {
@@ -49,6 +57,7 @@ import { RadioComponent, RadioVariant } from '../radio.component';
 })
 export class RadioGroupStorybookComponent {
   public label = input('Favorite color');
+  public orientation = input<SelectionListOrientation>('vertical');
   public hint = input('');
   public value = input<string | null>(null);
   public mixed = input(false);

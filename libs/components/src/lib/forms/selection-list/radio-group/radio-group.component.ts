@@ -4,6 +4,7 @@ import { FormErrorComponent } from '../../form-field/form-error.component';
 import { FORM_FIELD_SIZES, FormFieldSize } from '../../form-field/form-field.variants';
 import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../../form-field/headless';
 import { SelectionListDirective } from '../../selection-list/headless';
+import { SelectionListOrientation } from '../selection-list.types';
 
 @Component({
   selector: 'et-radio-group',
@@ -24,6 +25,7 @@ import { SelectionListDirective } from '../../selection-list/headless';
   host: {
     class: 'et-radio-group',
     '[attr.data-size]': 'size()',
+    '[attr.data-orientation]': 'orientation()',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-error]': 'support.displaysError() || null',
   },
@@ -31,6 +33,17 @@ import { SelectionListDirective } from '../../selection-list/headless';
 export class RadioGroupComponent {
   public support = injectFormSupport();
   public size = input<FormFieldSize>(FORM_FIELD_SIZES.MD);
+
+  /**
+   * Lay the options out in a row instead of a column. Horizontal wraps, and the group's label and its
+   * error/hint block keep their own lines above and below — only the options flow.
+   *
+   * Vertical is the default because it scans better and gives each option a full-width hit area; reach
+   * for horizontal only when the options are short (two or three words) and the set is small.
+   * All four arrow keys move between options either way, as the ARIA pattern expects.
+   */
+  public orientation = input<SelectionListOrientation>('vertical');
+
   private errorContentRef = viewChild<ElementRef<HTMLElement>>('errorContent');
   private hintContentRef = viewChild<ElementRef<HTMLElement>>('hintContent');
   private errorAnimatableRef = viewChild<AnimatableDirective>('errorAnimatable');

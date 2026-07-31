@@ -29,6 +29,14 @@
     initial-value: 10px;
   }
 
+  /* Horizontal only: options sitting side by side need more air between them than stacked ones, where
+     the gap is only separating lines of text. */
+  @property --et-radio-group-column-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 20px;
+  }
+
   @property --et-radio-group-label-font-size {
     syntax: '<length>';
     inherits: true;
@@ -159,5 +167,21 @@
       --et-radio-group-support-duration: 1ms;
       --et-radio-group-support-offset: 0px;
     }
+  }
+
+  /* Horizontal layout. The host stays the one flex container — no wrapper around the options — and the
+     label and the support block are simply forced onto their own lines with `flex-basis: 100%`. That
+     keeps the projected DOM exactly as it was: an option is still a direct child of the group. */
+  et-radio-group:where([data-orientation='horizontal']) {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--et-radio-group-column-gap);
+  }
+
+  et-radio-group:where([data-orientation='horizontal']) > et-label,
+  et-radio-group:where([data-orientation='horizontal']) > .et-radio-group-label,
+  et-radio-group:where([data-orientation='horizontal']) > .et-radio-group-support {
+    flex-basis: 100%;
   }
 }

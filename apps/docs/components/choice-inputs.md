@@ -93,10 +93,55 @@ keyboard navigation is roving-tabindex with wrapping arrows:
 - The segmented button group renders its options on a tonal track; the filled
   active pill animates between options on selection.
 
-Checkbox options and radios accept an `et-description` child for secondary text,
-and the headless layer offers a tri-state "select all" control
-(`[etSelectionListControl]`). See the `Radio group`, `Checkbox group` and
-`Segmented button group` stories.
+Checkbox options and radios accept an `et-description` child for secondary text.
+
+### Select all {#select-all}
+
+`<et-checkbox-group-select-all>` is the prebuilt select-all row: put it in the group above the
+options and it ticks all of them, clears them, and shows the **mixed** state while only some are
+picked.
+
+```html
+<et-checkbox-group [formField]="form.toppings">
+  <et-label>Toppings</et-label>
+  <et-checkbox-group-select-all />
+  @for (topping of TOPPINGS; track topping) {
+  <et-checkbox-option [value]="topping">{{ topping }}</et-checkbox-option>
+  }
+</et-checkbox-group>
+```
+
+<StoryEmbed id="components-forms-selection-list-checkbox-group--group-control" height="300px" />
+
+It is a real `role="checkbox"` with `aria-checked="mixed"`, **not** an option: a listbox option has
+no mixed state (it uses `aria-selected`), and "some of these are on" is exactly what this control has
+to be able to say. Its text comes from the shared `selectAll`
+[form label](/components/forms#localization), or from a `label` input for a one-off wording.
+
+The tri-state logic is the headless `[etSelectionListControl]`, which this composes — reach for the
+directive directly only when you want entirely different markup.
+
+### Orientation {#orientation}
+
+`et-checkbox-group` and `et-radio-group` take `orientation="horizontal"` to flow their options in a
+wrapping row instead of a column:
+
+```html
+<et-radio-group [formField]="form.size" orientation="horizontal">…</et-radio-group>
+```
+
+<StoryEmbed id="components-forms-selection-list-checkbox-group--horizontal" height="240px" />
+
+The group's label and its error/hint block keep their own lines above and below — only the options
+move, and an option is still a direct child of the group, so nothing about the projected DOM changes.
+Set `--et-checkbox-group-column-gap` / `--et-radio-group-column-gap` (20px) for the spacing between
+options in a row; the vertical `--et-*-group-gap` still spaces the rows.
+
+Vertical is the default and usually the right answer: it scans better and gives each option a
+full-width hit area. Reach for horizontal when the options are short and few — a two-way filter, a
+size picker. All four arrow keys move between options either way, as the ARIA radio pattern expects.
+
+The segmented button group is horizontal by construction and takes no `orientation`.
 
 ### Card presets {#card-presets}
 
