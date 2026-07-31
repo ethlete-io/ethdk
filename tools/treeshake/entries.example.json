@@ -1,0 +1,7 @@
+{
+  "core-floor": "import { clamp } from '@ethlete/core';\nconsole.log(clamp);",
+  "query-floor": "import { transformToString } from '@ethlete/query';\nconsole.log(transformToString);",
+  "components-floor": "import { paginate } from '@ethlete/components';\nconsole.log(paginate);",
+  "components-unused-import": "import '@ethlete/components';\nconsole.log('nothing used');",
+  "bracket-single-elimination": "import { BracketComponent, singleEliminationBracketLayout } from '@ethlete/components';\nconsole.log(BracketComponent, singleEliminationBracketLayout());"
+}
