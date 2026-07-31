@@ -1,385 +1,173 @@
 import { TestBed } from '@angular/core/testing';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  FakeBroadcastChannelHandle,
+  FakeWebLocksHandle,
+  flushMultiTabSync,
+  installFakeBroadcastChannel,
+  installFakeWebLocks,
+} from '@ethlete/query/testing';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { setupLeaderElection } from './leader-election';
 
+/**
+ * Lets lock grants, presence messages and the `navigator.locks.query()` behind the instance count all
+ * land — each is a microtask hop, and a recount triggered by a message is two.
+ */
+const settle = async () => {
+  for (let i = 0; i < 5; i++) {
+    TestBed.tick();
+    await flushMultiTabSync();
+  }
+};
+
+const openTab = () => TestBed.runInInjectionContext(() => setupLeaderElection());
+
 describe('setupLeaderElection', () => {
-  let originalBroadcastChannel: typeof BroadcastChannel;
-  let mockChannel: {
-    postMessage: ReturnType<typeof vi.fn>;
-    close: ReturnType<typeof vi.fn>;
-    onmessage: ((event: MessageEvent) => void) | null;
-  };
-  let storage: Record<string, string>;
+  let bus: FakeBroadcastChannelHandle;
+  let locks: FakeWebLocksHandle;
 
   beforeEach(() => {
-    // Mock BroadcastChannel
-    originalBroadcastChannel = globalThis.BroadcastChannel;
-    mockChannel = {
-      postMessage: vi.fn(),
-      close: vi.fn(),
-      onmessage: null,
-    };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (globalThis as any).BroadcastChannel = vi.fn(function (this: any) {
-      return mockChannel;
-    });
-
-    // Mock localStorage
-    storage = {};
-    vi.spyOn(Storage.prototype, 'getItem').mockImplementation((key) => storage[key] || null);
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation((key, value) => {
-      storage[key] = value;
-    });
-    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation((key) => {
-      delete storage[key];
-    });
-
-    vi.useFakeTimers();
+    bus = installFakeBroadcastChannel();
+    locks = installFakeWebLocks();
   });
 
   afterEach(() => {
-    vi.useRealTimers();
-    vi.clearAllMocks();
-    globalThis.BroadcastChannel = originalBroadcastChannel;
+    bus.restore();
+    locks.restore();
   });
 
-  it('should initialize and become leader on first tab', () => {
-    TestBed.runInInjectionContext(() => {
-      const election = setupLeaderElection();
+  it('should make the only tab the leader', async () => {
+    const tab = openTab();
 
-      expect(election.isLeader()).toBe(true);
-      expect(election.becomeLeader).toBeDefined();
-      expect(election.cleanup).toBeDefined();
-    });
+    expect(tab.isLeader()).toBe(false);
+
+    await settle();
+
+    expect(tab.isLeader()).toBe(true);
+    expect(tab.instanceCount()).toBe(1);
+
+    tab.cleanup();
   });
 
-  it('should send heartbeat messages periodically when leader', () => {
-    TestBed.runInInjectionContext(() => {
-      const election = setupLeaderElection();
+  it('should hold one namespaced lock', async () => {
+    const tab = openTab();
 
-      expect(election.isLeader()).toBe(true);
+    await settle();
 
-      mockChannel.postMessage.mockClear();
+    expect(locks.heldNames()).toEqual(['ethlete-auth:leader']);
 
-      // Advance time by heartbeat interval
-      vi.advanceTimersByTime(1000);
-
-      expect(mockChannel.postMessage).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: 'heartbeat',
-        }),
-      );
-    });
+    tab.cleanup();
   });
 
-  it('should not send heartbeat when not leader', () => {
-    TestBed.runInInjectionContext(() => {
-      // Setup first tab as leader
-      const election1 = setupLeaderElection();
-      expect(election1.isLeader()).toBe(true);
+  it('should leave a second tab queued behind the first', async () => {
+    const first = openTab();
+    const second = openTab();
 
-      // Manually set storage to simulate another tab is leader
-      storage['ethlete-auth-leader-heartbeat'] = JSON.stringify({
-        tabId: 'other-tab',
-        timestamp: Date.now(),
-      });
+    await settle();
 
-      mockChannel.postMessage.mockClear();
+    expect(first.isLeader()).toBe(true);
+    expect(second.isLeader()).toBe(false);
+    expect(locks.pendingNames()).toEqual(['ethlete-auth:leader']);
 
-      // Setup second tab
-      const election2 = setupLeaderElection();
-
-      // Second tab should not be leader
-      expect(election2.isLeader()).toBe(false);
-
-      // Advance time
-      vi.advanceTimersByTime(1000);
-
-      // Second tab should not send heartbeat (not leader)
-      // Note: We need to check after clearing the mock from setup
-      expect(election2.isLeader()).toBe(false);
-    });
+    first.cleanup();
+    second.cleanup();
   });
 
-  it('should become leader when current leader dies', () => {
-    TestBed.runInInjectionContext(() => {
-      // Simulate expired leader in storage
-      storage['ethlete-auth-leader-heartbeat'] = JSON.stringify({
-        tabId: 'old-leader',
-        timestamp: Date.now() - 5000, // 5 seconds ago (timeout is 3 seconds)
-      });
+  it('should hand leadership to the waiting tab when the leader goes away', async () => {
+    const first = openTab();
+    const second = openTab();
 
-      const election = setupLeaderElection();
+    await settle();
 
-      // Should become leader because old leader timed out
-      expect(election.isLeader()).toBe(true);
-    });
+    first.cleanup();
+    await settle();
+
+    expect(second.isLeader()).toBe(true);
+
+    second.cleanup();
   });
 
-  it('should update localStorage with heartbeat timestamp', () => {
-    TestBed.runInInjectionContext(() => {
-      const election = setupLeaderElection();
+  it('should count every tab taking part', async () => {
+    const first = openTab();
 
-      expect(election.isLeader()).toBe(true);
+    await settle();
 
-      // Check that storage was updated
-      const stored = storage['ethlete-auth-leader-heartbeat'];
-      expect(stored).toBeDefined();
+    expect(first.instanceCount()).toBe(1);
 
-      const parsed = JSON.parse(stored as string);
-      expect(parsed.tabId).toBeDefined();
-      expect(parsed.timestamp).toBeDefined();
-      expect(typeof parsed.timestamp).toBe('number');
-    });
+    const second = openTab();
+
+    await settle();
+
+    expect(first.instanceCount()).toBe(2);
+    expect(second.instanceCount()).toBe(2);
+
+    const third = openTab();
+
+    await settle();
+
+    expect(first.instanceCount()).toBe(3);
+
+    third.cleanup();
+    await settle();
+
+    expect(first.instanceCount()).toBe(2);
+    expect(second.instanceCount()).toBe(2);
+
+    first.cleanup();
+    second.cleanup();
   });
 
-  it('should release leadership on cleanup', () => {
-    TestBed.runInInjectionContext(() => {
-      const election = setupLeaderElection();
+  it('should release the lock on cleanup, idempotently', async () => {
+    const tab = openTab();
 
-      expect(election.isLeader()).toBe(true);
+    await settle();
 
-      mockChannel.postMessage.mockClear();
+    tab.cleanup();
 
-      // Cleanup
-      election.cleanup();
+    expect(() => tab.cleanup()).not.toThrow();
 
-      // Should send leader-release message
-      expect(mockChannel.postMessage).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: 'leader-release',
-        }),
-      );
+    await settle();
 
-      // Should close channel
-      expect(mockChannel.close).toHaveBeenCalled();
-    });
+    expect(locks.heldNames()).toEqual([]);
   });
 
-  it('should manually become leader when becomeLeader is called', () => {
-    TestBed.runInInjectionContext(() => {
-      // Set another tab as leader
-      storage['ethlete-auth-leader-heartbeat'] = JSON.stringify({
-        tabId: 'other-tab',
-        timestamp: Date.now(),
-      });
+  it('should expose read-only signals', async () => {
+    const tab = openTab();
 
-      const election = setupLeaderElection();
+    await settle();
 
-      expect(election.isLeader()).toBe(false);
+    expect((tab.isLeader as unknown as Record<string, unknown>)['set']).toBeUndefined();
+    expect((tab.instanceCount as unknown as Record<string, unknown>)['set']).toBeUndefined();
 
-      mockChannel.postMessage.mockClear();
-
-      // Force become leader
-      election.becomeLeader();
-
-      expect(election.isLeader()).toBe(true);
-
-      // Should broadcast leader-claim
-      expect(mockChannel.postMessage).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: 'leader-claim',
-        }),
-      );
-    });
+    tab.cleanup();
   });
 
-  it('should handle leader-release message from other tab', () => {
-    TestBed.runInInjectionContext(() => {
-      // Setup as non-leader
-      storage['ethlete-auth-leader-heartbeat'] = JSON.stringify({
-        tabId: 'other-tab',
-        timestamp: Date.now(),
-      });
+  it('should make the tab the leader without Web Locks', () => {
+    locks.restore();
 
-      const election = setupLeaderElection();
-      expect(election.isLeader()).toBe(false);
+    const tab = openTab();
 
-      // Simulate leader-release message and clear storage
-      delete storage['ethlete-auth-leader-heartbeat'];
+    expect(tab.isLeader()).toBe(true);
+    expect(tab.instanceCount()).toBe(1);
+    expect(() => tab.cleanup()).not.toThrow();
 
-      mockChannel.onmessage?.({
-        data: {
-          type: 'leader-release',
-          tabId: 'other-tab',
-        },
-      } as MessageEvent);
-
-      // Should try to become leader after timeout (100ms + interval check)
-      vi.advanceTimersByTime(1100);
-
-      expect(election.isLeader()).toBe(true);
-    });
+    locks = installFakeWebLocks();
   });
 
-  it('should work when BroadcastChannel is not available', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (globalThis as any).BroadcastChannel = undefined;
+  it('should elect without a BroadcastChannel, only losing the instance count', async () => {
+    bus.restore();
 
-    TestBed.runInInjectionContext(() => {
-      const election = setupLeaderElection();
+    const first = openTab();
+    const second = openTab();
 
-      // Should automatically be leader
-      expect(election.isLeader()).toBe(true);
-      expect(election.becomeLeader).toBeDefined();
-      expect(election.cleanup).toBeDefined();
+    await settle();
 
-      // Cleanup should not throw
-      expect(() => election.cleanup()).not.toThrow();
-    });
-  });
+    expect(first.isLeader()).toBe(true);
+    expect(second.isLeader()).toBe(false);
 
-  it('should work when localStorage is not available', () => {
-    // Mock localStorage.getItem to throw error
-    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
-      throw new Error('localStorage not available');
-    });
+    first.cleanup();
+    second.cleanup();
 
-    TestBed.runInInjectionContext(() => {
-      const election = setupLeaderElection();
-
-      // Should automatically be leader
-      expect(election.isLeader()).toBe(true);
-    });
-  });
-
-  it('should clean up intervals on cleanup', () => {
-    TestBed.runInInjectionContext(() => {
-      const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval');
-
-      const election = setupLeaderElection();
-
-      election.cleanup();
-
-      // Should clear both intervals (heartbeat + leader check)
-      expect(clearIntervalSpy).toHaveBeenCalledTimes(2);
-    });
-  });
-
-  it('should remove event listener on cleanup', () => {
-    TestBed.runInInjectionContext(() => {
-      const removeEventListenerSpy = vi.spyOn(document, 'removeEventListener');
-
-      const election = setupLeaderElection();
-
-      election.cleanup();
-
-      expect(removeEventListenerSpy).toHaveBeenCalledWith('visibilitychange', expect.any(Function));
-    });
-  });
-
-  it('should return readonly signal for isLeader', () => {
-    TestBed.runInInjectionContext(() => {
-      const election = setupLeaderElection();
-
-      const leaderSignal = election.isLeader;
-
-      // Should be a signal
-      expect(typeof leaderSignal).toBe('function');
-
-      // Should not have set method (readonly)
-      expect((leaderSignal as unknown as Record<string, unknown>)['set']).toBeUndefined();
-    });
-  });
-
-  describe('instanceCount', () => {
-    it('should start at 1', () => {
-      TestBed.runInInjectionContext(() => {
-        const election = setupLeaderElection();
-        expect(election.instanceCount()).toBe(1);
-      });
-    });
-
-    it('should return a readonly signal', () => {
-      TestBed.runInInjectionContext(() => {
-        const election = setupLeaderElection();
-        expect(typeof election.instanceCount).toBe('function');
-        expect((election.instanceCount as unknown as Record<string, unknown>)['set']).toBeUndefined();
-      });
-    });
-
-    it('should increase when another tab registers', () => {
-      TestBed.runInInjectionContext(() => {
-        const election = setupLeaderElection();
-        expect(election.instanceCount()).toBe(1);
-
-        mockChannel.onmessage?.({ data: { type: 'instance-register', tabId: 'other-tab-1' } } as MessageEvent);
-
-        expect(election.instanceCount()).toBe(2);
-      });
-    });
-
-    it('should decrease when a tab unregisters', () => {
-      TestBed.runInInjectionContext(() => {
-        const election = setupLeaderElection();
-        mockChannel.onmessage?.({ data: { type: 'instance-register', tabId: 'other-tab-1' } } as MessageEvent);
-        expect(election.instanceCount()).toBe(2);
-
-        mockChannel.onmessage?.({ data: { type: 'instance-unregister', tabId: 'other-tab-1' } } as MessageEvent);
-        expect(election.instanceCount()).toBe(1);
-      });
-    });
-
-    it('should prune stale tabs after leaderTimeout', () => {
-      TestBed.runInInjectionContext(() => {
-        const election = setupLeaderElection();
-
-        // Register another tab without sending any further heartbeats
-        mockChannel.onmessage?.({ data: { type: 'instance-register', tabId: 'stale-tab' } } as MessageEvent);
-        expect(election.instanceCount()).toBe(2);
-
-        // Advance past leaderTimeout (3000 ms) — stale-tab sends no heartbeats
-        vi.advanceTimersByTime(4000);
-
-        expect(election.instanceCount()).toBe(1);
-      });
-    });
-
-    it('should not prune a tab that keeps sending tab-heartbeats', () => {
-      TestBed.runInInjectionContext(() => {
-        const election = setupLeaderElection();
-        mockChannel.onmessage?.({ data: { type: 'instance-register', tabId: 'alive-tab' } } as MessageEvent);
-
-        // Keep the other tab alive by sending heartbeats every second
-        for (let i = 0; i < 5; i++) {
-          vi.advanceTimersByTime(1000);
-          mockChannel.onmessage?.({ data: { type: 'tab-heartbeat', tabId: 'alive-tab' } } as MessageEvent);
-        }
-
-        expect(election.instanceCount()).toBe(2);
-      });
-    });
-
-    it('should respond to instance-register with a tab-heartbeat', () => {
-      TestBed.runInInjectionContext(() => {
-        setupLeaderElection();
-        mockChannel.postMessage.mockClear();
-
-        mockChannel.onmessage?.({ data: { type: 'instance-register', tabId: 'other-tab-1' } } as MessageEvent);
-
-        expect(mockChannel.postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: 'tab-heartbeat' }));
-      });
-    });
-
-    it('should broadcast instance-unregister on cleanup', () => {
-      TestBed.runInInjectionContext(() => {
-        const election = setupLeaderElection();
-        mockChannel.postMessage.mockClear();
-
-        election.cleanup();
-
-        expect(mockChannel.postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: 'instance-unregister' }));
-      });
-    });
-
-    it('should return instanceCount = 1 in SSR fallback', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (globalThis as any).BroadcastChannel = undefined;
-
-      TestBed.runInInjectionContext(() => {
-        const election = setupLeaderElection();
-        expect(election.instanceCount()).toBe(1);
-      });
-    });
+    bus = installFakeBroadcastChannel();
   });
 });

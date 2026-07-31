@@ -1,257 +1,128 @@
-import { DestroyRef, inject, isDevMode, signal, Signal } from '@angular/core';
+import { DestroyRef, effect, inject, signal, Signal } from '@angular/core';
+import { createQueryKeyLockManager } from '../../http/sync/query-key-lock-manager';
 
-type LeaderMessage =
-  | {
-      type: 'heartbeat';
-      tabId: string;
-    }
-  | {
-      type: 'tab-heartbeat';
-      tabId: string;
-    }
-  | {
-      type: 'leader-claim';
-      tabId: string;
-    }
-  | {
-      type: 'leader-release';
-      tabId: string;
-    }
-  | {
-      type: 'instance-register';
-      tabId: string;
-    }
-  | {
-      type: 'instance-unregister';
-      tabId: string;
-    };
+/**
+ * Namespace and key of the one lock the whole election is: whoever holds it is the leader, and every
+ * other tab of the app is queued behind it. The lock name is what the instance count is derived from,
+ * so the two can never disagree about who is taking part.
+ */
+const LEADER_LOCK_NAMESPACE = 'ethlete-auth';
+const LEADER_LOCK_KEY = 'leader';
+const LEADER_LOCK_NAME = `${LEADER_LOCK_NAMESPACE}:${LEADER_LOCK_KEY}`;
+
+/**
+ * Web Locks has no "someone joined" event, so tabs announce themselves on this channel. Two messages
+ * per tab lifetime, in place of the heartbeat this used to run once a second.
+ */
+const PRESENCE_CHANNEL_NAME = 'ethlete-auth-leader';
+
+type LeaderPresenceMessage = { type: 'presence' };
 
 export type InternalLeaderElection = {
+  /**
+   * Whether this tab is the one doing the work only one tab should do — the proactive token refresh.
+   *
+   * Starts `false` and flips on the next microtask when nothing else holds the lock: the platform
+   * grants asynchronously, and the refresh this gates runs off a timer, so nothing observes the gap.
+   */
   isLeader: Signal<boolean>;
+
+  /**
+   * How many tabs of this app currently take part in the election. Telemetry only — `withTracking`
+   * emits it — and best-effort: it is recounted when a tab announces itself, says goodbye, or takes
+   * over the leadership, not on a timer. A tab that *crashes* without being the leader is therefore
+   * still counted until the next of those happens.
+   */
   instanceCount: Signal<number>;
-  becomeLeader: () => void;
+
+  /** Releases the lock and leaves the channel. Idempotent, and also run on destroy. */
   cleanup: () => void;
 };
 
+const countLeaderRequests = (snapshot: LockManagerSnapshot) => {
+  const isLeaderLock = (info: LockInfo) => info.name === LEADER_LOCK_NAME;
+
+  // Held plus pending is exactly the tab count: every tab requests this one lock, one gets it and the
+  // rest queue. The platform drops a crashed tab from both lists on its own.
+  return (snapshot.held?.filter(isLeaderLock).length ?? 0) + (snapshot.pending?.filter(isLeaderLock).length ?? 0);
+};
+
+/**
+ * Elects the one tab that refreshes the session's tokens, over the
+ * [Web Locks API](https://developer.mozilla.org/docs/Web/API/Web_Locks_API).
+ *
+ * The lock does the whole job: requests queue FIFO, so the tab that has been waiting longest takes
+ * over, and a holder that closes, crashes or navigates away has its lock released by the platform.
+ * No heartbeat, no timeout to tune, and no window in which two tabs both believe they are the leader.
+ *
+ * Degrades to "this tab is the leader" without Web Locks — the same single-tab behavior the previous
+ * `localStorage` implementation fell back to, and the only safe default: a session that refreshes its
+ * token in every tab is wasteful, one that refreshes it in none logs the user out.
+ */
 export const setupLeaderElection = (): InternalLeaderElection => {
   const destroyRef = inject(DestroyRef);
 
-  const channelName = 'ethlete-auth-leader';
-  const heartbeatInterval = 1000;
-  const leaderTimeout = 3000;
-  const storageKey = 'ethlete-auth-leader-heartbeat';
-
-  const tabId = `tab-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-  const isLeader = signal(false);
+  const lockManager = createQueryKeyLockManager(LEADER_LOCK_NAMESPACE);
+  const hold = lockManager.hold(LEADER_LOCK_KEY);
   const instanceCount = signal(1);
-  const knownTabs = new Map<string, number>();
-  knownTabs.set(tabId, Date.now());
 
-  let channel: BroadcastChannel | null = null;
-  let heartbeatIntervalId: ReturnType<typeof setInterval> | null = null;
-  let leaderCheckIntervalId: ReturnType<typeof setInterval> | null = null;
+  const noopCleanup = () => {
+    /* nothing was set up */
+  };
 
-  if (typeof BroadcastChannel === 'undefined' || typeof localStorage === 'undefined') {
-    isLeader.set(true);
-    return {
-      isLeader: isLeader.asReadonly(),
-      instanceCount: instanceCount.asReadonly(),
-      becomeLeader: () => {
-        /* no-op */
-      },
-      cleanup: () => {
-        /* no-op */
-      },
+  // `hold.isHolder` is already `true` in this case, so the tab reads as the leader it effectively is.
+  if (!lockManager.isSupported) {
+    return { isLeader: hold.isHolder, instanceCount: instanceCount.asReadonly(), cleanup: noopCleanup };
+  }
+
+  const channel = typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel(PRESENCE_CHANNEL_NAME);
+
+  let isDestroyed = false;
+
+  const recount = async () => {
+    const snapshot = await navigator.locks.query();
+
+    if (isDestroyed) return;
+
+    // Never below one: the snapshot can be taken before this tab's own request is registered, and a
+    // count of zero would say the app is not running in the tab reading it.
+    instanceCount.set(Math.max(countLeaderRequests(snapshot), 1));
+  };
+
+  const announce = () => channel?.postMessage({ type: 'presence' } satisfies LeaderPresenceMessage);
+
+  if (channel) {
+    channel.onmessage = (event: MessageEvent<unknown>) => {
+      if ((event.data as LeaderPresenceMessage | null)?.type !== 'presence') return;
+
+      void recount();
     };
   }
 
-  channel = new BroadcastChannel(channelName);
+  effect(() => {
+    if (!hold.isHolder()) return;
 
-  channel.postMessage({ type: 'instance-register', tabId } as LeaderMessage);
+    // Becoming the leader means the previous one went away. A tab that closed normally announced it
+    // itself, one that crashed did not — so this is the moment to tell the others for free.
+    announce();
+    void recount();
+  });
 
-  const updateLeaderHeartbeat = (newTabId: string = tabId) => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify({ tabId: newTabId, timestamp: Date.now() }));
-    } catch (error) {
-      if (isDevMode()) {
-        console.error('Failed to update leader heartbeat:', error);
-      }
-    }
-  };
-
-  const getLeaderHeartbeat = (): { tabId: string; timestamp: number } | null => {
-    try {
-      const stored = localStorage.getItem(storageKey);
-      if (!stored) return null;
-      return JSON.parse(stored);
-    } catch {
-      return null;
-    }
-  };
-
-  const becomeLeader = () => {
-    if (isLeader()) return;
-
-    isLeader.set(true);
-    updateLeaderHeartbeat();
-
-    const message: LeaderMessage = {
-      type: 'leader-claim',
-      tabId,
-    };
-    channel?.postMessage(message);
-  };
-
-  const releaseLeadership = () => {
-    if (!isLeader()) return;
-
-    isLeader.set(false);
-
-    const message: LeaderMessage = {
-      type: 'leader-release',
-      tabId,
-    };
-    channel?.postMessage(message);
-  };
-
-  const checkLeaderStatus = () => {
-    const heartbeat = getLeaderHeartbeat();
-    const now = Date.now();
-
-    if (!heartbeat || now - heartbeat.timestamp > leaderTimeout) {
-      if (!isLeader()) {
-        becomeLeader();
-      }
-    } else if (heartbeat.tabId === tabId) {
-      if (!isLeader()) {
-        isLeader.set(true);
-      }
-      updateLeaderHeartbeat();
-    } else {
-      if (isLeader()) {
-        isLeader.set(false);
-      }
-    }
-  };
-
-  channel.onmessage = (event: MessageEvent<LeaderMessage>) => {
-    const message = event.data;
-
-    if (message.type === 'heartbeat') {
-      if (message.tabId !== tabId) {
-        knownTabs.set(message.tabId, Date.now());
-      }
-      if (message.tabId !== tabId && isLeader()) {
-        const heartbeat = getLeaderHeartbeat();
-        if (heartbeat && heartbeat.tabId === message.tabId) {
-          releaseLeadership();
-        }
-      }
-    } else if (message.type === 'tab-heartbeat') {
-      if (message.tabId !== tabId) {
-        knownTabs.set(message.tabId, Date.now());
-      }
-    } else if (message.type === 'instance-register') {
-      if (message.tabId !== tabId) {
-        knownTabs.set(message.tabId, Date.now());
-        instanceCount.set(knownTabs.size);
-        channel?.postMessage({ type: 'tab-heartbeat', tabId } as LeaderMessage);
-      }
-    } else if (message.type === 'instance-unregister') {
-      if (message.tabId !== tabId) {
-        knownTabs.delete(message.tabId);
-        instanceCount.set(knownTabs.size);
-      }
-    } else if (message.type === 'leader-claim') {
-      if (message.tabId !== tabId && isLeader()) {
-        const heartbeat = getLeaderHeartbeat();
-        if (heartbeat && heartbeat.tabId === message.tabId) {
-          releaseLeadership();
-        } else {
-          const assertMessage: LeaderMessage = {
-            type: 'heartbeat',
-            tabId,
-          };
-          channel?.postMessage(assertMessage);
-        }
-      }
-    } else if (message.type === 'leader-release') {
-      if (message.tabId !== tabId) {
-        setTimeout(() => checkLeaderStatus(), 100);
-      }
-    }
-  };
-
-  checkLeaderStatus();
-
-  heartbeatIntervalId = setInterval(() => {
-    knownTabs.set(tabId, Date.now());
-
-    if (isLeader()) {
-      updateLeaderHeartbeat();
-      channel?.postMessage({ type: 'heartbeat', tabId } as LeaderMessage);
-    } else {
-      channel?.postMessage({ type: 'tab-heartbeat', tabId } as LeaderMessage);
-    }
-
-    const now = Date.now();
-    let changed = false;
-    for (const [id, lastSeen] of knownTabs) {
-      if (id !== tabId && now - lastSeen > leaderTimeout) {
-        knownTabs.delete(id);
-        changed = true;
-      }
-    }
-    if (changed) {
-      instanceCount.set(knownTabs.size);
-    }
-  }, heartbeatInterval);
-
-  leaderCheckIntervalId = setInterval(() => {
-    checkLeaderStatus();
-  }, heartbeatInterval);
-
-  const handleVisibilityChange = () => {
-    if (document.hidden && isLeader()) {
-      // Tab is hidden but we're leader - keep leadership but other tabs will take over if we die
-    } else if (!document.hidden && !isLeader()) {
-      checkLeaderStatus();
-    }
-  };
-
-  document.addEventListener('visibilitychange', handleVisibilityChange);
+  announce();
+  void recount();
 
   const cleanup = () => {
-    if (heartbeatIntervalId) {
-      clearInterval(heartbeatIntervalId);
-    }
-    if (leaderCheckIntervalId) {
-      clearInterval(leaderCheckIntervalId);
-    }
+    if (isDestroyed) return;
 
-    channel?.postMessage({ type: 'instance-unregister', tabId } as LeaderMessage);
+    isDestroyed = true;
 
-    releaseLeadership();
-
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    // Release before the goodbye: the tabs that recount on it should no longer see this one queued.
+    hold.release();
+    announce();
     channel?.close();
-
-    const heartbeat = getLeaderHeartbeat();
-    if (heartbeat?.tabId === tabId) {
-      try {
-        localStorage.removeItem(storageKey);
-      } catch {
-        // Ignore
-      }
-    }
   };
 
   destroyRef.onDestroy(cleanup);
 
-  return {
-    isLeader: isLeader.asReadonly(),
-    instanceCount: instanceCount.asReadonly(),
-    becomeLeader,
-    cleanup,
-  };
+  return { isLeader: hold.isHolder, instanceCount: instanceCount.asReadonly(), cleanup };
 };

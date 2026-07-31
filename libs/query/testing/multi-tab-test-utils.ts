@@ -196,10 +196,20 @@ export const installFakeWebLocks = (): FakeWebLocksHandle => {
     });
   };
 
+  // Both lists are reported, because a queued request is how a tab that is *not* the holder still
+  // shows up — which is what the auth leader election counts its tabs by.
+  const query = () =>
+    Promise.resolve({
+      held: [...holders.keys()].map((name) => ({ name, mode: 'exclusive' as const })),
+      pending: [...queues.entries()].flatMap(([name, waiters]) =>
+        waiters.map(() => ({ name, mode: 'exclusive' as const })),
+      ),
+    });
+
   Object.defineProperty(navigator, 'locks', {
     value: {
       request,
-      query: () => Promise.resolve({ held: [...holders.keys()].map((name) => ({ name })), pending: [] }),
+      query,
     },
     configurable: true,
     writable: true,

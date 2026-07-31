@@ -317,12 +317,15 @@ someone asks "why isn't this tab polling?".
   prefetch-shaped win; if ever wanted, design it as a deliberate prefetching
   feature, not a sync side effect. Only entries that already exist (in use or
   retained) get updated.
-- Persisting responses (localStorage/IndexedDB offline cache) — **agreed
-  follow-up (2026-07-31), own plan.**
+- Persisting responses (localStorage/IndexedDB offline cache) — **done
+  (2026-07-31)**, see `plans/query-offline-persistence.md`.
 - Legacy `V2QueryClient` support — confirmed not needed.
-- Migrating auth leader election to Web Locks — **agreed follow-up
-  (2026-07-31), own plan.** Replaces the heartbeat/localStorage election in
-  `libs/query/src/lib/auth/internal/leader-election.ts` and should reuse the
-  `KeyLockManager` primitive from Phase 1.
-- `client.invalidateQueries()` public API (local + broadcast unified) — natural
-  follow-up once §1.3 exists.
+- Migrating auth leader election to Web Locks — **done (2026-08-01)**.
+  `libs/query/src/lib/auth/internal/leader-election.ts` holds one
+  `createQueryKeyLockManager('ethlete-auth')` lock instead of the
+  heartbeat/localStorage election; the instance count is derived from
+  `navigator.locks.query()`, recounted off a presence ping rather than a timer.
+- `client.invalidateQueries()` public API (local + broadcast unified) — **done
+  (2026-08-01)**. `libs/query/src/lib/http/query-invalidation.ts` plus an
+  `invalidate` sync message; narrowed by `url` (boundary-aware) and a local-only
+  `filter`, with `otherTabs` to opt out of the broadcast.

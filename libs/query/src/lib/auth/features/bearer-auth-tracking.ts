@@ -1,4 +1,4 @@
-import { effect, Signal } from '@angular/core';
+import { effect, isDevMode, Signal } from '@angular/core';
 import { QueryArgs, QueryErrorResponse, QuerySnapshot } from '../../http';
 import {
   AnyQueryBuilder,
@@ -182,9 +182,21 @@ export const createTrackingFeature = <TBuilders extends readonly AnyQueryBuilder
 
   const emit = (event: string, data: unknown): void => {
     if (forwardingChannel && !context.isLeader()) {
-      forwardingChannel.postMessage({ event, data } satisfies ForwardedMessage);
-      return;
+      try {
+        forwardingChannel.postMessage({ event, data } satisfies ForwardedMessage);
+
+        return;
+      } catch (error) {
+        // Some payloads cannot leave the tab they were made in: a query snapshot is a bundle of
+        // signals, and the structured clone algorithm throws on functions. Firing the handlers here
+        // is the lesser evil — the event reaches a handler in the wrong tab rather than taking the
+        // effect it was emitted from down with it.
+        if (isDevMode()) {
+          console.warn(`[@ethlete/query] Could not forward the "${event}" tracking event to the leader tab.`, error);
+        }
+      }
     }
+
     fireHandlers(event, data);
   };
 

@@ -112,6 +112,10 @@ Refresh failures retry on transient statuses (`0, 408, 425, 429, 500, 502, 503, 
 
 On by default (`multiTabSync`): tokens and logout are synchronized across tabs via a `BroadcastChannel` (`'ethlete-auth-sync'`) with leader election, so only one tab performs proactive refreshes. Pass `multiTabSync: false` to disable, or an options object to tune `syncTokens`, `syncLogout` and `leaderElection` individually.
 
+Leadership is one lock in the [Web Locks API](https://developer.mozilla.org/docs/Web/API/Web_Locks_API) — the same primitive the query client elects its [polling tabs](/query/multi-tab#polling-dedup) with. Every tab asks for it, one gets it, the rest queue: requests are granted FIFO, and a holder that closes, crashes or navigates away has its lock released by the platform, so the longest-waiting tab takes over. There is no heartbeat to tune and no window in which two tabs both believe they are the leader. Without Web Locks the tab elects itself, which is the single-tab behavior anyway.
+
+Two consequences worth knowing. `isLeader` starts `false` and flips on the next microtask, because the platform grants asynchronously — nothing observes the gap, since the proactive refresh it gates runs off a timer. And the instance count `withTracking` reports is best-effort: it is recounted when a tab announces itself, says goodbye or takes over the leadership, so a tab that _crashes_ without holding the lock is counted until the next of those happens.
+
 This is separate from — and independent of — the query client's own [multi-tab sync](/query/multi-tab), which shares responses and deduplicates polling. Both are on by default and configured separately: this one is about the session, that one about data. They complement each other — because logout tears down secure entries in every tab, a shared response can never outlive the session it was fetched in.
 
 ## Features

@@ -1,5 +1,14 @@
 import { TestBed } from '@angular/core/testing';
-import { QueryTestSetup, setupAuthTest, setupQueryTest } from '@ethlete/query/testing';
+import {
+  FakeBroadcastChannelHandle,
+  FakeWebLocksHandle,
+  flushMultiTabSync,
+  installFakeBroadcastChannel,
+  installFakeWebLocks,
+  QueryTestSetup,
+  setupAuthTest,
+  setupQueryTest,
+} from '@ethlete/query/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { withTracking } from './bearer-auth-tracking';
 
@@ -135,126 +144,133 @@ describe('bearer-auth-tracking', () => {
   });
 
   describe('LeaderTrackingEvents', () => {
-    type MockChannel = {
-      postMessage: ReturnType<typeof vi.fn>;
-      close: ReturnType<typeof vi.fn>;
-      onmessage: ((event: MessageEvent) => void) | null;
-    };
-
-    let channels: Record<string, MockChannel>;
-    let originalBroadcastChannel: typeof BroadcastChannel;
-    let storage: Record<string, string>;
+    let bus: FakeBroadcastChannelHandle;
+    let locks: FakeWebLocksHandle;
 
     beforeEach(() => {
-      originalBroadcastChannel = globalThis.BroadcastChannel;
-      channels = {};
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (globalThis as any).BroadcastChannel = vi.fn(function (this: any, name: string) {
-        const ch: MockChannel = { postMessage: vi.fn(), close: vi.fn(), onmessage: null };
-        channels[name] = ch;
-        return ch;
-      });
-
-      storage = {};
-      vi.spyOn(Storage.prototype, 'getItem').mockImplementation((key) => storage[key] ?? null);
-      vi.spyOn(Storage.prototype, 'setItem').mockImplementation((key, value) => {
-        storage[key] = value as string;
-      });
-      vi.spyOn(Storage.prototype, 'removeItem').mockImplementation((key) => {
-        delete storage[key];
-      });
-
-      vi.useFakeTimers();
+      bus = installFakeBroadcastChannel();
+      locks = installFakeWebLocks();
     });
 
     afterEach(() => {
-      vi.useRealTimers();
+      // Tear the injector down while the fakes are still installed: destroying it releases the leader
+      // lock and posts a goodbye, which a restored `BroadcastChannel` would no longer accept.
+      TestBed.resetTestingModule();
+
+      bus.restore();
+      locks.restore();
       vi.clearAllMocks();
-      globalThis.BroadcastChannel = originalBroadcastChannel;
     });
 
-    it('should emit leaderStatusChange with initial leader state on setup', () => {
+    /** Lets lock grants, presence messages and the recount behind the instance count land. */
+    const settle = async () => {
+      for (let i = 0; i < 5; i++) {
+        TestBed.tick();
+        await flushMultiTabSync();
+      }
+    };
+
+    /** Another tab of the app, as far as the election is concerned: it holds the lock, or waits for it. */
+    const otherTab = () => {
+      let release = () => {
+        /* not granted yet */
+      };
+
+      const held = navigator.locks.request(
+        'ethlete-auth:leader',
+        () => new Promise<void>((resolve) => (release = resolve)),
+      );
+      const channel = new BroadcastChannel('ethlete-auth-leader');
+
+      channel.postMessage({ type: 'presence' });
+
+      return { close: () => (release(), channel.close(), held) };
+    };
+
+    const postedOn = (channelName: string) =>
+      bus.posted.filter((message) => message.channel === channelName).map((message) => message.data);
+
+    it('should emit leaderStatusChange once the lock is granted', async () => {
       const authSetup = setupAuthTest({
         querySetup: setup,
         features: [withTracking()],
         multiTabSync: { leaderElection: true },
       });
 
-      TestBed.runInInjectionContext(() => {
+      await TestBed.runInInjectionContext(async () => {
         const handler = vi.fn();
         authSetup.auth.features.tracking.on('leaderStatusChange', handler);
 
-        TestBed.tick();
+        await settle();
 
         expect(handler).toHaveBeenCalledWith({ isLeader: true });
       });
     });
 
-    it('should emit leaderStatusChange when leadership is lost', () => {
+    it('should emit leaderStatusChange when another tab holds the lock, and again on taking over', async () => {
+      const leader = otherTab();
+
       const authSetup = setupAuthTest({
         querySetup: setup,
         features: [withTracking()],
         multiTabSync: { leaderElection: true },
       });
 
-      TestBed.runInInjectionContext(() => {
+      await TestBed.runInInjectionContext(async () => {
         const handler = vi.fn();
         authSetup.auth.features.tracking.on('leaderStatusChange', handler);
 
-        // Flush initial effect (emits leaderStatusChange({ isLeader: true }))
-        TestBed.tick();
-        handler.mockClear();
-
-        // Simulate another tab asserting legitimate leadership
-        storage['ethlete-auth-leader-heartbeat'] = JSON.stringify({ tabId: 'other-tab', timestamp: Date.now() });
-        channels['ethlete-auth-leader']?.onmessage?.({
-          data: { type: 'heartbeat', tabId: 'other-tab' },
-        } as MessageEvent);
-
-        TestBed.tick();
+        await settle();
 
         expect(handler).toHaveBeenCalledWith({ isLeader: false });
+        handler.mockClear();
+
+        // The other tab goes away, which is the only way leadership ever moves with Web Locks.
+        leader.close();
+        await settle();
+
+        expect(handler).toHaveBeenCalledWith({ isLeader: true });
       });
     });
 
-    it('should emit leaderInstanceCountChange with initial count on setup', () => {
+    it('should emit leaderInstanceCountChange with initial count on setup', async () => {
       const authSetup = setupAuthTest({
         querySetup: setup,
         features: [withTracking()],
         multiTabSync: { leaderElection: true },
       });
 
-      TestBed.runInInjectionContext(() => {
+      await TestBed.runInInjectionContext(async () => {
         const handler = vi.fn();
         authSetup.auth.features.tracking.on('leaderInstanceCountChange', handler);
 
-        TestBed.tick();
+        await settle();
 
         expect(handler).toHaveBeenCalledWith({ count: 1 });
       });
     });
 
-    it('should emit leaderInstanceCountChange when another tab registers', () => {
+    it('should emit leaderInstanceCountChange when another tab announces itself', async () => {
       const authSetup = setupAuthTest({
         querySetup: setup,
         features: [withTracking()],
         multiTabSync: { leaderElection: true },
       });
 
-      TestBed.runInInjectionContext(() => {
+      await TestBed.runInInjectionContext(async () => {
         const handler = vi.fn();
         authSetup.auth.features.tracking.on('leaderInstanceCountChange', handler);
 
-        TestBed.tick();
+        await settle();
         handler.mockClear();
 
-        channels['ethlete-auth-leader']?.onmessage?.({
-          data: { type: 'instance-register', tabId: 'other-tab-1' },
-        } as MessageEvent);
+        const second = otherTab();
 
-        TestBed.tick();
+        await settle();
 
         expect(handler).toHaveBeenCalledWith({ count: 2 });
+
+        second.close();
       });
     });
 
@@ -278,29 +294,30 @@ describe('bearer-auth-tracking', () => {
       });
     });
 
-    it('should forward events from non-leader tabs to the leader', () => {
+    it('should forward events from non-leader tabs to the leader', async () => {
       const authSetup = setupAuthTest({
         querySetup: setup,
         features: [withTracking()],
         multiTabSync: { leaderElection: true },
       });
 
-      TestBed.runInInjectionContext(() => {
+      await TestBed.runInInjectionContext(async () => {
         const handler = vi.fn();
         authSetup.auth.features.tracking.on('logout', handler);
 
-        // Simulate a non-leader tab forwarding a logout event via the tracking channel
-        channels['ethlete-auth-tracking']?.onmessage?.({
-          data: { event: 'logout', data: undefined },
-        } as MessageEvent);
+        await settle();
+
+        // A non-leader tab forwarding a logout event over the tracking channel.
+        new BroadcastChannel('ethlete-auth-tracking').postMessage({ event: 'logout', data: undefined });
+
+        await flushMultiTabSync();
 
         expect(handler).toHaveBeenCalled();
       });
     });
 
-    it('should not fire logout handler locally when this tab is not the leader, but post to forwarding channel instead', () => {
-      // Set up another tab as the leader in localStorage before the auth provider is created
-      storage['ethlete-auth-leader-heartbeat'] = JSON.stringify({ tabId: 'leader-tab', timestamp: Date.now() });
+    it('should forward a logout instead of firing it locally when another tab is the leader', async () => {
+      const leader = otherTab();
 
       const authSetup = setupAuthTest({
         querySetup: setup,
@@ -308,37 +325,30 @@ describe('bearer-auth-tracking', () => {
         multiTabSync: { leaderElection: true },
       });
 
-      TestBed.runInInjectionContext(() => {
-        // This tab should not be the leader since another tab set a fresh heartbeat
-        expect(authSetup.auth.features.tracking).toBeDefined();
-
+      await TestBed.runInInjectionContext(async () => {
         const localLogoutHandler = vi.fn();
         authSetup.auth.features.tracking.on('logout', localLogoutHandler);
 
-        // Give the tab tokens so logout actually clears them and triggers the effect
+        // Give the tab tokens, so logging out actually clears something and triggers the effect.
         authSetup.login({ email: 'test@test.com', password: 'test' }, { accessToken: 'at', refreshToken: 'rt' });
-        TestBed.tick();
 
-        // Confirm this tab is not the leader
+        await settle();
+
         expect(authSetup.auth.isAuthenticated()).toBe(true);
-        const leaderChannel = channels['ethlete-auth-leader'];
-        // Keep the other tab's leadership alive so this tab stays non-leader
-        storage['ethlete-auth-leader-heartbeat'] = JSON.stringify({ tabId: 'leader-tab', timestamp: Date.now() });
-        leaderChannel?.onmessage?.({ data: { type: 'heartbeat', tabId: 'leader-tab' } } as MessageEvent);
-        TestBed.tick();
 
-        const forwardingChannel = channels['ethlete-auth-tracking'];
-        forwardingChannel?.postMessage.mockClear();
+        const forwardedBefore = postedOn('ethlete-auth-tracking').length;
 
-        // Execute logout on this (non-leader) tab
         authSetup.auth.logout();
-        TestBed.tick();
 
-        // Local handler must NOT have been called — the event was forwarded, not fired locally
+        await settle();
+
+        // The event belongs to the leader, so this tab hands it over rather than firing it.
         expect(localLogoutHandler).not.toHaveBeenCalled();
+        expect(postedOn('ethlete-auth-tracking').slice(forwardedBefore)).toEqual([
+          { event: 'logout', data: undefined },
+        ]);
 
-        // The forwarding channel must have received the logout event so the leader can fire it
-        expect(forwardingChannel?.postMessage).toHaveBeenCalledWith({ event: 'logout', data: undefined });
+        leader.close();
       });
     });
   });
