@@ -48,11 +48,54 @@ Both readouts (this one and the compact pager's) **reserve the width of the wide
 text they can ever produce** and use tabular figures, so stepping 9 → 10 doesn't
 widen them and shove whatever is laid out beside the paginator sideways.
 
+## Page size
+
+`<et-page-size-select>` is the "Items per page" control that completes the Material-style
+controls row. Import `PAGE_SIZE_SELECT_IMPORTS`:
+
+```html
+<div class="controls-row">
+  <et-page-size-select [(pageSize)]="pageSize" size="sm" />
+  <et-pagination [(page)]="page" [totalPages]="totalPages()" [totalItems]="total()" [pageSize]="pageSize()" compact />
+</div>
+```
+
+<StoryEmbed id="components-pagination--page-size-select" height="220px" />
+
+It is a **native `<select>`**. A handful of numbers doesn't justify dragging the overlay
+runtime and [`et-select`](/components/select)'s panel into every footer that shows one, and
+on mobile the platform picker is the better control at this size anyway. It costs nothing
+beyond itself.
+
+It is a **separate component**, not part of the paginator, because the paginator owns `page`
+and page size is yours — a table footer, an infinite list and a gallery all pair them
+differently, and plenty of paginators want no size control at all. Lay the two out however
+your app wants; both take `size="sm"` so they shrink together.
+
+| Input      | Type                | Default             | What it does                                             |
+| ---------- | ------------------- | ------------------- | -------------------------------------------------------- |
+| `pageSize` | `number` (model)    | required            | The current size; picking a choice writes it back        |
+| `sizes`    | `readonly number[]` | `[10, 25, 50, 100]` | The choices offered                                      |
+| `size`     | `'sm' \| 'md'`      | `'md'`              | Density, to match the paginator beside it                |
+| `labels`   | `Partial<…>`        | `null`              | Per-instance strings — see [Localization](#localization) |
+
+### Changing the size does not reset the page
+
+Which page 1-based position 47 belongs to depends on what you're paging, so that decision
+stays yours. Going back to page 1 is the usual answer, and `linkedSignal` is one line:
+
+```ts
+protected pageSize = signal(25);
+// page 1 whenever the size changes; the paginator drives it the rest of the time
+protected page = linkedSignal<number, number>({ source: this.pageSize, computation: () => 1 });
+```
+
 ## Localization
 
 Every string the paginator renders itself — the control `aria-label`s ("Previous
 page", "Page 3"), the "Showing X–Y of Z" readout, the compact pager's readout, the
-jump-to-page label and the landmark's `aria-label` — comes from one label set,
+jump-to-page label, the page-size select's label and the landmark's `aria-label` —
+comes from one label set,
 English by default. Localize it once per app (or per lazy-loaded feature) with
 `providePaginationLabels`; anything you leave out keeps its English default.
 
@@ -71,6 +114,7 @@ bootstrapApplication(AppComponent, {
       range: ({ start, end, totalItems }) => `Zeige ${start}–${end} von ${totalItems}`,
       compactRange: ({ start, end, totalItems }) => `${start}–${end} von ${totalItems}`,
       jumpTo: 'Gehe zu Seite',
+      pageSize: 'Einträge pro Seite',
     }),
   ],
 });
@@ -87,19 +131,21 @@ one-off wording, not for translation:
 
 The label keys, all optional:
 
-| Key            | Default                        | Where it shows                                                          |
-| -------------- | ------------------------------ | ----------------------------------------------------------------------- |
-| `navigation`   | `'Pagination'`                 | The landmark's `aria-label` (unless `ariaLabel` is set).                |
-| `first`        | `'First page'`                 | `aria-label` of the jump-to-first control.                              |
-| `previous`     | `'Previous page'`              | `aria-label` of the previous control.                                   |
-| `next`         | `'Next page'`                  | `aria-label` of the next control.                                       |
-| `last`         | `'Last page'`                  | `aria-label` of the jump-to-last control.                               |
-| `ellipsis`     | `'More pages'`                 | `aria-label` for a gap (inert here; for custom renderings).             |
-| `page`         | `` (page) => `Page ${page}` `` | `aria-label` of a page item; also gets `totalPages`.                    |
-| `range`        | `'Showing 41–60 of 500'`       | The `totalItems`/`pageSize` readout; gets `{ start, end, totalItems }`. |
-| `compactRange` | `'41–60 of 500'`               | The compact pager's readout when the range is known.                    |
-| `compactPage`  | `'3 / 25'`                     | The compact pager's readout without `totalItems`/`pageSize`.            |
-| `jumpTo`       | `'Go to page'`                 | Label of the `showJumpTo` field.                                        |
+| Key              | Default                        | Where it shows                                                          |
+| ---------------- | ------------------------------ | ----------------------------------------------------------------------- |
+| `navigation`     | `'Pagination'`                 | The landmark's `aria-label` (unless `ariaLabel` is set).                |
+| `first`          | `'First page'`                 | `aria-label` of the jump-to-first control.                              |
+| `previous`       | `'Previous page'`              | `aria-label` of the previous control.                                   |
+| `next`           | `'Next page'`                  | `aria-label` of the next control.                                       |
+| `last`           | `'Last page'`                  | `aria-label` of the jump-to-last control.                               |
+| `ellipsis`       | `'More pages'`                 | `aria-label` for a gap (inert here; for custom renderings).             |
+| `page`           | `` (page) => `Page ${page}` `` | `aria-label` of a page item; also gets `totalPages`.                    |
+| `range`          | `'Showing 41–60 of 500'`       | The `totalItems`/`pageSize` readout; gets `{ start, end, totalItems }`. |
+| `compactRange`   | `'41–60 of 500'`               | The compact pager's readout when the range is known.                    |
+| `compactPage`    | `'3 / 25'`                     | The compact pager's readout without `totalItems`/`pageSize`.            |
+| `jumpTo`         | `'Go to page'`                 | Label of the `showJumpTo` field.                                        |
+| `pageSize`       | `'Items per page'`             | Visible label of `<et-page-size-select>`.                               |
+| `pageSizeOption` | `` (size) => `${size}` ``      | One page-size choice — override for `'All'` or `'25 per page'`.         |
 
 `ariaLabel` still wins over `navigation` — set it when two paginators share a page
 ("Search results pages" vs "Comments pages"), and translate that string yourself.

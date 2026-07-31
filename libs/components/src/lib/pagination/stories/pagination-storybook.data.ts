@@ -17,4 +17,5 @@ export const GERMAN_LABELS: Partial<PaginationLabels> = {
   range: ({ start, end, totalItems }) => `Zeige ${start}–${end} von ${totalItems}`,
   compactRange: ({ start, end, totalItems }) => `${start}–${end} von ${totalItems}`,
   jumpTo: 'Gehe zu Seite',
+  pageSize: 'Einträge pro Seite',
 };

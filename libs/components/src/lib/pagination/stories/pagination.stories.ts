@@ -16,6 +16,7 @@ export default {
     pageSize: 20,
     showJumpTo: false,
     localized: false,
+    pageSizeSelect: false,
     surface: 'dark',
   },
   argTypes: {
@@ -29,6 +30,7 @@ export default {
     pageSize: { control: { type: 'number', min: 1 } },
     showJumpTo: { control: 'boolean' },
     localized: { control: 'boolean' },
+    pageSizeSelect: { control: 'boolean' },
     surface: { control: 'text' },
   },
 } as Meta<PaginationStorybookComponent>;
@@ -66,6 +68,23 @@ export const WithRangeAndJump: Story = {
       description: {
         story:
           'Opt into a "Showing X–Y of Z" readout by passing `totalItems` + `pageSize`, and a jump-to-page field with `showJumpTo` — handy for large result sets.',
+      },
+    },
+  },
+};
+
+export const PageSizeSelect: Story = {
+  args: { pageSizeSelect: true },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The Material-style controls row: `<et-page-size-select>` beside a `compact` paginator. It is a ' +
+          'native `<select>` — a handful of numbers does not justify dragging the overlay runtime into every ' +
+          'footer, and the platform picker is the better control on mobile. It is a separate component ' +
+          'because page size is the app’s state, not the paginator’s: **changing the size does not reset ' +
+          'the page**, since which page an item lands on depends on what you are paging. Here a ' +
+          '`linkedSignal` sends it back to page 1, which is the usual answer.',
       },
     },
   },

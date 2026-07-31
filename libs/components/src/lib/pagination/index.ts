@@ -1,4 +1,5 @@
 export * from './headless';
+export * from './page-size-select.component';
 export * from './paginate';
 export * from './pagination-labels';
 export * from './pagination.component';

@@ -1,0 +1,94 @@
+@layer components {
+  /* Its own height token rather than the paginator's `--et-pagination-item-size`: that one is
+     `@property`-registered as inheriting with a 36px initial value, so it resolves everywhere — the
+     select would silently take 36px regardless of its own density, and would not follow a compact
+     paginator that lowered it on its own host anyway. Set this to line the two up exactly. */
+  @property --et-page-size-select-height {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 36px;
+  }
+
+  :where(.et-page-size-select-host) {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .et-page-size-select-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    white-space: nowrap;
+    color: var(--et-surface-color-muted-solid, CanvasText);
+  }
+
+  /* The chevron is drawn over the control's trailing edge, so the field is the positioning context. */
+  .et-page-size-select-field {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* The control itself reads as the paginator's own chrome — same radius, same border, same minimum
+     height — so the two sit level in a controls row without either being restyled at the call site.
+     The trailing padding leaves room for the chevron. */
+  .et-page-size-select-control {
+    appearance: none;
+    min-block-size: var(--et-page-size-select-height);
+    padding-block: 0;
+    padding-inline: 8px 26px;
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    color: var(--et-surface-color-solid, CanvasText);
+    background: transparent;
+    border: 1px solid var(--et-surface-border-solid, rgb(128 128 128 / 0.3));
+    border-radius: var(--et-pagination-radius, 8px);
+    cursor: pointer;
+  }
+
+  .et-page-size-select-chevron {
+    position: absolute;
+    inset-inline-end: 8px;
+    /* The picker is the select's; the chevron is decoration sitting on top of it. */
+    pointer-events: none;
+    color: var(--et-surface-color-muted-solid, CanvasText);
+  }
+
+  /* The dropdown the browser draws is outside this element, so it inherits nothing from the surface
+     theme — give the options a background that at least matches the app rather than the UA default. */
+  .et-page-size-select-control option {
+    color: var(--et-surface-color-solid, CanvasText);
+    background: var(--et-surface-background-solid, Canvas);
+  }
+
+  @media (hover: hover) {
+    .et-page-size-select-control:hover {
+      background: color-mix(in srgb, var(--et-surface-interaction-solid, gray) 8%, transparent);
+    }
+  }
+
+  .et-page-size-select-control:focus-visible {
+    outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+    outline-offset: 2px;
+  }
+
+  /* Matches the paginator's own `sm` density, so a table footer can shrink both together. */
+  .et-page-size-select-host:where([data-size='sm']) .et-page-size-select-label {
+    font-size: 13px;
+    gap: 6px;
+  }
+
+  .et-page-size-select-host:where([data-size='sm']) {
+    /* Level with the compact pager's 34px chevrons, which is what it usually sits beside. */
+    --et-page-size-select-height: 34px;
+  }
+
+  .et-page-size-select-host:where([data-size='sm']) .et-page-size-select-control {
+    padding-inline: 6px 22px;
+  }
+
+  .et-page-size-select-host:where([data-size='sm']) .et-page-size-select-chevron {
+    inset-inline-end: 6px;
+  }
+}

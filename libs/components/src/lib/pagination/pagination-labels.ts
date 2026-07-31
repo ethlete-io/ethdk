@@ -41,6 +41,10 @@ export type PaginationLabels = {
   compactPage: (page: number, totalPages: number) => string;
   /** Label for the jump-to-page field (`showJumpTo`). */
   jumpTo: string;
+  /** Visible label for the page-size select (`<et-page-size-select>`). */
+  pageSize: string;
+  /** How one page-size choice reads, e.g. `'25'` — override for `'All'` or `'25 per page'`. */
+  pageSizeOption: (size: number) => string;
 };
 
 /** The built-in English labels. */
@@ -56,6 +60,8 @@ export const DEFAULT_PAGINATION_LABELS: PaginationLabels = {
   compactRange: ({ start, end, totalItems }) => `${start}–${end} of ${totalItems}`,
   compactPage: (page, totalPages) => `${page} / ${totalPages}`,
   jumpTo: 'Go to page',
+  pageSize: 'Items per page',
+  pageSizeOption: (size) => `${size}`,
 };
 
 /**
