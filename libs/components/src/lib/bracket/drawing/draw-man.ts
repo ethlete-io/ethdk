@@ -61,6 +61,27 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TR
         continueSources.push({ pos: currentPos, className: el.match.winner?.shortId || '' });
       }
 
+      // Crossing the middle of a fold. Every other line here is drawn by the match it flows *into*, but a
+      // round in the middle of a mirrored bracket is fed from both sides and its relation names only one
+      // of them — so the round on the way back draws its own line. Deliberately outside the switch below:
+      // which relation a match has says nothing about which side of a fold it sits on, and keying this to
+      // `two-to-one` is why a folded lower bracket used to lose the line into its centre round.
+      if (el.round.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT && 'nextMatch' in el.match.relation) {
+        const { nextMatch, nextRound } = el.match.relation;
+
+        if (nextRound.mirrorRoundType === null) {
+          const next = dimensions.bracketGrid.matchElementMap.getOrThrow(nextMatch.id);
+
+          // The winner's short id, not both participants': this line is somebody advancing along it, and
+          // the journey highlight lights the path a participant actually travelled.
+          svgParts.push(
+            linePath(makePos(next.dimensions), currentPos, {
+              path: { ...dimensions.path, className: el.match.winner?.shortId || '' },
+            }),
+          );
+        }
+      }
+
       switch (el.match.relation.type) {
         case 'nothing-to-one': {
           continue;
@@ -70,8 +91,13 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TR
           const prev = dimensions.bracketGrid.matchElementMap.getOrThrow(el.match.relation.previousMatch.id);
           const prevPos = makePos(prev.dimensions);
 
-          // draw a straight line
-          svgParts.push(linePath(prevPos, currentPos, { path: pathOptions }));
+          // The winner of the match it comes from, like every other connector — this used to carry both of
+          // the *current* match's participants, which lit the line for whoever arrived from somewhere else.
+          svgParts.push(
+            linePath(prevPos, currentPos, {
+              path: { ...dimensions.path, className: el.match.relation.previousMatch.winner?.shortId || '' },
+            }),
+          );
 
           break;
         }
@@ -119,19 +145,6 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TR
               },
             }),
           );
-
-          if (
-            el.round.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT &&
-            el.match.relation.type === 'two-to-one' &&
-            el.match.relation.nextRound.mirrorRoundType === null
-          ) {
-            // draw a straight line for the special case of connecting the final match to the mirrored semi final match
-
-            const next = dimensions.bracketGrid.matchElementMap.getOrThrow(el.match.relation.nextMatch.id);
-            const nextPos = makePos(next.dimensions);
-
-            svgParts.push(linePath(nextPos, currentPos, { path: pathOptions }));
-          }
 
           break;
         }
