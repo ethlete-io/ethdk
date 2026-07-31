@@ -275,6 +275,7 @@ export class QueryDevtoolsComponent {
         repository,
         entries: repository.subtle.cacheEntries(),
         pollStates: client?.subtle.sync?.lockManager.keyStates() ?? {},
+        client,
       };
     }),
   );
@@ -630,6 +631,31 @@ export class QueryDevtoolsComponent {
     return parts.join(' · ') || '—';
   }
 
+  /**
+   * Whether a cache entry is showing data that came off the disk rather than the network — the answer
+   * to "why is this here already?" on a cold start. Empty when the client does not persist responses.
+   */
+  protected cachePersistence(entry: QueryRepositoryCacheEntry) {
+    this.clock();
+
+    const hydratedAt = entry.request.subtle.lastPersistedResponseAt();
+
+    if (hydratedAt === null) return '—';
+
+    return `from disk ${Math.max(0, Math.round((Date.now() - hydratedAt) / 1000))}s ago`;
+  }
+
+  /** How many responses this client has on disk, which is usually more than it has in memory. */
+  protected persistedCount(client: QueryClient) {
+    this.clock();
+
+    return client.subtle.persistence?.indexEntries().length ?? 0;
+  }
+
+  protected clearPersistedQueries(client: QueryClient) {
+    void client.clearPersistedQueries();
+  }
+
   /** The path + query of a request URL (origin stripped), for readable cache/event identifiers. */
   protected requestPath(url: string) {
     try {
@@ -897,6 +923,10 @@ export class QueryDevtoolsComponent {
   }
 
   private pushEvent(event: QueryRepositoryEvent, client: string) {
+    // The log is about traffic. A cache entry being created is always followed by the request it made,
+    // so a row for it would only ever duplicate the next one.
+    if (event.type === 'entry-created') return;
+
     const base = { id: this.eventIdCounter++, timestamp: Date.now(), client, type: event.type };
 
     // A logout drops every secure entry at once — worth a row of its own, since the requests that

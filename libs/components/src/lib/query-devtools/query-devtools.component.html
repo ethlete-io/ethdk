@@ -460,6 +460,12 @@
                 <div class="et-query-devtools-card-head">
                   <strong class="et-query-devtools-mono">{{ client.baseUrl || client.name }}</strong>
                   <span class="et-query-devtools-count">{{ client.entries.length }} entries</span>
+                  @if (client.client?.subtle.persistence) {
+                    <span class="et-query-devtools-count">{{ persistedCount(client.client!) }} on disk</span>
+                    <button (click)="clearPersistedQueries(client.client!)" class="et-query-devtools-btn" type="button">
+                      Clear disk
+                    </button>
+                  }
                 </div>
                 <table class="et-query-devtools-table">
                   <thead>
@@ -469,6 +475,7 @@
                       <th>Secure</th>
                       <th>Freshness</th>
                       <th>Sync</th>
+                      <th>Disk</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -483,6 +490,7 @@
                         <td>{{ cacheEntry.isSecure ? 'yes' : 'no' }}</td>
                         <td>{{ cacheFreshness(cacheEntry) }}</td>
                         <td>{{ cacheSync(cacheEntry, client.pollStates) }}</td>
+                        <td>{{ cachePersistence(cacheEntry) }}</td>
                         <td class="et-query-devtools-cell-actions">
                           <button (click)="refetchCacheEntry(cacheEntry)" class="et-query-devtools-btn" type="button">
                             Refetch
@@ -498,7 +506,7 @@
                       </tr>
                     } @empty {
                       <tr>
-                        <td class="et-query-devtools-empty" colspan="6">Cache empty.</td>
+                        <td class="et-query-devtools-empty" colspan="7">Cache empty.</td>
                       </tr>
                     }
                   </tbody>
