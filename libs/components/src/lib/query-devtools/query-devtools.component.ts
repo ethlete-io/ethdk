@@ -9,8 +9,10 @@ import {
   AnyQueryStack,
   createQueryErrorResponse,
   Query,
+  QueryClient,
   queryDevtoolsEntries,
   QueryDevtoolsEntry,
+  QueryKeyLockState,
   QueryRepository,
   QueryRepositoryCacheEntry,
   QueryRepositoryEvent,
@@ -229,14 +231,18 @@ export class QueryDevtoolsComponent {
 
   /** Unique repositories (with their client name + base URL) used by the Cache and Events tabs. */
   private repositories = computed(() => {
-    const map = new Map<QueryRepository, { name: string; baseUrl: string }>();
+    const map = new Map<QueryRepository, { name: string; baseUrl: string; client: QueryClient | null }>();
     for (const entry of queryDevtoolsEntries()) {
       const repo = entry.meta.repository;
       if (repo && !map.has(repo)) {
-        map.set(repo, { name: entry.meta.clientName ?? 'unknown', baseUrl: entry.meta.clientBaseUrl ?? '' });
+        map.set(repo, {
+          name: entry.meta.clientName ?? 'unknown',
+          baseUrl: entry.meta.clientBaseUrl ?? '',
+          client: entry.meta.client ?? null,
+        });
       }
     }
-    return Array.from(map, ([repository, info]) => ({ repository, name: info.name, baseUrl: info.baseUrl }));
+    return Array.from(map, ([repository, info]) => ({ repository, ...info }));
   });
 
   protected filteredQueries = computed(() => {
@@ -259,10 +265,17 @@ export class QueryDevtoolsComponent {
   protected sequenceSelectedQuery = computed(() => this.findQuery(this.sequenceSelectedQueryId()));
 
   protected cacheView = computed(() =>
-    this.repositories().map(({ repository, name, baseUrl }) => {
+    this.repositories().map(({ repository, name, baseUrl, client }) => {
       // Read the version signal so this recomputes on every cache mutation.
       repository.subtle.cacheVersion();
-      return { name, baseUrl, repository, entries: repository.subtle.cacheEntries() };
+
+      return {
+        name,
+        baseUrl,
+        repository,
+        entries: repository.subtle.cacheEntries(),
+        pollStates: client?.subtle.sync?.lockManager.keyStates() ?? {},
+      };
     }),
   );
 
@@ -596,6 +609,25 @@ export class QueryDevtoolsComponent {
     if (expiresAt === null) return 'uncacheable';
     const ms = expiresAt - Date.now();
     return ms <= 0 ? 'stale' : `${Math.ceil(ms / 1000)}s`;
+  }
+
+  /**
+   * What multi-tab sync is doing for a cache entry: whether this tab is the one polling the key, and
+   * how long ago it last took a response from another tab. Empty when the client has no sync.
+   */
+  protected cacheSync(entry: QueryRepositoryCacheEntry, pollStates: Record<string, QueryKeyLockState>) {
+    this.clock();
+
+    const parts: string[] = [];
+    const pollState = pollStates[entry.key];
+
+    if (pollState) parts.push(pollState === 'holder' ? 'polling' : 'standby');
+
+    const lastSyncedAt = entry.request.subtle.lastExternalResponseAt();
+
+    if (lastSyncedAt !== null) parts.push(`synced ${Math.max(0, Math.round((Date.now() - lastSyncedAt) / 1000))}s ago`);
+
+    return parts.join(' · ') || '—';
   }
 
   /** The path + query of a request URL (origin stripped), for readable cache/event identifiers. */

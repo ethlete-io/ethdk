@@ -468,6 +468,7 @@
                       <th>Consumers</th>
                       <th>Secure</th>
                       <th>Freshness</th>
+                      <th>Sync</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -481,6 +482,7 @@
                         <td>{{ cacheEntry.consumerCount }}</td>
                         <td>{{ cacheEntry.isSecure ? 'yes' : 'no' }}</td>
                         <td>{{ cacheFreshness(cacheEntry) }}</td>
+                        <td>{{ cacheSync(cacheEntry, client.pollStates) }}</td>
                         <td class="et-query-devtools-cell-actions">
                           <button (click)="refetchCacheEntry(cacheEntry)" class="et-query-devtools-btn" type="button">
                             Refetch
@@ -496,7 +498,7 @@
                       </tr>
                     } @empty {
                       <tr>
-                        <td class="et-query-devtools-empty" colspan="5">Cache empty.</td>
+                        <td class="et-query-devtools-empty" colspan="6">Cache empty.</td>
                       </tr>
                     }
                   </tbody>
