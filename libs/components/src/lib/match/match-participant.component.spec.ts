@@ -9,6 +9,7 @@ const TEAM: NormalizedMatchParticipant = {
   id: 'fcb',
   name: 'FC Berlin',
   code: 'FCB',
+  subtitle: 'Berlin eSports',
   emblem: { defaultSrc: '/fcb.png' },
   seed: 3,
 };
@@ -139,6 +140,32 @@ describe('MatchParticipantComponent', () => {
       fixture.detectChanges();
 
       expect(host(fixture).querySelector('.et-match-participant-seed')).toBeNull();
+    });
+  });
+
+  describe('the subtitle', () => {
+    it('is a second line under the name', () => {
+      expect(host(create()).querySelector('.et-match-participant-subtitle')?.textContent?.trim()).toBe(
+        'Berlin eSports',
+      );
+    });
+
+    it('is dropped when compact — a second line is the first thing that stops fitting', () => {
+      const fixture = create();
+
+      fixture.componentInstance.compact.set(true);
+      fixture.detectChanges();
+
+      expect(host(fixture).querySelector('.et-match-participant-subtitle')).toBeNull();
+    });
+
+    it('is absent for a participant that has none', () => {
+      const fixture = create();
+
+      fixture.componentInstance.participant.set({ ...TEAM, subtitle: null });
+      fixture.detectChanges();
+
+      expect(host(fixture).querySelector('.et-match-participant-subtitle')).toBeNull();
     });
   });
 

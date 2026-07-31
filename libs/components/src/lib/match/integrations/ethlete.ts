@@ -33,6 +33,10 @@ export const normalizeEthleteParticipant = (
     id: participant.id,
     name: gamertag ?? participant.name,
     code: participant.code,
+    // Left to the consumer: the second line is usually the org or club behind the participant, which is
+    // a relationship the list views don't carry — and a player's real name under their gamertag is not
+    // a default worth shipping.
+    subtitle: null,
     emblem: normalizeEthleteMedia(participant.emblem ?? participant.footballClubEmblem),
     // The list views carry no seeding; a consumer with one fills it in after normalizing.
     seed: null,
@@ -88,6 +92,9 @@ export const normalizeEthleteMatch = (match: MatchListViewUnion): NormalizedMatc
   away: normalizeEthleteParticipant(match.away),
   homeScore: match.homeScore?.score ?? null,
   awayScore: match.awayScore?.score ?? null,
+  // The API's `score` is the match score — goals, rounds, or games won in a series. A competition that
+  // wants table points or plain outcomes on the card maps those in itself and says so here.
+  resultKind: 'score',
   gameScores: normalizeGameScores(match),
   winnerSide: match.winningSide,
   // `matchNumber` is the number within the round, which is what a bracket cell says; `number` is the

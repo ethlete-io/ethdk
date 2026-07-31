@@ -220,6 +220,7 @@ export default defineConfig({
             { text: 'Carousel', link: '/components/carousel' },
             { text: 'Grid', link: '/components/grid' },
             { text: 'Masonry', link: '/components/masonry' },
+            { text: 'Match', link: '/components/match' },
             { text: 'Pagination', link: '/components/pagination' },
             { text: 'Scrollable', link: '/components/scrollable' },
             { text: 'Table', link: '/components/table' },

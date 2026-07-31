@@ -65,6 +65,7 @@ describe('normalizeEthleteParticipant', () => {
       id: 'home',
       name: 'FC Berlin',
       code: 'FCB',
+      subtitle: null,
       emblem: { defaultSrc: '/fcb.png' },
       seed: null,
     });

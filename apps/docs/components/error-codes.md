@@ -395,3 +395,11 @@ Checked in dev mode only, after the first render.
 | Code     | Cause                                                                                | Fix                                                                                               |
 | -------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
 | `ET4200` | An `etFilterOverlaySubmit` or `etFilterOverlayReset` has no filter overlay above it. | Add `provideFilterOverlay({ … })` to the providers of the overlay component the control lives in. |
+
+## Match (ET43xx)
+
+Checked in dev mode only, after the first render.
+
+| Code     | Cause                                                                                                | Fix                                                                                  |
+| -------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `ET4300` | An `etMatchCardScore`, `etMatchCardMeta` or `etMatchCardGameScores` has no `[etMatchCard]` above it. | Move the part inside the card element (`<et-match-card>` or your own `etMatchCard`). |

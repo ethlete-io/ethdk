@@ -1,5 +1,19 @@
 import { createLabels } from '@ethlete/core';
-import { NormalizedMatchStatus } from './match.types';
+import { NormalizedMatchResultKind, NormalizedMatchStatus } from './match.types';
+
+/** The two headline values of a match, for the label that turns them into a phrase. */
+export type MatchResultNameContext = {
+  /** The home side's value, as drawn (`'2'`, `'3'`), or `null` when the match reports no values. */
+  home: string | null;
+  /** The away side's value, as drawn, or `null`. */
+  away: string | null;
+  /** What the two values are — see {@link NormalizedMatchResultKind}. */
+  kind: NormalizedMatchResultKind;
+  /** The winning side's display name, or `null` while undecided or drawn. */
+  winner: string | null;
+  /** The `scoreSeparator` in effect, passed in so this label honours an override of it. */
+  separator: string;
+};
 
 /** What a match card announces about itself, once composed. */
 export type MatchCardNameContext = {
@@ -7,11 +21,20 @@ export type MatchCardNameContext = {
   home: string;
   /** The away side's display name, or the `tbd` label. */
   away: string;
-  /** The score as one string (`'2 : 1'`), or `null` before there is one. */
-  score: string | null;
+  /**
+   * How it stands, as the `resultName` label phrased it (`'2 : 1'`, `'FC Berlin won'`), or `null`
+   * before there is a result.
+   */
+  result: string | null;
+  /** What the underlying two values are, in case the phrasing should turn on it. */
+  resultKind: NormalizedMatchResultKind;
+  /** The winning side's display name, or `null` while undecided or drawn. */
+  winner: string | null;
   /** The kick-off, already formatted for the active locale, or `null` when unscheduled. */
   startTime: string | null;
   status: NormalizedMatchStatus;
+  /** The match's own `label` (`'Grand Final'`), or `null` when it has none. */
+  label: string | null;
 };
 
 /**
@@ -30,6 +53,20 @@ export type MatchLabels = {
   scheduled: string;
   /** Separates the two scores, e.g. `' : '`. Also used to build the accessible name. */
   scoreSeparator: string;
+  /**
+   * How the result is announced — which is not how it is drawn. `'W'` beside `'L'` reads fine and
+   * listens terribly, so a match with no values to read names its winner instead, and `points` says
+   * what the numbers are.
+   */
+  resultName: (context: MatchResultNameContext) => string;
+  /** Sits between the two sides in the wide row, where a match has no result yet. */
+  versus: string;
+  /** The winning side's letter, for a match whose `resultKind` is `'outcome'`. */
+  outcomeWin: string;
+  /** The losing side's letter. */
+  outcomeLoss: string;
+  /** Both sides' letter for a drawn match. */
+  outcomeDraw: string;
   /** Accessible name for a participant's emblem — the image is decorative beside the name. */
   emblemAlt: (participant: string) => string;
   /** A participant's seed, e.g. `'Seed 3'`. */
@@ -52,15 +89,30 @@ export const DEFAULT_MATCH_LABELS: MatchLabels = {
   finished: 'Finished',
   scheduled: 'Scheduled',
   scoreSeparator: ' : ',
+  resultName: ({ home, away, kind, winner, separator }) => {
+    // Nothing numeric to read: a competition that reports only wins and losses still has an outcome,
+    // and "W" is not it.
+    if (home === null || away === null) return winner ? `${winner} won` : 'Draw';
+
+    const pair = `${home}${separator}${away}`;
+
+    return kind === 'points' ? `${pair} points` : pair;
+  },
+  versus: 'vs',
+  outcomeWin: 'W',
+  outcomeLoss: 'L',
+  outcomeDraw: 'D',
   emblemAlt: (participant) => `${participant} emblem`,
   seed: (seed) => `Seed ${seed}`,
-  // The order matters more than the punctuation: who is playing, then how it stands, then whether it
-  // is still going — which is how someone scanning a page of these actually reads them.
-  matchName: ({ home, away, score, startTime, status }) => {
-    const outcome = score ?? startTime;
+  // The order matters more than the punctuation: which match this is, who is playing, then how it
+  // stands, then whether it is still going — which is how someone scanning a page of these actually
+  // reads them.
+  matchName: ({ home, away, result, startTime, status, label }) => {
+    const outcome = result ?? startTime;
     const state = status === 'live' ? 'Live' : status === 'finished' ? 'Finished' : null;
+    const matchUp = label ? `${label}: ${home} vs. ${away}` : `${home} vs. ${away}`;
 
-    return [`${home} vs. ${away}`, outcome, state].filter(Boolean).join(', ');
+    return [matchUp, outcome, state].filter(Boolean).join(', ');
   },
   gameScores: 'Games',
   gameScore: (game, score) => `Game ${game}: ${score}`,
@@ -75,7 +127,7 @@ export const DEFAULT_MATCH_LABELS: MatchLabels = {
  * provideMatchLabels({
  *   tbd: 'Offen',
  *   live: 'Live',
- *   matchName: ({ home, away, score }) => `${home} gegen ${away}${score ? `, ${score}` : ''}`,
+ *   matchName: ({ home, away, result }) => `${home} gegen ${away}${result ? `, ${result}` : ''}`,
  * });
  */
 export const [provideMatchLabels, injectMatchLabels, MATCH_LABELS] = createLabels<MatchLabels>(

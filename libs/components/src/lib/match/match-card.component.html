@@ -1,0 +1,79 @@
+<!-- Everything mode-dependent lives on this element rather than the host: a container query can only
+     style descendants of its container, and the host is the container. -->
+<div class="et-match-card-content">
+  @if (card.match().label || card.isLive() || card.formattedStartTime()) {
+    <div class="et-match-card-meta" etMatchCardMeta>
+      @if (card.match().label; as label) {
+        <span class="et-match-card-label">{{ label }}</span>
+      }
+
+      @if (card.isLive()) {
+        <span [etProvideColor]="liveColorTheme()" class="et-match-card-live">
+          <span class="et-match-card-live-dot"></span>
+          {{ card.resolvedLabels().live }}
+        </span>
+      } @else if (card.formattedStartTime(); as startTime) {
+        <span class="et-match-card-time">{{ startTime }}</span>
+      }
+    </div>
+  }
+
+  <div class="et-match-card-sides">
+    <div class="et-match-card-side" data-side="home">
+      <et-match-participant
+        [participant]="card.match().home"
+        [compact]="card.showsShortNames()"
+        [showSeed]="card.showSeeds()"
+        [labels]="card.labels()"
+        class="et-match-card-participant"
+      />
+
+      <!-- One of the two, never both: a competition reports a score, table points, or a win — see
+           `resultKind`. Both are hidden from assistive tech, which gets the phrased result from the live
+           region below instead. -->
+      @if (card.drawsScore()) {
+        <span class="et-match-card-score" aria-hidden="true">{{ card.match().homeScore }}</span>
+      } @else if (card.homeOutcome(); as outcome) {
+        <span class="et-match-card-outcome" aria-hidden="true">{{ outcome }}</span>
+      }
+    </div>
+
+    <!-- Only laid out in the wide arrangement, where the two sides' results meet and need something
+         between them: the score separator, or "vs" when there is no result yet. -->
+    <span class="et-match-card-versus" aria-hidden="true">{{ card.separatorText() }}</span>
+
+    <div class="et-match-card-side" data-side="away">
+      <et-match-participant
+        [participant]="card.match().away"
+        [compact]="card.showsShortNames()"
+        [showSeed]="card.showSeeds()"
+        [labels]="card.labels()"
+        class="et-match-card-participant"
+      />
+
+      @if (card.drawsScore()) {
+        <span class="et-match-card-score" aria-hidden="true">{{ card.match().awayScore }}</span>
+      } @else if (card.awayOutcome(); as outcome) {
+        <span class="et-match-card-outcome" aria-hidden="true">{{ outcome }}</span>
+      }
+    </div>
+  </div>
+
+  @if (card.gameScores(); as gameScores) {
+    <ol class="et-match-card-games" etMatchCardGameScores>
+      @for (gameScore of gameScores; track $index) {
+        <li
+          [attr.aria-label]="card.resolvedLabels().gameScore($index + 1, card.gameScoreText(gameScore))"
+          class="et-match-card-game"
+        >
+          {{ card.gameScoreText(gameScore) }}
+        </li>
+      }
+    </ol>
+  }
+
+  <!-- Always in the DOM, even while empty: a live region has to exist before the value lands in it, or
+       the first score of a match that just kicked off is announced by nobody. It carries the phrased
+       result rather than the drawn pair, since 'W' beside 'L' is nothing to listen to. -->
+  <span class="et-match-card-announcement" etMatchCardScore>{{ card.result() }}</span>
+</div>

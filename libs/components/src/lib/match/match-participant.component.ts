@@ -2,6 +2,7 @@ import { booleanAttribute, Component, computed, input, ViewEncapsulation } from 
 import { PICTURE_IMPORTS } from '../picture';
 import { SKELETON_IMPORTS } from '../skeleton';
 import { injectMatchLabels, MatchLabels } from './match-labels';
+import { matchParticipantDisplayName } from './match-participant-name';
 import { NormalizedMatchParticipant } from './match.types';
 
 /**
@@ -41,8 +42,14 @@ import { NormalizedMatchParticipant } from './match.types';
     @if (loading() && !participant()) {
       <et-skeleton-item class="et-match-participant-name-bone" shape="text" />
     } @else {
-      <span [class.et-match-participant-name--tbd]="!participant()" class="et-match-participant-name">
-        {{ displayName() }}
+      <span class="et-match-participant-names">
+        <span [class.et-match-participant-name--tbd]="!participant()" class="et-match-participant-name">
+          {{ displayName() }}
+        </span>
+
+        @if (subtitle(); as subtitle) {
+          <span class="et-match-participant-subtitle">{{ subtitle }}</span>
+        }
       </span>
     }
 
@@ -87,19 +94,23 @@ export class MatchParticipantComponent {
   protected emblem = computed(() => this.participant()?.emblem ?? null);
 
   /**
-   * What this side is called, in one string — also what the card composes its accessible name from.
-   * Compact prefers the code and falls back to the name, because a participant with no code still has
-   * to be readable in a narrow column.
+   * The quieter second line, where there is one. Dropped in compact: the point of compact is that the
+   * row fits a bracket column, and a second line is the first thing that stops fitting.
    */
-  public displayName = computed(() => {
-    const participant = this.participant();
+  protected subtitle = computed(() => (this.compact() ? null : this.participant()?.subtitle) ?? null);
 
-    if (!participant) return this.resolvedLabels().tbd;
-
-    const name = this.compact() ? (participant.code ?? participant.name) : (participant.name ?? participant.code);
-
-    return name ?? this.resolvedLabels().tbd;
-  });
+  /**
+   * What this side is called, in one string — also what the card composes its accessible name from. The
+   * fallback chain itself lives in {@link matchParticipantDisplayName}, so the card can reach the same
+   * answer without a rendered participant to ask.
+   */
+  public displayName = computed(() =>
+    matchParticipantDisplayName({
+      participant: this.participant(),
+      labels: this.resolvedLabels(),
+      compact: this.compact(),
+    }),
+  );
 
   protected emblemAlt = computed(() => this.resolvedLabels().emblemAlt(this.displayName()));
 

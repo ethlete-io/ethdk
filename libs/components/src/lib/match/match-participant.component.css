@@ -44,11 +44,30 @@
     block-size: 100%;
   }
 
+  /* One column for the two lines, so the emblem stays centred against both of them. */
+  .et-match-participant-names {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
   .et-match-participant-name {
     min-inline-size: 0;
     overflow: hidden;
     font-size: var(--et-match-participant-font-size);
     line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The org behind the roster, the club behind the squad. Quiet by construction — it is context for the
+     name above it, not a second name. */
+  .et-match-participant-subtitle {
+    min-inline-size: 0;
+    overflow: hidden;
+    font-size: max(10px, calc(var(--et-match-participant-font-size) - 4px));
+    line-height: 1.3;
+    color: var(--et-surface-color-muted-solid, currentColor);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
