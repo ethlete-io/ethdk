@@ -16,6 +16,7 @@ export default {
     longNames: false,
     showSeeds: false,
     hideNames: false,
+    animateScoreChanges: true,
     interactive: true,
     rtl: false,
   },
@@ -30,6 +31,7 @@ export default {
     longNames: { control: 'boolean' },
     showSeeds: { control: 'boolean' },
     hideNames: { control: 'boolean' },
+    animateScoreChanges: { control: 'boolean' },
     interactive: { control: 'boolean' },
     rtl: { control: 'boolean' },
   },
@@ -86,8 +88,10 @@ export const Live: Story = {
       description: {
         story:
           'A running match shows a live badge instead of its kick-off, in the app\'s `type: "error"` color theme. ' +
-          'Score the goals with the buttons: each one updates a polite, atomic live region, so assistive tech reads ' +
-          '"3 : 1" once rather than reading a digit change twice.',
+          'Score the goals with the buttons: the value rolls, the side flashes, `scoreChange` fires with the side ' +
+          'and delta, and a polite live region reads the new score once. Only while live — a finished result ' +
+          'arriving with the page is not a moment. Turn `animateScoreChanges` off to keep the announcement without ' +
+          'the movement.',
       },
     },
   },

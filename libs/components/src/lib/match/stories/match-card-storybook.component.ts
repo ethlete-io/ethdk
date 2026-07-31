@@ -2,7 +2,7 @@ import { Component, ViewEncapsulation, computed, input, signal } from '@angular/
 import { ProvideSurfaceDirective } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../../button';
 import { MATCH_CARD_IMPORTS } from '../match.imports';
-import { MatchCardSize } from '../headless';
+import { MatchCardSize, MatchScoreChange } from '../headless';
 import { NormalizedMatch, NormalizedMatchParticipant, NormalizedMatchResultKind } from '../match.types';
 
 @Component({
@@ -32,6 +32,8 @@ import { NormalizedMatch, NormalizedMatchParticipant, NormalizedMatchResultKind 
               [size]="size()"
               [showSeeds]="showSeeds()"
               [hideNames]="hideNames()"
+              [animateScoreChanges]="animateScoreChanges()"
+              (scoreChange)="lastChange.set($event)"
               (click)="stayHere($event)"
               et-match-card
               href="#"
@@ -52,9 +54,18 @@ import { NormalizedMatch, NormalizedMatchParticipant, NormalizedMatchResultKind 
           </div>
 
           <p class="text-small m-0 opacity-60">
-            The score sits in a polite, atomic live region, so each goal is announced once as "{{ scoreText() }}" rather
-            than digit by digit. Animating the change is a later step — the announcement is not.
+            The scoring side's value rolls — old out, new in, both real elements — with a brief flash in the color
+            theme. The score also sits in a polite, atomic live region, so each goal is announced once as "{{
+              scoreText()
+            }}" rather than digit by digit.
           </p>
+
+          @if (lastChange(); as change) {
+            <p class="text-small m-0 opacity-60">
+              Last <code>scoreChange</code>: {{ change.side }} {{ change.from }} → {{ change.to }} (delta
+              {{ change.delta }}) — the hook for a sound or confetti the card deliberately doesn't ship.
+            </p>
+          }
         }
       </section>
     </div>
@@ -75,6 +86,9 @@ export class MatchCardStorybookComponent {
   public hideNames = input(false);
   public interactive = input(true);
   public rtl = input(false);
+  public animateScoreChanges = input(true);
+
+  protected lastChange = signal<MatchScoreChange | null>(null);
 
   private extraGoals = signal({ home: 0, away: 0 });
 

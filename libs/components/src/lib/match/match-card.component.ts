@@ -8,6 +8,7 @@ import {
   MatchCardScoreDirective,
 } from './headless';
 import { MatchParticipantComponent } from './match-participant.component';
+import { MatchScoreComponent } from './match-score.component';
 
 /**
  * The default match card: both sides with their emblems, the score or the kick-off, the per-game
@@ -36,6 +37,7 @@ import { MatchParticipantComponent } from './match-participant.component';
   encapsulation: ViewEncapsulation.None,
   imports: [
     MatchParticipantComponent,
+    MatchScoreComponent,
     MatchCardMetaDirective,
     MatchCardScoreDirective,
     MatchCardGameScoresDirective,
@@ -44,7 +46,17 @@ import { MatchParticipantComponent } from './match-participant.component';
   hostDirectives: [
     {
       directive: MatchCardDirective,
-      inputs: ['match', 'size', 'showSeeds', 'hideNames', 'startTimeFormat', 'interactive', 'labels'],
+      inputs: [
+        'match',
+        'size',
+        'showSeeds',
+        'hideNames',
+        'startTimeFormat',
+        'interactive',
+        'labels',
+        'animateScoreChanges',
+      ],
+      outputs: ['scoreChange'],
     },
     FocusRingDirective,
   ],

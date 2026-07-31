@@ -32,7 +32,12 @@
            `resultKind`. Both are hidden from assistive tech, which gets the phrased result from the live
            region below instead. -->
       @if (card.drawsScore()) {
-        <span class="et-match-card-score" aria-hidden="true">{{ card.match().homeScore }}</span>
+        <et-match-score
+          [value]="card.match().homeScore + ''"
+          [animate]="card.animatesScoreChanges()"
+          class="et-match-card-score"
+          aria-hidden="true"
+        />
       } @else if (card.homeOutcome(); as outcome) {
         <span class="et-match-card-outcome" aria-hidden="true">{{ outcome }}</span>
       }
@@ -52,7 +57,12 @@
       />
 
       @if (card.drawsScore()) {
-        <span class="et-match-card-score" aria-hidden="true">{{ card.match().awayScore }}</span>
+        <et-match-score
+          [value]="card.match().awayScore + ''"
+          [animate]="card.animatesScoreChanges()"
+          class="et-match-card-score"
+          aria-hidden="true"
+        />
       } @else if (card.awayOutcome(); as outcome) {
         <span class="et-match-card-outcome" aria-hidden="true">{{ outcome }}</span>
       }

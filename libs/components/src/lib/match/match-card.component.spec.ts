@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
-import { MatchCardSize } from './headless';
+import { MatchCardSize, MatchScoreChange } from './headless';
 import { provideMatchLabels } from './match-labels';
 import { MATCH_CARD_IMPORTS } from './match.imports';
 import { NormalizedMatch } from './match.types';
@@ -46,6 +46,7 @@ const FINISHED: NormalizedMatch = {
       [showSeeds]="showSeeds()"
       [hideNames]="hideNames()"
       [startTimeFormat]="startTimeFormat()"
+      (scoreChange)="changes.push($event)"
     />
   `,
   imports: [MATCH_CARD_IMPORTS],
@@ -55,6 +56,7 @@ class HostComponent {
   public size = signal<MatchCardSize>('auto');
   public showSeeds = signal(false);
   public hideNames = signal(false);
+  public changes: MatchScoreChange[] = [];
   // Year only: every other date-fns token moves with the runner's timezone.
   public startTimeFormat = signal<string | null>('yyyy');
 }
@@ -358,6 +360,58 @@ describe('MatchCardComponent', () => {
 
       expect(card(fixture).hasAttribute('data-hide-names')).toBe(true);
       expect(card(fixture).getAttribute('aria-label')).toContain('FC Berlin vs. Neon Esports');
+    });
+  });
+
+  describe('a score changing', () => {
+    const live = { ...FINISHED, status: 'live', winnerSide: null } as NormalizedMatch;
+
+    const digits = (fixture: ComponentFixture<unknown>) =>
+      all(fixture, '.et-match-score-digit').map(
+        (element) => `${element.textContent?.trim()}/${element.getAttribute('data-state')}`,
+      );
+
+    it('reports which side moved and by how much', () => {
+      const fixture = create();
+
+      fixture.componentInstance.match.set(live);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.changes).toEqual([]);
+
+      fixture.componentInstance.match.set({ ...live, homeScore: 3 });
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.changes).toEqual([{ side: 'home', from: 2, to: 3, delta: 1 }]);
+    });
+
+    it('reports nothing for the first render, however the scores arrive', () => {
+      const fixture = create();
+
+      expect(fixture.componentInstance.changes).toEqual([]);
+    });
+
+    it('rolls the old value out as the new one arrives, both as real elements', () => {
+      const fixture = create();
+
+      fixture.componentInstance.match.set(live);
+      fixture.detectChanges();
+
+      expect(digits(fixture)).toEqual(['2/static', '1/static']);
+
+      fixture.componentInstance.match.set({ ...live, homeScore: 3 });
+      fixture.detectChanges();
+
+      expect(digits(fixture)).toEqual(['2/out', '3/in', '1/static']);
+    });
+
+    it('does not roll a finished match — a result arriving late is not a moment', () => {
+      const fixture = create();
+
+      fixture.componentInstance.match.set({ ...FINISHED, homeScore: 3 });
+      fixture.detectChanges();
+
+      expect(digits(fixture)).toEqual(['3/static', '1/static']);
     });
   });
 

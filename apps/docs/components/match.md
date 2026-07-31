@@ -149,6 +149,41 @@ Because the card is a container, its own width can never come from its contents.
 is exactly right; in a flex row with no width it would collapse, which is what
 `--et-match-card-min-inline-size` (180px) guards against.
 
+## Live scores
+
+A live match's values roll when they change: the old value leaves upward as the new one arrives from
+below, with a brief flash behind the side that scored. Both values are **real elements** for the length of
+the roll — this library never clones a node to animate it — and the outgoing one is dropped on its own
+`animationend`, so nothing is left running.
+
+<StoryEmbed id="components-match--live" height="420px" />
+
+The card is **dumb about transport**: it compares the values it is given against the ones it had. Point
+[`@ethlete/query`](/query/) polling or a socket at the `match` input and the rest follows.
+
+| Behaviour                     | Rule                                                                           |
+| ----------------------------- | ------------------------------------------------------------------------------ |
+| First render                  | Never animates — a list arriving with scores on it hasn't seen anything happen |
+| `status` other than `'live'`  | Never animates; a finished result arriving with the page is not a moment       |
+| `animateScoreChanges` `false` | No movement, everything else unchanged                                         |
+| `prefers-reduced-motion`      | Instant swap, no flash                                                         |
+
+`scoreChange` fires with the side, both values and the numeric `delta` — the hook for the effects the card
+deliberately doesn't ship:
+
+```html
+<et-match-card [match]="match()" (scoreChange)="onGoal($event)" />
+```
+
+```ts
+protected onGoal(change: MatchScoreChange) {
+  if (change.side === 'home') this.crowdNoise.play();
+}
+```
+
+It fires on **any** change after the first render, live or not — a corrected result is still a change your
+app may want to know about. Only the animation is gated to live.
+
 ## The card is the link
 
 In a real app a match card is almost always a click target. Rather than owning that, the card puts its whole
@@ -335,7 +370,8 @@ Each throws [`ET4300`](/components/error-codes#match-et43xx) in dev mode when us
 - **Keyboard**: a card on an `<a>`/`<button>` is focusable and activatable natively, and shows the shared
   [focus ring](/components/focus-ring). The card adds no key handling of its own — there is nothing inside it
   to move focus between.
-- **Reduced motion**: the live badge's pulse stops under `prefers-reduced-motion: reduce`.
+- **Reduced motion**: the live badge's pulse stops under `prefers-reduced-motion: reduce`, and a score
+  change swaps instantly instead of rolling.
 
 ## Theming
 

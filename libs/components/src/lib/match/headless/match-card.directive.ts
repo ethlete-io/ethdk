@@ -1,4 +1,15 @@
-import { booleanAttribute, computed, Directive, ElementRef, inject, input } from '@angular/core';
+import {
+  booleanAttribute,
+  computed,
+  Directive,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  linkedSignal,
+  output,
+  untracked,
+} from '@angular/core';
 import { format } from 'date-fns';
 import { injectDateLocale } from '../../forms/date-time/date-time-formats';
 import { injectMatchLabels, MatchLabels } from '../match-labels';
@@ -27,6 +38,32 @@ export const DEFAULT_MATCH_CARD_START_TIME_FORMAT = 'P p';
 
 /** Elements that are focusable and clickable on their own, so the card doesn't have to fake it. */
 const NATIVELY_INTERACTIVE_TAGS = ['A', 'BUTTON'];
+
+/** One side's headline value changing — a goal, a map win, a correction. */
+export type MatchScoreChange = {
+  side: 'home' | 'away';
+  /** The value before, as it was on the match. */
+  from: number | string | null;
+  /** The value now. */
+  to: number | string | null;
+  /** How much it moved, when both values are numbers — `null` for anything else. */
+  delta: number | null;
+};
+
+/** Both sides at once, since a corrected result can move both. */
+type MatchScoreTransition = {
+  home: MatchScoreChange | null;
+  away: MatchScoreChange | null;
+};
+
+const NO_TRANSITION: MatchScoreTransition = { home: null, away: null };
+
+const scoreChange = ({ side, from, to }: Omit<MatchScoreChange, 'delta'>): MatchScoreChange => ({
+  side,
+  from,
+  to,
+  delta: typeof from === 'number' && typeof to === 'number' ? to - from : null,
+});
 
 /**
  * Headless match card: takes a {@link NormalizedMatch} and works out everything a card draws — the
@@ -110,8 +147,23 @@ export class MatchCardDirective {
    */
   public interactive = input<boolean | null>(null);
 
+  /**
+   * Animate the headline values when they change — the score ticker and the accent flash on the side that
+   * scored. Only ever while the match is **live**: a finished score arriving with the page, or a corrected
+   * result hours later, is not a moment worth animating.
+   *
+   * @default true
+   */
+  public animateScoreChanges = input(true, { transform: booleanAttribute });
+
   /** Override this instance's strings — see {@link provideMatchLabels} for the app-wide version. */
   public labels = input<Partial<MatchLabels> | null>(null);
+
+  /**
+   * Fires whenever a headline value changes after the first render — the hook for the effects this library
+   * deliberately doesn't ship (a sound, confetti, a toast). Both sides can fire from one update.
+   */
+  public scoreChange = output<MatchScoreChange>();
 
   /** The strings in effect here: the injected label set with this instance's `labels` applied. */
   public resolvedLabels = computed<MatchLabels>(() => ({ ...this.injectedLabels(), ...this.labels() }));
@@ -167,6 +219,12 @@ export class MatchCardDirective {
     return winnerSide === 'home' ? this.homeName() : this.awayName();
   });
 
+  /**
+   * Whether the drawn values should roll when they change. Live only: a finished score arriving with the
+   * page is not a moment, and animating it would say one happened.
+   */
+  public animatesScoreChanges = computed(() => this.animateScoreChanges() && this.isLive());
+
   /** The home side's W/L/D letter, or `null` when outcomes aren't drawn or the match isn't over. */
   public homeOutcome = computed(() => this.outcomeFor('home'));
 
@@ -208,6 +266,35 @@ export class MatchCardDirective {
   /** The per-game breakdown of a series, or `null` for a single game. */
   public gameScores = computed(() => this.match().gameScores);
 
+  /**
+   * What changed since the last update, per side. A `linkedSignal` rather than an effect writing state:
+   * the comparison *is* derived from the score pair, and the previous pair is the one thing a computed
+   * cannot see on its own.
+   *
+   * The first render has no previous pair and therefore no changes — a list arriving with scores already
+   * on it must not animate.
+   */
+  private scoreTransition = linkedSignal<
+    { home: number | string | null; away: number | string | null },
+    MatchScoreTransition
+  >({
+    source: () => ({ home: this.match().homeScore, away: this.match().awayScore }),
+    computation: (source, previous) => {
+      if (!previous) return NO_TRANSITION;
+
+      return {
+        home:
+          source.home === previous.source.home
+            ? null
+            : scoreChange({ side: 'home', from: previous.source.home, to: source.home }),
+        away:
+          source.away === previous.source.away
+            ? null
+            : scoreChange({ side: 'away', from: previous.source.away, to: source.away }),
+      };
+    },
+  });
+
   /** The kick-off in the active locale, or `null` when the match is unscheduled. */
   public formattedStartTime = computed(() => {
     const startTime = this.match().startTime;
@@ -235,6 +322,18 @@ export class MatchCardDirective {
       label: this.match().label,
     }),
   );
+
+  constructor() {
+    effect(() => {
+      const transition = this.scoreTransition();
+
+      untracked(() => {
+        for (const change of [transition.home, transition.away]) {
+          if (change) this.scoreChange.emit(change);
+        }
+      });
+    });
+  }
 
   /** One game of the series, as the same `'13 : 11'` shape the headline score uses. */
   public gameScoreText({ home, away }: NormalizedGameScore) {

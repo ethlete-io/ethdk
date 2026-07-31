@@ -1,0 +1,78 @@
+@layer components {
+  /* A fixed box the two values cross inside, so a rolling score never nudges the row it sits in. */
+  .et-match-score {
+    display: grid;
+    position: relative;
+    flex: none;
+    place-items: center end;
+    min-inline-size: 1ch;
+    overflow: hidden;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+
+  /* Both values occupy the same cell — that is what lets one leave while the other arrives. */
+  .et-match-score-digit {
+    grid-area: 1 / 1;
+  }
+
+  .et-match-score-digit:where([data-state='in']) {
+    animation: et-match-score-roll-in 220ms cubic-bezier(0.2, 0, 0.2, 1);
+  }
+
+  .et-match-score-digit:where([data-state='out']) {
+    animation: et-match-score-roll-out 220ms cubic-bezier(0.4, 0, 1, 1) forwards;
+  }
+
+  /* Behind the digits, in the color theme in scope: the side that just scored catches the eye without the
+     card moving or changing size. */
+  .et-match-score-flash {
+    position: absolute;
+    /* Inside the clip box rather than bleeding past it: `overflow: hidden` is what makes the digits roll,
+       and it would cut a wider glow into a rectangle anyway. */
+    inset: 0;
+    background: var(--et-theme-color-primary-solid, currentColor);
+    border-radius: 6px;
+    opacity: 0;
+    animation: et-match-score-flash 520ms ease-out;
+    pointer-events: none;
+  }
+
+  @keyframes et-match-score-roll-in {
+    from {
+      opacity: 0;
+      translate: 0 70%;
+    }
+  }
+
+  @keyframes et-match-score-roll-out {
+    to {
+      opacity: 0;
+      translate: 0 -70%;
+    }
+  }
+
+  @keyframes et-match-score-flash {
+    30% {
+      opacity: 0.22;
+    }
+
+    to {
+      opacity: 0;
+    }
+  }
+
+  /* Near-instant rather than `none`: the outgoing value is dropped on `animationend`, so an animation that
+     never runs is an animation that never finishes — and a value that never leaves. */
+  @media (prefers-reduced-motion: reduce) {
+    .et-match-score-digit:where([data-state='in']),
+    .et-match-score-digit:where([data-state='out']),
+    .et-match-score-flash {
+      animation-duration: 1ms;
+    }
+
+    .et-match-score-flash {
+      animation-name: none;
+    }
+  }
+}
