@@ -1,7 +1,8 @@
 # Tree-shaking opportunities across @ethlete/*
 
-**Status: phases 1–4 shipped** (researched + implemented 2026-08-01; phase 5 remains as
-measurement-gated follow-ups — see the bottom of this file). This is the execution plan; the full evidence lives
+**Status: phases 1–5 shipped** (phase 5's four follow-ups implemented 2026-08-01: form-field styles
+split, opt-in query persistence/sync, English-only query-error default, opt-in RTE link editor — see
+the bottom of this file for measurements and what remains). This is the execution plan; the full evidence lives
 in [`tree-shaking-research-measurements.md`](./tree-shaking-research-measurements.md) (bundle
 decomposition, simulated fixes, per-feature cost matrix) and
 [`tree-shaking-research-static.md`](./tree-shaking-research-static.md) (per-finding `file:line`
@@ -218,19 +219,45 @@ linker/optimizer) get none of this — the numbers assume the standard Angular a
 
 Worth doing, in order:
 
-1. **form-field stylesheet split** (757 LOC CSS). `FORM_FIELD_IMPORTS` alone is **16.1 kB**, and
-   `+ INPUT_IMPORTS` only 18.3 kB — form-field _is_ the cost of every text control, so this is the
-   highest-leverage remaining cut. Split per shell feature (support/hint/error chrome, text-field
-   shell, prefix/suffix, busy) into styles-only components mounted by the directive that enables each,
-   per CLAUDE.md's styles-split pattern.
-2. **query persistence + multi-tab sync as opt-in features** (1,211 LOC, default-on). `query-client`
-   is **13.9 kB** with both. The only default-behaviour change on the list, so it needs its own docs +
-   changeset story — and sync shipped recently, so confirm the default flip is wanted first.
-3. **`query-error` language tables** — `injectQueryErrorLabels` alone is **6.4 kB**, most of it the
-   German _and_ English HTTP-status tables. Making the second language opt-in saves ~3 kB for apps
-   that use query-error at all.
-4. **RTE, 69.3 kB** — still the most expensive domain. Candidates: the floating toolbar as its own
-   `*_IMPORTS`, and auditing what `provideRichTextEditorDom` forces.
+1. **form-field stylesheet split — DONE (2026-08-01).** 757 → 355 LOC base; text-shell, rich-text
+   and textarea slices became styles-only components mounted by the enabling directives (counter/hint
+   rules moved onto their components). Measured gz: `FORM_FIELD_IMPORTS` alone
+   **16,622 → 15,466 B (−1,156)**, form-field+checkbox −1,120 B, select+form-field ±0. Goldens:
+   select-alone +1,443 B accepted (the headless directive now carries the shell sheet standalone —
+   paired usage pays the same); form-field-input +185 B boilerplate. The affix slice and a
+   `FORM_FIELD_IMPORTS` barrel split were deliberately left — the barrel pins Hint/Counter/affix
+   directives, so those slices save nothing until the barrel is split (breaking; not measured worth
+   it this round).
+2. **query persistence + multi-tab sync — DONE (2026-08-01).** `createQueryClient` now takes
+   `features: [withQueryPersistence(), withMultiTabSync()]`; without them both subsystems tree-shake
+   away. Measured: query-client entry **13,919 → 11,442 B gz (−2,477 B)**; with both features
+   14,063 B (≈ the old default). Breaking; `@ethlete/query:migrate-query-client-features` is the
+   behavior-preserving codemod.
+3. **`query-error` language tables — DONE (2026-08-01).** The labels definition now defaults to
+   `DEFAULT_QUERY_ERROR_LABELS` (English) instead of the locale-driven selector, so the German table
+   is only bundled by apps that opt in via `provideQueryErrorLabels(queryErrorLabelsForLocale)` /
+   `GERMAN_QUERY_ERROR_LABELS`. Measured: a `QueryErrorComponent + injectQueryErrorLabels` entry went
+   **17,231 → 15,181 B gz (−2,050 B)**; the opt-in path costs what the old default did (17,244 B).
+   Breaking (German no longer auto-selected); `@ethlete/components:migrate-query-error-labels`
+   reports affected sites.
+4. **RTE — link editor opt-in DONE (2026-08-01).** The link popover (which pinned
+   FORM_FIELD/INPUT/CHECKBOX/CHOICE_FIELD plus overlay drag-to-dismiss in every editor) is now
+   `provideRichTextEditorLinkEditor()`; without it the link tool degrades to the pre-existing
+   `window.prompt` path. Also: `RICH_TEXT_EDITOR_HEADING_OPTIONS` moved next to the heading tool,
+   and the table/image CSS slices became styles-only components mounted by their tool providers.
+   Measured: `RICH_TEXT_EDITOR_IMPORTS` **69,633 → 49,677 B gz (−19,956, −29 %)**; opted back in
+   69,136 B. Breaking; `@ethlete/components:migrate-rich-text-editor-link-editor` reports affected
+   sites.
+
+Still open in RTE, in value order (audited 2026-08-01, not implemented):
+
+- **DOM feature modules behind provide fns** (~1,100 of the always-retained ~2,830 LOC:
+  blockquote/code-block/headings/autoformat/links droppable for a marks/lists-only editor). Invasive —
+  it narrows the headless directive's method surface; design carefully before touching.
+- **Floating toolbar as `provideRichTextEditorFloatingToolbar()`** (~350 LOC + 82 CSS; does not free
+  the overlay runtime).
+- **Per-feature label defaults** (~1 kB of the always-loaded 2.2 kB label literal serves opt-in
+  image/table/trigger tools).
 
 Measured as **not** worth doing:
 
@@ -241,3 +268,9 @@ Measured as **not** worth doing:
 - **Bracket rounds-list-only layout.** `BracketRoundsListComponent` + a layout is **27.2 kB** against
   **29.2 kB** for the full bracket + SE — a ~2 kB spread, well under the ~4 kB the earlier plan
   estimated, and it costs an API split. Same for the bracket default cards.
+- **Third-party import hygiene (swept 2026-08-01).** `date-fns` is imported per-function from the
+  root entry (tree-shakeable), rxjs imports are modern paths except three story/debug files (stories
+  don't ship), `@angular/cdk` uses secondary entry points. No duplicated implementations between core
+  and components. Nothing actionable.
+- **`FORM_FIELD_IMPORTS` barrel split** (drop Hint/Counter/affix directives from the barrel): would
+  unlock the affix CSS slice (~0.6 kB) at the cost of a breaking barrel change — not worth it alone.
