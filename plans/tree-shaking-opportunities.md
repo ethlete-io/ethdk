@@ -1,6 +1,7 @@
 # Tree-shaking opportunities across @ethlete/*
 
-**Status: not started** (researched 2026-08-01). This is the execution plan; the full evidence lives
+**Status: phases 1–4 shipped** (researched + implemented 2026-08-01; phase 5 remains as
+measurement-gated follow-ups — see the bottom of this file). This is the execution plan; the full evidence lives
 in [`tree-shaking-research-measurements.md`](./tree-shaking-research-measurements.md) (bundle
 decomposition, simulated fixes, per-feature cost matrix) and
 [`tree-shaking-research-static.md`](./tree-shaking-research-static.md) (per-finding `file:line`
@@ -48,13 +49,20 @@ inventory). Measurement tooling is committed under `tools/treeshake/` (see its R
 "Floor" = cost of importing one tiny symbol from the package. Simulated on the real FESMs by
 rewriting the offending statement shapes (semantics preserved):
 
-| variant                                       | core floor | query floor | components floor |
-| --------------------------------------------- | ---------: | ----------: | ---------------: |
-| today                                         |    12.5 kB |     18.6 kB |          89.8 kB |
-| `/*#__PURE__*/` on the tuple factories        |         ±0 |          ±0 |               ±0 |
-| tuple-split only (fix 1 below)                |     6.9 kB |     12.9 kB |          10.7 kB |
-| tuple-split + 49 single-binding PUREs (fix 2) | **1.1 kB** |  **0.9 kB** |       **4.9 kB** |
-| + 14 literal-with-member-access statements    |        1.1 |         0.9 |       **3.2 kB** |
+| variant                                        | core floor | query floor | components floor |
+| ---------------------------------------------- | ---------: | ----------: | ---------------: |
+| before                                         |    12.5 kB |     18.7 kB |          89.9 kB |
+| `/*#__PURE__*/` on the tuple factories         |         ±0 |          ±0 |               ±0 |
+| tuple-split only (fix 1 below)                 |     6.9 kB |     12.9 kB |          10.9 kB |
+| tuple-split + single-binding PUREs (fix 2)     |     1.0 kB |      0.9 kB |           5.3 kB |
+| + the 14 literal-with-member-access statements |     1.0 kB |      0.9 kB |           3.4 kB |
+| **shipped** (+ nested/`new` annotations)       | **1.0 kB** |  **0.9 kB** |       **2.4 kB** |
+
+**Measured after shipping** (`nx run treeshake:bundle-goldens`, the numbers now guarded in
+`tools/treeshake/goldens.json`): core floor **1.0 kB**, query floor **0.9 kB**, components floor
+**2.4 kB** (−97 %). Real entries: bracket+SE **111.2 → 29.2 kB**, rich-text-editor **77.8 → 69.3 kB**
+(heading menu now opt-in), table 21.3 kB, select 41.2 kB, form-field+input 18.3 kB, overlay+dialog
+20.0 kB, query client 13.9 kB.
 
 Real entry check: `BracketComponent` + `singleEliminationBracketLayout()` goes **111.1 → 30.4 kB
 (−72.6 %)**, verified to keep the bracket/SE code and drop Spinner/Notification/Overlay/RTE.
@@ -152,7 +160,7 @@ opt-in features like `withPolling` (note: sync shipped recently; check
   HTTP-status tables (`libs/query/src/lib/pipes/parse-http-error-code-{de,en}.ts`, 14.2 kB min)
   into every components bundle — make languages opt-in or lazy.
 
-## Regression guards (ship alongside fix 1, keep forever)
+## Regression guards (shipped with fix 1, keep forever)
 
 1. **Lint rule** in `@ethlete/eslint-plugin` (e.g. `ethlete/no-impure-top-level-provider`): ban
    top-level array/object destructuring whose initializer is a call expression, and require the
@@ -166,28 +174,70 @@ opt-in features like `withPolling` (note: sync shipped recently; check
    form-field+input, select, overlay+dialog, RTE, query client), plus a `check-goldens.mjs` that
    runs the existing pipeline and fails past a tolerance (~2 % or 512 B, whichever is larger —
    FESM linking is deterministic but dependency bumps move bytes), and an `--update` flag that
-   rewrites the file. Wire it as an Nx target (e.g. `nx run repo:bundle-goldens`) in CI for
+   rewrites the file. Wire it as an Nx target (shipped as `nx run treeshake:bundle-goldens`) in CI for
    affected libs; builds of `core`+`query`+`components` plus linking cost ~1-2 min. Record the
    goldens for the first time **after** fixes 1+2 land so the guarded state is the good state.
 
-## Execution order (each phase independently shippable, measured before/after)
+## What shipped
 
-1. **Fix 1 sweep, breaking** — new single-binding helpers in core, delete the tuple factories,
-   port all internal call sites, ship the `migrate-provider-shape` generator and the lint rule in
-   the same change. Changesets: core major (already in pre mode), components/query patch
-   (internal). Acceptance: floors ≤ 7/13/11 kB (core/query/components), generator green on a
-   fixture app, lint rule catches a reintroduced tuple.
-2. **Fix 2 annotations** (+ FESM-survival verification). Acceptance: floors ≈ 1.1/0.9/4.9 kB.
-   Then **record the initial size goldens** and wire the CI check.
-3. **Query internal moves** (fix 4 first half). Acceptance: no legacy modules in the current-gen
-   module graph (`tools/treeshake/dump-bundle.mjs` grep).
-4. **Retention chains** (fix 3), one feature per changeset, biggest first (RTE menu, overlay
-   strategies registration, notification stack, stream defaults). BREAKING-components allowed.
-   Update the goldens with each shipped cut.
-5. **Opt-ins** (fix 5) as follow-ups, each measurement-gated.
+1. **Fix 1, done.** `defineProvider` / `defineRootProvider` / `defineStaticProvider` /
+   `defineStaticRootProvider` / `defineLabels` return a `{ provide, inject, token }` definition;
+   `toProvideFn` / `toInjectFn` / `toToken` name the halves. The five tuple factories are deleted and
+   all ~90 call sites in core/components/query/cdk are ported. `createQueryClient`,
+   `createBearerAuthProvider` and `createWebSocketClient` return a definition too, so there is no
+   tuple left anywhere. `@ethlete/core:migrate-provider-shape` (Nx generator) rewrites both families,
+   including consumer call sites, and reports what it cannot in `provider-shape-migration-tasks.md`.
+   Dead `theming/theme.util.ts` + the two unused styles components were deleted along the way.
+2. **Fix 2, done, and generalized.** `ethlete/no-impure-top-level-provider` bans module-scope
+   destructuring of a call everywhere, and with `{ requirePureAnnotation: true }` (on in
+   core/query/components source) requires `@__PURE__` on **every** call evaluated at module scope —
+   including one nested in an argument or inside a top-level object literal, which is what the
+   original 49-call estimate missed. Its fixer placed the annotations. The 14 member-access literals
+   became literal keys / one-shot factories.
+3. **Goldens, done.** `tools/treeshake/{goldens.json,check-goldens.mjs}` + the
+   `treeshake:bundle-goldens` Nx target, wired into all three CI workflows. Tolerance 2 % / 512 B;
+   `:update` rewrites the file as a reviewable commit.
+4. **Fix 4 first half, done.** No current-gen module imports from `legacy/**` any more —
+   `buildRoute`, `buildQueryString`, `buildTimestampFromSeconds`, `decryptBearer`, `QueryError` and
+   the query-string types live in `http/internal/request-route`, which legacy re-exports. The
+   `http ↔ gql` runtime cycle is closed via `http/internal/gql-options-guard`. Worth ~0 bytes: fixes
+   1+2 had already made the legacy tree fully droppable (verified by grepping a `createQueryClient`
+   bundle for `V2QueryClient`/`EntityStore`/… — all absent). Kept for graph hygiene.
+5. **Fix 3, re-measured, mostly obsolete.** After fix 1 the overlay strategies are already
+   individually shakeable (`dialogOverlayStrategy` adds 0.4 kB over no strategy, all seven add
+   6.2 kB), so **no registration rework was done** — that avoids a gratuitous breaking change.
+   Likewise notification (`injectNotificationManager` 22.6 kB vs `NOTIFICATION_IMPORTS` 19.8 kB) and
+   the stream managers (`injectStreamManager` 3.9 kB) no longer justify a breaking split. The one
+   real win was taken: the **RTE heading menu is now the opt-in `provideRichTextEditorHeadingTool()`**
+   tool, −8.5 kB gz off every editor.
 
-Every phase: `npx nx build core query components`, run `tools/treeshake/measure-bundle.mjs` on the
-floor + feature entries, record numbers in this file, `nx test` + `nx lint --fix` + changeset per
-the repo skills. Caveat carried from `plans/table-tree-shaking.md`: consumers bundling without
-Angular's builder (no linker/optimizer) get none of this — the numbers assume the standard Angular
-app build.
+Caveat carried from `plans/table-tree-shaking.md`: consumers bundling without Angular's builder (no
+linker/optimizer) get none of this — the numbers assume the standard Angular app build.
+
+## Remaining follow-ups (fix 5), measured 2026-08-01
+
+Worth doing, in order:
+
+1. **form-field stylesheet split** (757 LOC CSS). `FORM_FIELD_IMPORTS` alone is **16.1 kB**, and
+   `+ INPUT_IMPORTS` only 18.3 kB — form-field _is_ the cost of every text control, so this is the
+   highest-leverage remaining cut. Split per shell feature (support/hint/error chrome, text-field
+   shell, prefix/suffix, busy) into styles-only components mounted by the directive that enables each,
+   per CLAUDE.md's styles-split pattern.
+2. **query persistence + multi-tab sync as opt-in features** (1,211 LOC, default-on). `query-client`
+   is **13.9 kB** with both. The only default-behaviour change on the list, so it needs its own docs +
+   changeset story — and sync shipped recently, so confirm the default flip is wanted first.
+3. **`query-error` language tables** — `injectQueryErrorLabels` alone is **6.4 kB**, most of it the
+   German _and_ English HTTP-status tables. Making the second language opt-in saves ~3 kB for apps
+   that use query-error at all.
+4. **RTE, 69.3 kB** — still the most expensive domain. Candidates: the floating toolbar as its own
+   `*_IMPORTS`, and auditing what `provideRichTextEditorDom` forces.
+
+Measured as **not** worth doing:
+
+- **`select` 41.2 kB / `cascader` 42.4 kB.** Decomposition attributes it to `components/forms`
+  (41 %, i.e. select + form-field + their headless) and the overlay it genuinely needs
+  (`components/overlay` 18 % + `core/overlay` + `core/animations`). Nothing is retained that a select
+  does not use; the lever is (1) above, not the select itself.
+- **Bracket rounds-list-only layout.** `BracketRoundsListComponent` + a layout is **27.2 kB** against
+  **29.2 kB** for the full bracket + SE — a ~2 kB spread, well under the ~4 kB the earlier plan
+  estimated, and it costs an API split. Same for the bracket default cards.
