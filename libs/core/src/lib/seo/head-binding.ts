@@ -77,7 +77,7 @@ export const toStringBinding = (
 };
 
 export const createBulkPropertyBinding = <TConfig extends Record<string, unknown>>(
-  propertyPrefix: string,
+  _propertyPrefix: string,
   applyConfigFn: (property: string, binding: MaybeSignal<string | null | undefined>) => void,
 ) => {
   return (config: TConfig) => {

@@ -3,14 +3,14 @@
 The low-level engine that mounts components into a floating layer - DOM scaffolding, backdrop, positioning, focus trapping and lifecycle animation. The [components overlay system](/components/overlays) (dialogs, sheets, menus, tooltips) is built on top of it; **reach for that first**. Use the runtime directly only when building your own floating primitive.
 
 ```ts
-import { injectOverlayRuntime } from '@ethlete/core';
+import { anchoredOverlayPosition, injectOverlayRuntime } from '@ethlete/core';
 
 const runtime = injectOverlayRuntime();
 
 const ref = runtime.mount({
   id: 'my-popover',
   component: MyPopoverComponent,
-  positionStrategy: { kind: 'anchored', referenceElement: trigger },
+  positionStrategy: anchoredOverlayPosition({ referenceElement: trigger }),
   modal: false,
 });
 
@@ -46,7 +46,11 @@ If the mounted component exposes an `animatedLifecycle` signal (an [`AnimatedLif
 
 - `{ kind: 'center' }` - centered with a 16px viewport padding (the default).
 - `{ kind: 'global', horizontal?, vertical?, padding? }` - edge/corner placement; alignments are `'start' | 'center' | 'end' | 'stretch'` (default `'center'`), padding default `0`.
-- `{ kind: 'anchored', referenceElement, … }` - Floating-UI anchored positioning with `placement` (default `'bottom'`), `fallbackPlacements`, `offset` (default `8`), `viewportPadding` (default `8`), `arrowPadding` (default `12`, i.e. how close the arrow's base may get to the pane's corners - raise it for a pane whose corner radius is larger than that), `shift` (default on), `autoResize`, `autoHide`, `autoCloseIfReferenceHidden` and `mirrorWidth`.
+- `anchoredOverlayPosition({ referenceElement, … })` - Floating-UI anchored positioning with `placement` (default `'bottom'`), `fallbackPlacements`, `offset` (default `8`), `viewportPadding` (default `8`), `arrowPadding` (default `12`, i.e. how close the arrow's base may get to the pane's corners - raise it for a pane whose corner radius is larger than that), `shift` (default on), `autoResize`, `autoHide`, `autoCloseIfReferenceHidden` and `mirrorWidth`.
+
+  Anchored positioning is the only part of the runtime that needs `@floating-ui/dom`, and it is reachable only through `anchoredOverlayPosition()` - an app that never anchors an overlay does not bundle it. A plain `{ kind: 'anchored', … }` literal still type-checks, but the pane falls back to centered positioning (with a dev-mode error) unless something in the app called `anchoredOverlayPosition()`.
+
+  `autoResize`, `autoHide`, `autoCloseIfReferenceHidden` and arrows additionally need `enableAnchoredOverlayPositionExtras()`, which installs the floating-ui `size`/`hide`/`arrow` middleware. Call it once next to where the strategy is built.
 
 The active strategy can be swapped on a live overlay via `ref.updatePositionStrategy(strategy)` - this is how responsive overlays morph between dialog and bottom sheet.
 

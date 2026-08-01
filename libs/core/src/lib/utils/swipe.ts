@@ -37,6 +37,7 @@ export type SwipeUpdateEvent = {
 const getClientXY = (event: TouchEvent | MouseEvent): { clientX: number; clientY: number } => {
   if (event.type[0] === 't') {
     const touch = (event as TouchEvent).targetTouches[0] ?? (event as TouchEvent).changedTouches[0];
+
     return touch ? { clientX: touch.clientX, clientY: touch.clientY } : { clientX: 0, clientY: 0 };
   }
   return { clientX: (event as MouseEvent).clientX, clientY: (event as MouseEvent).clientY };
@@ -145,7 +146,7 @@ export const createSwipeTracker = (startEvent: TouchEvent | MouseEvent): SwipeTr
     };
   };
 
-  const cancel = (): void => {
+  const cancel = () => {
     movementX = 0;
     movementY = 0;
     samples = [{ t: Date.now(), movementX: 0, movementY: 0 }];

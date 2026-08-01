@@ -7,7 +7,7 @@ import { bindProps, unbindProps } from './props-binding';
   selector: '[etProps]',
 })
 export class PropsDirective {
-  destroyRef = inject(DestroyRef);
+  private destroyRef = inject(DestroyRef);
 
   props = input.required<PropsInternal, Props>({ alias: 'etProps', transform: (d) => d as PropsInternal });
 

@@ -17,6 +17,7 @@ export const inferMimeType = (srcset: string) => {
 
   if (srcset.startsWith('data:')) {
     const match = /^data:([^;,]+)/.exec(srcset);
+
     return match?.[1] ?? null;
   }
 

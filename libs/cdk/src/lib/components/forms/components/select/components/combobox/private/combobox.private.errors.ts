@@ -1,5 +1,6 @@
 import { ComponentType } from '@angular/cdk/overlay';
-import { AnimatedOverlayComponentBase, RuntimeError } from '@ethlete/core';
+import { RuntimeError } from '@ethlete/core';
+import { AnimatedOverlayComponentBase } from '../../../../../../overlay/directives/animated-overlay';
 
 export const COMBOBOX_ERRORS = {
   options_object_mismatch:

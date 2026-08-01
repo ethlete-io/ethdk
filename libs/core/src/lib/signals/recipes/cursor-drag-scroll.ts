@@ -98,6 +98,7 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
         renderer.removeStyles(el, 'cursor', 'scrollSnapType', 'scrollBehavior');
         renderer.removeStyle(document.documentElement, 'cursor');
         renderer.removeClass(el, CURSOR_DRAG_SCROLLING_CLASS, CURSOR_DRAG_INIT_CLASS);
+
         return;
       }
 

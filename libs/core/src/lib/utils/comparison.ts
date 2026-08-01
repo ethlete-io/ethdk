@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-var */
 
 /**
@@ -28,11 +27,11 @@ export const clone = <T>(original: T): T => {
 
   var _og = original as any;
 
-  var i = 0,
-    k,
-    list,
-    tmp: any,
-    str = Object.prototype.toString.call(_og);
+  var i = 0;
+  var k;
+  var list;
+  var tmp: any;
+  var str = Object.prototype.toString.call(_og);
 
   if (str === '[object Object]') {
     tmp = Object.create(_og.__proto__ || null);
@@ -110,7 +109,9 @@ function find(iter: any, tar: any, key?: any) {
 }
 
 export const equal = (foo: any, bar: any) => {
-  var ctor: any, len: any, tmp: any;
+  var ctor: any;
+  var len: any;
+  var tmp: any;
   if (foo === bar) return true;
 
   if (foo && bar && (ctor = foo.constructor) === bar.constructor) {
@@ -121,6 +122,7 @@ export const equal = (foo: any, bar: any) => {
       if ((len = foo.length) === bar.length) {
         while (len-- && equal(foo[len], bar[len]));
       }
+
       return len === -1;
     }
 
@@ -136,6 +138,7 @@ export const equal = (foo: any, bar: any) => {
         }
         if (!bar.has(tmp)) return false;
       }
+
       return true;
     }
 
@@ -153,6 +156,7 @@ export const equal = (foo: any, bar: any) => {
           return false;
         }
       }
+
       return true;
     }
 
@@ -163,6 +167,7 @@ export const equal = (foo: any, bar: any) => {
       if ((len = foo.byteLength) === bar.byteLength) {
         while (len-- && foo.getInt8(len) === bar.getInt8(len));
       }
+
       return len === -1;
     }
 
@@ -172,6 +177,7 @@ export const equal = (foo: any, bar: any) => {
         //@ts-ignore
         while (len-- && foo[len] === bar[len]);
       }
+
       return len === -1;
     }
 
@@ -181,6 +187,7 @@ export const equal = (foo: any, bar: any) => {
         if (has.call(foo, ctor) && ++len && !has.call(bar, ctor)) return false;
         if (!(ctor in bar) || !equal(foo[ctor], bar[ctor])) return false;
       }
+
       return Object.keys(bar).length === len;
     }
   }

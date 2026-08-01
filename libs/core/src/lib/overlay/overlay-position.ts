@@ -1,6 +1,5 @@
-import { arrow, autoUpdate, computePosition, flip, hide, limitShift, offset, shift, size } from '@floating-ui/dom';
+import { isDevMode } from '@angular/core';
 import { AngularRenderer } from '../providers';
-import { isHTMLElement } from './overlay-focus';
 import { OverlayRuntimeRef } from './overlay-runtime-ref';
 import {
   OverlayRuntimeAnchoredPosition,
@@ -119,129 +118,27 @@ export const resetPositioningStyles = (
   setBaseElementStyles(config, hostElement, paneElement, renderer);
 };
 
-export const createAnchoredPositionCleanup = (
+/**
+ * Positions an anchored overlay pane and returns the cleanup for its auto-update loop.
+ */
+export type AnchoredPositionSetup = (
   strategy: OverlayRuntimeAnchoredPosition,
   paneElement: HTMLElement,
   overlayRef: OverlayRuntimeRef<object, unknown>,
   renderer: AngularRenderer,
-) => {
-  // mirrorWidth needs a real element to measure; virtual references fall back to max-content
-  const mirrorWidthElement =
-    strategy.mirrorWidth && isHTMLElement(strategy.referenceElement) ? strategy.referenceElement : null;
+) => () => void;
 
-  renderer.setStyle(paneElement, {
-    position: 'absolute',
-    top: '0',
-    left: '0',
-    width: mirrorWidthElement ? `${mirrorWidthElement.offsetWidth}px` : 'max-content',
-  });
+let anchoredPositionSetup: AnchoredPositionSetup | null = null;
 
-  const cleanup = autoUpdate(strategy.referenceElement, paneElement, () => {
-    const arrowElement = paneElement.querySelector<HTMLElement>('[et-floating-arrow]');
-    const middleware = [];
-
-    middleware.push(offset(strategy.offset ?? 8));
-    middleware.push(
-      flip({
-        fallbackPlacements: strategy.fallbackPlacements ?? undefined,
-        fallbackAxisSideDirection: 'start',
-        boundary: strategy.boundary,
-      }),
-    );
-
-    if (strategy.shift !== false) {
-      middleware.push(
-        shift({
-          crossAxis: typeof strategy.shift === 'object' ? (strategy.shift.crossAxis ?? false) : false,
-          limiter: limitShift(),
-          padding: strategy.viewportPadding ?? 8,
-          boundary: strategy.boundary,
-        }),
-      );
-    }
-
-    // size must run AFTER shift so the available space is measured from the shifted position -
-    // otherwise a cross-axis-shifted pane gets its max size capped to the unshifted leftover space
-    if (strategy.autoResize) {
-      middleware.push(
-        size({
-          padding: strategy.viewportPadding ?? 8,
-          apply({ availableHeight, availableWidth }) {
-            renderer.setCssProperties(paneElement, {
-              '--et-overlay-max-width': `${availableWidth}px`,
-              '--et-overlay-max-height': `${availableHeight}px`,
-            });
-          },
-        }),
-      );
-    }
-
-    if (arrowElement) {
-      middleware.push(
-        arrow({
-          element: arrowElement,
-          // keeps the arrow off a rounded pane corner by default: 12px covers the radius of the
-          // built-in boxed panes (--et-overlay-radius). Panes with a larger radius have to pass their
-          // own - an arrow whose base sits on the corner arc looks detached from the pane.
-          padding: strategy.arrowPadding ?? 12,
-        }),
-      );
-    }
-
-    if (strategy.autoHide || strategy.autoCloseIfReferenceHidden) {
-      middleware.push(
-        hide({
-          strategy: 'referenceHidden',
-        }),
-      );
-    }
-
-    computePosition(strategy.referenceElement, paneElement, {
-      placement: strategy.placement ?? 'bottom',
-      strategy: 'absolute',
-      middleware,
-    }).then(({ x, y, placement, middlewareData }) => {
-      // A detached reference reports a zeroed rect, so floating-ui positions the pane at the
-      // viewport's top-left. Tear the overlay down (without animating from that bogus position)
-      // before applying the transform when auto-close is on, and otherwise leave the pane where it
-      // last was rather than snapping it to the corner.
-      if (middlewareData.hide?.referenceHidden) {
-        if (strategy.autoCloseIfReferenceHidden) {
-          overlayRef.close(undefined, 'reference-detached');
-          return;
-        }
-
-        if (strategy.autoHide) {
-          renderer.setStyle(paneElement, { visibility: 'hidden' });
-        }
-        return;
-      }
-
-      renderer.setStyle(paneElement, {
-        transform: `translate3d(${x}px, ${y}px, 0)`,
-        width: mirrorWidthElement ? `${mirrorWidthElement.offsetWidth}px` : null,
-        visibility: null,
-      });
-      // exposed so animations can compose their transforms with the anchored position
-      renderer.setCssProperties(paneElement, {
-        '--et-overlay-anchored-x': `${x}px`,
-        '--et-overlay-anchored-y': `${y}px`,
-      });
-      renderer.setAttribute(paneElement, 'data-overlay-placement', placement);
-
-      if (arrowElement && middlewareData.arrow) {
-        renderer.setCssProperty(
-          arrowElement,
-          '--et-floating-arrow-translate',
-          `translate3d(${middlewareData.arrow.x ?? 0}px, ${middlewareData.arrow.y ?? 0}px, 0)`,
-        );
-      }
-    });
-  });
-
-  return () => {
-    cleanup();
-  };
+/**
+ * Installs the anchored positioning implementation. Called by `anchoredOverlayPosition()`, which is
+ * the only thing that pulls `@floating-ui/dom` into the bundle - apps that never anchor an overlay
+ * do not ship it.
+ *
+ * @internal
+ */
+export const registerAnchoredPositionSetup = (setup: AnchoredPositionSetup) => {
+  anchoredPositionSetup = setup;
 };
 
 export const setupPositioning = (
@@ -258,7 +155,20 @@ export const setupPositioning = (
       pointerEvents: config.hasBackdrop === false ? 'none' : 'auto',
     });
 
-    return createAnchoredPositionCleanup(strategy, paneElement, overlayRef, renderer);
+    if (!anchoredPositionSetup) {
+      if (isDevMode()) {
+        console.error(
+          'An overlay was mounted with an anchored position strategy, but anchored positioning is not installed. Build the strategy with `anchoredOverlayPosition()` from @ethlete/core so the positioning code is part of the bundle.',
+          strategy,
+        );
+      }
+
+      applyCenteredPosition(hostElement, paneElement, renderer, { kind: 'center' });
+
+      return () => undefined;
+    }
+
+    return anchoredPositionSetup(strategy, paneElement, overlayRef, renderer);
   }
 
   if (strategy.kind === 'global') {

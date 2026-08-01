@@ -56,7 +56,7 @@ export const getScrollSnapTarget = (
       continue;
     }
 
-    const computeDelta = (o: 'start' | 'center' | 'end'): number => {
+    const computeDelta = (o: 'start' | 'center' | 'end') => {
       switch (o) {
         case 'start':
           return relativeStart - margin;
@@ -149,14 +149,17 @@ export const getScrollItemTarget = (
           const prevIndex = firstIndex - 1;
           const element = entries[prevIndex]?.target as HTMLElement | undefined;
           if (!element) return null;
+
           return { element, index: prevIndex, origin: 'end' };
         }
+
         return { element: firstVisible.target as HTMLElement, index: firstIndex, origin: 'start' };
       } else {
         if (isEndEdgeVisible) {
           const nextIndex = lastIndex + 1;
           const element = entries[nextIndex]?.target as HTMLElement | undefined;
           if (!element) return null;
+
           return { element, index: nextIndex, origin: 'start' };
         }
         return { element: lastVisible.target as HTMLElement, index: lastIndex, origin: 'end' };
@@ -165,6 +168,7 @@ export const getScrollItemTarget = (
   } else if (scrollOrigin === 'center') {
     const entry = direction === 'start' ? firstVisible : lastVisible;
     const index = direction === 'start' ? firstIndex : lastIndex;
+
     return { element: entry.target as HTMLElement, index, origin: 'center' };
   }
 
@@ -178,6 +182,7 @@ export const getScrollItemTarget = (
     const nextIndex = direction === 'start' ? entryIndex - 1 : entryIndex + 1;
     const element = entries[nextIndex]?.target as HTMLElement | undefined;
     if (!element) return null;
+
     return { element, index: nextIndex, origin: direction };
   }
 

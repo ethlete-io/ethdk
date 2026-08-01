@@ -17,24 +17,24 @@ export const SEO_DIRECTIVE_TOKEN = new InjectionToken<SeoDirective>('SEO_DIRECTI
   providers: [{ provide: SEO_DIRECTIVE_TOKEN, useExisting: SeoDirective }],
 })
 export class SeoDirective implements OnInit, OnDestroy {
-  private readonly _metaService = inject(Meta);
-  private readonly _titleService = inject(Title);
+  private _metaService = inject(Meta);
+  private _titleService = inject(Title);
   private readonly _onDeactivate$ = new Subject<boolean>();
 
   private _isDeactivated = false;
 
-  readonly parent = inject(SEO_DIRECTIVE_TOKEN, { optional: true, skipSelf: true });
+  private parent = inject(SEO_DIRECTIVE_TOKEN, { optional: true, skipSelf: true });
 
   get config(): SeoConfig {
     return this._config;
   }
   private _config: SeoConfig = {};
 
-  ngOnInit(): void {
+  ngOnInit() {
     this.parent?._deactivate();
   }
 
-  ngOnDestroy(): void {
+  ngOnDestroy() {
     this._deactivate();
     this._cleanUp();
     this.parent?._activate();

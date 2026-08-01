@@ -128,7 +128,7 @@ export const signalClasses = <T extends Record<string, Signal<unknown>>>(el: Sig
 };
 
 export const signalHostClasses = <T extends Record<string, Signal<unknown>>>(classMap: T) =>
-  signalClasses(inject(ElementRef), classMap);
+  signalClasses(inject<ElementRef<HTMLElement>>(ElementRef), classMap);
 
 const ALWAYS_TRUE_ATTRIBUTE_KEYS = ['disabled', 'readonly', 'required', 'checked', 'selected', 'hidden', 'inert'];
 
@@ -163,7 +163,7 @@ export const signalAttributes = <T extends Record<string, Signal<unknown>>>(
 };
 
 export const signalHostAttributes = <T extends Record<string, Signal<unknown>>>(attributeMap: T) =>
-  signalAttributes(inject(ElementRef), attributeMap);
+  signalAttributes(inject<ElementRef<HTMLElement>>(ElementRef), attributeMap);
 
 export const signalStyles = <T extends Record<string, Signal<unknown>>>(el: SignalElementBindingType, styleMap: T) => {
   const renderer = injectRenderer();
@@ -193,4 +193,4 @@ export const signalStyles = <T extends Record<string, Signal<unknown>>>(el: Sign
 };
 
 export const signalHostStyles = <T extends Record<string, Signal<unknown>>>(styleMap: T) =>
-  signalStyles(inject(ElementRef), styleMap);
+  signalStyles(inject<ElementRef<HTMLElement>>(ElementRef), styleMap);

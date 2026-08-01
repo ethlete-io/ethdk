@@ -103,6 +103,7 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
 
     if (!rendered || !enabled) {
       observer.set(null);
+
       return;
     }
 
@@ -200,4 +201,4 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
 };
 
 export const signalHostElementIntersection = (options?: SignalElementIntersectionOptions) =>
-  signalElementIntersection(inject(ElementRef), options);
+  signalElementIntersection(inject<ElementRef<HTMLElement>>(ElementRef), options);

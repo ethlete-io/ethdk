@@ -6,7 +6,7 @@ import { fromEvent, tap } from 'rxjs';
   selector: '[etClickOutside]',
 })
 export class ClickOutsideDirective {
-  private elementRef = inject(ElementRef);
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private document = inject(DOCUMENT);
 
   didClickOutside = output<MouseEvent>({ alias: 'etClickOutside' });

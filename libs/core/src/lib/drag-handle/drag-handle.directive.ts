@@ -1,9 +1,7 @@
 import { Directive, ElementRef, booleanAttribute, inject, input } from '@angular/core';
 import { outputFromObservable, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Subject, distinctUntilChanged, exhaustMap, filter, map, share } from 'rxjs';
-
 import { DragGestureEvent, DragMoveEvent, DragStartEvent, dragGestureFrom } from './drag-gesture';
-
 import { applyHostListener } from '../utils/angular/host-listener';
 
 @Directive({
@@ -69,7 +67,7 @@ export class DragHandleDirective {
     applyHostListener('pointerdown', (e) => this.startGesture(e));
   }
 
-  startGesture(event: PointerEvent): void {
+  startGesture(event: PointerEvent) {
     if (event.button !== 0 || this.disabled()) return;
     event.stopPropagation();
     this.gestureStart$.next(event);

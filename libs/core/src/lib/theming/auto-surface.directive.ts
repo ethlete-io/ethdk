@@ -147,7 +147,6 @@ export class AutoSurfaceDirective {
       const surface = this.resolvedSurface();
 
       untracked(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setInputSignal(this.ownSurfaceProvider.surface as any, surface);
       });
     });

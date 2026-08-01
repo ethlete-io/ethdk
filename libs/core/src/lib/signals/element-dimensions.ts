@@ -136,7 +136,7 @@ export const signalElementDimensions = (el: SignalElementBindingType) => {
   });
 };
 
-export const signalHostElementDimensions = () => signalElementDimensions(inject(ElementRef));
+export const signalHostElementDimensions = () => signalElementDimensions(inject<ElementRef<HTMLElement>>(ElementRef));
 
 export const injectViewportSize = (): Signal<ElementSize> => {
   const document = inject(DOCUMENT);

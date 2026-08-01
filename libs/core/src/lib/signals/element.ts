@@ -1,4 +1,3 @@
-import { coerceElement } from '@angular/cdk/coercion';
 import {
   DOCUMENT,
   ElementRef,
@@ -13,6 +12,8 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Observable, map, pairwise, startWith } from 'rxjs';
+
+const coerceElement = <T>(el: ElementRef<T> | T): T => (el instanceof ElementRef ? el.nativeElement : el);
 
 export type SignalElementBindingComplexType =
   | HTMLElement
@@ -58,7 +59,7 @@ export const createEmptyElementSignal = (): ElementSignal =>
     previousElements: [],
   });
 
-const areElementArraysEqual = (a: HTMLElement[], b: HTMLElement[]): boolean => {
+const areElementArraysEqual = (a: HTMLElement[], b: HTMLElement[]) => {
   if (a === b) return true;
   if (a.length !== b.length) return false;
 
@@ -68,7 +69,7 @@ const areElementArraysEqual = (a: HTMLElement[], b: HTMLElement[]): boolean => {
   return true;
 };
 
-const areElementSignalValuesEqual = (a: ElementSignalValue, b: ElementSignalValue): boolean =>
+const areElementSignalValuesEqual = (a: ElementSignalValue, b: ElementSignalValue) =>
   areElementArraysEqual(a.currentElements, b.currentElements) &&
   areElementArraysEqual(a.previousElements, b.previousElements);
 

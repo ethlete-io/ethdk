@@ -40,7 +40,7 @@ export const canUseSessionMemory = () => {
       return false;
     }
 
-    return globalThis.sessionStorage != null;
+    return globalThis.sessionStorage !== null && globalThis.sessionStorage !== undefined;
   } catch {
     return false;
   }

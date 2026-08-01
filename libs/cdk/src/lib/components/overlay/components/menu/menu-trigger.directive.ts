@@ -11,14 +11,8 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  AnimatedOverlayDirective,
-  COLOR_PROVIDER,
-  fromNextFrame,
-  setInputSignal,
-  signalHostAttributes,
-  signalHostClasses,
-} from '@ethlete/core';
+import { COLOR_PROVIDER, fromNextFrame, setInputSignal, signalHostAttributes, signalHostClasses } from '@ethlete/core';
+import { AnimatedOverlayDirective } from '../../directives/animated-overlay';
 import { Placement } from '@floating-ui/dom';
 import { Subscription, filter, fromEvent, switchMap, tap } from 'rxjs';
 import { OverlayCloseBlockerDirective } from '../../directives/overlay-close-auto-blocker';

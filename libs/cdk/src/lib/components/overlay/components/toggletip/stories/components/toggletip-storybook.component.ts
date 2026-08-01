@@ -1,6 +1,6 @@
 import { OverlayModule } from '@angular/cdk/overlay';
 import { Component, viewChild, ViewEncapsulation } from '@angular/core';
-import { AnimatedOverlayDirective } from '@ethlete/core';
+import { AnimatedOverlayDirective } from '../../../../directives/animated-overlay';
 import { Placement } from '@floating-ui/dom';
 import { ToggletipDirective } from '../../directives/toggletip';
 import { ToggletipCloseDirective } from '../../partials/toggletip-close';

@@ -84,5 +84,5 @@ Typical use: defer cleanup until a leave animation actually finished (the form f
 Set `localStorage.setItem('et-overlay-debug', 'true')` and reload to get timestamped console traces from the lifecycle directive and the [overlay runtime](/core/overlay-runtime).
 
 ::: warning Legacy: `AnimatedOverlayDirective`
-`[etAnimatedOverlay]` (CDK-overlay + Floating UI mounting) is superseded - only the maintenance-mode `@ethlete/cdk` components still use it. New code should use the [components overlay system](/components/overlays), which is built on the [overlay runtime](/core/overlay-runtime).
+`[etAnimatedOverlay]` (CDK-overlay + Floating UI mounting) is superseded and now lives in the maintenance-mode `@ethlete/cdk` package - import it from `@ethlete/cdk` instead of `@ethlete/core`. New code should use the [components overlay system](/components/overlays), which is built on the [overlay runtime](/core/overlay-runtime).
 :::

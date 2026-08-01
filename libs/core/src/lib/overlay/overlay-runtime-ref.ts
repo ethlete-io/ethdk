@@ -112,7 +112,7 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
       afterOpenedSubject.complete();
     },
 
-    beginClose(closeEvent: OverlayRuntimeCloseEvent<TResult>): boolean {
+    beginClose(closeEvent: OverlayRuntimeCloseEvent<TResult>) {
       if (_state() === 'closing' || _state() === 'closed') {
         return false;
       }

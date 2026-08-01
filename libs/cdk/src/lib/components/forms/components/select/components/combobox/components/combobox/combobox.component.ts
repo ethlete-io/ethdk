@@ -1,6 +1,6 @@
 import { AsyncPipe, NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, inject } from '@angular/core';
-import { AnimatedOverlayDirective } from '@ethlete/core';
+import { AnimatedOverlayDirective } from '../../../../../../../overlay/directives/animated-overlay';
 import { CHEVRON_ICON } from '../../../../../../../icons/chevron-icon';
 import { provideIcons } from '../../../../../../../icons/icon-provider';
 import { IconDirective } from '../../../../../../../icons/icon.directive';

@@ -96,4 +96,4 @@ export const signalElementScrollState = (el: SignalElementBindingType, options?:
   );
 };
 
-export const signalHostElementScrollState = () => signalElementScrollState(inject(ElementRef));
+export const signalHostElementScrollState = () => signalElementScrollState(inject<ElementRef<HTMLElement>>(ElementRef));

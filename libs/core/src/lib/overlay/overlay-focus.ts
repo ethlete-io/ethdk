@@ -54,16 +54,19 @@ export const applyInitialFocus = (
 
   if (autoFocus === 'container') {
     focusElement(paneElement);
+
     return;
   }
 
   if (autoFocus === 'first-heading') {
     focusElement(getHeadingElement(paneElement) ?? paneElement);
+
     return;
   }
 
   if (autoFocus === 'first-tabbable') {
     focusElement(getFocusableElements(paneElement, document)[0] ?? paneElement);
+
     return;
   }
 
@@ -90,6 +93,7 @@ export const setupFocusTrap = (
     if (focusableElements.length === 0) {
       event.preventDefault();
       focusElement(paneElement);
+
       return;
     }
 
@@ -100,6 +104,7 @@ export const setupFocusTrap = (
     if (event.shiftKey && activeElement === firstElement) {
       event.preventDefault();
       focusElement(lastElement ?? null);
+
       return;
     }
 

@@ -1,10 +1,10 @@
-const escapeHtml = (str: string): string =>
+const escapeHtml = (str: string) =>
   str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /** Escapes HTML-special characters but leaves existing entity references intact - for input that
  *  may already contain entities (e.g. Markdown serialized from the editor's DOM, where `&` is
  *  stored as `&amp;`), where plain escaping would double-escape them. */
-const escapeHtmlPreservingEntities = (str: string): string =>
+const escapeHtmlPreservingEntities = (str: string) =>
   str
     .replace(/&(?![a-z]+;|#\d+;|#x[0-9a-f]+;)/gi, '&amp;')
     .replace(/</g, '&lt;')
@@ -14,11 +14,11 @@ const escapeHtmlPreservingEntities = (str: string): string =>
 /** Rejects URL schemes that execute script when navigated. Whitespace/control characters are
  *  stripped before checking - browsers ignore them inside URLs, so `java\tscript:` would
  *  otherwise slip through. */
-const isSafeUrl = (url: string): boolean =>
+const isSafeUrl = (url: string) =>
   // eslint-disable-next-line no-control-regex -- stripping control characters is the point: browsers ignore them inside URLs
   !/^(javascript|data|vbscript):/i.test(url.replace(/[\s\u0000-\u001f]/g, ''));
 
-const unescapeHtml = (str: string): string =>
+const unescapeHtml = (str: string) =>
   str
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
@@ -27,7 +27,7 @@ const unescapeHtml = (str: string): string =>
     .replace(/&#39;/g, "'")
     .replace(/&nbsp;/g, ' ');
 
-const stripTags = (str: string): string => str.replace(/<[^>]+>/g, '');
+const stripTags = (str: string) => str.replace(/<[^>]+>/g, '');
 
 const parseTableRow = (line: string): string[] =>
   line
@@ -35,7 +35,7 @@ const parseTableRow = (line: string): string[] =>
     .slice(1, -1)
     .map((cell) => cell.trim());
 
-const isTableSeparatorLine = (line: string): boolean => /^\|?(\s*:?-+:?\s*\|)+\s*$/.test(line);
+const isTableSeparatorLine = (line: string) => /^\|?(\s*:?-+:?\s*\|)+\s*$/.test(line);
 
 type TableAlign = 'left' | 'center' | 'right' | null;
 
@@ -49,15 +49,15 @@ const parseSeparatorAligns = (line: string): TableAlign[] =>
   });
 
 /** The GFM separator token for a column alignment. */
-const separatorFor = (align: TableAlign): string =>
+const separatorFor = (align: TableAlign) =>
   align === 'center' ? ':---:' : align === 'right' ? '---:' : align === 'left' ? ':---' : '---';
 
-const alignStyle = (align: TableAlign): string => (align ? ` style="text-align: ${align}"` : '');
+const alignStyle = (align: TableAlign) => (align ? ` style="text-align: ${align}"` : '');
 
 /** Wraps `content` in an emphasis `marker`, hoisting boundary whitespace outside the delimiters -
  *  CommonMark emphasis must not face whitespace on the inside (`** fett**` doesn't parse), and
  *  `&nbsp;` counts as whitespace there too. Whitespace-only content stays unwrapped. */
-const emphasize = (marker: string, content: string): string => {
+const emphasize = (marker: string, content: string) => {
   const lead = /^(?:\s|&nbsp;)+/i.exec(content)?.[0] ?? '';
   const rest = content.slice(lead.length);
   const trail = /(?:\s|&nbsp;)+$/i.exec(rest)?.[0] ?? '';
@@ -76,7 +76,7 @@ const SAFE_INLINE_TAGS = /* @__PURE__ */ new Set(['strong', 'em', 'b', 'i', 'del
 /** Reduces raw inline HTML to the editor's own vocabulary: allowed tags lose all their attributes
  *  (`<a>` keeps a safe `href`), everything else - including any event-handler attribute - is
  *  dropped, and the remaining text is escaped. */
-const sanitizeInlineHtml = (html: string): string => {
+const sanitizeInlineHtml = (html: string) => {
   const kept: string[] = [];
 
   const stashed = html.replace(/<\s*(\/?)\s*([a-z][a-z0-9]*)\b[^>]*>/gi, (full, closing: string, tag: string) => {
@@ -361,7 +361,7 @@ const buildListHtml = (lines: ParsedListLine[], start: number, baseIndent: numbe
  * Covers headings, bold, italic, strikethrough, inline code, fenced code blocks,
  * links, images, block quotes, unordered/ordered (and nested) lists, tables, horizontal rules, and paragraphs.
  */
-export const markdownToHtml = (markdown: string): string => {
+export const markdownToHtml = (markdown: string) => {
   if (!markdown) return '';
 
   let text = markdown.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
@@ -406,6 +406,7 @@ export const markdownToHtml = (markdown: string): string => {
       const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
       if (headingMatch?.[1] && headingMatch?.[2]) {
         const level = headingMatch[1].length;
+
         return `<h${level}>${processInline(headingMatch[2].trim())}</h${level}>`;
       }
 
@@ -432,6 +433,7 @@ export const markdownToHtml = (markdown: string): string => {
                 )
                 .join('')}</tbody>`
             : '';
+
         return `<table>${thead}${tbody}</table>`;
       }
 
@@ -465,7 +467,7 @@ export const markdownToHtml = (markdown: string): string => {
  * Covers headings, bold, italic, strikethrough, inline code, fenced code blocks,
  * links, images, block quotes, unordered/ordered lists, tables, horizontal rules, and paragraphs.
  */
-export const htmlToMarkdown = (html: string): string => {
+export const htmlToMarkdown = (html: string) => {
   if (!html) return '';
 
   let md = html;

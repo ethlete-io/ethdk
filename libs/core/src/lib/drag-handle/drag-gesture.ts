@@ -66,6 +66,7 @@ const setupDragObservable = (
             totalDy: e.clientY - startY,
           },
         };
+
         return of(start, catchUpMove);
       }
 

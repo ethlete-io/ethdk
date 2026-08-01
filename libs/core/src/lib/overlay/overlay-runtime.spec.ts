@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import { AnimatedLifecycleDirective, AnimatedLifecycleState } from '../animations';
+import { anchoredOverlayPosition } from './overlay-position-anchored';
 import { injectOverlayRuntime } from './overlay-runtime';
 
 const createFakeLifecycle = () => {
@@ -80,7 +81,7 @@ describe('overlay runtime', () => {
     };
 
     const ref = mount({
-      positionStrategy: { kind: 'anchored', referenceElement: virtualElement, mirrorWidth: true },
+      positionStrategy: anchoredOverlayPosition({ referenceElement: virtualElement, mirrorWidth: true }),
     });
 
     expect(ref.elements.paneElement.style.position).toBe('absolute');
@@ -141,7 +142,7 @@ describe('overlay runtime', () => {
         hasBackdrop: false,
         autoFocus: false,
         restoreFocus: false,
-        positionStrategy: { kind: 'anchored', referenceElement: trigger },
+        positionStrategy: anchoredOverlayPosition({ referenceElement: trigger }),
       },
       FocusableOverlayComponent,
     );

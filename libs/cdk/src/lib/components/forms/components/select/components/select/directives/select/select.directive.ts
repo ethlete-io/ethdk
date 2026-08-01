@@ -18,8 +18,6 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
-  AnimatedOverlayComponentBase,
-  AnimatedOverlayDirective,
   COLOR_PROVIDER,
   TypedQueryList,
   createDestroy,
@@ -28,6 +26,10 @@ import {
   signalClasses,
   signalHostClasses,
 } from '@ethlete/core';
+import {
+  AnimatedOverlayComponentBase,
+  AnimatedOverlayDirective,
+} from '../../../../../../../overlay/directives/animated-overlay';
 import { Placement } from '@floating-ui/dom';
 import { BehaviorSubject, combineLatest, debounceTime, map, of, switchMap, takeUntil, tap } from 'rxjs';
 import { OverlayCloseBlockerDirective } from '../../../../../../../overlay/directives/overlay-close-auto-blocker';

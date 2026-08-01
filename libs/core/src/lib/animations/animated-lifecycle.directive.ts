@@ -89,7 +89,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     });
   }
 
-  ngAfterViewInit(): void {
+  ngAfterViewInit() {
     this.isConstructed = true;
   }
 
@@ -104,6 +104,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
       this.skipNextEnter.set(false);
       this.addClass(ANIMATION_CLASSES.enterDone);
       this.forcedAtFrameId = null;
+
       return;
     }
 
@@ -140,6 +141,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
       this.addClass(ANIMATION_CLASSES.enterDone);
       previousCancel$.next();
       previousCancel$.complete();
+
       return;
     }
 
@@ -191,6 +193,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
       this.updateState('left');
       this.addClass(ANIMATION_CLASSES.leaveDone);
       this.forcedAtFrameId = null;
+
       return;
     }
 
@@ -227,6 +230,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
       this.addClass(ANIMATION_CLASSES.leaveDone);
       previousCancel$.next();
       previousCancel$.complete();
+
       return;
     }
 

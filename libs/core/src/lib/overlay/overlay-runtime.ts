@@ -247,6 +247,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
         // overlay down synchronously instead of playing a leave transition from a stale position.
         if (!lifecycle || closeEvent.source === 'reference-detached') {
           destroyMountedOverlay(closeEvent);
+
           return;
         }
 
@@ -275,6 +276,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
 
           if (!interactiveCloseReady) {
             animationDebugLog(`runtime ${config.id}`, 'escape ignored (enter transition has not started yet)');
+
             return;
           }
 
@@ -300,6 +302,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
 
           if (!interactiveCloseReady) {
             animationDebugLog(`runtime ${config.id}`, 'outside pointer ignored (enter transition has not started yet)');
+
             return;
           }
 
@@ -335,6 +338,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
       nextFrame(() => {
         if (overlayRef.state() !== 'mounting') {
           animationDebugLog(`runtime ${config.id}`, `enter skipped (state "${overlayRef.state()}" before enter frame)`);
+
           return;
         }
 
@@ -343,6 +347,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
           interactiveCloseReady = true;
           applyInitialFocus(paneElement, autoFocus, document);
           overlayRef.markOpened();
+
           return;
         }
 

@@ -15,7 +15,7 @@ let randomIdFallbackCounter = 0;
  * where `crypto.randomUUID` is `undefined`. Calling it there throws, so anything using it during e.g.
  * an overlay/menu open would break on such hosts. Prefer this over `crypto.randomUUID()` directly.
  */
-export const randomId = (): string => {
+export const randomId = () => {
   const cryptoObj = typeof globalThis !== 'undefined' ? globalThis.crypto : undefined;
 
   if (typeof cryptoObj?.randomUUID === 'function') {

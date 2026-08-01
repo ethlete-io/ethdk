@@ -57,4 +57,5 @@ export const signalElementLastScrollDirection = (el: SignalElementBindingType) =
   return lastScrollDirection.asReadonly();
 };
 
-export const signalHostElementLastScrollDirection = () => signalElementLastScrollDirection(inject(ElementRef));
+export const signalHostElementLastScrollDirection = () =>
+  signalElementLastScrollDirection(inject<ElementRef<HTMLElement>>(ElementRef));

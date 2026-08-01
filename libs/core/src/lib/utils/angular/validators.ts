@@ -78,6 +78,7 @@ export const MustMatch = (controlName: string, matchingControlName: string) => {
 
     if (control?.value !== matchingControl?.value) {
       matchingControl?.setErrors({ [MUST_MATCH]: true });
+
       return { [MUST_MATCH]: true };
     } else {
       matchingControl?.setErrors(null);

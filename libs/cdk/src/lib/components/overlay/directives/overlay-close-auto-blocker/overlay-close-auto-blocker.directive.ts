@@ -1,6 +1,6 @@
 import { Directive, InjectionToken, OnDestroy, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AnimatedOverlayDirective } from '@ethlete/core';
+import { AnimatedOverlayDirective } from '../animated-overlay';
 import { combineLatest, tap } from 'rxjs';
 import { OverlayRef } from '../../components/overlay';
 

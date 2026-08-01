@@ -1,6 +1,7 @@
 import { AriaDescriber } from '@angular/cdk/a11y';
 import { Directive, ElementRef, InjectionToken, Input, OnDestroy, TemplateRef, inject } from '@angular/core';
-import { AnimatedOverlayDirective, COLOR_PROVIDER, injectFocusVisibleTracker, setInputSignal } from '@ethlete/core';
+import { COLOR_PROVIDER, injectFocusVisibleTracker, setInputSignal } from '@ethlete/core';
+import { AnimatedOverlayDirective } from '../../../../directives/animated-overlay';
 import { Subscription, filter, fromEvent, switchMap, takeUntil, tap, timer } from 'rxjs';
 import { OverlayCloseBlockerDirective } from '../../../../directives/overlay-close-auto-blocker';
 import { TooltipComponent } from '../../components/tooltip';

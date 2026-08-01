@@ -1,5 +1,6 @@
-import { ComponentType } from '@angular/cdk/portal';
 import { Injector, Signal, TemplateRef, computed } from '@angular/core';
+
+export type ComponentType<T> = new (...args: any[]) => T;
 
 export type AnyTemplateType =
   string | TemplateRef<unknown> | ComponentType<unknown> | TemplateRefWithContext | ComponentTypeWithInputs;

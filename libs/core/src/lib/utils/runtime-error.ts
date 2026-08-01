@@ -1,5 +1,3 @@
-import { clone } from './comparison';
-
 export const RUNTIME_ERROR_NO_DATA = '__ET_NO_DATA__';
 
 export class RuntimeError<T extends number> extends Error {
@@ -11,17 +9,11 @@ export class RuntimeError<T extends number> extends Error {
     super(formatRuntimeError<T>(code, message));
 
     if (data !== RUNTIME_ERROR_NO_DATA) {
-      try {
-        const _data = clone(data);
-
-        setTimeout(() => {
-          console.error(_data);
-        }, 1);
-      } catch {
-        setTimeout(() => {
-          console.error(data);
-        }, 1);
-      }
+      // deferred so the error itself is logged first - consoles render the live object, so a
+      // mutation after the throw is visible in the log
+      setTimeout(() => {
+        console.error(data);
+      }, 1);
     }
   }
 }

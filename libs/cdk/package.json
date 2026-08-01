@@ -26,5 +26,19 @@
     "typescript": "6.0.3",
     "vite": "8.1.5"
   },
+  "peerDependenciesMeta": {
+    "@analogjs/vite-plugin-angular": {
+      "optional": true
+    },
+    "@nx/devkit": {
+      "optional": true
+    },
+    "typescript": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    }
+  },
   "generators": "./generators/generators.json"
 }

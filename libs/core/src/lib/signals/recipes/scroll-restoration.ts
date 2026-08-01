@@ -234,6 +234,7 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
       if (maxOffset >= target) {
         el.scrollTop = target;
         cancelPendingRestore();
+
         return;
       }
 
@@ -247,6 +248,7 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
 
       if (now < deadline && now < hardDeadline) {
         frame = requestAnimationFrame(step);
+
         return;
       }
 
@@ -333,6 +335,7 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
       // scrolled away from the anchor before leaving the page.
       if (target !== undefined) {
         scheduleRestore(target);
+
         return;
       }
     }
@@ -387,6 +390,7 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
     .subscribe((event) => {
       if (event instanceof NavigationStart) {
         onNavigationStart(event);
+
         return;
       }
 

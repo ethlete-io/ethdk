@@ -60,6 +60,7 @@ export const syncSignal = <T>(from: Signal<T>, to: WritableSignal<T>, options?: 
 
     if (options?.skipFirstRun && isFirstRun) {
       isFirstRun = false;
+
       return;
     }
 

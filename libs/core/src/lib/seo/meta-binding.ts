@@ -158,7 +158,7 @@ const META_STORE_DEF = /* @__PURE__ */ defineRootProvider(
     const metaTagsBySelector = signal<Map<string, Map<symbol, MetaTagBinding>>>(new Map());
     let priorityCounter = 0;
 
-    const getSelector = (config: MetaTagConfig): string => {
+    const getSelector = (config: MetaTagConfig) => {
       if (config.name) return `name="${config.name}"`;
       if (config.property) return `property="${config.property}"`;
       if (config.httpEquiv) return `http-equiv="${config.httpEquiv}"`;
@@ -166,7 +166,7 @@ const META_STORE_DEF = /* @__PURE__ */ defineRootProvider(
       return config.key ?? '';
     };
 
-    const isMultiInstanceTag = (selector: string): boolean => {
+    const isMultiInstanceTag = (selector: string) => {
       return config.multiInstanceTags.has(selector);
     };
 
@@ -177,7 +177,6 @@ const META_STORE_DEF = /* @__PURE__ */ defineRootProvider(
         transformedConfig.content = config.transformer(transformedConfig.content, locale);
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { key, allowMultiple, ...metaConfig } = transformedConfig;
 
       return metaService.addTag(metaConfig) as HTMLMetaElement;
@@ -189,6 +188,7 @@ const META_STORE_DEF = /* @__PURE__ */ defineRootProvider(
 
       if (!bindings || bindings.size === 0) {
         metaService.removeTag(selector);
+
         return;
       }
 
@@ -250,6 +250,7 @@ const META_STORE_DEF = /* @__PURE__ */ defineRootProvider(
         });
 
         applyActiveTag(selector);
+
         return;
       }
 

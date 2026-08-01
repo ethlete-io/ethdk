@@ -41,4 +41,4 @@ export const signalElementMutations = (el: SignalElementBindingType, options?: M
 };
 
 export const signalHostElementMutations = (options?: MutationObserverInit) =>
-  signalElementMutations(inject(ElementRef), options);
+  signalElementMutations(inject<ElementRef<HTMLElement>>(ElementRef), options);

@@ -12,7 +12,6 @@ import {
   Subject,
   tap,
 } from 'rxjs';
-
 import { animationDebugLog } from './animation-debug';
 
 export const ANIMATABLE_TOKEN = new InjectionToken<AnimatableDirective>('ANIMATABLE_DIRECTIVE_TOKEN');

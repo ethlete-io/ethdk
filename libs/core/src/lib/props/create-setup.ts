@@ -9,6 +9,7 @@ export const createSetup = <T extends Record<string, unknown>>(config: {
   afterNextRender(() => {
     if (!didCallSetup) {
       console.error('The setup() function was not called. Please call it inside your constructor.', config.this);
+
       return;
     }
   });
@@ -22,6 +23,7 @@ export const createSetup = <T extends Record<string, unknown>>(config: {
         '\n\n Setup was called with\n',
         params,
       );
+
       return;
     }
 

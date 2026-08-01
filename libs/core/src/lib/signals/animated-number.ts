@@ -104,6 +104,7 @@ export const signalAnimatedNumber = (
     // Skip animation if no change
     if (delta === 0) {
       options.onAnimationEnd?.();
+
       return readonlySignal;
     }
 

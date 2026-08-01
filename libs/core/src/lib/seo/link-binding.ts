@@ -80,7 +80,7 @@ const LINK_STORE_DEF = /* @__PURE__ */ defineRootProvider(
     const linksByKey = signal<Map<string, Map<symbol, LinkBinding>>>(new Map());
     let priorityCounter = 0;
 
-    const getLinkKey = (linkConfig: LinkConfig): string => {
+    const getLinkKey = (linkConfig: LinkConfig) => {
       const isMultiInstance = config.multiInstanceRels.has(linkConfig.rel) || linkConfig.allowMultiple;
 
       if (isMultiInstance) {
@@ -103,7 +103,7 @@ const LINK_STORE_DEF = /* @__PURE__ */ defineRootProvider(
       return linkConfig.rel;
     };
 
-    const isMultiInstanceLink = (key: string): boolean => {
+    const isMultiInstanceLink = (key: string) => {
       const rel = key.split('|')[0];
 
       if (!rel) return false;
@@ -114,7 +114,6 @@ const LINK_STORE_DEF = /* @__PURE__ */ defineRootProvider(
     const createLinkElement = (linkConfig: LinkConfig): HTMLLinkElement => {
       const link = document.createElement('link');
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { key, allowMultiple, ...attributes } = linkConfig;
 
       Object.entries(attributes).forEach(([attrKey, value]) => {
@@ -193,6 +192,7 @@ const LINK_STORE_DEF = /* @__PURE__ */ defineRootProvider(
         });
 
         applyActiveLinks(key);
+
         return;
       }
 

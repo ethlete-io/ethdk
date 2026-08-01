@@ -1,13 +1,13 @@
 import { InjectionToken, Provider, Signal } from '@angular/core';
 
-export interface ConsentHandler {
+export type ConsentHandler = {
   /** Signal that is `true` when consent has been granted. */
   isGranted: Signal<boolean>;
   /** Grants consent and writes the decision back to the source. */
   grant: () => void;
   /** Revokes consent and writes the decision back to the source. */
   revoke?: () => void;
-}
+};
 
 export type CreateUserConsentProviderOptions = {
   /** The provider result returned by `createStaticProvider` that this consent provider should be associated with. */

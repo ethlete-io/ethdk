@@ -35,11 +35,13 @@ import {
   size,
 } from '@floating-ui/dom';
 import { Subject, Subscription, filter, take, tap } from 'rxjs';
-import { injectBoundaryElement } from '../providers';
-import { signalElementDimensions } from '../signals';
-import { ProvideColorDirective } from '../theming';
-import { AnimatedLifecycleDirective } from './animated-lifecycle.directive';
-import { nextFrame } from './animation-utils';
+import {
+  AnimatedLifecycleDirective,
+  ProvideColorDirective,
+  injectBoundaryElement,
+  nextFrame,
+  signalElementDimensions,
+} from '@ethlete/core';
 
 export type AnimatedOverlayComponentBase = {
   animatedLifecycle: Signal<AnimatedLifecycleDirective | undefined>;
@@ -141,6 +143,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
         if (isDevMode()) {
           console.warn('AnimatedOverlayDirective: Cannot remount. Component ref is not available.');
         }
+
         return;
       }
 
@@ -179,6 +182,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
       if (isDevMode()) {
         console.warn('AnimatedOverlayDirective: Cannot mount. Component is already mounted or currently mounting.');
       }
+
       return;
     }
 
@@ -209,6 +213,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
       if (isDevMode()) {
         console.warn(`AnimatedOverlayDirective: Cannot unmount. Component is currently ${this.state()}`);
       }
+
       return;
     }
 
@@ -220,6 +225,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
       if (isDevMode()) {
         console.warn('AnimatedOverlayDirective: Cannot unmount. Component ref is not available.');
       }
+
       return;
     }
 
@@ -228,6 +234,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
 
     if (this.isHidden()) {
       this.destroy();
+
       return;
     }
 
@@ -235,6 +242,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
 
     if (!lifecycle) {
       this.destroy();
+
       return;
     }
 
@@ -414,6 +422,7 @@ export class AnimatedOverlayDirective<T extends AnimatedOverlayComponentBase> {
         console.error(
           'AnimatedOverlayDirective: The component does not have an AnimatedLifecycleDirective. Please add one to the component.',
         );
+
         return;
       }
 

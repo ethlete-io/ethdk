@@ -82,6 +82,11 @@ const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge): Obse
     }
   `,
   encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'et-resize-handles',
+    '[attr.inert]': 'disabled() ? "" : null',
+    '[attr.data-active-edge]': 'activeEdge()',
+  },
   styles: `
     @property --et-resize-handles-z-index {
       syntax: '<integer>';
@@ -223,11 +228,6 @@ const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge): Obse
       }
     }
   `,
-  host: {
-    class: 'et-resize-handles',
-    '[attr.inert]': 'disabled() ? "" : null',
-    '[attr.data-active-edge]': 'activeEdge()',
-  },
 })
 export class ResizeHandlesComponent {
   edges = input<ResizeEdge[]>(['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw']);
@@ -284,7 +284,7 @@ export class ResizeHandlesComponent {
 
   readonly edgeCursors = EDGE_CURSORS;
 
-  startResizeGesture(event: PointerEvent, edge: ResizeEdge): void {
+  startResizeGesture(event: PointerEvent, edge: ResizeEdge) {
     if (event.button !== 0 || this.disabled()) return;
     event.stopPropagation();
     this.gestureStart$.next({ event, edge });

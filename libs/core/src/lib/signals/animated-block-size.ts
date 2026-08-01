@@ -45,8 +45,8 @@ export type AnimatedBlockSizeConfig = {
  * (= one painted frame) late: a growing panel would flash at its final size, snap back, and only
  * then animate.
  */
-export const injectAnimatedBlockSize = (config: AnimatedBlockSizeConfig): void => {
-  const hostBinding = config.host ?? inject(ElementRef);
+export const injectAnimatedBlockSize = (config: AnimatedBlockSizeConfig) => {
+  const hostBinding = config.host ?? inject<ElementRef<HTMLElement>>(ElementRef);
   const renderer = injectRenderer();
   const prefersReducedMotion = injectPrefersReducedMotion();
   const destroyRef = inject(DestroyRef);

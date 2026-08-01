@@ -1,6 +1,5 @@
 import { FormArray, FormControl, FormGroup } from '@angular/forms';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const cloneFormGroup = <T extends FormGroup<any>>(formGroup: T) => {
   const cloneLevel = (group: FormGroup, cloneGroup: FormGroup) => {
     Object.keys(group.controls).forEach((key) => {
@@ -13,7 +12,6 @@ export const cloneFormGroup = <T extends FormGroup<any>>(formGroup: T) => {
 
         cloneLevel(control, cloneControl);
       } else if (control instanceof FormArray) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const cloneArrayControl = new FormArray<any>([], control.validator, control.asyncValidator);
 
         control.controls.forEach((control) => {

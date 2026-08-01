@@ -11,7 +11,6 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-
 import { SIGNAL } from '@angular/core/primitives/signals';
 import { BREAKPOINT_ORDER, Breakpoint } from '../providers/breakpoint-observer';
 import { setInputSignal } from '../utils';
@@ -63,7 +62,7 @@ export const breakpointTransformBase = <T, WriteT = BreakpointInput<T>>(
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   let capturedDefault: T = undefined!;
   let initialized = false;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let cachedSig: InputSignalWithTransform<T, any> | null = null;
 
   const transformFn = (value: WriteT): T => {
@@ -83,13 +82,11 @@ export const breakpointTransformBase = <T, WriteT = BreakpointInput<T>>(
     const r = raw();
 
     if (!cachedSig) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const instance = injector.get(BREAKPOINT_INSTANCE_TOKEN) as any;
       for (const key of Object.keys(instance)) {
         const val = instance[key];
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
         if (val && typeof val === 'function' && (val as any)[SIGNAL]?.transformFn === transformFn) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           cachedSig = val as InputSignalWithTransform<T, any>;
           break;
         }
@@ -98,7 +95,7 @@ export const breakpointTransformBase = <T, WriteT = BreakpointInput<T>>(
 
     if (!cachedSig || r === undefined || !isBreakpointMap(r)) return;
     const resolved = resolveFromMap(r as BreakpointMap<T>, bp, capturedDefault);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     untracked(() => setInputSignal(cachedSig as InputSignalWithTransform<T, any>, resolved));
   });
 

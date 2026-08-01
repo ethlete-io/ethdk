@@ -19,8 +19,6 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
-  AnimatedOverlayComponentBase,
-  AnimatedOverlayDirective,
   COLOR_PROVIDER,
   KeyPressManager,
   TypedQueryList,
@@ -30,6 +28,10 @@ import {
   signalClasses,
   signalHostClasses,
 } from '@ethlete/core';
+import {
+  AnimatedOverlayComponentBase,
+  AnimatedOverlayDirective,
+} from '../../../../../../../overlay/directives/animated-overlay';
 import { Placement } from '@floating-ui/dom';
 import {
   BehaviorSubject,

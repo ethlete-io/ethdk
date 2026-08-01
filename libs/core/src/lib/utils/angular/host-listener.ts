@@ -31,7 +31,6 @@ export const applyHostListeners = (
     const handler = listeners[eventName as keyof HTMLElementEventMap];
 
     if (handler) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       applyHostListener(eventName as keyof HTMLElementEventMap, handler as any, options);
     }
   }

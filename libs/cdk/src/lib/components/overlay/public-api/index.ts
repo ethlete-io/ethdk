@@ -18,5 +18,6 @@ export * from '../components/tooltip/tooltip.imports';
 export * from '../components/tooltip/types';
 export * from '../components/tooltip/utils';
 
+export * from '../directives/animated-overlay';
 export * from '../directives/overlay-close-auto-blocker';
 export * from '../utils';

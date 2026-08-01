@@ -1,7 +1,4 @@
-import { BreakpointObserver } from '@angular/cdk/layout';
-import { inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { map, startWith } from 'rxjs';
+import { DOCUMENT, Signal, inject, signal } from '@angular/core';
 import { defineRootProvider, defineStaticRootProvider, toInjectFn, toProvideFn } from '../utils';
 
 export type Vec2 = [number, number];
@@ -50,19 +47,43 @@ export type BuildMediaQueryOptions = {
 
 const BREAKPOINT_OBSERVER_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
-    const breakpointObserver = inject(BreakpointObserver);
     const viewportConfig = injectViewportConfig();
+    const defaultView = inject(DOCUMENT).defaultView;
+    const matchMedia = defaultView?.matchMedia?.bind(defaultView) ?? null;
+    const queryLists = new Map<string, MediaQueryList>();
+    const querySignals = new Map<string, Signal<boolean>>();
 
-    const isMediaQueryMatched = (mediaQuery: string) => breakpointObserver.isMatched(mediaQuery);
+    const getQueryList = (mediaQuery: string) => {
+      if (!matchMedia) return null;
 
-    const observeMediaQuery = (mediaQuery: string) => {
-      return toSignal(
-        breakpointObserver.observe(mediaQuery).pipe(
-          map((x) => x.matches),
-          startWith(isMediaQueryMatched(mediaQuery)),
-        ),
-        { requireSync: true },
-      );
+      let queryList = queryLists.get(mediaQuery);
+
+      if (!queryList) {
+        queryList = matchMedia(mediaQuery);
+        queryLists.set(mediaQuery, queryList);
+      }
+
+      return queryList;
+    };
+
+    const isMediaQueryMatched = (mediaQuery: string) => getQueryList(mediaQuery)?.matches ?? false;
+
+    const observeMediaQuery = (mediaQuery: string): Signal<boolean> => {
+      const existing = querySignals.get(mediaQuery);
+
+      if (existing) return existing;
+
+      const queryList = getQueryList(mediaQuery);
+      const matches = signal(queryList?.matches ?? false);
+
+      // the root provider outlives every consumer, so the listener is intentionally never removed -
+      // the same query list is shared by all of them
+      queryList?.addEventListener('change', (event) => matches.set(event.matches));
+
+      const result = matches.asReadonly();
+      querySignals.set(mediaQuery, result);
+
+      return result;
     };
 
     const observeBreakpoint = (options: BuildMediaQueryOptions) => observeMediaQuery(buildMediaQueryString(options));
