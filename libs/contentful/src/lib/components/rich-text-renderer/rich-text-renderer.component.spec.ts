@@ -514,7 +514,7 @@ describe('ContentfulRichTextRendererComponent', () => {
   });
 
   describe('diffing', () => {
-    it('preserves the only component instance but does NOT update its inputs', () => {
+    it('preserves the only component instance and updates its inputs', () => {
       const before = createEntry('e1', 'teaser', { title: 'Before' });
       const after = createEntry('e1', 'teaser', { title: 'After' });
 
@@ -532,16 +532,13 @@ describe('ContentfulRichTextRendererComponent', () => {
       expect(StubTeaserComponent.instances[0]).toBe(instance);
       expect(StubTeaserComponent.destroyed).toBe(0);
 
-      // Current behavior: the UPDATE instruction is only emitted for the *second and following*
-      // preserved components, so a lone component never sees its new inputs.
-      expect(instance?.fields()).toBe(before.fields);
-      expect(renderRoot(fixture).querySelector('.teaser')?.textContent).toBe('Before');
+      expect(instance?.fields()).toBe(after.fields);
+      expect(renderRoot(fixture).querySelector('.teaser')?.textContent).toBe('After');
     });
 
-    it('updates the second preserved component but leaves the first one stale', () => {
-      // Current behavior: render command ids are `<contentTypeId><ordinal>`, not entry ids, so
-      // both components are considered "the same" across the change. The diff walks pairs of
-      // preserved commands and only ever emits UPDATE for the later one of each pair.
+    it('updates every preserved component', () => {
+      // Render command ids are `<contentTypeId><ordinal>`, not entry ids, so both components are
+      // considered "the same" across the change and are reused with fresh inputs.
       const a = createEntry('a', 'teaser', { title: 'A' });
       const b = createEntry('b', 'teaser', { title: 'B' });
       const c = createEntry('c', 'teaser', { title: 'C' });
@@ -558,7 +555,7 @@ describe('ContentfulRichTextRendererComponent', () => {
       setContent(fixture, doc(embeddedEntry('c'), embeddedEntry('d')), { Entry: [c, d] });
 
       expect(StubTeaserComponent.instances).toEqual([first, second]);
-      expect(first?.sys()).toBe(a.sys);
+      expect(first?.sys()).toBe(c.sys);
       expect(second?.sys()).toBe(d.sys);
     });
 
@@ -603,10 +600,10 @@ describe('ContentfulRichTextRendererComponent', () => {
       expect(StubTeaserComponent.instances).toHaveLength(1);
     });
 
-    it('does not move any DOM when two entries swap places', () => {
-      // Current behavior: because the ids are positional, swapping two entries of the same
-      // content type never produces a MOVE instruction. The rendered order stays as-is and only
-      // the second component picks up the new entry (which is the entry that moved to slot 1).
+    it('renders the swapped content through input updates when two entries swap places', () => {
+      // Because the ids are positional, swapping two entries of the same content type never
+      // produces a MOVE instruction. Both instances stay in place and pick up the entry that now
+      // occupies their slot via an input update.
       const a = createEntry('a', 'teaser', { title: 'A' });
       const b = createEntry('b', 'teaser', { title: 'B' });
 
@@ -624,7 +621,36 @@ describe('ContentfulRichTextRendererComponent', () => {
 
       expect(StubTeaserComponent.instances).toEqual([first, second]);
       expect(StubTeaserComponent.destroyed).toBe(0);
-      expect(Array.from(renderRoot(fixture).querySelectorAll('.teaser')).map((e) => e.textContent)).toEqual(['A', 'A']);
+      expect(Array.from(renderRoot(fixture).querySelectorAll('.teaser')).map((e) => e.textContent)).toEqual(['B', 'A']);
+    });
+
+    it('reorders the DOM and preserves both instances when entries of different types swap places', () => {
+      const a = createEntry('a', 'teaser', { title: 'A' });
+      const b = createEntry('b', 'partial', { title: 'B' });
+
+      const { fixture } = setup({
+        customComponents: { teaser: StubTeaserComponent, partial: StubPartialComponent },
+        richText: doc(embeddedEntry('a'), embeddedEntry('b')),
+        includes: { Entry: [a, b] },
+      });
+
+      const teaser = StubTeaserComponent.instances[0];
+      const partial = StubPartialComponent.instances[0];
+
+      expect(Array.from(renderRoot(fixture).querySelectorAll('.teaser, .partial')).map((e) => e.textContent)).toEqual([
+        'A',
+        'B',
+      ]);
+
+      setContent(fixture, doc(embeddedEntry('b'), embeddedEntry('a')), { Entry: [a, b] });
+
+      expect(StubTeaserComponent.instances).toEqual([teaser]);
+      expect(StubPartialComponent.instances).toEqual([partial]);
+      expect(StubTeaserComponent.destroyed).toBe(0);
+      expect(Array.from(renderRoot(fixture).querySelectorAll('.teaser, .partial')).map((e) => e.textContent)).toEqual([
+        'B',
+        'A',
+      ]);
     });
 
     it('creates a new component when an additional entry of the same type appears', () => {

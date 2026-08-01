@@ -1,5 +1,5 @@
-import { DOCUMENT } from '@angular/common';
 import {
+  ChangeDetectionStrategy,
   Component,
   ComponentRef,
   ElementRef,
@@ -7,16 +7,20 @@ import {
   Type,
   ViewContainerRef,
   ViewEncapsulation,
+  WritableSignal,
   computed,
+  effect,
   inject,
   input,
+  inputBinding,
   isDevMode,
+  linkedSignal,
   reflectComponentType,
+  signal,
+  untracked,
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BLOCKS, Block, INLINES, Inline, Mark, Text } from '@contentful/rich-text-types';
 import { getObjectProperty, injectRenderer, isObject } from '@ethlete/core';
-import { pairwise, startWith, tap } from 'rxjs';
 import { CONTENTFUL_CONFIG } from '../../constants/contentful.constants';
 import {
   ContentfulCollection,
@@ -29,101 +33,51 @@ import { createContentfulConfig } from '../../utils/contentful-config';
 import { richTextRendererError } from './rich-text-renderer.errors';
 import { isRichTextRootNode, translateContentfulNodeTypeToHtmlTag } from './rich-text-renderer.util';
 
-export const RENDER_COMMAND_TYPE = {
-  HTML_OPEN: 0,
-  HTML_CLOSE: 1,
-  TEXT: 2,
-  COMPONENT: 3,
-} as const;
+type HtmlOpenRenderCommand = {
+  kind: 'htmlOpen';
+  nestingLevel: number;
+  domPosition: number;
+  index: number;
+  attributes: Record<string, string>;
+  tagName: keyof HTMLElementTagNameMap;
+  id: string;
+};
 
-export const RENDER_COMMAND_POSITION = {
-  TYPE: 0,
-  NESTING_LEVEL: 1,
-  DOM_POSITION: 2,
-  INDEX: 3,
-} as const;
+type HtmlCloseRenderCommand = {
+  kind: 'htmlClose';
+  nestingLevel: number;
+  domPosition: number;
+  index: number;
+  tagName: keyof HTMLElementTagNameMap;
+  id: string;
+};
 
-export const HTML_OPEN_RENDER_COMMAND_POSITION = {
-  ATTRIBUTES: 4,
-  TAG_NAME: 5,
-  ELEMENT_ID: 6,
-} as const;
+type TextRenderCommand = {
+  kind: 'text';
+  nestingLevel: number;
+  domPosition: number;
+  index: number;
+  attributes: Record<string, string>;
+  text: string;
+  id: string;
+};
 
-export const HTML_CLOSE_RENDER_COMMAND_POSITION = {
-  TAG_NAME: 4,
-  ELEMENT_ID: 5,
-} as const;
-
-export const TEXT_RENDER_COMMAND_POSITION = {
-  ATTRIBUTES: 4,
-  TEXT: 5,
-  TEXT_ID: 6,
-} as const;
-
-export const COMPONENT_RENDER_COMMAND_POSITION = {
-  ATTRIBUTES: 4,
-  COMPONENT: 5,
-  INPUTS: 6,
-  COMPONENT_ID: 7,
-} as const;
-
-type HtmlOpenRenderCommand = [
-  type: typeof RENDER_COMMAND_TYPE.HTML_OPEN,
-  nestingLevel: number,
-  domPosition: number,
-  index: number,
-  attributes: Record<string, string>,
-  tagName: keyof HTMLElementTagNameMap,
-  textId: string,
-];
-
-type HtmlCloseRenderCommand = [
-  type: typeof RENDER_COMMAND_TYPE.HTML_CLOSE,
-  nestingLevel: number,
-  domPosition: number,
-  index: number,
-  tagName: keyof HTMLElementTagNameMap,
-  elementId: string,
-];
-
-type TextRenderCommand = [
-  type: typeof RENDER_COMMAND_TYPE.TEXT,
-  nestingLevel: number,
-  domPosition: number,
-  index: number,
-  attributes: Record<string, string>,
-  text: string,
-  elementId: string,
-];
-
-type ComponentRenderCommand = [
-  type: typeof RENDER_COMMAND_TYPE.COMPONENT,
-  nestingLevel: number,
-  domPosition: number,
-  index: number,
-  attributes: Record<string, string>,
-  component: Type<unknown>,
-  inputs: Record<string, unknown>,
-  componentId: string,
-];
+type ComponentRenderCommand = {
+  kind: 'component';
+  nestingLevel: number;
+  domPosition: number;
+  index: number;
+  component: Type<unknown>;
+  inputs: Record<string, unknown>;
+  id: string;
+};
 
 type RenderCommand = HtmlOpenRenderCommand | HtmlCloseRenderCommand | TextRenderCommand | ComponentRenderCommand;
 
-export const RENDER_INSTRUCTION_POSITION = {
-  TYPE: 0,
-  COMMAND: 1,
-} as const;
-
-export const RENDER_INSTRUCTION_TYPE = {
-  CREATE: 0,
-  UPDATE: 1,
-  DELETE: 2,
-  MOVE: 3,
-} as const;
-
-type RenderInstructionTypeValue = (typeof RENDER_INSTRUCTION_TYPE)[keyof typeof RENDER_INSTRUCTION_TYPE];
-
-type RenderInstruction = [RenderInstructionTypeValue, RenderCommand];
+type RenderInstruction = {
+  type: 'create' | 'update' | 'move' | 'delete';
+  command: RenderCommand;
+};
 
 const MARK_TAILWIND_MAP: Record<string, string> = {
   bold: 'font-bold',
@@ -150,34 +104,6 @@ export const marksToClass = (marks: Mark[]) => {
   return classes.join(' ');
 };
 
-export const isHtmlOpenRenderCommand = (command: RenderCommand): command is HtmlOpenRenderCommand => {
-  return command[RENDER_COMMAND_POSITION.TYPE] === RENDER_COMMAND_TYPE.HTML_OPEN;
-};
-
-export const isHtmlCloseRenderCommand = (command: RenderCommand): command is HtmlCloseRenderCommand => {
-  return command[RENDER_COMMAND_POSITION.TYPE] === RENDER_COMMAND_TYPE.HTML_CLOSE;
-};
-
-export const isTextRenderCommand = (command: RenderCommand): command is TextRenderCommand => {
-  return command[RENDER_COMMAND_POSITION.TYPE] === RENDER_COMMAND_TYPE.TEXT;
-};
-
-export const isComponentRenderCommand = (command: RenderCommand): command is ComponentRenderCommand => {
-  return command[RENDER_COMMAND_POSITION.TYPE] === RENDER_COMMAND_TYPE.COMPONENT;
-};
-
-export const getRenderCommandId = (command: RenderCommand) => {
-  if (isHtmlOpenRenderCommand(command)) {
-    return command[HTML_OPEN_RENDER_COMMAND_POSITION.ELEMENT_ID];
-  } else if (isHtmlCloseRenderCommand(command)) {
-    return command[HTML_CLOSE_RENDER_COMMAND_POSITION.ELEMENT_ID];
-  } else if (isTextRenderCommand(command)) {
-    return command[TEXT_RENDER_COMMAND_POSITION.TEXT_ID];
-  } else {
-    return command[COMPONENT_RENDER_COMMAND_POSITION.COMPONENT_ID];
-  }
-};
-
 const CLASS_ATTR = 'class';
 const DEFAULT_COMPONENT_TYPES = {
   IMAGE: '$$$_et-image',
@@ -194,6 +120,7 @@ type ExecutedCommandCacheItemBase = {
 type ExecutedComponentCommandCacheItem = {
   command: ComponentRenderCommand;
   componentRef: ComponentRef<unknown>;
+  inputs: WritableSignal<Record<string, unknown>>;
 } & ExecutedCommandCacheItemBase;
 
 type ExecutedHtmlCommandCacheItem = {
@@ -202,28 +129,15 @@ type ExecutedHtmlCommandCacheItem = {
 
 type ExecutedTextCommandCacheItem = {
   command: TextRenderCommand;
-  textNode: unknown;
 } & ExecutedCommandCacheItemBase;
 
 type ExecutedCommandCacheItem =
   ExecutedComponentCommandCacheItem | ExecutedHtmlCommandCacheItem | ExecutedTextCommandCacheItem;
 
-export const isExecutedComponentCommandCacheItem = (
+const isExecutedComponentCommandCacheItem = (
   cache: ExecutedCommandCacheItem,
 ): cache is ExecutedComponentCommandCacheItem => {
-  return isComponentRenderCommand(cache.command);
-};
-
-export const isExecutedHtmlOrTextCommandCacheItem = (
-  cache: ExecutedCommandCacheItem,
-): cache is ExecutedHtmlCommandCacheItem => {
-  return isHtmlCloseRenderCommand(cache.command) || isHtmlOpenRenderCommand(cache.command);
-};
-
-export const isExecutedTextCommandCacheItem = (
-  cache: ExecutedCommandCacheItem,
-): cache is ExecutedTextCommandCacheItem => {
-  return isTextRenderCommand(cache.command);
+  return cache.command.kind === 'component';
 };
 
 export const ET_CONTENTFUL_ANY_ENTRY_CONTENT_TYPE_SYS_ID = '$$$_et-contentful-any-entry-content-type-sys-id';
@@ -346,23 +260,23 @@ export const createContentfulIncludeMap = (config: CreateContentfulIncludeMapCon
   selector: 'et-contentful-rich-text-renderer',
   template: ``,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'et-contentful-rich-text-renderer',
   },
 })
 export class ContentfulRichTextRendererComponent {
-  _viewContainerRef = inject(ViewContainerRef);
-  _renderer = injectRenderer();
-  _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  _document = inject(DOCUMENT);
-  _config = inject(CONTENTFUL_CONFIG, { optional: true }) ?? createContentfulConfig();
+  private readonly _viewContainerRef = inject(ViewContainerRef);
+  private readonly _renderer = injectRenderer();
+  private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly _config = inject(CONTENTFUL_CONFIG, { optional: true }) ?? createContentfulConfig();
 
   /**
    * A cache for all executed commands that are not deleted.
    * This is used to keep track of all rendered elements and components.
-   * The key is the render command element ID.
+   * The key is the render command ID.
    */
-  _executedCommandsCache = new Map<string, ExecutedCommandCacheItem>();
+  private readonly _executedCommandsCache = new Map<string, ExecutedCommandCacheItem>();
 
   /**
    * The contentful response gotten via their REST api.
@@ -422,24 +336,24 @@ export class ContentfulRichTextRendererComponent {
     return this._createRenderCommands(richTextData);
   });
 
-  renderCommandHistory = toSignal(
-    toObservable(this.renderCommands).pipe(startWith([] as RenderCommand[]), pairwise()),
-    { initialValue: [[], []] },
-  );
+  private readonly renderCommandHistory = linkedSignal<RenderCommand[], [RenderCommand[], RenderCommand[]]>({
+    source: this.renderCommands,
+    computation: (commands, previous) => [previous?.source ?? [], commands],
+  });
 
-  previousRenderCommandMap = computed(() => {
+  private readonly previousRenderCommandMap = computed(() => {
     const [prevCommands] = this.renderCommandHistory();
 
-    const map = new Map<string | number, RenderCommand>();
+    const map = new Map<string, RenderCommand>();
 
     for (const command of prevCommands) {
-      map.set(getRenderCommandId(command), command);
+      map.set(command.id, command);
     }
 
     return map;
   });
 
-  renderInstructions = computed(() => {
+  private readonly renderInstructions = computed(() => {
     const commands = this.renderCommands();
     const previousRenderCommandMap = new Map(this.previousRenderCommandMap());
 
@@ -447,23 +361,23 @@ export class ContentfulRichTextRendererComponent {
 
     // remove deleted components as well as all other elements
     for (const [, command] of previousRenderCommandMap) {
-      if (isComponentRenderCommand(command)) {
+      if (command.kind === 'component') {
         // keep the component around if it's still in the new commands
-        if (commands.some((c) => getRenderCommandId(c) === getRenderCommandId(command))) {
+        if (commands.some((c) => c.id === command.id)) {
           continue;
         }
       }
 
-      instructions.push([RENDER_INSTRUCTION_TYPE.DELETE, command]);
+      instructions.push({ type: 'delete', command });
 
       // remove from map to mark as used
-      previousRenderCommandMap.delete(getRenderCommandId(command));
+      previousRenderCommandMap.delete(command.id);
     }
 
     // Find the indexes of the commands remaining in the previousRenderCommandMap in the new commands array.
     const lastComponentIndexes: { newIndex: number; prevIndex: number; command: RenderCommand }[] = [];
     for (const [id, command] of previousRenderCommandMap) {
-      const index = commands.findIndex((c) => getRenderCommandId(c) === id);
+      const index = commands.findIndex((c) => c.id === id);
       const newCommand = commands[index];
 
       if (index === -1 || !newCommand) {
@@ -472,47 +386,34 @@ export class ContentfulRichTextRendererComponent {
 
       lastComponentIndexes.push({
         newIndex: index,
-        prevIndex: command[RENDER_COMMAND_POSITION.INDEX],
+        prevIndex: command.index,
         command: newCommand,
       });
     }
 
     lastComponentIndexes.sort((a, b) => a.newIndex - b.newIndex);
 
-    // check if the prevIndex are in order ascending
-    // for indexes that are not in order, create a move instruction
-    // for indexes that are in order, create an update instruction
-    let moveCheckIndex = 0;
-    while (moveCheckIndex < lastComponentIndexes.length - 1) {
-      const moveCurr = lastComponentIndexes[moveCheckIndex];
-      const moveNext = lastComponentIndexes[moveCheckIndex + 1];
-
-      if (!moveCurr || !moveNext) {
-        break;
-      }
-
-      if (moveCurr.prevIndex > moveNext.prevIndex) {
-        lastComponentIndexes.splice(moveCheckIndex + 1, 1);
-        instructions.push([RENDER_INSTRUCTION_TYPE.MOVE, moveNext.command]);
+    // Every preserved component gets its inputs refreshed. A component whose previous position
+    // breaks the ascending order relative to the new order additionally has to be re-inserted.
+    let lastPrevIndex = -1;
+    for (const item of lastComponentIndexes) {
+      if (item.prevIndex < lastPrevIndex) {
+        instructions.push({ type: 'move', command: item.command });
       } else {
-        instructions.push([RENDER_INSTRUCTION_TYPE.UPDATE, moveNext.command]);
-        moveCheckIndex++;
+        lastPrevIndex = item.prevIndex;
+        instructions.push({ type: 'update', command: item.command });
       }
     }
 
     for (const command of commands) {
-      const id = getRenderCommandId(command);
-
-      if (isComponentRenderCommand(command)) {
-        const previousCommand = previousRenderCommandMap.get(id);
+      if (command.kind === 'component') {
+        const previousCommand = previousRenderCommandMap.get(command.id);
 
         if (!previousCommand) {
-          // create
-          instructions.push([RENDER_INSTRUCTION_TYPE.CREATE, command]);
+          instructions.push({ type: 'create', command });
         }
       } else {
-        // create
-        instructions.push([RENDER_INSTRUCTION_TYPE.CREATE, command]);
+        instructions.push({ type: 'create', command });
       }
     }
 
@@ -520,14 +421,11 @@ export class ContentfulRichTextRendererComponent {
   });
 
   constructor() {
-    toObservable(this.renderInstructions)
-      .pipe(
-        takeUntilDestroyed(),
-        tap((instructions) => {
-          this._execInstructions(instructions);
-        }),
-      )
-      .subscribe();
+    effect(() => {
+      const instructions = this.renderInstructions();
+
+      untracked(() => this._execInstructions(instructions));
+    });
   }
 
   private _createRenderCommands(richTextData: RichTextResponse) {
@@ -556,8 +454,6 @@ export class ContentfulRichTextRendererComponent {
     const traverse = (node: Block | Inline | Text) => {
       switch (node.nodeType) {
         case 'text': {
-          // Render media
-          const type = RENDER_COMMAND_TYPE.TEXT;
           const text = node.value;
 
           if (!text) break;
@@ -576,19 +472,22 @@ export class ContentfulRichTextRendererComponent {
             }
           }
 
-          const id = 't' + textId++;
+          rootCommands.push({
+            kind: 'text',
+            nestingLevel,
+            domPosition,
+            index: commandIndex++,
+            attributes,
+            text,
+            id: 't' + textId++,
+          });
 
-          const command: TextRenderCommand = [type, nestingLevel, domPosition, commandIndex++, attributes, text, id];
-
-          rootCommands.push(command);
           domPosition++;
 
           break;
         }
 
         case BLOCKS.EMBEDDED_ASSET: {
-          // Render media
-          const type = RENDER_COMMAND_TYPE.COMPONENT;
           const assetId = node.data['target']?.sys?.id;
 
           if (!assetId) {
@@ -643,24 +542,15 @@ export class ContentfulRichTextRendererComponent {
           const id = componentType + ++componentId;
           componentIdMap.set(componentType, componentId);
 
-          const attributes = {};
-
-          const inputs = {
-            asset,
-          };
-
-          const command: ComponentRenderCommand = [
-            type,
+          rootCommands.push({
+            kind: 'component',
             nestingLevel,
             domPosition,
-            commandIndex++,
-            attributes,
+            index: commandIndex++,
             component,
-            inputs,
+            inputs: { asset },
             id,
-          ];
-
-          rootCommands.push(command);
+          });
 
           domPosition++;
 
@@ -687,18 +577,16 @@ export class ContentfulRichTextRendererComponent {
           const linkId = DEFAULT_COMPONENT_TYPES.LINK + ++linkComponentId;
           componentIdMap.set(DEFAULT_COMPONENT_TYPES.LINK, linkComponentId);
 
-          const linkCommand: ComponentRenderCommand = [
-            RENDER_COMMAND_TYPE.COMPONENT,
+          rootCommands.push({
+            kind: 'component',
             nestingLevel,
             domPosition,
-            commandIndex++,
-            {},
-            this._config.components.link,
-            { href: uri, text: linkText, textClass },
-            linkId,
-          ];
+            index: commandIndex++,
+            component: this._config.components.link,
+            inputs: { href: uri, text: linkText, textClass },
+            id: linkId,
+          });
 
-          rootCommands.push(linkCommand);
           domPosition++;
 
           break;
@@ -706,8 +594,6 @@ export class ContentfulRichTextRendererComponent {
 
         case BLOCKS.EMBEDDED_ENTRY:
         case INLINES.EMBEDDED_ENTRY: {
-          // Render component
-          const type = RENDER_COMMAND_TYPE.COMPONENT;
           const entryId = node.data['target']?.sys?.id;
 
           if (!entryId) {
@@ -732,30 +618,24 @@ export class ContentfulRichTextRendererComponent {
             });
           }
 
-          const attributes = {};
           let componentId = componentIdMap.get(componentType) ?? -1;
           const id = componentType + ++componentId;
           componentIdMap.set(componentType, componentId);
 
-          const inputs = {
-            fields: entry.fields,
-            metadata: entry.metadata,
-            sys: entry.sys,
-            includes: this.contentIncludesMap(),
-          };
-
-          const command: ComponentRenderCommand = [
-            type,
+          rootCommands.push({
+            kind: 'component',
             nestingLevel,
             domPosition,
-            commandIndex++,
-            attributes,
+            index: commandIndex++,
             component,
-            inputs,
+            inputs: {
+              fields: entry.fields,
+              metadata: entry.metadata,
+              sys: entry.sys,
+              includes: this.contentIncludesMap(),
+            },
             id,
-          ];
-
-          rootCommands.push(command);
+          });
 
           domPosition++;
 
@@ -763,16 +643,20 @@ export class ContentfulRichTextRendererComponent {
         }
 
         default: {
-          const type = RENDER_COMMAND_TYPE.HTML_OPEN;
           const tag = translateContentfulNodeTypeToHtmlTag(node.nodeType);
           const attributes: Record<string, string> = {
             class: `et-contentful-rich-text-default-element et-contentful-rich-text-default-${tag}`,
           };
-          const id = 'e-o' + elementOpenId++;
 
-          const command: HtmlOpenRenderCommand = [type, nestingLevel, domPosition, commandIndex++, attributes, tag, id];
-
-          rootCommands.push(command);
+          rootCommands.push({
+            kind: 'htmlOpen',
+            nestingLevel,
+            domPosition,
+            index: commandIndex++,
+            attributes,
+            tagName: tag,
+            id: 'e-o' + elementOpenId++,
+          });
 
           const domPositionAtThisLevel = domPosition;
           // Normal html elements can have children
@@ -786,27 +670,20 @@ export class ContentfulRichTextRendererComponent {
 
           const lastCommand = rootCommands[rootCommands.length - 1];
 
-          if (
-            lastCommand?.[RENDER_COMMAND_POSITION.TYPE] === RENDER_COMMAND_TYPE.HTML_OPEN &&
-            lastCommand[HTML_OPEN_RENDER_COMMAND_POSITION.TAG_NAME] !== 'td' &&
-            lastCommand[HTML_OPEN_RENDER_COMMAND_POSITION.TAG_NAME] !== 'hr'
-          ) {
+          if (lastCommand?.kind === 'htmlOpen' && lastCommand.tagName !== 'td' && lastCommand.tagName !== 'hr') {
             // If the last command is an open command, we can remove it since it's empty
             rootCommands.pop();
             elementOpenId--;
             commandIndex--;
           } else {
-            const closeId = 'e-c' + elementCloseId++;
-
-            const closeCommand: HtmlCloseRenderCommand = [
-              RENDER_COMMAND_TYPE.HTML_CLOSE,
+            rootCommands.push({
+              kind: 'htmlClose',
               nestingLevel,
               domPosition,
-              commandIndex++,
-              tag,
-              closeId,
-            ];
-            rootCommands.push(closeCommand);
+              index: commandIndex++,
+              tagName: tag,
+              id: 'e-c' + elementCloseId++,
+            });
 
             domPosition++;
           }
@@ -825,58 +702,57 @@ export class ContentfulRichTextRendererComponent {
 
   private _execInstructions(instructions: RenderInstruction[]) {
     for (const instruction of instructions) {
-      const type = instruction[RENDER_INSTRUCTION_POSITION.TYPE];
-      const command = instruction[RENDER_INSTRUCTION_POSITION.COMMAND];
-
-      switch (type) {
-        case RENDER_INSTRUCTION_TYPE.CREATE:
-          this._runCreateInstruction(command);
+      switch (instruction.type) {
+        case 'create':
+          this._runCreateInstruction(instruction.command);
           break;
-        case RENDER_INSTRUCTION_TYPE.UPDATE:
-          this._runUpdateInstruction(command);
+        case 'update':
+          this._runUpdateInstruction(instruction.command);
           break;
-        case RENDER_INSTRUCTION_TYPE.MOVE:
-          this._runMoveInstruction(command);
+        case 'move':
+          this._runMoveInstruction(instruction.command);
           break;
-        case RENDER_INSTRUCTION_TYPE.DELETE:
-          this._runDeleteInstruction(command);
+        case 'delete':
+          this._runDeleteInstruction(instruction.command);
           break;
       }
     }
   }
 
   private _runCreateInstruction(command: RenderCommand) {
-    const id = getRenderCommandId(command);
     const parentElement = this._findParent(command);
     const nextElement = this._findFollowingElement(command);
 
-    if (isComponentRenderCommand(command)) {
-      const componentRef = this._viewContainerRef.createComponent(command[COMPONENT_RENDER_COMMAND_POSITION.COMPONENT]);
+    if (command.kind === 'component') {
+      const inputs = signal(command.inputs);
 
-      this._updateComponentInputs(command, componentRef);
+      // Components may declare any subset of the offered inputs — only bind the declared ones.
+      const declaredInputs = reflectComponentType(command.component)?.inputs ?? [];
+      const bindings = declaredInputs
+        .filter((declared) => declared.propName in command.inputs)
+        .map((declared) => inputBinding(declared.templateName, () => inputs()[declared.propName]));
+
+      const componentRef = this._viewContainerRef.createComponent(command.component, { bindings });
 
       const rootNode = this._getComponentRootNode(componentRef);
 
       this._renderInsertOrAppend(rootNode, parentElement, nextElement);
 
-      this._executedCommandsCache.set(id, {
+      this._executedCommandsCache.set(command.id, {
         command,
         componentRef,
+        inputs,
         element: rootNode,
       });
-    } else if (isTextRenderCommand(command)) {
-      const text = command[TEXT_RENDER_COMMAND_POSITION.TEXT];
+    } else if (command.kind === 'text') {
       const span = this._renderer.createElement('span');
-      const attributes = command[TEXT_RENDER_COMMAND_POSITION.ATTRIBUTES];
-      const textSplitInLineBreaks = text.split('\n').filter((t) => t.trim().length > 0);
+      const textSplitInLineBreaks = command.text.split('\n').filter((t) => t.trim().length > 0);
 
-      const textNodes: unknown[] = [];
-
-      for (const [key, value] of Object.entries(attributes)) {
+      for (const [key, value] of Object.entries(command.attributes)) {
         this._renderer.setAttribute(span, key, value);
       }
 
-      if (text.startsWith('\n')) {
+      if (command.text.startsWith('\n')) {
         const brNode = this._renderer.createElement('br');
         this._renderer.appendChild(parentElement, brNode);
       }
@@ -890,29 +766,24 @@ export class ContentfulRichTextRendererComponent {
         const textNode = this._renderer.createText(textPart);
 
         this._renderer.appendChild(span, textNode);
-
-        textNodes.push(textNode);
       }
 
       this._renderInsertOrAppend(span, parentElement, nextElement);
 
-      this._executedCommandsCache.set(id, {
+      this._executedCommandsCache.set(command.id, {
         command,
         element: span,
-        textNode: textNodes,
       });
-    } else if (isHtmlOpenRenderCommand(command)) {
-      const tag = command[HTML_OPEN_RENDER_COMMAND_POSITION.TAG_NAME];
-      const attributes = command[HTML_OPEN_RENDER_COMMAND_POSITION.ATTRIBUTES];
-      const element = this._renderer.createElement(tag);
+    } else if (command.kind === 'htmlOpen') {
+      const element = this._renderer.createElement(command.tagName);
 
-      for (const [key, value] of Object.entries(attributes)) {
+      for (const [key, value] of Object.entries(command.attributes)) {
         this._renderer.setAttribute(element, key, value);
       }
 
       this._renderInsertOrAppend(element, parentElement, nextElement);
 
-      this._executedCommandsCache.set(id, {
+      this._executedCommandsCache.set(command.id, {
         command,
         element,
       });
@@ -920,52 +791,38 @@ export class ContentfulRichTextRendererComponent {
   }
 
   private _runUpdateInstruction(command: RenderCommand) {
-    const id = getRenderCommandId(command);
-    const cached = this._executedCommandsCache.get(id);
+    const cached = this._executedCommandsCache.get(command.id);
 
     if (!cached) {
       throw new Error('Cached command not found!');
     }
 
-    if (isComponentRenderCommand(command)) {
+    if (command.kind === 'component') {
       if (!isExecutedComponentCommandCacheItem(cached)) {
         throw new Error('Cached command is not a component command!');
       }
 
-      const componentRef = cached.componentRef;
-
-      if (!componentRef) {
-        throw new Error('Component ref not found!');
-      }
-
-      this._updateComponentInputs(command, componentRef);
+      cached.inputs.set(command.inputs);
     }
 
     // `cached` and the fresh `command` share the same id and therefore the same union variant,
     // but TS can't correlate the two after the spread — assert the merged object as the union.
-    this._executedCommandsCache.set(id, {
+    this._executedCommandsCache.set(command.id, {
       ...cached,
       command,
     } as ExecutedCommandCacheItem);
   }
 
   private _runMoveInstruction(command: RenderCommand) {
-    const id = getRenderCommandId(command);
-    const cached = this._executedCommandsCache.get(id);
+    const cached = this._executedCommandsCache.get(command.id);
 
     if (!cached) {
       throw new Error('Cached command not found!');
     }
 
-    if (isComponentRenderCommand(command)) {
+    if (command.kind === 'component') {
       if (!isExecutedComponentCommandCacheItem(cached)) {
         throw new Error('Cached command is not a component command!');
-      }
-
-      const componentRef = cached.componentRef;
-
-      if (!componentRef) {
-        throw new Error('Component ref not found!');
       }
 
       const rootNode = cached.element;
@@ -980,9 +837,9 @@ export class ContentfulRichTextRendererComponent {
 
       this._renderInsertOrAppend(rootNode, newParentElement, nextElement);
 
-      this._updateComponentInputs(command, componentRef);
+      cached.inputs.set(command.inputs);
 
-      this._executedCommandsCache.set(id, {
+      this._executedCommandsCache.set(command.id, {
         ...cached,
         command,
       } as ExecutedCommandCacheItem);
@@ -990,77 +847,56 @@ export class ContentfulRichTextRendererComponent {
   }
 
   private _runDeleteInstruction(command: RenderCommand) {
-    const id = getRenderCommandId(command);
-    const cached = this._executedCommandsCache.get(id);
+    const cached = this._executedCommandsCache.get(command.id);
 
     if (!cached) {
-      if (isHtmlCloseRenderCommand(command)) {
+      if (command.kind === 'htmlClose') {
         return;
       }
 
       throw new Error('Cached command not found!');
     }
 
-    if (isComponentRenderCommand(command)) {
+    if (command.kind === 'component') {
       if (!isExecutedComponentCommandCacheItem(cached)) {
         throw new Error('Cached command is not a component command!');
       }
 
-      cached.componentRef?.destroy();
-    } else if (isTextRenderCommand(command)) {
-      if (cached.element?.parentElement) {
-        this._renderer.removeChild(cached.element.parentElement, cached.element);
-      }
-    } else if (isHtmlOpenRenderCommand(command)) {
-      if (cached.element?.parentElement) {
+      cached.componentRef.destroy();
+    } else if (command.kind === 'text' || command.kind === 'htmlOpen') {
+      if (cached.element.parentElement) {
         this._renderer.removeChild(cached.element.parentElement, cached.element);
       }
     }
 
-    this._executedCommandsCache.delete(id);
+    this._executedCommandsCache.delete(command.id);
   }
 
   private _getComponentRootNode(componentRef: ComponentRef<unknown>): HTMLElement {
     return (componentRef.hostView as EmbeddedViewRef<unknown>).rootNodes[0] as HTMLElement;
   }
 
-  private _updateComponentInputs(command: ComponentRenderCommand, componentRef: ComponentRef<unknown>) {
-    const inputMeta = reflectComponentType(command[COMPONENT_RENDER_COMMAND_POSITION.COMPONENT])?.inputs ?? [];
-    const inputsByProp = new Map(inputMeta.map((i) => [i.propName, i.templateName]));
-
-    for (const [key, value] of Object.entries(command[COMPONENT_RENDER_COMMAND_POSITION.INPUTS])) {
-      const publicName = inputsByProp.get(key);
-
-      if (publicName === undefined) continue;
-
-      componentRef.setInput(publicName, value);
-    }
-  }
-
   private _findParent(command: RenderCommand) {
     const hostElement = this._elementRef.nativeElement;
-    const nestingLevel = command[RENDER_COMMAND_POSITION.NESTING_LEVEL];
     let parentElement: HTMLElement | undefined;
 
-    if (nestingLevel === 0) {
+    if (command.nestingLevel === 0) {
       parentElement = hostElement;
     } else {
-      // Reverse search all render commands beginning from the current one using a for loop.
-      // The parent is found when the command's nesting level ist the same as the current nesting level minus 1.
-      // If the parent is not found, throw an error.
+      // Reverse search all render commands beginning from the current one.
+      // The parent is the closest preceding html open command one nesting level up.
       const allCommands = this.renderCommands();
-      const currentCommandIndex = command[RENDER_COMMAND_POSITION.INDEX];
 
-      let parentCommand: RenderCommand | null = null;
+      let parentCommand: HtmlOpenRenderCommand | null = null;
 
-      for (let i = currentCommandIndex - 1; i >= 0; i--) {
+      for (let i = command.index - 1; i >= 0; i--) {
         const cmd = allCommands[i];
 
         if (!cmd) {
           throw new Error('Command not found!');
         }
 
-        if (cmd[RENDER_COMMAND_POSITION.NESTING_LEVEL] === nestingLevel - 1 && isHtmlOpenRenderCommand(cmd)) {
+        if (cmd.nestingLevel === command.nestingLevel - 1 && cmd.kind === 'htmlOpen') {
           parentCommand = cmd;
           break;
         }
@@ -1070,7 +906,7 @@ export class ContentfulRichTextRendererComponent {
         throw new Error('Parent command not found!');
       }
 
-      parentElement = this._executedCommandsCache.get(getRenderCommandId(parentCommand))?.element;
+      parentElement = this._executedCommandsCache.get(parentCommand.id)?.element;
     }
 
     if (!parentElement) {
@@ -1081,29 +917,20 @@ export class ContentfulRichTextRendererComponent {
   }
 
   private _findFollowingElement(command: RenderCommand) {
-    const cacheArray = Array.from(this._executedCommandsCache.values());
-    let nextElement: HTMLElement | undefined = undefined;
-
-    const domPosition = command[RENDER_COMMAND_POSITION.DOM_POSITION];
-    const nestingLevel = command[RENDER_COMMAND_POSITION.NESTING_LEVEL];
-    const type = command[RENDER_COMMAND_POSITION.TYPE];
-
-    // Try to find an already rendered element with a domPosition that is greater than the current domPosition. If there are multiple, use the one with the smallest domPosition.
-    // If it does not exist, use .appendChild to simply append the element to the end of the parent element.
-    // If it does exist, use .insertBefore to insert the element before the found element.
-    for (const cached of cacheArray) {
+    // Find an already rendered element at the same nesting level with a greater domPosition,
+    // to insert before. Without one the element is appended to the parent.
+    for (const cached of this._executedCommandsCache.values()) {
       if (
-        cached.command[RENDER_COMMAND_POSITION.DOM_POSITION] > domPosition &&
-        cached.command[RENDER_COMMAND_POSITION.NESTING_LEVEL] === nestingLevel &&
+        cached.command.domPosition > command.domPosition &&
+        cached.command.nestingLevel === command.nestingLevel &&
         // Make sure the element does not find itself
-        cached.command[RENDER_COMMAND_POSITION.TYPE] !== type
+        cached.command.kind !== command.kind
       ) {
-        nextElement = cached.element;
-        break;
+        return cached.element;
       }
     }
 
-    return nextElement;
+    return undefined;
   }
 
   private _renderInsertOrAppend(
@@ -1118,66 +945,3 @@ export class ContentfulRichTextRendererComponent {
     }
   }
 }
-
-// const stringifyRenderCommand = (command: RenderCommand) => {
-//   const nestAttr = `nest="${command[RENDER_COMMAND_POSITION.NESTING_LEVEL]}"`;
-//   const domAttr = `dom="${command[RENDER_COMMAND_POSITION.DOM_POSITION]}"`;
-
-//   if (isHtmlOpenRenderCommand(command)) {
-//     return `<${command[HTML_OPEN_RENDER_COMMAND_POSITION.TAG_NAME]} ${nestAttr} ${domAttr} _id="${command[HTML_OPEN_RENDER_COMMAND_POSITION.ELEMENT_ID]}" _index="${command[RENDER_COMMAND_POSITION.INDEX]}">`;
-//   } else if (isHtmlCloseRenderCommand(command)) {
-//     return `</${command[HTML_CLOSE_RENDER_COMMAND_POSITION.TAG_NAME]} ${nestAttr} ${domAttr}>`;
-//   } else if (isTextRenderCommand(command)) {
-//     let text = command[TEXT_RENDER_COMMAND_POSITION.TEXT];
-//     const brStart = text.startsWith('\n') ? '<br/>' : '';
-//     text = brStart ? text.slice(1) : text;
-
-//     return [
-//       ...(brStart ? [brStart] : []),
-//       `<span ${nestAttr} ${domAttr} _index="${command[RENDER_COMMAND_POSITION.INDEX]}">`,
-//       text.replace(/\n/g, ' <br/> '),
-//       '</span>',
-//     ];
-//   } else if (isComponentRenderCommand(command)) {
-//     const selector = command[COMPONENT_RENDER_COMMAND_POSITION.COMPONENT_ID];
-//     return [`<${selector} ${nestAttr} ${domAttr}>`, `</${selector}>`];
-//   } else {
-//     return 'UNKNOWN';
-//   }
-// };
-
-// const formatHTMLStringArray = (html: string[]) => {
-//   const result: string[] = [];
-//   let indent = 0;
-
-//   for (const tag of html) {
-//     if (tag.startsWith('</')) {
-//       indent--;
-//     }
-
-//     result.push(' '.repeat(indent * 2) + tag);
-
-//     if (tag.startsWith('<') && !tag.startsWith('</') && !tag.startsWith('<br')) {
-//       indent++;
-//     }
-//   }
-
-//   return result.join('\n');
-// };
-
-// const debugVisualizeRenderCommands = (commands: RenderCommand[]) => {
-//   const debug = commands.map((command) => stringifyRenderCommand(command)).flat();
-
-//   const prettified = formatHTMLStringArray(debug);
-
-//   return prettified;
-// };
-
-// const stringifyRenderInstruction = (instruction: RenderInstruction) => {
-//   const type = instruction[RENDER_INSTRUCTION_POSITION.TYPE];
-//   const translatedType = Object.entries(RENDER_INSTRUCTION_TYPE).find(([, value]) => value === type)?.[0];
-
-//   const command = stringifyRenderCommand(instruction[RENDER_INSTRUCTION_POSITION.COMMAND]);
-
-//   return `${translatedType}: ${command}`;
-// };
