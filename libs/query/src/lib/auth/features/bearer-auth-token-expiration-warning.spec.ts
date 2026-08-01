@@ -21,7 +21,6 @@ describe('bearer-auth-token-expiration-warning', () => {
         querySetup,
         features: [withTokenExpirationWarning()],
         bearerDecryptFn: () => ({ exp: futureExp, userId: 123 }),
-        multiTabSync: false,
       });
 
       // Initially no token
@@ -50,7 +49,6 @@ describe('bearer-auth-token-expiration-warning', () => {
         querySetup,
         features: [withTokenExpirationWarning({ checkInterval: 100 })],
         bearerDecryptFn: () => ({ exp: futureExp, userId: 123 }),
-        multiTabSync: false,
       });
 
       // Login
@@ -80,7 +78,6 @@ describe('bearer-auth-token-expiration-warning', () => {
         querySetup,
         features: [withTokenExpirationWarning({ checkInterval: 100 })],
         bearerDecryptFn: () => ({ exp: futureExp, userId: 123 }),
-        multiTabSync: false,
         autoRetryOn401: false,
       });
 
@@ -123,7 +120,6 @@ describe('bearer-auth-token-expiration-warning', () => {
         querySetup,
         features: [withTokenExpirationWarning({ checkInterval: 100 })],
         bearerDecryptFn: () => ({ exp: futureExp, userId: 123 }),
-        multiTabSync: false,
         autoRetryOn401: false,
       });
 
@@ -157,7 +153,6 @@ describe('bearer-auth-token-expiration-warning', () => {
         querySetup,
         features: [withTokenExpirationWarning({ checkInterval: 100 })],
         bearerDecryptFn: () => ({ exp: futureExp, userId: 123 }),
-        multiTabSync: false,
         autoRetryOn401: false,
       });
 
@@ -187,7 +182,6 @@ describe('bearer-auth-token-expiration-warning', () => {
         querySetup,
         features: [withTokenExpirationWarning({ warningThreshold: 1 * 60 * 1000, checkInterval: 100 })], // 1 minute threshold
         bearerDecryptFn: () => ({ exp: futureExp, userId: 123 }),
-        multiTabSync: false,
         autoRetryOn401: false,
       });
 
@@ -218,7 +212,6 @@ describe('bearer-auth-token-expiration-warning', () => {
       const { auth } = setupAuthTest({
         querySetup,
         features: [withTokenExpirationWarning({ checkInterval: 100 })],
-        multiTabSync: false,
         autoRetryOn401: false,
       });
 

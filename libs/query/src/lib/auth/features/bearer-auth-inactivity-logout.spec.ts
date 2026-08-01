@@ -19,7 +19,6 @@ describe('bearer-auth-inactivity-logout', () => {
       const { auth } = setupAuthTest({
         querySetup,
         features: [withInactivityLogout()],
-        multiTabSync: false,
       });
 
       // Feature is enabled by default
@@ -39,7 +38,6 @@ describe('bearer-auth-inactivity-logout', () => {
       const { auth, login } = setupAuthTest({
         querySetup,
         features: [withInactivityLogout({ inactivityTimeout: 5000 })],
-        multiTabSync: false,
       });
 
       // Login first
@@ -73,7 +71,6 @@ describe('bearer-auth-inactivity-logout', () => {
       const { auth, login } = setupAuthTest({
         querySetup,
         features: [withInactivityLogout({ inactivityTimeout: 5000 })],
-        multiTabSync: false,
       });
 
       // Login first
@@ -99,7 +96,6 @@ describe('bearer-auth-inactivity-logout', () => {
       const { auth, login } = setupAuthTest({
         querySetup,
         features: [withInactivityLogout({ inactivityTimeout: 5000 })],
-        multiTabSync: false,
       });
 
       const logout = vi.fn();
@@ -134,7 +130,6 @@ describe('bearer-auth-inactivity-logout', () => {
       const { auth, login } = setupAuthTest({
         querySetup,
         features: [withInactivityLogout({ inactivityTimeout: 5000 })],
-        multiTabSync: false,
       });
 
       const logout = vi.fn();
@@ -169,7 +164,6 @@ describe('bearer-auth-inactivity-logout', () => {
       const { auth, login } = setupAuthTest({
         querySetup,
         features: [withInactivityLogout({ inactivityTimeout: 5000, activityEvents: ['click'] })],
-        multiTabSync: false,
       });
 
       const logout = vi.fn();
@@ -205,7 +199,6 @@ describe('bearer-auth-inactivity-logout', () => {
       const { auth, login } = setupAuthTest({
         querySetup,
         features: [withInactivityLogout({ inactivityTimeout: 5000, customActivityCheck: customCheck })],
-        multiTabSync: false,
       });
 
       const logout = vi.fn();
@@ -242,7 +235,6 @@ describe('bearer-auth-inactivity-logout', () => {
       const { auth, login } = setupAuthTest({
         querySetup,
         features: [withInactivityLogout({ inactivityTimeout: 5000 })],
-        multiTabSync: false,
       });
 
       const logout = vi.fn();

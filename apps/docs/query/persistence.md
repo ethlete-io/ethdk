@@ -3,15 +3,16 @@
 The [cache](/query/caching) lives in memory, so a reload starts from nothing — every query on the page
 goes back to a loading state, and a reload without a network shows nothing at all.
 
-So successful reads are also kept on disk, in IndexedDB, per client. **This is on by default.** A
-returning user sees the data they left behind while it revalidates behind them; a user with no
-connection sees it too.
+So successful reads can also be kept on disk, in IndexedDB, per client. **This is opt-in**: add the
+`withQueryPersistence()` client feature and a returning user sees the data they left behind while it
+revalidates behind them; a user with no connection sees it too. A client without the feature does not
+ship the persistence engine at all.
 
 ```ts
 const API = createQueryClient({
   name: 'api',
   baseUrl: 'https://api.example.com/v1',
-  // persistence: true is the default — pass an object to tune it, or false to opt out entirely.
+  features: [withQueryPersistence()], // pass a config object to tune it
 });
 
 export const injectApi = toInjectFn(API);
@@ -100,13 +101,13 @@ secure entries, and public ones may still be recognizable ("the last thing this 
 ## Configuration
 
 ```ts
-persistence: {
+withQueryPersistence({
   storageName: 'et-query-persistence-api',
   version: 1,
   maxAge: 86_400_000,
   maxEntries: 50,
   writeDelay: 1000,
-}
+});
 ```
 
 | Option        | Default                        | Description                                                                                   |
@@ -126,9 +127,7 @@ by the deploy they had _last time_:
 
 ```ts
 // In the same commit that renames a field, changes an envelope, or splits an endpoint:
-persistence: {
-  version: 2,
-}
+withQueryPersistence({ version: 2 });
 ```
 
 Every entry is written under the version it was created with, and anything else is dropped rather than
@@ -160,7 +159,7 @@ await it:
 provideAppInitializer(() => injectApi().whenPersistenceReady);
 ```
 
-That resolves once the store's index is loaded (immediately when persistence is off, or on the server).
+That resolves once the store's index is loaded (immediately without the feature, or on the server).
 
 ## Custom storage
 
@@ -173,7 +172,7 @@ Supply an adapter to store them somewhere else: `localStorage`, the origin priva
 native store behind a Capacitor plugin.
 
 ```ts
-persistence: {
+withQueryPersistence({
   adapter: {
     loadIndex: () => Promise<PersistedQueryEntryMeta[]>, // metadata only, once at startup
     read: (key) => Promise<{ body: unknown } | null>, // one body, on a cold mount
@@ -182,7 +181,7 @@ persistence: {
     clear: () => Promise<void>,
     isSupported: true,
   },
-}
+});
 ```
 
 Adapters are deliberately dumb: they store what they are handed. `maxAge`, `maxEntries`, the `version`
@@ -225,11 +224,19 @@ import { createFakeQueryPersistenceStore } from '@ethlete/query/testing';
 const store = createFakeQueryPersistenceStore();
 
 // A reload is two clients over one store: everything written survives, nothing else does.
-const first = createQueryClient({ name: 'first', baseUrl, persistence: { adapter: store.adapter } });
+const first = createQueryClient({
+  name: 'first',
+  baseUrl,
+  features: [withQueryPersistence({ adapter: store.adapter })],
+});
 // …drive a query, then:
 await TestBed.inject(first[2]).subtle.persistence!.flush();
 
-const second = createQueryClient({ name: 'second', baseUrl, persistence: { adapter: store.adapter } });
+const second = createQueryClient({
+  name: 'second',
+  baseUrl,
+  features: [withQueryPersistence({ adapter: store.adapter })],
+});
 // …mount the same query; after a few microtasks it renders what the first session left behind.
 ```
 

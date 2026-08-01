@@ -40,7 +40,7 @@ export type QuerySyncRefreshOnMutationConfig = {
 
 /**
  * Cross-tab coordination for a query client.
- * @see CreateQueryClientConfigOptions.multiTabSync
+ * @see withMultiTabSync
  */
 export type QueryMultiTabSyncConfig = {
   /**

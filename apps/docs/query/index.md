@@ -17,8 +17,8 @@ import { createQueryClient, createGetQuery, withArgs } from '@ethlete/query';
 - [Queries & creators](/query/queries) — the query client, creating typed queries, the query object's signals and auto-execution. **Start here.**
 - [Query features](/query/features) — `withArgs`, `withPolling`, `withAutoRefresh`, side-effect handlers and live response updates.
 - [Caching & deduplication](/query/caching) — the query repository, cache keys, freshness and request sharing.
-- [Multi-tab sync](/query/multi-tab) — on by default: sharing responses between the user's tabs, polling a key in one tab only and fanning mutations out.
-- [Persisted responses](/query/persistence) — on by default: keeping successful reads on disk so a reload, or a cold start with no network, renders the last known data.
+- [Multi-tab sync](/query/multi-tab) — the `withMultiTabSync()` client feature: sharing responses between the user's tabs, polling a key in one tab only and fanning mutations out.
+- [Persisted responses](/query/persistence) — the `withQueryPersistence()` client feature: keeping successful reads on disk so a reload, or a cold start with no network, renders the last known data.
 - [Query stacks & pagination](/query/stacks) — running many queries as one, infinite lists and paged data.
 - [Errors & retries](/query/errors) — the normalized error object, the retry policy and runtime error codes.
 

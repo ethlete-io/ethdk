@@ -4,15 +4,17 @@ import { DestroyRef, ErrorHandler, inject, Injector, PLATFORM_ID } from '@angula
 import { defineRootProvider, ProviderDefinition } from '@ethlete/core';
 import { BuildQueryStringConfig } from './internal/request-route';
 import { createQueryInvalidationFilter, QueryInvalidationOptions, resolveInvalidationUrl } from './query-invalidation';
-import { createIndexedDbQueryPersistenceAdapter } from './persistence/query-persistence-indexed-db';
-import { QueryPersistenceConfig } from './persistence/query-persistence-config';
-import { createQueryPersistenceEngine, QueryPersistenceEngine } from './persistence/query-persistence-engine';
+import type { QueryPersistenceEngine } from './persistence/query-persistence-engine';
+import {
+  QueryClientFeatureFn,
+  QueryClientFeatureType,
+  QueryClientPersistenceFeature,
+  QueryClientMultiTabSyncFeature,
+} from './query-client-features';
+import { queryClientFeatureUsedMultipleTimes } from './query-errors';
 import { createQueryRepository, QueryRepository } from './query-repository';
 import { ShouldRetryRequestFn } from './query-retry-utils';
-import { createQueryKeyLockManager } from './sync/query-key-lock-manager';
-import { QueryMultiTabSyncConfig } from './sync/query-sync-config';
-import { createQuerySyncEngine, QuerySyncEngine } from './sync/query-sync-engine';
-import { createQuerySyncTransport } from './sync/query-sync-transport';
+import type { QuerySyncEngine } from './sync/query-sync-engine';
 
 export type CacheAdapterFn = (headers: HttpHeaders) => number | null;
 
@@ -95,49 +97,22 @@ export type CreateQueryClientConfigOptions = {
   keepUnusedFor?: number;
 
   /**
-   * Coordinates this client with its own instances in the user's **other tabs**, over a
-   * `BroadcastChannel` and the Web Locks API. Three things happen once it is on:
+   * Opt-in subsystems of this client. Nothing is on by default — a client without features ships
+   * neither the multi-tab sync engine nor the persistence engine at all.
    *
-   * 1. a successful read is shared, so the same query shows the same data in every tab without a
-   *    second request,
-   * 2. the same cache key polled in several tabs is polled by one of them, the others being fed the
-   *    result,
-   * 3. a successful mutation in one tab refreshes what the other tabs currently have on screen.
+   * - {@link withMultiTabSync} coordinates the client with its own instances in the user's other tabs,
+   * - {@link withQueryPersistence} keeps successful reads on disk so a reload renders them right away.
    *
-   * On by default: a user with several tabs open is the normal case, and all three behaviors are what
-   * they would expect to happen. Pass an object to configure the parts individually, or `false` to
-   * keep every tab entirely on its own. Always inert on the server, and a no-op in a browser without
-   * `BroadcastChannel`.
+   * Each feature may be used at most once.
    *
-   * The one thing it requires is that response bodies survive a structured clone, which JSON always
-   * does; a body that cannot be cloned is warned about in dev mode and simply not shared. Individual
-   * queries can stay tab-local via {@link BaseQueryCreatorOptions.multiTabSync} — worth doing for very
-   * large payloads on a short polling interval.
-   *
-   * @default true
+   * @example
+   * const MY_CLIENT = createQueryClient({
+   *   name: 'my-api',
+   *   baseUrl: 'https://api.example.com',
+   *   features: [withMultiTabSync(), withQueryPersistence()],
+   * });
    */
-  multiTabSync?: boolean | QueryMultiTabSyncConfig;
-
-  /**
-   * Keeps this client's successful reads on disk (IndexedDB), so a reload renders the last known data
-   * right away instead of a loading state — and so does a cold start with no network at all.
-   *
-   * A hydrated response is **always** revalidated: persisted data fills a cache entry while its request
-   * is already on its way, and never replaces something newer. What the user sees is last week's list
-   * immediately, then this week's a moment later; offline, they see last week's list plus the error.
-   *
-   * On by default, and bounded by design: only successful reads are stored, **secure responses need an
-   * explicit {@link BaseQueryCreatorOptions.persistence} on the query** (and are removed again on
-   * logout), nothing older than `maxAge` is ever shown, and at most `maxEntries` responses are kept.
-   * Pass an object to tune those, or `false` to keep everything in memory as before. Always inert on the
-   * server and in a browser without IndexedDB.
-   *
-   * Bump {@link QueryPersistenceConfig.version} in the commit that changes what a response looks like —
-   * that is what stops a returning user's disk copy from reaching code that can no longer read it.
-   *
-   * @default true
-   */
-  persistence?: boolean | QueryPersistenceConfig;
+  features?: readonly QueryClientFeatureFn[];
 };
 
 /**
@@ -146,15 +121,14 @@ export type CreateQueryClientConfigOptions = {
  */
 export type QueryClientSubtle = {
   /**
-   * The multi-tab sync engine, or `null` when this client has no
-   * {@link CreateQueryClientConfigOptions.multiTabSync} (or runs on the server). Query features reach
-   * it through `deps.client`.
+   * The multi-tab sync engine, or `null` when this client has no {@link withMultiTabSync} feature (or
+   * runs on the server). Query features reach it through `deps.client`.
    */
   sync: QuerySyncEngine | null;
 
   /**
-   * The persisted response store, or `null` when this client has no
-   * {@link CreateQueryClientConfigOptions.persistence} (or runs on the server).
+   * The persisted response store, or `null` when this client has no {@link withQueryPersistence}
+   * feature (or runs on the server).
    */
   persistence: QueryPersistenceEngine | null;
 };
@@ -200,15 +174,14 @@ export type QueryClient = {
    * window are deliberately left alone — they revalidate on their own when a consumer binds again,
    * and refreshing what nobody is looking at is how an invalidation turns into a request storm.
    *
-   * Reaching the other tabs needs {@link CreateQueryClientConfigOptions.multiTabSync} (on by default);
-   * without it this is a local call, and `otherTabs: false` makes it one deliberately.
+   * Reaching the other tabs needs the {@link withMultiTabSync} client feature; without it this is a
+   * local call, and `otherTabs: false` makes it one deliberately.
    */
   invalidateQueries: (options?: QueryInvalidationOptions) => void;
 
   /**
-   * Removes every response this client persisted (see
-   * {@link CreateQueryClientConfigOptions.persistence}). Resolves once the store is empty; a no-op when
-   * persistence is off.
+   * Removes every response this client persisted (see {@link withQueryPersistence}). Resolves once
+   * the store is empty; a no-op when the client has no persistence feature.
    *
    * What it is for is a switch of *who* is using the app — a different user logging in on a shared
    * device — where the previous session's public data should not be waiting for them. A logout already
@@ -253,65 +226,26 @@ export const createQueryClient = (options: CreateQueryClientConfigOptions): Quer
         dependencies: { httpClient, ngErrorHandler, injector },
       });
 
-      const { multiTabSync = true } = options;
-      const syncConfig = multiTabSync === false ? null : multiTabSync === true ? {} : multiTabSync;
-      const channelName = syncConfig?.channelName ?? `et-query-sync-${options.name}`;
-
-      // Same server guard as retention above: there are no other tabs to talk to, and a per-request
-      // injector must not open a channel it would then have to remember to close.
-      const sync =
-        isBrowser && syncConfig
-          ? createQuerySyncEngine({
-              config: syncConfig,
-              repository,
-              transport: createQuerySyncTransport(channelName),
-              // Keyed off the channel, not the client name: the channel is what says "these clients
-              // are the same client, in different tabs", so the locks have to agree with it.
-              lockManager: createQueryKeyLockManager(`et-query-poll:${channelName}`),
-            })
-          : null;
-
       const destroyRef = inject(DestroyRef);
 
-      if (sync) destroyRef.onDestroy(sync.destroy);
+      let sync: QuerySyncEngine | null = null;
+      let persistenceEngine: QueryPersistenceEngine | null = null;
 
-      const { persistence = true } = options;
-      const persistenceConfig = persistence === false ? null : persistence === true ? {} : persistence;
+      if (options.features?.length) {
+        const seen = new Set<QueryClientFeatureType>();
 
-      // Same server guard once more: a per-request injector has no disk to read and no session to
-      // remember, and `transferCache` already covers the SSR hand-off to the browser.
-      const persistenceEngine =
-        isBrowser && persistenceConfig
-          ? createQueryPersistenceEngine({
-              config: persistenceConfig,
-              repository,
-              adapter:
-                (typeof persistenceConfig.adapter === 'function'
-                  ? persistenceConfig.adapter()
-                  : persistenceConfig.adapter) ??
-                createIndexedDbQueryPersistenceAdapter({
-                  storageName: persistenceConfig.storageName ?? `et-query-persistence-${options.name}`,
-                }),
-            })
-          : null;
+        for (const featureFn of options.features) {
+          const feature = featureFn({ clientName: options.name, repository, destroyRef, isBrowser });
 
-      if (persistenceEngine) {
-        // Writes are coalesced, so the tab going away is the one moment they cannot wait: a reload right
-        // after a fetch is exactly the case persistence exists for. `visibilitychange` is what fires
-        // reliably on mobile, where `pagehide` sometimes does not.
-        const flush = () => void persistenceEngine.flush();
-        const flushWhenHidden = () => {
-          if (document.visibilityState === 'hidden') flush();
-        };
+          if (seen.has(feature.type)) throw queryClientFeatureUsedMultipleTimes(feature.type);
+          seen.add(feature.type);
 
-        document.addEventListener('visibilitychange', flushWhenHidden);
-        window.addEventListener('pagehide', flush);
-
-        destroyRef.onDestroy(() => {
-          document.removeEventListener('visibilitychange', flushWhenHidden);
-          window.removeEventListener('pagehide', flush);
-          persistenceEngine.destroy();
-        });
+          if (feature.type === QueryClientFeatureType.MULTI_TAB_SYNC) {
+            sync = (feature as QueryClientMultiTabSyncFeature).instance;
+          } else {
+            persistenceEngine = (feature as QueryClientPersistenceFeature).instance;
+          }
+        }
       }
 
       const client: QueryClient = {

@@ -41,7 +41,7 @@ export type QueryInvalidationOptions = {
 
   /**
    * Whether the user's other tabs invalidate the same queries. Requires
-   * {@link CreateQueryClientConfigOptions.multiTabSync}, and is ignored when it is off.
+   * the {@link withMultiTabSync} client feature, and is ignored without it.
    *
    * @default true
    */

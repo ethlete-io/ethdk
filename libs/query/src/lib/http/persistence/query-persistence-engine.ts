@@ -11,7 +11,7 @@ import {
 } from './query-persistence-config';
 
 /**
- * The per-client machinery behind {@link CreateQueryClientConfigOptions.persistence}: it writes
+ * The per-client machinery behind the {@link withQueryPersistence} feature: it writes
  * successful reads to the store, reads them back into cache entries a consumer just created, and owns
  * every policy around that — staleness, the entry cap, and the purge a logout triggers.
  *

@@ -21,7 +21,7 @@ export type QueryPersistenceCandidate = {
  * Keeps a query client's successful reads on disk, so a reload — or a cold start without a network —
  * renders the last known data instead of a loading state.
  *
- * @see CreateQueryClientConfigOptions.persistence
+ * @see withQueryPersistence
  */
 export type QueryPersistenceConfig = {
   /**

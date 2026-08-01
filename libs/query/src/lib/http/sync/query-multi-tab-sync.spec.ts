@@ -18,6 +18,7 @@ import {
 } from '@ethlete/query/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createQuery, Query, QueryArgs } from '../query';
+import { withMultiTabSync } from '../query-client-features';
 import { createQueryClient, QueryClientRef } from '../query-client';
 import { QueryMethod } from '../query-creator';
 import { withArgs, withPolling } from '../query-features';
@@ -57,8 +58,12 @@ describe('multi tab sync', () => {
    * A tab is just another query client on the shared channel: separate repository, separate engine,
    * same bus and same lock table — which is exactly the relationship two browser tabs are in.
    */
-  const createTab = (multiTabSync: boolean | QueryMultiTabSyncConfig = { channelName: CHANNEL }) =>
-    createQueryClient({ baseUrl: 'https://api.example.com', name: `tab-${++tabCount}`, multiTabSync });
+  const createTab = (multiTabSync: false | QueryMultiTabSyncConfig = { channelName: CHANNEL }) =>
+    createQueryClient({
+      baseUrl: 'https://api.example.com',
+      name: `tab-${++tabCount}`,
+      features: multiTabSync === false ? [] : [withMultiTabSync(multiTabSync)],
+    });
 
   const mountQuery = (
     client: QueryClientRef,
@@ -251,10 +256,10 @@ describe('multi tab sync', () => {
       expect(bus.posted).toEqual([]);
     });
 
-    it('is on for a client that says nothing about it', () => {
+    it('is off for a client without the feature', () => {
       const client = createQueryClient({ baseUrl: 'https://api.example.com', name: 'defaults' });
 
-      expect(TestBed.inject(client.token).subtle.sync).not.toBeNull();
+      expect(TestBed.inject(client.token).subtle.sync).toBeNull();
       expect(bus.posted).toEqual([]);
     });
   });
@@ -515,7 +520,7 @@ describe('multi tab sync', () => {
     };
 
     /** Mounts both tabs, settles their initial fetches and lets the lock be granted. */
-    const settleTwoTabs = async (multiTabSync?: boolean | QueryMultiTabSyncConfig, creatorSync?: boolean) => {
+    const settleTwoTabs = async (multiTabSync?: false | QueryMultiTabSyncConfig, creatorSync?: boolean) => {
       const tabA = mountPollingQuery(createTab(multiTabSync), { multiTabSync: creatorSync });
       const tabB = mountPollingQuery(createTab(multiTabSync), { multiTabSync: creatorSync });
 
@@ -634,7 +639,7 @@ describe('multi tab sync', () => {
       const client = createQueryClient({
         baseUrl: 'https://api.example.com',
         name: 'ssr',
-        multiTabSync: true,
+        features: [withMultiTabSync()],
       });
 
       expect(TestBed.inject(client.token).subtle.sync).toBeNull();

@@ -44,7 +44,7 @@ export type CreateIndexedDbQueryPersistenceAdapterOptions = {
 };
 
 /**
- * The default storage backend for {@link CreateQueryClientConfigOptions.persistence}: an IndexedDB
+ * The default storage backend for the {@link withQueryPersistence} feature: an IndexedDB
  * database per query client.
  *
  * IndexedDB rather than `localStorage` because it stores structured clones — no serialization pass,

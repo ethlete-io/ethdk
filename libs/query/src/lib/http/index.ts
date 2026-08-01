@@ -11,6 +11,7 @@ export * from './persistence/query-persistence-indexed-db';
 export * from './query';
 export * from './query-cache-utils';
 export * from './query-client';
+export * from './query-client-features';
 export * from './query-context';
 export * from './query-creator';
 export * from './query-creator-templates';

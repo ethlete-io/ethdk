@@ -5,6 +5,11 @@
       "schema": "./migrate-to-query-v3/schema.json",
       "description": "Migrate from legacy query system to new query system using interop"
     },
+    "migrate-query-client-features": {
+      "factory": "./migrate-query-client-features/migration",
+      "schema": "./migrate-query-client-features/schema.json",
+      "description": "Migrate createQueryClient multiTabSync/persistence options to opt-in features"
+    },
     "prep-for-query-v3": {
       "factory": "./prep-for-query-v3/migration",
       "schema": "./prep-for-query-v3/schema.json",

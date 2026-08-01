@@ -7,7 +7,7 @@ import { QuerySyncMessage } from './query-sync-message';
 import { QuerySyncTransport } from './query-sync-transport';
 
 /**
- * The per-client machinery behind {@link CreateQueryClientConfigOptions.multiTabSync}: it broadcasts
+ * The per-client machinery behind the {@link withMultiTabSync} feature: it broadcasts
  * what settles in this tab, applies what settles in the others, and owns the lock manager that
  * decides which tab polls a given cache key.
  *

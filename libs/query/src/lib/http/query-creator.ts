@@ -85,15 +85,15 @@ export type BaseQueryCreatorOptions<TArgs extends QueryArgs = QueryArgs> = {
    *
    * The case for opting out is payload cost: every shared response is structured-cloned per receiving
    * tab, so a very large body polled at a short interval is better left alone. Has no effect unless
-   * the client sets {@link CreateQueryClientConfigOptions.multiTabSync}.
+   * the client has the {@link withMultiTabSync} feature.
    *
    * @default true
    */
   multiTabSync?: boolean;
 
   /**
-   * Whether this query's responses may be kept on disk, when the client has
-   * {@link CreateQueryClientConfigOptions.persistence} enabled at all.
+   * Whether this query's responses may be kept on disk, when the client has the
+   * {@link withQueryPersistence} feature at all.
    *
    * Three states, because secure queries start on the other side of the default:
    * - left unset, a **public** query persists and a **secure** (authenticated) one does not — putting a

@@ -1,6 +1,6 @@
 # Caching & deduplication
 
-All [queries](/query/queries) of a client share one **query repository** — an in-memory cache that deduplicates identical requests and tracks response freshness. Successful reads are also kept on disk, so a reload does not start from nothing — see [persisted responses](/query/persistence).
+All [queries](/query/queries) of a client share one **query repository** — an in-memory cache that deduplicates identical requests and tracks response freshness. Successful reads can also be kept on disk so a reload does not start from nothing — see [persisted responses](/query/persistence).
 
 ## What is cached
 
@@ -10,7 +10,7 @@ All [queries](/query/queries) of a client share one **query repository** — an 
 
 Two queries with the same key share one in-flight request and one response — ten components rendering the same `getUser` query cause exactly one HTTP request. Entries are reference-counted: when the last consumer is destroyed, the entry is released — either kept for a while (see below) or aborted and evicted straight away.
 
-Deduplication reaches across tabs too: [multi-tab sync](/query/multi-tab) is on by default, so a response fetched in one tab updates the same cache key in the others, and a polled key is polled by one tab on behalf of all of them.
+Deduplication can reach across tabs too: with the [multi-tab sync](/query/multi-tab) client feature a response fetched in one tab updates the same cache key in the others, and a polled key is polled by one tab on behalf of all of them.
 
 ## Keeping unused entries around
 
@@ -79,11 +79,11 @@ injectApi().invalidateQueries({ url: '/players' });
 
 It refreshes the same set as `refreshQueriesInUse()` — cacheable entries with at least one consumer, cache bypassed, in-flight requests restarted — narrowed by what you pass:
 
-| Option      | Default | Description                                                                                                     |
-| ----------- | ------- | --------------------------------------------------------------------------------------------------------------- |
-| `url`       | —       | Invalidate one part of the API. Relative values resolve against `baseUrl`, like a route.                        |
-| `filter`    | —       | Narrow further on the built `{ method, url }` of each query. Runs after `url`. **This tab only** — see below.   |
-| `otherTabs` | `true`  | Whether the user's other tabs invalidate too. Needs [multi-tab sync](/query/multi-tab); ignored when it is off. |
+| Option      | Default | Description                                                                                                             |
+| ----------- | ------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `url`       | —       | Invalidate one part of the API. Relative values resolve against `baseUrl`, like a route.                                |
+| `filter`    | —       | Narrow further on the built `{ method, url }` of each query. Runs after `url`. **This tab only** — see below.           |
+| `otherTabs` | `true`  | Whether the user's other tabs invalidate too. Needs the [multi-tab sync](/query/multi-tab) feature; ignored without it. |
 
 `url` matching is boundary aware rather than a plain prefix test, so `/players` covers `/players`, `/players/1` and `/players?page=2` — but not `/players-archive`. Passing nothing invalidates everything in use.
 

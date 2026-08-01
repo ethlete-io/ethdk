@@ -80,7 +80,6 @@ describe('bearer-auth-token-revocation', () => {
             revokeOnLogout: false,
           }),
         ],
-        multiTabSync: false,
       });
 
       const auth = TestBed.runInInjectionContext(() => injectAuth());
@@ -129,7 +128,6 @@ describe('bearer-auth-token-revocation', () => {
             revokeOnLogout: false,
           }),
         ],
-        multiTabSync: false,
       });
 
       const auth = TestBed.runInInjectionContext(() => injectAuth());

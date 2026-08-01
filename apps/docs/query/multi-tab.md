@@ -4,16 +4,16 @@ A user with your app open in three tabs runs three query clients, each with its 
 [cache](/query/caching) and its own timers. Left alone, all three poll the same endpoint, and a
 mutation in one leaves the other two showing data that is quietly wrong.
 
-So the clients in a browser talk to each other over a `BroadcastChannel`, and elect one tab per cache
-key with the [Web Locks API](https://developer.mozilla.org/docs/Web/API/Web_Locks_API). **This is on
-by default** — a user with several tabs open is the normal case, and the three behaviors below are what
-they would expect to happen.
+So the clients in a browser can talk to each other over a `BroadcastChannel`, and elect one tab per
+cache key with the [Web Locks API](https://developer.mozilla.org/docs/Web/API/Web_Locks_API). **This is
+opt-in**: add the `withMultiTabSync()` client feature to get the three behaviors below. A client
+without the feature does not ship the sync engine at all.
 
 ```ts
 const API = createQueryClient({
   name: 'api',
   baseUrl: 'https://api.example.com/v1',
-  // multiTabSync: true is the default — pass an object to tune it, or false to opt out entirely.
+  features: [withMultiTabSync()], // pass a config object to tune it
 });
 
 export const injectApi = toInjectFn(API);
@@ -97,11 +97,11 @@ and deduplicated by the repository.
 Apps with chatty mutations can narrow it:
 
 ```ts
-multiTabSync: {
+withMultiTabSync({
   refreshOnMutation: {
     filter: (mutation, query) => new URL(query.url).pathname.startsWith('/players'),
   },
-},
+});
 ```
 
 The mutating tab itself is untouched. Refreshing locally after a mutation stays the app's job, as it
@@ -129,12 +129,12 @@ and invalidate a superset of what the calling tab did.
 ## Configuration
 
 ```ts
-multiTabSync: {
+withMultiTabSync({
   channelName: 'et-query-sync-api',
   syncResponses: true,
   dedupePolling: true,
   refreshOnMutation: true,
-}
+});
 ```
 
 | Option              | Default                 | Description                                                                                                 |
@@ -144,8 +144,8 @@ multiTabSync: {
 | `dedupePolling`     | `true`                  | Poll a given cache key in one tab only. Inert without `syncResponses`.                                      |
 | `refreshOnMutation` | `true`                  | Refresh other tabs' in-use queries after a mutation. Pass `{ filter }` to narrow it.                        |
 
-Those defaults are what you get without saying anything. `multiTabSync: false` turns all of it off, and
-each part can be switched off on its own — `dedupePolling: false` keeps shared responses but lets every
+Those defaults are what you get from a bare `withMultiTabSync()`. Leaving the feature out turns all of
+it off, and each part can be switched off on its own — `dedupePolling: false` keeps shared responses but lets every
 tab poll, for instance.
 
 ### Opting a single query out
@@ -202,8 +202,8 @@ const bus = installFakeBroadcastChannel();
 const locks = installFakeWebLocks();
 
 // Two clients sharing one channel name behave exactly as two tabs of one app.
-const tabA = createQueryClient({ name: 'a', baseUrl, multiTabSync: { channelName: 'shared' } });
-const tabB = createQueryClient({ name: 'b', baseUrl, multiTabSync: { channelName: 'shared' } });
+const tabA = createQueryClient({ name: 'a', baseUrl, features: [withMultiTabSync({ channelName: 'shared' })] });
+const tabB = createQueryClient({ name: 'b', baseUrl, features: [withMultiTabSync({ channelName: 'shared' })] });
 
 // …drive queries in both, then let messages and lock grants land:
 await flushMultiTabSync();

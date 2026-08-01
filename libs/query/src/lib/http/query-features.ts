@@ -16,7 +16,7 @@ import {
 import { InternalQueryExecute } from './query-execute';
 import { QueryKey } from './query-repository';
 import { QueryState } from './query-state';
-import { QueryKeyLockHold } from './sync/query-key-lock-manager';
+import type { QueryKeyLockHold } from './sync/query-key-lock-manager';
 
 /**
  * Returning this inside a withArgs feature will reset the query args to null.
@@ -152,7 +152,7 @@ export type WithPollingFeatureOptions = {
  * The interval will be cleared when the query is destroyed.
  * The interval will be reset when the arguments of the query change.
  *
- * With {@link CreateQueryClientConfigOptions.multiTabSync} enabled, the same query polled in several
+ * With the {@link withMultiTabSync} client feature, the same query polled in several
  * tabs is only polled by *one* of them — the other tabs keep their interval running but skip each
  * tick, and get the data through response sharing instead. Which tab does the work is decided per
  * cache key via the Web Locks API, so it moves on its own when that tab is closed or goes into the

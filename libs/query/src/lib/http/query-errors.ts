@@ -19,6 +19,9 @@ export const QueryRuntimeErrorCode = {
   AUTH_EXTRACT_TOKENS_RESPONSE_MISSING_REFRESH_TOKEN: 202,
   AUTH_PROVIDER_FEATURE_USED_MULTIPLE_TIMES: 203,
 
+  // Query client
+  QUERY_CLIENT_FEATURE_USED_MULTIPLE_TIMES: 250,
+
   // Query Repository
   UNCACHEABLE_REQUEST_HAS_CACHE_KEY_PARAM: 300,
   UNCACHEABLE_REQUEST_HAS_ALLOW_CACHE_PARAM: 301,
@@ -120,6 +123,13 @@ export const authProviderFeatureUsedMultipleTimes = (type: string) => {
   return new RuntimeError(
     QueryRuntimeErrorCode.AUTH_PROVIDER_FEATURE_USED_MULTIPLE_TIMES,
     `Bearer auth feature "${type}" was used multiple times.`,
+  );
+};
+
+export const queryClientFeatureUsedMultipleTimes = (type: string) => {
+  return new RuntimeError(
+    QueryRuntimeErrorCode.QUERY_CLIENT_FEATURE_USED_MULTIPLE_TIMES,
+    `Query client feature "${type}" was used multiple times.`,
   );
 };
 

@@ -16,6 +16,7 @@ import {
 } from '@ethlete/query/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createQuery, Query, QueryArgs } from '../query';
+import { withMultiTabSync, withQueryPersistence } from '../query-client-features';
 import { createQueryClient, QueryClient, QueryClientRef } from '../query-client';
 import { QueryPersistenceConfig } from './query-persistence-config';
 import { QueryPersistenceEngine } from './query-persistence-engine';
@@ -48,12 +49,11 @@ describe('query persistence', () => {
    * Multi-tab sync is off unless a spec asks for it — the two features are independent, and leaving the
    * channel out keeps the event stream to what this spec is about.
    */
-  const createSession = (persistence: boolean | QueryPersistenceConfig = {}) =>
+  const createSession = (persistence: false | QueryPersistenceConfig = {}) =>
     createQueryClient({
       baseUrl: 'https://api.example.com',
       name: `session-${++clientCount}`,
-      multiTabSync: false,
-      persistence: typeof persistence === 'boolean' ? persistence : { adapter: store.adapter, ...persistence },
+      features: persistence === false ? [] : [withQueryPersistence({ adapter: store.adapter, ...persistence })],
     });
 
   const client = (ref: QueryClientRef): QueryClient => TestBed.inject(ref.token);
@@ -460,14 +460,12 @@ describe('query persistence', () => {
       const tabA = createQueryClient({
         baseUrl: 'https://api.example.com',
         name: 'tab-a',
-        multiTabSync: { channelName },
-        persistence: shared,
+        features: [withMultiTabSync({ channelName }), withQueryPersistence(shared)],
       });
       const tabB = createQueryClient({
         baseUrl: 'https://api.example.com',
         name: 'tab-b',
-        multiTabSync: { channelName },
-        persistence: shared,
+        features: [withMultiTabSync({ channelName }), withQueryPersistence(shared)],
       });
 
       const queryA = mountQuery(tabA);
@@ -573,7 +571,7 @@ describe('query persistence', () => {
       const session = createQueryClient({
         baseUrl: 'https://api.example.com',
         name: 'ssr',
-        persistence: { adapter: store.adapter },
+        features: [withQueryPersistence({ adapter: store.adapter })],
       });
       const ssrClient = TestBed.inject(session.token);
 
