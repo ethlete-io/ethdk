@@ -14,9 +14,6 @@ const cli = async (args: string[]) => {
   }
 };
 
-// Get the command line arguments and normalize them
 const args = process.argv.slice(2).join('=').split('=');
 
 cli(args);
-
-// Burst cache

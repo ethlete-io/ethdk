@@ -163,11 +163,6 @@ export const injectRouterState = /* @__PURE__ */ memoizeSignal(() => {
   const event = injectRouterEvent();
   const router = inject(Router);
 
-  // We only depend on `event` to get re-evaluated on every router event, but we
-  // read the *committed* snapshot straight from the router. The router commits
-  // `routerState` before it activates components (and emits ActivationStart
-  // before NavigationEnd), so this is already correct inside a child component's
-  // constructor — unlike an effect, which only flushes after construction.
   return computed<RouterState>(
     () => {
       event();
