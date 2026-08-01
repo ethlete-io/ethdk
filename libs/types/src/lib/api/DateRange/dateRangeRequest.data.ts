@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface DateRangeRequestData {
+export type DateRangeRequestData = {
 
     /**
      * @default null

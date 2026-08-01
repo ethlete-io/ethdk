@@ -4,7 +4,7 @@ import { ParticipantType } from './../Enum/Participant/participant.type';
 import { IdentityView } from './../Identity/identity.view';
 import { MediaView } from './../Media/media.view';
 
-export interface AbstractParticipantView {
+export type AbstractParticipantView = {
     type: ParticipantType;
     id: string;
     name: string | null;

@@ -2,8 +2,8 @@
 import { BaseStageStageStructureView } from './baseStageStageStructure.view';
 import { GroupStageStructureView } from './groupStageStructure.view';
 
-export interface GroupStageStageStructureView extends BaseStageStageStructureView {
+export type GroupStageStageStructureView = {
     groups: GroupStageStructureView[];
-}
+} & BaseStageStageStructureView
 
 export default GroupStageStageStructureView;

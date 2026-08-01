@@ -1,7 +1,7 @@
 // Generated Interface, do not change manually!
 import { PaginatedSearchRequestData } from './../Request/paginatedSearchRequest.data';
 
-export interface ListUpcomingMatchesForUserSearchRequestData extends PaginatedSearchRequestData {
+export type ListUpcomingMatchesForUserSearchRequestData = {
 
     /**
      * @default ["preparing","started"]
@@ -17,6 +17,6 @@ export interface ListUpcomingMatchesForUserSearchRequestData extends PaginatedSe
      * @default "asc"
      */
     sortOrder?: string;
-}
+} & PaginatedSearchRequestData
 
 export default ListUpcomingMatchesForUserSearchRequestData;

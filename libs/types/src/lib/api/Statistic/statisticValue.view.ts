@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface StatisticValueView {
+export type StatisticValueView = {
     value: number | null;
     totalMatchesOrMatchGames: number;
 }

@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface PaginatedSearchRequestData {
+export type PaginatedSearchRequestData = {
 
     /**
      * @default 1

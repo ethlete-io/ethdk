@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface LastXGamesByPlayerView {
+export type LastXGamesByPlayerView = {
     player: string;
     results: any;
 }

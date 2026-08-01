@@ -2,9 +2,9 @@
 import { EventListView } from './eventList.view';
 import { FootballPlayerListView } from './../../FootballPlayer/footballPlayerList.view';
 
-export interface SubstitutionEventView extends EventListView {
+export type SubstitutionEventView = {
     inPlayer: FootballPlayerListView | null;
     outPlayer: FootballPlayerListView | null;
-}
+} & EventListView
 
 export default SubstitutionEventView;

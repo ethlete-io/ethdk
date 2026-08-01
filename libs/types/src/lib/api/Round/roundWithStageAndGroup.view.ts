@@ -3,7 +3,7 @@
 import { GroupListView } from '../Group';
 import { StageListView } from '../Stage';
 
-export interface RoundWithStageAndGroupView {
+export type RoundWithStageAndGroupView = {
     id: string;
     number: number;
     title: string;

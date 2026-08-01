@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface MediaView {
+export type MediaView = {
     id: number;
     name: string;
     copyright: string | null;

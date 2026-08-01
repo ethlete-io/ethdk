@@ -1,7 +1,7 @@
 // Generated Interface, do not change manually!
 import { MediaView } from './../Media/media.view';
 
-export interface LineupPlayerV2View {
+export type LineupPlayerV2View = {
     fullname: string | null;
     firstname: string | null;
     lastname: string | null;

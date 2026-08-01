@@ -1,7 +1,7 @@
 // Generated Interface, do not change manually!
 import { BaseSeasonView } from './../Season/baseSeason.view';
 
-export interface TournamentGroupListView {
+export type TournamentGroupListView = {
     id: string;
     title: string;
     shortTitle: string;

@@ -1,5 +1,5 @@
 import { FormViolationView } from './api';
 
-export interface FormViolationListView {
+export type FormViolationListView = {
   violations: FormViolationView[];
-}
+};

@@ -2,7 +2,7 @@
 import { MatchListViewUnion } from './../../Match/matchListView.union';
 import { MatchStreamDetailView } from './matchStreamDetail.view';
 
-export interface MatchListWithStreamView {
+export type MatchListWithStreamView = {
     match: MatchListViewUnion;
     streams: MatchStreamDetailView[];
 }

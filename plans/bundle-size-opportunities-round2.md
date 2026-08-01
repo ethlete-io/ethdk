@@ -149,11 +149,12 @@ After any change here: `yarn install`, commit the lockfile, re-lint the libs (de
 
 ## E. libs/components — CSS
 
-1. **slider/range-slider sheets are near-duplicates — ~2.4 kB gz, S, non-breaking.** 398 vs 392
-   lines; after `s/range-slider/slider/` the diff is 20 lines, the only real delta being the
-   dragged-thumb z-index rule (`range-slider.component.css:129-133`). Fix: shared
-   `SliderStylesComponent` mounted by both; range-slider keeps the 5-line delta. Highest-confidence
-   CSS win; any app using both sliders saves the full sheet.
+1. **slider/range-slider CSS dedupe — implemented, measured, REVERTED (2026-08-01).** The ~2.4 kB
+   estimate was raw bytes; gzip already collapses the two near-identical sheets (adding
+   `RangeSliderComponent` to a slider-only bundle costs only 1,316 B gz total), and routing the
+   sheet through a styles-only component costs ~1 kB gz of style-manager machinery in apps not
+   already using it. Best case measured −233 B, typical case a regression. Lesson recorded in §G:
+   raw-byte CSS duplication is a poor proxy for gz cost.
 2. **Overlay strategy CSS can follow the strategy provider — 1.2–1.6 kB gz, M, non-breaking.**
    `overlay/overlay-container.component.css:363-589` is `.et-overlay.et-with-default-animation`
    split cleanly per strategy (full-screen 431 B, sheets 871 B, dialog 248 B, anchored 360 B gz) —
@@ -217,3 +218,8 @@ alone 3,321 B.
   their stylesheets. Worth a note in the treeshake README.
 - The `--external` goldens hide third-party retention (floating-ui B1, rich-text-types C2).
   Consider one golden per lib in bundled mode for the third-party surface.
+- **Raw-byte CSS duplication is a poor proxy for gz cost** (learned from the reverted E1): gzip
+  already collapses near-identical sheets, and the styles-only-component indirection has a ~1 kB gz
+  floor (`injectStyleManager` + `createComponent`) in an app not already using the style manager.
+  Only _distinct_ CSS slices are worth splitting; Angular also flattens CSS nesting, so a
+  multi-element root selector is re-emitted on every nested rule.

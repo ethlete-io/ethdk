@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface StatisticOverallTournamentView {
+export type StatisticOverallTournamentView = {
     totalMatchGameCount: number;
     totalScoreSum: number;
     averageScore: number;

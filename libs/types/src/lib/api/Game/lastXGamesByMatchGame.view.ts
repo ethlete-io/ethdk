@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface LastXGamesByMatchGameView {
+export type LastXGamesByMatchGameView = {
     home: any;
     away: any;
 }

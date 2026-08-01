@@ -2,7 +2,7 @@
 import { PlacementView } from './../Ranking/Placement/placement.view';
 import { RoundListView } from './../Round/roundList.view';
 
-export interface GroupRankingView {
+export type GroupRankingView = {
     groupName: string;
     qualifiedPlayers: number | null;
     placements: PlacementView[];

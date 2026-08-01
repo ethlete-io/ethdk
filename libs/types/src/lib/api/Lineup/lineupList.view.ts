@@ -2,7 +2,7 @@
 import { FormationStructureView } from './formationStructure.view';
 import { LineupPlayerView } from './lineupPlayer.view';
 
-export interface LineupListView {
+export type LineupListView = {
     id: string;
     name: string;
     formation: FormationStructureView[];

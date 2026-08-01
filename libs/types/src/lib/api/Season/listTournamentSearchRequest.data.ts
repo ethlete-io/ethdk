@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface ListTournamentSearchRequestData {
+export type ListTournamentSearchRequestData = {
 
     /**
      * @default null

@@ -2,7 +2,7 @@
 import { PlayerParticipantView } from './../../Participant/playerParticipant.view';
 import { PlayerListViewUnion } from './../../Player/playerListView.union';
 
-export interface StatisticPlayerView {
+export type StatisticPlayerView = {
     id: string;
     statisticConfigurationId: string;
     identityId: string;

@@ -1,7 +1,7 @@
 // Generated Interface, do not change manually!
 import { StatisticValueView } from './statisticValue.view';
 
-export interface StatisticListView {
+export type StatisticListView = {
     score: StatisticValueView;
     enemyScore: StatisticValueView;
     expectedScore: StatisticValueView;

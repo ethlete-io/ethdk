@@ -1,7 +1,7 @@
 // Generated Interface, do not change manually!
 import { MatchStreamCategory } from './../../Enum/Match/matchStream.category';
 
-export interface MatchStreamDetailView {
+export type MatchStreamDetailView = {
     live: boolean;
     id: string | null;
     side: string | null;

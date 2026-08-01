@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface FootballPlayerListView {
+export type FootballPlayerListView = {
     id: string;
     type: string | null;
     rating: number | null;

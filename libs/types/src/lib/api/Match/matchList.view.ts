@@ -10,7 +10,7 @@ import { ParticipantViewUnion } from './../Participant/participantView.union';
 import { GameListViewUnion } from './../Game/gameListView.union';
 import { MatchRankingView } from './matchRanking.view';
 
-export interface MatchListView {
+export type MatchListView = {
     id: string;
     status: MatchStatus | null;
     number: number | null;

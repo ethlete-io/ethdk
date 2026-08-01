@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface GroupListView {
+export type GroupListView = {
     id: string;
     number: number;
     title: string;

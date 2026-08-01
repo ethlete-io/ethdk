@@ -2,7 +2,7 @@
 import { RoundStageStructureView } from './../../Tournament/roundStageStructure.view';
 import { MatchListViewUnion } from './../../Match/matchListView.union';
 
-export interface RoundStageStructureWithMatchesView {
+export type RoundStageStructureWithMatchesView = {
     round: RoundStageStructureView;
     matches: MatchListViewUnion[];
 }

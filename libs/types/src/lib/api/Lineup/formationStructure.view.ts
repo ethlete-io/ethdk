@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface FormationStructureView {
+export type FormationStructureView = {
     position: string;
 }
 

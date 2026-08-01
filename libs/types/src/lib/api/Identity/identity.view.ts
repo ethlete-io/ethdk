@@ -1,7 +1,7 @@
 // Generated Interface, do not change manually!
 import { MediaView } from './../Media/media.view';
 
-export interface IdentityView {
+export type IdentityView = {
     name: string;
     id: string;
     identifier: string;

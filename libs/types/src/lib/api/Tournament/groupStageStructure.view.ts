@@ -1,7 +1,7 @@
 // Generated Interface, do not change manually!
 import { RoundStageStructureView } from './roundStageStructure.view';
 
-export interface GroupStageStructureView {
+export type GroupStageStructureView = {
     id: string;
     status: string;
     name: string;

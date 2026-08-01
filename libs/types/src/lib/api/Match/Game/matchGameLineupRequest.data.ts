@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface MatchGameLineupRequestData {
+export type MatchGameLineupRequestData = {
 
     /**
      * @default false

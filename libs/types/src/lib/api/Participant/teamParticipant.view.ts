@@ -1,8 +1,8 @@
 // Generated Interface, do not change manually!
 import { AbstractParticipantView } from './abstractParticipant.view';
 
-export interface TeamParticipantView extends AbstractParticipantView {
+export type TeamParticipantView = {
     mediaCollection: any[];
-}
+} & AbstractParticipantView
 
 export default TeamParticipantView;

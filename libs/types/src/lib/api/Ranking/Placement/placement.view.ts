@@ -1,7 +1,7 @@
 // Generated Interface, do not change manually!
 import { ParticipantViewUnion } from './../../Participant/participantView.union';
 
-export interface PlacementView {
+export type PlacementView = {
     participant: ParticipantViewUnion | null;
     position: number;
     previousPosition: number | null;

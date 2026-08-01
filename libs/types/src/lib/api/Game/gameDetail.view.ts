@@ -4,12 +4,12 @@ import { LineupListView } from './../Lineup/lineupList.view';
 import { MetricListView } from './../Metric/metricList.view';
 import { EventListViewUnion } from './../Game/Event/eventListView.union';
 
-export interface GameDetailView extends GameListView {
+export type GameDetailView = {
     events: EventListViewUnion[];
     homeLineup: LineupListView | null;
     awayLineup: LineupListView | null;
     homeMetrics: MetricListView[];
     awayMetrics: MetricListView[];
-}
+} & GameListView
 
 export default GameDetailView;

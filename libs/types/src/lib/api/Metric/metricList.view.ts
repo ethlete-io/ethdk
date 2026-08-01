@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface MetricListView {
+export type MetricListView = {
     value: number | null;
     identifier: string;
 }

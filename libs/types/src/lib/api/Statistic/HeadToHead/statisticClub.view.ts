@@ -1,7 +1,7 @@
 // Generated Interface, do not change manually!
 import { TeamParticipantViewUnion } from './../../Participant/teamParticipantView.union';
 
-export interface StatisticClubView {
+export type StatisticClubView = {
     id: string;
     statisticConfigurationId: string;
     identityId: string;

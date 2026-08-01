@@ -1,7 +1,7 @@
 // Generated Interface, do not change manually!
 import { OpponentSide } from './../../Enum/Opponent/opponent.side';
 
-export interface EventListView {
+export type EventListView = {
     id: string;
     side: OpponentSide | null;
     name: string;

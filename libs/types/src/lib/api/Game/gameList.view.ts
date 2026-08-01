@@ -3,7 +3,7 @@ import { PlatformListView } from './../Platform/platformList.view';
 import { PlayerListViewUnion } from './../Player/playerListView.union';
 import { GameRankingView } from './gameRanking.view';
 
-export interface GameListView {
+export type GameListView = {
     id: string;
     status: string;
     match: string;

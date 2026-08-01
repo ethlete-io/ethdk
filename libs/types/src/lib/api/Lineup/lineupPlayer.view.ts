@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface LineupPlayerView {
+export type LineupPlayerView = {
     id: string;
     position: string | null;
     rating: number | null;

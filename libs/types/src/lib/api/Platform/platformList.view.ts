@@ -1,7 +1,7 @@
 // Generated Interface, do not change manually!
 import { MediaView } from './../Media/media.view';
 
-export interface PlatformListView {
+export type PlatformListView = {
     id: string;
     title: string;
     logo: MediaView | null;

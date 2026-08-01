@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface PaginationView {
+export type PaginationView = {
     items: any[];
     currentPage: number;
     nextPage: number | null;

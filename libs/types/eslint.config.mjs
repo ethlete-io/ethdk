@@ -1,3 +1,4 @@
+import ethlete from '@ethlete/eslint-plugin';
 import nx from '@nx/eslint-plugin';
 import baseConfig from '../../eslint.config.mjs';
 
@@ -19,9 +20,14 @@ export default [
   },
   ...nx.configs['flat/angular'],
   ...nx.configs['flat/angular-template'],
+  // Ethlete styleguide rules — TypeScript files. `types` ships only declarations, so the
+  // Angular/RxJS half of the config is inert here; the TS half still applies.
   {
+    ...ethlete.configs.recommendedTs,
     files: ['**/*.ts'],
+    ignores: ['**/*.spec.ts', '**/*.test.ts'],
     rules: {
+      ...ethlete.configs.recommendedTs.rules,
       '@angular-eslint/directive-selector': [
         'error',
         {
@@ -38,13 +44,11 @@ export default [
           style: 'kebab-case',
         },
       ],
+      '@typescript-eslint/no-explicit-any': 'off', // Disabled for auto-generated api types
       '@typescript-eslint/no-empty-interface': 'off', // Disabled for auto-generated api types
       '@typescript-eslint/no-empty-object-type': 'off', // Disabled for auto-generated api types
     },
   },
-  {
-    files: ['**/*.html'],
-    // Override or add rules here
-    rules: {},
-  },
+  // Relaxed rules for spec files (non-null assertions are common and intentional in tests)
+  ethlete.configs.recommendedSpec,
 ];

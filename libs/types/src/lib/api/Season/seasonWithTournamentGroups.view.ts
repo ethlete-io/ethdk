@@ -2,7 +2,7 @@
 import { TournamentGroupListView } from './../TournamentGroup/tournamentGroupList.view';
 import { BaseSeasonView } from './baseSeason.view';
 
-export interface SeasonWithTournamentGroupsView {
+export type SeasonWithTournamentGroupsView = {
     season: BaseSeasonView;
     tournamentGroups: TournamentGroupListView[];
 }

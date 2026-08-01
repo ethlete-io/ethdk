@@ -3,7 +3,7 @@ import { IdentityView } from './../Identity/identity.view';
 import { MediaView } from './../Media/media.view';
 import { ParticipantViewUnion } from './../Participant/participantView.union';
 
-export interface PlayerListView {
+export type PlayerListView = {
     id: string;
     name: string | null;
     displayName: string | null;

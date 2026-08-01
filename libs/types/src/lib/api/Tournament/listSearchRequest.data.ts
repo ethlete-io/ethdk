@@ -2,7 +2,7 @@
 import { DateRangeRequestData } from './../DateRange/dateRangeRequest.data';
 import { PaginatedSearchRequestData } from './../Request/paginatedSearchRequest.data';
 
-export interface ListSearchRequestData extends PaginatedSearchRequestData {
+export type ListSearchRequestData = {
 
     /**
      * @default null
@@ -19,6 +19,6 @@ export interface ListSearchRequestData extends PaginatedSearchRequestData {
      * @default []
      */
     tournamentIds?: string[];
-}
+} & PaginatedSearchRequestData
 
 export default ListSearchRequestData;

@@ -2,7 +2,7 @@
 import { ClubListView } from '../Club';
 import { MediaMinimalView } from './../Media/mediaMinimal.view';
 
-export interface ParticipantListView {
+export type ParticipantListView = {
     id: string;
     name: string;
     image: MediaMinimalView | null;

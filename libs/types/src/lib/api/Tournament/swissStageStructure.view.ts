@@ -2,8 +2,8 @@
 import { BaseStageStageStructureView } from './baseStageStageStructure.view';
 import { RoundStageStructureView } from './roundStageStructure.view';
 
-export interface SwissStageStructureView extends BaseStageStageStructureView {
+export type SwissStageStructureView = {
     rounds: RoundStageStructureView[];
-}
+} & BaseStageStageStructureView
 
 export default SwissStageStructureView;

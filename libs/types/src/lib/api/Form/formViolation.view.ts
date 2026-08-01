@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface FormViolationView {
+export type FormViolationView = {
     message: string;
     propertyPath: string | null;
 

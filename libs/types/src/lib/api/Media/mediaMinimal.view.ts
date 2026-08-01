@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface MediaMinimalView {
+export type MediaMinimalView = {
     path: string | null;
 }
 

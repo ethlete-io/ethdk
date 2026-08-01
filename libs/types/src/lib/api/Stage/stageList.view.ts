@@ -1,7 +1,7 @@
 // Generated Interface, do not change manually!
 import { StageType } from './../Enum/Stage/stage.type';
 
-export interface StageListView {
+export type StageListView = {
     id: string;
     name: string;
     type: string | null;

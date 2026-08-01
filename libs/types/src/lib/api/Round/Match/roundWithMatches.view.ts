@@ -2,7 +2,7 @@
 import { RoundListView } from './../../Round/roundList.view';
 import { MatchListViewUnion } from './../../Match/matchListView.union';
 
-export interface RoundWithMatchesView {
+export type RoundWithMatchesView = {
     round: RoundListView;
     matches: MatchListViewUnion[];
 }

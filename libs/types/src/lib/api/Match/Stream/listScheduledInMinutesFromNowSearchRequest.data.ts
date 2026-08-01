@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface ListScheduledInMinutesFromNowSearchRequestData {
+export type ListScheduledInMinutesFromNowSearchRequestData = {
 
     /**
      * @default 15

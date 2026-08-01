@@ -1,7 +1,7 @@
 // Generated Interface, do not change manually!
 import { SeasonStatus } from './../Enum/Season/season.status';
 
-export interface BaseSeasonView {
+export type BaseSeasonView = {
     id: string;
     name: string;
     identifier: string;

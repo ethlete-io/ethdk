@@ -1,7 +1,7 @@
 // Generated Interface, do not change manually!
 import { MediaMinimalView } from '../Media';
 
-export interface StatisticOverallUtCardResultsView {
+export type StatisticOverallUtCardResultsView = {
     goalsShot: number | null;
     playerInLineup: number | null;
     utCardFirstName: string;

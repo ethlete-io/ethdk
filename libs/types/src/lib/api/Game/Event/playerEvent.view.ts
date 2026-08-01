@@ -2,8 +2,8 @@
 import { EventListView } from './eventList.view';
 import { FootballPlayerListView } from './../../FootballPlayer/footballPlayerList.view';
 
-export interface PlayerEventView extends EventListView {
+export type PlayerEventView = {
     player: FootballPlayerListView | null;
-}
+} & EventListView
 
 export default PlayerEventView;

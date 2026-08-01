@@ -2,7 +2,7 @@
 import { ParticipantViewUnion } from './../../Participant/participantView.union';
 import { MatchStreamDetailView } from './matchStreamDetail.view';
 
-export interface MatchStreamListView {
+export type MatchStreamListView = {
     match: string;
     homeSide: ParticipantViewUnion | null;
     awaySide: ParticipantViewUnion | null;

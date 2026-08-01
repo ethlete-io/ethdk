@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface TotalUserRegistrationsView {
+export type TotalUserRegistrationsView = {
     total: number;
     tournamentSize: number;
 }

@@ -14,55 +14,55 @@
   "entries": {
     "core-floor": {
       "entry": "import { clamp } from '@ethlete/core';\nconsole.log(clamp);",
-      "gzip": 982
+      "gzip": 919
     },
     "query-floor": {
       "entry": "import { transformToString } from '@ethlete/query';\nconsole.log(transformToString);",
-      "gzip": 872
+      "gzip": 835
     },
     "components-floor": {
       "entry": "import { paginate } from '@ethlete/components';\nconsole.log(paginate);",
-      "gzip": 2544
+      "gzip": 2464
     },
     "bracket-single-elimination": {
       "entry": "import { BracketComponent, singleEliminationBracketLayout } from '@ethlete/components';\nconsole.log(BracketComponent, singleEliminationBracketLayout());",
-      "gzip": 29442
+      "gzip": 28948
     },
     "table": {
       "entry": "import { TABLE_IMPORTS } from '@ethlete/components';\nconsole.log(TABLE_IMPORTS);",
-      "gzip": 21392
+      "gzip": 20954
     },
     "form-field-input": {
       "entry": "import { FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';\nconsole.log(FORM_FIELD_IMPORTS, INPUT_IMPORTS);",
-      "gzip": 18503
+      "gzip": 18440
     },
     "select": {
       "entry": "import { SELECT_IMPORTS } from '@ethlete/components';\nconsole.log(SELECT_IMPORTS);",
-      "gzip": 42626
+      "gzip": 41743
     },
     "overlay-dialog": {
       "entry": "import { defineOverlay, dialogOverlayStrategy, OVERLAY_IMPORTS } from '@ethlete/components';\nconsole.log(defineOverlay, dialogOverlayStrategy, OVERLAY_IMPORTS);",
-      "gzip": 20135
+      "gzip": 19735
     },
     "rich-text-editor": {
       "entry": "import { RICH_TEXT_EDITOR_IMPORTS } from '@ethlete/components';\nconsole.log(RICH_TEXT_EDITOR_IMPORTS);",
-      "gzip": 49677
+      "gzip": 48914
     },
     "query-client": {
       "entry": "import { createGetQuery, createQueryClient } from '@ethlete/query';\nconsole.log(createGetQuery, createQueryClient);",
-      "gzip": 11442
+      "gzip": 9513
     },
     "contentful-floor": {
       "entry": "import { isContentfulEntryType } from '@ethlete/contentful';\nconsole.log(isContentfulEntryType);",
-      "gzip": 1500
+      "gzip": 300
     },
     "contentful-rich-text-renderer": {
       "entry": "import { ContentfulRichTextRendererComponent } from '@ethlete/contentful';\nconsole.log(ContentfulRichTextRendererComponent);",
-      "gzip": 12670
+      "gzip": 6399
     },
     "contentful-image": {
       "entry": "import { ContentfulImageComponent } from '@ethlete/contentful';\nconsole.log(ContentfulImageComponent);",
-      "gzip": 7099
+      "gzip": 5998
     }
   }
 }

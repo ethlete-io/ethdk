@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface RoundListView {
+export type RoundListView = {
     id: string;
     date: string | null;
     displayName: string;

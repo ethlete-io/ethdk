@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface IdentityMatchResultView {
+export type IdentityMatchResultView = {
     matchId: string;
     playedAt: string;
     participantScore: number;

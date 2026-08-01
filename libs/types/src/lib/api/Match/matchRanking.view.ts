@@ -1,7 +1,7 @@
 // Generated Interface, do not change manually!
 import { RankingStatus } from './../Enum/Ranking/ranking.status';
 
-export interface MatchRankingView {
+export type MatchRankingView = {
     score: number | null;
     status: RankingStatus | null;
     gameAmount: number;

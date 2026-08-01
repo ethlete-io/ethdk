@@ -2,7 +2,7 @@
 import { MediaView } from '../../Media';
 import { CheckInStatus } from './../../Registration/checkIn.status';
 
-export interface UserTournamentRegistrationView {
+export type UserTournamentRegistrationView = {
     id: string;
     tournamentId: string;
     userId: number;

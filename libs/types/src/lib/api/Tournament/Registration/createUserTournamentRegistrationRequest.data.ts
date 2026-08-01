@@ -1,6 +1,6 @@
 // Generated Interface, do not change manually!
 
-export interface CreateUserTournamentRegistrationRequestData {
+export type CreateUserTournamentRegistrationRequestData = {
 
     /**
      * @default false
