@@ -1,8 +1,4 @@
-import {
-  BRACKET_ROUND_MIRROR_TYPE,
-  COMMON_BRACKET_ROUND_TYPE,
-  DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
-} from '../../core';
+import { COMMON_BRACKET_ROUND_TYPE, DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE } from '../../core';
 import { Bracket, BracketRound } from '../../linked';
 import {
   BracketComponents,
@@ -38,24 +34,12 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
 ): ComputedBracketGrid<TRoundData, TMatchData> => {
   const grid = createBracketGrid<TRoundData, TMatchData>({ spanElementWidth: options.columnWidth });
 
-  const allUpperBracketRounds = Array.from(
+  const presentUpperBracketRounds = Array.from(
     bracketData.roundsByType.getOrThrow(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.UPPER_BRACKET).values(),
   );
-  const allLowerBracketRounds = Array.from(
+  const lowerBracketRounds = Array.from(
     bracketData.roundsByType.getOrThrow(DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET).values(),
   );
-
-  /** A round drawn on the way back from the middle of a mirrored bracket. */
-  const isFoldedBack = (round: BracketRound<TRoundData, TMatchData>) =>
-    round.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT;
-
-  // Everything below lays out the **outbound** side, which is an ordinary double elimination with half
-  // the matches per round — so the ratio, the front padding and the span maths are the ones that were
-  // always here, unchanged. The way back is then that side mirrored, sub-column for sub-column, which is
-  // what keeps a fold symmetric by construction rather than by a second set of index sums.
-  const hasFoldedBackRounds = allLowerBracketRounds.some(isFoldedBack);
-  const presentUpperBracketRounds = allUpperBracketRounds.filter((round) => !isFoldedBack(round));
-  const lowerBracketRounds = allLowerBracketRounds.filter((round) => !isFoldedBack(round));
 
   // A complete winner bracket has (lowerRounds / 2) + 1 rounds. If fewer are present, the winner
   // bracket starts later than round 1 — e.g. a small double elimination where lower-round 1 is
@@ -150,12 +134,6 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
 
   let lastRoundLastSubColumnUpperIndex = -1;
   let lastRoundLastSubColumnLowerIndex = -1;
-
-  /** Every sub-column the outbound pass drew, in order, so the way back can mirror it exactly. */
-  const outboundSubColumns: {
-    upperRound: BracketRound<TRoundData, TMatchData> | null;
-    lowerRound: BracketRound<TRoundData, TMatchData>;
-  }[] = [];
 
   for (const [lowerRoundIndex, lowerRound] of lowerBracketRounds.entries()) {
     const isLastLowerRound = lowerRoundIndex === lowerBracketRounds.length - 1;
@@ -263,8 +241,6 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
 
       pushLowerSubColumn(lowerSubColumn);
 
-      outboundSubColumns.push({ upperRound: upperRound ?? null, lowerRound });
-
       if (isLastSubColumnInMasterColumn) {
         lastRoundLastSubColumnUpperIndex = currentUpperRoundIndex;
         lastRoundLastSubColumnLowerIndex = currentLowerRoundIndex;
@@ -279,7 +255,7 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
     // last lower round is only needed to connect to the finals section (remainingRounds); in a
     // truncated bracket without a final we must still gap the intermediate rounds, otherwise the
     // rounds sit flush against each other and their connector lines collapse to zero width.
-    if (!isLastLowerRound || remainingRounds.length || hasFoldedBackRounds) {
+    if (!isLastLowerRound || remainingRounds.length) {
       grid.pushMasterColumn(
         createBracketGapMasterColumn({
           existingMasterColumns: grid.grid.masterColumns,
@@ -413,97 +389,13 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
 
     grid.pushMasterColumn(masterColumn);
 
-    if (!isLastRound || hasFoldedBackRounds) {
+    if (!isLastRound) {
       grid.pushMasterColumn(
         createBracketGapMasterColumn({
           existingMasterColumns: grid.grid.masterColumns,
           columnGap: options.columnGap,
         }),
       );
-    }
-  }
-
-  // The way back from the middle: the outbound pass reversed, sub-column for sub-column. Each one draws
-  // the other half of its round, and its span starts where the outbound span ended — which is all
-  // "mirrored" means once the outbound side is laid out. A depth too small to halve has no other half and
-  // simply stays in the middle, which is why this filters rather than assuming a pair.
-  if (hasFoldedBackRounds) {
-    const foldedBackHalfOf = (round: BracketRound<TRoundData, TMatchData> | null) =>
-      round
-        ? ([...allUpperBracketRounds, ...allLowerBracketRounds].find(
-            (candidate) =>
-              candidate.type === round.type && candidate.logicalIndex === round.logicalIndex && isFoldedBack(candidate),
-          ) ?? null)
-        : null;
-
-    const foldedBackSubColumns = outboundSubColumns
-      .slice()
-      .reverse()
-      .flatMap((subColumn) => {
-        const lowerRound = foldedBackHalfOf(subColumn.lowerRound);
-
-        return lowerRound ? [{ upperRound: foldedBackHalfOf(subColumn.upperRound), lowerRound }] : [];
-      });
-
-    /** A round spans its neighbours where they hold the same round — so a span starts where it differs. */
-    const spanAt = (index: number, pick: 'upperRound' | 'lowerRound') => ({
-      isStart: foldedBackSubColumns[index - 1]?.[pick] !== foldedBackSubColumns[index]?.[pick],
-      isEnd: foldedBackSubColumns[index + 1]?.[pick] !== foldedBackSubColumns[index]?.[pick],
-    });
-
-    for (let start = 0; start < foldedBackSubColumns.length; start += columnSplitFactor) {
-      const isLastMasterColumn = start + columnSplitFactor >= foldedBackSubColumns.length;
-
-      const { masterColumn, pushSection } = createBracketMasterColumn<TRoundData, TMatchData>({
-        columnWidth: options.columnWidth,
-        padding: { bottom: 0, left: 0, right: 0, top: 0 },
-      });
-
-      const { masterColumnSection: upperSection, pushSubColumn: pushUpperSubColumn } = createBracketMasterColumnSection<
-        TRoundData,
-        TMatchData
-      >({ type: 'round' });
-      const { masterColumnSection: upperLowerGapSection, pushSubColumn: pushUpperLowerSubColumn } =
-        createBracketMasterColumnSection<TRoundData, TMatchData>({ type: 'gap' });
-      const { masterColumnSection: lowerSection, pushSubColumn: pushLowerSubColumn } = createBracketMasterColumnSection<
-        TRoundData,
-        TMatchData
-      >({ type: 'round' });
-
-      for (let offset = 0; offset < columnSplitFactor; offset++) {
-        const index = start + offset;
-        const subColumn = foldedBackSubColumns[index];
-
-        if (!subColumn) break;
-
-        pushUpperSubColumn(
-          createUpperBracketSubColumn({ round: subColumn.upperRound, span: spanAt(index, 'upperRound') }),
-        );
-        pushUpperLowerSubColumn(createUpperLowerGapSubColumn());
-        pushLowerSubColumn(
-          createRoundBracketSubColumnRelativeToFirstRound({
-            firstRound: firstLowerRound,
-            round: subColumn.lowerRound,
-            options,
-            hasReverseFinal,
-            span: spanAt(index, 'lowerRound'),
-            components,
-          }),
-        );
-      }
-
-      pushSection(upperSection, upperLowerGapSection, lowerSection);
-
-      grid.pushMasterColumn(masterColumn);
-
-      if (!isLastMasterColumn) {
-        grid.pushMasterColumn(
-          createBracketGapMasterColumn({
-            existingMasterColumns: grid.grid.masterColumns,
-            columnGap: options.columnGap,
-          }),
-        );
-      }
     }
   }
 

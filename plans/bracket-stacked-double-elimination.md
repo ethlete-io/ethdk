@@ -1,6 +1,19 @@
 # Bracket — stacked mirrored double elimination
 
-**Status: not started.** Size: M — one new grid builder plus ~40 lines of shared drawing fixes.
+**Status: complete** (2026-08-01). Shipped as written, with three decisions phase 8 forced:
+
+- **Block centring is by centre column, not by slot count.** `columnCount = maxLeft + 1 + maxRight` and
+  `offset = maxLeft - blockLeft`, which reduces to the plan's `(slotCount - blockSlots) / 2` whenever a
+  block's two sides are the same length and still aligns the two centres when an odd early round makes
+  them differ.
+- **The block-to-block connector runs beside the middle column, not up it.** The strip is not empty: the
+  bracket reset and the losers block's own chain sit between the grand final and the losers champion. It
+  steps out into the gutter (`columnGap / 2` past the column edge), runs vertically and steps back in —
+  `gutterPath` in `drawing/line.ts`, taken when a merge's lower arm is directly below in the same column.
+- **The centre chain carries one round header** (the anchor's), as specified — so the grand final and the
+  bracket reset lose theirs. A header per chain round would sit on the line joining them. Documented.
+
+Size: M — one new grid builder plus ~40 lines of shared drawing fixes.
 Replaces the folded mirrored double elimination shipped in `568e9379c`, which the user judged
 "weird looking". `doubleEliminationBracketLayout()` (left-to-right) is **not touched**.
 

@@ -4,6 +4,7 @@ import { BRACKET_DATA_LAYOUT } from '../core/layout';
 import { COMMON_BRACKET_ROUND_TYPE, DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE } from '../core/round';
 import { TOURNAMENT_MODE } from '../core/tournament';
 import { createDoubleEliminationGrid } from '../drawing/grid/double-elimination';
+import { createStackedDoubleEliminationGrid } from '../drawing/grid/double-elimination-stacked';
 import { BracketRound } from '../linked/bracket';
 import { drawEliminationEdges } from './draw-elimination-edges';
 
@@ -55,8 +56,10 @@ export const doubleEliminationBracketLayout = <TRoundData = any, TMatchData = an
 });
 
 /**
- * The mirrored variant of {@link doubleEliminationBracketLayout}: both brackets fold in half and
- * converge on the finals in the middle.
+ * The mirrored variant of {@link doubleEliminationBracketLayout}: two stacked blocks, the winners
+ * bracket above the losers bracket, each folded around its own centre. A block's deciding rounds — the
+ * grand final and the bracket reset above, the third-place playoff below — hang vertically under the
+ * round its two halves converge on.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const mirroredDoubleEliminationBracketLayout = <TRoundData = any, TMatchData = any>(): BracketLayout<
@@ -66,7 +69,7 @@ export const mirroredDoubleEliminationBracketLayout = <TRoundData = any, TMatchD
   name: 'double-elimination-mirrored',
   mode: TOURNAMENT_MODE.DOUBLE_ELIMINATION,
   dataLayout: BRACKET_DATA_LAYOUT.MIRRORED,
-  createGrid: createDoubleEliminationGrid,
+  createGrid: createStackedDoubleEliminationGrid,
   drawEdges: drawEliminationEdges,
   // eslint-disable-next-line max-params -- the contract's (round, bracket, labels) shape
   listSection: (round, _bracket, labels) => doubleEliminationListSection(round, labels),

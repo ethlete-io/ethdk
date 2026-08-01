@@ -16,6 +16,12 @@ export type CreateRoundBracketSubColumnRelativeToFirstRoundConfig<TRoundData, TM
   hasReverseFinal: boolean;
   options: CreateBracketGridConfig;
   components: BracketComponents<TRoundData, TMatchData>;
+
+  /**
+   * Reserved space below the last match, for a layout whose columns are taller than the first round
+   * needs — a stacked bracket's centre chain hanging past the bottom of its block.
+   */
+  bottomPadding?: number;
 };
 
 export const createRoundBracketSubColumnRelativeToFirstRound = <TRoundData, TMatchData>(
@@ -93,6 +99,15 @@ export const createRoundBracketSubColumnRelativeToFirstRound = <TRoundData, TMat
         elementHeight: options.rowGap,
       });
     }
+  }
+
+  if (config.bottomPadding) {
+    elementsToCreate.push({
+      type: 'colGap',
+      area: '.',
+      partHeights: [config.bottomPadding],
+      elementHeight: config.bottomPadding,
+    });
   }
 
   // Create all elements at once

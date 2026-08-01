@@ -117,8 +117,11 @@ export type DoubleEliminationOptions = {
 
 /**
  * Double elimination for a power-of-two field. Upper-bracket winners advance cleanly (top seed
- * `u1` wins out); the lower bracket and finals use their own participant ids. Ratios stay within
- * the engine's supported range for `participantCount` of 4 or 8.
+ * `u1` wins out); the lower bracket and finals use their own participant ids.
+ *
+ * `participantCount` of 4 or 8 for the **left-to-right** layout, whose column mapping is a ratio
+ * between the two brackets. The stacked (mirrored) layout folds each bracket around its own centre and
+ * has no such ratio, so any power-of-two field works there — 32 is the one worth looking at.
  */
 export const generateDoubleEliminationBracket = (options: DoubleEliminationOptions = {}): Source => {
   const {

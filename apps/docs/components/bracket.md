@@ -88,16 +88,17 @@ providers: [
 double-elimination grid builder are each several hundred lines — and nothing references them until a
 factory you call does, so an app that only ever shows single-elimination brackets ships neither.
 
-| Factory                                    | Source `mode`            | Draws                                                                            | Roughly adds |
-| ------------------------------------------ | ------------------------ | -------------------------------------------------------------------------------- | ------------ |
-| `singleEliminationBracketLayout()`         | `single-elimination`     | Left to right, converging on the final.                                          | ~150 LOC     |
-| `mirroredSingleEliminationBracketLayout()` | `single-elimination`     | The same bracket [folded in half](#mirrored-layouts), final in the middle.       | ~150 LOC     |
-| `doubleEliminationBracketLayout()`         | `double-elimination`     | Upper over lower bracket, converging on the grand final (and the bracket reset). | ~600 LOC     |
-| `mirroredDoubleEliminationBracketLayout()` | `double-elimination`     | Both brackets [folded](#double-elimination-folds-too), finals in the middle.     | ~600 LOC     |
-| `swissBracketLayout(options?)`             | `swiss-with-elimination` | Standings groups per round with group-to-group connectors — see [Swiss](#swiss). | ~690 LOC     |
+| Factory                                    | Source `mode`            | Draws                                                                                                                           | Roughly adds |
+| ------------------------------------------ | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| `singleEliminationBracketLayout()`         | `single-elimination`     | Left to right, converging on the final.                                                                                         | ~150 LOC     |
+| `mirroredSingleEliminationBracketLayout()` | `single-elimination`     | The same bracket [folded in half](#mirrored-layouts), final in the middle.                                                      | ~150 LOC     |
+| `doubleEliminationBracketLayout()`         | `double-elimination`     | Upper over lower bracket, converging on the grand final (and the bracket reset).                                                | ~600 LOC     |
+| `mirroredDoubleEliminationBracketLayout()` | `double-elimination`     | The winners bracket [stacked over the losers bracket](#double-elimination-stacks-two-folds), each folded around its own centre. | ~350 LOC     |
+| `swissBracketLayout(options?)`             | `swiss-with-elimination` | Standings groups per round with group-to-group connectors — see [Swiss](#swiss).                                                | ~690 LOC     |
 
-The two variants of a mode share their builder, so registering both a layout and its mirrored twin
-costs almost nothing beyond the first.
+The two single-elimination variants share their builder, so registering both costs almost nothing
+beyond the first. The two double-elimination variants do not — they draw genuinely different shapes —
+so registering both costs roughly the sum.
 
 ### Per instance
 
@@ -339,7 +340,7 @@ Upper and lower brackets, the grand final and reverse (bracket-reset) final are 
 automatically from the round `type`s. Deferred/async lower brackets (where lower-bracket
 rounds resolve later than their upper-bracket feeders) are supported and align correctly, as is a
 front-truncated winners bracket whose opening round is played elsewhere. It also
-[folds](#double-elimination-folds-too).
+[folds](#double-elimination-stacks-two-folds).
 
 <StoryEmbed id="components-bracket--double-elimination" height="520px" />
 
@@ -420,20 +421,31 @@ that is too wide, which is what [density](#density) and the
 
 <StoryEmbed id="components-bracket--mirrored-single-elimination" height="420px" />
 
-### Double elimination folds too
+### Double elimination stacks two folds
 
-With `mirroredDoubleEliminationBracketLayout()` registered, both brackets fold, and each column keeps
-its winners-over-losers pairing, so the whole canvas mirrors
-rather than the two brackets mirroring separately. Two things follow from the losers bracket running
-longer than the winners bracket, and both are correct rather than worth working around:
+`mirroredDoubleEliminationBracketLayout()` draws **two independent blocks, one above the other**: the
+winners bracket folded around its own centre, the losers bracket folded around its own, and an empty
+band between them. Both blocks centre on the same middle column, however differently long they are —
+the losers bracket runs longer, so the winners block starts a column or two in.
 
-- **The middle is a run of columns, not one column** — the late rounds of both brackets, which are the
-  narrow ones, plus the grand final and the bracket reset.
-- **The losers bracket's way back crosses under the finals.** Its fold closes further out than the
-  winners bracket's, so that one connector is long. It lands on the right cells; it just has further to go.
+**The middle column is a vertical chain.** Under the round a block's two halves converge on hangs
+everything deeper than it: the grand final and then the bracket reset below the winners final, the
+third-place playoff below the losers final. That chain is what replaces the run of middle columns the
+fold used to need, and with it the long connector the losers bracket's way back used to make under the
+finals.
 
-A round that cannot be halved has no second copy, so an odd first round simply never folds — the bracket
-comes out left-to-right with the final at the end, which is the honest answer rather than an error.
+Two consequences worth knowing:
+
+- **The chain carries one round header**, naming the round its two halves converge on. The rounds below
+  it are a vertical run of single matches, and a header between each would sit on the line joining
+  them — [`<et-bracket-rounds-list>`](/components/bracket-rounds-list) still names every round.
+- **The losers champion's line to the grand final runs beside the middle column**, not through it: the
+  two cards share a column with the whole chain stacked between them, so the connector steps out into
+  the gutter and back.
+
+A round that cannot be halved has no second copy, so a block whose opening round is odd simply never
+folds — it comes out left-to-right with its late rounds at the end, which is the honest answer rather
+than an error.
 
 ## Density
 

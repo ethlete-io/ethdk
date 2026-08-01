@@ -40,6 +40,12 @@ swiss +2.4 kB; mirrored variants are free (+12 B, shared builders). Verified by 
 unminified bundles: `createSwissGrid`/`drawSwissMan`/swiss-group code appear **only** when
 `swissBracketLayout` is imported; DE builder only with its factory.
 
+**Since `plans/bracket-stacked-double-elimination.md` shipped, `mirroredDoubleEliminationBracketLayout()`
+is no longer free**: it has a builder of its own (`grid/double-elimination-stacked.ts`) rather than
+sharing the left-to-right one, so expect ≈ +1.5 kB gz for that factory. The left-to-right DE factory is
+unchanged — it actually shrank, since the folded-back pass it used to carry is gone. The seam is what
+made a second builder cheap to add: one new file, referenced only by the mirrored factory.
+
 ## Known trade-offs / follow-ups
 
 - **Rounds-list-only consumers pay +3.9 kB**: the list resolves a layout for grouping/sectioning/cards,

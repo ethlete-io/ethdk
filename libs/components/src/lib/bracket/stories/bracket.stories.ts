@@ -142,24 +142,27 @@ export const MirroredSingleElimination = {
 };
 
 /**
- * A folded double elimination. Both brackets fold, converging on the rounds too small to halve, with the
- * finals in the middle — so the losers bracket's way back crosses under them, since it runs longer than
- * the winners bracket.
+ * A folded double elimination: two stacked blocks, the winners bracket above the losers bracket, each
+ * folded around its own centre. The grand final and the bracket reset hang below the winners final, in
+ * the same middle column the losers bracket converges on.
  */
 export const MirroredDoubleElimination = {
   render: Template,
   args: {
-    source: generateDoubleEliminationBracket({ participantCount: 8, includeFinal: true }),
+    source: generateDoubleEliminationBracket({ participantCount: 32, includeFinal: true }),
     layout: BRACKET_DATA_LAYOUT.MIRRORED,
   },
 };
 
-/** The fold with a front-truncated winners bracket and a third-place playoff — the awkward shapes. */
+/**
+ * The stack with a losers bracket running one round longer than the winners bracket implies, plus a
+ * third-place playoff below it — the blocks come out different widths, and the shorter one centres.
+ */
 export const MirroredDoubleEliminationPartial = {
   render: Template,
   args: {
     source: generateDoubleEliminationBracket({
-      participantCount: 8,
+      participantCount: 32,
       partial: true,
       includeFinal: true,
       includeThirdPlace: true,

@@ -3,7 +3,7 @@ import { CurveOptions, curvePath } from './curve';
 import { Dimensions } from './grid/core/types';
 import { ComputedBracketGrid } from './grid/types';
 import { isBracketContinueMatch } from './grid/prebuild/bracket-continue-master-column';
-import { linePath } from './line';
+import { gutterPath, linePath, LineOptions, verticalPath } from './line';
 import { BracketPosition } from './math';
 import { path, PathOptions } from './path';
 
@@ -34,6 +34,28 @@ const makePos = (dimensions: Dimensions): BracketPosition => ({
     center: dimensions.left + dimensions.width / 2,
   },
 });
+
+/**
+ * Two cards in the same column — the shape a stacked layout's centre chain makes, where a round hangs
+ * directly below the one that feeds it and every horizontal run has zero width.
+ */
+const isSameColumn = (from: BracketPosition, to: BracketPosition) =>
+  Math.abs(from.inline.center - to.inline.center) < 1;
+
+/** A one-to-one connector, whichever way round the two cards sit. */
+// eslint-disable-next-line max-params -- geometry helper: (from, to, options) reads naturally positional
+const straightPath = (from: BracketPosition, to: BracketPosition, options: LineOptions) =>
+  isSameColumn(from, to) ? verticalPath(from, to, options) : linePath(from, to, options);
+
+/** One arm of a merge, collapsing to a straight run when the two cards share a column. */
+const mergePath = (
+  from: BracketPosition,
+  to: BracketPosition,
+  direction: 'up' | 'down',
+  options: CurveOptions,
+  // eslint-disable-next-line max-params -- mirrors curvePath's (from, to, direction, options)
+) =>
+  isSameColumn(from, to) ? verticalPath(from, to, { path: options.path }) : curvePath(from, to, direction, options);
 
 export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TRoundData, TMatchData>) => {
   const svgParts: string[] = [];
@@ -77,7 +99,7 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TR
           // The winner's short id, not both participants': this line is somebody advancing along it, and
           // the journey highlight lights the path a participant actually travelled.
           svgParts.push(
-            linePath(makePos(next.dimensions), currentPos, {
+            straightPath(makePos(next.dimensions), currentPos, {
               path: { ...dimensions.path, className: el.match.winner?.shortId || '' },
             }),
           );
@@ -96,8 +118,10 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TR
           // The winner of the match it comes from, like every other connector — this used to carry both of
           // the *current* match's participants, which lit the line for whoever arrived from somewhere else.
           svgParts.push(
-            linePath(prevPos, currentPos, {
+            straightPath(prevPos, currentPos, {
               path: { ...dimensions.path, className: el.match.relation.previousMatch.winner?.shortId || '' },
+              // The way back runs right to left: the round it comes from sits on the *other* side.
+              inverted: el.round.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT,
             }),
           );
 
@@ -124,11 +148,11 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TR
           };
 
           if (isLowerUpperMerger) {
-            svgParts.push(linePath(prevUpperPos, currentPos, { path: pathOptions }));
+            svgParts.push(straightPath(prevUpperPos, currentPos, { path: pathOptions, inverted: invertCurve }));
           } else {
             // draw two lines that merge into one in the middle
             svgParts.push(
-              curvePath(prevUpperPos, currentPos, 'down', {
+              mergePath(prevUpperPos, currentPos, 'down', {
                 ...curveOptions,
                 path: {
                   ...curveOptions.path,
@@ -138,14 +162,25 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TR
             );
           }
 
+          const lowerPathOptions = {
+            ...curveOptions.path,
+            className: el.match.relation.previousLowerMatch.winner?.shortId || '',
+          };
+
+          // A feeder directly *below* in the same column is the one connector a stacked layout has that
+          // crosses its own cards — the losers champion coming up to the grand final, past everything
+          // hanging under it. Every other same-column pair is adjacent, so a straight run is clear.
+          const isBlockToBlock =
+            isSameColumn(prevLowerPos, currentPos) && prevLowerPos.block.start > currentPos.block.end;
+
           svgParts.push(
-            curvePath(prevLowerPos, currentPos, 'up', {
-              ...curveOptions,
-              path: {
-                ...curveOptions.path,
-                className: el.match.relation.previousLowerMatch.winner?.shortId || '',
-              },
-            }),
+            isBlockToBlock
+              ? gutterPath(prevLowerPos, currentPos, {
+                  path: lowerPathOptions,
+                  inverted: invertCurve,
+                  gutter: dimensions.columnGap / 2,
+                })
+              : mergePath(prevLowerPos, currentPos, 'up', { ...curveOptions, path: lowerPathOptions }),
           );
 
           break;
