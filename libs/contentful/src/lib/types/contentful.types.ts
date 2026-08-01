@@ -1,5 +1,4 @@
-import { ComponentType } from '@angular/cdk/portal';
-import { InputSignal } from '@angular/core';
+import { InputSignal, Type } from '@angular/core';
 import { Block, NodeData } from '@contentful/rich-text-types';
 import { ContentfulIncludeMap } from '../components/rich-text-renderer';
 import { ContentfulGqlAsset } from '../gql';
@@ -18,15 +17,15 @@ export type ContentfulImageFocusArea =
   | 'face'
   | 'faces';
 
-export type ComponentLikeWithAsset = ComponentType<{
+export type ComponentLikeWithAsset = Type<{
   asset: InputSignal<ContentfulRestAsset | ContentfulGqlAsset | null | undefined>;
 }>;
-export type ComponentLikeWithLink = ComponentType<{
+export type ComponentLikeWithLink = Type<{
   href: InputSignal<string>;
   text: InputSignal<string>;
   textClass: InputSignal<string>;
 }>;
-export type ComponentLikeWithContentfulRendererInputs = ComponentType<{
+export type ComponentLikeWithContentfulRendererInputs = Type<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fields?: InputSignal<any>;
 

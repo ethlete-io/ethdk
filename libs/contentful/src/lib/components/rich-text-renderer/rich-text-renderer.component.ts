@@ -1,10 +1,10 @@
-import { ComponentType } from '@angular/cdk/portal';
 import { DOCUMENT } from '@angular/common';
 import {
   Component,
   ComponentRef,
   ElementRef,
   EmbeddedViewRef,
+  Type,
   ViewContainerRef,
   ViewEncapsulation,
   computed,
@@ -102,7 +102,7 @@ type ComponentRenderCommand = [
   domPosition: number,
   index: number,
   attributes: Record<string, string>,
-  component: ComponentType<unknown>,
+  component: Type<unknown>,
   inputs: Record<string, unknown>,
   componentId: string,
 ];
