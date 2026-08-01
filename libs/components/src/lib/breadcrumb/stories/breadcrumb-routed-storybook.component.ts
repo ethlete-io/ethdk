@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { ProvideSurfaceDirective } from '@ethlete/core';
 import { tap, timer } from 'rxjs';
-import { BREADCRUMB_IMPORTS } from '../breadcrumb.imports';
+import { BREADCRUMB_COLLAPSE_IMPORTS, BREADCRUMB_IMPORTS } from '../breadcrumb.imports';
 
 /**
  * The app shell: it renders the outlet without knowing what any view's trail says, and contributes the
@@ -20,7 +20,7 @@ import { BREADCRUMB_IMPORTS } from '../breadcrumb.imports';
         <a class="underline" routerLink="/teams/chemie/squad">Squad</a>
       </nav>
 
-      <et-breadcrumb-outlet />
+      <et-breadcrumb-outlet etBreadcrumbCollapse />
 
       <!-- The shell's own crumb: the root, which is a route of its own - so following it actually goes
            somewhere and the trail shortens to just this crumb. -->
@@ -34,7 +34,7 @@ import { BREADCRUMB_IMPORTS } from '../breadcrumb.imports';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BREADCRUMB_IMPORTS, ProvideSurfaceDirective, RouterLink, RouterOutlet],
+  imports: [BREADCRUMB_IMPORTS, BREADCRUMB_COLLAPSE_IMPORTS, ProvideSurfaceDirective, RouterLink, RouterOutlet],
 })
 export class BreadcrumbRoutedStorybookComponent {
   public surface = input('dark');

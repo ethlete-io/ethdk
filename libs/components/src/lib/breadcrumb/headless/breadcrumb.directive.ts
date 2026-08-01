@@ -17,7 +17,7 @@ import { RuntimeError, signalHostElementScrollState } from '@ethlete/core';
 import { BREADCRUMB_ERROR_CODES } from '../breadcrumb-errors';
 import { BreadcrumbLabels, injectBreadcrumbLabels } from '../breadcrumb-labels';
 import { BreadcrumbCrumb, BreadcrumbRenderItem } from '../breadcrumb.types';
-import { BREADCRUMB_TOKEN } from './breadcrumb.tokens';
+import { BREADCRUMB_COLLAPSE_TOKEN, BREADCRUMB_TOKEN } from './breadcrumb.tokens';
 import { BreadcrumbItemTemplateDirective, BreadcrumbSeparatorDirective } from './breadcrumb-templates.directive';
 
 /** Below this many crumbs there is nothing worth hiding: first + overflow + last is the collapsed shape. */
@@ -53,9 +53,15 @@ export class BreadcrumbDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private injectedLabels = injectBreadcrumbLabels();
 
+  private collapseAffordance = inject(BREADCRUMB_COLLAPSE_TOKEN, { optional: true });
+
   /**
    * Move the middle crumbs into an overflow control when the trail doesn't fit. Turn it off to let the
-   * trail be clipped (or wrapped, or scrolled) by your own CSS instead. @default true
+   * trail be clipped (or wrapped, or scrolled) by your own CSS instead.
+   *
+   * Only has an effect where the collapse affordance is present: apply `etBreadcrumbCollapse` from
+   * `BREADCRUMB_COLLAPSE_IMPORTS` to the breadcrumb (or any ancestor, e.g. the app shell). Without it
+   * there is no control to move the crumbs into, and the trail is clipped. @default true
    */
   public collapse = input(true, { transform: booleanAttribute });
 
@@ -77,6 +83,12 @@ export class BreadcrumbDirective {
 
   /** @internal The `etBreadcrumbSeparator` slot, when one is projected. */
   public separatorTemplate = contentChild(BreadcrumbSeparatorDirective, { descendants: true });
+
+  /** Whether collapsing is both wanted and possible - the affordance is an opt-in import. */
+  private canCollapse = computed(() => this.collapse() && !!this.collapseAffordance);
+
+  /** @internal The component the overflow slot renders, supplied by `etBreadcrumbCollapse`. */
+  public overflowComponent = this.collapseAffordance?.overflowComponent ?? null;
 
   /** The trail this breadcrumb renders, from whichever of the two sources is in play. */
   public items = computed<readonly BreadcrumbCrumb[]>(() => this.crumbs() ?? this.declaredCrumbs());
@@ -118,12 +130,12 @@ export class BreadcrumbDirective {
    * @internal
    */
   public isMeasuring = computed(
-    () => this.collapse() && this.items().length >= MIN_COLLAPSIBLE_ITEMS && !this.hasMeasured(),
+    () => this.canCollapse() && this.items().length >= MIN_COLLAPSIBLE_ITEMS && !this.hasMeasured(),
   );
 
   /** Whether the middle crumbs are currently hidden behind the overflow control. */
   public isCollapsed = computed(() => {
-    if (!this.collapse() || this.items().length < MIN_COLLAPSIBLE_ITEMS) return false;
+    if (!this.canCollapse() || this.items().length < MIN_COLLAPSIBLE_ITEMS) return false;
 
     const fullTrailWidth = this.fullTrailWidth();
 
@@ -212,7 +224,7 @@ export class BreadcrumbDirective {
 
     // A measurement taken while collapsed describes the collapsed trail, so it must not overwrite the
     // remembered full width - that is the number the trail is re-expanded against.
-    if (!this.collapse() || this.isCollapsed()) return;
+    if (!this.canCollapse() || this.isCollapsed()) return;
 
     // anything that still fits says nothing about the width the full trail needs
     if (scroll <= client) return;

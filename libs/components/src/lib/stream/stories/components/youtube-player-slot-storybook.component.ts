@@ -4,7 +4,7 @@ import { TextButtonComponent } from '../../../button/text-button.component';
 import { TAB_IMPORTS } from '../../../tabs/tabs.imports';
 import { PipSlotPlaceholderComponent } from '../../pip/pip-slot-placeholder.component';
 import { provideStreamConfig } from '../../stream-config';
-import { STREAM_IMPORTS } from '../../stream.imports';
+import { STREAM_IMPORTS, STREAM_PIP_IMPORTS, STREAM_YOUTUBE_IMPORTS } from '../../stream.imports';
 import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
 
 @Component({
@@ -203,7 +203,14 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [STREAM_IMPORTS, ButtonComponent, TextButtonComponent, TAB_IMPORTS],
+  imports: [
+    STREAM_IMPORTS,
+    STREAM_YOUTUBE_IMPORTS,
+    STREAM_PIP_IMPORTS,
+    ButtonComponent,
+    TextButtonComponent,
+    TAB_IMPORTS,
+  ],
   providers: [
     ...provideStreamConfig({
       pipSlotPlaceholderComponent: PipSlotPlaceholderComponent,

@@ -125,67 +125,6 @@
     block-size: var(--et-breadcrumb-separator-size);
   }
 
-  .et-breadcrumb-overflow-trigger {
-    /* A round pill would be the one circle in a row of text; match the trail's own rounding. */
-    --et-icon-button-border-radius: var(--et-breadcrumb-radius);
-
-    /* Its box carries ~5px of padding around the glyph, so the *visual* gap to the neighbouring
-       chevrons would read as twice the gap between the text crumbs. Pull it back in without giving up
-       any of the hit area. */
-    margin-inline: -4px;
-  }
-
-  /* `mutedUntilPressed` already keeps the resting trigger neutral; this does the same for the open
-     state, where the icon-button would otherwise reach for the accent. Nothing in a trail is ever
-     "active" in that sense — an accent-filled control mid-trail is the loudest thing in a row of muted
-     text — so the open state is the same neutral tint, one step stronger, which is enough to read as
-     held open next to the panel it opened. */
-  .et-breadcrumb .et-breadcrumb-overflow-trigger[data-pressed='true'] {
-    background: color-mix(in srgb, var(--et-surface-interaction-solid) 16%, transparent);
-    color: var(--et-surface-color-solid, CanvasText);
-
-    @media (hover: hover) {
-      &:hover {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid) 24%, transparent);
-      }
-    }
-
-    &:active {
-      background: color-mix(in srgb, var(--et-surface-interaction-solid) 28%, transparent);
-    }
-  }
-
-  .et-breadcrumb-overflow-list {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    /* The rows carry their own padding; pulling the list out by that much lets a row's hover fill reach
-       towards the panel edge like a menu row, while the labels stay aligned with the panel's padding. */
-    margin: -4px -8px;
-    padding: 0;
-    list-style: none;
-
-    /* Same crumb template as the trail, but here each one is a row: full-width, so the whole strip is
-       the target, with the fill doing the work the underline does inline. */
-    .et-breadcrumb-item {
-      display: block;
-      padding: 4px 8px;
-      color: var(--et-surface-color-solid, CanvasText);
-      transition:
-        background 120ms ease,
-        color 120ms ease;
-
-      &:where(a, button):hover {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid) 12%, transparent);
-        text-decoration-color: transparent;
-      }
-
-      &:where(a, button):active {
-        background: color-mix(in srgb, var(--et-surface-interaction-solid) 20%, transparent);
-      }
-    }
-  }
-
   .et-breadcrumb-loading {
     inline-size: var(--et-breadcrumb-loading-width);
   }

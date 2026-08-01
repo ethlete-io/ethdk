@@ -5,7 +5,8 @@ import { BreadcrumbOutletComponent } from './breadcrumb-outlet.component';
 import { provideBreadcrumbLabels } from './breadcrumb-labels';
 import { provideBreadcrumbManager } from './breadcrumb-manager';
 import { BreadcrumbComponent } from './breadcrumb.component';
-import { BREADCRUMB_IMPORTS } from './breadcrumb.imports';
+import { BreadcrumbOverflowComponent } from './breadcrumb-overflow.component';
+import { BREADCRUMB_COLLAPSE_IMPORTS, BREADCRUMB_IMPORTS } from './breadcrumb.imports';
 import { BreadcrumbDirective } from './headless';
 
 @Component({
@@ -195,5 +196,36 @@ describe('BreadcrumbOutletComponent', () => {
     fixture.detectChanges();
 
     expect(trail(fixture)).toEqual(['Home']);
+  });
+});
+
+@Component({
+  selector: 'et-test-breadcrumb-collapse-host',
+  template: `
+    <et-breadcrumb etBreadcrumbCollapse>
+      <ng-template etBreadcrumbItemTemplate><a etBreadcrumbItem href="#">Home</a></ng-template>
+      <ng-template etBreadcrumbItemTemplate><a etBreadcrumbItem href="#">Teams</a></ng-template>
+      <ng-template etBreadcrumbItemTemplate><span etBreadcrumbItem>Chemie</span></ng-template>
+    </et-breadcrumb>
+  `,
+  imports: [BREADCRUMB_IMPORTS, BREADCRUMB_COLLAPSE_IMPORTS],
+})
+class BreadcrumbCollapseHostComponent {
+  public breadcrumb = viewChild.required(BreadcrumbComponent, { read: BreadcrumbDirective });
+}
+
+describe('breadcrumb collapse', () => {
+  it('has no overflow control - and never collapses - without etBreadcrumbCollapse', () => {
+    const fixture = createHost();
+
+    expect(fixture.componentInstance.breadcrumb().overflowComponent).toBeNull();
+    expect(fixture.componentInstance.breadcrumb().isCollapsed()).toBe(false);
+  });
+
+  it('takes the overflow control from etBreadcrumbCollapse', () => {
+    const fixture = TestBed.createComponent(BreadcrumbCollapseHostComponent);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.breadcrumb().overflowComponent).toBe(BreadcrumbOverflowComponent);
   });
 });

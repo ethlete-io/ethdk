@@ -1,7 +1,7 @@
 import { JsonPipe } from '@angular/common';
 import { Component, ViewEncapsulation, input, viewChild } from '@angular/core';
 import { TwitchPlayerSlotComponent } from '../../platform/twitch/twitch-player-slot.component';
-import { STREAM_IMPORTS } from '../../stream.imports';
+import { STREAM_IMPORTS, STREAM_TWITCH_IMPORTS } from '../../stream.imports';
 
 @Component({
   selector: 'et-sb-twitch-player',
@@ -16,7 +16,7 @@ import { STREAM_IMPORTS } from '../../stream.imports';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [STREAM_IMPORTS, JsonPipe],
+  imports: [STREAM_IMPORTS, STREAM_TWITCH_IMPORTS, JsonPipe],
 })
 export class TwitchPlayerStorybookComponent {
   public src = input.required<string>();

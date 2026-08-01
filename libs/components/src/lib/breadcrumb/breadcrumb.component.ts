@@ -1,15 +1,16 @@
-import { NgTemplateOutlet } from '@angular/common';
+import { NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, inject } from '@angular/core';
-import { BUTTON_IMPORTS } from '../button';
-import { CHEVRON_ICON, ELLIPSIS_ICON, IconDirective, provideIcons } from '../icon';
+import { CHEVRON_ICON, IconDirective, provideIcons } from '../icon';
 import { SKELETON_IMPORTS } from '../skeleton';
-import { TOGGLETIP_IMPORTS } from '../toggletip';
 import { BreadcrumbDirective } from './headless';
 
 /**
- * The default breadcrumb: an ordered trail of crumbs separated by chevrons, which moves its middle
- * crumbs into a menu when it runs out of room (first and last always stay). Driven by the headless
+ * The default breadcrumb: an ordered trail of crumbs separated by chevrons. Driven by the headless
  * {@link BreadcrumbDirective}.
+ *
+ * Add `etBreadcrumbCollapse` from `BREADCRUMB_COLLAPSE_IMPORTS` and the middle crumbs move into an
+ * overflow control when the trail runs out of room (first and last always stay); without it the trail is
+ * clipped, and the overlay runtime that control needs stays out of your bundle.
  *
  * The crumbs are `<ng-template etBreadcrumbItemTemplate>`s you declare - see the headless directive for
  * why. For a routed app, don't place this yourself: let each view contribute an
@@ -27,8 +28,8 @@ import { BreadcrumbDirective } from './headless';
   templateUrl: './breadcrumb.component.html',
   styleUrl: './breadcrumb.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, IconDirective, NgTemplateOutlet, SKELETON_IMPORTS, TOGGLETIP_IMPORTS],
-  providers: [provideIcons(CHEVRON_ICON, ELLIPSIS_ICON)],
+  imports: [IconDirective, NgComponentOutlet, NgTemplateOutlet, SKELETON_IMPORTS],
+  providers: [provideIcons(CHEVRON_ICON)],
   hostDirectives: [
     {
       directive: BreadcrumbDirective,

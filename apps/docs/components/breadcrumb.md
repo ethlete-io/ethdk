@@ -2,18 +2,19 @@
 
 The trail that says where in the app the user is. Each crumb is a template you declare, so a crumb can
 be a router link, the plain text of the current page, or a placeholder while its name is still being
-fetched - and when the trail runs out of room, the middle crumbs move into a popover instead of being
-clipped.
+fetched - and, with the opt-in collapse affordance, the middle crumbs move into a popover when the trail
+runs out of room instead of being clipped.
 
 In a routed app you don't build the whole trail anywhere: every view contributes **only the crumbs it
 owns** and the shell's outlet composes them - see [Trails from routed views](#trails-from-routed-views).
 
 ```ts
-import { BREADCRUMB_IMPORTS } from '@ethlete/components';
+// add BREADCRUMB_COLLAPSE_IMPORTS for the overflow affordance - see Overflow
+import { BREADCRUMB_COLLAPSE_IMPORTS, BREADCRUMB_IMPORTS } from '@ethlete/components';
 ```
 
 ```html
-<et-breadcrumb>
+<et-breadcrumb etBreadcrumbCollapse>
   <ng-template etBreadcrumbItemTemplate>
     <a etBreadcrumbItem routerLink="/teams">Teams</a>
   </ng-template>
@@ -31,7 +32,8 @@ import { BREADCRUMB_IMPORTS } from '@ethlete/components';
 
 | Piece                      | What it is                                                                                                     |
 | -------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `et-breadcrumb`            | The navigation landmark: an `<ol>` of crumbs with separators, and the overflow control once they stop fitting. |
+| `et-breadcrumb`            | The navigation landmark: an `<ol>` of crumbs with separators.                                                  |
+| `etBreadcrumbCollapse`     | Opt-in: lets the trail move the crumbs that don't fit into an overflow control.                                |
 | `etBreadcrumbItemTemplate` | One crumb, as an `<ng-template>` - the breadcrumb decides whether it renders inline or inside the overflow.    |
 | `etBreadcrumbItem`         | The crumb element itself (`<a>`, `<button>`, `<span>`): default styling plus `aria-current` on the last crumb. |
 | `etBreadcrumbSeparator`    | Optional `<ng-template>` replacing the chevron between crumbs.                                                 |
@@ -47,10 +49,10 @@ keeps its slot until the name arrives.
 
 ### Inputs
 
-| Input      | Default | Description                                                                                                 |
-| ---------- | ------- | ----------------------------------------------------------------------------------------------------------- |
-| `collapse` | `true`  | Move the middle crumbs into the overflow control when the trail doesn't fit. Off leaves your CSS in charge. |
-| `labels`   | `null`  | Per-instance overrides for the accessible labels, merged over the provided `BREADCRUMB_LABELS`.             |
+| Input      | Default | Description                                                                                                                               |
+| ---------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `collapse` | `true`  | Move the middle crumbs into the overflow control when the trail doesn't fit. Off leaves your CSS in charge. Needs `etBreadcrumbCollapse`. |
+| `labels`   | `null`  | Per-instance overrides for the accessible labels, merged over the provided `BREADCRUMB_LABELS`.                                           |
 
 `etBreadcrumbItemTemplate` takes `loading` (default `false`) plus `name`/`url` for
 [structured data](#seo-structured-data); `etBreadcrumbSegment` takes `order` (default `null`);
@@ -58,7 +60,22 @@ keeps its slot until the name arrives.
 
 ## Overflow
 
-The breadcrumb measures itself: once the full trail is wider than the space available, everything
+Collapsing is opt-in. Apply `etBreadcrumbCollapse` (from `BREADCRUMB_COLLAPSE_IMPORTS`) to the
+breadcrumb, to `<et-breadcrumb-outlet>`, or to any ancestor - the shell's root element covers every
+breadcrumb below it. It is separate from `BREADCRUMB_IMPORTS` because the control it adds is a
+toggletip, which pulls in the overlay runtime; a trail that is always short, or one you clip, wrap or
+scroll yourself, shouldn't pay for it. Without the directive the trail is clipped by the breadcrumb's
+own `overflow: hidden` and `collapse` has nothing to collapse into.
+
+```html
+<!-- once, in the shell - every breadcrumb below it can collapse -->
+<div etBreadcrumbCollapse>
+  <et-breadcrumb-outlet />
+  <router-outlet />
+</div>
+```
+
+With it in place, the breadcrumb measures itself: once the full trail is wider than the space available, everything
 between the first crumb and the current page moves into a [toggletip](/components/toggletip) behind an
 ellipsis button. The width the full trail needs is remembered from that measurement, so the trail
 expands again only when there is genuinely room for all of it - it never flickers between the two
@@ -89,7 +106,7 @@ providers: [provideBreadcrumbManager()];
 
 ```html
 <!-- shell: one outlet, plus (optionally) the root crumb -->
-<et-breadcrumb-outlet />
+<et-breadcrumb-outlet etBreadcrumbCollapse />
 
 <ng-template etBreadcrumbSegment>
   <ng-template etBreadcrumbItemTemplate>

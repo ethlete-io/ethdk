@@ -79,7 +79,7 @@ const adapter = createGridAdapter<BackendWidget>({
 });
 ```
 
-The `BackendIntegration` story shows the full round trip. A `<et-grid-debug />` component visualizes the underlying cells while developing.
+The `BackendIntegration` story shows the full round trip. A `<et-grid-debug />` component visualizes the underlying cells while developing - it lives in its own `GRID_DEBUG_IMPORTS` barrel so it never reaches a production bundle.
 
 ## Accessibility
 

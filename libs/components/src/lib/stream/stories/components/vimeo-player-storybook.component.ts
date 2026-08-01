@@ -1,7 +1,7 @@
 import { JsonPipe } from '@angular/common';
 import { Component, ViewEncapsulation, input, viewChild } from '@angular/core';
 import { VimeoPlayerSlotComponent } from '../../platform/vimeo/vimeo-player-slot.component';
-import { STREAM_IMPORTS } from '../../stream.imports';
+import { STREAM_IMPORTS, STREAM_VIMEO_IMPORTS } from '../../stream.imports';
 
 @Component({
   selector: 'et-sb-vimeo-player',
@@ -16,7 +16,7 @@ import { STREAM_IMPORTS } from '../../stream.imports';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [STREAM_IMPORTS, JsonPipe],
+  imports: [STREAM_IMPORTS, STREAM_VIMEO_IMPORTS, JsonPipe],
 })
 export class VimeoPlayerStorybookComponent {
   public videoId = input<string | number>(148751763);

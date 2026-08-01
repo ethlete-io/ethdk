@@ -1,6 +1,6 @@
 # Stream
 
-Embedded live-stream and video players for **YouTube, Twitch, Vimeo, Dailymotion, Kick, Facebook, TikTok and SOOP** - with consent gating, loading/error overlays and cross-slot picture-in-picture. Import `STREAM_IMPORTS`.
+Embedded live-stream and video players for **YouTube, Twitch, Vimeo, Dailymotion, Kick, Facebook, TikTok and SOOP** - with consent gating, loading/error overlays and cross-slot picture-in-picture. Import `STREAM_IMPORTS` plus the barrel of each platform you embed.
 
 ## Player slots
 
@@ -13,8 +13,32 @@ Each platform ships a raw player (`et-youtube-player`) and a **slot** (`et-youtu
 ```
 
 ```ts
-import { STREAM_IMPORTS } from '@ethlete/components';
+// the shared parts, then one barrel per platform you actually embed
+import {
+  STREAM_IMPORTS,
+  STREAM_TIKTOK_IMPORTS,
+  STREAM_TWITCH_IMPORTS,
+  STREAM_YOUTUBE_IMPORTS,
+} from '@ethlete/components';
 ```
+
+`STREAM_IMPORTS` holds only what every stream shares - the consent gate, the loading and error overlays
+and the `etStreamPlayerSlot` directive. Each platform ships its own barrel, so the seven you don't use
+stay out of your bundle:
+
+| Platform    | Barrel                       |
+| ----------- | ---------------------------- |
+| YouTube     | `STREAM_YOUTUBE_IMPORTS`     |
+| Twitch      | `STREAM_TWITCH_IMPORTS`      |
+| Vimeo       | `STREAM_VIMEO_IMPORTS`       |
+| Dailymotion | `STREAM_DAILYMOTION_IMPORTS` |
+| Kick        | `STREAM_KICK_IMPORTS`        |
+| Facebook    | `STREAM_FACEBOOK_IMPORTS`    |
+| TikTok      | `STREAM_TIKTOK_IMPORTS`      |
+| SOOP        | `STREAM_SOOP_IMPORTS`        |
+
+Picture-in-picture is `STREAM_PIP_IMPORTS`, and `STREAM_ALL_IMPORTS` is everything at once - handy in a
+playground, wasteful in an app.
 
 Source inputs per platform:
 
@@ -64,7 +88,7 @@ A slot's player can detach into a floating, draggable PiP window and hand back l
 <button (click)="slot.slotDirective.slot.pipActivate(() => goBackToThisView())" et-button>Enter PiP</button>
 ```
 
-`pipActivate(onBack?)` / `pipDeactivate()` control it; the PiP window chrome (close, back, grid toggle for multiple simultaneous PiP players) and window sizing are configurable via `provideStreamConfig({ pipChromeComponent, pipChrome, pipWindow, pipSlotPlaceholderComponent })` - `pipChrome` tunes the appearance of the built-in chrome without replacing it. A custom chrome component composes the headless PiP directives from `STREAM_IMPORTS`: `etPipClose`, `etPipBack`, `etPipBringBack` and `etPipGridToggle`. The `Mixed` story demonstrates a PiP grid mixing 16∶9 and 9∶16 players.
+`pipActivate(onBack?)` / `pipDeactivate()` control it; the PiP window chrome (close, back, grid toggle for multiple simultaneous PiP players) and window sizing are configurable via `provideStreamConfig({ pipChromeComponent, pipChrome, pipWindow, pipSlotPlaceholderComponent })` - `pipChrome` tunes the appearance of the built-in chrome without replacing it. Picture-in-picture is opt-in: add `STREAM_PIP_IMPORTS` for the floating window, the PiP player and the controls. A custom chrome component composes the headless PiP directives from that barrel: `etPipClose`, `etPipBack`, `etPipBringBack` and `etPipGridToggle`. The `Mixed` story demonstrates a PiP grid mixing 16∶9 and 9∶16 players.
 
 <StoryEmbed id="components-stream-mixed--mixed-aspect-ratios" height="560px" />
 

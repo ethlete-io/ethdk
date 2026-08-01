@@ -6,33 +6,13 @@
       @if (slot.type === 'item') {
         <ng-container [ngTemplateOutlet]="crumb" [ngTemplateOutletContext]="{ $implicit: slot.item }" />
       } @else {
-        <!-- A toggletip, not a menu: the hidden crumbs are links and headings of the consumer's making,
-             and a `role="menu"` may only contain menu items. This keeps them a plain list of links,
-             reachable with Tab and dismissed with Escape. -->
-        <button
-          [etToggletip]="overflow"
-          [etToggletipAriaLabel]="breadcrumb.resolvedLabels().overflow"
-          [attr.aria-label]="breadcrumb.resolvedLabels().overflow"
-          class="et-breadcrumb-overflow-trigger"
-          et-icon-button
-          etToggletipTrigger
-          mutedUntilPressed
-          size="xs"
-          type="button"
-          variant="transparent"
-        >
-          <i etIcon="et-ellipsis"></i>
-        </button>
-
-        <ng-template #overflow>
-          <ol class="et-breadcrumb-overflow-list" data-toggletip-hug>
-            @for (item of slot.items; track $index) {
-              <li>
-                <ng-container [ngTemplateOutlet]="crumb" [ngTemplateOutletContext]="{ $implicit: item }" />
-              </li>
-            }
-          </ol>
-        </ng-template>
+        <!-- Rendered dynamically so the collapse affordance - a toggletip, and with it the overlay
+             runtime - is only in the bundle of an app that imports BREADCRUMB_COLLAPSE_IMPORTS. The
+             breadcrumb only ever produces an overflow slot when that import supplied the component. -->
+        <ng-container
+          [ngComponentOutlet]="breadcrumb.overflowComponent"
+          [ngComponentOutletInputs]="{ items: slot.items, crumbTemplate: crumb }"
+        />
       }
 
       @if (!$last) {

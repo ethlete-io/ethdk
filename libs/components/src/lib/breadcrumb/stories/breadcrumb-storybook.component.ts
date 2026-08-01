@@ -1,6 +1,6 @@
 import { Component, ViewEncapsulation, computed, input, viewChild } from '@angular/core';
 import { ProvideSurfaceDirective } from '@ethlete/core';
-import { BREADCRUMB_IMPORTS, BREADCRUMB_SEO_IMPORTS } from '../breadcrumb.imports';
+import { BREADCRUMB_COLLAPSE_IMPORTS, BREADCRUMB_IMPORTS, BREADCRUMB_SEO_IMPORTS } from '../breadcrumb.imports';
 import { BreadcrumbSeoDirective } from '../seo';
 
 @Component({
@@ -13,7 +13,7 @@ import { BreadcrumbSeoDirective } from '../seo';
         <!-- name/url are read only by etBreadcrumbSeo, never rendered: a crumb's content is a template
              with no single text form, and schema.org wants a plain name and an absolute URL. The last
              crumb states no url - it is the page the markup is on. -->
-        <et-breadcrumb [collapse]="collapse()" [etBreadcrumbSeo]="seo()">
+        <et-breadcrumb [collapse]="collapse()" [etBreadcrumbSeo]="seo()" etBreadcrumbCollapse>
           <ng-template etBreadcrumbItemTemplate name="Home" url="https://example.com/">
             <a (click)="stayHere($event)" etBreadcrumbItem href="#">Home</a>
           </ng-template>
@@ -59,7 +59,7 @@ import { BreadcrumbSeoDirective } from '../seo';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BREADCRUMB_IMPORTS, BREADCRUMB_SEO_IMPORTS, ProvideSurfaceDirective],
+  imports: [BREADCRUMB_IMPORTS, BREADCRUMB_COLLAPSE_IMPORTS, BREADCRUMB_SEO_IMPORTS, ProvideSurfaceDirective],
 })
 export class BreadcrumbStorybookComponent {
   public surface = input('dark');

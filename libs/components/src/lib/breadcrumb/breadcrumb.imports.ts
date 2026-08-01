@@ -1,3 +1,4 @@
+import { BreadcrumbCollapseDirective } from './breadcrumb-collapse.directive';
 import { BreadcrumbOutletComponent } from './breadcrumb-outlet.component';
 import { BreadcrumbComponent } from './breadcrumb.component';
 import {
@@ -19,6 +20,14 @@ export const BREADCRUMB_IMPORTS = [
   BreadcrumbSeparatorDirective,
   BreadcrumbDirective,
 ] as const;
+
+/**
+ * The collapse affordance (`etBreadcrumbCollapse`): apply it to a breadcrumb, to
+ * `<et-breadcrumb-outlet>`, or to any ancestor, and the crumbs that don't fit move into an overflow
+ * toggletip. Separate because that control pulls in the overlay runtime, which a trail that is always
+ * short - or one you clip or wrap yourself - shouldn't pay for.
+ */
+export const BREADCRUMB_COLLAPSE_IMPORTS = [BreadcrumbCollapseDirective] as const;
 
 /**
  * `schema.org` BreadcrumbList markup for the trail (`etBreadcrumbSeo`). Separate because it pulls in

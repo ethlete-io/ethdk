@@ -1,7 +1,7 @@
 import { JsonPipe } from '@angular/common';
 import { Component, ViewEncapsulation, input, viewChild } from '@angular/core';
 import { DailymotionPlayerSlotComponent } from '../../platform/dailymotion/dailymotion-player-slot.component';
-import { STREAM_IMPORTS } from '../../stream.imports';
+import { STREAM_DAILYMOTION_IMPORTS, STREAM_IMPORTS } from '../../stream.imports';
 
 @Component({
   selector: 'et-sb-dailymotion-player',
@@ -16,7 +16,7 @@ import { STREAM_IMPORTS } from '../../stream.imports';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [STREAM_IMPORTS, JsonPipe],
+  imports: [STREAM_IMPORTS, STREAM_DAILYMOTION_IMPORTS, JsonPipe],
 })
 export class DailymotionPlayerStorybookComponent {
   public videoId = input('x84sh87');
