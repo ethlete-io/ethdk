@@ -479,9 +479,6 @@ export class ContentfulRichTextRendererComponent {
 
     lastComponentIndexes.sort((a, b) => a.newIndex - b.newIndex);
 
-    // check if the prevIndex are in order ascending
-    // for indexes that are not in order, create a move instruction
-    // for indexes that are in order, create an update instruction
     let moveCheckIndex = 0;
     while (moveCheckIndex < lastComponentIndexes.length - 1) {
       const moveCurr = lastComponentIndexes[moveCheckIndex];
@@ -511,7 +508,6 @@ export class ContentfulRichTextRendererComponent {
           instructions.push([RENDER_INSTRUCTION_TYPE.CREATE, command]);
         }
       } else {
-        // create
         instructions.push([RENDER_INSTRUCTION_TYPE.CREATE, command]);
       }
     }
@@ -1118,66 +1114,3 @@ export class ContentfulRichTextRendererComponent {
     }
   }
 }
-
-// const stringifyRenderCommand = (command: RenderCommand) => {
-//   const nestAttr = `nest="${command[RENDER_COMMAND_POSITION.NESTING_LEVEL]}"`;
-//   const domAttr = `dom="${command[RENDER_COMMAND_POSITION.DOM_POSITION]}"`;
-
-//   if (isHtmlOpenRenderCommand(command)) {
-//     return `<${command[HTML_OPEN_RENDER_COMMAND_POSITION.TAG_NAME]} ${nestAttr} ${domAttr} _id="${command[HTML_OPEN_RENDER_COMMAND_POSITION.ELEMENT_ID]}" _index="${command[RENDER_COMMAND_POSITION.INDEX]}">`;
-//   } else if (isHtmlCloseRenderCommand(command)) {
-//     return `</${command[HTML_CLOSE_RENDER_COMMAND_POSITION.TAG_NAME]} ${nestAttr} ${domAttr}>`;
-//   } else if (isTextRenderCommand(command)) {
-//     let text = command[TEXT_RENDER_COMMAND_POSITION.TEXT];
-//     const brStart = text.startsWith('\n') ? '<br/>' : '';
-//     text = brStart ? text.slice(1) : text;
-
-//     return [
-//       ...(brStart ? [brStart] : []),
-//       `<span ${nestAttr} ${domAttr} _index="${command[RENDER_COMMAND_POSITION.INDEX]}">`,
-//       text.replace(/\n/g, ' <br/> '),
-//       '</span>',
-//     ];
-//   } else if (isComponentRenderCommand(command)) {
-//     const selector = command[COMPONENT_RENDER_COMMAND_POSITION.COMPONENT_ID];
-//     return [`<${selector} ${nestAttr} ${domAttr}>`, `</${selector}>`];
-//   } else {
-//     return 'UNKNOWN';
-//   }
-// };
-
-// const formatHTMLStringArray = (html: string[]) => {
-//   const result: string[] = [];
-//   let indent = 0;
-
-//   for (const tag of html) {
-//     if (tag.startsWith('</')) {
-//       indent--;
-//     }
-
-//     result.push(' '.repeat(indent * 2) + tag);
-
-//     if (tag.startsWith('<') && !tag.startsWith('</') && !tag.startsWith('<br')) {
-//       indent++;
-//     }
-//   }
-
-//   return result.join('\n');
-// };
-
-// const debugVisualizeRenderCommands = (commands: RenderCommand[]) => {
-//   const debug = commands.map((command) => stringifyRenderCommand(command)).flat();
-
-//   const prettified = formatHTMLStringArray(debug);
-
-//   return prettified;
-// };
-
-// const stringifyRenderInstruction = (instruction: RenderInstruction) => {
-//   const type = instruction[RENDER_INSTRUCTION_POSITION.TYPE];
-//   const translatedType = Object.entries(RENDER_INSTRUCTION_TYPE).find(([, value]) => value === type)?.[0];
-
-//   const command = stringifyRenderCommand(instruction[RENDER_INSTRUCTION_POSITION.COMMAND]);
-
-//   return `${translatedType}: ${command}`;
-// };
