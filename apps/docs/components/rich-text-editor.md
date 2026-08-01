@@ -64,8 +64,8 @@ nothing at all.
 
 The toolbar is data-driven. Pass a `tools` input with an ordered list of tokens to pick and order
 the controls. Tokens: `'undo'`, `'redo'`, `'bold'`, `'italic'`, `'underline'`, `'strike'`, `'code'`
-(inline code), `'heading'` (the Normal / Heading 1–3 menu), `'bulletedList'`, `'numberedList'`,
-`'blockquote'`, `'codeBlock'`, `'link'`, plus the opt-in `'align'`, `'table'` and `'image'` (see below).
+(inline code), `'bulletedList'`, `'numberedList'`, `'blockquote'`, `'codeBlock'`, `'link'`, plus the
+opt-in `'heading'` (the Normal / Heading 1–3 menu), `'align'`, `'table'` and `'image'` (see below).
 `'divider'` renders a separator. Omit `tools` for the full default toolbar.
 
 ```html
@@ -128,16 +128,26 @@ selection (floating) toolbar, and pre-fills from the link under the caret when e
 responsive: an arrow'd popover anchored to the selection on wider screens, and a top sheet (pinned
 above the on-screen keyboard) on small/touch screens.
 
-## Opt-in tools: tables, alignment and images
+## Opt-in tools: the heading menu, tables, alignment and images
 
 The heavier tools are opt-in so their code (and UI) tree-shakes away when unused. Add the provider
 and include its token in `tools`:
 
 ```ts
-import { provideRichTextEditorTableTool, provideRichTextEditorAlignmentTool } from '@ethlete/components';
+import {
+  provideRichTextEditorAlignmentTool,
+  provideRichTextEditorHeadingTool,
+  provideRichTextEditorTableTool,
+} from '@ethlete/components';
 
-providers: [provideRichTextEditorTableTool(), provideRichTextEditorAlignmentTool()];
+providers: [provideRichTextEditorHeadingTool(), provideRichTextEditorTableTool(), provideRichTextEditorAlignmentTool()];
 ```
+
+`'heading'` is in the **default** toolbar, so `provideRichTextEditorHeadingTool()` is all it takes —
+without it the editor renders no block-style control. It is opt-in because it is the only tool in the
+default set that needs the menu system, which is the single largest graph the editor could pull in
+(~8.5 kB gz). Markdown `#`/`##`/`###` [autoformat](#markdown-autoformat) and the heading-aware Enter
+behaviour work either way; only the toolbar control is gated.
 
 ```html
 <et-rich-text-editor [formField]="demoForm.report" [tools]="['heading', 'divider', 'align', 'table']" />

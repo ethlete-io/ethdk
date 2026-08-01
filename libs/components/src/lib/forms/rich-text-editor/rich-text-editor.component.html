@@ -12,41 +12,6 @@
       @case (TOOLS.DIVIDER) {
         <span class="et-rte-toolbar-divider" aria-hidden="true"></span>
       }
-      @case (TOOLS.HEADING) {
-        <div #headingMenu="etMenu" [autoFocus]="!hasTouchInput()" etMenu>
-          <button
-            [disabled]="dir.disabled() || dir.readonly() || dir.headingToolDisabled()"
-            [pressed]="headingMenu.open()"
-            [attr.aria-label]="labels().textStyle(currentHeadingLabel())"
-            (mousedown)="$event.preventDefault()"
-            emitAriaPressed="false"
-            etMenuTrigger
-            et-icon-button
-            size="sm"
-            type="button"
-            mutedUntilPressed
-          >
-            <i [etIcon]="currentHeadingIcon()"></i>
-          </button>
-
-          <ng-template etMenuSurface>
-            <et-menu>
-              <et-menu-radio-group
-                [value]="dir.headingLevel()"
-                (valueChange)="selectHeading($event)"
-                (mousedown)="$event.preventDefault()"
-              >
-                @for (option of headingOptions(); track option.level) {
-                  <!-- eslint-disable-next-line ethlete/prefer-static-boolean-properties -- closeOnActivate is tri-state (boolean | undefined); a transform would collapse its unset state -->
-                  <et-menu-radio-item [value]="option.level" [closeOnActivate]="true" [icon]="option.icon">
-                    {{ option.label }}
-                  </et-menu-radio-item>
-                }
-              </et-menu-radio-group>
-            </et-menu>
-          </ng-template>
-        </div>
-      }
       @default {
         @if (toolDefs().get(tool); as def) {
           @if (def.control; as control) {

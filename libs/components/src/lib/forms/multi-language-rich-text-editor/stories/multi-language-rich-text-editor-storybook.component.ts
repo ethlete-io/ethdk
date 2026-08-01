@@ -15,6 +15,7 @@ import {
 } from '../../form-field';
 import { MultiLanguageRichTextEditorValue } from '../multi-language-rich-text-editor-config';
 import { requiredLanguages } from '../multi-language-rich-text-editor-validators';
+import { provideRichTextEditorHeadingTool } from '../../rich-text-editor';
 import { MULTI_LANGUAGE_RICH_TEXT_EDITOR_IMPORTS } from '../multi-language-rich-text-editor.imports';
 
 @Component({
@@ -48,6 +49,7 @@ import { MULTI_LANGUAGE_RICH_TEXT_EDITOR_IMPORTS } from '../multi-language-rich-
     ProvideColorDirective,
     JsonPipe,
   ],
+  providers: [provideRichTextEditorHeadingTool()],
 })
 export class FormFieldMultiLanguageRichTextEditorStorybookComponent {
   public languages = input<{ code: string; label: string }[]>([

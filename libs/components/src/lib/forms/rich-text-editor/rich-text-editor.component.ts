@@ -20,15 +20,11 @@ import {
   BOLD_ICON,
   CODE_BLOCK_ICON,
   CODE_ICON,
-  HEADING_1_ICON,
-  HEADING_2_ICON,
-  HEADING_3_ICON,
   IconDirective,
   ITALIC_ICON,
   LINK_ICON,
   LIST_BULLETED_ICON,
   LIST_NUMBERED_ICON,
-  PARAGRAPH_ICON,
   provideIcons,
   QUOTE_ICON,
   REDO_ICON,
@@ -36,7 +32,6 @@ import {
   UNDERLINE_ICON,
   UNDO_ICON,
 } from '../../icon';
-import { MENU_IMPORTS } from '../../menu';
 import {
   RichTextEditorDirective,
   RichTextEditorFloatingToolbarDirective,
@@ -44,7 +39,6 @@ import {
 } from './headless';
 import { richTextEditorToolLabel } from './rich-text-editor-labels';
 import {
-  RICH_TEXT_EDITOR_HEADING_OPTIONS,
   RICH_TEXT_EDITOR_TOOL,
   RICH_TEXT_EDITOR_TOOL_BUTTONS,
   RICH_TEXT_EDITOR_TOOLS,
@@ -55,7 +49,7 @@ import {
 const DOCKED_TOOLBAR_POLL_MS = 500;
 
 /** Caret-navigation / deletion keys that should drop any pending stored-mark toggle. */
-const NAVIGATION_KEYS = new Set([
+const NAVIGATION_KEYS = /* @__PURE__ */ new Set([
   'ArrowLeft',
   'ArrowRight',
   'ArrowUp',
@@ -74,7 +68,7 @@ const NAVIGATION_KEYS = new Set([
   templateUrl: './rich-text-editor.component.html',
   styleUrl: './rich-text-editor.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [...BUTTON_IMPORTS, IconDirective, ...MENU_IMPORTS, NgComponentOutlet],
+  imports: [...BUTTON_IMPORTS, IconDirective, NgComponentOutlet],
   providers: [
     provideIcons(
       BOLD_ICON,
@@ -82,13 +76,9 @@ const NAVIGATION_KEYS = new Set([
       UNDERLINE_ICON,
       STRIKETHROUGH_ICON,
       CODE_ICON,
-      HEADING_1_ICON,
-      HEADING_2_ICON,
-      HEADING_3_ICON,
       LIST_BULLETED_ICON,
       LIST_NUMBERED_ICON,
       LINK_ICON,
-      PARAGRAPH_ICON,
       QUOTE_ICON,
       CODE_BLOCK_ICON,
       UNDO_ICON,
@@ -145,16 +135,6 @@ export class RichTextEditorComponent {
   /** The strings in effect, owned by the directive so the opt-in tools read the same set. */
   protected labels = computed(() => this.dir.resolvedLabels());
 
-  /** The block-style menu's entries, named by the label set rather than by the option table. */
-  protected headingOptions = computed(() => {
-    const labels = this.labels();
-
-    return RICH_TEXT_EDITOR_HEADING_OPTIONS.map((option) => ({
-      ...option,
-      label: option.level === null ? labels.paragraph : labels.heading(option.level),
-    }));
-  });
-
   private registeredTools = inject(RICH_TEXT_EDITOR_TOOL, { optional: true }) ?? [];
 
   /** Every renderable tool by token: the static base buttons plus any opt-in tools provided via DI. */
@@ -169,14 +149,6 @@ export class RichTextEditorComponent {
 
     return defs;
   });
-
-  /** The current block style option (used for the heading-menu trigger icon + label). */
-  private currentHeading = computed(() =>
-    this.headingOptions().find((option) => option.level === this.dir.headingLevel()),
-  );
-
-  protected currentHeadingLabel = computed(() => this.currentHeading()?.label ?? this.labels().paragraph);
-  protected currentHeadingIcon = computed(() => this.currentHeading()?.icon ?? 'et-paragraph');
 
   /** Keeps the docked toolbar up briefly after a blur so opening a menu/link editor from it (which
    *  moves focus into an overlay) doesn't collapse the bar mid-interaction. */
@@ -278,13 +250,6 @@ export class RichTextEditorComponent {
 
     this.toolbarTabStop = target;
     this.updateToolbarTabStops();
-  }
-
-  protected selectHeading(level: unknown) {
-    this.dir.setHeading(level as number | null);
-    // the menu overlay pulled focus off the editor; hand it back (deferred so it wins over the
-    // menu's own focus restoration on close) so the re-applied selection stays live in the editor.
-    queueMicrotask(() => this.dir.activate());
   }
 
   protected interceptEditorKeydown(event: KeyboardEvent) {

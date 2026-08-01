@@ -12,6 +12,8 @@ export * from './rich-text-editor-tools';
 export * from './rich-text-editor-trigger';
 export * from './tools/rich-text-editor-align.provider';
 export * from './tools/rich-text-editor-align-tool.component';
+export * from './tools/rich-text-editor-heading.provider';
+export * from './tools/rich-text-editor-heading-tool.component';
 export * from './tools/rich-text-editor-image.provider';
 export * from './tools/rich-text-editor-image-tool.component';
 export * from './tools/rich-text-editor-image-upload';

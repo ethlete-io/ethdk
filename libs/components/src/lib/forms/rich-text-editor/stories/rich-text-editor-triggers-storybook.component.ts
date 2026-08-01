@@ -14,6 +14,7 @@ import { DEFAULT_RICH_TEXT_EDITOR_TOOLS, RichTextEditorTool } from '../rich-text
 import { RICH_TEXT_EDITOR_TRIGGERS_IMPORTS } from '../rich-text-editor-triggers.imports';
 import { RICH_TEXT_EDITOR_IMPORTS } from '../rich-text-editor.imports';
 import { provideRichTextEditorAlignmentTool } from '../tools/rich-text-editor-align.provider';
+import { provideRichTextEditorHeadingTool } from '../tools/rich-text-editor-heading.provider';
 import { provideRichTextEditorTableTool } from '../tools/rich-text-editor-table.provider';
 
 /** The default tools plus the opt-in alignment + table tools, for the triggers demo. */
@@ -99,7 +100,11 @@ export const DEMO_TRIGGERS: RichTextEditorTrigger[] = [
     FormField,
     ProvideColorDirective,
   ],
-  providers: [provideRichTextEditorTableTool(), provideRichTextEditorAlignmentTool()],
+  providers: [
+    provideRichTextEditorTableTool(),
+    provideRichTextEditorAlignmentTool(),
+    provideRichTextEditorHeadingTool(),
+  ],
 })
 export class RichTextEditorTriggersStorybookComponent {
   protected readonly TRIGGERS = DEMO_TRIGGERS;

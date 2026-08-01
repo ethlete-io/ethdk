@@ -14,6 +14,7 @@ import {
   FormFieldSize,
 } from '../../form-field';
 import { provideRichTextEditorAlignmentTool } from '../tools/rich-text-editor-align.provider';
+import { provideRichTextEditorHeadingTool } from '../tools/rich-text-editor-heading.provider';
 import { provideRichTextEditorTableTool } from '../tools/rich-text-editor-table.provider';
 import { RichTextEditorTool } from '../rich-text-editor-tools';
 import { RICH_TEXT_EDITOR_IMPORTS } from '../rich-text-editor.imports';
@@ -41,7 +42,11 @@ import { RICH_TEXT_EDITOR_IMPORTS } from '../rich-text-editor.imports';
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [...FORM_FIELD_IMPORTS, ...RICH_TEXT_EDITOR_IMPORTS, FormField, ProvideColorDirective, JsonPipe],
-  providers: [provideRichTextEditorTableTool(), provideRichTextEditorAlignmentTool()],
+  providers: [
+    provideRichTextEditorTableTool(),
+    provideRichTextEditorAlignmentTool(),
+    provideRichTextEditorHeadingTool(),
+  ],
 })
 export class FormFieldRichTextEditorStorybookComponent {
   /** `null` renders the default toolbar; stories opt into the table/alignment tools via this. */

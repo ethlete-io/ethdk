@@ -4,6 +4,7 @@ import { createDropzoneUpload } from '../../dropzone/headless';
 import { FORM_FIELD_IMPORTS } from '../../form-field';
 import { RichTextEditorTool } from '../rich-text-editor-tools';
 import { RICH_TEXT_EDITOR_IMPORTS } from '../rich-text-editor.imports';
+import { provideRichTextEditorHeadingTool } from '../tools/rich-text-editor-heading.provider';
 import { provideRichTextEditorImageTool } from '../tools/rich-text-editor-image.provider';
 import {
   demoImageFailures,
@@ -72,6 +73,7 @@ export class RichTextEditorImageShellComponent {
       maxSize: 5 * 1024 * 1024,
       onFailure: recordDemoImageFailure,
     }),
+    provideRichTextEditorHeadingTool(),
   ],
 })
 export class RichTextEditorImageStorybookComponent {}
@@ -87,6 +89,7 @@ export class RichTextEditorImageStorybookComponent {}
       upload: createDropzoneUpload({ queryCreator: postFailingDemoImage, selectValue: (response) => response.url }),
       onFailure: recordDemoImageFailure,
     }),
+    provideRichTextEditorHeadingTool(),
   ],
 })
 export class RichTextEditorImageFailureStorybookComponent {}
