@@ -21,7 +21,7 @@ const SLIDER_LABELS_DEF = /* @__PURE__ */ defineLabels<SliderLabels>('SLIDER_LAB
 
 /**
  * Localize a slider's strings for everything below this injector, and read the set in effect here as a
- * signal. Partial — whatever you leave out keeps its {@link DEFAULT_SLIDER_LABELS} value. See {@link defineLabels}
+ * signal. Partial - whatever you leave out keeps its {@link DEFAULT_SLIDER_LABELS} value. See {@link defineLabels}
  * for the shape, which every domain in this library shares.
  *
  * @example

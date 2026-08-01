@@ -38,7 +38,7 @@ export type PipChromeState = {
   featuredPip: Signal<StreamPipEntry | undefined>;
   gridCols: Signal<number>;
   gridRows: Signal<number>;
-  /** Per-cell layout data — iterate over this in `@for` instead of calling methods. */
+  /** Per-cell layout data - iterate over this in `@for` instead of calling methods. */
   cells: Signal<PipCellData[]>;
   /** True when more than one pip is active (shows the grid-toggle button). */
   hasMultiplePips: Signal<boolean>;

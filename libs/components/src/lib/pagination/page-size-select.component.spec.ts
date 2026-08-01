@@ -93,7 +93,7 @@ describe('PageSizeSelectComponent', () => {
     expect(select(fixture).options[0]?.textContent?.trim()).toBe('10 Stück');
   });
 
-  it('leaves the page alone — resetting it is the consumer’s call', () => {
+  it('leaves the page alone - resetting it is the consumer’s call', () => {
     const fixture = create();
 
     // Nothing here to assert against but the absence of an output: the component has exactly one,

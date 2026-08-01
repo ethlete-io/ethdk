@@ -58,7 +58,7 @@ const QUERY_ERROR_LABELS_DEF = /* @__PURE__ */ defineLabels<QueryErrorLabels>(
 
 /**
  * Localize a query error's strings for everything below this injector, and read the set in effect here as a
- * signal. Partial — whatever you leave out keeps the English default, so this is also how you localize into
+ * signal. Partial - whatever you leave out keeps the English default, so this is also how you localize into
  * another language while keeping English as the base. See {@link defineLabels} for the shape, which every
  * domain in this library shares.
  *

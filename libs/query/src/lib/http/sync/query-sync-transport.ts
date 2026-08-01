@@ -18,7 +18,7 @@ export type QuerySyncTransport = {
   destroy: () => void;
 
   /**
-   * Whether a real channel backs this transport. `false` means every method is a no-op — no
+   * Whether a real channel backs this transport. `false` means every method is a no-op - no
    * `BroadcastChannel` in this environment (the server, or a very old browser).
    */
   isSupported: boolean;
@@ -51,7 +51,7 @@ export const createQuerySyncTransport = (channelName: string): QuerySyncTranspor
       channel.postMessage(wrapQuerySyncMessage(message));
     } catch (error) {
       // A body the structured clone algorithm cannot handle throws `DataCloneError`. Swallowing it
-      // keeps the repository event subscription this runs inside alive — the only cost of a
+      // keeps the repository event subscription this runs inside alive - the only cost of a
       // non-cloneable response is that the other tabs do not learn about it.
       if (isDevMode()) {
         console.warn(`[@ethlete/query] Could not broadcast a message on "${channelName}".`, error);

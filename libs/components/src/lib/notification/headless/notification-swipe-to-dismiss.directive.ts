@@ -45,7 +45,7 @@ const isInteractiveTarget = (target: HTMLElement) => {
 /**
  * Swipe-to-dismiss for a notification: drag it toward the edge its stack is docked to and let go.
  * A flick or a drag past a third of its width sends it away carrying the speed of the release; a
- * shorter one slides back. Dismissing this way is a manual dismissal — it does not touch the
+ * shorter one slides back. Dismissing this way is a manual dismissal - it does not touch the
  * auto-dismiss semantics of whatever is left on screen.
  *
  * Applied by `et-notification` unless the manager's `swipeToDismiss` is off. Add it to a custom
@@ -56,7 +56,7 @@ const isInteractiveTarget = (target: HTMLElement) => {
   exportAs: 'etNotificationSwipeToDismiss',
   host: {
     // The gesture owns the inline axis, the page keeps the block one. Unlike a sheet, a notification
-    // never scrolls on its own dismiss axis, so declaring it is enough — no touchmove handling.
+    // never scrolls on its own dismiss axis, so declaring it is enough - no touchmove handling.
     '[style.touch-action]': "isEnabled ? 'pan-y' : null",
   },
 })
@@ -82,7 +82,7 @@ export class NotificationSwipeToDismissDirective {
   /** How far the notification has been dragged toward dismissal, in px. Never negative. */
   private offset = 0;
 
-  /** The notification's own width plus the overshoot — the distance a full dismissal covers. */
+  /** The notification's own width plus the overshoot - the distance a full dismissal covers. */
   private extent = 0;
 
   constructor() {
@@ -101,7 +101,7 @@ export class NotificationSwipeToDismissDirective {
   }
 
   /**
-   * Which way the notification may be thrown, as a physical sign, or `null` for either — resolved
+   * Which way the notification may be thrown, as a physical sign, or `null` for either - resolved
    * per gesture because it depends on the writing direction, which can change under the stack.
    */
   private get allowedSign(): 1 | -1 | null {
@@ -210,7 +210,7 @@ export class NotificationSwipeToDismissDirective {
       const dismissDistance = Math.max(MIN_DISMISS_DISTANCE_PX, width * DISMISS_DISTANCE_RATIO);
 
       if (this.offset >= dismissDistance || velocity >= MIN_DISMISS_VELOCITY) {
-        // On its way out — the timer it was paused on is moot.
+        // On its way out - the timer it was paused on is moot.
         this.dismissWithMomentum(Math.abs(velocity));
 
         return;
@@ -260,7 +260,7 @@ export class NotificationSwipeToDismissDirective {
   }
 
   /**
-   * Hands the swipe's momentum to the leave animation instead of the stylesheet's fixed duration —
+   * Hands the swipe's momentum to the leave animation instead of the stylesheet's fixed duration -
    * the notification carries on in the direction it was thrown. Position stays continuous because
    * the leave transition starts from the drag's own inline transform (see the `data-swiped-away`
    * rules in `notification.component.css`, which need `!important` to override it).

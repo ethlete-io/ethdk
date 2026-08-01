@@ -18,7 +18,7 @@ import {
 
 // Note: `@ethlete/components` intentionally depends on `@ethlete/query` (the legacy `cdk` does too),
 // so this query-aware convenience factory can live here. It is a standalone function in its own
-// module — editors that don't use it (and apps not using `@ethlete/query`) tree-shake it away.
+// module - editors that don't use it (and apps not using `@ethlete/query`) tree-shake it away.
 
 /** Config for {@link createRichTextEditorTriggerWithQuery}. */
 export type RichTextEditorQueryTriggerConfig<TCreator extends AnyQueryCreator> = {
@@ -28,7 +28,7 @@ export type RichTextEditorQueryTriggerConfig<TCreator extends AnyQueryCreator> =
   type: string;
   /**
    * The query creator to run (e.g. from `createGetQuery`). Like a query stack, the query is created
-   * **once** and re-executes reactively — never per keystroke.
+   * **once** and re-executes reactively - never per keystroke.
    */
   queryCreator: TCreator;
   /**
@@ -84,7 +84,7 @@ export const createRichTextEditorTriggerWithQuery = <TCreator extends AnyQueryCr
   type TArgs = QueryArgsOf<TCreator>;
 
   const search = signal('');
-  // Created once, exactly like a query stack — `withArgs` re-runs as `search` changes.
+  // Created once, exactly like a query stack - `withArgs` re-runs as `search` changes.
   const query = config.queryCreator(withArgs<TArgs>(() => config.args(search)));
   const toErrorMessage = config.toErrorMessage ?? firstErrorMessage;
 

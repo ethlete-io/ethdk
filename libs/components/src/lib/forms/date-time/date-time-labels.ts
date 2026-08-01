@@ -1,7 +1,7 @@
 import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
- * Every string the date/time inputs render or announce themselves — the picker triggers, the two halves
+ * Every string the date/time inputs render or announce themselves - the picker triggers, the two halves
  * of a range, the date/time tabs, and the parse errors a typed value can produce.
  *
  * Month and weekday **names** are not here: they come from the `DATE_LOCALE` date-fns locale, which is
@@ -63,7 +63,7 @@ const DATE_TIME_LABELS_DEF = /* @__PURE__ */ defineLabels<DateTimeLabels>('DATE_
 
 /**
  * Localize the date/time inputs' strings for everything below this injector, and read the set in effect
- * here as a signal. Partial — whatever you leave out keeps its {@link DEFAULT_DATE_TIME_LABELS} value.
+ * here as a signal. Partial - whatever you leave out keeps its {@link DEFAULT_DATE_TIME_LABELS} value.
  * See {@link defineLabels} for the shape, which every domain in this library shares.
  *
  * @example

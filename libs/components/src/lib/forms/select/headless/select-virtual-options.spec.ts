@@ -258,7 +258,7 @@ describe('SelectDirective (data-driven options)', () => {
 
     expect(select.selection.items().length).toBe(1);
     expect(select.selection.items()[0]!.label()).toBe('First (renamed)');
-    // the selected value's option is gone — its label survives via the label cache
+    // the selected value's option is gone - its label survives via the label cache
     expect(select.displayValue()).toBe('Item 2');
   });
 

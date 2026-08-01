@@ -8,7 +8,7 @@ export type MapLayoutOptions = {
 
 /**
  * Resolves the active breakpoint name based on the container width.
- * Breakpoints are sorted by minWidth descending — the first one whose minWidth is <= containerWidth wins.
+ * Breakpoints are sorted by minWidth descending - the first one whose minWidth is <= containerWidth wins.
  */
 export const resolveBreakpoint = (breakpoints: GridBreakpointConfig[], containerWidth: number): GridBreakpointName => {
   const sorted = [...breakpoints].sort((a, b) => b.minWidth - a.minWidth);

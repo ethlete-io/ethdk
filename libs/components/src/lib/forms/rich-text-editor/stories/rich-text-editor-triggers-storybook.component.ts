@@ -60,7 +60,7 @@ export const DEMO_TRIGGERS: RichTextEditorTrigger[] = [
   createRichTextEditorTrigger({
     char: '$',
     type: 'link',
-    // demonstrates the error state — the source always fails
+    // demonstrates the error state - the source always fails
     items: () => throwError(() => new Error('Could not load links')).pipe(delay(300)),
   }),
 ];
@@ -138,7 +138,7 @@ export class RichTextEditorTriggersStorybookComponent {
 })
 export class RichTextEditorTokenDisplayStorybookComponent {
   private formModel = linkedSignal(() => ({
-    value: 'Hi {{block:firstName}}, thanks for the update — I have looped in {{mention:jane}} from Product.',
+    value: 'Hi {{block:firstName}}, thanks for the update - I have looped in {{mention:jane}} from Product.',
   }));
 
   // read-only is owned by the form field state (signal forms), not an attribute on the control
@@ -147,7 +147,7 @@ export class RichTextEditorTokenDisplayStorybookComponent {
   });
 }
 
-/** Merge fields for the click-to-insert palette (a fixed set — the palette is not a search). */
+/** Merge fields for the click-to-insert palette (a fixed set - the palette is not a search). */
 const PLACEHOLDERS: RichTextEditorTriggerItem[] = [
   { id: 'firstName', label: 'First name' },
   { id: 'lastName', label: 'Last name' },
@@ -182,7 +182,7 @@ const PALETTE_TRIGGERS: RichTextEditorTrigger[] = [
           etRichTextEditorTriggers
           placeholder="Write a message, then click a field below to insert it…"
         />
-        <et-hint>Click a chip to drop a merge field at the caret — or type <b>#</b> to pick one inline.</et-hint>
+        <et-hint>Click a chip to drop a merge field at the caret - or type <b>#</b> to pick one inline.</et-hint>
       </et-form-field>
 
       <et-rich-text-editor-token-palette [editor]="rte" [triggers]="TRIGGERS" />

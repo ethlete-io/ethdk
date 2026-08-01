@@ -7,7 +7,7 @@ import { SelectDirective } from './select.directive';
 
 export type SelectValueContext = {
   /**
-   * One entry per selected value — `label` is the resolved display label and `item` the live
+   * One entry per selected value - `label` is the resolved display label and `item` the live
    * option (or `null`, e.g. while an external filter hides it). Look up your own option data
    * by `entry.value` to render rich content such as flags.
    */

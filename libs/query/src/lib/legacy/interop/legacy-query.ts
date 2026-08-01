@@ -119,7 +119,7 @@ export type AnyLegacyQuery = LegacyQuery<any, any, any, any, any, any, any>;
 export class LegacyQuery<
   Response,
   Arguments extends BaseArguments | undefined,
-  // Positional public-API generic slot — consumers infer it via `LegacyQuery<…, infer Route, …>`,
+  // Positional public-API generic slot - consumers infer it via `LegacyQuery<…, infer Route, …>`,
   // so it must stay even though the class body never references it.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Route extends V2RouteType<Arguments>,
@@ -138,7 +138,7 @@ export class LegacyQuery<
   _currentPollConfig: PollConfig | null = null;
 
   /**
-   * `null` for an inert query — there is no live injector to own an effect.
+   * `null` for an inert query - there is no live injector to own an effect.
    *
    * @internal
    */
@@ -220,7 +220,7 @@ export class LegacyQuery<
     public entity?: QueryEntityConfig<Store, Data, Response, Arguments, Id>,
 
     /**
-     * Wraps an inert query — see `createInertQuery`. Skips everything that needs a live injector,
+     * Wraps an inert query - see `createInertQuery`. Skips everything that needs a live injector,
      * so the wrapper is safe to build during teardown.
      *
      * @internal

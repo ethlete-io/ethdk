@@ -23,7 +23,7 @@ const assertInsideAccordion = (accordion: unknown, directiveName: string) => {
 
 /**
  * Replaces the default accordion's plain-text `label` with a template, for a header that needs markup
- * — an icon, a badge, a count.
+ * - an icon, a badge, a count.
  *
  * @example
  * <et-accordion>
@@ -49,7 +49,7 @@ export class AccordionLabelDirective {
 }
 
 /**
- * Secondary header content, rendered between the label and the chevron of the default accordion — a
+ * Secondary header content, rendered between the label and the chevron of the default accordion - a
  * summary of what's inside ("3 items", "Optional"), not a second label.
  */
 @Directive({
@@ -68,7 +68,7 @@ export class AccordionHintDirective {
 }
 
 /**
- * Panel content that is only created the first time the accordion expands — use it instead of
+ * Panel content that is only created the first time the accordion expands - use it instead of
  * projecting the content directly when the panel holds something expensive (a table, a chart, a
  * component that fetches).
  *

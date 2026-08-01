@@ -49,7 +49,7 @@ export class QueryErrorComponent {
 
   /**
    * The colour theme for the panel and its retry button. Defaults to the app's `type: 'error'` theme, which is
-   * what makes an error look like one — override for a failure that shouldn't read as alarming (a cancelled
+   * what makes an error look like one - override for a failure that shouldn't read as alarming (a cancelled
    * request, an empty search).
    */
   public color = input<RegisteredColorThemeName | ColorTheme | null>(null);

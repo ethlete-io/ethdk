@@ -41,7 +41,7 @@ export class RichTextEditorAlignToolComponent {
 
   public editor = input.required<RichTextEditorDirective>();
 
-  /** The editor's strings — the tool is part of that editor's toolbar. */
+  /** The editor's strings - the tool is part of that editor's toolbar. */
   protected labels = computed(() => this.editor().resolvedLabels());
 
   protected options = computed<{ value: TextAlign; label: string; icon: string }[]>(() => {
@@ -55,7 +55,7 @@ export class RichTextEditorAlignToolComponent {
     ];
   });
 
-  /** Alignment of the caret's block/cell — kept live so the trigger icon and menu stay in sync. */
+  /** Alignment of the caret's block/cell - kept live so the trigger icon and menu stay in sync. */
   protected current = signal<TextAlign>('left');
   protected currentIcon = computed(
     () => this.options().find((o) => o.value === this.current())?.icon ?? 'et-align-left',
@@ -88,7 +88,7 @@ export class RichTextEditorAlignToolComponent {
     if (!root || !range || this.disabled()) return;
 
     // wrapping loose top-level text in a paragraph is a mutation, so it only happens here (on the
-    // explicit align action) — never in readAlign, which runs on every selection change
+    // explicit align action) - never in readAlign, which runs on every selection change
     const blocks = this.targetBlocks(root, range) ?? this.wrapLooseContent(root, range);
 
     for (const block of blocks) {
@@ -114,9 +114,9 @@ export class RichTextEditorAlignToolComponent {
 
   /**
    * The elements alignment applies to: inside a table, the full columns the selection touches
-   * (GFM table alignment is per column — the serializer reads it from the header cells, so a
-   * single aligned cell would not survive), otherwise the root-level blocks. Lists are skipped —
-   * their alignment has no Markdown form. Read-only — returns `null` when the selection is over
+   * (GFM table alignment is per column - the serializer reads it from the header cells, so a
+   * single aligned cell would not survive), otherwise the root-level blocks. Lists are skipped -
+   * their alignment has no Markdown form. Read-only - returns `null` when the selection is over
    * loose top-level text with no block to align (see {@link wrapLooseContent}).
    */
   private targetBlocks(root: HTMLElement, range: Range): HTMLElement[] | null {
@@ -162,7 +162,7 @@ export class RichTextEditorAlignToolComponent {
   }
 
   /** Wraps the loose top-level nodes the selection touches in a paragraph (the editor doesn't wrap
-   *  the first typed line until Enter) so there is a block to align. Mutates — call only on action. */
+   *  the first typed line until Enter) so there is a block to align. Mutates - call only on action. */
   private wrapLooseContent(root: HTMLElement, range: Range): HTMLElement[] {
     const loose = [...root.childNodes].filter((node) => range.intersectsNode(node));
 

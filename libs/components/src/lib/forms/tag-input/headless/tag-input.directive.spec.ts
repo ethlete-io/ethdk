@@ -152,7 +152,7 @@ describe('TagInputDirective', () => {
   });
 
   it('splits pastes on separators and newlines', () => {
-    // jsdom has no DataTransfer — fake the clipboardData surface
+    // jsdom has no DataTransfer - fake the clipboardData surface
     const event = new Event('paste', { bubbles: true, cancelable: true });
 
     Object.defineProperty(event, 'clipboardData', { value: { getData: () => 'one, two\nthree' } });
@@ -294,7 +294,7 @@ describe('TagInputDirective (contract)', () => {
         expect(fixture.nativeElement.querySelectorAll('et-chip').length).toBe(0);
         expect(field.getAttribute('placeholder')).toBe('Mixed');
       },
-      // no clear affordance — the tag input has no clear-all control
+      // no clear affordance - the tag input has no clear-all control
     };
   });
 });

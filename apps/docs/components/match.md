@@ -1,6 +1,6 @@
 # Match
 
-A match card and the participant primitive it is built from — the two pieces every sport and esport UI repeats:
+A match card and the participant primitive it is built from - the two pieces every sport and esport UI repeats:
 a fixture list, a results table, a [bracket](/components/bracket) cell, a
 ["today's matches" rail](/components/sport-recipes#today-s-matches-rail). The card draws
 both sides with their emblems, the score or the kick-off, a live badge, the per-game breakdown of a series, and
@@ -29,8 +29,8 @@ export class MatchListComponent {
 
 ## Any backend: the normalized match
 
-The card never learns one API's field names. It takes a `NormalizedMatch` — a small, presentation-oriented
-view-model owned by this library — and an **adapter** maps whatever your backend returns into it:
+The card never learns one API's field names. It takes a `NormalizedMatch` - a small, presentation-oriented
+view-model owned by this library - and an **adapter** maps whatever your backend returns into it:
 
 ```ts
 type NormalizedMatch = {
@@ -58,7 +58,7 @@ type NormalizedMatchParticipant = {
 ```
 
 `NormalizedMedia` is deliberately exactly [`et-picture`](/components/picture)'s two inputs, so an emblem is
-passed straight through — including a full `srcset` candidate set if your API has one.
+passed straight through - including a full `srcset` candidate set if your API has one.
 
 ### Adapters are plain functions
 
@@ -72,17 +72,17 @@ For an `@ethlete/types` backend, the adapter ships with the library:
 | `normalizeEthleteMatchStatus(status)` | `MatchStatus` → the three states                              |
 
 The smaller mappers are exported too, so a partial shape can reuse one without the whole match adapter. Any
-other backend writes its own `(data) => NormalizedMatch` — no DI, no registration.
+other backend writes its own `(data) => NormalizedMatch` - no DI, no registration.
 
 Two mapping decisions worth knowing about: a player's `gamertag` beats the account `name` (it is what people
-know them by), and the five API statuses collapse to three — `started` is live, `finished`/`published` are both
+know them by), and the five API statuses collapse to three - `started` is live, `finished`/`published` are both
 over, everything else (including `hidden`) reads as scheduled rather than throwing inside a list. `seed` and
 `subtitle` come out `null`: neither is in the list views, and both are easy to fill in after normalizing.
 
 ### What goes in the result slot
 
 Not always a score, and this is the part most likely to bite. A competition reports its results in exactly
-**one** of three forms, and `resultKind` says which — never two of them at once, because a cell showing `2`
+**one** of three forms, and `resultKind` says which - never two of them at once, because a cell showing `2`
 next to `W` says the same thing twice:
 
 | `resultKind` | Draws           | From                          | Announced as      |
@@ -99,11 +99,11 @@ next to `W` says the same thing twice:
 <StoryEmbed id="components-match--outcome" height="360px" />
 
 `'outcome'` deriving its letters is what keeps the model honest: `winnerSide` already says who won, so nothing
-has to denormalize that into two strings — and a screen reader hears "FC Berlin won" rather than the letter
+has to denormalize that into two strings - and a screen reader hears "FC Berlin won" rather than the letter
 "W". The letters only appear once the match is finished; before that the kick-off carries the card.
 
 For `'score'`, a single-game match's headline value _is_ that game's score, which is why `gameScores` stays
-`null` there rather than listing one game. A best-of-N puts its games in `gameScores` — up to seven for a Bo7 —
+`null` there rather than listing one game. A best-of-N puts its games in `gameScores` - up to seven for a Bo7 -
 and the headline values are then the games each side won.
 
 ## Three layouts, one component
@@ -112,15 +112,15 @@ The card measures **itself** with a container query, and the same DOM lands on o
 
 | Width     | Layout                                                                                                  |
 | --------- | ------------------------------------------------------------------------------------------------------- |
-| < 320px   | **Dense row** — a bracket column or a results list: small emblems, no subtitles, no game breakdown      |
-| 320–559px | **Featured card** — bigger emblems and score, participant subtitles, the per-game breakdown of a series |
-| ≥ 560px   | **Wide row** — the two sides stop stacking and face each other, results meeting in the middle           |
+| < 320px   | **Dense row** - a bracket column or a results list: small emblems, no subtitles, no game breakdown      |
+| 320–559px | **Featured card** - bigger emblems and score, participant subtitles, the per-game breakdown of a series |
+| ≥ 560px   | **Wide row** - the two sides stop stacking and face each other, results meeting in the middle           |
 
 There is nothing to configure and no breakpoint to keep in sync with a layout.
 
 The dense row is deliberately stripped: a bracket cell's round is named by the column it sits in, and its
 kick-off by the list around it, so repeating either inside every cell is noise. A **live badge is the one
-exception** — it is the reason someone is looking at the card. For the densest cell there is, `hideNames`
+exception** - it is the reason someone is looking at the card. For the densest cell there is, `hideNames`
 drops the names too, leaving emblems and results.
 
 <StoryEmbed id="components-match--states" height="640px" />
@@ -139,11 +139,11 @@ Swapping "Neon Esports" for "NEO" is a text change, and a container query can on
 keeps full names and lets them ellipsize; a bracket cell that wants codes sets `size="compact"`.
 :::
 
-The wide row is pure CSS over the same markup — the away side is mirrored with `row-reverse`, which is also why
-it keeps working in RTL — so nothing re-renders when the card crosses a threshold.
+The wide row is pure CSS over the same markup - the away side is mirrored with `row-reverse`, which is also why
+it keeps working in RTL - so nothing re-renders when the card crosses a threshold.
 
 The two thresholds are constants rather than tokens, because a `@container` condition may not contain
-`var()` — there is nothing a custom property could point at. Tune the layouts through their tokens
+`var()` - there is nothing a custom property could point at. Tune the layouts through their tokens
 instead (see [Theming](#theming)), or pin one with `size`.
 
 Because the card is a container, its own width can never come from its contents. In a block or grid parent that
@@ -154,7 +154,7 @@ is exactly right; in a flex row with no width it would collapse, which is what
 
 A live match's values roll when they change: the old value leaves upward as the new one arrives from
 below, with a brief flash behind the side that scored. Both values are **real elements** for the length of
-the roll — this library never clones a node to animate it — and the outgoing one is dropped on its own
+the roll - this library never clones a node to animate it - and the outgoing one is dropped on its own
 `animationend`, so nothing is left running.
 
 <StoryEmbed id="components-match--live" height="420px" />
@@ -164,12 +164,12 @@ The card is **dumb about transport**: it compares the values it is given against
 
 | Behaviour                     | Rule                                                                           |
 | ----------------------------- | ------------------------------------------------------------------------------ |
-| First render                  | Never animates — a list arriving with scores on it hasn't seen anything happen |
+| First render                  | Never animates - a list arriving with scores on it hasn't seen anything happen |
 | `status` other than `'live'`  | Never animates; a finished result arriving with the page is not a moment       |
 | `animateScoreChanges` `false` | No movement, everything else unchanged                                         |
 | `prefers-reduced-motion`      | Instant swap, no flash                                                         |
 
-`scoreChange` fires with the side, both values and the numeric `delta` — the hook for the effects the card
+`scoreChange` fires with the side, both values and the numeric `delta` - the hook for the effects the card
 deliberately doesn't ship:
 
 ```html
@@ -182,13 +182,13 @@ protected onGoal(change: MatchScoreChange) {
 }
 ```
 
-It fires on **any** change after the first render, live or not — a corrected result is still a change your
+It fires on **any** change after the first render, live or not - a corrected result is still a change your
 app may want to know about. Only the animation is gated to live.
 
 ## The card is the link
 
 In a real app a match card is almost always a click target. Rather than owning that, the card puts its whole
-accessible name on its **host element** — so making the host the link is all it takes:
+accessible name on its **host element** - so making the host the link is all it takes:
 
 ```html
 <!-- router navigation -->
@@ -209,14 +209,14 @@ accessible name on its **host element** — so making the host the link is all i
 See [overlay openers](/components/overlay-openers) for the overlay half of that.
 
 ::: warning One interactive element, no exceptions
-Nothing inside the default card is a click target — scores, emblems and participants are display only. A card
+Nothing inside the default card is a click target - scores, emblems and participants are display only. A card
 that contains a second link or button is a card whose hit areas fight each other, and whose accessible name is
 no longer the match. An affordance that needs its own interactivity (a pin, a follow button) goes **next to**
 the card, not inside it.
 :::
 
-A card on an `<a>` or `<button>` detects that itself. For a host that is interactive some other way — a `<div>`
-wired to an [overlay opener](/components/overlay-openers) with its own `role` and `tabindex` — set
+A card on an `<a>` or `<button>` detects that itself. For a host that is interactive some other way - a `<div>`
+wired to an [overlay opener](/components/overlay-openers) with its own `role` and `tabindex` - set
 `interactive` explicitly so the hover and focus treatment applies.
 
 ## Options
@@ -225,27 +225,27 @@ wired to an [overlay opener](/components/overlay-openers) with its own `role` an
 
 | Input             | Type                                             | Default  | What it does                                                                                           |
 | ----------------- | ------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------ |
-| `match`           | `NormalizedMatch`                                | —        | Required. The match to draw.                                                                           |
+| `match`           | `NormalizedMatch`                                | -        | Required. The match to draw.                                                                           |
 | `size`            | `'auto' \| 'compact' \| 'expanded' \| 'wide'`    | `'auto'` | Layout; see above.                                                                                     |
 | `showSeeds`       | `boolean`                                        | `false`  | Draw each participant's seeding position when they have one.                                           |
-| `startTimeFormat` | `string \| null`                                 | `null`   | date-fns format for the kick-off. `null` uses `'P p'` — a rail of today's matches usually wants `'p'`. |
+| `startTimeFormat` | `string \| null`                                 | `null`   | date-fns format for the kick-off. `null` uses `'P p'` - a rail of today's matches usually wants `'p'`. |
 | `interactive`     | `boolean \| null`                                | `null`   | `null` infers it from the host tag (`<a>` / `<button>`).                                               |
 | `labels`          | `Partial<MatchLabels> \| null`                   | `null`   | Per-instance string overrides.                                                                         |
 | `liveColor`       | `RegisteredColorThemeName \| ColorTheme \| null` | `null`   | The live badge's color theme. `null` uses the app's `type: 'error'` theme.                             |
 
-The kick-off is formatted with [date-fns](https://date-fns.org/docs/format) in the app's `DATE_LOCALE` — an app
+The kick-off is formatted with [date-fns](https://date-fns.org/docs/format) in the app's `DATE_LOCALE` - an app
 that calls `provideLocale('de')` should call `provideDateLocale(de)` next to it, or dates stay en-US.
 
 ## Participants on their own
 
-`<et-match-participant>` is the same primitive the card draws with — emblem, name and optional seed — and is
+`<et-match-participant>` is the same primitive the card draws with - emblem, name and optional seed - and is
 worth reaching for in a roster, a standings cell or a filter chip's content:
 
 ```html
 <et-match-participant [participant]="player()" showSeed />
 ```
 
-**It takes an attribute form too**, so the whole thing can be one click target — a player card that opens a
+**It takes an attribute form too**, so the whole thing can be one click target - a player card that opens a
 profile, a team row that filters a list:
 
 ```html
@@ -267,10 +267,10 @@ other way.
 | `labels`      | `Partial<MatchLabels> \| null`       | `null`  | Per-instance string overrides.                                        |
 
 `loading` and a `null` participant are different states on purpose: a `null` participant is a decided
-**absence** — a bracket match whose feeder hasn't finished — and renders "TBD" at full row height, so nothing
+**absence** - a bracket match whose feeder hasn't finished - and renders "TBD" at full row height, so nothing
 jumps when the name arrives. `loading` is a pending one.
 
-A participant's `subtitle` renders as a quieter second line under the name — the org behind an esports roster,
+A participant's `subtitle` renders as a quieter second line under the name - the org behind an esports roster,
 the club behind a squad. It is dropped in a dense row (and by `compact`), where a second line would double
 every row's height.
 
@@ -281,7 +281,7 @@ is the right thing to call when you compose a name of your own.
 ## Localization
 
 Every string comes from one label set, app-wide via `provideMatchLabels()` or per instance via `labels`.
-Partial — whatever you leave out keeps its English default.
+Partial - whatever you leave out keeps its English default.
 
 ```ts
 provideMatchLabels({
@@ -312,11 +312,11 @@ provideMatchLabels({
 Two of them do the composing, and they are where you change phrasing rather than words:
 
 - **`resultName({ home, away, kind, winner, separator })`** turns the result into the phrase the card
-  announces — which is not what it draws. With values it reads `"2 : 1"` (or `"3 : 0 points"`); with none it
+  announces - which is not what it draws. With values it reads `"2 : 1"` (or `"3 : 0 points"`); with none it
   names the winner, `"FC Berlin won"`, or says `"Draw"`.
 - **`matchName({ home, away, result, resultKind, winner, startTime, status, label })`** composes the card's
   whole accessible name, taking `resultName`'s output as `result`. The default reads
-  `"Grand Final: FC Berlin vs. Neon Esports, 2 : 1, Finished"` — which match, who is playing, how it stands,
+  `"Grand Final: FC Berlin vs. Neon Esports, 2 : 1, Finished"` - which match, who is playing, how it stands,
   whether it is still going.
 
 ## Build your own card
@@ -351,14 +351,14 @@ the card and read the state off it.
 | `isInteractive()`                             | `boolean`                       | Whether the card is a click target                        |
 
 The host also carries `data-status`, `data-size`, `data-result-kind`, `data-winner`, `data-interactive` and
-`data-hide-names` — the layout rules are written against those, so your own can be too.
+`data-hide-names` - the layout rules are written against those, so your own can be too.
 
 Three optional parts wire the accessibility that is easy to get wrong:
 
 | Part                    | What it does                                                                                                             |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `etMatchCardScore`      | Makes the element a polite, atomic live region, so a score arriving over a poll or socket is announced once as `"2 : 1"` |
-| `etMatchCardMeta`       | Hides the label/badge/kick-off row from assistive tech — all three are already in the composed name                      |
+| `etMatchCardMeta`       | Hides the label/badge/kick-off row from assistive tech - all three are already in the composed name                      |
 | `etMatchCardGameScores` | Names the breakdown from the `gameScores` label and gives it an explicit `role="list"`                                   |
 
 Each throws [`ET4300`](/components/error-codes#match-et43xx) in dev mode when used outside an `[etMatchCard]`.
@@ -369,7 +369,7 @@ Each throws [`ET4300`](/components/error-codes#match-et43xx) in dev mode when us
   the match rather than walking six unrelated fragments. A card that is not a link becomes `role="group"` (an
   unlabelled `div` cannot carry a name); a card on an `<a>` or `<button>` keeps its native role.
 - **Score changes are announced once.** The result sits in a visually hidden, polite, atomic live region that is
-  in the DOM from the start — a region added at the same moment as its value announces nothing. The drawn
+  in the DOM from the start - a region added at the same moment as its value announces nothing. The drawn
   digits and outcome letters are `aria-hidden`, so a goal is read as `"3 : 1"` and not three times over.
 - **Outcomes are phrased, not spelled.** `resultKind: 'outcome'` draws `W` / `L`; what gets announced is
   `"FC Berlin won"`, because the letters carry no meaning read aloud.
@@ -378,11 +378,11 @@ Each throws [`ET4300`](/components/error-codes#match-et43xx) in dev mode when us
   `hideNames`.
 - **The meta row is hidden** (`aria-hidden`) because the label, live badge and kick-off are all in the card's
   name already.
-- **The series breakdown stays exposed**, as a real list, with each game numbered (`"Game 2: 8 : 13"`) — a bare
+- **The series breakdown stays exposed**, as a real list, with each game numbered (`"Game 2: 8 : 13"`) - a bare
   `"8 : 13"` says nothing on its own.
 - **Emblems** are named from `emblemAlt`, and a seed badge from `seed`, since the digit alone is meaningless.
 - **Keyboard**: a card on an `<a>`/`<button>` is focusable and activatable natively, and shows the shared
-  [focus ring](/components/focus-ring). The card adds no key handling of its own — there is nothing inside it
+  [focus ring](/components/focus-ring). The card adds no key handling of its own - there is nothing inside it
   to move focus between.
 - **Reduced motion**: the live badge's pulse stops under `prefers-reduced-motion: reduce`, and a score
   change swaps instantly instead of rolling.
@@ -390,7 +390,7 @@ Each throws [`ET4300`](/components/error-codes#match-et43xx) in dev mode when us
 ## Theming
 
 Colors come entirely from the app-registered [surface and color theme](/core/theming) systems: surface tokens
-for the card's background, border and text, and the **color theme in scope** for the live badge — which the
+for the card's background, border and text, and the **color theme in scope** for the live badge - which the
 component points at the app's `type: 'error'` theme by default, so it is red without this library naming a
 theme. Override it per card with `liveColor`, or leave it unset in an app that registers no error theme and the
 badge follows the ambient color scope.
@@ -428,5 +428,5 @@ Inside a card those three are driven by the card's own density tokens, so set th
 
 ## Error codes
 
-The match domain owns `ET4300`–`ET4399` — see
+The match domain owns `ET4300`–`ET4399` - see
 [error codes](/components/error-codes#match-et43xx).

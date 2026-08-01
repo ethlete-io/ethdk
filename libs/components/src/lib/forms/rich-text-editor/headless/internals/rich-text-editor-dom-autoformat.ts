@@ -36,10 +36,10 @@ export const createRichTextEditorAutoformat = (
 
   /**
    * Markdown block autoformat: typing a space right after a line-start markdown prefix converts the
-   * block — `-`/`*`/`+` into a bulleted list, `1.` into a numbered list, `#`–`###` into a heading.
+   * block - `-`/`*`/`+` into a bulleted list, `1.` into a numbered list, `#`–`###` into a heading.
    * Only fires when the prefix is the entire line before the caret, and never inside contexts the
    * block tools don't apply to (list items, table cells, code, headings). `isReserved` marks
-   * characters claimed by the token-trigger system — a reserved prefix never converts, so e.g. a
+   * characters claimed by the token-trigger system - a reserved prefix never converts, so e.g. a
    * `#` trigger keeps opening its autocomplete instead of becoming a heading.
    * Returns `true` when it converted (the caller must then swallow the typed space).
    */
@@ -53,8 +53,8 @@ export const createRichTextEditorAutoformat = (
 
     if (closestWithin(range.startContainer, `li, td, th, pre, code, ${HEADING_SELECTOR}`)) return false;
 
-    // The line starts at the caret's paragraph — a browser-created <div> line counts too (Chrome
-    // inserts <div>s on Enter; the serializer maps them to paragraphs) — or at the editor root for
+    // The line starts at the caret's paragraph - a browser-created <div> line counts too (Chrome
+    // inserts <div>s on Enter; the serializer maps them to paragraphs) - or at the editor root for
     // the loose first line a contenteditable holds before any block exists.
     const container = closestWithin(range.startContainer, 'p, div') ?? el;
     const probe = doc.createRange();
@@ -86,7 +86,7 @@ export const createRichTextEditorAutoformat = (
     collapseInto(container === el ? el : container, 0);
     action();
 
-    // The consumed prefix usually leaves the converted block empty — give it a line box and a
+    // The consumed prefix usually leaves the converted block empty - give it a line box and a
     // clean collapsed caret so typing continues inside it.
     const editableAfter = getSelection();
     // descend from the restored selection's boundary (e.g. the <ul> after toggleList) to the leaf
@@ -120,7 +120,7 @@ export const createRichTextEditorAutoformat = (
    * Markdown inline autoformat: typing the closing delimiter of `**bold**`, `*italic*`,
    * `` `code` ``, `~~strike~~`, `__bold__` or `_italic_` converts the run into its mark, with the
    * caret placed after the mark so typing continues unformatted. The whole run must live in the
-   * caret's text node (marks already applied inside it keep it from matching — a v1 limit).
+   * caret's text node (marks already applied inside it keep it from matching - a v1 limit).
    * `typed` is the char about to be inserted; returns `true` when it consumed it.
    */
   const applyInlineAutoformat = (typed: string, isReserved: (char: string) => boolean) => {
@@ -162,7 +162,7 @@ export const createRichTextEditorAutoformat = (
       insertAt.insertNode(mark);
 
       // Land the caret in a real text node after the mark (a zero-width space when nothing
-      // follows — stripped on serialize), mirroring codeExit: a bare element boundary doesn't
+      // follows - stripped on serialize), mirroring codeExit: a bare element boundary doesn't
       // stick and the browser would snap the caret back inside the mark.
       let target = mark.nextSibling;
       let offset = 0;

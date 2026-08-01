@@ -2,7 +2,7 @@ import { BracketDrawEdgesContext } from '../bracket-layout';
 import { drawMan } from '../drawing/draw-man';
 
 /**
- * The connector drawing every elimination layout shares — single and double, folded or not — mapping
+ * The connector drawing every elimination layout shares - single and double, folded or not - mapping
  * the host's resolved settings onto {@link drawMan}'s dimensions.
  *
  * @internal

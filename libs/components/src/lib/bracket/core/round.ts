@@ -55,7 +55,7 @@ export type BracketRoundType =
 
 export type BracketRoundBase<TRoundData> = {
   /**
-   * How deep this round sits in its own bracket — 0 for the opening round, counted separately for the
+   * How deep this round sits in its own bracket - 0 for the opening round, counted separately for the
    * upper and lower halves of a double elimination.
    *
    * **Both halves of a mirrored round share it.** That is what makes it the fold's coordinate: a
@@ -135,7 +135,7 @@ export const createRoundsMapBase = <TRoundData, TMatchData>(
       const secondHalfRoundId = `${roundId}--half-2` as BracketRoundId;
       const firstHalfMatchesMaxIndex = matches.length / 2 - 1;
 
-      // Both halves are the same round at the same depth, drawn on either side of the fold — so they
+      // Both halves are the same round at the same depth, drawn on either side of the fold - so they
       // carry the same `logicalIndex`, which is what pairs a right-hand column with its left-hand twin.
       const halfBase = {
         type: round.type,
@@ -199,7 +199,7 @@ export const createRoundsMapBase = <TRoundData, TMatchData>(
 
   // The right halves close the map, deepest first, so walking it in order walks the fold: out along the
   // left side, through the rounds too small to halve, and back along the right. `splitRoundsRest` was
-  // built by unshifting, so it is already in that order — and each half keeps the depth of its twin
+  // built by unshifting, so it is already in that order - and each half keeps the depth of its twin
   // rather than being renumbered past the last round, which is what lets a builder pair the two sides.
   if (splitRoundsRest.length) {
     if (!map.last()) throw new RuntimeError(BRACKET_ERROR_CODES.ROUND_RELATION_INVALID, 'Last round not found');

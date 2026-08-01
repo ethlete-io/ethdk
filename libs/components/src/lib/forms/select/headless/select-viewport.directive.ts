@@ -6,7 +6,7 @@ import { SelectDirective } from './select.directive';
 
 /**
  * Marks the scrollable element that data-driven (`options` input) rendering windows
- * against. `et-select-panel` applies it to its own scroller — headless consumers put it
+ * against. `et-select-panel` applies it to its own scroller - headless consumers put it
  * on theirs. Without a registered viewport, `virtualizedItems()` falls back to every
  * visible option (no windowing).
  */

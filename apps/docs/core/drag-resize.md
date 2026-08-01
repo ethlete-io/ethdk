@@ -1,6 +1,6 @@
 # Drag & resize
 
-Pointer-gesture primitives: a drag handle directive and a resize handles component. Both are gesture _sources_ — they emit deltas and let you apply them, which is how the [grid](/components/grid) and the stream PIP window build their drag/resize behavior on top.
+Pointer-gesture primitives: a drag handle directive and a resize handles component. Both are gesture _sources_ - they emit deltas and let you apply them, which is how the [grid](/components/grid) and the stream PIP window build their drag/resize behavior on top.
 
 ## Drag handle
 
@@ -32,9 +32,9 @@ import { DragHandleDirective } from '@ethlete/core';
 | `dragMoved`   | `{ stepX, stepY, clientX, clientY, totalDx, totalDy }` | Every pointer move while dragging.                      |
 | `dragEnded`   | `void`                                                 | Released after a committed drag.                        |
 
-`isDragging` is exposed as a signal. On commit, the directive captures the pointer and emits a catch-up move in the same tick so the dragged element snaps to the pointer instead of trailing by the threshold. Only the primary button starts a gesture, and a new gesture is ignored while one is active. There is no built-in keyboard support — provide a keyboard path yourself where dragging changes state (the grid does).
+`isDragging` is exposed as a signal. On commit, the directive captures the pointer and emits a catch-up move in the same tick so the dragged element snaps to the pointer instead of trailing by the threshold. Only the primary button starts a gesture, and a new gesture is ignored while one is active. There is no built-in keyboard support - provide a keyboard path yourself where dragging changes state (the grid does).
 
-While enabled, the handle sets `touch-action: none` on its host so touch drags work — otherwise the browser would claim the pointermoves for scrolling and cancel the gesture. The flip side: touches on the handle can't scroll the page, so keep handles reasonably sized (or `disabled` when inactive — a disabled handle scrolls normally).
+While enabled, the handle sets `touch-action: none` on its host so touch drags work - otherwise the browser would claim the pointermoves for scrolling and cancel the gesture. The flip side: touches on the handle can't scroll the page, so keep handles reasonably sized (or `disabled` when inactive - a disabled handle scrolls normally).
 
 ## Resize handles
 
@@ -62,7 +62,7 @@ import { ResizeHandlesComponent } from '@ethlete/core';
 | Output          | Payload                                                                        |
 | --------------- | ------------------------------------------------------------------------------ |
 | `resizeStarted` | The `ResizeEdge` being dragged.                                                |
-| `resizeMoved`   | `{ edge, dx, dy, clientX, clientY }` — `dx`/`dy` cumulative since pointerdown. |
+| `resizeMoved`   | `{ edge, dx, dy, clientX, clientY }` - `dx`/`dy` cumulative since pointerdown. |
 | `resizeEnded`   | `void`                                                                         |
 
-`isResizing` and `activeEdge` are signals; the active edge is also reflected as `data-active-edge` on the host. Handles set the matching resize cursor per edge and grow their hit areas on touch devices. Sizing is themable via CSS custom properties (`--et-resize-handles-edge-size`, `--et-resize-handles-corner-size`, `--et-resize-handles-z-index`, …) — see `resize-handles.component.ts` for the full list and defaults.
+`isResizing` and `activeEdge` are signals; the active edge is also reflected as `data-active-edge` on the host. Handles set the matching resize cursor per edge and grow their hit areas on touch devices. Sizing is themable via CSS custom properties (`--et-resize-handles-edge-size`, `--et-resize-handles-corner-size`, `--et-resize-handles-z-index`, …) - see `resize-handles.component.ts` for the full list and defaults.

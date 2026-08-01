@@ -646,7 +646,7 @@ describe('CalendarDirective', () => {
       expect(cellFor(16)?.hasAttribute('data-selected')).toBe(false);
     });
 
-    it('never bands or previews — the dates are unrelated', () => {
+    it('never bands or previews - the dates are unrelated', () => {
       cellFor(10)?.click();
       fixture.detectChanges();
 

@@ -45,7 +45,7 @@ export type OverlayLifecycleConfig<TResult = unknown> = {
  * concatenated; scalars override).
  *
  * Note for query-param overlays: an `origin` set here anchors every URL-driven open, including
- * deep links where the originating element may not exist — omitting it is usually right (the
+ * deep links where the originating element may not exist - omitting it is usually right (the
  * overlay then falls back to the currently focused element).
  */
 export type OverlayOpenerConfig<TResult = unknown> = OverlayLifecycleConfig<TResult> & OverlayOpenConfig;
@@ -235,7 +235,7 @@ const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
       }
 
       if (overlayRef) {
-        // The overlay is already open and the param changed externally — push it into the model.
+        // The overlay is already open and the param changed externally - push it into the model.
         queryParamModel()?.set(value);
 
         return;

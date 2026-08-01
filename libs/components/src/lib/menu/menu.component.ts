@@ -40,7 +40,7 @@ export class MenuComponent {
   protected searchErrorId = createComponentId('et-menu-search-error');
 
   constructor() {
-    // this panel IS the overlay's own surface — paint the overlay's registered elevation exactly,
+    // this panel IS the overlay's own surface - paint the overlay's registered elevation exactly,
     // don't stack a level above it (the tracker is authoritative; content inside elevates off it)
     inject(AutoSurfaceDirective).matchOverlaySurface();
 
@@ -48,7 +48,7 @@ export class MenuComponent {
     // trigger location has to be re-applied here instead of cascading via the DOM
     // (the surface context is handled the same way by AutoSurfaceDirective). Synced
     // in the constructor so the theme is applied before the first painted frame of
-    // the enter animation — an effect would flush one render too late.
+    // the enter animation - an effect would flush one render too late.
     if (this.contextColorProvider) {
       this.ownColorProvider.syncWithProvider(this.contextColorProvider);
     }

@@ -48,7 +48,7 @@ export const createRichTextEditorKeymap = (
     const paragraph = closestWithin(node, 'p');
 
     if (paragraph && isBlockEmpty(paragraph)) {
-      // an empty first line sitting directly above a table can't merge upward — remove it and drop
+      // an empty first line sitting directly above a table can't merge upward - remove it and drop
       // the caret into the table so an unneeded exit line can be deleted
       const next = paragraph.nextElementSibling;
 
@@ -88,7 +88,7 @@ export const createRichTextEditorKeymap = (
   const handleEnter = () => {
     const editable = getSelection();
 
-    // a code block owns Enter outright — a fence holds newlines, not blocks
+    // a code block owns Enter outright - a fence holds newlines, not blocks
     if (codeBlockEnter()) {
       return true;
     }
@@ -122,7 +122,7 @@ export const createRichTextEditorKeymap = (
     const { range } = editable;
     const code = closestWithin(range.startContainer, 'code');
 
-    // inline code only — leave fenced code blocks (`<pre><code>`) alone
+    // inline code only - leave fenced code blocks (`<pre><code>`) alone
     if (!code || closestWithin(range.startContainer, 'pre')) return false;
 
     const emptyToward = (side: 'start' | 'end') => {
@@ -137,7 +137,7 @@ export const createRichTextEditorKeymap = (
     let target: Node;
     let offset: number;
 
-    // Just moving the caret past the code's boundary doesn't stick — the browser snaps it back
+    // Just moving the caret past the code's boundary doesn't stick - the browser snaps it back
     // inside. Land it in a real text node outside the code instead, inserting a zero-width-space
     // node when there's nothing adjacent (stripped on serialize).
     if (key === 'ArrowRight' && emptyToward('end')) {

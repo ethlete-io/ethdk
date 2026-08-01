@@ -107,7 +107,7 @@ describe('TableStatePersistenceDirective', () => {
     return fixture;
   };
 
-  it('saves the table setup — including a feature slice — and restores it into a fresh table', () => {
+  it('saves the table setup - including a feature slice - and restores it into a fresh table', () => {
     const storage = createMemoryStorage();
     const first = create(storage);
 

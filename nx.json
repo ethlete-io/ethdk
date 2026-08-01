@@ -91,6 +91,7 @@
       "include": [
         "libs/cdk/**/*",
         "libs/components/**/*",
+        "libs/contentful/**/*",
         "libs/core/**/*",
         "libs/eslint-plugin/**/*",
         "libs/query/**/*"

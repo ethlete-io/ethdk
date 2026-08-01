@@ -16,7 +16,7 @@ import { CalendarDateClassFn, CalendarView } from '../../../../calendar/headless
  * against the combined `displayFormat` on blur/Enter, then leniently (date and
  * time split at any separator, bare dates commit at midnight); the anchored
  * picker overlay hosts a calendar and a time picker side by side and stays open
- * across picks. String↔`Date` conversion happens exclusively here — calendar
+ * across picks. String↔`Date` conversion happens exclusively here - calendar
  * and time picker only ever see `Date` objects.
  */
 @Directive({
@@ -42,10 +42,10 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
   /** Month the picker calendar opens at while the value is empty. */
   public startAt = input<Date | null>(null);
 
-  /** Which grid the picker calendar opens on — `'year'` to pick a month first, `'multiYear'` a year. */
+  /** Which grid the picker calendar opens on - `'year'` to pick a month first, `'multiYear'` a year. */
   public startView = input<CalendarView>('month');
 
-  /** Per-cell classes for the picker calendar — busy days, holidays, markers of your own. */
+  /** Per-cell classes for the picker calendar - busy days, holidays, markers of your own. */
   public dateClass = input<CalendarDateClassFn | null>(null);
 
   /** Renders the picker calendar's week-number column. */
@@ -55,14 +55,14 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
    * Forwarded to the picker's time picker. Only the time of day of `minTime`/`maxTime`
    * is read, so the bound applies on every day; `timeFilter` receives the full candidate
    * timestamp (the picked time of day on the committed day), so opening hours can differ
-   * per weekday. Bounds shape the picker — validate typed entry with a schema validator,
+   * per weekday. Bounds shape the picker - validate typed entry with a schema validator,
    * exactly like `minDate`/`maxDate`.
    */
   public minTime = input<Date | null>(null);
   public maxTime = input<Date | null>(null);
   public timeFilter = input<((date: Date) => boolean) | null>(null);
 
-  /** No precision to derive from here — the input is the format in effect. */
+  /** No precision to derive from here - the input is the format in effect. */
   public effectiveDisplayFormat = this.displayFormat;
 
   /** The string in effect: this instance's `parseErrorMessage`, else the domain's label set. */
@@ -110,7 +110,7 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
       this.inputText.set('');
       this.parseError.set(false);
 
-      // while mixed the field is empty anyway — a blank commit is a plain blur, not a user
+      // while mixed the field is empty anyway - a blank commit is a plain blur, not a user
       // clear, so the hidden raw value survives (the clear affordance resolves instead)
       if (this.mixed()) {
         return;
@@ -142,7 +142,7 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
 
   /**
    * Commits a calendar-picked day, keeping the committed time of day (midnight
-   * while there is none yet). The picker stays open — the user likely still
+   * while there is none yet). The picker stays open - the user likely still
    * wants to pick a time.
    */
   public selectDate(date: Date | null) {
@@ -163,7 +163,7 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
 
   /**
    * Commits a picker-selected time onto the committed day (the picked time's
-   * own day — today — while there is none yet). The picker stays open — a time
+   * own day - today - while there is none yet). The picker stays open - a time
    * takes one selection per column.
    */
   public selectTime(time: Date | null) {

@@ -221,7 +221,7 @@ describe('PhoneInputDirective', () => {
       expect(field.value).toBe('');
     });
 
-    it('updates only the country presentation on selectCountry — no value write, mixed stays', () => {
+    it('updates only the country presentation on selectCountry - no value write, mixed stays', () => {
       enterMixed('+491701234567');
 
       phone.selectCountry('fr');

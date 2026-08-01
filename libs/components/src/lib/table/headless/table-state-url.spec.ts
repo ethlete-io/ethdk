@@ -25,7 +25,7 @@ describe('table state URL adapter', () => {
     expect(deserializeTableState('{not json')).toBeNull();
   });
 
-  it('reads both known versions — v1 predates the feature slices', () => {
+  it('reads both known versions - v1 predates the feature slices', () => {
     expect(deserializeTableState(JSON.stringify({ v: 1, columns: [] }))).toEqual({ v: 1, columns: [] });
     expect(deserializeTableState(JSON.stringify({ v: 2, columns: [], features: { selection: ['1'] } }))).toEqual({
       v: 2,

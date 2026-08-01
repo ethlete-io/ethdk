@@ -6,7 +6,7 @@ describe('generateMonthGrid', () => {
 
     expect(weeks).toHaveLength(5);
     expect(weeks.every((week) => week.length === 7)).toBe(true);
-    // July 1st 2026 is a Wednesday — the grid starts Monday June 29th
+    // July 1st 2026 is a Wednesday - the grid starts Monday June 29th
     expect(weeks[0]?.[0]).toEqual(new Date(2026, 5, 29));
     expect(weeks[4]?.[6]).toEqual(new Date(2026, 7, 2));
   });

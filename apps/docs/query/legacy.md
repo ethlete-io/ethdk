@@ -3,7 +3,7 @@
 The class-based `V2QueryClient` is the predecessor of the [current query system](/query/queries).
 
 ::: warning Maintenance mode
-The legacy client only receives bug fixes. Don't use it for new code — this page exists for teams maintaining existing apps and as a [migration map](#migrating-to-the-current-system).
+The legacy client only receives bug fixes. Don't use it for new code - this page exists for teams maintaining existing apps and as a [migration map](#migrating-to-the-current-system).
 :::
 
 Unlike the current system, the legacy client is instantiated directly (no DI provider) and its state is RxJS-first:
@@ -50,9 +50,9 @@ post = queryStateResponseSignal(this.postQuery);
 | `*etQuery`      | Structural directive that executes a query and exposes `$implicit` (data), `loading`, `refreshing`, `progress` and `error` in the template.                      |
 | `InfinityQuery` | Infinite lists: `createInfinityQueryConfig()` + `[etInfinityQuery]` / `[etInfinityQueryTrigger]` directives.                                                     |
 | `EntityStore`   | Normalized entity cache wired into queries via the `entity` config (`store`, `id`, `get`, `set`).                                                                |
-| `QueryForm`     | Router-synced filter/search forms — see the [overview](/query/#also-in-the-package); works with both systems but grew up here.                                   |
+| `QueryForm`     | Router-synced filter/search forms - see the [overview](/query/#also-in-the-package); works with both systems but grew up here.                                   |
 | Devtools        | `<et-query-devtools>` component showing live queries and auth state (`provideQueryClientForDevtools`).                                                           |
-| Interop         | `createLegacyQueryCreator({ creator })` wraps a **current-system** creator in the legacy `.prepare()/.state$` surface — useful while migrating screen by screen. |
+| Interop         | `createLegacyQueryCreator({ creator })` wraps a **current-system** creator in the legacy `.prepare()/.state$` surface - useful while migrating screen by screen. |
 
 ## Migrating to the current system
 
@@ -66,25 +66,25 @@ This table is the API-to-API map. The [migration guide](/query/migrating-from-v2
 | `client.get({ route, types })`                     | [`createGetQuery(client)<TArgs>(route)`](/query/http)                                                                                           |
 | `.prepare(args).execute()`                         | [`withArgs(() => args)`](/query/features#withargs) + [auto-execution](/query/queries#auto-execution)                                            |
 | `query.state$` + `filterSuccess()`                 | [`query.response()`](/query/queries#the-query-object) (signals; `.asObservable()` when RxJS is needed)                                          |
-| `createSignal()` / `toQuerySignal()`               | The query object itself — it's already signals.                                                                                                 |
+| `createSignal()` / `toQuerySignal()`               | The query object itself - it's already signals.                                                                                                 |
 | `query.poll({ interval })`                         | [`withPolling({ interval })`](/query/features#withpolling)                                                                                      |
-| `autoRefreshOn.windowFocus`                        | No equivalent — use [`withAutoRefresh`](/query/features#withautorefresh) with your own focus signal, or `injectClient().refreshQueriesInUse()`. |
+| `autoRefreshOn.windowFocus`                        | No equivalent - use [`withAutoRefresh`](/query/features#withautorefresh) with your own focus signal, or `injectClient().refreshQueriesInUse()`. |
 | `setDefaultHeaders({ headers })`                   | [`headers` on `createQueryClient`](/query/queries#the-query-client) (a function form re-reads per request)                                      |
 | `setDefaultHeaders({ refreshQueriesInUse: true })` | [`client.refreshQueriesInUse()`](/query/caching#refreshing-everything-in-use)                                                                   |
-| `*etQuery` / `<et-query-error>` / query button     | No replacement by design — [read the query's signals in the template](/query/migrating-from-v2#templates-read-signals-not-directives).          |
+| `*etQuery` / `<et-query-error>` / query button     | No replacement by design - [read the query's signals in the template](/query/migrating-from-v2#templates-read-signals-not-directives).          |
 | A query collection tracking several queries        | [`provider.executionState()`](/query/auth#execution-state) for auth; a `computed` over the queries' own `executionState()` otherwise.           |
 | `InfinityQuery` / `[etInfinityQuery]`              | [`createPagedQueryStack`](/query/stacks#paged-queries)                                                                                          |
 | `V2BearerAuthProvider` + `setAuthProvider`         | [`createBearerAuthProvider`](/query/auth) + secure creator templates                                                                            |
 | `secure: true`                                     | [`createSecureGetQuery(client, authProviderRef)`](/query/http#secure-queries)                                                                   |
 | `client.gqlQuery/gqlMutate`                        | [`createGqlQueryVia…` / `createGqlMutationVia…`](/query/gql)                                                                                    |
-| `EntityStore`                                      | No direct equivalent — [caching](/query/caching) dedupes by request; derive shared state with signals.                                          |
+| `EntityStore`                                      | No direct equivalent - [caching](/query/caching) dedupes by request; derive shared state with signals.                                          |
 | `provideQueryClientForDevtools`                    | [`provideQueryDevtools()`](/components/query-devtools) + `<et-query-devtools />` (registers every client at once)                               |
 
 The `createLegacyQueryCreator` interop lets both worlds coexist: define new endpoints with the current system and consume them from legacy-style components until those are migrated.
 
 ### Automated migration generators
 
-Two Nx generators automate large parts of this migration — run them in order:
+Two Nx generators automate large parts of this migration - run them in order:
 
 ```bash
 yarn nx g @ethlete/query:prep-for-query-v3
@@ -92,8 +92,8 @@ yarn nx g @ethlete/query:migrate-to-query-v3
 ```
 
 1. **`prep-for-query-v3`** prepares the workspace: it renames every legacy symbol that collides with the current system to its `V2`/`v2` name (`QueryClient` → `V2QueryClient`, `BearerAuthProvider` → `V2BearerAuthProvider`, `buildQueryCacheKey` → `v2BuildQueryCacheKey`, …) in all files importing `@ethlete/query`. Run it (and commit) before upgrading the package.
-2. **`migrate-to-query-v3`** performs the migration itself: it converts `V2QueryClient` instances to `createQueryClient`, generates current-system creators for your legacy ones, rewrites `.prepare()` call sites, wires the [`createLegacyQueryCreator`](#migrating-to-the-current-system) interop where a full conversion isn't possible, points devtools usage at the v3 equivalents — and writes a migration report listing everything it changed and what still needs manual attention.
+2. **`migrate-to-query-v3`** performs the migration itself: it converts `V2QueryClient` instances to `createQueryClient`, generates current-system creators for your legacy ones, rewrites `.prepare()` call sites, wires the [`createLegacyQueryCreator`](#migrating-to-the-current-system) interop where a full conversion isn't possible, points devtools usage at the v3 equivalents - and writes a migration report listing everything it changed and what still needs manual attention.
 
-Both accept `--skipFormat` to skip re-formatting the touched files. `migrate-to-query-v3` also accepts `--projects` (Nx project names) and `--include` (path prefixes) to migrate one app or library at a time — keep a query client and the creators built on it in the same run, though, since they are rewritten together.
+Both accept `--skipFormat` to skip re-formatting the touched files. `migrate-to-query-v3` also accepts `--projects` (Nx project names) and `--include` (path prefixes) to migrate one app or library at a time - keep a query client and the creators built on it in the same run, though, since they are rewritten together.
 
 The generators are codemods over your source: review the resulting diff (and the report) rather than trusting it blindly.

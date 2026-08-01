@@ -7,13 +7,13 @@ import { QueryErrorResponse } from './query-error-response';
 import { querySequenceAlreadyRunning } from './query-errors';
 import { executeUntilSettled } from './query-snapshot-utils';
 
-/** The last element of a tuple type — the response of the step a `.then()` callback follows. */
+/** The last element of a tuple type - the response of the step a `.then()` callback follows. */
 type LastOf<T extends unknown[]> = T extends [...unknown[], infer L] ? L : never;
 
 /** The current lifecycle phase of a query sequence. */
 export type QuerySequenceStatus = 'idle' | 'running' | 'success' | 'error';
 
-/** The args a sequence step supplies to its query — the same `{ args }` shape `query.execute()` takes. */
+/** The args a sequence step supplies to its query - the same `{ args }` shape `query.execute()` takes. */
 export type QuerySequenceStepArgs<TArgs extends QueryArgs> = {
   args: RequestArgs<TArgs>;
 };
@@ -24,14 +24,14 @@ export type QuerySequenceStepArgs<TArgs extends QueryArgs> = {
  * A discriminated union: on success `responses` is the fully-typed tuple of every step's response;
  * on failure `failedAt` is the zero-based index of the step that errored and `error` is its
  * normalized {@link QueryErrorResponse}. `snapshots` always holds the settled snapshots of every
- * step that ran — up to and including the failing one.
+ * step that ran - up to and including the failing one.
  */
 export type QuerySequenceResult<TResponses extends unknown[]> =
   | { ok: true; responses: TResponses; snapshots: AnyQuerySnapshot[] }
   | { ok: false; failedAt: number; error: QueryErrorResponse; snapshots: AnyQuerySnapshot[] };
 
 /**
- * An imperative waterfall of dependent queries — usually mutations (`POST`/`PUT`/`PATCH`/`DELETE`)
+ * An imperative waterfall of dependent queries - usually mutations (`POST`/`PUT`/`PATCH`/`DELETE`)
  * where each call needs the previous call's response.
  *
  * Build the chain once (e.g. as a component field) with {@link querySequence} and `.then()`, then
@@ -50,7 +50,7 @@ export type QuerySequence<TResponses extends unknown[]> = {
     mapArgs: (previousResponse: LastOf<TResponses>, responses: TResponses) => QuerySequenceStepArgs<TArgs>,
   ) => QuerySequence<[...TResponses, ResponseType<TArgs>]>;
 
-  /** The current lifecycle phase — `idle` before the first run, then `running` → `success` | `error`. */
+  /** The current lifecycle phase - `idle` before the first run, then `running` → `success` | `error`. */
   status: Signal<QuerySequenceStatus>;
 
   /** `true` while a run is in flight. */
@@ -86,7 +86,7 @@ export type QuerySequence<TResponses extends unknown[]> = {
   /**
    * Runs every step in order, resolving once the waterfall settles.
    *
-   * Resets the progress signals, then awaits each step in turn — stopping at the first error and
+   * Resets the progress signals, then awaits each step in turn - stopping at the first error and
    * resolving with `{ ok: false, failedAt, error }`, or `{ ok: true, responses }` when all steps
    * succeed. Re-runnable (e.g. behind a retry button); throws {@link querySequenceAlreadyRunning}
    * if a run is already in flight.
@@ -218,7 +218,7 @@ const buildSequence = <TResponses extends unknown[]>(
 
 /**
  * Starts an imperative waterfall of dependent queries. Chain the remaining steps with `.then()`
- * and trigger it with `.run()` — see {@link QuerySequence}.
+ * and trigger it with `.run()` - see {@link QuerySequence}.
  *
  * The seed step's `args` are produced lazily (at `run()` time), so the sequence can safely live as
  * a component field while still reading current signal values on each run.
@@ -263,7 +263,7 @@ export const querySequence = <TArgs extends QueryArgs>(
     try {
       inject(DestroyRef).onDestroy(unregister);
     } catch {
-      // Created outside an injection context — the entry lives for the app's lifetime.
+      // Created outside an injection context - the entry lives for the app's lifetime.
     }
   }
 

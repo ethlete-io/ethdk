@@ -153,7 +153,7 @@ type BracketRoundsByDepth<TRoundData, TMatchData> = Map<
   {
     left: BracketRound<TRoundData, TMatchData> | null;
     right: BracketRound<TRoundData, TMatchData> | null;
-    /** The round at this depth that was never folded — the middle of a mirrored bracket. */
+    /** The round at this depth that was never folded - the middle of a mirrored bracket. */
     single: BracketRound<TRoundData, TMatchData> | null;
   }
 >;
@@ -177,7 +177,7 @@ const buildRoundsByDepth = <TRoundData, TMatchData>(
 };
 
 /**
- * The round one depth along on the same side of the fold — or, where the fold has closed because that
+ * The round one depth along on the same side of the fold - or, where the fold has closed because that
  * depth was too small to halve, the whole round sitting in the middle.
  */
 const roundAtDepth = <TRoundData, TMatchData>(params: {
@@ -209,7 +209,7 @@ const getNavigationContext = <TRoundData, TMatchData>(params: {
     !currentUpperRound.mirrorRoundType || currentUpperRound.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.LEFT;
 
   // A folded half follows the fold, not the array. Its neighbours are the rounds one depth away on its
-  // own side, because the array puts a right half next to whatever happened to be emitted beside it —
+  // own side, because the array puts a right half next to whatever happened to be emitted beside it -
   // in a double elimination that is the grand final rather than the round it actually feeds.
   const isFolded = !!currentUpperRound.mirrorRoundType;
   const side = currentUpperRound.mirrorRoundType;
@@ -247,7 +247,7 @@ const handleFinalRound = <TRoundData, TMatchData>(params: {
   currentUpperRound: BracketRound<TRoundData, TMatchData>;
   previousUpperRound: BracketRound<TRoundData, TMatchData>;
   nextUpperRound: BracketRound<TRoundData, TMatchData> | null;
-  /** The lower bracket as it is played, one round per depth — see `lowerFlow`. */
+  /** The lower bracket as it is played, one round per depth - see `lowerFlow`. */
   lowerRounds: BracketRound<TRoundData, TMatchData>[];
   currentUpperRoundIndex: number;
   firstUpperRound: BracketRound<TRoundData, TMatchData>;
@@ -360,7 +360,7 @@ const handleFirstRound = <TRoundData, TMatchData>(params: {
 
   // Pairing "upper round at index i" with "lower round at index i" only means something while the upper
   // array is the outbound flow. A round on the way back from a fold sits past the finals in that array,
-  // so its index would claim a lower round in the middle of the bracket and wire it as an opening round —
+  // so its index would claim a lower round in the middle of the bracket and wire it as an opening round -
   // the loop at the end of `generateRoundRelations` reaches it by depth instead.
   if (currentLowerRound && nextLowerRound && !isFoldedBackRound(currentUpperRound)) {
     relations.push(
@@ -508,7 +508,7 @@ export const generateRoundRelationsNew = <TRoundData, TMatchData>(
     const assignedRoundIds = new Set(relations.map((r) => r.currentRound.id));
 
     // By depth and side rather than by array position: in a folded bracket the array holds two rounds
-    // per depth, so its neighbours are whatever was emitted alongside — for an unfolded one the two are
+    // per depth, so its neighbours are whatever was emitted alongside - for an unfolded one the two are
     // the same thing.
     for (const lowerRound of lowerRounds) {
       if (assignedRoundIds.has(lowerRound.id)) continue;

@@ -44,7 +44,7 @@ export const Card: Story = {
       description: {
         story:
           'The card preset lives on `et-choice-field`, not on the control, so a switch gets it too. The whole ' +
-          'panel is clickable and the checked state shows on its border — `:has()` is how the wrapper learns the ' +
+          'panel is clickable and the checked state shows on its border - `:has()` is how the wrapper learns the ' +
           "control's state.",
       },
     },

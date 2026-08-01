@@ -22,7 +22,7 @@ export type TimePickerOption = {
   value: number;
   label: string;
   selected: boolean;
-  /** Out of bounds or filtered out — announced `aria-disabled`, skipped by the keyboard model. */
+  /** Out of bounds or filtered out - announced `aria-disabled`, skipped by the keyboard model. */
   disabled: boolean;
   /** The column's roving-tabindex target (the selection, or the initial anchor while empty). */
   focused: boolean;
@@ -49,9 +49,9 @@ const nextEnabledIndex = (options: readonly TimePickerOption[], walk: { from: nu
 
 /**
  * Headless time picker state: one listbox column per time unit (derived from a
- * date-fns `format` — hours, minutes, optional seconds and AM/PM), selection
+ * date-fns `format` - hours, minutes, optional seconds and AM/PM), selection
  * per column committing into a single `Date` value. Operates on `Date` objects
- * only — string parsing/formatting belongs to the input directives.
+ * only - string parsing/formatting belongs to the input directives.
  */
 @Directive({
   selector: '[etTimePicker]',
@@ -110,7 +110,7 @@ export class TimePickerDirective {
   );
 
   /**
-   * The value, or "now" snapped to the steps — the time the columns anchor
+   * The value, or "now" snapped to the steps - the time the columns anchor
    * their roving focus and initial scroll position to, and the base a first
    * part pick completes into a full value. Units without a column are zeroed
    * so a completed anchor never carries an invisible seconds part.
@@ -143,7 +143,7 @@ export class TimePickerDirective {
     ];
   });
 
-  /** The value's column values, or `null` while empty — hours in the format's cycle. */
+  /** The value's column values, or `null` while empty - hours in the format's cycle. */
   private selectedParts = computed(() => {
     const value = this.value();
 
@@ -162,7 +162,7 @@ export class TimePickerDirective {
     generateSteppedValues({ end: 60, step: this.secondStep(), include: this.selectedParts()?.second }),
   );
 
-  /** Whether any bound or filter is in play — the unconstrained picker skips availability work entirely. */
+  /** Whether any bound or filter is in play - the unconstrained picker skips availability work entirely. */
   private constrained = computed(() => this.min() !== null || this.max() !== null || this.timeFilter() !== null);
 
   private availability = computed<TimeAvailabilityOptions>(() => {
@@ -174,7 +174,7 @@ export class TimePickerDirective {
       filter: this.timeFilter(),
       day: startOfDay(anchor),
       minuteValues: this.minuteValues(),
-      // without a seconds column the second never moves — the committed one is the only candidate
+      // without a seconds column the second never moves - the committed one is the only candidate
       secondValues: this.formatSpec().showSeconds ? this.secondValues() : [anchor.getSeconds()],
     };
   });
@@ -382,7 +382,7 @@ export class TimePickerDirective {
     }
 
     // an AM/PM pick chooses a half-day, not an hour: keeping the clock position (10 AM → 10 PM)
-    // is only the preference, so the hour may move inside the picked half — closest first
+    // is only the preference, so the hour may move inside the picked half - closest first
     if (unit === 'period') {
       for (const hour of this.halfDayHours(candidate.hour)) {
         const found = findSelectableTime({ hour }, availability);

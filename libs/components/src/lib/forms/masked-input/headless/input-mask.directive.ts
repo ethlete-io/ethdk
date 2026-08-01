@@ -16,7 +16,7 @@ import { advanceCaretPastLiterals, applyMaskEdit, caretForRawCount, renderMaskDi
 import { compilePatternMask } from './internals/pattern-mask';
 
 /**
- * Layers input masking onto an existing input control — place it on the same element
+ * Layers input masking onto an existing input control - place it on the same element
  * as `et-input` / `input[etInput]`, or any control providing `INPUT_MASK_HOST`. The
  * native element always shows the masked text; the form value stays raw by default
  * (`maskValueMode`).
@@ -37,7 +37,7 @@ export class InputMaskDirective {
    * The mask: a pattern string (`0` digit, `9` optional digit, `a` letter, `*`
    * alphanumeric, `\` escapes, anything else literal) or a `MaskSpec` object
    * (see `createCurrencyMask` / `createIbanMask` / `createCardMask`). `null`
-   * disables the mask entirely — the host's own value-sync stays (or resumes)
+   * disables the mask entirely - the host's own value-sync stays (or resumes)
    * in charge, so a mask can be applied conditionally.
    */
   public mask = input.required<string | MaskSpec | null>({ alias: 'etInputMask' });
@@ -76,24 +76,24 @@ export class InputMaskDirective {
   });
 
   /**
-   * Whether the raw value fills every required slot — `true`/`false` for pattern masks
+   * Whether the raw value fills every required slot - `true`/`false` for pattern masks
    * (`0`/`a`/`*` required, `9` optional), `null` when the mask does not track completeness
    * (the shipped factories, custom specs without `isComplete`, a `null` mask).
    */
   public complete = computed(() => this.spec()?.isComplete?.(this.rawValue()) ?? null);
 
   /**
-   * The raw value as of the last reconciliation — `applyMaskEdit` needs the pre-edit
+   * The raw value as of the last reconciliation - `applyMaskEdit` needs the pre-edit
    * raw to detect edits that only removed formatting. Kept as a plain field (not the
    * model) so event-listener ordering can't pollute it.
    */
   private committedRaw = '';
 
-  /** Caret produced by the last handled edit — consumed once by the display enforcement. */
+  /** Caret produced by the last handled edit - consumed once by the display enforcement. */
   private caret: number | null = null;
 
   constructor() {
-    // we own value-sync (raw/display split) in `handleInput` — stop the base input's native
+    // we own value-sync (raw/display split) in `handleInput` - stop the base input's native
     // `(input)` handler from also writing the model and clobbering the masked value.
     // Suppression tracks mask presence: a `null` mask leaves (or hands back) native sync
     effect(() => {
@@ -115,7 +115,7 @@ export class InputMaskDirective {
       });
     }
 
-    // keep the model in its declared shape — this also normalizes programmatic
+    // keep the model in its declared shape - this also normalizes programmatic
     // writes (a form reset with masked text, a consumer setting raw text, …)
     effect(() => {
       const host = this.host;
@@ -125,7 +125,7 @@ export class InputMaskDirective {
         return;
       }
 
-      // while the host is mixed the raw value is hidden state that must survive untouched —
+      // while the host is mixed the raw value is hidden state that must survive untouched -
       // normalizing it would count as a value edit the bulk-edit flow never made
       if (host.mixed?.()) {
         return;
@@ -142,7 +142,7 @@ export class InputMaskDirective {
 
     // the element always shows the masked text. This runs after every render because
     // the hosting component's [value] binding writes the model (raw in raw mode)
-    // straight into the element — the rewrite happens before paint, so it's invisible.
+    // straight into the element - the rewrite happens before paint, so it's invisible.
     afterRenderEffect(() => {
       const host = this.host;
       const element = host?.nativeControl();
@@ -152,7 +152,7 @@ export class InputMaskDirective {
         return;
       }
 
-      // a mixed host renders empty with its mixed label as placeholder — repainting the masked
+      // a mixed host renders empty with its mixed label as placeholder - repainting the masked
       // raw value here would leak the hidden value into the DOM. The next edit starts from an
       // empty committed raw, so the first typed content replaces the hidden value outright.
       if (host.mixed?.()) {
@@ -188,7 +188,7 @@ export class InputMaskDirective {
       return;
     }
 
-    // an IME is mid-composition — reconcile once it settles (`compositionend`), not on every
+    // an IME is mid-composition - reconcile once it settles (`compositionend`), not on every
     // intermediate `input`, or the candidate window is torn down on the first keystroke
     if (this.composing || (event as InputEvent).isComposing) {
       return;
@@ -211,7 +211,7 @@ export class InputMaskDirective {
   private reconcile(inputType: string | undefined) {
     const host = this.host;
     const element = host?.nativeControl();
-    // a `null` mask never reconciles — the host's own native sync is in charge
+    // a `null` mask never reconciles - the host's own native sync is in charge
     const spec = this.spec();
 
     if (!host || !element || !spec) {
@@ -229,7 +229,7 @@ export class InputMaskDirective {
     });
 
     if (host.mixed?.()) {
-      // an edit that produced no raw content is an empty commit — it keeps the mixed state
+      // an edit that produced no raw content is an empty commit - it keeps the mixed state
       // (and the hidden raw value); clear the element so no stray literals linger
       if (!result.raw) {
         element.value = '';

@@ -21,7 +21,7 @@ type Story = StoryObj<FormFieldCounterStorybookComponent>;
 
 export const Default: Story = {};
 
-/** The counter and the hint coexist — the counter sits at the inline-end and never swaps out. */
+/** The counter and the hint coexist - the counter sits at the inline-end and never swaps out. */
 export const WithHint: Story = {
   args: { hint: 'A short introduction shown on your profile.' },
 };

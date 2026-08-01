@@ -1,6 +1,6 @@
 # @ethlete/cli
 
-Release tooling for Changesets-based repos — installs the `et` binary.
+Release tooling for Changesets-based repos - installs the `et` binary.
 
 ## Installation
 

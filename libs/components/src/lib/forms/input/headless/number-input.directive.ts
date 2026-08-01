@@ -10,7 +10,7 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
   public value = model<number | null>(null);
 
   // `min`/`max` satisfy the signal-forms `FormValueControl` contract, which types them as
-  // `NonNullable<TValue> | undefined` — so they must be `number | undefined`, not `number | null`.
+  // `NonNullable<TValue> | undefined` - so they must be `number | undefined`, not `number | null`.
   public min = input<number | undefined>(undefined);
   public max = input<number | undefined>(undefined);
   public step = input<number | null>(null);
@@ -21,10 +21,10 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
   public hasValue = computed(() => this.mixed() || this.value() !== null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.NUMBER_INPUT);
 
-  /** What the native input renders — empty while mixed so the raw value never reaches the DOM. */
+  /** What the native input renders - empty while mixed so the raw value never reaches the DOM. */
   public displayValue = computed(() => (this.mixed() ? '' : (this.value() ?? '')));
 
-  /** The placeholder the native input renders — `mixedLabel` overrides the consumer placeholder while mixed. */
+  /** The placeholder the native input renders - `mixedLabel` overrides the consumer placeholder while mixed. */
   public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));
 
   /**
@@ -34,10 +34,10 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
    */
   public nativeControl = signal<HTMLInputElement | null>(null);
 
-  /** The value stepping starts from — `0` while mixed (deriving from the hidden raw value would leak it). */
+  /** The value stepping starts from - `0` while mixed (deriving from the hidden raw value would leak it). */
   private steppingBase = computed(() => (this.mixed() ? 0 : (this.value() ?? 0)));
 
-  /** Whether stepping up would change the value — `false` at the `max` bound or while non-interactive. */
+  /** Whether stepping up would change the value - `false` at the `max` bound or while non-interactive. */
   public canStepUp = computed(() => {
     if (this.disabled() || this.readonly()) return false;
 
@@ -46,7 +46,7 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
     return max === undefined || this.steppingBase() < max;
   });
 
-  /** Whether stepping down would change the value — `false` at the `min` bound or while non-interactive. */
+  /** Whether stepping down would change the value - `false` at the `min` bound or while non-interactive. */
   public canStepDown = computed(() => {
     if (this.disabled() || this.readonly()) return false;
 
@@ -83,7 +83,7 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
     if (max !== undefined) next = Math.min(max, next);
 
     if (this.mixed()) {
-      // stepping is a user commit — it replaces the hidden raw value and resolves mixed
+      // stepping is a user commit - it replaces the hidden raw value and resolves mixed
       this.mixed.set(false);
       this.value.set(next);
       this.touched.set(true);
@@ -93,7 +93,7 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
 
     if (next !== this.value()) {
       this.value.set(next);
-      // stepping is a deliberate edit — mark touched so validation errors surface immediately,
+      // stepping is a deliberate edit - mark touched so validation errors surface immediately,
       // rather than staying hidden until a separate blur (typed entry already touches on blur)
       this.touched.set(true);
     }
@@ -119,7 +119,7 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
   }
 }
 
-/** Decimal places needed to represent `value` exactly — strips float noise from step math. */
+/** Decimal places needed to represent `value` exactly - strips float noise from step math. */
 const decimalPrecisionOf = (value: number) => {
   const text = value.toString();
 

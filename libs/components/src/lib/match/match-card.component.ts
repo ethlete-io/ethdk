@@ -71,7 +71,7 @@ export class MatchCardComponent {
 
   /**
    * The color theme the live badge is drawn in. `null` (the default) uses the app's `type: 'error'`
-   * theme, which is the red a live badge is expected to be — and falls through to the ambient color
+   * theme, which is the red a live badge is expected to be - and falls through to the ambient color
    * scope in an app that registered none. Theme names are the app's own, so this takes one of them (or
    * the theme object).
    */

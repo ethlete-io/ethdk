@@ -21,7 +21,7 @@ export class ScrollableDragDirective {
   constructor() {
     this.scrollable?.dragDirective.set(this);
 
-    // A drag writes the scroll offset on every mouse move, which is exactly what CSS snap overrules — so the
+    // A drag writes the scroll offset on every mouse move, which is exactly what CSS snap overrules - so the
     // scrollable has to know a drag is in progress. `etScrollableSnap` is what acts on it.
     // Not a linkedSignal: it is pushed into the *scrollable's* signal, which is where anything else can see it.
     // eslint-disable-next-line ethlete/prefer-linked-signal

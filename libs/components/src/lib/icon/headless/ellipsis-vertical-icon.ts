@@ -1,6 +1,6 @@
 import { IconDefinition } from './icon-provider';
 
-/** Vertical three-dot "more actions" glyph — the table's column menu trigger. */
+/** Vertical three-dot "more actions" glyph - the table's column menu trigger. */
 export const ELLIPSIS_VERTICAL_ICON: IconDefinition = {
   name: 'et-ellipsis-vertical',
   data: `

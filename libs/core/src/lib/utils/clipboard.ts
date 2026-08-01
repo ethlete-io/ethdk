@@ -9,7 +9,7 @@ export const copyToClipboard = (text: string): Observable<boolean> =>
     if (navigator.clipboard) {
       return from(navigator.clipboard.writeText(text)).pipe(
         map(() => true),
-        // The async Clipboard API can be blocked (missing permission, insecure context) — try the legacy path.
+        // The async Clipboard API can be blocked (missing permission, insecure context) - try the legacy path.
         catchError(() => of(copyToClipboardViaExecCommand(text))),
       );
     }

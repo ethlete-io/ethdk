@@ -166,7 +166,7 @@ export class DropzoneComponent {
   }
 
   /**
-   * Opening the system file picker blurs the trigger — the control must not be
+   * Opening the system file picker blurs the trigger - the control must not be
    * marked as touched (and show validation errors) while the dialog is open.
    */
   protected markTriggerTouched() {
@@ -213,7 +213,7 @@ export class DropzoneComponent {
     this.removingEntryIds.add(entry.id);
     this.renderer.setStyle(entryElement, { pointerEvents: 'none' });
 
-    // animate the real element and remove the entry only afterwards — Angular unloads
+    // animate the real element and remove the entry only afterwards - Angular unloads
     // component styles once their last instance is destroyed, so a detached clone
     // would lose the button/progress-bar styling mid-animation
     const animation = entryElement.animate(

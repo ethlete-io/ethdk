@@ -16,7 +16,7 @@ import { SkeletonImports } from '@ethlete/cdk';
 
 <StoryEmbed id="cdk-skeleton--default" height="240px" />
 
-Items carry no intrinsic size — give each one its width, height and border-radius in your own CSS.
+Items carry no intrinsic size - give each one its width, height and border-radius in your own CSS.
 
 ## Options
 
@@ -27,7 +27,7 @@ Items carry no intrinsic size — give each one its width, height and border-rad
 
 ## Behavior & accessibility
 
-The wrapper renders the loading text visually hidden; every `et-skeleton-item` is `aria-hidden`, so assistive tech hears one meaningful announcement instead of decorative boxes. The shimmer is wrapped in `@media (prefers-reduced-motion: no-preference)` — users with reduced motion get static placeholders.
+The wrapper renders the loading text visually hidden; every `et-skeleton-item` is `aria-hidden`, so assistive tech hears one meaningful announcement instead of decorative boxes. The shimmer is wrapped in `@media (prefers-reduced-motion: no-preference)` - users with reduced motion get static placeholders.
 
 ## Styling
 

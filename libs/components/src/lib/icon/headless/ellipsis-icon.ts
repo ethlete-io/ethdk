@@ -1,6 +1,6 @@
 import { IconDefinition } from './icon-provider';
 
-/** Horizontal three-dot glyph — the breadcrumb's "show the hidden levels" trigger. */
+/** Horizontal three-dot glyph - the breadcrumb's "show the hidden levels" trigger. */
 export const ELLIPSIS_ICON: IconDefinition = {
   name: 'et-ellipsis',
   data: `

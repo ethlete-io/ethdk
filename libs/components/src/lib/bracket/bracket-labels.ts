@@ -4,7 +4,7 @@ import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
  * Every string the bracket's default cards render or announce. Defaults are English
  * ({@link DEFAULT_BRACKET_LABELS}); override them app-wide with {@link provideBracketLabels}.
  *
- * The match cards themselves draw no strings of their own — those come from the match domain's
+ * The match cards themselves draw no strings of their own - those come from the match domain's
  * `provideMatchLabels`, since the cards are `et-match-card`s.
  */
 export type BracketLabels = {
@@ -22,7 +22,7 @@ export type BracketLabels = {
   upperBracketSection: string;
   /** Heads the losers-bracket rounds in a double-elimination `et-bracket-rounds-list`. */
   lowerBracketSection: string;
-  /** Heads the deciding rounds — grand final, bracket reset, third place — in a rounds list. */
+  /** Heads the deciding rounds - grand final, bracket reset, third place - in a rounds list. */
   finalsSection: string;
 };
 
@@ -42,7 +42,7 @@ const BRACKET_LABELS_DEF = /* @__PURE__ */ defineLabels<BracketLabels>('BRACKET_
 
 /**
  * Localize the bracket's default cards for everything below this injector, and read the set in effect
- * here as a signal. Partial — whatever you leave out keeps its {@link DEFAULT_BRACKET_LABELS} value.
+ * here as a signal. Partial - whatever you leave out keeps its {@link DEFAULT_BRACKET_LABELS} value.
  *
  * @example
  * provideBracketLabels({

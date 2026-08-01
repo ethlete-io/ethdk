@@ -23,7 +23,7 @@ import {
 const injectDemoAuthProvider = toInjectFn(devtoolsDemoAuthProvider);
 const injectDemoSocket = toInjectFn(devtoolsDemoSocket);
 
-/** A GET query living in its own component — one inspect target. */
+/** A GET query living in its own component - one inspect target. */
 @Component({
   selector: 'et-sb-qd-server-time',
   template: `
@@ -33,7 +33,7 @@ const injectDemoSocket = toInjectFn(devtoolsDemoSocket);
     } @else if (serverTime.error(); as error) {
       <p class="et-sb-devtools-error">error {{ error.raw.status }}</p>
     } @else {
-      <p>#{{ serverTime.response()?.requestNumber ?? '—' }} · {{ serverTime.response()?.serverTime ?? '—' }}</p>
+      <p>#{{ serverTime.response()?.requestNumber ?? '-' }} · {{ serverTime.response()?.serverTime ?? '-' }}</p>
     }
     <button (click)="serverTime.execute()" type="button">Refetch</button>
   `,
@@ -53,7 +53,7 @@ export class QdServerTimeCardComponent {
     } @else if (post.error(); as error) {
       <p class="et-sb-devtools-error">error {{ error.raw.status }}</p>
     } @else {
-      <p>{{ post.response()?.title ?? '—' }}</p>
+      <p>{{ post.response()?.title ?? '-' }}</p>
     }
     <button (click)="nextPost()" type="button">Next post</button>
     <button (click)="fail()" type="button">Fail</button>
@@ -187,7 +187,7 @@ export class QdGqlCardComponent {
   template: `
     <h4>Web socket</h4>
     <p>
-      {{ socket.isConnected() ? 'connected' : 'disconnected (no server)' }} · room: {{ room() ? 'match-events' : '—' }}
+      {{ socket.isConnected() ? 'connected' : 'disconnected (no server)' }} · room: {{ room() ? 'match-events' : '-' }}
     </p>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -224,7 +224,7 @@ export class QdAuthCardComponent {
       <p>
         Each card below is a separate component that creates its own queries. Toggle the panel with the floating
         <strong>Query</strong> button (or <kbd>Ctrl/Cmd</kbd> + <kbd>Alt</kbd> + <kbd>Q</kbd>), then try
-        <strong>Inspect</strong> and hover the cards — each highlights its own queries.
+        <strong>Inspect</strong> and hover the cards - each highlights its own queries.
       </p>
 
       <div class="et-sb-devtools-grid">

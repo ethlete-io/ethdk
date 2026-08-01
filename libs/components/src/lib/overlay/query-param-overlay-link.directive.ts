@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { QueryParamOverlayDefinition } from './overlay-definition';
 
 /**
- * Opens a query-param overlay declaratively by navigating its query param — the counterpart to
+ * Opens a query-param overlay declaratively by navigating its query param - the counterpart to
  * `createOverlayOpener` for links. Takes the overlay definition itself, so the query param key
  * is never duplicated as a string.
  *

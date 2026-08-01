@@ -111,7 +111,7 @@ export class DateTimeInputComponent {
   /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
 
-  // only while the field is in use — mirrors the select's clear affordance
+  // only while the field is in use - mirrors the select's clear affordance
   protected showClear = computed(
     () =>
       this.clearable() &&
@@ -124,7 +124,7 @@ export class DateTimeInputComponent {
   protected activePane = signal<'date' | 'time'>('date');
 
   /**
-   * Direction of the last pane switch — the incoming pane slides in from the
+   * Direction of the last pane switch - the incoming pane slides in from the
    * travel direction, like the calendar's month navigation. `null` while
    * untouched, so opening the picker does not animate.
    */

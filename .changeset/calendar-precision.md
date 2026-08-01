@@ -6,7 +6,7 @@ Calendar and date inputs: `precision` makes them month or year pickers.
 
 - **`precision` (`'day' | 'month' | 'year'`) on `[etCalendar]`.** The grid holding that unit is the
   finest one the calendar shows, and picking a cell there writes the value rather than drilling
-  further in: at `'month'` the 12-month grid *is* the picker. The value is the start of the unit —
+  further in: at `'month'` the 12-month grid *is* the picker. The value is the start of the unit -
   July 2026 is `2026-07-01T00:00`. `startView` can no longer open a grid finer than the precision,
   and the header's wrap-around lands on the selecting grid instead of the day grid.
 - **Ranges compare, band, preview and complete at the precision's unit**, so `03/2026 – 06/2026`
@@ -15,7 +15,7 @@ Calendar and date inputs: `precision` makes them month or year pickers.
   now (`createCalendarSelectionReader`), which is also how the day grid keeps behaving exactly as
   before.
 - **`precision` on `et-date-input` and `et-date-range-input`**, where it moves the text format with
-  it: `displayFormat` defaults to `null` and derives from the precision — the locale's short date at
+  it: `displayFormat` defaults to `null` and derives from the precision - the locale's short date at
   day precision (`'P'`, as before), that same pattern with its day removed at month precision
   (`MM.yyyy` for a German locale, `MM/yyyy` for en-US, `yyyy/MM` for Japanese), and `'yyyy'` at year
   precision. Naming a `displayFormat` still wins. Because the derived patterns are fixed-width, a
@@ -27,4 +27,4 @@ Calendar and date inputs: `precision` makes them month or year pickers.
 - `min`/`max`/`dateFilter` keep their day-level meaning throughout: a month is selectable when some
   day inside it is.
 - Internally, `displayFormat` is read through the new `effectiveDisplayFormat` on the picker-input
-  base — a custom control extending `DatePickerInputDirective` now implements that instead.
+  base - a custom control extending `DatePickerInputDirective` now implements that instead.

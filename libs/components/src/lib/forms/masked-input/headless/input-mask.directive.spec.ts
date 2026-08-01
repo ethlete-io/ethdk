@@ -8,7 +8,7 @@ import { INPUT_MASK_HOST, InputMaskHost } from './input-mask-host';
 import { InputMaskDirective } from './input-mask.directive';
 import { MaskSpec, MaskValueMode } from './input-mask.types';
 
-// a minimal non-InputDirective mask host — the generalized contract in action
+// a minimal non-InputDirective mask host - the generalized contract in action
 @Directive({
   selector: '[etSbCustomMaskHost]',
   providers: [{ provide: INPUT_MASK_HOST, useExisting: CustomMaskHostDirective }],
@@ -250,7 +250,7 @@ describe('InputMaskDirective', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    // native sync is in charge — arbitrary text passes through untouched
+    // native sync is in charge - arbitrary text passes through untouched
     await focus();
     await type('a');
     await type('b');

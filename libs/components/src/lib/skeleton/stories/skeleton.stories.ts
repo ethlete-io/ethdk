@@ -19,7 +19,7 @@ export const Static: Story = {
     docs: {
       description: {
         story:
-          '`animated="false"` leaves the same shapes without the shimmer — for a placeholder inside ' +
+          '`animated="false"` leaves the same shapes without the shimmer - for a placeholder inside ' +
           'something that already moves, or a very long list where a sweep per row is noise. The shimmer ' +
           'is dropped automatically under `prefers-reduced-motion` regardless.',
       },

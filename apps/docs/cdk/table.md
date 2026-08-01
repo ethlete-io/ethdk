@@ -1,6 +1,6 @@
 # Table & sort
 
-A declarative table built on `@angular/cdk/table` — describe each column once, then declare which rows to render — plus sortable headers that integrate with it but also work standalone.
+A declarative table built on `@angular/cdk/table` - describe each column once, then declare which rows to render - plus sortable headers that integrate with it but also work standalone.
 
 ```ts
 import { TableImports, SortImports, provideSort, TableDataSource } from '@ethlete/cdk';
@@ -61,7 +61,7 @@ export class ElementsTableComponent {
 
 ### Busy overlay
 
-Set `busy` (default `false`) and project an `etTableBusy` template — the table renders it over the body without tearing down rows, and sets `aria-busy` while active:
+Set `busy` (default `false`) and project an `etTableBusy` template - the table renders it over the body without tearing down rows, and sets `aria-busy` while active:
 
 ```html
 <et-table [dataSource]="data" [busy]="isLoading">
@@ -76,7 +76,7 @@ The template's root element gets the `et-table-busy` class for positioning.
 
 ### TableDataSource
 
-For client-side filtering, sorting and paging there's `TableDataSource<T>` — the equivalent of Material's `MatTableDataSource`. Assign `data`, `filter`, `sort` (a `SortDirective`) and optionally a `paginator`, and it pipes rows through filter → sort → page automatically. Override `sortingDataAccessor`, `sortData` or `filterPredicate` to customize.
+For client-side filtering, sorting and paging there's `TableDataSource<T>` - the equivalent of Material's `MatTableDataSource`. Assign `data`, `filter`, `sort` (a `SortDirective`) and optionally a `paginator`, and it pipes rows through filter → sort → page automatically. Override `sortingDataAccessor`, `sortData` or `filterPredicate` to customize.
 
 ## Sort
 
@@ -89,8 +89,8 @@ The `etSort` directive tracks the active sort; `[et-sort-header]` elements regis
 | `etSortActive` / `etSortDirection` | `''`    | The currently sorted column id and direction.                                                                                                               |
 | `etSortStart`                      | `'asc'` | Direction a column starts with when first clicked.                                                                                                          |
 | `etSortDisableClear`               | `false` | Skip the cleared state in the cycle.                                                                                                                        |
-| `sortControl`                      | —       | `FormControl<Sort \| null>` two-way bound to the combined `{ active, direction }` state (also available split as `sortByControl` / `sortDirectionControl`). |
-| `(etSortChange)`                   | —       | Emits `Sort` on every change — reorder your data (or re-query) here.                                                                                        |
+| `sortControl`                      | -       | `FormControl<Sort \| null>` two-way bound to the combined `{ active, direction }` state (also available split as `sortByControl` / `sortDirectionControl`). |
+| `(etSortChange)`                   | -       | Emits `Sort` on every change - reorder your data (or re-query) here.                                                                                        |
 
 Per header you can set `arrowPosition` (`'after'` by default), `disableClear`, `disabled` and `sortActionDescription` (the screen-reader description of the sort action, default `'Sort'`). App-wide defaults go through the `SORT_DEFAULT_OPTIONS` token; `provideSort()` sets up the `SortHeaderIntl` service whose `changes` subject re-renders all headers (useful for runtime language switches).
 
@@ -98,4 +98,4 @@ Sort headers are fully accessible: `aria-sort` on the header, a `role="button"` 
 
 ## Styling
 
-The table ships structural CSS with a few custom properties on `.et-table` — `--et-table-separator-color`, `--et-table-separator-width`, `--et-table-row-min-height`, `--et-table-header-row-min-height`, `--et-table-row-inline-padding` and friends. Cells and rows expose `et-header-row`, `et-row`, `et-cell`, `et-column-<name>` and `et-table-sticky` classes; sort headers expose `et-sort-header`, `et-sort-header-container`, `et-sort-header-arrow` and `et-sort-header-sorted`.
+The table ships structural CSS with a few custom properties on `.et-table` - `--et-table-separator-color`, `--et-table-separator-width`, `--et-table-row-min-height`, `--et-table-header-row-min-height`, `--et-table-row-inline-padding` and friends. Cells and rows expose `et-header-row`, `et-row`, `et-cell`, `et-column-<name>` and `et-table-sticky` classes; sort headers expose `et-sort-header`, `et-sort-header-container`, `et-sort-header-arrow` and `et-sort-header-sorted`.

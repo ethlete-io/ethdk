@@ -51,7 +51,7 @@ describe('DateInputDirective', () => {
 
   const tick = () => TestBed.inject(ApplicationRef).tick();
 
-  // overlays render into the document — scope queries to the newest pane so a pane
+  // overlays render into the document - scope queries to the newest pane so a pane
   // stuck in its leave transition (jsdom fires no transition events) can't pollute them
   const pane = () => Array.from(document.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane')).at(-1) ?? null;
   const pickButton = () => pane()?.querySelector<HTMLButtonElement>('.pick-date') ?? null;
@@ -146,7 +146,7 @@ describe('DateInputDirective', () => {
     expect(dateInput.inputText()).toBe('');
     expect(dateInput.parseError()).toBe(false);
     expect(dateInput.hasValue()).toBe(false);
-    // the field only mirrors state while unfocused — the clear resets it directly
+    // the field only mirrors state while unfocused - the clear resets it directly
     expect(field.value).toBe('');
   });
 
@@ -285,7 +285,7 @@ describe('DateInputDirective', () => {
 
       typeAndBlur('07/2026');
 
-      // the 1st, not today's day of July — a coarse format cannot say which day it meant
+      // the 1st, not today's day of July - a coarse format cannot say which day it meant
       expect(host.value()).toBe('2026-07-01');
       expect(dateInput.parseError()).toBe(false);
       expect(field.value).toBe('07/2026');
@@ -500,7 +500,7 @@ describe('DateInputDirective with the opt-in typing mask', () => {
     expect(field.value).toBe('18.07.2026');
   });
 
-  it('commits the shaped text without guide placeholders — a partial entry is a parse error, not guide noise', async () => {
+  it('commits the shaped text without guide placeholders - a partial entry is a parse error, not guide noise', async () => {
     await focus();
     await type('1807');
     await blur();

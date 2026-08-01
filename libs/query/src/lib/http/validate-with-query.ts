@@ -10,20 +10,20 @@ import { applyQueryAsyncValidator } from './query-validator-core';
 export type ValidateWithQueryConfig<TCreator extends AnyQueryCreator, TValue, TPathKind extends PathKind> = {
   /**
    * The query creator to run (e.g. a secure `createPostQuery` validate route). Like a query stack,
-   * the query is created **once** and re-executes reactively — never per keystroke. Running it
+   * the query is created **once** and re-executes reactively - never per keystroke. Running it
    * through the query client is the point: auth, base route, caching and error normalization all
    * apply, unlike a raw `httpResource`.
    */
   queryCreator: TCreator;
   /**
    * Builds the request args from the field context. Runs reactively on the field value (debounced),
-   * exactly like `validateAsync`'s `params` — e.g.
+   * exactly like `validateAsync`'s `params` - e.g.
    * `(ctx) => ({ pathParams: { id }, body: { ...ctx.value() } })`.
    */
   args: (ctx: FieldContext<TValue, TPathKind>) => RequestArgs<QueryArgsOf<TCreator>>;
   /** Debounce before the request runs, in ms. @default 300 */
   debounce?: number;
-  /** Gate the validation — return `false` to skip the request (e.g. an empty or invalid value). */
+  /** Gate the validation - return `false` to skip the request (e.g. an empty or invalid value). */
   when?: (ctx: FieldContext<TValue, TPathKind>) => boolean;
   /**
    * Override the default violation → error mapping. Receives the violations extracted from the
@@ -36,8 +36,8 @@ export type ValidateWithQueryConfig<TCreator extends AnyQueryCreator, TValue, TP
 
 /**
  * Binds a query-backed async validator to a signal-forms field, adapting an `@ethlete/query` v3
- * query into what `validateAsync` consumes. The query runs through the query client — so bearer
- * auth, base route, caching and Symfony error normalization all apply — where a raw `httpResource`
+ * query into what `validateAsync` consumes. The query runs through the query client - so bearer
+ * auth, base route, caching and Symfony error normalization all apply - where a raw `httpResource`
  * would fire unauthenticated and bypass the pipeline.
  *
  * On the current v3 `QueryClient` / `createPostQuery` creators; the `validateWithV2Query` twin
@@ -72,7 +72,7 @@ export const validateWithQuery = <TCreator extends AnyQueryCreator, TValue, TPat
     mapViolations: config.mapViolations,
     factory: (params) => {
       // Created once, exactly like a query stack. A POST validate route doesn't auto-execute, so
-      // the resource loader drives it — each params change re-executes with the new args.
+      // the resource loader drives it - each params change re-executes with the new args.
       const query = config.queryCreator();
 
       return resource<TResult | undefined, TParams | undefined>({

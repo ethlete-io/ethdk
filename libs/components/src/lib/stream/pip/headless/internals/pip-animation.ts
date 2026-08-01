@@ -4,8 +4,8 @@ import { take, tap, timer } from 'rxjs';
 /**
  * Collapses a duration to an instant jump when the user prefers reduced motion.
  *
- * Every animation here does bookkeeping in `onfinish` — reparenting the player, restoring inline
- * styles, chaining the next phase — so skipping the `animate()` call outright would strand the
+ * Every animation here does bookkeeping in `onfinish` - reparenting the player, restoring inline
+ * styles, chaining the next phase - so skipping the `animate()` call outright would strand the
  * element mid-transition. Zeroing the duration keeps the lifecycle and drops only the motion.
  */
 const motionDuration = (duration: number, el: Element) => (matchesReducedMotion(el) ? 0 : duration);

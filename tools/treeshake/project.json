@@ -7,7 +7,7 @@
       "executor": "nx:run-commands",
       "dependsOn": [
         {
-          "projects": ["core", "query", "components"],
+          "projects": ["core", "query", "components", "contentful"],
           "target": "build"
         }
       ],

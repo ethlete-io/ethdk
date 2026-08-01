@@ -3,7 +3,7 @@ import type { QueryKey } from '../query-repository';
 
 /**
  * Version of the cross-tab message protocol. A tab ignores messages carrying a version it does not
- * know rather than guessing at a shape it has never seen — the realistic case being a user with the
+ * know rather than guessing at a shape it has never seen - the realistic case being a user with the
  * previous deploy still open next to a freshly loaded one.
  *
  * Bump this whenever {@link QuerySyncMessage} changes in a way an older tab could misread. Skew
@@ -47,7 +47,7 @@ export type QuerySyncInvalidateMessage = {
 
   /**
    * The absolute URL the invalidation was narrowed to, or `null` for every query in use. Already
-   * resolved by the tab that sent it — the two tabs run the same client, so its `baseUrl` is ours.
+   * resolved by the tab that sent it - the two tabs run the same client, so its `baseUrl` is ours.
    */
   url: string | null;
 };

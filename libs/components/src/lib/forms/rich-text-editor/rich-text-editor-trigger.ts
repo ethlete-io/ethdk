@@ -64,7 +64,7 @@ export type RichTextEditorTrigger = {
 
 /**
  * Declares a trigger for the rich text editor's building-block autocomplete. A thin
- * identity helper — kept as a function so the config type is inferred and the call site
+ * identity helper - kept as a function so the config type is inferred and the call site
  * reads intentionally. Pass the results to `[etRichTextEditorTriggers]`.
  *
  * ```ts

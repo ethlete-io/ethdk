@@ -59,7 +59,7 @@ const slideElements = (fixture: ComponentFixture<CarouselHostComponent>) =>
 
 /**
  * The track's children reach the carousel through the scrollable's mutation observer, which reports
- * asynchronously — so anything reading `domCount()` (the clone count among it) needs a turn of the event
+ * asynchronously - so anything reading `domCount()` (the clone count among it) needs a turn of the event
  * loop. The slide *count* does not: that comes from the slides array.
  */
 const settleChildren = async (fixture: ComponentFixture<CarouselHostComponent>) => {
@@ -125,7 +125,7 @@ describe('CarouselComponent', () => {
     fixture.componentInstance.loop.set(false);
     fixture.detectChanges();
 
-    // jsdom has no layout, so the active slide stays at the start — which is where `previous` runs out
+    // jsdom has no layout, so the active slide stays at the start - which is where `previous` runs out
     expect(carousel.canGoPrevious()).toBe(false);
     expect(host(fixture).querySelector('[etCarouselPrevious]')?.getAttribute('aria-disabled')).toBe('true');
   });
@@ -196,7 +196,7 @@ describe('CarouselComponent', () => {
     const autoplay = fixture.componentInstance.autoplayDirective();
     const toggle = host(fixture).querySelector('[etCarouselPlayToggle]') as HTMLButtonElement;
 
-    // pressing the control leaves the pointer on it and focus in it — the state a real click produces
+    // pressing the control leaves the pointer on it and focus in it - the state a real click produces
     autoplay.isHovered.set(true);
     autoplay.isFocusWithin.set(true);
     autoplay.isPointerOnPauseControl.set(true);
@@ -310,7 +310,7 @@ describe('CarouselComponent', () => {
       const fixture = await createLoopingHost();
       const text = slideElements(fixture).map((slide) => slide.textContent?.trim());
 
-      // [3, 4] [1, 2, 3, 4] [1, 2] — so scrolling off either end lands on content, not on a wall
+      // [3, 4] [1, 2, 3, 4] [1, 2] - so scrolling off either end lands on content, not on a wall
       expect(text).toEqual(['3. three', '4. four', '1. one', '2. two', '3. three', '4. four', '1. one', '2. two']);
     });
 

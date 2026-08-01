@@ -39,16 +39,16 @@ export class RichTextEditorFloatingToolbarComponent {
   private ownColorProvider = inject(ProvideColorDirective);
   private contextColorProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
 
-  /** The editor whose selection this toolbar formats (passed in — the toolbar is detached from the DOM). */
+  /** The editor whose selection this toolbar formats (passed in - the toolbar is detached from the DOM). */
   public editor = input.required<RichTextEditorDirective>();
 
   protected readonly TOOLS = RICH_TEXT_EDITOR_TOOLS;
   protected readonly TOOL_BUTTONS = RICH_TEXT_EDITOR_TOOL_BUTTONS;
 
-  /** The editor's strings — the same set, since this toolbar is part of that editor. */
+  /** The editor's strings - the same set, since this toolbar is part of that editor. */
   protected labels = computed(() => this.editor().resolvedLabels());
 
-  /** The inline marks from the editor's configured tools — headings/lists stay in the static toolbar. */
+  /** The inline marks from the editor's configured tools - headings/lists stay in the static toolbar. */
   protected inlineTools = computed(() =>
     this.editor()
       .resolvedTools()
@@ -57,7 +57,7 @@ export class RichTextEditorFloatingToolbarComponent {
 
   constructor() {
     // Detached overlay pane: the toolbar's surface IS the overlay's own surface, so it paints the
-    // overlay's registered elevation exactly (via the surface-context tracker) — the same treatment
+    // overlay's registered elevation exactly (via the surface-context tracker) - the same treatment
     // as the token popup / menu.
     inject(AutoSurfaceDirective).matchOverlaySurface();
 

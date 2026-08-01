@@ -8,7 +8,7 @@ import { TableComponent } from './table.component';
  * The row expander, stamped into the table's own lead column when a detail template is set. Registered
  * through the same seam as a feature's lead column, so the table's row loops have no special case.
  *
- * It is created inside the table's view, so it reaches the table by plain DI — no injector plumbing,
+ * It is created inside the table's view, so it reaches the table by plain DI - no injector plumbing,
  * unlike a feature's cells (see `TableLeadColumn.injector`). Its styles travel with it rather than in
  * `table.component.css`, so Angular injects them the first time a table actually renders an expander.
  *

@@ -20,7 +20,7 @@ const isWordBoundary = (text: string, index: number) => index === 0 || /\s/.test
  * Resolves the trigger active at a collapsed caret, or `null`. Reads the DOM directly so it stays
  * correct across typing, Backspace, caret jumps and paste without intercepting keystrokes.
  *
- * The trigger char is never consumed here — it stays in the text; only picking an item replaces it.
+ * The trigger char is never consumed here - it stays in the text; only picking an item replaces it.
  * Requiring a word boundary means `user@domain` in an email never opens the popup (the `@` follows
  * a letter); the query cancels on whitespace unless the trigger opts into `allowSpaces`.
  */
@@ -54,7 +54,7 @@ export const resolveTriggerMatch = ({
 
     const query = text.slice(charOffset + 1, caretOffset);
 
-    // Cancel once the query runs into whitespace (unless the trigger allows it) — this is what
+    // Cancel once the query runs into whitespace (unless the trigger allows it) - this is what
     // lets the user keep typing past the popup, e.g. an email, without it hijacking the text.
     if (!(trigger.allowSpaces ?? false) && /\s/.test(query)) continue;
 

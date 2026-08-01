@@ -51,7 +51,7 @@ export const AlwaysOneOpen: Story = {
       description: {
         story:
           '`preventCloseLast` keeps at *least* one panel open: clicking the open header does nothing. With ' +
-          '`autoCloseOthers` alongside it, the group behaves like a radio set — exactly one section open at a ' +
+          '`autoCloseOthers` alongside it, the group behaves like a radio set - exactly one section open at a ' +
           'time. The header keeps `aria-expanded="true"` and is deliberately **not** `aria-disabled`: the ' +
           'control works fine, it is the collapse that is momentarily inert, and announcing the header as ' +
           'disabled would be a lie the moment another panel opens.',
@@ -67,7 +67,7 @@ export const LazyContent: Story = {
       description: {
         story:
           'Projected children are created with their parent whether the panel opens or not. Content in an ' +
-          '`<ng-template etAccordionContent>` is created on the first expand instead — and then stays, so ' +
+          '`<ng-template etAccordionContent>` is created on the first expand instead - and then stays, so ' +
           'collapsing keeps its state.',
       },
     },

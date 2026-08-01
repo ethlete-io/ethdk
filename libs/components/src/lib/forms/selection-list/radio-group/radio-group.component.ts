@@ -36,7 +36,7 @@ export class RadioGroupComponent {
 
   /**
    * Lay the options out in a row instead of a column. Horizontal wraps, and the group's label and its
-   * error/hint block keep their own lines above and below — only the options flow.
+   * error/hint block keep their own lines above and below - only the options flow.
    *
    * Vertical is the default because it scans better and gives each option a full-width hit area; reach
    * for horizontal only when the options are short (two or three words) and the set is small.

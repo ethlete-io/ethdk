@@ -13,7 +13,7 @@ export type StreamLabels = {
   /** Announced by the loading overlay while a player is starting up. */
   loading: string;
   /**
-   * `title` for an embedded player's iframe, given the platform's own name — announced in place of the
+   * `title` for an embedded player's iframe, given the platform's own name - announced in place of the
    * frame's contents. The brand name is not translated; the wording around it is.
    */
   playerFrame: (platform: string) => string;
@@ -65,7 +65,7 @@ const STREAM_LABELS_DEF = /* @__PURE__ */ defineLabels<StreamLabels>('STREAM_LAB
 
 /**
  * Localize the stream chrome's strings for everything below this injector, and read the set in effect
- * here as a signal. Partial — whatever you leave out keeps its {@link DEFAULT_STREAM_LABELS} value. See
+ * here as a signal. Partial - whatever you leave out keeps its {@link DEFAULT_STREAM_LABELS} value. See
  * {@link defineLabels} for the shape, which every domain in this library shares.
  *
  * @example

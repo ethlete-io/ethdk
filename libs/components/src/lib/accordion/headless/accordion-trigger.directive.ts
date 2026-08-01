@@ -8,7 +8,7 @@ import { ACCORDION_TOKEN } from './accordion.tokens';
  * `aria-controls` and the id the panel points back at, and toggles on click.
  *
  * Put it on a native `<button>` (inside a heading element or a `role="heading"` wrapper, as the
- * default `et-accordion` does) — that is what gives you Enter/Space, focus and the right role for
+ * default `et-accordion` does) - that is what gives you Enter/Space, focus and the right role for
  * free. A disabled accordion marks its trigger `aria-disabled` instead of natively disabling it, so
  * the header stays reachable and announces why it won't open.
  */
@@ -19,7 +19,7 @@ import { ACCORDION_TOKEN } from './accordion.tokens';
     // an accordion header never submits the form it happens to sit in
     type: 'button',
     '[attr.id]': 'accordion?.TRIGGER_ID',
-    // no `aria-controls` while the panel isn't in the DOM — a reference to a missing id is worse than none
+    // no `aria-controls` while the panel isn't in the DOM - a reference to a missing id is worse than none
     '[attr.aria-controls]': 'accordion?.panel() ? accordion?.PANEL_ID : null',
     '[attr.aria-expanded]': 'accordion?.isOpen() ?? false',
     '[attr.aria-disabled]': 'accordion?.disabled() ? "true" : null',

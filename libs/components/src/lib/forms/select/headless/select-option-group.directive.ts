@@ -10,7 +10,7 @@ export type SelectOptionGroupItem = {
 
 /**
  * Groups a set of `[etSelectOption]`s under a labelled `role="group"` section. Purely
- * presentational — options still register flat with the select, so keyboard navigation and
+ * presentational - options still register flat with the select, so keyboard navigation and
  * typeahead run across the whole list. With internal filtering the group hides itself once
  * all of its options are filtered out.
  */
@@ -28,7 +28,7 @@ export type SelectOptionGroupItem = {
 export class SelectOptionGroupDirective {
   private select = inject(SelectDirective, { optional: true });
 
-  /** The group's accessible name — also the default header text in `et-select-option-group`. */
+  /** The group's accessible name - also the default header text in `et-select-option-group`. */
   public label = input('');
 
   /** @internal Set by the rendered label element so `aria-labelledby` points at it. */

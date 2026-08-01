@@ -9,7 +9,7 @@ import {
 import { Observable, Subject, take, tap } from 'rxjs';
 import { OverlayConfig } from './overlay-config';
 
-/** A synchronous veto for a pending overlay close — see {@link OverlayRuntimeCloseGuard}. */
+/** A synchronous veto for a pending overlay close - see {@link OverlayRuntimeCloseGuard}. */
 export type OverlayCloseGuard<TResult = unknown> = OverlayRuntimeCloseGuard<TResult | undefined>;
 
 export const createOverlayRef = <TComponent extends object, TResult = unknown>(config: OverlayConfig) => {
@@ -23,8 +23,8 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
   const beforeClosed$ = new Subject<TResult | undefined>();
   const afterClosed$ = new Subject<TResult | undefined>();
   const afterClosedEvent$ = new Subject<OverlayRuntimeCloseEvent<TResult | undefined>>();
-  // Guards live here (not on the runtime ref directly) because the mounted component — where a guard
-  // is registered — is constructed before `attachRuntime` runs. A single aggregate guard is wired to
+  // Guards live here (not on the runtime ref directly) because the mounted component - where a guard
+  // is registered - is constructed before `attachRuntime` runs. A single aggregate guard is wired to
   // the runtime ref on attach and reads this set live, so guards registered either side of attach work.
   const closeGuards = new Set<OverlayCloseGuard<TResult>>();
 
@@ -68,7 +68,7 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
     return () => closeGuards.delete(guard);
   };
 
-  /** Close the overlay bypassing every registered close guard — used to commit a close a guard
+  /** Close the overlay bypassing every registered close guard - used to commit a close a guard
    *  previously vetoed (e.g. after an async confirm resolved). */
   const forceClose = (source: OverlayRuntimeCloseSource = 'api', result?: TResult) => {
     _runtimeRef?.forceClose(result, source);
@@ -92,7 +92,7 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
   };
 
   /** Like `afterClosed`, but also reports how the close was initiated (`escape`,
-   *  `outside-pointer`, `api`, …) — e.g. to restore focus on an explicit dismiss without
+   *  `outside-pointer`, `api`, …) - e.g. to restore focus on an explicit dismiss without
    *  stealing it from whatever an outside-pointer close was aimed at. */
   const afterClosedEvent = (): Observable<OverlayRuntimeCloseEvent<TResult | undefined>> => {
     return afterClosedEvent$.asObservable();
@@ -102,7 +102,7 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
     _runtimeRef = runtimeRef;
     id = runtimeRef.id;
 
-    // One aggregate guard, reading the live set — any single guard vetoing vetoes the close.
+    // One aggregate guard, reading the live set - any single guard vetoing vetoes the close.
     runtimeRef.registerCloseGuard((event) => {
       for (const guard of closeGuards) {
         if (!guard(event)) {

@@ -36,7 +36,7 @@ const makePos = (dimensions: Dimensions): BracketPosition => ({
 });
 
 /**
- * Two cards in the same column — the shape a stacked layout's centre chain makes, where a round hangs
+ * Two cards in the same column - the shape a stacked layout's centre chain makes, where a round hangs
  * directly below the one that feeds it and every horizontal run has zero width.
  */
 const isSameColumn = (from: BracketPosition, to: BracketPosition) =>
@@ -87,7 +87,7 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TR
 
       // Crossing the middle of a fold. Every other line here is drawn by the match it flows *into*, but a
       // round in the middle of a mirrored bracket is fed from both sides and its relation names only one
-      // of them — so the round on the way back draws its own line. Deliberately outside the switch below:
+      // of them - so the round on the way back draws its own line. Deliberately outside the switch below:
       // which relation a match has says nothing about which side of a fold it sits on, and keying this to
       // `two-to-one` is why a folded lower bracket used to lose the line into its centre round.
       if (el.round.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT && 'nextMatch' in el.match.relation) {
@@ -115,7 +115,7 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TR
           const prev = dimensions.bracketGrid.matchElementMap.getOrThrow(el.match.relation.previousMatch.id);
           const prevPos = makePos(prev.dimensions);
 
-          // The winner of the match it comes from, like every other connector — this used to carry both of
+          // The winner of the match it comes from, like every other connector - this used to carry both of
           // the *current* match's participants, which lit the line for whoever arrived from somewhere else.
           svgParts.push(
             straightPath(prevPos, currentPos, {
@@ -168,7 +168,7 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TR
           };
 
           // A feeder directly *below* in the same column is the one connector a stacked layout has that
-          // crosses its own cards — the losers champion coming up to the grand final, past everything
+          // crosses its own cards - the losers champion coming up to the grand final, past everything
           // hanging under it. Every other same-column pair is adjacent, so a straight run is clear.
           const isBlockToBlock =
             isSameColumn(prevLowerPos, currentPos) && prevLowerPos.block.start > currentPos.block.end;

@@ -11,7 +11,7 @@ export type AccordionHeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
  * {@link AccordionDirective}.
  *
  * Works standalone; put several inside an `<et-accordion-group>` for single-open behavior and
- * arrow-key navigation between the headers. Panel content is projected as children — reach for
+ * arrow-key navigation between the headers. Panel content is projected as children - reach for
  * `<ng-template etAccordionContent>` instead when it is expensive enough that it shouldn't exist
  * before the first expand.
  *

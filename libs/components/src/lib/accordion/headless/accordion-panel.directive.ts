@@ -9,7 +9,7 @@ import { ACCORDION_TOKEN } from './accordion.tokens';
  *
  * It carries no styles: `data-open` is the hook to hang the collapse on (the default `et-accordion`
  * animates a `grid-template-rows` track off it, and hides the collapsed panel from find-in-page with
- * `visibility`). Keeping the content mounted while collapsed is deliberate — see
+ * `visibility`). Keeping the content mounted while collapsed is deliberate - see
  * `etAccordionContent` for the deferred alternative.
  */
 @Directive({

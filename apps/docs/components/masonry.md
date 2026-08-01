@@ -1,7 +1,7 @@
 # Masonry
 
 Packs variable-height items into columns, each item going to whichever column is currently shortest. Reach for
-it when the items genuinely differ in height and cropping them to a common height would lose something — a photo
+it when the items genuinely differ in height and cropping them to a common height would lose something - a photo
 feed, a card wall, user-submitted content. When the items are uniform, a CSS grid is simpler and cheaper; when
 they scroll sideways, use the [carousel](/components/carousel).
 
@@ -18,7 +18,7 @@ Import `MASONRY_IMPORTS`. There is no provider to register.
 </ul>
 ```
 
-Masonry ships as directives only — there is no `<et-masonry>` element. The layout has no visual opinion to wrap
+Masonry ships as directives only - there is no `<et-masonry>` element. The layout has no visual opinion to wrap
 in a default component, and the element being yours is what lets the markup be a real list: `<ul>` plus `<li>`
 needs no ARIA at all. The structural CSS the layout depends on is injected by the directive itself, so a
 hand-built masonry behaves identically to the snippet above.
@@ -32,7 +32,7 @@ hand-built masonry behaves identically to the snippet above.
 Items are measured and then absolutely positioned. That is a deliberate choice, not a legacy one:
 
 - **Native CSS masonry is not usable yet.** CSS Grid Level 3 (`display: grid-lanes`, previously
-  `grid-template-rows: masonry`) is not Baseline — no engine ships it unflagged, and the syntax has changed
+  `grid-template-rows: masonry`) is not Baseline - no engine ships it unflagged, and the syntax has changed
   twice. It will make this component unnecessary; it can't yet.
 - **CSS `columns` fills column by column**, so the third item in the DOM appears at the top of the second
   column. A feed's reading order would no longer be its visual order, which breaks tab order and screen readers
@@ -44,12 +44,12 @@ inside the masonry never relayouts the page around it.
 ### Columns come from the container, not from breakpoints
 
 `columnWidth` is a **minimum**, not a target. The column count is as many columns of that width as fit, gaps
-included, and the leftover space is shared out so the columns always fill the container — the arithmetic of
+included, and the leftover space is shared out so the columns always fill the container - the arithmetic of
 `repeat(auto-fill, minmax(240px, 1fr))`.
 
 So a 1000px container at `columnWidth: 240` and `gap: 16` gives **three** columns of 322.67px: a fourth would
 need `4 × 240 + 3 × 16 = 1008px`. The columns you get are never narrower than you asked for, which is the part
-cdk got wrong — it divided without counting the gaps, so `columWidth: 250` in a 1000px container produced four
+cdk got wrong - it divided without counting the gaps, so `columWidth: 250` in a 1000px container produced four
 238px columns.
 
 The count therefore follows the element's own width, so a masonry in a collapsing sidebar re-columns without a
@@ -81,7 +81,7 @@ in its own column.
 The cost is that heights which change a lot after the first layout leave the columns less even than a fresh pack
 would. Two things rebalance:
 
-- a resize that changes the **column count** — the old assignments say nothing about a different grid, so it
+- a resize that changes the **column count** - the old assignments say nothing about a different grid, so it
   packs from scratch;
 - **`repack()`**, the explicit escape hatch, for when you have replaced the content wholesale.
 
@@ -96,7 +96,7 @@ protected onDataReplaced() {
 ### Appending items, and infinite scroll
 
 Where an item lands depends only on the items before it, so appending a page re-derives the existing placements
-_identically_ — nothing already on screen moves.
+_identically_ - nothing already on screen moves.
 
 What does need care is _when_ you append. Fetching the next page while the current one is still being measured
 appends items against heights that are about to change. `isSettled()` is the signal to gate on:
@@ -123,7 +123,7 @@ protected onSentinelVisible() {
 
 ::: tip Migrating from `@ethlete/cdk`
 This replaces cdk's `injectInfinityQueryResponseDelay` handshake, which only ever existed for the legacy query
-client. `isSettled()` is client-agnostic — gate the trigger on it whatever fetches your data.
+client. `isSettled()` is client-agnostic - gate the trigger on it whatever fetches your data.
 :::
 
 ## Options
@@ -148,7 +148,7 @@ The host also carries `data-settled` and `data-resizing` attributes mirroring th
 
 ### `[etMasonryItem]`
 
-The item takes no inputs — it measures itself and reads its width and position from the masonry. cdk required a
+The item takes no inputs - it measures itself and reads its width and position from the masonry. cdk required a
 `key` per item; nothing needs one here, because identity is the directive instance and size changes are observed
 rather than announced.
 
@@ -156,7 +156,7 @@ rather than announced.
 | ---------------- | ---------------------------------- | ---------------------------------------------------------------------------- |
 | `placement()`    | `Signal<MasonryPlacement \| null>` | `{ column, inlineOffset, blockOffset }`, or `null` before the first layout.  |
 | `isPlaced()`     | `Signal<boolean>`                  | The placement is current, i.e. derived from a height measured at this width. |
-| `isPositioned()` | `Signal<boolean>`                  | The item has been placed at least once — sticky, and what reveals it.        |
+| `isPositioned()` | `Signal<boolean>`                  | The item has been placed at least once - sticky, and what reveals it.        |
 | `blockSize()`    | `Signal<number>`                   | The measured height being packed with.                                       |
 
 Items expose `data-column`, `data-positioned` and `data-can-move` for styling.
@@ -164,7 +164,7 @@ Items expose `data-column`, `data-positioned` and `data-can-move` for styling.
 ## Motion
 
 Items fade in as they are first placed, one by one, so a feed reveals itself as it settles rather than after a
-blank pause. They then animate between placements — when a resize re-columns, when a neighbour grows, when one
+blank pause. They then animate between placements - when a resize re-columns, when a neighbour grows, when one
 is removed.
 
 Two things are deliberately _not_ animated:
@@ -172,11 +172,11 @@ Two things are deliberately _not_ animated:
 - **The first placement.** The move transition is armed a frame after an item is placed, so nothing slides in
   from the container's corner.
 - **Moves during a container resize.** The columns change on every frame of a window drag, and a transition
-  retargeted every frame is one the items never finish — they trail behind the layout. While `isResizing()` is
+  retargeted every frame is one the items never finish - they trail behind the layout. While `isResizing()` is
   true, moves snap.
 
 Everything is inside `@media (prefers-reduced-motion: no-preference)`, so a reader who asks for less motion gets
-none of it — including the fade.
+none of it - including the fade.
 
 ## Accessibility
 
@@ -184,7 +184,7 @@ DOM order is reading order: this is what the JS layout buys over CSS `columns`, 
 screen-reader order match what is on screen.
 
 `[etMasonry]` sets `role="list"` and `[etMasonryItem]` sets `role="listitem"`. The roles are explicit rather than
-implied because the host element is yours — but prefer `<ul>` and `<li>` anyway, which say the same thing
+implied because the host element is yours - but prefer `<ul>` and `<li>` anyway, which say the same thing
 natively (Safari drops list semantics from a `<ul>` with `list-style: none`, so the explicit role earns its keep
 there too).
 
@@ -196,7 +196,7 @@ invisible content, and an `etMasonryItem` outside a masonry throws too.
 
 ## Theming
 
-Masonry paints nothing — no colors, no borders, no surface of its own. The cards are yours, and their colors come
+Masonry paints nothing - no colors, no borders, no surface of its own. The cards are yours, and their colors come
 from the app-registered surface and color theme systems like anything else.
 
 The only tokens it declares are for its motion:
@@ -213,4 +213,4 @@ and overflow it. Put the padding on a wrapper.
 
 ## Error codes
 
-Masonry throws in the `ET39xx` range — see [error codes](/components/error-codes#masonry-et39xx).
+Masonry throws in the `ET39xx` range - see [error codes](/components/error-codes#masonry-et39xx).

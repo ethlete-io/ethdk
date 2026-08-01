@@ -1,5 +1,5 @@
 /**
- * Route building, query-string serialization and the token clock — shared by the current generation and
+ * Route building, query-string serialization and the token clock - shared by the current generation and
  * the legacy V2 client, which re-exports them under their original names.
  */
 

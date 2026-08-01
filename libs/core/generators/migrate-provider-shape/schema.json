@@ -7,7 +7,7 @@
     "projects": {
       "type": "array",
       "items": { "type": "string" },
-      "description": "Nx projects to migrate. Defaults to every project in the workspace. Every declaration is rewritten independently, so any scope is safe — use this to keep the diff reviewable.",
+      "description": "Nx projects to migrate. Defaults to every project in the workspace. Every declaration is rewritten independently, so any scope is safe - use this to keep the diff reviewable.",
       "alias": "project"
     },
     "include": {

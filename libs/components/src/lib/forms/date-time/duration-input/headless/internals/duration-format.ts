@@ -8,7 +8,7 @@ export type DurationSegment = {
 
 export type DurationFormatSpec = {
   segments: DurationSegment[];
-  /** The literal text between consecutive segments — `separators.length === segments.length - 1`. */
+  /** The literal text between consecutive segments - `separators.length === segments.length - 1`. */
   separators: string[];
 };
 

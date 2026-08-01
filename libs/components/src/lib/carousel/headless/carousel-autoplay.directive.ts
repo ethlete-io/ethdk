@@ -24,7 +24,7 @@ export type CarouselAutoplayPauseReason =
   'disabled' | 'stopped' | 'reduced-motion' | 'page-hidden' | 'off-screen' | 'hover' | 'focus' | 'no-slides';
 
 /**
- * Advances the carousel on its own. Opt-in — put it on the same element as `[etCarousel]` — so a carousel
+ * Advances the carousel on its own. Opt-in - put it on the same element as `[etCarousel]` - so a carousel
  * that doesn't move by itself carries none of this.
  *
  * It pauses whenever moving the page under the user would be rude: pointer over the carousel, focus
@@ -32,7 +32,7 @@ export type CarouselAutoplayPauseReason =
  * it never starts at all). It also stops at the last slide when the carousel doesn't `loop`, rather than
  * jumping back to the start forever.
  *
- * Resuming restarts the current slide's full duration instead of continuing a partial one — one clock,
+ * Resuming restarts the current slide's full duration instead of continuing a partial one - one clock,
  * so the progress a consumer renders can't drift away from when the slide actually changes.
  *
  * A carousel that plays by itself needs a control to stop it (WCAG 2.2.2): register one with
@@ -59,11 +59,11 @@ export class CarouselAutoplayDirective {
   private isDocumentVisible = injectIsDocumentVisible();
 
   /**
-   * Turn autoplay off without removing the directive — the same escape hatch `etScrollableSnap` has. A
+   * Turn autoplay off without removing the directive - the same escape hatch `etScrollableSnap` has. A
    * disabled autoplay never plays and never asks for a pause control.
    *
    * `true` by default because putting the directive on an element *is* the opt-in. `<et-carousel>` is the
-   * exception — it always carries the directive, so it cannot let this default stand; see
+   * exception - it always carries the directive, so it cannot let this default stand; see
    * {@link enabledOverride}. Read {@link isEnabled} for what is actually in effect.
    * @default true
    */
@@ -75,13 +75,13 @@ export class CarouselAutoplayDirective {
   /** Pause while the pointer is over the carousel. @default true */
   public pauseOnHover = input(true, { transform: booleanAttribute });
 
-  /** Pause while focus is inside the carousel — moving the slide out from under a keyboard user is worse than stalling. @default true */
+  /** Pause while focus is inside the carousel - moving the slide out from under a keyboard user is worse than stalling. @default true */
   public pauseOnFocus = input(true, { transform: booleanAttribute });
 
   /**
    * Pause whenever nobody can see the carousel: scrolled out of view, or on a tab that isn't the one in
-   * front. The second is not the same check as the first — an IntersectionObserver reports a fully visible
-   * element in a background tab — and it matters more, because a hidden tab throttles timers rather than
+   * front. The second is not the same check as the first - an IntersectionObserver reports a fully visible
+   * element in a background tab - and it matters more, because a hidden tab throttles timers rather than
    * stopping them, so without it a carousel spends its time in the background queueing up slide changes to
    * deliver all at once on return. @default true
    */
@@ -95,21 +95,21 @@ export class CarouselAutoplayDirective {
    * @internal Set by `<et-carousel>` from its own `autoplay` input, which is opt-in and so defaults to
    * `false`.
    *
-   * The component attaches this directive unconditionally — its host listeners have to cover the controls as
-   * well as the track, so it cannot be conditional — which meant every `<et-carousel>` that did not say
+   * The component attaches this directive unconditionally - its host listeners have to cover the controls as
+   * well as the track, so it cannot be conditional - which meant every `<et-carousel>` that did not say
    * `[autoplay]="false"` was playing, against what both this directive and the component document. A
    * `hostDirectives` alias forwards an input but cannot change its default, so the component takes the value
    * over entirely and pushes it here. `null` leaves {@link enabled} in charge, which is the headless case.
    */
   public enabledOverride = signal<boolean | null>(null);
 
-  /** Whether autoplay is switched on at all — this instance's `enabled`, or what `<et-carousel>` set. */
+  /** Whether autoplay is switched on at all - this instance's `enabled`, or what `<et-carousel>` set. */
   public isEnabled = computed(() => this.enabledOverride() ?? this.enabled());
 
   /** @internal Set by `etCarouselPlayToggle`, and checked in dev mode: autoplay without a pause control fails WCAG 2.2.2. */
   public pauseControl = signal<unknown | null>(null);
 
-  /** Whether the user (or code) has stopped autoplay — the only pause that outlives hover and focus. */
+  /** Whether the user (or code) has stopped autoplay - the only pause that outlives hover and focus. */
   public isStopped = signal(false);
 
   /** @internal */
@@ -121,11 +121,11 @@ export class CarouselAutoplayDirective {
   /**
    * @internal Whether the pointer is on the play/pause control, and whether focus is.
    *
-   * Both are subtracted from the hover and focus pauses, because the control lives *inside* the carousel —
+   * Both are subtracted from the hover and focus pauses, because the control lives *inside* the carousel -
    * it has to, it is part of the region it controls. Without this, pressing play would clear `isStopped`
    * and then immediately report `'hover'` or `'focus'` instead, because the pointer and focus are still on
    * the button that was just pressed: autoplay could never be restarted by the one control WCAG requires
-   * for it. And the subtraction is the honest rule rather than a workaround — those pauses exist so a
+   * for it. And the subtraction is the honest rule rather than a workaround - those pauses exist so a
    * slide doesn't move while someone is reading or tabbing through it, and the pause control is neither.
    */
   public isPointerOnPauseControl = signal(false);
@@ -175,7 +175,7 @@ export class CarouselAutoplayDirective {
   constructor() {
     this.isStopped.set(!this.playOnInit());
 
-    // One clock, restarted whenever the slide, the duration or the playing state changes — a paused
+    // One clock, restarted whenever the slide, the duration or the playing state changes - a paused
     // carousel holds no timer at all. `equal` keeps an unrelated recompute from restarting the countdown.
     const run = computed(
       () => ({
@@ -225,7 +225,7 @@ export class CarouselAutoplayDirective {
     this.isStopped.set(true);
   }
 
-  /** Stop if playing, start if stopped — what the play/pause control calls. */
+  /** Stop if playing, start if stopped - what the play/pause control calls. */
   public toggle() {
     if (this.isStopped()) {
       this.start();

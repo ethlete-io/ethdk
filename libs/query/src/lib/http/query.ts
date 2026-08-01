@@ -34,7 +34,7 @@ export type RequestArgs<T extends QueryArgs | null> = T extends QueryArgs ? Omit
 
 /**
  * The empty request-args object, typed to satisfy `RequestArgs<TArgs>` for a query that takes no
- * arguments — its `QueryArgs` is just `{ response: T }`, so `RequestArgs` resolves to `{}`.
+ * arguments - its `QueryArgs` is just `{ response: T }`, so `RequestArgs` resolves to `{}`.
  *
  * Only needed in generic code, where `TArgs` is still a type parameter and TS therefore cannot see
  * that `{}` is the whole of it. Against a concrete query, omit the argument instead: both
@@ -104,13 +104,13 @@ export type QuerySubtle<TArgs extends QueryArgs> = {
 
   /**
    * Manually forces the loading state of the query. Overridden on the next execution. Intended for
-   * devtools / testing UI states — not for application logic.
+   * devtools / testing UI states - not for application logic.
    */
   setLoading: (loading: HttpRequestLoadingState | null) => void;
 
   /**
    * Manually forces the error state of the query. Overridden on the next execution. Intended for
-   * devtools / testing UI states — not for application logic.
+   * devtools / testing UI states - not for application logic.
    */
   setError: (error: QueryErrorResponse | null) => void;
 

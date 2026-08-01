@@ -13,7 +13,7 @@ export type BracketDensity = (typeof BRACKET_DENSITY)[keyof typeof BRACKET_DENSI
  * What a density is: a set of layout defaults, applied under anything you set yourself.
  *
  * `compact`'s column is deliberately under the match card's own 150px minimal threshold, so the cards
- * inside it drop their emblems and shrink their type without the bracket having to say so — one number
+ * inside it drop their emblems and shrink their type without the bracket having to say so - one number
  * here changes the whole look. The curves come down with the columns: a 10px radius on a 40px connector
  * reads as a kink rather than a curve.
  */

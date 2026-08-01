@@ -1,7 +1,7 @@
 /**
  * Executable contract for the mixed (bulk-edit) state of form controls.
  *
- * A control that exposes `mixed` claims these semantics — every claimant runs this suite
+ * A control that exposes `mixed` claims these semantics - every claimant runs this suite
  * from its own spec via {@link describeMixedStateContract} so the semantics cannot drift
  * between controls:
  *
@@ -10,12 +10,12 @@
  *    `data-mixed` for styling.
  * 2. The first user commit REPLACES the raw value (it does not toggle against or merge
  *    with the hidden value) and resolves `mixed` to `false`.
- * 3. External / programmatic value writes do NOT resolve mixed — only user interaction
+ * 3. External / programmatic value writes do NOT resolve mixed - only user interaction
  *    (or the consumer setting `mixed` to `false`) does.
  * 4. A clear affordance, where the control has one, writes the control's empty shape
  *    (`null`, `''`, `[]`, …) and resolves mixed.
  * 5. Keyboard deletion never mass-clears a hidden multi-value selection (covered by
- *    control-specific specs where applicable — see the select's Backspace tests).
+ *    control-specific specs where applicable - see the select's Backspace tests).
  * 6. `mixedLabel` (where the control has a text display slot) is presentation only and
  *    never enters the form value; validation always sees the raw value.
  *
@@ -25,7 +25,7 @@
 export type MixedStateContractHarness = {
   /** Establishes a representative raw value, then turns mixed on. Must leave the view stable. */
   enterMixed: () => void | Promise<void>;
-  /** The raw value `enterMixed` established — asserted to survive masking untouched. */
+  /** The raw value `enterMixed` established - asserted to survive masking untouched. */
   rawValue: () => unknown;
   /** The value as the consumer's two-way binding currently sees it. */
   value: () => unknown;
@@ -39,13 +39,13 @@ export type MixedStateContractHarness = {
   externallyWrittenValue: () => unknown;
   /** Performs a real user commit interaction (pointer/keyboard). Must leave the view stable. */
   commit: () => void | Promise<void>;
-  /** The value expected after `commit` — replace semantics, no merging with the hidden raw value. */
+  /** The value expected after `commit` - replace semantics, no merging with the hidden raw value. */
   committedValue: () => unknown;
   /** Control-specific masking assertions run while mixed (display text, aria, chips, …). */
   assertMasked?: () => void;
   /** Drives the control's clear affordance, if it has one. Must leave the view stable. */
   clear?: () => void | Promise<void>;
-  /** The control's empty value shape — required when `clear` is provided. */
+  /** The control's empty value shape - required when `clear` is provided. */
   emptyValue?: () => unknown;
 };
 

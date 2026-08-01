@@ -27,7 +27,7 @@ import { registerPart } from './internals/register-part';
 /**
  * One disclosure: a trigger that expands a panel. Owns the open state, the ids that wire the two
  * together for assistive tech, and the "has ever been open" flag lazy content hangs off. No visual
- * opinion — bring your own template, or use the default `et-accordion`.
+ * opinion - bring your own template, or use the default `et-accordion`.
  *
  * A single accordion is a complete disclosure on its own; put several inside an `[etAccordionGroup]`
  * to get single-open behavior and arrow-key navigation between their triggers.
@@ -57,7 +57,7 @@ export class AccordionDirective {
   public isOpen = model(false);
 
   /**
-   * Expand on first render. Only the initial value is honored — a later change never reopens a panel
+   * Expand on first render. Only the initial value is honored - a later change never reopens a panel
    * the user has since closed. Use `[(isOpen)]` to drive the state over time.
    */
   public isOpenByDefault = input(false, { transform: booleanAttribute });
@@ -84,12 +84,12 @@ export class AccordionDirective {
   /** @internal The `etAccordionHint` slot, when one is projected. */
   public hintTemplate = signal<AccordionHintDirective | null>(null);
 
-  /** @internal The `etAccordionContent` slot — panel content deferred until the first expand. */
+  /** @internal The `etAccordionContent` slot - panel content deferred until the first expand. */
   public contentTemplate = signal<AccordionContentDirective | null>(null);
 
   /**
    * Whether content that is only created on demand should exist by now: `false` until the first
-   * expand, `true` forever after. Deferred content stays mounted once created — unmounting it on
+   * expand, `true` forever after. Deferred content stays mounted once created - unmounting it on
    * collapse would throw away its state and leave nothing to animate the collapse with.
    */
   public hasBeenOpened = linkedSignal<boolean, boolean>({
@@ -113,7 +113,7 @@ export class AccordionDirective {
     });
 
     // Registered from the constructor rather than an effect, so the group sees its accordions in
-    // creation order and, crucially, is told when one is destroyed — a `@for` that drops an item must
+    // creation order and, crucially, is told when one is destroyed - a `@for` that drops an item must
     // not leave a dead accordion in the group's list.
     this.group?.registerAccordion(this);
 
@@ -131,7 +131,7 @@ export class AccordionDirective {
 
         // Only an accordion that is *open* is definitely broken without a panel. A closed one may
         // simply be rendering its panel conditionally (`@if (accordion.isOpen())`), which is a valid
-        // way to build one — the trigger drops its `aria-controls` while the panel doesn't exist.
+        // way to build one - the trigger drops its `aria-controls` while the panel doesn't exist.
         if (this.isOpen() && !this.panel()) {
           throw new RuntimeError(
             ACCORDION_ERROR_CODES.MISSING_PANEL,
@@ -150,13 +150,13 @@ export class AccordionDirective {
     this.isOpen.set(true);
   }
 
-  /** Collapse the panel. Works even while `disabled` — a disabled accordion can still be closed programmatically. */
+  /** Collapse the panel. Works even while `disabled` - a disabled accordion can still be closed programmatically. */
   public close() {
     this.isOpen.set(false);
   }
 
   /**
-   * Expand or collapse the panel — what the trigger calls. No-op while `disabled`, and no-op when this
+   * Expand or collapse the panel - what the trigger calls. No-op while `disabled`, and no-op when this
    * is the last open panel of a group with `preventCloseLast`.
    */
   public toggle() {
@@ -173,7 +173,7 @@ export class AccordionDirective {
     this.isOpen.set(true);
   }
 
-  /** @internal Call from the trigger's constructor — it takes over the teardown from the caller's `DestroyRef`. */
+  /** @internal Call from the trigger's constructor - it takes over the teardown from the caller's `DestroyRef`. */
   public registerTrigger(trigger: AccordionTriggerDirective) {
     registerPart(this.trigger, trigger);
   }

@@ -16,7 +16,7 @@ npx nx build core query components   # types is pulled in as a dependency
 The scripts read `dist/libs/{components,core,query,types}/fesm2022/*.mjs`. `decompose.mjs`
 additionally needs the `.mjs.map` files next to them (ng-packagr writes them by default).
 
-A rebuilt `dist` is detected automatically — the cache directory name is a hash of the FESMs' size
+A rebuilt `dist` is detected automatically - the cache directory name is a hash of the FESMs' size
 and mtime, so a stale cache is never reused, and an unchanged one is instant.
 
 ## The pipeline (do not skip a step)
@@ -27,19 +27,19 @@ esbuild/Rollup measures nothing: every class stays pinned by `ɵɵngDeclare*(…
 these scripts reproduce exactly what an Angular application build does before bundling (see
 `node_modules/@angular/build/src/tools/esbuild/javascript-transformer-worker.js`):
 
-1. **`@angular/compiler-cli/linker/babel`** — link the partial declarations into real ones.
+1. **`@angular/compiler-cli/linker/babel`** - link the partial declarations into real ones.
 2. **`@angular/build`'s babel optimizer passes**, in the same order and with the same options used
    for a `sideEffects: false`, non-`@angular` package:
    - `markTopLevelPure { topLevelSafeMode: true }`
    - `elideAngularMetadata`
    - `adjustTypeScriptEnums`
-   - `adjustStaticMembers { wrapDecorators: true }` — this is what wraps each class in a
+   - `adjustStaticMembers { wrapDecorators: true }` - this is what wraps each class in a
      `/*#__PURE__*/` IIFE so a bundler can drop it.
 3. **A `package.json` shim** with `sideEffects: false` written next to each processed FESM in the
    cache dir. esbuild only drops unused top-level statements of a module whose _nearest_
    `package.json` says so. Without the shim the `@ethlete/components` floor measures ~293 kB gz
    instead of ~90 kB.
-4. **esbuild** — `bundle`, `format: esm`, `target: es2022`, `minify`, `treeShaking`,
+4. **esbuild** - `bundle`, `format: esm`, `target: es2022`, `minify`, `treeShaking`,
    `define: ngDevMode=false ngJitMode=false ngI18nClosureMode=false NODE_ENV=production` → **gzip
    level 9** → bytes.
 
@@ -53,7 +53,7 @@ much faster. Use it for anything comparative.
 ### Consumer caveat
 
 An app bundled **without** Angular's builder (plain Vite/esbuild/Rollup over the published FESM) does
-not get passes 1–2 and therefore gets **no tree-shaking at all** from these packages — it ships the
+not get passes 1–2 and therefore gets **no tree-shaking at all** from these packages - it ships the
 whole library regardless of what these numbers say. (Recorded in `plans/table-tree-shaking.md`.) If
 that ever needs supporting, the fix is to run the same two passes as part of this repo's own publish
 pipeline rather than leaving them to the consumer.
@@ -72,7 +72,7 @@ pipeline rather than leaving them to the consumer.
 | `split-tuples.mjs`      | copies' rewrite: turns `const [a, b] = createRootProvider(…)` into a memoized per-binding shape. Simulates fixing the tuple-destructuring blocker.                                                                                                                                                                 |
 | `wrap-literals.mjs`     | copies' rewrite: wraps top-level object literals containing a member access in a PURE IIFE. Simulates fixing the property-read blocker.                                                                                                                                                                            |
 | `entries.example.json`  | the package floors plus one real feature entry. Default `--entries` for `measure-bundle.mjs`.                                                                                                                                                                                                                      |
-| `check-goldens.mjs`     | **the regression guard.** Measures every entry in `goldens.json` and fails when one grew past the tolerance. `nx run treeshake:bundle-goldens` in CI; `…:update` rewrites the file. Unlike the rest of this folder it is not a diagnostic — it is wired into the build.                                            |
+| `check-goldens.mjs`     | **the regression guard.** Measures every entry in `goldens.json` and fails when one grew past the tolerance. `nx run treeshake:bundle-goldens` in CI; `…:update` rewrites the file. Unlike the rest of this folder it is not a diagnostic - it is wired into the build.                                            |
 | `goldens.json`          | checked-in expected gz bytes per entry: the three package floors plus one real entry per big domain. A golden change is a deliberate, reviewable commit.                                                                                                                                                           |
 
 ### Why the rewrite scripts exist
@@ -81,10 +81,10 @@ esbuild keeps a top-level statement unless it can prove the initializer side-eff
 are three distinct shapes it refuses, only one of which a comment can fix:
 
 ```js
-const [provideX, injectX] = /*#__PURE__*/ createRootProvider(…);  // ❌ kept — array destructuring
-const { provideX } = /*#__PURE__*/ makeThem();                    // ❌ kept — object destructuring
-const t = /*#__PURE__*/ makeThem(); const provideX = t[0];        // ❌ kept — index/property read
-const CONFIG = { [SIZES.SM]: 1, label: DEFAULTS.x };              // ❌ kept — property read
+const [provideX, injectX] = /*#__PURE__*/ createRootProvider(…);  // ❌ kept - array destructuring
+const { provideX } = /*#__PURE__*/ makeThem();                    // ❌ kept - object destructuring
+const t = /*#__PURE__*/ makeThem(); const provideX = t[0];        // ❌ kept - index/property read
+const CONFIG = { [SIZES.SM]: 1, label: DEFAULTS.x };              // ❌ kept - property read
 const provideX = /*#__PURE__*/ makeProvider(…);                   // ✅ droppable
 ```
 
@@ -157,7 +157,7 @@ npx nx run treeshake:bundle-goldens:update   # accept new sizes, then commit gol
 ```
 
 The target builds `core`, `query` and `components` first, so it is self-contained. Tolerance is 2 % or
-512 B, whichever is larger — FESM linking is deterministic, but a dependency bump moves a few bytes. A
+512 B, whichever is larger - FESM linking is deterministic, but a dependency bump moves a few bytes. A
 new entry with `"gzip": 0` is recorded rather than failed, which is how you add one.
 
 When it fails, the cause is almost always a module-scope statement that stopped being droppable: an
@@ -170,7 +170,7 @@ failing entry names the file.
 - **Compare gz, not min.** The `min` column is useful only for sourcemap attribution, where gzip
   cannot be split per module.
 - **A feature's cost is its entry minus the package floor.** While the floor is large, per-feature
-  deltas for anything the floor already pins read as ~0 and are meaningless — fix the floor first.
+  deltas for anything the floor already pins read as ~0 and are meaningless - fix the floor first.
 - **An unknown export is a hard esbuild error**, which makes the entries file a decent typo check.
 - `<unmapped>` in `decompose.mjs` output is esbuild's own module glue plus the entry, not library
   code.

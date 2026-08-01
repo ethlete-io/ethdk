@@ -11,7 +11,7 @@ export type TableReorderConfig = TableFeatureConfig;
 /** How long a column takes to slide between preview positions. */
 const PREVIEW_DURATION_MS = 160;
 
-/** Dead zone (px) each side of a column's midpoint — see {@link TableReorderDirective.flipThresholdOf}. */
+/** Dead zone (px) each side of a column's midpoint - see {@link TableReorderDirective.flipThresholdOf}. */
 const FLIP_HYSTERESIS_PX = 12;
 
 /** The column order that dropping `key` next to `overKey` (on the given side) would produce. */
@@ -74,7 +74,7 @@ export class TableReorderDirective {
   /** The column key being dragged, and the header text shown in the floating ghost. */
   public dragging = signal<{ key: string; header: string } | null>(null);
 
-  /** Live pointer position — drives the ghost. */
+  /** Live pointer position - drives the ghost. */
   public pointer = signal<{ x: number; y: number } | null>(null);
 
   // Where a drop would land: the column it would insert next to, and which side.
@@ -105,7 +105,7 @@ export class TableReorderDirective {
     // this feature exists (and without it importing any drag code).
     fromEvent<PointerEvent>(this.table.element, 'pointerdown')
       .pipe(
-        // one gesture at a time — a second pointer must not start a competing drag
+        // one gesture at a time - a second pointer must not start a competing drag
         exhaustMap((event) => {
           const hit = this.headerCellAt(event);
 
@@ -137,7 +137,7 @@ export class TableReorderDirective {
     const column = this.table.visibleColumnsMeta()[index];
     const cell = cells[index];
 
-    // Pinned columns can't be reordered — they anchor to an edge. A nested drag handle (the resize
+    // Pinned columns can't be reordered - they anchor to an edge. A nested drag handle (the resize
     // grip) stops its own pointerdown, so reaching here means the header itself was grabbed.
     if (!column || !cell || this.table.effectiveStickyOf(column.key) !== null) return null;
 
@@ -179,14 +179,14 @@ export class TableReorderDirective {
     this.previewSignature = null;
 
     if (!moved) {
-      // Nothing to commit — slide the preview back to the resting order.
+      // Nothing to commit - slide the preview back to the resting order.
       this.clearPreview({ animated: true });
 
       return;
     }
 
     // The preview already has every cell at its post-drop x, so the transforms must survive until the
-    // reordered grid has actually rendered — dropping them any earlier flashes the old order for a
+    // reordered grid has actually rendered - dropping them any earlier flashes the old order for a
     // frame. Cleared in the write phase of that render, which is before it paints.
     afterNextRender({ write: () => this.clearPreview({ animated: false }) }, { injector: this.injector });
   }
@@ -197,7 +197,7 @@ export class TableReorderDirective {
    * Hit-testing runs against the columns' **resting** slots (see {@link restingBoundsOf}), not where
    * the preview has moved them to. Measuring them as-drawn would feed the preview back into its own
    * input: shifting a column out from under the pointer changes which column is hit, which picks a
-   * different landing order, which shifts a different set of columns — and the row oscillates on its
+   * different landing order, which shifts a different set of columns - and the row oscillates on its
    * own. Resting slots never move, so each pointer position maps to exactly one landing order.
    */
   private resolveDropTarget(clientX: number) {
@@ -212,7 +212,7 @@ export class TableReorderDirective {
 
       if (!cell || !overColumn || !overKey) continue;
 
-      // Pinned columns anchor to an edge — never drop a column onto (or across) one.
+      // Pinned columns anchor to an edge - never drop a column onto (or across) one.
       if (this.table.effectiveStickyOf(overKey) !== null) continue;
 
       const bounds = this.restingBoundsOf(cell);
@@ -220,7 +220,7 @@ export class TableReorderDirective {
       if (clientX < bounds.start || clientX > bounds.end) continue;
 
       if (overKey === dragging) {
-        // Hovering the dragged column's own slot — releasing here changes nothing.
+        // Hovering the dragged column's own slot - releasing here changes nothing.
         this.target.set(null);
 
         return;
@@ -235,7 +235,7 @@ export class TableReorderDirective {
   /**
    * Where the column sits in the table's real layout, whatever the preview is currently drawing.
    *
-   * `offsetLeft`/`offsetWidth` are layout geometry, so — unlike a client rect — they ignore the
+   * `offsetLeft`/`offsetWidth` are layout geometry, so - unlike a client rect - they ignore the
    * preview's transforms, *including* a transform part-way through its transition. That matters: a
    * client rect measured mid-slide sits between the two orders, so backing out the preview's final
    * offset lands nowhere real and a 1px pointer move can resolve to a whole different column.
@@ -256,7 +256,7 @@ export class TableReorderDirective {
    * The x at which the drop flips from this column's leading to its trailing side.
    *
    * That is its midpoint, biased *away* from whichever side is already showing. Without the bias a
-   * hand resting on the midpoint flaps the preview — every pixel of tremor re-crosses it, and each
+   * hand resting on the midpoint flaps the preview - every pixel of tremor re-crosses it, and each
    * crossing slides the columns a full width in the opposite direction. The bias makes crossing back
    * a deliberate move instead, and is capped to a quarter of the column so a narrow one stays usable.
    */
@@ -276,7 +276,7 @@ export class TableReorderDirective {
    * order live instead of a floating bar hinting at it.
    *
    * Offsets are derived from the two orders rather than from measured positions: cumulative widths
-   * give an exact delta per column, and a pinned column — which can never be reordered — keeps its
+   * give an exact delta per column, and a pinned column - which can never be reordered - keeps its
    * index and so lands on a delta of 0. Measuring `left` instead would read a sticky cell's *painted*
    * x, which drifts from its layout x as soon as the table is scrolled sideways.
    */
@@ -319,7 +319,7 @@ export class TableReorderDirective {
     }
   }
 
-  /** Drop the preview transforms — instantly once the real order has caught up, animated otherwise. */
+  /** Drop the preview transforms - instantly once the real order has caught up, animated otherwise. */
   private clearPreview({ animated }: { animated: boolean }) {
     for (const key of this.previewOffsets.keys()) {
       for (const element of this.cellsFor(key)) {

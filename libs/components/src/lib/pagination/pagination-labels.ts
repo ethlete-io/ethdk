@@ -1,6 +1,6 @@
 import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
-/** The item range a readout label describes — `start`/`end` are 1-based and inclusive. */
+/** The item range a readout label describes - `start`/`end` are 1-based and inclusive. */
 export type PaginationRangeContext = {
   /** First item shown on the current page (`0` when there are no items). */
   start: number;
@@ -29,7 +29,7 @@ export type PaginationLabels = {
   next: string;
   /** Accessible label for the "jump to last page" control. */
   last: string;
-  /** Accessible label for an ellipsis gap (inert, `aria-hidden` — kept for custom renderings). */
+  /** Accessible label for an ellipsis gap (inert, `aria-hidden` - kept for custom renderings). */
   ellipsis: string;
   /** Accessible label for a page item, e.g. `'Page 3'`. */
   page: (page: number, totalPages: number) => string;
@@ -43,7 +43,7 @@ export type PaginationLabels = {
   jumpTo: string;
   /** Visible label for the page-size select (`<et-page-size-select>`). */
   pageSize: string;
-  /** How one page-size choice reads, e.g. `'25'` — override for `'All'` or `'25 per page'`. */
+  /** How one page-size choice reads, e.g. `'25'` - override for `'All'` or `'25 per page'`. */
   pageSizeOption: (size: number) => string;
 };
 
@@ -71,7 +71,7 @@ const PAGINATION_LABELS_DEF = /* @__PURE__ */ defineLabels<PaginationLabels>(
 
 /**
  * Localize the paginator's strings for everything below this injector, and read the set in effect
- * here as a signal. Partial — whatever you leave out keeps its {@link DEFAULT_PAGINATION_LABELS}
+ * here as a signal. Partial - whatever you leave out keeps its {@link DEFAULT_PAGINATION_LABELS}
  * value. See {@link defineLabels} for the shape, which every domain in this library shares.
  *
  * @example

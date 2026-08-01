@@ -83,7 +83,7 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
 
   // Apply the generation-time default overrides, if any. The shared theme definitions may
   // mark defaults via isDefault, but in a monorepo each app picks its own defaults at its
-  // generation invocation — the options win over the definitions (per surface type).
+  // generation invocation - the options win over the definitions (per surface type).
   try {
     if (schema.defaultLightTheme) {
       const name = applyDefaultSurfaceThemeOverride(themes, schema.defaultLightTheme, 'light');
@@ -433,7 +433,7 @@ function generateSurfaceThemeCss(
   const defaultThemes = themes.filter((t) => t.isDefault);
   const regularThemes = themes.filter((t) => !t.isDefault);
 
-  // Static Tailwind @theme block — one color set per surface theme
+  // Static Tailwind @theme block - one color set per surface theme
   for (const theme of themes) {
     const name = createCssSurfaceName(theme.name);
 
@@ -468,7 +468,7 @@ function generateSurfaceThemeCss(
   // Dynamic surface colors (reference runtime CSS variables).
   // These are ALSO re-declared on every surface selector in the alias block below. A Tailwind
   // `@theme` variable only lands on `:root`, so `rgb(var(--<runtime>-surface-*))` resolves once
-  // against the root surface and inherits that concrete color into descendants — which means
+  // against the root surface and inherits that concrete color into descendants - which means
   // `bg-<prefix>-surface-*` utilities would ignore nested surface scopes (e.g. an elevated
   // surface). Re-declaring them per surface selector makes the utilities resolve against the
   // nearest surface instead.
@@ -476,7 +476,7 @@ function generateSurfaceThemeCss(
   tailwindVars.push('  /* Dynamic surface colors (references runtime CSS variables) */');
   tailwindVars.push(...dynamicSurfaceColors.map((decl) => `  ${decl}`));
 
-  // Runtime CSS — theme selector classes
+  // Runtime CSS - theme selector classes
   for (const theme of themes) {
     const name = createCssSurfaceName(theme.name);
     const isDefault = theme.isDefault;
@@ -493,7 +493,7 @@ function generateSurfaceThemeCss(
     themeVars.push('}\n');
   }
 
-  // Media query defaults — apply surface vars to :root based on prefers-color-scheme
+  // Media query defaults - apply surface vars to :root based on prefers-color-scheme
   const defaultLight = themes.find((t) => t.isDefault && t.type === 'light');
   const defaultDark = themes.find((t) => t.isDefault && t.type === 'dark');
 
@@ -513,7 +513,7 @@ function generateSurfaceThemeCss(
     themeVars.push(`}\n`);
   }
 
-  // Convenience var aliases — available on any element with a surface class or :root (via media queries)
+  // Convenience var aliases - available on any element with a surface class or :root (via media queries)
   const aliasBlock = `/* Convenience aliases (rgb + solid variants) */
 @layer base {
   :root, :where([class*="${runtimePrefix}-surface--"]) {
@@ -547,7 +547,7 @@ function generateSurfaceThemeCss(
     --${runtimePrefix}-surface-interaction-disabled-rgb: var(--${runtimePrefix}-surface-interaction-disabled);
     --${runtimePrefix}-surface-interaction-disabled-solid: rgb(var(--${runtimePrefix}-surface-interaction-disabled-rgb));
 
-    /* Dynamic Tailwind surface colors — re-declared per surface scope so that
+    /* Dynamic Tailwind surface colors - re-declared per surface scope so that
        bg-${utilityPrefix}-surface-* utilities resolve against the nearest surface
        (e.g. a nested elevated surface) instead of the value computed once at :root. */
 ${dynamicSurfaceColors.map((decl) => `    ${decl}`).join('\n')}

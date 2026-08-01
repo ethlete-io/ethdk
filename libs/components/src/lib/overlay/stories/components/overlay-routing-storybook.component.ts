@@ -27,13 +27,13 @@ import { dialogOverlayStrategy, transformingFullScreenDialogToDialogOverlayStrat
     <ng-template etOverlayHeaderTemplate>Create workspace</ng-template>
     <p class="text-base text-white/80">
       Workspaces group your team's projects, members and billing in one place. This wizard runs on the overlay's own
-      router — moving between steps never touches Angular's application router.
+      router - moving between steps never touches Angular's application router.
     </p>
     <dl class="mt-6 grid grid-cols-[auto_1fr] gap-x-8 gap-y-3 text-base">
       <dt class="text-white/50">Name</dt>
       <dd>Ethlete HQ</dd>
       <dt class="text-white/50">Plan</dt>
-      <dd>Team — 14-day trial</dd>
+      <dd>Team - 14-day trial</dd>
       <dt class="text-white/50">Region</dt>
       <dd>eu-central</dd>
     </dl>
@@ -183,7 +183,7 @@ export class UrlRoutingDemoOverlayComponent {}
 
 // ─── Nested header/footer routing demo: pages ────────────────────────────────
 // Each route nests its own header/body/footer (et-overlay-main) and the outlet is placed
-// directly as the overlay content — no shared shell, no sidebar, no fixed dialog height.
+// directly as the overlay content - no shared shell, no sidebar, no fixed dialog height.
 
 @Component({
   selector: 'et-sb-nt-page-1',
@@ -232,7 +232,7 @@ export class NestedRoutingDemoPage1Component {
     </et-overlay-header>
     <et-overlay-body dividers="dynamic">
       <p class="text-base text-white/80">
-        A short page. The dialog keeps the same fixed size as the other routes — the footer stays pinned to the bottom.
+        A short page. The dialog keeps the same fixed size as the other routes - the footer stays pinned to the bottom.
       </p>
     </et-overlay-body>
     <et-overlay-footer>
@@ -482,7 +482,7 @@ export class SidebarDemoOverlayComponent {}
       <header class="flex flex-col gap-1">
         <h2 class="text-h5 font-title">Overlay Routing</h2>
         <p class="text-small text-white/60">
-          An internal router for multi-step flows — no dependency on Angular's application router.
+          An internal router for multi-step flows - no dependency on Angular's application router.
         </p>
       </header>
 
@@ -512,7 +512,7 @@ export class OverlayRoutingStorybookComponent {
 
   public openWithRouting() {
     this.overlayManager.open(RoutingDemoOverlayComponent, {
-      // routing overlays get a static height — pages scroll inside the outlet instead of resizing the dialog
+      // routing overlays get a static height - pages scroll inside the outlet instead of resizing the dialog
       strategies: dialogOverlayStrategy({ width: 480, height: 'min(520px, 80vh)' }),
       panelClass: 'et-sb-routing-panel',
       providers: [

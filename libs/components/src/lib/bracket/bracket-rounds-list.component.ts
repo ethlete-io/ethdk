@@ -17,8 +17,8 @@ import { BracketLayout, resolveBracketLayout } from './bracket-layout';
 import { BRACKET_DEFAULTS, injectBracketConfig } from './bracket.config';
 
 /**
- * One header and the matches under it: a round, or — in a swiss stage, where a round is drawn as several
- * standings groups — one group of one round.
+ * One header and the matches under it: a round, or - in a swiss stage, where a round is drawn as several
+ * standings groups - one group of one round.
  */
 export type BracketRoundsListBlock<TRoundData, TMatchData> = {
   /** Unique among the rendered blocks; a swiss round contributes one per group. */
@@ -29,7 +29,7 @@ export type BracketRoundsListBlock<TRoundData, TMatchData> = {
 };
 
 /**
- * A run of rounds under a shared heading. Double elimination has three — the winners bracket, the losers
+ * A run of rounds under a shared heading. Double elimination has three - the winners bracket, the losers
  * bracket, and the deciding rounds; a layout without a `listSection` hook is one unnamed section.
  */
 export type BracketRoundsListSection<TRoundData, TMatchData> = {
@@ -41,7 +41,7 @@ export type BracketRoundsListSection<TRoundData, TMatchData> = {
 
 /**
  * The same tournament as [`<et-bracket>`](/components/bracket), drawn as a vertical list of rounds
- * instead of a connected grid — the representation that survives a phone, a blog column, or a
+ * instead of a connected grid - the representation that survives a phone, a blog column, or a
  * match-day page.
  *
  * It takes the same `BracketDataSource`, resolves the same cards through the same
@@ -78,13 +78,13 @@ export class BracketRoundsListComponent<TRoundData = unknown, TMatchData = unkno
   public source = input.required<BracketDataSource<TRoundData, TMatchData>>();
 
   /**
-   * Render only this round, by its id in the source. `null` (the default) stacks every round — set it
+   * Render only this round, by its id in the source. `null` (the default) stacks every round - set it
    * from a tab bar or a select to page through a long tournament instead.
    */
   public selectedRoundId = input<string | null>(null);
 
   /**
-   * The layouts this instance may draw with, replacing the `provideBracketConfig` list entirely —
+   * The layouts this instance may draw with, replacing the `provideBracketConfig` list entirely -
    * see {@link BracketLayout}. The list draws no grid, but it asks the matching layout how to group
    * (swiss standings groups) and section (double elimination's brackets) the rounds, and which cards
    * are its defaults. A source nothing matches throws `ET3413`, same as `<et-bracket>`.
@@ -99,11 +99,11 @@ export class BracketRoundsListComponent<TRoundData = unknown, TMatchData = unkno
   public matchComponent = input<BracketMatchComponent<TRoundData, TMatchData> | undefined>();
   public finalMatchComponent = input<BracketMatchComponent<TRoundData, TMatchData> | undefined>();
 
-  /** Unused here — the list draws no continue element — and accepted so the two hosts take the same bindings. */
+  /** Unused here - the list draws no continue element - and accepted so the two hosts take the same bindings. */
   public continueComponent = input<BracketContinueComponent<TRoundData, TMatchData> | undefined>();
 
   /**
-   * How to read your match data, for the **default** cards — see {@link BracketMatchNormalizer}. Cards of
+   * How to read your match data, for the **default** cards - see {@link BracketMatchNormalizer}. Cards of
    * your own get the match through their inputs and need none of this.
    */
   public matchNormalizer = input<BracketMatchNormalizer<TRoundData, TMatchData> | undefined>();
@@ -129,7 +129,7 @@ export class BracketRoundsListComponent<TRoundData = unknown, TMatchData = unkno
   public resolvedFinalMatchCardSize = computed<MatchCardSize>(() => MATCH_CARD_SIZES.EXPANDED);
 
   /**
-   * The layout answering for this source — see the `layouts` input. Resolved even though the list draws
+   * The layout answering for this source - see the `layouts` input. Resolved even though the list draws
    * no grid: the grouping/sectioning hooks and the per-layout cards live on it, and a mode the app never
    * registered should fail the same loud way in both representations.
    */
@@ -207,7 +207,7 @@ export class BracketRoundsListComponent<TRoundData = unknown, TMatchData = unkno
   });
 
   /**
-   * Which component draws a block's matches — the deciding round gets the final card here just as it does
+   * Which component draws a block's matches - the deciding round gets the final card here just as it does
    * in the grid.
    */
   protected matchComponentFor(block: BracketRoundsListBlock<TRoundData, TMatchData>): Type<unknown> {

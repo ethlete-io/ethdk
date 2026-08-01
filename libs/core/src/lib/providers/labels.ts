@@ -4,7 +4,7 @@ import { injectLocale } from './locale';
 /**
  * A label set, or a function building one for a locale. The function form is called again whenever
  * {@link injectLocale}'s `currentLocale` changes, so a locale switch re-renders the wording without
- * reloading — that is the seam an app's i18n library plugs into.
+ * reloading - that is the seam an app's i18n library plugs into.
  */
 export type LabelsSource<T> = Partial<T> | ((locale: string) => Partial<T>);
 
@@ -20,8 +20,8 @@ const resolveSource = <T>(source: T | ((locale: string) => T), locale: string): 
 
 /**
  * The one mechanism for the strings a component renders or announces itself. Every domain in the UI
- * library that has such strings exposes exactly this pair — `provide<Domain>Labels` to localize a
- * subtree, `inject<Domain>Labels()` to read the result — so localizing an app is the same move
+ * library that has such strings exposes exactly this pair - `provide<Domain>Labels` to localize a
+ * subtree, `inject<Domain>Labels()` to read the result - so localizing an app is the same move
  * repeated per domain rather than a different one each time.
  *
  * `defaults` may itself be locale-derived, for a domain that ships more than one language (the
@@ -29,7 +29,7 @@ const resolveSource = <T>(source: T | ((locale: string) => T), locale: string): 
  * resolved to, so translating into a third language while keeping a shipped one as the base is the
  * same call.
  *
- * The injector returns a **signal**, because both halves can change at runtime — read it in a
+ * The injector returns a **signal**, because both halves can change at runtime - read it in a
  * template or computed, never destructure it once.
  *
  * @example

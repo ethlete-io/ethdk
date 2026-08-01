@@ -25,13 +25,13 @@ type Story = StoryObj<RichTextEditorTriggersStorybookComponent>;
 export const Default: Story = {};
 
 /** A read-only editor rendering a stored value that contains `{{type:id}}` tokens as chips, using
- *  `provideRichTextEditorTokenRendering` — no interactive picker pulled in. */
+ *  `provideRichTextEditorTokenRendering` - no interactive picker pulled in. */
 export const TokenDisplay: StoryObj<RichTextEditorTokenDisplayStorybookComponent> = {
   render: () => ({ template: '<et-sb-rich-text-editor-token-display />' }),
 };
 
 /** A click-to-insert token palette (`et-rich-text-editor-token-palette`) beneath the editor. Clicking
- *  a chip inserts its `{{type:id}}` token at the caret — the same result as picking it from the `#`
+ *  a chip inserts its `{{type:id}}` token at the caret - the same result as picking it from the `#`
  *  popup. */
 export const TokenPalette: StoryObj<RichTextEditorTokenPaletteStorybookComponent> = {
   render: () => ({ template: '<et-sb-rich-text-editor-token-palette />' }),

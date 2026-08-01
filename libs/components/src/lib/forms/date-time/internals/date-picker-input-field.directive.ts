@@ -7,7 +7,7 @@ import { DatePickerInputDirective } from './date-picker-input.directive';
  * (`input[etDateInputField]`, `input[etTimeInputField]`, `input[etDateTimeInputField]`).
  * Owns the common host bindings, the unfocused display mirror, the blur/Enter
  * commits, the Alt+ArrowDown picker shortcut, and the `INPUT_MASK_HOST` adapter
- * behind the inputs' opt-in typing masks. Must be extended by an `@Directive` —
+ * behind the inputs' opt-in typing masks. Must be extended by an `@Directive` -
  * subclasses inject their input directive into `pickerInput`, register themselves
  * as the field, and provide `INPUT_MASK_HOST` via `useExisting`.
  */
@@ -55,7 +55,7 @@ export abstract class DatePickerInputFieldDirective implements InputMaskHost {
     return input.parseError() ? input.inputText() : input.displayValue();
   });
 
-  /** Whether the field has focus (`InputMaskHost.focused`) — drives the mask's guide display. */
+  /** Whether the field has focus (`InputMaskHost.focused`) - drives the mask's guide display. */
   public focused = computed(() => this.pickerInput?.focused() ?? false);
 
   /** The native element an attached mask rewrites (`InputMaskHost.nativeControl`). */
@@ -82,7 +82,7 @@ export abstract class DatePickerInputFieldDirective implements InputMaskHost {
     });
 
     // masked typing bypasses handleInput, so mirror the mask-written text into
-    // `inputText` — hasValue (and the clear button) must react like native typing
+    // `inputText` - hasValue (and the clear button) must react like native typing
     effect(() => {
       if (!this.maskAttached()) {
         return;
@@ -102,12 +102,12 @@ export abstract class DatePickerInputFieldDirective implements InputMaskHost {
     this.elementRef.nativeElement.focus({ preventScroll: true });
   }
 
-  /** @internal `InputMaskHost` — an attached mask owns value-sync; our input/mirror handling stands down. */
+  /** @internal `InputMaskHost` - an attached mask owns value-sync; our input/mirror handling stands down. */
   public suppressNativeSync() {
     this.maskAttached.set(true);
   }
 
-  /** @internal `InputMaskHost` — the mask was set to `null`; native handling resumes. */
+  /** @internal `InputMaskHost` - the mask was set to `null`; native handling resumes. */
   public resumeNativeSync() {
     this.maskAttached.set(false);
   }
@@ -162,7 +162,7 @@ export abstract class DatePickerInputFieldDirective implements InputMaskHost {
     }
   }
 
-  /** What a blur/Enter commit parses — the mask's value, since the element text may hold guide placeholders. */
+  /** What a blur/Enter commit parses - the mask's value, since the element text may hold guide placeholders. */
   private commitText() {
     return this.maskAttached() ? this.value() : this.elementRef.nativeElement.value;
   }

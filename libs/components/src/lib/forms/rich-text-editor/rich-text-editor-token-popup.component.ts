@@ -24,7 +24,7 @@ import { RichTextEditorTriggerItem } from './rich-text-editor-trigger';
 /**
  * The caret-anchored autocomplete list opened by `[etRichTextEditorTriggers]`. Purely
  * presentational: it renders items / loading / error / empty states and reports selection and
- * hover. Focus stays in the editor's `contenteditable` — the active row is driven by
+ * hover. Focus stays in the editor's `contenteditable` - the active row is driven by
  * `aria-activedescendant`, and pointer events are `preventDefault`ed so mousedown never steals it.
  *
  * Mirrors `et-menu`: neutral surface chrome, an animated block-size resize as the list changes,
@@ -67,7 +67,7 @@ export class RichTextEditorTokenPopupComponent {
   constructor() {
     // The popup mounts in a detached overlay pane. Its surface IS the overlay's own surface, so it
     // paints the overlay's registered elevation exactly (via the surface-context tracker) rather
-    // than stacking a level above it — the same treatment as the menu / tooltip panels.
+    // than stacking a level above it - the same treatment as the menu / tooltip panels.
     inject(AutoSurfaceDirective).matchOverlaySurface();
 
     // Color still has to be re-synced here instead of cascading through the detached DOM.

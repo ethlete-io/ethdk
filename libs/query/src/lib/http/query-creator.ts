@@ -80,8 +80,8 @@ export type BaseQueryCreatorOptions<TArgs extends QueryArgs = QueryArgs> = {
   /**
    * Whether this query takes part in the client's multi-tab sync, when the client has it enabled at
    * all. Set to `false` to keep the query tab-local: its responses are neither broadcast to nor
-   * accepted from other tabs, and — because dedup is only safe while the suppressed tab still gets
-   * the data — every tab polls it itself again.
+   * accepted from other tabs, and - because dedup is only safe while the suppressed tab still gets
+   * the data - every tab polls it itself again.
    *
    * The case for opting out is payload cost: every shared response is structured-cloned per receiving
    * tab, so a very large body polled at a short interval is better left alone. Has no effect unless
@@ -96,7 +96,7 @@ export type BaseQueryCreatorOptions<TArgs extends QueryArgs = QueryArgs> = {
    * {@link withQueryPersistence} feature at all.
    *
    * Three states, because secure queries start on the other side of the default:
-   * - left unset, a **public** query persists and a **secure** (authenticated) one does not — putting a
+   * - left unset, a **public** query persists and a **secure** (authenticated) one does not - putting a
    *   logged in user's data on the device is a decision per endpoint, not a blanket one,
    * - `true` persists it either way. On a secure query this is the opt-in; pair it with the knowledge
    *   that a logout removes every persisted secure response again,
@@ -220,7 +220,7 @@ export type QueryConfig = {
    *
    * For the legacy interop layer: v2 had a single `skipCache` for every method, so it forwards `allowCache`
    * without being able to tell a cacheable request from an uncacheable one. Application code should not set
-   * this — on a hand-written `execute()` the error it silences is a real mistake.
+   * this - on a hand-written `execute()` the error it silences is a real mistake.
    */
   silenceUncacheableAllowCacheError?: boolean;
 

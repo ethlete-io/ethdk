@@ -56,7 +56,7 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
       return false;
     }
 
-    // a committed-but-unparseable value is an error too — otherwise the native input reads
+    // a committed-but-unparseable value is an error too - otherwise the native input reads
     // `aria-invalid` (it gates on the control's parse error) while the field shows no message
     return ctrl.touched() && (ctrl.invalid() || (ctrl.parseError?.() ?? false));
   });
@@ -71,7 +71,7 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
 
   public controlType = computed(() => this.registeredControl()?.controlType() ?? FORM_FIELD_CONTROL_TYPES.TEXT_INPUT);
 
-  /** The registered control's value — the counter measures this. */
+  /** The registered control's value - the counter measures this. */
   public controlValue = computed<unknown>(() => this.registeredControl()?.value?.() ?? null);
 
   /** The bound field's schema `maxLength()`, when signal forms bound one into the control. */
@@ -91,7 +91,7 @@ export class FormFieldDirective implements FormFieldDirectiveBase {
 
   public isDisabled = computed(() => this.registeredControl()?.disabled?.() ?? false);
 
-  /** Whether the control reports itself hidden (signal-forms schema) — hides the whole field. */
+  /** Whether the control reports itself hidden (signal-forms schema) - hides the whole field. */
   public isHidden = computed(() => this.registeredControl()?.hidden?.() ?? false);
 
   public usesTextFieldShell = computed(

@@ -9,7 +9,7 @@ import { MatchParticipantComponent } from './match-participant.component';
 import { MatchScoreComponent } from './match-score.component';
 
 /**
- * The participant display primitive (`<et-match-participant>`) — emblem, name and optional seed for one
+ * The participant display primitive (`<et-match-participant>`) - emblem, name and optional seed for one
  * side of a match. Standalone as well as inside a card: a roster, a standings cell, a filter chip.
  * Pulls in [`et-picture`](/components/picture) and the skeleton.
  */

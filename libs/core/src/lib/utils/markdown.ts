@@ -1,7 +1,7 @@
 const escapeHtml = (str: string): string =>
   str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-/** Escapes HTML-special characters but leaves existing entity references intact — for input that
+/** Escapes HTML-special characters but leaves existing entity references intact - for input that
  *  may already contain entities (e.g. Markdown serialized from the editor's DOM, where `&` is
  *  stored as `&amp;`), where plain escaping would double-escape them. */
 const escapeHtmlPreservingEntities = (str: string): string =>
@@ -12,7 +12,7 @@ const escapeHtmlPreservingEntities = (str: string): string =>
     .replace(/"/g, '&quot;');
 
 /** Rejects URL schemes that execute script when navigated. Whitespace/control characters are
- *  stripped before checking — browsers ignore them inside URLs, so `java\tscript:` would
+ *  stripped before checking - browsers ignore them inside URLs, so `java\tscript:` would
  *  otherwise slip through. */
 const isSafeUrl = (url: string): boolean =>
   // eslint-disable-next-line no-control-regex -- stripping control characters is the point: browsers ignore them inside URLs
@@ -54,7 +54,7 @@ const separatorFor = (align: TableAlign): string =>
 
 const alignStyle = (align: TableAlign): string => (align ? ` style="text-align: ${align}"` : '');
 
-/** Wraps `content` in an emphasis `marker`, hoisting boundary whitespace outside the delimiters —
+/** Wraps `content` in an emphasis `marker`, hoisting boundary whitespace outside the delimiters -
  *  CommonMark emphasis must not face whitespace on the inside (`** fett**` doesn't parse), and
  *  `&nbsp;` counts as whitespace there too. Whitespace-only content stays unwrapped. */
 const emphasize = (marker: string, content: string): string => {
@@ -74,7 +74,7 @@ const isPlaceholder = (kind: string, str: string) => new RegExp(`^\u{E000}${kind
 const SAFE_INLINE_TAGS = /* @__PURE__ */ new Set(['strong', 'em', 'b', 'i', 'del', 's', 'u', 'code', 'br']);
 
 /** Reduces raw inline HTML to the editor's own vocabulary: allowed tags lose all their attributes
- *  (`<a>` keeps a safe `href`), everything else — including any event-handler attribute — is
+ *  (`<a>` keeps a safe `href`), everything else - including any event-handler attribute - is
  *  dropped, and the remaining text is escaped. */
 const sanitizeInlineHtml = (html: string): string => {
   const kept: string[] = [];
@@ -106,7 +106,7 @@ const processInline = (text: string): string => {
 
   // "Open in new tab" links round-trip as raw HTML because Markdown has no `target` syntax. Extract
   // them before the raw-HTML escape below, keeping only a safe href, `target="_blank"` and a forced
-  // `rel="noopener noreferrer"` (any other attribute — including event handlers — is dropped); their
+  // `rel="noopener noreferrer"` (any other attribute - including event handlers - is dropped); their
   // inner markup is processed recursively. Anything else that looks like raw HTML is still escaped.
   const newTabLinks: string[] = [];
   text = text.replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, (full, attrs: string, inner: string) => {
@@ -120,12 +120,12 @@ const processInline = (text: string): string => {
     return makePlaceholder('NTLINK', newTabLinks.push(anchor) - 1);
   });
 
-  // Raw HTML in Markdown text is escaped, not rendered — the editor writes this HTML straight
+  // Raw HTML in Markdown text is escaped, not rendered - the editor writes this HTML straight
   // into the DOM via innerHTML, so anything else would let a crafted value inject markup. `<u>`
   // is the one deliberate exception: underline has no Markdown form and round-trips as raw <u>.
   text = escapeHtmlPreservingEntities(text).replace(/&lt;(\/?)u&gt;/gi, '<$1u>');
 
-  // Bold + italic — *** before ** before *. A delimiter flanking whitespace doesn't open/close a
+  // Bold + italic - *** before ** before *. A delimiter flanking whitespace doesn't open/close a
   // run (CommonMark's flanking rule), so literal asterisks as in `2 * 3 * 4` stay text.
   text = text.replace(/\*\*\*([^\s*](?:.*?[^\s*])?)\*\*\*/g, '<strong><em>$1</em></strong>');
   text = text.replace(/\*\*([^\s*](?:.*?[^\s*])?)\*\*/g, '<strong>$1</strong>');
@@ -229,7 +229,7 @@ const findBlockquote = (html: string): { start: number; end: number; inner: stri
 };
 
 /** The lines of quoted text in a blockquote's own (non-nested) HTML, each with its `> ` prefix.
- *  `<br>` and paragraph boundaries are the line breaks — the tag-strip would swallow them. */
+ *  `<br>` and paragraph boundaries are the line breaks - the tag-strip would swallow them. */
 const quotedLines = (html: string, prefix: string): string[] => {
   const text = stripTags(html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p\s*>/gi, '\n')).trim();
 
@@ -320,7 +320,7 @@ const listToMarkdown = (inner: string, ordered: boolean, depth: number): string 
 
 type ParsedListLine = { indent: number; ordered: boolean; text: string };
 
-/** Parses list lines into (indent-level, ordered, text) — two leading spaces per nesting level. */
+/** Parses list lines into (indent-level, ordered, text) - two leading spaces per nesting level. */
 const parseListLines = (lines: string[]): ParsedListLine[] =>
   lines
     .map((line): ParsedListLine | null => {
@@ -412,7 +412,7 @@ export const markdownToHtml = (markdown: string): string => {
       // Horizontal rule
       if (/^(---|\*\*\*|___)\s*$/.test(trimmed)) return '<hr>';
 
-      // Table (GFM) — column alignment from the separator line lands as text-align on every cell
+      // Table (GFM) - column alignment from the separator line lands as text-align on every cell
       const tableLines = trimmed.split('\n');
       if (tableLines.length >= 2 && /\|/.test(tableLines[0] ?? '') && isTableSeparatorLine(tableLines[1] ?? '')) {
         const aligns = parseSeparatorAligns(tableLines[1] ?? '');
@@ -435,7 +435,7 @@ export const markdownToHtml = (markdown: string): string => {
         return `<table>${thead}${tbody}</table>`;
       }
 
-      // Blockquote — each line runs through the inline pass on its own (processInline escapes raw
+      // Blockquote - each line runs through the inline pass on its own (processInline escapes raw
       // HTML, so joining first would escape the <br> separators too), and a `>>` run nests
       if (/^>/.test(trimmed)) return buildBlockquoteHtml(trimmed.split('\n'));
 
@@ -448,7 +448,7 @@ export const markdownToHtml = (markdown: string): string => {
         }
       }
 
-      // Paragraph — single newlines within a block become <br>
+      // Paragraph - single newlines within a block become <br>
       return `<p>${trimmed
         .split('\n')
         .map((l) => processInline(l))
@@ -471,14 +471,14 @@ export const htmlToMarkdown = (html: string): string => {
   let md = html;
 
   // Aligned blocks: text-align has no Markdown form, so preserve them verbatim as native HTML (their
-  // inner markup stays HTML) and round-trip via a placeholder — extracted before the block passes
+  // inner markup stays HTML) and round-trip via a placeholder - extracted before the block passes
   // below rewrite them, restored after the final tag-strip.
   const alignedBlocks: string[] = [];
   md = md.replace(/<(p|h[1-6]|div)\b[^>]*\bstyle="[^"]*text-align[^"]*"[^>]*>[\s\S]*?<\/\1>/gi, (match) =>
     makePlaceholder('ALIGN', alignedBlocks.push(match) - 1),
   );
 
-  // Code blocks — process before inline code
+  // Code blocks - process before inline code
   md = md.replace(
     /<pre[^>]*><code[^>]*class="language-([^"]+)"[^>]*>([\s\S]*?)<\/code><\/pre>/gi,
     (_, lang: string, code: string) => `\n\`\`\`${lang}\n${unescapeHtml(code.trim())}\n\`\`\`\n`,
@@ -492,7 +492,7 @@ export const htmlToMarkdown = (html: string): string => {
     (_, code: string) => `\n\`\`\`\n${unescapeHtml(code.trim())}\n\`\`\`\n`,
   );
 
-  // Headings — keep the inner markup so the inline passes below turn any nested
+  // Headings - keep the inner markup so the inline passes below turn any nested
   // bold/italic/link/code into markdown; leftover tags are stripped at the end.
   for (let i = 6; i >= 1; i--) {
     md = md.replace(
@@ -502,7 +502,7 @@ export const htmlToMarkdown = (html: string): string => {
   }
 
   // Bold + italic (combined before individual). Boundary whitespace is hoisted out of the
-  // delimiters (emphasize) — `<strong> x</strong>` must become ` **x**`, not the invalid `** x**`.
+  // delimiters (emphasize) - `<strong> x</strong>` must become ` **x**`, not the invalid `** x**`.
   md = md.replace(/<strong[^>]*><em[^>]*>([\s\S]*?)<\/em><\/strong>/gi, (_, c: string) => emphasize('***', c));
   md = md.replace(/<em[^>]*><strong[^>]*>([\s\S]*?)<\/strong><\/em>/gi, (_, c: string) => emphasize('***', c));
   md = md.replace(/<(strong|b)[^>]*>([\s\S]*?)<\/\1>/gi, (_, _tag, c: string) => emphasize('**', c));
@@ -513,7 +513,7 @@ export const htmlToMarkdown = (html: string): string => {
   md = md.replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, (_, code: string) => `\`${unescapeHtml(code)}\``);
 
   // Links and images. A link with `target="_blank"` has no Markdown form, so it round-trips as raw
-  // HTML (keeping only href + target + rel) via a placeholder — like underline below; ordinary links
+  // HTML (keeping only href + target + rel) via a placeholder - like underline below; ordinary links
   // become `[text](url)`.
   const newTabLinks: string[] = [];
   md = md.replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, (_, attrs: string, inner: string) => {
@@ -531,19 +531,19 @@ export const htmlToMarkdown = (html: string): string => {
   md = md.replace(/<img[^>]+alt="([^"]*)"[^>]*src="([^"]*)"[^>]*\/?>/gi, '![$1]($2)');
   md = md.replace(/<img[^>]+src="([^"]*)"[^>]*\/?>/gi, '![]($1)');
 
-  // Underline has no Markdown form — preserve it as raw <u> so it round-trips. Extract it now (its
+  // Underline has no Markdown form - preserve it as raw <u> so it round-trips. Extract it now (its
   // inner markup is already converted above) so the block passes below don't strip the tag; the
   // placeholder is restored after the final tag-strip.
   const underlines: string[] = [];
   md = md.replace(/<u[^>]*>([\s\S]*?)<\/u>/gi, (_, inner: string) => makePlaceholder('U', underlines.push(inner) - 1));
 
-  // Block quotes — replace each top-level <blockquote> with its recursively-serialized Markdown, so
+  // Block quotes - replace each top-level <blockquote> with its recursively-serialized Markdown, so
   // a quote inside a quote becomes `>>` (regex alone can't match balanced nesting).
   for (let quote = findBlockquote(md); quote; quote = findBlockquote(md)) {
     md = `${md.slice(0, quote.start)}\n${blockquoteToMarkdown(quote.inner, 0)}\n${md.slice(quote.end)}`;
   }
 
-  // Lists — replace each top-level list with its recursively-serialized Markdown (handles nesting).
+  // Lists - replace each top-level list with its recursively-serialized Markdown (handles nesting).
   for (let list = findList(md); list; list = findList(md)) {
     md = `${md.slice(0, list.start)}\n${listToMarkdown(list.inner, list.ordered, 0)}\n${md.slice(list.end)}`;
   }
@@ -585,13 +585,13 @@ export const htmlToMarkdown = (html: string): string => {
     return `\n${lines.join('\n')}\n`;
   });
 
-  // Block elements — a <br> inside a paragraph is a soft line break; turn it into a newline before
+  // Block elements - a <br> inside a paragraph is a soft line break; turn it into a newline before
   // the tag-strip removes it, so it round-trips (a single newline within a block renders as <br>)
   md = md.replace(
     /<p[^>]*>([\s\S]*?)<\/p>/gi,
     (_, content: string) => `\n${stripTags(content.replace(/<br\s*\/?>/gi, '\n')).trim()}\n`,
   );
-  // A <div> boundary acts as a paragraph boundary — clipboard HTML commonly uses divs as
+  // A <div> boundary acts as a paragraph boundary - clipboard HTML commonly uses divs as
   // paragraphs, and silently stripping them would merge adjacent blocks into one.
   md = md.replace(/<\/div\s*>/gi, '\n\n').replace(/<div[^>]*>/gi, '\n\n');
   md = md.replace(/<br\s*\/?>/gi, '\n');

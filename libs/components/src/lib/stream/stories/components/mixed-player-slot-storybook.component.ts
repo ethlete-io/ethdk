@@ -14,7 +14,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
       <et-tab-group [selectedIndex]="selectedIndex()" (selectedIndexChange)="selectedIndex.set($event)">
         <et-tab label="YouTube">
           <div class="p-5">
-            <p class="mb-4 text-sm font-semibold text-white">YouTube — Rick Astley (16:9)</p>
+            <p class="mb-4 text-sm font-semibold text-white">YouTube - Rick Astley (16:9)</p>
 
             <et-youtube-player-slot
               #slotA
@@ -38,7 +38,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
 
         <et-tab label="Twitch">
           <div class="p-5">
-            <p class="mb-4 text-sm font-semibold text-white">Twitch — {{ twitchChannel() }} (16:9)</p>
+            <p class="mb-4 text-sm font-semibold text-white">Twitch - {{ twitchChannel() }} (16:9)</p>
 
             <et-twitch-player-slot
               #slotB
@@ -63,7 +63,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
 
         <et-tab label="TikTok A">
           <div class="p-5">
-            <p class="mb-4 text-sm font-semibold text-white">TikTok A — {{ tiktokVideoIdA() }} (9:16)</p>
+            <p class="mb-4 text-sm font-semibold text-white">TikTok A - {{ tiktokVideoIdA() }} (9:16)</p>
 
             <et-tiktok-player-slot
               #slotC
@@ -88,7 +88,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
 
         <et-tab label="TikTok B">
           <div class="p-5">
-            <p class="mb-4 text-sm font-semibold text-white">TikTok B — 7106594312292453675 (9:16)</p>
+            <p class="mb-4 text-sm font-semibold text-white">TikTok B - 7106594312292453675 (9:16)</p>
 
             <et-tiktok-player-slot
               #slotD
@@ -110,7 +110,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
 
             <p class="text-neutral-500 mt-4 leading-relaxed text-xs">
               Enter PIP on all four players to test the grid view with mixed aspect ratios (16:9 YouTube + Twitch and
-              9:16 TikTok). The grid should not break — each cell adapts to the player's natural ratio.
+              9:16 TikTok). The grid should not break - each cell adapts to the player's natural ratio.
             </p>
           </div>
         </et-tab>

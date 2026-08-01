@@ -140,7 +140,7 @@ describe('CheckboxDirective', () => {
     it('blocks toggling but stays focusable with the normal look', () => {
       expect(checkboxEl.getAttribute('aria-readonly')).toBe('true');
       expect(checkboxEl.getAttribute('data-readonly')).toBe('true');
-      // focusable and not dimmed — view-only, unlike disabled
+      // focusable and not dimmed - view-only, unlike disabled
       expect(checkboxEl.getAttribute('tabindex')).toBe('0');
       expect(checkboxEl.getAttribute('aria-disabled')).toBeNull();
 

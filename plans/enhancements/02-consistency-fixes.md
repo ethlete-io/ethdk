@@ -1,4 +1,4 @@
-# 02 — Consistency fixes (bug-like)
+# 02 - Consistency fixes (bug-like)
 
 Small, independent fixes where half the codebase does it right and the other
 half doesn't. Each item is its own commit-sized change; they can ship together
@@ -15,7 +15,7 @@ Fix: resolve direction at gesture setup from the container's computed
 `direction`. Either accept logical values (`'to-inline-start'/'to-inline-end'`)
 in `OverlayDragToDismissConfig` and map to physical at runtime, or keep the
 physical API and have the left/right sheet strategies resolve
-`getComputedStyle(...).direction` — slider already established the runtime
+`getComputedStyle(...).direction` - slider already established the runtime
 pattern (`slider-engine.ts:60-67`). Prefer the logical-value API: strategies
 declare intent once, and consumer configs stay RTL-correct by default. Keep
 physical values working (they mean what they say).
@@ -43,7 +43,7 @@ Same utilities, inconsistent gating:
 
 Fix at the source: make `createFlipAnimation`/`createFlipAnimationGroup`
 (core `animations/flip-animation.ts`) check `prefers-reduced-motion`
-internally (matchMedia — these may run outside injection context; verify) and
+internally (matchMedia - these may run outside injection context; verify) and
 skip to end state, with an opt-out flag for the rare essential-motion case.
 Remove now-redundant caller gates or leave them (harmless). Gate the PiP
 `.animate()` calls individually via `injectPrefersReducedMotion()`.
@@ -53,7 +53,7 @@ brand-loader animate under reduced motion as essential feedback) in the loader
 docs, mirroring the skeleton's explicit note.
 
 **Found while implementing, deliberately left out of scope:** the **overlay**
-enter/leave animations are not reduced-motion gated at all —
+enter/leave animations are not reduced-motion gated at all -
 `overlay-container.component.css` has no `prefers-reduced-motion` block (unlike
 `notification.component.css:208`), and `overlay/strategies/fullscreen-animation.ts`
 (733 lines of JS transform math) is ungated too. Notification, accordion,
@@ -73,19 +73,19 @@ plus the fullscreen JS path) and wants its own plan. Worth pairing with
   `overlay/strategies/fullscreen-animation.ts:444`. Allocate codes in each
   domain's `*-errors.ts` + docs entries.
 
-  **Corrected while implementing — only 1 of the 3 should be converted.** The
+  **Corrected while implementing - only 1 of the 3 should be converted.** The
   cascader and RTE throws are not developer-error signals: their message is the
   **display-ready** text carried through an RxJS pipeline to the UI.
   `cascader.directive.ts:111`'s default `toErrorMessage` renders `error.message`
   verbatim in the column's error row, and
   `rich-text-editor-triggers.directive.ts:68` does the same for the token popup's
-  `role="alert"` text — so a `RuntimeError` would print `ET3309: …` in front of
+  `role="alert"` text - so a `RuntimeError` would print `ET3309: …` in front of
   the user. Both keep a plain `Error` and now carry a comment saying why, so the
   next grep-driven audit doesn't "fix" them. Only
   `fullscreen-animation.ts` was a real misuse signal → `ET1209`
   (`MISSING_ANIMATION_ORIGIN`).
 
-  Also: the master range table was missing **four** rows, not one — Masonry
+  Also: the master range table was missing **four** rows, not one - Masonry
   (3900), Query error (4000), Floating action (4100) and Filter overlay (4200)
   all had their `## …` sections but no index entry. All four added.
 
@@ -93,13 +93,13 @@ plus the fullscreen JS path) and wants its own plan. Worth pairing with
 
 - `core/src/lib/scrolling/scrollable.ts` (bare `document.documentElement`
   default param, `window.innerWidth/Height` in `createViewportRect`) and
-  `core/src/lib/animations/animation-utils.ts:18` (`document.body` default) —
+  `core/src/lib/animations/animation-utils.ts:18` (`document.body` default) -
   align with the `DOCUMENT`-injection / guard convention used by
   `document-visibility.ts` and the SEO binding utils. These only run from
   browser event paths today, so this is hygiene, not a crash fix; don't
   restructure APIs, just make defaults lazy/guarded.
 - `core/seo.directive.ts` is `@deprecated` and the only real SSR crash risk
-  (bare `document` at 98-154). Don't fix — confirm removal is on the next
+  (bare `document` at 98-154). Don't fix - confirm removal is on the next
   major's checklist and note it there.
 
 ## Verification

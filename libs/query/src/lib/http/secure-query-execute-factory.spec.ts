@@ -99,7 +99,7 @@ describe('createSecureExecuteFactory', () => {
     });
 
     // A logout: the repository tears the secure entries down, but the response the query object
-    // holds is its own — without this the logged out user stays on screen.
+    // holds is its own - without this the logged out user stays on screen.
     mockRepositoryEvents$.next({ type: 'unbind-all-secure' });
 
     expect(mockState.rawResponse()).toBeNull();

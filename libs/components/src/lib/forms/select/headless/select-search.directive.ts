@@ -20,7 +20,7 @@ import { SelectDirective } from './select.directive';
  * pattern): typing opens the panel and filters. Filtering behavior is controlled by the
  * select's `filterMode` (`internal` hides non-matching options, `external` leaves the option
  * list to the consumer via `queryChange`). With a search registered, this input *is* the
- * combobox — the trigger element drops its combobox role.
+ * combobox - the trigger element drops its combobox role.
  */
 @Directive({
   selector: 'input[etSelectSearch]',
@@ -60,7 +60,7 @@ export class SelectSearchDirective {
   protected expanded = computed(() => this.select?.open() ?? false);
   protected controls = computed(() => (this.select?.open() ? this.select.listboxId() : null));
   protected activeDescendant = computed(() => (this.select?.open() ? this.select.activeId() : null));
-  // a full selection locks the input like the tag-input field — values leave via chips/Backspace
+  // a full selection locks the input like the tag-input field - values leave via chips/Backspace
   protected isFull = computed(() => this.select?.isFull() ?? false);
   protected describedBy = computed(() => {
     const select = this.select;
@@ -89,7 +89,7 @@ export class SelectSearchDirective {
 
       // single select: the input displays the selected value's label until the user edits.
       // A custom value template owns the resting display (an input cannot render rich HTML),
-      // but while the field is focused it becomes editable text here too — so Backspace edits
+      // but while the field is focused it becomes editable text here too - so Backspace edits
       // the label instead of nuking the whole value (see `handleKeydown`). Panel-hosted search
       // inputs stay pure query boxes.
       if (
@@ -150,7 +150,7 @@ export class SelectSearchDirective {
 
     const element = this.elementRef.nativeElement;
 
-    // a custom value template kept the resting input empty (the rich display showed instead) —
+    // a custom value template kept the resting input empty (the rich display showed instead) -
     // now in edit mode the input becomes the editable label, so write it before the display
     // effect catches up so it can be selected for replace-on-type
     if (select.registeredValueTemplate() && !select.mixed() && !element.value) {
@@ -163,7 +163,7 @@ export class SelectSearchDirective {
   }
 
   public clear() {
-    // no direct element.value write — the display effect owns the element (it may need to
+    // no direct element.value write - the display effect owns the element (it may need to
     // show the selected value's label instead of the empty query)
     this.query.set('');
     this.select?.queryChange.emit('');
@@ -206,7 +206,7 @@ export class SelectSearchDirective {
         this.query.set(pending);
         select.queryChange.emit(pending);
 
-        // a rejected commit (duplicate, normalized away) keeps the pending text for editing —
+        // a rejected commit (duplicate, normalized away) keeps the pending text for editing -
         // with the panel open so the user sees why (e.g. the already-selected option)
         if (!pending || !select.commitCustomValue(pending)) {
           select.show();
@@ -221,7 +221,7 @@ export class SelectSearchDirective {
     select?.queryChange.emit(value);
 
     // single select: the input doubles as the value display, so the user erasing all of its
-    // text clears the selection (Escape/close clears revert the display instead — they don't
+    // text clears the selection (Escape/close clears revert the display instead - they don't
     // go through this handler). A custom value template shows the editable label here only
     // while focused, so erasing it deselects the same way. A panel-hosted search input is a
     // pure query box and clearing it must not deselect.
@@ -233,7 +233,7 @@ export class SelectSearchDirective {
       }
     }
 
-    // typing opens the panel — the combobox pattern
+    // typing opens the panel - the combobox pattern
     select?.show();
   }
 
@@ -248,7 +248,7 @@ export class SelectSearchDirective {
         return;
       }
 
-      // while mixed there is no visible chip to delete — a lone Backspace must not nuke the
+      // while mixed there is no visible chip to delete - a lone Backspace must not nuke the
       // hidden raw selection of every edited record; the clear button stays the destructive path
       if (select.mixed()) {
         return;
@@ -275,7 +275,7 @@ export class SelectSearchDirective {
     const select = this.select;
     const text = event.clipboardData?.getData('text/plain');
 
-    // splitting only makes sense where several values can land — multi mode with custom values
+    // splitting only makes sense where several values can land - multi mode with custom values
     if (!select || !text || !select.allowCustomValues() || !select.multiple()) {
       return;
     }
@@ -315,7 +315,7 @@ export class SelectSearchDirective {
   }
 
   // the input doubles as the value display only while it sits inline in the trigger (the
-  // combobox-in-field pattern) — a search rendered inside the panel instead (e.g. the phone
+  // combobox-in-field pattern) - a search rendered inside the panel instead (e.g. the phone
   // input's country picker) is a pure query box and always shows its placeholder
   private isInlineInTrigger() {
     const trigger = this.select?.registeredTrigger()?.elementRef.nativeElement;

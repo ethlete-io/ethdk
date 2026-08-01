@@ -378,15 +378,15 @@ describe('CascaderDirective', () => {
       nodeByLabel('Group B')!.click();
       tick();
 
-      // every leaf under "Group stage" is checked — full check, not the dash
+      // every leaf under "Group stage" is checked - full check, not the dash
       expect(nodeByLabel('Group stage')!.getAttribute('data-selected')).toBe('true');
       expect(nodeByLabel('Group stage')!.hasAttribute('data-indeterminate')).toBe(false);
 
-      // "Euro" also holds the (unselected) "Knockout" branch — still just indeterminate
+      // "Euro" also holds the (unselected) "Knockout" branch - still just indeterminate
       expect(nodeByLabel('Euro')!.getAttribute('data-indeterminate')).toBe('true');
       expect(nodeByLabel('Euro')!.hasAttribute('data-selected')).toBe(false);
 
-      // the promotion is display-only — the value stays the exact leaves
+      // the promotion is display-only - the value stays the exact leaves
       expect(fixture.componentInstance.value()).toEqual(['euro-group-a', 'euro-group-b']);
 
       // unchecking a leaf drops the ancestor back to the dash
@@ -408,7 +408,7 @@ describe('CascaderDirective', () => {
       expect(nodeByLabel('World Cup')!.hasAttribute('data-indeterminate')).toBe(false);
 
       // drilling into another branch truncates the columns, but the loaded child lists are
-      // remembered — "World Cup" must not fall back to indeterminate
+      // remembered - "World Cup" must not fall back to indeterminate
       nodeByLabel('Euro')!.click();
       tick();
 
@@ -501,7 +501,7 @@ describe('CascaderDirective', () => {
       await flushFrames();
       tick();
 
-      // result 0 is the "Group stage" branch (re-roots in leaf mode) — toggle the "Group A" leaf
+      // result 0 is the "Group stage" branch (re-roots in leaf mode) - toggle the "Group A" leaf
       const options = Array.from(pane()!.querySelectorAll<HTMLElement>('[role="option"]'));
       const leafOption = options.find((option) => option.textContent!.includes('Group A'))!;
 
@@ -722,7 +722,7 @@ describe('CascaderDirective', () => {
     it('collapses older levels into breadcrumbs once the drill exceeds the window', async () => {
       drillTo(['Region 1', 'Country 1', 'League 1']);
 
-      // four levels are drilled — all stay mounted on the track, the root slides offstage
+      // four levels are drilled - all stay mounted on the track, the root slides offstage
       expect(cascader.columns().length).toBe(4);
       expect(columns().length).toBe(4);
       expect(cascader.visibleColumnStart()).toBe(1);
@@ -740,7 +740,7 @@ describe('CascaderDirective', () => {
 
       expect(cascader.columns().length).toBe(4);
       expect(cascader.visibleColumnStart()).toBe(0);
-      // the crumb row mirrors the drill, not the window — sliding back must not rebuild it
+      // the crumb row mirrors the drill, not the window - sliding back must not rebuild it
       expect(crumbLabels()).toEqual(['Region 1', 'Country 1', 'League 1']);
       expect(cascader.focusedNode()?.label).toBe('Region 1');
       // the deepest column slid offstage instead of being truncated
@@ -753,7 +753,7 @@ describe('CascaderDirective', () => {
       crumbs()[0]!.click();
       tick();
 
-      // League 1 is still expanded — activating it reveals its children instead of reloading
+      // League 1 is still expanded - activating it reveals its children instead of reloading
       nodeByLabel('League 1')!.click();
       tick();
 
@@ -766,7 +766,7 @@ describe('CascaderDirective', () => {
     it('slides the window when ArrowLeft moves focus past its edge', async () => {
       drillTo(['Region 1', 'Country 1', 'League 1']);
 
-      // Country 1 sits in the leftmost visible column — ArrowLeft targets the collapsed root
+      // Country 1 sits in the leftmost visible column - ArrowLeft targets the collapsed root
       nodeByLabel('Country 1')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
       tick();
 
@@ -786,12 +786,12 @@ describe('CascaderDirective', () => {
 
       expect(cascader.columns().length).toBe(2);
       expect(cascader.visibleColumnStart()).toBe(0);
-      // the drill changed — now the crumb row updates (and empties, everything fits again)
+      // the drill changed - now the crumb row updates (and empties, everything fits again)
       expect(crumbs().length).toBe(0);
       expect([offstage(0), offstage(1)]).toEqual([false, false]);
     });
 
-    it('keeps every crumb clickable — each anchors the window at its own column', async () => {
+    it('keeps every crumb clickable - each anchors the window at its own column', async () => {
       drillTo(['Region 1', 'Country 1', 'League 1', 'Club 1', 'Team 1']);
 
       // six columns: the row lists the whole drilled trail and never rebuilds on slides
@@ -948,7 +948,7 @@ describe('CascaderDirective', () => {
       expect(nodeByLabel('Group stage')!.hasAttribute('data-indeterminate')).toBe(false);
       expect(nodeByLabel('Euro')!.hasAttribute('data-indeterminate')).toBe(false);
       expect(cascader.displayValue()).toBe('Mixed');
-      // masking is presentation only — the raw array is preserved
+      // masking is presentation only - the raw array is preserved
       expect(fixture.componentInstance.value()).toEqual(['euro-group-a']);
     });
 
@@ -963,7 +963,7 @@ describe('CascaderDirective', () => {
       tick();
       nodeByLabel('Group stage')!.click();
       tick();
-      // "Group A" is part of the hidden raw selection — the first commit must still SELECT it
+      // "Group A" is part of the hidden raw selection - the first commit must still SELECT it
       // into a fresh array, never toggle it away against the hidden value
       nodeByLabel('Group A')!.click();
       tick();
@@ -1113,7 +1113,7 @@ describe('CascaderDirective (multiple, mixed contract)', () => {
         fixture.detectChanges();
       },
       externallyWrittenValue: () => ['euro-group-b'],
-      // "Group A" is inside the hidden raw array — replace semantics must still yield a fresh
+      // "Group A" is inside the hidden raw array - replace semantics must still yield a fresh
       // one-entry array instead of toggling it away
       commit: commitGroupA,
       committedValue: () => ['euro-group-a'],

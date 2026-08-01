@@ -10,12 +10,12 @@ export type SignalElementScrollStateOptions = {
   initialScrollPosition?: Signal<ScrollToOptions | null>;
 
   /**
-   * What the underlying `MutationObserver` watches for — a proxy for "the content may have changed size, so
+   * What the underlying `MutationObserver` watches for - a proxy for "the content may have changed size, so
    * re-measure whether it still overflows". The default is deliberately broad.
    *
    * Narrow it wherever the consumer knows better. `attributes: true` means every inline style or class write
    * anywhere in the subtree re-runs the measurement, and the measurement reads `scrollWidth`/`scrollHeight`
-   * — so a descendant written to per animation frame buys a forced layout per frame.
+   * - so a descendant written to per animation frame buys a forced layout per frame.
    */
   mutations?: MutationObserverInit;
 };

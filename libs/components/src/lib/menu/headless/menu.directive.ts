@@ -58,7 +58,7 @@ export class MenuDirective {
   public fallbackPlacements = input<Placement[] | undefined>(undefined);
   public offset = input<OffsetOptions | null | 'auto'>('auto');
   public viewportPadding = input<Padding | null>(8);
-  /** Render an arrow pointing at the trigger. Trigger-anchored root menus only — submenus and context menus never render one. */
+  /** Render an arrow pointing at the trigger. Trigger-anchored root menus only - submenus and context menus never render one. */
   public arrow = input(true, { transform: booleanAttribute });
   public arrowPadding = input<Padding | null>(14);
   // eslint-disable-next-line ethlete/no-native-html-input-name -- mirrors the native autofocus behaviour on open
@@ -66,7 +66,7 @@ export class MenuDirective {
   public hoverOpen = input(true, { transform: booleanAttribute });
   /**
    * Wrap around at the ends: `ArrowDown` on the last item goes to the first. Turn it off for a long
-   * menu, where wrapping reads as a jump to somewhere unrelated rather than as continuing — the
+   * menu, where wrapping reads as a jump to somewhere unrelated rather than as continuing - the
    * arrows then simply stop at the ends.
    *
    * Does not apply to a menu with a search field: there the ends hand focus back to the field, which
@@ -576,7 +576,7 @@ export class MenuDirective {
       return;
     }
 
-    // Past an end with `loop` off, there is nowhere to go — the active item stays where it is rather
+    // Past an end with `loop` off, there is nowhere to go - the active item stays where it is rather
     // than jumping to the other end of the menu.
     if (!this.loop() && (nextIndex < 0 || nextIndex >= items.length)) {
       return;

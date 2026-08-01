@@ -29,7 +29,7 @@ export type ResolveCollisionsOptions = {
 
 /**
  * Per-item lower bound (in rows) for the upward compaction pass. An item with a
- * floor is never pulled above it — used during live resize gestures to keep
+ * floor is never pulled above it - used during live resize gestures to keep
  * unrelated items from collapsing into freshly vacated space while the pointer
  * is still down. Items without an entry compact all the way up (floor 0).
  */
@@ -73,10 +73,10 @@ const clampToColumns = (position: GridItemPosition, columns: number): GridItemPo
  * Compacts the layout vertically (moves items up as far as possible without collision).
  *
  * Also acts as a self-healing normaliser: positions that overflow the grid horizontally
- * (e.g. stale data from a wider breakpoint clamped into a narrower one — a colSpan of 12
+ * (e.g. stale data from a wider breakpoint clamped into a narrower one - a colSpan of 12
  * or a col of 8 in a 6-column grid) are first clamped back into bounds, then any items
  * left overlapping are pushed down before the upward compaction runs. This guarantees the
- * returned layout is always in-bounds and overlap-free regardless of the input — clamping
+ * returned layout is always in-bounds and overlap-free regardless of the input - clamping
  * a column alone is not enough, because it can drop an item on top of an existing one.
  */
 export const compactLayout = (options: CompactLayoutOptions) => {
@@ -164,7 +164,7 @@ export const resolveCollisions = (options: ResolveCollisionsOptions) => {
   const colliding = result.filter((e) => e.id !== movedId && itemsCollide(movedEntry.position, e.position));
   const swapTarget = colliding.length === 1 ? colliding[0] : undefined;
 
-  // Same-position same-size swap — only when origin was immediately adjacent to the target.
+  // Same-position same-size swap - only when origin was immediately adjacent to the target.
   // Without the adjacency guard a far-away drag (e.g. 4 rows up) would teleport the collider
   // back to the drag origin instead of simply pushing it out of the way.
   if (
@@ -233,7 +233,7 @@ export const resolveCollisions = (options: ResolveCollisionsOptions) => {
   // item and the closing compaction pulled the moved item straight back into its vacated
   // origin, undoing the move until the drag had cleared the collider's full height. Instead,
   // each direct collider first tries to escape UPWARD into the topmost space that fits it
-  // (typically the vacated origin) — the swap the gesture implies. Whatever finds no room
+  // (typically the vacated origin) - the swap the gesture implies. Whatever finds no room
   // above the moved item falls through to the push-down cascade below.
   if (originPosition && movedEntry.position.row > originPosition.row) {
     for (const collider of colliding) {

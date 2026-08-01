@@ -36,7 +36,7 @@ export const Card: Story = {
       description: {
         story:
           'The card preset lives on `et-choice-field`, so the switch gets it from the same place the checkbox ' +
-          'does — the whole panel is the target and the selection shows on its border.',
+          'does - the whole panel is the target and the selection shows on its border.',
       },
     },
   },

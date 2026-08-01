@@ -26,7 +26,7 @@ const FAILURE_VISIBLE_MS = 4000;
 export type RichTextEditorImageToolConfig = {
   /**
    * Uploads one file and resolves to the URL to embed. Either a function returning a promise or
-   * observable, or a dropzone upload config (`createDropzoneUpload`) — the latter reuses the
+   * observable, or a dropzone upload config (`createDropzoneUpload`) - the latter reuses the
    * dropzone's per-file query machinery and reports upload progress on the placeholder.
    */
   upload: RichTextEditorImageUpload;
@@ -42,7 +42,7 @@ export type RichTextEditorImageToolConfig = {
 
   /**
    * Called when an image did not make it in: the wrong type, too large, or a failed upload. Wire it
-   * to whatever your app uses to tell the user — a notification, a form error, a log.
+   * to whatever your app uses to tell the user - a notification, a form error, a log.
    */
   onFailure?: (failure: RichTextEditorImageFailure) => void;
 };
@@ -69,7 +69,7 @@ const imageFilesOf = (data: DataTransfer | null | undefined, accept: string): Fi
  * consumer's handler, and embed it as `![alt](url)`. Add it to a component/route's providers and
  * include `'image'` in the editor's `tools`.
  *
- * The button inserts, and — with the caret on an image — opens the image popover instead, where the
+ * The button inserts, and - with the caret on an image - opens the image popover instead, where the
  * alt text is edited and the image can be removed; clicking an image opens the same popover. Both
  * paste and drop of image files run through the same upload, whether or not `'image'` is in the
  * visible toolbar. Everything here (and the image DOM ops and popover it pulls in) tree-shakes away
@@ -180,7 +180,7 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
 
     if (!placeholder) return;
 
-    // The placeholder itself serializes to nothing, but inserting it replaced the selection — commit
+    // The placeholder itself serializes to nothing, but inserting it replaced the selection - commit
     // that edit so the value stays in step with the DOM even if the upload never finishes.
     editor.syncFromDom({ boundary: true });
 
@@ -192,7 +192,7 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
       onSuccess: (url) => {
         const image = ops.replacePlaceholderWithImage({ dom, placeholder, image: { src: url, alt: '' } });
 
-        // Gone means the content was replaced while the upload ran (an undo, an external write) —
+        // Gone means the content was replaced while the upload ran (an undo, an external write) -
         // silently drop the result rather than putting an image back into a document that moved on.
         if (image) editor.syncFromDom({ boundary: true });
       },
@@ -238,7 +238,7 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
   };
 
   const handlePaste = (editor: RichTextEditorDirective, event: ClipboardEvent) => {
-    // A clipboard that also carries HTML is a *content* paste — text that happens to include images
+    // A clipboard that also carries HTML is a *content* paste - text that happens to include images
     // (Word, a web page) puts both on the clipboard, and uploading the file would drop the text. Only
     // a bare file payload (a screenshot, an image copied from the file manager) is an upload.
     if (event.clipboardData?.types.includes('text/html')) return false;
@@ -257,14 +257,14 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
 
     if (!files.length || editor.disabled() || editor.readonly() || editor.codeBlockActive()) return false;
 
-    // Drop lands where it was dropped, not where the caret was — the browser has already moved the
+    // Drop lands where it was dropped, not where the caret was - the browser has already moved the
     // caret there by the time this runs, so the placeholder goes in at the drop point.
     upload(editor, files);
 
     return true;
   };
 
-  /** A click on an image opens its popover — the discoverable way to reach the alt text. */
+  /** A click on an image opens its popover - the discoverable way to reach the alt text. */
   const handleClick = (editor: RichTextEditorDirective, event: MouseEvent) => {
     const target = event.target;
 

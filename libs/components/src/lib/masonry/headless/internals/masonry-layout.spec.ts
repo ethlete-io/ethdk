@@ -66,7 +66,7 @@ describe('packMasonryItems', () => {
 
   it('sends each item to the shortest column', () => {
     // Row one leaves the columns at 300 / 100 / 200, so the three short items that follow all pile into the
-    // middle one — which is exactly the balancing a row-major grid can't do.
+    // middle one - which is exactly the balancing a row-major grid can't do.
     expect(columns([300, 100, 200, 50, 50, 50], 3)).toEqual([0, 1, 2, 1, 1, 1]);
   });
 
@@ -147,7 +147,7 @@ describe('packMasonryItems', () => {
       gap: 0,
     });
 
-    // The pinned first item, then three placed greedily — the last one landing on the 40px column, which is
+    // The pinned first item, then three placed greedily - the last one landing on the 40px column, which is
     // the shortest by then.
     expect(placements.map((p) => p.column)).toEqual([0, 1, 2, 2]);
   });

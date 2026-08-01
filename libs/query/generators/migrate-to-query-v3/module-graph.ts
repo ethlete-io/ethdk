@@ -7,7 +7,7 @@ import { createSourceFile } from './shared.js';
  * actually declared in.
  *
  * The generator renames identifiers, and a rename that only matches on the *name* rewrites anything
- * that happens to share it — a data-source method called `getPerson`, a config property called
+ * that happens to share it - a data-source method called `getPerson`, a config property called
  * `postLogin`, an unrelated `getCampaigns` helper in a package that has no query client at all.
  * Knowing where a name comes from is what makes the difference between renaming a symbol and
  * renaming a string.
@@ -16,7 +16,7 @@ export type ModuleGraph = {
   /**
    * The file that declares `symbolName` when imported from `specifier` in `fromFile`, or `null`
    * when the specifier does not resolve inside the workspace (an npm package, a missing path
-   * alias). `null` means "cannot prove it is ours" — callers should leave such an import alone.
+   * alias). `null` means "cannot prove it is ours" - callers should leave such an import alone.
    */
   findDeclaringFile: (fromFile: string, specifier: string, symbolName: string) => string | null;
 };

@@ -4,7 +4,7 @@ import { RichTextEditorDomCore } from './rich-text-editor-dom-core';
 const NOT_FENCEABLE = /* @__PURE__ */ new Set(['TABLE', 'UL', 'OL', 'BLOCKQUOTE']);
 
 /**
- * Fenced code blocks — `<pre><code>` holding plain text, exactly what a ``` fence round-trips to.
+ * Fenced code blocks - `<pre><code>` holding plain text, exactly what a ``` fence round-trips to.
  * Everything inside is literal: no inline marks, no nested blocks, no autoformat and no token
  * triggers (the callers gate those on {@link RichTextMarkStates.codeBlock}), and Enter inserts a
  * real newline instead of splitting the block.
@@ -27,7 +27,7 @@ export const createRichTextEditorCodeBlock = (core: RichTextEditorDomCore) => {
     return first instanceof HTMLElement && first.tagName === 'CODE' ? first : pre;
   };
 
-  /** The code text on either side of the caret — which line it is on and whether that line is empty
+  /** The code text on either side of the caret - which line it is on and whether that line is empty
    *  both follow from these. */
   const textAround = (host: HTMLElement, range: Range) => {
     const start = doc.createRange();
@@ -41,14 +41,14 @@ export const createRichTextEditorCodeBlock = (core: RichTextEditorDomCore) => {
     return { before: start.toString(), after: end.toString() };
   };
 
-  /** Whether the caret sits at the very end of the code text — where a newline needs a second one
+  /** Whether the caret sits at the very end of the code text - where a newline needs a second one
    *  to render a line box the caret can occupy. */
   const atEnd = (host: HTMLElement, range: Range) => textAround(host, range).after.length === 0;
 
   /**
    * Whether the caret is on the block's last line. The trailing newline that gives an empty last
    * line its line box sits *after* the caret (see {@link codeBlockEnter}), so a lone `\n` still
-   * counts as being on the last line — otherwise the line the caret visibly occupies would never
+   * counts as being on the last line - otherwise the line the caret visibly occupies would never
    * be recognized as the last one.
    */
   const onLastLine = (host: HTMLElement, range: Range) => {
@@ -57,12 +57,12 @@ export const createRichTextEditorCodeBlock = (core: RichTextEditorDomCore) => {
     return after === '' || after === '\n';
   };
 
-  /** Whether the caret is on the block's first line — nothing but this line's own text before it. */
+  /** Whether the caret is on the block's first line - nothing but this line's own text before it. */
   const onFirstLine = (host: HTMLElement, range: Range) => !textAround(host, range).before.includes('\n');
 
   /**
    * Turns the selected blocks into one code block, or a code block back into paragraphs. Only the
-   * text survives the conversion in either direction — a fence has no inline markup.
+   * text survives the conversion in either direction - a fence has no inline markup.
    */
   const toggleCodeBlock = () => {
     const editable = getSelection();
@@ -118,7 +118,7 @@ export const createRichTextEditorCodeBlock = (core: RichTextEditorDomCore) => {
   };
 
   /** Enter inside a code block: a plain newline, never a new block. On the empty last line it
-   *  leaves the code block instead — the way out, like lists and quotes. Returns `true` when
+   *  leaves the code block instead - the way out, like lists and quotes. Returns `true` when
    *  handled. */
   const codeBlockEnter = () => {
     const editable = getSelection();
@@ -140,7 +140,7 @@ export const createRichTextEditorCodeBlock = (core: RichTextEditorDomCore) => {
       const kept = text.replace(/\n+$/, '');
 
       if (kept === '') {
-        // nothing was written — the code block becomes the paragraph
+        // nothing was written - the code block becomes the paragraph
         replaceWith(pre, [paragraph]);
       } else {
         host.textContent = kept;
@@ -155,7 +155,7 @@ export const createRichTextEditorCodeBlock = (core: RichTextEditorDomCore) => {
     range.deleteContents();
 
     // A newline at the very end renders no line box of its own, so add the one the caret lands on
-    // (between the two) — text nodes are left unmerged on purpose, so the caret survives.
+    // (between the two) - text nodes are left unmerged on purpose, so the caret survives.
     const newline = renderer.createText(atEnd(host, range) ? '\n\n' : '\n');
 
     range.insertNode(newline);
@@ -165,7 +165,7 @@ export const createRichTextEditorCodeBlock = (core: RichTextEditorDomCore) => {
   };
 
   /**
-   * ArrowDown on the last line of a code block that ends the content — or ArrowUp on the first line
+   * ArrowDown on the last line of a code block that ends the content - or ArrowUp on the first line
    * of one that starts it: there is no line that way to move to, so create the paragraph the caret is
    * reaching for. Nothing else can produce one at either edge, so a code block flush against the
    * start or end of the content would otherwise be a keyboard trap for anyone who doesn't know about
@@ -220,7 +220,7 @@ export const createRichTextEditorCodeBlock = (core: RichTextEditorDomCore) => {
   };
 
   /**
-   * Selecting everything inside a code block and deleting it leaves the `<pre>` behind — minus its
+   * Selecting everything inside a code block and deleting it leaves the `<pre>` behind - minus its
    * `<code>`, which the browser removes with the content. The caret would then keep typing literal
    * text inside a code block whose tools are all disabled, with no way out, so a `<pre>` that lost
    * its `<code>` becomes a paragraph again. The editor never builds a bare `<pre>` itself (the

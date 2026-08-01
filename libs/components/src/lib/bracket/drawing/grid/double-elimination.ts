@@ -42,7 +42,7 @@ export const createDoubleEliminationGrid = <TRoundData, TMatchData>(
   );
 
   // A complete winner bracket has (lowerRounds / 2) + 1 rounds. If fewer are present, the winner
-  // bracket starts later than round 1 — e.g. a small double elimination where lower-round 1 is
+  // bracket starts later than round 1 - e.g. a small double elimination where lower-round 1 is
   // seeded directly from a group phase and has no winner round feeding it. Pad the front of the
   // winner rounds with nulls so the column mapping keeps treating the winner bracket as complete:
   // the missing early rounds become empty slots above the lower rounds they never fed, and every

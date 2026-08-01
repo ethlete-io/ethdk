@@ -1,4 +1,4 @@
-# 05 — Form field: character counter (+ field busy state)
+# 05 - Form field: character counter (+ field busy state)
 
 ## Character counter
 
@@ -13,25 +13,25 @@ Design:
 - New `et-counter` support element in the form-field shell, sibling of
   `et-hint`/`et-form-error` in the support region. Layout: hint/error at
   inline-start, counter at inline-end (the common convention); both visible at
-  once — the counter does NOT participate in `SUPPORT_CONTENT_STATE`
+  once - the counter does NOT participate in `SUPPORT_CONTENT_STATE`
   swapping, it's persistent. Extend the support-region CSS accordingly
   (`@layer components`, tokens only).
 - Value source, in priority order:
   1. Explicit `[max]` input on `et-counter` (works for any control).
   2. Auto-derive from the bound field's schema `maxLength` validator if
-     signal-forms exposes it introspectably — investigate first; if not
+     signal-forms exposes it introspectably - investigate first; if not
      cleanly reachable, skip auto-derivation (don't hack into validator
      internals).
 
      **Investigated: cleanly reachable, and it's a first-class API.** Signal
-     forms _pushes_ the limit rather than exposing it for pulling — a control
+     forms _pushes_ the limit rather than exposing it for pulling - a control
      that declares a `maxLength` input gets the schema's `maxLength()` bound
      into it automatically by the `Field` directive (same mechanism as
      `required`/`disabled`/`errors`). Same for `pending`, which is exactly what
      the busy state below needed. Both are now declared on
      `TextFieldControlDirective` and re-exposed through each control component's
      `hostDirectives` inputs list. **Gotcha:** declaring the input on the
-     headless directive is not enough — the `Field` directive binds against the
+     headless directive is not enough - the `Field` directive binds against the
      _component_ the `[formField]` sits on, so the name must also be in that
      component's `hostDirectives` inputs array or the value never arrives.
      Deliberately not forwarded to the native `maxlength` attribute: truncating
@@ -54,7 +54,7 @@ Signal-forms async validators produce a pending state; the select has its own
 - Form-field reads the bound field's pending signal (verify the exact
   signal-forms API for async-validator pending) and exposes a `busy` state:
   a small spinner in the suffix slot area (does not displace an explicit
-  consumer suffix — renders after it), plus `aria-busy` on the field.
+  consumer suffix - renders after it), plus `aria-busy` on the field.
 - Manual override input for non-validator busy cases
   (`[busy]="true"`).
 - Keep it subtle: spinner only, no text, no blocking.

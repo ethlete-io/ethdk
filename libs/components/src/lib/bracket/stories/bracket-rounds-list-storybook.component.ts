@@ -22,7 +22,7 @@ import { demoMatchNormalizer } from './demo-match-normalizer';
 const DEMO_LAYOUTS = [singleEliminationBracketLayout(), doubleEliminationBracketLayout(), swissBracketLayout()];
 
 /**
- * The layout settings both representations run with, so the fit test predicts the bracket that renders —
+ * The layout settings both representations run with, so the fit test predicts the bracket that renders -
  * `layouts` included, since how wide a bracket draws is the layout's answer.
  */
 const DEMO_BRACKET_CONFIG: BracketConfig = { layouts: DEMO_LAYOUTS, columnWidth: 220, matchHeight: 75 };
@@ -95,7 +95,7 @@ export class StorybookBracketRoundsListComponent {
   selector: 'et-sb-bracket-adaptive',
   template: `
     <p class="mb-2 text-small">
-      {{ availableWidth() }}px available, bracket needs {{ naturalWidth() }}px —
+      {{ availableWidth() }}px available, bracket needs {{ naturalWidth() }}px -
       <strong>{{ fitsBracket() ? 'grid' : 'rounds list' }}</strong>
     </p>
 
@@ -119,7 +119,7 @@ export class StorybookBracketRoundsListComponent {
 export class StorybookBracketAdaptiveComponent {
   public source = input.required<BracketDataSource<unknown, unknown>>();
 
-  /** Stands in for the viewport — drag it down and the representation swaps. */
+  /** Stands in for the viewport - drag it down and the representation swaps. */
   public containerWidth = input(1200, { transform: numberAttribute });
   // The host is the measured container: it never grows past the width set on it, because the grid inside
   // it scrolls rather than pushing it wider. Measuring the scroll container itself would always fit.

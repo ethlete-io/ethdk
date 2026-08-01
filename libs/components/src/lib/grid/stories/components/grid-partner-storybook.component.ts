@@ -249,7 +249,7 @@ type LayoutRow = {
       @if (apiPayloadJson()) {
         <div class="mt-4">
           <div class="text-[11px] uppercase tracking-wide mb-1" style="color: rgb(var(--et-surface-color-muted))">
-            API payload — <code>adapter.toExternal(gridItems)</code>
+            API payload - <code>adapter.toExternal(gridItems)</code>
           </div>
           <pre
             class="p-3 rounded text-[11px] overflow-auto max-h-64"

@@ -8,7 +8,7 @@ import { MATCH_CARD_IMPORTS } from '../match.imports';
 import { NormalizedMatch, NormalizedMatchParticipant } from '../match.types';
 
 /**
- * The "today's matches" rail — the reason `et-match-list` was never built. `et-scrollable` already snaps,
+ * The "today's matches" rail - the reason `et-match-list` was never built. `et-scrollable` already snaps,
  * scrolls element by element, sizes children per breakpoint and scrolls the active one into view; a component
  * around it would be pass-through and nothing else.
  */
@@ -21,7 +21,7 @@ import { NormalizedMatch, NormalizedMatchParticipant } from '../match.types';
         <a class="text-small opacity-60" href="#">All matches</a>
       </div>
 
-      <!-- The gap lives on the scroll container, which is what scrollableClass targets — the scrollable reads
+      <!-- The gap lives on the scroll container, which is what scrollableClass targets - the scrollable reads
            its computed value to work out how wide a half/third-width child is. -->
       <et-scrollable
         [itemSize]="{ xs: 'full', md: 'half', lg: 'third' }"
@@ -123,7 +123,7 @@ export class SportRecipesMatchRailStorybookComponent {
 
         <p class="text-small m-0 opacity-60">
           A nation card is the same thing with a flag in the emblem slot; a squad list is a column of these. Nothing
-          here is a library component — that is the point.
+          here is a library component - that is the point.
         </p>
       </section>
     </div>

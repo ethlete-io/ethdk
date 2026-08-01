@@ -140,7 +140,7 @@ describe('createQueryKeyLockManager', () => {
 
     expect(hiddenHold.isHolder()).toBe(true);
 
-    // What `withPolling` does when its tab becomes hidden: release, then immediately ask again — FIFO
+    // What `withPolling` does when its tab becomes hidden: release, then immediately ask again - FIFO
     // puts it behind the tab that was already waiting.
     hiddenHold.release();
     hiddenHold = hidden.hold('key');

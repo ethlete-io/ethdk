@@ -106,7 +106,7 @@ const NAVIGATION_KEYS = /* @__PURE__ */ new Set([
   host: {
     class: 'et-rich-text-editor',
     // on touch the toolbar is hidden until the editor is active, then docks above the keyboard (the
-    // OS selection menu owns the top, so a top toolbar there is unreachable) — it never sits at the
+    // OS selection menu owns the top, so a top toolbar there is unreachable) - it never sits at the
     // top or shuffles around
     '[class.et-rich-text-editor--touch]': 'hasTouchInput()',
     '[class.et-rich-text-editor--docked-toolbar]': 'dockedToolbar()',
@@ -208,7 +208,7 @@ export class RichTextEditorComponent {
   /**
    * The toolbar is a single tab stop (ARIA toolbar pattern): Tab enters on one button, the arrow
    * keys move focus between the buttons, and the next Tab leaves the toolbar. Menu surfaces render
-   * into an overlay, so every `button` inside the toolbar element is a toolbar control — including
+   * into an overlay, so every `button` inside the toolbar element is a toolbar control - including
    * the custom tool controls (`ngComponentOutlet`), which template bindings couldn't reach.
    */
   protected handleToolbarKeydown(event: KeyboardEvent) {
@@ -292,7 +292,7 @@ export class RichTextEditorComponent {
       }
     }
 
-    // Escape inside a code block moves the caret to a paragraph after it — everything typed in
+    // Escape inside a code block moves the caret to a paragraph after it - everything typed in
     // there is literal, so there is no other way out with the keyboard alone.
     if (event.key === 'Escape' && this.dir.codeBlockActive() && this.dir.editorDom.exitCodeBlock()) {
       event.preventDefault();
@@ -301,8 +301,8 @@ export class RichTextEditorComponent {
       return;
     }
 
-    // ArrowDown off the last line of a code block that ends the content — or ArrowUp off the first
-    // line of one that starts it — creates the line it would move to: the exit people reach for
+    // ArrowDown off the last line of a code block that ends the content - or ArrowUp off the first
+    // line of one that starts it - creates the line it would move to: the exit people reach for
     // before they think of Escape, and at the top edge the only one there is.
     if (
       (event.key === 'ArrowDown' || event.key === 'ArrowUp') &&
@@ -360,7 +360,7 @@ export class RichTextEditorComponent {
     }
 
     // Files nobody claimed: the browser would insert them itself, and for an image that means a
-    // `blob:` URL in the value — one that dies with the tab. Provide the image tool to keep them.
+    // `blob:` URL in the value - one that dies with the tab. Provide the image tool to keep them.
     if (event.clipboardData?.files.length && !event.clipboardData.getData('text/html')) {
       event.preventDefault();
 
@@ -376,7 +376,7 @@ export class RichTextEditorComponent {
       return;
     }
 
-    // A plain-text paste is already schema-safe — the browser inserts it as text. The exception is
+    // A plain-text paste is already schema-safe - the browser inserts it as text. The exception is
     // text spelling out a token (`#User Name`), which only the editor can turn back into a chip.
     const text = event.clipboardData?.getData('text/plain');
 
@@ -385,7 +385,7 @@ export class RichTextEditorComponent {
 
   /**
    * Dropped content, in the same order as a paste: a tool that owns the payload takes it (the image
-   * tool uploads image files), and anything left that carries files is refused — dropping a file on a
+   * tool uploads image files), and anything left that carries files is refused - dropping a file on a
    * `contenteditable` otherwise has the browser embed it as a `blob:` URL, which outlives nothing.
    */
   protected interceptDrop(event: DragEvent) {
@@ -400,7 +400,7 @@ export class RichTextEditorComponent {
     if (event.dataTransfer?.files.length) event.preventDefault();
   }
 
-  /** Lets a tool act on the content it owns — clicking an image opens the image tool's popover. */
+  /** Lets a tool act on the content it owns - clicking an image opens the image tool's popover. */
   protected interceptClick(event: MouseEvent) {
     for (const tool of this.registeredTools) {
       if (tool.click?.(this.dir, event)) return;
@@ -427,8 +427,8 @@ export class RichTextEditorComponent {
         event.preventDefault();
         this.dir.toggleUnderline();
         break;
-      // The platform's own undo affordances — the macOS Edit menu, iOS shake-to-undo, the Android
-      // keyboard's undo key — never produce a keydown, but do arrive here.
+      // The platform's own undo affordances - the macOS Edit menu, iOS shake-to-undo, the Android
+      // keyboard's undo key - never produce a keydown, but do arrive here.
       case 'historyUndo':
         event.preventDefault();
         this.dir.undo();
@@ -477,11 +477,11 @@ export class RichTextEditorComponent {
 
   /** Track the visual viewport so the docked (fixed) toolbar sits right above the on-screen
    *  keyboard: the inset is the gap from where `position: fixed; bottom: 0` actually renders (a
-   *  measured probe — see below) down past the keyboard's top edge
+   *  measured probe - see below) down past the keyboard's top edge
    *  (`visualViewport.offsetTop + height`). Reacting to BOTH `resize` and `scroll` keeps it glued
    *  while the page scrolls (the visual viewport pans, the URL bar shows/hides).
    *
-   *  Performance: the CSS var is written straight to the host element, outside Angular — no signal,
+   *  Performance: the CSS var is written straight to the host element, outside Angular - no signal,
    *  so no change detection fires per scroll frame (that was what made scrolling feel sluggish). The
    *  position has no CSS transition, so it tracks the viewport instantly instead of lagging behind. */
   private trackKeyboardInset() {
@@ -493,15 +493,15 @@ export class RichTextEditorComponent {
     const host = this.host.nativeElement;
 
     // In a same-origin iframe (Storybook, docs story embeds) the frame's own visualViewport never
-    // reflects the soft keyboard — only the top window's does. Track the top viewport plus the
+    // reflects the soft keyboard - only the top window's does. Track the top viewport plus the
     // frame's position to compute how much of THIS frame the keyboard covers. A cross-origin
     // parent exposes neither (`frameElement` is null / viewport access throws), so those frames
-    // keep the local metrics — the status quo of not seeing the keyboard at all.
+    // keep the local metrics - the status quo of not seeing the keyboard at all.
     let frameElement: Element | null = null;
     let topViewport: VisualViewport | null = null;
 
     try {
-      // no instanceof here — frameElement belongs to the PARENT document's realm, so it is never
+      // no instanceof here - frameElement belongs to the PARENT document's realm, so it is never
       // an instance of this window's HTMLElement constructor
       frameElement = view.frameElement;
       topViewport = frameElement ? (view.top?.visualViewport ?? null) : null;
@@ -512,7 +512,7 @@ export class RichTextEditorComponent {
 
     // Where "position: fixed; bottom: 0" actually lands is NOT derivable from window/visualViewport
     // on iOS: with the soft keyboard open (and focus zoom active), WebKit positions fixed elements
-    // against an internal rect that tracks the visual viewport and is clamped to the document — its
+    // against an internal rect that tracks the visual viewport and is clamped to the document - its
     // bottom sits well below where `innerHeight` says. Measure it with a zero-size fixed probe
     // instead of assuming layout-viewport math; on engines without the quirk the probe bottom IS
     // `innerHeight`, so this degenerates to the plain `innerHeight - height - offsetTop`.
@@ -547,7 +547,7 @@ export class RichTextEditorComponent {
 
       lastApplied = inset;
       // set the CSS var directly via the renderer (not a signal) so scroll/resize don't schedule
-      // change detection each frame — that per-frame CD was what made scrolling feel sluggish
+      // change detection each frame - that per-frame CD was what made scrolling feel sluggish
       this.renderer.setCssProperty(host, '--_et-rte-keyboard-inset', `${inset}px`);
 
       return true;
@@ -555,16 +555,16 @@ export class RichTextEditorComponent {
 
     // iOS moves its fixed-position rect ASYNCHRONOUSLY while scrolling with the keyboard open (and
     // fires few or no visualViewport events mid-scroll, including when the scroll itself dismisses
-    // the keyboard) — a single synchronous re-measure per event reads a stale probe rect and the
+    // the keyboard) - a single synchronous re-measure per event reads a stale probe rect and the
     // toolbar drifts under the keyboard. So each event kicks a rAF loop that keeps re-measuring
-    // until the inset has been stable for a few frames, then stops — continuous tracking while
+    // until the inset has been stable for a few frames, then stops - continuous tracking while
     // anything moves, zero per-frame work at rest.
     let rafId: number | null = null;
     let quietFrames = 0;
 
     const settle = () => {
       quietFrames = apply() ? 0 : quietFrames + 1;
-      // ~30 quiet frames (≈500ms) so the loop outlasts the keyboard show/hide animation — iOS can
+      // ~30 quiet frames (≈500ms) so the loop outlasts the keyboard show/hide animation - iOS can
       // fire its last viewport event right at the animation's start while the fixed-position rect
       // keeps moving until the end
       rafId = quietFrames < 30 ? view.requestAnimationFrame(settle) : null;
@@ -584,7 +584,7 @@ export class RichTextEditorComponent {
     // The event stream is not guaranteed to be complete: a soft keyboard can change height without a
     // viewport event (Gboard switching layout, a suggestion row appearing), and inside an embedded
     // frame the event may land while the ancestor layout is still moving. Either leaves the bar parked
-    // for a keyboard that is no longer there — floating over the content instead of sitting on it. So
+    // for a keyboard that is no longer there - floating over the content instead of sitting on it. So
     // re-measure on a slow timer for as long as the bar is actually docked: one rect read every
     // POLL_MS, no rAF loop and no change detection, and a stale position heals within half a second.
     toObservable(this.dockedToolbar)
@@ -603,13 +603,13 @@ export class RichTextEditorComponent {
     try {
       if (frameElement && view.top) scrollTargets.push(view.top);
     } catch {
-      // cross-origin top — its scrolls are invisible to us; the frame keeps local tracking
+      // cross-origin top - its scrolls are invisible to us; the frame keeps local tracking
     }
 
     merge(
       ...viewports.map((v) => fromEvent(v, 'resize')),
       // These are ancestor viewports/windows (visualViewport, iframe top), not a component-owned
-      // scroll container — signalElementScrollState targets a known elementRef and doesn't apply.
+      // scroll container - signalElementScrollState targets a known elementRef and doesn't apply.
       // eslint-disable-next-line ethlete/prefer-scroll-state
       ...scrollTargets.map((t) => fromEvent(t, 'scroll', { passive: true })),
     )
@@ -625,7 +625,7 @@ export class RichTextEditorComponent {
   private trackEditingActive() {
     effect(() => {
       // stay "active" while the editor is focused OR the link editor popover (part of the same
-      // editing flow) is open — the popover borrows focus, but the toolbar should hold its place
+      // editing flow) is open - the popover borrows focus, but the toolbar should hold its place
       const active = this.dir.focused() || this.dir.linkEditorOpen();
 
       if (active) {

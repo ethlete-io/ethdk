@@ -13,15 +13,15 @@ import { CascaderDataSource, CascaderNode } from './headless';
 
 // Note: `@ethlete/components` intentionally depends on `@ethlete/query` (the legacy `cdk` does too),
 // so this query-aware convenience factory can live here. It is a standalone function in its own
-// module — cascaders that don't use it (and apps not using `@ethlete/query`) tree-shake it away.
+// module - cascaders that don't use it (and apps not using `@ethlete/query`) tree-shake it away.
 
-/** The optional flat-search half of {@link cascaderFromQuery} — providing it enables the panel's search input. */
+/** The optional flat-search half of {@link cascaderFromQuery} - providing it enables the panel's search input. */
 export type CascaderFromQuerySearchConfig<TSearchCreator extends AnyQueryCreator, TValue> = {
   /** The query creator behind the flat search (e.g. a backend search endpoint). */
   queryCreator: TSearchCreator;
   /** Builds the request args from the (trimmed) search query. Return `null` to skip the request. */
   args: (query: string) => RequestArgs<QueryArgsOf<TSearchCreator>> | null;
-  /** Maps a successful response to the matching paths — root → matching node chains. */
+  /** Maps a successful response to the matching paths - root → matching node chains. */
   toResults: (response: ResponseType<QueryArgsOf<TSearchCreator>>) => CascaderNode<TValue>[][];
   /** Minimum query length before requests run. @default 1 */
   minQueryLength?: number;
@@ -39,7 +39,7 @@ export type CascaderFromQueryConfig<
   queryCreator: TCreator;
   /**
    * Builds the request args for loading `parent`'s children (the root level when `parent` is
-   * `null`). Return `null` to skip the request — the level shows as empty.
+   * `null`). Return `null` to skip the request - the level shows as empty.
    */
   args: (parent: CascaderNode<TValue> | null) => RequestArgs<QueryArgsOf<TCreator>> | null;
   /** Maps a successful response to the level's nodes. */
@@ -52,9 +52,9 @@ export type CascaderFromQueryConfig<
    * Defaults to the first error message of the response.
    */
   toErrorMessage?: (error: QueryErrorResponse) => string;
-  /** Optional flat-search wiring — its presence enables the panel's search input. */
+  /** Optional flat-search wiring - its presence enables the panel's search input. */
   search?: CascaderFromQuerySearchConfig<TSearchCreator, TValue>;
-  /** Passed through to the data source — see `CascaderDataSource.resolvePath`. */
+  /** Passed through to the data source - see `CascaderDataSource.resolvePath`. */
   resolvePath?: CascaderDataSource<TValue>['resolvePath'];
 };
 
@@ -66,7 +66,7 @@ const firstErrorMessage = (error: QueryErrorResponse) => {
 
 /**
  * Builds a `CascaderDataSource` whose levels (and, optionally, flat search) are fed by
- * `@ethlete/query` queries. Mirroring `createQueryStack`, each level load creates its own query —
+ * `@ethlete/query` queries. Mirroring `createQueryStack`, each level load creates its own query -
  * the cascader loads several levels concurrently (e.g. re-opening onto a committed branch), so one
  * reactive query can't serve them; the client's dedup and caching still coalesce repeated loads.
  * A failed load surfaces as the column's error row (with Retry); the error text comes from

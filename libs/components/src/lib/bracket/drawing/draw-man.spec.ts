@@ -75,7 +75,7 @@ const SOURCES = {
 } satisfies Record<string, BracketDataSource<null, null>>;
 
 describe('drawMan', () => {
-  // The fold changes where matches sit, never which of them are linked — so a missing connector on one
+  // The fold changes where matches sit, never which of them are linked - so a missing connector on one
   // side of a mirrored bracket shows up here as a count that no longer matches. Every other assertion
   // about the fold is about position; this is the one about completeness.
   for (const [name, source] of Object.entries(SOURCES)) {

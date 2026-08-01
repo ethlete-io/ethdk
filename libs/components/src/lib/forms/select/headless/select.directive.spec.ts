@@ -276,7 +276,7 @@ describe('SelectDirective', () => {
     tick();
   };
 
-  // overlays render into the document — scope queries to the newest pane so a pane
+  // overlays render into the document - scope queries to the newest pane so a pane
   // stuck in its leave transition (jsdom fires no transition events) can't pollute them
   const pane = () => Array.from(document.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane')).at(-1) ?? null;
   const listbox = () => pane()?.querySelector<HTMLElement>('[role="listbox"]') ?? null;
@@ -813,7 +813,7 @@ describe('SelectDirective (search)', () => {
     expect(mixedLabelId).not.toBe('');
     expect(searchInput()!.getAttribute('aria-describedby')?.split(' ')).toEqual(['search-hint', mixedLabelId]);
 
-    // no visible chip to delete — Backspace must not silently clear the hidden raw selection
+    // no visible chip to delete - Backspace must not silently clear the hidden raw selection
     searchInput()!.value = '';
     keydownOnSearch('Backspace');
 
@@ -902,7 +902,7 @@ describe('SelectDirective (search)', () => {
     await openSelect();
 
     typeQuery('kiwi');
-    // no regular option matches — only the "Create …" row remains, holding virtual focus
+    // no regular option matches - only the "Create …" row remains, holding virtual focus
     expect(visibleOptions().length).toBe(1);
     expect(visibleOptions()[0]!.classList.contains('et-select-create-option')).toBe(true);
     expect(activeOption()).toBe(visibleOptions()[0]);
@@ -955,7 +955,7 @@ describe('SelectDirective (search)', () => {
 
     await openSelect();
 
-    // "app" matches Apple — previously Enter could only ever commit the option
+    // "app" matches Apple - previously Enter could only ever commit the option
     typeQuery('app');
 
     const visible = visibleOptions();
@@ -965,7 +965,7 @@ describe('SelectDirective (search)', () => {
     expect(visible[1]!.classList.contains('et-select-create-option')).toBe(true);
     expect(visible[1]!.textContent).toContain('app');
 
-    // default virtual focus stays on the real option — Enter would pick Apple
+    // default virtual focus stays on the real option - Enter would pick Apple
     expect(activeOption()).toBe(visible[0]);
 
     keydownOnSearch('ArrowDown');
@@ -986,7 +986,7 @@ describe('SelectDirective (search)', () => {
 
     await openSelect();
 
-    // exact label match (case-insensitive) — creating "apple" beside Apple is a duplicate
+    // exact label match (case-insensitive) - creating "apple" beside Apple is a duplicate
     typeQuery('apple');
     expect(visibleOptions().length).toBe(1);
     expect(visibleOptions()[0]!.classList.contains('et-select-create-option')).toBe(false);
@@ -1027,7 +1027,7 @@ describe('SelectDirective (search)', () => {
 
     await openSelect();
 
-    // jsdom has no DataTransfer — fake the clipboardData surface
+    // jsdom has no DataTransfer - fake the clipboardData surface
     const event = new Event('paste', { bubbles: true, cancelable: true });
 
     Object.defineProperty(event, 'clipboardData', { value: { getData: () => 'kiwi, mango\nkiwi' } });
@@ -1053,7 +1053,7 @@ describe('SelectDirective (search)', () => {
 
     expect(fixture.componentInstance.value()).toEqual(['kiwi']);
 
-    // Escape clears the query before the close — it must never commit
+    // Escape clears the query before the close - it must never commit
     await openSelect();
     typeQuery('mango');
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -1072,7 +1072,7 @@ describe('SelectDirective (search)', () => {
 
     await openSelect();
 
-    // "ban" filters to Banana; Enter picks the option — the close must not turn the
+    // "ban" filters to Banana; Enter picks the option - the close must not turn the
     // leftover "ban" query into a custom value overwriting it
     typeQuery('ban');
     keydownOnSearch('Enter');
@@ -1166,7 +1166,7 @@ describe('SelectDirective (search)', () => {
 
     expect(fixture.componentInstance.value()).toEqual(['kiwi']);
 
-    // rejected by the hook — no create row, Enter commits nothing
+    // rejected by the hook - no create row, Enter commits nothing
     typeQuery('xyz');
     expect(visibleOptions().length).toBe(0);
     keydownOnSearch('Enter');
@@ -1188,7 +1188,7 @@ describe('SelectDirective (search)', () => {
 
     expect(fixture.componentInstance.value()).toEqual(['kiwi']);
 
-    // pick a regular option from the panel — the custom value must survive
+    // pick a regular option from the panel - the custom value must survive
     pane()!.querySelectorAll<HTMLElement>('[role="option"]')[0]!.click();
     tick();
 
@@ -1211,7 +1211,7 @@ describe('SelectDirective (search)', () => {
     backspace();
     expect(fixture.componentInstance.value()).toEqual([]);
 
-    // nothing selected — backspace is a no-op
+    // nothing selected - backspace is a no-op
     backspace();
     expect(fixture.componentInstance.value()).toEqual([]);
   });
@@ -1342,7 +1342,7 @@ describe('SelectDirective (search)', () => {
   it('marks pointer-set virtual focus as such (the highlight only paints while hovered)', async () => {
     await openSelect();
 
-    // initial virtual focus comes from the open logic — keyboard-grade, always highlighted
+    // initial virtual focus comes from the open logic - keyboard-grade, always highlighted
     expect(activeOption()?.getAttribute('data-active-source')).toBe('keyboard');
 
     const banana = visibleOptions()[1]!;
@@ -1386,7 +1386,7 @@ describe('SelectDirective (panel-hosted search)', () => {
     await flushFrames();
   });
 
-  it('is a pure query box — never displays the selected value, erasing does not deselect', async () => {
+  it('is a pure query box - never displays the selected value, erasing does not deselect', async () => {
     fixture.nativeElement.querySelector('button').click();
     tick();
     await flushFrames();
@@ -1482,7 +1482,7 @@ describe('SelectDirective (searchable custom value)', () => {
 
   it('renders the rich value template beside the input instead of the label inside it', () => {
     expect(customValue()?.textContent?.trim()).toBe('🇩🇪 Germany');
-    // the input is a pure query box — the label never gets written into it
+    // the input is a pure query box - the label never gets written into it
     expect(searchInput().value).toBe('');
   });
 
@@ -1502,7 +1502,7 @@ describe('SelectDirective (searchable custom value)', () => {
     await flushFrames();
     tick();
 
-    // the combobox keeps focus after the close — still edit mode, so the editable label
+    // the combobox keeps focus after the close - still edit mode, so the editable label
     // (not the query) shows and the rich display stays hidden
     expect(customValue()).toBeNull();
     expect(searchInput().value).toBe('Germany');
@@ -1523,7 +1523,7 @@ describe('SelectDirective (searchable custom value)', () => {
     expect(searchInput().value).toBe('Germany');
     expect(customValue()).toBeNull();
 
-    // Backspace now has text to delete — it removes a character (native), it does not wipe the
+    // Backspace now has text to delete - it removes a character (native), it does not wipe the
     // whole option the way a lone Backspace on an empty box would
     searchInput().dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
     tick();
@@ -1532,7 +1532,7 @@ describe('SelectDirective (searchable custom value)', () => {
   });
 
   it('renders a clear control while focused that clears the selection', () => {
-    // no focus yet — the control stays hidden despite the value
+    // no focus yet - the control stays hidden despite the value
     expect(fixture.nativeElement.querySelector('.et-select-clear')).toBeNull();
 
     searchInput().dispatchEvent(new FocusEvent('focus'));
@@ -1598,7 +1598,7 @@ describe('SelectDirective (single)', () => {
         fixture.detectChanges();
       },
       externallyWrittenValue: () => 'cherry',
-      // closed typeahead — a real keyboard commit that needs no open panel
+      // closed typeahead - a real keyboard commit that needs no open panel
       commit: () => {
         trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
         tick();

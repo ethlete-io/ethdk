@@ -13,21 +13,21 @@ export class ColorInputDirective extends TextFieldControlDirective implements Fo
 
   /**
    * `<input type="color">` ignores the native `readonly` attribute (spec), so the surface gates
-   * interaction on this instead — the component blocks the picker-opening events while it's false,
+   * interaction on this instead - the component blocks the picker-opening events while it's false,
    * and the value sync no-ops as a backstop.
    */
   public interactive = computed(() => !this.disabled() && !this.readonly());
 
   /**
-   * The color the native input currently paints — `#000000` until a value is picked, and
+   * The color the native input currently paints - `#000000` until a value is picked, and
    * while mixed (the picker must not preselect and thereby reveal the hidden raw color).
    */
   public resolvedColor = computed(() => (this.mixed() ? '#000000' : (this.value() ?? '#000000')));
 
-  /** The color the swatch paints — `null` while mixed so the CSS neutral treatment takes over. */
+  /** The color the swatch paints - `null` while mixed so the CSS neutral treatment takes over. */
   public swatchColor = computed(() => (this.mixed() ? null : this.resolvedColor()));
 
-  /** The text the value slot renders — `mixedLabel` while mixed, never the hidden raw color. */
+  /** The text the value slot renders - `mixedLabel` while mixed, never the hidden raw color. */
   public displayValue = computed(() => (this.mixed() ? this.resolvedMixedLabel() : (this.value() ?? '')));
 
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.COLOR_INPUT);

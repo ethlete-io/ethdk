@@ -7,8 +7,8 @@ import { SelectOptionsFromQuery } from '../select-options-from-query';
 import { SelectDirective } from './select.directive';
 
 /**
- * Wires an async options bundle — the return value of `selectOptionsFromQuery` or
- * `selectOptionsFromV2Query` — into a select with a single binding, replacing the manual
+ * Wires an async options bundle - the return value of `selectOptionsFromQuery` or
+ * `selectOptionsFromV2Query` - into a select with a single binding, replacing the manual
  * per-input wiring. Push the bundle in and it forwards `loading`, `error` and `hasMoreItems`,
  * forces `filterMode` to `external`, and drives the bundle's `setQuery`/`loadMore` from the
  * select's `(queryChange)`/`(loadMore)` outputs. Render `options` yourself as before:
@@ -70,7 +70,7 @@ export class SelectOptionsDirective implements OnInit {
   }
 
   public ngOnInit() {
-    // The factory bundle is created once (a field initializer), so a one-time push is enough —
+    // The factory bundle is created once (a field initializer), so a one-time push is enough -
     // it overrides loading/error/hasMoreItems and forces filterMode to external while set.
     this.select?.asyncOptions.set(this.bundle());
   }

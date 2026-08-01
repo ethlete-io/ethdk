@@ -23,14 +23,14 @@ export type QueryInvalidationOptions = {
    * client's `baseUrl`, exactly like a query route; an absolute URL is taken as it is.
    *
    * Matching is boundary aware rather than a plain prefix test, so `/players` covers `/players`,
-   * `/players/1` and `/players?page=2` — but not `/players-archive`.
+   * `/players/1` and `/players?page=2` - but not `/players-archive`.
    */
   url?: string;
   /**
    * Narrows the invalidation further, on the built `{ method, url }` of each candidate. Runs after
    * `url` when both are given.
    *
-   * **Not broadcast** — a function cannot cross a `BroadcastChannel`, so the other tabs narrow by
+   * **Not broadcast** - a function cannot cross a `BroadcastChannel`, so the other tabs narrow by
    * `url` alone and invalidate a superset. Pair it with `otherTabs: false` when the two must agree.
    *
    * @example
@@ -50,7 +50,7 @@ export type QueryInvalidationOptions = {
 
 /**
  * Resolves an {@link QueryInvalidationOptions.url} to the absolute form request URLs are built in, so
- * the comparison — and the message the other tabs receive — never depends on who resolves it.
+ * the comparison - and the message the other tabs receive - never depends on who resolves it.
  */
 export const resolveInvalidationUrl = (baseUrl: string, url: string): string => {
   const absolute = url.startsWith('/') ? `${baseUrl}${url}` : url;
@@ -74,7 +74,7 @@ export const isUnderInvalidatedUrl = (queryUrl: string, invalidatedUrl: string):
 
 /**
  * Turns an invalidation into the filter the repository refreshes by, or `undefined` when nothing
- * narrows it — "everything in use" is the repository's own cheapest path.
+ * narrows it - "everything in use" is the repository's own cheapest path.
  */
 export const createQueryInvalidationFilter = (options: {
   url: string | null;

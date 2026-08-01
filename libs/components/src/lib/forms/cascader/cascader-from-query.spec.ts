@@ -116,7 +116,7 @@ describe('cascaderFromQuery', () => {
 
     const subscription = (source.loadChildren(null) as Observable<CascaderNode<string>[]>).subscribe({
       error: () => {
-        // the destroyed query surfaces a cancellation — irrelevant here
+        // the destroyed query surfaces a cancellation - irrelevant here
       },
     });
 

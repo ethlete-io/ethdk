@@ -23,7 +23,7 @@ const doubleEliminationListSection = <TRoundData, TMatchData>(
     case DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET:
       return { id: 'lower', name: labels.lowerBracketSection };
 
-    // The grand final, the bracket reset and the third-place playoff — everything a double elimination
+    // The grand final, the bracket reset and the third-place playoff - everything a double elimination
     // source has left once the two brackets are accounted for.
     case COMMON_BRACKET_ROUND_TYPE.FINAL:
     case DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL:
@@ -34,7 +34,7 @@ const doubleEliminationListSection = <TRoundData, TMatchData>(
 };
 
 /**
- * Draws a double elimination source left to right — upper bracket over lower bracket, converging on the
+ * Draws a double elimination source left to right - upper bracket over lower bracket, converging on the
  * grand final (and the bracket reset, when the source has one). What a `mode` of `'double-elimination'`
  * renders once this is registered.
  *
@@ -57,8 +57,8 @@ export const doubleEliminationBracketLayout = <TRoundData = any, TMatchData = an
 
 /**
  * The mirrored variant of {@link doubleEliminationBracketLayout}: two stacked blocks, the winners
- * bracket above the losers bracket, each folded around its own centre. A block's deciding rounds — the
- * grand final and the bracket reset above, the third-place playoff below — hang vertically under the
+ * bracket above the losers bracket, each folded around its own centre. A block's deciding rounds - the
+ * grand final and the bracket reset above, the third-place playoff below - hang vertically under the
  * round its two halves converge on.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

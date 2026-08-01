@@ -30,7 +30,7 @@ export const escapeHtmlText = (value: string) =>
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/** The Markdown/text form of a token — inert to `markdownToHtml`/`htmlToMarkdown`. */
+/** The Markdown/text form of a token - inert to `markdownToHtml`/`htmlToMarkdown`. */
 export const tokenMarkdown = (type: string, id: string) => `{{${type}:${id}}}`;
 
 /** Builds the chip HTML string used when rendering a stored value into the editor. */
@@ -43,7 +43,7 @@ export const buildChipHtml = ({ type, id, label, prefix }: RichTextEditorTokenCh
 /**
  * Builds a live chip element (the DOM counterpart of {@link buildChipHtml}) for insertion into the
  * contenteditable. Kept as one shared builder so the trigger popup and the public insert API produce
- * byte-identical chips — the class/attr contract, prefix span and label span must match what
+ * byte-identical chips - the class/attr contract, prefix span and label span must match what
  * {@link buildChipHtml} serializes, or `serialize`/`render` would round-trip inconsistently.
  */
 export const buildChipElement = (
@@ -104,7 +104,7 @@ const isPromiseLike = <T>(value: unknown): value is Promise<T> =>
  * Bridges token chips and their serialized `{{type:id}}` Markdown form. The
  * {@link RichTextEditorTokenCodec.serialize} direction reconstructs the token purely from the
  * chip's `type`/`id` data attributes (never the visible label), so `serialize(render(md))`
- * is byte-stable regardless of the resolved label — the base editor relies on this to avoid
+ * is byte-stable regardless of the resolved label - the base editor relies on this to avoid
  * re-rendering (and resetting the caret) on every keystroke.
  */
 export type RichTextEditorTokenCodec = {
@@ -122,8 +122,8 @@ export type RichTextEditorTokenCodec = {
    */
   resolveChip: (type: string, id: string) => RichTextEditorTokenChip;
   /**
-   * Recognizes tokens written the way they read — `#User Name`: a trigger char followed by an
-   * item's label (or its id) — and returns the text with those runs replaced by `{{type:id}}`, so
+   * Recognizes tokens written the way they read - `#User Name`: a trigger char followed by an
+   * item's label (or its id) - and returns the text with those runs replaced by `{{type:id}}`, so
    * pasted text becomes chips again. Only triggers with a static `items` list can be matched: a
    * function source (search-as-you-type) has nothing to look through synchronously. Returns the
    * input unchanged when nothing matched.
@@ -162,7 +162,7 @@ export const createRichTextEditorTokenCodec = (
 
       if (!type || !id) return;
 
-      // `replaceWith(string)` inserts a plain text node — no manual DOM node creation needed.
+      // `replaceWith(string)` inserts a plain text node - no manual DOM node creation needed.
       chip.replaceWith(tokenMarkdown(type, id));
     });
   };

@@ -65,7 +65,7 @@ describe('TimeInputDirective', () => {
 
   const tick = () => TestBed.inject(ApplicationRef).tick();
 
-  // overlays render into the document — scope queries to the newest pane so a pane
+  // overlays render into the document - scope queries to the newest pane so a pane
   // stuck in its leave transition (jsdom fires no transition events) can't pollute them
   const pane = () => Array.from(document.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane')).at(-1) ?? null;
   const pickerOption = (unit: string, value: number) =>

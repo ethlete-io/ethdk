@@ -21,13 +21,13 @@ export type NotificationPromiseContent<TValue, TError> = {
 };
 
 /**
- * Work a notification can follow. An observable settles on completion, carrying its last value —
+ * Work a notification can follow. An observable settles on completion, carrying its last value -
  * completing without ever emitting counts as a failure, the way `lastValueFrom` treats it.
  */
 export type NotificationPromiseWork<TValue> = PromiseLike<TValue> | Observable<TValue>;
 
 /**
- * Opens a `loading` notification and turns it into the success or error one when the work settles —
+ * Opens a `loading` notification and turns it into the success or error one when the work settles -
  * the same notification, updated in place, not a second toast.
  *
  * Takes a promise, an observable, or an `@ethlete/query` query. A query is *followed*, never
@@ -35,7 +35,7 @@ export type NotificationPromiseWork<TValue> = PromiseLike<TValue> | Observable<T
  * execution state, settling on the first success or failure it sees. If the query already carries a
  * response by then, the notification skips straight to success.
  *
- * Dismissing the notification detaches it — the work keeps running (dismissing a toast must not
+ * Dismissing the notification detaches it - the work keeps running (dismissing a toast must not
  * cancel a request), it just no longer has anything to say.
  *
  * @example
@@ -72,7 +72,7 @@ type RunNotificationPromiseOptions = {
   content: NotificationPromiseContent<never, never>;
   open: (config: NotificationConfig) => NotificationRef;
 
-  /** Injector the query-following effect runs in — `promise()` is called from event handlers, not DI. */
+  /** Injector the query-following effect runs in - `promise()` is called from event handlers, not DI. */
   injector: Injector;
 };
 
@@ -127,7 +127,7 @@ const runNotificationPromise = ({ work, content, open, injector }: RunNotificati
 
 /**
  * Builds the manager's `promise` method. Both public signatures share this one implementation, hence
- * the cast — the overloads exist to type the settle callbacks (a query hands them a
+ * the cast - the overloads exist to type the settle callbacks (a query hands them a
  * `QueryErrorResponse`, everything else an `unknown`), not to pick different code paths.
  */
 export const createNotificationPromiseFn = (deps: Omit<RunNotificationPromiseOptions, 'work' | 'content'>) =>

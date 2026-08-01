@@ -3,7 +3,7 @@
 The CDK form system: field wrappers with shared label/error chrome around typed controls, bound via **classic Angular reactive forms** (`FormControl` / `ControlValueAccessor`).
 
 ::: info Partially superseded
-Text input, textarea, checkbox, slide toggle and selection list have signal-forms successors in [`@ethlete/components` forms](/components/forms). Everything else on this page — select, combobox, radio, segmented button, slider and the specialized inputs — exists only here. If your app uses reactive forms, use the CDK controls throughout.
+Text input, textarea, checkbox, slide toggle and selection list have signal-forms successors in [`@ethlete/components` forms](/components/forms). Everything else on this page - select, combobox, radio, segmented button, slider and the specialized inputs - exists only here. If your app uses reactive forms, use the CDK controls throughout.
 :::
 
 ## Anatomy of a field
@@ -30,7 +30,7 @@ The wrapper wires ids for `label[for]`, `aria-labelledby` and `aria-describedby`
 
 ### Validation messages
 
-Error rendering needs a message service — provide it once at the root:
+Error rendering needs a message service - provide it once at the root:
 
 ```ts
 import { provideValidatorErrorsService } from '@ethlete/cdk';
@@ -52,11 +52,11 @@ Inputs accept projected affixes via `[etInputPrefix]` / `[etInputSuffix]` (an ic
 
 Extras worth knowing:
 
-- **Password visibility** — project `<et-password-input-toggle etInputSuffix />` into an `et-password-input` to toggle between masked and plain text.
-- **Search clear** — `<et-search-input-clear *etIfInputFilled etInputSuffix />` clears the input; the `*etIfInputFilled` / `*etIfInputEmpty` structural directives render content based on the value.
-- **Autosize textarea** — `et-textarea-input[etAutosize]` grows with its content, capped by `maxHeight`.
-- **Date formats** — the native pickers speak their own formats, but the _model_ value format is configurable app-wide via `provideDateFormat()` / `provideTimeFormat()` / `provideDateTimeFormat()` (date-fns format strings; the default is an ISO-like `yyyy-MM-dd'T'HH:mm:ssxxx`, times default to `HH:mm`).
-- **Native pickers** — `[etShowPickerTrigger]` opens the browser picker programmatically; `*etIfSupportsShowPicker` guards for support.
+- **Password visibility** - project `<et-password-input-toggle etInputSuffix />` into an `et-password-input` to toggle between masked and plain text.
+- **Search clear** - `<et-search-input-clear *etIfInputFilled etInputSuffix />` clears the input; the `*etIfInputFilled` / `*etIfInputEmpty` structural directives render content based on the value.
+- **Autosize textarea** - `et-textarea-input[etAutosize]` grows with its content, capped by `maxHeight`.
+- **Date formats** - the native pickers speak their own formats, but the _model_ value format is configurable app-wide via `provideDateFormat()` / `provideTimeFormat()` / `provideDateTimeFormat()` (date-fns format strings; the default is an ISO-like `yyyy-MM-dd'T'HH:mm:ssxxx`, times default to `HH:mm`).
+- **Native pickers** - `[etShowPickerTrigger]` opens the browser picker programmatically; `*etIfSupportsShowPicker` guards for support.
 
 ## Checkbox
 
@@ -113,7 +113,7 @@ import { RadioImports } from '@ethlete/cdk';
 import { SlideToggleImports } from '@ethlete/cdk';
 ```
 
-`SlideToggleImports`. A boolean switch — superseded by the [components switch](/components/forms) for signal-forms apps.
+`SlideToggleImports`. A boolean switch - superseded by the [components switch](/components/forms) for signal-forms apps.
 
 ## Segmented button
 
@@ -188,7 +188,7 @@ All three select flavors share the same `et-select-field` wrapper (which carries
 import { NativeSelectImports } from '@ethlete/cdk';
 ```
 
-`NativeSelectImports`. A styled shell around a real `<select>` — best on mobile. Option values aren't limited to strings; the directive maps the selected index back to the bound value.
+`NativeSelectImports`. A styled shell around a real `<select>` - best on mobile. Option values aren't limited to strings; the directive maps the selected index back to the bound value.
 
 ### Styled select
 
@@ -206,7 +206,7 @@ import { NativeSelectImports } from '@ethlete/cdk';
 import { SelectImports } from '@ethlete/cdk';
 ```
 
-`SelectImports`. An overlay-based listbox with single/`multiple` selection and complete keyboard handling — Alt+Arrow and Space open, typeahead jumps to options, Escape/Tab close, Backspace removes the last value in multiple mode.
+`SelectImports`. An overlay-based listbox with single/`multiple` selection and complete keyboard handling - Alt+Arrow and Space open, typeahead jumps to options, Escape/Tab close, Backspace removes the last value in multiple mode.
 
 <StoryEmbed id="cdk-forms-select-select--default" height="380px" />
 
@@ -231,13 +231,13 @@ import { ComboboxImports } from '@ethlete/cdk';
 
 | Input                | Default          | Purpose                                                                                                                               |
 | -------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `options` (required) | —                | The option list — primitives or objects (with `bindLabel` / `bindValue` / `bindKey` / `bindDisabled`).                                |
+| `options` (required) | -                | The option list - primitives or objects (with `bindLabel` / `bindValue` / `bindKey` / `bindDisabled`).                                |
 | `filterInternal`     | `false`          | `true` filters the given options in memory; `false` emits the debounced (300ms) text via `(filterChange)` so you can query a backend. |
 | `multiple`           | `false`          | Multi-select with chips; Backspace removes the last one.                                                                              |
 | `allowCustomValues`  | `false`          | Enter adds the typed text as a value.                                                                                                 |
 | `loading` / `error`  | `false` / `null` | Show a loading or error body while async options resolve.                                                                             |
 
-Every rendered piece — options, selected chips, the empty/loading/error/"more items" bodies — can be replaced with templates (`etComboboxOptionTemplate`, `etComboboxBodyEmptyTemplate`, …) or component classes. App-wide defaults (like the empty text) go through `COMBOBOX_CONFIG_TOKEN`.
+Every rendered piece - options, selected chips, the empty/loading/error/"more items" bodies - can be replaced with templates (`etComboboxOptionTemplate`, `etComboboxBodyEmptyTemplate`, …) or component classes. App-wide defaults (like the empty text) go through `COMBOBOX_CONFIG_TOKEN`.
 
 ## Styling
 

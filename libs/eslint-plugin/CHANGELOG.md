@@ -5,16 +5,16 @@
 ### Minor Changes
 
 - [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`19469c2`](https://github.com/ethlete-io/ethdk/commit/19469c21903217e05b974ac69773f222e63ae4e1) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `no-effect-cleanup-return`: flags a cleanup function returned from `effect()` /
-  `afterRenderEffect()`, which Angular ignores — so the teardown silently never runs. Auto-fixes the
+  `afterRenderEffect()`, which Angular ignores - so the teardown silently never runs. Auto-fixes the
   mechanical case to the `onCleanup` parameter; otherwise points at `inject(DestroyRef).onDestroy()`.
 
 - [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`3151b7a`](https://github.com/ethlete-io/ethdk/commit/3151b7a253d14e38e22e20d67bf0191f141c144e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `ethlete/no-template-literal-before-inline-template`, and restructure the files it flagged.
 
-  The Angular VS Code extension decides **client-side** whether the cursor sits inside an inline `template:` before it forwards completion, hover, go-to-definition or signature-help to the language server. That check (`isNotTypescriptOrSupportedDecoratorField`) walks the file with a bare `ts.createScanner()` loop, which cannot re-scan `}` as `TemplateMiddle`/`TemplateTail` — that needs the parser's `reScanTemplateToken()`. So the first template literal containing a `${…}` substitution desynchronises both the token stream and the brace counter, the scanner never recognises `template` `:` again, and every template request below it is dropped. The language server answers those requests correctly; the editor just never asks, so the template silently has no IntelliSense at all.
+  The Angular VS Code extension decides **client-side** whether the cursor sits inside an inline `template:` before it forwards completion, hover, go-to-definition or signature-help to the language server. That check (`isNotTypescriptOrSupportedDecoratorField`) walks the file with a bare `ts.createScanner()` loop, which cannot re-scan `}` as `TemplateMiddle`/`TemplateTail` - that needs the parser's `reScanTemplateToken()`. So the first template literal containing a `${…}` substitution desynchronises both the token stream and the brace counter, the scanner never recognises `template` `:` again, and every template request below it is dropped. The language server answers those requests correctly; the editor just never asks, so the template silently has no IntelliSense at all.
 
-  The new rule reproduces that scanner verbatim, so it reports exactly the templates the extension would abandon — no heuristic. Twenty inline templates across `components`, `cdk` and the playground were affected, all of them behind a fixture or helper that happened to use an interpolated template literal. Story fixtures moved into sibling `*-storybook.data.ts` files; spec fixtures and in-class helpers that must stay above their component (because a later `@Component` references the class in `imports`) were rewritten without the interpolation.
+  The new rule reproduces that scanner verbatim, so it reports exactly the templates the extension would abandon - no heuristic. Twenty inline templates across `components`, `cdk` and the playground were affected, all of them behind a fixture or helper that happened to use an interpolated template literal. Story fixtures moved into sibling `*-storybook.data.ts` files; spec fixtures and in-class helpers that must stay above their component (because a later `@Component` references the class in `imports`) were rewritten without the interpolation.
 
-  No public API changed — the `components` and `cdk` bumps are story/spec restructuring plus moving `signalVisibilityChangeClasses` below `RichFilterHostComponent` in the same module.
+  No public API changed - the `components` and `cdk` bumps are story/spec restructuring plus moving `signalVisibilityChangeClasses` below `RichFilterHostComponent` in the same module.
 
 ## 1.0.0-next.15
 
@@ -28,13 +28,13 @@
 
 - [`423b30b`](https://github.com/ethlete-io/ethdk/commit/423b30ba4f368d7cee8c464ebd89b5df20d3934c) Thanks [@TomTomB](https://github.com/TomTomB)! - The `static` class member ban now excepts `ngTemplateContextGuard`, which Angular's template type checker requires to be static.
 
-- [`7ca77d4`](https://github.com/ethlete-io/ethdk/commit/7ca77d4a9e1dd3abad7237227c62643159719b74) Thanks [@TomTomB](https://github.com/TomTomB)! - `no-trivial-return-type`: self-referencing (recursive) functions keep their return type annotation — TypeScript cannot infer a return type that depends on itself (TS7023), so the fixer no longer strips it there.
+- [`7ca77d4`](https://github.com/ethlete-io/ethdk/commit/7ca77d4a9e1dd3abad7237227c62643159719b74) Thanks [@TomTomB](https://github.com/TomTomB)! - `no-trivial-return-type`: self-referencing (recursive) functions keep their return type annotation - TypeScript cannot infer a return type that depends on itself (TS7023), so the fixer no longer strips it there.
 
 ## 1.0.0-next.13
 
 ### Minor Changes
 
-- [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`5a43c83`](https://github.com/ethlete-io/ethdk/commit/5a43c8347a98a815562d1bb0f59bc0db1d765262) Thanks [@github-actions](https://github.com/apps/github-actions)! - Recommended config: the `@Injectable` ban now also flags Angular 22's `@Service` decorator — use `createProvider` / `createRootProvider` from `@ethlete/core` instead.
+- [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`5a43c83`](https://github.com/ethlete-io/ethdk/commit/5a43c8347a98a815562d1bb0f59bc0db1d765262) Thanks [@github-actions](https://github.com/apps/github-actions)! - Recommended config: the `@Injectable` ban now also flags Angular 22's `@Service` decorator - use `createProvider` / `createRootProvider` from `@ethlete/core` instead.
 
 - [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`9be3738`](https://github.com/ethlete-io/ethdk/commit/9be3738e18ef1837841c79131127fa42406a3e92) Thanks [@github-actions](https://github.com/apps/github-actions)! - New template rule `ethlete/prefer-static-boolean-properties` (in `recommendedTemplate` as `warn`): flags property bindings of static booleans like `[isReadonly]="true"` and suggests the static-attribute form (`isReadonly` / `isReadonly="false"`). Suggestion-only, since the rewrite is only safe for inputs with a `booleanAttribute` transform.
 
@@ -43,8 +43,8 @@
 ### Minor Changes
 
 - [`44adcac`](https://github.com/ethlete-io/ethdk/commit/44adcac94d7e0f56742e02901221c6e04da7df47) Thanks [@TomTomB](https://github.com/TomTomB)! - Add two component I/O naming rules:
-  - `no-native-html-input-name` (error) — flags an `input()`/`model()` named after a global HTML attribute (`title`, `id`, `hidden`, `role`, `tabindex`, …), which collides with the attribute the host element carries natively.
-  - `prefer-present-tense-output` (warn) — nudges `output()` names toward the present tense like native DOM events (`playerSelect`, not `playerSelected`).
+  - `no-native-html-input-name` (error) - flags an `input()`/`model()` named after a global HTML attribute (`title`, `id`, `hidden`, `role`, `tabindex`, …), which collides with the attribute the host element carries natively.
+  - `prefer-present-tense-output` (warn) - nudges `output()` names toward the present tense like native DOM events (`playerSelect`, not `playerSelected`).
 
   The `on`-prefix case is already covered by `@angular-eslint/no-output-on-prefix`, so no rule is added for it.
 
@@ -52,7 +52,7 @@
 
 ### Major Changes
 
-- [#3016](https://github.com/ethlete-io/ethdk/pull/3016) [`396bdfb`](https://github.com/ethlete-io/ethdk/commit/396bdfb50dc51d2de0156dd7b7cc0ae3b21dfe9b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove the `no-public-property` rule. It contradicted `template-member-accessibility`, which requires an explicit `public` modifier on surface members — the explicit-public style is the intended one. The rule was never part of the `recommended` config; if you enabled `ethlete/no-public-property` manually, drop it from your ESLint config.
+- [#3016](https://github.com/ethlete-io/ethdk/pull/3016) [`396bdfb`](https://github.com/ethlete-io/ethdk/commit/396bdfb50dc51d2de0156dd7b7cc0ae3b21dfe9b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Remove the `no-public-property` rule. It contradicted `template-member-accessibility`, which requires an explicit `public` modifier on surface members - the explicit-public style is the intended one. The rule was never part of the `recommended` config; if you enabled `ethlete/no-public-property` manually, drop it from your ESLint config.
 
 ## 0.1.0-next.10
 

@@ -37,7 +37,7 @@ const CAROUSEL_LABELS_DEF = /* @__PURE__ */ defineLabels<CarouselLabels>('CAROUS
 
 /**
  * Localize the carousel's strings for everything below this injector, and read the set in effect here
- * as a signal. Partial — whatever you leave out keeps its {@link DEFAULT_CAROUSEL_LABELS} value. See
+ * as a signal. Partial - whatever you leave out keeps its {@link DEFAULT_CAROUSEL_LABELS} value. See
  * {@link defineLabels} for the shape, which every domain in this library shares.
  *
  * @example

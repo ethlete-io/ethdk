@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   ViewEncapsulation,
   booleanAttribute,
@@ -7,8 +8,7 @@ import {
   input,
   numberAttribute,
 } from '@angular/core';
-import { PictureComponent, normalizePictureSizes } from '@ethlete/cdk';
-import { NgClassType } from '@ethlete/core';
+import { PictureComponent, normalizePictureSizes } from '@ethlete/components';
 import { CONTENTFUL_CONFIG } from '../../constants';
 import { ContentfulGqlAsset, isContentfulGqlAsset } from '../../gql';
 import { ContentfulImageFocusArea, ContentfulImageResizeBehavior, ContentfulRestAsset } from '../../types';
@@ -21,13 +21,9 @@ import {
   selector: 'et-contentful-image',
   template: `
     <et-picture
-      [imgClass]="imgClass()"
-      [hasPriority]="hasPriority()"
-      [figureClass]="figureClass()"
-      [pictureClass]="pictureClass()"
-      [figcaptionClass]="figcaptionClass()"
+      [priority]="priority()"
       [defaultSrc]="_defaultSrc()"
-      [alt]="normalizedAsset().alt ?? null"
+      [alt]="normalizedAsset().alt ?? ''"
       [figcaption]="normalizedAsset().figcaption ?? null"
       [width]="normalizedAsset().width ?? null"
       [height]="normalizedAsset().height ?? null"
@@ -36,13 +32,14 @@ import {
     />
   `,
   encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PictureComponent],
   host: {
     class: 'et-contentful-image',
   },
 })
 export class ContentfulImageComponent {
-  _contentfulConfig = inject(CONTENTFUL_CONFIG);
+  private readonly _contentfulConfig = inject(CONTENTFUL_CONFIG);
 
   asset = input.required<ContentfulRestAsset | ContentfulGqlAsset | null | undefined>();
   backgroundColor = input<string | null>(null);
@@ -51,11 +48,7 @@ export class ContentfulImageComponent {
   quality = input(null, { transform: numberAttribute });
   focusArea = input<ContentfulImageFocusArea | null>(null);
   resizeBehavior = input<ContentfulImageResizeBehavior | null>(null);
-  hasPriority = input(false, { transform: booleanAttribute });
-  imgClass = input<NgClassType>(null);
-  figureClass = input<NgClassType>(null);
-  figcaptionClass = input<NgClassType>(null);
-  pictureClass = input<NgClassType>(null);
+  priority = input(false, { transform: booleanAttribute });
   sizes = input<string | null, string[] | string | null>(
     normalizePictureSizes(this._contentfulConfig.imageOptions.sizes),
     {
@@ -63,7 +56,7 @@ export class ContentfulImageComponent {
     },
   );
 
-  normalizedAsset = computed(() => {
+  protected normalizedAsset = computed(() => {
     const asset = this.asset();
 
     if (isContentfulGqlAsset(asset)) {
@@ -83,7 +76,7 @@ export class ContentfulImageComponent {
     }
   });
 
-  _sources = computed(() => {
+  protected _sources = computed(() => {
     const asset = this.asset();
     const backgroundColor = this.backgroundColor();
     const srcsetSizes = this.srcsetSizes();
@@ -98,7 +91,7 @@ export class ContentfulImageComponent {
     return generateContentfulImageSources(asset, srcsetSizes, backgroundColor, quality, focusArea, resizeBehavior);
   });
 
-  _defaultSrc = computed(() => {
+  protected _defaultSrc = computed(() => {
     const asset = this.asset();
 
     return asset ? generateDefaultContentfulImageSource(asset) : null;

@@ -4,7 +4,7 @@ import { RuntimeError } from '@ethlete/core';
 import { SLIDER_ERROR_CODES } from '../slider-errors';
 import { SLIDER_TOKEN, SliderThumbLabelBase, SliderThumbLabelContext } from './slider.tokens';
 
-/** Opts the slider into value labels — rendered once per thumb with its current value. */
+/** Opts the slider into value labels - rendered once per thumb with its current value. */
 @Directive({
   selector: 'ng-template[etSliderThumbLabel]',
   exportAs: 'etSliderThumbLabel',

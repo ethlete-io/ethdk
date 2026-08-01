@@ -10,7 +10,7 @@ const comparable = (text: string) => text.toLowerCase().replace(/\s/g, '').repla
 
 /**
  * Turns a failed query into something renderable: a title, the messages, and whether retrying is worth
- * offering. All state, no markup — `<et-query-error>` is this with the chrome on top.
+ * offering. All state, no markup - `<et-query-error>` is this with the chrome on top.
  *
  * The classification work is not here, deliberately. `@ethlete/query` already normalizes every error shape it
  * knows (class-validator arrays, Symfony violation lists, a bare `{ message }`, a plain string) into
@@ -30,7 +30,7 @@ const comparable = (text: string) => text.toLowerCase().replace(/\s/g, '').repla
   host: {
     class: 'et-query-error',
     // An error that appears after the fact has to announce itself; a reader who has moved on from the button
-    // they pressed would otherwise never learn it failed. `alert` is the assertive one, which is right here —
+    // they pressed would otherwise never learn it failed. `alert` is the assertive one, which is right here -
     // the request they asked for did not happen.
     role: 'alert',
     '[attr.data-status]': 'view()?.status',
@@ -53,7 +53,7 @@ export class QueryErrorDirective {
   public query = input<QueryErrorRetryTarget | null>(null);
 
   /**
-   * Show the retry button even for an error the retry policy considers final — a 404 will not fix itself, and
+   * Show the retry button even for an error the retry policy considers final - a 404 will not fix itself, and
    * offering to try again invites the reader to waste their time. Turn it on for a query whose failure really
    * can be transient in a way the policy can't see. @default false
    */
@@ -64,7 +64,7 @@ export class QueryErrorDirective {
 
   /**
    * The reader asked to retry. Fires whether or not `query` is set, and after the query has been re-executed
-   * when it is — so it doubles as "retried" for analytics.
+   * when it is - so it doubles as "retried" for analytics.
    */
   public retryRequest = output<void>();
 
@@ -95,7 +95,7 @@ export class QueryErrorDirective {
     //  - It repeats the title. Plenty of APIs answer 404 with "Not found", and rendering that under the
     //    heading "Not found" tells the reader nothing twice.
     //  - It *is* Angular's `HttpErrorResponse.message`, which is what the query client falls back to when the
-    //    body carried no message at all — "Http failure response for /api/users: 500 Internal Server Error" is
+    //    body carried no message at all - "Http failure response for /api/users: 500 Internal Server Error" is
     //    developer text and must never reach a reader.
     const isUseless =
       messages.length === 1 && !!single && (comparable(single) === comparable(title) || single === error.raw.message);
@@ -112,7 +112,7 @@ export class QueryErrorDirective {
     };
   });
 
-  /** Whether to offer a retry — false when there is no error at all. */
+  /** Whether to offer a retry - false when there is no error at all. */
   public canRetry = computed(() => this.view()?.canRetry ?? false);
 
   /**

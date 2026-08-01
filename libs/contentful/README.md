@@ -1,6 +1,6 @@
 # @ethlete/contentful
 
-Angular components for rendering Contentful content — a diffing rich-text renderer with custom-component support for embedded entries, asset components (image, video, audio, file, link), and typed helpers for the REST and GraphQL APIs.
+Angular components for rendering Contentful content - a diffing rich-text renderer with custom-component support for embedded entries, asset components (image, video, audio, file, link), and typed helpers for the REST and GraphQL APIs.
 
 ## Installation
 

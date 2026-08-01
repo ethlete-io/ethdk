@@ -56,7 +56,7 @@ describe('multi tab sync', () => {
 
   /**
    * A tab is just another query client on the shared channel: separate repository, separate engine,
-   * same bus and same lock table — which is exactly the relationship two browser tabs are in.
+   * same bus and same lock table - which is exactly the relationship two browser tabs are in.
    */
   const createTab = (multiTabSync: false | QueryMultiTabSyncConfig = { channelName: CHANNEL }) =>
     createQueryClient({
@@ -87,7 +87,7 @@ describe('multi tab sync', () => {
   };
 
   /**
-   * The tabs share one testing controller, and `match()` *removes* everything it matches — so
+   * The tabs share one testing controller, and `match()` *removes* everything it matches - so
    * requests are drained into a local queue instead, letting a spec settle one tab's request while
    * the other's is still in flight.
    */
@@ -130,7 +130,7 @@ describe('multi tab sync', () => {
 
       expect(tabB.query.response()).toEqual({ version: 1 });
 
-      // Tab A refetches — a poll tick, or the user hitting refresh there.
+      // Tab A refetches - a poll tick, or the user hitting refresh there.
       tabA.query.execute();
       await flushNext({ version: 2 });
 
@@ -177,7 +177,7 @@ describe('multi tab sync', () => {
       const tabB = mountQuery(createTab());
 
       // Both tabs mounted and are still loading, so tab A's response arrives at a tab that has a
-      // fetch of its own outstanding. Applying it there would be pointless churn — the local request
+      // fetch of its own outstanding. Applying it there would be pointless churn - the local request
       // is at least as fresh and about to overwrite it anyway.
       await flushNext({ version: 1 });
 
@@ -329,7 +329,7 @@ describe('multi tab sync', () => {
       await flushAll({ version: 1 });
 
       // A read that opted out of the repository cache has a per-request key no other tab can derive,
-      // so there is nothing to share — but it must not be mistaken for a mutation either.
+      // so there is nothing to share - but it must not be mistaken for a mutation either.
       const uncached = mountQuery(tabAClient, { route: '/scores', useCache: false });
 
       uncached.query.execute();
@@ -546,7 +546,7 @@ describe('multi tab sync', () => {
 
       expect(await tickAndFindPoller(tabs)).toEqual(['a']);
 
-      // The holder navigates away — its query, and with it the lock, is gone.
+      // The holder navigates away - its query, and with it the lock, is gone.
       tabs.tabA.destroy();
       await flushMultiTabSync();
       await flushMultiTabSync();
@@ -583,7 +583,7 @@ describe('multi tab sync', () => {
 
       expect(await tickAndFindPoller(tabs)).toEqual(['a']);
 
-      // Both tabs share one document here, so both see the event — and only the holder reacts, which
+      // Both tabs share one document here, so both see the event - and only the holder reacts, which
       // is the guard that makes the handover go one way instead of shuffling every tab's place in the
       // queue.
       setHidden(true);

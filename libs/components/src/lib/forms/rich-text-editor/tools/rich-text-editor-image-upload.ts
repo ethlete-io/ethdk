@@ -4,13 +4,13 @@ import { AnyDropzoneUploadConfig } from '../../dropzone/headless';
 
 /**
  * Uploads one file and resolves to the URL the editor should point at. The simple shape: anything
- * that produces a URL — an `HttpClient` call, a query's response stream, a plain promise.
+ * that produces a URL - an `HttpClient` call, a query's response stream, a plain promise.
  */
 export type RichTextEditorImageUploadFn = (file: File) => Observable<string> | PromiseLike<string>;
 
 /**
  * How the image tool uploads. Either an upload function, or a dropzone upload config built with
- * `createDropzoneUpload` / `createV2DropzoneUpload` — the config route reuses the dropzone's
+ * `createDropzoneUpload` / `createV2DropzoneUpload` - the config route reuses the dropzone's
  * per-file query machinery, which is what gives the placeholder real upload progress.
  */
 export type RichTextEditorImageUpload = RichTextEditorImageUploadFn | AnyDropzoneUploadConfig<string>;
@@ -48,7 +48,7 @@ const isDropzoneUploadConfig = (upload: RichTextEditorImageUpload): upload is An
 
 /**
  * Runs one image upload, whichever flavor the consumer configured, and reports progress/outcome
- * through plain callbacks — so the tool doesn't care whether a query or a promise is behind it.
+ * through plain callbacks - so the tool doesn't care whether a query or a promise is behind it.
  */
 export const startImageUpload = (options: StartImageUploadOptions): RichTextEditorImageUploadRun => {
   const { file, upload, injector, onProgress, onSuccess, onError } = options;
@@ -144,7 +144,7 @@ const runQueryUpload = (
   };
 };
 
-/** Best-effort message for the failure callback — an `Error`, or a query error's own message. */
+/** Best-effort message for the failure callback - an `Error`, or a query error's own message. */
 const errorMessageOf = (error: unknown): string | null => {
   if (error instanceof Error) return error.message;
 

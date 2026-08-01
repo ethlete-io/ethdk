@@ -26,8 +26,8 @@ On `et-slider` (forwarded from the headless `[etSlider]` directive):
 | `min`         | `number \| undefined`            | `undefined`    | Lower bound; `undefined` means `0`. A schema `min(...)` validator binds into this input automatically.   |
 | `max`         | `number \| undefined`            | `undefined`    | Upper bound; `undefined` means `100`. A schema `max(...)` validator binds into this input automatically. |
 | `step`        | `number`                         | `1`            | Snap grid, anchored at `min`. Keyboard steps, pointer commits and the displayed value all snap to it.    |
-| `orientation` | `'horizontal' \| 'vertical'`     | `'horizontal'` | Axis the slider runs along — see [orientation](#orientation).                                            |
-| `marks`       | `boolean \| { value, label? }[]` | `false`        | Tick marks on the track — see [tick marks](#tick-marks).                                                 |
+| `orientation` | `'horizontal' \| 'vertical'`     | `'horizontal'` | Axis the slider runs along - see [orientation](#orientation).                                            |
+| `marks`       | `boolean \| { value, label? }[]` | `false`        | Tick marks on the track - see [tick marks](#tick-marks).                                                 |
 | `snapToMarks` | `boolean`                        | `false`        | Snaps values onto the marks instead of the `step` grid.                                                  |
 | `disabled`    | `boolean`                        | `false`        | Blocks all interaction and removes the thumb from the tab order.                                         |
 | `readonly`    | `boolean`                        | `false`        | Focusable but not adjustable (`aria-readonly`).                                                          |
@@ -45,7 +45,7 @@ The `value` model is a plain `number` (default `0`). Values outside the bounds o
 | ------------------------- | ---------------- | ----------- | ------------------------------------------------------------------------------------ |
 | `minValue` / `maxValue`   | `number`         | `0` / `100` | Track bounds.                                                                        |
 | `step`                    | `number`         | `1`         | Snap grid.                                                                           |
-| `minDistance`             | `number`         | `0`         | Minimum gap kept between the thumbs — use a multiple of `step`. `0` lets them touch. |
+| `minDistance`             | `number`         | `0`         | Minimum gap kept between the thumbs - use a multiple of `step`. `0` lets them touch. |
 | `startLabel` / `endLabel` | `string \| null` | `null` ²    | Accessible name (`aria-label`) of each thumb.                                        |
 | `mixedLabel`              | `string \| null` | `null` ¹    | `aria-valuetext` both thumbs announce while `mixed` is true.                         |
 
@@ -60,7 +60,7 @@ A reversed tuple is normalized for display (`[80, 20]` renders as 20–80). Drag
 
 ## Orientation
 
-`orientation="vertical"` turns either slider into a vertical one. A vertical track runs **bottom→up** — the minimum sits at the bottom, and unlike the horizontal track it is **not mirrored in RTL** (the ARIA/W3C convention). Its length comes from `--et-slider-vertical-size` (`160px`), so give it whatever height the layout needs:
+`orientation="vertical"` turns either slider into a vertical one. A vertical track runs **bottom→up** - the minimum sits at the bottom, and unlike the horizontal track it is **not mirrored in RTL** (the ARIA/W3C convention). Its length comes from `--et-slider-vertical-size` (`160px`), so give it whatever height the layout needs:
 
 ```html
 <et-slider [formField]="form.volume" style="--et-slider-vertical-size: 220px" orientation="vertical">
@@ -97,13 +97,13 @@ const qualityMarks = [
 <StoryEmbed id="components-forms-slider--marks" height="240px" />
 
 - Ticks inside the filled part of the track (between the thumbs, for a range) render in the theme's on-primary color; the rest sit on the neutral rail.
-- Explicit marks are sorted, de-duplicated and clipped to the bounds. `marks="true"` refuses to generate more than 200 ticks — raise the `step` or pass an array ([`ET3104`](/components/error-codes#slider-et31xx)).
+- Explicit marks are sorted, de-duplicated and clipped to the bounds. `marks="true"` refuses to generate more than 200 ticks - raise the `step` or pass an array ([`ET3104`](/components/error-codes#slider-et31xx)).
 - A pointer press that starts on a tick (or its label) commits **that exact value**, not the value under the pointer.
 - Labels are decoration: the whole tick layer is `aria-hidden`, and the accessible value stays on the thumb.
 
 ### snapToMarks
 
-With `snapToMarks`, the marks replace the `step` grid entirely — commits land on the nearest mark, the arrow keys move one mark at a time (Page keys ten), and Home/End go to the outermost marks. A range slider still honors `minDistance`: a thumb that would come too close to its sibling falls back to the closest mark that keeps the gap.
+With `snapToMarks`, the marks replace the `step` grid entirely - commits land on the nearest mark, the arrow keys move one mark at a time (Page keys ten), and Home/End go to the outermost marks. A range slider still honors `minDistance`: a thumb that would come too close to its sibling falls back to the closest mark that keeps the gap.
 
 While snapping, a mark's `label` also becomes the thumb's `aria-valuetext`, so screen readers announce "Medium" instead of "1".
 
@@ -111,7 +111,7 @@ While snapping, a mark's `label` also becomes the thumb's `aria-valuetext`, so s
 
 ## Value labels
 
-Project an `ng-template[etSliderThumbLabel]` to render a value bubble above each thumb — the context is the thumb's current value (`$implicit`) and its `index` (`0` = start, `1` = end):
+Project an `ng-template[etSliderThumbLabel]` to render a value bubble above each thumb - the context is the thumb's current value (`$implicit`) and its `index` (`0` = start, `1` = end):
 
 ```html
 <et-slider [formField]="form.volume">
@@ -126,7 +126,7 @@ Project an `ng-template[etSliderThumbLabel]` to render a value bubble above each
 
 Try it live in Storybook: `Components/Forms/Slider` → `Mixed` / `Components/Forms/Range slider` → `Mixed`.
 
-Use `mixed` when one slider edits several records whose current values differ — both slider components implement the SDK-wide [mixed state contract](/components/mixed-state). A slider has no text display slot, so the state is expressed through ARIA and visual masking: while mixed, the rail switches to a dashed treatment and the thumb(s) park dimmed at the track start (the position reads as "provisional / values differ", not "minimum"), the fill collapses, any value-label bubble is hidden, `aria-valuenow` is removed (the ARIA-sanctioned indeterminate value) and `aria-valuetext` announces `mixedLabel`. The raw form value stays unchanged and is not readable from the DOM.
+Use `mixed` when one slider edits several records whose current values differ - both slider components implement the SDK-wide [mixed state contract](/components/mixed-state). A slider has no text display slot, so the state is expressed through ARIA and visual masking: while mixed, the rail switches to a dashed treatment and the thumb(s) park dimmed at the track start (the position reads as "provisional / values differ", not "minimum"), the fill collapses, any value-label bubble is hidden, `aria-valuenow` is removed (the ARIA-sanctioned indeterminate value) and `aria-valuetext` announces `mixedLabel`. The raw form value stays unchanged and is not readable from the DOM.
 
 ```html
 <et-slider [(mixed)]="volumeIsMixed" [formField]="form.volume" mixedLabel="Different volumes">
@@ -136,14 +136,14 @@ Use `mixed` when one slider edits several records whose current values differ �
 
 Treat `mixed` as explicitly controlled state. Updating the raw form value from application code does not change it; set `volumeIsMixed` to `false` yourself when external data establishes one value. Setting it to `false` reveals whatever raw value is currently in the form.
 
-- The first user commit replaces the hidden raw value and resolves mixed — clicking or dragging on the track commits that position; keyboard steps start from the effective minimum (`ArrowRight` on a `0`–`100` slider commits `1`, `Home` commits the minimum, `End` the maximum). A commit that happens to equal the hidden value still resolves.
-- On `et-range-slider` one flag masks both thumbs. The first committed thumb writes a fresh range: its own end takes the committed value, the untouched end falls back to its default bound (`[value, maxValue]` when the start thumb commits first, `[minValue, value]` for the end thumb), honoring `minDistance`. While mixed, each thumb announces the full track as its `aria-valuemin`/`aria-valuemax` — parked thumbs carry no sibling constraint.
+- The first user commit replaces the hidden raw value and resolves mixed - clicking or dragging on the track commits that position; keyboard steps start from the effective minimum (`ArrowRight` on a `0`–`100` slider commits `1`, `Home` commits the minimum, `End` the maximum). A commit that happens to equal the hidden value still resolves.
+- On `et-range-slider` one flag masks both thumbs. The first committed thumb writes a fresh range: its own end takes the committed value, the untouched end falls back to its default bound (`[value, maxValue]` when the start thumb commits first, `[minValue, value]` for the end thumb), honoring `minDistance`. While mixed, each thumb announces the full track as its `aria-valuemin`/`aria-valuemax` - parked thumbs carry no sibling constraint.
 - Sliders have no clear affordance; there is no empty shape to clear to.
 - Both hosts expose `data-mixed` for consumer styling.
 
 ## Headless usage
 
-`[etSlider]` / `[etRangeSlider]` own the state and form integration; `[etSliderTrack]` maps pointer positions on its own rect onto the range (place the thumbs inside it so their pointer events bubble up); each `[etSliderThumb]` carries the ARIA slider semantics and the keyboard model. Thumb order is registration order — render the start thumb first:
+`[etSlider]` / `[etRangeSlider]` own the state and form integration; `[etSliderTrack]` maps pointer positions on its own rect onto the range (place the thumbs inside it so their pointer events bubble up); each `[etSliderThumb]` carries the ARIA slider semantics and the keyboard model. Thumb order is registration order - render the start thumb first:
 
 ```html
 <div [(value)]="range" etRangeSlider>
@@ -156,10 +156,10 @@ Treat `mixed` as explicitly controlled state. Updating the raw form value from a
 
 Position thumbs from `percent()` (0–100, already RTL-agnostic when applied via `inset-inline-start`); the host exposes `thumbPercents()` for track fills. Both directives provide the shared `SLIDER_TOKEN`, so the sub-directives compose with either.
 
-All of the behavior above lives in the headless tier — the default components only add visuals. Useful pieces when building your own:
+All of the behavior above lives in the headless tier - the default components only add visuals. Useful pieces when building your own:
 
 - `orientation()` is mirrored onto the host as `data-orientation`, and `[etSliderTrack]` / `[etSliderThumb]` already set the right `touch-action` themselves.
-- `markStops()` gives the resolved ticks as `{ value, label?, percent, active }` in ascending order — render them however you like.
+- `markStops()` gives the resolved ticks as `{ value, label?, percent, active }` in ascending order - render them however you like.
 - A tick element carrying `data-et-slider-mark-value="<value>"` commits that exact value when a pointer press starts on it (`SLIDER_MARK_VALUE_ATTRIBUTE`).
 
 ## Accessibility
@@ -199,4 +199,4 @@ The rail is a neutral `--et-surface-interaction-solid` tint; the fill and thumbs
 
 ## Error codes
 
-The slider domain owns the `ET3100`–`ET3199` range — see [error codes](/components/error-codes#slider-et31xx).
+The slider domain owns the `ET3100`–`ET3199` range - see [error codes](/components/error-codes#slider-et31xx).

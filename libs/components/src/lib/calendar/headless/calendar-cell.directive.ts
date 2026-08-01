@@ -5,7 +5,7 @@ import { CalendarGridDirective } from './calendar-grid.directive';
 import { CalendarCellBase, CalendarDirective } from './calendar.directive';
 
 /**
- * One cell of whichever grid is showing — a day, a month or a year (place it on
+ * One cell of whichever grid is showing - a day, a month or a year (place it on
  * the cell's `<button>`): ARIA/data attributes, activation, hover preview, and
  * the roving-tabindex focus pull.
  */
@@ -43,7 +43,7 @@ export class CalendarCellDirective {
 
   /**
    * `dateClass`'s classes, as a map rather than a list so the element's static classes survive the
-   * binding — and so a class the hook stops returning is taken back off.
+   * binding - and so a class the hook stops returning is taken back off.
    */
   protected dynamicClasses = computed(() => {
     const classes = this.cell().classes;
@@ -72,7 +72,7 @@ export class CalendarCellDirective {
   }
 
   protected handlePointerEnter() {
-    // only the grid that selects previews a range — anywhere coarser, a cell is a place to look
+    // only the grid that selects previews a range - anywhere coarser, a cell is a place to look
     // rather than an endpoint
     if (
       this.calendar?.mode() === 'range' &&

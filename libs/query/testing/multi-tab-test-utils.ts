@@ -9,7 +9,7 @@
  * talk to each other over the fake bus and contend for the same fake locks, going through the real
  * production code path on both sides.
  *
- * Neither jsdom nor happy-dom can stand in here — jsdom ships a `BroadcastChannel` that never
+ * Neither jsdom nor happy-dom can stand in here - jsdom ships a `BroadcastChannel` that never
  * delivers to other instances, and no `navigator.locks` at all.
  */
 
@@ -41,7 +41,7 @@ type FakeChannelInstance = {
  *
  * Messages are structured-cloned at post time (so a non-cloneable payload throws exactly like the
  * real API does), delivered on a microtask (never synchronously), and never delivered back to the
- * channel that posted them — all three matching browser behavior. `await Promise.resolve()` in a
+ * channel that posted them - all three matching browser behavior. `await Promise.resolve()` in a
  * spec is enough to flush delivery.
  */
 export const installFakeBroadcastChannel = (): FakeBroadcastChannelHandle => {
@@ -121,7 +121,7 @@ type FakeLockWaiter = {
 /**
  * Installs an in-memory `navigator.locks` implementing exclusive locks: one holder per name, the
  * rest queued FIFO, granted on a microtask (never synchronously), released when the callback's
- * promise settles. `signal` is honored for queued requests and — as in the real API — ignored once a
+ * promise settles. `signal` is honored for queued requests and - as in the real API - ignored once a
  * request has been granted.
  *
  * `mode: 'shared'`, `ifAvailable` and `steal` are not implemented; nothing in the library uses them.
@@ -150,7 +150,7 @@ export const installFakeWebLocks = (): FakeWebLocksHandle => {
     };
 
     // `pump` itself only ever runs from a microtask, so calling the callback right here keeps the
-    // grant exactly one microtask away from the `request()` call — which is what makes a single
+    // grant exactly one microtask away from the `request()` call - which is what makes a single
     // `flushMultiTabSync()` per hop enough in specs.
     try {
       Promise.resolve(waiter.callback({ name, mode: 'exclusive' } as Lock)).then(
@@ -197,7 +197,7 @@ export const installFakeWebLocks = (): FakeWebLocksHandle => {
   };
 
   // Both lists are reported, because a queued request is how a tab that is *not* the holder still
-  // shows up — which is what the auth leader election counts its tabs by.
+  // shows up - which is what the auth leader election counts its tabs by.
   const query = () =>
     Promise.resolve({
       held: [...holders.keys()].map((name) => ({ name, mode: 'exclusive' as const })),
@@ -232,7 +232,7 @@ export const installFakeWebLocks = (): FakeWebLocksHandle => {
 };
 
 /**
- * Flushes the microtask queue, which is where both fakes schedule their work — message delivery and
+ * Flushes the microtask queue, which is where both fakes schedule their work - message delivery and
  * lock grants. Awaiting it once is enough for a single hop; a grant that has to wait for another
  * tab's release needs one await per hop.
  */

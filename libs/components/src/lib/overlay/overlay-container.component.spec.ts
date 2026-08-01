@@ -78,7 +78,7 @@ describe('OverlayContainerComponent color context', () => {
     appRootElement?.remove();
   });
 
-  /** Bootstraps the themed root for real — only bootstrapped components register in `ApplicationRef.components`. */
+  /** Bootstraps the themed root for real - only bootstrapped components register in `ApplicationRef.components`. */
   const bootstrapAppRoot = () => {
     appRootElement = document.createElement('et-themed-app-root');
     document.body.appendChild(appRootElement);

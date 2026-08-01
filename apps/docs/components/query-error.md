@@ -3,7 +3,7 @@
 The default rendering of a failed [query](/query/errors): a heading from the status, the message (or the
 violation list), and a retry button when the failure is one worth repeating.
 
-Import `QUERY_ERROR_IMPORTS`. Your app must register a color theme with `type: 'error'` — that is what the panel
+Import `QUERY_ERROR_IMPORTS`. Your app must register a color theme with `type: 'error'` - that is what the panel
 paints itself with (see [theming](/core/theming)).
 
 ```html
@@ -21,8 +21,8 @@ announces when it _appears_, so a reader who has moved on from the button they p
 
 ## It classifies nothing
 
-Worth knowing, because it shapes the API. `@ethlete/query` already normalizes every error shape it recognises —
-class-validator arrays, Symfony violation lists, a bare `{ message }`, a plain string, a dev-mode `{ detail }` —
+Worth knowing, because it shapes the API. `@ethlete/query` already normalizes every error shape it recognises -
+class-validator arrays, Symfony violation lists, a bare `{ message }`, a plain string, a dev-mode `{ detail }` -
 into a single `QueryErrorResponse` before it reaches `query.error()`, and it attaches the retry policy's verdict
 as `retryState`. This component reads that.
 
@@ -34,16 +34,16 @@ ever be used with a legacy query. This one names no client's types at all.
 ## What the reader actually sees
 
 The title always comes from the HTTP status, because that is the one thing every failure has. The message is the
-response's own — except in two cases where the status table's sentence is better:
+response's own - except in two cases where the status table's sentence is better:
 
 - **The message repeats the title.** Plenty of APIs answer `404` with `"Not found"`, and rendering that under the
   heading "Not found" says nothing twice.
 - **The response carried no message.** The query client then falls back to Angular's
-  `HttpErrorResponse.message` — `"Http failure response for /api/teams/42: 500 Error"` — which is developer text
+  `HttpErrorResponse.message` - `"Http failure response for /api/teams/42: 500 Error"` - which is developer text
   and must never reach a reader.
 
 Titles and fallback messages come from `@ethlete/query`'s English status tables by default. A German table
-ships too, but as an opt-in — referencing it would otherwise put both languages in every bundle:
+ships too, but as an opt-in - referencing it would otherwise put both languages in every bundle:
 
 ```ts
 // German whenever injectLocale() reports a German locale, English otherwise:
@@ -56,13 +56,13 @@ cdk took a `language: 'en' | 'de'` input; locale belongs to the app's context, n
 
 ## Retrying
 
-The retry button appears only when the retry policy says the failure is worth repeating — a `503` yes, a `404`
+The retry button appears only when the retry policy says the failure is worth repeating - a `503` yes, a `404`
 no, since offering to try again on something that cannot resolve itself wastes the reader's time. Two escape
 hatches:
 
 - **`alwaysAllowRetry`** shows the button regardless, for a query whose failure really can be transient in a way
   the policy can't see.
-- **`retryRequest`** fires on every retry, with or without a `query` bound — the hook for a recovery that isn't
+- **`retryRequest`** fires on every retry, with or without a `query` bound - the hook for a recovery that isn't
   a re-execution.
 
 `[query]` takes anything with an `execute` method, and the retry **bypasses the cache**: a retry exists because
@@ -74,7 +74,7 @@ the last answer was unusable, so serving it again from memory would make the but
 
 Three levels, smallest first:
 
-**Labels** — for the strings themselves. `provideQueryErrorLabels` app-wide, or the `labels` input per instance.
+**Labels** - for the strings themselves. `provideQueryErrorLabels` app-wide, or the `labels` input per instance.
 Partial: what you leave out keeps the English default, which is also how you localize into another language.
 
 ```ts
@@ -84,7 +84,7 @@ provideQueryErrorLabels({
 });
 ```
 
-**Slots** — for markup. `etQueryErrorTitle` and `etQueryErrorActions` replace the heading and the whole actions
+**Slots** - for markup. `etQueryErrorTitle` and `etQueryErrorActions` replace the heading and the whole actions
 row; the error is in scope in both, so the wording can key off the status.
 
 ```html
@@ -100,7 +100,7 @@ row; the error is in scope in both, so the wording can key off the status.
 </et-query-error>
 ```
 
-**The headless directive** — for a layout of your own. `[etQueryError]` holds all the state and none of the
+**The headless directive** - for a layout of your own. `[etQueryError]` holds all the state and none of the
 markup:
 
 ```html
@@ -132,12 +132,12 @@ private usersError = legacyQueryErrorSource({
 }
 ```
 
-The conversion is nearly free — a legacy `RequestError` carries the raw `HttpErrorResponse` it came from, so the
+The conversion is nearly free - a legacy `RequestError` carries the raw `HttpErrorResponse` it came from, so the
 current client's own normalizer does the classifying and the same retry policy judges it. `queryErrorResponseFromLegacyError`
 is exported on its own if you only need the shape conversion.
 
 The error is passed in rather than read off the query because legacy query state is an `Observable`, not a
-signal — how you get from `state$` to a signal is your app's choice, not this adapter's.
+signal - how you get from `state$` to a signal is your app's choice, not this adapter's.
 
 ## Options
 
@@ -145,8 +145,8 @@ signal — how you get from `state$` to a signal is your app's choice, not this 
 
 | Input              | Type                                        | Default | Purpose                                                      |
 | ------------------ | ------------------------------------------- | ------- | ------------------------------------------------------------ |
-| `error`            | `QueryErrorResponse \| null` (**required**) | —       | The failed query's error. `null` renders nothing.            |
-| `query`            | `QueryErrorRetryTarget \| null`             | `null`  | What to re-execute on retry — anything with `execute`.       |
+| `error`            | `QueryErrorResponse \| null` (**required**) | -       | The failed query's error. `null` renders nothing.            |
+| `query`            | `QueryErrorRetryTarget \| null`             | `null`  | What to re-execute on retry - anything with `execute`.       |
 | `alwaysAllowRetry` | `boolean`                                   | `false` | Offer a retry even for a failure the policy considers final. |
 | `labels`           | `Partial<QueryErrorLabels> \| null`         | `null`  | Per-instance string overrides.                               |
 
@@ -163,7 +163,7 @@ defaulting to the app's `type: 'error'` theme.
 
 ## Accessibility
 
-The host is `role="alert"`, so an error that appears is announced — assertive rather than polite on purpose: the
+The host is `role="alert"`, so an error that appears is announced - assertive rather than polite on purpose: the
 request the reader asked for did not happen. This only works if the element is created when the error is, hence
 the `@if` around it.
 
@@ -172,7 +172,7 @@ reader announces how many problems there are before reading them.
 
 ## Theming
 
-There is no global "error color" variable in this system — error is a _theme_, which is why the component takes
+There is no global "error color" variable in this system - error is a _theme_, which is why the component takes
 it from DI via `injectErrorTheme()` and provides it as a color scope on its own host. Inside that scope
 `--et-theme-color-primary-*` **is** the error color, so the panel's tint, border and icon all follow whatever the
 app registered, and the retry button inherits it without being told.
@@ -191,4 +191,4 @@ Text colors come from the surface tokens, so the panel reads correctly on any el
 
 ## Error codes
 
-Query error throws in the `ET40xx` range — see [error codes](/components/error-codes#query-error-et40xx).
+Query error throws in the `ET40xx` range - see [error codes](/components/error-codes#query-error-et40xx).

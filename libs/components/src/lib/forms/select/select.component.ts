@@ -59,7 +59,7 @@ import { injectSelectLabels } from '../../forms/select/select-labels';
         'hasMoreItems',
         'pickOnly',
         'mirrorPanelWidth',
-        // Named by something outside the field (a shared caption) rather than a projected <et-label> —
+        // Named by something outside the field (a shared caption) rather than a projected <et-label> -
         // forwarded so the field's labelling guard sees the name. See SelectDirective.ariaLabel.
         'aria-label',
         'aria-labelledby',
@@ -110,7 +110,7 @@ export class SelectComponent {
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
   protected mixedLabelId = createComponentId('et-select-mixed-label');
 
-  // only while the field is in use — `focused` covers the trigger/search input having DOM
+  // only while the field is in use - `focused` covers the trigger/search input having DOM
   // focus as well as the panel being open
   protected showClear = computed(
     () =>
@@ -123,7 +123,7 @@ export class SelectComponent {
 
   public hasSearch = computed(() => !!this.select.registeredSearch());
 
-  // whether the default value/placeholder span renders — never with an inline search
+  // whether the default value/placeholder span renders - never with an inline search
   // input: in single mode the input itself displays the selected label, in multi mode
   // the chips (or the input's placeholder) carry the value display. With a custom value
   // template it only covers the empty state (placeholder) of search-less selects.
@@ -153,7 +153,7 @@ export class SelectComponent {
 
   // the custom value display coexists with an inline search input: while typing in single
   // mode the query replaces the visual value; in multi mode it stays visible (like chips).
-  // Never rendered without a selection — an empty wrapper would keep the caret/placeholder
+  // Never rendered without a selection - an empty wrapper would keep the caret/placeholder
   // CSS rules active and the field would look dead
   protected showCustomValue = computed(() => {
     if (this.select.mixed() || !this.select.registeredValueTemplate() || !this.select.selectedEntries().length) {
@@ -164,13 +164,13 @@ export class SelectComponent {
       return true;
     }
 
-    // single select: the rich template is the resting display — while the field is focused it
+    // single select: the rich template is the resting display - while the field is focused it
     // gives way to the editable label text in the search input (see the search directive)
     return !this.select.query() && !this.select.focused();
   });
 
   // single select with a custom value template + search: the value display and the query
-  // input stack in the same cell (typing hides the template) — side by side they'd wrap
+  // input stack in the same cell (typing hides the template) - side by side they'd wrap
   // the input onto a second line on narrow fields
   protected stackedValue = computed(
     () => this.hasSearch() && !this.select.multiple() && !!this.select.registeredValueTemplate(),
@@ -188,7 +188,7 @@ export class SelectComponent {
   }
 
   protected handleArrowClick(event: Event) {
-    // with an inline search input, a field click focuses the input and opens — the chevron
+    // with an inline search input, a field click focuses the input and opens - the chevron
     // is the one place that still toggles closed
     if (this.hasSearch() && this.select.open()) {
       event.stopPropagation();

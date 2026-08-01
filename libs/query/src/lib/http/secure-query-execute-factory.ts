@@ -47,7 +47,7 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
   };
 
   // A logout tears down the secure entries in the repository, but the query object holding one keeps
-  // its own `response`/`error` signals — so without this a component still mounted after logout goes
+  // its own `response`/`error` signals - so without this a component still mounted after logout goes
   // on rendering the previous user's data until something calls `reset()` by hand.
   options.deps.client.repository.events$
     .pipe(

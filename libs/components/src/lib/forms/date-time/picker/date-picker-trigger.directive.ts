@@ -16,7 +16,7 @@ import { DATE_PICKER_HOST } from './date-picker-host';
     '(click)': 'host?.togglePicker()',
     // keep focus on the field through the toggle: without this, the mousedown blurs the input
     // (dropping the field's focused style and the value's clear button) a frame before the click
-    // opens the picker and restores it — a visible flicker. The picker still autofocuses on open.
+    // opens the picker and restores it - a visible flicker. The picker still autofocuses on open.
     '(mousedown)': '$event.preventDefault()',
   },
 })

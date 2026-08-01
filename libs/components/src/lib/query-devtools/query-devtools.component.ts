@@ -128,7 +128,7 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
  * system: queries, stacks, sequences, bearer auth providers, the repository cache and a rolling
  * event log.
  *
- * Requires `provideQueryDevtools()` in the application providers — without it the registry stays
+ * Requires `provideQueryDevtools()` in the application providers - without it the registry stays
  * empty and the panel shows nothing.
  */
 @Component({
@@ -368,7 +368,7 @@ export class QueryDevtoolsComponent {
 
     const doc = this.document;
 
-    // Global toggle shortcut: Ctrl/Cmd + Alt + Q ("Q" for Query) — uncommon, no browser/OS conflict.
+    // Global toggle shortcut: Ctrl/Cmd + Alt + Q ("Q" for Query) - uncommon, no browser/OS conflict.
     // Matched on `code` (the physical key), not `key`: on macOS, Option rewrites `key` to the layout's
     // alternate glyph (Option+Q is "œ" on a US layout), so a `key === 'q'` test never fires there.
     fromEvent<KeyboardEvent>(doc, 'keydown')
@@ -480,14 +480,14 @@ export class QueryDevtoolsComponent {
 
   /**
    * Copies a shareable report (path, args, status, slimmed response) for handing to an API dev.
-   * Writes both rich `text/html` (Slack applies formatting on paste — it does not parse markdown) and
+   * Writes both rich `text/html` (Slack applies formatting on paste - it does not parse markdown) and
    * a plain-text fallback.
    */
   protected copyReport(entry: QueryDevtoolsEntry, query: AnyQuery) {
     const error = query.error();
     const httpStatus = error ? error.raw.status : this.responseStatus(query);
     const method = entry.meta.method ?? '';
-    const route = entry.meta.route || '—';
+    const route = entry.meta.route || '-';
     const client = entry.meta.clientBaseUrl ?? entry.meta.clientName ?? '';
     const statusLine = `status: ${this.queryStatus(query)}${httpStatus !== null ? ` (${httpStatus})` : ''} · ${this.formatTime(query.lastTimeExecutedAt())}`;
     const gqlDoc = entry.meta.gqlQuery ? this.gqlDocument(entry.meta.gqlQuery) : null;
@@ -501,7 +501,7 @@ export class QueryDevtoolsComponent {
         : error.error.message
       : JSON.stringify(slimForReport(query.response()), null, 2);
 
-    const textParts = [`${method} ${route}${client ? ` — ${client}` : ''}`, statusLine];
+    const textParts = [`${method} ${route}${client ? ` - ${client}` : ''}`, statusLine];
     if (gqlDoc) textParts.push('', 'GraphQL document', gqlDoc);
     if (argsJson) textParts.push('', argsLabel, argsJson);
     textParts.push('', bodyLabel, bodyContent);
@@ -509,7 +509,7 @@ export class QueryDevtoolsComponent {
 
     const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const htmlParts = [
-      `<b>${esc(method)}</b> <code>${esc(route)}</code>${client ? ` — <code>${esc(client)}</code>` : ''}`,
+      `<b>${esc(method)}</b> <code>${esc(route)}</code>${client ? ` - <code>${esc(client)}</code>` : ''}`,
       esc(statusLine),
     ];
     if (gqlDoc) htmlParts.push('<b>GraphQL document</b>', `<pre><code>${esc(gqlDoc)}</code></pre>`);
@@ -628,11 +628,11 @@ export class QueryDevtoolsComponent {
 
     if (lastSyncedAt !== null) parts.push(`synced ${Math.max(0, Math.round((Date.now() - lastSyncedAt) / 1000))}s ago`);
 
-    return parts.join(' · ') || '—';
+    return parts.join(' · ') || '-';
   }
 
   /**
-   * Whether a cache entry is showing data that came off the disk rather than the network — the answer
+   * Whether a cache entry is showing data that came off the disk rather than the network - the answer
    * to "why is this here already?" on a cold start. Empty when the client does not persist responses.
    */
   protected cachePersistence(entry: QueryRepositoryCacheEntry) {
@@ -640,7 +640,7 @@ export class QueryDevtoolsComponent {
 
     const hydratedAt = entry.request.subtle.lastPersistedResponseAt();
 
-    if (hydratedAt === null) return '—';
+    if (hydratedAt === null) return '-';
 
     return `from disk ${Math.max(0, Math.round((Date.now() - hydratedAt) / 1000))}s ago`;
   }
@@ -809,7 +809,7 @@ export class QueryDevtoolsComponent {
   }
 
   protected formatTime(timestamp: number | null) {
-    if (!timestamp) return '—';
+    if (!timestamp) return '-';
     return new Date(timestamp).toLocaleTimeString(undefined, { hour12: false });
   }
 
@@ -929,7 +929,7 @@ export class QueryDevtoolsComponent {
 
     const base = { id: this.eventIdCounter++, timestamp: Date.now(), client, type: event.type };
 
-    // A logout drops every secure entry at once — worth a row of its own, since the requests that
+    // A logout drops every secure entry at once - worth a row of its own, since the requests that
     // disappear from the cache view are otherwise unexplained.
     const item: EventLogItem =
       event.type === 'unbind-all-secure'

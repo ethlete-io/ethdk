@@ -183,7 +183,7 @@ describe('DropzoneComponent', () => {
     const preview = fixture.nativeElement.querySelector('.et-dropzone-preview') as HTMLElement;
     expect(preview).toBeTruthy();
     expect(area.getAttribute('data-has-preview')).toBe('true');
-    // the preview is an absolutely positioned overlay inside the area — the trigger keeps its box
+    // the preview is an absolutely positioned overlay inside the area - the trigger keeps its box
     expect(preview.parentElement).toBe(area);
     expect(fixture.nativeElement.querySelector('.et-dropzone-preview-image')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('.et-dropzone-list')).toBe(null);

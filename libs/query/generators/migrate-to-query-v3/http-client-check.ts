@@ -8,7 +8,7 @@ const APP_CONFIG_MARKERS = ['bootstrapApplication(', 'ApplicationConfig', 'provi
 /**
  * Flags the v2 default-header APIs, which the client migration drops on the floor.
  *
- * `setDefaultHeaders` is not cosmetic — an API token or a preview credential lives there, so losing
+ * `setDefaultHeaders` is not cosmetic - an API token or a preview credential lives there, so losing
  * it means every request goes out unauthenticated. v3 has a home for it (`headers` on
  * `createQueryClient`), but the call sites are imperative and scattered, so this is a pointer rather
  * than a rewrite.
@@ -45,7 +45,7 @@ export const reportDefaultHeaderUsages = (tree: Tree, report: QueryV3MigrationRe
     summary:
       'This workspace sets client-wide headers through the v2 `setDefaultHeaders` / `globalHeaders` API, which `createQueryClient` does not have. Left as is, those headers are simply not sent.',
     action:
-      'Pass `headers` to `createQueryClient` — a function form re-reads on every request, so a signal can drive it. `refreshQueriesInUse: true` becomes `injectMyClient().refreshQueriesInUse()` after the value changes.',
+      'Pass `headers` to `createQueryClient` - a function form re-reads on every request, so a signal can drive it. `refreshQueriesInUse: true` becomes `injectMyClient().refreshQueriesInUse()` after the value changes.',
     locations,
     source: 'http-client-check',
     dedupeKey: 'default-headers',
@@ -56,7 +56,7 @@ export const reportDefaultHeaderUsages = (tree: Tree, report: QueryV3MigrationRe
  * Flags applications that will build cleanly and then fail on their first request.
  *
  * The v2 client shipped its own transport; v3 does `inject(HttpClient)`. An app that never needed
- * `provideHttpClient()` therefore keeps compiling after the migration and dies at runtime instead —
+ * `provideHttpClient()` therefore keeps compiling after the migration and dies at runtime instead -
  * the one failure mode a codemod should never leave behind silently.
  */
 export const reportMissingHttpClientProviders = (tree: Tree, report: QueryV3MigrationReport, scope: MigrationScope) => {
@@ -96,9 +96,9 @@ export const reportMissingHttpClientProviders = (tree: Tree, report: QueryV3Migr
     report.addWarning({
       title: 'Add provideHttpClient() to the application providers',
       summary:
-        'v3 queries run on Angular’s `HttpClient`, but no `provideHttpClient()` was found. The app compiles and then throws on the first request — `@ethlete/query` never provides it, that is the application’s job.',
+        'v3 queries run on Angular’s `HttpClient`, but no `provideHttpClient()` was found. The app compiles and then throws on the first request - `@ethlete/query` never provides it, that is the application’s job.',
       action:
-        'Add `provideHttpClient()` to every app config that uses a query client. If anything relies on upload progress, use `provideHttpClient(withXhr())` — on Angular ≥ 22 the default is fetch, which emits no upload progress events.',
+        'Add `provideHttpClient()` to every app config that uses a query client. If anything relies on upload progress, use `provideHttpClient(withXhr())` - on Angular ≥ 22 the default is fetch, which emits no upload progress events.',
       locations: appConfigFiles,
       source: 'http-client-check',
       dedupeKey: 'missing-provide-http-client',

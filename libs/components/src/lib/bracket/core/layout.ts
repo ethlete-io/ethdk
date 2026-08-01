@@ -6,7 +6,7 @@ export const BRACKET_DATA_LAYOUT = {
    * rounds too small to halve. Halves the height and roughly doubles the width, which is what a poster
    * or a broadcast graphic wants.
    *
-   * Carried by the mirrored layout factories — a layout that has no fold to make (swiss) simply has no
+   * Carried by the mirrored layout factories - a layout that has no fold to make (swiss) simply has no
    * mirrored variant.
    */
   MIRRORED: 'mirrored',

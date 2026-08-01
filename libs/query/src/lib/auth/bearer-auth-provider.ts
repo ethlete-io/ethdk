@@ -102,7 +102,7 @@ export type ExtractQueryArgs<T> =
 
 export type QueryRegistryEntry<TArgs extends QueryArgs> = {
   /**
-   * Executes the auth query. `args` may be omitted for a query that takes none — its
+   * Executes the auth query. `args` may be omitted for a query that takes none - its
    * `RequestArgs` is `{}`, which generic helper code cannot produce without a cast.
    */
   execute: (args?: RequestArgs<TArgs>, options?: RunQueryExecuteOptions) => QuerySnapshot<TArgs>;
@@ -282,7 +282,7 @@ export type BearerAuthProvider<
   > | null>;
 
   /**
-   * Seeds the provider with tokens that were issued outside of it — an SSO/OIDC callback that
+   * Seeds the provider with tokens that were issued outside of it - an SSO/OIDC callback that
    * arrives with both tokens in the URL, a token handed over by a native shell, a test harness.
    *
    * Behaves exactly like a successful auth query: the tokens are applied, `bearerData` /
@@ -290,7 +290,7 @@ export type BearerAuthProvider<
    * disabled) other tabs are synced. Without it the only way in is to execute the refresh query with
    * the refresh token and throw the access token away.
    *
-   * Does **not** persist anything by itself — `withPersistentAuth` picks the tokens up through the
+   * Does **not** persist anything by itself - `withPersistentAuth` picks the tokens up through the
    * same signals it watches for query-issued ones.
    */
   setTokens: (accessToken: string, refreshToken: string) => void;
@@ -670,7 +670,7 @@ export type BearerAuthProviderRef<
 export type AnyCreateBearerAuthProviderResult = BearerAuthProviderRef<any, any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 /**
- * The exact provider type behind a `createBearerAuthProvider` result — query keys, feature registry
+ * The exact provider type behind a `createBearerAuthProvider` result - query keys, feature registry
  * and bearer data all preserved.
  *
  * Prefer this over {@link AnyBearerAuthProvider} whenever the provider is reachable as a value, e.g.
@@ -696,7 +696,7 @@ export type AnyBearerAuthProvider = Omit<
    *
    * Deliberately untyped here: with unknown builders the mapped type degrades to an index
    * signature, and `noPropertyAccessFromIndexSignature` then rejects `provider.queries.login`
-   * (TS4111) — forcing every call site into bracket access or a hand-written structural contract.
+   * (TS4111) - forcing every call site into bracket access or a hand-written structural contract.
    * Use {@link BearerAuthProviderOf} where the concrete provider is reachable and the keys survive.
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,5 +1,4 @@
-import { ComponentType } from '@angular/cdk/portal';
-import { InputSignal } from '@angular/core';
+import { InputSignal, Type } from '@angular/core';
 import { Block, NodeData } from '@contentful/rich-text-types';
 import { ContentfulIncludeMap } from '../components/rich-text-renderer';
 import { ContentfulGqlAsset } from '../gql';
@@ -18,15 +17,15 @@ export type ContentfulImageFocusArea =
   | 'face'
   | 'faces';
 
-export type ComponentLikeWithAsset = ComponentType<{
+export type ComponentLikeWithAsset = Type<{
   asset: InputSignal<ContentfulRestAsset | ContentfulGqlAsset | null | undefined>;
 }>;
-export type ComponentLikeWithLink = ComponentType<{
+export type ComponentLikeWithLink = Type<{
   href: InputSignal<string>;
   text: InputSignal<string>;
   textClass: InputSignal<string>;
 }>;
-export type ComponentLikeWithContentfulRendererInputs = ComponentType<{
+export type ComponentLikeWithContentfulRendererInputs = Type<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fields?: InputSignal<any>;
 
@@ -55,11 +54,6 @@ export type ContentfulConfig = {
    * Component for rendering embedded entries
    */
   customComponents: Record<string, ComponentLikeWithContentfulRendererInputs>;
-
-  /**
-   * Determines if the contentful rich text renderer should render the contentful rich text with tailwind css classes
-   */
-  useTailwindClasses: boolean;
 
   /**
    * Additional hostnames that should be treated as internal links (in addition to the current page's host).

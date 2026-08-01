@@ -1,6 +1,6 @@
 import { IconDefinition } from './icon-provider';
 
-// Two filled quotation marks — the block-quote tool's mark, drawn rather than typeset so it doesn't
+// Two filled quotation marks - the block-quote tool's mark, drawn rather than typeset so it doesn't
 // depend on the font's glyph.
 export const QUOTE_ICON: IconDefinition = {
   name: 'et-quote',

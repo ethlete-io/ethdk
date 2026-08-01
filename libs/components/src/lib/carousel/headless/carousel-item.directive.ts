@@ -22,8 +22,8 @@ const autoplayTimeAttribute = (value: unknown): number | null => {
 };
 
 /**
- * One slide. It carries the slide semantics — `role="group"` with `aria-roledescription="slide"` and an
- * `N of M` label — so a screen reader user knows how far along the carousel they are.
+ * One slide. It carries the slide semantics - `role="group"` with `aria-roledescription="slide"` and an
+ * `N of M` label - so a screen reader user knows how far along the carousel they are.
  *
  * `<et-carousel>` renders this wrapper itself, once per slide of its `etCarouselSlide` template, which is
  * what guarantees the semantics and the clone marking rather than leaving them to be remembered. Reach for
@@ -31,7 +31,7 @@ const autoplayTimeAttribute = (value: unknown): number | null => {
  *
  * Slides are **not** hidden or `inert` while off screen, unlike a carousel that stacks its slides: this
  * one scrolls, so an off-screen slide is reachable by scrolling or by tabbing into it (which scrolls it
- * into view). Hiding them would take that away. A loop *clone* is a different matter — it is the same
+ * into view). Hiding them would take that away. A loop *clone* is a different matter - it is the same
  * slide a second time, so it is hidden and skipped.
  *
  * @example
@@ -57,14 +57,14 @@ export class CarouselItemDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   /**
-   * How long autoplay rests on this slide, overriding the carousel's `autoplayTime` — for the one slide
+   * How long autoplay rests on this slide, overriding the carousel's `autoplayTime` - for the one slide
    * carrying a paragraph rather than a picture. `null` uses the carousel's duration. `<et-carousel>` sets
    * it from its own `autoplayTimeFor`. @default null
    */
   public autoplayTime = input<number | null>(null, { transform: autoplayTimeAttribute });
 
   /**
-   * Whether this is a loop clone rather than the slide itself — the same slide rendered a second time so
+   * Whether this is a loop clone rather than the slide itself - the same slide rendered a second time so
    * the carousel has content on both sides of the seam. A clone is hidden from assistive technology,
    * taken out of the tab order, and left out of the slide count and the `N of M` labels, so looping costs
    * a reader nothing. Set by `<et-carousel>`. @default false
@@ -73,7 +73,7 @@ export class CarouselItemDirective {
 
   /**
    * This slide's position among the track's children, clones included, and from the DOM rather than from
-   * registration order — so a `@for` that reorders its items can't put the labels out of step with what
+   * registration order - so a `@for` that reorders its items can't put the labels out of step with what
    * is on screen.
    */
   public domIndex = computed(() => {
@@ -82,7 +82,7 @@ export class CarouselItemDirective {
     return children.indexOf(this.elementRef.nativeElement);
   });
 
-  /** Which slide this shows: itself, or — for a clone — the slide it clones. */
+  /** Which slide this shows: itself, or - for a clone - the slide it clones. */
   public index = computed(() => this.carousel?.slideIndexOf(this.domIndex()) ?? -1);
 
   /**
@@ -91,7 +91,7 @@ export class CarouselItemDirective {
    */
   public isActive = computed(() => this.domIndex() >= 0 && this.domIndex() === this.carousel?.activeDomIndex());
 
-  /** The `N of M` label announced with the slide. Clones announce nothing — they are the same slide again. */
+  /** The `N of M` label announced with the slide. Clones announce nothing - they are the same slide again. */
   public label = computed(() => {
     const carousel = this.carousel;
 

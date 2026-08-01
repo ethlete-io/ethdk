@@ -101,7 +101,7 @@ export const BackendIntegration: StoryObj<GridDataStorybookComponent> = {
       description: {
         story:
           'Demonstrates the adapter pattern for backend-integrated dashboards. ' +
-          'Widget layout is stored per-breakpoint on the backend as `{x, y, cols, rows}` — ' +
+          'Widget layout is stored per-breakpoint on the backend as `{x, y, cols, rows}` - ' +
           "a different shape from the grid's internal `{col, row, colSpan, rowSpan}`. " +
           '`createGridAdapter()` bridges the two: `fromExternal` maps backend widgets to ' +
           '`GridItemConfig[]` for the grid to render, and `toExternal` converts back to ' +

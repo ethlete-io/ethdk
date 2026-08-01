@@ -48,7 +48,7 @@ export const extractFormViolations = (error: unknown): FormViolationView[] => {
 
 export type MapViolationsToFormErrorsOptions<TModel> = {
   /**
-   * The field tree the violation property paths are resolved against — usually the form root
+   * The field tree the violation property paths are resolved against - usually the form root
    * (or the `field` passed to a signal-forms `submit()` action).
    */
   fieldTree: FieldTree<TModel>;
@@ -60,7 +60,7 @@ export type MapViolationsToFormErrorsOptions<TModel> = {
   error: unknown;
 
   /**
-   * Rewrites a violation's property path before it is resolved against the field tree — use it
+   * Rewrites a violation's property path before it is resolved against the field tree - use it
    * when the API's payload shape differs from the form model. Return `null` to treat the
    * violation as unmapped.
    */
@@ -75,7 +75,7 @@ export type MapViolationsToFormErrorsOptions<TModel> = {
 };
 
 /**
- * Maps a failed request's violations onto a signal-forms field tree as validation errors —
+ * Maps a failed request's violations onto a signal-forms field tree as validation errors -
  * the bridge between an API's violation list (`@ethlete/types` `FormViolationView`) and
  * signal forms.
  *
@@ -83,7 +83,7 @@ export type MapViolationsToFormErrorsOptions<TModel> = {
  * resolved violation becomes a `ServerViolationValidationError` bound to that field, an
  * unresolved one becomes a form-level error (customizable via `onUnmappedViolation`). A failed
  * request that carries no violations at all degrades to form-level `ServerValidationError`s
- * built from the normalized error message — so returning this function's result from a
+ * built from the normalized error message - so returning this function's result from a
  * `submit()` action never silently succeeds on failure.
  *
  * ```ts
@@ -107,7 +107,7 @@ export const mapViolationsToFormErrors = <TModel>(
   const violations = extractFormViolations(error);
 
   if (!violations.length) {
-    // An empty violation array is an explicit "nothing to map" — only unrecognized error
+    // An empty violation array is an explicit "nothing to map" - only unrecognized error
     // shapes degrade to the form-level fallback.
     if (Array.isArray(error) && !error.length) return [];
 
@@ -182,7 +182,7 @@ const resolveFieldTreePath = <TModel>(
     current = (current as Record<string, unknown>)[segment];
   }
 
-  // A field tree node is callable (calling it returns the field state) — anything else means the
+  // A field tree node is callable (calling it returns the field state) - anything else means the
   // path left the tree (e.g. an index past the array's current length).
   return typeof current === 'function' ? (current as ReadonlyFieldTree<unknown>) : null;
 };

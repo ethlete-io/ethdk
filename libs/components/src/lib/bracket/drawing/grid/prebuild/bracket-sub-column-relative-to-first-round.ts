@@ -19,7 +19,7 @@ export type CreateRoundBracketSubColumnRelativeToFirstRoundConfig<TRoundData, TM
 
   /**
    * Reserved space below the last match, for a layout whose columns are taller than the first round
-   * needs — a stacked bracket's centre chain hanging past the bottom of its block.
+   * needs - a stacked bracket's centre chain hanging past the bottom of its block.
    */
   bottomPadding?: number;
 };

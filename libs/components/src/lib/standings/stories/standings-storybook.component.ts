@@ -10,7 +10,7 @@ import { NormalizedStandingRow, StandingsZone } from '../standings.types';
       <section class="flex flex-col gap-4">
         <p class="text-small m-0 opacity-60">
           A real table, with the zone bands and the legend coming from one config. Drag <code>width</code> down: at
-          720px the form column goes, at 560px the rest of the detail columns do, and position, team and points stay — a
+          720px the form column goes, at 560px the rest of the detail columns do, and position, team and points stay - a
           table read sideways is worse than a table with fewer columns.
         </p>
 

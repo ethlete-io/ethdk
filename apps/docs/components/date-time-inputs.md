@@ -22,21 +22,21 @@ import { FORM_FIELD_IMPORTS, DATE_INPUT_IMPORTS } from '@ethlete/components';
 ## Shared behavior
 
 The date/time family (everything except the duration input, which is a distinct
-scalar — see below) shares one design:
+scalar - see below) shares one design:
 
 - **String wire value in a configurable format.** The form value is a `string`
-  in `valueFormat`; string↔`Date` conversion happens only in the control — the
+  in `valueFormat`; string↔`Date` conversion happens only in the control - the
   [calendar](/components/calendar) and [time picker](/components/time-picker)
   overlays operate on `Date` objects.
 - **Typed entry + anchored picker.** Typed text is parsed against `displayFormat`
   (strictly for dates, leniently for times). Unparseable text stays visible, the
-  `parseError` signal turns on and the value clears to `null` — once touched,
+  `parseError` signal turns on and the value clears to `null` - once touched,
   it's announced as a real error (`parseErrorMessage`) with matching
   `aria-invalid`/`aria-describedby`. <kbd>Alt</kbd>+<kbd>ArrowDown</kbd> opens the
   picker.
 - **Opt-in typing mask.** With `mask` set, a fixed-width numeric `displayFormat`
   (`dd.MM.yyyy`, `MM/dd/yyyy`, `HH:mm`, …) drives a live
-  [input mask](/components/text-inputs#masked-input) — guide placeholders
+  [input mask](/components/text-inputs#masked-input) - guide placeholders
   (`__.__.____`) while focused, auto-inserted separators, filtered pastes, and a
   numeric soft keyboard (`inputmode="numeric"`). Formats the mask can't represent
   (locale formats like `P`/`p`/`Pp`, variable-width or text tokens) are refused
@@ -59,7 +59,7 @@ import { de } from 'date-fns/locale';
 providers: [provideDateFormat('yyyy-MM-dd'), provideTimeFormat('HH:mm:ss'), provideDateLocale(de)];
 ```
 
-## Date input — `et-date-input` {#date-input}
+## Date input - `et-date-input` {#date-input}
 
 A date control combining typed entry with an anchored
 [calendar](/components/calendar) picker.
@@ -77,7 +77,7 @@ A date control combining typed entry with an anchored
 | --------------------- | -------------------------------------------- | ------------------- | ---------------------------------------------------------------------------- |
 | `valueFormat`         | `string`                                     | `DATE_FORMAT` token | date-fns format of the string value (token default: ISO 8601 with offset).   |
 | `displayFormat`       | `string \| null`                             | `null` ⁴            | date-fns format shown in and parsed from the field (locale-aware).           |
-| `precision`           | `'day' \| 'month' \| 'year'`                 | `'day'`             | Which unit the value names — `'month'` makes this a month picker.            |
+| `precision`           | `'day' \| 'month' \| 'year'`                 | `'day'`             | Which unit the value names - `'month'` makes this a month picker.            |
 | `weekNumbers`         | `boolean`                                    | `false`             | Renders the picker calendar's week-number column.                            |
 | `locale`              | `Locale \| null` (date-fns)                  | `DATE_LOCALE` token | Display/parse locale.                                                        |
 | `minDate` / `maxDate` | `Date \| null`                               | `null`              | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms). |
@@ -92,13 +92,13 @@ A date control combining typed entry with an anchored
 | `mask`                | `boolean`                                    | `false`             | Opt-in typing mask derived from a fixed-width numeric `displayFormat`.       |
 
 ¹ `null` falls through to [`DATE_TIME_LABELS`](/components/localization) (`'Open calendar'`, and the matching `openTimePicker` / `openDateTimePicker` for the other controls).
-² `null` falls through to [`DATE_TIME_LABELS`](/components/localization) — `invalidDate` here, and the matching `invalidTime` / `invalidDateTime` / `invalidDateRange` / `invalidDuration` for the other controls.
+² `null` falls through to [`DATE_TIME_LABELS`](/components/localization) - `invalidDate` here, and the matching `invalidTime` / `invalidDateTime` / `invalidDateRange` / `invalidDuration` for the other controls.
 ³ `null` falls through to [`DATE_TIME_LABELS`](/components/localization) (`'Date'` / `'Time'`).
 ⁴ `null` derives the format from `precision`: the locale's short date (`'P'`) at day precision, that same pattern without its day at month precision, `'yyyy'` at year precision.
 
 Typed text is parsed **strictly** against `displayFormat` on blur/Enter. Picking
 a day writes `format(date, valueFormat)` and closes the picker (a named
-`role="dialog"`). `startView` and `dateClass` reach the calendar inside it — see
+`role="dialog"`). `startView` and `dateClass` reach the calendar inside it - see
 [view drilling](/components/calendar#view-drilling); a month or year picked while
 drilling only navigates, so the field commits on the day pick as always.
 
@@ -106,7 +106,7 @@ drilling only navigates, so the field commits on the day pick as always.
 
 ### Precision {#precision}
 
-`precision` turns the control into a month or year picker. It changes three things together: the text format (so the field reads `07/2026` — and a typing mask can be derived from it, which `'P'` never allowed, since the derived pattern is fixed-width), the picker calendar's selecting grid, and the value, which is always the start of the unit whether it was typed or picked. Without that last part, `07/2026` parsed against `MM/yyyy` would inherit today's day of the month from date-fns' reference date.
+`precision` turns the control into a month or year picker. It changes three things together: the text format (so the field reads `07/2026` - and a typing mask can be derived from it, which `'P'` never allowed, since the derived pattern is fixed-width), the picker calendar's selecting grid, and the value, which is always the start of the unit whether it was typed or picked. Without that last part, `07/2026` parsed against `MM/yyyy` would inherit today's day of the month from date-fns' reference date.
 
 ```html
 <et-form-field>
@@ -117,7 +117,7 @@ drilling only navigates, so the field commits on the day pick as always.
 
 <StoryEmbed id="components-forms-date-input--month-precision" height="360px" />
 
-Naming a `displayFormat` yourself still wins over the derived one. The range input takes `precision` the same way, for month ranges like `07/2025 – 03/2026`; see [the calendar's precision](/components/calendar#month-and-year-pickers) for how the picker behaves there. The date-time input has none — its value carries a time.
+Naming a `displayFormat` yourself still wins over the derived one. The range input takes `precision` the same way, for month ranges like `07/2025 – 03/2026`; see [the calendar's precision](/components/calendar#month-and-year-pickers) for how the picker behaves there. The date-time input has none - its value carries a time.
 
 ### Time zones {#time-zones}
 
@@ -126,7 +126,7 @@ Every `Date` in this family is read and written in the **runtime's own zone**. d
 browser is, and the default `valueFormat` (`yyyy-MM-dd'T'HH:mm:ssxxx`) writes that instant with the
 local offset.
 
-That is right for _an instant_ — when something happened — and wrong for _a date someone chose_. A
+That is right for _an instant_ - when something happened - and wrong for _a date someone chose_. A
 value of `2026-07-30T00:00:00+02:00` read in a browser set to UTC is July 29th at 22:00, so the picker
 highlights the 29th. Nothing is broken; the two readings disagree because the value pinned an instant
 when what was meant was a day.
@@ -138,18 +138,18 @@ when what was meant was a day.
 <et-date-input [formField]="demoForm.date" valueFormat="yyyy-MM-dd" />
 ```
 
-If the value genuinely is an instant in a zone that is not the reader's — a booking in the venue's
-zone, say — convert at the boundary: turn the stored instant into a `Date` whose _local_ wall-clock
+If the value genuinely is an instant in a zone that is not the reader's - a booking in the venue's
+zone, say - convert at the boundary: turn the stored instant into a `Date` whose _local_ wall-clock
 reading matches that zone's, hand that to the control, and convert back on commit. The controls stay
 in local time throughout, which keeps one rule for the whole family.
 
 Rendering a foreign zone's calendar directly is deliberately not supported: every day boundary,
 `isSameDay` comparison and time-picker column would have to be evaluated in that zone, which means
 zoned arithmetic through the calendar, the time picker and all four inputs, a zoned date dependency,
-and a different answer to what a committed value means. That is a project, not an option — say so if
+and a different answer to what a committed value means. That is a project, not an option - say so if
 you need it.
 
-## Date range input — `et-date-range-input` {#date-range-input}
+## Date range input - `et-date-range-input` {#date-range-input}
 
 One registered form control containing two text inputs (start – end) that share a
 single range-mode [calendar](/components/calendar) picker. The value shape is
@@ -170,13 +170,13 @@ Options mirror the date input (`valueFormat`, `displayFormat`, `locale`, `mask`,
 for [snapping picks](/components/calendar#range-selection-strategies), with
 `startPlaceholder`/`endPlaceholder` and per-field `startAriaLabel`/`endAriaLabel`
 (defaults `'Start date'`/`'End date'`; the host is a `role="group"` labelled by
-the field label). The opt-in typing mask applies to both fields — each side is
+the field label). The opt-in typing mask applies to both fields - each side is
 its own mask host, so the guide only shows on the focused side. In the picker,
 the first click starts the range and a completed range closes it; a partial pick
 keeps it open. See the `Masked` story.
 
 **Validation:** signal forms attaches child-path errors (e.g.
-`required(s.range.start)`) to the sub-fields — they flip the control's invalid
+`required(s.range.start)`) to the sub-fields - they flip the control's invalid
 state, but their messages don't reach the field's single error area. Validate on
 the range path for messages you want displayed:
 
@@ -190,7 +190,7 @@ validate(s.range, ({ value }) => {
 });
 ```
 
-## Time input — `et-time-input` {#time-input}
+## Time input - `et-time-input` {#time-input}
 
 A time control (default wire format `HH:mm`) combining **lenient** typed entry
 with an anchored [time picker](/components/time-picker) overlay.
@@ -212,18 +212,18 @@ with an anchored [time picker](/components/time-picker) overlay.
 | `timeFilter`                | `((date: Date) => boolean) \| null` | `null`               | Rejects individual times in the picker.                                    |
 | `pickerOpen`                | `boolean` (model)                   | `false`              | The picker overlay's open state.                                           |
 | `pickerTriggerLabel`        | `string`                            | `'Open time picker'` | `aria-label` of the suffix clock button.                                   |
-| `mask`                      | `boolean`                           | `false`              | Opt-in typing mask — needs a fixed-width `displayFormat` like `HH:mm`.     |
+| `mask`                      | `boolean`                           | `false`              | Opt-in typing mask - needs a fixed-width `displayFormat` like `HH:mm`.     |
 
 Typed text is parsed against `displayFormat` first, then **leniently**: bare
 digit runs (`930` → 09:30, `0930`, `93015`), loose separators (`9.30`, `9 30`)
 and meridiem suffixes (`930pm`, `9 a.m.`) all commit, and 24-hour entry is
 accepted even under a 12-hour display format. Picking parts writes
-`format(time, valueFormat)` and — unlike the calendar picker — **keeps the
+`format(time, valueFormat)` and - unlike the calendar picker - **keeps the
 overlay open**, since a time takes one pick per column. See the `Default` and
 `With seconds` stories.
 
 `minTime` / `maxTime` / `timeFilter` are forwarded to the picker and follow its
-[bounds and filtering](/components/time-picker#bounds-and-filtering) rules — only the
+[bounds and filtering](/components/time-picker#bounds-and-filtering) rules - only the
 bounds' time of day is read, and unselectable options stay in place, dimmed. They shape
 the **picker** only: typed entry is not gated by them (the same split the date inputs make
 with `minDate`/`maxDate`), so pair them with a schema validator when the form must reject
@@ -231,10 +231,10 @@ out-of-range times.
 
 <StoryEmbed id="components-forms-time-input--opening-hours" height="560px" />
 
-## Date-time input — `et-date-time-input` {#date-time-input}
+## Date-time input - `et-date-time-input` {#date-time-input}
 
 A combined date & time control (default wire format: the `DATE_FORMAT` token, ISO
-8601 with offset — it already carries the time). One field, one combined display
+8601 with offset - it already carries the time). One field, one combined display
 format; the anchored picker overlay hosts a [calendar](/components/calendar) and
 a [time picker](/components/time-picker) **side by side** and stays open across
 picks. Below the `md` breakpoint the picker opens as a bottom sheet with **Date /
@@ -265,16 +265,16 @@ Time tabs** switching between the two panes.
 | `pickerOpen`                    | `boolean` (model)                            | `false`                     | The picker overlay's open state.                                                  |
 | `pickerTriggerLabel`            | `string`                                     | `'Open date & time picker'` | `aria-label` of the suffix calendar button.                                       |
 | `dateTabLabel` / `timeTabLabel` | `string \| null`                             | `null` ³                    | Labels of the pane tabs in the bottom sheet.                                      |
-| `mask`                          | `boolean`                                    | `false`                     | Opt-in typing mask — needs a fixed-width `displayFormat` like `dd.MM.yyyy HH:mm`. |
+| `mask`                          | `boolean`                                    | `false`                     | Opt-in typing mask - needs a fixed-width `displayFormat` like `dd.MM.yyyy HH:mm`. |
 
 Typed text is parsed **strictly** against `displayFormat` first, then leniently:
 the entry is split into a date and a time at any separator (the date against the
-locale's short `P` format, the time with the time input's lenient rules —
+locale's short `P` format, the time with the time input's lenient rules -
 `7/16/2026 930pm` commits), and a **bare date commits at midnight**. In the
 The date bounds (`minDate`/`maxDate`/`dateFilter`) and the time bounds
 (`minTime`/`maxTime`/`timeFilter`) are independent: the first gate the calendar pane, the
-second the time pane. Because `timeFilter` receives the full candidate timestamp — the
-picked time of day on the **committed day** — it is the hook for anything date-dependent,
+second the time pane. Because `timeFilter` receives the full candidate timestamp - the
+picked time of day on the **committed day** - it is the hook for anything date-dependent,
 e.g. opening hours that differ on weekends:
 
 ```ts
@@ -290,15 +290,15 @@ const openingHours = (candidate: Date) => {
 
 In the
 picker, selections **merge**: picking a day keeps the committed time of day,
-picking a time keeps the committed day — and neither closes the overlay. While
+picking a time keeps the committed day - and neither closes the overlay. While
 the value is still empty, a first day pick commits the day **at midnight** (the
 time never defaults to the current wall-clock time); a first time pick completes
 with today as the day.
 
-## Duration input — `et-duration-input` {#duration-input}
+## Duration input - `et-duration-input` {#duration-input}
 
 A duration control whose value is a **total elapsed time in milliseconds**
-(`number | null`) — not a `Date`. A duration is a distinct scalar quantity (split
+(`number | null`) - not a `Date`. A duration is a distinct scalar quantity (split
 times, race durations, effort windows), so it stays out of the calendar/time
 `Date` system and owns its own value contract.
 
@@ -311,7 +311,7 @@ times, race durations, effort windows), so it stays out of the calendar/time
 
 | Input            | Type     | Default   | Description                                                        |
 | ---------------- | -------- | --------- | ------------------------------------------------------------------ |
-| `durationFormat` | `string` | `'mm:ss'` | Segment layout — runs of `h`/`m`/`s`/`S` (millis) plus separators. |
+| `durationFormat` | `string` | `'mm:ss'` | Segment layout - runs of `h`/`m`/`s`/`S` (millis) plus separators. |
 | `placeholder`    | `string` | `''`      | Shown on the empty field.                                          |
 
 The format is any arrangement of unit-token runs and separators: `mm:ss`,
@@ -324,7 +324,7 @@ The format is any arrangement of unit-token runs and separators: `mm:ss`,
 (`100:00` is a valid `mm:ss` value); validation of any upper bound belongs to the
 schema.
 
-Unlike the date/time inputs, the duration input has **no opt-in typing mask** —
+Unlike the date/time inputs, the duration input has **no opt-in typing mask** -
 and that's deliberate: its first segment is unbounded, so a fixed slot layout
 would block valid entries (`100:00`), and its lenient parse fills from the
 _smallest_ unit up (`130` → `01:30`) while a mask fills slots left-to-right
@@ -340,13 +340,13 @@ recipe.
 
 ## Accessibility
 
-These controls inherit the field shell's label/error/`aria-describedby` wiring —
+These controls inherit the field shell's label/error/`aria-describedby` wiring -
 see [Validation & accessibility](/components/forms#validation-accessibility) in
 the overview. Notes specific to this family:
 
 - A **parse error** (unparseable typed text) is surfaced like any validation
   error once touched: `parseErrorMessage` renders as an `et-form-error` with
-  matching `aria-invalid` and `aria-describedby` — no silent invalid state.
+  matching `aria-invalid` and `aria-describedby` - no silent invalid state.
 - The picker overlay is a named `role="dialog"`; the date range host is a
   `role="group"` labelled by the field label.
 - <kbd>Alt</kbd>+<kbd>ArrowDown</kbd> opens the picker from the field.
@@ -355,7 +355,7 @@ the overview. Notes specific to this family:
 
 These controls render entirely through the [`et-form-field` shell](/components/forms#theming),
 the [calendar](/components/calendar#theming) and the
-[time picker](/components/time-picker#theming) — see those guides for their
+[time picker](/components/time-picker#theming) - see those guides for their
 tokens. All colors resolve through the app-registered
 [surface/color theme systems](/core/theming).
 

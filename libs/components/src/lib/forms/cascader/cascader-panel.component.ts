@@ -28,7 +28,7 @@ import { CascaderDirective } from './headless';
     class: 'et-cascader-panel',
     // a "columnar tree": each level is a sibling `role="group"` related by `aria-level`, not by
     // `aria-owns` back to its parent node. This is a deliberate deviation from a strict single-root
-    // tree — the column layout is the whole point — and node keyboard nav bridges the levels.
+    // tree - the column layout is the whole point - and node keyboard nav bridges the levels.
     // While a flat search is active the columns are replaced by a flat result list, so the panel
     // reports itself as the listbox owning those options instead.
     '[attr.role]': 'role()',
@@ -43,7 +43,7 @@ export class CascaderPanelComponent {
   private hostRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   /**
-   * Whether the panel is presented as a bottom sheet (small viewport) — drill mode. Mirrors
+   * Whether the panel is presented as a bottom sheet (small viewport) - drill mode. Mirrors
    * the overlay's `md` breakpoint that swaps the anchored strategy for the bottom sheet.
    */
   public isSheet = injectObserveBreakpoint({ max: 'sm' });
@@ -54,7 +54,7 @@ export class CascaderPanelComponent {
   protected multiselectable = computed(() => (this.cascader?.multiple() ? 'true' : null));
 
   constructor() {
-    // this panel IS the overlay's own surface — paint the overlay's registered elevation exactly,
+    // this panel IS the overlay's own surface - paint the overlay's registered elevation exactly,
     // don't stack a level above it (the tracker is authoritative; content inside elevates off it)
     inject(AutoSurfaceDirective).matchOverlaySurface();
 
@@ -74,7 +74,7 @@ export class CascaderPanelComponent {
       }
     });
 
-    // Desktop (anchored) presentation animates width too — columns drilling in/out and the
+    // Desktop (anchored) presentation animates width too - columns drilling in/out and the
     // search-mode swap grow/shrink the panel instead of jumping. The sheet is viewport-wide,
     // so its width must keep following the pane (animating it would feed back into itself).
     injectOverlaySurfaceContext({

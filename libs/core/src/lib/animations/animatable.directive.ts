@@ -118,7 +118,7 @@ export class AnimatableDirective {
               } else {
                 animationDebugLog(
                   `animatable ${el.tagName.toLowerCase()}`,
-                  `${eventType} ignored — count already 0 (start ${didEmitStart ? '' : 'not '}emitted)`,
+                  `${eventType} ignored - count already 0 (start ${didEmitStart ? '' : 'not '}emitted)`,
                 );
                 console.warn(
                   `${el.tagName} received animation end/cancel event but activeAnimationCount is already 0. Start was ${didEmitStart ? '' : 'not '}emitted.`,

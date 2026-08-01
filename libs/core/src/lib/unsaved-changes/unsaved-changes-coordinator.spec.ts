@@ -138,7 +138,7 @@ describe('unsaved-changes coordinator', () => {
 
       await expect(tracker.runCheck()).resolves.toBe(true);
       expect(confirm).not.toHaveBeenCalled();
-      // The changes are still there — they just aren't guarded anymore.
+      // The changes are still there - they just aren't guarded anymore.
       expect(tracker.hasChanges()).toBe(true);
     });
 

@@ -44,7 +44,7 @@ describe('IconDirective', () => {
       expect(span.hasAttribute('role')).toBe(false);
     });
 
-    // An icon usually repeats the label beside it, so hidden is the right default — but a lone status
+    // An icon usually repeats the label beside it, so hidden is the right default - but a lone status
     // glyph is the content, and then it needs a name of its own.
     it('becomes a named image when given a label', () => {
       fixture.componentInstance.label.set('Verified');

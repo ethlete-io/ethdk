@@ -95,8 +95,8 @@ export class OverlayContainerComponent {
       // into another overlay, so DI (`parentSurfaceProvider`) reports the wrong surface for a
       // trigger rendered inside a dialog/menu pane, and reports nothing for the anchored panel
       // overlays (select/menu/date) which mount with no DI link to the trigger at all. The
-      // trigger's nearest painted surface ancestor *in the DOM* is authoritative in every case —
-      // an overlay pane and a plain elevated card both carry the surface class — so read that,
+      // trigger's nearest painted surface ancestor *in the DOM* is authoritative in every case -
+      // an overlay pane and a plain elevated card both carry the surface class - so read that,
       // and fall back to DI (openers that pass a viewContainerRef but no origin).
       const parentSurface = this.resolveOriginSurface() ?? this.parentDiSurface();
       const parentType = parentSurface?.type ?? 'dark';
@@ -119,7 +119,7 @@ export class OverlayContainerComponent {
 
       // A sheet's enter spring briefly overshoots past its docked edge; a box-shadow fills the gap
       // (see the CSS). Its color must match the sheet's *actually painted* surface, which can live
-      // on nested content one elevation above the host's own forced surface — so measure the
+      // on nested content one elevation above the host's own forced surface - so measure the
       // painted pane rather than trusting the host's --et-surface-background-solid token, which
       // would be a shade off. Falls back to the token (CSS default) when nothing paints.
       if (host.classList.contains('et-with-default-animation') && this.isSheetHost(host)) {
@@ -144,7 +144,7 @@ export class OverlayContainerComponent {
       const panePaints = !!background && background !== 'transparent' && background !== 'rgba(0, 0, 0, 0)';
 
       if (panePaints) {
-        // continue the pane's background and match its border exactly — including no border at
+        // continue the pane's background and match its border exactly - including no border at
         // all when the pane has none, so a 0px width is forwarded rather than left to the fallback
         props['--_et-overlay-arrow-pane-background'] = background;
         props['--_et-overlay-arrow-pane-border-width'] = `${borderWidth}px`;
@@ -211,7 +211,7 @@ export class OverlayContainerComponent {
 
   /**
    * The surface of the nearest ancestor of the overlay's origin (trigger) that paints a resolved
-   * surface — walking the real DOM so it sees *through* the portal/projection boundary that hides
+   * surface - walking the real DOM so it sees *through* the portal/projection boundary that hides
    * the true parent surface from DI. Returns null when there is no origin element or no surfaced
    * ancestor (the overlay then falls back to DI, and ultimately to elevation 1).
    */

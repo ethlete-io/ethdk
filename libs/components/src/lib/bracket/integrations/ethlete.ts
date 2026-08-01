@@ -151,7 +151,7 @@ export const generateBracketDataForEthlete = (source: RoundStageStructureWithMat
 
 /**
  * The normalizer the bracket's default cards need, for a source built by
- * {@link generateBracketDataForEthlete} — the two halves of the same integration, kept apart because the
+ * {@link generateBracketDataForEthlete} - the two halves of the same integration, kept apart because the
  * layout engine has no business knowing what a `MatchListView` is.
  *
  * @example

@@ -10,7 +10,7 @@ import {
 import { StreamManager, StreamPlayerEntry, StreamPlayerId, StreamSlotEntry } from './stream-manager.types';
 
 type InternalPlayerEntry = StreamPlayerEntry & {
-  /** True while this player is in PIP mode — prevents slot reassignment. */
+  /** True while this player is in PIP mode - prevents slot reassignment. */
   isInPip: boolean;
   /**
    * True while the exit (pip→slot) animation is in flight.

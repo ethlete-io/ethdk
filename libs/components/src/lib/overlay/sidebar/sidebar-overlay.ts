@@ -39,7 +39,7 @@ export type SidebarOverlayConfig = {
 
   /**
    * The width from which the sidebar renders inline (rather than collapsing into a page). Compared
-   * against the overlay's own pane width — not the viewport — so a narrow dialog collapses its
+   * against the overlay's own pane width - not the viewport - so a narrow dialog collapses its
    * sidebar even on a wide screen. Can be a breakpoint name or a pixel number. Works best with an
    * overlay that has a defined width.
    *

@@ -125,7 +125,7 @@ export const Loading: Story = {
     docs: {
       description: {
         story:
-          '`loading` with nothing to show yet fills the body with placeholder rows — one per column, so ' +
+          '`loading` with nothing to show yet fills the body with placeholder rows - one per column, so ' +
           'the layout does not jump when the data lands. `loadingRows` sets how many; the host carries ' +
           '`aria-busy` and the rows themselves are hidden from assistive tech.',
       },
@@ -140,7 +140,7 @@ export const Refetching: Story = {
       description: {
         story:
           'The same `loading` input over rows that are already on screen keeps them readable and runs an ' +
-          'indeterminate bar under the header instead — the state a paged or refetching table is in most ' +
+          'indeterminate bar under the header instead - the state a paged or refetching table is in most ' +
           'of the time, where blanking the body would cost the user their place.',
       },
     },
@@ -192,7 +192,7 @@ export const ExpandableSubTable: Story = {
     docs: {
       description: {
         story:
-          'The detail template can hold anything, including another `<et-table>` — a sub-table needs no ' +
+          'The detail template can hold anything, including another `<et-table>` - a sub-table needs no ' +
           'dedicated API. The nested table carries its own `columns`, `rowKey`, sorting and empty state, and ' +
           'sits on `etAutoSurface` so it paints one elevation above the table it is nested in.',
       },
@@ -209,7 +209,7 @@ export const SingleSelectFilter: Story = {
           "A column with `filterSelection: 'single'` filters by one value: the menu renders radio items " +
           'instead of checkboxes, picking replaces the selection, and picking the selected one again ' +
           'clears the filter. Filter state stays a list of values either way, so nothing downstream ' +
-          'changes — `state()`, client filtering and a server request all look the same.',
+          'changes - `state()`, client filtering and a server request all look the same.',
       },
     },
   },
@@ -221,7 +221,7 @@ export const TemplatedFilterOptions: Story = {
     docs: {
       description: {
         story:
-          '`etTableFilterOption` templates one column’s option rows — a subtitle here, a flag or avatar ' +
+          '`etTableFilterOption` templates one column’s option rows - a subtitle here, a flag or avatar ' +
           'elsewhere. `let-option` is the option and `let-selected` whether it is picked; the menu still ' +
           'owns the row, its checkbox mark and its keyboard behaviour.',
       },
@@ -288,7 +288,7 @@ export const StickyFooter: Story = {
       description: {
         story:
           'A column `footerCell` (context: the rendered rows) adds a summary row pinned to the bottom of ' +
-          'the scroll viewport — here a running count in the Name column.',
+          'the scroll viewport - here a running count in the Name column.',
       },
     },
   },
@@ -317,7 +317,7 @@ export const ResizableColumns: Story = {
       description: {
         story:
           'With `<et-table-resize />` (from `TABLE_RESIZE_IMPORTS`) each header grows a grip on its ' +
-          'trailing edge — drag it to resize the ' +
+          'trailing edge - drag it to resize the ' +
           'column, double-click to reset to the default width. Widths persist in `state()` and round-trip ' +
           'through `restoreState()`. Composes with reordering: the grip swallows its own pointerdown so it ' +
           'never starts a header drag.',
@@ -348,7 +348,7 @@ export const RowInteractive: Story = {
     docs: {
       description: {
         story:
-          'With `rowInteractive`, rows get a pointer affordance and emit `(rowClick)` with the row — except ' +
+          'With `rowInteractive`, rows get a pointer affordance and emit `(rowClick)` with the row - except ' +
           'when the click lands on interactive cell content (a button, link, input, the selection checkbox, ' +
           'or the expander), which keeps those controls working. The table performs no navigation itself; ' +
           'wire `router.navigate` in the handler. Click a row to update the readout below.',
@@ -364,7 +364,7 @@ export const PaginatedFooter: Story = {
       description: {
         story:
           'The `[etTableFooter]` slot projects arbitrary controls into a full-width bar pinned to the bottom ' +
-          'of the table. The table bakes in no pager — here a page-size `<et-select>` and an `<et-pagination>` ' +
+          'of the table. The table bakes in no pager - here a page-size `<et-select>` and an `<et-pagination>` ' +
           'drive a client-side page slice; wire them to `tableRowsFromQuery` for server paging.',
       },
     },
@@ -378,7 +378,7 @@ export const Virtualized: Story = {
       description: {
         story:
           'With `virtualScroll`, the table becomes its own scroll container and renders only the rows near ' +
-          'the viewport — here 2,000 rows scroll smoothly with a handful in the DOM. Give the table a bounded height.',
+          'the viewport - here 2,000 rows scroll smoothly with a handful in the DOM. Give the table a bounded height.',
       },
     },
   },
@@ -392,7 +392,7 @@ export const CsvExport: Story = {
         story:
           'The `etTableCsvExport` directive downloads the table as CSV from a button of your own. It writes the ' +
           "visible columns in their displayed order and the table's own rows (client-filtered and sorted), so " +
-          'filtering, sorting, hiding or reordering a column changes the file. `export()` takes overrides — the ' +
+          'filtering, sorting, hiding or reordering a column changes the file. `export()` takes overrides - the ' +
           'second button passes `rows: selection.selectedRows()` to export only what is ticked.',
       },
     },
@@ -409,7 +409,7 @@ export const CsvExportBeyondThePage: Story = {
           'wrong file. When the table’s `rowsSource` reports a `total`, the export notices and throws `ET3506` ' +
           'in dev mode instead. The two buttons are the two honest answers: `rows: tableCsvRowsFromPages(…)` ' +
           'walks every page before writing (with `exporting()` driving the busy state), and `partial: true` ' +
-          'writes the loaded page on purpose. A backend with its own export endpoint skips both — pass its ' +
+          'writes the loaded page on purpose. A backend with its own export endpoint skips both - pass its ' +
           'query, promise or observable as `file` and the server’s CSV is saved as it came.',
       },
     },
@@ -423,7 +423,7 @@ export const KeyboardNavigation: Story = {
       description: {
         story:
           '`etTableKeyboardNav` makes the body a single tab stop and moves cell focus with the arrows, ' +
-          'Home/End, Ctrl+Home/End and PageUp/PageDown — the ARIA grid pattern. Tab into the table, then ' +
+          'Home/End, Ctrl+Home/End and PageUp/PageDown - the ARIA grid pattern. Tab into the table, then ' +
           'navigate; Enter drills into a cell that holds a control and Escape comes back out.',
       },
     },
@@ -439,7 +439,7 @@ export const InlineEditing: Story = {
           '`etTableInlineEdit` swaps an `editable` column’s cell for the `etTableCellEdit` template while it is ' +
           'being edited. Double-click a Name or Email cell, or focus one and press Enter; Enter saves, Escape ' +
           'restores, Tab saves and moves to the next cell in the row. The editor is a plain `et-input` bound with ' +
-          '`[formField]` to the draft the feature hands the template — there is no cell-editor interface. ' +
+          '`[formField]` to the draft the feature hands the template - there is no cell-editor interface. ' +
           'Committing only *reports* the change: this demo runs a pretend request and reports its progress back ' +
           'through the table’s `cellState`, which is what draws the pending bar and the error mark. Type `fail` ' +
           'into a cell to see the failure path.',

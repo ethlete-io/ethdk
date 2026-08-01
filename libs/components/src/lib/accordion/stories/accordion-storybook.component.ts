@@ -26,7 +26,7 @@ import { ACCORDION_IMPORTS } from '../accordion.imports';
         </et-accordion>
 
         <et-accordion label="Do you ship outside the EU?" disabled>
-          Not yet — which is why this header refuses to open. It stays focusable and is announced as disabled rather
+          Not yet - which is why this header refuses to open. It stays focusable and is announced as disabled rather
           than being skipped over.
         </et-accordion>
       </et-accordion-group>
@@ -43,7 +43,7 @@ export class AccordionStorybookComponent {
 
 let creationOrder = 0;
 
-/** Stands in for something worth deferring — it records when, and in which order, it was constructed. */
+/** Stands in for something worth deferring - it records when, and in which order, it was constructed. */
 @Component({
   selector: 'et-sb-accordion-expensive',
   template: `<p class="text-small">
@@ -121,7 +121,7 @@ export class AccordionHeadlessStorybookComponent {
   public surface = input('dark');
 
   protected readonly SECTIONS = [
-    { title: 'Own markup', body: 'No heading wrapper, no chevron, no separators — just the two directives.' },
+    { title: 'Own markup', body: 'No heading wrapper, no chevron, no separators - just the two directives.' },
     { title: 'Own animation', body: 'This one swaps the panel in and out instead of animating a height.' },
   ];
 }

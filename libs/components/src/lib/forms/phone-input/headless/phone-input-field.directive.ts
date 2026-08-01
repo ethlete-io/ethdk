@@ -4,7 +4,7 @@ import { RuntimeError } from '@ethlete/core';
 import { PHONE_INPUT_ERROR_CODES } from '../phone-input-errors';
 import { PhoneInputDirective } from './phone-input.directive';
 
-/** The tel field of a phone input — displays the national number, grouped while unfocused. */
+/** The tel field of a phone input - displays the national number, grouped while unfocused. */
 @Directive({
   selector: 'input[etPhoneInputField]',
   exportAs: 'etPhoneInputField',
@@ -31,7 +31,7 @@ export class PhoneInputFieldDirective {
   constructor() {
     registerSingleton(this.phoneInput?.registeredField, this);
 
-    // the element shows raw digits while editing and the grouped form otherwise —
+    // the element shows raw digits while editing and the grouped form otherwise -
     // rewriting the value mid-typing would fight the caret
     effect(() => {
       const phoneInput = this.phoneInput;
@@ -48,7 +48,7 @@ export class PhoneInputFieldDirective {
       }
 
       if (phoneInput.focused() && element.value.trim().startsWith('+')) {
-        // a `+…` entry was normalized into value/country — show the national part again
+        // a `+…` entry was normalized into value/country - show the national part again
         element.value = text;
       }
     });

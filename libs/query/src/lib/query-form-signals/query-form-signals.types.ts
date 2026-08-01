@@ -42,7 +42,7 @@ export type QueryFieldDef<T> = {
 
   /**
    * Reset this field to its default whenever one of the listed sibling fields
-   * changes — e.g. a `page` field is reset by `['search', 'limit']`.
+   * changes - e.g. a `page` field is reset by `['search', 'limit']`.
    */
   readonly isResetBy?: readonly string[];
 
@@ -71,8 +71,8 @@ export type QueryFieldDef<T> = {
    * Declared with method syntax, and it has to be: as an arrow-typed property it makes `QueryFieldDef<T>`
    * contravariant in `T`, so `QueryFieldDef<string>` is not assignable to `QueryFieldDef<unknown>` and therefore a
    * concrete field map does not satisfy {@link QueryFormFields}. Inference papers over that, but it makes any
-   * generic API over a query form — `injectFilterOverlay<typeof MY_FIELDS>()`, or simply passing a
-   * `QueryFormSignals<typeof MY_FIELDS>` to something that takes a `QueryFormSignals<TFields>` — impossible to
+   * generic API over a query form - `injectFilterOverlay<typeof MY_FIELDS>()`, or simply passing a
+   * `QueryFormSignals<typeof MY_FIELDS>` to something that takes a `QueryFormSignals<TFields>` - impossible to
    * write. Method syntax is bivariant, which is the right call for a heterogeneous record like this.
    */
   valueToQueryParam?(value: T): unknown;
@@ -92,7 +92,7 @@ export type QueryFieldValue<F> = F extends QueryFieldDef<infer T> ? T : never;
 /** A map of field name → field definition, as passed to `createQueryForm({ fields })`. */
 export type QueryFormFields = Record<string, QueryFieldDef<unknown>>;
 
-/** The value shape of a query form — one entry per field. */
+/** The value shape of a query form - one entry per field. */
 export type QueryFormModel<TFields extends QueryFormFields> = {
   [K in keyof TFields]: QueryFieldValue<TFields[K]>;
 };
@@ -131,7 +131,7 @@ export type QueryFormSignalsObserveOptions = {
  * Options for a single programmatic write (`setValue`/`patchValue`/reset).
  *
  * Named distinctly from the legacy reactive-forms `QueryFormWriteOptions` (which
- * also carried the RxJS-only `onlySelf`/`emitEvent`) — the signals variant only
+ * also carried the RxJS-only `onlySelf`/`emitEvent`) - the signals variant only
  * needs `skipResets`.
  */
 export type QueryFormSignalsWriteOptions = {

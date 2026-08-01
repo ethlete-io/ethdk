@@ -12,7 +12,7 @@ export type FilterOverlayLabels = {
   error: string;
   /** When the draft filters would return nothing. */
   empty: string;
-  /** Exactly one result — worth its own string, because "Show 1 results" reads badly. */
+  /** Exactly one result - worth its own string, because "Show 1 results" reads badly. */
   one: string;
   /** A known count. */
   many: (totalHits: number) => string;
@@ -59,7 +59,7 @@ const FILTER_OVERLAY_LABELS_DEF = /* @__PURE__ */ defineLabels<FilterOverlayLabe
 
 /**
  * Localize the filter overlay's strings below this injector, and read the set in effect here as a signal.
- * Partial — what you leave out keeps the value the current locale gives it. See {@link defineLabels} for the
+ * Partial - what you leave out keeps the value the current locale gives it. See {@link defineLabels} for the
  * shape, which every domain in this library shares.
  *
  * @example
@@ -74,7 +74,7 @@ export const FILTER_OVERLAY_LABELS = /* @__PURE__ */ toToken(FILTER_OVERLAY_LABE
  *
  * The button is deliberately the place the count appears: it is what the reader is about to press, so putting
  * the consequence on it ("Show 42 results") lets them decide without applying first. It disables itself while a
- * count is pending, when the count failed, and when the answer is zero — applying a filter that returns nothing
+ * count is pending, when the count failed, and when the answer is zero - applying a filter that returns nothing
  * is never what someone meant to do.
  *
  * An overlay with no preview has nothing to wait for and simply reads "Show results". cdk's version returned the
@@ -90,7 +90,7 @@ export const resolveFilterOverlaySubmitButton = (
 
   const totalHits = state.totalHits;
 
-  // No count yet, and nothing in flight — the first request has not started.
+  // No count yet, and nothing in flight - the first request has not started.
   if (totalHits === null) return { label: labels.loading, disabled: true };
 
   if (totalHits === 0) return { label: labels.empty, disabled: true };

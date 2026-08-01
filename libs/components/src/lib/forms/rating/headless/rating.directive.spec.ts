@@ -230,7 +230,7 @@ describe('RatingDirective', () => {
       expect(fixture.componentInstance.mixed()).toBe(true);
     });
 
-    it('always commits a pick — even the hidden raw value — instead of clearing by repick', () => {
+    it('always commits a pick - even the hidden raw value - instead of clearing by repick', () => {
       icons()[2]!.click();
       fixture.detectChanges();
 
@@ -238,7 +238,7 @@ describe('RatingDirective', () => {
       expect(fixture.componentInstance.mixed()).toBe(false);
       expect(host.getAttribute('aria-valuenow')).toBe('3');
 
-      // resolved — the normal clear-by-repick behavior is back
+      // resolved - the normal clear-by-repick behavior is back
       icons()[2]!.click();
       fixture.detectChanges();
 

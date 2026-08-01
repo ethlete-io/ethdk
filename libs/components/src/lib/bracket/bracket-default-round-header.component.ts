@@ -9,7 +9,7 @@ import { BracketRound, BracketRoundSwissGroup } from './linked';
  *
  * It is a **real heading** (`role="heading"` with an `aria-level`), which is what turns a wall of
  * absolutely-positioned cells into something a screen reader can navigate by structure. The level comes
- * from the bracket's `roundHeaderLevel` — set that to sit correctly in your page's outline rather than
+ * from the bracket's `roundHeaderLevel` - set that to sit correctly in your page's outline rather than
  * assuming this one is right.
  */
 @Component({

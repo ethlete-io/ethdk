@@ -45,7 +45,7 @@ save() {
 | `createPatchQuery`  | `PATCH`  | no            | no     |
 | `createDeleteQuery` | `DELETE` | no            | no     |
 
-Each has a `createSecure…Query(client, authProviderRef)` twin. Auto-execution and caching semantics are the core rules — see [auto-execution](/query/queries#auto-execution) and [caching](/query/caching).
+Each has a `createSecure…Query(client, authProviderRef)` twin. Auto-execution and caching semantics are the core rules - see [auto-execution](/query/queries#auto-execution) and [caching](/query/caching).
 
 ## Typing requests
 
@@ -53,14 +53,14 @@ The generic `TArgs` type passed to a creator describes the whole request/respons
 
 | Field         | Description                                                                                                     |
 | ------------- | --------------------------------------------------------------------------------------------------------------- |
-| `response`    | The (transformed) response type — what `query.response()` returns.                                              |
+| `response`    | The (transformed) response type - what `query.response()` returns.                                              |
 | `rawResponse` | The wire response type, when it differs from `response`. Declaring it makes `transformResponse` **required**.   |
-| `pathParams`  | `Record<string, string \| number>` — declaring it requires a **function route**: `(p) => `/users/${p.userId}``. |
+| `pathParams`  | `Record<string, string \| number>` - declaring it requires a **function route**: `(p) => `/users/${p.userId}``. |
 | `queryParams` | Serialized into the query string using the client's `queryString` config.                                       |
 | `body`        | The request body (mutating methods).                                                                            |
 | `headers`     | Extra headers (`HttpHeaders` or a function returning them).                                                     |
 
-You pass everything except `response` when executing — via `withArgs(() => ({ … }))` or `execute({ args })`. A function route without a `withArgs` feature throws in dev mode (opt out with the `silenceMissingWithArgsFeatureError` query config if you always pass args to `execute`).
+You pass everything except `response` when executing - via `withArgs(() => ({ … }))` or `execute({ args })`. A function route without a `withArgs` feature throws in dev mode (opt out with the `silenceMissingWithArgsFeatureError` query config if you always pass args to `execute`).
 
 ### Transforming responses
 
@@ -85,20 +85,20 @@ The second argument of a creator factory (required only when `rawResponse` diffe
 | Option              | Default  | Description                                                                                                                             |
 | ------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `transformResponse` | identity | Maps `rawResponse` → `response`.                                                                                                        |
-| `reportProgress`    | `false`  | Emit upload/download progress into `query.loading()`. Not supported with the fetch backend (`withFetch()`) — upload progress needs XHR. |
+| `reportProgress`    | `false`  | Emit upload/download progress into `query.loading()`. Not supported with the fetch backend (`withFetch()`) - upload progress needs XHR. |
 | `responseType`      | `'json'` | `'json' \| 'text' \| 'blob' \| 'arraybuffer'`.                                                                                          |
 | `withCredentials`   | `false`  | Send cookies on cross-origin requests.                                                                                                  |
-| `transferCache`     | —        | Angular SSR transfer-cache config.                                                                                                      |
+| `transferCache`     | -        | Angular SSR transfer-cache config.                                                                                                      |
 | `retryFn`           | client's | Per-endpoint retry override.                                                                                                            |
-| `keepUnusedFor`     | client's | Per-endpoint override for how long an unused cache entry is kept — see [Caching](/query/caching#keeping-unused-entries-around).         |
+| `keepUnusedFor`     | client's | Per-endpoint override for how long an unused cache entry is kept - see [Caching](/query/caching#keeping-unused-entries-around).         |
 
 ## Secure queries
 
-Every template has a `createSecure…Query(client, authProviderRef)` twin that takes a bearer auth provider reference. Secure queries wait for a valid access token, attach the `Authorization` header, and re-execute automatically after a token refresh when they failed with a `401`. Setting up the provider — login/refresh queries, token refresh strategies, multi-tab sync and auth features — is covered in the [auth guide](/query/auth).
+Every template has a `createSecure…Query(client, authProviderRef)` twin that takes a bearer auth provider reference. Secure queries wait for a valid access token, attach the `Authorization` header, and re-execute automatically after a token refresh when they failed with a `401`. Setting up the provider - login/refresh queries, token refresh strategies, multi-tab sync and auth features - is covered in the [auth guide](/query/auth).
 
 ## Upload & download progress
 
-With `reportProgress: true`, `query.loading()` carries a `progress` object (`percentage`, `loaded`, `total`, plus `speed` and `remainingTime` once ~2s of samples exist) for both directions — useful for file upload UIs.
+With `reportProgress: true`, `query.loading()` carries a `progress` object (`percentage`, `loaded`, `total`, plus `speed` and `remainingTime` once ~2s of samples exist) for both directions - useful for file upload UIs.
 
 ## Error codes
 

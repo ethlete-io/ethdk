@@ -40,7 +40,7 @@ export const Mixed: Story = {
     value: 'grid',
     mixed: true,
     showMixedState: true,
-    hint: 'Bulk edit over records that disagree — no segment reads as selected until a user picks one, which replaces the hidden raw value.',
+    hint: 'Bulk edit over records that disagree - no segment reads as selected until a user picks one, which replaces the hidden raw value.',
   },
 };
 
@@ -52,7 +52,7 @@ export const Tabs: Story = {
         story:
           'The tabs variant underlines the selection instead of filling it, for a group that reads as a set of ' +
           'views. The same element the FLIP animation moves becomes the underline, so the selection still slides. ' +
-          'It is still a selection *control* — if the segments are routes or linkable panels, use ' +
+          'It is still a selection *control* - if the segments are routes or linkable panels, use ' +
           '[tabs](/components/tabs).',
       },
     },

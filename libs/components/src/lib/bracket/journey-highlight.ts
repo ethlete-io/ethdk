@@ -10,7 +10,7 @@ export const JOURNEY_FOCUS_HOST_CLASS = 'et-bracket-host--journey-focused';
 export const JOURNEY_ACTIVE_ELEMENT_CLASS = 'et-bracket-journey-active';
 /** The match a highlighted participant went out in. */
 export const JOURNEY_ENDPOINT_ELEMENT_CLASS = 'et-bracket-journey-endpoint';
-/** That participant's own row inside it — the one that lost. */
+/** That participant's own row inside it - the one that lost. */
 export const JOURNEY_ELIMINATED_ELEMENT_CLASS = 'et-bracket-journey-eliminated';
 
 /**
@@ -37,7 +37,7 @@ export type SetupJourneyHighlightConfig = {
   renderer: AngularRenderer;
   /** Read on each pointer event rather than at setup, so new bracket data needs no new listeners. */
   participants: Signal<BracketJourneyParticipant[]>;
-  /** Called when the bracket itself drops the pin — Escape, or a click on empty bracket space. */
+  /** Called when the bracket itself drops the pin - Escape, or a click on empty bracket space. */
   onFocusChange: (participantId: string | null) => void;
 };
 
@@ -50,7 +50,7 @@ export type JourneyHighlightController = {
 /**
  * Reduces the linked bracket to what the highlight reads on a pointer event.
  *
- * A participant is out when every match of theirs is decided and the last of them is one they lost —
+ * A participant is out when every match of theirs is decided and the last of them is one they lost -
  * both halves matter: a pending lower-bracket match means the loss above it wasn't the end, and a
  * champion who dropped a set in the winners bracket lost a match without ever going out.
  *
@@ -73,7 +73,7 @@ export const createBracketJourneyParticipants = <TRoundData, TMatchData>(
 
 /**
  * `:focus-visible` is what tells a tab from a click, but not every engine a test or an old browser runs
- * in can match it — and an unknown pseudo-class throws rather than returning `false`.
+ * in can match it - and an unknown pseudo-class throws rather than returning `false`.
  */
 const isFocusVisible = (element: Element) => {
   try {
@@ -139,7 +139,7 @@ export const setupJourneyHighlight = (config: SetupJourneyHighlightConfig): Jour
     }
   };
 
-  /** Draws whichever journey is in effect — the pin if there is one, the preview otherwise. */
+  /** Draws whichever journey is in effect - the pin if there is one, the preview otherwise. */
   const render = () => {
     const journey = focused ? [focused] : previewed;
     const pinned = !!focused;
@@ -211,7 +211,7 @@ export const setupJourneyHighlight = (config: SetupJourneyHighlightConfig): Jour
     focused = next;
 
     // On the document, and only while something is pinned. The pin is usually set from a control
-    // *outside* the bracket (a participants list), so focus is rarely inside it — a listener on the host
+    // *outside* the bracket (a participants list), so focus is rarely inside it - a listener on the host
     // would mean Escape worked only in the one case where the user had already tabbed into the bracket.
     stopListeningForEscape?.();
     stopListeningForEscape = focused ? renderer.listen(host.ownerDocument, 'keydown', onKeyDown) : null;
@@ -223,7 +223,7 @@ export const setupJourneyHighlight = (config: SetupJourneyHighlightConfig): Jour
 
   const onMouseLeave = () => preview([]);
 
-  // Tabbing to a linked card previews both its journeys — the same affordance a pointer gets, for the
+  // Tabbing to a linked card previews both its journeys - the same affordance a pointer gets, for the
   // one element in a cell that can hold focus. Never pins: the card's own click is its click.
   const onFocusIn = (event: Event) => {
     const target = event.target as Element | null;

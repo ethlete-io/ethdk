@@ -1,6 +1,6 @@
 // Demo fixtures live here rather than in the component file. An interpolated template literal
 // anywhere above an inline `template:` desynchronises the Angular VS Code extension's editor-side
-// scanner, which then stops forwarding template completions to the language service — see the
+// scanner, which then stops forwarding template completions to the language service - see the
 // `ethlete/no-template-literal-before-inline-template` lint rule.
 
 export type Person = {
@@ -40,7 +40,7 @@ const makePerson = (i: number): Person => {
 
 export const PEOPLE: Person[] = Array.from({ length: 40 }, (_, i) => makePerson(i));
 
-// A large set to exercise virtualization — only a window of these ever renders.
+// A large set to exercise virtualization - only a window of these ever renders.
 export const MANY_PEOPLE: Person[] = Array.from({ length: 2000 }, (_, i) => makePerson(i));
 
 // Sub-table fixture: the projects a person works on, rendered by a nested table in the detail row.
@@ -67,7 +67,7 @@ const makeProjects = (personId: number): Project[] =>
   });
 
 // Built up front and looked up by person id, so the array a detail row hands its nested table keeps
-// the same identity across change detection — a freshly built array every read would churn the
+// the same identity across change detection - a freshly built array every read would churn the
 // sub-table's own derived state.
 export const PROJECTS_BY_PERSON = new Map<number, Project[]>(
   PEOPLE.map((person) => [person.id, makeProjects(person.id)]),

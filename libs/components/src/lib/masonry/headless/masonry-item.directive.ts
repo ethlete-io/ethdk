@@ -14,14 +14,14 @@ import { MASONRY_ERROR_CODES } from '../masonry-errors';
 import { MASONRY_TOKEN } from './masonry.tokens';
 
 /**
- * One item in a masonry. It measures itself — continuously, via its own `ResizeObserver` — and takes the
+ * One item in a masonry. It measures itself - continuously, via its own `ResizeObserver` - and takes the
  * width and position the masonry works out from those measurements.
  *
  * Continuous measurement is what makes late content behave: an image that arrives after layout, a card that
  * reflows when a translation swaps in, a description that expands on click. cdk measured each item once and
  * kept the number, so any of those left the item overlapping its neighbour until the next resize.
  *
- * The element is yours, which is what lets a masonry be a real list — `<ul etMasonry>` with `<li
+ * The element is yours, which is what lets a masonry be a real list - `<ul etMasonry>` with `<li
  * etMasonryItem>` children needs no ARIA roles at all.
  *
  * @example
@@ -59,12 +59,12 @@ export class MasonryItemDirective {
    */
   private measured = computed(() => this.dimensions().rect?.() ?? null);
 
-  /** How tall the item is right now — what the masonry packs with. */
+  /** How tall the item is right now - what the masonry packs with. */
   public blockSize = computed(() => this.measured()?.height ?? 0);
 
   /**
    * How wide the item is right now. The masonry compares this against the column width to know whether the
-   * item has re-measured since the columns changed — a stale width means a stale height too, and both arrive
+   * item has re-measured since the columns changed - a stale width means a stale height too, and both arrive
    * together when the observer fires.
    */
   public inlineSize = computed(() => this.measured()?.width ?? 0);
@@ -84,7 +84,7 @@ export class MasonryItemDirective {
   public isMeasured = computed(() => {
     const columnInlineSize = this.columnInlineSize();
 
-    // Sub-pixel column widths are normal — the remainder is shared out between the columns.
+    // Sub-pixel column widths are normal - the remainder is shared out between the columns.
     return columnInlineSize !== null && Math.abs(this.inlineSize() - columnInlineSize) < 1;
   });
 
@@ -95,7 +95,7 @@ export class MasonryItemDirective {
   public isPlaced = computed(() => this.isMeasured() && this.placement() !== null);
 
   /**
-   * Whether the item has a place on screen — **sticky**: it fades in on its first placement and then stays
+   * Whether the item has a place on screen - **sticky**: it fades in on its first placement and then stays
    * visible. That the reveal latches is the point. Every column width change un-measures every item for a
    * frame (its recorded width is the old one until the observer reports), and a reveal tied to the live
    * measurement would therefore fade the whole masonry out and back in on every frame of a window drag.
@@ -114,7 +114,7 @@ export class MasonryItemDirective {
 
   /**
    * Whether this item may animate a move. It must not animate the first one: before it has a placement its
-   * offsets are zero, so an armed transition would slide it in from the container's start corner — and an item
+   * offsets are zero, so an armed transition would slide it in from the container's start corner - and an item
    * appended to a feed would slide in from there too. So the transition is armed a frame *after* the item is
    * placed, by which point the browser has painted it where it belongs and there is nothing to animate from.
    */

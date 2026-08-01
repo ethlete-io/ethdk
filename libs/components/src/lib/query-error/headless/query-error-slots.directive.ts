@@ -26,7 +26,7 @@ const assertInsideQueryError = (queryError: unknown, directiveName: string) => {
 };
 
 /**
- * Replaces the title. The error is in scope, so a title can key off the status — "You are signed out" reads
+ * Replaces the title. The error is in scope, so a title can key off the status - "You are signed out" reads
  * better for a 401 than the generic table entry does.
  *
  * @example
@@ -48,7 +48,7 @@ export class QueryErrorTitleDirective {
 
 /**
  * Replaces the actions row, retry button included. For adding a "contact support" link, or for a recovery that
- * isn't a retry — the retry itself stays available as `queryError.retry()`.
+ * isn't a retry - the retry itself stays available as `queryError.retry()`.
  *
  * @example
  * <ng-template etQueryErrorActions>

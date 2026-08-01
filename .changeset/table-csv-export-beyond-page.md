@@ -2,8 +2,8 @@
 '@ethlete/components': minor
 ---
 
-Table: the CSV export can write more than the loaded page. `rows` now also takes a **provider** —
-a function returning an observable or promise of rows — and `tableCsvRowsFromPages({ fetchPage })`
+Table: the CSV export can write more than the loaded page. `rows` now also takes a **provider** -
+a function returning an observable or promise of rows - and `tableCsvRowsFromPages({ fetchPage })`
 walks a paginated endpoint to produce one, fetching pages one at a time. `file` saves a CSV the
 **server** built instead (an `@ethlete/query` query, followed not executed, a promise, or an
 observable of `Blob | string`), skipping client-side serialization entirely.

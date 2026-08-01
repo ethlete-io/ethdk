@@ -52,7 +52,7 @@ export class RichTextEditorLinkEditorComponent {
   private ownColorProvider = inject(ProvideColorDirective);
   private contextColorProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
 
-  /** The editor's strings, handed in by `[etRichTextEditorLinkEditor]` — the popover renders detached. */
+  /** The editor's strings, handed in by `[etRichTextEditorLinkEditor]` - the popover renders detached. */
   public labels = input.required<RichTextEditorLabels>();
 
   public href = input('');
@@ -73,7 +73,7 @@ export class RichTextEditorLinkEditorComponent {
 
   constructor() {
     // The popover mounts in a detached overlay pane. Its surface IS the overlay's own surface, so it
-    // paints the overlay's registered elevation exactly (via the surface-context tracker) — the same
+    // paints the overlay's registered elevation exactly (via the surface-context tracker) - the same
     // treatment as the token popup / menu. Initial focus of the URL field is handled by the overlay's
     // `autoFocus` (reliable timing; works within the tap's user-activation window so the mobile
     // keyboard opens).
@@ -98,7 +98,7 @@ export class RichTextEditorLinkEditorComponent {
   }
 
   /** Applying re-focuses the editor before the browser processes the Enter keydown's default
-   *  action, which would then insert a line break into the editor — so the default is prevented. */
+   *  action, which would then insert a line break into the editor - so the default is prevented. */
   protected saveOnEnter(event: Event) {
     event.preventDefault();
     this.save();

@@ -24,8 +24,8 @@ const mockError: RequestError = {
 
 const settle = (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// each state change hops through the debounced query observable and the mock timer, so — like the
-// select v2 spec — flush twice: once for the query to reach the state signal, once for it to settle.
+// each state change hops through the debounced query observable and the mock timer, so - like the
+// select v2 spec - flush twice: once for the query to reach the state signal, once for it to settle.
 const flush = async () => {
   TestBed.tick();
   await settle();
@@ -101,7 +101,7 @@ describe('createV2DropzoneUpload', () => {
     });
 
     it('re-prepares and succeeds on retry', async () => {
-      // the mock object is captured in the frozen args — mutating it before re-execute lets the
+      // the mock object is captured in the frozen args - mutating it before re-execute lets the
       // retry resolve differently, exactly like a flaky endpoint that succeeds the second time.
       const mock: QueryMockConfig<UploadResponse> = { delay: 0, error: mockError };
       const handle = createHandle({ mock });
@@ -154,7 +154,7 @@ describe('createV2DropzoneUpload', () => {
       await settle(30);
       TestBed.tick();
 
-      // the disposed query no longer feeds the handle — no late success leaks in
+      // the disposed query no longer feeds the handle - no late success leaks in
       expect(handle.value()).toBeNull();
     });
   });
@@ -170,7 +170,7 @@ describe('createV2DropzoneUpload', () => {
     });
 
     // `AnyLegacyQueryCreator` (a `createLegacyQueryCreator` interop wrapper) is accepted by the same
-    // config union as a genuine `V2QueryClient` creator. We only assert the config builds — executing
+    // config union as a genuine `V2QueryClient` creator. We only assert the config builds - executing
     // an interop upload to teardown trips a re-entrant `LegacyQuery.destroy()` (NG0205), a known
     // limitation of the legacy interop query itself, not of this adapter. Apps mid-migration should
     // prefer a genuine v2 creator; the select v2 adapter carries the same caveat.

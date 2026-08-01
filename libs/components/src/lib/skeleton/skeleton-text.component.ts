@@ -2,7 +2,7 @@ import { Component, computed, input, numberAttribute, ViewEncapsulation } from '
 import { SkeletonItemComponent } from './skeleton-item.component';
 
 /**
- * A paragraph of placeholder lines — the shape almost every skeleton needs, so it isn't worth writing
+ * A paragraph of placeholder lines - the shape almost every skeleton needs, so it isn't worth writing
  * out. The last line is short, which is what makes a block of bars read as text rather than a table.
  *
  * @example
@@ -26,7 +26,7 @@ export class SkeletonTextComponent {
   /** How many lines to draw. @default 3 */
   public lines = input(3, { transform: numberAttribute });
 
-  /** Width (%) of the last line — a full-width final line reads as a block, not a paragraph. @default 60 */
+  /** Width (%) of the last line - a full-width final line reads as a block, not a paragraph. @default 60 */
   public lastLineWidth = input(60, { transform: numberAttribute });
 
   protected lineList = computed(() => {

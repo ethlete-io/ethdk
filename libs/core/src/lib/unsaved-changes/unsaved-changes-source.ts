@@ -6,9 +6,9 @@ import { controlValueSignal } from '../signals';
 /**
  * The value source an unsaved-changes tracker watches. In order of preference:
  *
- * - **`FieldTree<T>`** (signal forms — primary): read `field().value()`, restore `field().value.set(v)`.
- * - **`Signal<FieldTree<T> | null>`**: a late/async-created signal form — resolves once the field exists.
- * - **`AbstractControl`** (reactive forms — migration path): bridged via `controlValueSignal` + `setValue`.
+ * - **`FieldTree<T>`** (signal forms - primary): read `field().value()`, restore `field().value.set(v)`.
+ * - **`Signal<FieldTree<T> | null>`**: a late/async-created signal form - resolves once the field exists.
+ * - **`AbstractControl`** (reactive forms - migration path): bridged via `controlValueSignal` + `setValue`.
  * - **`WritableSignal<T>`** (escape hatch for non-form state): read/write directly.
  */
 export type UnsavedChangesSource<T> = FieldTree<T> | Signal<FieldTree<T> | null> | AbstractControl | WritableSignal<T>;
@@ -43,7 +43,7 @@ export const normalizeUnsavedChangesSource = <T>(
   if (isFieldTree<T>(source)) {
     return {
       value: computed(() => source().value()),
-      // FieldTree's value type is a generic conditional that TS can't narrow here — cast the writer.
+      // FieldTree's value type is a generic conditional that TS can't narrow here - cast the writer.
       setValue: (next) => (source().value as WritableSignal<T>).set(next),
     };
   }
@@ -51,7 +51,7 @@ export const normalizeUnsavedChangesSource = <T>(
   if (isSignal(source)) {
     const peek = untracked(source as Signal<unknown>);
 
-    // A signal that currently holds a FieldTree — or nothing yet (the late/async form case).
+    // A signal that currently holds a FieldTree - or nothing yet (the late/async form case).
     if (peek === null || peek === undefined || isFieldTree(peek)) {
       const fieldSignal = source as Signal<FieldTree<T> | null>;
 

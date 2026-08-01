@@ -41,7 +41,7 @@ describe('RichTextEditorDom', () => {
   };
 
   // Selects by plain-text character offsets regardless of how many marks currently wrap the
-  // text — approximates a user re-dragging a selection over content that already has formatting.
+  // text - approximates a user re-dragging a selection over content that already has formatting.
   const selectByTextOffsets = (root: HTMLElement, startOffset: number, endOffset: number) => {
     const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     let pos = 0;
@@ -106,7 +106,7 @@ describe('RichTextEditorDom', () => {
 
     it('inserts a line-ending space as nbsp so the next keystroke cannot collapse it away', () => {
       // A plain trailing space at line end is CSS-collapsed and Chrome drops it on the next
-      // keystroke, snapping the caret back inside the mark — the toggle-off would silently undo.
+      // keystroke, snapping the caret back inside the mark - the toggle-off would silently undo.
       const { root, dom } = setup('one <strong>two</strong>');
       const text = (root.querySelector('strong') as HTMLElement).firstChild as Node;
       select(text, 3, text, 3); // collapsed caret at the end, inside <strong>
@@ -212,7 +212,7 @@ describe('RichTextEditorDom', () => {
 
     it('does not strand an empty ancestor shell when a wrap range starts at the edge of another mark', () => {
       // Range.extractContents() leaves the original ancestor in place (now empty) whenever the
-      // range fully drains its content — here the range starts exactly at the beginning of
+      // range fully drains its content - here the range starts exactly at the beginning of
       // <strong>'s text, so wrapping in <em> triggers that fallback and used to leave `<strong></strong>`.
       const { root, dom } = setup('<strong>ab</strong>cd');
       const strongText = (root.querySelector('strong') as HTMLElement).firstChild as Node;
@@ -228,7 +228,7 @@ describe('RichTextEditorDom', () => {
     it('excludes trailing whitespace from a new mark', () => {
       const { root, dom } = setup('A short intro');
 
-      // Selects "A short " — including the space before "intro" as the last character.
+      // Selects "A short " - including the space before "intro" as the last character.
       select(root.firstChild as Node, 0, root.firstChild as Node, 8);
 
       dom.toggleInline('strong');
@@ -239,7 +239,7 @@ describe('RichTextEditorDom', () => {
     it('excludes leading whitespace from a new mark', () => {
       const { root, dom } = setup('intro A short');
 
-      // Selects " A short" — including the space after "intro" as the first character.
+      // Selects " A short" - including the space after "intro" as the first character.
       select(root.firstChild as Node, 5, root.firstChild as Node, 13);
 
       dom.toggleInline('strong');
@@ -266,7 +266,7 @@ describe('RichTextEditorDom', () => {
       dom.toggleInline('strong');
       expect(root.innerHTML).toBe('<strong>A short</strong> intro');
 
-      // Now select just "A short" (excluding the space, which was never marked to begin with —
+      // Now select just "A short" (excluding the space, which was never marked to begin with -
       // trimming above already dropped it) and remove bold.
       const strongText = (root.querySelector('strong') as HTMLElement).firstChild as Node;
       select(strongText, 0, strongText, 7);
@@ -277,7 +277,7 @@ describe('RichTextEditorDom', () => {
     });
 
     it('drops a pre-existing trailing whitespace-only mark segment when splitting instead of re-wrapping it', () => {
-      // A mark already containing trailing whitespace (e.g. from data authored elsewhere) — the
+      // A mark already containing trailing whitespace (e.g. from data authored elsewhere) - the
       // split for a partial unwrap must not preserve that whitespace inside its own <strong>.
       const { root, dom } = setup('<strong>A short </strong>intro');
       const text = (root.querySelector('strong') as HTMLElement).firstChild as Node;
@@ -292,8 +292,8 @@ describe('RichTextEditorDom', () => {
     it('produces clean markup with no empty shells across bold → italic → strike → remove-bold with an imprecise first selection', () => {
       const { root, dom } = setup('A short');
 
-      // Bold only "A shor", leaving the trailing "t" out — mimics a real, slightly-off drag
-      // selection — then re-select the full word (now split across the <strong> boundary) for
+      // Bold only "A shor", leaving the trailing "t" out - mimics a real, slightly-off drag
+      // selection - then re-select the full word (now split across the <strong> boundary) for
       // each subsequent toggle, as a user re-dragging over the already-formatted text would.
       selectByTextOffsets(root, 0, 6);
       dom.toggleInline('strong');
@@ -304,7 +304,7 @@ describe('RichTextEditorDom', () => {
       selectByTextOffsets(root, 0, 7);
       dom.toggleInline('del');
 
-      // The trailing "t" was never bolded above, so this selection is only partially marked —
+      // The trailing "t" was never bolded above, so this selection is only partially marked -
       // toggling applies the mark to the whole selection rather than removing it, per existing
       // toggle semantics. What matters here is that no empty shells or duplicate marks survive.
       selectByTextOffsets(root, 0, 7);
@@ -817,7 +817,7 @@ describe('RichTextEditorDom', () => {
 
       dom.applyLink('https://example.com');
 
-      // a link that ends the line gets a trailing space so the caret can continue after it — a
+      // a link that ends the line gets a trailing space so the caret can continue after it - a
       // no-break one, since a plain space at line end is CSS-collapsed and Chrome drops it from
       // the text node on the next keystroke
       expect(root.innerHTML).toBe('<a href="https://example.com">hello</a>&nbsp;');
@@ -837,7 +837,7 @@ describe('RichTextEditorDom', () => {
     it('keeps whitespace at the selection edges outside the anchor', () => {
       const { root, dom } = setup('hello world');
       const text = root.firstChild as Node;
-      // select "hello " — a word selection often includes the trailing space
+      // select "hello " - a word selection often includes the trailing space
       select(text, 0, text, 6);
 
       dom.applyLink('https://example.com');
@@ -848,7 +848,7 @@ describe('RichTextEditorDom', () => {
     it('keeps whitespace outside the anchor when the popover provides a trimmed label', () => {
       const { root, dom } = setup('hello world');
       const text = root.firstChild as Node;
-      select(text, 0, text, 6); // "hello " — the link editor trims the label it emits
+      select(text, 0, text, 6); // "hello " - the link editor trims the label it emits
 
       dom.applyLink('https://example.com', { text: 'hello' });
 
@@ -878,7 +878,7 @@ describe('RichTextEditorDom', () => {
 
     it('replaces an existing link cleanly when linking a selection that extends beyond it', () => {
       // Range.surroundContents() throws when the range starts before an existing <a> and ends
-      // inside it, so this goes through the extract+insert fallback — which used to nest the old
+      // inside it, so this goes through the extract+insert fallback - which used to nest the old
       // <a> inside the new one and strand the drained original as an empty <a></a> shell.
       const { root, dom } = setup('test <a href="dddd">link</a>');
       const testText = root.firstChild as Node;
@@ -902,7 +902,7 @@ describe('RichTextEditorDom', () => {
 
       expect(handled).toBe(true);
       // A bare `<p></p>` has no line box in a real browser and can't hold a caret, which pushed
-      // it into the following line — the replacement paragraph must carry a `<br>` like a
+      // it into the following line - the replacement paragraph must carry a `<br>` like a
       // browser-created empty <li> would.
       expect(root.innerHTML).toBe('<ul><li>one</li></ul><p><br></p>');
     });
@@ -1150,7 +1150,7 @@ describe('RichTextEditorDom', () => {
       const { root, dom } = setup('<p>**bold</p>');
       caretAtEndOf((root.firstChild as HTMLElement).firstChild as Node);
 
-      // first closing star: `**bold*` — must wait for the second one
+      // first closing star: `**bold*` - must wait for the second one
       expect(dom.applyInlineAutoformat('*', noneReserved)).toBe(false);
     });
 

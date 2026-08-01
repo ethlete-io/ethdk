@@ -13,7 +13,7 @@ import {
 /**
  * The per-client machinery behind the {@link withQueryPersistence} feature: it writes
  * successful reads to the store, reads them back into cache entries a consumer just created, and owns
- * every policy around that — staleness, the entry cap, and the purge a logout triggers.
+ * every policy around that - staleness, the entry cap, and the purge a logout triggers.
  *
  * Reachable via `client.subtle.persistence`, and `null` on a client that turned persistence off (or on
  * the server).
@@ -22,7 +22,7 @@ export type QueryPersistenceEngine = {
   /**
    * Resolves once the store's index has been read, after which a cold cache entry can be hydrated
    * without waiting. Entries created before that are hydrated as soon as it resolves, so nothing is
-   * lost by not awaiting it — see {@link QueryClient.whenPersistenceReady}.
+   * lost by not awaiting it - see {@link QueryClient.whenPersistenceReady}.
    */
   whenReady: Promise<void>;
 
@@ -79,7 +79,7 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
     if (!keys.length) return;
 
     // Disk first, index second: an entry dropped from the index but still on disk would be invisible
-    // forever — never hydrated, never counted against the cap, never cleaned up. Leaving it indexed
+    // forever - never hydrated, never counted against the cap, never cleaned up. Leaving it indexed
     // after a failed removal just means the next flush tries again.
     await adapter.remove(keys);
 
@@ -135,7 +135,7 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
     }
 
     try {
-      // Nothing survived — the usual reason being a bumped `version`, i.e. a deploy whose response
+      // Nothing survived - the usual reason being a bumped `version`, i.e. a deploy whose response
       // shapes changed. Emptying the store outright also collects anything the index does not know
       // about, which a key-by-key removal cannot.
       if (droppedKeys.length && !index.size) {
@@ -178,7 +178,7 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
     }
 
     if (!stored) {
-      // The store disagrees with the index — another tab removed the entry in between. Believe the
+      // The store disagrees with the index - another tab removed the entry in between. Believe the
       // store.
       index.delete(key);
 
@@ -205,7 +205,7 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
     try {
       await adapter.write(entries);
     } catch {
-      // The realistic failure is a full quota. Free the oldest half and give it exactly one more go —
+      // The realistic failure is a full quota. Free the oldest half and give it exactly one more go -
       // repeated retries against a disk that is genuinely full would just burn transactions.
       try {
         const oldestHalf = Array.from(index.values())
@@ -278,7 +278,7 @@ export const createQueryPersistenceEngine = (options: CreateQueryPersistenceEngi
 
   const handleEvent = (event: QueryRepositoryEvent) => {
     if (event.type === 'unbind-all-secure') {
-      // A logout before the index has loaded still has to purge — the entries are on disk, this tab
+      // A logout before the index has loaded still has to purge - the entries are on disk, this tab
       // simply does not know their keys yet.
       if (!isReady) {
         isSecurePurgeDeferred = true;

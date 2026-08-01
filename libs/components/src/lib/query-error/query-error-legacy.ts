@@ -13,7 +13,7 @@ import { QueryErrorRetryTarget } from './query-error.types';
 /**
  * A legacy `RequestError` as the current client's `QueryErrorResponse`.
  *
- * Nearly free, because a legacy error carries the raw `HttpErrorResponse` it came from — so the current
+ * Nearly free, because a legacy error carries the raw `HttpErrorResponse` it came from - so the current
  * client's own normalizer does the classifying, and a legacy error is described by exactly the same code, and
  * judged by the same retry policy, as a current one. That is the point of the adapter: no second
  * classification path to keep in step.
@@ -34,7 +34,7 @@ export type LegacyQueryErrorSource = {
  * Bridges a legacy query into `<et-query-error>`, so an app still on the V2 client gets the components-lib
  * error UI without the component ever naming a legacy type.
  *
- * A separate adapter rather than a union-typed input — the same split as the select and table query adapters —
+ * A separate adapter rather than a union-typed input - the same split as the select and table query adapters -
  * so the component's API describes one client, and this file is the only thing to delete when the last legacy
  * query is gone.
  *

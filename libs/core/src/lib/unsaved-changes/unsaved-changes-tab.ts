@@ -13,13 +13,13 @@ import {
 import { injectFaviconStore, injectTitleStore } from '../seo';
 import { injectIsDocumentVisible } from '../signals';
 
-/** The default tab title marker — a filled dot, prefixed while there are unsaved changes. */
+/** The default tab title marker - a filled dot, prefixed while there are unsaved changes. */
 export const UNSAVED_CHANGES_TITLE_MARKER = '●';
 
 /**
  * How an unsaved-changes tracker surfaces itself on the browser tab.
  *
- * Only the `beforeunload` lock is on by default — the title marker and the app badge write to
+ * Only the `beforeunload` lock is on by default - the title marker and the app badge write to
  * app-global surfaces, so they are opt-in.
  */
 export type UnsavedChangesTabConfig = {
@@ -27,7 +27,7 @@ export type UnsavedChangesTabConfig = {
    * Make the browser ask for confirmation before the tab is closed, reloaded, or navigated away from
    * while there are unsaved changes (`beforeunload`).
    *
-   * The prompt is the browser's own — its wording cannot be customized, and browsers only show it
+   * The prompt is the browser's own - its wording cannot be customized, and browsers only show it
    * after the user has interacted with the page at least once (sticky activation). The listener is
    * attached **only while changes exist**, so a clean page stays eligible for the back/forward cache.
    * @default true
@@ -39,7 +39,7 @@ export type UnsavedChangesTabConfig = {
    * {@link UNSAVED_CHANGES_TITLE_MARKER}, a string is used as-is.
    *
    * Goes through the core title store (`injectTitleStore`), so the app's title must be owned by it
-   * (`applyHeadTitleBinding` / the `etSeo` directive) — an app that writes `document.title` by some
+   * (`applyHeadTitleBinding` / the `etSeo` directive) - an app that writes `document.title` by some
    * other means would fight the store over it.
    * @default false
    */
@@ -47,11 +47,11 @@ export type UnsavedChangesTabConfig = {
 
   /**
    * Blink the tab while there are unsaved changes: the title marker (and the favicon dot, if enabled)
-   * is toggled on and off — the closest thing the web has to an "attention needed" tab flash, since no
+   * is toggled on and off - the closest thing the web has to an "attention needed" tab flash, since no
    * browser exposes one. Implies `titleMarker` when that isn't set.
    *
    * By default it only blinks while the tab is **in the background** (`whenHidden`), which is the case
-   * worth flagging — a title blinking in the tab the user is already reading is just noise. `interval`
+   * worth flagging - a title blinking in the tab the user is already reading is just noise. `interval`
    * is in ms and defaults to 1000; going faster is pointless because browsers clamp timers in hidden
    * tabs to roughly one second.
    * @default false
@@ -78,7 +78,7 @@ export type UnsavedChangesTabConfig = {
 };
 
 export type CreateUnsavedChangesTabLockConfig = UnsavedChangesTabConfig & {
-  /** Whether there are unsaved changes right now — typically a tracker's `hasChanges`. */
+  /** Whether there are unsaved changes right now - typically a tracker's `hasChanges`. */
   hasChanges: Signal<boolean>;
 };
 
@@ -96,7 +96,7 @@ type BadgingNavigator = Navigator & {
 };
 
 // The badge is a single app-wide surface, so every lock that wants one registers here and the badge
-// is derived from all of them — otherwise the first tracker to go clean would clear a badge that
+// is derived from all of them - otherwise the first tracker to go clean would clear a badge that
 // another one still needs.
 const BADGE_HOLDERS = /* @__PURE__ */ new Map<symbol, number | true>();
 
@@ -107,7 +107,7 @@ const syncAppBadge = () => {
     return;
   }
 
-  // Unsupported, or not installed — the promise rejects instead of throwing synchronously.
+  // Unsupported, or not installed - the promise rejects instead of throwing synchronously.
   const ignore = () => undefined;
 
   if (!BADGE_HOLDERS.size) {
@@ -127,7 +127,7 @@ const syncAppBadge = () => {
 
 /**
  * The browser-tab flavor of the unsaved-changes family: while `hasChanges` reads `true`, the tab
- * cannot be closed or reloaded without the browser's confirm prompt, and — opt in — the tab title
+ * cannot be closed or reloaded without the browser's confirm prompt, and - opt in - the tab title
  * carries a marker (optionally blinking), the favicon carries a dot, and the installed app carries a
  * badge.
  *

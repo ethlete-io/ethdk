@@ -87,7 +87,7 @@ export class ScrollableDirective {
   // --- Child tracking ---
 
   // The mutations are narrowed to the one attribute this actually reads. Left broad, every inline style
-  // written anywhere inside the track re-runs it — and a carousel's JS transition driver writes one per
+  // written anywhere inside the track re-runs it - and a carousel's JS transition driver writes one per
   // slide per animation frame, so a scroll cost a change detection tick a frame for nothing.
   private allScrollableChildren = signalElementChildren(this.scrollContainerRef, {
     mutations: { childList: true, subtree: true, attributeFilter: [SCROLLABLE_IGNORE_CHILD_ATTRIBUTE] },
@@ -100,12 +100,12 @@ export class ScrollableDirective {
   /** @internal */
   public scrollObserverRef = signal<ScrollObserverDirective | null>(null);
 
-  // Narrowed like the children observer above, and for the same reason — but not as far, because this one is
+  // Narrowed like the children observer above, and for the same reason - but not as far, because this one is
   // asking "might the content have changed size?", which an attribute genuinely can. `class` and `hidden` are
   // the attributes that plausibly resize something; `style` is left out deliberately, because it is the one
   // written per animation frame (a carousel's JS transition driver, any inline-style animation) and every such
   // write re-measured `scrollWidth`, which is a forced layout, and ran a change detection tick with it. The gap
-  // it leaves is a descendant resized by an inline style with no DOM change alongside it — rare, and the
+  // it leaves is a descendant resized by an inline style with no DOM change alongside it - rare, and the
   // container's own ResizeObserver still covers everything about the viewport.
   public containerScrollState = signalElementScrollState(this.scrollContainerRef, {
     mutations: { childList: true, subtree: true, attributeFilter: ['class', 'hidden'] },
@@ -193,7 +193,7 @@ export class ScrollableDirective {
     'et-scrollable--can-scroll': this.canScroll,
     'et-scrollable--is-at-start': this.isAtStart,
     'et-scrollable--is-at-end': this.isAtEnd,
-    // Only the edge masks read this, and it flips as often as a scroll crosses an item boundary — so a
+    // Only the edge masks read this, and it flips as often as a scroll crosses an item boundary - so a
     // scrollable without masks would pay a class change, and a restyle of the whole track with it, for a
     // selector nothing matches.
     'et-scrollable--has-partial-items': computed(
@@ -257,13 +257,13 @@ export class ScrollableDirective {
    * Hold CSS snap off until the returned function is called.
    *
    * For anything that moves the scroll offset *itself* rather than by gesture. `scroll-snap-type: mandatory`
-   * does not merely influence where a scroll comes to rest — it overrules a programmatic offset outright, and
+   * does not merely influence where a scroll comes to rest - it overrules a programmatic offset outright, and
    * silently: `container.scroll({ left: 950, behavior: 'instant' })` on a track whose snap positions are 306
    * apart lands at 918 and reports 918, and `container.scrollLeft = 1260` lands at 1224. Any code that means
    * a specific offset therefore has to take snapping off the table while it writes one.
    *
-   * Ref-counted, because two of them can overlap — a carousel crossing its loop seam on the frame a drag is
-   * being settled — and whichever finishes first must not hand snapping back to the other.
+   * Ref-counted, because two of them can overlap - a carousel crossing its loop seam on the frame a drag is
+   * being settled - and whichever finishes first must not hand snapping back to the other.
    *
    * @internal
    */
@@ -281,7 +281,7 @@ export class ScrollableDirective {
   }
 
   /**
-   * Write a scroll offset that CSS snap cannot overrule — see {@link suspendSnap}. The offset is applied
+   * Write a scroll offset that CSS snap cannot overrule - see {@link suspendSnap}. The offset is applied
    * synchronously, so snapping is handed back on the next frame, by which point the browser has nothing left
    * to argue with.
    *

@@ -12,7 +12,7 @@ import { StandingsDirective } from './headless';
  * relegation, advancing) come from a config that also draws the legend, so the two cannot drift apart.
  *
  * **Two densities, like the match card**: under 560px it keeps position, participant and points and drops
- * the rest — a table nobody can read sideways is worse than a table with fewer columns.
+ * the rest - a table nobody can read sideways is worse than a table with fewer columns.
  *
  * @example
  * <et-standings [rows]="rows()" [zones]="zones" [highlightedRowId]="myTeamId()" />

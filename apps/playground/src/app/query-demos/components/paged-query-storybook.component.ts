@@ -38,7 +38,7 @@ const getPosts = demoGetQuery<GetPostsQueryArgs>('/posts');
 
       <p class="et-sb-paged-demo-hint">
         The stack starts at page 4 of 8, so pages can be fetched in both directions.
-        <code>items()</code> currently holds {{ postPages.items().length }} items — loading:
+        <code>items()</code> currently holds {{ postPages.items().length }} items - loading:
         <code>{{ postPages.loading() ? 'true' : 'false' }}</code>
       </p>
 

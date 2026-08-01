@@ -1,6 +1,6 @@
 # Rich filter
 
-A scroll-aware scaffold for filter UIs: it watches your inline filter area with intersection observers and sets state classes on the host, so a floating filter button can appear once the inline filters scroll out of view — and `scrollToTop()` brings the user back.
+A scroll-aware scaffold for filter UIs: it watches your inline filter area with intersection observers and sets state classes on the host, so a floating filter button can appear once the inline filters scroll out of view - and `scrollToTop()` brings the user back.
 
 ```html
 <div #host et-rich-filter-host>
@@ -30,7 +30,7 @@ import { RichFilterImports } from '@ethlete/cdk';
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `et-rich-filter-host` / `[et-rich-filter-host]` | The scaffold; observes the slots and emits the state classes. Exposes `scrollToTop(options?)`. |
 | `et-rich-filter-button-slot`                    | Marks where the filter button lives inline; its viewport visibility is tracked.                |
-| `[etRichFilterButton]`                          | The button itself — this is the element the CSS turns into a floating button.                  |
+| `[etRichFilterButton]`                          | The button itself - this is the element the CSS turns into a floating button.                  |
 | `[etRichFilterContent]`                         | The filterable content area; its visibility is tracked too.                                    |
 | `[etRichFilterTop]`                             | The scroll anchor `scrollToTop()` targets (defaults to the host itself).                       |
 

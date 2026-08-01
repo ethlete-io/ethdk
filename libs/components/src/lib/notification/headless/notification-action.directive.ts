@@ -20,7 +20,7 @@ const toActionSlot = (value: NotificationActionSlot | ''): NotificationActionSlo
 export class NotificationActionDirective {
   private notification = inject(NotificationDirective, { optional: true });
 
-  /** Which action this element runs — `etNotificationAction="secondary"` for the quieter one. */
+  /** Which action this element runs - `etNotificationAction="secondary"` for the quieter one. */
   public actionSlot = input(NOTIFICATION_ACTION_SLOTS.PRIMARY, {
     alias: 'etNotificationAction',
     transform: toActionSlot,

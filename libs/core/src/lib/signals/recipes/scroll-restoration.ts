@@ -8,7 +8,7 @@ import { createRoute, createRouterState } from '../router';
 
 /**
  * The element that gets scrolled. Pass a function if the scroll container is created per route or
- * only exists after the app shell rendered — it is resolved on every navigation instead of once at
+ * only exists after the app shell rendered - it is resolved on every navigation instead of once at
  * setup time.
  * @default document.documentElement
  */
@@ -78,7 +78,7 @@ export type SetupScrollRestorationConfig = {
   };
   /**
    * Config for restoring the previous scroll offset on browser back/forward navigation.
-   * Disabled by default — without it, history navigation scrolls to top like any other navigation.
+   * Disabled by default - without it, history navigation scrolls to top like any other navigation.
    */
   restore?: ScrollRestorationRestoreConfig;
 };
@@ -143,7 +143,7 @@ const injectScrollRestorationHolds = /* @__PURE__ */ toInjectFn(SCROLL_RESTORATI
  * Suspend scroll restoration while `isPending` reads `true`.
  *
  * Restoration already waits for the scroll container to grow tall enough to reach the saved offset,
- * so this is only needed when the content may take longer than `restore.timeout` to get there —
+ * so this is only needed when the content may take longer than `restore.timeout` to get there -
  * a slow list request, for instance. Registers for the lifetime of the current injection context.
  *
  * @example
@@ -187,7 +187,7 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
   };
 
   // The browser restores the offset against the still-loading (much shorter) document, which is the
-  // exact problem we are solving — take it over completely.
+  // exact problem we are solving - take it over completely.
   if (restoreEnabled && 'scrollRestoration' in history) {
     history.scrollRestoration = 'manual';
   }
@@ -240,7 +240,7 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
       const now = Date.now();
 
       // A registered hold means the page knows more data is coming, so the content is expected to
-      // grow — suspend the clock instead of giving up on a still loading page.
+      // grow - suspend the clock instead of giving up on a still loading page.
       if (holds.isHeld() && now < hardDeadline) {
         deadline = now + restoreTimeout;
       }
@@ -257,7 +257,7 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
       cancelPendingRestore();
     };
 
-    // Wait for the new route to actually render before reading any geometry — on `NavigationEnd` the
+    // Wait for the new route to actually render before reading any geometry - on `NavigationEnd` the
     // components exist but the DOM still shows the previous page, whose height would be measured
     // instead. The timeout is a safety net in case no render pass follows.
     const start = () => {

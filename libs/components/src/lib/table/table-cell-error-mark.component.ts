@@ -10,7 +10,7 @@ import { TableCellErrorTooltipDirective } from './table-cell-error-tooltip.direc
  * The mark drawn in a failed cell when `etTableCellErrorTooltip` is imported: the same glyph the base
  * table draws, with the cell's message on a real tooltip instead of a native `title`.
  *
- * This is where the tooltip — and with it the overlay runtime and floating-ui — is actually referenced,
+ * This is where the tooltip - and with it the overlay runtime and floating-ui - is actually referenced,
  * which is the whole reason the feature is separate. Stamped only into cells that are in the error
  * state, so even with the feature imported a healthy table creates none of these.
  *

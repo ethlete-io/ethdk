@@ -44,10 +44,10 @@ export class TextareaDirective extends TextFieldControlDirective implements Form
   public hasValue = computed(() => this.mixed() || this.value().length > 0);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.TEXTAREA);
 
-  /** The text the native textarea renders — empty while mixed so the raw value never reaches the DOM. */
+  /** The text the native textarea renders - empty while mixed so the raw value never reaches the DOM. */
   public displayValue = computed(() => (this.mixed() ? '' : this.value()));
 
-  /** The placeholder the native textarea renders — `mixedLabel` overrides the consumer placeholder while mixed. */
+  /** The placeholder the native textarea renders - `mixedLabel` overrides the consumer placeholder while mixed. */
   public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));
 
   public effectiveResize = computed(() => (this.autosize() ? TEXTAREA_RESIZE_MODES.NONE : this.resize()));
@@ -86,7 +86,7 @@ export class TextareaDirective extends TextFieldControlDirective implements Form
         return;
       }
 
-      // size against what is actually rendered — while mixed that is the empty masked display,
+      // size against what is actually rendered - while mixed that is the empty masked display,
       // never the hidden raw value (resizeToFit would otherwise write it into the DOM)
       const value = this.displayValue();
       const bounds: AutosizeBounds = { minRows: this.minRows() ?? this.rows(), maxRows: this.maxRows() };
@@ -121,7 +121,7 @@ export class TextareaDirective extends TextFieldControlDirective implements Form
 
   private resizeToFit(textarea: HTMLTextAreaElement, { bounds, value }: { bounds: AutosizeBounds; value: string }) {
     // The value model can change before the template binding has flushed to the
-    // DOM — measure against the model, not a stale native value.
+    // DOM - measure against the model, not a stale native value.
     if (textarea.value !== value) {
       this.renderer.setProperty(textarea, 'value', value);
     }

@@ -9,5 +9,3 @@ export * from './lib/contentful.imports';
 export * from './lib/gql';
 export * from './lib/types';
 export * from './lib/utils';
-
-// Burst cache

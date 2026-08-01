@@ -20,7 +20,7 @@ import { injectStyleManager } from '@ethlete/core';
 import { TableComponent } from './table.component';
 import { TableCellEditContext, TableColumnDef } from './table.types';
 
-/** What one committed edit reports. The mutation is the consumer's — see {@link TableInlineEditDirective}. */
+/** What one committed edit reports. The mutation is the consumer's - see {@link TableInlineEditDirective}. */
 export type TableCellEditCommit<T> = {
   /** The row that was edited. */
   row: T;
@@ -32,7 +32,7 @@ export type TableCellEditCommit<T> = {
   next: unknown;
 };
 
-/** Which cell an edit was about — what `cellCancel` reports. */
+/** Which cell an edit was about - what `cellCancel` reports. */
 export type TableCellEditTarget<T> = {
   row: T;
   /** The column's key. */
@@ -42,7 +42,7 @@ export type TableCellEditTarget<T> = {
 /** Options for {@link TableInlineEditDirective}. */
 export type TableInlineEditConfig<T> = TableFeatureConfig & {
   /**
-   * Gate individual cells on top of the column's `editable` — e.g. a row the current user may not
+   * Gate individual cells on top of the column's `editable` - e.g. a row the current user may not
    * change, or a field that is locked once it has a value. Defaults to every cell of an editable column.
    */
   editableCell?: (row: T, column: string) => boolean;
@@ -64,7 +64,7 @@ type TableEditSession<T> = {
  *
  * The editor is yours. The feature holds the draft as a **signal-forms field** and hands it to the
  * template, so the control is bound exactly the way every control in this library is bound
- * (`[formField]`) — there is no cell-editor interface to implement.
+ * (`[formField]`) - there is no cell-editor interface to implement.
  *
  * | Key / gesture       | Does                                                        |
  * | ------------------- | ----------------------------------------------------------- |
@@ -73,7 +73,7 @@ type TableEditSession<T> = {
  * | `Escape`            | cancels, restoring the value                                  |
  * | `Tab` / `Shift+Tab` | commits and moves to the next cell in the row, editing it too |
  *
- * `Enter` needs cell focus, which is [`etTableKeyboardNav`](/components/table#keyboard-navigation) —
+ * `Enter` needs cell focus, which is [`etTableKeyboardNav`](/components/table#keyboard-navigation) -
  * without it the double-click flow still works, and the two features agree on `Enter` through the table
  * (navigation offers the cell here first, and only drills into its content when this feature passes).
  *
@@ -116,7 +116,7 @@ export class TableInlineEditDirective<T> {
   });
 
   /**
-   * A cell was committed — with Enter, with Tab, or by opening another one. Perform the mutation here
+   * A cell was committed - with Enter, with Tab, or by opening another one. Perform the mutation here
    * and drive the table's `cellState` from it; the feature has already closed the editor.
    */
   public cellCommit = output<TableCellEditCommit<T>>();
@@ -124,7 +124,7 @@ export class TableInlineEditDirective<T> {
   /** An edit was abandoned with Escape, or because its row left the table. Nothing was changed. */
   public cellCancel = output<TableCellEditTarget<T>>();
 
-  // The draft the open editor writes into. One signal — and so one form — for every edit, because only
+  // The draft the open editor writes into. One signal - and so one form - for every edit, because only
   // one cell is ever open; starting an edit seeds it with the cell's current value.
   private draft = signal<unknown>(null);
 
@@ -179,7 +179,7 @@ export class TableInlineEditDirective<T> {
 
   /**
    * Start editing the cell at an absolute row index and a visible-column index. Returns whether it
-   * opened — `false` for a column that isn't `editable`, has no `etTableCellEdit` template, or was
+   * opened - `false` for a column that isn't `editable`, has no `etTableCellEdit` template, or was
    * turned down by `editableCell`. Also the table's `editCell` seam, which is how `Enter` arrives.
    */
   public editCell(rowIndex: number, columnIndex: number) {
@@ -229,7 +229,7 @@ export class TableInlineEditDirective<T> {
     if (!hit) return;
 
     // A double-click also selects the text under it, which is exactly what the editor is about to
-    // replace — so the selection would be left behind on top of the field.
+    // replace - so the selection would be left behind on top of the field.
     if (this.editCell(hit.row, hit.column)) this.document.getSelection()?.removeAllRanges();
   }
 
@@ -242,8 +242,8 @@ export class TableInlineEditDirective<T> {
 
     const cell = this.cellOf(session);
 
-    // Only the open editor's own keystrokes are ours. Everything else in the table — another row's
-    // link, a header's sort button — carries on as it would without this feature.
+    // Only the open editor's own keystrokes are ours. Everything else in the table - another row's
+    // link, a header's sort button - carries on as it would without this feature.
     if (!cell || !event.composedPath().includes(cell)) return;
 
     // Escape gets out from anywhere in the cell, including the cell itself: an editor with nothing
@@ -256,7 +256,7 @@ export class TableInlineEditDirective<T> {
     }
 
     // Enter and Tab have to come from *inside* the editor. The `Enter` that opens one is dispatched on
-    // the cell, and keyboard navigation may have handed it over before this listener ran — so without
+    // the cell, and keyboard navigation may have handed it over before this listener ran - so without
     // this the editor would be closed by the very keystroke that opened it. Host-listener order between
     // two directives on the same element is not ours to choose, so it must not matter.
     if (event.target === cell) return;
@@ -302,7 +302,7 @@ export class TableInlineEditDirective<T> {
   }
 
   private begin({ row, column, position }: Omit<TableEditSession<T>, 'previous' | 'context'>) {
-    // Opening a second cell commits the first — one cell is in edit mode at a time, and abandoning the
+    // Opening a second cell commits the first - one cell is in edit mode at a time, and abandoning the
     // typing someone just did is not what moving on means.
     this.commit();
 
@@ -363,7 +363,7 @@ export class TableInlineEditDirective<T> {
   }
 
   /**
-   * The body cell an event came from, as a position — `null` when it started outside the grid body.
+   * The body cell an event came from, as a position - `null` when it started outside the grid body.
    * The rendered cells are rows major, so their index carries both coordinates; this is the same
    * arithmetic keyboard navigation does, and it exists because `closest()` is banned here.
    */
@@ -386,7 +386,7 @@ export class TableInlineEditDirective<T> {
 }
 
 // The feature reads cell values through the columns' `value` accessors, which the row-type-agnostic
-// feature seam deliberately hides — so it injects the table itself, as the CSV export does. Placed
+// feature seam deliberately hides - so it injects the table itself, as the CSV export does. Placed
 // anywhere else the directive could only ever silently do nothing, so name the mistake instead.
 const injectHostTable = <T>() => {
   const table = inject(TableComponent, { optional: true }) as TableComponent<T> | null;

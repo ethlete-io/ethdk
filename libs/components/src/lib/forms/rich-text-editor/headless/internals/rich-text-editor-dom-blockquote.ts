@@ -4,7 +4,7 @@ import { RichTextEditorDomCore } from './rich-text-editor-dom-core';
 const NOT_QUOTABLE = /* @__PURE__ */ new Set(['TABLE', 'UL', 'OL', 'PRE']);
 
 /**
- * Block quotes. A quote's lines are `<br>`-separated inline content inside one `<blockquote>` —
+ * Block quotes. A quote's lines are `<br>`-separated inline content inside one `<blockquote>` -
  * the shape `markdownToHtml` produces for `> ` lines, so a quote survives being re-rendered from
  * the value (undo, an external write) unchanged. Nesting is a `<blockquote>` inside a
  * `<blockquote>` (`>>`), adjusted with Tab / Shift+Tab.
@@ -56,7 +56,7 @@ export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
         continue;
       }
 
-      // A nested quote (or any block) can't live inside the paragraph — emit it on its own.
+      // A nested quote (or any block) can't live inside the paragraph - emit it on its own.
       if (child instanceof HTMLElement && (child.tagName === 'BLOCKQUOTE' || child.tagName === 'P')) {
         if (current.firstChild) flush();
 
@@ -105,7 +105,7 @@ export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
 
     const quote = renderer.createElement('blockquote');
 
-    // An empty editor has no block to quote — start an empty one, the <br> giving it a line box
+    // An empty editor has no block to quote - start an empty one, the <br> giving it a line box
     // for the caret (same treatment as toggleList / toggleHeading).
     if (blocks.length === 0) {
       renderer.appendChild(quote, renderer.createElement('br'));
@@ -128,7 +128,7 @@ export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
       while (block.firstChild) renderer.appendChild(quote, block.firstChild);
     });
 
-    // the quoted blocks may all have been empty — the <br> keeps a line box for the caret
+    // the quoted blocks may all have been empty - the <br> keeps a line box for the caret
     if (!quote.firstChild) renderer.appendChild(quote, renderer.createElement('br'));
 
     renderer.insertBefore(el, quote, blocks[0] ?? null);
@@ -171,7 +171,7 @@ export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
       const { startContainer, startOffset } = editable.range;
       const ref = quote.nextSibling;
 
-      // the lifted lines become the outer quote's own — kept apart from what sits above them
+      // the lifted lines become the outer quote's own - kept apart from what sits above them
       if (
         quote.previousSibling &&
         !(quote.previousSibling instanceof HTMLElement && quote.previousSibling.tagName === 'BR')
@@ -192,7 +192,7 @@ export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
     return true;
   };
 
-  /** Whether the caret sits at the start of a quoted line — nothing but a line break (or the start
+  /** Whether the caret sits at the start of a quoted line - nothing but a line break (or the start
    *  of the quote) before it. */
   const atLineStart = (quote: HTMLElement, range: Range) => {
     const { startContainer, startOffset } = range;
@@ -205,7 +205,7 @@ export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
   };
 
   /**
-   * Enter inside a quote: a line break within the same `<blockquote>` — left to the browser it
+   * Enter inside a quote: a line break within the same `<blockquote>` - left to the browser it
    * would split the quote into two instead, which is neither the shape the value round-trips to nor
    * what the user asked for. On the quote's already-empty last line it leaves the quote, the way
    * out that lists and headings have. Returns `true` when handled.
@@ -229,7 +229,7 @@ export const createRichTextEditorBlockquote = (core: RichTextEditorDomCore) => {
       while (outermost.parentElement && outermost.parentElement !== el) outermost = outermost.parentElement;
 
       // Drop the empty last line. Alongside its break that means the empty text nodes
-      // `Range.insertNode` leaves behind when it splits a text node — they are invisible in the
+      // `Range.insertNode` leaves behind when it splits a text node - they are invisible in the
       // markup but would keep the loop from reaching the break.
       const isTrailingBlank = (node: ChildNode | null) =>
         !!node &&

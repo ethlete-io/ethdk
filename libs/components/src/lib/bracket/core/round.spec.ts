@@ -41,7 +41,7 @@ describe('createRoundsMapBase', () => {
 
   describe('mirrored', () => {
     it('folds a single-elimination bracket around the rounds it cannot halve', () => {
-      // Out along the left, through the one-match final, back along the right — and the two halves of a
+      // Out along the left, through the one-match final, back along the right - and the two halves of a
       // round share its depth.
       expect(foldShape(generateSingleEliminationBracket(8), BRACKET_DATA_LAYOUT.MIRRORED)).toEqual([
         'se-r0--half-1 0 left',

@@ -8,7 +8,7 @@ export type PageState<TItem> = {
 
 /**
  * Whether a freshly settled page ends the pagination. This is the guard against a "load more" control
- * that outlives the data, and it overrules `toHasMore` — which can only ever be as exact as the response
+ * that outlives the data, and it overrules `toHasMore` - which can only ever be as exact as the response
  * it reads. Two cases:
  *
  * - **Nothing came back.** A page with no items has nothing after it either.

@@ -14,7 +14,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
       <et-tab-group [selectedIndex]="selectedIndex()" (selectedIndexChange)="selectedIndex.set($event)">
         <et-tab label="Page A">
           <div class="p-5">
-            <p class="mb-4 text-sm font-semibold text-white">Page A — {{ videoId() }}</p>
+            <p class="mb-4 text-sm font-semibold text-white">Page A - {{ videoId() }}</p>
 
             <et-dailymotion-player-slot
               #slotA
@@ -38,7 +38,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
 
         <et-tab label="Page B">
           <div class="p-5">
-            <p class="mb-4 text-sm font-semibold text-white">Page B — x8kpf0h</p>
+            <p class="mb-4 text-sm font-semibold text-white">Page B - x8kpf0h</p>
 
             <et-dailymotion-player-slot
               #slotB
@@ -59,7 +59,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
             </div>
 
             <p class="text-neutral-500 mt-4 leading-relaxed text-xs">
-              Both videos can be in PIP simultaneously. Navigate between pages — the player stays alive in the
+              Both videos can be in PIP simultaneously. Navigate between pages - the player stays alive in the
               background.
             </p>
           </div>

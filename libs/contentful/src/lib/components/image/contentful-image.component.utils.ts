@@ -1,4 +1,4 @@
-import { PictureSource } from '@ethlete/cdk';
+import { PictureSource } from '@ethlete/components';
 import { ContentfulGqlAsset, isContentfulGqlAsset } from '../../gql';
 import { ContentfulImageFocusArea, ContentfulImageResizeBehavior, ContentfulRestAsset } from '../../types';
 

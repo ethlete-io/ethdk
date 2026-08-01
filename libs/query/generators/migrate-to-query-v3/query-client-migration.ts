@@ -360,7 +360,7 @@ const renameVariables = (content: string, renames: Map<string, string>) => {
  */
 const DROPPED_CLIENT_OPTIONS: Record<string, string> = {
   'request.autoRefreshQueriesOnWindowFocus':
-    'No direct equivalent. Re-run the affected queries yourself — `withAutoRefresh({ onSignalChanges: [windowFocusSignal] })` per query, or `injectMyClient().refreshQueriesInUse()` from a focus listener.',
+    'No direct equivalent. Re-run the affected queries yourself - `withAutoRefresh({ onSignalChanges: [windowFocusSignal] })` per query, or `injectMyClient().refreshQueriesInUse()` from a focus listener.',
   'request.enableSmartPolling':
     'No direct equivalent. `withPolling({ interval })` polls unconditionally; pause it yourself when the tab is hidden if that matters.',
   'logging.preparedQuerySubscriptions':

@@ -1,8 +1,8 @@
 /**
  * The date-fns tokens a typing mask can represent: fixed-width, purely numeric.
  * Keyed by token letter, listing the run lengths that are fixed-width (each
- * letter maps to exactly one digit). Everything else — locale formats (`P`/`p`),
- * variable-width tokens (`d`, `M`, `H`), text tokens (`MMM`, `EEEE`, `a`) —
+ * letter maps to exactly one digit). Everything else - locale formats (`P`/`p`),
+ * variable-width tokens (`d`, `M`, `H`), text tokens (`MMM`, `EEEE`, `a`) -
  * cannot be masked: the mask's positional slots need every character to have a
  * fixed place.
  */
@@ -17,7 +17,7 @@ const FIXED_WIDTH_TOKEN_RUNS: Record<string, readonly number[]> = {
   S: [1, 2, 3],
 };
 
-/** Characters with meaning in the mask pattern language — literals must escape them. */
+/** Characters with meaning in the mask pattern language - literals must escape them. */
 const PATTERN_SPECIALS = /* @__PURE__ */ new Set(['0', '9', 'a', '*', '\\']);
 
 const toPatternLiteral = (text: string) =>
@@ -25,7 +25,7 @@ const toPatternLiteral = (text: string) =>
 
 /**
  * Derives an input-mask pattern (`'dd.MM.yyyy'` → `'00.00.0000'`) from a date-fns
- * display format, or `null` when the format is not fixed-width numeric — locale
+ * display format, or `null` when the format is not fixed-width numeric - locale
  * formats like the default `P`/`p`, variable-width tokens (`d.M.yyyy`), or text
  * tokens (`MMM`, am/pm markers). Quoted sections (`'T'`, `''`) become literals.
  */

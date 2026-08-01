@@ -72,7 +72,7 @@ export class SliderTrackDirective {
     try {
       this.elementRef.nativeElement.setPointerCapture(event.pointerId);
     } catch {
-      // pointer capture is unavailable in some test environments — dragging still works
+      // pointer capture is unavailable in some test environments - dragging still works
     }
 
     // keep the interaction from selecting text or starting a native drag

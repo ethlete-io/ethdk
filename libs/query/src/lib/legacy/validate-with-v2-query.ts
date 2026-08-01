@@ -8,11 +8,11 @@ import { AnyV2QueryCreator, QueryDataOf } from './query-creator';
 import { V2QueryState, isQueryStateFailure, isQueryStateSuccess } from './query';
 
 // The legacy twin of `../http/validate-with-query.ts` for apps still on the class-based
-// `V2QueryClient`. Same signature and behavior; only the query engine differs — it prepares and
+// `V2QueryClient`. Same signature and behavior; only the query engine differs - it prepares and
 // executes a v2/legacy query and awaits its settled `state$`, where the v3 variant awaits a query
 // snapshot. The shared error-mapping and `validateAsync` wiring live in `query-validator-core`.
 
-/** The args accepted by the creator's `prepare()` — includes `mock`/`config` extras. */
+/** The args accepted by the creator's `prepare()` - includes `mock`/`config` extras. */
 export type V2PrepareArgsOf<TCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator> = Parameters<
   TCreator['prepare']
 >[0];
@@ -32,13 +32,13 @@ export type ValidateWithV2QueryConfig<
   queryCreator: TCreator;
   /**
    * Builds the `prepare()` args from the field context. Runs reactively on the field value
-   * (debounced), exactly like `validateAsync`'s `params` — e.g.
+   * (debounced), exactly like `validateAsync`'s `params` - e.g.
    * `(ctx) => ({ pathParams: { id }, body: { ...ctx.value() } })`.
    */
   args: (ctx: FieldContext<TValue, TPathKind>) => V2PrepareArgsOf<TCreator>;
   /** Debounce before the request runs, in ms. @default 300 */
   debounce?: number;
-  /** Gate the validation — return `false` to skip the request (e.g. an empty or invalid value). */
+  /** Gate the validation - return `false` to skip the request (e.g. an empty or invalid value). */
   when?: (ctx: FieldContext<TValue, TPathKind>) => boolean;
   /**
    * Override the default violation → error mapping. Receives the violations extracted from the
@@ -58,7 +58,7 @@ type PreparedV2Query<TData> = {
 
 /**
  * Binds a query-backed async validator to a signal-forms field, adapting a **legacy v2**
- * `@ethlete/query` query into what `validateAsync` consumes — the `V2QueryClient` counterpart of
+ * `@ethlete/query` query into what `validateAsync` consumes - the `V2QueryClient` counterpart of
  * {@link validateWithQuery}, so apps that haven't migrated yet can still validate against the
  * server. The query runs through the client (bearer auth, base route, caching, Symfony error
  * normalization), where a raw `httpResource` would fire unauthenticated and bypass the pipeline.
@@ -99,7 +99,7 @@ export const validateWithV2Query = <
       resource<TResult | undefined, TParams | undefined>({
         params: () => params(),
         loader: ({ params: prepareArgs, abortSignal }) => {
-          // Prepared per request — v2 caches by the prepared args, so a fresh `prepare()` is the
+          // Prepared per request - v2 caches by the prepared args, so a fresh `prepare()` is the
           // legacy idiom (the sibling `selectOptionsFromV2Query` does the same via `queryComputed`).
           const query = config.queryCreator.prepare(prepareArgs) as unknown as PreparedV2Query<TResult>;
 

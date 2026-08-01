@@ -2,16 +2,16 @@
 
 A **query form** binds on-screen controls (a search input, a sort select, filter
 checkboxes) to typed fields that debounce, serialize to the URL query params, and
-feed your query args — so a filtered, sorted, paged list is fully described by its
+feed your query args - so a filtered, sorted, paged list is fully described by its
 URL and survives reload, share and back/forward.
 
 There are two implementations:
 
-- **`createQueryForm`** — the signals-first form (recommended for new code).
+- **`createQueryForm`** - the signals-first form (recommended for new code).
   Built on [Angular signal forms](https://angular.dev/guide/forms/signals), so
   fields bind to `@ethlete/components` controls with `[formField]` and everything
   is a signal.
-- **`QueryForm`** — the original reactive-forms class. Unchanged and still
+- **`QueryForm`** - the original reactive-forms class. Unchanged and still
   exported; see [below](#legacy-queryform).
 
 ## Quickstart
@@ -46,10 +46,10 @@ export class UsersComponent {
 ```
 
 - `fields` maps a name to a **field creator**. Each field is exposed on
-  `qf.fields.<name>` as a signal-forms field — bind it to any control that
+  `qf.fields.<name>` as a signal-forms field - bind it to any control that
   implements the signal-forms control contract (every `@ethlete/components` form
   control does) with `[formField]`.
-- `qf.value()` is the **committed** value signal — debounced and reset-resolved —
+- `qf.value()` is the **committed** value signal - debounced and reset-resolved -
   ready to feed straight into query args.
 - `.observe()` starts syncing with the URL. Call it once, after construction.
 
@@ -71,15 +71,15 @@ Every creator accepts the same options:
 | Option                    | Default                          | Description                                                                                                     |
 | ------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `defaultValue`            | `null`                           | Value the field starts at. Elided from the URL and ignored by the filter count. A function is evaluated lazily. |
-| `debounce`                | — (`300` for `searchQueryField`) | Milliseconds to wait before committing a change.                                                                |
+| `debounce`                | - (`300` for `searchQueryField`) | Milliseconds to wait before committing a change.                                                                |
 | `disableDebounceIfFalsy`  | `false` (`true` for search)      | Commit immediately when the new value is falsy (e.g. clearing a search).                                        |
 | `appendToUrl`             | `true`                           | Write the field to the URL.                                                                                     |
 | `appendDefaultValueToUrl` | `false`                          | Write the field even when it holds its default.                                                                 |
-| `isResetBy`               | —                                | Sibling field(s) whose change resets this field to its default (single key or list).                            |
+| `isResetBy`               | -                                | Sibling field(s) whose change resets this field to its default (single key or list).                            |
 | `skipInFilterCount`       | `false`                          | Exclude from `activeFilterCount`.                                                                               |
 | `skipAutoTransform`       | `false`                          | Skip the URL string → number/boolean coercion.                                                                  |
-| `queryParamToValue`       | —                                | Custom URL → value transform.                                                                                   |
-| `valueToQueryParam`       | —                                | Custom value → URL transform.                                                                                   |
+| `queryParamToValue`       | -                                | Custom URL → value transform.                                                                                   |
+| `valueToQueryParam`       | -                                | Custom value → URL transform.                                                                                   |
 
 ## Form API
 
@@ -96,7 +96,7 @@ Every creator accepts the same options:
 | `resetFieldToDefault(key, { skipResets? })` | Reset one field.                                                                  |
 | `resetFieldsToDefault(keys, …)`             | Reset several fields.                                                             |
 | `resetAllFieldsToDefault({ skipFields? })`  | Reset everything (optionally skipping some fields).                               |
-| `branch()`                                  | A detached editor over the same fields — see [Filter overlays](#filter-overlays). |
+| `branch()`                                  | A detached editor over the same fields - see [Filter overlays](#filter-overlays). |
 | `observe(options?)`                         | Start URL sync. Returns the form for chaining.                                    |
 | `unobserve()`                               | Stop syncing and remove this form's params from the URL.                          |
 
@@ -118,7 +118,7 @@ are always ignored, plus any field created with `skipInFilterCount`.
 
 Serialization rules:
 
-- **Defaults are elided** — a field at its default is removed from the URL (unless
+- **Defaults are elided** - a field at its default is removed from the URL (unless
   `appendDefaultValueToUrl` is set), keeping URLs clean.
 - **`null`** is written as the `ET_NULL__` sentinel (only when it isn't the default).
 - **Sort** is `active:direction` (`name:asc`). This matches the table system's URL
@@ -153,7 +153,7 @@ It reacts to HTTP `416`, and to a `500` carrying a Pagerfanta out-of-range detai
 
 `branch()` returns a **detached editor** over the same fields, seeded with the
 current committed value and with no URL sync. Bind it inside a filter overlay,
-let the user edit freely, then write it back on "apply" — or drop it on "cancel":
+let the user edit freely, then write it back on "apply" - or drop it on "cancel":
 
 ```ts
 draft = this.qf.branch();
@@ -171,5 +171,5 @@ The branch exposes `fields`, `value`, `activeFilterCount`, `setValue`,
 The original `QueryForm` class (with `QueryField`, `SearchQueryField`,
 `SortQueryField`, … and a reactive-forms `FormGroup`) is unchanged and still
 exported. It works with both query clients but grew up alongside the
-[legacy client](/query/legacy). Prefer `createQueryForm` for new code — it binds
+[legacy client](/query/legacy). Prefer `createQueryForm` for new code - it binds
 to `@ethlete/components` controls directly and is signals-native throughout.

@@ -11,7 +11,7 @@ export type SliderSteppedBounds = SliderBounds & {
   step: number;
 };
 
-/** Decimal places needed to represent `value` exactly — used to strip float noise after step math. */
+/** Decimal places needed to represent `value` exactly - used to strip float noise after step math. */
 const decimalPrecisionOf = (value: number) => {
   const text = value.toString();
 
@@ -82,7 +82,7 @@ export const valueFromPointerPosition = (options: PointerValueOptions) => {
 
 /**
  * The thumb a track interaction should move: the one closest to the target value.
- * Coincident thumbs tie-break by drag direction — a target above the shared value
+ * Coincident thumbs tie-break by drag direction - a target above the shared value
  * picks the later thumb so the pair can spread apart.
  */
 export const nearestThumbIndex = (target: number, values: readonly number[]) => {
@@ -106,7 +106,7 @@ export type RangeThumbConstraint = {
   end: 'start' | 'end';
   /** The other thumb's current value. */
   otherValue: number;
-  /** Minimum gap kept between the two thumbs — should be a multiple of `step`. */
+  /** Minimum gap kept between the two thumbs - should be a multiple of `step`. */
   minDistance: number;
 };
 
@@ -120,7 +120,7 @@ export const constrainRangeThumb = (value: number, constraint: RangeThumbConstra
 /** Upper bound on how many ticks `marks: true` may generate before it becomes a DOM problem. */
 export const MAX_GENERATED_MARKS = 200;
 
-// `ngDevMode` is undefined outside an Angular runtime (pure unit specs) — treat that as dev
+// `ngDevMode` is undefined outside an Angular runtime (pure unit specs) - treat that as dev
 const isDevMode = () => typeof ngDevMode === 'undefined' || !!ngDevMode;
 
 /**
@@ -166,7 +166,7 @@ export const resolveMarks = (marks: SliderMarks, bounds: SliderSteppedBounds): r
     stops.push({ value: snapValueToStep(min + index * step, bounds) });
   }
 
-  // a max that is off the step grid still gets a tick — the track visibly ends there
+  // a max that is off the step grid still gets a tick - the track visibly ends there
   if (stops[stops.length - 1]?.value !== max) {
     stops.push({ value: max });
   }
@@ -176,7 +176,7 @@ export const resolveMarks = (marks: SliderMarks, bounds: SliderSteppedBounds): r
 
 export type MarkStopOptions = {
   bounds: SliderBounds;
-  /** The filled part of the track — marks inside it are flagged active. `null` flags none. */
+  /** The filled part of the track - marks inside it are flagged active. `null` flags none. */
   activeRange: readonly [number, number] | null;
 };
 
@@ -236,7 +236,7 @@ export const snapValueToMarks = (value: number, options: MarkSnapOptions) => {
 export type AdjacentMarkOptions = {
   /** The mark grid, ascending. */
   markValues: readonly number[];
-  /** How many marks to move — negative moves towards the minimum. */
+  /** How many marks to move - negative moves towards the minimum. */
   steps: number;
 };
 

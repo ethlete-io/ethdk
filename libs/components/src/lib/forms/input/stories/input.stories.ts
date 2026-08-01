@@ -56,7 +56,7 @@ type Story = StoryObj<FormFieldInputStorybookComponent>;
 export const Default: Story = {};
 
 /**
- * The label is optional. Clear `label` (empty) and the `<et-label>` is dropped — the field
+ * The label is optional. Clear `label` (empty) and the `<et-label>` is dropped - the field
  * reserves no label band, and the control is named by its `aria-label` instead. A placeholder is
  * not an accessible name, so `aria-label`/`aria-labelledby` is required whenever the label is
  * omitted (a missing name throws `ET2201` in dev mode).
@@ -70,7 +70,7 @@ export const NoLabel: Story = {
 };
 
 /**
- * An affix takes a text glyph or an `[etIcon]`. Icons need no size class — the field shell sizes
+ * An affix takes a text glyph or an `[etIcon]`. Icons need no size class - the field shell sizes
  * them via `--et-form-field-affix-icon-size` (16px), matching the other in-field icons.
  */
 export const IconAffixes: Story = {

@@ -28,7 +28,7 @@ const MIN_COLLAPSIBLE_ITEMS = 3;
  * is the navigation landmark itself (`role="navigation"` + a label), so the element you put it on is the
  * `<nav>`.
  *
- * The trail comes from crumb templates declared inside it, or — in the shell's outlet — from the `crumbs`
+ * The trail comes from crumb templates declared inside it, or - in the shell's outlet - from the `crumbs`
  * input, which the breadcrumb manager composes out of every registered segment. When the trail is wider
  * than the space available, the middle crumbs move into an overflow slot; first and last stay visible.
  *
@@ -72,7 +72,7 @@ export class BreadcrumbDirective {
    */
   public crumbs = input<readonly BreadcrumbCrumb[] | null>(null);
 
-  /** Crumbs declared as content of this element — the direct, non-routed way to build a trail. */
+  /** Crumbs declared as content of this element - the direct, non-routed way to build a trail. */
   private declaredCrumbs = contentChildren(BreadcrumbItemTemplateDirective, { descendants: true });
 
   /** @internal The `etBreadcrumbSeparator` slot, when one is projected. */
@@ -82,7 +82,7 @@ export class BreadcrumbDirective {
   public items = computed<readonly BreadcrumbCrumb[]>(() => this.crumbs() ?? this.declaredCrumbs());
 
   // Watches the host: `scroll.width > client.width` is the "doesn't fit" signal, and it re-measures on
-  // resize *and* on DOM mutations — which is what makes a crumb's label arriving late trigger a recheck.
+  // resize *and* on DOM mutations - which is what makes a crumb's label arriving late trigger a recheck.
   private scrollState = signalHostElementScrollState();
 
   /** The strings in effect here: the injected label set with this instance's `labels` applied. */
@@ -90,7 +90,7 @@ export class BreadcrumbDirective {
 
   /**
    * The width the full trail needs, measured the one time it didn't fit. Kept as state rather than
-   * derived, because it can only be measured while the trail *is* fully rendered — once collapsed, the
+   * derived, because it can only be measured while the trail *is* fully rendered - once collapsed, the
    * host measures the collapsed width and says nothing about what the full trail would need. Reset
    * whenever the trail changes, since new crumbs mean a new width.
    */
@@ -111,7 +111,7 @@ export class BreadcrumbDirective {
   /**
    * Nothing can be known about whether the trail fits before it has been measured, and rendering the full
    * trail on that guess is the flash on load: the browser paints the overflowing trail, then swaps it for
-   * the collapsed one. While this is true the trail takes its space but isn't painted — see the
+   * the collapsed one. While this is true the trail takes its space but isn't painted - see the
    * `[data-measuring]` rule in the CSS. Only while collapsing is possible at all; otherwise there is no
    * decision pending and nothing to wait for.
    *
@@ -153,7 +153,7 @@ export class BreadcrumbDirective {
 
   constructor() {
     // A crumb can't tell where it sits in a trail that may be composed from several segments, so the one
-    // place that knows the whole trail marks its end — that is what carries `aria-current="page"`.
+    // place that knows the whole trail marks its end - that is what carries `aria-current="page"`.
     effect(() => {
       const items = this.items();
 
@@ -201,8 +201,8 @@ export class BreadcrumbDirective {
   }
 
   /**
-   * Takes one pair of host measurements as the trail's state: that it has been measured, and — if the full
-   * trail didn't fit — how wide it wants to be. Zero width means the element isn't laid out yet (or sits in
+   * Takes one pair of host measurements as the trail's state: that it has been measured, and - if the full
+   * trail didn't fit - how wide it wants to be. Zero width means the element isn't laid out yet (or sits in
    * something hidden), which is not a measurement of anything.
    */
   private recordMeasurement(client: number, scroll: number) {
@@ -211,7 +211,7 @@ export class BreadcrumbDirective {
     this.hasMeasured.set(true);
 
     // A measurement taken while collapsed describes the collapsed trail, so it must not overwrite the
-    // remembered full width — that is the number the trail is re-expanded against.
+    // remembered full width - that is the number the trail is re-expanded against.
     if (!this.collapse() || this.isCollapsed()) return;
 
     // anything that still fits says nothing about the width the full trail needs

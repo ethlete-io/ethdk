@@ -32,7 +32,7 @@ export const isQueryErrorResponse = (error: unknown): error is QueryErrorRespons
 };
 
 /**
- * Every message carried by an error, flattened into a plain list — one entry for a single error,
+ * Every message carried by an error, flattened into a plain list - one entry for a single error,
  * one per violation for a list (a form response with several field violations), empty for `null`.
  *
  * The single/list split exists because that is how APIs answer; UI almost never wants to branch on
@@ -53,7 +53,7 @@ export const queryErrorMessages = (error: QueryErrorResponse | null | undefined)
 };
 
 /**
- * The first message of an error, or `null` when there is none — the single-line counterpart to
+ * The first message of an error, or `null` when there is none - the single-line counterpart to
  * {@link queryErrorMessages}, for a toast or a form-field hint.
  */
 export const queryErrorMessage = (error: QueryErrorResponse | null | undefined): string | null =>
@@ -78,7 +78,7 @@ export const createQueryErrorResponse = (error: unknown): QueryErrorResponse => 
   if (html) {
     // An HTML error page (a proxy's 502, a maintenance page) is never shown as-is: keep the sentence inside it
     // and drop the markup. A page with no readable text leaves the list empty, which falls back to the
-    // HttpErrorResponse's own message below — still better than a wall of tags.
+    // HttpErrorResponse's own message below - still better than a wall of tags.
     const message = extractHtmlErrorMessage(html);
 
     if (message) {

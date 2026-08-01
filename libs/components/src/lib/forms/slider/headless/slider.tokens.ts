@@ -58,7 +58,7 @@ export type SliderHostBase = {
   snapToMarks: Signal<boolean>;
   /** Tick stops to render, in ascending value order. Empty while `marks` is off. */
   markStops: Signal<readonly SliderMarkStop[]>;
-  /** Bulk-edit view state — while set, thumbs park at the track start and hide their value from ARIA. */
+  /** Bulk-edit view state - while set, thumbs park at the track start and hide their value from ARIA. */
   mixed: Signal<boolean>;
   /** `aria-valuetext` the thumbs announce while `mixed` is set, after `SLIDER_LABELS` is applied. */
   resolvedMixedLabel: Signal<string>;
@@ -68,20 +68,20 @@ export type SliderHostBase = {
   shouldDisplayError: Signal<boolean>;
   labelId: Signal<string | null>;
   describedBy: Signal<string | null>;
-  /** The thumb currently being dragged via the track, or `null` — set by the track directive. */
+  /** The thumb currently being dragged via the track, or `null` - set by the track directive. */
   draggingThumbIndex: WritableSignal<number | null>;
-  /** Current thumb values in thumb order — already clamped and snapped for display. */
+  /** Current thumb values in thumb order - already clamped and snapped for display. */
   thumbValues: Signal<readonly number[]>;
   /** `thumbValues` as 0–100 track percentages, for positioning. */
   thumbPercents: Signal<readonly number[]>;
-  /** Registered thumbs in registration order — a thumb's index is its position in this list. */
+  /** Registered thumbs in registration order - a thumb's index is its position in this list. */
   thumbs: Signal<readonly SliderThumbBase[]>;
   registeredThumbLabelTemplate: WritableSignal<SliderThumbLabelBase | null>;
-  /** The ARIA value bounds of a thumb — in range mode each thumb is bounded by its sibling. */
+  /** The ARIA value bounds of a thumb - in range mode each thumb is bounded by its sibling. */
   thumbAriaBounds(index: number): { min: number; max: number };
   /** `aria-valuetext` for the thumb at `index`, or `null` to announce the raw number. */
   thumbValueText(index: number): string | null;
-  /** The value `steps` keyboard steps from `value` — mark-aware while snapping to marks. */
+  /** The value `steps` keyboard steps from `value` - mark-aware while snapping to marks. */
   adjacentValue(value: number, steps: number): number;
   /** Clamps + snaps `value` and commits it to the thumb at `index`. */
   commitThumbValue(index: number, value: number): void;

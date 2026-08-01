@@ -56,7 +56,7 @@ describe('TableComponent', () => {
 
     expect(table.visibleColumns().map((c) => c.key)).toEqual(['name']);
     // The only remaining column is a rigid width, so a trailing slack track carries the table's chrome
-    // to the panel's edge — see `hasFiller`. Slack, so its floor is 0, unlike a real column's.
+    // to the panel's edge - see `hasFiller`. Slack, so its floor is 0, unlike a real column's.
     expect(table.templateColumns()).toBe('200px minmax(0, 1fr)');
   });
 
@@ -412,7 +412,7 @@ describe('TableComponent', () => {
       table.setColumnWidth('name', 321);
       table.setColumnVisible('id', false);
 
-      // Same definitions, new array — what a consumer's `computed()` produces on any unrelated change.
+      // Same definitions, new array - what a consumer's `computed()` produces on any unrelated change.
       fixture.componentRef.setInput('columns', threeColumns());
       fixture.detectChanges();
 
@@ -826,7 +826,7 @@ describe('TableComponent', () => {
       const fixture = create(columns());
       const table = fixture.componentInstance;
 
-      // Row height can only come from a rendered cell — jsdom reports 0, so stand one in.
+      // Row height can only come from a rendered cell - jsdom reports 0, so stand one in.
       vi.spyOn(table, 'firstBodyCellElement').mockReturnValue({
         getBoundingClientRect: () => ({ height: 52 }) as DOMRect,
       } as unknown as HTMLElement);
@@ -1061,7 +1061,7 @@ describe('TableComponent', () => {
       table.toggleSort('name');
       fixture.detectChanges();
 
-      // The source is asked, not the table's own model — and its answer is mirrored into `sort()` so
+      // The source is asked, not the table's own model - and its answer is mirrored into `sort()` so
       // features, `state()` and the header keep one read path.
       expect(source.setSort).toHaveBeenCalledWith([{ key: 'name', direction: 'asc' }]);
       expect(table.sort()).toEqual([{ key: 'name', direction: 'asc' }]);
@@ -1071,7 +1071,7 @@ describe('TableComponent', () => {
       expect(source.setFilters).toHaveBeenCalledWith([{ key: 'role', values: ['Admin'] }]);
       expect(table.filterValuesFor('role')).toEqual(['Admin']);
 
-      // Server-side means the rows arrive as they are — no second sort in the browser.
+      // Server-side means the rows arrive as they are - no second sort in the browser.
       expect(table.rows()).toEqual(PEOPLE);
     });
 

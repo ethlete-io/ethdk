@@ -4,7 +4,7 @@
 
 Add vertical orientation and tick marks to both sliders. `orientation="vertical"`
 turns `et-slider` / `et-range-slider` (and the headless `etSlider` /
-`etRangeSlider`) into a bottom→up slider — `aria-orientation` follows, pointer
+`etRangeSlider`) into a bottom→up slider - `aria-orientation` follows, pointer
 mapping runs on the block axis, `touch-action` frees the other axis, and RTL
 leaves a vertical track unmirrored; its length comes from
 `--et-slider-vertical-size`. `marks` renders ticks on the track (`true` for one

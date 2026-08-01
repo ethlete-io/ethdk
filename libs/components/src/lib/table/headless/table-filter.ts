@@ -9,7 +9,7 @@ export type FilterRowsConfig<T> = {
 /**
  * Filter rows by a {@link TableFilter} list, using each column's `filterValue` (or its `value`
  * accessor). A row passes when, for **every** column with an active filter, its value is one of
- * that column's selected values (AND across columns, OR within a column). Pure and tree-shakable —
+ * that column's selected values (AND across columns, OR within a column). Pure and tree-shakable -
  * the base table applies it only in client filter mode; server-side callers let the backend filter.
  */
 export const filterRows = <T>({ rows, filters, columns }: FilterRowsConfig<T>): T[] => {

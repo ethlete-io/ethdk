@@ -293,7 +293,7 @@ describe('NumberInputDirective', () => {
       };
     });
 
-    it('steps from 0 over a mixed value and resolves it — never from the hidden raw value', () => {
+    it('steps from 0 over a mixed value and resolves it - never from the hidden raw value', () => {
       const { host, enterMixed, press } = setup();
 
       enterMixed(42);

@@ -24,7 +24,7 @@ export const createRichTextEditorHeadings = (core: RichTextEditorDomCore) => {
   const replaceBlockTag = (block: HTMLElement, tag: HeadingTag | 'p'): HTMLElement => {
     const replacement = renderer.createElement(tag);
 
-    // alignment survives the re-tag — it's the one style the editor persists on blocks
+    // alignment survives the re-tag - it's the one style the editor persists on blocks
     if (block.style.textAlign) {
       renderer.setStyle(replacement, { textAlign: block.style.textAlign });
     }
@@ -47,7 +47,7 @@ export const createRichTextEditorHeadings = (core: RichTextEditorDomCore) => {
     }
 
     const rawBlocks = blocksInRange(editable.range);
-    // Headings can't wrap a table (and wrapping the whole table would style every cell) — a caret
+    // Headings can't wrap a table (and wrapping the whole table would style every cell) - a caret
     // inside one makes the heading a no-op, matching how it leaves lists untouched.
     const blocks = rawBlocks.filter((block) => !(block instanceof HTMLElement && block.tagName === 'TABLE'));
 
@@ -55,7 +55,7 @@ export const createRichTextEditorHeadings = (core: RichTextEditorDomCore) => {
       return;
     }
 
-    // An empty editor has no block to convert — start a fresh heading with an empty line box so
+    // An empty editor has no block to convert - start a fresh heading with an empty line box so
     // the caret has somewhere to land, mirroring toggleList's empty-editor branch.
     if (blocks.length === 0) {
       const heading = renderer.createElement(tag);
@@ -69,7 +69,7 @@ export const createRichTextEditorHeadings = (core: RichTextEditorDomCore) => {
     const produced: Node[] = [];
 
     blocks.forEach((block) => {
-      // A heading cannot contain list items, so leave lists untouched — the heading button is a
+      // A heading cannot contain list items, so leave lists untouched - the heading button is a
       // no-op over a selected list rather than producing invalid markup.
       if (block instanceof HTMLElement && (block.tagName === 'UL' || block.tagName === 'OL')) {
         produced.push(block);
@@ -91,7 +91,7 @@ export const createRichTextEditorHeadings = (core: RichTextEditorDomCore) => {
       }
 
       // A bare text node, <br>, or bare inline element (e.g. <strong> before any paragraph exists)
-      // sitting directly under the root has no wrapping block — move it into a fresh heading in the
+      // sitting directly under the root has no wrapping block - move it into a fresh heading in the
       // same position, preserving its inline markup.
       const heading = renderer.createElement(tag);
       const ref = block.nextSibling;

@@ -31,7 +31,7 @@ export type TableFiltersConfig = TableFeatureConfig;
   exportAs: 'etTableFilters',
 })
 export class TableFiltersDirective {
-  /** The host table this feature registered with — filter state lives there, so it serializes. */
+  /** The host table this feature registered with - filter state lives there, so it serializes. */
   public table = injectTableFeatureHost('etTableFilters');
 
   /** See {@link TableFiltersConfig}. */
@@ -40,7 +40,7 @@ export class TableFiltersDirective {
     transform: tableFeatureConfig<TableFiltersConfig>,
   });
 
-  // Per-column filter-menu search text — client-side for a static option list, and forwarded to a
+  // Per-column filter-menu search text - client-side for a static option list, and forwarded to a
   // provider's setQuery for an async one.
   private searchQueries = signal<Record<string, string>>({});
 
@@ -59,7 +59,7 @@ export class TableFiltersDirective {
     return this.table.filterValuesFor(key).length > 0;
   }
 
-  /** Whether the column's menu gets a search box — asked for explicitly, or implied by an async provider. */
+  /** Whether the column's menu gets a search box - asked for explicitly, or implied by an async provider. */
   public hasSearch(column: TableColumnMeta) {
     return column.filterSearch === true || this.providerOf(column) !== null;
   }
@@ -73,7 +73,7 @@ export class TableFiltersDirective {
     this.providerOf(column)?.setQuery?.(query);
   }
 
-  /** The options for a column's menu — provider-backed, or the static list narrowed by the search text. */
+  /** The options for a column's menu - provider-backed, or the static list narrowed by the search text. */
   public optionsFor(column: TableColumnMeta): TableFilterOption[] {
     const provider = this.providerOf(column);
 
@@ -100,13 +100,13 @@ export class TableFiltersDirective {
     this.providerOf(column)?.loadMore?.();
   }
 
-  /** A single-choice column's picked value, or `null` — the filter list holds at most one entry. */
+  /** A single-choice column's picked value, or `null` - the filter list holds at most one entry. */
   public singleValueFor(key: string): unknown {
     return this.table.filterValuesFor(key)[0] ?? null;
   }
 
   /**
-   * Pick a single-choice column's value, or clear it by picking the one already selected — the only way
+   * Pick a single-choice column's value, or clear it by picking the one already selected - the only way
    * out of a radio group, which has no "none" row to go back to. Driven by each item's `activate`
    * rather than the group's `valueChange`: a radio group emits nothing when the checked item is chosen
    * again, which is exactly the gesture that has to clear here.
@@ -117,7 +117,7 @@ export class TableFiltersDirective {
     this.table.setFilterValues(key, value === null || value === undefined || value === current ? [] : [value]);
   }
 
-  /** The menu's checkbox group emits a single value or an array — normalize to the filter's list. */
+  /** The menu's checkbox group emits a single value or an array - normalize to the filter's list. */
   public asArray(value: unknown): unknown[] {
     return Array.isArray(value) ? value : value === null || value === undefined ? [] : [value];
   }

@@ -114,7 +114,7 @@ export class LegacyQueryCreator<
   > = (args: LegacyArgumentsOfQueryArgs<TArgs> & WithHeaders & WithLegacyConfig & WithInjector) => {
     // v2's `prepare()` needed no injection context, so plenty of call sites are plain callbacks.
     // Angular's raw NG0203 names neither the query nor the call site, which makes those a bisection
-    // exercise — replace it with an error that does.
+    // exercise - replace it with an error that does.
     const injector =
       args?.injector ??
       (() => {
@@ -144,13 +144,13 @@ export class LegacyQueryCreator<
 
     // A captured component injector routinely outlives its component here: a debounced search
     // resolving after navigation, an RxJS callback on a stream torn down a tick later. That is not
-    // a programming error the way it would be in new code — v2 had no injector to destroy — so it
+    // a programming error the way it would be in new code - v2 had no injector to destroy - so it
     // yields a query that does nothing instead of an NG0205 raised from the view's cleanup phase.
     if (!isInjectorUsable(injector)) {
       if (isDevMode()) {
         console.warn(
           `${this.options.name ? `"${this.options.name}"` : 'A legacy query'}.prepare() was called with a destroyed injector, so an inert query was returned. ` +
-            `This usually means a callback outlived the component whose injector it captured — guard the call site with DestroyRef.onDestroy, or pass an injector that outlives it.`,
+            `This usually means a callback outlived the component whose injector it captured - guard the call site with DestroyRef.onDestroy, or pass an injector that outlives it.`,
         );
       }
 

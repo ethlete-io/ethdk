@@ -25,7 +25,7 @@ export const Default: Story = {
       description: {
         story:
           'A single-message error. Switch `shape` to see the other response shapes the query client normalizes, ' +
-          'and the locale button to see the German strings — the titles and fallback messages come from the ' +
+          'and the locale button to see the German strings - the titles and fallback messages come from the ' +
           'status tables in `@ethlete/query`, picked by `injectLocale()` rather than an input.',
       },
     },
@@ -49,7 +49,7 @@ export const Retryable: Story = {
     docs: {
       description: {
         story:
-          'A 503 is transient, so the retry policy says retry and the button appears. A 404 does not get one — ' +
+          'A 503 is transient, so the retry policy says retry and the button appears. A 404 does not get one - ' +
           "offering to try again on a failure that cannot resolve itself wastes the reader's time. Set " +
           '`alwaysAllowRetry` to override that per instance.',
       },

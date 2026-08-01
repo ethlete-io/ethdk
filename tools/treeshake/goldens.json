@@ -3,7 +3,7 @@
     "Checked-in expected bundle sizes, the way Angular's repo keeps goldens/size-tracking/*.json.",
     "`gzip` is the gzipped byte count of the entry bundled in --external mode (@ethlete code only,",
     "no Angular runtime constant). Regenerate with `nx run treeshake:bundle-goldens:update` and commit",
-    "the diff as a deliberate, reviewable change — that is the whole point of the file.",
+    "the diff as a deliberate, reviewable change - that is the whole point of the file.",
     "The floors are what an app pays for importing one tiny symbol; the rest is one real entry per",
     "big domain, so a regression can be attributed instead of just noticed."
   ],
@@ -51,6 +51,18 @@
     "query-client": {
       "entry": "import { createGetQuery, createQueryClient } from '@ethlete/query';\nconsole.log(createGetQuery, createQueryClient);",
       "gzip": 11442
+    },
+    "contentful-floor": {
+      "entry": "import { isContentfulEntryType } from '@ethlete/contentful';\nconsole.log(isContentfulEntryType);",
+      "gzip": 1500
+    },
+    "contentful-rich-text-renderer": {
+      "entry": "import { ContentfulRichTextRendererComponent } from '@ethlete/contentful';\nconsole.log(ContentfulRichTextRendererComponent);",
+      "gzip": 12670
+    },
+    "contentful-image": {
+      "entry": "import { ContentfulImageComponent } from '@ethlete/contentful';\nconsole.log(ContentfulImageComponent);",
+      "gzip": 7099
     }
   }
 }

@@ -201,7 +201,7 @@ describe('SliderDirective', () => {
     pointer('pointerup', 62);
     expect(host.hasAttribute('data-dragging')).toBe(false);
 
-    // no longer dragging — moves are ignored
+    // no longer dragging - moves are ignored
     pointer('pointermove', 90);
     expect(fixture.componentInstance.value()).toBe(62);
   });

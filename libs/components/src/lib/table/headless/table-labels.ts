@@ -8,7 +8,7 @@ import { defineLabels, LabelsSource, toInjectFn, toProvideFn, toToken } from '@e
  * The functions take the column's own header text (its `key` when it has no header), so a translation
  * decides the word order rather than having it baked into a concatenation.
  *
- * Anything a consumer would rather build than translate has a template or slot instead — the empty and
+ * Anything a consumer would rather build than translate has a template or slot instead - the empty and
  * error states ({@link TableComponent.emptyTemplate}, `[etTableEmpty]`, `[etTableError]`) and filter
  * option content. These are the strings that are left.
  */
@@ -25,7 +25,7 @@ export type TableLabels = {
 
   /**
    * Accessible name for a sortable column's header button. It announces what the *next* activation
-   * does, so it takes the direction that click would apply — `null` meaning "clear the sort".
+   * does, so it takes the direction that click would apply - `null` meaning "clear the sort".
    */
   sortAction: (header: string, next: 'asc' | 'desc' | null) => string;
 
@@ -105,7 +105,7 @@ export const DEFAULT_TABLE_LABELS: TableLabels = {
 /**
  * A label set, or a function building one for the **active locale**. See {@link LabelsSource}.
  *
- * @deprecated Use {@link LabelsSource}`<`{@link TableLabels}`>` — the shape is shared by every domain
+ * @deprecated Use {@link LabelsSource}`<`{@link TableLabels}`>` - the shape is shared by every domain
  * in this library now.
  */
 export type TableLabelsSource = LabelsSource<TableLabels>;
@@ -115,7 +115,7 @@ const TABLE_LABELS_DEF = /* @__PURE__ */ defineLabels<TableLabels>('TABLE_LABELS
 /**
  * Localize the table's strings for everything below this injector, and read the set in effect here as
  * a signal: the defaults with the provided set (or the set its factory builds for the current locale)
- * layered on top. Partial — whatever you leave out keeps its {@link DEFAULT_TABLE_LABELS} value. See
+ * layered on top. Partial - whatever you leave out keeps its {@link DEFAULT_TABLE_LABELS} value. See
  * {@link defineLabels} for the shape, which every domain in this library shares.
  *
  * @example

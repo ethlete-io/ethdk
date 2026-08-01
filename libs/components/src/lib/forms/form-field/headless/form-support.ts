@@ -45,7 +45,7 @@ const formSupportFactory = () => {
 
   const displaysError = computed(() => semanticSupportState() === SUPPORT_CONTENT_STATE.ERROR);
 
-  // the enter/leave/frozen-color state machine is shared with the text-field shell — see
+  // the enter/leave/frozen-color state machine is shared with the text-field shell - see
   // `support-presentation.ts`. This holds only the presentation state; the derived render flags
   // below read it alongside the live `semanticSupportState`.
   const supportPresentation = signal(INITIAL_SUPPORT_PRESENTATION_STATE);
@@ -187,7 +187,7 @@ export type FormSupport = ReturnType<typeof formSupportFactory>;
 
 /**
  * Forwards a component's support-region view children into its `FormSupport`. The `viewChild`
- * queries themselves must stay as class fields (`NG8110` — the compiler only accepts them in
+ * queries themselves must stay as class fields (`NG8110` - the compiler only accepts them in
  * direct field initializers); this owns the wiring so the mapping lives in one place. Call
  * from the constructor (needs an injection context for the effect).
  */

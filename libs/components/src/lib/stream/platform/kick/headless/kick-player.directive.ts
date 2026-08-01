@@ -85,7 +85,7 @@ export class KickPlayerDirective implements StreamPlayer {
     });
   }
 
-  // Kick embeds have no programmatic control API — these are intentional no-ops.
+  // Kick embeds have no programmatic control API - these are intentional no-ops.
 
   public play() {
     // no-op

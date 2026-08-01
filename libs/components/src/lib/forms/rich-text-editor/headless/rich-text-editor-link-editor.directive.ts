@@ -18,7 +18,7 @@ import { RichTextEditorDirective } from './rich-text-editor.directive';
 /**
  * Registers the link editor popover on `editor`: the link tool opens it instead of falling back to
  * `window.prompt`, anchored to the selection (a top sheet below `md`). Must run in an injection
- * context tied to the editor's lifetime — `provideRichTextEditorLinkEditor()` and
+ * context tied to the editor's lifetime - `provideRichTextEditorLinkEditor()` and
  * `[etRichTextEditorLinkEditor]` are the two ways in.
  *
  * @internal
@@ -30,7 +30,7 @@ export const setupRichTextEditorLinkEditor = (editor: RichTextEditorDirective, h
 
   const overlayRef = signal<OverlayRef<RichTextEditorLinkEditorComponent, unknown> | null>(null);
 
-  /** The selection the popover edits — captured on open, restored before applying (the popover's
+  /** The selection the popover edits - captured on open, restored before applying (the popover's
    *  inputs take focus, which would otherwise collapse the live selection). */
   let savedRange: Range | null = null;
 
@@ -85,7 +85,7 @@ export const setupRichTextEditorLinkEditor = (editor: RichTextEditorDirective, h
     queueMicrotask(() => editor.activate());
   };
 
-  /** The popover's own close button — an explicit dismiss, so focus goes back to the editor. */
+  /** The popover's own close button - an explicit dismiss, so focus goes back to the editor. */
   const dismiss = () => {
     close();
     queueMicrotask(() => editor.activate());
@@ -174,7 +174,7 @@ export const setupRichTextEditorLinkEditor = (editor: RichTextEditorDirective, h
 
           if (overlayRef() === ref) overlayRef.set(null);
 
-          // Escape is an explicit "back to the editor" — hand focus back (restoreFocus is off).
+          // Escape is an explicit "back to the editor" - hand focus back (restoreFocus is off).
           // An outside-pointer close is aimed at something else; don't steal its focus.
           if (event.source === 'escape') {
             queueMicrotask(() => editor.activate());

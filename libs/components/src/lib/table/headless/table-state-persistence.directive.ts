@@ -11,7 +11,7 @@ export type TableStatePersistenceConfig = TableFeatureConfig &
   };
 
 /**
- * Opt-in persistence for a table's setup — column order, visibility, widths, sort, filters, expanded
+ * Opt-in persistence for a table's setup - column order, visibility, widths, sort, filters, expanded
  * rows and whatever the imported features contribute (a selection). Restores once when the table first
  * renders, then writes on every change.
  *
@@ -41,7 +41,7 @@ export class TableStatePersistenceDirective {
 
   private enabled = computed(() => this.config().enabled ?? true);
 
-  /** The store in effect — rebuilt when the key or kind changes, so one table can move stores. */
+  /** The store in effect - rebuilt when the key or kind changes, so one table can move stores. */
   public storage = computed(() => {
     const { key, kind, storage } = this.config();
 
