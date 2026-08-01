@@ -2,6 +2,7 @@ import { Provider } from '@angular/core';
 import { injectRenderer } from '@ethlete/core';
 import { DEFAULT_RICH_TEXT_EDITOR_LABELS } from '../rich-text-editor-labels';
 import { RICH_TEXT_EDITOR_TOOL, RichTextEditorToolDefinition } from '../rich-text-editor-tools';
+import { mountRichTextEditorTableStyles } from './rich-text-editor-table-styles.component';
 import { RichTextEditorTableToolComponent } from './rich-text-editor-table-tool.component';
 import { createTableNav } from './rich-text-editor-table.util';
 
@@ -16,6 +17,8 @@ import { createTableNav } from './rich-text-editor-table.util';
 export const provideRichTextEditorTableTool = (): Provider => ({
   provide: RICH_TEXT_EDITOR_TOOL,
   useFactory: (): RichTextEditorToolDefinition => {
+    mountRichTextEditorTableStyles();
+
     const nav = createTableNav(injectRenderer());
 
     return {

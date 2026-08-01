@@ -11,7 +11,17 @@ import {
 } from '../../../icon';
 import { MENU_IMPORTS } from '../../../menu';
 import { RichTextEditorDirective } from '../headless/rich-text-editor.directive';
-import { RICH_TEXT_EDITOR_HEADING_OPTIONS } from '../rich-text-editor-tools';
+import { DEFAULT_RICH_TEXT_EDITOR_LABELS } from '../rich-text-editor-labels';
+
+const richTextEditorHeadingOptions = (): readonly { level: number | null; label: string; icon: string }[] => [
+  { level: null, label: DEFAULT_RICH_TEXT_EDITOR_LABELS.paragraph, icon: 'et-paragraph' },
+  { level: 1, label: DEFAULT_RICH_TEXT_EDITOR_LABELS.heading(1), icon: 'et-heading-1' },
+  { level: 2, label: DEFAULT_RICH_TEXT_EDITOR_LABELS.heading(2), icon: 'et-heading-2' },
+  { level: 3, label: DEFAULT_RICH_TEXT_EDITOR_LABELS.heading(3), icon: 'et-heading-3' },
+];
+
+/** Block-style options for the heading menu. `null` is a normal paragraph. */
+export const RICH_TEXT_EDITOR_HEADING_OPTIONS = /* @__PURE__ */ richTextEditorHeadingOptions();
 
 /**
  * The opt-in `'heading'` tool's toolbar control: a menu of block styles (paragraph, H1, H2, H3).

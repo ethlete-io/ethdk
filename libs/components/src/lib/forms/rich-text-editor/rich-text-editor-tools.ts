@@ -199,16 +199,6 @@ const richTextEditorToolButtons = (): Partial<Record<RichTextEditorTool, RichTex
 /** The toggle-button tools, keyed by token (`divider`/`heading` are rendered specially). */
 export const RICH_TEXT_EDITOR_TOOL_BUTTONS = /* @__PURE__ */ richTextEditorToolButtons();
 
-const richTextEditorHeadingOptions = (): readonly { level: number | null; label: string; icon: string }[] => [
-  { level: null, label: DEFAULT_RICH_TEXT_EDITOR_LABELS.paragraph, icon: 'et-paragraph' },
-  { level: 1, label: DEFAULT_RICH_TEXT_EDITOR_LABELS.heading(1), icon: 'et-heading-1' },
-  { level: 2, label: DEFAULT_RICH_TEXT_EDITOR_LABELS.heading(2), icon: 'et-heading-2' },
-  { level: 3, label: DEFAULT_RICH_TEXT_EDITOR_LABELS.heading(3), icon: 'et-heading-3' },
-];
-
-/** Block-style options for the heading menu. `null` is a normal paragraph. */
-export const RICH_TEXT_EDITOR_HEADING_OPTIONS = /* @__PURE__ */ richTextEditorHeadingOptions();
-
 /**
  * A tool contributed to the toolbar via DI. Base tools are the static {@link RICH_TEXT_EDITOR_TOOL_BUTTONS};
  * opt-in tools (table, alignment, or app-defined ones) register a definition through

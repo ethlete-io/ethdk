@@ -120,13 +120,38 @@ so those tools disable themselves accordingly.
 
 ## Links
 
-The `'link'` tool opens a popover (not a browser prompt) to set a link's **text**, **URL** and
-whether it should **open in a new tab**. New-tab links are stored in the Markdown value as raw HTML
+New-tab links are stored in the Markdown value as raw HTML
 (`<a href="…" target="_blank" rel="noopener noreferrer">…</a>`) since Markdown has no `target`
-syntax; ordinary links stay `[text](url)`. The popover is used from both the main toolbar and the
-selection (floating) toolbar, and pre-fills from the link under the caret when editing one. It is
-responsive: an arrow'd popover anchored to the selection on wider screens, and a top sheet (pinned
-above the on-screen keyboard) on small/touch screens.
+syntax; ordinary links stay `[text](url)`.
+
+By default the `'link'` tool asks for a URL with the browser's `prompt()` — on an existing link it
+removes it. That keeps an editor that only needs plain links free of any link UI.
+
+Add `provideRichTextEditorLinkEditor()` for the real thing: a popover that sets a link's **text**,
+**URL** and whether it should **open in a new tab**, reachable from both the main toolbar and the
+selection (floating) toolbar, pre-filled from the link under the caret when editing one, and
+responsive — an arrow'd popover anchored to the selection on wider screens, a top sheet (pinned above
+the on-screen keyboard) on small/touch ones.
+
+```ts
+import { provideRichTextEditorLinkEditor } from '@ethlete/components';
+
+providers: [provideRichTextEditorLinkEditor()];
+```
+
+::: tip Bundle size
+The popover is a form (URL, text, a "new tab" checkbox) rendered in an overlay, so it pulls the form
+field, input, checkbox and choice-field components plus the top-sheet strategy in with it — roughly
+half of what a bare editor costs. Providing it once per app is enough; not providing it means none of
+that ships.
+:::
+
+Upgrading from a version where the popover was always mounted? Run the scan-and-report migration to
+list the editors that now fall back to the prompt:
+
+```bash
+yarn nx g @ethlete/components:migrate-rich-text-editor-link-editor
+```
 
 ## Opt-in tools: the heading menu, tables, alignment and images
 

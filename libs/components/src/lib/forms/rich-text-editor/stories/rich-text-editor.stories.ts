@@ -5,7 +5,10 @@ import {
   RichTextEditorImageFailureStorybookComponent,
   RichTextEditorImageStorybookComponent,
 } from './rich-text-editor-image-storybook.component';
-import { FormFieldRichTextEditorStorybookComponent } from './rich-text-editor-storybook.component';
+import {
+  FormFieldRichTextEditorPromptLinkStorybookComponent,
+  FormFieldRichTextEditorStorybookComponent,
+} from './rich-text-editor-storybook.component';
 
 export default {
   title: 'Components/Forms/Rich Text Editor',
@@ -85,4 +88,10 @@ export const Images: { render: () => { template: string }; decorators: unknown[]
 export const ImageUploadFailure: { render: () => { template: string }; decorators: unknown[] } = {
   render: () => ({ template: `<et-sb-rich-text-editor-image-failure />` }),
   decorators: [moduleMetadata({ imports: [RichTextEditorImageFailureStorybookComponent] })],
+};
+
+/** Without `provideRichTextEditorLinkEditor()` the link tool falls back to the browser's `prompt()`. */
+export const LinkPromptFallback: { render: () => { template: string }; decorators: unknown[] } = {
+  render: () => ({ template: `<et-sb-form-field-rich-text-editor-prompt-link />` }),
+  decorators: [moduleMetadata({ imports: [FormFieldRichTextEditorPromptLinkStorybookComponent] })],
 };

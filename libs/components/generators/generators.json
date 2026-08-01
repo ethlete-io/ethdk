@@ -5,6 +5,11 @@
       "schema": "./migrate-query-error-labels/schema.json",
       "description": "Find query-error usage affected by the English-only label default and report where German must be re-opted-in"
     },
+    "migrate-rich-text-editor-link-editor": {
+      "factory": "./migrate-rich-text-editor-link-editor/migration",
+      "schema": "./migrate-rich-text-editor-link-editor/schema.json",
+      "description": "Find rich text editor usage that loses the link editor popover and report where to re-opt-in"
+    },
     "icons": {
       "factory": "./icons/generator",
       "schema": "./icons/schema.json",

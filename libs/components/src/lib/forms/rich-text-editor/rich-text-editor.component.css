@@ -47,18 +47,6 @@
     initial-value: 6px;
   }
 
-  @property --et-rich-text-editor-image-radius {
-    syntax: '<length>';
-    inherits: true;
-    initial-value: 6px;
-  }
-
-  @property --et-rich-text-editor-image-upload-height {
-    syntax: '<length>';
-    inherits: true;
-    initial-value: 140px;
-  }
-
   @property --et-rich-text-editor-token-radius {
     syntax: '<length>';
     inherits: true;
@@ -354,104 +342,6 @@
         font-size: inherit;
       }
 
-      table {
-        border-collapse: collapse;
-        inline-size: 100%;
-        margin-block: var(--et-rich-text-editor-content-gap);
-      }
-
-      :is(th, td) {
-        padding: 6px 8px;
-        border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.15));
-        text-align: start;
-        vertical-align: top;
-      }
-
-      th {
-        font-weight: 700;
-        background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
-      }
-
-      /* Images are block-level (the only shape `![alt](url)` round-trips), and clickable: the image
-         tool opens its popover from a click, so they keep a pointer cursor. */
-      img {
-        display: block;
-        max-inline-size: 100%;
-        block-size: auto;
-        margin-block: var(--et-rich-text-editor-content-gap);
-        border-radius: var(--et-rich-text-editor-image-radius);
-        cursor: pointer;
-      }
-
-      /* The upload placeholder the image tool leaves at the caret while a file uploads. It stands in
-         for the image, so it takes an image's room rather than a character's — but it carries no text
-         (that is what keeps it out of the editor's value), so everything it says is drawn here from
-         its attributes: a spinning ring, the label plus percentage, a progress bar along the bottom,
-         and a failed state that removes itself shortly after.
-
-         It is a `<span>` set to `display: block` on purpose: a real block element (`<p>`, `<div>`)
-         would serialize as a paragraph boundary, and this must serialize as nothing at all. */
-      .et-rte-image-upload {
-        display: block;
-        position: relative;
-        block-size: var(--et-rich-text-editor-image-upload-height);
-        margin-block: var(--et-rich-text-editor-content-gap);
-        border-radius: var(--et-rich-text-editor-image-radius);
-        outline: 1px dashed color-mix(in srgb, currentColor 24%, transparent);
-        outline-offset: -1px;
-        background:
-          linear-gradient(to right, var(--et-theme-color-primary-solid, currentColor) 0 0) no-repeat left bottom /
-            var(--_et-rte-image-progress, 0%) 3px,
-          color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 8%, transparent);
-        user-select: all;
-
-        /* The spinner, above the label. */
-        &::before {
-          content: '';
-          position: absolute;
-          inset-inline: 0;
-          inset-block-start: calc(50% - 1.9em);
-          margin-inline: auto;
-          inline-size: 1.8em;
-          block-size: 1.8em;
-          border: 2px solid color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 28%, transparent);
-          border-block-start-color: var(--et-theme-color-primary-solid, currentColor);
-          border-radius: 50%;
-          animation: et-rte-image-upload-spin 800ms linear infinite;
-        }
-
-        /* The state, read straight off the accessible name so it needs no text node of its own. */
-        &::after {
-          content: attr(aria-label);
-          position: absolute;
-          inset-inline: 0;
-          inset-block-start: calc(50% + 0.4em);
-          color: var(--et-surface-color-muted-solid, inherit);
-          font-size: 1.2rem;
-          text-align: center;
-        }
-
-        &[data-progress]::after {
-          content: attr(aria-label) ' · ' attr(data-progress) '%';
-          font-variant-numeric: tabular-nums;
-        }
-
-        &[data-state='error'] {
-          outline-color: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 40%, transparent);
-          background: color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 10%, transparent);
-
-          /* A failed upload is not still working — the ring stops and becomes a cross. */
-          &::before {
-            border: none;
-            border-radius: 0;
-            background:
-              linear-gradient(to bottom right, transparent 44%, currentColor 44% 56%, transparent 56%),
-              linear-gradient(to bottom left, transparent 44%, currentColor 44% 56%, transparent 56%);
-            animation: none;
-          }
-        }
-      }
-
       .et-rte-token {
         --_et-rte-token-accent: var(--et-theme-color-primary-solid, var(--et-surface-interaction-solid, currentColor));
 
@@ -471,18 +361,6 @@
         margin-inline-end: 1px;
         opacity: 0.65;
       }
-    }
-  }
-
-  @keyframes et-rte-image-upload-spin {
-    to {
-      transform: rotate(1turn);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .et-rte-content .et-rte-image-upload::before {
-      animation: none;
     }
   }
 }

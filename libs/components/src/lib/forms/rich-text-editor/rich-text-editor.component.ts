@@ -32,12 +32,9 @@ import {
   UNDERLINE_ICON,
   UNDO_ICON,
 } from '../../icon';
-import {
-  RichTextEditorDirective,
-  RichTextEditorFloatingToolbarDirective,
-  RichTextEditorLinkEditorDirective,
-} from './headless';
+import { RichTextEditorDirective, RichTextEditorFloatingToolbarDirective } from './headless';
 import { richTextEditorToolLabel } from './rich-text-editor-labels';
+import { RICH_TEXT_EDITOR_LINK_EDITOR } from './rich-text-editor-link-editor.token';
 import {
   RICH_TEXT_EDITOR_TOOL,
   RICH_TEXT_EDITOR_TOOL_BUTTONS,
@@ -105,7 +102,6 @@ const NAVIGATION_KEYS = /* @__PURE__ */ new Set([
       outputs: ['valueChange', 'touchedChange'],
     },
     RichTextEditorFloatingToolbarDirective,
-    RichTextEditorLinkEditorDirective,
   ],
   host: {
     class: 'et-rich-text-editor',
@@ -127,6 +123,10 @@ export class RichTextEditorComponent {
   /** Touch devices: menus open without stealing focus (keeps the keyboard up so the docked toolbar
    *  stays put) and the toolbar docks above the keyboard. */
   protected hasTouchInput = injectHasTouchInput();
+
+  /** Present only when `provideRichTextEditorLinkEditor()` is in scope; otherwise the link tool
+   *  falls back to `window.prompt` and the popover never ships. */
+  private linkEditorSetup = inject(RICH_TEXT_EDITOR_LINK_EDITOR, { optional: true });
   protected editable = viewChild.required<ElementRef<HTMLElement>>('editable');
   protected toolbar = viewChild.required<ElementRef<HTMLElement>>('toolbar');
 
@@ -162,6 +162,8 @@ export class RichTextEditorComponent {
   private toolbarTabStop: HTMLButtonElement | null = null;
 
   constructor() {
+    this.linkEditorSetup?.(this.dir, this.host.nativeElement);
+
     this.trackKeyboardInset();
     this.trackEditingActive();
 

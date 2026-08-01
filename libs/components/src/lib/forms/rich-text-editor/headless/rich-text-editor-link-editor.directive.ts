@@ -15,51 +15,102 @@ import {
 import { rangeTextBoundingRect } from './internals/rich-text-editor-dom';
 import { RichTextEditorDirective } from './rich-text-editor.directive';
 
-@Directive({
-  selector: '[etRichTextEditorLinkEditor]',
-})
-export class RichTextEditorLinkEditorDirective {
-  private editor = inject(RichTextEditorDirective);
-  private document = inject(DOCUMENT);
-  private host = inject<ElementRef<HTMLElement>>(ElementRef);
-  private overlayManager = injectOverlayManager();
-  private destroyRef = inject(DestroyRef);
+/**
+ * Registers the link editor popover on `editor`: the link tool opens it instead of falling back to
+ * `window.prompt`, anchored to the selection (a top sheet below `md`). Must run in an injection
+ * context tied to the editor's lifetime — `provideRichTextEditorLinkEditor()` and
+ * `[etRichTextEditorLinkEditor]` are the two ways in.
+ *
+ * @internal
+ */
+export const setupRichTextEditorLinkEditor = (editor: RichTextEditorDirective, host: HTMLElement) => {
+  const document = inject(DOCUMENT);
+  const overlayManager = injectOverlayManager();
+  const destroyRef = inject(DestroyRef);
 
-  private overlayRef = signal<OverlayRef<RichTextEditorLinkEditorComponent, unknown> | null>(null);
+  const overlayRef = signal<OverlayRef<RichTextEditorLinkEditorComponent, unknown> | null>(null);
 
   /** The selection the popover edits — captured on open, restored before applying (the popover's
    *  inputs take focus, which would otherwise collapse the live selection). */
-  private savedRange: Range | null = null;
+  let savedRange: Range | null = null;
 
-  constructor() {
-    this.editor.openLinkEditor.set(() => this.open());
+  const close = () => {
+    const ref = overlayRef();
 
-    this.destroyRef.onDestroy(() => {
-      this.editor.openLinkEditor.set(null);
-      this.close();
-    });
-  }
+    if (!ref) return;
 
-  private open() {
+    overlayRef.set(null);
+    ref.close();
+  };
+
+  const restoreSelection = () => {
+    if (!savedRange) return;
+
+    const selection = document.getSelection();
+
+    if (!selection) return;
+
+    selection.removeAllRanges();
+    selection.addRange(savedRange);
+  };
+
+  const buildAnchoredPosition = (): OverlayRuntimeAnchoredPosition => {
+    const referenceElement: VirtualElement = {
+      getBoundingClientRect: () => (savedRange ? rangeTextBoundingRect(savedRange) : new DOMRect()),
+      contextElement: editor.editorDom.root() ?? undefined,
+    };
+
+    return {
+      kind: 'anchored',
+      referenceElement,
+      placement: 'bottom',
+      fallbackPlacements: ['top'],
+      offset: 10,
+      arrowPadding: 16,
+      autoCloseIfReferenceHidden: true,
+    };
+  };
+
+  const apply = (value: RichTextEditorLinkEditorValue) => {
+    restoreSelection();
+    editor.applyLink(value.href, { newTab: value.newTab, text: value.text });
+    close();
+    queueMicrotask(() => editor.activate());
+  };
+
+  const remove = () => {
+    restoreSelection();
+    editor.removeLink();
+    close();
+    queueMicrotask(() => editor.activate());
+  };
+
+  /** The popover's own close button — an explicit dismiss, so focus goes back to the editor. */
+  const dismiss = () => {
+    close();
+    queueMicrotask(() => editor.activate());
+  };
+
+  const open = () => {
     // clicking the link button while the popover is open toggles it shut
-    if (this.overlayRef()) {
-      this.close();
+    if (overlayRef()) {
+      close();
 
       return;
     }
 
-    if (this.editor.disabled() || this.editor.readonly()) return;
+    if (editor.disabled() || editor.readonly()) return;
 
     // a tap on the link button can move focus off the editor on touch; restore the selection so the
     // popover edits and re-links what was actually selected
-    this.editor.editorDom.restoreSelection();
+    editor.editorDom.restoreSelection();
 
-    const selection = this.editor.editorDom.getSelection();
-    const info = this.editor.editorDom.readActiveLink();
+    const selection = editor.editorDom.getSelection();
+    const info = editor.editorDom.readActiveLink();
 
     if (!selection || !info) return;
 
-    this.savedRange = selection.range.cloneRange();
+    savedRange = selection.range.cloneRange();
 
     const config: OverlayConfig = {
       mode: 'non-modal',
@@ -72,16 +123,16 @@ export class RichTextEditorLinkEditorDirective {
       closeOnOutsidePointer: true,
       // the whole editor (toolbar + content) is the origin, so clicking the link button that opened
       // the popover cleanly toggles it shut instead of closing-then-reopening
-      origin: this.host.nativeElement,
+      origin: host,
       bindings: [
         inputBinding('href', () => info.href),
         inputBinding('text', () => info.text),
         inputBinding('newTab', () => info.newTab),
         inputBinding('exists', () => info.exists),
-        inputBinding('labels', () => this.editor.resolvedLabels()),
-        outputBinding<RichTextEditorLinkEditorValue>('saveLink', (value) => this.apply(value)),
-        outputBinding<void>('removeLink', () => this.remove()),
-        outputBinding<void>('dismiss', () => this.dismiss()),
+        inputBinding('labels', () => editor.resolvedLabels()),
+        outputBinding<RichTextEditorLinkEditorValue>('saveLink', (value) => apply(value)),
+        outputBinding<void>('removeLink', () => remove()),
+        outputBinding<void>('dismiss', () => dismiss()),
       ],
       // Responsive: on phones (< md) an anchored popover would be cramped against the on-screen
       // keyboard and the native selection menu, so use a top sheet (pinned above the keyboard). On
@@ -98,7 +149,7 @@ export class RichTextEditorLinkEditorDirective {
             breakpoint: 'md',
             strategy: anchoredDialog.build({
               containerClass: 'et-rte-link-editor-overlay',
-              positionStrategy: () => this.buildAnchoredPosition(),
+              positionStrategy: () => buildAnchoredPosition(),
               applyTransformOrigin: false,
               minWidth: 'unset',
               hasBackdrop: false,
@@ -108,85 +159,50 @@ export class RichTextEditorLinkEditorDirective {
       },
     };
 
-    const ref = this.overlayManager.open<RichTextEditorLinkEditorComponent>(RichTextEditorLinkEditorComponent, config);
+    const ref = overlayManager.open<RichTextEditorLinkEditorComponent>(RichTextEditorLinkEditorComponent, config);
 
-    this.overlayRef.set(ref);
-    this.editor.linkEditorOpen.set(true);
+    overlayRef.set(ref);
+    editor.linkEditorOpen.set(true);
 
     ref
       .afterClosedEvent()
       .pipe(
         take(1),
-        takeUntilDestroyed(this.destroyRef),
+        takeUntilDestroyed(destroyRef),
         tap((event) => {
-          this.editor.linkEditorOpen.set(false);
+          editor.linkEditorOpen.set(false);
 
-          if (this.overlayRef() === ref) this.overlayRef.set(null);
+          if (overlayRef() === ref) overlayRef.set(null);
 
           // Escape is an explicit "back to the editor" — hand focus back (restoreFocus is off).
           // An outside-pointer close is aimed at something else; don't steal its focus.
           if (event.source === 'escape') {
-            queueMicrotask(() => this.editor.activate());
+            queueMicrotask(() => editor.activate());
           }
         }),
       )
       .subscribe();
-  }
+  };
 
-  private apply(value: RichTextEditorLinkEditorValue) {
-    this.restoreSelection();
-    this.editor.applyLink(value.href, { newTab: value.newTab, text: value.text });
-    this.close();
-    queueMicrotask(() => this.editor.activate());
-  }
+  editor.openLinkEditor.set(() => open());
 
-  private remove() {
-    this.restoreSelection();
-    this.editor.removeLink();
-    this.close();
-    queueMicrotask(() => this.editor.activate());
-  }
+  destroyRef.onDestroy(() => {
+    editor.openLinkEditor.set(null);
+    close();
+  });
+};
 
-  /** The popover's own close button — an explicit dismiss, so focus goes back to the editor. */
-  private dismiss() {
-    this.close();
-    queueMicrotask(() => this.editor.activate());
-  }
+/**
+ * Adds the link editor popover to a headless `[etRichTextEditor]`. The default `et-rich-text-editor`
+ * takes the same wiring through `provideRichTextEditorLinkEditor()`.
+ */
+@Directive({
+  selector: '[etRichTextEditorLinkEditor]',
+})
+export class RichTextEditorLinkEditorDirective {
+  constructor() {
+    const host = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  private restoreSelection() {
-    if (!this.savedRange) return;
-
-    const selection = this.document.getSelection();
-
-    if (!selection) return;
-
-    selection.removeAllRanges();
-    selection.addRange(this.savedRange);
-  }
-
-  private buildAnchoredPosition(): OverlayRuntimeAnchoredPosition {
-    const referenceElement: VirtualElement = {
-      getBoundingClientRect: () => (this.savedRange ? rangeTextBoundingRect(this.savedRange) : new DOMRect()),
-      contextElement: this.editor.editorDom.root() ?? undefined,
-    };
-
-    return {
-      kind: 'anchored',
-      referenceElement,
-      placement: 'bottom',
-      fallbackPlacements: ['top'],
-      offset: 10,
-      arrowPadding: 16,
-      autoCloseIfReferenceHidden: true,
-    };
-  }
-
-  private close() {
-    const ref = this.overlayRef();
-
-    if (!ref) return;
-
-    this.overlayRef.set(null);
-    ref.close();
+    setupRichTextEditorLinkEditor(inject(RichTextEditorDirective), host.nativeElement);
   }
 }

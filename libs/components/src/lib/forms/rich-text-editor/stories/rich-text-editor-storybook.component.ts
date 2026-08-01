@@ -13,6 +13,7 @@ import {
   FormFieldLabelMode,
   FormFieldSize,
 } from '../../form-field';
+import { provideRichTextEditorLinkEditor } from '../rich-text-editor-link-editor.provider';
 import { provideRichTextEditorAlignmentTool } from '../tools/rich-text-editor-align.provider';
 import { provideRichTextEditorHeadingTool } from '../tools/rich-text-editor-heading.provider';
 import { provideRichTextEditorTableTool } from '../tools/rich-text-editor-table.provider';
@@ -43,6 +44,7 @@ import { RICH_TEXT_EDITOR_IMPORTS } from '../rich-text-editor.imports';
   encapsulation: ViewEncapsulation.None,
   imports: [...FORM_FIELD_IMPORTS, ...RICH_TEXT_EDITOR_IMPORTS, FormField, ProvideColorDirective, JsonPipe],
   providers: [
+    provideRichTextEditorLinkEditor(),
     provideRichTextEditorTableTool(),
     provideRichTextEditorAlignmentTool(),
     provideRichTextEditorHeadingTool(),
@@ -72,4 +74,23 @@ export class FormFieldRichTextEditorStorybookComponent {
     readonly(s.value, () => this.readonly());
     required(s.value, { when: () => this.required(), message: 'This field is required' });
   });
+}
+
+/** The same editor without `provideRichTextEditorLinkEditor()`: the link tool falls back to `prompt()`. */
+@Component({
+  selector: 'et-sb-form-field-rich-text-editor-prompt-link',
+  template: `
+    <div class="flex max-w-2xl flex-col gap-4 p-8 font-sans" style="--et-rich-text-editor-min-height: 220px">
+      <et-form-field>
+        <et-label>Description</et-label>
+        <et-rich-text-editor [formField]="demoForm.value" placeholder="Write something…" />
+      </et-form-field>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...FORM_FIELD_IMPORTS, ...RICH_TEXT_EDITOR_IMPORTS, FormField],
+  providers: [provideRichTextEditorHeadingTool()],
+})
+export class FormFieldRichTextEditorPromptLinkStorybookComponent {
+  public demoForm = form(linkedSignal(() => ({ value: '' })));
 }

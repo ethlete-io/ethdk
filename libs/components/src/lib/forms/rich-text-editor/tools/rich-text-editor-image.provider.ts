@@ -16,6 +16,7 @@ import {
   RichTextEditorImageUpload,
   startImageUpload,
 } from './rich-text-editor-image-upload';
+import { mountRichTextEditorImageStyles } from './rich-text-editor-image-styles.component';
 import { RichTextEditorImageToolComponent } from './rich-text-editor-image-tool.component';
 import { createImageOps } from './rich-text-editor-image.util';
 
@@ -106,6 +107,8 @@ export const provideRichTextEditorImageTool = (config: RichTextEditorImageToolCo
 });
 
 const createImageToolController = (config: RichTextEditorImageToolConfig) => {
+  mountRichTextEditorImageStyles();
+
   const document = inject(DOCUMENT);
   const injector = inject(Injector);
   const destroyRef = inject(DestroyRef);
