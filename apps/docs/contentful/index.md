@@ -6,7 +6,7 @@ Angular components for rendering [Contentful](https://www.contentful.com/) conte
 yarn add @ethlete/contentful
 ```
 
-The package peers on `@ethlete/core`, `@ethlete/cdk`, `@ethlete/query` and `@contentful/rich-text-types`.
+The package peers on `@ethlete/core`, `@ethlete/components`, `@ethlete/query` and `@contentful/rich-text-types`. Upgrading from v4? Run the codemod: `nx g @ethlete/contentful:migrate-to-contentful-v5` — it renames the changed image input, adds the `@ethlete/components` dependency and writes `contentful-v5-migration-tasks.md` for anything it can't rewrite (removed image class inputs, removed renderer internals, a leftover `@ethlete/cdk` dependency).
 
 ## Setup
 
@@ -75,7 +75,7 @@ The component has an empty template and renders imperatively. Each node type map
 
 Every element gets the classes `et-contentful-rich-text-default-element` and `et-contentful-rich-text-default-<tag>` for styling. Elements that end up empty are pruned (except `td` and `hr`).
 
-When `content` changes, the renderer **diffs** the new document against the previous render and only creates, moves, updates or deletes what changed — embedded component instances that persist across updates keep their state; only their inputs are re-set.
+When `content` changes, the renderer **diffs** the new document against the previous render — plain elements and text are rebuilt, while embedded component instances survive when an embed of the same content type still occupies the same slot. Every surviving instance receives the new inputs reactively (they are bound with `inputBinding`, so signal inputs update in place), and embeds of different types that change relative order are moved in the DOM instead of recreated.
 
 ### Text marks
 
@@ -108,19 +108,20 @@ The `isContentfulEntryType<T>(entry, type)` guard narrows an entry by its conten
 
 ### Images
 
-`<et-contentful-image>` renders an `et-picture` (from `@ethlete/cdk`) with sources generated through the [Contentful Images API](https://www.contentful.com/developers/docs/references/images-api/) — one `<source>` per format in the order avif, webp, png, jpg.
+`<et-contentful-image>` renders an `et-picture` (from `@ethlete/components`) with sources generated through the [Contentful Images API](https://www.contentful.com/developers/docs/references/images-api/) — one `<source>` per format in the order avif, webp, png, jpg.
 
-| Input                                                        | Default                           | Purpose                                                                                      |
-| ------------------------------------------------------------ | --------------------------------- | -------------------------------------------------------------------------------------------- |
-| `asset` (required)                                           | —                                 | REST or GQL asset. Alt text comes from the asset title, the figcaption from its description. |
-| `srcsetSizes`                                                | config `imageOptions.srcsetSizes` | Srcset candidates: `'400'`/`'400w'` (width), `'400h'` (height), `'400x300'` (both).          |
-| `sizes`                                                      | config `imageOptions.sizes`       | `sizes` attribute entries.                                                                   |
-| `quality`                                                    | `null`                            | Contentful `q=` parameter.                                                                   |
-| `focusArea`                                                  | `null`                            | `f=` parameter (`'center'`, `'top_left'`, `'face'`, …).                                      |
-| `resizeBehavior`                                             | `null`                            | `fit=` parameter (`'pad'`, `'crop'`, `'fill'`, `'scale'`, `'thumb'`, `'fit'`).               |
-| `backgroundColor`                                            | `null`                            | `bg=rgb:…` parameter.                                                                        |
-| `hasPriority`                                                | `false`                           | Marks the image as high-priority (eager loading).                                            |
-| `imgClass`, `pictureClass`, `figureClass`, `figcaptionClass` | `null`                            | Class passthroughs.                                                                          |
+| Input              | Default                           | Purpose                                                                                      |
+| ------------------ | --------------------------------- | -------------------------------------------------------------------------------------------- |
+| `asset` (required) | —                                 | REST or GQL asset. Alt text comes from the asset title, the figcaption from its description. |
+| `srcsetSizes`      | config `imageOptions.srcsetSizes` | Srcset candidates: `'400'`/`'400w'` (width), `'400h'` (height), `'400x300'` (both).          |
+| `sizes`            | config `imageOptions.sizes`       | `sizes` attribute entries.                                                                   |
+| `quality`          | `null`                            | Contentful `q=` parameter.                                                                   |
+| `focusArea`        | `null`                            | `f=` parameter (`'center'`, `'top_left'`, `'face'`, …).                                      |
+| `resizeBehavior`   | `null`                            | `fit=` parameter (`'pad'`, `'crop'`, `'fill'`, `'scale'`, `'thumb'`, `'fit'`).               |
+| `backgroundColor`  | `null`                            | `bg=rgb:…` parameter.                                                                        |
+| `priority`         | `false`                           | Marks the image as high-priority (eager loading).                                            |
+
+There are no class passthrough inputs — target the static `et-picture-figure`, `et-picture-picture`, `et-picture-img` and `et-picture-figcaption` classes with CSS instead.
 
 The source-generation helpers (`generateContentfulImageSources`, `generateDefaultContentfulImageSource`, `parseContentfulImageSize`) are exported for custom image components.
 
