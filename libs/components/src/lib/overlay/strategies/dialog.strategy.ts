@@ -1,6 +1,7 @@
 import { defineRootProvider, defineStaticRootProvider, randomId, toInjectFn, toProvideFn } from '@ethlete/core';
 import { mergeOverlayBreakpointConfigs } from './overlay-strategy-config-merger';
 import { OverlayBreakpointConfig, OverlayStrategy, OverlayStrategyBreakpoint } from './overlay-strategy.types';
+import { DialogStylesComponent } from './dialog-styles.component';
 
 const DIALOG_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootProvider<OverlayBreakpointConfig>(
   {
@@ -8,6 +9,7 @@ const DIALOG_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootProvider<Ov
     maxWidth: '80vw',
     width: 'min(512px, 80vw)',
     containerClass: 'et-overlay--dialog',
+    stylesComponent: DialogStylesComponent,
     positionStrategy: () => ({ kind: 'global' }),
   },
   {

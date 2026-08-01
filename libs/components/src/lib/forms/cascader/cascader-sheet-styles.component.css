@@ -1,0 +1,56 @@
+@layer components {
+  /* below the md breakpoint the cascader mounts as a bottom sheet: the panel becomes the
+     full-width sheet surface (drops its floating-card chrome) and draws its own drag handle */
+  .et-overlay.et-cascader-sheet {
+    /* comfortable touch targets — the token inherits into the panel content */
+    --et-cascader-node-height: 52px;
+
+    border-radius: 16px 16px 0 0;
+
+    .et-overlay-container-drag-handle {
+      display: none;
+    }
+
+    /* roomier, more tappable rows on mobile */
+    .et-cascader-node,
+    .et-cascader-search-option {
+      font-size: 16px;
+      padding-inline: 14px;
+    }
+
+    /* aligned with the sheet header's content inset (20px), not the 6px desktop-card padding */
+    .et-cascader-search {
+      padding-inline: 20px;
+    }
+
+    /* 16px also keeps iOS Safari from zooming into the focused input */
+    .et-cascader-search input[etcascadersearch] {
+      block-size: 44px;
+      font-size: 16px;
+    }
+
+    .et-cascader-node-chevron {
+      inline-size: 14px;
+      block-size: 14px;
+    }
+
+    .et-cascader-panel {
+      max-inline-size: none;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      padding-block-end: max(8px, env(safe-area-inset-bottom));
+
+      &::before {
+        content: '';
+        display: block;
+        inline-size: 32px;
+        block-size: 4px;
+        margin-inline: auto;
+        margin-block: 8px 4px;
+        border-radius: 999px;
+        background: var(--et-surface-border-solid, rgb(255 255 255 / 0.2));
+      }
+    }
+  }
+}

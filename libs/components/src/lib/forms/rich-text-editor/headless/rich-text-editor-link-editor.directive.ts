@@ -1,7 +1,11 @@
 import { DOCUMENT } from '@angular/common';
 import { DestroyRef, Directive, ElementRef, inject, inputBinding, outputBinding, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { OverlayRuntimeAnchoredPosition } from '@ethlete/core';
+import {
+  anchoredOverlayPosition,
+  enableAnchoredOverlayPositionExtras,
+  OverlayRuntimeAnchoredPosition,
+} from '@ethlete/core';
 import { VirtualElement } from '@floating-ui/dom';
 import { take, tap } from 'rxjs';
 import { OverlayConfig } from '../../../overlay/overlay-config';
@@ -60,15 +64,16 @@ export const setupRichTextEditorLinkEditor = (editor: RichTextEditorDirective, h
       contextElement: editor.editorDom.root() ?? undefined,
     };
 
-    return {
-      kind: 'anchored',
+    enableAnchoredOverlayPositionExtras();
+
+    return anchoredOverlayPosition({
       referenceElement,
       placement: 'bottom',
       fallbackPlacements: ['top'],
       offset: 10,
       arrowPadding: 16,
       autoCloseIfReferenceHidden: true,
-    };
+    });
   };
 
   const apply = (value: RichTextEditorLinkEditorValue) => {

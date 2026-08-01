@@ -71,14 +71,14 @@ const supportsViewTimeline = () =>
  * is what gives touch, swipe momentum and keyboard scrolling for free - so this directive adds meaning
  * and continuity, not movement.
  *
- * Apply it on the scrollable element (`<et-scrollable etCarousel snap itemSize="full">`), or use the
+ * Apply it on the scrollable element (`<et-scrollable etCarousel etScrollableSnap itemSize="full">`), or use the
  * default `<et-carousel>`, which is that composition with controls, chrome and rendered slides.
  *
  * Autoplay is a separate opt-in (`etCarouselAutoplay`) so a carousel that doesn't advance itself carries
  * none of its code.
  *
  * @example
- * <et-scrollable etCarousel snap itemSize="full" #carousel="etCarousel">
+ * <et-scrollable etCarousel etScrollableSnap itemSize="full" #carousel="etCarousel">
  *   <div etCarouselItem>…</div>
  *   <div etCarouselItem>…</div>
  * </et-scrollable>
@@ -399,7 +399,7 @@ export class CarouselDirective {
           throw new RuntimeError(
             CAROUSEL_ERROR_CODES.MISSING_SCROLLABLE,
             '[CarouselDirective] etCarousel needs a scrollable to move: put it on an [etScrollable] element ' +
-              '(e.g. <et-scrollable etCarousel snap itemSize="full">), or use <et-carousel>.',
+              '(e.g. <et-scrollable etCarousel etScrollableSnap itemSize="full">), or use <et-carousel>.',
           );
         }
       });

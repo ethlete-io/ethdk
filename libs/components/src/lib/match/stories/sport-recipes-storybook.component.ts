@@ -2,7 +2,7 @@ import { Component, ViewEncapsulation, computed, input } from '@angular/core';
 import { ProvideSurfaceDirective } from '@ethlete/core';
 import { CHIP_IMPORTS } from '../../chip';
 import { PICTURE_IMPORTS } from '../../picture';
-import { SCROLLABLE_IMPORTS } from '../../scrollable';
+import { SCROLLABLE_DRAG_IMPORTS, SCROLLABLE_IMPORTS } from '../../scrollable';
 import { SKELETON_IMPORTS } from '../../skeleton';
 import { MATCH_CARD_IMPORTS } from '../match.imports';
 import { NormalizedMatch, NormalizedMatchParticipant } from '../match.types';
@@ -25,9 +25,9 @@ import { NormalizedMatch, NormalizedMatchParticipant } from '../match.types';
            its computed value to work out how wide a half/third-width child is. -->
       <et-scrollable
         [itemSize]="{ xs: 'full', md: 'half', lg: 'third' }"
+        etScrollableSnap
         scrollableClass="gap-3"
         scrollableRole="list"
-        snap
       >
         <!-- The wrapper carries the list semantics: the card owns its own role (a labelled group), so asking
              it to also be a listitem would just be overwritten. -->
@@ -48,7 +48,7 @@ import { NormalizedMatch, NormalizedMatchParticipant } from '../match.types';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [MATCH_CARD_IMPORTS, SCROLLABLE_IMPORTS, ProvideSurfaceDirective],
+  imports: [MATCH_CARD_IMPORTS, SCROLLABLE_IMPORTS, SCROLLABLE_DRAG_IMPORTS, ProvideSurfaceDirective],
 })
 export class SportRecipesMatchRailStorybookComponent {
   public surface = input('dark');

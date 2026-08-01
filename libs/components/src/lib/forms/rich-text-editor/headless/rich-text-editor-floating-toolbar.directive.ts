@@ -1,7 +1,14 @@
 import { DOCUMENT } from '@angular/common';
 import { DestroyRef, Directive, effect, inject, inputBinding, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { createComponentId, injectHasTouchInput, injectRenderer, OverlayRuntimeAnchoredPosition } from '@ethlete/core';
+import {
+  anchoredOverlayPosition,
+  createComponentId,
+  enableAnchoredOverlayPositionExtras,
+  injectHasTouchInput,
+  injectRenderer,
+  OverlayRuntimeAnchoredPosition,
+} from '@ethlete/core';
 import { VirtualElement } from '@floating-ui/dom';
 import { take, tap } from 'rxjs';
 import { OverlayConfig } from '../../../overlay/overlay-config';
@@ -166,8 +173,9 @@ export class RichTextEditorFloatingToolbarDirective {
       contextElement: this.editor.editorDom.root() ?? undefined,
     };
 
-    return {
-      kind: 'anchored',
+    enableAnchoredOverlayPositionExtras();
+
+    return anchoredOverlayPosition({
       referenceElement,
       placement: 'top',
       fallbackPlacements: ['bottom'],
@@ -176,7 +184,7 @@ export class RichTextEditorFloatingToolbarDirective {
       // the caret instead of covering the static toolbar above it
       boundary: this.editor.editorDom.root() ?? undefined,
       autoCloseIfReferenceHidden: true,
-    };
+    });
   }
 
   private hide() {

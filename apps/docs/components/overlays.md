@@ -212,6 +212,12 @@ A strategy controls the overlay's position, sizing, classes and animation. Pass 
 
 Every factory accepts a partial `OverlayBreakpointConfig` (sizes, classes, `dragToDismiss`, `hasBackdrop`, `arrow`, …).
 
+### Strategy stylesheets
+
+A strategy's default enter/leave animation ships with the strategy rather than with the overlay container: each built-in factory sets `stylesComponent` on its config, and the container mounts that stylesheet while the strategy is active. An app therefore only carries the animation CSS for the overlay shapes it actually opens.
+
+The consequence is for hand-rolled strategies: an overlay that sets a layout `containerClass` of its own (instead of composing a built-in factory) gets no default animation unless it points `stylesComponent` at a styles-only component of its own - a `@Component` with an empty template, `ViewEncapsulation.None` and the animation rules in its `styleUrl`.
+
 ### Drag-to-dismiss direction
 
 `dragToDismiss.direction` takes either a physical direction (`'to-top'`, `'to-bottom'`, `'to-left'`, `'to-right'`) or a **logical** one (`'to-inline-start'`, `'to-inline-end'`). Logical values are resolved against the overlay container's computed `direction` when the gesture is attached, so they follow the writing direction the same way the `horizontal: 'start' | 'end'` position strategies do - a side sheet stays draggable toward the edge it is docked to under `dir="rtl"`. The side-sheet strategies use the logical values by default; physical values keep meaning exactly what they say.

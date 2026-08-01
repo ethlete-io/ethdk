@@ -2,7 +2,7 @@ import { Component, ViewEncapsulation, input } from '@angular/core';
 import { ProvideSurfaceDirective } from '@ethlete/core';
 import { CAROUSEL_IMPORTS } from '../carousel.imports';
 import { CarouselSlideAlign, CarouselTransition, CarouselTransitionDriver } from '../headless';
-import { SCROLLABLE_IMPORTS } from '../../scrollable';
+import { SCROLLABLE_DRAG_IMPORTS, SCROLLABLE_IMPORTS } from '../../scrollable';
 import { ScrollableItemSize } from '../../scrollable';
 
 type Slide = { title: string; body: string };
@@ -166,11 +166,10 @@ export class CarouselVariableWidthsStorybookComponent {
       <div #carousel="etCarousel" class="flex flex-col gap-4" etCarousel>
         <et-scrollable
           [style.max-inline-size.px]="640"
-          [renderButtons]="false"
-          [renderMasks]="false"
+          renderMasks="false"
+          etScrollableSnap
           itemSize="half"
           scrollMode="element"
-          snap
         >
           @for (slide of SLIDES; track slide.title; let index = $index) {
             <div class="text-small rounded-lg border border-white/15 p-4" etCarouselItem>
@@ -188,7 +187,7 @@ export class CarouselVariableWidthsStorybookComponent {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [CAROUSEL_IMPORTS, SCROLLABLE_IMPORTS, ProvideSurfaceDirective],
+  imports: [CAROUSEL_IMPORTS, SCROLLABLE_IMPORTS, SCROLLABLE_DRAG_IMPORTS, ProvideSurfaceDirective],
 })
 export class CarouselHeadlessStorybookComponent {
   public surface = input('dark');

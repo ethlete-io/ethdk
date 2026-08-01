@@ -17,6 +17,7 @@ import {
   OverlayStrategyBreakpoint,
   OverlayStrategyContext,
 } from './overlay-strategy.types';
+import { AnchoredDialogStylesComponent } from './anchored-dialog-styles.component';
 
 const DEFAULT_ANCHORED_DIALOG_POSITION: AnchoredPositionOptions = {
   placement: 'bottom-end',
@@ -35,6 +36,7 @@ const ANCHORED_DIALOG_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootPr
     maxWidth: '80vw',
     minWidth: '288px',
     containerClass: 'et-overlay--anchored-dialog',
+    stylesComponent: AnchoredDialogStylesComponent,
     positionStrategy: /* @__PURE__ */ buildAnchoredRuntimePositionStrategy(DEFAULT_ANCHORED_DIALOG_POSITION),
     applyTransformOrigin: true,
     arrow: true,

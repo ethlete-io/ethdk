@@ -26,7 +26,7 @@ import { ScrollableDirective } from './scrollable.directive';
     }
   `,
 })
-export class ScrollableMasksDirective {
+export class ScrollableMasksComponent {
   private scrollable = inject(ScrollableDirective);
 
   constructor() {

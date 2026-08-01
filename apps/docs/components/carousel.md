@@ -324,9 +324,12 @@ rotations cost ~139 and ~89, which is within measurement noise of rendering no r
 handed over by `<et-carousel>`. **Wrapping is usually what you want** - slides and controls resolve the
 carousel from an ancestor, so they have to be inside it:
 
+A hand-built carousel imports the scrollable itself, so it also needs `SCROLLABLE_DRAG_IMPORTS` for
+`etScrollableSnap` (`<et-carousel>` brings its own).
+
 ```html
 <div #carousel="etCarousel" etCarousel>
-  <et-scrollable itemSize="half" scrollMode="element" snap>
+  <et-scrollable etScrollableSnap itemSize="half" scrollMode="element">
     <div etCarouselItem>…</div>
     <div etCarouselItem>…</div>
   </et-scrollable>
@@ -360,8 +363,7 @@ effects, and `.et-carousel-item` is the element they apply to.
   slide is reachable by scrolling and by tabbing into it (which scrolls it into view) - hiding them
   would take that away. A carousel that stacks its slides, like the one in `@ethlete/cdk`, does need to
   hide them.
-- The controls are real labelled buttons (the scrollable's own buttons and dots are decorative and stay
-  turned off here). At the ends of a non-looping carousel they report `aria-disabled` rather than going
+- The controls are real labelled buttons (the scrollable's own buttons and dots are decorative, and are not imported here at all). At the ends of a non-looping carousel they report `aria-disabled` rather than going
   natively disabled, so they keep their place in the tab order; while looping they stay operable,
   because there is always somewhere to go.
 - The dots are buttons labelled "Go to slide N", with `aria-current` on the current one.

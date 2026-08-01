@@ -8,7 +8,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { BUTTON_IMPORTS } from '../../button';
-import { SCROLLABLE_IMPORTS } from '../../scrollable/scrollable.imports';
+import { SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS } from '../../scrollable/scrollable.imports';
 import { BRACKET_DENSITY, BracketDensity } from '../bracket-density';
 import { BracketComponent } from '../bracket.component';
 import { BRACKET_DATA_LAYOUT, BracketDataLayout } from '../core/layout';
@@ -87,7 +87,7 @@ export class StorybookFinalMatchComponent<TRoundData = unknown, TMatchData = unk
   selector: 'et-sb-bracket-density',
   template: `
     <div [style.max-inline-size.px]="containerWidth()">
-      <et-scrollable stickyButtons>
+      <et-scrollable [etScrollableButtons]="{ sticky: true }">
         <et-bracket
           [source]="source()"
           [layouts]="LAYOUTS"
@@ -98,7 +98,7 @@ export class StorybookFinalMatchComponent<TRoundData = unknown, TMatchData = unk
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BracketComponent, ...SCROLLABLE_IMPORTS],
+  imports: [BracketComponent, ...SCROLLABLE_IMPORTS, ...SCROLLABLE_NAVIGATION_IMPORTS],
 })
 export class StorybookBracketDensityComponent {
   public source = input.required<BracketDataSource<unknown, unknown>>();
@@ -134,7 +134,7 @@ export class StorybookBracketDensityComponent {
       </div>
     }
 
-    <et-scrollable stickyButtons>
+    <et-scrollable [etScrollableButtons]="{ sticky: true }">
       <et-bracket
         [(focusedParticipantId)]="focusedParticipantId"
         [source]="source()"
@@ -168,7 +168,7 @@ export class StorybookBracketDensityComponent {
     </et-scrollable>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BracketComponent, BUTTON_IMPORTS, ...SCROLLABLE_IMPORTS],
+  imports: [BracketComponent, BUTTON_IMPORTS, ...SCROLLABLE_IMPORTS, ...SCROLLABLE_NAVIGATION_IMPORTS],
 })
 export class StorybookBracketComponent {
   public source = input.required<BracketDataSource<unknown, unknown>>();

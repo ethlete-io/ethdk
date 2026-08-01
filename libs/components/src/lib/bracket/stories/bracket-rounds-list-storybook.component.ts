@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { signalHostElementDimensions } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../../button';
-import { SCROLLABLE_IMPORTS } from '../../scrollable/scrollable.imports';
+import { SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS } from '../../scrollable/scrollable.imports';
 import { bracketFitsWidth, bracketNaturalWidth } from '../bracket-fits-width';
 import { BracketRoundsListComponent } from '../bracket-rounds-list.component';
 import { BracketComponent } from '../bracket.component';
@@ -100,7 +100,7 @@ export class StorybookBracketRoundsListComponent {
     </p>
 
     @if (fitsBracket()) {
-      <et-scrollable stickyButtons>
+      <et-scrollable [etScrollableButtons]="{ sticky: true }">
         <et-bracket [source]="source()" [layouts]="LAYOUTS" [matchNormalizer]="MATCH_NORMALIZER" [columnWidth]="220" />
       </et-scrollable>
     } @else {
@@ -108,7 +108,7 @@ export class StorybookBracketRoundsListComponent {
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BracketComponent, BracketRoundsListComponent, ...SCROLLABLE_IMPORTS],
+  imports: [BracketComponent, BracketRoundsListComponent, ...SCROLLABLE_IMPORTS, ...SCROLLABLE_NAVIGATION_IMPORTS],
   host: {
     class: 'block',
     // `max-inline-size`, not `inline-size`: a demo about fitting the space available must not be wider

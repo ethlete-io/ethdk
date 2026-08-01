@@ -2,6 +2,7 @@ import { defineRootProvider, defineStaticRootProvider, injectRenderer, toInjectF
 import { mergeOverlayBreakpointConfigs } from './overlay-strategy-config-merger';
 import { OverlayBreakpointConfig, OverlayStrategyBreakpoint } from './overlay-strategy.types';
 import { createSheetStrategy } from './sheet-strategy-hooks';
+import { SheetStylesComponent } from './sheet-styles.component';
 
 const BOTTOM_SHEET_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootProvider<OverlayBreakpointConfig>(
   {
@@ -9,6 +10,7 @@ const BOTTOM_SHEET_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootProvi
     maxHeight: 'calc(100% - 72px)',
     maxWidth: '640px',
     containerClass: 'et-overlay--bottom-sheet',
+    stylesComponent: SheetStylesComponent,
     positionStrategy: () => ({ kind: 'global', vertical: 'end' }),
     dragToDismiss: {
       direction: 'to-bottom',

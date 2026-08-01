@@ -14,7 +14,13 @@ import { RuntimeError, createCanAnimateSignal } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../button';
 import { FocusRingDirective } from '../focus-ring';
 import { CHEVRON_ICON, IconDirective, PAUSE_ICON, PLAY_ICON, provideIcons } from '../icon';
-import { SCROLLABLE_IMPORTS, ScrollableComponent, ScrollableDirective, ScrollableItemSize } from '../scrollable';
+import {
+  SCROLLABLE_DRAG_IMPORTS,
+  SCROLLABLE_IMPORTS,
+  ScrollableComponent,
+  ScrollableDirective,
+  ScrollableItemSize,
+} from '../scrollable';
 import { CAROUSEL_ERROR_CODES } from './carousel-errors';
 import {
   CarouselAutoplayDirective,
@@ -76,6 +82,7 @@ type CarouselSlideView = {
     IconDirective,
     NgTemplateOutlet,
     SCROLLABLE_IMPORTS,
+    SCROLLABLE_DRAG_IMPORTS,
   ],
   providers: [provideIcons(CHEVRON_ICON, PLAY_ICON, PAUSE_ICON)],
   hostDirectives: [

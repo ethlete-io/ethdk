@@ -1,7 +1,5 @@
-import { BreakpointObserver } from '@angular/cdk/layout';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { BehaviorSubject } from 'rxjs';
 import '../../../test-helpers';
 import { injectOverlayManager } from '../overlay-manager';
 import { OverlayRef } from '../overlay-ref';
@@ -9,32 +7,38 @@ import { OverlayStrategy, OverlayStrategyContext } from './overlay-strategy.type
 
 const MD_QUERY = '(min-width: 768px)';
 
-class FakeBreakpointObserver {
-  private states = new Map<string, BehaviorSubject<{ matches: boolean }>>();
+type FakeMediaQueryList = MediaQueryList & { matches: boolean };
 
-  private state(query: string) {
-    const subject = this.states.get(query);
+class FakeMatchMedia {
+  private readonly lists = new Map<string, FakeMediaQueryList>();
+  private readonly listeners = new Map<string, ((event: MediaQueryListEvent) => void)[]>();
 
-    if (!subject) {
-      const newSubject = new BehaviorSubject({ matches: false });
-      this.states.set(query, newSubject);
+  readonly matchMedia = (query: string): FakeMediaQueryList => {
+    const existing = this.lists.get(query);
 
-      return newSubject;
-    }
+    if (existing) return existing;
 
-    return subject;
-  }
+    const list = {
+      media: query,
+      matches: false,
+      addEventListener: (_: string, listener: (event: MediaQueryListEvent) => void) => {
+        this.listeners.set(query, [...(this.listeners.get(query) ?? []), listener]);
+      },
+      removeEventListener: () => undefined,
+    } as unknown as FakeMediaQueryList;
 
-  observe(query: string) {
-    return this.state(query).asObservable();
-  }
+    this.lists.set(query, list);
 
-  isMatched(query: string) {
-    return this.state(query).value.matches;
-  }
+    return list;
+  };
 
   setMatches(query: string, matches: boolean) {
-    this.state(query).next({ matches });
+    const list = this.matchMedia(query);
+    list.matches = matches;
+
+    for (const listener of this.listeners.get(query) ?? []) {
+      listener({ matches } as MediaQueryListEvent);
+    }
   }
 }
 
@@ -45,7 +49,8 @@ const flushFrames = () =>
   new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
 describe('overlay strategy controller', () => {
-  let fakeBreakpoints: FakeBreakpointObserver;
+  let fakeBreakpoints: FakeMatchMedia;
+  let originalMatchMedia: typeof window.matchMedia;
 
   const createTestStrategy = (id: string, config: OverlayStrategy['config']): OverlayStrategy => ({
     id,
@@ -63,12 +68,12 @@ describe('overlay strategy controller', () => {
   let openedRef: OverlayRef<StrategyTestContentComponent, unknown> | null = null;
 
   beforeEach(() => {
-    fakeBreakpoints = new FakeBreakpointObserver();
+    fakeBreakpoints = new FakeMatchMedia();
+    originalMatchMedia = window.matchMedia;
+    window.matchMedia = fakeBreakpoints.matchMedia as typeof window.matchMedia;
     openedRef = null;
 
-    TestBed.configureTestingModule({
-      providers: [{ provide: BreakpointObserver, useValue: fakeBreakpoints }],
-    });
+    TestBed.configureTestingModule({});
 
     smallStrategy = createTestStrategy('small', {
       width: '100%',
@@ -88,6 +93,7 @@ describe('overlay strategy controller', () => {
 
   afterEach(() => {
     openedRef?.close();
+    window.matchMedia = originalMatchMedia;
   });
 
   const openOverlay = () => {
@@ -98,7 +104,6 @@ describe('overlay strategy controller', () => {
     );
 
     openedRef = overlayRef;
-    TestBed.inject(BreakpointObserver);
     TestBed.tick();
 
     return overlayRef;

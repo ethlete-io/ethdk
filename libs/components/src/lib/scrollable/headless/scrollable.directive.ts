@@ -27,6 +27,7 @@ import {
   signalHostStyles,
   typedBreakpointTransform,
 } from '@ethlete/core';
+import { ResolvedScrollableChrome, ScrollableChrome } from './scrollable-chrome';
 import { SCROLLABLE_ERROR_CODES } from './scrollable-errors';
 import {
   ScrollableDirection,
@@ -148,10 +149,6 @@ export class ScrollableDirective {
   /** @internal */
   public masksDirective = signal<unknown | null>(null);
   /** @internal */
-  public buttonsDirective = signal<unknown | null>(null);
-  /** @internal */
-  public navigationDirective = signal<unknown | null>(null);
-  /** @internal */
   public snapDirective = signal<unknown | null>(null);
   /**
    * @internal Where a snapped child comes to rest, or `null` when nothing is snapping. Set by
@@ -171,10 +168,28 @@ export class ScrollableDirective {
    * @internal
    */
   public isSnapSuspended = computed(() => this.snapSuspensions() > 0);
-  /** @internal */
-  public dragDirective = signal<unknown | null>(null);
-  /** @internal */
-  public darkenDirective = signal<unknown | null>(null);
+
+  // --- Chrome contributed by opt-in features ---
+
+  private registeredChrome = signal<readonly ScrollableChrome[]>([]);
+
+  /**
+   * The chrome to stamp right now, slots and inputs read, disabled contributions dropped.
+   *
+   * @internal
+   */
+  public activeChrome = computed<readonly ResolvedScrollableChrome[]>(() =>
+    this.registeredChrome()
+      .filter((chrome) => chrome.enabled?.() ?? true)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      .map((chrome) => ({
+        key: chrome.key,
+        slot: typeof chrome.slot === 'function' ? chrome.slot() : chrome.slot,
+        component: chrome.component,
+        inputs: chrome.inputs?.() ?? {},
+        injector: chrome.injector,
+      })),
+  );
 
   // --- Host bindings ---
 
@@ -243,6 +258,14 @@ export class ScrollableDirective {
   }
 
   // --- Registration API ---
+
+  /**
+   * Contribute a component to the scrollable's own DOM. Call once, from an opt-in feature's constructor -
+   * see {@link ScrollableChrome}.
+   */
+  public registerChrome(chrome: ScrollableChrome) {
+    this.registeredChrome.update((entries) => [...entries, chrome]);
+  }
 
   /** @internal */
   public unregisterActiveChild(child: ScrollableActiveChildRef) {

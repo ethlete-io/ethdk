@@ -3,7 +3,7 @@
 Tournament bracket rendering. `et-new-bracket` draws the rounds, matches and connector lines for single elimination, double elimination and Swiss (with elimination) formats from a `BracketDataSource`. The older `et-bracket` is kept for backwards compatibility only - use the new one.
 
 ```html
-<et-scrollable stickyButtons>
+<et-scrollable [etScrollableButtons]="{ sticky: true }">
   <et-new-bracket [source]="source" />
 </et-scrollable>
 ```

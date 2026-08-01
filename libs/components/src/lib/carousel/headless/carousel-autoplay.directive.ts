@@ -1,6 +1,7 @@
 import {
   Directive,
   afterNextRender,
+  effect,
   booleanAttribute,
   computed,
   inject,
@@ -13,9 +14,11 @@ import {
   RuntimeError,
   injectIsDocumentVisible,
   injectPrefersReducedMotion,
+  injectStyleManager,
   signalHostElementIntersection,
 } from '@ethlete/core';
 import { EMPTY, switchMap, tap, timer } from 'rxjs';
+import { CarouselAutoplayStylesComponent } from '../carousel-autoplay-styles.component';
 import { CAROUSEL_ERROR_CODES } from '../carousel-errors';
 import { CAROUSEL_AUTOPLAY_TOKEN, CAROUSEL_TOKEN } from './carousel.tokens';
 
@@ -39,7 +42,7 @@ export type CarouselAutoplayPauseReason =
  * `etCarouselPlayToggle`, which the default `<et-carousel>` does for you. Dev mode throws without it.
  *
  * @example
- * <et-scrollable etCarousel etCarouselAutoplay [autoplayTime]="6000" snap itemSize="full">…</et-scrollable>
+ * <et-scrollable etCarousel etCarouselAutoplay [autoplayTime]="6000" etScrollableSnap itemSize="full">…</et-scrollable>
  */
 @Directive({
   selector: '[etCarouselAutoplay]',
@@ -57,6 +60,7 @@ export class CarouselAutoplayDirective {
   private carousel = inject(CAROUSEL_TOKEN, { optional: true });
   private prefersReducedMotion = injectPrefersReducedMotion();
   private isDocumentVisible = injectIsDocumentVisible();
+  private styleManager = injectStyleManager();
 
   /**
    * Turn autoplay off without removing the directive - the same escape hatch `etScrollableSnap` has. A
@@ -174,6 +178,17 @@ export class CarouselAutoplayDirective {
 
   constructor() {
     this.isStopped.set(!this.playOnInit());
+
+    // `<et-carousel>` always carries this directive, so the countdown ring and pause control only reach the
+    // document once autoplay is actually switched on.
+    let hasMountedStyles = false;
+
+    effect(() => {
+      if (hasMountedStyles || !this.isEnabled()) return;
+
+      hasMountedStyles = true;
+      this.styleManager.mount(CarouselAutoplayStylesComponent);
+    });
 
     // One clock, restarted whenever the slide, the duration or the playing state changes - a paused
     // carousel holds no timer at all. `equal` keeps an unrelated recompute from restarting the countdown.

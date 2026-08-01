@@ -13,7 +13,14 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { createComponentId, injectRenderer, OverlayRuntimeAnchoredPosition, RuntimeError } from '@ethlete/core';
+import {
+  anchoredOverlayPosition,
+  createComponentId,
+  enableAnchoredOverlayPositionExtras,
+  injectRenderer,
+  OverlayRuntimeAnchoredPosition,
+  RuntimeError,
+} from '@ethlete/core';
 import { VirtualElement } from '@floating-ui/dom';
 import { fromEvent, map, take, tap } from 'rxjs';
 import { OverlayConfig } from '../../../overlay/overlay-config';
@@ -460,8 +467,9 @@ export class RichTextEditorTriggersDirective {
       contextElement: this.editor?.editorDom.root() ?? undefined,
     };
 
-    return {
-      kind: 'anchored',
+    enableAnchoredOverlayPositionExtras();
+
+    return anchoredOverlayPosition({
       referenceElement,
       placement: 'bottom-start',
       fallbackPlacements: ['top-start', 'bottom-end', 'top-end'],
@@ -469,7 +477,7 @@ export class RichTextEditorTriggersDirective {
       shift: { crossAxis: true },
       autoResize: true,
       autoCloseIfReferenceHidden: true,
-    };
+    });
   }
 
   private setAriaExpanded(open: boolean) {

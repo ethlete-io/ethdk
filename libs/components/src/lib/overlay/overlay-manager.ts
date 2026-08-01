@@ -1,5 +1,12 @@
 import { DOCUMENT, EnvironmentInjector, Type, computed, inject, inputBinding } from '@angular/core';
-import { defineRootProvider, injectOverlayRuntime, OverlayRuntimeRef, toInjectFn, toProvideFn } from '@ethlete/core';
+import {
+  anchoredOverlayPosition,
+  defineRootProvider,
+  injectOverlayRuntime,
+  OverlayRuntimeRef,
+  toInjectFn,
+  toProvideFn,
+} from '@ethlete/core';
 import { OverlayConfig } from './overlay-config';
 import { OverlayContainerComponent } from './overlay-container.component';
 import { OVERLAY_REF, OverlayRef, createOverlayRef } from './overlay-ref';
@@ -67,10 +74,7 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
       const disableClose = config.disableClose ?? false;
       const positionStrategy =
         config.origin instanceof HTMLElement
-          ? {
-              kind: 'anchored' as const,
-              referenceElement: config.origin,
-            }
+          ? anchoredOverlayPosition({ referenceElement: config.origin })
           : {
               kind: 'center' as const,
             };

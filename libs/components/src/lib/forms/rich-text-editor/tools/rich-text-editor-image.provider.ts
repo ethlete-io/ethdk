@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { DestroyRef, inject, Injector, inputBinding, outputBinding, Provider } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { injectRenderer } from '@ethlete/core';
+import { anchoredOverlayPosition, enableAnchoredOverlayPositionExtras, injectRenderer } from '@ethlete/core';
 import { fromEvent, take, tap, timer } from 'rxjs';
 import { OverlayConfig } from '../../../overlay/overlay-config';
 import { injectOverlayManager } from '../../../overlay/overlay-manager';
@@ -309,15 +309,18 @@ const createImageToolController = (config: RichTextEditorImageToolConfig) => {
             breakpoint: 'md',
             strategy: anchoredDialog.build({
               containerClass: 'et-rte-image-editor-overlay',
-              positionStrategy: () => ({
-                kind: 'anchored',
-                referenceElement: image,
-                placement: 'bottom',
-                fallbackPlacements: ['top'],
-                offset: 10,
-                arrowPadding: 16,
-                autoCloseIfReferenceHidden: true,
-              }),
+              positionStrategy: () => {
+                enableAnchoredOverlayPositionExtras();
+
+                return anchoredOverlayPosition({
+                  referenceElement: image,
+                  placement: 'bottom',
+                  fallbackPlacements: ['top'],
+                  offset: 10,
+                  arrowPadding: 16,
+                  autoCloseIfReferenceHidden: true,
+                });
+              },
               applyTransformOrigin: false,
               minWidth: 'unset',
               hasBackdrop: false,

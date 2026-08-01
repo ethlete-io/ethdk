@@ -31,7 +31,7 @@ const SETTLE_TIMEOUT = 700;
  * `ScrollableDirective.suspendSnap`), and why the one thing still settled in JavaScript is a cursor drag:
  * releasing a mouse button produces no fling, so there is nothing for the platform to decelerate into.
  *
- * @internal
+ * Opt-in, applied on the `<et-scrollable>` itself. Ships in `SCROLLABLE_DRAG_IMPORTS`.
  */
 @Directive({
   selector: '[etScrollableSnap]',
@@ -40,7 +40,7 @@ export class ScrollableSnapDirective {
   private scrollable = inject(ScrollableDirective);
   private destroyRef = inject(DestroyRef);
 
-  public enabled = input(true, { transform: booleanAttribute });
+  public enabled = input(true, { transform: booleanAttribute, alias: 'etScrollableSnap' });
   public snapOrigin = input<ScrollableScrollOrigin>('auto');
 
   constructor() {

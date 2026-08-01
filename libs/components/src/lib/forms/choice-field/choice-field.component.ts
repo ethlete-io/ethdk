@@ -1,12 +1,14 @@
-import { Component, ElementRef, input, viewChild, ViewEncapsulation } from '@angular/core';
+import { Component, effect, ElementRef, input, viewChild, ViewEncapsulation } from '@angular/core';
 import {
   AnimatableDirective,
   ColorInteractiveContainerDirective,
   ColorInteractiveDirective,
   ColorInteractiveExcludeDirective,
   createCanAnimateSignal,
+  injectStyleManager,
   ProvideColorDirective,
 } from '@ethlete/core';
+import { ChoiceFieldCardStylesComponent } from './choice-field-card-styles.component';
 import { FormErrorComponent } from '../form-field/form-error.component';
 import { FORM_FIELD_SIZES, FormFieldSize } from '../form-field/form-field.variants';
 import { FormFieldDirective, injectFormSupport, wireFormSupport, provideFormSupport } from '../form-field/headless';
@@ -44,6 +46,8 @@ export type ChoiceFieldVariant = (typeof CHOICE_FIELD_VARIANTS)[keyof typeof CHO
 })
 export class ChoiceFieldComponent {
   public support = injectFormSupport();
+
+  private styleManager = injectStyleManager();
   public size = input<FormFieldSize>(FORM_FIELD_SIZES.MD);
 
   /**
@@ -59,6 +63,12 @@ export class ChoiceFieldComponent {
   public canAnimate = createCanAnimateSignal();
 
   constructor() {
+    effect(() => {
+      if (this.variant() === CHOICE_FIELD_VARIANTS.CARD) {
+        this.styleManager.mount(ChoiceFieldCardStylesComponent);
+      }
+    });
+
     wireFormSupport(this.support, {
       errorContent: this.errorContentRef,
       hintContent: this.hintContentRef,

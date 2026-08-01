@@ -1,6 +1,13 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../test-helpers';
 import { ScrollableComponent } from './scrollable.component';
+import {
+  SCROLLABLE_DARKEN_IMPORTS,
+  SCROLLABLE_DRAG_IMPORTS,
+  SCROLLABLE_IMPORTS,
+  SCROLLABLE_NAVIGATION_IMPORTS,
+} from './scrollable.imports';
 
 const ensureObserverMocks = () => {
   const windowWithObservers = window as typeof window & {
@@ -76,11 +83,12 @@ describe('ScrollableComponent', () => {
     host = fixture.nativeElement;
   });
 
-  it('renders masks and inside buttons by default', () => {
+  it('renders masks by default and no chrome until a feature registers some', () => {
     fixture.detectChanges();
 
     expect(host.querySelector('et-scrollable-masks')).not.toBeNull();
-    expect(host.querySelector('et-scrollable-buttons')).not.toBeNull();
+    expect(host.querySelector('et-scrollable-buttons')).toBeNull();
+    expect(host.querySelector('et-scrollable-navigation')).toBeNull();
   });
 
   it('forwards container role and custom class inputs', () => {
@@ -93,21 +101,39 @@ describe('ScrollableComponent', () => {
     expect(container?.classList.contains('custom-scroll-container')).toBe(true);
   });
 
-  it('omits masks and buttons when their features are disabled', () => {
+  it('omits masks when renderMasks is off', () => {
     fixture.componentRef.setInput('renderMasks', false);
-    fixture.componentRef.setInput('renderButtons', false);
     fixture.detectChanges();
 
     expect(host.querySelector('et-scrollable-masks')).toBeNull();
-    expect(host.querySelector('et-scrollable-buttons')).toBeNull();
   });
+});
 
-  it('applies sticky and darken host classes from inputs', () => {
-    fixture.componentRef.setInput('stickyButtons', true);
-    fixture.componentRef.setInput('darkenNonIntersectingItems', true);
+describe('ScrollableComponent opt-in features', () => {
+  @Component({
+    template: `
+      <et-scrollable
+        [etScrollableButtons]="{ sticky: true }"
+        etScrollableDarken
+        etScrollableDrag
+        etScrollableSnap
+      ></et-scrollable>
+    `,
+    imports: [SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS, SCROLLABLE_DRAG_IMPORTS, SCROLLABLE_DARKEN_IMPORTS],
+  })
+  class TestHostComponent {}
+
+  it('stamps the buttons and carries the feature host classes', () => {
+    ensureObserverMocks();
+
+    const fixture = TestBed.createComponent(TestHostComponent);
     fixture.detectChanges();
 
-    expect(host.classList.contains('et-scrollable--sticky-buttons')).toBe(true);
-    expect(host.classList.contains('et-scrollable--darken-non-intersecting-items')).toBe(true);
+    const scrollable = fixture.nativeElement.querySelector('et-scrollable') as HTMLElement;
+
+    expect(scrollable.querySelector('et-scrollable-buttons')).not.toBeNull();
+    expect(scrollable.classList.contains('et-scrollable--sticky-buttons')).toBe(true);
+    expect(scrollable.classList.contains('et-scrollable--darken-non-intersecting-items')).toBe(true);
+    expect(scrollable.getAttribute('snap')).toBe('');
   });
 });

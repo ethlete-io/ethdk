@@ -20,7 +20,13 @@
     "rxjs": "7.8.2"
   },
   "peerDependenciesMeta": {
+    "@analogjs/vitest-angular": {
+      "optional": true
+    },
     "@nx/devkit": {
+      "optional": true
+    },
+    "date-fns": {
       "optional": true
     }
   },

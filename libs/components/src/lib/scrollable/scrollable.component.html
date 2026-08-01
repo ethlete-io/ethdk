@@ -25,42 +25,22 @@
     <et-scrollable-masks />
   }
 
-  @if (renderButtonsInside()) {
-    <et-scrollable-buttons />
+  @for (chrome of overlayChrome(); track chrome.key) {
+    <ng-container *ngComponentOutlet="chrome.component; inputs: chrome.inputs; injector: chrome.injector" />
   }
 </div>
 
-@if ((renderButtonsInFooter() || (renderNavigation() && scrollableDir.canScroll())) && scrollableDir.canScroll()) {
+@if (footerChrome().length && scrollableDir.canScroll()) {
   <div
-    [class.et-scrollable-footer--with-navigation]="renderNavigation()"
-    [class.et-scrollable-footer--with-buttons]="renderButtonsInFooter()"
+    [class.et-scrollable-footer--with-navigation]="footerHasNavigation()"
+    [class.et-scrollable-footer--with-buttons]="footerHasButtons()"
     class="et-scrollable-footer"
     aria-hidden="true"
   >
-    @if (renderButtonsInFooter()) {
-      <et-scrollable-buttons position="footer" />
-    }
-
-    @if (renderNavigation()) {
-      <et-scrollable-navigation />
-    }
-
-    @if (renderButtonsInFooter()) {
-      <!-- Second buttons instance for end side in footer layout is handled by the buttons directive itself -->
+    @for (chrome of footerChrome(); track chrome.key) {
+      <ng-container *ngComponentOutlet="chrome.component; inputs: chrome.inputs; injector: chrome.injector" />
     }
   </div>
-}
-
-@if (snap()) {
-  <ng-container [snapOrigin]="snapOrigin()" etScrollableSnap />
-}
-
-@if (cursorDragScroll()) {
-  <ng-container etScrollableDrag />
-}
-
-@if (darkenNonIntersectingItems()) {
-  <ng-container etScrollableDarken />
 }
 
 <ng-template #loadingTpl>

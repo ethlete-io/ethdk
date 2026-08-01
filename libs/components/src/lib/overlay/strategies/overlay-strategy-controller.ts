@@ -17,6 +17,7 @@ import {
   equal,
   injectBreakpointObserver,
   injectRenderer,
+  injectStyleManager,
   isHTMLElement,
 } from '@ethlete/core';
 import { tap } from 'rxjs';
@@ -61,6 +62,14 @@ export const createOverlayStrategyController = (
   const document = childInjector.get(DOCUMENT);
   const renderer = runInInjectionContext(childInjector, () => injectRenderer());
   const breakpointObserver = runInInjectionContext(childInjector, () => injectBreakpointObserver());
+  const styleManager = runInInjectionContext(childInjector, () => injectStyleManager());
+
+  /** The strategy's CSS ships with the strategy, so it has to be in the document before it renders. */
+  const mountStrategyStyles = (strategyConfig: OverlayBreakpointConfig) => {
+    if (strategyConfig.stylesComponent) {
+      styleManager.mount(strategyConfig.stylesComponent);
+    }
+  };
 
   const origin = config.origin;
   // event origins climb to the nearest clickable element (e.g. the button instead of its icon)
@@ -99,6 +108,8 @@ export const createOverlayStrategyController = (
   };
 
   let activeStrategy = untracked(() => getHighestMatchedStrategy());
+
+  mountStrategyStyles(activeStrategy.config);
   let attachedRuntimeRef: OverlayRuntimeRef<object, unknown> | null = null;
   let attachedOverlayRef: OverlayRef<object, unknown> | null = null;
 
@@ -224,6 +235,7 @@ export const createOverlayStrategyController = (
 
     activeStrategy = currStrategy;
 
+    mountStrategyStyles(currStrategy.config);
     applyClasses({ runtimeRef, prevConfig: prevStrategy.config, currConfig: currStrategy.config });
     runtimeRef.updatePositionStrategy(resolvePositionStrategy(currStrategy.config));
     // re-position clears inline pane styles, so sizing must be re-applied afterwards

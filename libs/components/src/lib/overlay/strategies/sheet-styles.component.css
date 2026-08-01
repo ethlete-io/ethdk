@@ -1,0 +1,116 @@
+@layer components {
+  .et-overlay.et-with-default-animation {
+    /* Color of the overshoot filler painted past a sheet's docked edge (see the per-direction
+     box-shadows below). Sourced from the surface token — which the container always forces onto
+     the host by elevation — because most sheet content (e.g. a date picker) paints its background
+     on a nested element, leaving the host itself transparent, so `inherit` would paint nothing.
+     Falls back to transparent (no filler) for overlays opened without surface themes. */
+    --_et-overlay-overshoot-fill: var(--et-surface-background-solid, transparent);
+
+    &.et-overlay--bottom-sheet {
+      &.et-animation-enter-from,
+      &.et-animation-leave-to {
+        transform: translateY(100%) !important;
+      }
+
+      &.et-animation-enter-active {
+        transition: transform 300ms var(--ease-out-5);
+
+        @supports (transition-timing-function: linear(0, 1)) {
+          transition: transform 300ms var(--ease-spring-1);
+        }
+      }
+
+      &.et-animation-leave-active {
+        transition: transform 150ms var(--ease-in-5);
+      }
+
+      /* Hide the spring overshoot: the sheet momentarily springs past its docked edge, which
+       would reveal the page behind it. A solid, zero-blur offset box-shadow paints a 50px block
+       just past that edge in the surface color, filling the gap. A shadow (not a pseudo-element)
+       is used deliberately: sheets keep `overflow: hidden` to clip their rounded corners, and an
+       element's own box-shadow is not clipped by its own overflow — a child/`::after` would be. */
+      box-shadow: 0 50px 0 0 var(--_et-overlay-overshoot-fill);
+    }
+
+    &.et-overlay--top-sheet {
+      &.et-animation-enter-from,
+      &.et-animation-leave-to {
+        transform: translateY(-100%) !important;
+      }
+
+      &.et-animation-enter-active {
+        transition: transform 300ms var(--ease-out-5);
+
+        @supports (transition-timing-function: linear(0, 1)) {
+          transition: transform 300ms var(--ease-spring-1);
+        }
+      }
+
+      &.et-animation-leave-active {
+        transition: transform 150ms var(--ease-in-5);
+      }
+
+      box-shadow: 0 -50px 0 0 var(--_et-overlay-overshoot-fill);
+    }
+
+    /* Side sheets dock to a *logical* inline edge (the position strategy uses `start`/`end`), but
+     `translateX` and the overshoot shadow are physical — so the slide axis is driven by a sign that
+     flips with the writing direction. `-1` slides toward the physical left, `1` toward the right.
+     This has to agree with the drag-to-dismiss gesture, which resolves its logical direction the
+     same way (see `resolvePhysicalDirection` in `overlay-drag-to-dismiss.ts`). */
+    &.et-overlay--left-sheet {
+      --_et-overlay-sheet-slide-sign: -1;
+
+      &:dir(rtl) {
+        --_et-overlay-sheet-slide-sign: 1;
+      }
+
+      &.et-animation-enter-from,
+      &.et-animation-leave-to {
+        transform: translateX(calc(100% * var(--_et-overlay-sheet-slide-sign))) !important;
+      }
+
+      &.et-animation-enter-active {
+        transition: transform 300ms var(--ease-out-5);
+
+        @supports (transition-timing-function: linear(0, 1)) {
+          transition: transform 300ms var(--ease-spring-1);
+        }
+      }
+
+      &.et-animation-leave-active {
+        transition: transform 150ms var(--ease-in-5);
+      }
+
+      box-shadow: calc(50px * var(--_et-overlay-sheet-slide-sign)) 0 0 0 var(--_et-overlay-overshoot-fill);
+    }
+
+    &.et-overlay--right-sheet {
+      --_et-overlay-sheet-slide-sign: 1;
+
+      &:dir(rtl) {
+        --_et-overlay-sheet-slide-sign: -1;
+      }
+
+      &.et-animation-enter-from,
+      &.et-animation-leave-to {
+        transform: translateX(calc(100% * var(--_et-overlay-sheet-slide-sign))) !important;
+      }
+
+      &.et-animation-enter-active {
+        transition: transform 300ms var(--ease-out-5);
+
+        @supports (transition-timing-function: linear(0, 1)) {
+          transition: transform 300ms var(--ease-spring-1);
+        }
+      }
+
+      &.et-animation-leave-active {
+        transition: transform 150ms var(--ease-in-5);
+      }
+
+      box-shadow: calc(50px * var(--_et-overlay-sheet-slide-sign)) 0 0 0 var(--_et-overlay-overshoot-fill);
+    }
+  }
+}

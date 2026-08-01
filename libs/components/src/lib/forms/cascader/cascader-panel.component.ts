@@ -1,11 +1,22 @@
-import { Component, DestroyRef, ElementRef, ViewEncapsulation, computed, inject, viewChild } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  ViewEncapsulation,
+  computed,
+  effect,
+  inject,
+  viewChild,
+} from '@angular/core';
 import {
   AnimatedSizeAxis,
   AutoSurfaceDirective,
   ProvideColorDirective,
   createComponentId,
   injectObserveBreakpoint,
+  injectStyleManager,
 } from '@ethlete/core';
+import { CascaderSheetStylesComponent } from './cascader-sheet-styles.component';
 import { injectOverlaySurfaceContext } from '../form-field/headless';
 import { CascaderDirective } from './headless';
 
@@ -41,6 +52,7 @@ import { CascaderDirective } from './headless';
 export class CascaderPanelComponent {
   private cascader = inject(CascaderDirective, { optional: true });
   private hostRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private styleManager = injectStyleManager();
 
   /**
    * Whether the panel is presented as a bottom sheet (small viewport) - drill mode. Mirrors
@@ -54,6 +66,15 @@ export class CascaderPanelComponent {
   protected multiselectable = computed(() => (this.cascader?.multiple() ? 'true' : null));
 
   constructor() {
+    let hasMountedSheetStyles = false;
+
+    effect(() => {
+      if (hasMountedSheetStyles || !this.isSheet()) return;
+
+      hasMountedSheetStyles = true;
+      this.styleManager.mount(CascaderSheetStylesComponent);
+    });
+
     // this panel IS the overlay's own surface - paint the overlay's registered elevation exactly,
     // don't stack a level above it (the tracker is authoritative; content inside elevates off it)
     inject(AutoSurfaceDirective).matchOverlaySurface();

@@ -15,7 +15,14 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { OverlayRuntimeAnchoredPosition, RuntimeError, nextFrame, randomId } from '@ethlete/core';
+import {
+  OverlayRuntimeAnchoredPosition,
+  RuntimeError,
+  anchoredOverlayPosition,
+  enableAnchoredOverlayPositionExtras,
+  nextFrame,
+  randomId,
+} from '@ethlete/core';
 import { OffsetOptions, Padding, Placement, VirtualElement } from '@floating-ui/dom';
 import { fromEvent, take, tap } from 'rxjs';
 import { OverlayConfig } from '../../overlay/overlay-config';
@@ -796,8 +803,9 @@ export class MenuDirective {
       contextElement: this.registeredContextTrigger()?.elementRef.nativeElement,
     };
 
-    return {
-      kind: 'anchored',
+    enableAnchoredOverlayPositionExtras();
+
+    return anchoredOverlayPosition({
       referenceElement,
       placement: this.resolvedPlacement(),
       fallbackPlacements: this.resolvedFallbackPlacements(),
@@ -805,7 +813,7 @@ export class MenuDirective {
       viewportPadding: this.viewportPadding(),
       autoResize: true,
       shift: { crossAxis: true },
-    };
+    });
   }
 
   private resolvedPlacement(): Placement {

@@ -2,8 +2,20 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, Provider, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ColorTheme, injectLocale, provideColorThemesWithTailwind4 } from '@ethlete/core';
-import { QueryErrorResponse, createQueryErrorResponse } from '@ethlete/query';
+import {
+  QueryErrorResponse,
+  createQueryErrorResponse,
+  registerQueryErrorParser,
+  setDefaultQueryRetryFn,
+  shouldRetryRequest,
+  symfonyQueryErrorParser,
+} from '@ethlete/query';
 import '../../test-helpers';
+
+// The component renders whatever the client's error pipeline produced; these specs
+// describe an app opted into withEthleteApiErrors().
+registerQueryErrorParser(symfonyQueryErrorParser);
+setDefaultQueryRetryFn(shouldRetryRequest);
 import { QueryErrorDirective } from './headless';
 import { provideQueryErrorLabels, queryErrorLabelsForLocale } from './query-error-labels';
 import { queryErrorResponseFromLegacyError } from './query-error-legacy';

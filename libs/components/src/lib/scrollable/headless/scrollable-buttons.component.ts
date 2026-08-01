@@ -57,12 +57,8 @@ import { ScrollableButtonPosition } from './scrollable.types';
     }
   `,
 })
-export class ScrollableButtonsDirective {
+export class ScrollableButtonsComponent {
   protected scrollable = inject(ScrollableDirective);
 
   public position = input<ScrollableButtonPosition>('inside');
-
-  constructor() {
-    this.scrollable.buttonsDirective.set(this);
-  }
 }

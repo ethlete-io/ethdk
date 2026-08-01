@@ -124,10 +124,10 @@ between the provider, the helper and the component is the way to keep them hones
 ```ts
 @Component({
   selector: 'app-bracket',
-  imports: [BRACKET_IMPORTS, SCROLLABLE_IMPORTS],
+  imports: [BRACKET_IMPORTS, SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS],
   template: `
     @if (fitsBracket()) {
-      <et-scrollable stickyButtons>
+      <et-scrollable [etScrollableButtons]="{ sticky: true }">
         <et-bracket [source]="source()" [layouts]="BRACKET_CONFIG.layouts" [columnWidth]="BRACKET_CONFIG.columnWidth" />
       </et-scrollable>
     } @else {

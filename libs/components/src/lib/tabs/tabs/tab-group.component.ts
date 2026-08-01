@@ -3,6 +3,7 @@ import { Component, ViewEncapsulation, computed, contentChildren, inject, input 
 import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
 import { FocusRingDirective } from '../../focus-ring';
 import { IconDirective } from '../../icon';
+import { ScrollableButtonsDirective } from '../../scrollable/headless/scrollable-buttons.directive';
 import { SCROLLABLE_IMPORTS } from '../../scrollable/scrollable.imports';
 import { TabBarTriggerDirective } from '../headless/tab-bar-trigger.directive';
 import { TabBarUnderlineDirective } from '../headless/tab-bar-underline.directive';
@@ -19,8 +20,8 @@ import { TabComponent } from './tab.component';
         [direction]="tabGroup.tabBar.orientation()"
         [itemSize]="tabGroup.tabBar.fit() === 'fill' ? 'same' : 'auto'"
         class="et-tab-group__header-scrollable"
+        etScrollableButtons
         renderMasks="false"
-        buttonPosition="inside"
         scrollMode="element"
         scrollOrigin="center"
         scrollableClass="et-tab-group__header"
@@ -75,6 +76,7 @@ import { TabComponent } from './tab.component';
     IconDirective,
     FocusRingDirective,
     SCROLLABLE_IMPORTS,
+    ScrollableButtonsDirective,
   ],
   hostDirectives: [
     {

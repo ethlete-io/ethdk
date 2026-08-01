@@ -10,7 +10,12 @@ import {
 } from '../../headless';
 import { ScrollableActiveChildDirective } from '../../headless/scrollable-active-child.directive';
 import { ScrollableComponent } from '../../scrollable.component';
-import { SCROLLABLE_IMPORTS } from '../../scrollable.imports';
+import {
+  SCROLLABLE_DARKEN_IMPORTS,
+  SCROLLABLE_DRAG_IMPORTS,
+  SCROLLABLE_IMPORTS,
+  SCROLLABLE_NAVIGATION_IMPORTS,
+} from '../../scrollable.imports';
 import { SCROLLABLE_ITEMS } from './scrollable-storybook.data';
 
 @Component({
@@ -27,7 +32,11 @@ import { SCROLLABLE_ITEMS } from './scrollable-storybook.data';
       </div>
 
       <et-scrollable
-        [stickyButtons]="stickyButtons()"
+        [etScrollableButtons]="{ position: buttonPosition(), sticky: stickyButtons(), enabled: renderButtons() }"
+        [etScrollableNavigation]="{ enabled: renderNavigation() }"
+        [etScrollableDarken]="darkenNonIntersectingItems()"
+        [etScrollableDrag]="cursorDragScroll()"
+        [etScrollableSnap]="snap()"
         [itemSize]="itemSize()"
         [direction]="direction()"
         [color]="color()"
@@ -35,16 +44,10 @@ import { SCROLLABLE_ITEMS } from './scrollable-storybook.data';
         [scrollableClass]="scrollableClass()"
         [renderMasks]="renderMasks()"
         [maskVariant]="maskVariant()"
-        [renderButtons]="renderButtons()"
         [renderScrollbars]="renderScrollbars()"
-        [cursorDragScroll]="cursorDragScroll()"
-        [renderNavigation]="renderNavigation()"
-        [buttonPosition]="buttonPosition()"
         [scrollMode]="scrollMode()"
-        [snap]="snap()"
         [scrollMargin]="scrollMargin()"
         [scrollOrigin]="scrollOrigin()"
-        [darkenNonIntersectingItems]="darkenNonIntersectingItems()"
       >
         @for (item of ITEMS; track item.index) {
           @if (item.index < 2 || makeScrollable()) {
@@ -62,7 +65,14 @@ import { SCROLLABLE_ITEMS } from './scrollable-storybook.data';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [SCROLLABLE_IMPORTS, ScrollableActiveChildDirective, BUTTON_IMPORTS],
+  imports: [
+    SCROLLABLE_IMPORTS,
+    SCROLLABLE_NAVIGATION_IMPORTS,
+    SCROLLABLE_DRAG_IMPORTS,
+    SCROLLABLE_DARKEN_IMPORTS,
+    ScrollableActiveChildDirective,
+    BUTTON_IMPORTS,
+  ],
   styles: `
     .et-sb-scrollable-item {
       display: flex;

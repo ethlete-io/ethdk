@@ -27,7 +27,7 @@ import { TAB_IMPORTS } from '@ethlete/components';
 - `label` + optional `icon` render the trigger, or supply a custom `ng-template etTabLabel`.
 - `preserveContent` (default `true`) keeps inactive panels rendered but `hidden` + `inert`; set it to `false` for lazy rendering of only the active panel.
 - `sessionMemoryKey` persists the selected tab across navigation in session storage.
-- The tab bar lives inside a [scrollable](/components/scrollable), so overflowing tabs scroll with the active one centered.
+- The tab bar lives inside a [scrollable](/components/scrollable), so overflowing tabs scroll with the active one centered. Tabs opt into that scrollable's prev/next buttons for you; they carry none of its other optional chrome.
 
 <StoryEmbed id="components-tabs-tabs--default" height="380px" />
 

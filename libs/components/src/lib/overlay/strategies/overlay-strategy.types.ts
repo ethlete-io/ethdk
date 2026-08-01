@@ -1,3 +1,4 @@
+import { Type } from '@angular/core';
 import {
   AnimatedLifecycleDirective,
   Breakpoint,
@@ -158,6 +159,13 @@ export type OverlayBreakpointConfig = {
 
   /** Custom class for the overlay container (the runtime pane element hosting the overlay content). */
   containerClass?: string | string[];
+
+  /**
+   * Styles-only component carrying the CSS that the strategy's `containerClass` selects. Mounted
+   * once (per component type) while the strategy is active, so an app that never opens this kind of
+   * overlay never bundles its stylesheet.
+   */
+  stylesComponent?: Type<unknown>;
 
   /** Custom class for the runtime host element wrapping backdrop and pane. */
   hostClass?: string | string[];

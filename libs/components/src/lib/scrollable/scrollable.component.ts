@@ -1,4 +1,4 @@
-import { NgTemplateOutlet } from '@angular/common';
+import { NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import {
   booleanAttribute,
   Component,
@@ -19,20 +19,13 @@ import {
   signalClasses,
 } from '@ethlete/core';
 import { debounceTime, map, tap } from 'rxjs';
-import { ScrollableButtonsDirective } from './headless/scrollable-buttons.directive';
-import { ScrollableDarkenDirective } from './headless/scrollable-darken.directive';
-import { ScrollableDragDirective } from './headless/scrollable-drag.directive';
 import { ScrollableIgnoreChildDirective } from './headless/scrollable-ignore-child.directive';
-import { ScrollableMasksDirective } from './headless/scrollable-masks.directive';
-import { ScrollableNavigationDirective } from './headless/scrollable-navigation.directive';
-import { ScrollableSnapDirective } from './headless/scrollable-snap.directive';
+import { ScrollableMasksComponent } from './headless/scrollable-masks.component';
 import { ScrollableDirective } from './headless/scrollable.directive';
 import {
-  ScrollableButtonPosition,
   ScrollableIntersectionChange,
   ScrollableLoadingTemplatePosition,
   ScrollableMaskVariant,
-  ScrollableScrollOrigin,
   ScrollableScrollState,
 } from './headless/scrollable.types';
 
@@ -46,12 +39,8 @@ import {
     ScrollObserverStartDirective,
     ScrollObserverEndDirective,
     ScrollableIgnoreChildDirective,
-    ScrollableMasksDirective,
-    ScrollableButtonsDirective,
-    ScrollableNavigationDirective,
-    ScrollableSnapDirective,
-    ScrollableDragDirective,
-    ScrollableDarkenDirective,
+    ScrollableMasksComponent,
+    NgComponentOutlet,
     NgTemplateOutlet,
   ],
   hostDirectives: [
@@ -67,8 +56,6 @@ import {
   host: {
     class: 'et-scrollable',
     '[class.et-scrollable--can-animate]': 'canAnimate.state()',
-    '[class.et-scrollable--darken-non-intersecting-items]': 'darkenNonIntersectingItems()',
-    '[class.et-scrollable--sticky-buttons]': 'stickyButtons() && renderButtonsInside()',
     '[attr.mask-variant]': 'maskVariant()',
   },
 })
@@ -77,21 +64,6 @@ export class ScrollableComponent {
 
   public renderMasks = input(true, { transform: booleanAttribute });
   public maskVariant = input<ScrollableMaskVariant>('gradient');
-  public renderButtons = input(true, { transform: booleanAttribute });
-  public buttonPosition = input<ScrollableButtonPosition>('inside');
-  public renderNavigation = input(false, { transform: booleanAttribute });
-  public snap = input(false, { transform: booleanAttribute });
-
-  /**
-   * Where a snapped item comes to rest. `'auto'` takes whichever of start/centre/end the item is already
-   * nearest, which keeps a plain list from being dragged around; pin it to `'center'` for a peeking layout,
-   * where the point is that the current item sits in the middle with its neighbours showing either side.
-   * Only used with `snap`. @default 'auto'
-   */
-  public snapOrigin = input<ScrollableScrollOrigin>('auto');
-  public cursorDragScroll = input(true, { transform: booleanAttribute });
-  public darkenNonIntersectingItems = input(false, { transform: booleanAttribute });
-  public stickyButtons = input(false, { transform: booleanAttribute });
   public showLoadingTemplate = input(false, { transform: booleanAttribute });
   public loadingTemplatePosition = input<ScrollableLoadingTemplatePosition>('end');
   public scrollableRole = input<string | null>(null);
@@ -125,8 +97,11 @@ export class ScrollableComponent {
   private scrollContainerEl = viewChild<ElementRef<HTMLElement>>('scrollable');
   private scrollObserver = viewChild.required(ScrollObserverDirective);
 
-  public renderButtonsInside = computed(() => this.buttonPosition() === 'inside' && this.renderButtons());
-  public renderButtonsInFooter = computed(() => this.buttonPosition() === 'footer' && this.renderButtons());
+  protected overlayChrome = computed(() => this.scrollableDir.activeChrome().filter((c) => c.slot === 'overlay'));
+  protected footerChrome = computed(() => this.scrollableDir.activeChrome().filter((c) => c.slot === 'footer'));
+  protected footerHasButtons = computed(() => this.footerChrome().some((c) => c.key === 'buttons'));
+  protected footerHasNavigation = computed(() => this.footerChrome().some((c) => c.key === 'navigation'));
+
   public canAnimate = createCanAnimateSignal();
 
   constructor() {

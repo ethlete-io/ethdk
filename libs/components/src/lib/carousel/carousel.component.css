@@ -18,20 +18,6 @@
     initial-value: 24px;
   }
 
-  /* The autoplay countdown ring. Deliberately smaller than the tap target and thicker than a hairline —
-     drawn at the target size it read as a stray outline rather than as a countdown. */
-  @property --et-carousel-dot-ring-size {
-    syntax: '<length>';
-    inherits: true;
-    initial-value: 18px;
-  }
-
-  @property --et-carousel-dot-ring-width {
-    syntax: '<length>';
-    inherits: true;
-    initial-value: 2.5px;
-  }
-
   /* How far the track's edges fade out where slides are cut off by them. Set it to `0px` for a hard cut. */
   @property --et-carousel-edge-fade {
     syntax: '<length>';
@@ -162,144 +148,8 @@
     }
   }
 
-  /* The autoplay countdown, drawn as a ring closing around the active dot.
-
-     The element is mounted for every dot while autoplay is on, and it is `data-counting` that applies the
-     keyframes — which is what keeps the ring and the timer as one clock (the attribute landing starts the
-     animation from the beginning, exactly as a fresh mount used to) while still leaving something in the DOM
-     to fade in and out. Mounting and unmounting can only ever hard-cut. */
-  .et-carousel-dot-progress {
-    position: absolute;
-    inline-size: var(--et-carousel-dot-ring-size);
-    block-size: var(--et-carousel-dot-ring-size);
-    border-radius: 50%;
-    opacity: 0;
-    scale: 0.55;
-    /* `closest-side` puts 100% at the radius, so this keeps the outermost ring-width and drops the rest —
-       one ring, one token, no radius arithmetic to get wrong. */
-    mask: radial-gradient(
-      closest-side,
-      transparent calc(100% - var(--et-carousel-dot-ring-width)),
-      black calc(100% - var(--et-carousel-dot-ring-width))
-    );
-  }
-
-  /* The countdown, as two rotations rather than a growing gradient.
-
-     It was a `conic-gradient` whose angle came from an animated registered property, which reads beautifully
-     and cannot be composited: a gradient has to be re-rasterized for every value, and animating a registered
-     property recalculates the element's style every frame whether or not the value actually changed. Idle, a
-     counting-down ring cost ~1120 paints and ~510 style recalculations over nine seconds. Stepping the
-     property halved the paints and did nothing at all for the recalculations — the recalculation is the
-     animation existing, not the value moving.
-
-     So nothing here animates a custom property or a paint-only property. Each half of the circle holds a
-     half-disc pinned to the centre, rotating from `-180deg` (entirely in the other half, clipped away) to
-     `0deg` (filling this one), and its own half clips it. The first sweeps the right half over the first half
-     of the slide's duration; the second the left half over the second, via a delay. `rotate` is composited, so
-     the whole countdown runs off the main thread: ~120 paints and ~45 recalculations over the same nine
-     seconds, which is the floor — what the page costs with no ring at all. */
-  .et-carousel-dot-progress-half {
-    position: absolute;
-    inset-block: 0;
-    inline-size: 50%;
-    /* Its own half is the window; the disc inside is only visible where it has swept into it. */
-    overflow: hidden;
-
-    &::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: var(--et-theme-color-primary-solid, currentColor);
-      rotate: -180deg;
-    }
-
-    /* Right half: the disc is a circle's right half, hinged on its left edge — the circle's centre. */
-    &:first-child {
-      inset-inline-start: 50%;
-
-      &::before {
-        border-radius: 0 100% 100% 0 / 0 50% 50% 0;
-        transform-origin: 0 50%;
-      }
-    }
-
-    /* Left half, hinged on its right edge — the same centre. */
-    &:last-child {
-      inset-inline-start: 0;
-
-      &::before {
-        border-radius: 100% 0 0 100% / 50% 0 0 50%;
-        transform-origin: 100% 50%;
-      }
-    }
-  }
-
-  @keyframes et-carousel-autoplay-sweep {
-    from {
-      rotate: -180deg;
-    }
-
-    to {
-      rotate: 0deg;
-    }
-  }
-
-  .et-carousel-dot {
-    position: relative;
-
-    /* The track the countdown fills against. Without it the ring is a lone arc with nothing to read it
-       against, and at the start of a slide there is almost nothing drawn at all. */
-    &::after {
-      content: '';
-      position: absolute;
-      inline-size: var(--et-carousel-dot-ring-size);
-      block-size: var(--et-carousel-dot-ring-size);
-      border: var(--et-carousel-dot-ring-width) solid
-        color-mix(in srgb, var(--et-surface-interaction-solid, gray) 30%, transparent);
-      border-radius: 50%;
-      opacity: 0;
-      scale: 0.55;
-    }
-
-    /* Counting down: the ring and its track grow into place, and the sweeps start from the beginning. */
-    &:where([data-counting]) {
-      & .et-carousel-dot-progress {
-        opacity: 1;
-        scale: 1;
-      }
-
-      /* Each sweep covers half the circle, so each runs for half the slide's duration and the second waits
-         for the first. */
-      & .et-carousel-dot-progress-half::before {
-        animation: et-carousel-autoplay-sweep calc(var(--_et-carousel-autoplay-duration, 5000ms) / 2) linear forwards;
-      }
-
-      & .et-carousel-dot-progress-half:last-child::before {
-        animation-delay: calc(var(--_et-carousel-autoplay-duration, 5000ms) / 2);
-      }
-
-      &::after {
-        opacity: 1;
-        scale: 1;
-      }
-    }
-
-    /* The dot itself shrinks a little to make room for the ring, so the two don't read as one blob. */
-    &:where([data-counting])::before {
-      scale: 0.75;
-    }
-  }
-
   /* Only once the component has settled, so nothing animates on the first render. */
   .et-carousel:where(.et-carousel--can-animate) {
-    & .et-carousel-dot-progress,
-    & .et-carousel-dot::after {
-      transition:
-        opacity 220ms var(--ease-3, ease-out),
-        scale 220ms var(--ease-3, ease-out);
-    }
-
     /* The dot's own disc: its colour changes on hover and when it becomes current, and its size when the
        countdown ring appears beside it. All three in one declaration, or the last one wins.  */
     & .et-carousel-dot::before {
@@ -310,41 +160,6 @@
 
     & .et-carousel-dot {
       transition: outline-color 160ms var(--ease-3, ease-out);
-    }
-
-    & .et-carousel-play-toggle-icon {
-      transition:
-        opacity 180ms var(--ease-3, ease-out),
-        scale 180ms var(--ease-3, ease-out),
-        rotate 220ms var(--ease-3, ease-out);
-    }
-  }
-
-  /* The play/pause control keeps both icons and cross-fades them: two different elements have nothing to
-     animate between, so swapping the icon name could only ever hard-cut. */
-  /* The icon button lays its projected icons out in a flex row, which would put play and pause side by side.
-     Three classes deep because that rule is one class deep on the button and is injected at runtime, so it
-     would win at equal specificity however this file is ordered. */
-  .et-carousel .et-carousel-play-toggle .et-icon-button-icon {
-    display: grid;
-    place-items: center;
-  }
-
-  .et-carousel-play-toggle {
-    & .et-carousel-play-toggle-icon {
-      /* Both in the one cell, so they occupy the same space and can cross-fade. */
-      grid-area: 1 / 1;
-      opacity: 0;
-      scale: 0.55;
-      rotate: -35deg;
-    }
-
-    /* Paused: offer play. Playing: offer pause. */
-    &:not([data-playing]) .et-icon--et-play,
-    &:where([data-playing]) .et-icon--et-pause {
-      opacity: 1;
-      scale: 1;
-      rotate: 0deg;
     }
   }
 

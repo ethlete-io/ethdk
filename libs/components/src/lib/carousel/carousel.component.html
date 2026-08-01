@@ -1,15 +1,14 @@
-<!-- The track is a scrollable: snapping per slide, one slide per view by default. Its own buttons, dots
-     and edge masks are off — they are decorative (`aria-hidden`, not tabbable), and a carousel's controls
-     have to be operable, so this component renders labelled ones below instead. -->
+<!-- The track is a scrollable: snapping per slide, one slide per view by default. Its buttons and dots are
+     not imported at all — they are decorative (`aria-hidden`, not tabbable), and a carousel's controls have
+     to be operable, so this component renders labelled ones below instead. -->
 <et-scrollable
   [itemSize]="itemSize()"
   [snapOrigin]="carousel.slideAlign()"
-  [renderButtons]="false"
-  [renderNavigation]="false"
-  [renderMasks]="false"
   class="et-carousel-track"
+  renderMasks="false"
+  etScrollableDrag
+  etScrollableSnap
   scrollMode="element"
-  snap
 >
   <!-- The wrapper is rendered here rather than left to the slide template, so slide semantics, the `N of M`
        label and the clone marking are guaranteed rather than something to remember. It is also the element

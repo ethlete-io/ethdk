@@ -1,5 +1,6 @@
 import { Component, ViewEncapsulation, inject, input } from '@angular/core';
 import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
+import { ScrollableButtonsDirective } from '../../scrollable/headless/scrollable-buttons.directive';
 import { SCROLLABLE_IMPORTS } from '../../scrollable/scrollable.imports';
 import { TabBarDirective } from '../headless/tab-bar.directive';
 import { TAB_SIZES, TabSize } from '../tab-sizes';
@@ -12,8 +13,8 @@ import { NavTabsDirective } from './headless/nav-tabs.directive';
       [direction]="tabBar.orientation()"
       [itemSize]="tabBar.fit() === 'fill' ? 'same' : 'auto'"
       class="et-nav-tabs__scrollable"
+      etScrollableButtons
       renderMasks="false"
-      buttonPosition="inside"
       scrollMode="element"
       scrollOrigin="center"
       scrollableClass="et-nav-tabs__container"
@@ -22,7 +23,7 @@ import { NavTabsDirective } from './headless/nav-tabs.directive';
     </et-scrollable>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [SCROLLABLE_IMPORTS],
+  imports: [SCROLLABLE_IMPORTS, ScrollableButtonsDirective],
   hostDirectives: [
     {
       directive: ProvideSurfaceDirective,

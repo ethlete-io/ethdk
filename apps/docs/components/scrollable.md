@@ -1,9 +1,9 @@
 # Scrollable
 
-`et-scrollable` upgrades a native scroll container with prev/next buttons, edge masks, scroll-snap, cursor drag-scrolling, navigation dots and programmatic scrolling. Import `SCROLLABLE_IMPORTS`.
+`et-scrollable` upgrades a native scroll container with edge masks, scroll-snap, cursor drag-scrolling, prev/next buttons, navigation dots and programmatic scrolling. Import `SCROLLABLE_IMPORTS` for the track, and an extra imports array per feature you actually use.
 
 ```html
-<et-scrollable [snap]="true" scrollMode="element" itemSize="third">
+<et-scrollable etScrollableSnap scrollMode="element" itemSize="third">
   @for (item of items(); track item.id) {
   <article [etScrollableActiveChild]="item.active">{{ item.label }}</article>
   }
@@ -11,8 +11,38 @@
 ```
 
 ```ts
-import { SCROLLABLE_IMPORTS } from '@ethlete/components';
+import { SCROLLABLE_DRAG_IMPORTS, SCROLLABLE_IMPORTS } from '@ethlete/components';
 ```
+
+## Opt-in features
+
+Everything optional is a directive you put on the `<et-scrollable>` itself, and each ships in its own imports array. A track you only scroll therefore carries no buttons, no icon button, no spinner and no drag code - you pay for what you write.
+
+| Imports array                   | Directive                  | What it adds                                                            |
+| ------------------------------- | -------------------------- | ----------------------------------------------------------------------- |
+| `SCROLLABLE_NAVIGATION_IMPORTS` | `[etScrollableButtons]`    | Prev/next buttons. Config: `{ position, sticky, enabled }`              |
+| `SCROLLABLE_NAVIGATION_IMPORTS` | `[etScrollableNavigation]` | Dot navigation below the track. Config: `{ enabled }`                   |
+| `SCROLLABLE_DRAG_IMPORTS`       | `[etScrollableDrag]`       | Drag the track with a mouse. Takes a boolean to toggle                  |
+| `SCROLLABLE_DRAG_IMPORTS`       | `[etScrollableSnap]`       | Native scroll snap; also takes `snapOrigin` - see [Snapping](#snapping) |
+| `SCROLLABLE_DARKEN_IMPORTS`     | `[etScrollableDarken]`     | Dims children that are only partly in view. Takes a boolean to toggle   |
+
+```html
+<et-scrollable
+  [etScrollableButtons]="{ position: 'footer', sticky: true }"
+  etScrollableDrag
+  etScrollableNavigation
+  etScrollableSnap
+  snapOrigin="center"
+>
+  …
+</et-scrollable>
+```
+
+```ts
+import { SCROLLABLE_DRAG_IMPORTS, SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS } from '@ethlete/components';
+```
+
+A directive cannot be applied conditionally, so each takes a value to switch it off at runtime - `[etScrollableDrag]="false"`, `[etScrollableButtons]="{ enabled: canScroll() }"` - rather than being added and removed.
 
 ## Live demo
 
@@ -20,29 +50,25 @@ import { SCROLLABLE_IMPORTS } from '@ethlete/components';
 
 ## Options
 
-| Input                        | Default        | Notes                                                                                                 |
-| ---------------------------- | -------------- | ----------------------------------------------------------------------------------------------------- |
-| `direction`                  | `'horizontal'` | or `'vertical'`                                                                                       |
-| `itemSize`                   | `'auto'`       | `'auto' \| 'same' \| 'half' \| 'third' \| 'quarter' \| 'full'` - sizes children as viewport fractions |
-| `scrollMode`                 | `'container'`  | `'element'` scrolls child-by-child (pair with snap)                                                   |
-| `scrollOrigin`               | `'auto'`       | Where scrolled-to elements align: `'auto' \| 'start' \| 'center' \| 'end'`                            |
-| `scrollMargin`               | `0`            | Extra margin (px) when scrolling elements into view (incl. snap)                                      |
-| `snap`                       | `false`        | Snap the track onto a child, with native CSS scroll snap - see [Snapping](#snapping)                  |
-| `snapOrigin`                 | `'auto'`       | Where a snapped child rests: `'auto' \| 'start' \| 'center' \| 'end'`. Only used with `snap`          |
-| `renderButtons`              | `true`         | Prev/next buttons; `buttonPosition: 'inside' \| 'footer'`, `stickyButtons`                            |
-| `renderMasks`                | `true`         | Edge fades; `maskVariant: 'gradient' \| 'border'`                                                     |
-| `renderNavigation`           | `false`        | Dot navigation                                                                                        |
-| `renderScrollbars`           | `false`        | Show the native scrollbar instead of hiding it                                                        |
-| `cursorDragScroll`           | `true`         | Drag with the mouse to scroll                                                                         |
-| `darkenNonIntersectingItems` | `false`        | Dims children outside the viewport                                                                    |
-| `loadingTemplatePosition`    | `'end'`        | Where `etScrollableLoadingTemplate` content renders                                                   |
-| `scrollableRole`             | -              | `role` attribute for the scroll container (e.g. `list`)                                               |
-| `scrollableClass`            | -              | Extra class(es) on the scroll container                                                               |
-| `color`                      | -              | App-registered color theme for buttons/dots                                                           |
+| Input                     | Default        | Notes                                                                                                 |
+| ------------------------- | -------------- | ----------------------------------------------------------------------------------------------------- |
+| `direction`               | `'horizontal'` | or `'vertical'`                                                                                       |
+| `itemSize`                | `'auto'`       | `'auto' \| 'same' \| 'half' \| 'third' \| 'quarter' \| 'full'` - sizes children as viewport fractions |
+| `scrollMode`              | `'container'`  | `'element'` scrolls child-by-child (pair with snap)                                                   |
+| `scrollOrigin`            | `'auto'`       | Where scrolled-to elements align: `'auto' \| 'start' \| 'center' \| 'end'`                            |
+| `scrollMargin`            | `0`            | Extra margin (px) when scrolling elements into view (incl. snap)                                      |
+| `renderMasks`             | `true`         | Edge fades; `maskVariant: 'gradient' \| 'border'`                                                     |
+| `renderScrollbars`        | `false`        | Show the native scrollbar instead of hiding it                                                        |
+| `loadingTemplatePosition` | `'end'`        | Where `etScrollableLoadingTemplate` content renders                                                   |
+| `scrollableRole`          | -              | `role` attribute for the scroll container (e.g. `list`)                                               |
+| `scrollableClass`         | -              | Extra class(es) on the scroll container                                                               |
+| `color`                   | -              | App-registered color theme for buttons/dots                                                           |
 
 ### Snapping
 
-Snapping is **native CSS scroll snap**, so the browser folds it into the fling itself, on the compositor: a
+Snapping is `[etScrollableSnap]` from `SCROLLABLE_DRAG_IMPORTS`, applied on the `<et-scrollable>` itself.
+
+It is **native CSS scroll snap**, so the browser folds it into the fling itself, on the compositor: a
 swipe decelerates straight onto a child and stops. `snapOrigin` decides where that child comes to rest, and
 maps onto CSS like this:
 

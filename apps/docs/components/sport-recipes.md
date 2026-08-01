@@ -24,7 +24,12 @@ pass-through inputs and nothing else.
   <a routerLink="/matches">All matches</a>
 </div>
 
-<et-scrollable [itemSize]="{ xs: 'full', md: 'half', lg: 'third' }" scrollableClass="gap-3" scrollableRole="list" snap>
+<et-scrollable
+  [itemSize]="{ xs: 'full', md: 'half', lg: 'third' }"
+  etScrollableSnap
+  scrollableClass="gap-3"
+  scrollableRole="list"
+>
   @for (match of matches(); track match.id) {
   <div [etScrollableActiveChild]="match.status === 'live'" role="listitem">
     <a [match]="match" [routerLink]="['/matches', match.id]" class="grid h-full" et-match-card></a>

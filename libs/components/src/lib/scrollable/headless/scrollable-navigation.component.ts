@@ -107,7 +107,7 @@ import { ScrollableNavigation } from './scrollable.types';
     }
   `,
 })
-export class ScrollableNavigationDirective {
+export class ScrollableNavigationComponent {
   protected scrollable = inject(ScrollableDirective);
 
   private navigationDotsContainer = viewChild<ElementRef<HTMLElement>>('navigationDotsContainer');
@@ -192,7 +192,6 @@ export class ScrollableNavigationDirective {
 
   constructor() {
     this.scrollable.activateChildIntersections();
-    this.scrollable.navigationDirective.set(this);
 
     const scrollContainerRef$ = toObservable(this.scrollable.getScrollContainerRef());
 

@@ -17,12 +17,14 @@ import {
 } from './fullscreen-animation';
 import { mergeOverlayBreakpointConfigs } from './overlay-strategy-config-merger';
 import { OverlayBreakpointConfig, OverlayStrategy, OverlayStrategyBreakpoint } from './overlay-strategy.types';
+import { FullScreenDialogStylesComponent } from './full-screen-dialog-styles.component';
 
 const FULLSCREEN_DIALOG_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootProvider<OverlayBreakpointConfig>(
   {
     width: '100%',
     height: '100%',
     containerClass: 'et-overlay--full-screen-dialog',
+    stylesComponent: FullScreenDialogStylesComponent,
     positionStrategy: () => ({ kind: 'global', horizontal: 'stretch', vertical: 'stretch' }),
     documentClass: 'et-overlay--full-screen-dialog-document',
     applyTransformOrigin: true,
