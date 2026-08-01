@@ -355,65 +355,105 @@ export class ContentfulRichTextRendererComponent {
 
   private readonly renderInstructions = computed(() => {
     const commands = this.renderCommands();
-    const previousRenderCommandMap = new Map(this.previousRenderCommandMap());
+    const previousRenderCommandMap = this.previousRenderCommandMap();
 
     const instructions: RenderInstruction[] = [];
 
-    // remove deleted components as well as all other elements
-    for (const [, command] of previousRenderCommandMap) {
-      if (command.kind === 'component') {
-        // keep the component around if it's still in the new commands
-        if (commands.some((c) => c.id === command.id)) {
-          continue;
+    // Decide, in document order, which commands survive the change with their DOM intact.
+    // A plain element or text node survives when the same id renders the same output at the same
+    // spot inside a surviving parent. Ancestors are decided first because parents precede their
+    // children in command order. Components survive on id alone — their DOM can be reattached.
+    const preserved = new Set<string>();
+    const needsReattach = new Set<string>();
+
+    const parentIdOf = (command: RenderCommand): string | null => {
+      if (command.nestingLevel === 0) {
+        return null;
+      }
+
+      for (let i = command.index - 1; i >= 0; i--) {
+        const cmd = commands[i];
+
+        if (cmd && cmd.nestingLevel === command.nestingLevel - 1 && cmd.kind === 'htmlOpen') {
+          return cmd.id;
         }
       }
 
-      instructions.push({ type: 'delete', command });
+      return null;
+    };
 
-      // remove from map to mark as used
-      previousRenderCommandMap.delete(command.id);
-    }
+    const attributesEqual = (a: Record<string, string>, b: Record<string, string>) => {
+      const aKeys = Object.keys(a);
 
-    // Find the indexes of the commands remaining in the previousRenderCommandMap in the new commands array.
-    const lastComponentIndexes: { newIndex: number; prevIndex: number; command: RenderCommand }[] = [];
-    for (const [id, command] of previousRenderCommandMap) {
-      const index = commands.findIndex((c) => c.id === id);
-      const newCommand = commands[index];
-
-      if (index === -1 || !newCommand) {
-        throw new Error('Command not found!');
-      }
-
-      lastComponentIndexes.push({
-        newIndex: index,
-        prevIndex: command.index,
-        command: newCommand,
-      });
-    }
-
-    lastComponentIndexes.sort((a, b) => a.newIndex - b.newIndex);
-
-    // Every preserved component gets its inputs refreshed. A component whose previous position
-    // breaks the ascending order relative to the new order additionally has to be re-inserted.
-    let lastPrevIndex = -1;
-    for (const item of lastComponentIndexes) {
-      if (item.prevIndex < lastPrevIndex) {
-        instructions.push({ type: 'move', command: item.command });
-      } else {
-        lastPrevIndex = item.prevIndex;
-        instructions.push({ type: 'update', command: item.command });
-      }
-    }
+      return aKeys.length === Object.keys(b).length && aKeys.every((key) => a[key] === b[key]);
+    };
 
     for (const command of commands) {
-      if (command.kind === 'component') {
-        const previousCommand = previousRenderCommandMap.get(command.id);
+      if (command.kind === 'htmlClose') {
+        continue;
+      }
 
-        if (!previousCommand) {
-          instructions.push({ type: 'create', command });
+      const previous = previousRenderCommandMap.get(command.id);
+
+      if (!previous || previous.kind !== command.kind) {
+        continue;
+      }
+
+      const parentId = parentIdOf(command);
+      const parentPreserved = parentId === null || preserved.has(parentId);
+
+      if (command.kind === 'component') {
+        preserved.add(command.id);
+
+        const samePlace =
+          parentPreserved &&
+          previous.nestingLevel === command.nestingLevel &&
+          previous.domPosition === command.domPosition;
+
+        if (!samePlace) {
+          needsReattach.add(command.id);
         }
-      } else {
+
+        continue;
+      }
+
+      const sameOutput =
+        previous.kind === command.kind &&
+        (previous.kind !== 'htmlOpen' || previous.tagName === (command as HtmlOpenRenderCommand).tagName) &&
+        (previous.kind !== 'text' || previous.text === (command as TextRenderCommand).text);
+
+      if (
+        parentPreserved &&
+        sameOutput &&
+        previous.nestingLevel === command.nestingLevel &&
+        previous.domPosition === command.domPosition &&
+        attributesEqual(previous.attributes, command.attributes)
+      ) {
+        preserved.add(command.id);
+      }
+    }
+
+    // Everything that did not survive is removed first, so the ordered pass below can rebuild
+    // into a clean tree. Close commands never render DOM and are skipped throughout.
+    for (const [id, command] of previousRenderCommandMap) {
+      if (command.kind !== 'htmlClose' && !preserved.has(id)) {
+        instructions.push({ type: 'delete', command });
+      }
+    }
+
+    // One pass in document order: parents are created before a child component is reattached.
+    // Surviving plain elements still get an update so the cache tracks their fresh command data.
+    for (const command of commands) {
+      if (command.kind === 'htmlClose') {
+        continue;
+      }
+
+      if (!preserved.has(command.id)) {
         instructions.push({ type: 'create', command });
+      } else if (command.kind === 'component' && needsReattach.has(command.id)) {
+        instructions.push({ type: 'move', command });
+      } else {
+        instructions.push({ type: 'update', command });
       }
     }
 
@@ -917,20 +957,24 @@ export class ContentfulRichTextRendererComponent {
   }
 
   private _findFollowingElement(command: RenderCommand) {
-    // Find an already rendered element at the same nesting level with a greater domPosition,
-    // to insert before. Without one the element is appended to the parent.
+    // Find the closest already rendered element at the same nesting level with a greater
+    // domPosition, to insert before. Without one the element is appended to the parent.
+    let nextElement: HTMLElement | undefined;
+    let nextDomPosition = Infinity;
+
     for (const cached of this._executedCommandsCache.values()) {
       if (
         cached.command.domPosition > command.domPosition &&
+        cached.command.domPosition < nextDomPosition &&
         cached.command.nestingLevel === command.nestingLevel &&
-        // Make sure the element does not find itself
-        cached.command.kind !== command.kind
+        cached.command.id !== command.id
       ) {
-        return cached.element;
+        nextElement = cached.element;
+        nextDomPosition = cached.command.domPosition;
       }
     }
 
-    return undefined;
+    return nextElement;
   }
 
   private _renderInsertOrAppend(

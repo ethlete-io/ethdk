@@ -75,7 +75,7 @@ The component has an empty template and renders imperatively. Each node type map
 
 Every element gets the classes `et-contentful-rich-text-default-element` and `et-contentful-rich-text-default-<tag>` for styling. Elements that end up empty are pruned (except `td` and `hr`).
 
-When `content` changes, the renderer **diffs** the new document against the previous render — plain elements and text are rebuilt, while embedded component instances survive when an embed of the same content type still occupies the same slot. Every surviving instance receives the new inputs reactively (they are bound with `inputBinding`, so signal inputs update in place), and embeds of different types that change relative order are moved in the DOM instead of recreated.
+When `content` changes, the renderer **diffs** the new document against the previous render. Unchanged plain elements and text spans keep their DOM nodes; only nodes whose output, position or ancestry actually changed are rebuilt. Embedded component instances survive when an embed of the same content type still occupies the same slot — every surviving instance receives the new inputs reactively (they are bound with `inputBinding`, so signal inputs update in place), and a surviving component whose position or parent changed is reattached in place instead of recreated. Setting an identical document performs no DOM writes at all.
 
 ### Text marks
 

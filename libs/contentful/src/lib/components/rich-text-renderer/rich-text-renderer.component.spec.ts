@@ -38,6 +38,9 @@ const embeddedAsset = (assetId: string) =>
 const embeddedEntry = (entryId: string) =>
   block('embedded-entry-block', [], { target: { sys: { type: 'Link', linkType: 'Entry', id: entryId } } });
 
+const inlineEmbeddedEntry = (entryId: string) =>
+  block('embedded-entry-inline', [], { target: { sys: { type: 'Link', linkType: 'Entry', id: entryId } } });
+
 const hyperlink = (uri: string, value: string, marks: string[] = []) =>
   block('hyperlink', [text(value, marks)], { uri });
 
@@ -577,7 +580,7 @@ describe('ContentfulRichTextRendererComponent', () => {
       expect(renderRoot(fixture).querySelector('p')?.textContent).toBe('replacement');
     });
 
-    it('recreates plain elements on every content change while preserving component instances', () => {
+    it('keeps unchanged plain elements and component instances across a content change', () => {
       const entry = createEntry('e1', 'teaser', { title: 'Teaser' });
 
       const { fixture } = setup({
@@ -588,16 +591,56 @@ describe('ContentfulRichTextRendererComponent', () => {
 
       const instanceBefore = StubTeaserComponent.instances[0];
       const pBefore = renderRoot(fixture).querySelector('p');
+      const spanBefore = renderRoot(fixture).querySelector('p > span');
 
       setContent(fixture, doc(paragraph('same'), embeddedEntry('e1')), { Entry: [entry] });
 
-      const pAfter = renderRoot(fixture).querySelector('p');
-
-      // Current behavior: non-component commands are always deleted and recreated.
-      expect(pAfter).not.toBe(pBefore);
-      expect(pAfter?.textContent).toBe('same');
+      expect(renderRoot(fixture).querySelector('p')).toBe(pBefore);
+      expect(renderRoot(fixture).querySelector('p > span')).toBe(spanBefore);
+      expect(renderRoot(fixture).querySelector('p')?.textContent).toBe('same');
       expect(StubTeaserComponent.instances[0]).toBe(instanceBefore);
       expect(StubTeaserComponent.instances).toHaveLength(1);
+    });
+
+    it('recreates only the changed text span inside a preserved element', () => {
+      const { fixture } = setup({
+        richText: doc(block('paragraph', [text('stable'), text(' changing')])),
+      });
+
+      const pBefore = renderRoot(fixture).querySelector('p');
+      const [stableBefore, changingBefore] = Array.from(renderRoot(fixture).querySelectorAll('p > span'));
+
+      setContent(fixture, doc(block('paragraph', [text('stable'), text(' changed')])));
+
+      const spans = Array.from(renderRoot(fixture).querySelectorAll('p > span'));
+
+      expect(renderRoot(fixture).querySelector('p')).toBe(pBefore);
+      expect(spans[0]).toBe(stableBefore);
+      expect(spans[1]).not.toBe(changingBefore);
+      expect(spans.map((s) => s.textContent)).toEqual(['stable', ' changed']);
+    });
+
+    it('reattaches a preserved component when its parent element is rebuilt', () => {
+      const entry = createEntry('e1', 'teaser', { title: 'Teaser' });
+
+      const { fixture } = setup({
+        customComponents: { teaser: StubTeaserComponent },
+        richText: doc(block('paragraph', [text('before '), inlineEmbeddedEntry('e1')])),
+        includes: { Entry: [entry] },
+      });
+
+      const instance = StubTeaserComponent.instances[0];
+
+      expect(renderRoot(fixture).querySelector('p .teaser')).not.toBeNull();
+
+      setContent(fixture, doc(block('paragraph', [text('rewritten '), inlineEmbeddedEntry('e1')])), {
+        Entry: [entry],
+      });
+
+      expect(StubTeaserComponent.instances).toEqual([instance]);
+      expect(StubTeaserComponent.destroyed).toBe(0);
+      expect(renderRoot(fixture).querySelector('p .teaser')).not.toBeNull();
+      expect(renderRoot(fixture).querySelector('p')?.textContent).toContain('rewritten');
     });
 
     it('renders the swapped content through input updates when two entries swap places', () => {
