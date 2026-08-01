@@ -44,6 +44,7 @@ import {
   toSearchObservable,
 } from './internals/cascader-tree';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
+import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
 
 export const CASCADER_SELECTABLE_LEVELS = {
   /** Only terminal leaves commit a value (default). */
@@ -415,6 +416,8 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   private typeaheadColumn = -1;
 
   constructor() {
+    mountTextFieldShellStyles();
+
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
 

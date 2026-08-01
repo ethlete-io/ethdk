@@ -12,9 +12,10 @@ import {
   untracked,
 } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
-import { injectRenderer, signalElementDimensions } from '@ethlete/core';
+import { injectRenderer, injectStyleManager, signalElementDimensions } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, TextFieldControlDirective } from '../../form-field/headless';
 import { AutosizeBounds, computeAutosizeBlockSize, readTextareaStyleMetrics } from './internals/textarea-autosize';
+import { FormFieldTextareaStylesComponent } from '../../form-field/form-field-textarea-styles.component';
 
 export const TEXTAREA_RESIZE_MODES = {
   NONE: 'none',
@@ -62,6 +63,7 @@ export class TextareaDirective extends TextFieldControlDirective implements Form
 
   constructor() {
     super();
+    injectStyleManager().mount(FormFieldTextareaStylesComponent);
 
     const hostRef = inject<ElementRef<HTMLElement | null>>(ElementRef);
     const hostElement = hostRef.nativeElement;

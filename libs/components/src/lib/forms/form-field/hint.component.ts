@@ -4,6 +4,7 @@ import { FORM_FIELD_TOKEN, HintComponentBase } from './headless';
 @Component({
   selector: 'et-hint',
   template: '<ng-content />',
+  styleUrl: './hint.component.css',
   encapsulation: ViewEncapsulation.None,
 })
 export class HintComponent implements HintComponentBase {

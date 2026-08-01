@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { booleanAttribute, computed, DestroyRef, Directive, inject, input, model, signal } from '@angular/core';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import { htmlToMarkdown, injectRenderer, markdownToHtml, RuntimeError } from '@ethlete/core';
+import { htmlToMarkdown, injectRenderer, injectStyleManager, markdownToHtml, RuntimeError } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 import { RICH_TEXT_EDITOR_ERROR_CODES } from '../rich-text-editor-errors';
 import { injectRichTextEditorLabels, RichTextEditorLabels } from '../rich-text-editor-labels';
@@ -23,6 +23,8 @@ import {
   RichTextEditorTokenChip,
   RichTextEditorTokenCodec,
 } from './internals/rich-text-editor-token';
+import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
+import { FormFieldRichTextStylesComponent } from '../../form-field/form-field-rich-text-styles.component';
 
 @Directive({
   selector: '[etRichTextEditor]',
@@ -192,6 +194,10 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   public linkEditorOpen = signal(false);
 
   constructor() {
+    injectStyleManager().mount(FormFieldRichTextStylesComponent);
+
+    mountTextFieldShellStyles();
+
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
   }

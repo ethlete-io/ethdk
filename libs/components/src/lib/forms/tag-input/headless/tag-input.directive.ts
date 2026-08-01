@@ -3,6 +3,7 @@ import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 import { TagInputFieldDirective } from './tag-input-field.directive';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
+import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
 
 const defaultNormalizeTag = (raw: string) => {
   const trimmed = raw.trim();
@@ -100,6 +101,8 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
   public keySeparators = computed(() => this.separators().filter((separator) => separator.length > 1));
 
   constructor() {
+    mountTextFieldShellStyles();
+
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
   }

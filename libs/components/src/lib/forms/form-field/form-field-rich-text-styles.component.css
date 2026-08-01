@@ -1,0 +1,36 @@
+@layer components {
+  /* The host hook is a bare attribute selector, not `:where([data-control-type='rich-text'])`: this
+     sheet is injected by the editor, so a standalone editor instantiated before any form-field would
+     inject it *before* the base sheet and lose every source-order tie against the base frame rules. */
+  et-form-field[data-control-type='rich-text'] {
+    .et-form-field-control-frame {
+      align-items: stretch;
+      padding: 0;
+      cursor: auto;
+    }
+
+    .et-form-field-control-area {
+      align-items: stretch;
+    }
+
+    .et-form-field-control-slot {
+      align-items: stretch;
+    }
+
+    /* The frame has no padding of its own (the editor's toolbar/content bring theirs), so the
+       inline label needs its own inset, must not center across the editor's full height, and
+       must not keep the negative block margin that is sized to cancel the regular frame padding
+       (here it would push the box-appearance divider outside the frame). */
+    &[data-label-mode='inline'] .et-form-field-label-area--inline {
+      align-items: flex-start;
+      margin-block: 0;
+      padding-block-start: var(--et-form-field-control-padding-block);
+      padding-inline-start: var(--et-form-field-control-padding-inline);
+    }
+
+    /* The editor brings its own inline padding after the divider — only cancel the control-area gap. */
+    &[data-appearance='box'][data-label-mode='inline'] .et-form-field-label-area--inline {
+      margin-inline-end: calc(var(--et-form-field-control-affix-gap) * -1);
+    }
+  }
+}

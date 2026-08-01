@@ -1,0 +1,306 @@
+@layer components {
+  et-form-field {
+    &:where([data-size='sm']) {
+      --et-form-field-gap: 4px;
+      --et-form-field-control-border-radius: 4px;
+      --et-form-field-control-padding-block: 4px;
+      --et-form-field-control-padding-inline: 10px;
+      --et-form-field-control-affix-gap: 6px;
+      --et-form-field-control-font-size: 12px;
+      --et-form-field-control-min-height: 42px;
+      --et-form-field-label-font-size: 12px;
+    }
+
+    &:where([data-size='md']) {
+      --et-form-field-gap: 5px;
+      --et-form-field-control-border-radius: 5px;
+      --et-form-field-control-padding-block: 6px;
+      --et-form-field-control-padding-inline: 12px;
+      --et-form-field-control-affix-gap: 8px;
+      --et-form-field-control-font-size: 14px;
+      --et-form-field-control-min-height: 50px;
+      --et-form-field-label-font-size: 13px;
+    }
+
+    &:where([data-size='lg']) {
+      --et-form-field-gap: 6px;
+      --et-form-field-control-border-radius: 6px;
+      --et-form-field-control-padding-block: 8px;
+      --et-form-field-control-padding-inline: 14px;
+      --et-form-field-control-affix-gap: 10px;
+      --et-form-field-control-font-size: 16px;
+      --et-form-field-control-min-height: 58px;
+      --et-form-field-label-font-size: 14px;
+    }
+
+    &[data-fill='filled'] {
+      --_et-form-field-control-background: var(
+        --et-surface-background-solid,
+        var(--et-surface-base-solid, transparent)
+      );
+    }
+
+    /* The host hook is a bare attribute selector, not `:where([data-text-shell])`: this sheet is
+       injected by the control, so a control instantiated before any form-field would inject it
+       *before* the base sheet and lose every source-order tie against the base frame/label rules. */
+    &[data-text-shell] {
+      &[data-label-mode='static'] {
+        /* only reserve the label band when a label is actually projected */
+        &[data-has-label] .et-form-field-shell {
+          padding-block-start: calc(var(--et-form-field-label-font-size) * 1.2 + var(--et-form-field-gap));
+        }
+
+        .et-form-field-control-area {
+          position: static;
+        }
+
+        .et-form-field-label-area {
+          position: absolute;
+          inset-block-start: 0;
+          inset-inline-start: var(--et-form-field-control-padding-inline);
+          transform: translateY(calc(-100% - var(--et-form-field-gap) - var(--et-form-field-control-border-width)));
+        }
+
+        &[data-appearance='underline'][data-fill='transparent'] .et-form-field-label-area {
+          inset-inline-start: 0;
+        }
+      }
+
+      &[data-label-mode='inline'] {
+        .et-form-field-control-frame {
+          align-items: stretch;
+        }
+
+        .et-form-field-control-area {
+          position: static;
+          gap: var(--et-form-field-control-affix-gap);
+          align-items: stretch;
+        }
+
+        .et-form-field-control-slot {
+          display: flex;
+          align-items: center;
+        }
+
+        .et-form-field-label-area--inline {
+          position: static;
+          flex-shrink: 0;
+          transform: none;
+          white-space: nowrap;
+          pointer-events: auto;
+          font-size: var(--et-form-field-control-font-size);
+          line-height: var(--et-form-field-control-line-height);
+          display: flex;
+          align-items: center;
+          margin-block: calc(var(--et-form-field-control-padding-block) * -1);
+        }
+
+        &[data-appearance='underline'] .et-form-field-label-area--inline::after {
+          content: ':';
+        }
+
+        &[data-appearance='box'] .et-form-field-label-area--inline {
+          padding-inline-end: var(--et-form-field-control-padding-inline);
+          margin-inline-end: calc(var(--et-form-field-control-padding-inline) - var(--et-form-field-control-affix-gap));
+          border-inline-end: var(--et-form-field-control-border-width) solid
+            var(--et-surface-border-solid, currentColor);
+        }
+      }
+
+      &[data-label-mode='floating-inside'],
+      &[data-label-mode='floating-outside'] {
+        :is(.et-input-native, .et-number-input-native, .et-textarea-native)::placeholder {
+          transition: color 150ms ease;
+        }
+
+        /* the select renders its placeholder as a span, not a native ::placeholder */
+        .et-select-value[data-placeholder] {
+          transition: color 150ms ease;
+        }
+
+        &:not([data-label-floated]) :is(.et-input-native, .et-number-input-native, .et-textarea-native)::placeholder {
+          color: transparent;
+        }
+
+        &:not([data-label-floated]) .et-select-value[data-placeholder] {
+          color: transparent;
+        }
+      }
+
+      &[data-label-mode='floating-outside'] {
+        .et-form-field-control-area {
+          align-self: stretch;
+          display: flex;
+          align-items: center;
+        }
+
+        .et-form-field-label-area--floating {
+          inset-inline-start: 0;
+        }
+
+        /* only reserve the label band when a label is actually projected */
+        &[data-has-label] .et-form-field-shell {
+          padding-block-start: calc(var(--et-form-field-label-font-size) * 1.2 + var(--et-form-field-gap));
+        }
+
+        &[data-label-floated] .et-form-field-label-area--floating {
+          inset-block-start: 0;
+          inset-inline-start: calc(var(--_et-form-field-prefix-offset, 0px) * -1);
+          transform: translateY(
+            calc(
+              -100% - var(--et-form-field-gap) - var(--et-form-field-control-border-width) -
+                var(--et-form-field-control-padding-block)
+            )
+          );
+        }
+      }
+
+      &[data-label-mode='floating-inside'] {
+        --_et-form-field-float-inside-extra-padding: calc(
+          var(--et-form-field-label-font-size) * var(--_et-form-field-floating-label-scale) + 2px
+        );
+
+        .et-form-field-control-area {
+          align-self: stretch;
+          display: flex;
+          align-items: center;
+          padding-block-start: var(--_et-form-field-float-inside-extra-padding);
+        }
+
+        .et-form-field-label-area--floating {
+          inset-inline-start: 0;
+        }
+
+        &[data-label-floated] .et-form-field-label-area--floating {
+          inset-block-start: 4px;
+          transform: scale(var(--_et-form-field-floating-label-scale));
+        }
+
+        .et-form-field-control-slot {
+          font-size: calc(var(--et-form-field-control-font-size) * 0.96);
+        }
+      }
+
+      .et-form-field-label-area {
+        max-inline-size: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      /* Hover follows the FRAME and the label — the two boxes that activate the control — not the host.
+         The host's box also spans the label band, the `--et-form-field-gap` between frame and support, and
+         the whole hint/counter row, so keying on `:hover` lit the frame up while the pointer was resting
+         visibly outside it (next to the counter, most obviously). Readonly and disabled get no hover
+         feedback at all: the frame's `pointer-events: none` (disabled) does not stop an ancestor from
+         matching `:hover`, so it has to be excluded here. */
+      @media (hover: hover) {
+        &:where(:not([data-readonly]):not([data-disabled]):not(:has(.et-color-interactive-exclude:hover))):where(
+            :has(.et-form-field-control-frame:hover),
+            :has(.et-form-field-label-area:hover)
+          ) {
+          .et-form-field-control-frame {
+            border-color: var(--et-surface-interaction-hover-solid, currentColor);
+          }
+
+          .et-form-field-label-area,
+          .et-form-field-affix {
+            color: var(--et-surface-color-solid, currentColor);
+            opacity: 1;
+          }
+        }
+      }
+
+      /* an open popup keeps the field in its focused look: focus has moved into the detached
+         overlay, so `:focus-visible` no longer matches — `[data-expanded]` stands in for it */
+      &:where(:has(:focus-visible):not([data-readonly])) .et-form-field-control-frame,
+      &:where([data-expanded]:not([data-readonly])) .et-form-field-control-frame,
+      &:where([data-focused]:not([data-readonly])) .et-form-field-control-frame {
+        border-color: var(--et-theme-color-primary-solid);
+      }
+
+      &:where(:has(:focus-visible):not([data-readonly])) .et-form-field-label-area,
+      &:where(:has(:focus-visible):not([data-readonly])) .et-form-field-affix,
+      &:where([data-expanded]:not([data-readonly])) .et-form-field-label-area,
+      &:where([data-expanded]:not([data-readonly])) .et-form-field-affix,
+      &:where([data-focused]:not([data-readonly])) .et-form-field-label-area,
+      &:where([data-focused]:not([data-readonly])) .et-form-field-affix {
+        color: var(--et-surface-color-solid, currentColor);
+        opacity: 1;
+      }
+
+      &[data-readonly] {
+        .et-form-field-control-frame {
+          cursor: default;
+        }
+
+        .et-form-field-control,
+        input,
+        textarea,
+        [contenteditable] {
+          cursor: default;
+        }
+      }
+
+      &[data-error] .et-form-field-control-frame {
+        border-color: var(--et-theme-color-primary-solid);
+      }
+
+      &[data-error] .et-form-field-label-area {
+        color: var(--et-theme-color-primary-solid);
+      }
+
+      &[data-error] .et-form-field-affix {
+        color: var(--et-theme-color-primary-solid);
+        opacity: 1;
+      }
+
+      /* Driven by the registered control's disabled state (data-disabled), NOT :has(:disabled) —
+         a composite control like the rich text editor legitimately disables individual toolbar
+         buttons while fully enabled, and :has(:disabled) would dim (and pointer-events-kill) the
+         whole field over it. */
+      &[data-disabled] {
+        .et-form-field-control-frame {
+          opacity: var(--et-form-field-control-disabled-opacity);
+          pointer-events: none;
+          box-shadow: none;
+        }
+
+        .et-form-field-label-area {
+          cursor: not-allowed;
+        }
+      }
+
+      &[data-appearance='underline'] {
+        /* An underline field is text with a rule beneath it — there is no box to fill, so it must not
+           reserve the box height the filled/box skins need. With the shared per-size min-height a `sm`
+           field left ~12px of dead space between its value and the underline (very visible in a table
+           footer's page-size select). Sizing the floor to the control's own line box puts the rule
+           `--et-form-field-control-padding-block` under the text instead. A floating label still grows
+           the frame past this floor — it adds its own padding-block-start on top. */
+        --et-form-field-control-min-height: calc(
+          var(--et-form-field-control-font-size) * var(--et-form-field-control-line-height) +
+            var(--et-form-field-control-padding-block) * 2
+        );
+
+        .et-form-field-control-frame {
+          border-top: none;
+          border-inline: none;
+          border-radius: 0;
+          box-shadow: none;
+        }
+
+        &[data-fill='transparent'] {
+          .et-form-field-control-frame {
+            padding-inline: 0;
+          }
+
+          .et-form-field-errors,
+          .et-form-field-hint {
+            padding-inline-start: 0;
+          }
+        }
+      }
+    }
+  }
+}

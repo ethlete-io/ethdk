@@ -15,6 +15,7 @@ import { PHONE_COUNTRIES, matchCountryByDialCode, stripTrunkZero } from './phone
 import { PhoneInputFieldDirective } from './phone-input-field.directive';
 import { PhoneInputFlagDirective } from './phone-input-flag.directive';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
+import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
 
 const onlyDigits = (raw: string) => raw.replace(/\D/g, '');
 
@@ -124,6 +125,8 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
   });
 
   constructor() {
+    mountTextFieldShellStyles();
+
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
   }

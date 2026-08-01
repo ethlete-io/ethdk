@@ -1,0 +1,20 @@
+@layer components {
+  et-form-field {
+    .et-form-field-hint {
+      font-size: var(--et-form-field-hint-font-size);
+      color: var(--et-surface-color-muted-solid, currentColor);
+      padding-inline-start: calc(
+        var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width)
+      );
+      transition: color 150ms ease;
+
+      &:empty {
+        display: none;
+      }
+    }
+
+    &[data-disabled] .et-form-field-hint {
+      color: var(--et-surface-interaction-disabled-solid, currentColor);
+    }
+  }
+}

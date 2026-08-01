@@ -2,6 +2,7 @@ import { booleanAttribute, computed, DestroyRef, Directive, inject, input, model
 import { ValidationError } from '@angular/forms/signals';
 import { FORM_FIELD_TOKEN, FormFieldControl, FormFieldControlType } from './form-field.tokens';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
+import { mountTextFieldShellStyles } from '../form-field-text-shell-styles.component';
 
 /**
  * Shared wiring for the native-input-backed controls that render inside the text-field shell
@@ -97,6 +98,8 @@ export abstract class TextFieldControlDirective implements FormFieldControl {
   public abstract controlType: Signal<FormFieldControlType>;
 
   constructor() {
+    mountTextFieldShellStyles();
+
     const destroyRef = inject(DestroyRef);
 
     this.formField?.registerControl(this);

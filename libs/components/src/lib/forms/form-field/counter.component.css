@@ -1,4 +1,14 @@
 @layer components {
+  .et-form-field-support-counter {
+    flex: none;
+    margin-inline-start: auto;
+    padding-inline-end: calc(var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width));
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
   .et-counter {
     display: block;
     flex: none;

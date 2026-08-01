@@ -45,6 +45,7 @@ import { SelectValueDirective } from './select-value.directive';
 import { SelectViewportDirective } from './select-viewport.directive';
 import { SelectItem, SelectOptionData, SelectSelectedEntry } from './select.tokens';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
+import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
 
 export const SELECT_FILTER_MODES = {
   /** The select never filters — a search input is purely informational for the consumer. */
@@ -526,6 +527,8 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   private typeahead = createTypeahead();
 
   constructor() {
+    mountTextFieldShellStyles();
+
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
 

@@ -5,6 +5,7 @@ import { deriveDurationFormatSpec, formatDuration, parseDuration } from './inter
 import { DurationInputFieldDirective } from './duration-input-field.directive';
 import { injectFormFieldLabels } from '../../../../forms/form-field/form-field-labels';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
+import { mountTextFieldShellStyles } from '../../../form-field/form-field-text-shell-styles.component';
 
 /**
  * A duration form control whose value is a **total elapsed time in milliseconds**
@@ -85,6 +86,8 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
   public registeredField = signal<DurationInputFieldDirective | null>(null);
 
   constructor() {
+    mountTextFieldShellStyles();
+
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
   }
