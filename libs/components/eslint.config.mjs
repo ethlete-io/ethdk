@@ -58,6 +58,21 @@ export default [
       '@angular-eslint/no-output-on-prefix': 'error',
     },
   },
+  // `requirePureAnnotation` only pays off in publishable source, so it is off in the shipped config.
+  {
+    files: ['**/*.ts'],
+    ignores: [
+      '**/*.spec.ts',
+      '**/*.test.ts',
+      '**/test-helpers.ts',
+      '**/testing/**',
+      '**/generators/**',
+      '**/stories/**',
+    ],
+    rules: {
+      'ethlete/no-impure-top-level-provider': ['error', { requirePureAnnotation: true }],
+    },
+  },
   // Ethlete styleguide rules — HTML templates
   ethlete.configs.recommendedTemplate,
   // Relaxed rules for spec files (non-null assertions are common and intentional in tests)

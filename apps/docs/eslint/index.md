@@ -1,6 +1,6 @@
 # @ethlete/eslint-plugin
 
-Custom ESLint rules and shareable flat configs that enforce the Ethlete Angular styleguide — 52 custom rules covering signals vs RxJS usage, class member accessibility, Angular component metadata, templates, input/output naming, DOM/platform access and TypeScript style. Most rules ship with an auto-fixer, so `eslint --fix` (or `nx lint --fix`) does the bulk of the work.
+Custom ESLint rules and shareable flat configs that enforce the Ethlete Angular styleguide — 53 custom rules covering signals vs RxJS usage, class member accessibility, Angular component metadata, templates, input/output naming, DOM/platform access and TypeScript style. Most rules ship with an auto-fixer, so `eslint --fix` (or `nx lint --fix`) does the bulk of the work.
 
 ```bash
 yarn add --dev @ethlete/eslint-plugin
@@ -73,7 +73,7 @@ Besides the [custom `ethlete/*` rules](/eslint/rules), `recommendedTs` configure
 - **TypeScript**: no `any` (`@typescript-eslint/no-explicit-any`); `type` instead of `interface`; strict unused-variable checking (`_`-prefixed args exempt).
 - **Naming**: camelCase / PascalCase / UPPER_CASE via `@typescript-eslint/naming-convention` — no leading/trailing underscores on types and methods, `T`-prefixed generic parameters (`TValue`, never bare `T`).
 - **Code style**: `const` by default, no `var`, one declaration per statement, `===` / `!==` only, max two function parameters.
-- **Banned syntax** (`no-restricted-syntax`): `enum`, `function` declarations/expressions, arrow-function class properties, `async`/`await` (use RxJS), `static` members (except `ngTemplateContextGuard`, which Angular's template type checker requires to be static), `#`-private members, constructor injection, legacy Angular lifecycle hooks (`ngOnChanges`, `ngAfterViewInit`, …), `@Injectable` and `@Service` (use `createProvider` / `createRootProvider` from `@ethlete/core`), route guards and resolvers, barrel (`index`) imports, and `on`-prefixed method names.
+- **Banned syntax** (`no-restricted-syntax`): `enum`, `function` declarations/expressions, arrow-function class properties, `async`/`await` (use RxJS), `static` members (except `ngTemplateContextGuard`, which Angular's template type checker requires to be static), `#`-private members, constructor injection, legacy Angular lifecycle hooks (`ngOnChanges`, `ngAfterViewInit`, …), `@Injectable` and `@Service` (use `defineProvider` / `defineRootProvider` from `@ethlete/core`), route guards and resolvers, barrel (`index`) imports, and `on`-prefixed method names.
 - **Restricted globals**: direct `document` / `window` access — use `inject(DOCUMENT)` or a dedicated injection token.
 - **Angular outputs**: no `on` prefix (`@angular-eslint/no-output-on-prefix`), no native DOM event names (`@angular-eslint/no-output-native`).
 

@@ -1,6 +1,6 @@
 # Rules
 
-Reference for all custom rules in `@ethlete/eslint-plugin`. Every rule is used with the `ethlete/` prefix (e.g. `ethlete/no-inject-chain`). None of the rules take options.
+Reference for all custom rules in `@ethlete/eslint-plugin`. Every rule is used with the `ethlete/` prefix (e.g. `ethlete/no-inject-chain`). Only `no-impure-top-level-provider` takes options; the rest take none.
 
 - **Fix** — 🔧 means the rule has an auto-fixer applied by `eslint --fix` / `nx lint --fix`.
 - **Default** — the severity set by the [`recommended` config](/eslint/). `warn` is used for migration-style rules where existing code may reasonably still violate them.
@@ -28,10 +28,11 @@ const getName = (user: User) => user.name;
 
 ## Dependency injection
 
-| Rule                            | What it enforces                                                                                    | Fix | Default |
-| ------------------------------- | --------------------------------------------------------------------------------------------------- | --- | ------- |
-| `no-inject-chain`               | No member access chained directly off `inject()` — assign the injected value to a `const` first     |     | error   |
-| `no-typed-injected-element-ref` | `inject<ElementRef<HTMLElement>>(ElementRef)` — the generic goes on `inject()`, not on `ElementRef` | 🔧  | error   |
+| Rule                            | What it enforces                                                                                      | Fix | Default |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------- | --- | ------- |
+| `no-inject-chain`               | No member access chained directly off `inject()` — assign the injected value to a `const` first       |     | error   |
+| `no-typed-injected-element-ref` | `inject<ElementRef<HTMLElement>>(ElementRef)` — the generic goes on `inject()`, not on `ElementRef`   | 🔧  | error   |
+| `no-impure-top-level-provider`  | No module-scope destructuring of a factory call; optionally require `@__PURE__` on module-scope calls | 🔧  | error   |
 
 ```ts
 // ❌ chaining off inject()
@@ -41,6 +42,31 @@ const apiUrl = inject(APP_CONFIG).apiUrl;
 const config = inject(APP_CONFIG);
 const apiUrl = config.apiUrl;
 ```
+
+### `no-impure-top-level-provider`
+
+```ts
+// ❌ no bundler can drop this — destructuring invokes the iterator protocol, so everything the
+//    factory closes over ships to every consumer of the package
+export const [provideThing, injectThing] = defineRootProvider(() => new Thing());
+
+// ✅ one binding per exported name, each a call the bundler can prove pure
+const THING_DEF = /* @__PURE__ */ defineRootProvider(() => new Thing());
+
+export const provideThing = /* @__PURE__ */ toProvideFn(THING_DEF);
+export const injectThing = /* @__PURE__ */ toInjectFn(THING_DEF);
+```
+
+The destructuring half is always on. The second half — requiring `/* @__PURE__ */` on every module-scope
+call — is opt-in, because it only pays off in a **publishable library**, where a retained statement lands
+in every consumer's bundle; in an application every top-level statement is reachable anyway:
+
+```js
+'ethlete/no-impure-top-level-provider': ['error', { requirePureAnnotation: true }],
+```
+
+The fixer inserts the annotation. If the call is genuinely not side-effect free at import time, do not
+annotate it — move it inside a function, because a library must not do work when it is imported.
 
 ## Class members & accessibility
 

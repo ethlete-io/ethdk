@@ -170,12 +170,12 @@ const recommendedTs = {
         message:
           'No legacy Angular lifecycle hooks. Use afterNextRender, inject(DestroyRef).onDestroy, or constructor-based effects instead.',
       },
-      // No @Injectable / @Service — use createRootProvider / createProvider from @ethlete/core
+      // No @Injectable / @Service — use defineRootProvider / defineProvider from @ethlete/core
       {
         selector:
           'Decorator[expression.callee.name=/^(Injectable|Service)$/], Decorator[expression.name=/^(Injectable|Service)$/]',
         message:
-          'No @Injectable / @Service services. Use createRootProvider / createProvider from @ethlete/core instead.',
+          'No @Injectable / @Service services. Use defineRootProvider / defineProvider from @ethlete/core instead.',
       },
       // No route guards — handle access control inside the component itself
       {
@@ -294,6 +294,8 @@ const recommendedTs = {
 
     // No empty blank lines between import declarations
     'ethlete/no-empty-newlines-between-imports': 'error',
+
+    'ethlete/no-impure-top-level-provider': 'error',
 
     // No legacy Angular decorators — use signal-based APIs (input, output, viewChild, etc.)
     // and host: {} bindings (instead of @HostBinding / @HostListener)

@@ -54,6 +54,15 @@ export default [
       ],
     },
   },
+  // `requirePureAnnotation` only pays off in publishable source, so it is off in the shipped config.
+  {
+    files: ['**/*.ts'],
+    ignores: ['**/*.spec.ts', '**/*.test.ts', '**/testing/**', '**/generators/**'],
+    plugins: { ethlete },
+    rules: {
+      'ethlete/no-impure-top-level-provider': ['error', { requirePureAnnotation: true }],
+    },
+  },
   {
     files: ['**/*.html'],
     // Override or add rules here

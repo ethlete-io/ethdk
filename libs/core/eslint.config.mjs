@@ -1,3 +1,4 @@
+import ethlete from '@ethlete/eslint-plugin';
 import nx from '@nx/eslint-plugin';
 import baseConfig from '../../eslint.config.mjs';
 
@@ -39,6 +40,15 @@ export default [
         },
       ],
       '@angular-eslint/no-input-rename': 'off',
+    },
+  },
+  // The one styleguide rule core opts into (it does not use the full recommended config yet).
+  {
+    files: ['**/*.ts'],
+    ignores: ['**/*.spec.ts', '**/*.test.ts', '**/generators/**', '**/stories/**'],
+    plugins: { ethlete },
+    rules: {
+      'ethlete/no-impure-top-level-provider': ['error', { requirePureAnnotation: true }],
     },
   },
   {
