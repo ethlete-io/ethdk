@@ -1,5 +1,10 @@
 {
   "generators": {
+    "migrate-query-error-labels": {
+      "factory": "./migrate-query-error-labels/migration",
+      "schema": "./migrate-query-error-labels/schema.json",
+      "description": "Find query-error usage affected by the English-only label default and report where German must be re-opted-in"
+    },
     "icons": {
       "factory": "./icons/generator",
       "schema": "./icons/schema.json",

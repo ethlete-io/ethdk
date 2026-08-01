@@ -13,7 +13,7 @@ export default defineConfig(() => ({
     globals: true,
     environment: 'jsdom',
     passWithNoTests: true,
-    include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    include: ['{src,tests,generators}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     setupFiles: ['src/test-setup.mjs'],
     reporters: ['default'],
     onConsoleLog: (log, type) => {

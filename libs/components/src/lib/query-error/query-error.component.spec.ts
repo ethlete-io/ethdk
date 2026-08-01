@@ -1,10 +1,11 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, signal, viewChild } from '@angular/core';
+import { Component, Provider, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ColorTheme, injectLocale, provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { QueryErrorResponse, createQueryErrorResponse } from '@ethlete/query';
 import '../../test-helpers';
 import { QueryErrorDirective } from './headless';
+import { provideQueryErrorLabels, queryErrorLabelsForLocale } from './query-error-labels';
 import { queryErrorResponseFromLegacyError } from './query-error-legacy';
 import { QueryErrorComponent } from './query-error.component';
 import { QUERY_ERROR_IMPORTS } from './query-error.imports';
@@ -40,8 +41,8 @@ class QueryErrorHostComponent {
   public query = { execute: (args?: unknown) => this.executions.push(args) };
 }
 
-const createHost = (): ComponentFixture<QueryErrorHostComponent> => {
-  TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(COLOR_THEMES)] });
+const createHost = (providers: Provider[] = []): ComponentFixture<QueryErrorHostComponent> => {
+  TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(COLOR_THEMES), providers] });
 
   const fixture = TestBed.createComponent(QueryErrorHostComponent);
   fixture.detectChanges();
@@ -143,8 +144,20 @@ describe('QueryErrorComponent', () => {
     });
   });
 
-  it('uses the German labels for a German locale', () => {
+  it('stays English for a German locale unless the locale-driven labels are opted into', () => {
     const fixture = createHost();
+
+    TestBed.runInInjectionContext(() => injectLocale().currentLocale.set('de-DE'));
+
+    fixture.componentInstance.error.set(errorResponse(503, { message: 'Später versuchen' }));
+    fixture.detectChanges();
+
+    expect(text(fixture, '.et-query-error-title')).toBe('Service unavailable');
+    expect(text(fixture, '.et-query-error-actions button')).toBe('Retry');
+  });
+
+  it('uses the German labels for a German locale with provideQueryErrorLabels(queryErrorLabelsForLocale)', () => {
+    const fixture = createHost([provideQueryErrorLabels(queryErrorLabelsForLocale)]);
 
     TestBed.runInInjectionContext(() => injectLocale().currentLocale.set('de-DE'));
 

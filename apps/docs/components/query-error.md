@@ -42,9 +42,17 @@ response's own — except in two cases where the status table's sentence is bett
   `HttpErrorResponse.message` — `"Http failure response for /api/teams/42: 500 Error"` — which is developer text
   and must never reach a reader.
 
-Titles and fallback messages come from `@ethlete/query`'s status tables, in English or German according to
-[`injectLocale()`](/core/providers). cdk took a `language: 'en' | 'de'` input; locale belongs to the app's
-context, not to each error's markup.
+Titles and fallback messages come from `@ethlete/query`'s English status tables by default. A German table
+ships too, but as an opt-in — referencing it would otherwise put both languages in every bundle:
+
+```ts
+// German whenever injectLocale() reports a German locale, English otherwise:
+provideQueryErrorLabels(queryErrorLabelsForLocale);
+// or German unconditionally:
+provideQueryErrorLabels(GERMAN_QUERY_ERROR_LABELS);
+```
+
+cdk took a `language: 'en' | 'de'` input; locale belongs to the app's context, not to each error's markup.
 
 ## Retrying
 
@@ -67,7 +75,7 @@ the last answer was unusable, so serving it again from memory would make the but
 Three levels, smallest first:
 
 **Labels** — for the strings themselves. `provideQueryErrorLabels` app-wide, or the `labels` input per instance.
-Partial: what you leave out keeps the locale's value, which is also how you localize into a third language.
+Partial: what you leave out keeps the English default, which is also how you localize into another language.
 
 ```ts
 provideQueryErrorLabels({
