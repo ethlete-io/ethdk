@@ -83,7 +83,7 @@ const autoCoerce = (raw: unknown, defaultValue: unknown): unknown => {
   return raw;
 };
 
-const computeFilterCount = (fields: QueryFormFields, value: Dict, defaults: Dict): number => {
+const computeFilterCount = (fields: QueryFormFields, value: Dict, defaults: Dict) => {
   let count = 0;
 
   for (const [key, def] of Object.entries(fields)) {
@@ -160,27 +160,27 @@ export type CreateQueryFormConfig<TFields extends QueryFormFields> = {
  * // template: <input etInput [formField]="qf.fields.search" />
  */
 export class QueryFormSignals<TFields extends QueryFormFields> {
-  private readonly _router = inject(Router);
-  private readonly _route = inject(ActivatedRoute);
-  private readonly _injector = inject(Injector);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private injector = inject(Injector);
+  private readonly queryParamChanges = injectQueryParamChanges();
 
   private readonly _fields: TFields;
-  private readonly _prefix: string | (() => string) | undefined;
-  private readonly _defaults: Dict;
+  private readonly prefix: string | (() => string) | undefined;
+  private readonly defaults: Dict;
 
   /** Live field values (updated immediately by bound controls). */
-  private readonly _model: ReturnType<typeof signal<QueryFormModel<TFields>>>;
+  private readonly model: ReturnType<typeof signal<QueryFormModel<TFields>>>;
 
   /** The committed (debounced) value that drives `value`, the URL and the filter count. */
-  private readonly _committed: ReturnType<typeof signal<QueryFormModel<TFields>>>;
-  private readonly _previous = signal<QueryFormModel<TFields> | null>(null);
+  private readonly committed: ReturnType<typeof signal<QueryFormModel<TFields>>>;
+  private previous = signal<QueryFormModel<TFields> | null>(null);
 
-  private readonly _observing = signal(false);
-  private readonly _queryParamChanges = injectQueryParamChanges();
+  private observing = signal(false);
 
-  private _observeOptions: QueryFormSignalsObserveOptions | undefined;
-  private _pendingTimer: ReturnType<typeof setTimeout> | null = null;
-  private _skipNextResets = false;
+  private observeOptions: QueryFormSignalsObserveOptions | undefined;
+  private pendingTimer: ReturnType<typeof setTimeout> | null = null;
+  private skipNextResets = false;
 
   /**
    * The bindable signal-forms field tree - bind a field with `[formField]`, e.g.
@@ -210,45 +210,43 @@ export class QueryFormSignals<TFields extends QueryFormFields> {
     assertInInjectionContext(QueryFormSignals);
 
     this._fields = config.fields;
-    this._prefix = config.queryParamPrefix;
-    this._defaults = buildDefaults(config.fields);
-    this.defaultValue = clone(this._defaults) as QueryFormModel<TFields>;
+    this.prefix = config.queryParamPrefix;
+    this.defaults = buildDefaults(config.fields);
+    this.defaultValue = clone(this.defaults) as QueryFormModel<TFields>;
 
-    const initial = clone(this._defaults) as QueryFormModel<TFields>;
-    this._model = signal(initial);
-    this._committed = signal(clone(initial) as QueryFormModel<TFields>);
-    this.fields = form(this._model);
+    const initial = clone(this.defaults) as QueryFormModel<TFields>;
+    this.model = signal(initial);
+    this.committed = signal(clone(initial) as QueryFormModel<TFields>);
+    this.fields = form(this.model);
 
-    this.value = this._committed.asReadonly();
-    this.previousValue = this._previous.asReadonly();
-    this.changes = computed(() => ({ previousValue: this._previous(), currentValue: this._committed() }));
-    this.activeFilterCount = computed(() =>
-      computeFilterCount(this._fields, this._committed() as Dict, this._defaults),
-    );
+    this.value = this.committed.asReadonly();
+    this.previousValue = this.previous.asReadonly();
+    this.changes = computed(() => ({ previousValue: this.previous(), currentValue: this.committed() }));
+    this.activeFilterCount = computed(() => computeFilterCount(this._fields, this.committed() as Dict, this.defaults));
 
     // React to live control edits: schedule a debounced commit.
     effect(() => {
-      const live = this._model();
+      const live = this.model();
 
-      untracked(() => this._onLiveChange(live as Dict));
+      untracked(() => this.onLiveChange(live as Dict));
     });
 
     // React to navigation (back/forward, external links): apply URL → form immediately.
     effect(() => {
-      const changes = this._queryParamChanges();
+      const changes = this.queryParamChanges();
 
       untracked(() => {
-        if (!this._observing() || this._observeOptions?.syncOnNavigation === false) return;
+        if (!this.observing() || this.observeOptions?.syncOnNavigation === false) return;
 
-        this._applyFromUrl(changes as Dict);
+        this.applyFromUrl(changes as Dict);
       });
     });
 
-    inject(DestroyRef).onDestroy(() => this._cleanup());
+    inject(DestroyRef).onDestroy(() => this.cleanup());
   }
 
   public observe(options?: QueryFormSignalsObserveOptions): this {
-    if (this._observing()) {
+    if (this.observing()) {
       if (isDevMode()) {
         console.warn('QueryFormSignals.observe() was called more than once. Ignoring the extra call.');
       }
@@ -256,49 +254,49 @@ export class QueryFormSignals<TFields extends QueryFormFields> {
       return this;
     }
 
-    this._observeOptions = options;
-    this._observing.set(true);
+    this.observeOptions = options;
+    this.observing.set(true);
 
     if (options?.syncOnNavigation !== false) {
-      this._applyFromUrl(this._route.snapshot.queryParams as Dict);
+      this.applyFromUrl(this.route.snapshot.queryParams as Dict);
     }
 
     // Commit whatever the model holds now (URL-restored or programmatic defaults).
-    this._flush();
+    this.flush();
 
     return this;
   }
 
-  public unobserve(): void {
-    this._cleanup();
+  public unobserve() {
+    this.cleanup();
   }
 
-  public setValue(value: QueryFormModel<TFields>, options?: QueryFormSignalsWriteOptions): void {
-    if (options?.skipResets) this._skipNextResets = true;
+  public setValue(value: QueryFormModel<TFields>, options?: QueryFormSignalsWriteOptions) {
+    if (options?.skipResets) this.skipNextResets = true;
 
-    this._model.set(clone(value));
+    this.model.set(clone(value));
   }
 
-  public patchValue(value: Partial<QueryFormModel<TFields>>, options?: QueryFormSignalsWriteOptions): void {
-    if (options?.skipResets) this._skipNextResets = true;
+  public patchValue(value: Partial<QueryFormModel<TFields>>, options?: QueryFormSignalsWriteOptions) {
+    if (options?.skipResets) this.skipNextResets = true;
 
-    this._model.update((cur) => ({ ...cur, ...value }));
+    this.model.update((cur) => ({ ...cur, ...value }));
   }
 
-  public resetFieldToDefault(key: keyof QueryFormModel<TFields>, options?: QueryFormSignalsWriteOptions): void {
-    if (options?.skipResets) this._skipNextResets = true;
+  public resetFieldToDefault(key: keyof QueryFormModel<TFields>, options?: QueryFormSignalsWriteOptions) {
+    if (options?.skipResets) this.skipNextResets = true;
 
-    this._model.update((cur) => ({ ...cur, [key]: this._defaults[key as string] }));
+    this.model.update((cur) => ({ ...cur, [key]: this.defaults[key as string] }));
   }
 
-  public resetFieldsToDefault(keys: (keyof QueryFormModel<TFields>)[], options?: QueryFormSignalsWriteOptions): void {
-    if (options?.skipResets) this._skipNextResets = true;
+  public resetFieldsToDefault(keys: (keyof QueryFormModel<TFields>)[], options?: QueryFormSignalsWriteOptions) {
+    if (options?.skipResets) this.skipNextResets = true;
 
-    this._model.update((cur) => {
+    this.model.update((cur) => {
       const next = { ...cur } as Dict;
 
       for (const key of keys) {
-        next[key as string] = this._defaults[key as string];
+        next[key as string] = this.defaults[key as string];
       }
 
       return next as QueryFormModel<TFields>;
@@ -307,7 +305,7 @@ export class QueryFormSignals<TFields extends QueryFormFields> {
 
   public resetAllFieldsToDefault(
     options?: QueryFormSignalsWriteOptions & { skipFields?: (keyof QueryFormModel<TFields>)[] },
-  ): void {
+  ) {
     const skip = new Set((options?.skipFields ?? []).map((key) => key as string));
     const keys = Object.keys(this._fields).filter((key) => !skip.has(key)) as (keyof QueryFormModel<TFields>)[];
 
@@ -316,30 +314,30 @@ export class QueryFormSignals<TFields extends QueryFormFields> {
 
   /** Create a detached editor over the same fields, seeded from the current committed value. */
   public branch(): QueryFormBranch<TFields> {
-    return createBranch(this._fields, clone(this._committed()), this._injector);
+    return createBranch(this._fields, clone(this.committed()), this.injector);
   }
 
-  private _onLiveChange(live: Dict): void {
-    if (!this._observing()) return;
-    if (equal(live, this._committed())) return;
+  private onLiveChange(live: Dict) {
+    if (!this.observing()) return;
+    if (equal(live, this.committed())) return;
 
-    const changedKeys = changedKeysBetween(this._committed() as Dict, live);
-    const debounceMs = this._resolveDebounce(changedKeys, live);
+    const changedKeys = changedKeysBetween(this.committed() as Dict, live);
+    const debounceMs = this.resolveDebounce(changedKeys, live);
 
-    this._clearTimer();
+    this.clearTimer();
 
     if (debounceMs === null) {
-      this._flush();
+      this.flush();
     } else {
-      this._pendingTimer = setTimeout(() => {
-        this._pendingTimer = null;
-        this._flush();
+      this.pendingTimer = setTimeout(() => {
+        this.pendingTimer = null;
+        this.flush();
       }, debounceMs);
     }
   }
 
   /** Shortest-debounce-wins; `null` means commit immediately. */
-  private _resolveDebounce(changedKeys: string[], live: Dict): number | null {
+  private resolveDebounce(changedKeys: string[], live: Dict): number | null {
     if (!changedKeys.length) return null;
 
     const times: number[] = [];
@@ -357,38 +355,38 @@ export class QueryFormSignals<TFields extends QueryFormFields> {
     return Math.min(...times);
   }
 
-  private _flush(): void {
-    this._clearTimer();
+  private flush() {
+    this.clearTimer();
 
-    const live = this._model() as Dict;
-    const previous = this._committed() as Dict;
+    const live = this.model() as Dict;
+    const previous = this.committed() as Dict;
 
     if (equal(live, previous)) {
-      this._skipNextResets = false;
+      this.skipNextResets = false;
 
       return;
     }
 
     const changedKeys = changedKeysBetween(previous, live);
-    const next = this._skipNextResets ? { ...live } : this._applyResets(live, changedKeys);
+    const next = this.skipNextResets ? { ...live } : this.applyResets(live, changedKeys);
 
-    this._skipNextResets = false;
+    this.skipNextResets = false;
 
-    this._previous.set(clone(previous) as QueryFormModel<TFields>);
-    this._committed.set(clone(next) as QueryFormModel<TFields>);
+    this.previous.set(clone(previous) as QueryFormModel<TFields>);
+    this.committed.set(clone(next) as QueryFormModel<TFields>);
 
     // Reflect any reset overrides back into the bound controls. The effect re-runs
     // but no-ops because the model now equals the committed value.
     if (!equal(next, live)) {
-      this._model.set(clone(next) as QueryFormModel<TFields>);
+      this.model.set(clone(next) as QueryFormModel<TFields>);
     }
 
-    if (this._observing() && this._observeOptions?.writeToQueryParams !== false) {
-      this._writeToUrl(next);
+    if (this.observing() && this.observeOptions?.writeToQueryParams !== false) {
+      this.writeToUrl(next);
     }
   }
 
-  private _applyResets(live: Dict, changedKeys: string[]): Dict {
+  private applyResets(live: Dict, changedKeys: string[]): Dict {
     const next = { ...live };
 
     for (const [key, def] of Object.entries(this._fields)) {
@@ -410,7 +408,7 @@ export class QueryFormSignals<TFields extends QueryFormFields> {
 
       if (!triggered) continue;
 
-      const defaultValue = this._defaults[key];
+      const defaultValue = this.defaults[key];
 
       if (!equal(next[key], defaultValue)) {
         next[key] = defaultValue;
@@ -420,16 +418,16 @@ export class QueryFormSignals<TFields extends QueryFormFields> {
     return next;
   }
 
-  private _applyFromUrl(params: Dict): void {
-    const current = { ...(this._committed() as Dict) };
+  private applyFromUrl(params: Dict) {
+    const current = { ...(this.committed() as Dict) };
     let changed = false;
 
     for (const [key, def] of Object.entries(this._fields)) {
-      const raw = params[this._paramKey(key)];
+      const raw = params[this.paramKey(key)];
 
       if (raw === undefined) continue;
 
-      const value = raw === ET_PROPERTY_REMOVED ? this._defaults[key] : this._deserialize(def, raw);
+      const value = raw === ET_PROPERTY_REMOVED ? this.defaults[key] : this.deserialize(def, raw);
 
       if (!equal(current[key], value)) {
         current[key] = value;
@@ -439,32 +437,32 @@ export class QueryFormSignals<TFields extends QueryFormFields> {
 
     if (!changed) return;
 
-    this._commitFromUrl(current);
+    this.commitFromUrl(current);
   }
 
-  private _commitFromUrl(next: Dict): void {
-    this._clearTimer();
-    this._previous.set(clone(this._committed()) as QueryFormModel<TFields>);
-    this._committed.set(clone(next) as QueryFormModel<TFields>);
+  private commitFromUrl(next: Dict) {
+    this.clearTimer();
+    this.previous.set(clone(this.committed()) as QueryFormModel<TFields>);
+    this.committed.set(clone(next) as QueryFormModel<TFields>);
     // Feed the URL value into the live model & bound controls; the effect no-ops (model === committed).
-    this._model.set(clone(next) as QueryFormModel<TFields>);
+    this.model.set(clone(next) as QueryFormModel<TFields>);
   }
 
-  private _deserialize(def: QueryFieldDef<unknown>, raw: unknown): unknown {
+  private deserialize(def: QueryFieldDef<unknown>, raw: unknown): unknown {
     if (def.queryParamToValue) return def.queryParamToValue(raw);
     if (def.skipAutoTransform) return raw;
 
     return autoCoerce(raw, resolveDefault(def));
   }
 
-  private _writeToUrl(value: Dict): void {
+  private writeToUrl(value: Dict) {
     const queryParams: Dict = {};
 
     for (const [key, def] of Object.entries(this._fields)) {
-      const paramKey = this._paramKey(key);
+      const paramKey = this.paramKey(key);
       const fieldValue = value[key];
 
-      const isDefault = equal(fieldValue, this._defaults[key]);
+      const isDefault = equal(fieldValue, this.defaults[key]);
       const writeToUrl = def.appendToUrl !== false;
       const writeDefault = def.appendDefaultValueToUrl === true;
 
@@ -478,45 +476,45 @@ export class QueryFormSignals<TFields extends QueryFormFields> {
     }
 
     queueMicrotask(() => {
-      this._router.navigate([], {
+      this.router.navigate([], {
         queryParams,
         queryParamsHandling: 'merge',
-        replaceUrl: this._observeOptions?.replaceUrl,
+        replaceUrl: this.observeOptions?.replaceUrl,
       });
     });
   }
 
-  private _paramKey(key: string): string {
-    const prefix = this._prefix;
+  private paramKey(key: string) {
+    const prefix = this.prefix;
 
     if (!prefix) return key;
 
     return `${typeof prefix === 'string' ? prefix : prefix()}-${key}`;
   }
 
-  private _clearTimer(): void {
-    if (this._pendingTimer !== null) {
-      clearTimeout(this._pendingTimer);
-      this._pendingTimer = null;
+  private clearTimer() {
+    if (this.pendingTimer !== null) {
+      clearTimeout(this.pendingTimer);
+      this.pendingTimer = null;
     }
   }
 
-  private _cleanup(): void {
-    if (!this._observing()) return;
+  private cleanup() {
+    if (!this.observing()) return;
 
-    this._observing.set(false);
-    this._clearTimer();
+    this.observing.set(false);
+    this.clearTimer();
 
-    if (this._observeOptions?.writeToQueryParams === false) return;
+    if (this.observeOptions?.writeToQueryParams === false) return;
 
     const queryParams: Dict = {};
 
     for (const key of Object.keys(this._fields)) {
-      queryParams[this._paramKey(key)] = undefined;
+      queryParams[this.paramKey(key)] = undefined;
     }
 
     queueMicrotask(() => {
-      this._router.navigate([], { queryParams, queryParamsHandling: 'merge', replaceUrl: true });
+      this.router.navigate([], { queryParams, queryParamsHandling: 'merge', replaceUrl: true });
     });
   }
 }

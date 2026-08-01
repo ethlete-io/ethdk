@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "migrate-query-opt-in-features",
+  "title": "Migrate query clients and auth providers to opt-in features",
+  "type": "object",
+  "properties": {
+    "projects": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Nx projects to migrate. Defaults to every project in the workspace.",
+      "alias": "project"
+    },
+    "include": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Path prefixes to migrate, relative to the workspace root (e.g. 'libs/queries'). Unioned with `projects`. Defaults to the whole workspace.",
+      "alias": "includePath"
+    },
+    "reportOnly": {
+      "type": "boolean",
+      "description": "Only list the affected call sites in the report file, without changing any code.",
+      "default": false
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "description": "Skip formatting files after migration",
+      "default": false
+    }
+  },
+  "required": []
+}

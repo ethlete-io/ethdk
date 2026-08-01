@@ -1,5 +1,5 @@
-import type { QueryMethod } from '../query-creator';
-import type { QueryKey } from '../query-repository';
+import { QueryMethod } from '../query-creator';
+import { QueryKey } from '../query-repository';
 
 /**
  * Version of the cross-tab message protocol. A tab ignores messages carrying a version it does not

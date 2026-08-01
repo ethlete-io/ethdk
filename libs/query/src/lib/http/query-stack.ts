@@ -10,7 +10,11 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { consumeSuppressQueryStackDevtools, isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools';
+import {
+  consumeSuppressQueryStackDevtools,
+  isQueryDevtoolsEnabled,
+  registerQueryDevtoolsEntry,
+} from '../devtools/query-devtools-hook';
 import { AnyNewQuery, RequestArgs, ResponseType } from './query';
 import { AnyQueryCreator, QueryArgsOf, RunQueryCreator } from './query-creator';
 import { QueryErrorResponse } from './query-error-response';
@@ -226,8 +230,8 @@ export const createQueryStack = <
   const lastQuery = signal<QueryType | null>(null);
   const firstQuery = computed(() => queries()[0] ?? null);
 
-  const hasWithArgsFeature = features.some((f) => f.type == QueryFeatureType.WITH_ARGS);
-  const hasWithOptimisticUpdateFeature = features.some((f) => f.type == QueryFeatureType.WITH_RESPONSE_UPDATE);
+  const hasWithArgsFeature = features.some((f) => f.type === QueryFeatureType.WITH_ARGS);
+  const hasWithOptimisticUpdateFeature = features.some((f) => f.type === QueryFeatureType.WITH_RESPONSE_UPDATE);
 
   if (hasWithArgsFeature) {
     throw queryStackWithArgsUsed();
@@ -288,6 +292,7 @@ export const createQueryStack = <
 
         queries.set(finalQueries);
         lastQuery.set(lastAppendedQuery);
+
         return lastAppendedQuery;
       } else {
         const keyFn = argsKeyFn ?? ((a) => JSON.stringify(a));

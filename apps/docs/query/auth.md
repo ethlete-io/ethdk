@@ -110,13 +110,26 @@ Refresh failures retry on transient statuses (`0, 408, 425, 429, 500, 502, 503, 
 
 ## Multi-tab sync
 
-On by default (`multiTabSync`): tokens and logout are synchronized across tabs via a `BroadcastChannel` (`'ethlete-auth-sync'`) with leader election, so only one tab performs proactive refreshes. Pass `multiTabSync: false` to disable, or an options object to tune `syncTokens`, `syncLogout` and `leaderElection` individually.
+Opt in with the `withBearerAuthMultiTabSync()` feature: tokens and logout are then synchronized across tabs via a `BroadcastChannel` (`'ethlete-auth-sync'`) with leader election, so only one tab performs proactive refreshes. Pass a config object to tune `channelName`, `syncTokens`, `syncLogout` and `leaderElection` individually.
+
+```ts
+export const AUTH_PROVIDER = createBearerAuthProvider({
+  name: 'my-auth',
+  queryClientRef: MY_CLIENT,
+  queries: [loginQuery, refreshQuery],
+  features: [withBearerAuthMultiTabSync()],
+});
+
+AUTH_PROVIDER.inject().features.multiTabSync.isLeader(); // and .instanceCount()
+```
+
+Without the feature every tab is its own leader and refreshes its own token - exactly right for a single-tab app, a kiosk or an embedded webview, which then ship neither the channel nor the Web Locks election.
 
 Leadership is one lock in the [Web Locks API](https://developer.mozilla.org/docs/Web/API/Web_Locks_API) - the same primitive the query client elects its [polling tabs](/query/multi-tab#polling-dedup) with. Every tab asks for it, one gets it, the rest queue: requests are granted FIFO, and a holder that closes, crashes or navigates away has its lock released by the platform, so the longest-waiting tab takes over. There is no heartbeat to tune and no window in which two tabs both believe they are the leader. Without Web Locks the tab elects itself, which is the single-tab behavior anyway.
 
 Two consequences worth knowing. `isLeader` starts `false` and flips on the next microtask, because the platform grants asynchronously - nothing observes the gap, since the proactive refresh it gates runs off a timer. And the instance count `withTracking` reports is best-effort: it is recounted when a tab announces itself, says goodbye or takes over the leadership, so a tab that _crashes_ without holding the lock is counted until the next of those happens.
 
-This is separate from - and independent of - the query client's own [multi-tab sync](/query/multi-tab), which shares responses and deduplicates polling. Both are on by default and configured separately: this one is about the session, that one about data. They complement each other - because logout tears down secure entries in every tab, a shared response can never outlive the session it was fetched in.
+This is separate from - and independent of - the query client's own [multi-tab sync](/query/multi-tab), which shares responses and deduplicates polling. Both are opt-in and configured separately: this one is about the session, that one about data. They complement each other - because logout tears down secure entries in every tab, a shared response can never outlive the session it was fetched in.
 
 ## Features
 
@@ -129,6 +142,7 @@ Optional behaviors passed to the provider's `features` array (each usable once -
 | `withInactivityLogout`       | Auto-logout after inactivity (default 15 minutes; listens to mouse/keyboard/scroll/touch).                                                                                                                                                                            |
 | `withTokenRevocation`        | Calls a revocation query - by default automatically on logout.                                                                                                                                                                                                        |
 | `withTracking`               | Typed event bus for auth telemetry (query execute/success/failure, token refresh, logout, leader changes).                                                                                                                                                            |
+| `withBearerAuthMultiTabSync` | Cross-tab token/logout sync and leader election - see [Multi-tab sync](#multi-tab-sync). Exposes `isLeader` / `instanceCount`.                                                                                                                                        |
 
 ## Error codes
 

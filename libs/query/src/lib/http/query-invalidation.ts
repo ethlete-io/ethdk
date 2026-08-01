@@ -1,5 +1,5 @@
-import type { QueryMethod } from './query-creator';
-import type { QueryRepositoryRefreshFilterFn } from './query-repository';
+import { QueryMethod } from './query-creator';
+import { QueryRepositoryRefreshFilterFn } from './query-repository';
 
 /** A query of this client that an invalidation is deciding about. */
 export type QueryInvalidationCandidate = {
@@ -52,7 +52,7 @@ export type QueryInvalidationOptions = {
  * Resolves an {@link QueryInvalidationOptions.url} to the absolute form request URLs are built in, so
  * the comparison - and the message the other tabs receive - never depends on who resolves it.
  */
-export const resolveInvalidationUrl = (baseUrl: string, url: string): string => {
+export const resolveInvalidationUrl = (baseUrl: string, url: string) => {
   const absolute = url.startsWith('/') ? `${baseUrl}${url}` : url;
 
   // A trailing slash would put the boundary check below one character past where the URL actually
@@ -64,7 +64,7 @@ export const resolveInvalidationUrl = (baseUrl: string, url: string): string => 
  * Whether a query URL is the invalidated one or sits below it. The check on what follows the prefix
  * is what keeps `/players` from matching `/players-archive`, which a `startsWith` alone would.
  */
-export const isUnderInvalidatedUrl = (queryUrl: string, invalidatedUrl: string): boolean => {
+export const isUnderInvalidatedUrl = (queryUrl: string, invalidatedUrl: string) => {
   if (!queryUrl.startsWith(invalidatedUrl)) return false;
 
   const rest = queryUrl.slice(invalidatedUrl.length);

@@ -8,7 +8,7 @@ import { createQueryKeyLockManager } from '../../http/sync/query-key-lock-manage
  */
 const LEADER_LOCK_NAMESPACE = 'ethlete-auth';
 const LEADER_LOCK_KEY = 'leader';
-const LEADER_LOCK_NAME = `${LEADER_LOCK_NAMESPACE}:${LEADER_LOCK_KEY}`;
+const LEADER_LOCK_NAME = 'ethlete-auth:leader';
 
 /**
  * Web Locks has no "someone joined" event, so tabs announce themselves on this channel. Two messages

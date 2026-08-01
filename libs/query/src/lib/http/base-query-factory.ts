@@ -1,10 +1,5 @@
 import { runInInjectionContext } from '@angular/core';
-import {
-  getQueryClientName,
-  isQueryDevtoolsEnabled,
-  registerQueryDevtoolsEntry,
-  stringifyQueryRoute,
-} from '../devtools';
+import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
 import { CreateGqlQueryOptions } from '../gql/gql-query';
 import { isCreateGqlQueryOptions } from './internal/gql-options-guard';
 import { AnyCreateGqlQueryCreatorOptions, GqlQueryMethod } from '../gql/gql-query-creator';
@@ -44,7 +39,7 @@ export const getQueryFeatureUsage = <TArgs extends QueryArgs>(
 ) => {
   const { creator, features, queryConfig, creatorInternals } = options;
 
-  const hasWithArgsFeature = features.some((f) => f.type == QueryFeatureType.WITH_ARGS);
+  const hasWithArgsFeature = features.some((f) => f.type === QueryFeatureType.WITH_ARGS);
   const shouldAutoExecuteMethod = isCreateGqlQueryOptions(options)
     ? shouldAutoExecuteGqlQuery(options.creatorInternals.method)
     : shouldAutoExecuteQuery(options.creatorInternals.method);
@@ -228,13 +223,13 @@ export const createBaseQuery = <TArgs extends QueryArgs, TInternals extends { cl
       const unregister = registerQueryDevtoolsEntry({
         kind: 'query',
         handle: query,
+        clientRef: client,
+        route:
+          (options.creatorInternals as { route?: unknown }).route ??
+          (options.creator as { route?: unknown } | undefined)?.route ??
+          null,
         meta: {
-          clientName: getQueryClientName(client),
           clientBaseUrl: deps.client.baseUrl,
-          route: stringifyQueryRoute(
-            (options.creatorInternals as { route?: unknown }).route ??
-              (options.creator as { route?: unknown } | undefined)?.route,
-          ),
           method: flags.method,
           featureTypes: options.features.map((f) => f.type),
           queryConfig: options.queryConfig,

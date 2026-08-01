@@ -84,7 +84,7 @@ export type BuildQueryStringConfig = {
 };
 
 export const isNaN = (value: unknown): boolean => typeof value === 'number' && Number.isNaN(value);
-export const isEmptyString = (value: unknown): boolean => typeof value === 'string' && value.trim() === '';
+export const isEmptyString = (value: unknown) => typeof value === 'string' && value.trim() === '';
 
 export const buildQueryString = (params: QueryParams, config?: BuildQueryStringConfig): string | null => {
   const objectNotation = config?.objectNotation ?? 'bracket';

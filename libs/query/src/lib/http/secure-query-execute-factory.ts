@@ -116,6 +116,7 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
   const authAndExecWhenTokenReady = (executeArgs?: QueryExecuteArgs<TArgs>) => {
     if (options.authProvider.accessToken()) {
       authAndExec(executeArgs);
+
       return;
     }
 

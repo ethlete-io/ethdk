@@ -60,7 +60,7 @@ export type ValidateWithQueryConfig<TCreator extends AnyQueryCreator, TValue, TP
 export const validateWithQuery = <TCreator extends AnyQueryCreator, TValue, TPathKind extends PathKind = PathKind.Root>(
   path: SchemaPath<TValue, SchemaPathRules.Supported, TPathKind>,
   config: ValidateWithQueryConfig<TCreator, TValue, TPathKind>,
-): void => {
+) => {
   type TArgs = QueryArgsOf<TCreator>;
   type TParams = RequestArgs<TArgs>;
   type TResult = ResponseType<TArgs>;

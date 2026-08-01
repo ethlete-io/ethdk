@@ -1,7 +1,7 @@
 import { isDevMode } from '@angular/core';
-import type { QueryKey, QueryRepository, QueryRepositoryEvent } from '../query-repository';
-import type { PersistedQueryBody, PersistedQueryEntry, PersistedQueryEntryMeta } from './persisted-query-entry';
-import type { QueryPersistenceAdapter } from './query-persistence-adapter';
+import { QueryKey, QueryRepository, QueryRepositoryEvent } from '../query-repository';
+import { PersistedQueryBody, PersistedQueryEntry, PersistedQueryEntryMeta } from './persisted-query-entry';
+import { QueryPersistenceAdapter } from './query-persistence-adapter';
 import {
   DEFAULT_QUERY_PERSISTENCE_MAX_AGE,
   DEFAULT_QUERY_PERSISTENCE_MAX_ENTRIES,

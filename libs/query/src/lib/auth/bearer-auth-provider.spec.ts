@@ -7,7 +7,7 @@ import { createUnsavedChangesTracker, getCookie, getDomain, injectRoute } from '
 import { createPostQuery, createQueryClient, QueryClientRef } from '../http';
 import { createBearerAuthProvider } from './bearer-auth-provider';
 import { withAuthenticationQuery, withRefreshQuery } from './bearer-auth-query-builders';
-import { withPersistentAuth } from './features';
+import { withBearerAuthMultiTabSync, withPersistentAuth } from './features';
 import { encryptToken, resetEncryptionKey } from './utils';
 
 vi.mock('@ethlete/core', async (importOriginal) => {
@@ -955,7 +955,7 @@ describe('createBearerAuthProvider', () => {
     });
   });
 
-  describe('built-in multi-tab sync', () => {
+  describe('multi-tab sync feature', () => {
     let originalBroadcastChannel: typeof BroadcastChannel;
     let mockChannel: {
       postMessage: ReturnType<typeof vi.fn>;
@@ -983,7 +983,7 @@ describe('createBearerAuthProvider', () => {
       globalThis.BroadcastChannel = originalBroadcastChannel;
     });
 
-    it('should be enabled by default', () => {
+    it('should open the sync channel when the feature is used', () => {
       const postQuery = createPostQuery(queryClientRef);
       const login = postQuery<{
         body: { username: string };
@@ -998,6 +998,7 @@ describe('createBearerAuthProvider', () => {
             queryCreator: login,
           }),
         ],
+        features: [withBearerAuthMultiTabSync()],
       });
 
       TestBed.runInInjectionContext(() => {
@@ -1021,6 +1022,7 @@ describe('createBearerAuthProvider', () => {
             queryCreator: login,
           }),
         ],
+        features: [withBearerAuthMultiTabSync()],
       });
 
       TestBed.runInInjectionContext(() => {
@@ -1060,6 +1062,7 @@ describe('createBearerAuthProvider', () => {
             queryCreator: login,
           }),
         ],
+        features: [withBearerAuthMultiTabSync()],
       });
 
       TestBed.runInInjectionContext(() => {
@@ -1098,6 +1101,7 @@ describe('createBearerAuthProvider', () => {
             queryCreator: login,
           }),
         ],
+        features: [withBearerAuthMultiTabSync()],
       });
 
       TestBed.runInInjectionContext(() => {
@@ -1134,6 +1138,7 @@ describe('createBearerAuthProvider', () => {
             queryCreator: login,
           }),
         ],
+        features: [withBearerAuthMultiTabSync()],
       });
 
       TestBed.runInInjectionContext(() => {
@@ -1159,7 +1164,7 @@ describe('createBearerAuthProvider', () => {
       });
     });
 
-    it('should be disabled when multiTabSync is false', () => {
+    it('should be off without the feature', () => {
       const postQuery = createPostQuery(queryClientRef);
       const login = postQuery<{
         body: { username: string };
@@ -1174,14 +1179,13 @@ describe('createBearerAuthProvider', () => {
             queryCreator: login,
           }),
         ],
-        multiTabSync: false,
       });
 
       TestBed.runInInjectionContext(() => {
         injectAuthProvider();
 
         // Named rather than "never called": the query client opens a channel of its own for its
-        // multi-tab sync, which is a separate opt-out.
+        // multi-tab sync, which is a separate opt-in.
         expect(globalThis.BroadcastChannel).not.toHaveBeenCalledWith('ethlete-auth-sync');
       });
     });
@@ -1201,9 +1205,7 @@ describe('createBearerAuthProvider', () => {
             queryCreator: login,
           }),
         ],
-        multiTabSync: {
-          channelName: 'custom-auth-channel',
-        },
+        features: [withBearerAuthMultiTabSync({ channelName: 'custom-auth-channel' })],
       });
 
       TestBed.runInInjectionContext(() => {
@@ -1227,9 +1229,7 @@ describe('createBearerAuthProvider', () => {
             queryCreator: login,
           }),
         ],
-        multiTabSync: {
-          syncTokens: false,
-        },
+        features: [withBearerAuthMultiTabSync({ syncTokens: false })],
       });
 
       TestBed.runInInjectionContext(() => {
@@ -1260,9 +1260,7 @@ describe('createBearerAuthProvider', () => {
             queryCreator: login,
           }),
         ],
-        multiTabSync: {
-          syncLogout: false,
-        },
+        features: [withBearerAuthMultiTabSync({ syncLogout: false })],
       });
 
       TestBed.runInInjectionContext(() => {
@@ -1648,7 +1646,6 @@ describe('createBearerAuthProvider', () => {
             },
           }),
         ],
-        multiTabSync: false,
       });
 
       TestBed.runInInjectionContext(() => {
@@ -1691,7 +1688,6 @@ describe('createBearerAuthProvider', () => {
             expiresInPropertyName: 'exp',
           }),
         ],
-        multiTabSync: false,
       });
 
       TestBed.runInInjectionContext(() => {

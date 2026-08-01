@@ -10,6 +10,7 @@ import {
   setupQueryTest,
 } from '@ethlete/query/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { withBearerAuthMultiTabSync } from './bearer-auth-multi-tab-sync';
 import { withTracking } from './bearer-auth-tracking';
 
 describe('bearer-auth-tracking', () => {
@@ -193,8 +194,7 @@ describe('bearer-auth-tracking', () => {
     it('should emit leaderStatusChange once the lock is granted', async () => {
       const authSetup = setupAuthTest({
         querySetup: setup,
-        features: [withTracking()],
-        multiTabSync: { leaderElection: true },
+        features: [withTracking(), withBearerAuthMultiTabSync()],
       });
 
       await TestBed.runInInjectionContext(async () => {
@@ -212,8 +212,7 @@ describe('bearer-auth-tracking', () => {
 
       const authSetup = setupAuthTest({
         querySetup: setup,
-        features: [withTracking()],
-        multiTabSync: { leaderElection: true },
+        features: [withTracking(), withBearerAuthMultiTabSync()],
       });
 
       await TestBed.runInInjectionContext(async () => {
@@ -236,8 +235,7 @@ describe('bearer-auth-tracking', () => {
     it('should emit leaderInstanceCountChange with initial count on setup', async () => {
       const authSetup = setupAuthTest({
         querySetup: setup,
-        features: [withTracking()],
-        multiTabSync: { leaderElection: true },
+        features: [withTracking(), withBearerAuthMultiTabSync()],
       });
 
       await TestBed.runInInjectionContext(async () => {
@@ -253,8 +251,7 @@ describe('bearer-auth-tracking', () => {
     it('should emit leaderInstanceCountChange when another tab announces itself', async () => {
       const authSetup = setupAuthTest({
         querySetup: setup,
-        features: [withTracking()],
-        multiTabSync: { leaderElection: true },
+        features: [withTracking(), withBearerAuthMultiTabSync()],
       });
 
       await TestBed.runInInjectionContext(async () => {
@@ -278,7 +275,7 @@ describe('bearer-auth-tracking', () => {
       const authSetup = setupAuthTest({
         querySetup: setup,
         features: [withTracking()],
-        // multiTabSync defaults to false in setupAuthTest
+        // No `withBearerAuthMultiTabSync()`, so this tab is its own leader
       });
 
       TestBed.runInInjectionContext(() => {
@@ -297,8 +294,7 @@ describe('bearer-auth-tracking', () => {
     it('should forward events from non-leader tabs to the leader', async () => {
       const authSetup = setupAuthTest({
         querySetup: setup,
-        features: [withTracking()],
-        multiTabSync: { leaderElection: true },
+        features: [withTracking(), withBearerAuthMultiTabSync()],
       });
 
       await TestBed.runInInjectionContext(async () => {
@@ -321,8 +317,7 @@ describe('bearer-auth-tracking', () => {
 
       const authSetup = setupAuthTest({
         querySetup: setup,
-        features: [withTracking()],
-        multiTabSync: { leaderElection: true },
+        features: [withTracking(), withBearerAuthMultiTabSync()],
       });
 
       await TestBed.runInInjectionContext(async () => {

@@ -17,13 +17,44 @@ import {
 import { decryptBearer } from './auth-provider.utils';
 
 export class V2BearerAuthProvider<T extends AnyV2QueryCreator> implements AuthProvider {
-  private readonly _destroy$ = new Subject<boolean>();
+  private readonly destroy$ = new Subject<boolean>();
   private readonly _currentRefreshQuery$ = new BehaviorSubject<ConstructQuery<T> | null>(null);
 
   private readonly _tokens$ = new BehaviorSubject<TokenResponse>({
     token: null,
     refreshToken: null,
   });
+
+  constructor(public _config: AuthProviderBearerConfig<T>) {
+    const cookieEnabled = _config.refreshConfig?.cookieEnabled ?? true;
+    const cookieToken =
+      _config.refreshConfig?.cookieName && cookieEnabled ? (getCookie(_config.refreshConfig.cookieName) ?? null) : null;
+
+    this._tokens$.next({
+      token: _config.token || null,
+      refreshToken: _config.refreshConfig?.token || cookieToken || null,
+    });
+
+    if (!this.tokens.token && !this.tokens.refreshToken) {
+      if (!_config.refreshConfig?.cookieName) {
+        console.error(
+          'A BearerAuthProvider was created without token or refresh token. You should provide at least a cookieName where the refresh token might be stored.',
+        );
+      }
+
+      return;
+    }
+
+    if (this.tokens.token) {
+      this.prepareForRefresh();
+
+      if (this.tokens.refreshToken && this._config.refreshConfig?.cookieName && cookieEnabled) {
+        this.setCookie();
+      }
+    } else if (this.tokens.refreshToken) {
+      this._refreshQuery();
+    }
+  }
 
   get header() {
     return { Authorization: `Bearer ${this._tokens$.getValue().token}` };
@@ -53,44 +84,13 @@ export class V2BearerAuthProvider<T extends AnyV2QueryCreator> implements AuthPr
     );
   }
 
-  constructor(public _config: AuthProviderBearerConfig<T>) {
-    const cookieEnabled = _config.refreshConfig?.cookieEnabled ?? true;
-    const cookieToken =
-      _config.refreshConfig?.cookieName && cookieEnabled ? (getCookie(_config.refreshConfig.cookieName) ?? null) : null;
-
-    this._tokens$.next({
-      token: _config.token || null,
-      refreshToken: _config.refreshConfig?.token || cookieToken || null,
-    });
-
-    if (!this.tokens.token && !this.tokens.refreshToken) {
-      if (!_config.refreshConfig?.cookieName) {
-        console.error(
-          'A BearerAuthProvider was created without token or refresh token. You should provide at least a cookieName where the refresh token might be stored.',
-        );
-      }
-
-      return;
-    }
-
-    if (this.tokens.token) {
-      this._prepareForRefresh();
-
-      if (this.tokens.refreshToken && this._config.refreshConfig?.cookieName && cookieEnabled) {
-        this._setCookie();
-      }
-    } else if (this.tokens.refreshToken) {
-      this._refreshQuery();
-    }
-  }
-
-  cleanUp(): void {
-    this._destroy$.next(true);
-    this._destroy$.unsubscribe();
+  cleanUp() {
+    this.destroy$.next(true);
+    this.destroy$.unsubscribe();
     this._currentRefreshQuery$.next(null);
 
     if (this._config.refreshConfig?.cookieName) {
-      this._deleteCookie();
+      this.deleteCookie();
     }
   }
 
@@ -105,7 +105,7 @@ export class V2BearerAuthProvider<T extends AnyV2QueryCreator> implements AuthPr
 
     this._config.refreshConfig.cookieEnabled = true;
 
-    this._setCookie();
+    this.setCookie();
   }
 
   disableCookie() {
@@ -115,67 +115,11 @@ export class V2BearerAuthProvider<T extends AnyV2QueryCreator> implements AuthPr
 
     this._config.refreshConfig.cookieEnabled = false;
 
-    this._deleteCookie();
+    this.deleteCookie();
   }
 
   forceRefresh() {
     return this._refreshQuery();
-  }
-
-  private _setCookie() {
-    if (!this._config.refreshConfig?.cookieName || !this.tokens.refreshToken) return;
-
-    setCookie(
-      this._config.refreshConfig.cookieName,
-      this.tokens.refreshToken,
-      this._config.refreshConfig.cookieExpiresInDays,
-      this._config.refreshConfig.cookieDomain,
-      this._config.refreshConfig.cookiePath,
-      this._config.refreshConfig.cookieSameSite,
-    );
-  }
-
-  private _deleteCookie() {
-    if (!this._config.refreshConfig?.cookieName) return;
-
-    deleteCookie(
-      this._config.refreshConfig.cookieName,
-      this._config.refreshConfig.cookiePath,
-      this._config.refreshConfig.cookieDomain,
-    );
-  }
-
-  private _prepareForRefresh() {
-    if (!this.tokens.token || !this._config.refreshConfig) {
-      return;
-    }
-
-    const bearer = decryptBearer(this.tokens.token);
-
-    if (!bearer) {
-      return;
-    }
-
-    const expiresInPropertyName = this._config.refreshConfig.expiresInPropertyName || 'exp';
-    const expiresIn = bearer[expiresInPropertyName] as number | undefined;
-    const fiveMinutes = 5 * 60 * 1000;
-    const refreshBuffer = this._config.refreshConfig.refreshBuffer ?? fiveMinutes;
-
-    if (expiresIn === undefined) {
-      throw new Error(`Bearer token does not contain an '${expiresInPropertyName}' property`);
-    }
-
-    const remainingTime = new Date(expiresIn * 1000).getTime() - refreshBuffer - new Date().getTime();
-
-    const strategy = this._config.refreshConfig.strategy ?? AuthBearerRefreshStrategy.BeforeExpiration;
-
-    switch (strategy) {
-      case AuthBearerRefreshStrategy.BeforeExpiration:
-        timer(remainingTime)
-          .pipe(takeUntil(this._destroy$))
-          .subscribe(() => this._refreshQuery());
-        break;
-    }
   }
 
   /**
@@ -227,23 +171,79 @@ export class V2BearerAuthProvider<T extends AnyV2QueryCreator> implements AuthPr
             const cookieEnabled = this._config.refreshConfig?.cookieEnabled ?? true;
 
             if (this._config.refreshConfig?.cookieName && this.tokens.refreshToken && cookieEnabled) {
-              this._setCookie();
+              this.setCookie();
             }
 
-            this._prepareForRefresh();
+            this.prepareForRefresh();
           } else if (isQueryStateFailure(state)) {
             this._tokens$.next({ token: null, refreshToken: null });
 
             if (this._config.refreshConfig?.cookieName) {
-              this._deleteCookie();
+              this.deleteCookie();
             }
           }
         }),
         takeUntilResponse(),
-        takeUntil(this._destroy$),
+        takeUntil(this.destroy$),
       )
       .subscribe();
 
     return query;
+  }
+
+  private setCookie() {
+    if (!this._config.refreshConfig?.cookieName || !this.tokens.refreshToken) return;
+
+    setCookie(
+      this._config.refreshConfig.cookieName,
+      this.tokens.refreshToken,
+      this._config.refreshConfig.cookieExpiresInDays,
+      this._config.refreshConfig.cookieDomain,
+      this._config.refreshConfig.cookiePath,
+      this._config.refreshConfig.cookieSameSite,
+    );
+  }
+
+  private deleteCookie() {
+    if (!this._config.refreshConfig?.cookieName) return;
+
+    deleteCookie(
+      this._config.refreshConfig.cookieName,
+      this._config.refreshConfig.cookiePath,
+      this._config.refreshConfig.cookieDomain,
+    );
+  }
+
+  private prepareForRefresh() {
+    if (!this.tokens.token || !this._config.refreshConfig) {
+      return;
+    }
+
+    const bearer = decryptBearer(this.tokens.token);
+
+    if (!bearer) {
+      return;
+    }
+
+    const expiresInPropertyName = this._config.refreshConfig.expiresInPropertyName || 'exp';
+    const expiresIn = bearer[expiresInPropertyName] as number | undefined;
+    const fiveMinutes = 5 * 60 * 1000;
+    const refreshBuffer = this._config.refreshConfig.refreshBuffer ?? fiveMinutes;
+
+    if (expiresIn === undefined) {
+      throw new Error(`Bearer token does not contain an '${expiresInPropertyName}' property`);
+    }
+
+    const remainingTime = new Date(expiresIn * 1000).getTime() - refreshBuffer - new Date().getTime();
+
+    const strategy = this._config.refreshConfig.strategy ?? AuthBearerRefreshStrategy.BeforeExpiration;
+
+    switch (strategy) {
+      case AuthBearerRefreshStrategy.BeforeExpiration:
+        timer(remainingTime)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe(() => this._refreshQuery());
+        break;
+    }
   }
 }

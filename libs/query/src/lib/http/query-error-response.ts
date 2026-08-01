@@ -1,11 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { extractHtmlErrorMessage, htmlErrorPayload } from './query-error-html-utils';
-import {
-  isClassValidatorError,
-  isSymfonyFormViolationListError,
-  isSymfonyListError,
-} from './query-error-response-utils';
-import { shouldRetryRequest, ShouldRetryRequestResult } from './query-retry-utils';
+import { runDefaultQueryRetry, runQueryErrorParsers } from './query-error-parsing';
+import { ShouldRetryRequestResult } from './query-retry-utils';
 
 export type QueryErrorResponseList = {
   isList: true;
@@ -69,32 +64,15 @@ export const createQueryErrorResponse = (error: unknown): QueryErrorResponse => 
       statusText: 'Unknown Error',
     });
   }
-  const retryState = shouldRetryRequest(err);
+  const retryState = runDefaultQueryRetry({ retryCount: 0, error: err });
 
   const detail = err.error;
   const errorList: QueryErrorResponseItem[] = [];
-  const html = htmlErrorPayload(detail);
+  const parsed = runQueryErrorParsers(detail, err);
 
-  if (html) {
-    // An HTML error page (a proxy's 502, a maintenance page) is never shown as-is: keep the sentence inside it
-    // and drop the markup. A page with no readable text leaves the list empty, which falls back to the
-    // HttpErrorResponse's own message below - still better than a wall of tags.
-    const message = extractHtmlErrorMessage(html);
-
-    if (message) {
+  if (parsed) {
+    for (const message of parsed) {
       errorList.push({ message });
-    }
-  } else if (isClassValidatorError(detail)) {
-    for (const error of detail.message) {
-      errorList.push({ message: error });
-    }
-  } else if (isSymfonyFormViolationListError(detail)) {
-    for (const violation of detail.violations) {
-      errorList.push({ message: violation.message });
-    }
-  } else if (isSymfonyListError(detail)) {
-    for (const error of detail) {
-      errorList.push({ message: error.message });
     }
   } else if (typeof detail === 'object' && !!detail && 'message' in detail && typeof detail.message === 'string') {
     errorList.push({ message: detail.message });

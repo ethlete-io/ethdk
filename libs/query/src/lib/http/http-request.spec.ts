@@ -5,6 +5,11 @@ import { TestBed } from '@angular/core/testing';
 import { MockInstance } from 'vitest';
 import { createHttpRequest, HttpRequest, SPEED_BUFFER_TIME_IN_MS } from './http-request';
 import { QueryArgs } from './query';
+import { setDefaultQueryRetryFn } from './query-error-parsing';
+import { shouldRetryRequest } from './query-retry-utils';
+
+// Retrying is what `withDefaultRetry()` installs.
+setDefaultQueryRetryFn(shouldRetryRequest);
 
 describe('createHttpRequest', () => {
   let testingController: HttpTestingController;

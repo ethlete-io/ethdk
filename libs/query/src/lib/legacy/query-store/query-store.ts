@@ -7,9 +7,9 @@ export class QueryStore {
    */
   readonly _store = new Map<string, AnyV2Query>();
 
-  private _garbageCollector: number | null = null;
-  private _isInLowResourceMode = false;
-  private _lastBlurTimestamp = Date.now();
+  private garbageCollector: number | null = null;
+  private isInLowResourceMode = false;
+  private lastBlurTimestamp = Date.now();
 
   private _storeChange$ = new Subject<string>();
   private _queryCreated$ = new Subject<AnyV2Query>();
@@ -25,15 +25,15 @@ export class QueryStore {
       enableSmartPolling?: boolean;
     },
   ) {
-    this._initSmartQueryHandling();
+    this.initSmartQueryHandling();
   }
 
   add(id: string, query: AnyV2Query) {
     this._store.set(id, query);
 
-    this._initGarbageCollector();
+    this.initGarbageCollector();
 
-    this._logState(id, query, 'SET');
+    this.logState(id, query, 'SET');
 
     this._storeChange$.next(id);
   }
@@ -45,7 +45,7 @@ export class QueryStore {
   remove(id: string) {
     this._store.delete(id);
 
-    this._logState(id, null, 'REMOVE');
+    this.logState(id, null, 'REMOVE');
 
     this._storeChange$.next(id);
   }
@@ -79,7 +79,7 @@ export class QueryStore {
     this._queryCreated$.next(query);
   }
 
-  private _initSmartQueryHandling() {
+  private initSmartQueryHandling() {
     const windowBlur$ = fromEvent<Event>(window, 'blur');
     const windowFocus$ = fromEvent<Event>(window, 'focus');
 
@@ -87,9 +87,9 @@ export class QueryStore {
       timer(5000)
         .pipe(takeUntil(windowFocus$), take(1))
         .subscribe(() => {
-          this._lastBlurTimestamp = Date.now();
-          this._isInLowResourceMode = true;
-          this._stopGarbageCollector();
+          this.lastBlurTimestamp = Date.now();
+          this.isInLowResourceMode = true;
+          this.stopGarbageCollector();
 
           if (this._config?.enableSmartPolling) {
             this.forEach((query) => {
@@ -104,11 +104,11 @@ export class QueryStore {
     });
 
     windowFocus$.subscribe(() => {
-      if (!this._isInLowResourceMode) {
+      if (!this.isInLowResourceMode) {
         return;
       }
 
-      this._isInLowResourceMode = false;
+      this.isInLowResourceMode = false;
 
       if (this._config?.enableSmartPolling || this._config?.autoRefreshQueriesOnWindowFocus) {
         this.forEach((query) => {
@@ -116,7 +116,7 @@ export class QueryStore {
             query.resumePolling();
           }
 
-          if (Date.now() - this._lastBlurTimestamp > 15000) {
+          if (Date.now() - this.lastBlurTimestamp > 15000) {
             if (
               this._config?.autoRefreshQueriesOnWindowFocus &&
               query.isExpired &&
@@ -129,11 +129,11 @@ export class QueryStore {
         });
       }
 
-      this._initGarbageCollector();
+      this.initGarbageCollector();
     });
   }
 
-  private _logState(key: string | null, item: AnyV2Query | null, operation: string) {
+  private logState(key: string | null, item: AnyV2Query | null, operation: string) {
     if (!this._config?.enableChangeLogging) return;
 
     const stateAsJson: Record<string, AnyV2Query> = {};
@@ -148,28 +148,28 @@ export class QueryStore {
     console.log(stateAsJson);
   }
 
-  private _initGarbageCollector() {
-    if (this._garbageCollector !== null) {
+  private initGarbageCollector() {
+    if (this.garbageCollector !== null) {
       return;
     }
 
-    this._logGarbageCollector('Start');
+    this.logGarbageCollector('Start');
 
-    this._garbageCollector = window.setInterval(() => {
-      this._runGarbageCollector();
+    this.garbageCollector = window.setInterval(() => {
+      this.runGarbageCollector();
     }, 15000);
   }
 
-  private _stopGarbageCollector() {
-    if (this._garbageCollector !== null) {
-      window.clearInterval(this._garbageCollector);
-      this._garbageCollector = null;
-      this._logGarbageCollector('Stop');
+  private stopGarbageCollector() {
+    if (this.garbageCollector !== null) {
+      window.clearInterval(this.garbageCollector);
+      this.garbageCollector = null;
+      this.logGarbageCollector('Stop');
     }
   }
 
-  private _runGarbageCollector() {
-    this._logGarbageCollector('Collecting...');
+  private runGarbageCollector() {
+    this.logGarbageCollector('Collecting...');
 
     this._store.forEach((item, key) => {
       if (item.isExpired && !item.isInUse) {
@@ -177,14 +177,14 @@ export class QueryStore {
       }
     });
 
-    this._logGarbageCollector('Collection done');
+    this.logGarbageCollector('Collection done');
 
     if (!this._store.size) {
-      this._stopGarbageCollector();
+      this.stopGarbageCollector();
     }
   }
 
-  private _logGarbageCollector(action: string) {
+  private logGarbageCollector(action: string) {
     if (!this._config?.enableGarbageCollectorLogging) return;
 
     console.log(`%cGC: ${action}`, 'color: yellow; font-weight: bold');

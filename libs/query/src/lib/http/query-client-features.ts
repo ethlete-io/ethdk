@@ -1,4 +1,7 @@
 import { DestroyRef } from '@angular/core';
+import { htmlQueryErrorParser, symfonyQueryErrorParser } from './query-error-parsers';
+import { registerQueryErrorParser, setDefaultQueryRetryFn } from './query-error-parsing';
+import { shouldRetryRequest } from './query-retry-utils';
 import { createIndexedDbQueryPersistenceAdapter } from './persistence/query-persistence-indexed-db';
 import { QueryPersistenceConfig } from './persistence/query-persistence-config';
 import { createQueryPersistenceEngine, QueryPersistenceEngine } from './persistence/query-persistence-engine';
@@ -11,6 +14,10 @@ import { createQuerySyncTransport } from './sync/query-sync-transport';
 export const QueryClientFeatureType = {
   PERSISTENCE: 'PERSISTENCE',
   MULTI_TAB_SYNC: 'MULTI_TAB_SYNC',
+  HTML_ERROR_PARSING: 'HTML_ERROR_PARSING',
+  SYMFONY_ERRORS: 'SYMFONY_ERRORS',
+  DEFAULT_RETRY: 'DEFAULT_RETRY',
+  ETHLETE_API_ERRORS: 'ETHLETE_API_ERRORS',
 } as const;
 
 export type QueryClientFeatureType = (typeof QueryClientFeatureType)[keyof typeof QueryClientFeatureType];
@@ -40,7 +47,22 @@ export type QueryClientPersistenceFeature = {
   instance: QueryPersistenceEngine | null;
 };
 
-export type QueryClientFeature = QueryClientMultiTabSyncFeature | QueryClientPersistenceFeature;
+/**
+ * A feature that only installs error-pipeline behavior. It has no per-client instance: how an error
+ * body is read, and whether a failed request is retried, is a property of the app rather than of one
+ * client.
+ */
+export type QueryClientErrorPipelineFeature = {
+  type:
+    | typeof QueryClientFeatureType.HTML_ERROR_PARSING
+    | typeof QueryClientFeatureType.SYMFONY_ERRORS
+    | typeof QueryClientFeatureType.DEFAULT_RETRY
+    | typeof QueryClientFeatureType.ETHLETE_API_ERRORS;
+  instance: null;
+};
+
+export type QueryClientFeature =
+  QueryClientMultiTabSyncFeature | QueryClientPersistenceFeature | QueryClientErrorPipelineFeature;
 
 export type QueryClientFeatureFn = (context: QueryClientFeatureContext) => QueryClientFeature;
 
@@ -153,3 +175,88 @@ export const withQueryPersistence =
 
     return { type: QueryClientFeatureType.PERSISTENCE, instance: engine };
   };
+
+/**
+ * Teaches the error pipeline to read an **HTML error page** - the 502 a proxy answers with, a
+ * maintenance page, anything that is markup rather than JSON. Without it such a body is not
+ * inspected at all and the error carries the `HttpErrorResponse`'s own message.
+ *
+ * The extractor and its entity table are ~0.9 kB gz that an app talking to a JSON-only API never
+ * needs, which is why it is opt-in.
+ *
+ * @example
+ * const MY_CLIENT = createQueryClient({
+ *   name: 'my-api',
+ *   baseUrl: 'https://api.example.com',
+ *   features: [withHtmlErrorParsing()],
+ * });
+ */
+export const withHtmlErrorParsing = (): QueryClientFeatureFn => () => {
+  registerQueryErrorParser(htmlQueryErrorParser);
+
+  return { type: QueryClientFeatureType.HTML_ERROR_PARSING, instance: null };
+};
+
+/**
+ * Teaches the error pipeline the shapes a Symfony/API-Platform backend and a NestJS class-validator
+ * pipeline answer with: a form violation list (`{ violations: [...] }`), a bare violation array, and
+ * `{ message: string[] }`. Without it a form response with several field violations is read by the
+ * built-in ladder, which sees no `message` string and falls back to the response's own message.
+ *
+ * @example
+ * const MY_CLIENT = createQueryClient({
+ *   name: 'my-api',
+ *   baseUrl: 'https://api.example.com',
+ *   features: [withSymfonyErrors()],
+ * });
+ */
+export const withSymfonyErrors = (): QueryClientFeatureFn => () => {
+  registerQueryErrorParser(symfonyQueryErrorParser);
+
+  return { type: QueryClientFeatureType.SYMFONY_ERRORS, instance: null };
+};
+
+/**
+ * Installs the SDK's default retry policy for every request that does not bring its own `retryFn`:
+ * retry a connection failure indefinitely, a 5xx above 500, a 408/425, and a 429 (honouring
+ * `retry-after`), up to three times with a backing-off delay - and never a Pagerfanta out-of-range
+ * page.
+ *
+ * Without it nothing is retried automatically and `error.retryState` always reads `{ retry: false }`.
+ * A per-client or per-creator `retryFn` keeps working either way.
+ *
+ * @example
+ * const MY_CLIENT = createQueryClient({
+ *   name: 'my-api',
+ *   baseUrl: 'https://api.example.com',
+ *   features: [withDefaultRetry()],
+ * });
+ */
+export const withDefaultRetry = (): QueryClientFeatureFn => () => {
+  setDefaultQueryRetryFn(shouldRetryRequest);
+
+  return { type: QueryClientFeatureType.DEFAULT_RETRY, instance: null };
+};
+
+/**
+ * Everything the error pipeline used to do before it became opt-in: {@link withHtmlErrorParsing},
+ * {@link withSymfonyErrors} and {@link withDefaultRetry} in one feature. The soft landing for an app
+ * talking to an Ethlete API - and the right default for any Symfony backend behind a proxy.
+ *
+ * Prefer the individual features once you know which of the three the API actually needs; each one
+ * left out is code the app stops shipping.
+ *
+ * @example
+ * const MY_CLIENT = createQueryClient({
+ *   name: 'my-api',
+ *   baseUrl: 'https://api.example.com',
+ *   features: [withEthleteApiErrors()],
+ * });
+ */
+export const withEthleteApiErrors = (): QueryClientFeatureFn => () => {
+  registerQueryErrorParser(htmlQueryErrorParser);
+  registerQueryErrorParser(symfonyQueryErrorParser);
+  setDefaultQueryRetryFn(shouldRetryRequest);
+
+  return { type: QueryClientFeatureType.ETHLETE_API_ERRORS, instance: null };
+};

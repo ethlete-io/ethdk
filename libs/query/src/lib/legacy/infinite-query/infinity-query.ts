@@ -11,13 +11,13 @@ export class InfinityQuery<
   QueryResponse extends QueryDataOf<QueryCreator>,
   InfinityResponse extends unknown[],
 > {
-  private readonly _queries$ = new BehaviorSubject<Query[]>([]);
+  private readonly queries$ = new BehaviorSubject<Query[]>([]);
   private readonly _currentPage$ = new BehaviorSubject<number | null>(null);
   private readonly _currentCalculatedPage$ = new BehaviorSubject<number | null>(null);
   private readonly _totalPages$ = new BehaviorSubject<number | null>(null);
   private readonly _itemsPerPage$ = new BehaviorSubject<number>(10);
 
-  private readonly _data$ = this._queries$.pipe(
+  private readonly _data$ = this.queries$.pipe(
     switchMap((queries) => {
       if (!queries.length) {
         return of([]);
@@ -84,10 +84,17 @@ export class InfinityQuery<
     shareReplay({ bufferSize: 1, refCount: true }),
   );
 
-  private readonly _lastQuery$ = this._queries$.pipe(
+  private readonly lastQuery$ = this.queries$.pipe(
     map((queries) => queries[queries.length - 1] ?? null),
     shareReplay({ bufferSize: 1, refCount: true }),
   );
+
+  constructor(
+    private _config: InfinityQueryConfig<QueryCreator, Args, QueryResponse, InfinityResponse>,
+    private _destroy$: Observable<boolean>,
+  ) {
+    this._itemsPerPage$.next(this._config.limitParam?.value ?? 10);
+  }
 
   get currentPage$() {
     return this._currentPage$.asObservable();
@@ -126,14 +133,7 @@ export class InfinityQuery<
   }
 
   get currentQuery$() {
-    return this._lastQuery$;
-  }
-
-  constructor(
-    private _config: InfinityQueryConfig<QueryCreator, Args, QueryResponse, InfinityResponse>,
-    private _destroy$: Observable<boolean>,
-  ) {
-    this._itemsPerPage$.next(this._config.limitParam?.value ?? 10);
+    return this.lastQuery$;
   }
 
   nextPage() {
@@ -149,10 +149,11 @@ export class InfinityQuery<
       console.error(
         'Cannot load more pages, already at the end. Make sure to not render the infinity query trigger using *ngIf canLoadMore',
       );
+
       return;
     }
 
-    const args = this._prepareArgs(this._config, calculatedPage);
+    const args = this.prepareArgs(this._config, calculatedPage);
 
     const query = this._config.queryCreator.prepare(args).execute() as Query;
 
@@ -160,7 +161,7 @@ export class InfinityQuery<
       query.poll({ interval: this._config.pollingInterval, takeUntil: this._destroy$ });
     }
 
-    this._queries$.next([...this._queries$.value, query]);
+    this.queries$.next([...this.queries$.value, query]);
 
     this._currentPage$.next(newPage);
     this._currentCalculatedPage$.next(calculatedPage);
@@ -178,13 +179,13 @@ export class InfinityQuery<
     this._currentCalculatedPage$.next(null);
     this._totalPages$.next(null);
     this._itemsPerPage$.next(this._config.limitParam?.value ?? 10);
-    this._queries$.next([]);
+    this.queries$.next([]);
 
     this.nextPage();
   }
 
-  private _prepareArgs(config: InfinityQueryConfig<QueryCreator, Args, QueryResponse, InfinityResponse>, page: number) {
-    const pageParamLocation = this._getPageParamLocation(config?.pageParam?.location);
+  private prepareArgs(config: InfinityQueryConfig<QueryCreator, Args, QueryResponse, InfinityResponse>, page: number) {
+    const pageParamLocation = this.getPageParamLocation(config?.pageParam?.location);
 
     const pageArgs = {
       [pageParamLocation]: {
@@ -192,7 +193,7 @@ export class InfinityQuery<
       },
     };
 
-    const limitParamLocation = this._getPageParamLocation(config?.limitParam?.location);
+    const limitParamLocation = this.getPageParamLocation(config?.limitParam?.location);
 
     const limitArgs = {
       [limitParamLocation]: {
@@ -227,7 +228,7 @@ export class InfinityQuery<
     return mergedArgs;
   }
 
-  private _getPageParamLocation(location: InfinityQueryParamLocation | undefined) {
+  private getPageParamLocation(location: InfinityQueryParamLocation | undefined) {
     const loc = location ?? 'query';
 
     switch (loc) {

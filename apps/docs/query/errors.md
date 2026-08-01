@@ -4,11 +4,38 @@
 
 Failed requests resolve to a **`QueryErrorResponse`** on [`query.error()`](/query/queries#the-query-object): `{ raw: HttpErrorResponse, code: number, retryState }` plus a normalized message - either a single message (`isList: false`, `error.message`) or a violation list (`isList: true`, `errors[].message`).
 
-The normalizer understands class-validator errors, Symfony violation lists/list errors, `{ message }`, `{ detail }`, plain strings and string arrays - so templates can render error messages without caring about the backend flavor.
+Out of the box the normalizer reads the shapes every API has: `{ message }`, `{ detail }`, plain strings and string arrays - so templates can render error messages without caring about the backend flavor.
+
+### Opt in to the shapes your API answers with
+
+Everything beyond that ladder is a **query client feature**, because an app that never sees a shape should not ship the code that reads it:
+
+| Feature                  | Teaches the pipeline                                                                                                          |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `withHtmlErrorParsing()` | [HTML error pages](#html-error-pages) - a proxy's `502`, a maintenance page (~0.9 kB gz).                                     |
+| `withSymfonyErrors()`    | Symfony/API-Platform violation lists (`{ violations: [...] }`), bare violation arrays, and class-validator `{ message: [] }`. |
+| `withDefaultRetry()`     | The [default retry policy](#retries). Without it nothing is retried and `retryState` always reads `{ retry: false }`.         |
+| `withEthleteApiErrors()` | All three at once - the pre-6.0 behavior, and the right default for a Symfony backend behind a proxy.                         |
+
+```ts
+export const MY_CLIENT = createQueryClient({
+  name: 'my-api',
+  baseUrl: API_URL,
+  features: [withSymfonyErrors(), withDefaultRetry()],
+});
+```
+
+The features are installed process-wide rather than per client: which body shapes an app understands is a property of the app, not of one of its APIs. For a shape the SDK does not know, register your own parser - it runs ahead of the built-in ladder, and returning `null` passes the body on to the next one:
+
+```ts
+registerQueryErrorParser((detail) =>
+  isObject(detail) && 'errorCode' in detail ? [translate(detail.errorCode as string)] : null,
+);
+```
 
 ### HTML error pages
 
-Not every failure answers with JSON: a proxy's `502`, a load balancer's maintenance page or a platform's "service temporarily unavailable" arrive as a full HTML document. Rendering that as the message would dump markup into the UI, so the normalizer picks the readable text out of it instead:
+With `withHtmlErrorParsing()` (or `withEthleteApiErrors()`) installed: not every failure answers with JSON - a proxy's `502`, a load balancer's maintenance page or a platform's "service temporarily unavailable" arrive as a full HTML document. Rendering that as the message would dump markup into the UI, so the normalizer picks the readable text out of it instead:
 
 - the first **heading** (or the `<title>` when the page has none), plus the first **paragraph** that says something new - `Service Temporarily Unavailable: The server is currently restarting.`
 - unusually structured pages fall back to the page's flattened text; `<script>`/`<style>` contents never make it in,
@@ -103,7 +130,9 @@ protected form = form(signal({ email: '' }), this.emailSchema);
 
 ## Retries
 
-The default retry policy (`shouldRetryRequest`) retries up to **3 times** with a delay of `1s + 1s × attempt` (capped at 5s):
+Retrying is opt-in: add `withDefaultRetry()` (or `withEthleteApiErrors()`) to the client's `features`, or bring your own `retryFn`. Without either, a failed request is not retried.
+
+The default policy (`shouldRetryRequest`) retries up to **3 times** with a delay of `1s + 1s × attempt` (capped at 5s):
 
 - status `0` (offline/CORS) - always retried,
 - `5xx` from `501` upwards (except a Symfony Pagerfanta out-of-range error),

@@ -19,27 +19,20 @@ export class V2QueryClient {
    * @internal
    */
   readonly _store: QueryStore;
-
-  get config() {
-    return this._clientConfig;
-  }
-
-  get authProvider() {
-    return this._authProvider$.getValue() ?? this._clientConfig.parent?._authProvider$.getValue() ?? null;
-  }
-  get authProvider$() {
-    return this._authProvider$.asObservable() ?? this._clientConfig.parent?._authProvider$.asObservable() ?? null;
-  }
   private readonly _authProvider$ = new BehaviorSubject<AuthProvider | null>(null);
 
-  constructor(private _clientConfig: V2QueryClientConfig) {
-    this._store = new QueryStore({
-      enableChangeLogging: _clientConfig.logging?.queryStateChanges,
-      enableGarbageCollectorLogging: _clientConfig.logging?.queryStateGarbageCollector,
-      autoRefreshQueriesOnWindowFocus: _clientConfig.request?.autoRefreshQueriesOnWindowFocus ?? true,
-      enableSmartPolling: _clientConfig.request?.enableSmartPolling ?? true,
-    });
-  }
+  fetch = <
+    Route extends V2RouteType<Arguments>,
+    Response,
+    Arguments extends BaseArguments | undefined,
+    Id,
+    Store extends EntityStore<unknown> = EntityStore<unknown>,
+    Data = Response,
+  >(
+    queryConfig:
+      | RestQueryConfig<Route, Response, Arguments, Store, Data, Id>
+      | GqlQueryConfig<Route, Response, Arguments, Store, Data, Id>,
+  ) => new V2QueryCreator<Arguments, Response, Route, Store, Data, Id>(queryConfig, this, this._store);
 
   get = <
     Route extends V2RouteType<Arguments>,
@@ -146,19 +139,6 @@ export class V2QueryClient {
       method: 'GQL_MUTATE',
     });
 
-  fetch = <
-    Route extends V2RouteType<Arguments>,
-    Response,
-    Arguments extends BaseArguments | undefined,
-    Id,
-    Store extends EntityStore<unknown> = EntityStore<unknown>,
-    Data = Response,
-  >(
-    queryConfig:
-      | RestQueryConfig<Route, Response, Arguments, Store, Data, Id>
-      | GqlQueryConfig<Route, Response, Arguments, Store, Data, Id>,
-  ) => new V2QueryCreator<Arguments, Response, Route, Store, Data, Id>(queryConfig, this, this._store);
-
   setAuthProvider = (authProvider: AuthProvider) => {
     if (this.authProvider) {
       this.authProvider?.cleanUp();
@@ -192,4 +172,24 @@ export class V2QueryClient {
   _updateBaseRoute = (route: string) => {
     this._clientConfig.baseRoute = route;
   };
+
+  constructor(private _clientConfig: V2QueryClientConfig) {
+    this._store = new QueryStore({
+      enableChangeLogging: _clientConfig.logging?.queryStateChanges,
+      enableGarbageCollectorLogging: _clientConfig.logging?.queryStateGarbageCollector,
+      autoRefreshQueriesOnWindowFocus: _clientConfig.request?.autoRefreshQueriesOnWindowFocus ?? true,
+      enableSmartPolling: _clientConfig.request?.enableSmartPolling ?? true,
+    });
+  }
+
+  get config() {
+    return this._clientConfig;
+  }
+
+  get authProvider() {
+    return this._authProvider$.getValue() ?? this._clientConfig.parent?._authProvider$.getValue() ?? null;
+  }
+  get authProvider$() {
+    return this._authProvider$.asObservable() ?? this._clientConfig.parent?._authProvider$.asObservable() ?? null;
+  }
 }

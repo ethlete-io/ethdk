@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { computed, DestroyRef, effect, inject, isDevMode, Signal, signal, untracked } from '@angular/core';
-import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry, suppressNextQueryStackDevtools } from '../devtools';
+import {
+  isQueryDevtoolsEnabled,
+  registerQueryDevtoolsEntry,
+  suppressNextQueryStackDevtools,
+} from '../devtools/query-devtools-hook';
 import {
   ContentfulGqlLikePaginated,
   DynLikePaginated,
@@ -18,7 +22,6 @@ import {
   queryStackTotalQueriesAndExpectedQueriesMismatch,
 } from './query-errors';
 import { QueryFeature } from './query-features';
-import { shouldRetryRequest } from './query-retry-utils';
 import { createQueryStack, transformArrayResponse } from './query-stack';
 
 export const ethletePaginationAdapter = <T>(response: Paginated<T>) => {
@@ -309,6 +312,7 @@ export const createPagedQueryStack = <
 
       if (!newQuery) {
         const lastQuery = oldQueries[oldQueries.length - 1] ?? null;
+
         return { queries: oldQueries, lastQuery };
       } else if (dir === 'previous') {
         return { queries: [newQuery, ...oldQueries], lastQuery: newQuery };
@@ -489,9 +493,8 @@ export const createPagedQueryStack = <
       for (const [index, query] of stack.queries().entries()) {
         const res = query.response();
         const err = query.error();
-        const isErroredAndCanBeRetried = err && shouldRetryRequest(err.raw);
 
-        if (isErroredAndCanBeRetried) {
+        if (err) {
           queriesToExecute.add(query);
         } else if (res) {
           if (responseNormalizer(res, all).items.some((item, i, a) => whereFn(item, i, a))) {

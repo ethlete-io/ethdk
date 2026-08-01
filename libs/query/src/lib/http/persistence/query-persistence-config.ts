@@ -1,6 +1,6 @@
-import type { QueryMethod } from '../query-creator';
-import type { QueryKey } from '../query-repository';
-import type { QueryPersistenceAdapter } from './query-persistence-adapter';
+import { QueryMethod } from '../query-creator';
+import { QueryKey } from '../query-repository';
+import { QueryPersistenceAdapter } from './query-persistence-adapter';
 
 /** A response that is about to be written to disk, as seen by {@link QueryPersistenceConfig.filter}. */
 export type QueryPersistenceCandidate = {

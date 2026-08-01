@@ -41,6 +41,7 @@ export const setupMultiTabSync = (
     if (isDevMode()) {
       console.warn('BroadcastChannel is not supported in this environment. Multi-tab sync will be disabled.');
     }
+
     return {
       cleanup: () => {
         // No cleanup needed when BroadcastChannel is not available

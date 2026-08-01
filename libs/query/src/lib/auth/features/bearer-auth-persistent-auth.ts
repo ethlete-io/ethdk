@@ -116,7 +116,7 @@ export const createPersistentAuthFeature = <
   const rememberMeStorageKey = `${cookieName}-rememberMe`;
   const route = injectRoute();
 
-  const initializeRememberMe = (): boolean => {
+  const initializeRememberMe = () => {
     const storedPreference = typeof localStorage !== 'undefined' ? localStorage.getItem(rememberMeStorageKey) : null;
     if (storedPreference !== null) {
       return storedPreference === 'true';

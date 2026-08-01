@@ -14,6 +14,11 @@
       "factory": "./prep-for-query-v3/migration",
       "schema": "./prep-for-query-v3/schema.json",
       "description": "Update code to prepare for migration to query v3"
+    },
+    "migrate-query-opt-in-features": {
+      "factory": "./migrate-query-opt-in-features/migration",
+      "schema": "./migrate-query-opt-in-features/schema.json",
+      "description": "Migrate query clients to the opt-in error pipeline and bearer auth providers to the opt-in multi-tab sync feature"
     }
   }
 }

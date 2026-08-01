@@ -6,40 +6,40 @@ import { INFINITY_QUERY_TOKEN, InfinityQueryDirective } from './infinity-query.d
   selector: '[etInfinityQueryTrigger], et-infinity-query-trigger',
 })
 export class InfinityQueryTriggerDirective implements OnInit, OnDestroy {
-  private _elementRef = inject(ElementRef<HTMLElement>);
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private _infinityQuery = inject(INFINITY_QUERY_TOKEN);
 
-  private _destroy = new Subject<boolean>();
-  private _observer: IntersectionObserver | null = null;
-
-  click$ = fromEvent(this._elementRef.nativeElement, 'click');
-
-  readonly scrollContainerSelector = input<string | null>(null);
+  scrollContainerSelector = input<string | null>(null);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   infinityQueryOverride = input<InfinityQueryDirective<any> | null>(null);
 
+  private destroy = new Subject<boolean>();
+  private observer: IntersectionObserver | null = null;
+
+  click$ = fromEvent(this.elementRef.nativeElement, 'click');
+
   infinityQuery = computed(() => this.infinityQueryOverride() ?? this._infinityQuery);
 
-  ngOnInit(): void {
-    const isInteractive = this._elementRef.nativeElement.tagName === 'BUTTON';
+  ngOnInit() {
+    const isInteractive = this.elementRef.nativeElement.tagName === 'BUTTON';
 
     if (isInteractive) {
-      this.click$.pipe(takeUntil(this._destroy)).subscribe(() => this.infinityQuery().loadNextPage());
+      this.click$.pipe(takeUntil(this.destroy)).subscribe(() => this.infinityQuery().loadNextPage());
     } else {
-      this._setupIntersectionObserver();
+      this.setupIntersectionObserver();
     }
   }
 
-  ngOnDestroy(): void {
-    this._destroy.next(true);
-    this._destroy.unsubscribe();
-    this._observer?.disconnect();
+  ngOnDestroy() {
+    this.destroy.next(true);
+    this.destroy.unsubscribe();
+    this.observer?.disconnect();
   }
 
-  private _setupIntersectionObserver(): void {
+  private setupIntersectionObserver() {
     const scrollContainerSelector = this.scrollContainerSelector();
-    this._observer = new IntersectionObserver(
+    this.observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
 
@@ -56,6 +56,6 @@ export class InfinityQueryTriggerDirective implements OnInit, OnDestroy {
       },
     );
 
-    this._observer.observe(this._elementRef.nativeElement);
+    this.observer.observe(this.elementRef.nativeElement);
   }
 }

@@ -1,5 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { htmlQueryErrorParser, symfonyQueryErrorParser } from './query-error-parsers';
+import { registerQueryErrorParser, setDefaultQueryRetryFn } from './query-error-parsing';
 import { createQueryErrorResponse, queryErrorMessage, queryErrorMessages } from './query-error-response';
+import { shouldRetryRequest } from './query-retry-utils';
+
+// The pipeline these tests describe is what `withEthleteApiErrors()` installs.
+registerQueryErrorParser(htmlQueryErrorParser);
+registerQueryErrorParser(symfonyQueryErrorParser);
+setDefaultQueryRetryFn(shouldRetryRequest);
 
 describe('createQueryErrorResponse', () => {
   it('should wrap a non-HttpErrorResponse as a status 0 error', () => {

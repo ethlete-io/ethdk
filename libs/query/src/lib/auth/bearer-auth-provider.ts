@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { defineRootProvider, injectUnsavedChangesCoordinator, isObject, ProviderDefinition } from '@ethlete/core';
 import { Observable, Subject } from 'rxjs';
-import { getQueryClientName, isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools';
+import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
 import {
   AnyCreateQueryClientResult,
   authExtractTokensResponseMissingAccessToken,
@@ -34,12 +34,12 @@ import {
   TokenRefreshQueryBuilder,
 } from './bearer-auth-query-builders';
 import {
+  BearerAuthMultiTabSyncFeature,
   InactivityLogoutFeature,
   PersistentAuthFeature,
   TokenExpirationWarningFeature,
   TrackingFeature,
 } from './features';
-import { setupLeaderElection, setupMultiTabSync } from './internal';
 
 export { AnyQueryBuilder } from './bearer-auth-query-builders';
 
@@ -77,6 +77,7 @@ export const BearerAuthFeatureType = {
   INACTIVITY_LOGOUT: 'INACTIVITY_LOGOUT',
   TOKEN_REVOCATION: 'TOKEN_REVOCATION',
   TRACKING: 'TRACKING',
+  MULTI_TAB_SYNC: 'MULTI_TAB_SYNC',
 } as const;
 
 export type BearerAuthFeatureType = (typeof BearerAuthFeatureType)[keyof typeof BearerAuthFeatureType];
@@ -84,6 +85,33 @@ export type BearerAuthFeatureType = (typeof BearerAuthFeatureType)[keyof typeof 
 export type BearerAuthFeature<TBuilders extends readonly AnyQueryBuilder[], TBearerData> = {
   type: BearerAuthFeatureType;
   setup: (context: BearerAuthProviderFeatureContext<TBearerData, TBuilders>) => unknown;
+};
+
+/**
+ * What a feature gets before the provider's queries are wired up. Only the tokens and the client
+ * exist this early - everything else is built on top of what early setup returns.
+ *
+ * Advanced: only a feature that has to run before the auth queries are wired needs this.
+ */
+export type BearerAuthProviderEarlySetupContext = {
+  accessToken: WritableSignal<string | null>;
+  refreshToken: WritableSignal<string | null>;
+  queryClient: QueryClient;
+};
+
+/** The parts of the provider an early setup can contribute. */
+export type BearerAuthProviderEarlySetupResult = {
+  isLeader?: () => boolean;
+  leaderElection?: { isLeader: Signal<boolean>; instanceCount: Signal<number> };
+};
+
+/**
+ * A feature builder that additionally runs before the auth queries are set up. The auth queries read
+ * `isLeader` while being wired, so a feature that decides who the leader is cannot wait for the
+ * regular feature pass.
+ */
+export type BearerAuthProviderEarlySetup = {
+  earlySetup?: (context: BearerAuthProviderEarlySetupContext) => BearerAuthProviderEarlySetupResult;
 };
 
 export type ExtractQueryKey<T> =
@@ -150,6 +178,9 @@ export type FeatureRegistry<
     : unknown) &
   (HasFeatureType<TFeatures, typeof BearerAuthFeatureType.TRACKING> extends true
     ? { tracking: TrackingFeature<TBuilders> }
+    : unknown) &
+  (HasFeatureType<TFeatures, typeof BearerAuthFeatureType.MULTI_TAB_SYNC> extends true
+    ? { multiTabSync: BearerAuthMultiTabSyncFeature }
     : unknown);
 
 export type CreateBearerAuthProviderConfig<
@@ -182,47 +213,6 @@ export type CreateBearerAuthProviderConfig<
    * @default decryptBearer()
    */
   bearerDecryptFn?: (token: string) => TBearerData;
-
-  /**
-   * Multi-tab sync configuration
-   * Set to false to disable
-   * Leader election is automatically enabled when multiTabSync is enabled
-   * @default { enabled: true, channelName: 'ethlete-auth-sync', syncTokens: true, syncLogout: true, leaderElection: true }
-   */
-  multiTabSync?:
-    | false
-    | {
-        /**
-         * Whether multi-tab sync is enabled
-         * @default true
-         */
-        enabled?: boolean;
-
-        /**
-         * Channel name for BroadcastChannel
-         * @default 'ethlete-auth-sync'
-         */
-        channelName?: string;
-
-        /**
-         * Whether to sync token updates across tabs
-         * @default true
-         */
-        syncTokens?: boolean;
-
-        /**
-         * Whether to sync logout across tabs
-         * @default true
-         */
-        syncLogout?: boolean;
-
-        /**
-         * Whether to use leader election for token refresh
-         * When enabled, only one tab (the leader) will perform automatic token refreshes
-         * @default true
-         */
-        leaderElection?: boolean;
-      };
 };
 
 export type BearerAuthProvider<
@@ -352,7 +342,7 @@ const defaultExtractTokens = (response: unknown): BearerAuthProviderTokens => {
   return { accessToken: response['accessToken'], refreshToken: response['refreshToken'] };
 };
 
-const deriveExecutionStateType = (builder: AnyQueryBuilder, triggeredBy: string | undefined): string => {
+const deriveExecutionStateType = (builder: AnyQueryBuilder, triggeredBy: string | undefined) => {
   if (triggeredBy === 'persistent-auth') return 'autoLogin';
   if (builder._type === 'tokenRefreshQuery') return 'tokenRefresh';
   if (triggeredBy === 'token-revocation') return 'revocation';
@@ -479,42 +469,26 @@ const setupFeatures = <
   return features;
 };
 
-const setupMultiTabSyncIfEnabled = (
-  config: CreateBearerAuthProviderConfig<any, any, any>, // eslint-disable-line @typescript-eslint/no-explicit-any
-  accessToken: WritableSignal<string | null>,
-  refreshToken: WritableSignal<string | null>,
-  queryClient: QueryClient,
-) => {
-  const multiTabSyncConfig = config.multiTabSync;
-  const multiTabSyncEnabled = multiTabSyncConfig !== false && (multiTabSyncConfig?.enabled ?? true);
+const alwaysLeader = () => true;
 
-  if (multiTabSyncEnabled) {
-    setupMultiTabSync(
-      {
-        channelName: typeof multiTabSyncConfig === 'object' ? multiTabSyncConfig?.channelName : undefined,
-        syncTokens: typeof multiTabSyncConfig === 'object' ? multiTabSyncConfig?.syncTokens : undefined,
-        syncLogout: typeof multiTabSyncConfig === 'object' ? multiTabSyncConfig?.syncLogout : undefined,
-      },
-      accessToken,
-      refreshToken,
-      queryClient,
-    );
+const runEarlyFeatureSetup = (
+  featureBuilders: readonly unknown[] | undefined,
+  context: BearerAuthProviderEarlySetupContext,
+) => {
+  let isLeaderFn: () => boolean = alwaysLeader;
+  let leaderElectionContext: BearerAuthProviderFeatureContext['leaderElection'];
+
+  for (const featureBuilder of featureBuilders ?? []) {
+    const earlySetup = (featureBuilder as BearerAuthProviderEarlySetup).earlySetup;
+
+    if (!earlySetup) continue;
+
+    const result = earlySetup(context);
+
+    isLeaderFn = result.isLeader ?? isLeaderFn;
+    leaderElectionContext = result.leaderElection ?? leaderElectionContext;
   }
-};
 
-const createLeaderElection = (
-  config: CreateBearerAuthProviderConfig<any, any, any>, // eslint-disable-line @typescript-eslint/no-explicit-any
-) => {
-  const multiTabSyncConfig = config.multiTabSync;
-  const multiTabSyncEnabled = multiTabSyncConfig !== false && (multiTabSyncConfig?.enabled ?? true);
-  const leaderElectionEnabled =
-    multiTabSyncEnabled &&
-    (typeof multiTabSyncConfig === 'object' ? (multiTabSyncConfig?.leaderElection ?? true) : true);
-  const leaderElection = leaderElectionEnabled ? setupLeaderElection() : null;
-  const isLeaderFn = () => (leaderElectionEnabled ? (leaderElection?.isLeader() ?? true) : true);
-  const leaderElectionContext = leaderElection
-    ? { isLeader: leaderElection.isLeader, instanceCount: leaderElection.instanceCount }
-    : undefined;
   return { isLeaderFn, leaderElectionContext };
 };
 
@@ -582,7 +556,7 @@ const createBearerAuthProviderImpl = <
     unsavedChanges.abandonAll('logout');
   };
 
-  const isLeader = createLeaderElection(config);
+  const isLeader = runEarlyFeatureSetup(config.features, { accessToken, refreshToken, queryClient });
 
   const querySetupContext: BearerAuthProviderQueryContext<TBearerData, TBuilders> = {
     accessToken,
@@ -616,8 +590,6 @@ const createBearerAuthProviderImpl = <
 
   const features = setupFeatures(config.features, featureSetupContext);
 
-  setupMultiTabSyncIfEnabled(config, accessToken, refreshToken, queryClient);
-
   const provider = {
     queries,
     features: features as FeatureRegistry<TFeatures, TBuilders>,
@@ -637,9 +609,9 @@ const createBearerAuthProviderImpl = <
     const unregister = registerQueryDevtoolsEntry({
       kind: 'auth-provider',
       handle: provider,
+      clientRef: config.queryClientRef,
       meta: {
         name: config.name,
-        clientName: getQueryClientName(config.queryClientRef),
         clientBaseUrl: queryClient.baseUrl,
         repository: queryClient.repository,
         client: queryClient,

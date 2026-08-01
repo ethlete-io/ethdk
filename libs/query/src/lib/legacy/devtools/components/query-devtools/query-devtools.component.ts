@@ -28,24 +28,24 @@ type QueryViewMode = 'query' | 'authProvider';
 @Component({
   selector: 'et-query-devtools',
   templateUrl: './query-devtools.component.html',
-  styleUrls: ['./query-devtools.component.scss'],
+  styleUrl: './query-devtools.component.scss',
   encapsulation: ViewEncapsulation.ShadowDom,
+  imports: [AsyncPipe, JsonPipe, ReactiveFormsModule, NgClass, QueryShortNamePipe, QueryDirective],
   host: {
     class: 'et-query-devtools',
   },
-  imports: [AsyncPipe, JsonPipe, ReactiveFormsModule, NgClass, QueryShortNamePipe, QueryDirective],
 })
 export class QueryDevtoolsComponent {
-  private readonly _cdr = inject(ChangeDetectorRef);
+  private cdr = inject(ChangeDetectorRef);
+
+  protected queryClientConfigs = inject(QUERY_CLIENT_DEVTOOLS_TOKEN);
   protected readonly _destroy$ = createDestroy();
 
-  protected readonly queryClientConfigs = inject(QUERY_CLIENT_DEVTOOLS_TOKEN);
-
-  protected readonly isOpen = signal(false);
-  protected readonly isTranslucent = signal(false);
-  protected readonly snapLayout = signal<QueryDevtoolsSnapLayout>('full');
-  protected readonly queryListMode = signal<QueryListMode>('live');
-  protected readonly viewMode = signal<QueryViewMode>('query');
+  protected isOpen = signal(false);
+  protected isTranslucent = signal(false);
+  protected snapLayout = signal<QueryDevtoolsSnapLayout>('full');
+  protected queryListMode = signal<QueryListMode>('live');
+  protected viewMode = signal<QueryViewMode>('query');
 
   protected showResponse = signal(false);
   protected showRawResponse = signal(false);
@@ -55,12 +55,12 @@ export class QueryDevtoolsComponent {
 
   protected selectedClientIdCtrl = new FormControl(0);
 
-  protected readonly selectedClientId = toSignal(
+  protected selectedClientId = toSignal(
     this.selectedClientIdCtrl.valueChanges.pipe(startWith(this.selectedClientIdCtrl.value)),
   );
-  protected readonly selectedQueryId = signal<number | null>(null);
+  protected selectedQueryId = signal<number | null>(null);
 
-  protected readonly selectedClientConfig = computed(() => {
+  protected selectedClientConfig = computed(() => {
     const configs = this.queryClientConfigs;
     const index = configs.length === 1 ? 0 : (this.selectedClientId() ?? 0);
     const config = configs[index] ?? configs[0];
@@ -72,18 +72,20 @@ export class QueryDevtoolsComponent {
     return config;
   });
 
-  protected readonly queryStore = computed(() => {
+  protected queryStore = computed(() => {
     const config = this.selectedClientConfig();
 
     return config.client._store;
   });
 
-  protected readonly queryStore$ = toObservable(this.queryStore);
+  protected queryStore$ = toObservable(this.queryStore);
 
-  private readonly _queries$ = new BehaviorSubject<AnyV2Query[]>([]);
-  protected readonly queries = toSignal(this._queries$);
+  private readonly queries$ = new BehaviorSubject<AnyV2Query[]>([]);
+  protected queries = toSignal(this.queries$);
 
-  protected readonly selectedQuery = computed(() => {
+  protected readonly queryHistory$ = new BehaviorSubject<AnyV2Query[]>([]);
+
+  protected selectedQuery = computed(() => {
     const id = this.selectedQueryId();
     const mode = this.queryListMode();
 
@@ -98,7 +100,7 @@ export class QueryDevtoolsComponent {
     return this.queryHistory$.getValue()?.find((q) => q._id === id) ?? null;
   });
 
-  protected readonly selectedQuery$ = toObservable(this.selectedQuery);
+  protected selectedQuery$ = toObservable(this.selectedQuery);
 
   protected selectedQueryEntityStore = computed(() => {
     const query = this.selectedQuery();
@@ -108,7 +110,7 @@ export class QueryDevtoolsComponent {
     return query.store as EntityStore<unknown> | null;
   });
 
-  protected readonly selectedQueryEntityStore$ = toObservable(this.selectedQueryEntityStore);
+  protected selectedQueryEntityStore$ = toObservable(this.selectedQueryEntityStore);
 
   protected readonly selectedQueryEntityStoreValue$ = this.selectedQueryEntityStore$.pipe(
     switchMap(
@@ -130,9 +132,7 @@ export class QueryDevtoolsComponent {
     ),
   );
 
-  protected readonly queryHistory$ = new BehaviorSubject<AnyV2Query[]>([]);
-
-  protected readonly stringifiedQueryConfig = computed(() => {
+  protected stringifiedQueryConfig = computed(() => {
     const query = this.selectedQuery();
 
     if (!query) return null;
@@ -166,11 +166,11 @@ export class QueryDevtoolsComponent {
     };
   });
 
-  protected readonly authProvider = toSignal(
+  protected authProvider = toSignal(
     toObservable(this.selectedClientConfig).pipe(switchMap((c) => c.client.authProvider$)),
   );
 
-  protected readonly authProviderDetails = computed(() => {
+  protected authProviderDetails = computed(() => {
     const provider = this.authProvider();
 
     if (!provider) return null;
@@ -231,6 +231,9 @@ export class QueryDevtoolsComponent {
     }
   });
 
+  protected trackByClient: TrackByFunction<QueryClientDevtoolsOptions> = (_, { client }) => client.config.baseRoute;
+  protected trackByQuery: TrackByFunction<AnyV2Query> = (_, { _id }) => _id;
+
   constructor() {
     this.selectedClientIdCtrl.valueChanges
       .pipe(
@@ -242,7 +245,7 @@ export class QueryDevtoolsComponent {
     this.selectedQuery$
       .pipe(
         switchMap((q) => q?._dependentsChanged$ ?? of(null)),
-        tap(() => this._cdr.markForCheck()),
+        tap(() => this.cdr.markForCheck()),
         takeUntilDestroyed(),
       )
       .subscribe();
@@ -250,7 +253,7 @@ export class QueryDevtoolsComponent {
     toObservable(this.authProviderDetails)
       .pipe(switchMap((ap) => (ap?.type === 'BearerAuthProvider' ? ap.provider.tokens$ : of(null))))
       .pipe(
-        tap(() => this._cdr.markForCheck()),
+        tap(() => this.cdr.markForCheck()),
         takeUntilDestroyed(),
       )
       .subscribe();
@@ -263,7 +266,7 @@ export class QueryDevtoolsComponent {
             map(() => s._store),
             tap((s) => {
               untracked(() => {
-                this._queries$.next(Array.from(s.values()));
+                this.queries$.next(Array.from(s.values()));
               });
             }),
             takeUntil(this._destroy$),
@@ -297,7 +300,7 @@ export class QueryDevtoolsComponent {
       )
       .subscribe();
 
-    this._queries$
+    this.queries$
       .pipe(
         tap((queries) => {
           const currentHistory = this.queryHistory$.getValue();
@@ -359,9 +362,6 @@ export class QueryDevtoolsComponent {
     }
   }
 
-  protected trackByClient: TrackByFunction<QueryClientDevtoolsOptions> = (_, { client }) => client.config.baseRoute;
-  protected trackByQuery: TrackByFunction<AnyV2Query> = (_, { _id }) => _id;
-
   protected toggleOpen() {
     this.isOpen.set(!this.isOpen());
   }
@@ -374,7 +374,7 @@ export class QueryDevtoolsComponent {
     this.showResponse.set(!this.showResponse());
 
     nextFrame(() => {
-      this._cdr.markForCheck();
+      this.cdr.markForCheck();
     });
   }
 

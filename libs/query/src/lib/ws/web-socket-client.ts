@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { defineRootProvider, previousSignalValue, ProviderDefinition } from '@ethlete/core';
 import { io } from 'socket.io-client';
-import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools';
+import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
 import { messageMalformed, roomNotJoined } from './web-socket-errors';
 
 /** A single message captured for the devtools web socket inspector. */

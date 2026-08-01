@@ -78,7 +78,7 @@ export class QueryDirective<Q extends QueryDirectiveType | null> {
   private errorHandler = inject(ErrorHandler);
   private cdr = inject(ChangeDetectorRef);
 
-  private readonly _viewContext: QueryDirectiveContext<Q> = {
+  private readonly viewContext: QueryDirectiveContext<Q> = {
     $implicit: null,
     etQuery: null,
     loading: false,
@@ -103,21 +103,22 @@ export class QueryDirective<Q extends QueryDirectiveType | null> {
   }
 
   constructor() {
-    inject(ViewContainerRef).createEmbeddedView(inject(TemplateRef), this._viewContext);
+    inject(ViewContainerRef).createEmbeddedView(inject(TemplateRef), this.viewContext);
 
     effect(() => {
       const query = extractQuery(this.query());
 
       untracked(() => {
         if (!query) {
-          this._viewContext.$implicit = null;
-          this._viewContext.etQuery = null;
-          this._viewContext.loading = false;
-          this._viewContext.refreshing = false;
-          this._viewContext.error = null;
-          this._viewContext.progress = null;
-          this._viewContext.scope = null;
-          this._viewContext.query = null;
+          this.viewContext.$implicit = null;
+          this.viewContext.etQuery = null;
+          this.viewContext.loading = false;
+          this.viewContext.refreshing = false;
+          this.viewContext.error = null;
+          this.viewContext.progress = null;
+          this.viewContext.scope = null;
+          this.viewContext.query = null;
+
           return;
         }
 
@@ -125,8 +126,8 @@ export class QueryDirective<Q extends QueryDirectiveType | null> {
           query.execute();
         }
 
-        this._viewContext.scope = isQueryCollection(query) ? (query.type as QueryCollectionKeysOf<Q>) : null;
-        this._viewContext.query = query as QueryOf<Q>;
+        this.viewContext.scope = isQueryCollection(query) ? (query.type as QueryCollectionKeysOf<Q>) : null;
+        this.viewContext.query = query as QueryOf<Q>;
       });
     });
 
@@ -136,34 +137,34 @@ export class QueryDirective<Q extends QueryDirectiveType | null> {
 
       untracked(() => {
         if (isQueryStateLoading(state)) {
-          this._viewContext.progress = state.progress ?? null;
-          this._viewContext.refreshing = state.meta.triggeredVia === 'auto' || state.meta.triggeredVia === 'poll';
+          this.viewContext.progress = state.progress ?? null;
+          this.viewContext.refreshing = state.meta.triggeredVia === 'auto' || state.meta.triggeredVia === 'poll';
 
-          if (!this._viewContext.refreshing) {
-            this._viewContext.loading = true;
+          if (!this.viewContext.refreshing) {
+            this.viewContext.loading = true;
           }
         } else {
-          this._viewContext.loading = false;
-          this._viewContext.refreshing = false;
-          this._viewContext.progress = null;
+          this.viewContext.loading = false;
+          this.viewContext.refreshing = false;
+          this.viewContext.progress = null;
         }
 
         if (isQueryStateSuccess(state)) {
-          this._viewContext.etQuery = state.response as QueryDataOf<QueryOf<Q>>;
-          this._viewContext.$implicit = state.response as QueryDataOf<QueryOf<Q>>;
+          this.viewContext.etQuery = state.response as QueryDataOf<QueryOf<Q>>;
+          this.viewContext.$implicit = state.response as QueryDataOf<QueryOf<Q>>;
         } else if (!cache) {
-          this._viewContext.etQuery = null;
-          this._viewContext.$implicit = null;
+          this.viewContext.etQuery = null;
+          this.viewContext.$implicit = null;
         }
 
         if (isQueryStateFailure(state)) {
-          this._viewContext.error = state.error;
+          this.viewContext.error = state.error;
 
           if (isLegacyQuery(extractQuery(this.query()))) {
             this.errorHandler.handleError(state.error.httpErrorResponse);
           }
         } else {
-          this._viewContext.error = null;
+          this.viewContext.error = null;
         }
 
         this.cdr.markForCheck();

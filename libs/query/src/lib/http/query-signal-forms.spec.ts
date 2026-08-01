@@ -3,6 +3,8 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form } from '@angular/forms/signals';
 import { FormViolationView } from '@ethlete/types';
+import { symfonyQueryErrorParser } from './query-error-parsers';
+import { registerQueryErrorParser } from './query-error-parsing';
 import { createQueryErrorResponse } from './query-error-response';
 import {
   extractFormViolations,
@@ -11,6 +13,9 @@ import {
   SERVER_VIOLATION_ERROR_KIND,
   ServerViolationValidationError,
 } from './query-signal-forms';
+
+// Violation lists are read by the parser `withSymfonyErrors()` installs.
+registerQueryErrorParser(symfonyQueryErrorParser);
 
 const violation = (propertyPath: string | null, message = 'Invalid value'): FormViolationView => ({
   message,

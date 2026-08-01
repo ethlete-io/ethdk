@@ -206,6 +206,7 @@ export const v2ShouldRetryRequest: RequestRetryFn = (config) => {
 
     if (retryAfter) {
       const delay = parseInt(retryAfter) * 1000;
+
       return { retry: true, delay: Number.isNaN(delay) ? defaultRetryDelay : delay };
     }
 

@@ -64,7 +64,7 @@ export type BaseQueryCreatorOptions<TArgs extends QueryArgs = QueryArgs> = {
    * Custom retry function for this specific query creator.
    * If provided, overrides the retry function configured at the client level.
    *
-   * @default Client's retryFn or shouldRetryRequest()
+   * @default the client's `retryFn`, else the `withDefaultRetry()` policy, else no retry
    */
   retryFn?: ShouldRetryRequestFn;
 

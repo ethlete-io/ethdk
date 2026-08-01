@@ -20,7 +20,7 @@ import { createQueryClient, createGetQuery, withArgs } from '@ethlete/query';
 - [Multi-tab sync](/query/multi-tab) - the `withMultiTabSync()` client feature: sharing responses between the user's tabs, polling a key in one tab only and fanning mutations out.
 - [Persisted responses](/query/persistence) - the `withQueryPersistence()` client feature: keeping successful reads on disk so a reload, or a cold start with no network, renders the last known data.
 - [Query stacks & pagination](/query/stacks) - running many queries as one, infinite lists and paged data.
-- [Errors & retries](/query/errors) - the normalized error object, the retry policy and runtime error codes.
+- [Errors & retries](/query/errors) - the normalized error object, the opt-in parsers (`withEthleteApiErrors()` and friends), the retry policy and runtime error codes.
 
 ## HTTP & auth
 

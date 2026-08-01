@@ -48,10 +48,6 @@ export type AuthTestSetupConfig<
   features?: [...TFeatures];
   /** Custom bearer decrypt function for testing */
   bearerDecryptFn?: (token: string) => TBearerData;
-  /** Whether to disable multi-tab sync. Default: false */
-  multiTabSync?:
-    | false
-    | { enabled?: boolean; channelName?: string; syncTokens?: boolean; syncLogout?: boolean; leaderElection?: boolean };
   /** Refresh strategy configuration. See TokenRefreshQueryConfig for details */
   refreshStrategy?: TokenRefreshQueryConfig<TRefreshArgs>['refreshStrategy'];
   /** Minimum refresh interval in milliseconds */
@@ -117,7 +113,6 @@ export const setupAuthTest = <
     }),
     features,
     bearerDecryptFn,
-    multiTabSync = false,
     refreshStrategy,
     minRefreshInterval,
     refreshIfExpired,
@@ -149,7 +144,6 @@ export const setupAuthTest = <
     ] as [AuthQueryBuilder<'login', TLoginArgs>, TokenRefreshQueryBuilder<'refresh', TRefreshArgs>],
     features: (features ?? ([] as const)) as unknown as TFeatures,
     bearerDecryptFn,
-    multiTabSync,
   });
 
   const auth = TestBed.runInInjectionContext(() => {

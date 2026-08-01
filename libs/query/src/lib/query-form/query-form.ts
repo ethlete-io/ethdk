@@ -39,18 +39,13 @@ const ET_OBJ_PREFIX = 'ET_OBJ__';
 const ET_PROP_NULL_VALUE = 'ET_NULL__';
 
 export class QueryField<T> {
+  constructor(public data: QueryFieldOptions<T>) {}
   get control() {
     return this.data.control;
   }
-
-  constructor(public data: QueryFieldOptions<T>) {}
 }
 
 export class SearchQueryField {
-  get control() {
-    return this.data.control;
-  }
-
   data: QueryFieldOptions<string | null>;
 
   constructor(public _data?: OptionalQueryFieldOptions<string | null>) {
@@ -61,13 +56,12 @@ export class SearchQueryField {
       ...(_data ?? {}),
     };
   }
-}
-
-export class SortQueryField {
   get control() {
     return this.data.control;
   }
+}
 
+export class SortQueryField {
   data: QueryFieldOptions<Sort | null>;
 
   constructor(public _data?: OptionalQueryFieldOptions<Sort | null>) {
@@ -78,13 +72,12 @@ export class SortQueryField {
       ...(_data ?? {}),
     };
   }
-}
-
-export class StringArrayQueryField<T extends string[]> {
   get control() {
     return this.data.control;
   }
+}
 
+export class StringArrayQueryField<T extends string[]> {
   data: QueryFieldOptions<T | null>;
 
   constructor(public _data?: OptionalQueryFieldOptions<T | null>) {
@@ -94,13 +87,12 @@ export class StringArrayQueryField<T extends string[]> {
       ...(_data ?? {}),
     };
   }
-}
-
-export class BooleanArrayQueryField {
   get control() {
     return this.data.control;
   }
+}
 
+export class BooleanArrayQueryField {
   data: QueryFieldOptions<boolean[] | null>;
 
   constructor(public _data?: OptionalQueryFieldOptions<boolean[] | null>) {
@@ -110,13 +102,12 @@ export class BooleanArrayQueryField {
       ...(_data ?? {}),
     };
   }
-}
-
-export class NumberArrayQueryField {
   get control() {
     return this.data.control;
   }
+}
 
+export class NumberArrayQueryField {
   data: QueryFieldOptions<number[] | null>;
 
   constructor(public _data?: OptionalQueryFieldOptions<number[] | null>) {
@@ -126,13 +117,12 @@ export class NumberArrayQueryField {
       ...(_data ?? {}),
     };
   }
-}
-
-export class DateQueryField {
   get control() {
     return this.data.control;
   }
+}
 
+export class DateQueryField {
   data: QueryFieldOptions<Date | null>;
 
   constructor(public _data?: OptionalQueryFieldOptions<Date | null>) {
@@ -142,13 +132,12 @@ export class DateQueryField {
       ...(_data ?? {}),
     };
   }
-}
-
-export class DateArrayQueryField {
   get control() {
     return this.data.control;
   }
+}
 
+export class DateArrayQueryField {
   data: QueryFieldOptions<Date[] | null>;
 
   constructor(public _data?: OptionalQueryFieldOptions<Date[] | null>) {
@@ -157,6 +146,9 @@ export class DateArrayQueryField {
       queryParamToValueTransformFn: transformToDateArray,
       ...(_data ?? {}),
     };
+  }
+  get control() {
+    return this.data.control;
   }
 }
 
@@ -174,19 +166,19 @@ export type AnyQueryForm = QueryForm<any>;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class QueryForm<T extends Record<string, QueryField<any>>> {
-  private readonly _destroy$ = createDestroy();
-  private readonly _unobserveTrigger$ = new Subject<boolean>();
-  private readonly _router = inject(Router);
-  private readonly _activatedRoute = inject(ActivatedRoute);
-  private readonly _defaultValues = this._extractDefaultValues();
-  private readonly _zone = inject(NgZone);
-  private readonly _didValueChanges$ = new Subject<boolean>();
+  private router = inject(Router);
+  private activatedRoute = inject(ActivatedRoute);
+  private zone = inject(NgZone);
+  private queryParams = injectQueryParams();
+  private readonly destroy$ = createDestroy();
+  private readonly unobserveTrigger$ = new Subject<boolean>();
+  private readonly defaultValues = this.extractDefaultValues();
+  private readonly didValueChanges$ = new Subject<boolean>();
 
-  private _isObserving = false;
-  private _skipNextResets = false;
+  private isObserving = false;
+  private skipNextResets = false;
 
-  private _queryParamChanges$ = toObservable(injectQueryParamChanges());
-  private _queryParams = injectQueryParams();
+  private queryParamChanges$ = toObservable(injectQueryParamChanges());
 
   /**
    * The angular form group that contains all the fields.
@@ -198,18 +190,10 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
    * - `value`: Use `QueryForm.value` instead.
    * - `controls`: Use `QueryForm.controls` instead.
    */
-  readonly form = this._setupFormGroup();
+  readonly form = this.setupFormGroup();
 
-  private readonly _lastFormValue$ = new BehaviorSubject<QueryFormValue<T> | null>(null);
-  private readonly _currentFormValue$ = new BehaviorSubject<QueryFormValue<T>>(this._formValue);
-
-  private get _formValue() {
-    return this.form.getRawValue() as QueryFormValue<T>;
-  }
-
-  private get _form() {
-    return this.form as unknown as QueryFormGroup;
-  }
+  private readonly lastFormValue$ = new BehaviorSubject<QueryFormValue<T> | null>(null);
+  private readonly currentFormValue$ = new BehaviorSubject<QueryFormValue<T>>(this.formValue);
 
   private readonly _changes$ = new BehaviorSubject<QueryFormValueEvent<T>>({
     previousValue: null,
@@ -220,9 +204,9 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   readonly currentValue$ = this._changes$.pipe(map(({ currentValue }) => currentValue));
   readonly previousValue$ = this._changes$.pipe(map(({ previousValue }) => previousValue));
 
-  readonly changes = toSignal(this.changes$);
-  readonly currentValue = toSignal(this.currentValue$);
-  readonly previousValue = toSignal(this.previousValue$);
+  changes = toSignal(this.changes$);
+  currentValue = toSignal(this.currentValue$);
+  previousValue = toSignal(this.previousValue$);
 
   /**
    * The number of active filters.
@@ -247,11 +231,21 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
               return true;
             }
 
-            return this._isDefaultValue(key, value);
+            return this.isDefaultValue(key, value);
           })
           .filter((v) => v === false).length,
     ),
   );
+
+  // with prefix eg. page should become ${prefix}-page
+  constructor(
+    private _fields: T,
+    private _options?: QueryFormOptions,
+  ) {
+    assertInInjectionContext(QueryForm);
+
+    inject(DestroyRef).onDestroy(() => this.cleanup());
+  }
 
   get controls() {
     return this.form.controls;
@@ -262,62 +256,53 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   }
 
   get defaultFormValue() {
-    return Object.entries(this._defaultValues).reduce((acc, [key]) => {
-      acc[key as keyof QueryFormValue<T>] = this._getDefaultValue(key);
+    return Object.entries(this.defaultValues).reduce((acc, [key]) => {
+      acc[key as keyof QueryFormValue<T>] = this.getDefaultValue(key);
 
       return acc;
     }, {} as QueryFormValue<T>);
   }
 
-  // with prefix eg. page should become ${prefix}-page
-  constructor(
-    private _fields: T,
-    private _options?: QueryFormOptions,
-  ) {
-    assertInInjectionContext(QueryForm);
-
-    inject(DestroyRef).onDestroy(() => this._cleanup());
-  }
-
   observe(options?: QueryFormObserveOptions) {
-    if (this._isObserving) {
+    if (this.isObserving) {
       if (isDevMode()) {
         console.warn('QueryForm.observe() was called multiple times. This is not supported.');
       }
+
       return this;
     }
 
-    this._isObserving = true;
+    this.isObserving = true;
 
     if (options?.syncOnNavigation !== false) {
       const didChanges = this.setFormValueFromUrlQueryParams({
-        queryParams: this._queryParams(),
+        queryParams: this.queryParams(),
       });
 
       if (didChanges) {
-        this._handleFormChange(true);
+        this.handleFormChange(true);
       }
     }
 
-    merge(...Object.values(this._fields).map((field) => field.control.valueChanges), this._didValueChanges$)
+    merge(...Object.values(this._fields).map((field) => field.control.valueChanges), this.didValueChanges$)
       .pipe(
         debounceTime(0),
         tap(() => {
-          this._handleFormChange();
+          this.handleFormChange();
         }),
-        takeUntil(this._destroy$),
-        takeUntil(this._unobserveTrigger$),
+        takeUntil(this.destroy$),
+        takeUntil(this.unobserveTrigger$),
       )
       .subscribe();
 
     let changedFieldsInLastResetLoop: string[] = [];
     let currentUniqueChangedFields: string[] = [];
 
-    this._currentFormValue$
+    this.currentFormValue$
       .pipe(
         map((currentValue) => {
           return {
-            previousValue: clone(this._lastFormValue$.value),
+            previousValue: clone(this.lastFormValue$.value),
             currentValue: clone(currentValue),
           };
         }),
@@ -326,11 +311,11 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
             this._syncViaUrlQueryParams(currentValue, options?.replaceUrl);
           }
 
-          const didResetValues = this._skipNextResets
+          const didResetValues = this.skipNextResets
             ? false
             : this._handleQueryFormResets(previousValue ?? null, currentValue);
 
-          this._skipNextResets = false;
+          this.skipNextResets = false;
 
           const changedFields = Object.keys(currentValue).filter(
             (key) => !equal(previousValue?.[key], currentValue[key]),
@@ -342,7 +327,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
           }
 
           if (didResetValues) {
-            this._didValueChanges$.next(true);
+            this.didValueChanges$.next(true);
             changedFieldsInLastResetLoop = changedFields;
           }
 
@@ -381,21 +366,21 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
             currentValue: currentValue,
           });
         }),
-        takeUntil(this._destroy$),
-        takeUntil(this._unobserveTrigger$),
+        takeUntil(this.destroy$),
+        takeUntil(this.unobserveTrigger$),
       )
       .subscribe();
 
     if (options?.syncOnNavigation !== false) {
-      this._queryParamChanges$
+      this.queryParamChanges$
         .pipe(
-          takeUntil(this._destroy$),
-          takeUntil(this._unobserveTrigger$),
+          takeUntil(this.destroy$),
+          takeUntil(this.unobserveTrigger$),
           tap((changes) => {
             const didValueChanges = this.setFormValueFromUrlQueryParams({ queryParams: changes });
 
             if (didValueChanges) {
-              this._didValueChanges$.next(true);
+              this.didValueChanges$.next(true);
             }
           }),
         )
@@ -403,6 +388,136 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     }
 
     return this;
+  }
+
+  unobserve() {
+    this.unobserveTrigger$.next(true);
+    this.cleanup();
+  }
+
+  setFormValueFromUrlQueryParams(options: { queryParams: Record<string, unknown> }) {
+    let didValueChanges = false;
+
+    for (const [key, field] of Object.entries(this._fields)) {
+      const value = options.queryParams[this.transformKeyToQueryParam(key)];
+
+      const valueDoesNotExist = value === undefined;
+
+      if (valueDoesNotExist) continue;
+
+      const valueGotRemoved = value === ET_PROPERTY_REMOVED;
+
+      if (valueGotRemoved) {
+        const defaultValue = this.getDefaultValue(key);
+        if (!equal(field.control.value, defaultValue)) {
+          field.control.setValue(defaultValue, { emitEvent: false });
+          didValueChanges = true;
+        }
+
+        continue;
+      }
+      let deserializedValue = value;
+
+      if (field.data.queryParamToValueTransformFn) {
+        deserializedValue = field.data.queryParamToValueTransformFn(value);
+      } else if (!field.data.skipAutoTransform) {
+        const defaultIsNum = typeof this.getDefaultValue(key) === 'number';
+        const valueIsNum = !isNaN(Number(value));
+        const valueContainsWhitespace = typeof value === 'string' && value.trim() !== value;
+        const valueHasLeadingZero = typeof value === 'string' && value.startsWith('0');
+        const valueEndsWithDot = typeof value === 'string' && value.endsWith('.');
+
+        const defaultIsBool = this.getDefaultValue(key) === 'boolean';
+        const valueIsBool = value === 'true' || value === 'false';
+
+        if (value === ET_PROP_NULL_VALUE) {
+          deserializedValue = null;
+        } else if (
+          defaultIsNum ||
+          (valueIsNum && !valueContainsWhitespace && !valueHasLeadingZero && !valueEndsWithDot)
+        ) {
+          deserializedValue = transformToNumber(value);
+        } else if (defaultIsBool || valueIsBool) {
+          deserializedValue = transformToBoolean(value);
+        }
+      }
+
+      const valueIsEqualToCurrent = equal(deserializedValue, field.control.value);
+
+      if (valueIsEqualToCurrent) continue;
+
+      field.control.setValue(deserializedValue, { emitEvent: false });
+      didValueChanges = true;
+    }
+
+    return didValueChanges;
+  }
+
+  setValue(value: QueryFormValue<T>, options?: QueryFormWriteOptions) {
+    this._form._setValue(value, options);
+
+    if (options?.skipResets) {
+      this.skipNextResets = true;
+    }
+  }
+
+  patchValue(value: Partial<QueryFormValue<T>>, options?: QueryFormWriteOptions) {
+    this._form._patchValue(value, options);
+
+    if (options?.skipResets) {
+      this.skipNextResets = true;
+    }
+  }
+
+  resetFieldToDefault(key: keyof QueryFormValue<T>, options?: QueryFormWriteOptions) {
+    const defaultValue = this.getDefaultValue(key as string);
+
+    this.form.controls[key].setValue(defaultValue);
+
+    if (options?.skipResets) {
+      this.skipNextResets = true;
+    }
+  }
+
+  resetFieldsToDefault(keys: (keyof QueryFormValue<T>)[], options?: QueryFormWriteOptions) {
+    const defaults = keys.reduce(
+      (acc, key) => {
+        acc[key] = this.getDefaultValue(key as string);
+
+        return acc;
+      },
+      {} as Partial<QueryFormValue<T>>,
+    );
+
+    this.patchValue(defaults);
+
+    if (options?.skipResets) {
+      this.skipNextResets = true;
+    }
+  }
+
+  resetAllFieldsToDefault(options?: QueryFormWriteOptions & { skipFields?: (keyof QueryFormValue<T>)[] }) {
+    const keys = Object.keys(this._fields) as (keyof QueryFormValue<T>)[];
+
+    if (options?.skipFields) {
+      for (const key of options.skipFields) {
+        const index = keys.indexOf(key);
+
+        if (index !== -1) {
+          keys.splice(index, 1);
+        }
+      }
+    }
+
+    this.resetFieldsToDefault(keys, options);
+  }
+
+  private get formValue() {
+    return this.form.getRawValue() as QueryFormValue<T>;
+  }
+
+  private get _form() {
+    return this.form as unknown as QueryFormGroup;
   }
 
   private _handleQueryFormResets(previousValue: QueryFormValue<T> | null, currentValue: QueryFormValue<T>) {
@@ -433,7 +548,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
           currentValue &&
           !equal(previousValue[resetConditionKey], currentValue[resetConditionKey])
         ) {
-          const defaultValueForKeyToReset = this._getDefaultValue(formFieldKey);
+          const defaultValueForKeyToReset = this.getDefaultValue(formFieldKey);
           const currentValueForKeyToReset = currentValue[formFieldKey];
 
           if (equal(defaultValueForKeyToReset, currentValueForKeyToReset)) {
@@ -452,130 +567,8 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     return didResetValues;
   }
 
-  unobserve() {
-    this._unobserveTrigger$.next(true);
-    this._cleanup();
-  }
-
-  setFormValueFromUrlQueryParams(options: { queryParams: Record<string, unknown> }) {
-    let didValueChanges = false;
-
-    for (const [key, field] of Object.entries(this._fields)) {
-      const value = options.queryParams[this._transformKeyToQueryParam(key)];
-
-      const valueDoesNotExist = value === undefined;
-
-      if (valueDoesNotExist) continue;
-
-      const valueGotRemoved = value === ET_PROPERTY_REMOVED;
-
-      if (valueGotRemoved) {
-        const defaultValue = this._getDefaultValue(key);
-        if (!equal(field.control.value, defaultValue)) {
-          field.control.setValue(defaultValue, { emitEvent: false });
-          didValueChanges = true;
-        }
-
-        continue;
-      }
-      let deserializedValue = value;
-
-      if (field.data.queryParamToValueTransformFn) {
-        deserializedValue = field.data.queryParamToValueTransformFn(value);
-      } else if (!field.data.skipAutoTransform) {
-        const defaultIsNum = typeof this._getDefaultValue(key) === 'number';
-        const valueIsNum = !isNaN(Number(value));
-        const valueContainsWhitespace = typeof value === 'string' && value.trim() !== value;
-        const valueHasLeadingZero = typeof value === 'string' && value.startsWith('0');
-        const valueEndsWithDot = typeof value === 'string' && value.endsWith('.');
-
-        const defaultIsBool = this._getDefaultValue(key) === 'boolean';
-        const valueIsBool = value === 'true' || value === 'false';
-
-        if (value === ET_PROP_NULL_VALUE) {
-          deserializedValue = null;
-        } else if (
-          defaultIsNum ||
-          (valueIsNum && !valueContainsWhitespace && !valueHasLeadingZero && !valueEndsWithDot)
-        ) {
-          deserializedValue = transformToNumber(value);
-        } else if (defaultIsBool || valueIsBool) {
-          deserializedValue = transformToBoolean(value);
-        }
-      }
-
-      const valueIsEqualToCurrent = equal(deserializedValue, field.control.value);
-
-      if (valueIsEqualToCurrent) continue;
-
-      field.control.setValue(deserializedValue, { emitEvent: false });
-      didValueChanges = true;
-    }
-
-    return didValueChanges;
-  }
-
-  setValue(value: QueryFormValue<T>, options?: QueryFormWriteOptions) {
-    this._form._setValue(value, options);
-
-    if (options?.skipResets) {
-      this._skipNextResets = true;
-    }
-  }
-
-  patchValue(value: Partial<QueryFormValue<T>>, options?: QueryFormWriteOptions) {
-    this._form._patchValue(value, options);
-
-    if (options?.skipResets) {
-      this._skipNextResets = true;
-    }
-  }
-
-  resetFieldToDefault(key: keyof QueryFormValue<T>, options?: QueryFormWriteOptions) {
-    const defaultValue = this._getDefaultValue(key as string);
-
-    this.form.controls[key].setValue(defaultValue);
-
-    if (options?.skipResets) {
-      this._skipNextResets = true;
-    }
-  }
-
-  resetFieldsToDefault(keys: (keyof QueryFormValue<T>)[], options?: QueryFormWriteOptions) {
-    const defaults = keys.reduce(
-      (acc, key) => {
-        acc[key] = this._getDefaultValue(key as string);
-
-        return acc;
-      },
-      {} as Partial<QueryFormValue<T>>,
-    );
-
-    this.patchValue(defaults);
-
-    if (options?.skipResets) {
-      this._skipNextResets = true;
-    }
-  }
-
-  resetAllFieldsToDefault(options?: QueryFormWriteOptions & { skipFields?: (keyof QueryFormValue<T>)[] }) {
-    const keys = Object.keys(this._fields) as (keyof QueryFormValue<T>)[];
-
-    if (options?.skipFields) {
-      for (const key of options.skipFields) {
-        const index = keys.indexOf(key);
-
-        if (index !== -1) {
-          keys.splice(index, 1);
-        }
-      }
-    }
-
-    this.resetFieldsToDefault(keys, options);
-  }
-
-  private _getDefaultValue(key: string) {
-    const val = this._defaultValues[key];
+  private getDefaultValue(key: string) {
+    const val = this.defaultValues[key];
 
     if (typeof val === 'string' && val.startsWith(ET_ARR_PREFIX)) {
       return JSON.parse(val.slice(ET_ARR_PREFIX.length));
@@ -590,7 +583,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     return val ?? null;
   }
 
-  private _transformKeyToQueryParam(key: string) {
+  private transformKeyToQueryParam(key: string) {
     if (!this._options?.queryParamPrefix) return key;
 
     const prefix =
@@ -601,7 +594,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     return `${prefix}-${key}`;
   }
 
-  private _isDefaultValue(key: string, value: unknown) {
+  private isDefaultValue(key: string, value: unknown) {
     const normalizedValue = Array.isArray(value)
       ? `${ET_ARR_PREFIX}${JSON.stringify(value)}`
       : typeof value === 'object' && value !== null
@@ -610,10 +603,10 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
           ? ET_PROP_NULL_VALUE
           : value;
 
-    return this._defaultValues[key] === normalizedValue;
+    return this.defaultValues[key] === normalizedValue;
   }
 
-  private _setupFormGroup() {
+  private setupFormGroup() {
     const group = new FormGroup({} as QueryFormGroupControls<T>) as unknown as QueryFormGroup;
 
     for (const [key, field] of Object.entries(this._fields)) {
@@ -629,7 +622,7 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     return group as unknown as FormGroup<QueryFormGroupControls<T>>;
   }
 
-  private _extractDefaultValues() {
+  private extractDefaultValues() {
     const defaultValues: Record<string, unknown> = {};
 
     for (const [key, field] of Object.entries(this._fields)) {
@@ -650,17 +643,17 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
   }
 
   private _syncViaUrlQueryParams(values: QueryFormValue<T>, replaceUrl?: boolean) {
-    const queryParams = { ...clone(this._activatedRoute.snapshot.queryParams) };
+    const queryParams = { ...clone(this.activatedRoute.snapshot.queryParams) };
 
     for (const [key, value] of Object.entries(values)) {
-      const queryParamKey = this._transformKeyToQueryParam(key);
+      const queryParamKey = this.transformKeyToQueryParam(key);
       const field = this._fields[key];
 
       if (!field) {
         continue;
       }
 
-      const isDefault = this._isDefaultValue(key, value);
+      const isDefault = this.isDefaultValue(key, value);
       const writeDefaultToUrl = field.data.appendDefaultValueToUrl === true;
       const writeToUrl = field.data.appendToUrl !== false;
 
@@ -675,9 +668,9 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
       }
     }
 
-    this._zone.run(() => {
+    this.zone.run(() => {
       queueMicrotask(() => {
-        this._router.navigate([], {
+        this.router.navigate([], {
           queryParams,
           replaceUrl,
           queryParamsHandling: 'merge',
@@ -686,52 +679,52 @@ export class QueryForm<T extends Record<string, QueryField<any>>> {
     });
   }
 
-  private _handleFormChange(forceOverwrite = false) {
+  private handleFormChange(forceOverwrite = false) {
     // Normalize values that have a valueToQueryParamTransformFn returning null/undefined to their
     // field default before capturing the new value. This prevents intermediate "empty object" states
     // (e.g. Sort emitting { active: '', direction: '' } when cleared) from being
     // emitted as distinct form values.
     for (const [key, field] of Object.entries(this._fields)) {
       if (!field.data.valueToQueryParamTransformFn) continue;
-      const rawValue = (this._formValue as Record<string, unknown>)[key];
-      if (this._isDefaultValue(key, rawValue)) continue;
+      const rawValue = (this.formValue as Record<string, unknown>)[key];
+      if (this.isDefaultValue(key, rawValue)) continue;
       const serialized = field.data.valueToQueryParamTransformFn(rawValue);
       if (serialized !== null && serialized !== undefined) continue;
-      this.form.controls[key]?.setValue(this._getDefaultValue(key), { emitEvent: false });
+      this.form.controls[key]?.setValue(this.getDefaultValue(key), { emitEvent: false });
     }
 
-    const currentVal = clone(this._currentFormValue$.value);
-    const newVal = clone(this._formValue);
+    const currentVal = clone(this.currentFormValue$.value);
+    const newVal = clone(this.formValue);
 
     if (equal(currentVal, newVal)) {
       return;
     }
 
     if (forceOverwrite) {
-      this._lastFormValue$.next(newVal);
+      this.lastFormValue$.next(newVal);
     } else {
-      this._lastFormValue$.next(currentVal);
+      this.lastFormValue$.next(currentVal);
     }
 
-    this._currentFormValue$.next(newVal);
+    this.currentFormValue$.next(newVal);
   }
 
-  private _cleanup() {
-    if (!this._isObserving) return;
+  private cleanup() {
+    if (!this.isObserving) return;
 
-    this._isObserving = false;
+    this.isObserving = false;
 
     const queryParamKeys = Object.keys(this._fields);
     const queryParams = queryParamKeys.reduce(
       (acc, key) => {
-        acc[this._transformKeyToQueryParam(key)] = undefined;
+        acc[this.transformKeyToQueryParam(key)] = undefined;
         return acc;
       },
       {} as Record<string, unknown>,
     );
-    this._zone.run(() => {
+    this.zone.run(() => {
       queueMicrotask(() => {
-        this._router.navigate([], {
+        this.router.navigate([], {
           queryParams,
           replaceUrl: true,
           queryParamsHandling: 'merge',

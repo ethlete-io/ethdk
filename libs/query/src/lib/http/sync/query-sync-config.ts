@@ -1,4 +1,4 @@
-import type { QueryMethod } from '../query-creator';
+import { QueryMethod } from '../query-creator';
 
 /** A mutation that succeeded in another tab. */
 export type QuerySyncMutation = {

@@ -162,7 +162,7 @@ export const isQueryStateCancelled = (state: V2QueryState | null | undefined): s
 export const isQueryStatePrepared = (state: V2QueryState | null | undefined): state is Prepared =>
   state?.type === QueryStateType.Prepared;
 
-export const isAutoRefresh = (state: V2QueryState | null | undefined): boolean => state?.meta.triggeredVia === 'auto';
+export const isAutoRefresh = (state: V2QueryState | null | undefined) => state?.meta.triggeredVia === 'auto';
 
 export const mergeHeaders = (...headers: Array<RequestHeaders | null | undefined>) => {
   return headers.reduce((acc, headers) => {

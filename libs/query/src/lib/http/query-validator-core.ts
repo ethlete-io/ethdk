@@ -74,7 +74,7 @@ export type QueryValidatorCoreConfig<TValue, TParams, TResult, TPathKind extends
 export const applyQueryAsyncValidator = <TValue, TParams, TResult, TPathKind extends PathKind = PathKind.Root>(
   path: SchemaPath<TValue, SchemaPathRules.Supported, TPathKind>,
   config: QueryValidatorCoreConfig<TValue, TParams, TResult, TPathKind>,
-): void => {
+) => {
   validateAsync<TValue, TParams, TResult, TPathKind>(path, {
     params: config.params,
     debounce: config.debounce ?? DEFAULT_QUERY_VALIDATION_DEBOUNCE,

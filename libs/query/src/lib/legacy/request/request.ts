@@ -69,6 +69,7 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
       if (!retry) {
         observer.next({ type: 'failure', headers, error });
         observer.complete();
+
         return;
       }
 

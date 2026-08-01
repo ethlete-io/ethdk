@@ -64,10 +64,10 @@ export class V2Query<
 > {
   readonly _id = _nextQueryId++;
 
-  private _currentLocalId = 0;
-  private _pollingSubscription: Subscription | null = null;
-  private _onAbort$ = new Subject<void>();
-  private _currentPollConfig: PollConfig | null = null;
+  private currentLocalId = 0;
+  private pollingSubscription: Subscription | null = null;
+  private onAbort$ = new Subject<void>();
+  private currentPollConfig: PollConfig | null = null;
 
   /**
    * @internal
@@ -76,7 +76,7 @@ export class V2Query<
    * The value is the number of times the component has subscribed to this query.
    * The value might increase since we cant distinguish between a component and a host directive applied to it.
    */
-  _dependents: Record<number, number> = {};
+  readonly _dependents: Record<number, number> = {};
 
   /**
    * @internal
@@ -88,20 +88,42 @@ export class V2Query<
    */
   _isPollingPaused = false;
 
-  private _memoizedState$: Observable<V2QueryState<Data>> | null = null;
+  private memoizedState$: Observable<V2QueryState<Data>> | null = null;
 
   private readonly _state$ = new BehaviorSubject<V2QueryState<Response>>({
     type: QueryStateType.Prepared,
-    meta: { id: this._currentLocalId, triggeredVia: 'program' },
+    meta: { id: this.currentLocalId, triggeredVia: 'program' },
   });
 
-  private get _nextId() {
-    return ++this._currentLocalId;
-  }
+  constructor(
+    private readonly _client: V2QueryClient,
+
+    /**
+     * @internal
+     */
+    public readonly _queryConfig:
+      | RestQueryConfig<Route, Response, Arguments, Store, Data, Id>
+      | GqlQueryConfig<Route, Response, Arguments, Store, Data, Id>,
+
+    /**
+     * @internal
+     */
+    public readonly _routeWithParams: Route,
+
+    /**
+     * @internal
+     */
+    public readonly _arguments: Arguments,
+
+    /**
+     * @internal
+     */
+    public readonly _queryStoreKey: string,
+  ) {}
 
   get state$(): Observable<V2QueryState<Data>> {
-    if (!this._memoizedState$) {
-      this._memoizedState$ = this._state$.pipe(
+    if (!this.memoizedState$) {
+      this.memoizedState$ = this._state$.pipe(
         tap((s) => {
           if (!this._client.config.logging?.preparedQuerySubscriptions) return;
 
@@ -111,11 +133,11 @@ export class V2Query<
             );
           }
         }),
-        switchMap((s) => this._transformState(s)),
+        switchMap((s) => this.transformState(s)),
         shareReplay({ bufferSize: 1, refCount: true }),
       );
     }
-    return this._memoizedState$;
+    return this.memoizedState$;
   }
 
   /**
@@ -162,7 +184,7 @@ export class V2Query<
   }
 
   get isPolling() {
-    return !!this._pollingSubscription;
+    return !!this.pollingSubscription;
   }
 
   get autoRefreshOnConfig() {
@@ -195,32 +217,6 @@ export class V2Query<
     return !!this._arguments?.mock;
   }
 
-  constructor(
-    private readonly _client: V2QueryClient,
-
-    /**
-     * @internal
-     */
-    public readonly _queryConfig:
-      | RestQueryConfig<Route, Response, Arguments, Store, Data, Id>
-      | GqlQueryConfig<Route, Response, Arguments, Store, Data, Id>,
-
-    /**
-     * @internal
-     */
-    public readonly _routeWithParams: Route,
-
-    /**
-     * @internal
-     */
-    public readonly _arguments: Arguments,
-
-    /**
-     * @internal
-     */
-    public readonly _queryStoreKey: string,
-  ) {}
-
   execute(options: ExecuteQueryOptions = {}) {
     const { skipCache = false, _triggeredVia: triggeredVia = 'program', cancelPrevious = false } = options;
     const { authProvider } = this._client;
@@ -234,7 +230,7 @@ export class V2Query<
       throw new Error('Cannot execute secure query without auth provider');
     }
 
-    const id = this._nextId;
+    const id = this.nextId;
     const meta: QueryStateMeta = { id, triggeredVia };
 
     if (isQueryStateLoading(this.rawState)) {
@@ -245,10 +241,10 @@ export class V2Query<
       }
     }
 
-    this._updateState({ type: QueryStateType.Loading, meta });
+    this.updateState({ type: QueryStateType.Loading, meta });
 
     if (this._isInMockMode) {
-      this._mockRequest({}, meta, options);
+      this.mockRequest({}, meta, options);
     } else {
       let goSignal = of(true);
 
@@ -265,14 +261,15 @@ export class V2Query<
           authProvider.currentRefreshQuery$.pipe(switchQueryState(), takeUntilResponse()),
           authProvider.tokens$.pipe(take(1)),
         ]).pipe(
-          takeUntil(this._onAbort$),
+          takeUntil(this.onAbort$),
           switchMap(([state, tokens]) => {
             if (state && isQueryStateLoading(state)) {
               return EMPTY;
             }
 
             if (isQueryStateFailure(state)) {
-              this._updateEntityState({ type: 'failure', error: state.error, headers: {} }, meta, options);
+              this.updateEntityState({ type: 'failure', error: state.error, headers: {} }, meta, options);
+
               return EMPTY;
             }
 
@@ -304,8 +301,8 @@ export class V2Query<
               cacheAdapter: this._client.config.request?.cacheAdapter,
               retryFn: this._client.config.request?.retryFn,
             }).pipe(
-              tap((state) => this._updateEntityState(state, meta, options)),
-              takeUntil(this._onAbort$),
+              tap((state) => this.updateEntityState(state, meta, options)),
+              takeUntil(this.onAbort$),
             );
           }),
         )
@@ -321,9 +318,9 @@ export class V2Query<
       return this;
     }
 
-    this._onAbort$.next();
+    this.onAbort$.next();
 
-    this._updateState({
+    this.updateState({
       type: QueryStateType.Cancelled,
       meta: { id: this.rawState.meta.id, triggeredVia: this.rawState.meta.triggeredVia },
     });
@@ -332,11 +329,11 @@ export class V2Query<
   }
 
   poll(config: PollConfig) {
-    if (this._pollingSubscription) {
+    if (this.pollingSubscription) {
       return this;
     }
 
-    this._currentPollConfig = config;
+    this.currentPollConfig = config;
 
     const interval$ = interval(config.interval);
     const poll$ = interval$.pipe(
@@ -346,7 +343,7 @@ export class V2Query<
       filter(() => !isQueryStateLoading(this._state$.value)),
     );
 
-    this._pollingSubscription = poll$.subscribe({
+    this.pollingSubscription = poll$.subscribe({
       next: () => this.execute({ skipCache: true, _triggeredVia: 'poll' }),
       complete: () => this.stopPolling(),
     });
@@ -355,16 +352,16 @@ export class V2Query<
   }
 
   stopPolling() {
-    this._pollingSubscription?.unsubscribe();
-    this._pollingSubscription = null;
-    this._currentPollConfig = null;
+    this.pollingSubscription?.unsubscribe();
+    this.pollingSubscription = null;
+    this.currentPollConfig = null;
 
     return this;
   }
 
   pausePolling() {
-    this._pollingSubscription?.unsubscribe();
-    this._pollingSubscription = null;
+    this.pollingSubscription?.unsubscribe();
+    this.pollingSubscription = null;
 
     this._isPollingPaused = true;
 
@@ -372,13 +369,13 @@ export class V2Query<
   }
 
   resumePolling() {
-    if (!this._isPollingPaused || !this._currentPollConfig) {
+    if (!this._isPollingPaused || !this.currentPollConfig) {
       return this;
     }
 
     this._isPollingPaused = false;
 
-    return this.poll({ ...this._currentPollConfig, triggerImmediately: true });
+    return this.poll({ ...this.currentPollConfig, triggerImmediately: true });
   }
 
   onSuccess(callback: (response: Data) => void) {
@@ -389,216 +386,6 @@ export class V2Query<
   onFailure(callback: (error: RequestError<unknown>) => void) {
     this.state$.pipe(takeUntilResponse(), filterFailure()).subscribe((state) => callback(state.error));
     return this;
-  }
-
-  private _getBearerAuthProvider() {
-    const authProvider = this._client.authProvider;
-
-    if (authProvider && isBearerAuthProvider(authProvider)) {
-      return authProvider;
-    }
-
-    return null;
-  }
-
-  private _updateEntityState(
-    requestEvent: RequestEvent<Response>,
-    meta: QueryStateMeta,
-    options?: ExecuteQueryOptions,
-  ) {
-    switch (requestEvent.type) {
-      case 'start':
-      case 'delay-retry': {
-        const { type, retryDelay, retryNumber } = requestEvent;
-        const newMeta: QueryStateMeta = { ...meta, isWaitingForRetry: type === 'delay-retry', retryDelay, retryNumber };
-
-        this._updateState({
-          type: QueryStateType.Loading,
-          meta: newMeta,
-        });
-        break;
-      }
-
-      case 'upload-progress':
-      case 'download-progress': {
-        this._updateState({
-          type: QueryStateType.Loading,
-          progress: requestEvent.progress,
-          partialText: 'partialText' in requestEvent ? requestEvent.partialText : undefined,
-          meta,
-        });
-
-        break;
-      }
-
-      case 'success': {
-        const { response, expiresInTimestamp, headers } = requestEvent;
-        const isGql = isGqlQueryConfig(this._queryConfig);
-        const responseData =
-          isGql && typeof response === 'object' && !!response && 'data' in response
-            ? (response['data'] as Response)
-            : (response as Response);
-
-        if (this._queryConfig.entity && this._queryConfig.entity.set) {
-          const id = this._queryConfig.entity?.id({ args: this._arguments, response: responseData });
-
-          this._queryConfig.entity?.set({
-            args: this._arguments,
-            response: responseData,
-            id,
-            store: this._queryConfig.entity.store,
-          });
-        }
-
-        this._updateState({
-          type: QueryStateType.Success,
-          response: responseData,
-          headers: headers,
-          meta: { ...meta, expiresAt: expiresInTimestamp },
-        });
-
-        break;
-      }
-
-      case 'failure': {
-        const { error } = requestEvent;
-        const failure = () => this._updateState({ type: QueryStateType.Failure, error, meta });
-        const bearerAuthProvider = this._getBearerAuthProvider();
-
-        if (
-          !bearerAuthProvider ||
-          options?._isUnauthorizedRetry ||
-          error.status !== 401 ||
-          !bearerAuthProvider.shouldRefreshOnUnauthorizedResponse
-        ) {
-          return failure();
-        }
-
-        const query = bearerAuthProvider._refreshQuery();
-        if (!query) return failure();
-
-        query.state$
-          .pipe(
-            takeUntilResponse(),
-            takeUntil(this._onAbort$),
-            tap((state) =>
-              isQueryStateSuccess(state) ? this.execute({ ...options, _isUnauthorizedRetry: true }) : failure(),
-            ),
-          )
-          .subscribe();
-
-        break;
-      }
-
-      case 'cancel': {
-        this._updateState({
-          type: QueryStateType.Cancelled,
-          meta,
-        });
-
-        break;
-      }
-    }
-  }
-
-  private _transformState(s: V2QueryState<Response>): Observable<V2QueryState<Data>> {
-    if (!isQueryStateSuccess(s) || !this._queryConfig.entity?.get) {
-      return of(s) as Observable<V2QueryState<Data>>;
-    }
-
-    const id = this._queryConfig.entity.id({ args: this._arguments, response: s.response });
-
-    return this._queryConfig.entity
-      .get({ args: this._arguments, id, response: s.response, store: this._queryConfig.entity.store })
-      .pipe(map((v) => ({ ...s, response: v })));
-  }
-
-  private _updateState(s: V2QueryState<Response>) {
-    // We need to use untracked here to avoid Angular's "allowSignalWrites is false" error when executing queries inside Angular's computed/effect signal functions.
-    untracked(() => this._state$.next(s));
-  }
-
-  private _mockRequest(headers: RequestHeaders | undefined, meta: QueryStateMeta, options: ExecuteQueryOptions) {
-    if (!this._arguments?.mock) return;
-
-    const { delay = 200, error, response, retryIntoResponse = false, progress } = this._arguments.mock;
-    const progressFileSize = progress?.fileSize ?? 1000000;
-    const progressEventType = progress?.eventType ?? 'upload';
-    const progressEventCount = progress?.eventCount ?? 5;
-    const progressOmitTotal = progress?.omitTotal ?? false;
-    const omitPartialText = progress?.omitPartialText ?? false;
-
-    const finalResolveMock = () => {
-      if (error) {
-        this._updateEntityState({ error, headers: headers ?? {}, type: 'failure' }, meta, options);
-        return;
-      }
-
-      this._updateEntityState(
-        { response: response as Response, headers: headers ?? {}, type: 'success' },
-        meta,
-        options,
-      );
-    };
-
-    if (progress) {
-      interval(delay)
-        .pipe(
-          tap((a) => {
-            if (a === progressEventCount + 1) {
-              finalResolveMock();
-            } else {
-              const current = Math.min(progressFileSize * a, progressFileSize * progressEventCount);
-              const percentage = (current / (progressFileSize * progressEventCount)) * 100;
-
-              this._updateEntityState(
-                {
-                  type: progressEventType === 'upload' ? 'upload-progress' : 'download-progress',
-                  headers: headers ?? {},
-                  progress: { current, ...(progressOmitTotal ? {} : { percentage, total: progressFileSize }) },
-                  partialText: omitPartialText ? undefined : `Partial text ${a}`,
-                },
-                meta,
-                options,
-              );
-            }
-          }),
-          takeUntil(this._onAbort$),
-          takeWhile((a) => a < progressEventCount + 1, true),
-        )
-        .subscribe();
-    } else if (retryIntoResponse) {
-      interval(delay)
-        .pipe(
-          tap((a) => {
-            if (a === 3) {
-              finalResolveMock();
-            } else {
-              const aModified = a + 1;
-              this._updateEntityState(
-                {
-                  type: 'delay-retry',
-                  headers: headers ?? {},
-                  retryDelay: 1000 + 1000 * aModified,
-                  retryNumber: aModified,
-                },
-                meta,
-                options,
-              );
-            }
-          }),
-          takeUntil(this._onAbort$),
-          takeWhile((a) => a < 3, true),
-        )
-        .subscribe();
-    } else {
-      timer(delay)
-        .pipe(
-          tap(() => finalResolveMock()),
-          takeUntil(this._onAbort$),
-        )
-        .subscribe();
-    }
   }
 
   /**
@@ -639,5 +426,216 @@ export class V2Query<
    */
   _hasDependents() {
     return Object.keys(this._dependents).length > 0;
+  }
+
+  private get nextId() {
+    return ++this.currentLocalId;
+  }
+
+  private getBearerAuthProvider() {
+    const authProvider = this._client.authProvider;
+
+    if (authProvider && isBearerAuthProvider(authProvider)) {
+      return authProvider;
+    }
+
+    return null;
+  }
+
+  private updateEntityState(requestEvent: RequestEvent<Response>, meta: QueryStateMeta, options?: ExecuteQueryOptions) {
+    switch (requestEvent.type) {
+      case 'start':
+      case 'delay-retry': {
+        const { type, retryDelay, retryNumber } = requestEvent;
+        const newMeta: QueryStateMeta = { ...meta, isWaitingForRetry: type === 'delay-retry', retryDelay, retryNumber };
+
+        this.updateState({
+          type: QueryStateType.Loading,
+          meta: newMeta,
+        });
+        break;
+      }
+
+      case 'upload-progress':
+      case 'download-progress': {
+        this.updateState({
+          type: QueryStateType.Loading,
+          progress: requestEvent.progress,
+          partialText: 'partialText' in requestEvent ? requestEvent.partialText : undefined,
+          meta,
+        });
+
+        break;
+      }
+
+      case 'success': {
+        const { response, expiresInTimestamp, headers } = requestEvent;
+        const isGql = isGqlQueryConfig(this._queryConfig);
+        const responseData =
+          isGql && typeof response === 'object' && !!response && 'data' in response
+            ? (response['data'] as Response)
+            : (response as Response);
+
+        if (this._queryConfig.entity && this._queryConfig.entity.set) {
+          const id = this._queryConfig.entity?.id({ args: this._arguments, response: responseData });
+
+          this._queryConfig.entity?.set({
+            args: this._arguments,
+            response: responseData,
+            id,
+            store: this._queryConfig.entity.store,
+          });
+        }
+
+        this.updateState({
+          type: QueryStateType.Success,
+          response: responseData,
+          headers: headers,
+          meta: { ...meta, expiresAt: expiresInTimestamp },
+        });
+
+        break;
+      }
+
+      case 'failure': {
+        const { error } = requestEvent;
+        const failure = () => this.updateState({ type: QueryStateType.Failure, error, meta });
+        const bearerAuthProvider = this.getBearerAuthProvider();
+
+        if (
+          !bearerAuthProvider ||
+          options?._isUnauthorizedRetry ||
+          error.status !== 401 ||
+          !bearerAuthProvider.shouldRefreshOnUnauthorizedResponse
+        ) {
+          return failure();
+        }
+
+        const query = bearerAuthProvider._refreshQuery();
+        if (!query) return failure();
+
+        query.state$
+          .pipe(
+            takeUntilResponse(),
+            takeUntil(this.onAbort$),
+            tap((state) =>
+              isQueryStateSuccess(state) ? this.execute({ ...options, _isUnauthorizedRetry: true }) : failure(),
+            ),
+          )
+          .subscribe();
+
+        break;
+      }
+
+      case 'cancel': {
+        this.updateState({
+          type: QueryStateType.Cancelled,
+          meta,
+        });
+
+        break;
+      }
+    }
+  }
+
+  private transformState(s: V2QueryState<Response>): Observable<V2QueryState<Data>> {
+    if (!isQueryStateSuccess(s) || !this._queryConfig.entity?.get) {
+      return of(s) as Observable<V2QueryState<Data>>;
+    }
+
+    const id = this._queryConfig.entity.id({ args: this._arguments, response: s.response });
+
+    return this._queryConfig.entity
+      .get({ args: this._arguments, id, response: s.response, store: this._queryConfig.entity.store })
+      .pipe(map((v) => ({ ...s, response: v })));
+  }
+
+  private updateState(s: V2QueryState<Response>) {
+    // We need to use untracked here to avoid Angular's "allowSignalWrites is false" error when executing queries inside Angular's computed/effect signal functions.
+    untracked(() => this._state$.next(s));
+  }
+
+  private mockRequest(headers: RequestHeaders | undefined, meta: QueryStateMeta, options: ExecuteQueryOptions) {
+    if (!this._arguments?.mock) return;
+
+    const { delay = 200, error, response, retryIntoResponse = false, progress } = this._arguments.mock;
+    const progressFileSize = progress?.fileSize ?? 1000000;
+    const progressEventType = progress?.eventType ?? 'upload';
+    const progressEventCount = progress?.eventCount ?? 5;
+    const progressOmitTotal = progress?.omitTotal ?? false;
+    const omitPartialText = progress?.omitPartialText ?? false;
+
+    const finalResolveMock = () => {
+      if (error) {
+        this.updateEntityState({ error, headers: headers ?? {}, type: 'failure' }, meta, options);
+
+        return;
+      }
+
+      this.updateEntityState(
+        { response: response as Response, headers: headers ?? {}, type: 'success' },
+        meta,
+        options,
+      );
+    };
+
+    if (progress) {
+      interval(delay)
+        .pipe(
+          tap((a) => {
+            if (a === progressEventCount + 1) {
+              finalResolveMock();
+            } else {
+              const current = Math.min(progressFileSize * a, progressFileSize * progressEventCount);
+              const percentage = (current / (progressFileSize * progressEventCount)) * 100;
+
+              this.updateEntityState(
+                {
+                  type: progressEventType === 'upload' ? 'upload-progress' : 'download-progress',
+                  headers: headers ?? {},
+                  progress: { current, ...(progressOmitTotal ? {} : { percentage, total: progressFileSize }) },
+                  partialText: omitPartialText ? undefined : `Partial text ${a}`,
+                },
+                meta,
+                options,
+              );
+            }
+          }),
+          takeUntil(this.onAbort$),
+          takeWhile((a) => a < progressEventCount + 1, true),
+        )
+        .subscribe();
+    } else if (retryIntoResponse) {
+      interval(delay)
+        .pipe(
+          tap((a) => {
+            if (a === 3) {
+              finalResolveMock();
+            } else {
+              const aModified = a + 1;
+              this.updateEntityState(
+                {
+                  type: 'delay-retry',
+                  headers: headers ?? {},
+                  retryDelay: 1000 + 1000 * aModified,
+                  retryNumber: aModified,
+                },
+                meta,
+                options,
+              );
+            }
+          }),
+          takeUntil(this.onAbort$),
+          takeWhile((a) => a < 3, true),
+        )
+        .subscribe();
+    } else {
+      timer(delay)
+        .pipe(
+          tap(() => finalResolveMock()),
+          takeUntil(this.onAbort$),
+        )
+        .subscribe();
+    }
   }
 }

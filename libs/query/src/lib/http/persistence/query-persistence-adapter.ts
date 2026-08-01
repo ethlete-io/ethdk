@@ -1,5 +1,5 @@
-import type { QueryKey } from '../query-repository';
-import type { PersistedQueryBody, PersistedQueryEntry, PersistedQueryEntryMeta } from './persisted-query-entry';
+import { QueryKey } from '../query-repository';
+import { PersistedQueryBody, PersistedQueryEntry, PersistedQueryEntryMeta } from './persisted-query-entry';
 
 /**
  * Where a query client keeps its persisted responses. The default is IndexedDB

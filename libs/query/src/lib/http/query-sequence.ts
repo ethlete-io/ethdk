@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { DestroyRef, inject, Signal, signal, WritableSignal } from '@angular/core';
-import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools';
+import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
 import { AnyNewQuery, AnyQuerySnapshot, Query, QueryArgs, RequestArgs, ResponseType } from './query';
 import { QueryErrorResponse } from './query-error-response';
 import { querySequenceAlreadyRunning } from './query-errors';

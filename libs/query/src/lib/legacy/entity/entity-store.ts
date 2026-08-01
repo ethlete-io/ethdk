@@ -33,8 +33,9 @@ export class EntityStore<T> {
   select(keys: EntityKey[][]): Observable<T[]>;
   select(keyOrKeys: EntityKey | EntityKey[] | EntityKey[][]): Observable<T | null> | Observable<T[]> {
     if (Array.isArray(keyOrKeys)) {
-      const _keys = this._normalizeKeys(keyOrKeys);
-      return this._selectMany(_keys as EntityKey[]);
+      const _keys = this.normalizeKeys(keyOrKeys);
+
+      return this.selectMany(_keys as EntityKey[]);
     }
 
     return this._select(keyOrKeys);
@@ -56,7 +57,7 @@ export class EntityStore<T> {
   set(keys: EntityKey[], values: T[]): void;
   set(keys: EntityKey[][], values: T[][]): void;
   set(keyOrKeys: EntityKey | EntityKey[] | EntityKey[][], valueOrValues: T | T[] | T[][]) {
-    const _keys = this._normalizeKeys(keyOrKeys);
+    const _keys = this.normalizeKeys(keyOrKeys);
 
     if (Array.isArray(_keys)) {
       if (!Array.isArray(valueOrValues)) {
@@ -87,7 +88,7 @@ export class EntityStore<T> {
   remove(keys: EntityKey[]): void;
   remove(keys: EntityKey[][]): void;
   remove(keyOrKeys: EntityKey | EntityKey[] | EntityKey[][]) {
-    const _keys = this._normalizeKeys(keyOrKeys);
+    const _keys = this.normalizeKeys(keyOrKeys);
 
     if (Array.isArray(_keys)) {
       for (const key of _keys) {
@@ -128,7 +129,7 @@ export class EntityStore<T> {
     );
   }
 
-  private _selectMany(keys: EntityKey[]): Observable<T[]> {
+  private selectMany(keys: EntityKey[]): Observable<T[]> {
     if (this._config.logActions) {
       console.log('EntityStore: selectMany', this._config.name, keys);
     }
@@ -166,7 +167,7 @@ export class EntityStore<T> {
     this._dictionary.delete(key);
   }
 
-  private _normalizeKeys(keys: EntityKey | EntityKey[] | EntityKey[][]): EntityKey | EntityKey[] {
+  private normalizeKeys(keys: EntityKey | EntityKey[] | EntityKey[][]): EntityKey | EntityKey[] {
     if (Array.isArray(keys)) {
       if (Array.isArray(keys[0])) {
         return flatten(keys as EntityKey[][]);

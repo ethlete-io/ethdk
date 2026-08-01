@@ -8,7 +8,8 @@ import { CacheAdapterFn } from './query-client';
 import { CreateQueryCreatorOptions, QueryMethod } from './query-creator';
 import { QueryErrorResponse, createQueryErrorResponse } from './query-error-response';
 import { QueryRepositoryDependencies } from './query-repository';
-import { ShouldRetryRequestFn, ShouldRetryRequestOptions, shouldRetryRequest } from './query-retry-utils';
+import { runDefaultQueryRetry } from './query-error-parsing';
+import { ShouldRetryRequestFn, ShouldRetryRequestOptions } from './query-retry-utils';
 
 export const SPEED_BUFFER_TIME_IN_MS = 2000;
 
@@ -63,7 +64,7 @@ export type CreateHttpRequestOptions<TArgs extends QueryArgs> = {
 
   /**
    * The retry function to use for the request
-   * @default shouldRetryRequest()
+   * @default the `withDefaultRetry()` policy, or no retry at all without that client feature
    */
   retryFn?: ShouldRetryRequestFn;
 };
@@ -266,7 +267,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
           delay: (error, retryCount) => {
             const retryOptions: ShouldRetryRequestOptions = { error, retryCount };
 
-            const retryResult = options.retryFn?.(retryOptions) || shouldRetryRequest(retryOptions);
+            const retryResult = options.retryFn?.(retryOptions) || runDefaultQueryRetry(retryOptions);
 
             if (!retryResult.retry) {
               return throwError(() => error);

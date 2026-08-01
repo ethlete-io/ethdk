@@ -86,7 +86,7 @@ export const validateWithV2Query = <
 >(
   path: SchemaPath<TValue, SchemaPathRules.Supported, TPathKind>,
   config: ValidateWithV2QueryConfig<TCreator, TValue, TPathKind>,
-): void => {
+) => {
   type TParams = V2PrepareArgsOf<TCreator>;
   type TResult = QueryDataOf<TCreator>;
 

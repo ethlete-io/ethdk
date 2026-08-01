@@ -4,7 +4,7 @@ import { DestroyRef, ErrorHandler, inject, Injector, PLATFORM_ID } from '@angula
 import { defineRootProvider, ProviderDefinition } from '@ethlete/core';
 import { BuildQueryStringConfig } from './internal/request-route';
 import { createQueryInvalidationFilter, QueryInvalidationOptions, resolveInvalidationUrl } from './query-invalidation';
-import type { QueryPersistenceEngine } from './persistence/query-persistence-engine';
+import { QueryPersistenceEngine } from './persistence/query-persistence-engine';
 import {
   QueryClientFeatureFn,
   QueryClientFeatureType,
@@ -14,7 +14,7 @@ import {
 import { queryClientFeatureUsedMultipleTimes } from './query-errors';
 import { createQueryRepository, QueryRepository } from './query-repository';
 import { ShouldRetryRequestFn } from './query-retry-utils';
-import type { QuerySyncEngine } from './sync/query-sync-engine';
+import { QuerySyncEngine } from './sync/query-sync-engine';
 
 export type CacheAdapterFn = (headers: HttpHeaders) => number | null;
 
@@ -73,7 +73,7 @@ export type CreateQueryClientConfigOptions = {
    * The retry function to use for the client.
    * It determines if a request should be retried after it failed.
    *
-   * @default shouldRetryRequest()
+   * @default the `withDefaultRetry()` policy, or no retry at all without that client feature
    */
   retryFn?: ShouldRetryRequestFn;
 
@@ -101,15 +101,20 @@ export type CreateQueryClientConfigOptions = {
    * neither the multi-tab sync engine nor the persistence engine at all.
    *
    * - {@link withMultiTabSync} coordinates the client with its own instances in the user's other tabs,
-   * - {@link withQueryPersistence} keeps successful reads on disk so a reload renders them right away.
+   * - {@link withQueryPersistence} keeps successful reads on disk so a reload renders them right away,
+   * - {@link withHtmlErrorParsing} reads the sentence out of an HTML error page,
+   * - {@link withSymfonyErrors} reads Symfony / class-validator violation lists,
+   * - {@link withDefaultRetry} retries connection failures, 5xx, 408/425 and 429,
+   * - {@link withEthleteApiErrors} is the three error features above in one.
    *
-   * Each feature may be used at most once.
+   * Each feature may be used at most once. The error-pipeline features are installed process-wide
+   * rather than per client - which body shapes an app understands is a property of the app.
    *
    * @example
    * const MY_CLIENT = createQueryClient({
    *   name: 'my-api',
    *   baseUrl: 'https://api.example.com',
-   *   features: [withMultiTabSync(), withQueryPersistence()],
+   *   features: [withMultiTabSync(), withQueryPersistence(), withEthleteApiErrors()],
    * });
    */
   features?: readonly QueryClientFeatureFn[];
@@ -242,7 +247,7 @@ export const createQueryClient = (options: CreateQueryClientConfigOptions): Quer
 
           if (feature.type === QueryClientFeatureType.MULTI_TAB_SYNC) {
             sync = (feature as QueryClientMultiTabSyncFeature).instance;
-          } else {
+          } else if (feature.type === QueryClientFeatureType.PERSISTENCE) {
             persistenceEngine = (feature as QueryClientPersistenceFeature).instance;
           }
         }

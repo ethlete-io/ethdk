@@ -142,7 +142,7 @@ export const createTrackingFeature = <TBuilders extends readonly AnyQueryBuilder
   const off = <TEvent extends TrackingEventName<TBuilders>>(
     event: TEvent,
     handler: TrackingEventHandler<TrackingEventDataMap<TBuilders>[TEvent]>,
-  ): void => {
+  ) => {
     const eventHandlers = handlers.get(event);
     if (eventHandlers) {
       eventHandlers.delete(handler);
@@ -152,7 +152,7 @@ export const createTrackingFeature = <TBuilders extends readonly AnyQueryBuilder
     }
   };
 
-  const fireHandlers = (event: string, data: unknown): void => {
+  const fireHandlers = (event: string, data: unknown) => {
     const eventHandlers = handlers.get(event);
     if (eventHandlers) {
       eventHandlers.forEach((handler) => {
@@ -180,7 +180,7 @@ export const createTrackingFeature = <TBuilders extends readonly AnyQueryBuilder
     context.destroyRef.onDestroy(() => forwardingChannel.close());
   }
 
-  const emit = (event: string, data: unknown): void => {
+  const emit = (event: string, data: unknown) => {
     if (forwardingChannel && !context.isLeader()) {
       try {
         forwardingChannel.postMessage({ event, data } satisfies ForwardedMessage);
@@ -200,7 +200,7 @@ export const createTrackingFeature = <TBuilders extends readonly AnyQueryBuilder
     fireHandlers(event, data);
   };
 
-  const emitDirect = (event: string, data: unknown): void => {
+  const emitDirect = (event: string, data: unknown) => {
     fireHandlers(event, data);
   };
 

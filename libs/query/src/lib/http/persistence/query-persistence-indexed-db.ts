@@ -1,4 +1,4 @@
-import type { QueryKey } from '../query-repository';
+import { QueryKey } from '../query-repository';
 import {
   PersistedQueryBody,
   PersistedQueryEntry,

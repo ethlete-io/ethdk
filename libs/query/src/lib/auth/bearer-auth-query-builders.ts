@@ -197,7 +197,7 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
       });
     };
 
-    const calculateRefreshBuffer = (tokenLifetimeMs: number): number => {
+    const calculateRefreshBuffer = (tokenLifetimeMs: number) => {
       if (typeof config.refreshStrategy === 'number') {
         return config.refreshStrategy;
       }
@@ -225,6 +225,7 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
               if (isDevMode()) {
                 console.warn(`Token does not contain valid ${expiresInPropertyName} property for auto-refresh`);
               }
+
               return of(null);
             }
 
@@ -237,8 +238,10 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
                 if (isDevMode()) {
                   console.warn('Token is already expired, triggering immediate refresh');
                 }
+
                 return of(true);
               }
+
               return of(null);
             }
 

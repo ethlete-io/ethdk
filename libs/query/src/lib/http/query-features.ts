@@ -16,7 +16,7 @@ import {
 import { InternalQueryExecute } from './query-execute';
 import { QueryKey } from './query-repository';
 import { QueryState } from './query-state';
-import type { QueryKeyLockHold } from './sync/query-key-lock-manager';
+import { QueryKeyLockHold } from './sync/query-key-lock-manager';
 
 /**
  * Returning this inside a withArgs feature will reset the query args to null.
@@ -109,6 +109,7 @@ export const withArgs = <TArgs extends QueryArgs>(args: () => NoInfer<RequestArg
 
         if (value === CLEAR_QUERY_ARGS) {
           previous = null;
+
           return null;
         }
 
@@ -414,7 +415,7 @@ export const withResponseUpdate = <TArgs extends QueryArgs>(options: WithRespons
  * `500` carrying a Symfony/Pagerfanta out-of-range detail (the dev-mode shape).
  * Exported so it can also be used as the predicate of a `withErrorHandling` handler.
  */
-export const isPageOutOfRangeError = (error: QueryErrorResponse): boolean => {
+export const isPageOutOfRangeError = (error: QueryErrorResponse) => {
   if (error.code === 416) return true;
 
   return error.code === 500 && isSymfonyPagerfantaOutOfRangeError(error.raw.error);

@@ -1,6 +1,6 @@
 const ENCRYPTION_KEY_STORAGE = '__eth_ek';
 
-const generateEncryptionKey = (): string => {
+const generateEncryptionKey = () => {
   const navigatorInfo =
     typeof navigator !== 'undefined'
       ? `${navigator.userAgent}${navigator.language}${screen.width}${screen.height}${screen.colorDepth}`
@@ -13,19 +13,21 @@ const generateEncryptionKey = (): string => {
 
 let cachedKey: string | null = null;
 
-const getEncryptionKey = (): string => {
+const getEncryptionKey = () => {
   if (cachedKey) return cachedKey;
 
   if (typeof localStorage !== 'undefined') {
     const stored = localStorage.getItem(ENCRYPTION_KEY_STORAGE);
     if (stored) {
       cachedKey = stored;
+
       return stored;
     }
 
     const newKey = generateEncryptionKey();
     localStorage.setItem(ENCRYPTION_KEY_STORAGE, newKey);
     cachedKey = newKey;
+
     return newKey;
   }
 
@@ -35,7 +37,7 @@ const getEncryptionKey = (): string => {
   return cachedKey;
 };
 
-const xorCipher = (text: string, key: string): string => {
+const xorCipher = (text: string, key: string) => {
   let result = '';
   for (let i = 0; i < text.length; i++) {
     result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
@@ -43,7 +45,7 @@ const xorCipher = (text: string, key: string): string => {
   return result;
 };
 
-export const encryptToken = (token: string): string => {
+export const encryptToken = (token: string) => {
   if (!token) return token;
 
   try {
@@ -55,7 +57,7 @@ export const encryptToken = (token: string): string => {
   }
 };
 
-export const decryptToken = (encryptedToken: string): string => {
+export const decryptToken = (encryptedToken: string) => {
   if (!encryptedToken) return encryptedToken;
 
   try {
@@ -67,7 +69,7 @@ export const decryptToken = (encryptedToken: string): string => {
   }
 };
 
-export const isEncrypted = (value: string): boolean => {
+export const isEncrypted = (value: string) => {
   if (!value) return false;
 
   const base64Regex = /^[A-Za-z0-9+/]+=*$/;
@@ -81,7 +83,7 @@ export const isEncrypted = (value: string): boolean => {
   }
 };
 
-export const resetEncryptionKey = (): void => {
+export const resetEncryptionKey = () => {
   cachedKey = null;
   if (typeof localStorage !== 'undefined') {
     localStorage.removeItem(ENCRYPTION_KEY_STORAGE);

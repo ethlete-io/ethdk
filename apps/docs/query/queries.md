@@ -57,15 +57,16 @@ const API = createQueryClient({ name: 'api', baseUrl: 'https://api.example.com/v
 export const injectApi = toInjectFn(API);
 ```
 
-| Option          | Default                   | Description                                                                                                                     |
-| --------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `name`          | - (required)              | Unique name, used in the injection token (`QueryClient_<name>`).                                                                |
-| `baseUrl`       | - (required)              | Base URL prepended to every route, e.g. `https://api.example.com/v1`.                                                           |
-| `queryString`   | -                         | Config for how query params are serialized.                                                                                     |
-| `headers`       | -                         | `HttpHeaders` (or a function returning them) sent with every request - see [Client-wide headers](#client-wide-headers).         |
-| `cacheAdapter`  | `extractExpiresInSeconds` | Maps response headers to a freshness TTL - see [Caching](/query/caching).                                                       |
-| `retryFn`       | `shouldRetryRequest`      | Decides whether a failed request is retried - see [Errors & retries](/query/errors).                                            |
-| `keepUnusedFor` | `300000` (5 min)          | How long an entry survives after its last consumer was destroyed - see [Caching](/query/caching#keeping-unused-entries-around). |
+| Option          | Default                     | Description                                                                                                                                                                    |
+| --------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `name`          | - (required)                | Unique name, used in the injection token (`QueryClient_<name>`).                                                                                                               |
+| `baseUrl`       | - (required)                | Base URL prepended to every route, e.g. `https://api.example.com/v1`.                                                                                                          |
+| `queryString`   | -                           | Config for how query params are serialized.                                                                                                                                    |
+| `headers`       | -                           | `HttpHeaders` (or a function returning them) sent with every request - see [Client-wide headers](#client-wide-headers).                                                        |
+| `cacheAdapter`  | `extractExpiresInSeconds`   | Maps response headers to a freshness TTL - see [Caching](/query/caching).                                                                                                      |
+| `retryFn`       | none (`withDefaultRetry()`) | Decides whether a failed request is retried - see [Errors & retries](/query/errors).                                                                                           |
+| `keepUnusedFor` | `300000` (5 min)            | How long an entry survives after its last consumer was destroyed - see [Caching](/query/caching#keeping-unused-entries-around).                                                |
+| `features`      | `[]`                        | Opt-in subsystems: [multi-tab sync](/query/multi-tab), [persistence](/query/persistence), [error parsing & retries](/query/errors#opt-in-to-the-shapes-your-api-answers-with). |
 
 ### Client-wide headers
 

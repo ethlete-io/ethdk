@@ -101,8 +101,6 @@ export class LegacyQueryCreator<
   Id,
   Data = Response,
 > {
-  constructor(public options: CreateLegacyQueryCreatorOptions<TArgs, Response, Store, Data, Id>) {}
-
   prepare: LegacyQueryPrepareFn<
     LegacyArgumentsOfQueryArgs<TArgs>,
     Response,
@@ -214,6 +212,7 @@ export class LegacyQueryCreator<
   };
 
   behaviorSubject = this.createSubject;
+  constructor(public options: CreateLegacyQueryCreatorOptions<TArgs, Response, Store, Data, Id>) {}
 }
 
 /**

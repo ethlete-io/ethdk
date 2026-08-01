@@ -1,5 +1,5 @@
-import type { QueryMethod } from '../query-creator';
-import type { QueryKey } from '../query-repository';
+import { QueryMethod } from '../query-creator';
+import { QueryKey } from '../query-repository';
 
 /**
  * Schema version of the persisted store, owned by this library. Bumping it makes the storage adapter

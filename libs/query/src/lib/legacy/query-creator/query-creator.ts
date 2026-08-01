@@ -27,14 +27,6 @@ export class V2QueryCreator<
   Data,
   Id,
 > {
-  constructor(
-    private _queryConfig:
-      | RestQueryConfig<Route, Response, Arguments, Store, Data, Id>
-      | GqlQueryConfig<Route, Response, Arguments, Store, Data, Id>,
-    private _client: V2QueryClient,
-    private _store: QueryStore,
-  ) {}
-
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   prepare: QueryPrepareFn<Arguments, Response, Route, Store, Data, Id> = (
@@ -97,4 +89,11 @@ export class V2QueryCreator<
 
   behaviorSubject = (initialValue?: ReturnType<typeof this.prepare> | null) =>
     new BehaviorSubject<ReturnType<typeof this.prepare> | null>(initialValue ?? null);
+  constructor(
+    private _queryConfig:
+      | RestQueryConfig<Route, Response, Arguments, Store, Data, Id>
+      | GqlQueryConfig<Route, Response, Arguments, Store, Data, Id>,
+    private _client: V2QueryClient,
+    private _store: QueryStore,
+  ) {}
 }
