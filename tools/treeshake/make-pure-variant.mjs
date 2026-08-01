@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Copy a linked-FESM cache dir and inject `/*#__PURE__*​/` before top-level call initializers,
+ * Copy a linked-FESM cache dir and inject a `#__PURE__` annotation before top-level call initializers,
  * so measure-bundle.mjs can be pointed at it with --cache and measure "what if these were pure".
  *
  * Usage: node tools/treeshake/make-pure-variant.mjs <src-cache> <dst-cache> <tier>

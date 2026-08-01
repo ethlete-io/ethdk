@@ -80,7 +80,7 @@ const babelPlugins = () => {
   const linker = createEs2015LinkerPlugin({
     linkerJitMode: false,
     sourceMapping: false,
-    logger: { level: 2, debug() {}, info() {}, warn: console.warn, error: console.error },
+    logger: { level: 2, debug: () => undefined, info: () => undefined, warn: console.warn, error: console.error },
     fileSystem: {
       resolve: path.resolve,
       exists: fs.existsSync,

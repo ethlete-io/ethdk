@@ -136,7 +136,12 @@ const reachFrom = (seedIdxs) => {
   const stack = [...seedIdxs];
   while (stack.length) {
     const cur = stmts[stack.pop()];
-    for (const r of cur.refs) if (!seen.has(r)) (seen.add(r), stack.push(r));
+    for (const r of cur.refs) {
+      if (seen.has(r)) continue;
+
+      seen.add(r);
+      stack.push(r);
+    }
   }
   return seen;
 };

@@ -1,0 +1,25 @@
+{
+  "name": "treeshake",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "targets": {
+    "bundle-goldens": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        {
+          "projects": ["core", "query", "components"],
+          "target": "build"
+        }
+      ],
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "command": "node tools/treeshake/check-goldens.mjs"
+      },
+      "configurations": {
+        "update": {
+          "command": "node tools/treeshake/check-goldens.mjs --update"
+        }
+      }
+    }
+  }
+}

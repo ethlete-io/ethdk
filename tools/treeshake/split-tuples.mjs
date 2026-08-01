@@ -7,9 +7,9 @@
  *   const [provideX, injectX, TOKEN] = createRootProvider(ARGS);
  * becomes
  *   const __etTup0 = () => createRootProvider(ARGS);          // arrow decl: always droppable
- *   const provideX = /*#__PURE__*​/ __etTupleGet(__etTup0, 0); // droppable when unused
- *   const injectX  = /*#__PURE__*​/ __etTupleGet(__etTup0, 1);
- *   const TOKEN    = /*#__PURE__*​/ __etTupleGet(__etTup0, 2);
+ *   const provideX = PURE __etTupleGet(__etTup0, 0); // PURE = a #__PURE__ annotation; droppable when unused
+ *   const injectX  = PURE __etTupleGet(__etTup0, 1);
+ *   const TOKEN    = PURE __etTupleGet(__etTup0, 2);
  *
  * `__etTupleGet` memoizes the tuple, so runtime semantics (one shared InjectionToken per
  * declaration) are preserved while each binding becomes independently removable.

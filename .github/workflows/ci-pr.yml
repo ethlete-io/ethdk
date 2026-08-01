@@ -37,6 +37,10 @@ jobs:
 
       - run: yarn nx run-many -t build
 
+      # Bundle-size goldens: fails when something in core/query/components becomes unshakeable again.
+      # Accept a real change with `nx run treeshake:bundle-goldens:update` and commit goldens.json.
+      - run: yarn nx run treeshake:bundle-goldens
+
       - if: "${{ !contains(github.event.pull_request.title, 'from API') && !contains(github.event.pull_request.title, 'API TS Models') }}"
         run: yarn nx run playground:build-storybook:ci
 

@@ -72,6 +72,8 @@ pipeline rather than leaving them to the consumer.
 | `split-tuples.mjs`      | copies' rewrite: turns `const [a, b] = createRootProvider(…)` into a memoized per-binding shape. Simulates fixing the tuple-destructuring blocker.                                                                                                                                                                 |
 | `wrap-literals.mjs`     | copies' rewrite: wraps top-level object literals containing a member access in a PURE IIFE. Simulates fixing the property-read blocker.                                                                                                                                                                            |
 | `entries.example.json`  | the package floors plus one real feature entry. Default `--entries` for `measure-bundle.mjs`.                                                                                                                                                                                                                      |
+| `check-goldens.mjs`     | **the regression guard.** Measures every entry in `goldens.json` and fails when one grew past the tolerance. `nx run treeshake:bundle-goldens` in CI; `…:update` rewrites the file. Unlike the rest of this folder it is not a diagnostic — it is wired into the build.                                            |
+| `goldens.json`          | checked-in expected gz bytes per entry: the three package floors plus one real entry per big domain. A golden change is a deliberate, reviewable commit.                                                                                                                                                           |
 
 ### Why the rewrite scripts exist
 
@@ -144,6 +146,24 @@ node tools/treeshake/dump-bundle.mjs --cache "$BASE" --out bracket.js \
   --entries tools/treeshake/entries.example.json --name bracket-single-elimination
 grep -c 'SwissGrid' /tmp/ethlete-treeshake/bracket.js
 ```
+
+## The regression guard
+
+Everything above diagnoses a problem once. `goldens.json` is what keeps it fixed:
+
+```bash
+npx nx run treeshake:bundle-goldens          # CI runs this; fails on unexplained growth
+npx nx run treeshake:bundle-goldens:update   # accept new sizes, then commit goldens.json
+```
+
+The target builds `core`, `query` and `components` first, so it is self-contained. Tolerance is 2 % or
+512 B, whichever is larger — FESM linking is deterministic, but a dependency bump moves a few bytes. A
+new entry with `"gzip": 0` is recorded rather than failed, which is how you add one.
+
+When it fails, the cause is almost always a module-scope statement that stopped being droppable: an
+unannotated call (`ethlete/no-impure-top-level-provider` catches most of these), a computed key or
+property read inside a top-level literal, or a destructured factory result. `decompose.mjs` on the
+failing entry names the file.
 
 ## Reading the numbers
 
