@@ -15,5 +15,16 @@
     "@nx/devkit": "23.1.0",
     "vite": "8.1.5"
   },
+  "peerDependenciesMeta": {
+    "@analogjs/vite-plugin-angular": {
+      "optional": true
+    },
+    "@nx/devkit": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    }
+  },
   "generators": "./generators/generators.json"
 }

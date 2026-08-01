@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   ViewEncapsulation,
   booleanAttribute,
@@ -22,35 +21,34 @@ import {
   template: `
     <et-picture
       [priority]="priority()"
-      [defaultSrc]="_defaultSrc()"
+      [defaultSrc]="defaultSrcValue()"
       [alt]="normalizedAsset().alt ?? ''"
       [figcaption]="normalizedAsset().figcaption ?? null"
       [width]="normalizedAsset().width ?? null"
       [height]="normalizedAsset().height ?? null"
       [sizes]="sizes()"
-      [sources]="_sources()"
+      [sources]="sourcesValue()"
     />
   `,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PictureComponent],
   host: {
     class: 'et-contentful-image',
   },
 })
 export class ContentfulImageComponent {
-  private readonly _contentfulConfig = inject(CONTENTFUL_CONFIG);
+  private contentfulConfig = inject(CONTENTFUL_CONFIG);
 
   asset = input.required<ContentfulRestAsset | ContentfulGqlAsset | null | undefined>();
   backgroundColor = input<string | null>(null);
-  srcsetSizes = input<string[]>(this._contentfulConfig.imageOptions.srcsetSizes);
+  srcsetSizes = input<string[]>(this.contentfulConfig.imageOptions.srcsetSizes);
 
   quality = input(null, { transform: numberAttribute });
   focusArea = input<ContentfulImageFocusArea | null>(null);
   resizeBehavior = input<ContentfulImageResizeBehavior | null>(null);
   priority = input(false, { transform: booleanAttribute });
   sizes = input<string | null, string[] | string | null>(
-    normalizePictureSizes(this._contentfulConfig.imageOptions.sizes),
+    normalizePictureSizes(this.contentfulConfig.imageOptions.sizes),
     {
       transform: (v) => normalizePictureSizes(v),
     },
@@ -76,7 +74,7 @@ export class ContentfulImageComponent {
     }
   });
 
-  protected _sources = computed(() => {
+  protected sourcesValue = computed(() => {
     const asset = this.asset();
     const backgroundColor = this.backgroundColor();
     const srcsetSizes = this.srcsetSizes();
@@ -91,7 +89,7 @@ export class ContentfulImageComponent {
     return generateContentfulImageSources(asset, srcsetSizes, backgroundColor, quality, focusArea, resizeBehavior);
   });
 
-  protected _defaultSrc = computed(() => {
+  protected defaultSrcValue = computed(() => {
     const asset = this.asset();
 
     return asset ? generateDefaultContentfulImageSource(asset) : null;

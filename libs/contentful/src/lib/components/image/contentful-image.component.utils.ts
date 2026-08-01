@@ -59,6 +59,8 @@ export const parseContentfulImageSize = (size: string): { width: number | null; 
   };
 };
 
+const SOURCE_TYPES = ['image/avif', 'image/webp', 'image/png', 'image/jpg'];
+
 export const generateContentfulImageSources = (
   data: ContentfulRestAsset | ContentfulGqlAsset,
   srcsetSizes: string[],
@@ -74,8 +76,6 @@ export const generateContentfulImageSources = (
   }
 
   const sources: PictureSource[] = [];
-
-  const SOURCE_TYPES = ['image/avif', 'image/webp', 'image/png', 'image/jpg'];
 
   for (const type of SOURCE_TYPES) {
     const baseUrl = isContentfulGqlAsset(assetData) ? assetData.url : assetData.fields.file.url;

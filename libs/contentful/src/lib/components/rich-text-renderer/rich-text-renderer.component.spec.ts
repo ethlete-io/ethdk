@@ -174,6 +174,8 @@ type SetupOptions = {
   richTextPath?: string;
   customComponents?: Record<string, any>;
   useStubAssetComponents?: boolean;
+  /** Omit `provideContentfulConfig()` entirely - the renderer then has no embedded components. */
+  withoutConfig?: boolean;
 };
 
 const setup = (options: SetupOptions = {}) => {
@@ -191,10 +193,14 @@ const setup = (options: SetupOptions = {}) => {
     imports: [TestHostComponent],
     providers: [
       provideRouter([]),
-      provideContentfulConfig({
-        ...(components ? { components } : {}),
-        customComponents: options.customComponents ?? {},
-      }),
+      ...(options.withoutConfig
+        ? []
+        : [
+            provideContentfulConfig({
+              ...(components ? { components } : {}),
+              customComponents: options.customComponents ?? {},
+            }),
+          ]),
     ],
   });
 
@@ -295,7 +301,7 @@ describe('ContentfulRichTextRendererComponent', () => {
       expect(Array.from(root.children).map((c) => c.tagName)).toEqual(['H1', 'P']);
     });
 
-    it('renders mark classes on the text span', () => {
+    it('wraps marked text in nested semantic elements', () => {
       const { fixture } = setup({
         richText: doc(block('paragraph', [text('plain'), text('strong', ['bold', 'italic'])])),
       });
@@ -303,7 +309,8 @@ describe('ContentfulRichTextRendererComponent', () => {
       const spans = renderRoot(fixture).querySelectorAll('p > span');
 
       expect(spans[0]?.getAttribute('class')).toBe(DEFAULT_SPAN_CLASS);
-      expect(spans[1]?.getAttribute('class')).toBe(`${DEFAULT_SPAN_CLASS} font-bold italic`);
+      expect(spans[1]?.getAttribute('class')).toBe(DEFAULT_SPAN_CLASS);
+      expect(spans[1]?.innerHTML).toBe('<strong><em>strong</em></strong>');
       expect(spans[1]?.textContent).toBe('strong');
     });
 
@@ -432,6 +439,22 @@ describe('ContentfulRichTextRendererComponent', () => {
       expect(StubImageComponent.instances[0]?.asset()).toBe(asset);
     });
 
+    it('skips an embedded asset when no component is registered for it', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => void 0);
+      const asset = createAsset('a1', 'image/png');
+
+      const { fixture } = setup({
+        withoutConfig: true,
+        richText: doc(embeddedAsset('a1')),
+        includes: { Asset: [asset] },
+      });
+
+      expect(renderRoot(fixture).querySelector('et-contentful-image')).toBeNull();
+      expect(warn).toHaveBeenCalled();
+
+      warn.mockRestore();
+    });
+
     it('skips an asset without file data', () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => void 0);
       const { fixture } = setup({
@@ -491,7 +514,24 @@ describe('ContentfulRichTextRendererComponent', () => {
       expect(link).not.toBeNull();
       expect(link?.textContent).toBe('Example');
       expect(StubLinkComponent.instances[0]?.href()).toBe('https://example.com');
-      expect(StubLinkComponent.instances[0]?.textClass()).toBe('font-bold');
+      expect(StubLinkComponent.instances[0]?.textClass()).toBe('et-contentful-rich-text-mark-bold');
+    });
+
+    it('renders a plain anchor when no config provides a link component', () => {
+      const { fixture } = setup({
+        withoutConfig: true,
+        richText: doc(block('paragraph', [hyperlink('https://example.com', 'Example', ['bold'])])),
+      });
+
+      const anchor = renderRoot(fixture).querySelector('p > a');
+
+      expect(renderRoot(fixture).querySelector('et-contentful-link')).toBeNull();
+      expect(anchor?.getAttribute('href')).toBe('https://example.com');
+      expect(anchor?.getAttribute('class')).toBe(
+        'et-contentful-rich-text-default-element et-contentful-rich-text-default-a',
+      );
+      expect(anchor?.textContent).toBe('Example');
+      expect(anchor?.querySelector('strong')).not.toBeNull();
     });
 
     it('renders the default link component', () => {
@@ -512,7 +552,9 @@ describe('ContentfulRichTextRendererComponent', () => {
 
       const anchor = renderRoot(fixture).querySelector('et-contentful-link a');
 
-      expect(anchor?.getAttribute('class')).toContain('font-bold italic');
+      expect(anchor?.getAttribute('class')).toContain(
+        'et-contentful-rich-text-mark-bold et-contentful-rich-text-mark-italic',
+      );
     });
   });
 

@@ -19,13 +19,17 @@ export const RICH_TEXT_RENDERER_ERRORS = {
     'The parent node neither a html element nor a custom component. This structure is not supported.',
 } as const;
 
-const RICH_TEXT_RENDERER_ERROR_CODES = Object.keys(RICH_TEXT_RENDERER_ERRORS).reduce(
-  (acc, key, index) => {
-    acc[key as keyof typeof RICH_TEXT_RENDERER_ERRORS] = index;
-    return acc;
-  },
-  {} as Record<keyof typeof RICH_TEXT_RENDERER_ERRORS, number>,
-);
+const RICH_TEXT_RENDERER_ERROR_CODES: Record<keyof typeof RICH_TEXT_RENDERER_ERRORS, number> = {
+  rich_text_undefined: 0,
+  rich_text_wrong_type: 1,
+  asset_id_not_found: 2,
+  entry_id_not_found: 3,
+  asset_not_found: 4,
+  entry_not_found: 5,
+  custom_component_not_found: 6,
+  text_parent_not_found: 7,
+  text_parent_wrong_type: 8,
+};
 
 export const richTextRendererError = (code: keyof typeof RICH_TEXT_RENDERER_ERRORS, data?: unknown) => {
   const message = `<et-contentful-rich-text-renderer>: ${RICH_TEXT_RENDERER_ERRORS[code]}`;

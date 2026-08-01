@@ -37,11 +37,11 @@ export type ComponentLikeWithContentfulRendererInputs = Type<{
 }>;
 
 export type ContentfulAssetComponents = {
-  file: ComponentLikeWithAsset;
-  image: ComponentLikeWithAsset;
-  video: ComponentLikeWithAsset;
-  audio: ComponentLikeWithAsset;
-  link: ComponentLikeWithLink;
+  file?: ComponentLikeWithAsset;
+  image?: ComponentLikeWithAsset;
+  video?: ComponentLikeWithAsset;
+  audio?: ComponentLikeWithAsset;
+  link?: ComponentLikeWithLink;
 };
 
 export type ContentfulConfig = {

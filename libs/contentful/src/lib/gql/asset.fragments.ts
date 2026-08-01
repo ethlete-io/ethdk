@@ -1,6 +1,6 @@
-import { gql } from '@ethlete/query';
+import { GQL } from '@ethlete/query';
 
-export const GQL_FRAGMENT_CONTENTFUL_ASSET = gql`
+export const GQL_FRAGMENT_CONTENTFUL_ASSET = `
   fragment AssetData on Asset {
     sys {
       id
@@ -13,7 +13,7 @@ export const GQL_FRAGMENT_CONTENTFUL_ASSET = gql`
     contentType
     size
   }
-`;
+` as GQL;
 
 export type ContentfulGqlAsset = {
   sys: {

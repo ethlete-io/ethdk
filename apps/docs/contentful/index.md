@@ -47,7 +47,13 @@ All config options (defaults from `createContentfulConfig()`):
 `provideContentfulConfig` spreads your partial over the defaults **shallowly** - passing `imageOptions` or `components` replaces the whole sub-object, so include every key you still want.
 :::
 
-If no config is provided, the renderer and link component fall back to the defaults above; only `ContentfulImageComponent` _requires_ the provider.
+::: warning The built-in components need the provider
+The default `components` map only exists inside `provideContentfulConfig()`. **Without the provider in scope the renderer ships no embedded components at all**: embedded assets are skipped (with a dev-mode warning) and hyperlinks render as plain `<a href>` anchors instead of `ContentfulLinkComponent`. Call `provideContentfulConfig()` - with no arguments if you only want the defaults - as soon as your content contains embedded assets or links.
+
+Keeping the components out of the fallback is what lets an app that imports only `ContentfulLinkComponent` (or only renders text) leave the image/video/audio/file components - and with them `PictureComponent` - out of its bundle.
+:::
+
+Everything else falls back to the defaults above even without the provider; `ContentfulImageComponent` still _requires_ it.
 
 `ContentfulImports` bundles the audio, file, image, video and rich-text-renderer components for convenience (the link component is not included - import it separately if you use it directly).
 
@@ -78,7 +84,9 @@ When `content` changes, the renderer **diffs** the new document against the prev
 
 ### Text marks
 
-Marks on text nodes are emitted as classes: `bold` → `font-bold`, `italic` → `italic`, `underline` → `underline`, `code` → `font-mono`. Unknown mark types fall back to the raw mark name as class (with a dev-mode warning). The names follow Tailwind conventions, but they're just classes - style them yourself if you don't use Tailwind.
+Marks on text nodes are rendered as nested semantic elements inside the text span, in mark order: `bold` → `<strong>`, `italic` → `<em>`, `underline` → `<u>`, `code` → `<code>`, `strikethrough` → `<s>`, `subscript` → `<sub>`, `superscript` → `<sup>`. Text with `bold` + `italic` therefore renders as `<span class="…"><strong><em>text</em></strong></span>`. Unknown mark types are ignored (with a dev-mode warning).
+
+Marks inside a hyperlink are the exception: the link component receives its text as a plain string, so they are passed as classes on its `textClass` input - `et-contentful-rich-text-mark-<mark type>` (e.g. `et-contentful-rich-text-mark-bold`). Style those yourself.
 
 ## Embedded entries (custom components)
 
@@ -103,7 +111,7 @@ The `isContentfulEntryType<T>(entry, type)` guard narrows an entry by its conten
 
 ## Embedded assets
 
-`embedded-asset-block` nodes pick a component by the asset's MIME type: `image/*` → `components.image`, `video/*` → `components.video`, `audio/*` → `components.audio`, anything else → `components.file`. Each receives the resolved asset as its `asset` input; all four accept both REST (`ContentfulRestAsset`) and GraphQL (`ContentfulGqlAsset`) asset shapes. You can use them standalone, too.
+`embedded-asset-block` nodes pick a component by the asset's MIME type: `image/*` → `components.image`, `video/*` → `components.video`, `audio/*` → `components.audio`, anything else → `components.file`. A node whose component is not registered (no `provideContentfulConfig()` in scope, or a `components` override that omits it) is skipped with a dev-mode warning. Each receives the resolved asset as its `asset` input; all four accept both REST (`ContentfulRestAsset`) and GraphQL (`ContentfulGqlAsset`) asset shapes. You can use them standalone, too.
 
 ### Images
 
@@ -135,6 +143,7 @@ The source-generation helpers (`generateContentfulImageSources`, `generateDefaul
 `<et-contentful-link>` (inputs: `href`, `text` required; `textClass` default `''`) renders hyperlink nodes and decides between router navigation and a plain anchor:
 
 - A URL is **external** only if it's absolute (`http://`, `https://`, `//`) _and_ its host matches neither the current `document.location.host` nor any entry in `config.internalHosts` (compared by primary domain, so `'example.com'` also covers subdomains). External links to a different primary domain open in a new tab with `rel="noopener noreferrer"`.
+- Without a `components.link` in the config the renderer falls back to a plain `<a href>` element with the same classes - no router navigation.
 - Internal links render `[routerLink]` with the URL reduced to path + query + hash - useful when content authored against the production domain runs on localhost or a preview host (add the production host to `internalHosts`).
 
 ## GraphQL helpers

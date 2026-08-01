@@ -1,10 +1,9 @@
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
+import { Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { CONTENTFUL_CONFIG } from '../../constants/contentful.constants';
-import { createContentfulConfig } from '../../utils/contentful-config';
+import { injectContentfulConfig } from '../../utils/contentful-config';
 
-const getPrimaryDomain = (host: string): string => {
+const getPrimaryDomain = (host: string) => {
   const parts = host.split('.');
   return parts.length > 2 ? parts.slice(-2).join('.') : host;
 };
@@ -24,16 +23,15 @@ const getPrimaryDomain = (host: string): string => {
       <a [class]="linkClass()" [routerLink]="internalPath()">{{ text() }}</a>
     }
   `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [RouterLink],
   host: {
     style: 'display: contents',
   },
-  imports: [RouterLink],
-  encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ContentfulLinkComponent {
-  private readonly _document = inject(DOCUMENT);
-  private readonly _config = inject(CONTENTFUL_CONFIG, { optional: true }) ?? createContentfulConfig();
+  private document = inject(DOCUMENT);
+  private readonly config = injectContentfulConfig();
 
   href = input.required<string>();
   text = input.required<string>();
@@ -47,7 +45,7 @@ export class ContentfulLinkComponent {
 
     try {
       const parsed = new URL(href.startsWith('//') ? `https:${href}` : href);
-      const internalHosts = [this._document.location.host, ...this._config.internalHosts];
+      const internalHosts = [this.document.location.host, ...this.config.internalHosts];
       return !internalHosts.includes(parsed.host);
     } catch {
       return true;
@@ -62,8 +60,8 @@ export class ContentfulLinkComponent {
     try {
       const parsed = new URL(href.startsWith('//') ? `https:${href}` : href);
       const internalPrimaryDomains = [
-        getPrimaryDomain(this._document.location.host),
-        ...this._config.internalHosts.map(getPrimaryDomain),
+        getPrimaryDomain(this.document.location.host),
+        ...this.config.internalHosts.map(getPrimaryDomain),
       ];
       return !internalPrimaryDomains.includes(getPrimaryDomain(parsed.host));
     } catch {

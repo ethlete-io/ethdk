@@ -4,6 +4,7 @@ import {
   ET_CONTENTFUL_ANY_ENTRY_CONTENT_TYPE_SYS_ID,
   createContentfulIncludeMap,
   marksToClass,
+  marksToTags,
 } from './rich-text-renderer.component';
 import { isRichTextRootNode, translateContentfulNodeTypeToHtmlTag } from './rich-text-renderer.util';
 
@@ -32,25 +33,40 @@ const createEntry = (id: string, contentTypeId: string): ContentfulEntry => ({
   metadata: { tags: [] },
 });
 
+describe('marksToTags', () => {
+  it('maps the known marks to their semantic elements', () => {
+    expect(marksToTags([mark('bold'), mark('italic'), mark('underline'), mark('code')])).toEqual([
+      'strong',
+      'em',
+      'u',
+      'code',
+    ]);
+  });
+
+  it('returns an empty array for no marks', () => {
+    expect(marksToTags([])).toEqual([]);
+  });
+
+  it('warns and skips an unknown mark', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => void 0);
+
+    expect(marksToTags([mark('bold'), mark('nope')])).toEqual(['strong']);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toContain('No element found for mark type');
+
+    warn.mockRestore();
+  });
+});
+
 describe('marksToClass', () => {
-  it('maps the known marks to their tailwind classes', () => {
-    expect(marksToClass([mark('bold'), mark('italic'), mark('underline'), mark('code')])).toBe(
-      'font-bold italic underline font-mono',
+  it('maps marks to library mark classes', () => {
+    expect(marksToClass([mark('bold'), mark('italic')])).toBe(
+      'et-contentful-rich-text-mark-bold et-contentful-rich-text-mark-italic',
     );
   });
 
   it('returns an empty string for no marks', () => {
     expect(marksToClass([])).toBe('');
-  });
-
-  it('warns and falls back to the mark type for an unknown mark', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => void 0);
-
-    expect(marksToClass([mark('superscript')])).toBe('superscript');
-    expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0]?.[0]).toContain('No class found for mark type!');
-
-    warn.mockRestore();
   });
 });
 

@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   ComponentRef,
   ElementRef,
@@ -19,9 +18,8 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { BLOCKS, Block, INLINES, Inline, Mark, Text } from '@contentful/rich-text-types';
+import { Block, Inline, Mark, Text } from '@contentful/rich-text-types';
 import { getObjectProperty, injectRenderer, isObject } from '@ethlete/core';
-import { CONTENTFUL_CONFIG } from '../../constants/contentful.constants';
 import {
   ContentfulCollection,
   ContentfulEntry,
@@ -29,7 +27,8 @@ import {
   ContentfulRestAsset,
   RichTextResponse,
 } from '../../types';
-import { createContentfulConfig } from '../../utils/contentful-config';
+import { injectContentfulConfig } from '../../utils/contentful-config';
+import { CF_BLOCKS, CF_INLINES } from './rich-text-node-types';
 import { richTextRendererError } from './rich-text-renderer.errors';
 import { isRichTextRootNode, translateContentfulNodeTypeToHtmlTag } from './rich-text-renderer.util';
 
@@ -58,6 +57,7 @@ type TextRenderCommand = {
   domPosition: number;
   index: number;
   attributes: Record<string, string>;
+  markTags: MarkTagName[];
   text: string;
   id: string;
 };
@@ -79,32 +79,49 @@ type RenderInstruction = {
   command: RenderCommand;
 };
 
-const MARK_TAILWIND_MAP: Record<string, string> = {
-  bold: 'font-bold',
-  italic: 'italic',
-  underline: 'underline',
-  code: 'font-mono',
+type MarkTagName = 'strong' | 'em' | 'u' | 'code' | 's' | 'sub' | 'sup';
+
+const MARK_TAG_MAP: Record<string, MarkTagName> = {
+  bold: 'strong',
+  italic: 'em',
+  underline: 'u',
+  code: 'code',
+  strikethrough: 's',
+  subscript: 'sub',
+  superscript: 'sup',
 };
 
-export const marksToClass = (marks: Mark[]) => {
-  const classes: string[] = [];
+/**
+ * Translates contentful text marks into the semantic html elements the marked text is
+ * wrapped in, outermost first. Unknown marks are skipped (with a dev-mode warning).
+ */
+export const marksToTags = (marks: Mark[]) => {
+  const tags: MarkTagName[] = [];
 
   for (const mark of marks) {
-    let klass = MARK_TAILWIND_MAP[mark.type];
+    const tag = MARK_TAG_MAP[mark.type];
 
-    if (!klass) {
-      console.warn(`No class found for mark type! Falling back to "${mark.type}".`, mark);
+    if (!tag) {
+      if (isDevMode()) {
+        console.warn(`No element found for mark type "${mark.type}"! The mark is ignored.`, mark);
+      }
 
-      klass = mark.type;
+      continue;
     }
 
-    classes.push(klass);
+    tags.push(tag);
   }
 
-  return classes.join(' ');
+  return tags;
 };
 
-const CLASS_ATTR = 'class';
+/**
+ * The classes marked text inside a hyperlink is rendered with, since the link component
+ * receives its text as a plain string.
+ */
+export const marksToClass = (marks: Mark[]) =>
+  marks.map((mark) => `et-contentful-rich-text-mark-${mark.type}`).join(' ');
+
 const LINK_COMPONENT_TYPE = '$$$_et-link';
 
 type ExecutedCommandCacheItemBase = {
@@ -254,23 +271,15 @@ export const createContentfulIncludeMap = (config: CreateContentfulIncludeMapCon
   selector: 'et-contentful-rich-text-renderer',
   template: ``,
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'et-contentful-rich-text-renderer',
   },
 })
 export class ContentfulRichTextRendererComponent {
-  private readonly _viewContainerRef = inject(ViewContainerRef);
-  private readonly _renderer = injectRenderer();
-  private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly _config = inject(CONTENTFUL_CONFIG, { optional: true }) ?? createContentfulConfig();
-
-  /**
-   * A cache for all executed commands that are not deleted.
-   * This is used to keep track of all rendered elements and components.
-   * The key is the render command ID.
-   */
-  private readonly _executedCommandsCache = new Map<string, ExecutedCommandCacheItem>();
+  private viewContainerRef = inject(ViewContainerRef);
+  private readonly renderer = injectRenderer();
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly config = injectContentfulConfig();
 
   /**
    * The contentful response gotten via their REST api.
@@ -283,6 +292,13 @@ export class ContentfulRichTextRendererComponent {
    * @example "items[0].fields.html"
    */
   richTextPath = input.required<string>();
+
+  /**
+   * A cache for all executed commands that are not deleted.
+   * This is used to keep track of all rendered elements and components.
+   * The key is the render command ID.
+   */
+  private readonly executedCommandsCache = new Map<string, ExecutedCommandCacheItem>();
 
   /**
    * A map of all includes in the contentful response.
@@ -327,15 +343,15 @@ export class ContentfulRichTextRendererComponent {
       return [];
     }
 
-    return this._createRenderCommands(richTextData);
+    return this.createRenderCommands(richTextData);
   });
 
-  private readonly renderCommandHistory = linkedSignal<RenderCommand[], [RenderCommand[], RenderCommand[]]>({
+  private renderCommandHistory = linkedSignal<RenderCommand[], [RenderCommand[], RenderCommand[]]>({
     source: this.renderCommands,
     computation: (commands, previous) => [previous?.source ?? [], commands],
   });
 
-  private readonly previousRenderCommandMap = computed(() => {
+  private previousRenderCommandMap = computed(() => {
     const [prevCommands] = this.renderCommandHistory();
 
     const map = new Map<string, RenderCommand>();
@@ -347,7 +363,7 @@ export class ContentfulRichTextRendererComponent {
     return map;
   });
 
-  private readonly renderInstructions = computed(() => {
+  private renderInstructions = computed(() => {
     const commands = this.renderCommands();
     const previousRenderCommandMap = this.previousRenderCommandMap();
 
@@ -375,6 +391,9 @@ export class ContentfulRichTextRendererComponent {
 
       return null;
     };
+
+    const markTagsEqual = (a: MarkTagName[], b: MarkTagName[]) =>
+      a.length === b.length && a.every((tag, index) => tag === b[index]);
 
     const attributesEqual = (a: Record<string, string>, b: Record<string, string>) => {
       const aKeys = Object.keys(a);
@@ -419,7 +438,9 @@ export class ContentfulRichTextRendererComponent {
       const sameOutput =
         previous.kind === command.kind &&
         (previous.kind !== 'htmlOpen' || previous.tagName === (command as HtmlOpenRenderCommand).tagName) &&
-        (previous.kind !== 'text' || previous.text === (command as TextRenderCommand).text);
+        (previous.kind !== 'text' ||
+          (previous.text === (command as TextRenderCommand).text &&
+            markTagsEqual(previous.markTags, (command as TextRenderCommand).markTags)));
 
       if (
         parentPreserved &&
@@ -463,11 +484,11 @@ export class ContentfulRichTextRendererComponent {
     effect(() => {
       const instructions = this.renderInstructions();
 
-      untracked(() => this._execInstructions(instructions));
+      untracked(() => this.execInstructions(instructions));
     });
   }
 
-  private _createRenderCommands(richTextData: RichTextResponse) {
+  private createRenderCommands(richTextData: RichTextResponse) {
     /** List of all render commands */
     const rootCommands: RenderCommand[] = [];
 
@@ -501,22 +522,13 @@ export class ContentfulRichTextRendererComponent {
             class: 'et-contentful-rich-text-default-element et-contentful-rich-text-default-span',
           };
 
-          if (node.marks.length) {
-            const markClasses = marksToClass(node.marks);
-
-            if (CLASS_ATTR in attributes) {
-              attributes[CLASS_ATTR] += ` ${markClasses}`;
-            } else {
-              attributes[CLASS_ATTR] = markClasses;
-            }
-          }
-
           rootCommands.push({
             kind: 'text',
             nestingLevel,
             domPosition,
             index: commandIndex++,
             attributes,
+            markTags: node.marks.length ? marksToTags(node.marks) : [],
             text,
             id: 't' + textId++,
           });
@@ -526,7 +538,7 @@ export class ContentfulRichTextRendererComponent {
           break;
         }
 
-        case BLOCKS.EMBEDDED_ASSET: {
+        case CF_BLOCKS.EMBEDDED_ASSET: {
           const assetId = node.data['target']?.sys?.id;
 
           if (!assetId) {
@@ -540,7 +552,7 @@ export class ContentfulRichTextRendererComponent {
           }
 
           const contentType = asset.fields.file.contentType;
-          const assetComponents = this._config.components;
+          const assetComponents = this.config.components;
 
           // Every property inside the asset will be null if no file was provided for a translation.
           // In this case, we can assume that the asset is missing due to user error.
@@ -569,6 +581,17 @@ export class ContentfulRichTextRendererComponent {
                 ? assetComponents.audio
                 : assetComponents.file;
 
+          if (!component) {
+            if (isDevMode()) {
+              console.warn(
+                'No component registered for this embedded asset! The asset will be skipped. Provide one via provideContentfulConfig({ components: … }).',
+                { asset },
+              );
+            }
+
+            break;
+          }
+
           const occurrenceKey = 'asset:' + assetId;
           const occurrence = (componentIdMap.get(occurrenceKey) ?? -1) + 1;
           componentIdMap.set(occurrenceKey, occurrence);
@@ -589,7 +612,7 @@ export class ContentfulRichTextRendererComponent {
           break;
         }
 
-        case INLINES.HYPERLINK: {
+        case CF_INLINES.HYPERLINK: {
           const uri = (node.data['uri'] as string) ?? '';
 
           // Collect all text and marks from children (hyperlink children are text nodes)
@@ -603,6 +626,58 @@ export class ContentfulRichTextRendererComponent {
             }
           }
 
+          const linkComponent = this.config.components.link;
+
+          if (!linkComponent) {
+            // Without a link component the hyperlink still renders - as a plain anchor.
+            rootCommands.push({
+              kind: 'htmlOpen',
+              nestingLevel,
+              domPosition,
+              index: commandIndex++,
+              attributes: {
+                class: 'et-contentful-rich-text-default-element et-contentful-rich-text-default-a',
+                href: uri,
+              },
+              tagName: 'a',
+              id: 'e-o' + elementOpenId++,
+            });
+
+            const anchorDomPosition = domPosition;
+
+            nestingLevel++;
+            domPosition = 0;
+
+            rootCommands.push({
+              kind: 'text',
+              nestingLevel,
+              domPosition,
+              index: commandIndex++,
+              attributes: {
+                class: 'et-contentful-rich-text-default-element et-contentful-rich-text-default-span',
+              },
+              markTags: marksToTags(linkMarks),
+              text: linkText,
+              id: 't' + textId++,
+            });
+
+            nestingLevel--;
+            domPosition = anchorDomPosition;
+
+            rootCommands.push({
+              kind: 'htmlClose',
+              nestingLevel,
+              domPosition,
+              index: commandIndex++,
+              tagName: 'a',
+              id: 'e-c' + elementCloseId++,
+            });
+
+            domPosition++;
+
+            break;
+          }
+
           const textClass = linkMarks.length ? marksToClass(linkMarks) : '';
 
           let linkComponentId = componentIdMap.get(LINK_COMPONENT_TYPE) ?? -1;
@@ -614,7 +689,7 @@ export class ContentfulRichTextRendererComponent {
             nestingLevel,
             domPosition,
             index: commandIndex++,
-            component: this._config.components.link,
+            component: linkComponent,
             inputs: { href: uri, text: linkText, textClass },
             id: linkId,
           });
@@ -624,8 +699,8 @@ export class ContentfulRichTextRendererComponent {
           break;
         }
 
-        case BLOCKS.EMBEDDED_ENTRY:
-        case INLINES.EMBEDDED_ENTRY: {
+        case CF_BLOCKS.EMBEDDED_ENTRY:
+        case CF_INLINES.EMBEDDED_ENTRY: {
           const entryId = node.data['target']?.sys?.id;
 
           if (!entryId) {
@@ -640,12 +715,12 @@ export class ContentfulRichTextRendererComponent {
 
           const componentType = entry.sys.contentType.sys.id;
 
-          const component = this._config.customComponents[componentType];
+          const component = this.config.customComponents[componentType];
 
           if (!component) {
             throw richTextRendererError('custom_component_not_found', {
               componentType,
-              customComponents: this._config.customComponents,
+              customComponents: this.config.customComponents,
               entry,
             });
           }
@@ -733,28 +808,28 @@ export class ContentfulRichTextRendererComponent {
     return rootCommands;
   }
 
-  private _execInstructions(instructions: RenderInstruction[]) {
+  private execInstructions(instructions: RenderInstruction[]) {
     for (const instruction of instructions) {
       switch (instruction.type) {
         case 'create':
-          this._runCreateInstruction(instruction.command);
+          this.runCreateInstruction(instruction.command);
           break;
         case 'update':
-          this._runUpdateInstruction(instruction.command);
+          this.runUpdateInstruction(instruction.command);
           break;
         case 'move':
-          this._runMoveInstruction(instruction.command);
+          this.runMoveInstruction(instruction.command);
           break;
         case 'delete':
-          this._runDeleteInstruction(instruction.command);
+          this.runDeleteInstruction(instruction.command);
           break;
       }
     }
   }
 
-  private _runCreateInstruction(command: RenderCommand) {
-    const parentElement = this._findParent(command);
-    const nextElement = this._findFollowingElement(command);
+  private runCreateInstruction(command: RenderCommand) {
+    const parentElement = this.findParent(command);
+    const nextElement = this.findFollowingElement(command);
 
     if (command.kind === 'component') {
       const inputs = signal(command.inputs);
@@ -765,66 +840,76 @@ export class ContentfulRichTextRendererComponent {
         .filter((declared) => declared.propName in command.inputs)
         .map((declared) => inputBinding(declared.templateName, () => inputs()[declared.propName]));
 
-      const componentRef = this._viewContainerRef.createComponent(command.component, { bindings });
+      const componentRef = this.viewContainerRef.createComponent(command.component, { bindings });
 
-      const rootNode = this._getComponentRootNode(componentRef);
+      const rootNode = this.getComponentRootNode(componentRef);
 
-      this._renderInsertOrAppend(rootNode, parentElement, nextElement);
+      this.renderInsertOrAppend(rootNode, parentElement, nextElement);
 
-      this._executedCommandsCache.set(command.id, {
+      this.executedCommandsCache.set(command.id, {
         command,
         componentRef,
         inputs,
         element: rootNode,
       });
     } else if (command.kind === 'text') {
-      const span = this._renderer.createElement('span');
+      const span = this.renderer.createElement('span');
       const textSplitInLineBreaks = command.text.split('\n').filter((t) => t.trim().length > 0);
 
       for (const [key, value] of Object.entries(command.attributes)) {
-        this._renderer.setAttribute(span, key, value);
+        this.renderer.setAttribute(span, key, value);
       }
 
       if (command.text.startsWith('\n')) {
-        const brNode = this._renderer.createElement('br');
-        this._renderer.appendChild(parentElement, brNode);
+        const brNode = this.renderer.createElement('br');
+        this.renderer.appendChild(parentElement, brNode);
+      }
+
+      // Marks are rendered as nested semantic elements inside the span, outermost mark first.
+      let textContainer = span;
+
+      for (const tag of command.markTags) {
+        const markElement = this.renderer.createElement(tag);
+
+        this.renderer.appendChild(textContainer, markElement);
+        textContainer = markElement;
       }
 
       for (const [textPartIndex, textPart] of textSplitInLineBreaks.entries()) {
         if (textPartIndex > 0) {
-          const brNode = this._renderer.createElement('br');
-          this._renderer.appendChild(span, brNode);
+          const brNode = this.renderer.createElement('br');
+          this.renderer.appendChild(textContainer, brNode);
         }
 
-        const textNode = this._renderer.createText(textPart);
+        const textNode = this.renderer.createText(textPart);
 
-        this._renderer.appendChild(span, textNode);
+        this.renderer.appendChild(textContainer, textNode);
       }
 
-      this._renderInsertOrAppend(span, parentElement, nextElement);
+      this.renderInsertOrAppend(span, parentElement, nextElement);
 
-      this._executedCommandsCache.set(command.id, {
+      this.executedCommandsCache.set(command.id, {
         command,
         element: span,
       });
     } else if (command.kind === 'htmlOpen') {
-      const element = this._renderer.createElement(command.tagName);
+      const element = this.renderer.createElement(command.tagName);
 
       for (const [key, value] of Object.entries(command.attributes)) {
-        this._renderer.setAttribute(element, key, value);
+        this.renderer.setAttribute(element, key, value);
       }
 
-      this._renderInsertOrAppend(element, parentElement, nextElement);
+      this.renderInsertOrAppend(element, parentElement, nextElement);
 
-      this._executedCommandsCache.set(command.id, {
+      this.executedCommandsCache.set(command.id, {
         command,
         element,
       });
     }
   }
 
-  private _runUpdateInstruction(command: RenderCommand) {
-    const cached = this._executedCommandsCache.get(command.id);
+  private runUpdateInstruction(command: RenderCommand) {
+    const cached = this.executedCommandsCache.get(command.id);
 
     if (!cached) {
       throw new Error('Cached command not found!');
@@ -840,14 +925,14 @@ export class ContentfulRichTextRendererComponent {
 
     // `cached` and the fresh `command` share the same id and therefore the same union variant,
     // but TS can't correlate the two after the spread — assert the merged object as the union.
-    this._executedCommandsCache.set(command.id, {
+    this.executedCommandsCache.set(command.id, {
       ...cached,
       command,
     } as ExecutedCommandCacheItem);
   }
 
-  private _runMoveInstruction(command: RenderCommand) {
-    const cached = this._executedCommandsCache.get(command.id);
+  private runMoveInstruction(command: RenderCommand) {
+    const cached = this.executedCommandsCache.get(command.id);
 
     if (!cached) {
       throw new Error('Cached command not found!');
@@ -862,25 +947,25 @@ export class ContentfulRichTextRendererComponent {
       const oldParentElement = cached.element.parentElement;
 
       if (oldParentElement) {
-        this._renderer.removeChild(oldParentElement, rootNode);
+        this.renderer.removeChild(oldParentElement, rootNode);
       }
 
-      const newParentElement = this._findParent(command);
-      const nextElement = this._findFollowingElement(command);
+      const newParentElement = this.findParent(command);
+      const nextElement = this.findFollowingElement(command);
 
-      this._renderInsertOrAppend(rootNode, newParentElement, nextElement);
+      this.renderInsertOrAppend(rootNode, newParentElement, nextElement);
 
       cached.inputs.set(command.inputs);
 
-      this._executedCommandsCache.set(command.id, {
+      this.executedCommandsCache.set(command.id, {
         ...cached,
         command,
       } as ExecutedCommandCacheItem);
     }
   }
 
-  private _runDeleteInstruction(command: RenderCommand) {
-    const cached = this._executedCommandsCache.get(command.id);
+  private runDeleteInstruction(command: RenderCommand) {
+    const cached = this.executedCommandsCache.get(command.id);
 
     if (!cached) {
       if (command.kind === 'htmlClose') {
@@ -898,19 +983,19 @@ export class ContentfulRichTextRendererComponent {
       cached.componentRef.destroy();
     } else if (command.kind === 'text' || command.kind === 'htmlOpen') {
       if (cached.element.parentElement) {
-        this._renderer.removeChild(cached.element.parentElement, cached.element);
+        this.renderer.removeChild(cached.element.parentElement, cached.element);
       }
     }
 
-    this._executedCommandsCache.delete(command.id);
+    this.executedCommandsCache.delete(command.id);
   }
 
-  private _getComponentRootNode(componentRef: ComponentRef<unknown>): HTMLElement {
+  private getComponentRootNode(componentRef: ComponentRef<unknown>): HTMLElement {
     return (componentRef.hostView as EmbeddedViewRef<unknown>).rootNodes[0] as HTMLElement;
   }
 
-  private _findParent(command: RenderCommand) {
-    const hostElement = this._elementRef.nativeElement;
+  private findParent(command: RenderCommand) {
+    const hostElement = this.elementRef.nativeElement;
     let parentElement: HTMLElement | undefined;
 
     if (command.nestingLevel === 0) {
@@ -939,7 +1024,7 @@ export class ContentfulRichTextRendererComponent {
         throw new Error('Parent command not found!');
       }
 
-      parentElement = this._executedCommandsCache.get(parentCommand.id)?.element;
+      parentElement = this.executedCommandsCache.get(parentCommand.id)?.element;
     }
 
     if (!parentElement) {
@@ -949,13 +1034,13 @@ export class ContentfulRichTextRendererComponent {
     return parentElement;
   }
 
-  private _findFollowingElement(command: RenderCommand) {
+  private findFollowingElement(command: RenderCommand) {
     // Find the closest already rendered element at the same nesting level with a greater
     // domPosition, to insert before. Without one the element is appended to the parent.
     let nextElement: HTMLElement | undefined;
     let nextDomPosition = Infinity;
 
-    for (const cached of this._executedCommandsCache.values()) {
+    for (const cached of this.executedCommandsCache.values()) {
       if (
         cached.command.domPosition > command.domPosition &&
         cached.command.domPosition < nextDomPosition &&
@@ -970,15 +1055,15 @@ export class ContentfulRichTextRendererComponent {
     return nextElement;
   }
 
-  private _renderInsertOrAppend(
+  private renderInsertOrAppend(
     nodeToRender: HTMLElement,
     parentElement: HTMLElement,
     nextElement: HTMLElement | undefined,
   ) {
     if (nextElement) {
-      this._renderer.insertBefore(parentElement, nodeToRender, nextElement);
+      this.renderer.insertBefore(parentElement, nodeToRender, nextElement);
     } else {
-      this._renderer.appendChild(parentElement, nodeToRender);
+      this.renderer.appendChild(parentElement, nodeToRender);
     }
   }
 }
