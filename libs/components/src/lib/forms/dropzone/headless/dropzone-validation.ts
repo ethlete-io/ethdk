@@ -93,7 +93,7 @@ export const defaultDropzoneRejectionMessage = (
  * Files violating the constraints are never uploaded; each violation surfaces as a
  * regular validation error (`kind: 'dropzoneFiles'`) on the field until the next
  * selection, removal or clear. Count and emptiness constraints are plain value
- * validation — use `required()`, `minLength()` and `maxLength()` for those.
+ * validation - use `required()`, `minLength()` and `maxLength()` for those.
  *
  * @example
  * ```ts

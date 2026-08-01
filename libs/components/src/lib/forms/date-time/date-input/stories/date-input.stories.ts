@@ -66,7 +66,7 @@ export const Masked: Story = {
     mask: true,
     displayFormat: 'dd.MM.yyyy',
     placeholder: 'tt.mm.jjjj',
-    hint: 'Typing is guided by the fixed-width display format — separators insert themselves',
+    hint: 'Typing is guided by the fixed-width display format - separators insert themselves',
   },
 };
 
@@ -84,7 +84,7 @@ export const YearPrecision: Story = {
     precision: 'year',
     valueFormat: 'yyyy',
     placeholder: 'yyyy',
-    hint: 'A year picker — the calendar opens on its year grid and picks there',
+    hint: 'A year picker - the calendar opens on its year grid and picks there',
   },
 };
 

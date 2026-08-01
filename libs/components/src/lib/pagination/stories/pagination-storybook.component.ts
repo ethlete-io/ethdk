@@ -10,7 +10,7 @@ import { GERMAN_LABELS } from './pagination-storybook.data';
     <div [etProvideSurface]="surface()" class="p-8 font-sans">
       @if (pageSizeSelect()) {
         <!-- The Material-style controls row: size select, then the compact pager with its own readout.
-             Two components, laid out by the app — the paginator owns page, never pageSize. -->
+             Two components, laid out by the app - the paginator owns page, never pageSize. -->
         <div class="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
           <et-page-size-select [(pageSize)]="chosenPageSize" [labels]="labels()" size="sm" />
           <et-pagination
@@ -24,7 +24,7 @@ import { GERMAN_LABELS } from './pagination-storybook.data';
         </div>
         <p class="text-small mt-4 opacity-70">
           Page {{ resettingPage() }} of {{ pagedTotalPages() }} · {{ chosenPageSize() }} per page. Changing the size
-          sends you back to page 1 — the app's decision, in one linkedSignal.
+          sends you back to page 1 - the app's decision, in one linkedSignal.
         </p>
       } @else {
         <et-pagination
@@ -71,7 +71,7 @@ export class PaginationStorybookComponent {
   protected chosenPageSize = signal(25);
   protected pagedTotalPages = computed(() => Math.max(1, Math.ceil(this.DEMO_TOTAL_ITEMS / this.chosenPageSize())));
   // Back to page 1 whenever the size changes; the paginator drives it otherwise. The size select
-  // deliberately does not do this itself — which page an item lands on is the app's to decide.
+  // deliberately does not do this itself - which page an item lands on is the app's to decide.
   protected resettingPage = linkedSignal<number, number>({ source: this.chosenPageSize, computation: () => 1 });
 
   protected labels = computed(() => (this.localized() ? GERMAN_LABELS : null));

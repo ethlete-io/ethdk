@@ -115,7 +115,7 @@ export class InlineTabBodyComponent implements OnInit, OnDestroy {
   /**
    * Attaches the content portal when this body is centered and detaches it once it leaves the center
    * (unless `preserveContent` is set). This replaces the `@angular/animations` `translateTab` trigger,
-   * whose only remaining role was driving the portal lifecycle — the slide itself never animated
+   * whose only remaining role was driving the portal lifecycle - the slide itself never animated
    * (the animation duration was always `0ms`) and visibility is controlled by the parent group.
    */
   private _syncPortal() {

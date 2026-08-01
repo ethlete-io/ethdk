@@ -4,7 +4,7 @@ import { RichTextEditorDom } from '../headless/internals/rich-text-editor-dom';
 /** The Ethlete renderer wrapper returned by `injectRenderer()`. */
 type EditorRenderer = NonNullable<ReturnType<typeof injectRenderer>>;
 
-/** Class on the transient upload placeholder. Also the CSS hook — see `rich-text-editor.component.css`. */
+/** Class on the transient upload placeholder. Also the CSS hook - see `rich-text-editor.component.css`. */
 export const RICH_TEXT_EDITOR_IMAGE_PLACEHOLDER_CLASS = 'et-rte-image-upload';
 
 /** The image at the caret, as the alt editor needs it. */
@@ -19,7 +19,7 @@ const isBlockEmpty = (block: HTMLElement) =>
   !block.textContent?.trim() && Array.from(block.children).every((child) => child.tagName === 'BR');
 
 /**
- * Whether a block is an image and nothing else — the shape `![alt](url)` renders to, and the one the
+ * Whether a block is an image and nothing else - the shape `![alt](url)` renders to, and the one the
  * editor treats as an atom. A paragraph with an image *among text* is ordinary editable prose.
  */
 const isImageBlock = (block: Element): block is HTMLElement =>
@@ -62,14 +62,14 @@ const nodeAtBoundary = (container: Node, offset: number): Node => {
  * DOM operations for the opt-in image tool: the upload placeholder, inserting the finished image as
  * its own block, and reading/editing/removing the image at the caret.
  *
- * The placeholder is deliberately **text-free** — an element with no text content serializes to
+ * The placeholder is deliberately **text-free** - an element with no text content serializes to
  * nothing, so an upload in flight leaves the editor's Markdown value untouched (and out of the undo
- * history). Everything it shows — spinner, progress, failure — is CSS on its attributes.
+ * history). Everything it shows - spinner, progress, failure - is CSS on its attributes.
  */
 export const createImageOps = (renderer: EditorRenderer) => {
   /**
    * Puts the placeholder on a line of its own after the block the caret sits in, and moves the caret
-   * to the line below it — so writing continues under the image from the moment the upload starts,
+   * to the line below it - so writing continues under the image from the moment the upload starts,
    * not once it lands. Returns it, or `null` when there is nowhere to insert.
    *
    * A `<span>` (styled `display: block`), not a real block element: `<p>`/`<div>` would serialize as a
@@ -146,7 +146,7 @@ export const createImageOps = (renderer: EditorRenderer) => {
 
   /**
    * The editable line after `block`, reusing an empty one that already follows. An image block is not
-   * editable, so without this there would be nowhere to put the caret — and no way to keep writing
+   * editable, so without this there would be nowhere to put the caret - and no way to keep writing
    * when the image is the last thing in the document.
    */
   const ensureLineAfter = (root: HTMLElement, block: Element): HTMLElement => {
@@ -171,7 +171,7 @@ export const createImageOps = (renderer: EditorRenderer) => {
    * typing would break the block out of), and an editable line after a trailing image so the document
    * never ends on something that cannot be typed after.
    *
-   * Runs on every render and every value sync — both are value-neutral: `htmlToMarkdown` drops the
+   * Runs on every render and every value sync - both are value-neutral: `htmlToMarkdown` drops the
    * attribute, and an empty trailing paragraph serializes to nothing.
    */
   const normalizeImages = (root: HTMLElement) => {
@@ -189,7 +189,7 @@ export const createImageOps = (renderer: EditorRenderer) => {
   };
 
   /**
-   * Swaps the placeholder for the uploaded image, in the exact place it was holding — the
+   * Swaps the placeholder for the uploaded image, in the exact place it was holding - the
    * `<p><img></p>` shape `markdownToHtml` produces for `![alt](url)`, so a re-render keeps what was
    * inserted. The caret is deliberately left where it is: it moved below the placeholder when the
    * upload started, and by now the user may be typing somewhere else entirely.
@@ -252,7 +252,7 @@ export const createImageOps = (renderer: EditorRenderer) => {
     renderer.setAttribute(image, 'alt', alt);
   };
 
-  /** Removes the image, and the block it was alone in — an empty paragraph is not what was meant. */
+  /** Removes the image, and the block it was alone in - an empty paragraph is not what was meant. */
   const removeImage = (dom: RichTextEditorDom, image: HTMLImageElement) => {
     const root = dom.root();
     const block = image.parentElement;

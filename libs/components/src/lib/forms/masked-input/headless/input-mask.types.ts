@@ -6,7 +6,7 @@
  */
 export type MaskSpec = {
   /**
-   * Filters arbitrary text down to the raw value — it defines which characters
+   * Filters arbitrary text down to the raw value - it defines which characters
    * count as content (everything else is formatting or noise). Must be
    * idempotent: `toRaw(toRaw(x)) === toRaw(x)`.
    */
@@ -24,7 +24,7 @@ export type MaskSpec = {
   isComplete?(raw: string): boolean;
   /** Optional focused-state display that renders unfilled slots (e.g. `12-__`). */
   toGuideDisplay?(raw: string): string;
-  /** The character `toGuideDisplay` uses for unfilled slots — caret logic stops at it. */
+  /** The character `toGuideDisplay` uses for unfilled slots - caret logic stops at it. */
   placeholderChar?: string;
   /**
    * How the caret re-anchors after re-formatting: `'start'` preserves the content

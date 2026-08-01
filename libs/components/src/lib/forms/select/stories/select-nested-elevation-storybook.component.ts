@@ -44,7 +44,7 @@ import { USERS } from './select-nested-elevation-storybook.data';
             </span>
           </ng-template>
         </et-select>
-        <et-hint>Avatar circle uses etAutoSurface — its class is shown on the right of each row</et-hint>
+        <et-hint>Avatar circle uses etAutoSurface - its class is shown on the right of each row</et-hint>
       </et-form-field>
     </et-overlay-body>
 

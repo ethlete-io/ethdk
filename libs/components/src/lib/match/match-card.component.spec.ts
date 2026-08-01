@@ -169,7 +169,7 @@ describe('MatchCardComponent', () => {
       expect(announcement?.textContent?.trim()).toBe('2 : 1');
     });
 
-    it('stays in the DOM while there is nothing to announce — a live region has to exist first', () => {
+    it('stays in the DOM while there is nothing to announce - a live region has to exist first', () => {
       const fixture = create();
 
       fixture.componentInstance.match.set({ ...FINISHED, status: 'scheduled', homeScore: null, awayScore: null });
@@ -230,7 +230,7 @@ describe('MatchCardComponent', () => {
       expect(all(fixture, '.et-match-card-outcome').map((element) => element.textContent?.trim())).toEqual(['W', 'L']);
     });
 
-    it('replace the score rather than joining it — one slot, one form', () => {
+    it('replace the score rather than joining it - one slot, one form', () => {
       const fixture = withOutcome();
 
       expect(all(fixture, '.et-match-card-score')).toHaveLength(0);
@@ -246,7 +246,7 @@ describe('MatchCardComponent', () => {
       expect(text(withOutcome(), '.et-match-card-announcement')).toBe('FC Berlin won');
     });
 
-    it('stay away until the match is over — there is no W before then', () => {
+    it('stay away until the match is over - there is no W before then', () => {
       const fixture = withOutcome({ status: 'live', winnerSide: null });
 
       expect(all(fixture, '.et-match-card-outcome')).toHaveLength(0);
@@ -261,7 +261,7 @@ describe('MatchCardComponent', () => {
   });
 
   describe('the meta row', () => {
-    it('shows the label and the kick-off, hidden from assistive tech — the card name has both', () => {
+    it('shows the label and the kick-off, hidden from assistive tech - the card name has both', () => {
       const fixture = create();
 
       expect(text(fixture, '.et-match-card-label')).toBe('Match 3');
@@ -405,7 +405,7 @@ describe('MatchCardComponent', () => {
       expect(digits(fixture)).toEqual(['2/out', '3/in', '1/static']);
     });
 
-    it('does not roll a finished match — a result arriving late is not a moment', () => {
+    it('does not roll a finished match - a result arriving late is not a moment', () => {
       const fixture = create();
 
       fixture.componentInstance.match.set({ ...FINISHED, homeScore: 3 });

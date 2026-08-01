@@ -24,7 +24,7 @@ import { TableFiltersDirective } from './table-filters.directive';
  * `registerHeaderAdornment`). A non-filterable column renders nothing.
  *
  * This is where the menu system is actually referenced, and it is created with the filters feature's
- * own injector, so it reaches the feature — and the feature's state — by plain DI.
+ * own injector, so it reaches the feature - and the feature's state - by plain DI.
  *
  * @internal
  */
@@ -55,10 +55,10 @@ export class TableFilterTriggerComponent {
   /** The column this trigger belongs to. Set by the table (see {@link TableHeaderAdornment}). */
   public column = input.required<TableColumnMeta>();
 
-  /** The host table's wording — every string here comes from there, never from this component. */
+  /** The host table's wording - every string here comes from there, never from this component. */
   protected labels = this.filters.table.resolvedLabels;
 
-  /** One value or several — a column says so with `filterSelection`. @default 'multiple' */
+  /** One value or several - a column says so with `filterSelection`. @default 'multiple' */
   protected selection = computed<TableFilterSelection>(() => this.column().filterSelection ?? 'multiple');
 
   /**

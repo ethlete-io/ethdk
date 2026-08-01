@@ -28,7 +28,7 @@ export const forceReflow = (element?: HTMLElement) => {
  *
  * Inside a component, prefer the reactive `injectPrefersReducedMotion()`. This is for the animation
  * helpers that run from effects, event handlers and imperative APIs, where there is no injection
- * context. Pass the element being animated so the query resolves against its own window — otherwise
+ * context. Pass the element being animated so the query resolves against its own window - otherwise
  * an animation inside an iframe would read the top-level document's preference.
  */
 export const matchesReducedMotion = (element?: Element) => {

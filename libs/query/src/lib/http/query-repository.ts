@@ -29,7 +29,7 @@ export type QueryRepositoryEvent =
       /**
        * Whether the request is held in the cache under a key every tab derives identically (a hash of
        * route + args) rather than a per-request UUID. `false` for mutations and anything else
-       * uncacheable — which is exactly what tells the multi-tab sync engine whether a settled request
+       * uncacheable - which is exactly what tells the multi-tab sync engine whether a settled request
        * is a shareable read or a mutation other tabs should react to.
        */
       isCached: boolean;
@@ -47,7 +47,7 @@ export type QueryRepositoryEvent =
     }
   | {
       /**
-       * A cache entry was created — the query behind it had nothing to bind to, so this is the moment a
+       * A cache entry was created - the query behind it had nothing to bind to, so this is the moment a
        * response from a previous session can still be of use. The persistence engine answers it by
        * reading the key back from disk.
        *
@@ -66,7 +66,7 @@ export type QueryRepositoryEvent =
     }
   | {
       /**
-       * Every secure entry was torn down at once — a logout. Emitted after the cache is cleared so
+       * Every secure entry was torn down at once - a logout. Emitted after the cache is cleared so
        * secure queries can drop the state they hold themselves; the repository only owns the
        * requests, not the `response` signal of the query objects bound to them.
        */
@@ -136,7 +136,7 @@ export type QueryRepositoryCacheEntry = {
 
   /**
    * Whether the entry has no consumers left and is only being kept around for its
-   * `keepUnusedFor` window. Such an entry is not a leak — it is waiting to be reused by a
+   * `keepUnusedFor` window. Such an entry is not a leak - it is waiting to be reused by a
    * consumer that comes back.
    */
   isUnused: boolean;
@@ -147,7 +147,7 @@ export type QueryRepositoryCacheEntry = {
 
 /**
  * Advanced repository internals used by the query devtools. **Not part of the general public
- * contract** — do not build application logic on top of these.
+ * contract** - do not build application logic on top of these.
  */
 export type QueryRepositorySubtle = {
   /** Returns a read-only snapshot of every entry currently held in the cache. */
@@ -158,7 +158,7 @@ export type QueryRepositorySubtle = {
 
   /**
    * Destroys and removes a single cache entry by key, regardless of its consumers. Intended for
-   * devtools cache management — consumers still holding the query will get a fresh request on their
+   * devtools cache management - consumers still holding the query will get a fresh request on their
    * next execution.
    */
   evict: (key: QueryKey) => void;
@@ -191,7 +191,7 @@ export type ApplyPersistedResponseOptions = {
   body: unknown;
 
   /**
-   * Timestamp (ms) at which the response goes stale, as it was when the response was persisted — so
+   * Timestamp (ms) at which the response goes stale, as it was when the response was persisted - so
    * usually in the past, which is exactly right: the entry revalidates and the data is shown meanwhile.
    */
   expiresAt: number | null;
@@ -214,7 +214,7 @@ export type QueryRepository = {
 
   /**
    * Re-executes every cacheable entry that still has consumers, bypassing the cache and restarting
-   * in-flight requests. Entries kept only for their `keepUnusedFor` window are skipped — nobody is
+   * in-flight requests. Entries kept only for their `keepUnusedFor` window are skipped - nobody is
    * looking at them, and they revalidate on their own when a consumer binds again.
    *
    * Pass a filter to narrow it down to a subset of those entries.
@@ -233,24 +233,24 @@ export type QueryRepository = {
    * - the entry's creator opted out of {@link BaseQueryCreatorOptions.multiTabSync},
    * - or the entry has a request in flight, which is at least as fresh and overwrites this anyway.
    *
-   * Entries sitting out their `keepUnusedFor` window without consumers *are* updated — it costs
+   * Entries sitting out their `keepUnusedFor` window without consumers *are* updated - it costs
    * nothing and means a returning consumer renders data that is current rather than merely recent.
    */
   applyExternalResponse: (options: ApplyExternalResponseOptions) => boolean;
 
   /**
-   * Writes a response from a previous session — read back from the client's persisted store — onto a
+   * Writes a response from a previous session - read back from the client's persisted store - onto a
    * cache entry that has nothing of its own yet.
    *
    * Returns whether it was applied. It is skipped when
    * - no entry exists for the key: the entry was destroyed again while the store was being read,
    * - the entry's creator opted out of {@link BaseQueryCreatorOptions.persistence},
-   * - or the entry already holds a response — from its own request, or from another tab. Persisted data
+   * - or the entry already holds a response - from its own request, or from another tab. Persisted data
    *   only ever fills a gap; it never replaces something newer.
    *
    * Note that the entry's request is *not* stopped: hydration happens while it is already in flight, so
    * persisted data is always shown alongside a revalidation rather than instead of one. An entry whose
-   * request already failed keeps its error, which is what makes the offline case honest — the data is
+   * request already failed keeps its error, which is what makes the offline case honest - the data is
    * from disk, and the attempt to refresh it did fail.
    */
   applyPersistedResponse: (options: ApplyPersistedResponseOptions) => boolean;
@@ -291,7 +291,7 @@ type DestroyListenerMapItem = {
   /** How long this entry survives without consumers. `0` destroys it immediately. */
   keepUnusedFor: number;
 
-  /** When the entry lost its last consumer — drives the eviction order of the unused-entry cap. */
+  /** When the entry lost its last consumer - drives the eviction order of the unused-entry cap. */
   unusedSince?: number;
 
   /** Pending eviction of an unused entry, cancelled as soon as a consumer binds again. */
@@ -332,7 +332,7 @@ export type CreateQueryRepositoryConfig = CreateQueryClientConfigOptions & {
 
   /**
    * Whether unused entries may be retained at all. `false` forces `keepUnusedFor` to `0` everywhere,
-   * regardless of client or creator configuration — used to disable retention on the server, where a
+   * regardless of client or creator configuration - used to disable retention on the server, where a
    * per-request injector must not hold response bodies (and a pending timer) for minutes.
    * @default true
    */
@@ -347,7 +347,7 @@ export const DEFAULT_KEEP_UNUSED_FOR = 300_000;
 /**
  * Hard cap on entries kept without consumers, per client. Retention is opportunistic, so a runaway
  * count (a search-as-you-type query produces a new cache key per keystroke, and each one goes through
- * `unbind`) must never grow unbounded — the least recently orphaned entries are dropped first.
+ * `unbind`) must never grow unbounded - the least recently orphaned entries are dropped first.
  */
 export const MAX_UNUSED_ENTRIES = 50;
 
@@ -356,7 +356,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
   const eventsSubject = new Subject<QueryRepositoryEvent>();
 
   // Bumped on every cache mutation so the devtools cache view can react. Cheap enough to keep
-  // unconditional — it is a single integer signal with no readers unless the devtools are open.
+  // unconditional - it is a single integer signal with no readers unless the devtools are open.
   const cacheVersion = signal(0);
   const bumpCacheVersion = () => cacheVersion.update((v) => v + 1);
 
@@ -375,7 +375,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
 
     if (!shouldCache && options.key) throw uncacheableRequestHasCacheKeyParam(options.key);
 
-    // `allowCache` is never read on the uncacheable path below — there is no cache entry to reuse — so this throw
+    // `allowCache` is never read on the uncacheable path below - there is no cache entry to reuse - so this throw
     // is purely a guard against a mistake in hand-written code. The legacy interop opts out of it.
     if (!shouldCache && runQueryOptions?.allowCache && !options.silenceUncacheableAllowCacheError) {
       throw uncacheableRequestHasAllowCacheParam();
@@ -419,7 +419,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
       const cacheEntry = cache.get(cacheKey);
 
       if (cacheEntry) {
-        // The entry may have been sitting out its `keepUnusedFor` window — a consumer binding again
+        // The entry may have been sitting out its `keepUnusedFor` window - a consumer binding again
         // makes it live, so the pending eviction must go.
         cancelEviction(cacheEntry);
 
@@ -467,7 +467,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     });
 
     // Announced after the entry is bound and its request is on its way, because the one thing that acts
-    // on it — hydration from the persisted store — is only ever allowed to fill a gap this request has
+    // on it - hydration from the persisted store - is only ever allowed to fill a gap this request has
     // not filled itself.
     eventsSubject.next({ type: 'entry-created', key: trackingKey, isCached: shouldCache, isPersistEnabled });
 
@@ -552,7 +552,7 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     for (const cacheEntry of cache.values()) {
       if (cacheEntry.consumers.size === 0) continue;
 
-      // Re-firing a mutation would be a side effect nobody asked for, so only reads are refreshed —
+      // Re-firing a mutation would be a side effect nobody asked for, so only reads are refreshed -
       // "read" meaning cacheable, which also covers a GQL query transported via POST that opted into
       // the cache explicitly.
       if (!cacheEntry.isCached) continue;

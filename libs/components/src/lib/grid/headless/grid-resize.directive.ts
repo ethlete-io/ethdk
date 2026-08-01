@@ -125,7 +125,7 @@ export class GridResizeDirective {
   public finishResize() {
     if (!this.start) return;
 
-    // Commit first (layout holds the final slot), then hand rendering back — the box
+    // Commit first (layout holds the final slot), then hand rendering back - the box
     // transitions from its live pixel rect to the slot, animating real width/height.
     this.grid?.commitResize();
     this.finishGesture();
@@ -185,7 +185,7 @@ export class GridResizeDirective {
 
   private attachGestureListeners() {
     // Captures scroll on any ancestor during an active drag-resize gesture to recompute the
-    // container origin — this is document-wide gesture tracking, not a component scroll container,
+    // container origin - this is document-wide gesture tracking, not a component scroll container,
     // so signalElementScrollState / signalHostElementScrollState don't apply.
     // eslint-disable-next-line ethlete/prefer-scroll-state
     const scroll$ = fromEvent(this.document, 'scroll', { capture: true, passive: true }).pipe(

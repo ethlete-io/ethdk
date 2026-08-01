@@ -7,7 +7,7 @@ const SEPARATOR_PATTERN = /[,\s]+/g;
 
 /**
  * Parses typed date-time text: strictly against the combined display format
- * first, then leniently — the text split into a date and a time at any
+ * first, then leniently - the text split into a date and a time at any
  * separator boundary (the date parsed against the locale's short `P` format,
  * the time via the time input's lenient `parseTimeText`, so `7/16/2026 930pm`
  * commits), or a bare date committing at midnight. Returns `null` when nothing
@@ -34,7 +34,7 @@ export const parseDateTimeText = (value: string, options: ParseDateValueOptions)
 
   const locale = options.locale;
   // date-only parses must fill their missing time from midnight, not `new Date()` (parseDateValue's
-  // default) — otherwise a bare date leaks the current wall-clock time into the wire value, and the
+  // default) - otherwise a bare date leaks the current wall-clock time into the wire value, and the
   // day-portion reference below would hand a non-midnight time to `parseTimeText`.
   const referenceDate = startOfDay(options.referenceDate ?? new Date());
 
@@ -45,7 +45,7 @@ export const parseDateTimeText = (value: string, options: ParseDateValueOptions)
       continue;
     }
 
-    // `date` parsed from a date-only format is midnight — as the reference date
+    // `date` parsed from a date-only format is midnight - as the reference date
     // it contributes the day, the parsed time contributes the time of day
     const merged = parseTimeText(trimmed.slice(separator.index + separator[0].length), {
       format: 'p',

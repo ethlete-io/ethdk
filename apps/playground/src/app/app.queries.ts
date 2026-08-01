@@ -1,7 +1,7 @@
 // Query and type definitions for the playground app. They live here rather than in
 // app.component.ts because an interpolated template literal above an inline `template:`
 // desynchronises the Angular VS Code extension's editor-side scanner, which then stops
-// forwarding template completions to the language service — see the
+// forwarding template completions to the language service - see the
 // `ethlete/no-template-literal-before-inline-template` lint rule.
 
 import {} from '@angular/core';

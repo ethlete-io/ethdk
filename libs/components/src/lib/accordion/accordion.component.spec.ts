@@ -20,7 +20,7 @@ import { AccordionDirective, AccordionGroupDirective } from './headless';
   imports: [ACCORDION_IMPORTS],
 })
 class AccordionHostComponent {
-  // read the headless directive off the group component's element — it is applied as a host directive
+  // read the headless directive off the group component's element - it is applied as a host directive
   public group = viewChild.required(AccordionGroupComponent, { read: AccordionGroupDirective });
 
   public sections = signal(['first', 'second', 'third']);

@@ -12,7 +12,7 @@ import { AnimatedSizeAxis, COLOR_PROVIDER, ProvideColorDirective, injectAnimated
 export const injectOverlaySurfaceContext = (options: {
   panelBody: Signal<ElementRef<HTMLElement> | undefined>;
   resizingClass: string;
-  /** Size axes the panel animates on content changes — see `injectAnimatedBlockSize`. */
+  /** Size axes the panel animates on content changes - see `injectAnimatedBlockSize`. */
   axes?: AnimatedSizeAxis[] | Signal<AnimatedSizeAxis[]>;
 }) => {
   const ownColorProvider = inject(ProvideColorDirective);

@@ -29,7 +29,7 @@ export const RICH_TEXT_EDITOR_TOOLS = {
 } as const;
 
 /**
- * A toolbar tool token. The `align`, `table` and `image` tools are opt-in — they only render when
+ * A toolbar tool token. The `align`, `table` and `image` tools are opt-in - they only render when
  * their provider (`provideRichTextEditorAlignmentTool` / `provideRichTextEditorTableTool` /
  * `provideRichTextEditorImageTool`) is present, so their code tree-shakes away otherwise.
  * `(string & {})` keeps the union open for custom tools.
@@ -58,7 +58,7 @@ export const DEFAULT_RICH_TEXT_EDITOR_TOOLS: readonly RichTextEditorTool[] = [
   'link',
 ];
 
-/** The inline marks the selection (floating) toolbar can offer — headings/lists are block-level. */
+/** The inline marks the selection (floating) toolbar can offer - headings/lists are block-level. */
 export const RICH_TEXT_EDITOR_INLINE_TOOLS: readonly RichTextEditorTool[] = [
   'bold',
   'italic',
@@ -91,7 +91,7 @@ export { injectRichTextEditorTools };
  * Icon + label + wiring for a single toggle-button tool.
  *
  * `label` is only the fallback: what the toolbar renders comes from `RICH_TEXT_EDITOR_LABELS`, keyed by
- * the tool's token — which is why the built-in tables below read their labels from that set's defaults
+ * the tool's token - which is why the built-in tables below read their labels from that set's defaults
  * rather than repeating them.
  */
 export type RichTextEditorToolButton = {
@@ -229,15 +229,15 @@ export type RichTextEditorToolDefinition = {
   control?: Type<unknown>;
   /**
    * Intercepts a keydown inside the editor content before the editor's own handling (but after
-   * list Tab/Enter handling). Runs for every provided tool — even when its `token` is not in the
+   * list Tab/Enter handling). Runs for every provided tool - even when its `token` is not in the
    * visible toolbar, since it acts on content, not the button (e.g. table caret navigation must
-   * work whenever the value can contain a table). Return `true` when the event was handled — the
+   * work whenever the value can contain a table). Return `true` when the event was handled - the
    * editor then calls `preventDefault()` and syncs its value from the DOM.
    */
   keydown?: (editor: RichTextEditorDirective, event: KeyboardEvent) => boolean;
 
   /**
-   * Intercepts a paste into the editor content **before** the editor's own HTML/text handling — the
+   * Intercepts a paste into the editor content **before** the editor's own HTML/text handling - the
    * hook for a payload only this tool understands (the image tool takes the clipboard's image
    * files). Return `true` when it was handled; the editor then calls `preventDefault()`.
    */
@@ -250,14 +250,14 @@ export type RichTextEditorToolDefinition = {
   drop?: (editor: RichTextEditorDirective, event: DragEvent) => boolean;
 
   /**
-   * Intercepts a click inside the editor content — for content this tool owns and lets the user act
+   * Intercepts a click inside the editor content - for content this tool owns and lets the user act
    * on (clicking an image opens its popover). Return `true` when it was handled.
    */
   click?: (editor: RichTextEditorDirective, event: MouseEvent) => boolean;
 
   /**
    * Normalizes the editor's content into the shape this tool needs, after every render and every
-   * value sync — the hook for structure the Markdown cannot carry (the image tool marks image blocks
+   * value sync - the hook for structure the Markdown cannot carry (the image tool marks image blocks
    * `contenteditable="false"` and keeps a line after a trailing image). It must be **value-neutral**
    * and idempotent: whatever it changes has to serialize to the same Markdown, or the editor would
    * write a value it never got.

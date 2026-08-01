@@ -48,7 +48,7 @@ export class SelectOptionDirective {
   public labelInput = input('', { alias: 'label' });
   public disabled = input(false, { transform: booleanAttribute });
   /**
-   * Marks the option as the select's "Create …" row for the current `customValueCandidate` —
+   * Marks the option as the select's "Create …" row for the current `customValueCandidate` -
    * it is excluded from the candidate's duplicate-label check (it would otherwise hide
    * itself, since its label *is* the candidate).
    */
@@ -60,7 +60,7 @@ export class SelectOptionDirective {
   public label = computed(() => this.labelInput() || this.textLabel());
   public checked = signal(false);
 
-  // the required `value` input throws until its binding executes — which never happens for
+  // the required `value` input throws until its binding executes - which never happens for
   // projected options whose view is not rendered (a lazy, closed surface). Reading through
   // this computed keeps registry-wide reads (value↔checked sync, label cache) crash-free.
   private boundValue = computed(() => {
@@ -72,7 +72,7 @@ export class SelectOptionDirective {
   });
 
   // derived from the select's value instead of `checked` (which the registry sync effect only
-  // writes after the first render) — the overlay's fresh option instances must paint their
+  // writes after the first render) - the overlay's fresh option instances must paint their
   // selected state correctly on the very first frame of the enter animation
   public selected = computed(() => {
     const value = this.boundValue();
@@ -89,8 +89,8 @@ export class SelectOptionDirective {
   });
 
   /**
-   * The option's effective interactivity: its own `disabled` input, or — once `maxSelection`
-   * is reached in multi mode — every still-unselected option, so the remaining choices read
+   * The option's effective interactivity: its own `disabled` input, or - once `maxSelection`
+   * is reached in multi mode - every still-unselected option, so the remaining choices read
    * as unavailable instead of silently ignoring clicks. Selected options stay enabled for
    * deselection; keyboard navigation skips full options like any other disabled option.
    */
@@ -186,7 +186,7 @@ export class SelectOptionDirective {
   }
 
   protected handleMousedown(event: MouseEvent) {
-    // DOM focus stays on the trigger — options only ever hold virtual focus
+    // DOM focus stays on the trigger - options only ever hold virtual focus
     event.preventDefault();
   }
 

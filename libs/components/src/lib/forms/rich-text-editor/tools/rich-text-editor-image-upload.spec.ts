@@ -142,7 +142,7 @@ describe('startImageUpload', () => {
       expect(errors).toEqual([{ error: null, message: 'Too large' }]);
     });
 
-    it('settles once — a later state change is no longer reported', () => {
+    it('settles once - a later state change is no longer reported', () => {
       const fake = createFakeConfig();
 
       startImageUpload({ file: FILE, upload: fake.config, injector, ...callbacks() });

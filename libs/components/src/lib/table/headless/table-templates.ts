@@ -46,7 +46,7 @@ const registerColumnTemplate = ({
 
 /**
  * Custom body-cell content for one column. Bind the column from your `TableColumns` record and the
- * context is typed from it — `let-row` is the row type and `let-value` the column's `value` type,
+ * context is typed from it - `let-row` is the row type and `let-value` the column's `value` type,
  * inferred, not declared.
  *
  * @example
@@ -69,7 +69,7 @@ export class TableCellDirective<T, TValue> {
   }
 
   // static on purpose (the lint ban excepts it): Angular's template type checker requires the
-  // context guard to be static — it types the `let-` bindings of the host ng-template.
+  // context guard to be static - it types the `let-` bindings of the host ng-template.
   public static ngTemplateContextGuard<T, TValue>(
     _directive: TableCellDirective<T, TValue>,
     _context: unknown,
@@ -108,12 +108,12 @@ export class TableHeaderCellDirective<T> {
 }
 
 /**
- * Custom content for one column's filter options — a flag beside a country, a subtitle under a name,
+ * Custom content for one column's filter options - a flag beside a country, a subtitle under a name,
  * an avatar. `let-option` is the option (`label`, `value`, and anything else you put on it) and
  * `let-selected` says whether it is currently picked; the menu still owns the row, its checkbox/radio
  * mark and its keyboard behaviour.
  *
- * Needs `TABLE_FILTER_IMPORTS` on the table — without the filter feature there is no menu to render
+ * Needs `TABLE_FILTER_IMPORTS` on the table - without the filter feature there is no menu to render
  * into, and the template simply goes unused.
  *
  * @example
@@ -143,7 +143,7 @@ export class TableFilterOptionDirective<T> {
 
 /**
  * What one column's cells look like while the table is loading with no rows yet. Without it the table
- * draws a line-of-text bone, which is right for text and wrong for anything taller — a chip, an avatar,
+ * draws a line-of-text bone, which is right for text and wrong for anything taller - a chip, an avatar,
  * a button. Since the placeholder rows exist to keep the layout still, a column whose cells are taller
  * than text should say so here, or the table will resize when the data lands.
  *
@@ -176,7 +176,7 @@ export class TableCellSkeletonDirective<T> {
 }
 
 /**
- * The editor one column's cells swap to while they are being edited in place — what makes a column
+ * The editor one column's cells swap to while they are being edited in place - what makes a column
  * marked `editable` actually editable. Needs `etTableInlineEdit` on the table.
  *
  * `let-field` is the draft, as a signal-forms field: bind it with `[formField]` and the control saves
@@ -211,7 +211,7 @@ export class TableCellEditDirective<T, TValue> {
 }
 
 /**
- * A footer cell for one column — a totals/summary row. `let-rows` is every rendered row (typed),
+ * A footer cell for one column - a totals/summary row. `let-rows` is every rendered row (typed),
  * so the cell can aggregate them. Any column with one shows the table's sticky footer row.
  *
  * @example

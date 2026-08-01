@@ -21,7 +21,7 @@ import { SelectOptionsFromQuery } from './select-options-from-query';
 // `V2QueryClient`. Same module rules apply: standalone function in its own file so unused
 // integrations tree-shake away.
 
-/** The args accepted by the creator's `prepare()` — includes `mock`/`config` extras. */
+/** The args accepted by the creator's `prepare()` - includes `mock`/`config` extras. */
 export type V2PrepareArgsOf<TCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator> = Parameters<
   TCreator['prepare']
 >[0];
@@ -38,10 +38,10 @@ export type SelectOptionsFromV2QueryConfig<TCreator extends AnyV2QueryCreator | 
    * Builds the `prepare()` args from the debounced search query and the current `page`. Runs
    * reactively (like `queryComputed`): reading `query()` re-executes as the user types, and reading
    * `page()` re-executes when `loadMore()` advances the page. Return `null` to skip a request
-   * (e.g. for an empty query) — `options` is empty while skipped.
+   * (e.g. for an empty query) - `options` is empty while skipped.
    *
    * `page` starts at `initialPage` and resets there whenever the query changes; `loadMore()`
-   * increments it. Return only that page's slice from `toOptions` — the factory appends each
+   * increments it. Return only that page's slice from `toOptions` - the factory appends each
    * page to the accumulated `options`.
    */
   args: (query: Signal<string>, page: Signal<number>) => V2PrepareArgsOf<TCreator> | null;
@@ -50,7 +50,7 @@ export type SelectOptionsFromV2QueryConfig<TCreator extends AnyV2QueryCreator | 
    * each page's slice to the accumulated `options` (and resets when the query changes).
    */
   toOptions: (response: QueryDataOf<TCreator>) => TOption[];
-  /** Derives whether more pages exist from the latest page's response — drives `hasMoreItems` and gates `loadMore()`. */
+  /** Derives whether more pages exist from the latest page's response - drives `hasMoreItems` and gates `loadMore()`. */
   toHasMore?: (response: QueryDataOf<TCreator>) => boolean;
   /** Turns a query failure into the select's error text. Defaults to the first error message. */
   toErrorMessage?: (error: RequestError) => string;
@@ -83,7 +83,7 @@ const firstErrorMessage = (error: RequestError) => {
 };
 
 /**
- * Feeds a select's options from a **legacy v2** query as the user searches — the
+ * Feeds a select's options from a **legacy v2** query as the user searches - the
  * `V2QueryClient` counterpart of {@link selectOptionsFromQuery}, so apps that haven't migrated
  * yet can still adopt the new async select. It returns the same signal bundle; wire it to the
  * select's async inputs and render `options` yourself with `filterMode="external"`:
@@ -119,7 +119,7 @@ const firstErrorMessage = (error: RequestError) => {
  *
  * Pagination is built in: `args` receives a `page` signal (starting at `initialPage`, default `1`)
  * that resets on every query change and advances on `loadMore()`. Return only the current page's
- * slice from `toOptions` — the factory appends each page to the accumulated `options`. Wire
+ * slice from `toOptions` - the factory appends each page to the accumulated `options`. Wire
  * `hasMore` (via `toHasMore`) to `hasMoreItems` and `loadMore` to `(loadMore)`; `loadMore`
  * is a no-op while loading, when skipped, or once `hasMore` is false.
  */
@@ -136,7 +136,7 @@ export const selectOptionsFromV2Query = <TCreator extends AnyV2QueryCreator | An
 
   const initialPage = config.initialPage ?? 1;
   // Resets to `initialPage` whenever the debounced query changes (so the next request starts a
-  // fresh page run), and `loadMore()` bumps it. Keyed off the debounced query — not the raw one —
+  // fresh page run), and `loadMore()` bumps it. Keyed off the debounced query - not the raw one -
   // so the reset lands in the same tick the query re-prepares, never firing a spurious page.
   const page = linkedSignal<string, number>({
     source: debouncedQuery,
@@ -160,7 +160,7 @@ export const selectOptionsFromV2Query = <TCreator extends AnyV2QueryCreator | An
   });
 
   const state = queryStateSignal(query);
-  // Success/failure only — keeps the previous options rendered while the next request loads,
+  // Success/failure only - keeps the previous options rendered while the next request loads,
   // mirroring how the current system's `response()` behaves across re-executions.
   const settledState = queryStateSignal(query, { cacheResponse: true });
 
@@ -196,7 +196,7 @@ export const selectOptionsFromV2Query = <TCreator extends AnyV2QueryCreator | An
     },
   });
 
-  // A `linkedSignal` only folds while something observes it — so a page that settles while nothing
+  // A `linkedSignal` only folds while something observes it - so a page that settles while nothing
   // renders `options` (e.g. the panel is closed) would be skipped, and a later page would fold over
   // a stale `previous`. This keepalive makes the fold eager: it captures every settled page.
   effect(() => void pageState());

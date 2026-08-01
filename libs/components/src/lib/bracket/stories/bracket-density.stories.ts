@@ -37,7 +37,7 @@ export const Compact = {
   },
 };
 
-/** Where it earns its keep — a full double-elimination bracket inside an article column. */
+/** Where it earns its keep - a full double-elimination bracket inside an article column. */
 export const CompactDoubleElimination = {
   render: Template,
   args: {

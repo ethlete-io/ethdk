@@ -39,7 +39,7 @@ export type FormFieldControl = {
   required?: Signal<boolean>;
   disabled?: Signal<boolean>;
   readonly?: Signal<boolean>;
-  /** Signal-forms `hidden` status — when true the whole field is visually removed. */
+  /** Signal-forms `hidden` status - when true the whole field is visually removed. */
   hidden?: Signal<boolean>;
   effectiveDisabled?: Signal<boolean>;
   describedBy: WritableSignal<string | null>;
@@ -47,7 +47,7 @@ export type FormFieldControl = {
   focused?: Signal<boolean>;
   /**
    * True while the control's own popup (a date picker, select/cascader panel, …) is open. The
-   * field keeps its focused styling while set — focus itself has moved into the detached overlay,
+   * field keeps its focused styling while set - focus itself has moved into the detached overlay,
    * so `:focus-visible` no longer matches the field.
    */
   expanded?: Signal<boolean>;
@@ -55,7 +55,7 @@ export type FormFieldControl = {
   /** True while the committed text can't be parsed (date/time/duration typed entry). */
   parseError?: Signal<boolean>;
   /**
-   * User-facing message shown when `parseError` is set and there is no validation error — the control's
+   * User-facing message shown when `parseError` is set and there is no validation error - the control's
    * own `parseErrorMessage` input if it has one, else `DATE_TIME_LABELS`.
    */
   resolvedParseErrorMessage?: Signal<string>;
@@ -67,7 +67,7 @@ export type FormFieldControl = {
    */
   hasCustomAccessibleName?: Signal<boolean>;
   /**
-   * The control's current value. `et-counter` derives the length it displays from this — a string's
+   * The control's current value. `et-counter` derives the length it displays from this - a string's
    * `length`, an array's/set's element count, or whatever the counter's `lengthOf` says.
    */
   value?: Signal<unknown>;
@@ -75,12 +75,12 @@ export type FormFieldControl = {
    * The bound field's `maxLength()` limit. Signal forms binds this automatically into any control
    * that declares a `maxLength` input, so `et-counter` gets its limit from the schema without the
    * consumer repeating it. Note the controls deliberately do **not** forward it to the native
-   * `maxlength` attribute — hard-truncating input would stop the validator from ever reporting the
+   * `maxlength` attribute - hard-truncating input would stop the validator from ever reporting the
    * over-limit error the counter is there to make visible.
    */
   maxLength?: Signal<number | undefined>;
   /**
-   * True while an async validator is in flight for the bound field — bound automatically by signal
+   * True while an async validator is in flight for the bound field - bound automatically by signal
    * forms into any control declaring a `pending` input. Surfaces as the field's busy state.
    */
   pending?: Signal<boolean>;
@@ -110,7 +110,7 @@ export type FormFieldDirectiveBase = {
   controlValue: Signal<unknown>;
   /** The bound field's schema `maxLength()`, when it has one. */
   controlMaxLength: Signal<number | undefined>;
-  /** The field's visible control frame — the box overlay-based controls anchor their panels to. */
+  /** The field's visible control frame - the box overlay-based controls anchor their panels to. */
   controlFrameElement: WritableSignal<HTMLElement | null>;
   activate(): void;
 };

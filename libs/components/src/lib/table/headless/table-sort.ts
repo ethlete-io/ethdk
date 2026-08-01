@@ -22,7 +22,7 @@ export type SortRowsConfig<T> = {
 
 /**
  * Sort rows by a {@link TableSort} list, using each column's `sortValue` (or its
- * `value` accessor). Stable, multi-key, pure and tree-shakable — the base table
+ * `value` accessor). Stable, multi-key, pure and tree-shakable - the base table
  * doesn't apply it unless in client sort mode; import it directly for custom flows.
  * Server-side callers ignore this and let the backend sort instead. Nullish values
  * always sink to the bottom, regardless of direction.

@@ -21,7 +21,7 @@ import { NormalizedMatch, NormalizedMatchParticipant, NormalizedMatchResultKind 
         </p>
 
         <!-- px, not a max-w-* class: the playground's root font is 62.5%, so the rem container scale is 62.5% of
-             what its name says — and here the exact width is the thing being demonstrated. -->
+             what its name says - and here the exact width is the thing being demonstrated. -->
         <div [style.inline-size.px]="width()">
           @if (interactive()) {
             <!-- The card renders its own content and its own accessible name (an aria-label bound by the
@@ -54,7 +54,7 @@ import { NormalizedMatch, NormalizedMatchParticipant, NormalizedMatchResultKind 
           </div>
 
           <p class="text-small m-0 opacity-60">
-            The scoring side's value rolls — old out, new in, both real elements — with a brief flash in the color
+            The scoring side's value rolls - old out, new in, both real elements - with a brief flash in the color
             theme. The score also sits in a polite, atomic live region, so each goal is announced once as "{{
               scoreText()
             }}" rather than digit by digit.
@@ -63,7 +63,7 @@ import { NormalizedMatch, NormalizedMatchParticipant, NormalizedMatchResultKind 
           @if (lastChange(); as change) {
             <p class="text-small m-0 opacity-60">
               Last <code>scoreChange</code>: {{ change.side }} {{ change.from }} → {{ change.to }} (delta
-              {{ change.delta }}) — the hook for a sound or confetti the card deliberately doesn't ship.
+              {{ change.delta }}) - the hook for a sound or confetti the card deliberately doesn't ship.
             </p>
           }
         }
@@ -98,7 +98,7 @@ export class MatchCardStorybookComponent {
     const extra = this.extraGoals();
     const kind = this.resultKind();
 
-    // Which result form a competition reports is its own decision, so the adapter's — here it is a story
+    // Which result form a competition reports is its own decision, so the adapter's - here it is a story
     // control. `outcome` needs no values at all: the card derives W/L/D from `winnerSide`.
     const values = kind === 'points' ? { home: 3, away: 0 } : null;
 
@@ -175,7 +175,7 @@ export class MatchCardStatesStorybookComponent {
 }
 
 // Below the components on purpose: an interpolated template literal above an inline `template:` breaks the
-// Angular language service inside it — see the `ethlete/no-template-literal-before-inline-template` rule.
+// Angular language service inside it - see the `ethlete/no-template-literal-before-inline-template` rule.
 //
 // Inline SVG data URIs rather than remote crests, so the story renders identically offline and in CI.
 const emblem = (config: { label: string; fill: string }) =>
@@ -224,7 +224,7 @@ const THIRD: NormalizedMatchParticipant = {
   seed: 4,
 };
 
-// A fixed date, so the story reads the same on every run — the card formats it in the active locale.
+// A fixed date, so the story reads the same on every run - the card formats it in the active locale.
 const KICK_OFF = new Date('2026-05-02T18:30:00Z');
 
 // A best-of-three: the headline 2 : 1 is games won, and these are the games.
@@ -234,7 +234,7 @@ const GAME_SCORES = [
   { home: 13, away: 9 },
 ];
 
-// A best-of-seven that went the distance — a Rocket League series looks like this.
+// A best-of-seven that went the distance - a Rocket League series looks like this.
 const BO7_GAME_SCORES = [
   { home: 3, away: 1 },
   { home: 0, away: 2 },
@@ -325,7 +325,7 @@ const STATE_MATCHES: NormalizedMatch[] = [
     label: 'Matchday 14',
   },
   // A competition that reports only who advanced. The W/L letters come from `winnerSide`, so this row
-  // still says "FC Berlin won" to a screen reader — and carries no numbers at all.
+  // still says "FC Berlin won" to a screen reader - and carries no numbers at all.
   {
     id: 'outcome',
     status: 'finished',

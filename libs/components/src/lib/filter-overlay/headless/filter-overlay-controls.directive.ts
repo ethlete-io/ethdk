@@ -22,7 +22,7 @@ const assertInsideFilterOverlay = (hasOverlay: boolean, directiveName: string) =
  * The submit button. Takes its label and disabled state from the live preview, so the button reads "Show 42
  * results" rather than "Apply" and disables itself while the count is pending or zero.
  *
- * Put it on a real `<button>` — it is the primary action of a form and should behave like one.
+ * Put it on a real `<button>` - it is the primary action of a form and should behave like one.
  *
  * @example
  * <button etFilterOverlaySubmit et-button></button>

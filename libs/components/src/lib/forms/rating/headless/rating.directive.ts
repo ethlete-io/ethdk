@@ -25,7 +25,7 @@ export type RatingIconState = 'full' | 'half' | 'empty';
     '[attr.tabindex]': 'disabled() ? -1 : 0',
     'aria-valuemin': '0',
     '[attr.aria-valuemax]': 'effectiveMax()',
-    // a removed aria-valuenow is the ARIA-sanctioned "indeterminate value" — the valuetext
+    // a removed aria-valuenow is the ARIA-sanctioned "indeterminate value" - the valuetext
     // then carries the mixed label so assistive tech announces the bulk-edit state
     '[attr.aria-valuenow]': 'mixed() ? null : (value() ?? 0)',
     '[attr.aria-valuetext]': 'valueText()',
@@ -65,7 +65,7 @@ export class RatingDirective implements FormValueControl<number | null>, FormFie
   public name = input('');
 
   /**
-   * Typed `number | undefined` because signal forms reserves `max` on value controls —
+   * Typed `number | undefined` because signal forms reserves `max` on value controls -
    * a schema `max(...)` validator binds straight into this input.
    */
   public max = input<number | undefined>(5);
@@ -83,7 +83,7 @@ export class RatingDirective implements FormValueControl<number | null>, FormFie
 
   /**
    * What the icons render: the hover preview wins over the committed value. While mixed,
-   * the hidden raw value contributes nothing — no icon fills until the user hovers or commits.
+   * the hidden raw value contributes nothing - no icon fills until the user hovers or commits.
    */
   public displayValue = computed(() => this.hoverValue() ?? (this.mixed() ? 0 : (this.value() ?? 0)));
 
@@ -147,7 +147,7 @@ export class RatingDirective implements FormValueControl<number | null>, FormFie
     this.hoverValue.set(null);
   }
 
-  /** Commits from a pointer interaction — picking the current value again clears the rating. */
+  /** Commits from a pointer interaction - picking the current value again clears the rating. */
   public commitPointer(value: number) {
     if (!this.interactive()) {
       return;
@@ -155,7 +155,7 @@ export class RatingDirective implements FormValueControl<number | null>, FormFie
 
     const clamped = this.clamp(value);
 
-    // while mixed there is no visible current value, so a pick always commits — the
+    // while mixed there is no visible current value, so a pick always commits - the
     // clear-by-repick shortcut must never fire against the hidden raw value
     if (this.mixed()) {
       this.commitUserValue(clamped);
@@ -177,7 +177,7 @@ export class RatingDirective implements FormValueControl<number | null>, FormFie
     }
 
     const step = this.step();
-    // while mixed, nothing reads as filled — keyboard steps start from that visible zero
+    // while mixed, nothing reads as filled - keyboard steps start from that visible zero
     const current = this.mixed() ? 0 : (this.value() ?? 0);
 
     switch (event.key) {
@@ -210,7 +210,7 @@ export class RatingDirective implements FormValueControl<number | null>, FormFie
 
         return;
       }
-      // rating's clear affordance — a deliberate act on a focused single-value control,
+      // rating's clear affordance - a deliberate act on a focused single-value control,
       // so unlike a multi-select mass-clear it also resolves mixed
       case 'Backspace':
       case 'Delete': {
@@ -222,7 +222,7 @@ export class RatingDirective implements FormValueControl<number | null>, FormFie
     }
   }
 
-  /** Writes a user-chosen value with replace semantics — user commits resolve mixed. */
+  /** Writes a user-chosen value with replace semantics - user commits resolve mixed. */
   private commitUserValue(value: number | null) {
     this.mixed.set(false);
     this.value.set(value);

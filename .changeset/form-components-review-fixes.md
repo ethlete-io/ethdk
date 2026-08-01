@@ -24,4 +24,4 @@ opt-in APIs.
   password `hideLabel`, phone `countryLabel`, date-picker-panel `dialogLabel`.
 - **Note:** the checkbox now toggles on `keydown` Space (matching switch and the
   selection options), and the select panel renders its listbox as an inner
-  element — restyle if you targeted the panel host as the listbox.
+  element - restyle if you targeted the panel host as the listbox.

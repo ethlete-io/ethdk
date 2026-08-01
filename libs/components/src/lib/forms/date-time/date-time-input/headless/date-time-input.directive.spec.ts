@@ -53,7 +53,7 @@ describe('DateTimeInputDirective', () => {
 
   const tick = () => TestBed.inject(ApplicationRef).tick();
 
-  // overlays render into the document — scope queries to the newest pane so a pane
+  // overlays render into the document - scope queries to the newest pane so a pane
   // stuck in its leave transition (jsdom fires no transition events) can't pollute them
   const pane = () => Array.from(document.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane')).at(-1) ?? null;
   const paneButton = (selector: string) => pane()?.querySelector<HTMLButtonElement>(selector) ?? null;
@@ -286,7 +286,7 @@ describe('DateTimeInputDirective', () => {
       tick();
 
       expect(host.mixed()).toBe(false);
-      // the hidden 08:15 must not leak into the fresh pick — replace semantics
+      // the hidden 08:15 must not leak into the fresh pick - replace semantics
       expect(host.value()).toBe('2026-07-16 00:00');
       expect(dateTimeInput.pickerOpen()).toBe(true);
     });
@@ -299,7 +299,7 @@ describe('DateTimeInputDirective', () => {
       tick();
 
       expect(host.mixed()).toBe(false);
-      // the hidden 2026-03-05 must not leak into the fresh pick — replace semantics
+      // the hidden 2026-03-05 must not leak into the fresh pick - replace semantics
       expect(host.value()).toBe('2026-01-01 21:45');
     });
   });

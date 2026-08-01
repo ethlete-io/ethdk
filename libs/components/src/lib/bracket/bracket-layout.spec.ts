@@ -78,7 +78,7 @@ describe('the layouts input', () => {
   it('replaces the provideBracketConfig list rather than adding to it', async () => {
     await TestBed.configureTestingModule({
       imports: [HostComponent],
-      // Only single elimination app-wide — the double-elimination source below would throw on this alone.
+      // Only single elimination app-wide - the double-elimination source below would throw on this alone.
       providers: [provideBracketConfig({ layouts: [singleEliminationBracketLayout()] })],
     }).compileComponents();
 
@@ -110,7 +110,7 @@ describe('swissBracketLayout', () => {
     fixture.detectChanges();
 
     // The mounted instance in the style manager's hidden container is what carries the group border CSS
-    // into the document — asserting the `<style>` itself is not possible here, since the test build
+    // into the document - asserting the `<style>` itself is not possible here, since the test build
     // strips component stylesheets.
     expect(document.querySelector('.et-style-manager et-bracket-swiss-styles')).toBeTruthy();
     expect(swissBracketLayout().styles).toContain(BracketSwissStylesComponent);

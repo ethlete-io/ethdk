@@ -173,7 +173,7 @@ describe('TableInlineEditDirective', () => {
       expect(editor(fixture)).toBeNull();
     });
 
-    it('does not write to the data — the consumer owns the mutation', () => {
+    it('does not write to the data - the consumer owns the mutation', () => {
       const fixture = startEditing(create());
 
       type(fixture, 'Grace');
@@ -241,7 +241,7 @@ describe('TableInlineEditDirective', () => {
 
       type(fixture, 'Grace');
       // `name` is the last editable column of the row (`role` has no editor), so there is nothing to
-      // open next — but the commit still happens.
+      // open next - but the commit still happens.
       press(fixture, 'Tab');
 
       expect(fixture.componentInstance.commits).toMatchObject([{ previous: 'Ada', next: 'Grace' }]);
@@ -286,7 +286,7 @@ describe('TableInlineEditDirective', () => {
       expect(document.activeElement).toBe(cell);
     });
 
-    // Both features listen for `keydown` on the table, and Angular — not the template — decides which
+    // Both features listen for `keydown` on the table, and Angular - not the template - decides which
     // listener runs first. With navigation first, it opens the editor from the very event that then
     // goes on to reach this feature's own listener, which must not read it as "commit".
     it('survives the order where navigation handles Enter first', () => {

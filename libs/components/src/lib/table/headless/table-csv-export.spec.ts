@@ -84,7 +84,7 @@ describe('tableToCsv', () => {
       expect(lines(tableToCsv(source({ rows: () => [ROWS[0]!] })))).toHaveLength(2);
     });
 
-    it('takes an explicit list — a selection, or unfiltered data', () => {
+    it('takes an explicit list - a selection, or unfiltered data', () => {
       expect(lines(tableToCsv(source(), { rows: [ROWS[1]!] }))).toEqual(['Name,Age,Active', 'Grace,45,false']);
     });
 
@@ -169,7 +169,7 @@ describe('tableToCsv', () => {
       },
     );
 
-    it.each(['-5', '+1', '1e3'])('leaves %j alone — a number written as text is inert', (value) => {
+    it.each(['-5', '+1', '1e3'])('leaves %j alone - a number written as text is inert', (value) => {
       expect(exported(value)).toBe(value);
     });
 
@@ -177,7 +177,7 @@ describe('tableToCsv', () => {
       expect(exported('-5+A1')).toBe("'-5+A1");
     });
 
-    it('leaves real numbers alone — they are not text', () => {
+    it('leaves real numbers alone - they are not text', () => {
       expect(lines(tableToCsv(source(), { columns: ['age'], header: false }))).toEqual(['36', '45']);
     });
 

@@ -14,7 +14,7 @@ export type PictureSource = {
    * A single URL, or a comma-separated candidate list with descriptors.
    *
    * With **width** descriptors (`400w`) you must also give `sizes`, or the browser has no way to know how
-   * much of the viewport the image will occupy. With **density** descriptors (`2x`) you must not — the
+   * much of the viewport the image will occupy. With **density** descriptors (`2x`) you must not - the
    * browser picks by device pixel ratio. The two forms can't be mixed in one srcset.
    *
    * @example 'https://example.com/hero.jpg'
@@ -33,7 +33,7 @@ export type PictureSource = {
   sizes?: string | null;
 
   /**
-   * The media query this source applies to — this is what makes art direction possible, as opposed to
+   * The media query this source applies to - this is what makes art direction possible, as opposed to
    * merely picking a resolution.
    *
    * @example '(min-width: 800px)'

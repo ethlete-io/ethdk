@@ -5,7 +5,7 @@ type SlotClass = 'digit' | 'letter' | 'alnum';
 type PatternToken = { kind: 'slot'; slotClass: SlotClass; required: boolean } | { kind: 'literal'; char: string };
 
 const SLOT_CLASSES: Record<string, SlotClass> = {
-  // 0 = required digit, 9 = optional digit — both accept the same characters; the
+  // 0 = required digit, 9 = optional digit - both accept the same characters; the
   // distinction only matters for `isComplete` (the lazy display model ignores it)
   '0': 'digit',
   '9': 'digit',
@@ -52,7 +52,7 @@ export const compilePatternMask = (pattern: string, options: PatternMaskOptions 
   const tokens = parsePattern(pattern);
   const slotIndexes = tokens.flatMap((token, index) => (token.kind === 'slot' ? [index] : []));
 
-  // a pattern without slots can't hold content — treat it as a passthrough
+  // a pattern without slots can't hold content - treat it as a passthrough
   if (!slotIndexes.length) {
     return { toRaw: (text) => text, toDisplay: (raw) => raw };
   }
@@ -62,7 +62,7 @@ export const compilePatternMask = (pattern: string, options: PatternMaskOptions 
     let position = 0;
 
     for (const char of text) {
-      // an expected literal is formatting, never content — even when its character
+      // an expected literal is formatting, never content - even when its character
       // would also satisfy a slot class (e.g. a digit literal before digit slots)
       const current = tokens[position];
 
@@ -112,7 +112,7 @@ export const compilePatternMask = (pattern: string, options: PatternMaskOptions 
   };
 
   // raw fills slots strictly left to right, so completeness is positional: consume one
-  // raw character per slot in pattern order — any required slot left unfilled fails
+  // raw character per slot in pattern order - any required slot left unfilled fails
   const isComplete = (raw: string) => {
     let consumed = 0;
 

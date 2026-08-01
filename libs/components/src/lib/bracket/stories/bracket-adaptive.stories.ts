@@ -15,7 +15,7 @@ export default {
 
 const Template: StoryFn<StorybookBracketAdaptiveComponent> = (args) => ({ props: args });
 
-/** Wide enough for the grid — drag `containerWidth` down and it swaps to the rounds list. */
+/** Wide enough for the grid - drag `containerWidth` down and it swaps to the rounds list. */
 export const Wide = {
   render: Template,
   args: {

@@ -6,7 +6,7 @@ import { BracketMatch } from './linked';
 /**
  * The bracket's default continue cell: the "and then?" at the end of a stage that feeds a later one
  * rather than crowning a winner. Says how many winners advance, and carries an accessible label of its
- * own — its visible text is a fragment, and a fragment is not a name.
+ * own - its visible text is a fragment, and a fragment is not a name.
  *
  * Only rendered when `showContinueElement` is on and the layout runs left to right.
  */

@@ -223,7 +223,7 @@ describe('RangeSliderDirective', () => {
       fixture.componentInstance.step.set(25);
       fixture.detectChanges();
 
-      // the [20, 80] value snaps onto the step grid first — the 25/50/75 ticks are inside the fill
+      // the [20, 80] value snaps onto the step grid first - the 25/50/75 ticks are inside the fill
       expect(marks().map((mark) => mark.hasAttribute('data-active'))).toEqual([false, true, true, true, false]);
     });
 
@@ -234,7 +234,7 @@ describe('RangeSliderDirective', () => {
       fixture.componentInstance.value.set([25, 75]);
       fixture.detectChanges();
 
-      // End would jump to 100 — the sibling limit stops it at 50, which is itself a mark
+      // End would jump to 100 - the sibling limit stops it at 50, which is itself a mark
       keydown(0, 'End');
       expect(fixture.componentInstance.value()).toEqual([50, 75]);
 
@@ -263,7 +263,7 @@ describe('RangeSliderDirective', () => {
         expect(thumb.hasAttribute('aria-valuenow')).toBe(false);
         expect(thumb.getAttribute('aria-valuetext')).toBe('Mixed');
         expect(thumb.style.getPropertyValue('--_et-slider-thumb-position')).toBe('0');
-        // parked thumbs carry no sibling constraint — the full track is announced
+        // parked thumbs carry no sibling constraint - the full track is announced
         expect(thumb.getAttribute('aria-valuemin')).toBe('0');
         expect(thumb.getAttribute('aria-valuemax')).toBe('100');
       }

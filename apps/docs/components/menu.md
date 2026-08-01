@@ -1,6 +1,6 @@
 # Menu
 
-Accessible dropdown, context and submenu system built on the [overlay system](/components/overlays). Full keyboard navigation, typeahead, hover-open submenus, radio/checkbox selection and built-in search — import `MENU_IMPORTS` and compose.
+Accessible dropdown, context and submenu system built on the [overlay system](/components/overlays). Full keyboard navigation, typeahead, hover-open submenus, radio/checkbox selection and built-in search - import `MENU_IMPORTS` and compose.
 
 ## Anatomy
 
@@ -41,13 +41,13 @@ import { MENU_IMPORTS } from '@ethlete/components';
 
 ## Items
 
-- `button[et-menu-item]` / `a[et-menu-item]` — a menu row with slots for an `[etIcon]`, the label, and a trailing `<et-menu-item-shortcut>`. `variant="destructive"` switches it to the app's error color theme (the theme registered with `type: 'error'`).
+- `button[et-menu-item]` / `a[et-menu-item]` - a menu row with slots for an `[etIcon]`, the label, and a trailing `<et-menu-item-shortcut>`. `variant="destructive"` switches it to the app's error color theme (the theme registered with `type: 'error'`).
 - The headless `etMenuItem` directive exposes an `activate` output (`{ source: 'pointer' | 'keyboard-enter' | 'keyboard-space' }`) and a `closeOnActivate` input to control whether activating dismisses the menu.
 - `<et-menu-separator />` and `<et-menu-group-label>` structure longer menus (the label is wired into group `aria-labelledby` automatically).
 
 ## Submenus
 
-Nest an `[etMenu]` inside the surface; a row that is both `et-menu-item` and `etMenuTrigger` opens it. Arbitrary depth is supported — submenus open on hover (with intent delays) or <kbd>ArrowRight</kbd>, close on <kbd>ArrowLeft</kbd>:
+Nest an `[etMenu]` inside the surface; a row that is both `et-menu-item` and `etMenuTrigger` opens it. Arbitrary depth is supported - submenus open on hover (with intent delays) or <kbd>ArrowRight</kbd>, close on <kbd>ArrowLeft</kbd>:
 
 ```html
 <div etMenu>
@@ -63,7 +63,7 @@ Nest an `[etMenu]` inside the surface; a row that is both `et-menu-item` and `et
 
 ## Context menus
 
-Swap the click trigger for `[etMenuContextTrigger]` on the area that should react to right-click — the menu opens point-anchored at the cursor (and right-clicking again repositions it):
+Swap the click trigger for `[etMenuContextTrigger]` on the area that should react to right-click - the menu opens point-anchored at the cursor (and right-clicking again repositions it):
 
 ```html
 <div etMenu>
@@ -98,7 +98,7 @@ Radio (single) and checkbox (multi) items work with `[(value)]` on their group o
 
 Activation follows menu conventions: <kbd>Enter</kbd> selects and dismisses, <kbd>Space</kbd> and pointer clicks toggle while keeping the menu open for multi-pick. Checkbox items also support `indeterminate`.
 
-Both item kinds take an optional `icon` input (a `provideIcons`-registered icon name). The icon renders in place of the radio dot / checkmark, and the checked state shows through the icon taking the accent color instead — used by e.g. the rich text editor's alignment and text-style menus:
+Both item kinds take an optional `icon` input (a `provideIcons`-registered icon name). The icon renders in place of the radio dot / checkmark, and the checked state shows through the icon taking the accent color instead - used by e.g. the rich text editor's alignment and text-style menus:
 
 ```html
 <et-menu-radio-item value="left" icon="et-align-left">Align left</et-menu-radio-item>
@@ -110,7 +110,7 @@ Groups and standalone items carry the usual signal-forms surface alongside `[(va
 
 ## Search
 
-`input[etMenuSearch]` placed as the first child of `<et-menu>` renders into the menu's header. It surfaces the query — filtering the items is your job:
+`input[etMenuSearch]` placed as the first child of `<et-menu>` renders into the menu's header. It surfaces the query - filtering the items is your job:
 
 ```html
 <et-menu>
@@ -126,7 +126,7 @@ Groups and standalone items carry the usual signal-forms surface alongside `[(va
 </et-menu>
 ```
 
-For async sources, bind `[loading]` (header spinner + `aria-busy`) and `[error]` (inline `role="alert"` line) on the search input while your request runs. Typing while the menu is focused forwards characters into the search field; <kbd>Escape</kbd> clears a non-empty query before closing the menu — the same reset is available programmatically via `clear()` (`#search="etMenuSearch"`).
+For async sources, bind `[loading]` (header spinner + `aria-busy`) and `[error]` (inline `role="alert"` line) on the search input while your request runs. Typing while the menu is focused forwards characters into the search field; <kbd>Escape</kbd> clears a non-empty query before closing the menu - the same reset is available programmatically via `clear()` (`#search="etMenuSearch"`).
 
 <StoryEmbed id="components-menu-with-search--async" height="440px" />
 
@@ -137,12 +137,12 @@ Inputs on `[etMenu]`:
 | Input                | Default        | Notes                                                                                                                                  |
 | -------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | `placement`          | `'auto'`       | Resolves to `bottom-start` for root menus, `right-start` for submenus/context menus                                                    |
-| `fallbackPlacements` | —              | floating-ui fallbacks                                                                                                                  |
+| `fallbackPlacements` | -              | floating-ui fallbacks                                                                                                                  |
 | `offset`             | `'auto'`       | Resolves to `10` with the arrow, smaller without                                                                                       |
 | `viewportPadding`    | `8`            | Clearance against the viewport edge                                                                                                    |
 | `arrow`              | `true`         | Floating arrow pointing at the trigger (root, trigger-anchored menus only); `arrowPadding` (default `14`) keeps it off rounded corners |
 | `hoverOpen`          | `true`         | Submenu hover-open with `hoverOpenDelay` (120ms) / `hoverCloseDelay` (300ms)                                                           |
-| `loop`               | `true`         | Wrap the arrow keys at the ends. Off makes them stop instead — better for a long menu, where wrapping reads as a jump somewhere else.  |
+| `loop`               | `true`         | Wrap the arrow keys at the ends. Off makes them stop instead - better for a long menu, where wrapping reads as a jump somewhere else.  |
 | `autoFocus`          | `true`         | Focus the panel/first item on open                                                                                                     |
 | `open`               | `model(false)` | Two-way open state; methods `show()`, `hide()`, `toggle()`, `closeAll()`, `openAt(point)`                                              |
 | `disabled`           | `false`        | Ignores open requests (trigger clicks, hover, `openAt`) while set                                                                      |
@@ -158,14 +158,14 @@ Inputs on `[etMenu]`:
 | <kbd>Space</kbd>                 | Activate (selection items toggle and keep the menu open)                       |
 | <kbd>Esc</kbd>                   | Close the current level                                                        |
 | <kbd>Tab</kbd>                   | Close the whole menu tree                                                      |
-| Printable keys                   | Typeahead — or forwarded into the search input when present                    |
+| Printable keys                   | Typeahead - or forwarded into the search input when present                    |
 
 ## Accessibility
 
 Full [menu-pattern](https://www.w3.org/WAI/ARIA/apg/patterns/menu/) semantics are emitted automatically:
 
 - The trigger gets `aria-haspopup="menu"`, live `aria-expanded`, and `aria-controls` pointing at the open panel; the panel is `role="menu"` labelled by its trigger.
-- Items are `role="menuitem"` — or `menuitemradio` / `menuitemcheckbox` with `aria-checked` (`"mixed"` for indeterminate) for selection items. Groups are `role="group"` labelled by their `<et-menu-group-label>`, separators `role="separator"`, shortcuts `aria-hidden`.
+- Items are `role="menuitem"` - or `menuitemradio` / `menuitemcheckbox` with `aria-checked` (`"mixed"` for indeterminate) for selection items. Groups are `role="group"` labelled by their `<et-menu-group-label>`, separators `role="separator"`, shortcuts `aria-hidden`.
 - Focus uses a roving tabindex over enabled items (see [Keyboard](#keyboard)) plus typeahead, and returns to the trigger when the menu closes via item activation, <kbd>Esc</kbd> or <kbd>Tab</kbd>.
 - With search: the panel reflects `[loading]` as `aria-busy`, and an `[error]` renders as a `role="alert"` line wired to the input via `aria-describedby` / `aria-invalid`.
 

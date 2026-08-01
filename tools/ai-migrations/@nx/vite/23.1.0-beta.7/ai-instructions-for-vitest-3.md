@@ -20,14 +20,14 @@ The pre-pass handled, mechanically:
 - `browser.provider: 'none'` → `'preview'` (only when the value is a direct string literal under `test.browser.provider`)
 - `browser.indexScripts` → `orchestratorScripts` (only as a direct property name)
 
-The pre-pass **does not** edit CI provider configs (`.github/workflows/*.yml`, `.gitlab-ci.yml`, `azure-pipelines.yml`, `.circleci/config.yml`, `bitbucket-pipelines.yml`) — YAML structure varies too much. Any matches it finds there are forwarded to you in `<advisory_context>`.
+The pre-pass **does not** edit CI provider configs (`.github/workflows/*.yml`, `.gitlab-ci.yml`, `azure-pipelines.yml`, `.circleci/config.yml`, `bitbucket-pipelines.yml`) - YAML structure varies too much. Any matches it finds there are forwarded to you in `<advisory_context>`.
 
-**The vast majority of action items below are NOT covered by the pre-pass** and still require your attention — every section other than the six items above.
+**The vast majority of action items below are NOT covered by the pre-pass** and still require your attention - every section other than the six items above.
 
 How to read the wrapper sections above this file:
 
 - `<files_changed>` lists files the pre-pass already wrote to. Verify the new shape is in place; do not re-apply the same edit.
-- `<advisory_context>` lists detections the pre-pass forwarded because it could not safely complete them. **Every entry is pending work** — address each one in the relevant section below, not as a separate task.
+- `<advisory_context>` lists detections the pre-pass forwarded because it could not safely complete them. **Every entry is pending work** - address each one in the relevant section below, not as a separate task.
 
 </pre_pass_summary>
 
@@ -51,9 +51,9 @@ In your handoff `summary` (1–3 sentences per the system prompt), name the brea
 
 3. **Locate all Vitest configuration files**:
    - Search for `vitest.config.{ts,js,mjs}`
-   - Search for `vitest.workspace.{ts,js,mjs}` (deprecated in Vitest 3.2 — see "v3.2 Workspace File Deprecation" below)
+   - Search for `vitest.workspace.{ts,js,mjs}` (deprecated in Vitest 3.2 - see "v3.2 Workspace File Deprecation" below)
    - Check `project.json` files for `@nx/vitest:test` / `@nx/vite:test` executor options
-   - For workspaces relying on the inferred plugin (`@nx/vitest/plugin`), targets come from inference — inspect them with `nx show project <name> --json | jq .targets`
+   - For workspaces relying on the inferred plugin (`@nx/vitest/plugin`), targets come from inference - inspect them with `nx show project <name> --json | jq .targets`
 
 4. **Identify affected code**:
    - Test files: `**/*.{spec,test}.{ts,js,tsx,jsx}`
@@ -69,7 +69,7 @@ In your handoff `summary` (1–3 sentences per the system prompt), name the brea
 - **Inferred plugin targets**: modern Nx workspaces use `@nx/vitest/plugin` (or `@nx/vite/plugin` historically) to _infer_ the test target from the presence of a `vitest.config.*` file. `project.json` may have no `test` target at all. Renaming or moving `vitest.config.*` invalidates inference. After config edits, run `nx reset && nx show project <name>` on a sample project to confirm the target is still present.
 - **Shared base config pattern**: many Nx workspaces extend a workspace-root `vitest.config.base.ts` via `mergeConfig`. Apply transforms to the BASE config first, then per-project overrides. Otherwise a migrated base may conflict with un-migrated children.
 - **Angular projects using AnalogJS** (`@analogjs/vitest-angular`, `@analogjs/vite-plugin-angular`): the Analog packages are bumped automatically by Nx's `packageJsonUpdates`. Review the Analog-specific setup file (typically `src/test-setup.ts`) and any plugin invocations in the per-project `vitest.config.ts` for changes between Analog `~1.x` and `~2.x` lines.
-- **CI configuration**: when `@nx/vitest/plugin` is configured with `ciTargetName`, per-test-file targets are inferred — your `.github/workflows/*.yml` doesn't need direct reporter changes. CI-side reporter config matters only if you bypass the plugin.
+- **CI configuration**: when `@nx/vitest/plugin` is configured with `ciTargetName`, per-test-file targets are inferred - your `.github/workflows/*.yml` doesn't need direct reporter changes. CI-side reporter config matters only if you bypass the plugin.
 
 ---
 
@@ -84,7 +84,7 @@ Skip this section if your workspace is already on Vitest 2.x.
 **What Changed**: The default `pool` switched from `threads` to `forks` for improved stability. Existing `poolOptions.threads` configurations now apply to the non-default pool unless `pool` is explicitly set.
 
 ```typescript
-// ❌ BEFORE (Vitest 1.x — relying on implicit `threads` default)
+// ❌ BEFORE (Vitest 1.x - relying on implicit `threads` default)
 export default defineConfig({
   test: {
     poolOptions: {
@@ -93,7 +93,7 @@ export default defineConfig({
   },
 });
 
-// ✅ AFTER (Vitest 2.0 — either explicitly set the pool or move options to `forks`)
+// ✅ AFTER (Vitest 2.0 - either explicitly set the pool or move options to `forks`)
 export default defineConfig({
   test: {
     poolOptions: {
@@ -132,7 +132,7 @@ export default defineConfig({
 
 **Action Items**:
 
-- [ ] Audit hooks that mutate shared state — they now execute sequentially in declaration order.
+- [ ] Audit hooks that mutate shared state - they now execute sequentially in declaration order.
 - [ ] Audit `afterAll`/`afterEach` hooks that depend on registration order; their order is now reversed.
 - [ ] Add `sequence.hooks: 'parallel'` only if you cannot otherwise resolve hook-order dependencies.
 
@@ -231,7 +231,7 @@ An existing `watchExclude` entry uses a pattern whose chokidar equivalent is amb
 
 **Action Items**:
 
-- [ ] If you ingest the JSON reporter output, accept the new `task.meta` field (additive — most consumers will be unaffected).
+- [ ] If you ingest the JSON reporter output, accept the new `task.meta` field (additive - most consumers will be unaffected).
 
 ### 1.9 Mock Generic Types Simplified
 
@@ -409,7 +409,7 @@ vi.isMockFunction(fooService.foo);
 **Action Items**:
 
 - [ ] Audit tests that double-spied on the same method expecting two independent mocks.
-- [ ] Audit tests that asserted a method remained mocked after `restoreAllMocks` — they will now see the original.
+- [ ] Audit tests that asserted a method remained mocked after `restoreAllMocks` - they will now see the original.
 
 ### 2.5 Fake Timers Mock Everything by Default
 
@@ -454,7 +454,7 @@ expect(() => {
 
 **Action Items**:
 
-- [ ] Update assertions that pass a base `Error` to match a subclassed throw — use the matching subclass.
+- [ ] Update assertions that pass a base `Error` to match a subclassed throw - use the matching subclass.
 - [ ] Update assertions whose expected error has a `cause`/`name` that the actual error lacks.
 
 ### 2.7 Vite 6 + Vitest 3: `module` Condition Excluded from `resolve.conditions`
@@ -481,11 +481,11 @@ expect(() => {
 
 **Search Pattern**: `import { Custom, WorkspaceSpec } from 'vitest'`
 
-**What Changed**: `Custom` is now an alias for `Test`; prefer `RunnerCustomCase` and `RunnerTestCase`. `WorkspaceSpec` is removed — use `TestSpecification` instead. Tasks created via `getCurrentSuite().custom()` now have `type: 'test'`.
+**What Changed**: `Custom` is now an alias for `Test`; prefer `RunnerCustomCase` and `RunnerTestCase`. `WorkspaceSpec` is removed - use `TestSpecification` instead. Tasks created via `getCurrentSuite().custom()` now have `type: 'test'`.
 
 **Action Items**:
 
-- [ ] Replace `import { Custom } from 'vitest'`: most usages should become `RunnerTestCase` (the regular test case type — `Custom` was an alias for `Test`). Only use `RunnerCustomCase` if the workspace explicitly creates tasks via `getCurrentSuite().custom()`.
+- [ ] Replace `import { Custom } from 'vitest'`: most usages should become `RunnerTestCase` (the regular test case type - `Custom` was an alias for `Test`). Only use `RunnerCustomCase` if the workspace explicitly creates tasks via `getCurrentSuite().custom()`.
 - [ ] Replace `WorkspaceSpec` references with `TestSpecification`.
 
 ### 2.10 `resolveConfig()` API Shape Changed
@@ -516,7 +516,7 @@ expect(() => {
 
 **Action Items**:
 
-- [ ] Remove any `coverage.excludes` patterns that were trying to surface test files in coverage — they no longer apply.
+- [ ] Remove any `coverage.excludes` patterns that were trying to surface test files in coverage - they no longer apply.
 
 ### 2.13 Snapshot Internal API Restructured
 
@@ -574,7 +574,7 @@ export default defineConfig({
 Confirm:
 
 - All configuration files updated
-- All test files pass (or are flagged in your handoff `summary` if they remain failing — see `<test_integrity_guardrails>` below)
+- All test files pass (or are flagged in your handoff `summary` if they remain failing - see `<test_integrity_guardrails>` below)
 - Coverage reports generate correctly
 - No deprecated API warnings in console
 

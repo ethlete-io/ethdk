@@ -64,7 +64,7 @@ export class SliderComponent {
   private errorAnimatableRef = viewChild<AnimatableDirective>('errorAnimatable');
   private hintAnimatableRef = viewChild<AnimatableDirective>('hintAnimatable');
 
-  /** Labelled ticks need room next to the track — the stylesheet reserves it off this flag. */
+  /** Labelled ticks need room next to the track - the stylesheet reserves it off this flag. */
   protected hasMarkLabels = computed(() => this.slider.markStops().some((mark) => !!mark.label));
   public canAnimate = createCanAnimateSignal();
 

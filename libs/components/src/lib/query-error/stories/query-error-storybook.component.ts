@@ -5,7 +5,7 @@ import { createQueryErrorResponse } from '@ethlete/query';
 import { BUTTON_IMPORTS } from '../../button';
 import { QUERY_ERROR_IMPORTS } from '../query-error.imports';
 
-/** The shapes an API actually answers with — each one a different branch of the client's normalizer. */
+/** The shapes an API actually answers with - each one a different branch of the client's normalizer. */
 const ERROR_BODIES = {
   message: { status: 403, body: { message: 'You do not have access to this team.' } },
   violations: {

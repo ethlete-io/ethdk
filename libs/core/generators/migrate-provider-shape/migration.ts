@@ -13,7 +13,7 @@ const renderReport = (tasks: ProviderShapeTask[]) =>
     '# Provider-shape migration tasks',
     '',
     'The codemod rewrote every destructured provider declaration into a definition plus one extractor per',
-    'binding. The sites below are **not** plain module-scope declarations, so they were left alone — each',
+    'binding. The sites below are **not** plain module-scope declarations, so they were left alone - each',
     'needs a decision a codemod cannot make.',
     '',
     'Recipes:',
@@ -65,6 +65,6 @@ export default async function migrateProviderShape(tree: Tree, schema: Migration
   console.log(`\n✅ Rewrote ${filesChanged} file(s).`);
 
   if (tasks.length > 0) {
-    console.log(`⚠️  ${tasks.length} site(s) need a manual decision — see ${PROVIDER_SHAPE_REPORT_PATH}.`);
+    console.log(`⚠️  ${tasks.length} site(s) need a manual decision - see ${PROVIDER_SHAPE_REPORT_PATH}.`);
   }
 }

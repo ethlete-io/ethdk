@@ -113,7 +113,7 @@ describe('compilePatternMask', () => {
       expect(date.isComplete!('12042026')).toBe(true);
     });
 
-    it('treats 9 slots as optional — positionally, in pattern order', () => {
+    it('treats 9 slots as optional - positionally, in pattern order', () => {
       // raw fills slots left to right: with `09`, one char fills the required slot
       expect(compilePatternMask('09').isComplete!('1')).toBe(true);
       // with `90`, one char lands in the optional slot, leaving the required one empty

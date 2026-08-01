@@ -12,13 +12,13 @@ Do all of the following in the same change:
      table (rule → `ethlete/<rule-name>`).
    - If a rule now enforces something previously described as a judgment call,
      move it out of the prose section into the table.
-2. **Bump the version in the styleguide header** — `# Style Guide vX.Y.Z` (line 1).
+2. **Bump the version in the styleguide header** - `# Style Guide vX.Y.Z` (line 1).
    New rule / stricter enforcement → minor bump; wording/fix → patch.
-3. **⚠️ ALWAYS UPDATE THE VITEPRESS DOCS — this is the step most easily forgotten.**
+3. **⚠️ ALWAYS UPDATE THE VITEPRESS DOCS - this is the step most easily forgotten.**
    The published rule reference lives at **`apps/docs/eslint/rules.md`** (a table row
    per rule, grouped by section, with `Fix`/`Default` columns) and the rule **count +
    coverage summary** in **`apps/docs/eslint/index.md`**. Adding, removing, or renaming
-   a rule (or changing its default severity) **must** update both — `docs/STYLEGUIDE.md`
+   a rule (or changing its default severity) **must** update both - `docs/STYLEGUIDE.md`
    is not enough. Grep `apps/docs/eslint` for the rule name to confirm it's in sync.
 4. Wire the rule into `src/configs/recommended.js` and export it from `src/index.js`.
 5. Add a **changeset** for `@ethlete/eslint-plugin` (see the `changeset` skill).

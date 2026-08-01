@@ -87,7 +87,7 @@ type StickyOffsets = { start: Record<string, number>; end: Record<string, number
  * The template binds fields, never calls methods: a method in a binding re-runs on every change
  * detection with nothing to memoize it, and in a table that means row-count × column-count calls per
  * pass. Each `…Vm` below is one `computed`, so the same work happens once per actual change and the
- * template is a plain projection of it. (Event bindings still call methods — that's the one place a
+ * template is a plain projection of it. (Event bindings still call methods - that's the one place a
  * call belongs.)
  */
 type TableStickyVm = {
@@ -97,7 +97,7 @@ type TableStickyVm = {
   offsetEnd: number | null;
 };
 
-/** One leading utility cell (selection, expander) — identical chrome in every row kind. */
+/** One leading utility cell (selection, expander) - identical chrome in every row kind. */
 type TableLeadCellVm = {
   key: string;
   cellClass: string;
@@ -121,7 +121,7 @@ type TableBodyCellVm<T> = TableStickyVm & {
   key: string;
   align: string;
   state: TableCellState | null;
-  /** What went wrong, when the callback said — shown on the mark. */
+  /** What went wrong, when the callback said - shown on the mark. */
   message: string | null;
   template: TemplateRef<unknown> | null;
   /** The cell's value, resolved through the column's accessor. */
@@ -137,9 +137,9 @@ type TableBodyCellVm<T> = TableStickyVm & {
 
 type TableBodyRowVm<T> = {
   row: T;
-  /** The row's absolute index in `rows()` — true even while a virtual window renders a slice. */
+  /** The row's absolute index in `rows()` - true even while a virtual window renders a slice. */
   index: number;
-  /** `rowIdentity`'s result — what `@for` tracks by. */
+  /** `rowIdentity`'s result - what `@for` tracks by. */
   key: unknown;
   classes: string;
   stripe: boolean;
@@ -180,7 +180,7 @@ type TablePlaceholderRowVm = {
 const MIN_COLUMN_WIDTH = 96;
 
 /**
- * The default track for a column: it shares out the leftover room, but never shrinks past its floor —
+ * The default track for a column: it shares out the leftover room, but never shrinks past its floor -
  * which is what stops one wide (or resized) column from squeezing its neighbours down to their
  * padding and out of sight. Past that point the table scrolls instead, which the scroll fades
  * advertise.
@@ -188,7 +188,7 @@ const MIN_COLUMN_WIDTH = 96;
 const defaultTrack = (minWidth: number) => `minmax(${minWidth}px, 1fr)`;
 
 /**
- * Trailing track that soaks up the room left over by all-rigid columns — see
+ * Trailing track that soaks up the room left over by all-rigid columns - see
  * {@link TableComponent.hasFiller}. Slack, not a column, so unlike {@link DEFAULT_TRACK} it has no
  * floor: it must be free to collapse to nothing.
  */
@@ -200,7 +200,7 @@ const FILLER_TRACK = 'minmax(0, 1fr)';
  */
 const isFlexibleTrack = (track: string) => /\bauto\b|[\d.]fr\b/.test(track);
 
-/** Detail-row enter/leave duration (must match the CSS animations) — see `markUserToggled`. */
+/** Detail-row enter/leave duration (must match the CSS animations) - see `markUserToggled`. */
 const DETAIL_ANIMATION_MS = 200;
 
 /**
@@ -211,7 +211,7 @@ const MIN_UNPINNED_SPACE = 96;
 
 /**
  * Cheap structural comparison for the small, plain state lists the table mirrors (sort entries, filter
- * values). Enough to stop an equal-but-new array from being written back — see the mirroring effect.
+ * values). Enough to stop an equal-but-new array from being written back - see the mirroring effect.
  */
 const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -220,14 +220,14 @@ const SCROLL_FADE_EPSILON = 1;
 
 /**
  * Widths (%) a loading placeholder bar cycles through, so a block of them reads as ragged text rather
- * than a bar chart. Cycled by row + column index — see `placeholderGrid`.
+ * than a bar chart. Cycled by row + column index - see `placeholderGrid`.
  */
 const PLACEHOLDER_WIDTHS = [72, 45, 88, 60, 34, 79];
 
 /**
  * The default table. Renders typed rows and cells from a {@link TableColumns}
  * record on a CSS grid with a sticky header and an empty state. Light by
- * default — sort, filter, expansion, reordering, virtualization and state
+ * default - sort, filter, expansion, reordering, virtualization and state
  * persistence arrive as separate opt-in features.
  *
  * @example
@@ -268,12 +268,12 @@ export class TableComponent<T> {
   public data = input<readonly T[]>([]);
 
   /**
-   * A rows source to drive the table from — what `tableRowsFromQuery` / `tableRowsFromV2Query` return,
+   * A rows source to drive the table from - what `tableRowsFromQuery` / `tableRowsFromV2Query` return,
    * or any object of that shape. It supplies `data`, `loading` and `error`, and takes the table's sort
    * and filter changes back through its own setters, so one binding replaces six.
    *
    * Because such a source has already sorted and filtered on the server, `sortMode` and `filterMode`
-   * default to `'server'` while one is bound — set them explicitly to override.
+   * default to `'server'` while one is bound - set them explicitly to override.
    */
   public rowsSource = input<TableRowsSource<T>>();
 
@@ -288,7 +288,7 @@ export class TableComponent<T> {
 
   /**
    * Wording for this table only, on top of the injected {@link TABLE_LABELS} set. Prefer
-   * {@link provideTableLabels} for app-wide localization; use this for a one-off. Partial — omitted
+   * {@link provideTableLabels} for app-wide localization; use this for a one-off. Partial - omitted
    * keys keep the provided/default value.
    */
   public labels = input<Partial<TableLabels> | null>(null);
@@ -305,7 +305,7 @@ export class TableComponent<T> {
   public loadingRows = input(5, { transform: numberAttribute });
 
   /**
-   * The load's failure, if any — anything non-nullish counts (an `HttpErrorResponse`, a message, a
+   * The load's failure, if any - anything non-nullish counts (an `HttpErrorResponse`, a message, a
    * flag), so it takes a query's `error` signal as-is. Set, it replaces the body with the error
    * state: stale rows under an unreported failure are worse than an honest empty table. Say more than
    * the `error` label with {@link errorTemplate} (which gets the error) or a projected `[etTableError]`.
@@ -313,15 +313,15 @@ export class TableComponent<T> {
   public error = input<unknown>(null);
 
   /**
-   * Body content for the empty state, in place of the `empty` label. Context: `{ $implicit: rows }` —
+   * Body content for the empty state, in place of the `empty` label. Context: `{ $implicit: rows }` -
    * the (empty) row list, so one template can serve "nothing here" and "nothing matches your filters".
    * Takes precedence over projected `[etTableEmpty]` content.
    */
   public emptyTemplate = input<TemplateRef<TableEmptyContext<T>>>();
 
   /**
-   * Body content for the error state, in place of the `error` label. Context: `{ $implicit: error }` —
-   * whatever was bound to {@link error} — so the template can render the message and a retry.
+   * Body content for the error state, in place of the `error` label. Context: `{ $implicit: error }` -
+   * whatever was bound to {@link error} - so the template can render the message and a retry.
    * Takes precedence over projected `[etTableError]` content.
    */
   public errorTemplate = input<TemplateRef<TableErrorContext>>();
@@ -330,9 +330,9 @@ export class TableComponent<T> {
    * Per-cell async state, for a cell that loads or fails on its own (inline editing). Return
    * `'loading'` to replace that cell's content with a placeholder bar, `'error'` to mark it, or
    * `null`/nothing for a normal cell. Return `{ state: 'error', message }` and the message rides
-   * along on the mark — as its `title` and accessible name, or as a tooltip with
+   * along on the mark - as its `title` and accessible name, or as a tooltip with
    * `etTableCellErrorTooltip`. Resolved once per rendered cell (see `bodyRows`), but keep it cheap
-   * anyway — a map lookup, not a search.
+   * anyway - a map lookup, not a search.
    */
   public cellState = input<(row: T, key: string) => TableCellStateValue | null | undefined>();
 
@@ -392,14 +392,14 @@ export class TableComponent<T> {
 
   /**
    * Make whole rows respond to clicks: adds a hover/pointer affordance and emits {@link rowClick}
-   * (clicks landing on interactive cell content are ignored — see `rowClick`). @default false
+   * (clicks landing on interactive cell content are ignored - see `rowClick`). @default false
    */
   public rowInteractive = input(false, { transform: booleanAttribute });
 
   /**
    * Emitted when an interactive row (see {@link rowInteractive}) is clicked, with the row as payload.
-   * Clicks originating from interactive descendants — buttons, links, inputs, selects, a menu trigger,
-   * and the selection/expander cells — are ignored, so in-row controls keep working. The table bakes
+   * Clicks originating from interactive descendants - buttons, links, inputs, selects, a menu trigger,
+   * and the selection/expander cells - are ignored, so in-row controls keep working. The table bakes
    * in no navigation; call `router.navigate` (etc.) yourself. For crawlable per-row links, render a
    * real `<a>` in a cell instead.
    */
@@ -418,7 +418,7 @@ export class TableComponent<T> {
   // Group-header cells; the first is measured to offset the sub-header row's sticky position.
   private groupCells = viewChildren<ElementRef<HTMLElement>>('groupCell');
 
-  // The rendered lead-column header cells, in lead-column order — measured so each lead column and
+  // The rendered lead-column header cells, in lead-column order - measured so each lead column and
   // the pinned data columns know how far in they start.
   private leadHeaderCells = viewChildren<ElementRef<HTMLElement>>('leadHeaderCell');
 
@@ -448,7 +448,7 @@ export class TableComponent<T> {
 
   // UI contributed by opt-in features (filter menus, resize grips), rendered in every header cell.
   // Features register themselves (see TABLE_FEATURE_HOST) rather than being queried, so the table
-  // never references a feature's dependencies — that's what keeps them out of an unused bundle.
+  // never references a feature's dependencies - that's what keeps them out of an unused bundle.
   private headerAdornmentList = signal<TableHeaderAdornment[]>([]);
 
   protected headerAdornments = computed(() =>
@@ -467,7 +467,7 @@ export class TableComponent<T> {
   protected cellErrorMark = computed(() => this.cellErrorMarkList().find((mark) => mark.enabled?.() ?? true) ?? null);
 
   // Floating UI contributed by features (the reorder drag ghost). The table hosts it so a feature
-  // never needs a view — and never an element — of its own.
+  // never needs a view - and never an element - of its own.
   private layerList = signal<TableLayer[]>([]);
 
   protected layers = computed(() => this.layerList().filter((layer) => layer.enabled?.() ?? true));
@@ -484,13 +484,13 @@ export class TableComponent<T> {
   // `tabindex`, and the row must stop being a tab stop of its own or the body would have two.
   private cellNavigationList = signal<TableCellNavigation[]>([]);
 
-  /** Whether a feature has taken over cell focus — see {@link registerCellNavigation}. */
+  /** Whether a feature has taken over cell focus - see {@link registerCellNavigation}. */
   public cellNavigation = computed(() =>
     this.cellNavigationList().some((navigation) => navigation.enabled?.() ?? true),
   );
 
   // A feature that edits cells in place (etTableInlineEdit). The base knows only which cell is open and
-  // what to render in it — the session, the draft and the commit are all the feature's.
+  // what to render in it - the session, the draft and the commit are all the feature's.
   private cellEditingList = signal<TableCellEditing[]>([]);
 
   private cellEditing = computed(() => this.cellEditingList().find((editing) => editing.enabled?.() ?? true) ?? null);
@@ -522,13 +522,13 @@ export class TableComponent<T> {
   // during an `autosizeColumns` pass.
   private autosizing = signal<ReadonlySet<string>>(new Set());
 
-  // Total frozen width (px) at each inline edge — the leading utility columns and start pins, and the
+  // Total frozen width (px) at each inline edge - the leading utility columns and start pins, and the
   // end pins. Where the scroll fades sit; see `scrollFades`.
   private pinnedInsets = signal<{ start: number; end: number }>({ start: 0, end: 0 });
 
   /**
    * Where content is currently scrolled out of view horizontally. Drives the edge gradients: they mark
-   * the boundary the rows disappear under, which is *not* the viewport edge when columns are pinned —
+   * the boundary the rows disappear under, which is *not* the viewport edge when columns are pinned -
    * a pinned column is the thing they slide beneath, so the fade sits at its inner edge instead. That
    * offset is what a generic scroll-fade wrapper can't know, so the table draws its own.
    */
@@ -544,7 +544,7 @@ export class TableComponent<T> {
   private userToggledKey = signal<unknown>(null);
   private userToggleReset: Subscription | undefined;
 
-  // The declared columns paired with their keys, in declaration order — the form everything else
+  // The declared columns paired with their keys, in declaration order - the form everything else
   // (rendering, features, state) works with. Keys are the record's, so they can't collide.
   private columnDefs = computed<TableColumnDef<T>[]>(() =>
     Object.entries(this.columns()).map(([key, column]) => ({ ...column, key })),
@@ -552,7 +552,7 @@ export class TableComponent<T> {
 
   // Column order, visibility and user-resized widths (px). All three are reconciled rather than
   // reset when the `columns` input changes identity, so a reorder / resize / hidden column (or a
-  // restoreState()) survives a consumer rebuilding its definitions — see `table-column-state.ts`.
+  // restoreState()) survives a consumer rebuilding its definitions - see `table-column-state.ts`.
   private columnOrder = linkedSignal<TableColumnDef<T>[], string[]>({
     source: () => this.columnDefs(),
     computation: (columns, previous) =>
@@ -628,7 +628,7 @@ export class TableComponent<T> {
   /**
    * The spanning group-header row as maximal runs of adjacent visible columns sharing a `group`.
    * Ungrouped columns each form their own single-track run (`label: null`) so the row still covers
-   * every track — dragging a column out of a group simply splits the run.
+   * every track - dragging a column out of a group simply splits the run.
    */
   public headerGroups = computed<TableHeaderGroup[]>(() => {
     const runs: TableHeaderGroup[] = [];
@@ -657,7 +657,7 @@ export class TableComponent<T> {
     () => !this.stickySuppressed() && this.visibleColumns().some((column) => column.sticky === 'end'),
   );
 
-  /** Whether any visible column is pinned (start or end) — the grid then sizes to its tracks so pinning works. */
+  /** Whether any visible column is pinned (start or end) - the grid then sizes to its tracks so pinning works. */
   public hasStickyColumns = computed(
     () => !this.stickySuppressed() && this.visibleColumns().some((column) => !!column.sticky),
   );
@@ -694,8 +694,8 @@ export class TableComponent<T> {
    * The column tracks, plus whether they are all rigid.
    *
    * A track that is `auto` or flexible (`fr`) soaks up whatever room is left over, so such a grid
-   * always fills its container. Once every column carries a fixed length — which is what resizing
-   * every column does — that stops being true, and the table's chrome (header band, row dividers,
+   * always fills its container. Once every column carries a fixed length - which is what resizing
+   * every column does - that stops being true, and the table's chrome (header band, row dividers,
    * vertical rules) would stop at the last column instead of at the panel's edge. {@link hasFiller}
    * is the fix.
    */
@@ -703,7 +703,7 @@ export class TableComponent<T> {
     const widths = this.columnWidths();
     const measuring = this.autosizing();
     const tracks = this.visibleColumns().map((column) => {
-      // Mid-autosize this column is let out to its content so it can be measured — see `autosizeColumns`.
+      // Mid-autosize this column is let out to its content so it can be measured - see `autosizeColumns`.
       if (measuring.has(column.key)) return 'max-content';
 
       const resized = widths[column.key];
@@ -713,8 +713,8 @@ export class TableComponent<T> {
 
     // An end-pinned column already owns the trailing edge of the scroll viewport; a slack track
     // between it and that edge would only strand it away from the last real column. Nor during a
-    // measurement pass: `max-content` isn't flexible, so it would otherwise add — and immediately
-    // drop — a filler cell in every row for that one frame.
+    // measurement pass: `max-content` isn't flexible, so it would otherwise add - and immediately
+    // drop - a filler cell in every row for that one frame.
     const fixed = tracks.length > 0 && !measuring.size && !tracks.some(isFlexibleTrack) && !this.hasStickyEnd();
 
     // Leading utility columns come first, in registration order (see `leadColumns`). Their widths are
@@ -735,7 +735,7 @@ export class TableComponent<T> {
    */
   protected hasFiller = computed(() => this.columnTracks().fixed);
 
-  /** The serializable, versioned table state — column order, visibility, sort, filters and expanded rows. */
+  /** The serializable, versioned table state - column order, visibility, sort, filters and expanded rows. */
   public state = computed<TableState>(() => {
     const sort = this.sort();
     const multiSorted = sort.length > 1;
@@ -790,7 +790,7 @@ export class TableComponent<T> {
   });
 
   /**
-   * The rendered rows — client-filtered then client-sorted for whichever of
+   * The rendered rows - client-filtered then client-sorted for whichever of
    * `filterMode`/`sortMode` is `'client'`.
    */
   public rows = computed(() => {
@@ -809,7 +809,7 @@ export class TableComponent<T> {
     return [...result];
   });
 
-  /** The rows actually rendered — a registered row window's slice (virtual scrolling), or all of them. */
+  /** The rows actually rendered - a registered row window's slice (virtual scrolling), or all of them. */
   public renderedRows = computed<readonly T[]>(() => {
     const window = this.rowWindow();
     const rows = this.rows();
@@ -823,14 +823,14 @@ export class TableComponent<T> {
   /** The failure in effect: the `error` input, else whatever a bound {@link rowsSource} reports. */
   public resolvedError = computed(() => this.error() ?? this.rowsSource()?.error?.() ?? null);
 
-  /** Whether there is a failure to show — the error state then stands in for the body. */
+  /** Whether there is a failure to show - the error state then stands in for the body. */
   public hasError = computed(() => this.resolvedError() !== null && this.resolvedError() !== undefined);
 
   /** Whether rows are loading: the `loading` input, or a bound {@link rowsSource} with a request out. */
   public resolvedLoading = computed(() => this.loading() || (this.rowsSource()?.loading?.() ?? false));
 
   /**
-   * How many rows exist in total, when a bound {@link rowsSource} knows — `null` for a table given its
+   * How many rows exist in total, when a bound {@link rowsSource} knows - `null` for a table given its
    * rows outright, which by definition holds all of them. Nothing renders it: it exists so a
    * [CSV export](/components/table#exporting-more-than-the-loaded-page) can tell that it would write
    * one page of many.
@@ -991,7 +991,7 @@ export class TableComponent<T> {
   /**
    * The height of a real row, remembered from the last time this table had any. Placeholder rows adopt
    * it, so a refetch or a page change keeps the table exactly as tall as the data the user was just
-   * looking at. `null` until a row has been rendered — the first load has nothing to measure, which is
+   * looking at. `null` until a row has been rendered - the first load has nothing to measure, which is
    * what `etTableCellSkeleton` is for.
    */
   protected measuredRowHeight = signal<number | null>(null);
@@ -1007,7 +1007,7 @@ export class TableComponent<T> {
 
   /**
    * The keys of the currently hidden columns, in declared order. Nothing in the table's own chrome
-   * shows a hidden column — the column menu's "Hide column" takes one away and has no way back — so
+   * shows a hidden column - the column menu's "Hide column" takes one away and has no way back - so
    * this is what an app builds its own "columns" chooser from, together with {@link allColumns},
    * {@link setColumnVisible} and {@link showAllColumns}.
    *
@@ -1024,7 +1024,7 @@ export class TableComponent<T> {
   );
 
   /**
-   * Every declared column in the current order, hidden ones included — the counterpart to
+   * Every declared column in the current order, hidden ones included - the counterpart to
    * {@link visibleColumns}, and the list a "columns" chooser iterates.
    */
   public allColumns = computed(() => this.orderedColumns());
@@ -1032,7 +1032,7 @@ export class TableComponent<T> {
   constructor() {
     // Remember how tall a real row is, so placeholder rows can match it on the next load. Measured from
     // a rendered body cell (the row itself is `display: contents` and has no box of its own) whenever
-    // the rendered rows change — cheap, and the only way to know a row's height when its cells hold
+    // the rendered rows change - cheap, and the only way to know a row's height when its cells hold
     // arbitrary content. A table that has never had rows keeps `null` and falls back to a text line.
     afterEveryRender(() => {
       const cell = this.firstBodyCellElement();
@@ -1053,8 +1053,8 @@ export class TableComponent<T> {
       untracked(() => this.styleManager.mount(TableDetailStylesComponent));
     });
 
-    // A bound rows source owns the sort/filter state, but everything here — features, `state()`, the
-    // header models — reads `sort()` / `filters()`. Mirror the source into them rather than teaching
+    // A bound rows source owns the sort/filter state, but everything here - features, `state()`, the
+    // header models - reads `sort()` / `filters()`. Mirror the source into them rather than teaching
     // every reader about two sources of truth. Writes go the other way (see `applySort`), and each
     // branch only sets when the value actually differs, so the two can't ping-pong.
     effect(() => {
@@ -1073,7 +1073,7 @@ export class TableComponent<T> {
 
     // Measure pinned columns' inline offsets from header-cell widths (re-runs on resize and
     // structural change). Sticky-start columns stack from the left edge (clearing the expander),
-    // sticky-end columns stack from the right — pin from the edges, so widths sum cleanly.
+    // sticky-end columns stack from the right - pin from the edges, so widths sum cleanly.
     effect(() => {
       this.hostDimensions();
       // Re-measure when a column is resized (widths change but the host doesn't), so pinned
@@ -1084,7 +1084,7 @@ export class TableComponent<T> {
       const cells = this.headerCells();
 
       // `signalElementDimensions` observes one element; sticky offsets need the widths of *every*
-      // header cell summed in order, re-read whenever the host resizes or a column width changes —
+      // header cell summed in order, re-read whenever the host resizes or a column width changes -
       // both of which this effect already tracks above.
       // eslint-disable-next-line ethlete/prefer-element-dimensions
       const width = (index: number) => cells[index]?.nativeElement.getBoundingClientRect().width ?? 0;
@@ -1156,7 +1156,7 @@ export class TableComponent<T> {
       );
     });
 
-    // The fades depend on the live scroll offset, which no signal tracks — recheck on scroll, and
+    // The fades depend on the live scroll offset, which no signal tracks - recheck on scroll, and
     // whenever the host or the tracks resize (either can change what overflows).
     effect(() => {
       this.hostDimensions();
@@ -1177,7 +1177,7 @@ export class TableComponent<T> {
   }
 
   /**
-   * A template registered for one of a column's slots, or `null`. Part of the feature contract — the
+   * A template registered for one of a column's slots, or `null`. Part of the feature contract - the
    * filter menu reads its option template through it; consumers register templates instead.
    */
   public columnTemplate(slot: TableTemplateSlot, key: string): TemplateRef<unknown> | null {
@@ -1194,7 +1194,7 @@ export class TableComponent<T> {
 
   /**
    * Called by a feature to contribute its own serializable state to `state()` / `restoreState()`. Part
-   * of the feature contract — see {@link TableFeatureHost}; consumers never call this.
+   * of the feature contract - see {@link TableFeatureHost}; consumers never call this.
    */
   public registerStateSlice(slice: TableStateSlice) {
     this.stateSliceList.update((slices) => [...slices, slice]);
@@ -1202,7 +1202,7 @@ export class TableComponent<T> {
 
   /**
    * Called by `etTableCellErrorTooltip` to replace the mark drawn in failed cells. Part of the feature
-   * contract — see {@link TableFeatureHost}; consumers never call this.
+   * contract - see {@link TableFeatureHost}; consumers never call this.
    */
   public registerCellErrorMark(mark: TableCellErrorMark) {
     this.cellErrorMarkList.update((marks) => [...marks, mark]);
@@ -1215,7 +1215,7 @@ export class TableComponent<T> {
 
   /**
    * Called by an opt-in feature (e.g. `etTableFilters`) to stamp a component into every header cell.
-   * Part of the feature contract — see `TableFeatureHost`; consumers never call this.
+   * Part of the feature contract - see `TableFeatureHost`; consumers never call this.
    */
   public registerHeaderAdornment(adornment: TableHeaderAdornment) {
     this.headerAdornmentList.update((adornments) => [...adornments, adornment]);
@@ -1269,7 +1269,7 @@ export class TableComponent<T> {
   }
 
   /**
-   * Offer a cell to a registered editing feature. Part of the feature contract — it is how
+   * Offer a cell to a registered editing feature. Part of the feature contract - it is how
    * `etTableKeyboardNav` hands `Enter` over to `etTableInlineEdit` without either knowing about the
    * other. `false` when nothing took it.
    */
@@ -1294,7 +1294,7 @@ export class TableComponent<T> {
 
   /**
    * The rendered body cell at an absolute row index and visible-column index. Part of the feature
-   * contract. `null` when the row is outside a window's rendered range — ask {@link scrollRowIntoView}
+   * contract. `null` when the row is outside a window's rendered range - ask {@link scrollRowIntoView}
    * for it first.
    */
   public bodyCellElementAt(rowIndex: number, columnIndex: number) {
@@ -1304,14 +1304,14 @@ export class TableComponent<T> {
     if (rendered < 0 || rendered >= this.renderedRows().length) return null;
     if (columnIndex < 0 || columnIndex >= columns) return null;
 
-    // `bodyCells` is every rendered data cell in DOM order, rows major — lead cells carry no `#bodyCell`
+    // `bodyCells` is every rendered data cell in DOM order, rows major - lead cells carry no `#bodyCell`
     // ref, so the arithmetic doesn't have to know how many of them there are.
     return this.bodyCells()[rendered * columns + columnIndex]?.nativeElement ?? null;
   }
 
   /**
    * Bring an absolute row index into view. Part of the feature contract. Returns `true` when a
-   * registered window did it — the row is then only rendered after the next change detection, which is
+   * registered window did it - the row is then only rendered after the next change detection, which is
    * what the caller has to wait for.
    */
   public scrollRowIntoView(rowIndex: number) {
@@ -1330,7 +1330,7 @@ export class TableComponent<T> {
     return false;
   }
 
-  /** How many rows fit the scroll viewport. Part of the feature contract — the PageUp/PageDown step. */
+  /** How many rows fit the scroll viewport. Part of the feature contract - the PageUp/PageDown step. */
   public rowsPerPage() {
     const rowHeight = this.measuredRowHeight() ?? this.firstBodyCellElement()?.offsetHeight ?? 0;
     const viewport = this.elementRef.nativeElement.clientHeight;
@@ -1340,7 +1340,7 @@ export class TableComponent<T> {
     return Math.max(1, Math.floor(viewport / rowHeight) - 1);
   }
 
-  /** Apply a previously captured {@link TableState} — column order, visibility, sort, filters and expanded rows. */
+  /** Apply a previously captured {@link TableState} - column order, visibility, sort, filters and expanded rows. */
   public restoreState(next: TableState) {
     this.columnOrder.set(next.columns.map((column) => column.key));
     this.hiddenColumns.set(new Set(next.columns.filter((column) => column.hidden).map((column) => column.key)));
@@ -1403,7 +1403,7 @@ export class TableComponent<T> {
   }
 
   /**
-   * Set a column's sort direction outright, or clear it with `null` — what a column menu's explicit
+   * Set a column's sort direction outright, or clear it with `null` - what a column menu's explicit
    * "Sort ascending / descending / Clear" entries need, where {@link toggleSort}'s cycle would make
    * the result depend on the column's current state. Honours `multiSort` the same way.
    */
@@ -1504,7 +1504,7 @@ export class TableComponent<T> {
   }
 
   /** The inline-start offset (px) of a lead column, when the leading columns are pinned. */
-  /** Whether a row can expand — expansion is on and the row passes `expandableRow`. */
+  /** Whether a row can expand - expansion is on and the row passes `expandableRow`. */
   public canExpand(row: T) {
     return this.expandable() && (this.expandableRow()?.(row) ?? true);
   }
@@ -1513,7 +1513,7 @@ export class TableComponent<T> {
    * The animation class for a detail row's enter/leave, or `''` to mount/unmount it instantly.
    *
    * Only the row the user just toggled animates. A detail row also mounts and unmounts when the rows
-   * themselves change — paging away and back, sorting, a query refresh — and animating those replays
+   * themselves change - paging away and back, sorting, a query refresh - and animating those replays
    * an open/close the user never asked for (and pays the layout cost mid page-change).
    */
   /**
@@ -1571,7 +1571,7 @@ export class TableComponent<T> {
 
   /**
    * Insert a column next to another in the full column order, keeping hidden columns in place. Part of
-   * the feature contract — `etTableReorder` commits a drop with it.
+   * the feature contract - `etTableReorder` commits a drop with it.
    */
   public moveColumnNextTo(key: string, target: { overKey: string; before: boolean }) {
     this.columnOrder.update((order) => {
@@ -1587,7 +1587,7 @@ export class TableComponent<T> {
   }
 
   /**
-   * The column's current rendered header width in px. Part of the feature contract — `etTableResize`
+   * The column's current rendered header width in px. Part of the feature contract - `etTableResize`
    * uses it as the baseline for a drag.
    */
   public renderedColumnWidth(key: string) {
@@ -1597,7 +1597,7 @@ export class TableComponent<T> {
   }
 
   /**
-   * Override a column's width, clamped between a usable minimum and the table's own width — a column
+   * Override a column's width, clamped between a usable minimum and the table's own width - a column
    * wider than the visible table only scrolls uselessly and makes it easy to strand the layout in a
    * strange state. Stored in `state()` so it round-trips. Part of the feature contract.
    */
@@ -1610,7 +1610,7 @@ export class TableComponent<T> {
 
   /**
    * The narrowest a column may be: its own `minWidth`, else {@link MIN_COLUMN_WIDTH}. One source for
-   * both floors a column has — the flexible track's, and how far a resize drag may go — so the two
+   * both floors a column has - the flexible track's, and how far a resize drag may go - so the two
    * can't disagree.
    */
   public minWidthOf(key: string) {
@@ -1621,7 +1621,7 @@ export class TableComponent<T> {
    * Fit columns to their widest rendered content, then keep that as a width override.
    *
    * Measured by letting the tracks out to `max-content` for one frame and reading back what the
-   * browser gave them, rather than by adding up text metrics — that way arbitrary cell content (a
+   * browser gave them, rather than by adding up text metrics - that way arbitrary cell content (a
    * badge, an avatar, a nested component) is measured as it actually lays out, and the cell's own
    * padding is included for free. Only *rendered* rows count, so on a virtualized table this fits the
    * current window, as it must: the rows outside it have no width to measure.
@@ -1650,12 +1650,12 @@ export class TableComponent<T> {
     );
   }
 
-  /** Fit one column to its widest rendered content — see {@link autosizeColumns}. */
+  /** Fit one column to its widest rendered content - see {@link autosizeColumns}. */
   public autosizeColumn(key: string) {
     this.autosizeColumns([key]);
   }
 
-  /** Fit every visible column to its widest rendered content — see {@link autosizeColumns}. */
+  /** Fit every visible column to its widest rendered content - see {@link autosizeColumns}. */
   public autosizeAllColumns() {
     this.autosizeColumns(this.visibleColumns().map((column) => column.key));
   }
@@ -1678,8 +1678,8 @@ export class TableComponent<T> {
   }
 
   /**
-   * The one place sort state is written. A bound {@link rowsSource} owns it — it resets the page and
-   * refetches — and its own value syncs back into `sort` (see the constructor), so everything else can
+   * The one place sort state is written. A bound {@link rowsSource} owns it - it resets the page and
+   * refetches - and its own value syncs back into `sort` (see the constructor), so everything else can
    * keep reading `sort()` whichever drives it.
    */
   private applySort(sort: TableSort[]) {

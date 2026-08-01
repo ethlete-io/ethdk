@@ -7,7 +7,7 @@ export type MatchResultNameContext = {
   home: string | null;
   /** The away side's value, as drawn, or `null`. */
   away: string | null;
-  /** What the two values are — see {@link NormalizedMatchResultKind}. */
+  /** What the two values are - see {@link NormalizedMatchResultKind}. */
   kind: NormalizedMatchResultKind;
   /** The winning side's display name, or `null` while undecided or drawn. */
   winner: string | null;
@@ -54,7 +54,7 @@ export type MatchLabels = {
   /** Separates the two scores, e.g. `' : '`. Also used to build the accessible name. */
   scoreSeparator: string;
   /**
-   * How the result is announced — which is not how it is drawn. `'W'` beside `'L'` reads fine and
+   * How the result is announced - which is not how it is drawn. `'W'` beside `'L'` reads fine and
    * listens terribly, so a match with no values to read names its winner instead, and `points` says
    * what the numbers are.
    */
@@ -67,7 +67,7 @@ export type MatchLabels = {
   outcomeLoss: string;
   /** Both sides' letter for a drawn match. */
   outcomeDraw: string;
-  /** Accessible name for a participant's emblem — the image is decorative beside the name. */
+  /** Accessible name for a participant's emblem - the image is decorative beside the name. */
   emblemAlt: (participant: string) => string;
   /** A participant's seed, e.g. `'Seed 3'`. */
   seed: (seed: number) => string;
@@ -105,7 +105,7 @@ export const DEFAULT_MATCH_LABELS: MatchLabels = {
   emblemAlt: (participant) => `${participant} emblem`,
   seed: (seed) => `Seed ${seed}`,
   // The order matters more than the punctuation: which match this is, who is playing, then how it
-  // stands, then whether it is still going — which is how someone scanning a page of these actually
+  // stands, then whether it is still going - which is how someone scanning a page of these actually
   // reads them.
   matchName: ({ home, away, result, startTime, status, label }) => {
     const outcome = result ?? startTime;
@@ -122,7 +122,7 @@ const MATCH_LABELS_DEF = /* @__PURE__ */ defineLabels<MatchLabels>('MATCH_LABELS
 
 /**
  * Localize the match components' strings for everything below this injector, and read the set in
- * effect here as a signal. Partial — whatever you leave out keeps its {@link DEFAULT_MATCH_LABELS}
+ * effect here as a signal. Partial - whatever you leave out keeps its {@link DEFAULT_MATCH_LABELS}
  * value. See {@link defineLabels} for the shape, which every domain in this library shares.
  *
  * @example

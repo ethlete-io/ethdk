@@ -67,7 +67,7 @@ export const WithRangeAndJump: Story = {
     docs: {
       description: {
         story:
-          'Opt into a "Showing X–Y of Z" readout by passing `totalItems` + `pageSize`, and a jump-to-page field with `showJumpTo` — handy for large result sets.',
+          'Opt into a "Showing X–Y of Z" readout by passing `totalItems` + `pageSize`, and a jump-to-page field with `showJumpTo` - handy for large result sets.',
       },
     },
   },
@@ -80,7 +80,7 @@ export const PageSizeSelect: Story = {
       description: {
         story:
           'The Material-style controls row: `<et-page-size-select>` beside a `compact` paginator. It is a ' +
-          'native `<select>` — a handful of numbers does not justify dragging the overlay runtime into every ' +
+          'native `<select>` - a handful of numbers does not justify dragging the overlay runtime into every ' +
           'footer, and the platform picker is the better control on mobile. It is a separate component ' +
           'because page size is the app’s state, not the paginator’s: **changing the size does not reset ' +
           'the page**, since which page an item lands on depends on what you are paging. Here a ' +
@@ -96,7 +96,7 @@ export const Localized: Story = {
     docs: {
       description: {
         story:
-          "Every built-in string — control `aria-label`s, the range readout and the jump-to label — comes from the paginator's label set. Localize it app-wide with `providePaginationLabels`, or per instance with the `labels` input (as here, in German).",
+          "Every built-in string - control `aria-label`s, the range readout and the jump-to label - comes from the paginator's label set. Localize it app-wide with `providePaginationLabels`, or per instance with the `labels` input (as here, in German).",
       },
     },
   },

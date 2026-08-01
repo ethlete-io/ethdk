@@ -4,7 +4,7 @@ import { createTableRowsSource, TableRowsFromQuery, TableRowsQueryState } from '
 import { TableFilter, TableSort } from '../table.types';
 
 // Note: `@ethlete/components` intentionally depends on `@ethlete/query`, so this query-aware
-// convenience factory lives here. It's a standalone function in its own module — tables that don't
+// convenience factory lives here. It's a standalone function in its own module - tables that don't
 // use it (and apps not using `@ethlete/query`) tree-shake it away.
 
 export type TableRowsFromQueryConfig<TCreator extends AnyQueryCreator, TRow> = {
@@ -79,7 +79,7 @@ export const tableRowsFromQuery = <TCreator extends AnyQueryCreator, TRow>(
   const filters = signal<TableFilter[]>(config.initialFilters ?? []);
   const page = signal(initialPage);
 
-  // Created once — `withArgs` re-runs as sort/filters/page change.
+  // Created once - `withArgs` re-runs as sort/filters/page change.
   const query = config.queryCreator(withArgs<TArgs>(() => config.args({ sort, filters, page }) ?? null));
   const toErrorMessage = config.toErrorMessage ?? firstErrorMessage;
 

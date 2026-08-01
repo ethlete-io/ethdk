@@ -8,11 +8,11 @@
 
 - [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`3151b7a`](https://github.com/ethlete-io/ethdk/commit/3151b7a253d14e38e22e20d67bf0191f141c144e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `ethlete/no-template-literal-before-inline-template`, and restructure the files it flagged.
 
-  The Angular VS Code extension decides **client-side** whether the cursor sits inside an inline `template:` before it forwards completion, hover, go-to-definition or signature-help to the language server. That check (`isNotTypescriptOrSupportedDecoratorField`) walks the file with a bare `ts.createScanner()` loop, which cannot re-scan `}` as `TemplateMiddle`/`TemplateTail` — that needs the parser's `reScanTemplateToken()`. So the first template literal containing a `${…}` substitution desynchronises both the token stream and the brace counter, the scanner never recognises `template` `:` again, and every template request below it is dropped. The language server answers those requests correctly; the editor just never asks, so the template silently has no IntelliSense at all.
+  The Angular VS Code extension decides **client-side** whether the cursor sits inside an inline `template:` before it forwards completion, hover, go-to-definition or signature-help to the language server. That check (`isNotTypescriptOrSupportedDecoratorField`) walks the file with a bare `ts.createScanner()` loop, which cannot re-scan `}` as `TemplateMiddle`/`TemplateTail` - that needs the parser's `reScanTemplateToken()`. So the first template literal containing a `${…}` substitution desynchronises both the token stream and the brace counter, the scanner never recognises `template` `:` again, and every template request below it is dropped. The language server answers those requests correctly; the editor just never asks, so the template silently has no IntelliSense at all.
 
-  The new rule reproduces that scanner verbatim, so it reports exactly the templates the extension would abandon — no heuristic. Twenty inline templates across `components`, `cdk` and the playground were affected, all of them behind a fixture or helper that happened to use an interpolated template literal. Story fixtures moved into sibling `*-storybook.data.ts` files; spec fixtures and in-class helpers that must stay above their component (because a later `@Component` references the class in `imports`) were rewritten without the interpolation.
+  The new rule reproduces that scanner verbatim, so it reports exactly the templates the extension would abandon - no heuristic. Twenty inline templates across `components`, `cdk` and the playground were affected, all of them behind a fixture or helper that happened to use an interpolated template literal. Story fixtures moved into sibling `*-storybook.data.ts` files; spec fixtures and in-class helpers that must stay above their component (because a later `@Component` references the class in `imports`) were rewritten without the interpolation.
 
-  No public API changed — the `components` and `cdk` bumps are story/spec restructuring plus moving `signalVisibilityChangeClasses` below `RichFilterHostComponent` in the same module.
+  No public API changed - the `components` and `cdk` bumps are story/spec restructuring plus moving `signalVisibilityChangeClasses` below `RichFilterHostComponent` in the same module.
 
 ## 5.0.0-next.22
 
@@ -29,7 +29,7 @@
   `et-menu`, `et-radio`, `et-select`, `et-checkbox`, `et-tooltip`, …), apps that
   consume both libraries at once can no longer target one without hitting the
   other. Every cdk element now carries `et-legacy` alongside its usual classes, so
-  consumer overrides can be scoped to the cdk implementation only — e.g. rewrite
+  consumer overrides can be scoped to the cdk implementation only - e.g. rewrite
   `.et-overlay { … }` as `.et-overlay.et-legacy { … }`. The marker is inert (no cdk
   CSS references it), so cdk rendering is unchanged.
 
@@ -82,11 +82,11 @@
 
 - [#2996](https://github.com/ethlete-io/ethdk/pull/2996) [`b64e055`](https://github.com/ethlete-io/ethdk/commit/b64e0553c6480d5efde342675fd09899f0d45c0f) Thanks [@baltruschat](https://github.com/baltruschat)! - Position winner rounds correctly when the winner bracket starts after round 1
 
-  Some double elimination brackets omit the early winner rounds — e.g. a small bracket where the first lower round is seeded directly from a group phase and has no winner round feeding it. The grid previously placed the first present winner round in the leftmost column, so every winner round was one column too far left relative to its drop-in lower round. The grid now detects the missing leading winner rounds (a complete winner bracket has lowerRounds / 2 + 1 rounds) and leaves those leading slots empty, so each present winner round lines up above the lower round its losers actually drop into.
+  Some double elimination brackets omit the early winner rounds - e.g. a small bracket where the first lower round is seeded directly from a group phase and has no winner round feeding it. The grid previously placed the first present winner round in the leftmost column, so every winner round was one column too far left relative to its drop-in lower round. The grid now detects the missing leading winner rounds (a complete winner bracket has lowerRounds / 2 + 1 rounds) and leaves those leading slots empty, so each present winner round lines up above the lower round its losers actually drop into.
 
 - [#2996](https://github.com/ethlete-io/ethdk/pull/2996) [`b64e055`](https://github.com/ethlete-io/ethdk/commit/b64e0553c6480d5efde342675fd09899f0d45c0f) Thanks [@baltruschat](https://github.com/baltruschat)! - Align winner bracket rounds above their drop-in loser round
 
-  In the double elimination grid, winner bracket rounds that span two lower bracket columns were centered over that span, leaving them half a column off from the loser round they relate to. They are now left-aligned within the span so winner round n sits directly above the loser round its losers drop into (round 2n − 2) — the round whose matches merge into the next one — making the drop target unambiguous. The first winner round and the winner final are single-column and stay in place; lower rounds and other brackets are unaffected.
+  In the double elimination grid, winner bracket rounds that span two lower bracket columns were centered over that span, leaving them half a column off from the loser round they relate to. They are now left-aligned within the span so winner round n sits directly above the loser round its losers drop into (round 2n − 2) - the round whose matches merge into the next one - making the drop target unambiguous. The first winner round and the winner final are single-column and stay in place; lower rounds and other brackets are unaffected.
 
 - [#2996](https://github.com/ethlete-io/ethdk/pull/2996) [`b64e055`](https://github.com/ethlete-io/ethdk/commit/b64e0553c6480d5efde342675fd09899f0d45c0f) Thanks [@baltruschat](https://github.com/baltruschat)! - Fix rendering of truncated double elimination brackets
 

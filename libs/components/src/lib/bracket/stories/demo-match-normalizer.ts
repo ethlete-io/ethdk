@@ -2,7 +2,7 @@ import { NormalizedMatch } from '../../match';
 import { BracketMatchNormalizer } from '../bracket-card-context';
 
 /**
- * A `matchNormalizer` for the story brackets, whose generated data source carries `data: null` — which is
+ * A `matchNormalizer` for the story brackets, whose generated data source carries `data: null` - which is
  * exactly the point: everything below is derived from what the *bracket* knows (participant ids,
  * `winnerSide`, `status`), so it doubles as the worked example for a consumer whose own payload holds
  * nothing presentational.
@@ -18,7 +18,7 @@ export const demoMatchNormalizer: BracketMatchNormalizer<unknown, unknown> = (ma
   return {
     id: match.id,
     status: isCompleted ? 'finished' : 'scheduled',
-    // Derived from the match id so it is stable across re-renders — `new Date()` in a normalizer would
+    // Derived from the match id so it is stable across re-renders - `new Date()` in a normalizer would
     // change every change-detection pass.
     startTime: new Date(DEMO_EPOCH + (hash(match.id) % 72) * 3_600_000),
     home,
@@ -65,7 +65,7 @@ const crest = (config: { label: string; fill: string }) =>
       `dominant-baseline="middle">${config.label}</text></svg>`,
   );
 
-/** `null` in, `null` out — a bracket slot whose feeder hasn't finished is a TBD, not an error. */
+/** `null` in, `null` out - a bracket slot whose feeder hasn't finished is a TBD, not an error. */
 export const demoParticipant = (id: string | null) => {
   if (!id) return null;
 

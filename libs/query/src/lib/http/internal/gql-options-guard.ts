@@ -3,7 +3,7 @@ import { CreateGqlQueryOptions } from '../../gql/gql-query';
 import { CreateQueryOptions, QueryArgs } from '../query';
 
 /**
- * Whether a create-query options object came from the gql layer — only gql's `creatorInternals` carries
+ * Whether a create-query options object came from the gql layer - only gql's `creatorInternals` carries
  * a `transport`. Lives here because `base-query-factory` is what branches on it; `gql/gql-query`
  * re-exports it under its original public name.
  */

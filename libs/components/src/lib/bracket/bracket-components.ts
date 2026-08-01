@@ -29,7 +29,7 @@ export type BracketComponentOverrides<TRoundData, TMatchData> = {
  * second (`swissBracketLayout({ matchComponent })`), `provideBracketConfig` third, the shipped
  * defaults last.
  *
- * Shared so that every representation of a bracket — the grid and the rounds list — picks the same card
+ * Shared so that every representation of a bracket - the grid and the rounds list - picks the same card
  * for the same source.
  *
  * @internal
@@ -59,7 +59,7 @@ export const resolveBracketComponents = <TRoundData, TMatchData>(
  * Whether a round's matches get the *final* card rather than the ordinary one.
  *
  * The last match played is the one that decides the tournament, which in a double elimination bracket
- * with a bracket-reset final is the reverse final rather than the grand final — mirrors the rule the grid
+ * with a bracket-reset final is the reverse final rather than the grand final - mirrors the rule the grid
  * applies in `createBracketSubColumnRelativeToFirstRound`.
  *
  * @internal

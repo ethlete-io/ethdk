@@ -10,7 +10,7 @@ export type UnsavedChangesAbandonReason = 'logout' | (string & {});
 /** The second argument every {@link UnsavedChangesConfirmFn} receives. */
 export type UnsavedChangesConfirmContext = {
   /**
-   * Aborts when the session this confirm belongs to ends underneath it — a logout, or an explicit
+   * Aborts when the session this confirm belongs to ends underneath it - a logout, or an explicit
    * `abandonAll()`. **Close your confirm dialog when it fires**, otherwise it is left on screen over
    * a page the user has already been redirected away from. The guard itself stops waiting either way.
    *
@@ -43,7 +43,7 @@ const UNSAVED_CHANGES_COORDINATOR_DEF = /* @__PURE__ */ defineRootProvider(
 
     /** @internal Runs a tracker's confirm under the single-flight + abandon regime. */
     const runCheck = (runner: (context: UnsavedChangesConfirmContext) => Promise<boolean>): Promise<boolean> => {
-      // A confirm is already on screen — adopt its answer rather than opening a second dialog.
+      // A confirm is already on screen - adopt its answer rather than opening a second dialog.
       if (pending) {
         return pending.promise;
       }
@@ -53,7 +53,7 @@ const UNSAVED_CHANGES_COORDINATOR_DEF = /* @__PURE__ */ defineRootProvider(
       let settle!: (result: boolean) => void;
       const abandoned = new Promise<boolean>((resolve) => (settle = resolve));
 
-      // Run the confirm synchronously — a dialog that opens a microtask later can miss a `signal` that
+      // Run the confirm synchronously - a dialog that opens a microtask later can miss a `signal` that
       // already aborted, and callers reasonably expect the dialog to be up when `runCheck()` returns.
       let confirmed: Promise<boolean>;
 
@@ -117,7 +117,7 @@ const UNSAVED_CHANGES_COORDINATOR_DEF = /* @__PURE__ */ defineRootProvider(
  * - **Abandoning guards when the session ends.** `abandonAll()` resolves the pending confirm, tells
  *   its dialog to close (via {@link UnsavedChangesConfirmContext.signal}), and switches every live
  *   guard off: further checks pass, and the tab locks release. Called automatically by
- *   `@ethlete/query`'s auth provider on logout — the edits cannot be saved anymore, so guarding them
+ *   `@ethlete/query`'s auth provider on logout - the edits cannot be saved anymore, so guarding them
  *   only strands dialogs over the login page and blocks the tab.
  *
  * Root-provided; every tracker registers itself. Inject it to abandon guards from app code (a session

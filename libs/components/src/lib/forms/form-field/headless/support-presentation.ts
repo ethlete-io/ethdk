@@ -5,7 +5,7 @@ import { ValidationError } from '@angular/forms/signals';
  * an animated cross-fade/slide when it switches. This module owns that little state machine so the
  * text-field shell (`form-field.component`) and the headless `injectFormSupport` (rating, otp,
  * slider, selection groups, dropzone, choice-field, …) share one implementation instead of two
- * that drift. Callers keep their own view-child wiring, error source, and derived signals — only
+ * that drift. Callers keep their own view-child wiring, error source, and derived signals - only
  * the reducer, state shape, and enum constants live here.
  */
 

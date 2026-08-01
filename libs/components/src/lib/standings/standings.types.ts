@@ -7,7 +7,7 @@ export type StandingsFormResult = 'win' | 'loss' | 'tie';
  * One row of a table, in the shape `et-standings` draws. Same philosophy as the match domain: **every
  * backend maps into it** with a plain adapter, and the components never learn one API's field names.
  *
- * Deliberately the columns a league table has and nothing else — a competition with exotic tiebreakers
+ * Deliberately the columns a league table has and nothing else - a competition with exotic tiebreakers
  * puts them in a table of its own.
  */
 export type NormalizedStandingRow = {
@@ -21,7 +21,7 @@ export type NormalizedStandingRow = {
   wins: number;
   ties: number;
   losses: number;
-  /** What the table ranks by — points in most competitions, wins in some. */
+  /** What the table ranks by - points in most competitions, wins in some. */
   points: number;
   /** Goal or game difference, when the competition tracks one. */
   difference: number | null;
@@ -32,7 +32,7 @@ export type NormalizedStandingRow = {
 /**
  * A band of positions that means something: promotion, playoffs, relegation, advancing out of a group.
  *
- * `color` names one of **your** registered color themes — this library ships none and hardcodes none, so
+ * `color` names one of **your** registered color themes - this library ships none and hardcodes none, so
  * what "advancing" looks like is your app's decision. The same config draws the row banding and the
  * legend, which is what stops the two from drifting apart.
  */

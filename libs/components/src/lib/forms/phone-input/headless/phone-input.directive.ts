@@ -31,7 +31,7 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
 
-  /** Normalized `+<dialCode><national digits>` — empty string while nothing is entered. */
+  /** Normalized `+<dialCode><national digits>` - empty string while nothing is entered. */
   public value = model('');
   /** View state for a field whose source values disagree. The raw form value stays untouched. */
   public mixed = model(false);
@@ -56,7 +56,7 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
   public hasValue = computed(() => this.mixed() || this.value().length > 0);
 
-  /** The placeholder the tel field currently shows — `mixedLabel` while mixed. */
+  /** The placeholder the tel field currently shows - `mixedLabel` while mixed. */
   public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));
 
   public describedBy = signal<string | null>(null);
@@ -74,7 +74,7 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
 
   /**
    * The active country's ISO code: derived from the value's dial code, manually selectable.
-   * A manual pick survives value edits as long as its dial code still fits — dial codes are
+   * A manual pick survives value edits as long as its dial code still fits - dial codes are
    * shared (`+1` → US, CA, …) and typing digits must not flip a chosen country.
    */
   public country = linkedSignal<string | null, string>({
@@ -94,7 +94,7 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
 
   public dialCode = computed(() => this.dialCodeOf(this.country()));
 
-  /** The digits after the dial code. Mixed masks the hidden raw number — it is never displayed. */
+  /** The digits after the dial code. Mixed masks the hidden raw number - it is never displayed. */
   public nationalNumber = computed(() => {
     if (this.mixed()) {
       return '';
@@ -107,7 +107,7 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
   });
 
   /**
-   * Cosmetic display grouping (groups of three) — deliberately **not** metadata-driven
+   * Cosmetic display grouping (groups of three) - deliberately **not** metadata-driven
    * per-country formatting; real validation belongs to the backend/schema.
    */
   public formattedNational = computed(() =>
@@ -116,7 +116,7 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
       .trim(),
   );
 
-  /** A cheap length-window sanity check (4–14 national digits) — not real validation. */
+  /** A cheap length-window sanity check (4–14 national digits) - not real validation. */
   public isPlausible = computed(() => {
     const length = this.nationalNumber().length;
 
@@ -136,7 +136,7 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
     this.registeredField()?.focus();
   }
 
-  /** Clears the number (the selected country stays) — wired to the styled input's clear button. */
+  /** Clears the number (the selected country stays) - wired to the styled input's clear button. */
   public clearValue() {
     if (!this.interactive()) {
       return;
@@ -145,7 +145,7 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
     this.value.set('');
     this.mixed.set(false);
 
-    // the tel field shows raw digits while focused (blur reformats) — a clear happens
+    // the tel field shows raw digits while focused (blur reformats) - a clear happens
     // while focused, so reset the element text directly
     const field = this.registeredField();
 
@@ -161,7 +161,7 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
     }
 
     // while mixed a country pick is preparatory (like opening a select): it updates the
-    // presentation only — rebuilding a value would leak the hidden national number, and
+    // presentation only - rebuilding a value would leak the hidden national number, and
     // mixed resolves only once a national number is committed
     if (this.mixed()) {
       this.country.set(iso2);
@@ -199,7 +199,7 @@ export class PhoneInputDirective implements FormValueControl<string>, FormFieldC
   }
 
   /**
-   * Writes a user-typed value. While mixed, only a non-empty entry commits — it is built
+   * Writes a user-typed value. While mixed, only a non-empty entry commits - it is built
    * from scratch with the chosen country (never from the hidden number) and resolves mixed;
    * an empty entry leaves the hidden raw value untouched.
    */

@@ -25,11 +25,11 @@ import { FLOATING_ACTION_TOKEN } from './floating-action.tokens';
  * written, and pins itself to a corner of the viewport once its place in the page has scrolled away. A filter
  * button above a long list, a "save changes" bar, a back-to-top.
  *
- * Ported from cdk's `rich-filter`, which was never about filtering — it renders no filter UI and imports nothing
+ * Ported from cdk's `rich-filter`, which was never about filtering - it renders no filter UI and imports nothing
  * from `@ethlete/query`. This is that scroll-coordination pattern under a name that says what it does.
  *
  * **Why not CSS?** `position: sticky` can keep an element at an edge, but it cannot move it to a corner of the
- * viewport, and it has no way to express "and the region this acts on is still on screen" — which is the part
+ * viewport, and it has no way to express "and the region this acts on is still on screen" - which is the part
  * that stops a pinned button following the reader onto unrelated content. So the state comes from two
  * intersection observers and CSS reacts to it.
  *
@@ -59,7 +59,7 @@ export class FloatingActionDirective {
 
   /**
    * Keep the trigger in the flow, whatever the scroll position. The escape hatch for turning the behaviour off
-   * per breakpoint or per route without unwinding the markup — a desktop layout with the filters already in a
+   * per breakpoint or per route without unwinding the markup - a desktop layout with the filters already in a
    * sidebar has nothing to float. @default false
    */
   public disabled = input(false, { transform: booleanAttribute });
@@ -81,7 +81,7 @@ export class FloatingActionDirective {
    *
    * Read off *above*, not merely "not visible": scrolling **down** past the anchor is what should pin the
    * trigger, while an anchor still below the fold has simply not been reached and must stay put. The same goes
-   * for the scope — once it is above, the reader has left the region behind.
+   * for the scope - once it is above, the reader has left the region behind.
    */
   public state = computed<FloatingActionState>(() => {
     if (this.disabled()) return FLOATING_ACTION_STATES.INLINE;
@@ -120,7 +120,7 @@ export class FloatingActionDirective {
   }
 
   /**
-   * Scroll back to the top of the region — what a filter button does after applying filters, so the reader sees
+   * Scroll back to the top of the region - what a filter button does after applying filters, so the reader sees
    * the new first result rather than wherever they happened to be. Targets `[etFloatingActionTop]` if there is
    * one, otherwise this element.
    */

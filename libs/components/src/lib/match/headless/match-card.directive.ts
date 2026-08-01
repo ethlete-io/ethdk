@@ -18,7 +18,7 @@ import { NormalizedGameScore, NormalizedMatch } from '../match.types';
 import { MATCH_CARD_TOKEN } from './match-card.tokens';
 
 export const MATCH_CARD_SIZES = {
-  /** Let the card's own width decide — the container-query default. */
+  /** Let the card's own width decide - the container-query default. */
   AUTO: 'auto',
   /** Always the dense row: short codes, no per-game breakdown. */
   COMPACT: 'compact',
@@ -32,21 +32,21 @@ export type MatchCardSize = (typeof MATCH_CARD_SIZES)[keyof typeof MATCH_CARD_SI
 
 /**
  * The kick-off format when none is given: the active locale's short date and short time. Deliberately
- * unambiguous rather than pretty — a match list spanning a season can't rely on "Sat 15:30".
+ * unambiguous rather than pretty - a match list spanning a season can't rely on "Sat 15:30".
  */
 export const DEFAULT_MATCH_CARD_START_TIME_FORMAT = 'P p';
 
 /** Elements that are focusable and clickable on their own, so the card doesn't have to fake it. */
 const NATIVELY_INTERACTIVE_TAGS = ['A', 'BUTTON'];
 
-/** One side's headline value changing — a goal, a map win, a correction. */
+/** One side's headline value changing - a goal, a map win, a correction. */
 export type MatchScoreChange = {
   side: 'home' | 'away';
   /** The value before, as it was on the match. */
   from: number | string | null;
   /** The value now. */
   to: number | string | null;
-  /** How much it moved, when both values are numbers — `null` for anything else. */
+  /** How much it moved, when both values are numbers - `null` for anything else. */
   delta: number | null;
 };
 
@@ -66,7 +66,7 @@ const scoreChange = ({ side, from, to }: Omit<MatchScoreChange, 'delta'>): Match
 });
 
 /**
- * Headless match card: takes a {@link NormalizedMatch} and works out everything a card draws — the
+ * Headless match card: takes a {@link NormalizedMatch} and works out everything a card draws - the
  * score as one string, the kick-off in the active locale, who won, and the single composed name the
  * whole thing announces itself by.
  *
@@ -80,7 +80,7 @@ const scoreChange = ({ side, from, to }: Omit<MatchScoreChange, 'delta'>): Match
  * </a>
  *
  * **One interactive element.** The accessible name lands on the host, so the host is what should be the
- * link or the button — `<a etMatchCard routerLink>`, or composed with
+ * link or the button - `<a etMatchCard routerLink>`, or composed with
  * [`etQueryParamOverlayLink`](/components/overlay-openers) for a shareable detail overlay. Nothing
  * inside a card may be a second click target; an affordance that needs its own (a pin, a follow button)
  * belongs next to the card, not in it.
@@ -97,7 +97,7 @@ const scoreChange = ({ side, from, to }: Omit<MatchScoreChange, 'delta'>): Match
     '[attr.data-interactive]': 'isInteractive() ? "" : null',
     '[attr.data-hide-names]': 'hideNames() ? "" : null',
     '[attr.aria-label]': 'accessibleName()',
-    // A card that isn't a link is still one thing rather than six loose fragments — but an unlabelled
+    // A card that isn't a link is still one thing rather than six loose fragments - but an unlabelled
     // `div` can't carry a name, so it becomes a group. A link or button already has a role of its own.
     '[attr.role]': 'isInteractive() ? null : "group"',
   },
@@ -107,15 +107,15 @@ export class MatchCardDirective {
   private injectedLabels = injectMatchLabels();
   private dateLocale = injectDateLocale();
 
-  /** The match to draw, already normalized — see {@link NormalizedMatch} and the `integrations/` adapters. */
+  /** The match to draw, already normalized - see {@link NormalizedMatch} and the `integrations/` adapters. */
   public match = input.required<NormalizedMatch>();
 
   /**
    * Which layout to render. `auto` (the default) lets the card's own inline size decide via a container
-   * query — dense row, then featured card, then wide row as it gets wider; the other three fix it, for
+   * query - dense row, then featured card, then wide row as it gets wider; the other three fix it, for
    * a consumer who wants the same card everywhere regardless of width.
    *
-   * Only an explicit `compact` swaps participant names for their short codes — a text change can't come
+   * Only an explicit `compact` swaps participant names for their short codes - a text change can't come
    * out of a container query, so `auto` keeps full names and lets them ellipsize.
    *
    * @default 'auto'
@@ -126,7 +126,7 @@ export class MatchCardDirective {
   public showSeeds = input(false, { transform: booleanAttribute });
 
   /**
-   * Draw emblems only, no names. For the densest cell there is — a bracket that has to fit six rounds on
+   * Draw emblems only, no names. For the densest cell there is - a bracket that has to fit six rounds on
    * a phone. The names stay in the card's accessible name and in each emblem's `alt`, so nothing is lost
    * to assistive tech; give participants an `emblem` before turning this on, or every row looks alike.
    *
@@ -143,12 +143,12 @@ export class MatchCardDirective {
   /**
    * Whether this card is a click target. `null` (the default) infers it from the host element, which is
    * right whenever the card is an `<a>` or `<button>`. Set it explicitly for a host that is interactive
-   * some other way — a `<div>` wired to an overlay opener with its own `role` and `tabindex`.
+   * some other way - a `<div>` wired to an overlay opener with its own `role` and `tabindex`.
    */
   public interactive = input<boolean | null>(null);
 
   /**
-   * Animate the headline values when they change — the score ticker and the accent flash on the side that
+   * Animate the headline values when they change - the score ticker and the accent flash on the side that
    * scored. Only ever while the match is **live**: a finished score arriving with the page, or a corrected
    * result hours later, is not a moment worth animating.
    *
@@ -156,11 +156,11 @@ export class MatchCardDirective {
    */
   public animateScoreChanges = input(true, { transform: booleanAttribute });
 
-  /** Override this instance's strings — see {@link provideMatchLabels} for the app-wide version. */
+  /** Override this instance's strings - see {@link provideMatchLabels} for the app-wide version. */
   public labels = input<Partial<MatchLabels> | null>(null);
 
   /**
-   * Fires whenever a headline value changes after the first render — the hook for the effects this library
+   * Fires whenever a headline value changes after the first render - the hook for the effects this library
    * deliberately doesn't ship (a sound, confetti, a toast). Both sides can fire from one update.
    */
   public scoreChange = output<MatchScoreChange>();
@@ -179,7 +179,7 @@ export class MatchCardDirective {
 
   /**
    * Whether participants render as short codes. Tied to an explicit `compact`, not to the rendered
-   * width — see the `size` input.
+   * width - see the `size` input.
    */
   public showsShortNames = computed(() => this.size() === MATCH_CARD_SIZES.COMPACT);
 
@@ -205,7 +205,7 @@ export class MatchCardDirective {
   );
 
   /**
-   * Whether the card draws W/L/D letters. Only once the match is over — before that an `outcome`
+   * Whether the card draws W/L/D letters. Only once the match is over - before that an `outcome`
    * competition has nothing to say about it, and the kick-off carries the card instead.
    */
   public drawsOutcome = computed(() => this.isOutcomeResult() && this.isFinished());
@@ -233,7 +233,7 @@ export class MatchCardDirective {
 
   /**
    * What goes between the two sides where they face each other: the score separator once there is
-   * something to separate, otherwise the `versus` label. Only drawn in the wide arrangement — stacked,
+   * something to separate, otherwise the `versus` label. Only drawn in the wide arrangement - stacked,
    * the two sides need nothing between them.
    */
   public separatorText = computed(() => {
@@ -243,7 +243,7 @@ export class MatchCardDirective {
   });
 
   /**
-   * How the match stands, as one announced string — `'2 : 1'`, `'3 : 0 points'`, `'FC Berlin won'`.
+   * How the match stands, as one announced string - `'2 : 1'`, `'3 : 0 points'`, `'FC Berlin won'`.
    * Composed by the `resultName` label, because what the two values *mean* varies per competition (see
    * `NormalizedMatchResultKind`), and because a match reported only as a win and a loss still has
    * an outcome to announce while having nothing to read. `null` while there is neither.
@@ -271,7 +271,7 @@ export class MatchCardDirective {
    * the comparison *is* derived from the score pair, and the previous pair is the one thing a computed
    * cannot see on its own.
    *
-   * The first render has no previous pair and therefore no changes — a list arriving with scores already
+   * The first render has no previous pair and therefore no changes - a list arriving with scores already
    * on it must not animate.
    */
   private scoreTransition = linkedSignal<

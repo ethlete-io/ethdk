@@ -332,7 +332,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
             return of(true);
           }
 
-          // The batch ended cancelled or under a different id — e.g. the browser cancelled and
+          // The batch ended cancelled or under a different id - e.g. the browser cancelled and
           // restarted a running transition mid-flight (an anchored overlay whose ancestor pane got
           // destroyed) or a foreign transition on the same element finished. If nothing is
           // animating anymore the expected end event can never arrive, so treat the transition as

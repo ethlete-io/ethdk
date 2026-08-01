@@ -381,7 +381,7 @@ describe('createBearerAuthProvider', () => {
       TestBed.runInInjectionContext(() => {
         const provider = injectAuthProvider();
 
-        // An SSO callback arrives with both tokens — no auth query runs at all.
+        // An SSO callback arrives with both tokens - no auth query runs at all.
         let refreshed = 0;
         provider.afterTokenRefresh$.subscribe(() => refreshed++);
 

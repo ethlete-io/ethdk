@@ -25,7 +25,7 @@ export const Default: Story = {
           'The whole pattern: a floating **Filters** trigger with an active-filter badge, opening a routed panel ' +
           'whose pages edit a *draft* of the page query form. The submit button reports how many teams the draft ' +
           'would show and disables itself at zero. Dismiss with Escape and nothing is applied; press submit and the ' +
-          'filters — and the URL — update. Note the badge ignores the search box: the query form counts filters, ' +
+          'filters - and the URL - update. Note the badge ignores the search box: the query form counts filters, ' +
           'and search is navigation state.',
       },
     },

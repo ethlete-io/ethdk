@@ -938,7 +938,7 @@ export class ContentfulRichTextRendererComponent {
     }
 
     // `cached` and the fresh `command` share the same id and therefore the same union variant,
-    // but TS can't correlate the two after the spread — assert the merged object as the union.
+    // but TS can't correlate the two after the spread - assert the merged object as the union.
     this._executedCommandsCache.set(id, {
       ...cached,
       command,

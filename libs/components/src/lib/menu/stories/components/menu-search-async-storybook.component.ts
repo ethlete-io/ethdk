@@ -44,7 +44,7 @@ const SIMULATED_LATENCY = 700;
         Fail requests
       </label>
 
-      <p class="et-sb-menu-log">Assigned: {{ assignedPlayer() ?? '—' }}</p>
+      <p class="et-sb-menu-log">Assigned: {{ assignedPlayer() ?? '-' }}</p>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,

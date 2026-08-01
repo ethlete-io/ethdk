@@ -6,7 +6,7 @@ export type CascaderNode<T> = {
   value: T;
   /** The visible label. */
   label: string;
-  /** Marks the node as a terminal leaf — it is selectable and never expands. */
+  /** Marks the node as a terminal leaf - it is selectable and never expands. */
   isLeaf?: boolean;
   /**
    * Whether the node has children to drill into. `false` makes it terminal (like `isLeaf`);
@@ -20,7 +20,7 @@ export type CascaderNode<T> = {
 /**
  * The abstract hierarchical source a cascader browses. `loadChildren` returns the children
  * of a node (or the root's children when `parent` is `null`) as a sync array, a `Promise`,
- * or an `Observable` — so static trees and per-level async both work, and each level loads
+ * or an `Observable` - so static trees and per-level async both work, and each level loads
  * only when the user drills into it.
  */
 export type CascaderDataSource<T> = {
@@ -33,7 +33,7 @@ export type CascaderDataSource<T> = {
    * can show its breadcrumb when the value is set **programmatically** (a form patch/restore)
    * rather than picked in the panel. Return `null` (or an empty array) when the value has no
    * resolvable path. Without this hook an externally-set value commits fine but shows the
-   * placeholder until the user re-opens and re-picks — the cascader can't reverse a value into
+   * placeholder until the user re-opens and re-picks - the cascader can't reverse a value into
    * a path itself, because `loadChildren` is lazy and per-level (walking every branch to find
    * one value could fire an unbounded number of loads). For a static tree the implementation is
    * a trivial depth-first search; for an async source, resolve it however the backend allows.
@@ -43,11 +43,11 @@ export type CascaderDataSource<T> = {
   ): CascaderNode<T>[] | null | Promise<CascaderNode<T>[] | null> | Observable<CascaderNode<T>[] | null>;
 
   /**
-   * Optionally searches the whole hierarchy **flat** — across all levels at once, so a known
+   * Optionally searches the whole hierarchy **flat** - across all levels at once, so a known
    * leaf can be jumped to without drilling. Each result is the full ancestor chain (root →
    * matching node). Providing this hook is what enables search: with it, a search input
    * (`etCascaderSearch` / the default component's built-in one) filters the panel into a flat
-   * result list. It lives on the data source for the same reason `resolvePath` does — the tree
+   * result list. It lives on the data source for the same reason `resolvePath` does - the tree
    * is lazy and per-level, so only the source can search branches that were never loaded. For
    * a static tree it's a depth-first walk collecting matches; for an async source, a backend
    * search endpoint.
@@ -55,7 +55,7 @@ export type CascaderDataSource<T> = {
   search?(query: string): CascaderNode<T>[][] | Promise<CascaderNode<T>[][]> | Observable<CascaderNode<T>[][]>;
 };
 
-/** Whether a node can be drilled into — false for explicit leaves and `hasChildren: false`. */
+/** Whether a node can be drilled into - false for explicit leaves and `hasChildren: false`. */
 export const canHaveChildren = <T>(node: CascaderNode<T>) => node.isLeaf !== true && node.hasChildren !== false;
 
 export type CascaderCompareWith<T> = (a: T, b: T) => boolean;

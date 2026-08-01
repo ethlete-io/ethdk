@@ -1,7 +1,7 @@
 # Pagination
 
 A page-number paginator: first / previous / next / last jump controls around a
-window of page numbers, with `…` ellipses for large page counts. Signals-first —
+window of page numbers, with `…` ellipses for large page counts. Signals-first -
 `page` is a two-way model you bind to your data source. Items render with the
 shared [`[et-button]`](/components/button), so the paginator inherits the button
 system's variants, focus rings, theming and interaction states.
@@ -35,7 +35,7 @@ each edge (`1 … 45 46 47 … 200`):
 ## Range readout & jump-to-page
 
 Pass `totalItems` **and** `pageSize` to show a "Showing X–Y of Z" readout, and set
-`showJumpTo` for a number field that jumps straight to a page — both handy for
+`showJumpTo` for a number field that jumps straight to a page - both handy for
 large result sets.
 
 ```html
@@ -68,7 +68,7 @@ on mobile the platform picker is the better control at this size anyway. It cost
 beyond itself.
 
 It is a **separate component**, not part of the paginator, because the paginator owns `page`
-and page size is yours — a table footer, an infinite list and a gallery all pair them
+and page size is yours - a table footer, an infinite list and a gallery all pair them
 differently, and plenty of paginators want no size control at all. Lay the two out however
 your app wants; both take `size="sm"` so they shrink together.
 
@@ -77,7 +77,7 @@ your app wants; both take `size="sm"` so they shrink together.
 | `pageSize` | `number` (model)    | required            | The current size; picking a choice writes it back        |
 | `sizes`    | `readonly number[]` | `[10, 25, 50, 100]` | The choices offered                                      |
 | `size`     | `'sm' \| 'md'`      | `'md'`              | Density, to match the paginator beside it                |
-| `labels`   | `Partial<…>`        | `null`              | Per-instance strings — see [Localization](#localization) |
+| `labels`   | `Partial<…>`        | `null`              | Per-instance strings - see [Localization](#localization) |
 
 ### Changing the size does not reset the page
 
@@ -92,9 +92,9 @@ protected page = linkedSignal<number, number>({ source: this.pageSize, computati
 
 ## Localization
 
-Every string the paginator renders itself — the control `aria-label`s ("Previous
+Every string the paginator renders itself - the control `aria-label`s ("Previous
 page", "Page 3"), the "Showing X–Y of Z" readout, the compact pager's readout, the
-jump-to-page label, the page-size select's label and the landmark's `aria-label` —
+jump-to-page label, the page-size select's label and the landmark's `aria-label` -
 comes from one label set,
 English by default. Localize it once per app (or per lazy-loaded feature) with
 `providePaginationLabels`; anything you leave out keeps its English default.
@@ -120,7 +120,7 @@ bootstrapApplication(AppComponent, {
 });
 ```
 
-The `labels` input overrides the provided set for a single paginator — use it for a
+The `labels` input overrides the provided set for a single paginator - use it for a
 one-off wording, not for translation:
 
 ```html
@@ -145,9 +145,9 @@ The label keys, all optional:
 | `compactPage`    | `'3 / 25'`                     | The compact pager's readout without `totalItems`/`pageSize`.            |
 | `jumpTo`         | `'Go to page'`                 | Label of the `showJumpTo` field.                                        |
 | `pageSize`       | `'Items per page'`             | Visible label of `<et-page-size-select>`.                               |
-| `pageSizeOption` | `` (size) => `${size}` ``      | One page-size choice — override for `'All'` or `'25 per page'`.         |
+| `pageSizeOption` | `` (size) => `${size}` ``      | One page-size choice - override for `'All'` or `'25 per page'`.         |
 
-`ariaLabel` still wins over `navigation` — set it when two paginators share a page
+`ariaLabel` still wins over `navigation` - set it when two paginators share a page
 ("Search results pages" vs "Comments pages"), and translate that string yourself.
 
 The pure `paginate()` function takes the same overrides as a `labels` option, so item
@@ -156,7 +156,7 @@ labels are localized outside Angular too.
 ## Links mode & SEO
 
 By default items are `<button>`s (pure client state). For crawlable pagination,
-set `renderAs="links"` and provide a `urlForPage` mapping — items render as real
+set `renderAs="links"` and provide a `urlForPage` mapping - items render as real
 `<a href>`s. Plain left-clicks are intercepted (no full reload) so the `page` model
 still drives everything; modified clicks (⌘/Ctrl/Shift/middle) open the URL as the
 browser normally would.
@@ -171,7 +171,7 @@ urlForPage = (page: number) => `/results?page=${page}`;
 
 <StoryEmbed id="components-pagination--links" height="200px" />
 
-For paged SEO — a per-page canonical link plus `rel="prev"`/`rel="next"` — add the
+For paged SEO - a per-page canonical link plus `rel="prev"`/`rel="next"` - add the
 opt-in `etPaginationSeo` directive. It's a separate import (the base paginator never
 pulls it in, so bundles that don't need head management stay lean) built on the
 non-deprecated core head-binding utils, so it's SSR-safe and cleans itself up on
@@ -221,20 +221,20 @@ pageTitle = (page: number) => (page > 1 ? `Results – Page ${page}` : null);
 ## Responsive window
 
 With `responsive` on (the default), the paginator adapts to **its own measured
-width** — not a viewport media query, so it reacts to the space it actually sits
+width** - not a viewport media query, so it reacts to the space it actually sits
 in (a sidebar, a table footer, a modal). As width shrinks it first trims the page
-window to fit one row — shedding sibling pages, then the first/last jumps
+window to fit one row - shedding sibling pages, then the first/last jumps
 (`siblingCount`/`boundaryCount` act as the _desired_ maximum; it only ever shows
 that many or fewer). Once the width is too tight for a useful number row, it
 **collapses to a compact pager**. Set `responsive="false"` to always render the
 full configured number row.
 
-The compact pager is a range readout followed by previous/next — the item range
-("1–10 of 40") when `totalItems`/`pageSize` are set, otherwise the page position —
+The compact pager is a range readout followed by previous/next - the item range
+("1–10 of 40") when `totalItems`/`pageSize` are set, otherwise the page position -
 with the readout _before_ the chevrons, and its width reserved for the longest range
 it can show, so the controls hold their position across page changes. Because auto-collapse measures
 the paginator's own box, give it a definite
-width where it would otherwise shrink to its content (e.g. a flex item) — stretch it
+width where it would otherwise shrink to its content (e.g. a flex item) - stretch it
 (`w-full`, `flex: 1`). Or skip measurement entirely with `[compact]="true"` for a
 Material-style controls row where the paginator sits inline with a page-size select:
 
@@ -254,9 +254,9 @@ compact layouts.
 ## Headless
 
 `et-pagination` applies the headless `etPagination` directive via `hostDirectives`.
-Use the directive directly for a bespoke layout — it owns the `page` model and
+Use the directive directly for a bespoke layout - it owns the `page` model and
 exposes `items()` (the ordered `PaginationItem[]` of page numbers, jump controls
-and ellipses — labels already localized) plus `resolvedLabels()` for your own
+and ellipses - labels already localized) plus `resolvedLabels()` for your own
 readouts, and `goTo(page)` / `first()` / `previous()` / `next()` / `last()`.
 The pure `paginate(options)` function is exported too, for computing the item list
 outside Angular.
@@ -302,7 +302,7 @@ With the reactive-forms `QueryForm`, bind through the page control:
 
 The host is a `nav` landmark (`role="navigation"`, `aria-label`). Each control is a
 real `<button>` (or `<a href>` in links mode) with a descriptive `aria-label`
-("Page 3", "Previous page" — all [localizable](#localization)); the current page sets `aria-current="page"`, and
+("Page 3", "Previous page" - all [localizable](#localization)); the current page sets `aria-current="page"`, and
 unavailable controls (previous on the first page, etc.) are `disabled`. Each item is
 a standard tab stop, so keyboard users move through them with Tab and activate with
 Enter/Space (links also with the usual anchor semantics). Ellipses are inert and
@@ -313,7 +313,7 @@ doesn't fit they wrap (rather than scrolling) so every control stays reachable.
 ## Theming
 
 Colors come from the [`[et-button]`](/components/button) system: the current page is
-a `filled` button (accent from the nearest color scope —
+a `filled` button (accent from the nearest color scope -
 `--et-theme-color-primary` / `--et-theme-color-on-primary`), every other item is a
 neutral `transparent` button that stays surface-themed until it's the active page
 (`mutedUntilPressed`), with hover tints from `--et-surface-interaction-solid`. Size

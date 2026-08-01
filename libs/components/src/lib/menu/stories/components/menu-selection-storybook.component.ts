@@ -42,7 +42,7 @@ import { MENU_IMPORTS } from '../../menu.imports';
 
       <div class="et-sb-menu-readout">
         <p>Form value: {{ formModel() | json }}</p>
-        <p>Last action: {{ lastAction() ?? '—' }}</p>
+        <p>Last action: {{ lastAction() ?? '-' }}</p>
       </div>
     </div>
   `,

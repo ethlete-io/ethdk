@@ -65,7 +65,7 @@ describe('selectOptionsFromQuery', () => {
     TestBed.tick();
   };
 
-  // A loadMore hop: not debounced — bump the page, withArgs re-executes (tick) -> flush ->
+  // A loadMore hop: not debounced - bump the page, withArgs re-executes (tick) -> flush ->
   // response propagates + the keepalive fold runs (tick).
   const loadMore = async (source: SelectOptionsFromQuery<Item>, body: ItemsResponse) => {
     source.loadMore();
@@ -188,7 +188,7 @@ describe('selectOptionsFromQuery', () => {
       await search(source, 'eu', { items: page1, hasMore: false });
       expect(source.options()).toEqual(page1);
 
-      // hasMore is false — this must not fire a (non-existent) page 2 request
+      // hasMore is false - this must not fire a (non-existent) page 2 request
       source.loadMore();
       TestBed.tick();
       httpMock.expectNone((r) => r.url.includes('/items'));

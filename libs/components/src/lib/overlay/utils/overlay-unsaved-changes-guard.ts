@@ -34,7 +34,7 @@ export type OverlayUnsavedChangesGuardRef<T> = UnsavedChangesTrackerRef<T> & {
  * unsaved changes: it runs the `confirm` and only then re-issues the close. Call from an overlay
  * content component's injection context.
  *
- * Being a tracker, it also locks the browser tab while there are changes (`beforeunload`) — configure
+ * Being a tracker, it also locks the browser tab while there are changes (`beforeunload`) - configure
  * or disable that via the inherited `tab` option.
  *
  * ```ts
@@ -69,7 +69,7 @@ export const createOverlayUnsavedChangesGuard = <T>(
   if (isDevMode() && overlayRef.config.disableClose && (dismiss.outsidePointer || dismiss.escape || dismiss.drag)) {
     console.warn(
       '[createOverlayUnsavedChangesGuard] The overlay was opened with disableClose: true, so escape, ' +
-        'outside-pointer and drag never fire — only a programmatic close() reaches the guard.',
+        'outside-pointer and drag never fire - only a programmatic close() reaches the guard.',
     );
   }
 

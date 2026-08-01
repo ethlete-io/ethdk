@@ -11,7 +11,7 @@ import { validateWithV2Query } from './validate-with-v2-query';
 
 // The v2 request layer runs on raw `XMLHttpRequest`, so there's no `HttpClient` to intercept with
 // `HttpTestingController`. Instead we drive the validator with a fake creator whose `state$` emits
-// a controlled settled state — this proves the loader wiring (prepare → execute → await settled →
+// a controlled settled state - this proves the loader wiring (prepare → execute → await settled →
 // throw on failure) and the shared error mapping deterministically.
 
 type Model = { name: string };

@@ -9,7 +9,7 @@ import { injectChipLabels } from '../../chip/chip-labels';
   exportAs: 'etChipRemove',
   host: {
     class: 'et-chip-remove',
-    // chips are never tab stops — contexts like the select trigger or the tag input move
+    // chips are never tab stops - contexts like the select trigger or the tag input move
     // focus across chips virtually, and pointer/Backspace removal works without a tab stop
     tabindex: '-1',
     '[attr.type]': 'IS_BUTTON ? "button" : null',
@@ -45,7 +45,7 @@ export class ChipRemoveDirective {
   }
 
   protected handleClick(event: Event) {
-    // a chip may itself be clickable (e.g. filter chips) — removal must not double as activation
+    // a chip may itself be clickable (e.g. filter chips) - removal must not double as activation
     event.stopPropagation();
     this.chip?.requestRemove();
   }

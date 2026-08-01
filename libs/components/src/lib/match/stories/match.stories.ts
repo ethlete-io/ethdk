@@ -47,7 +47,7 @@ export const Compact: Story = {
     docs: {
       description: {
         story:
-          'Narrow enough for the container query to land on the dense row — the shape a bracket column or a ' +
+          'Narrow enough for the container query to land on the dense row - the shape a bracket column or a ' +
           'results list wants. `size="compact"` fixes it there regardless of width, and is the only setting that ' +
           "also swaps participant names for their short codes (a text change can't come out of a container query).",
       },
@@ -62,7 +62,7 @@ export const HiddenNames: Story = {
       description: {
         story:
           'The densest cell there is: emblems and results, nothing else. `hideNames` drops the names from the ' +
-          "drawing only — they stay in the card's accessible name and in each emblem's alt text.",
+          "drawing only - they stay in the card's accessible name and in each emblem's alt text.",
       },
     },
   },
@@ -89,7 +89,7 @@ export const Live: Story = {
         story:
           'A running match shows a live badge instead of its kick-off, in the app\'s `type: "error"` color theme. ' +
           'Score the goals with the buttons: the value rolls, the side flashes, `scoreChange` fires with the side ' +
-          'and delta, and a polite live region reads the new score once. Only while live — a finished result ' +
+          'and delta, and a polite live region reads the new score once. Only while live - a finished result ' +
           'arriving with the page is not a moment. Turn `animateScoreChanges` off to keep the announcement without ' +
           'the movement.',
       },
@@ -102,7 +102,7 @@ export const Scheduled: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'No score yet, so the kick-off carries the card — formatted in the active `DATE_LOCALE`.',
+        story: 'No score yet, so the kick-off carries the card - formatted in the active `DATE_LOCALE`.',
       },
     },
   },
@@ -114,7 +114,7 @@ export const Wide: Story = {
     docs: {
       description: {
         story:
-          'From 560px the two sides stop stacking and face each other across the middle, results meeting in it — ' +
+          'From 560px the two sides stop stacking and face each other across the middle, results meeting in it - ' +
           'the shape a full-width fixture list wants. Same DOM as the other two layouts: the away side is mirrored ' +
           'in CSS, which is also why it keeps working in RTL.',
       },
@@ -129,7 +129,7 @@ export const Outcome: Story = {
       description: {
         story:
           'A competition that reports wins and losses rather than scores. The letters are derived from ' +
-          '`winnerSide`, not sent as data, so nothing has to denormalize a result into a "W" — and a screen ' +
+          '`winnerSide`, not sent as data, so nothing has to denormalize a result into a "W" - and a screen ' +
           'reader hears "FC Berlin won" rather than the letter. Never alongside a score: one slot, one form.',
       },
     },
@@ -168,7 +168,7 @@ export const Tbd: Story = {
     docs: {
       description: {
         story:
-          'A `null` participant is a TBD slot, not an error — a bracket match whose feeder has not finished. The ' +
+          'A `null` participant is a TBD slot, not an error - a bracket match whose feeder has not finished. The ' +
           'row keeps its height, and the composed name says "TBD" so the card still announces something.',
       },
     },
@@ -180,7 +180,7 @@ export const Rtl: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Logical properties throughout, so the whole card mirrors — emblem, name, seed and score.',
+        story: 'Logical properties throughout, so the whole card mirrors - emblem, name, seed and score.',
       },
     },
   },

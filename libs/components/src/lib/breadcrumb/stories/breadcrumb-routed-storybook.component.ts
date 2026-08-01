@@ -22,7 +22,7 @@ import { BREADCRUMB_IMPORTS } from '../breadcrumb.imports';
 
       <et-breadcrumb-outlet />
 
-      <!-- The shell's own crumb: the root, which is a route of its own — so following it actually goes
+      <!-- The shell's own crumb: the root, which is a route of its own - so following it actually goes
            somewhere and the trail shortens to just this crumb. -->
       <ng-template etBreadcrumbSegment>
         <ng-template etBreadcrumbItemTemplate>
@@ -72,7 +72,7 @@ export class BreadcrumbTeamsPageComponent {}
 })
 export class BreadcrumbHomePageComponent {}
 
-/** A detail route: contributes exactly one crumb — the record's name, which only it can know. */
+/** A detail route: contributes exactly one crumb - the record's name, which only it can know. */
 @Component({
   selector: 'et-sb-breadcrumb-page-team',
   template: `

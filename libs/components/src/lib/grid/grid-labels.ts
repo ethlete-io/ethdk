@@ -1,7 +1,7 @@
 import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
- * Every string the grid announces. It renders no text of its own — the items are yours — so these are
+ * Every string the grid announces. It renders no text of its own - the items are yours - so these are
  * all accessible labels.
  *
  * They used to live on `GridConfig` next to a `transformer(text, locale)` hook, which asked an app to
@@ -28,7 +28,7 @@ const GRID_LABELS_DEF = /* @__PURE__ */ defineLabels<GridLabels>('GRID_LABELS', 
 
 /**
  * Localize the grid's accessible labels for everything below this injector, and read the set in effect
- * here as a signal. Partial — whatever you leave out keeps its {@link DEFAULT_GRID_LABELS} value. See
+ * here as a signal. Partial - whatever you leave out keeps its {@link DEFAULT_GRID_LABELS} value. See
  * {@link defineLabels} for the shape, which every domain in this library shares.
  *
  * @example

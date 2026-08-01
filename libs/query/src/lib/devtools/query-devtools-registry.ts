@@ -6,7 +6,7 @@ import type { QueryRepository } from '../http/query-repository';
 
 /**
  * The kind of object a {@link QueryDevtoolsEntry} describes. Part of the devtools contract consumed
- * by `<et-query-devtools>` — not a general-purpose query API.
+ * by `<et-query-devtools>` - not a general-purpose query API.
  */
 export type QueryDevtoolsEntryKind =
   'query' | 'query-stack' | 'paged-query-stack' | 'query-sequence' | 'auth-provider' | 'ws-client';
@@ -51,7 +51,7 @@ export type QueryDevtoolsEntryMeta = {
 
   /**
    * The owning client itself, where known (queries and auth providers). Read for state that hangs off
-   * the client rather than the repository — the multi-tab sync engine, in particular.
+   * the client rather than the repository - the multi-tab sync engine, in particular.
    */
   client?: QueryClient;
 
@@ -93,7 +93,7 @@ const entries = /* @__PURE__ */ signal<QueryDevtoolsEntry[]>([]);
 export const queryDevtoolsEntries: Signal<QueryDevtoolsEntry[]> = /* @__PURE__ */ entries.asReadonly();
 
 // Per-descriptor counter used to derive stable, reload-deterministic ids. Reset on page load (module
-// re-eval), so the same queries created in the same order get the same ids across reloads — which is
+// re-eval), so the same queries created in the same order get the same ids across reloads - which is
 // what lets the devtools restore the selected query after a reload.
 const idCounters = /* @__PURE__ */ new Map<string, number>();
 
@@ -195,8 +195,8 @@ export const getQueryClientName = (client: AnyCreateQueryClientResult): string =
  * `bootstrapApplication`) to make query clients, queries, stacks, sequences and auth providers
  * appear in the `<et-query-devtools>` panel.
  *
- * When omitted, all devtools instrumentation is a no-op — no references are retained and there is no
- * runtime overhead — so it is safe to leave out of production builds.
+ * When omitted, all devtools instrumentation is a no-op - no references are retained and there is no
+ * runtime overhead - so it is safe to leave out of production builds.
  *
  * @example
  * ```ts

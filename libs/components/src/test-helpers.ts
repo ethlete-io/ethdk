@@ -1,4 +1,4 @@
-// Shared side-effect setup for specs. jsdom has no ResizeObserver — anything
+// Shared side-effect setup for specs. jsdom has no ResizeObserver - anything
 // rendering a component/directive that uses signalElementDimensions needs this.
 if (!globalThis.ResizeObserver) {
   class ResizeObserverMock {
@@ -26,7 +26,7 @@ if (!globalThis.ResizeObserver) {
   });
 }
 
-// jsdom has no IntersectionObserver either — anything that tracks child visibility (the scrollable's
+// jsdom has no IntersectionObserver either - anything that tracks child visibility (the scrollable's
 // lazy child intersections, and so the carousel and its snapping) needs this to render at all. It never
 // reports: jsdom has no layout to report, so intersection-derived state stays at its initial value.
 if (!globalThis.IntersectionObserver) {

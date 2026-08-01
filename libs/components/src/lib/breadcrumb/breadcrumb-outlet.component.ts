@@ -10,7 +10,7 @@ import { BreadcrumbComponent } from './breadcrumb.component';
  * ancestors'.
  *
  * Renders nothing while no view has contributed a crumb, so the shell needs to know nothing about which
- * routes have breadcrumbs. Anything you project into it lands inside the breadcrumb — which is how a
+ * routes have breadcrumbs. Anything you project into it lands inside the breadcrumb - which is how a
  * shell-wide `<ng-template etBreadcrumbSeparator>` is set.
  *
  * @example
@@ -20,7 +20,7 @@ import { BreadcrumbComponent } from './breadcrumb.component';
   selector: 'et-breadcrumb-outlet',
   template: `
     <!-- Instantiating a segment is what brings its crumb templates (and their registrations) into
-         existence. A segment declares templates only, so this renders nothing — the wrapper is hidden so
+         existence. A segment declares templates only, so this renders nothing - the wrapper is hidden so
          that stray content in a segment stays invisible instead of leaking into the shell. -->
     <div class="et-breadcrumb-outlet-segments" hidden>
       @for (segment of manager.segments(); track segment) {

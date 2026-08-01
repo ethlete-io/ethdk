@@ -1,7 +1,7 @@
 import { EMPTY, Observable, concat, concatMap, defer, filter, fromEvent, merge, of, take, takeUntil } from 'rxjs';
 
 export type DragStartEvent = {
-  /** Pointer position at pointerdown — NOT at commit-threshold crossing. */
+  /** Pointer position at pointerdown - NOT at commit-threshold crossing. */
   readonly clientX: number;
   readonly clientY: number;
 };

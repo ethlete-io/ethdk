@@ -13,12 +13,12 @@ const DEFAULT_PAGE_SIZES = [10, 25, 50, 100] as const;
  * that shows one. Native also gets the platform picker on mobile for free, which is the better control
  * for this at that size.
  *
- * Standalone rather than part of the paginator, because the paginator is `page`, not `pageSize` — a
+ * Standalone rather than part of the paginator, because the paginator is `page`, not `pageSize` - a
  * table's footer, an infinite list and a gallery all pair them differently, and plenty of paginators
  * want no size control at all.
  *
  * **Changing the size does not reset the page.** Which page 1-based position 47 belongs to depends on
- * what you are paging, so that decision stays yours — the usual answer is to go back to page 1, which
+ * what you are paging, so that decision stays yours - the usual answer is to go back to page 1, which
  * `linkedSignal` expresses in a line (see the example).
  *
  * @example
@@ -44,7 +44,7 @@ const DEFAULT_PAGE_SIZES = [10, 25, 50, 100] as const;
             <option [value]="option.value" [selected]="option.value === pageSize()">{{ option.label }}</option>
           }
         </select>
-        <!-- The native arrow goes with \`appearance: none\`, so the control draws its own — inline, like
+        <!-- The native arrow goes with \`appearance: none\`, so the control draws its own - inline, like
              the paginator's chevrons, rather than through the icon system the paginator also avoids.
              Pointer-events off so the whole field still opens the picker. -->
         <svg class="et-page-size-select-chevron" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
@@ -72,7 +72,7 @@ export class PageSizeSelectComponent {
   /** Control density, to match the paginator it sits next to. @default 'md' */
   public size = input<'sm' | 'md'>('md');
 
-  /** Override this instance's strings — see {@link providePaginationLabels} for the app-wide version. */
+  /** Override this instance's strings - see {@link providePaginationLabels} for the app-wide version. */
   public labels = input<Partial<PaginationLabels> | null>(null);
 
   /** The strings in effect here: the injected label set with this instance's `labels` applied. */

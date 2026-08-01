@@ -7,20 +7,20 @@ const PAGE_STEP_MULTIPLIER = 10;
 
 /**
  * A slider thumb: carries the ARIA slider semantics and the keyboard model.
- * Registration order determines its index — for ranges, place the start thumb first.
+ * Registration order determines its index - for ranges, place the start thumb first.
  */
 @Directive({
   selector: '[etSliderThumb]',
   exportAs: 'etSliderThumb',
   host: {
     role: 'slider',
-    // a vertical thumb pans the page horizontally instead — the drag axis is the blocked one
+    // a vertical thumb pans the page horizontally instead - the drag axis is the blocked one
     '[style.touch-action]': 'vertical() ? "pan-x" : "pan-y"',
     '[attr.aria-orientation]': 'slider?.orientation() ?? "horizontal"',
     '[attr.tabindex]': 'slider?.disabled() ? -1 : 0',
     '[attr.aria-valuemin]': 'ariaMin()',
     '[attr.aria-valuemax]': 'ariaMax()',
-    // a removed aria-valuenow is the ARIA-sanctioned "indeterminate value" — the valuetext
+    // a removed aria-valuenow is the ARIA-sanctioned "indeterminate value" - the valuetext
     // then carries the mixed label so assistive tech announces the bulk-edit state
     '[attr.aria-valuenow]': 'slider?.mixed() ? null : value()',
     '[attr.aria-valuetext]': 'slider?.thumbValueText(index())',
@@ -43,7 +43,7 @@ export class SliderThumbDirective implements SliderThumbBase {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private destroyRef = inject(DestroyRef);
 
-  /** Accessible name of the thumb — range thumbs need one each (e.g. "Minimum"). */
+  /** Accessible name of the thumb - range thumbs need one each (e.g. "Minimum"). */
   public label = input('');
 
   public focused = signal(false);

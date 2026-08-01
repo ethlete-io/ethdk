@@ -7,8 +7,8 @@ import { applyHeadBinding } from './head-binding';
 /**
  * Something drawn on top of the site's favicon.
  *
- * - `dot` — a filled badge punched into the bottom-right corner, the "something happened here" marker.
- * - `progress` — a ring around the icon, `value` in percent (`0`–`100`). The browser exposes no
+ * - `dot` - a filled badge punched into the bottom-right corner, the "something happened here" marker.
+ * - `progress` - a ring around the icon, `value` in percent (`0`–`100`). The browser exposes no
  *   taskbar/tab progress API, so a favicon ring (or a percentage in the title) is as close as the web
  *   gets to one.
  */
@@ -161,7 +161,7 @@ const FAVICON_STORE_DEF = /* @__PURE__ */ defineRootProvider(
       canvas.width = FAVICON_SIZE;
       canvas.height = FAVICON_SIZE;
 
-      // No 2d context (a non-browser DOM implementation) — leave the favicon untouched entirely.
+      // No 2d context (a non-browser DOM implementation) - leave the favicon untouched entirely.
       const ctx = canvas.getContext('2d');
 
       if (!ctx) return;
@@ -187,7 +187,7 @@ const FAVICON_STORE_DEF = /* @__PURE__ */ defineRootProvider(
       try {
         link.setAttribute('href', canvas.toDataURL('image/png'));
       } catch {
-        // A tainted canvas (cross-origin base icon) can't be exported — leave the favicon as it was.
+        // A tainted canvas (cross-origin base icon) can't be exported - leave the favicon as it was.
         restore();
       }
     };
@@ -227,14 +227,14 @@ const FAVICON_STORE_DEF = /* @__PURE__ */ defineRootProvider(
  * Owns the `<link rel="icon">` href so overlays can be drawn onto the site's favicon and taken back
  * off again. The original href is captured on first use and restored once the last overlay is gone.
  *
- * Registrations are keyed, and a `progress` overlay wins over a `dot` — a ring that also carries a
+ * Registrations are keyed, and a `progress` overlay wins over a `dot` - a ring that also carries a
  * badge reads as neither.
  */
 export const provideFaviconStore = /* @__PURE__ */ toProvideFn(FAVICON_STORE_DEF);
 export const injectFaviconStore = /* @__PURE__ */ toInjectFn(FAVICON_STORE_DEF);
 
 /**
- * Draw an overlay on the site's favicon while the binding has a value — an unsaved-changes dot, an
+ * Draw an overlay on the site's favicon while the binding has a value - an unsaved-changes dot, an
  * upload's progress ring. The favicon is restored when the binding goes empty or the injector is
  * destroyed. No-op during SSR.
  *

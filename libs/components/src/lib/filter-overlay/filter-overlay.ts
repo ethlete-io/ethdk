@@ -17,7 +17,7 @@ import {
 
 export type FilterOverlayConfig<TFields extends QueryFormFields> = {
   /**
-   * The page's filter state. The overlay never edits it directly — it edits a detached branch and writes the
+   * The page's filter state. The overlay never edits it directly - it edits a detached branch and writes the
    * branch back on submit, which is what makes dismissing the overlay a discard.
    */
   queryForm: QueryFormSignals<TFields>;
@@ -39,13 +39,13 @@ export type FilterOverlayConfig<TFields extends QueryFormFields> = {
 };
 
 /**
- * The draft's editing surface — a query form branch, described by its **value** shape rather than by its field
+ * The draft's editing surface - a query form branch, described by its **value** shape rather than by its field
  * map.
  *
  * That is deliberate and worth explaining: `QueryFieldDef<T>` is contravariant in `T` (it can hold a
  * `valueToQueryParam: (value: T) => unknown`), so a concrete field map does *not* satisfy
- * `Record<string, QueryFieldDef<unknown>>`. Inference copes, but an explicit type argument —
- * `injectFilterOverlay<typeof MY_FIELDS>()` — cannot be written at all. Naming the value shape sidesteps it, and
+ * `Record<string, QueryFieldDef<unknown>>`. Inference copes, but an explicit type argument -
+ * `injectFilterOverlay<typeof MY_FIELDS>()` - cannot be written at all. Naming the value shape sidesteps it, and
  * is what a consumer actually cares about. Structurally identical to `QueryFormBranch`.
  */
 export type FilterOverlayDraft<TValue> = {
@@ -53,7 +53,7 @@ export type FilterOverlayDraft<TValue> = {
   readonly fields: FieldTree<TValue>;
   /** The draft's live value. */
   readonly value: Signal<TValue>;
-  /** How many of the draft's *filters* are set — search, sort and pagination excluded. */
+  /** How many of the draft's *filters* are set - search, sort and pagination excluded. */
   readonly activeFilterCount: Signal<number>;
   setValue(value: TValue): void;
   patchValue(value: Partial<TValue>): void;
@@ -66,7 +66,7 @@ export type FilterOverlayValueOf<TForm> = TForm extends { value: Signal<infer TV
 
 export type FilterOverlay<TValue = unknown> = {
   /**
-   * The draft being edited — bind its `fields` to your controls. A detached clone of the page's query form: its
+   * The draft being edited - bind its `fields` to your controls. A detached clone of the page's query form: its
    * own value, no URL writes, no reset graph, so nothing the reader does here affects the page until they submit.
    */
   draft: FilterOverlayDraft<TValue>;
@@ -78,7 +78,7 @@ export type FilterOverlay<TValue = unknown> = {
   labels: Signal<FilterOverlayLabels>;
   /** How many filters the draft has set, for a badge on the overlay's own controls. */
   activeFilterCount: Signal<number>;
-  /** Whether the draft differs from the filters actually applied — what "unsaved changes" means here. */
+  /** Whether the draft differs from the filters actually applied - what "unsaved changes" means here. */
   hasChanges: Signal<boolean>;
   /**
    * Whether every field in the draft is still at its default, i.e. there is nothing for `reset()` to do.
@@ -157,7 +157,7 @@ const createFilterOverlay = <TFields extends QueryFormFields>(
  * Provides the filter overlay for an overlay component: a draft of the page's filters that the reader edits, a
  * live count of what those filters would return, and an explicit apply.
  *
- * The model is **edit a copy, then commit** — dismissing the overlay discards, which is what lets a filter panel
+ * The model is **edit a copy, then commit** - dismissing the overlay discards, which is what lets a filter panel
  * be closed with Escape without consequence. It is cdk's `FilterOverlayService` rebuilt on the signals query
  * form: no reactive-forms `FormGroup` to clone, no legacy query types, and `reset()` needs no configured defaults
  * because the query form already knows them.

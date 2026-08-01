@@ -48,18 +48,18 @@ export const findTableContext = (root: HTMLElement, node: Node | null): TableCon
   return { table, row, cell, rowIndex: rows.indexOf(row), cellIndex: [...row.cells].indexOf(cell) };
 };
 
-/** Whether the table still has a header row (a `<tr>` inside `<thead>`) — the picker always creates
+/** Whether the table still has a header row (a `<tr>` inside `<thead>`) - the picker always creates
  *  one, but "Delete row" can remove it. */
 export const hasHeaderRow = (table: HTMLTableElement) => (table.tHead?.rows.length ?? 0) > 0;
 
 /** Whether a context's caret row is the table's header row. */
 export const isHeaderRow = (ctx: TableContext) => ctx.row.parentElement?.nodeName === 'THEAD';
 
-/** The first editable cell of a table — where the caret lands after inserting. */
+/** The first editable cell of a table - where the caret lands after inserting. */
 export const firstTableCell = (table: HTMLElement): HTMLElement | null =>
   table instanceof HTMLTableElement ? (allRows(table)[0]?.cells[0] ?? null) : null;
 
-/** The cell nearest a context's (row, cell) position, clamped to what still exists — for restoring
+/** The cell nearest a context's (row, cell) position, clamped to what still exists - for restoring
  *  the caret after an edit removed the original row/column. `null` when the table has no cells. */
 export const cellAt = (ctx: TableContext): HTMLElement | null => {
   const rows = allRows(ctx.table);
@@ -73,7 +73,7 @@ export const cellAt = (ctx: TableContext): HTMLElement | null => {
   return row.cells[Math.min(ctx.cellIndex, row.cells.length - 1)] ?? null;
 };
 
-/** Table DOM operations bound to a renderer — kept together so table code tree-shakes as one unit. */
+/** Table DOM operations bound to a renderer - kept together so table code tree-shakes as one unit. */
 export const createTableOps = (renderer: EditorRenderer) => {
   const fillCell = (cell: HTMLElement) => renderer.appendChild(cell, renderer.createElement('br'));
 
@@ -113,7 +113,7 @@ export const createTableOps = (renderer: EditorRenderer) => {
     const tr = renderer.createElement('tr') as HTMLElement;
     for (let c = 0; c < ctx.row.cells.length; c++) renderer.appendChild(tr, makeCell('td'));
 
-    // body rows never belong in <thead> — from the header row, the new row lands at the top of the body
+    // body rows never belong in <thead> - from the header row, the new row lands at the top of the body
     if (isHeaderRow(ctx)) {
       const body = ctx.table.tBodies[0] ?? null;
 
@@ -197,7 +197,7 @@ export const createTableOps = (renderer: EditorRenderer) => {
 
 /**
  * Arrow-key caret navigation across table boundaries, registered as the table tool's `keydown`
- * interceptor (so it ships — like all table code — only with `provideRichTextEditorTableTool`).
+ * interceptor (so it ships - like all table code - only with `provideRichTextEditorTableTool`).
  * `exit` steps the caret OUT of an edge cell into the block next to the table (creating an empty
  * paragraph when the table ends the document); `enter` steps it INTO the first/last cell of an
  * adjacent root-level table instead of stranding it at the table's edge.
@@ -279,7 +279,7 @@ export const createTableNav = (renderer: EditorRenderer) => {
     return true;
   };
 
-  /** Moves the caret out of `table` (a root-level block — both callers verify that) into the
+  /** Moves the caret out of `table` (a root-level block - both callers verify that) into the
    *  adjacent block, creating an empty paragraph when the table starts/ends the document. */
   const stepOut = (table: HTMLTableElement, edge: 'before' | 'after') => {
     const el = table.parentElement as HTMLElement;

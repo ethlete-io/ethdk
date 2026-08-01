@@ -11,7 +11,7 @@ const MIN_LEAVE_SPEED = 50;
 
 /**
  * Gives the leave transition the speed the swipe had when it let go, instead of the fixed duration
- * the stylesheet uses for every other close. Only the duration is overridden — position is already
+ * the stylesheet uses for every other close. Only the duration is overridden - position is already
  * continuous, because the drag's inline transform is what the leave transition starts from.
  */
 const applyDismissMomentum = (

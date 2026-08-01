@@ -5,7 +5,7 @@ import { BracketMatch, BracketRound, BracketRoundSwissGroup } from './linked';
 
 /**
  * The bracket's default match cell: an [`et-match-card`](/components/match) at `compact`, which is the
- * density a bracket column has room for — two rows, short codes, the winner emphasized.
+ * density a bracket column has room for - two rows, short codes, the winner emphasized.
  *
  * It reads your match through the registered `matchNormalizer`, so the bracket engine stays ignorant of
  * your API's shape. No normalizer, no card: dev mode throws

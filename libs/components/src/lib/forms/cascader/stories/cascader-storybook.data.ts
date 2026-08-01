@@ -1,6 +1,6 @@
 // Demo fixtures live here rather than in the component file. An interpolated template literal
 // anywhere above an inline `template:` desynchronises the Angular VS Code extension's editor-side
-// scanner, which then stops forwarding template completions to the language service — see the
+// scanner, which then stops forwarding template completions to the language service - see the
 // `ethlete/no-template-literal-before-inline-template` lint rule.
 
 import { Observable, of } from 'rxjs';
@@ -81,13 +81,13 @@ const searchTree = (query: string): CascaderNode<string>[][] => {
   return results;
 };
 
-// the sync tree plus a `search` hook — its presence is what enables the panel's search input
+// the sync tree plus a `search` hook - its presence is what enables the panel's search input
 export const searchableSource: CascaderDataSource<string> = {
   loadChildren: syncSource.loadChildren,
   search: (query) => of(searchTree(query)).pipe(delay(400)),
 };
 
-// a generated six-level hierarchy (region → … → player) for the deep-nesting story — deeper
+// a generated six-level hierarchy (region → … → player) for the deep-nesting story - deeper
 // than maxVisibleColumns, so older levels collapse into the breadcrumb row
 const DEEP_LEVEL_NAMES = ['Region', 'Country', 'League', 'Club', 'Team', 'Player'];
 

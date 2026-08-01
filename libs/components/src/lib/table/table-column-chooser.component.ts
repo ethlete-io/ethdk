@@ -15,14 +15,14 @@ import {
 import { MenuTriggerDirective } from '../menu/headless';
 import { TableFeatureHost } from './headless/table-features';
 
-/** The slice of the table a column chooser drives — any `et-table` satisfies it. */
+/** The slice of the table a column chooser drives - any `et-table` satisfies it. */
 export type TableColumnVisibilityHost = Pick<
   TableFeatureHost,
   'allColumns' | 'visibleColumnsMeta' | 'isColumnVisible' | 'setColumnVisible' | 'showAllColumns' | 'resolvedLabels'
 >;
 
 /**
- * A "columns" button and menu for toggling column visibility, placed wherever you like — a toolbar
+ * A "columns" button and menu for toggling column visibility, placed wherever you like - a toolbar
  * above the table, the `[etTableFooter]` slot, a page header.
  *
  * Deliberately *not* part of the per-column `⋮` menu. A list that hides columns cannot hang off a
@@ -56,17 +56,17 @@ export type TableColumnVisibilityHost = Pick<
   providers: [provideIcons(GRID_2X2_ICON, EYE_ICON)],
 })
 export class TableColumnChooserComponent {
-  /** The table whose columns this toggles — bind a template ref to the `<et-table>`. */
+  /** The table whose columns this toggles - bind a template ref to the `<et-table>`. */
   public table = input.required<TableColumnVisibilityHost>();
 
   /**
-   * The bound table's wording, so the chooser needs no strings of its own — localize it with
+   * The bound table's wording, so the chooser needs no strings of its own - localize it with
    * `provideTableLabels` or the table's `labels` input like everything else.
    */
   protected labels = computed(() => this.table().resolvedLabels());
 
   /**
-   * Toggling a column leaves the menu open — hiding several in one visit is the point of the list. A
+   * Toggling a column leaves the menu open - hiding several in one visit is the point of the list. A
    * field rather than a literal in the template because `closeOnActivate` is tri-state
    * (`boolean | undefined`) and so takes a binding, not a static attribute.
    */
@@ -75,7 +75,7 @@ export class TableColumnChooserComponent {
   protected hasHidden = computed(() => this.table().visibleColumnsMeta().length < this.table().allColumns().length);
 
   /**
-   * The last column standing can't be hidden — a table with no columns has nothing to show. Its
+   * The last column standing can't be hidden - a table with no columns has nothing to show. Its
    * checkbox is disabled rather than absent, so the list still reads as the whole set.
    */
   protected isLastVisible(key: string) {

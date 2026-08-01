@@ -35,7 +35,7 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
     state: _state.asReadonly(),
     componentInstance: _componentInstance.asReadonly(),
 
-    // Internal — driven by overlay-runtime.ts
+    // Internal - driven by overlay-runtime.ts
     beforeOpenedSubject,
 
     close(result?: TResult, source: OverlayRuntimeCloseSource = 'api') {
@@ -43,7 +43,7 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
         return;
       }
 
-      // `reference-detached` is a forced teardown (the anchor is gone) — never vetoable.
+      // `reference-detached` is a forced teardown (the anchor is gone) - never vetoable.
       if (source !== 'reference-detached') {
         for (const guard of closeGuards) {
           if (!guard({ result, source })) {
@@ -55,7 +55,7 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
       requestClose(result, source);
     },
 
-    /** Close bypassing every registered close guard — used by a guard's owner to commit a
+    /** Close bypassing every registered close guard - used by a guard's owner to commit a
      *  close it previously vetoed (e.g. after an async confirm resolved). */
     forceClose(result?: TResult, source: OverlayRuntimeCloseSource = 'api') {
       if (_state() === 'closing' || _state() === 'closed') {

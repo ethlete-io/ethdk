@@ -28,7 +28,7 @@ const getServerTime = demoGetQuery<GetServerTimeQueryArgs>('/server-time');
 
       <p class="et-sb-query-demo-hint">
         The mock API responds with <code>cache-control: max-age=20</code>, giving the response a 10 second freshness
-        window. While it is fresh, "execute (allowCache)" serves the cached response — <code>requestNumber</code> only
+        window. While it is fresh, "execute (allowCache)" serves the cached response - <code>requestNumber</code> only
         increments when the server is actually hit.
       </p>
 

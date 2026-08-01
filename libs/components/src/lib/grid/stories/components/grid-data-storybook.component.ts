@@ -29,7 +29,7 @@ export type NotesData = {
 };
 
 // ---------------------------------------------------------------------------
-// Backend API shape — matches the WidgetView contract from the backend.
+// Backend API shape - matches the WidgetView contract from the backend.
 // In a real app this is what GET /partners/dashboards returns and what
 // POST/PATCH /partners/dashboard expects.
 // ---------------------------------------------------------------------------
@@ -46,7 +46,7 @@ type MockWidgetView = {
 };
 
 // ---------------------------------------------------------------------------
-// Adapter — bridges MockWidgetView ↔ GridItemConfig.
+// Adapter - bridges MockWidgetView ↔ GridItemConfig.
 // In a real app this lives next to the component that talks to the API.
 // ---------------------------------------------------------------------------
 
@@ -239,7 +239,7 @@ const INITIAL_ITEMS: GridItemConfig[] = [
     data: {
       title: 'Q2 Highlights',
       author: 'Product Team',
-      body: 'Strong growth in the EMEA region — up 18% QoQ. The new onboarding flow shipped in May is showing early conversion improvements. Key risk: churn in the SMB segment remains elevated. Next focus: retention campaign targeting 30-day inactive accounts.',
+      body: 'Strong growth in the EMEA region - up 18% QoQ. The new onboarding flow shipped in May is showing early conversion improvements. Key risk: churn in the SMB segment remains elevated. Next focus: retention campaign targeting 30-day inactive accounts.',
     } satisfies NotesData,
     layout: {
       lg: { col: 8, row: 1, colSpan: 4, rowSpan: 2 },
@@ -449,11 +449,11 @@ const DEFAULT_CONSTRAINTS = { minColSpan: 1, maxColSpan: 12, minRowSpan: 1, maxR
         }
       </div>
 
-      <!-- API payload panel — shows what adapter.toExternal() produces (the PATCH body) -->
+      <!-- API payload panel - shows what adapter.toExternal() produces (the PATCH body) -->
       @if (apiPayloadJson()) {
         <div class="mt-4">
           <div class="text-[11px] uppercase tracking-wide mb-1" style="color: rgb(var(--et-surface-color-muted))">
-            API payload — <code>adapter.toExternal(gridItems)</code> → sent as
+            API payload - <code>adapter.toExternal(gridItems)</code> → sent as
             <code>PATCH /partners/dashboard/:uuid</code>
           </div>
           <pre
@@ -493,7 +493,7 @@ export class GridDataStorybookComponent {
     return CONSTRAINTS[type] ?? DEFAULT_CONSTRAINTS;
   }
 
-  // Safe casts — template-only, types are always correct by construction
+  // Safe casts - template-only, types are always correct by construction
   public asKpi(data: unknown): KpiData {
     return data as KpiData;
   }
@@ -562,7 +562,7 @@ export class GridDataStorybookComponent {
       notes: { title: 'New Note', author: 'You', body: 'Write something here…' } satisfies NotesData,
     };
 
-    // layout: {} — grid will auto-place the new item and emit layoutChange with its real position
+    // layout: {} - grid will auto-place the new item and emit layoutChange with its real position
     this.gridItems.update((items) => [...items, { id, type, data: defaultData[type], layout: {} }]);
   }
 }

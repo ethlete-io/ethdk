@@ -1,6 +1,6 @@
 # Error codes
 
-Every error the library throws is a [`RuntimeError` from `@ethlete/core`](/core/utilities#runtime-errors). Its message starts with a stable code — `ET1301: [MenuTriggerDirective] etMenuTrigger must be placed inside an [etMenu] element.` — so you can search this page for the code you see in the console.
+Every error the library throws is a [`RuntimeError` from `@ethlete/core`](/core/utilities#runtime-errors). Its message starts with a stable code - `ET1301: [MenuTriggerDirective] etMenuTrigger must be placed inside an [etMenu] element.` - so you can search this page for the code you see in the console.
 
 ```ts
 import { RuntimeError } from '@ethlete/core';
@@ -14,11 +14,11 @@ try {
 }
 ```
 
-Some errors carry extra context (the offending config, element, …). That payload isn't serialized into the message — it's logged as a separate `console.error` right after the throw.
+Some errors carry extra context (the offending config, element, …). That payload isn't serialized into the message - it's logged as a separate `console.error` right after the throw.
 
 Two kinds of checks produce these errors:
 
-- **Structural checks** (a directive placed outside its required parent, a missing required template) run **in dev mode only**, after the first render. Production builds skip them, so fix them during development — the broken structure will silently misbehave in production.
+- **Structural checks** (a directive placed outside its required parent, a missing required template) run **in dev mode only**, after the first render. Production builds skip them, so fix them during development - the broken structure will silently misbehave in production.
 - **Runtime failures** (an icon name that isn't registered, a player SDK that fails to load) throw in production too.
 
 Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU_ERROR_CODES`, `OVERLAY_ERROR_CODES`) if you need to match on them programmatically.
@@ -61,7 +61,7 @@ Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU
 | 4400–4499 | Standings          | [Standings](/components/standings)                 |
 
 ::: info Codes below 1000
-Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web sockets). `ET1000`/`ET1001` therefore exist in both packages — the bracketed source in the message (`[SelectDirective]` vs. a query feature) tells them apart.
+Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web sockets). `ET1000`/`ET1001` therefore exist in both packages - the bracketed source in the message (`[SelectDirective]` vs. a query feature) tells them apart.
 :::
 
 ## Select (ET10xx)
@@ -174,7 +174,7 @@ The date input, date range input, [time picker](/components/time-picker), time i
 | `ET1304` | `etMenuPanel` is not rendered inside a menu surface.                                                                           | Move the panel inside the surface template.                                                                |
 | `ET1305` | `etMenuSearch` is not rendered inside a menu surface.                                                                          | Move the search input inside the surface template.                                                         |
 | `ET1306` | `etMenuContextTrigger` is not inside an `[etMenu]` element.                                                                    | Move the context trigger inside the menu root.                                                             |
-| `ET1307` | `etMenuContextTrigger` is placed on a submenu.                                                                                 | Context triggers can only open root menus — move it to the outermost `[etMenu]` element.                   |
+| `ET1307` | `etMenuContextTrigger` is placed on a submenu.                                                                                 | Context triggers can only open root menus - move it to the outermost `[etMenu]` element.                   |
 | `ET1320` | A selection item inside a selection group has no value.                                                                        | Add a `[value]` input to the `etMenuSelectionItem`.                                                        |
 | `ET1321` | A radio item is used without a surrounding selection group.                                                                    | Wrap radio items in an `et-menu-radio-group`.                                                              |
 
@@ -197,7 +197,7 @@ The date input, date range input, [time picker](/components/time-picker), time i
 | Code     | Cause                                                                       | Fix                                                                                  |
 | -------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | `ET1600` | The configured consent component doesn't provide the stream consent token.  | Add `hostDirectives: [StreamConsentDirective]` to the consent component.             |
-| `ET1601` | A platform SDK script failed to load.                                       | Check the URL and network — ad blockers commonly block player SDKs.                  |
+| `ET1601` | A platform SDK script failed to load.                                       | Check the URL and network - ad blockers commonly block player SDKs.                  |
 | `ET1602` | The Twitch Embed SDK loaded but its global isn't available.                 | Ensure the Twitch Embed SDK URL is accessible and not rewritten.                     |
 | `ET1603` | The YouTube IFrame API loaded but `YT.Player` isn't available.              | Ensure the YouTube IFrame API URL is accessible and not rewritten.                   |
 | `ET1604` | The configured PiP chrome component doesn't provide the PiP chrome token.   | Add `hostDirectives: [StreamPipChromeComponent]` to the chrome component.            |
@@ -219,9 +219,9 @@ The date input, date range input, [time picker](/components/time-picker), time i
 | Code     | Cause                                                                   | Fix                                                                                           |
 | -------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | `ET1800` | `[etIcon]` is used but no icons are registered.                         | Register icons via `provideIcons()` in component or application providers.                    |
-| `ET1801` | The requested icon name (or name/variant combination) isn't registered. | The message lists all available icons — register the missing one or fix the name.             |
+| `ET1801` | The requested icon name (or name/variant combination) isn't registered. | The message lists all available icons - register the missing one or fix the name.             |
 | `ET1802` | The registered icon data contains no `<svg>` element.                   | Provide valid SVG markup.                                                                     |
-| `ET1803` | The icon's `<svg>` is missing `xmlns="http://www.w3.org/2000/svg"`.     | Add the attribute — it's required for `innerHTML`-based rendering.                            |
+| `ET1803` | The icon's `<svg>` is missing `xmlns="http://www.w3.org/2000/svg"`.     | Add the attribute - it's required for `innerHTML`-based rendering.                            |
 | `ET1804` | The icon's `<svg>` is missing `width="100%"` and/or `height="100%"`.    | Add both attributes so the icon scales with its host.                                         |
 | `ET1805` | The icon uses a hardcoded `fill`/`stroke` color.                        | Use `currentColor` so the icon follows the text color, or set `[allowHardcodedColor]="true"`. |
 | `ET1806` | Two icons were registered with the same name/variant combination.       | Make every name/variant combination unique.                                                   |
@@ -315,7 +315,7 @@ Runtime errors from the bracket data pipeline and layout engine. They indicate a
 | `ET3409` | A swiss group ended up empty while round headers are enabled.                | Populate every available win/loss group, or hide round headers.                                                                     |
 | `ET3410` | A match's resolved winner id isn't among its participants.                   | Set `winner` to `'home'`/`'away'`/`null` matching the match's `home`/`away`.                                                        |
 | `ET3411` | A required key was missing from an internal bracket lookup.                  | Ensure every match `roundId` references an existing round.                                                                          |
-| `ET3412` | The default cards are rendering but no `matchNormalizer` was registered.     | Add `provideBracketConfig({ matchNormalizer })` — the Ethlete feed ships `normalizeEthleteBracketMatch` — or supply your own cards. |
+| `ET3412` | The default cards are rendering but no `matchNormalizer` was registered.     | Add `provideBracketConfig({ matchNormalizer })` - the Ethlete feed ships `normalizeEthleteBracketMatch` - or supply your own cards. |
 | `ET3413` | No registered bracket layout matches the source's tournament `mode`.         | Add the mode's factory (e.g. `doubleEliminationBracketLayout()`) to `provideBracketConfig({ layouts })` or to the `layouts` input.  |
 
 ## Table (ET35xx)
@@ -328,7 +328,7 @@ Runtime errors from the bracket data pipeline and layout engine. They indicate a
 | `ET3504` | A column template is bound to a column this table doesn't render.                  | Bind it to a column of the same `columns` record, e.g. `[etTableCell]="COLUMNS.role"`.                                                                        |
 | `ET3505` | A CSV export named a column key the table doesn't declare.                         | Check the key against the `columns` record, or drop the `columns` option to take the visible ones.                                                            |
 | `ET3506` | A CSV export would write fewer rows than the table's source says exist.            | Pass `rows` (a list or a provider such as `tableCsvRowsFromPages`), `file` for a server-built export, or `partial: true` to write the loaded page on purpose. |
-| `ET3507` | A CSV export was given `file` together with options for building one.              | The server already wrote that file — drop `rows`/`columns`/`header`/`delimiter`/`formulaGuard`/`bom`, or drop `file`.                                         |
+| `ET3507` | A CSV export was given `file` together with options for building one.              | The server already wrote that file - drop `rows`/`columns`/`header`/`delimiter`/`formulaGuard`/`bom`, or drop `file`.                                         |
 
 `ET3500` is retired: it flagged duplicate column keys, which the keyed
 `TableColumns` record makes impossible.
@@ -340,7 +340,7 @@ All accordion checks run in dev mode only, after the first render.
 | Code     | Cause                                                                                   | Fix                                                                                             |
 | -------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `ET3600` | An `etAccordionTrigger`, `etAccordionPanel` or slot template sits outside an accordion. | Move it inside the `[etAccordion]` element (e.g. `<et-accordion>`) it belongs to.               |
-| `ET3601` | An accordion rendered no `etAccordionTrigger`, so nothing can expand it.                | Add a trigger — ideally a `<button etAccordionTrigger>` inside a heading.                       |
+| `ET3601` | An accordion rendered no `etAccordionTrigger`, so nothing can expand it.                | Add a trigger - ideally a `<button etAccordionTrigger>` inside a heading.                       |
 | `ET3602` | An accordion is open but has no `etAccordionPanel`.                                     | Add an `etAccordionPanel` element, or render it conditionally only while the accordion is open. |
 
 ## Breadcrumb (ET37xx)
@@ -358,7 +358,7 @@ All carousel checks run in dev mode only.
 
 | Code     | Cause                                                                                    | Fix                                                                                     |
 | -------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `ET3800` | A slide template, slide, control or `etCarouselAutoplay` sits outside an `[etCarousel]`. | Move it inside the carousel element — controls included, since they resolve it upwards. |
+| `ET3800` | A slide template, slide, control or `etCarouselAutoplay` sits outside an `[etCarousel]`. | Move it inside the carousel element - controls included, since they resolve it upwards. |
 | `ET3801` | The carousel has children but none of them is an `etCarouselItem`.                       | Add the directive to each slide, so it can label them and track the current one.        |
 | `ET3802` | Autoplay is on with no control to pause it (WCAG 2.2.2).                                 | Add a button with `etCarouselPlayToggle`, or use `<et-carousel>`, which renders one.    |
 | `ET3803` | `etCarousel` found no scrollable to move.                                                | Put it on, or around, an `[etScrollable]` element (or use `<et-carousel>`).             |
@@ -371,7 +371,7 @@ All masonry checks run in dev mode only.
 | Code     | Cause                                                            | Fix                                                                                          |
 | -------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | `ET3900` | An `etMasonryItem` sits outside an `[etMasonry]` element.        | Move it inside the masonry, which is what measures and positions it.                         |
-| `ET3901` | The masonry has children but none of them is an `etMasonryItem`. | Add the directive to each child — without it nothing positions them and they stay invisible. |
+| `ET3901` | The masonry has children but none of them is an `etMasonryItem`. | Add the directive to each child - without it nothing positions them and they stay invisible. |
 
 ## Query error (ET40xx)
 
@@ -388,7 +388,7 @@ All floating-action checks run in dev mode only, after the first render.
 | Code     | Cause                                                                | Fix                                                                             |
 | -------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | `ET4100` | A floating-action part sits outside an `[etFloatingAction]` element. | Move it inside the coordinator element it belongs to.                           |
-| `ET4101` | A floating action has no `[etFloatingActionAnchor]`.                 | Wrap the trigger in an anchor element — it is what reports the scroll position. |
+| `ET4101` | A floating action has no `[etFloatingActionAnchor]`.                 | Wrap the trigger in an anchor element - it is what reports the scroll position. |
 
 ## Filter overlay (ET42xx)
 

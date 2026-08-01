@@ -7,7 +7,7 @@ export type PhoneCountry = {
 
 /**
  * ISO alpha-2 → dial code, nothing more. Display names come from
- * `Intl.DisplayNames(locale, { type: 'region' })` and flags from regional-indicator emoji —
+ * `Intl.DisplayNames(locale, { type: 'region' })` and flags from regional-indicator emoji -
  * no bundled name/flag data. Shared dial codes list their primary country first (`+1` → US).
  */
 export const PHONE_COUNTRIES: readonly PhoneCountry[] = [
@@ -237,7 +237,7 @@ export const matchCountryByDialCode = (digits: string): PhoneCountry | null => {
 const TRUNK_ZERO_KEPT = /* @__PURE__ */ new Set(['it', 'sm']);
 
 /**
- * Strips the national trunk prefix `0` (`'0171…'` → `'171…'`) — in most countries it replaces
+ * Strips the national trunk prefix `0` (`'0171…'` → `'171…'`) - in most countries it replaces
  * the dial code in national notation and is never part of the international number. Countries
  * that keep their leading `0` are exempt. A `00…` international prefix must be handled before
  * calling this.
@@ -249,7 +249,7 @@ export const stripTrunkZero = (nationalDigits: string, iso2: string) =>
 export const phoneCountryFlag = (iso2: string) =>
   String.fromCodePoint(...Array.from(iso2.toUpperCase()).map((char) => 0x1f1a5 + char.charCodeAt(0)));
 
-/** Localized display name via `Intl.DisplayNames` — falls back to the upper-cased code. */
+/** Localized display name via `Intl.DisplayNames` - falls back to the upper-cased code. */
 export const phoneCountryName = (iso2: string, locale?: string) => {
   try {
     return (

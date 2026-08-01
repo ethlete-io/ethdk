@@ -3,7 +3,7 @@ const CHARACTER_CLASSES = [/[a-z]/, /[A-Z]/, /[0-9]/, /[^a-zA-Z0-9]/];
 /**
  * A deliberately simple zero-dependency strength score (0–4) from length and
  * character-class diversity. It is a typing-feedback heuristic, not a security
- * estimate — real policies (and dictionary checks à la zxcvbn) belong to the
+ * estimate - real policies (and dictionary checks à la zxcvbn) belong to the
  * schema/backend.
  */
 export const scorePasswordStrength = (password: string) => {

@@ -42,7 +42,7 @@ type Story = StoryObj<CascaderStorybookComponent>;
 export const Default: Story = {};
 
 export const AnyLevel: Story = {
-  args: { selectableLevels: 'any', hint: 'Any node — including a stage — can be committed' },
+  args: { selectableLevels: 'any', hint: 'Any node - including a stage - can be committed' },
 };
 
 export const AsyncLevels: Story = {
@@ -56,7 +56,7 @@ export const Search: Story = {
 export const Multiple: Story = {
   args: {
     multiple: true,
-    hint: 'Leaf picks toggle — parents show the dash, or a full check once every child is picked',
+    hint: 'Leaf picks toggle - parents show the dash, or a full check once every child is picked',
   },
 };
 
@@ -94,5 +94,5 @@ export const DeepNesting: Story = {
 };
 
 export const AsyncError: Story = {
-  args: { errorMode: true, hint: 'The first load of each level fails — use Retry to recover' },
+  args: { errorMode: true, hint: 'The first load of each level fails - use Retry to recover' },
 };

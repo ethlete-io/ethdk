@@ -8,7 +8,7 @@ import { BREADCRUMB_TOKEN } from '../headless/breadcrumb.tokens';
  * `<script>` describing the trail, which is what gets a site the breadcrumb line in a search result
  * instead of a bare URL.
  *
- * It reads the `name` and `url` each crumb states — not the rendered DOM. A crumb's content is a
+ * It reads the `name` and `url` each crumb states - not the rendered DOM. A crumb's content is a
  * template that may hold an icon or markup with no single text form, and its `routerLink` is a path
  * where `schema.org` wants an absolute URL; both are things only the app can say:
  *
@@ -18,12 +18,12 @@ import { BREADCRUMB_TOKEN } from '../headless/breadcrumb.tokens';
  * </ng-template>
  * ```
  *
- * Crumbs still **loading** are skipped, and so are crumbs with no `name` — a `BreadcrumbList` with a
+ * Crumbs still **loading** are skipped, and so are crumbs with no `name` - a `BreadcrumbList` with a
  * placeholder in it is worse than a shorter one. Nothing is emitted at all until at least two named
  * crumbs exist, since a one-item trail tells a crawler nothing it doesn't already know.
  *
  * Separate from the breadcrumb itself so an app that does no head management never pulls the
- * structured-data store into its bundle — the same split as `etPaginationSeo`.
+ * structured-data store into its bundle - the same split as `etPaginationSeo`.
  *
  * @example
  * <et-breadcrumb etBreadcrumbSeo>…</et-breadcrumb>
@@ -36,7 +36,7 @@ export class BreadcrumbSeoDirective {
   private breadcrumb = inject(BREADCRUMB_TOKEN);
 
   /**
-   * Turn the markup off without removing the directive — a directive can't be applied conditionally,
+   * Turn the markup off without removing the directive - a directive can't be applied conditionally,
    * so this is how `[etBreadcrumbSeo]="isPublicPage()"` gates it. Writing it bare turns it on.
    * @default true
    */
@@ -65,7 +65,7 @@ export class BreadcrumbSeoDirective {
         // schema.org positions are 1-based.
         position: index + 1,
         name: crumb.name,
-        // `item` is omitted rather than empty for the current page — that is what Google's own
+        // `item` is omitted rather than empty for the current page - that is what Google's own
         // breadcrumb guidance asks for on the last crumb.
         ...(crumb.url ? { item: crumb.url } : {}),
       })),

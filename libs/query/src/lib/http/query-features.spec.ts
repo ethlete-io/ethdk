@@ -75,7 +75,7 @@ describe('query features', () => {
    * run yet would lose its transition (mitigated at the time by a global `effectScheduler.flush()`).
    *
    * The features now subscribe to the query-level `state.events$`, fed synchronously from each
-   * request's own event stream at the moment each event occurs — so delivery cannot be clobbered by
+   * request's own event stream at the moment each event occurs - so delivery cannot be clobbered by
    * a later execution and needs no flush.
    */
   describe('side-effect feature delivery is loss-free across executions (race class B)', () => {

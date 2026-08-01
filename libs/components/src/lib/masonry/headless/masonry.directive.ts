@@ -20,7 +20,7 @@ import { MasonryItemDirective } from './masonry-item.directive';
 import { MASONRY_TOKEN } from './masonry.tokens';
 
 /**
- * Packs variable-height items into columns, each item going to whichever column is currently shortest — the
+ * Packs variable-height items into columns, each item going to whichever column is currently shortest - the
  * layout a photo feed wants, where cropping every card to a common height would be the alternative.
  *
  * It measures and positions, because CSS still can't: native masonry (`display: grid-lanes`, CSS Grid Level
@@ -30,7 +30,7 @@ import { MASONRY_TOKEN } from './masonry.tokens';
  * same and means a reflow never relayouts the page around it.
  *
  * The measuring is per item and continuous (a `ResizeObserver` each), so a card whose image loads late, or
- * whose text reflows, moves the ones below it — the one thing cdk's one-shot `getBoundingClientRect()`
+ * whose text reflows, moves the ones below it - the one thing cdk's one-shot `getBoundingClientRect()`
  * snapshots could not do.
  *
  * @example
@@ -58,7 +58,7 @@ export class MasonryDirective {
   private styleManager = injectStyleManager();
 
   /**
-   * The narrowest a column may be, in px — a minimum rather than a target. As many columns as fit at that
+   * The narrowest a column may be, in px - a minimum rather than a target. As many columns as fit at that
    * width are used (gaps included), and the leftover space is shared out between them, so the columns always
    * fill the container. That is `repeat(auto-fill, minmax(X, 1fr))`, expressed as a number because the
    * packing needs it as one.
@@ -70,7 +70,7 @@ export class MasonryDirective {
 
   /**
    * The space between columns and between stacked items, in px. Also accepts a per-breakpoint map. It is a
-   * number rather than CSS `gap` because the items are positioned, not laid out — CSS never sees the
+   * number rather than CSS `gap` because the items are positioned, not laid out - CSS never sees the
    * columns. @default 16
    */
   public gap = input(16, { transform: numberBreakpointTransform() });
@@ -111,7 +111,7 @@ export class MasonryDirective {
 
   /**
    * Every item's position, derived rather than assigned. The whole layout is one `computed` over the item
-   * sizes, the column grid and the gap — so there is no invalidation to get right, no imperative pass over
+   * sizes, the column grid and the gap - so there is no invalidation to get right, no imperative pass over
    * the DOM, and appending to a feed re-derives the existing placements *identically* because the packing is
    * prefix-stable. What cdk did with a partial-invalidation mode, Angular's binding dedupe does here: an
    * item whose placement is unchanged is not written to again.
@@ -146,7 +146,7 @@ export class MasonryDirective {
    * Whether the layout matches what is on screen: the container has been measured, and every item has
    * reported its size at the current column width.
    *
-   * This is the signal to gate an infinite scroll on — fetching the next page while the current one is still
+   * This is the signal to gate an infinite scroll on - fetching the next page while the current one is still
    * settling appends items against sizes that are about to change, which is what cdk needed its
    * `injectInfinityQueryResponseDelay` handshake for. That provider only ever existed for the legacy query
    * client, so this is the generic replacement: `disabled: !masonry.isSettled()` on the trigger, whatever the
@@ -159,7 +159,7 @@ export class MasonryDirective {
   });
 
   /**
-   * Whether the container itself has changed width in the last moment — a window drag, a panel opening, a
+   * Whether the container itself has changed width in the last moment - a window drag, a panel opening, a
    * sidebar collapsing. Items snap to their new columns while it is true instead of animating: the columns
    * change every frame of a drag, so a move transition would be restarted every frame and the items would
    * trail behind the layout they belong to.
@@ -167,14 +167,14 @@ export class MasonryDirective {
   public isResizing = useMasonryResizeSettled(this.containerInlineSize);
 
   constructor() {
-    // Structural CSS is mounted rather than shipped on a component, so the directive works standalone —
+    // Structural CSS is mounted rather than shipped on a component, so the directive works standalone -
     // absolute positioning is this layout's mechanism, not its decoration, and a headless composition has to
     // get it too. The style manager de-duplicates, so many masonries inject one <style>.
     this.styleManager.mount(MasonryStylesComponent);
 
     // Freezing the assignments is what makes a card growing a local event. It happens on settling, never
     // before: an item that has not been measured has no height yet, so a batch of appended items would all
-    // look like they belong in whichever column was shortest and pile into it — permanently, once frozen.
+    // look like they belong in whichever column was shortest and pile into it - permanently, once frozen.
     effect(() => {
       if (!this.isSettled()) return;
 
@@ -201,7 +201,7 @@ export class MasonryDirective {
       let hasCheckedItems = false;
 
       // An empty masonry is a legitimate state (an unfetched feed), so this checks the first time there *are*
-      // children — children without the item directive are positioned by nothing and stay invisible, which
+      // children - children without the item directive are positioned by nothing and stay invisible, which
       // is a silent failure worth a loud error.
       effect(() => {
         const childCount = children().length;
@@ -231,7 +231,7 @@ export class MasonryDirective {
    * Re-balance the columns from scratch, as if the items had just arrived.
    *
    * Items keep the column they were first given for as long as the column count holds, because the
-   * alternative is a grid that reshuffles itself whenever any one card changes height — expanding a
+   * alternative is a grid that reshuffles itself whenever any one card changes height - expanding a
    * description would move cards two columns away. The cost is that heights which change a lot *after* the
    * first layout leave the columns less even than a fresh pack would, so this is the escape hatch: call it
    * after replacing the content wholesale, and the packing balances again. A resize that changes the column

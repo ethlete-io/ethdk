@@ -40,7 +40,7 @@ export class RichTextEditorImageEditorComponent {
   private ownColorProvider = inject(ProvideColorDirective);
   private contextColorProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
 
-  /** The editor's strings, handed in by the tool — the popover renders detached. */
+  /** The editor's strings, handed in by the tool - the popover renders detached. */
   public labels = input.required<RichTextEditorLabels>();
 
   /** The image's current alt text. */

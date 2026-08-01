@@ -1,7 +1,7 @@
 import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
- * The strings the text-field family's own controls render — the number input's steppers and the password
+ * The strings the text-field family's own controls render - the number input's steppers and the password
  * input's reveal toggle. The field's label, hint and errors are yours; these are the parts the control
  * adds by itself.
  */
@@ -31,7 +31,7 @@ const INPUT_LABELS_DEF = /* @__PURE__ */ defineLabels<InputLabels>('INPUT_LABELS
 
 /**
  * Localize the text field family's strings for everything below this injector, and read the set in effect here as a
- * signal. Partial — whatever you leave out keeps its {@link DEFAULT_INPUT_LABELS} value. See {@link defineLabels}
+ * signal. Partial - whatever you leave out keeps its {@link DEFAULT_INPUT_LABELS} value. See {@link defineLabels}
  * for the shape, which every domain in this library shares.
  *
  * @example

@@ -6,7 +6,7 @@ import { RichTextEditorImageFailure } from '../tools/rich-text-editor-image-uplo
 
 const DEMO_API_URL = 'https://rich-text-editor-image-demo.ethlete.local';
 
-/** Served by Storybook from `apps/playground/src/assets` — a real URL, which is what the value needs
+/** Served by Storybook from `apps/playground/src/assets` - a real URL, which is what the value needs
  *  (core's markdown pipeline deliberately refuses `data:` URLs, so a data URI would not round-trip). */
 const UPLOADED_IMAGE_URL = '/assets/rich-text-editor-image.svg';
 
@@ -59,14 +59,14 @@ export const richTextEditorImageDemoInterceptor: HttpInterceptorFn = (req, next)
 
 const demoClient = createQueryClient({ name: 'rich-text-editor-image-demo', baseUrl: DEMO_API_URL });
 
-/** `reportProgress` is what makes the upload emit progress events — the dropzone upload reads them. */
+/** `reportProgress` is what makes the upload emit progress events - the dropzone upload reads them. */
 export const postDemoImage = createPostQuery(demoClient)<ImageUploadArgs>('/images', { reportProgress: true });
 
 export const postFailingDemoImage = createPostQuery(demoClient)<ImageUploadArgs>('/images/fail');
 
 /**
  * What the tool reported through `onFailure`, rendered by the story so the callback is visible.
- * Module-level because the tool config is built outside an injection context — fine for a demo, where
+ * Module-level because the tool config is built outside an injection context - fine for a demo, where
  * only one of the image stories is on screen at a time.
  */
 export const demoImageFailures = signal<string[]>([]);

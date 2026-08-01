@@ -61,7 +61,7 @@ class ConfirmDiscardComponent {
             Status: <strong>{{ guard.hasChanges() ? 'unsaved changes' : 'clean' }}</strong>
           </p>
           <p class="text-small text-white/50">
-            Try Escape or the Close button — while there are unsaved changes you'll be asked to confirm. Save
+            Try Escape or the Close button - while there are unsaved changes you'll be asked to confirm. Save
             re-baselines, so closing right after a save won't prompt.
           </p>
           <p class="text-small text-white/50">
@@ -96,7 +96,7 @@ class EditItemOverlayComponent {
         panelClass: 'et-sb-overlay-panel',
       });
 
-      // The session can end while the dialog is up (a logout redirects to the login page) — close it
+      // The session can end while the dialog is up (a logout redirects to the login page) - close it
       // instead of leaving it stranded there.
       fromEvent(signal, 'abort')
         .pipe(
@@ -137,13 +137,13 @@ class EditItemOverlayComponent {
       <hr class="w-full border-white/10" />
 
       <p class="text-medium text-white/70">
-        Pending work can claim the tab too — a favicon ring is as close as the web gets to tab progress.
+        Pending work can claim the tab too - a favicon ring is as close as the web gets to tab progress.
       </p>
       <button [disabled]="uploadProgress() !== null" (click)="simulateUpload()" et-button variant="outline">
         Simulate an upload
       </button>
       @if (uploadProgress() !== null) {
-        <p class="text-small text-white/50">Uploading — favicon at {{ uploadProgress() }}%</p>
+        <p class="text-small text-white/50">Uploading - favicon at {{ uploadProgress() }}%</p>
       }
     </div>
   `,

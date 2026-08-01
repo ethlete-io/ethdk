@@ -96,7 +96,7 @@ export const defineOverlay = <TComponent extends object, TResult = unknown>(
 /**
  * Defines an overlay whose lifecycle is driven by a URL query param: it opens while the param is
  * present and closes (clearing the param) when dismissed. The component must expose an
- * `overlayQueryParam` {@link https://angular.dev/api/core/model | model} — it receives the param
+ * `overlayQueryParam` {@link https://angular.dev/api/core/model | model} - it receives the param
  * value and is kept in two-way sync with the URL.
  *
  * Because opens are triggered by URL state, there is no per-open config; `bindings` and

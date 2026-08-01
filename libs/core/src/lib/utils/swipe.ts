@@ -7,7 +7,7 @@ export type SwipeTracker = {
 export type SwipeEndEvent = {
   /**
    * Speed at the moment of release, measured over the trailing {@link SWIPE_VELOCITY_WINDOW_MS} of
-   * the gesture — not the whole-gesture average. A slow drag that ends in a flick reports the
+   * the gesture - not the whole-gesture average. A slow drag that ends in a flick reports the
    * flick, and a flick that ends parked reports ~0.
    */
   positivePixelPerSecondX: number;
@@ -111,8 +111,8 @@ export const createSwipeTracker = (startEvent: TouchEvent | MouseEvent): SwipeTr
 
     const newest = samples[samples.length - 1]!;
 
-    // Measure across the window when it holds a span of its own. With a single sample in it — a
-    // pointer emitting moves slower than the window — reach back one sample for a baseline instead
+    // Measure across the window when it holds a span of its own. With a single sample in it - a
+    // pointer emitting moves slower than the window - reach back one sample for a baseline instead
     // of reporting nothing.
     const hasSpanInWindow = samples.length - firstInWindow >= 2;
     const baseline = samples[hasSpanInWindow ? firstInWindow : Math.max(0, firstInWindow - 1)]!;

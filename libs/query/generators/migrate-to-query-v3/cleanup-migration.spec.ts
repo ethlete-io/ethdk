@@ -70,7 +70,7 @@ export const component = {
     expect(appConfig).toContain('somethingElse(),');
     expect(appConfig).not.toContain(',,');
 
-    // The component only changed packages — it stays in the imports array.
+    // The component only changed packages - it stays in the imports array.
     expect(component).toContain("import { QueryDevtoolsComponent } from '@ethlete/components';");
     expect(component).not.toContain("from '@ethlete/query'");
     expect(component).toContain('imports: [QueryDevtoolsComponent]');

@@ -1,6 +1,6 @@
 # Carousel
 
-A slide carousel with configurable transitions, optional looping and autoplay, plus attachable nav directives. All logic lives in a headless `CarouselDirective` — `et-carousel` is just the styled shell.
+A slide carousel with configurable transitions, optional looping and autoplay, plus attachable nav directives. All logic lives in a headless `CarouselDirective` - `et-carousel` is just the styled shell.
 
 ```html
 <et-carousel [autoPlay]="true">
@@ -43,7 +43,7 @@ Items (`et-carousel-item` or `[etCarouselItem]`) are projected into the slide ar
 
 The button directives attach to any element inside the carousel: `etCarouselPreviousButton` / `etCarouselNextButton` disable themselves at the ends when `loop` is off, and `etCarouselToggleAutoPlayButton` toggles play/pause (reflected as `--playing` / `--paused` classes). `et-carousel-item-nav` renders one dot per item; with autoplay on, the active dot animates the current slide's progress.
 
-For a fully custom shell, apply `CarouselDirective` yourself — it exposes the whole state as signals (`activeIndex`, `isAtStart`, `isAtEnd`, `activeItemAutoPlayProgress`, …) and the `next()` / `prev()` / `goTo(index)` / `stopAutoPlay()` / `resumeAutoPlay()` API; the sub-directives find it via DI.
+For a fully custom shell, apply `CarouselDirective` yourself - it exposes the whole state as signals (`activeIndex`, `isAtStart`, `isAtEnd`, `activeItemAutoPlayProgress`, …) and the `next()` / `prev()` / `goTo(index)` / `stopAutoPlay()` / `resumeAutoPlay()` API; the sub-directives find it via DI.
 
 ## Behavior & accessibility
 

@@ -25,7 +25,7 @@ const SVG_COLOR_ATTRIBUTES = ['fill', 'stroke', 'stop-color', 'stop-opacity'];
   ],
   host: {
     '[innerHTML]': 'iconSrc()',
-    // Decorative by default — an icon almost always repeats a label right next to it, and announcing
+    // Decorative by default - an icon almost always repeats a label right next to it, and announcing
     // it again is noise. A `label` flips it to a real image with a name; see the input.
     '[attr.aria-hidden]': 'label() ? null : "true"',
     '[attr.role]': 'label() ? "img" : null',
@@ -50,7 +50,7 @@ export class IconDirective {
    * a status glyph alone in a table cell, a lone icon button's only child, a checkmark that is the
    * whole answer.
    *
-   * Without it the icon is `aria-hidden` — the right default, since an icon normally sits beside the
+   * Without it the icon is `aria-hidden` - the right default, since an icon normally sits beside the
    * text it illustrates and repeating it is noise. With it the host becomes `role="img"` with this as
    * its `aria-label`, so the meaning survives for a screen reader.
    *

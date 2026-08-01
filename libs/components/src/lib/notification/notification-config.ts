@@ -45,7 +45,7 @@ export type NotificationConfig = {
   progress?: number;
   /**
    * Identity of the notification. Opening a notification whose id matches one that is still on
-   * screen replaces that one in place instead of stacking a duplicate — the way to keep repeated
+   * screen replaces that one in place instead of stacking a duplicate - the way to keep repeated
    * clicks, retries or a per-entity notification down to a single toast.
    *
    * Defaults to a generated id, which is never equal to another notification's.
@@ -53,7 +53,7 @@ export type NotificationConfig = {
   id?: string;
   /**
    * Icon name rendered in front of the title, overriding the default for the notification's status.
-   * `null` renders no icon at all. Names must be registered with the icon registry — the built-in
+   * `null` renders no icon at all. Names must be registered with the icon registry - the built-in
    * `et-*` set is, and `provideIconOverrides()` takes both replacements and brand-new names.
    *
    * A `loading` notification shows its spinner unless this names an icon.
@@ -62,7 +62,7 @@ export type NotificationConfig = {
 };
 
 /**
- * The content half of a {@link NotificationConfig} — everything except the `status`, which is
+ * The content half of a {@link NotificationConfig} - everything except the `status`, which is
  * decided by whatever opens the notification (see `NotificationManager.promise`).
  */
 export type NotificationContentInit = Omit<NotificationConfig, 'status'>;
@@ -98,7 +98,7 @@ export type NotificationManagerConfig = {
   controlsColor?: string;
   /**
    * Icon rendered per status, overridable per notification via {@link NotificationConfig.icon}.
-   * `null` opts a status out of icons entirely. `loading` has none by default — it renders a spinner.
+   * `null` opts a status out of icons entirely. `loading` has none by default - it renders a spinner.
    * @default `{ success: 'et-circle-check', error: 'et-triangle-exclamation', info: 'et-circle-info', loading: null }`
    */
   statusIcons?: Partial<Record<NotificationStatus, string | null>>;
@@ -118,7 +118,7 @@ export const DEFAULT_NOTIFICATION_STATUS_ICONS: Record<NotificationStatus, strin
 
 /**
  * The icon a status renders when the notification itself doesn't name one. A partial `statusIcons`
- * map only speaks for the statuses it lists — the rest keep their {@link DEFAULT_NOTIFICATION_STATUS_ICONS}
+ * map only speaks for the statuses it lists - the rest keep their {@link DEFAULT_NOTIFICATION_STATUS_ICONS}
  * icon, and a listed `null` opts that status out.
  */
 export const resolveNotificationStatusIcon = (config: NotificationManagerConfig, status: NotificationStatus) => {

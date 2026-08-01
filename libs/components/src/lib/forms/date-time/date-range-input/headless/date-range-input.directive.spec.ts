@@ -246,7 +246,7 @@ describe('DateRangeInputDirective', () => {
       tick();
     };
 
-    it('renders both fields empty with the mixed label as placeholder — one flag masks the whole range', () => {
+    it('renders both fields empty with the mixed label as placeholder - one flag masks the whole range', () => {
       enterMixed();
 
       expect(startField.value).toBe('');
@@ -259,7 +259,7 @@ describe('DateRangeInputDirective', () => {
       expect(rangeInput.hasValue()).toBe(true);
     });
 
-    it('starts a fresh range on the first typed commit — the hidden other side does not leak', () => {
+    it('starts a fresh range on the first typed commit - the hidden other side does not leak', () => {
       enterMixed();
       typeAndBlur(endField, '07/20/2026');
 
@@ -379,7 +379,7 @@ describe('DateRangeInputDirective mixed state', () => {
         tick();
       },
       externallyWrittenValue: () => ({ start: '2026-01-01', end: '2026-01-05' }),
-      // replace semantics: the resolving commit starts a fresh range — no merge with the hidden end
+      // replace semantics: the resolving commit starts a fresh range - no merge with the hidden end
       commit: () => typeAndBlur(startField, '07/20/2026'),
       committedValue: () => ({ start: '2026-07-20', end: null }),
       assertMasked: () => {
@@ -487,7 +487,7 @@ describe('DateRangeInputDirective with the opt-in typing mask', () => {
     await focus(startField);
 
     expect(startField.value).toBe('__.__.____');
-    // the other side stays untouched — each field is its own mask host
+    // the other side stays untouched - each field is its own mask host
     expect(endField.value).toBe('');
 
     await type(startField, '0807');
@@ -511,7 +511,7 @@ describe('DateRangeInputDirective with the opt-in typing mask', () => {
     expect(endField.value).toBe('23.07.2026');
   });
 
-  it('commits the shaped text without guide placeholders — a partial entry is a parse error on its side only', async () => {
+  it('commits the shaped text without guide placeholders - a partial entry is a parse error on its side only', async () => {
     await focus(endField);
     await type(endField, '2307');
     await blur(endField);

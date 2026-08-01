@@ -22,7 +22,7 @@ export type DropzoneEntry<TValue = unknown> = {
   /** Unique id of this entry. Stable for the lifetime of the entry. */
   id: string;
 
-  /** What this entry was created from — a picked/dropped file or an existing form control value. */
+  /** What this entry was created from - a picked/dropped file or an existing form control value. */
   source: DropzoneEntrySource<TValue>;
 
   /** Human readable name (file name or resolved from the existing value). */

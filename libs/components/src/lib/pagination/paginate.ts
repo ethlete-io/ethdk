@@ -8,7 +8,7 @@ const range = (start: number, end: number): number[] =>
 /**
  * Build the ordered {@link PaginationItem} list for a paginator: optional first/previous controls,
  * a windowed set of page numbers with `ellipsis` gaps for large page counts (the
- * `1 … 45 46 47 … 200` shape), then optional next/last controls. Pure and global-free — the caller
+ * `1 … 45 46 47 … 200` shape), then optional next/last controls. Pure and global-free - the caller
  * turns page numbers into hrefs (or handles clicks) itself.
  *
  * The page-window algorithm mirrors the well-worn boundary/sibling approach: `boundaryCount` pages

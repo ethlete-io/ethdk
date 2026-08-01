@@ -28,7 +28,7 @@ export const COLOR_PROVIDER = new InjectionToken<ProvideColorDirective>('ColorPr
  * The color provider attached to a bootstrapped root component (e.g. `ProvideColorDirective` in
  * the app component's `hostDirectives`), if any. Detached DOM such as overlay panes can't reach
  * it through element DI, so overlay containers fall back to this when resolving the provider to
- * `syncWithProvider()` — resolve at sync time, not at injection time, since root components only
+ * `syncWithProvider()` - resolve at sync time, not at injection time, since root components only
  * register with `ApplicationRef` once bootstrap completes.
  *
  * @internal
@@ -80,8 +80,8 @@ export class ProvideColorDirective {
   });
 
   /**
-   * The color that actually applies at this provider's location: its own effective color, or —
-   * when this provider is passive (no input, nothing forced) — the nearest ancestor provider's.
+   * The color that actually applies at this provider's location: its own effective color, or -
+   * when this provider is passive (no input, nothing forced) - the nearest ancestor provider's.
    * Mirrors the CSS cascade, which falls through a provider's `-color--inherited` scope class;
    * consumers that re-apply context across detached DOM (overlay panes) must use this instead
    * of `effectiveColor` or a passive in-between provider (e.g. a form field's) erases the theme.

@@ -81,7 +81,7 @@ export class CascaderStorybookComponent {
   public deep = input(false);
   /** Multi-select: activations toggle values, parents show indeterminate states. */
   public multiple = input(false);
-  /** Fails the first load of each level and recovers on Retry — demonstrates the error state. */
+  /** Fails the first load of each level and recovers on Retry - demonstrates the error state. */
   public errorMode = input(false);
   public value = input<string | string[] | null>(null);
   public mixed = input(false);
@@ -102,7 +102,7 @@ export class CascaderStorybookComponent {
       const nodes = TREE[key] ?? [];
 
       return attempts === 1
-        ? timer(700).pipe(switchMap(() => throwError(() => new Error('Could not load — check your connection'))))
+        ? timer(700).pipe(switchMap(() => throwError(() => new Error('Could not load - check your connection'))))
         : of(nodes).pipe(delay(500));
     },
   };

@@ -20,7 +20,7 @@ Place the outlet in your shell, outside the router outlet:
 
 ## Registering breadcrumbs per page
 
-A routed page declares its breadcrumb inside an `etBreadcrumbTemplate` — the directive registers it with the manager on creation and unregisters on destroy, so navigation swaps the rendered breadcrumb automatically:
+A routed page declares its breadcrumb inside an `etBreadcrumbTemplate` - the directive registers it with the manager on creation and unregisters on destroy, so navigation swaps the rendered breadcrumb automatically:
 
 ```html
 <ng-template etBreadcrumbTemplate>

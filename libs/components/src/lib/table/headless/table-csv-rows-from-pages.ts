@@ -5,13 +5,13 @@ import { TableCsvRowsProvider } from './table-csv-export';
 export type TableCsvRowsFromPagesOptions<T> = {
   /**
    * Fetch one page and hand back its rows. Called with `1`, then `2`, and so on until `hasMore` says
-   * to stop. An observable is read to its first emission — one page is one list, not a stream.
+   * to stop. An observable is read to its first emission - one page is one list, not a stream.
    */
   fetchPage: (page: number) => Promise<readonly T[]> | Observable<readonly T[]>;
 
   /**
    * Whether to ask for another page after this one. The default stops at the first page that comes
-   * back empty, which is right whenever the last page is followed by an empty one — pass your own when
+   * back empty, which is right whenever the last page is followed by an empty one - pass your own when
    * the response says so directly (`(rows, page) => page < response.totalPages`).
    */
   hasMore?: (rows: readonly T[], page: number) => boolean;
@@ -29,7 +29,7 @@ export type TableCsvRowsFromPagesOptions<T> = {
 };
 
 // One page is one list, so the first emission is the answer and the subscription ends there. A source
-// that completes without emitting is the end of the pages, not a failure — hence the default.
+// that completes without emitting is the end of the pages, not a failure - hence the default.
 const firstPage = <T>(source: Promise<readonly T[]> | Observable<readonly T[]>): Observable<readonly T[]> =>
   (isObservable(source) ? source : from(source)).pipe(take(1), defaultIfEmpty<readonly T[], readonly T[]>([]));
 
@@ -38,7 +38,7 @@ const firstPage = <T>(source: Promise<readonly T[]> | Observable<readonly T[]>):
  * [CSV export](/components/table#exporting-more-than-the-loaded-page).
  *
  * This is the fallback for a backend with no "export everything" endpoint of its own. Prefer one when
- * it exists — see the export's `file` option — because this makes N round trips for a file the server
+ * it exists - see the export's `file` option - because this makes N round trips for a file the server
  * could stream in one, and holds the whole dataset in memory to do it.
  *
  * The pages are fetched **in order, one at a time**: page N+1 is only asked for once page N has come

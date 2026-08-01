@@ -1,9 +1,9 @@
 # Sport UI recipes
 
 Compositions, not components. Everything on this page is built from pieces the library already
-ships — [`et-match-card`](/components/match), [`et-match-participant`](/components/match#participants-on-their-own),
+ships - [`et-match-card`](/components/match), [`et-match-participant`](/components/match#participants-on-their-own),
 [`et-picture`](/components/picture), [`et-scrollable`](/components/scrollable),
-[`et-chip`](/components/chip), [`et-skeleton`](/components/skeleton) — because their fields differ per
+[`et-chip`](/components/chip), [`et-skeleton`](/components/skeleton) - because their fields differ per
 product far too much to normalize. Copy one, change the fields, own it.
 
 If a recipe here turns out to be universal across products, it gets promoted to a component. None of these
@@ -35,15 +35,15 @@ pass-through inputs and nothing else.
 
 Four details worth keeping:
 
-- **The gap goes on the scroll container**, via `scrollableClass` — `et-scrollable` reads its computed value
+- **The gap goes on the scroll container**, via `scrollableClass` - `et-scrollable` reads its computed value
   to work out how wide a half- or third-width child is, so there is no `gap` input to set instead.
-- **`etScrollableActiveChild` on the live match** — the rail opens on the match that's being played rather
+- **`etScrollableActiveChild` on the live match** - the rail opens on the match that's being played rather
   than at the start of the week.
 - **The wrapper carries `role="listitem"`**, not the card. The card owns its own role (a labelled group), so
   a `role` set on it from outside is overwritten.
 - **`grid h-full` on the card** equalises the heights: a live card has a badge row the others don't, and a
   rail of different heights looks broken. Plain Tailwind utilities win over component CSS because component
-  styles live in the `components` cascade layer — see [overriding component styles](/components/#overriding-component-styles).
+  styles live in the `components` cascade layer - see [overriding component styles](/components/#overriding-component-styles).
 
 ## Competition, team, player and nation cards
 
@@ -87,7 +87,7 @@ card is a team card with a flag in the emblem slot; a squad list is a column of 
 `et-match-participant` is doing the work here: the emblem frame keeps its size whether or not an image
 arrived, `subtitle` gives you the org under the roster name, and `loading` draws its own bones so the card
 doesn't need a second layout for the pending state. On an `<a>` or `<button>` it also names itself after the
-participant — without that the link would read "FC Berlin emblem FC Berlin".
+participant - without that the link would read "FC Berlin emblem FC Berlin".
 
 ## Where the real components are
 

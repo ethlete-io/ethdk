@@ -15,7 +15,7 @@ const TAKEN_HANDLES = ['admin', 'root', 'ethlete'];
   selector: 'et-sb-form-field-counter',
   template: `
     <div [etProvideColor]="color()" class="flex max-w-md flex-col gap-8 p-8 font-sans">
-      <!-- The limit comes from the schema's maxLength() — the counter needs no [max] at all. -->
+      <!-- The limit comes from the schema's maxLength() - the counter needs no [max] at all. -->
       <et-form-field>
         <et-label>Bio</et-label>
         <et-textarea [formField]="bioForm.bio" placeholder="Tell us about yourself…" />
@@ -29,7 +29,7 @@ const TAKEN_HANDLES = ['admin', 'root', 'ethlete'];
       <et-form-field>
         <et-label>Tagline</et-label>
         <et-input [formField]="bioForm.tagline" placeholder="One line about you" />
-        <et-hint>Aim for something short — the limit here is advisory.</et-hint>
+        <et-hint>Aim for something short - the limit here is advisory.</et-hint>
         <et-counter [max]="40" />
       </et-form-field>
 
@@ -52,7 +52,7 @@ const TAKEN_HANDLES = ['admin', 'root', 'ethlete'];
       <et-form-field [busy]="true">
         <et-label>Manually busy</et-label>
         <et-input [formField]="bioForm.tagline" />
-        <et-hint>busy="true" — for a save or lookup the form knows nothing about.</et-hint>
+        <et-hint>busy="true" - for a save or lookup the form knows nothing about.</et-hint>
       </et-form-field>
     </div>
   `,

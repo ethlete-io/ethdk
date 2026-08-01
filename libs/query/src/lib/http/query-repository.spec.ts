@@ -187,14 +187,14 @@ describe('createQueryRepository', () => {
 
       const types = events.map((e) => e.type);
 
-      // The entry announces itself once, when it is created — a retry of the same request must not
+      // The entry announces itself once, when it is created - a retry of the same request must not
       // produce a second one, nor any event beyond the two terminal ones.
       expect(types).toEqual(['entry-created', 'request-error', 'request-success']);
     });
   });
 });
 
-describe('createQueryRepository — keepUnusedFor (unused entry retention)', () => {
+describe('createQueryRepository - keepUnusedFor (unused entry retention)', () => {
   let destroyRef: DestroyRef;
   let httpTesting: HttpTestingController;
 
@@ -303,7 +303,7 @@ describe('createQueryRepository — keepUnusedFor (unused entry retention)', () 
 
     const req = repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/test' });
 
-    // Unbound while still in flight — there is no data worth keeping, so the request is aborted.
+    // Unbound while still in flight - there is no data worth keeping, so the request is aborted.
     repo.unbind(req.key, destroyRef);
 
     expect(repo.subtle.cacheEntries()).toHaveLength(0);

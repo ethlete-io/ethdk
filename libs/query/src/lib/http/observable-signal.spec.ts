@@ -117,7 +117,7 @@ describe('wrapAsObservableSignal', () => {
       wrapped.asObservable({ injector: overrideInjector }).subscribe({ complete: () => (completed = true) });
       TestBed.tick();
 
-      // destroy the default injector — min(override, default) should win
+      // destroy the default injector - min(override, default) should win
       defaultInjector.destroy();
       TestBed.tick();
 

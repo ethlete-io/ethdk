@@ -259,7 +259,7 @@ describe('unsaved-changes tab lock', () => {
       makeLock({ hasChanges, titleMarker: true, flash: { interval: 1000 } });
       TestBed.tick();
 
-      // Blink to the "hidden" half, then go clean — the marker must not be left stuck off.
+      // Blink to the "hidden" half, then go clean - the marker must not be left stuck off.
       vi.advanceTimersByTime(1000);
       TestBed.tick();
       expect(document.title).toBe('Editor');

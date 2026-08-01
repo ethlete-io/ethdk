@@ -10,7 +10,7 @@ type IconsConfig = {
   /** Source package override. Falls back to the generator's `source` option, then auto-detection. */
   source?: string;
   /**
-   * Default variant(s) generated for icons that don't specify their own — i.e. shorthand string
+   * Default variant(s) generated for icons that don't specify their own - i.e. shorthand string
    * entries and object entries without a `variant`/`variants`. Defaults to `['solid']`. List more
    * than one to emit several styles per icon by default (e.g. `['solid', 'light']`).
    */

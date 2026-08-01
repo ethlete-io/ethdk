@@ -13,7 +13,7 @@ const RESIZE_SETTLE_MS = 150;
  * Whether the container is in the middle of changing width.
  *
  * A window drag re-columns the masonry on every frame, and a move transition retargeted every frame is one
- * the items never finish — they trail behind the layout they belong to for as long as the drag lasts. So moves
+ * the items never finish - they trail behind the layout they belong to for as long as the drag lasts. So moves
  * snap while this is true and animate again once the width holds still.
  *
  * Debounced rather than framed: what matters is when the resizing *stops*, which nothing reports.
@@ -25,7 +25,7 @@ export const useMasonryResizeSettled = (containerInlineSize: Signal<number>) => 
 
   toObservable(containerInlineSize)
     .pipe(
-      // Zero is "not measured yet" — the first real width is not a resize.
+      // Zero is "not measured yet" - the first real width is not a resize.
       filter((inlineSize) => inlineSize > 0),
       tap(() => isResizing.set(true)),
       debounceTime(RESIZE_SETTLE_MS),

@@ -10,14 +10,14 @@ import { BracketSwissStylesComponent } from './bracket-swiss-styles.component';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type SwissBracketLayoutOptions<TRoundData = any, TMatchData = any> = {
   /**
-   * Colors for the group borders and connection lines — see {@link BracketSwissColors}. A host's
+   * Colors for the group borders and connection lines - see {@link BracketSwissColors}. A host's
    * `swissColors` input still wins over this, per instance.
    */
   colors?: BracketSwissColors;
 
   /**
    * Cards drawn for swiss sources only, sitting between a host's inputs and the app-wide
-   * `provideBracketConfig` components — a swiss stage often wants a denser card than the
+   * `provideBracketConfig` components - a swiss stage often wants a denser card than the
    * elimination stage next to it.
    */
   matchComponent?: BracketMatchComponent<TRoundData, TMatchData>;
@@ -25,7 +25,7 @@ export type SwissBracketLayoutOptions<TRoundData = any, TMatchData = any> = {
 };
 
 /**
- * Draws a swiss stage (with elimination) as standings groups per round — winners climbing, losers
+ * Draws a swiss stage (with elimination) as standings groups per round - winners climbing, losers
  * sinking, group-to-group connection lines instead of match-to-match. What a `mode` of
  * `'swiss-with-elimination'` renders once this is registered.
  *

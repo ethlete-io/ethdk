@@ -5,7 +5,7 @@
 Move all component styles into the `components` CSS cascade layer (`@layer components`).
 
 Component CSS was previously injected unlayered, which meant it beat Tailwind
-utility classes (in `@layer utilities`) regardless of specificity — forcing
+utility classes (in `@layer utilities`) regardless of specificity - forcing
 consumers to reach for `!important` (e.g. `flex!`) to override layout, spacing or
 sizing on components. Because layer precedence is resolved before specificity,
 `:where()` could not fix this.

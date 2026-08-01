@@ -11,7 +11,7 @@ import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labe
  * `touched && invalid` error gate, and the focus-target `activate()`.
  *
  * Subclasses add their own `value` model, `controlType`, `hasValue`, and any control-specific
- * surface (placeholder, native element wiring, etc.). Must be extended by an `@Directive` — Angular
+ * surface (placeholder, native element wiring, etc.). Must be extended by an `@Directive` - Angular
  * only surfaces inherited inputs/outputs from a decorated base.
  */
 @Directive({
@@ -32,7 +32,7 @@ export abstract class TextFieldControlDirective implements FormFieldControl {
    * semantics) and resolves `mixed`; external/programmatic value writes do not.
    */
   public mixed = model(false);
-  /** Placeholder text shown while `mixed` is set — overrides the consumer placeholder. */
+  /** Placeholder text shown while `mixed` is set - overrides the consumer placeholder. */
   public mixedLabel = input<string | null>(null);
 
   public disabled = input(false, { transform: booleanAttribute });
@@ -46,7 +46,7 @@ export abstract class TextFieldControlDirective implements FormFieldControl {
 
   /**
    * The bound field's `maxLength()` limit, bound automatically by signal forms because this input
-   * exists — so `<et-counter />` needs no `[max]` for a schema-validated field.
+   * exists - so `<et-counter />` needs no `[max]` for a schema-validated field.
    *
    * Deliberately **not** forwarded to the native `maxlength` attribute: hard-truncating typed input
    * would stop the validator from ever reporting the over-limit error the counter exists to surface.
@@ -55,14 +55,14 @@ export abstract class TextFieldControlDirective implements FormFieldControl {
   public maxLength = input<number | undefined>(undefined);
 
   /**
-   * True while an async validator is in flight for the bound field — bound automatically by signal
+   * True while an async validator is in flight for the bound field - bound automatically by signal
    * forms because this input exists. The field shell surfaces it as its busy state.
    */
   public pending = input(false, { transform: booleanAttribute });
 
   /**
    * Author-supplied accessible name, forwarded onto the native control. Use this (or an
-   * `<et-label>`) when the field has no visible label — a placeholder is not an accessible name.
+   * `<et-label>`) when the field has no visible label - a placeholder is not an accessible name.
    */
   public ariaLabel = input<string | null>(null, { alias: 'aria-label' });
 
@@ -80,7 +80,7 @@ export abstract class TextFieldControlDirective implements FormFieldControl {
   public describedBy = signal<string | null>(null);
   public focused = signal(false);
 
-  /** @internal The element `activate()` focuses — the native control by default. */
+  /** @internal The element `activate()` focuses - the native control by default. */
   public focusTarget = signal<HTMLElement | null>(null);
 
   private registeredLabelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);

@@ -4,7 +4,7 @@ import { BRACKET_DATA_LAYOUT, BracketDataLayout } from './core/layout';
 import { CreateBracketGridConfig } from './drawing/grid/types';
 
 /**
- * Every layout setting, resolved to a concrete value — no `undefined`, no "fall back to the config".
+ * Every layout setting, resolved to a concrete value - no `undefined`, no "fall back to the config".
  * Produced by {@link resolveBracketLayoutSettings}.
  *
  * @internal
@@ -39,7 +39,7 @@ export const resolveBracketLayoutSettings = (config: BracketLayoutConfig): Brack
 };
 
 /**
- * Translates the resolved settings into what the grid builders take — the two differ where a flag zeroes
+ * Translates the resolved settings into what the grid builders take - the two differ where a flag zeroes
  * a measurement (hidden round headers) or turns a pair of them into an object (the continue column).
  * The data layout comes from the active {@link BracketLayout}, not from the settings.
  *

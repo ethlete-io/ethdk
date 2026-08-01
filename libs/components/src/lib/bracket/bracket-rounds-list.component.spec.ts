@@ -11,7 +11,7 @@ import { BracketDataSource } from './integrations';
 import { doubleEliminationBracketLayout, singleEliminationBracketLayout } from './layouts';
 import { generateDoubleEliminationBracket, generateSingleEliminationBracket } from './stories/generate-bracket';
 
-/** The modes the fixtures below use — a source nothing here matches would throw ET3413. */
+/** The modes the fixtures below use - a source nothing here matches would throw ET3413. */
 const LAYOUTS = [singleEliminationBracketLayout(), doubleEliminationBracketLayout()];
 
 const normalizer: BracketMatchNormalizer = (match): NormalizedMatch => ({
@@ -135,7 +135,7 @@ describe('BracketRoundsListComponent', () => {
     host.matchComponent.set(TestMatchComponent);
     fixture.detectChanges();
 
-    // The final keeps its own card — only the ordinary cells were overridden.
+    // The final keeps its own card - only the ordinary cells were overridden.
     expect(fixture.nativeElement.querySelectorAll('.test-match').length).toBe(6);
   });
 

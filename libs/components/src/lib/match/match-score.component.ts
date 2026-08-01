@@ -5,7 +5,7 @@ import { booleanAttribute, Component, computed, input, linkedSignal, signal, Vie
  * arrives from below, with a brief accent flash behind them.
  *
  * Both values are **real elements** for the length of the animation, which is the only honest way to
- * cross them — this library never clones a node to animate it (a clone outlives the component that
+ * cross them - this library never clones a node to animate it (a clone outlives the component that
  * styled it). The outgoing one is dropped on its own `animationend`, so nothing here runs a timer.
  *
  * A change is anything the bound `value` does after the first render. `animate` gates the movement, not
@@ -31,7 +31,7 @@ import { booleanAttribute, Component, computed, input, linkedSignal, signal, Vie
   },
 })
 export class MatchScoreComponent {
-  /** The value to draw. Anything printable — a score, table points, a W. */
+  /** The value to draw. Anything printable - a score, table points, a W. */
   public value = input.required<string>();
 
   /** Roll the value when it changes. @default false */
@@ -49,7 +49,7 @@ export class MatchScoreComponent {
     }),
   });
 
-  /** The revision whose animation has finished — up to date means nothing is moving. */
+  /** The revision whose animation has finished - up to date means nothing is moving. */
   private settledKey = signal(0);
 
   private isRolling = computed(() => {

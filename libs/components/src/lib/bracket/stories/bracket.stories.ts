@@ -96,7 +96,7 @@ export const DoubleElimination = {
 export const DoubleEliminationGrandFinalOnly = {
   render: Template,
   args: {
-    // Grand final without a bracket-reset final — the reverse final is optional.
+    // Grand final without a bracket-reset final - the reverse final is optional.
     source: generateDoubleEliminationBracket({ participantCount: 8, includeFinal: true, includeReverseFinal: false }),
   },
 };
@@ -104,7 +104,7 @@ export const DoubleEliminationGrandFinalOnly = {
 export const DoubleEliminationPartial = {
   render: Template,
   args: {
-    // Truncated view of a larger tournament — the losers bracket runs one round longer, and a
+    // Truncated view of a larger tournament - the losers bracket runs one round longer, and a
     // third-place playoff is included.
     source: generateDoubleEliminationBracket({
       participantCount: 8,
@@ -126,7 +126,7 @@ export const DoubleEliminationDelayedStart = {
 export const DoubleEliminationWithContinue = {
   render: Template,
   args: {
-    // No grand final — the winners of the last winners/losers rounds advance to a later stage.
+    // No grand final - the winners of the last winners/losers rounds advance to a later stage.
     source: generateDoubleEliminationBracket({ participantCount: 8, includeFinal: false }),
     showContinueElement: true,
   },
@@ -156,7 +156,7 @@ export const MirroredDoubleElimination = {
 
 /**
  * The stack with a losers bracket running one round longer than the winners bracket implies, plus a
- * third-place playoff below it — the blocks come out different widths, and the shorter one centres.
+ * third-place playoff below it - the blocks come out different widths, and the shorter one centres.
  */
 export const MirroredDoubleEliminationPartial = {
   render: Template,

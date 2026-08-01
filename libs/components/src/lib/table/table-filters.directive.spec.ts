@@ -39,7 +39,7 @@ const create = (cols: TableColumns<Person>) => {
 
 const tableOf = (fixture: ComponentFixture<HostComponent>) => fixture.componentInstance.table();
 
-// The menu plumbing is protected (template-only) — reach it via a cast, as the table's own spec does.
+// The menu plumbing is protected (template-only) - reach it via a cast, as the table's own spec does.
 type FilterInternals = {
   optionsFor: (column: TableColumnMeta) => { label: string; value: unknown }[];
   setSearchQuery: (column: AnyTableColumn<Person>, query: string) => void;
@@ -156,7 +156,7 @@ describe('TableFiltersDirective', () => {
       expect(filters.singleValueFor('role')).toBe('Admin');
       expect(table.rows().map((person) => person.name)).toEqual(['Ada']);
 
-      // Picking another replaces rather than adds — that is the whole difference from a checkbox menu.
+      // Picking another replaces rather than adds - that is the whole difference from a checkbox menu.
       filters.toggleSingleValue('role', 'Editor');
       fixture.detectChanges();
       expect(table.filters()).toEqual([{ key: 'role', values: ['Editor'] }]);

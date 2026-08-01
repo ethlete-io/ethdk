@@ -2,7 +2,7 @@ import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
  * The strings the select's panel renders itself. The options are yours; these are the panel's own
- * affordances — paging through an async option list, and the create-a-value flow (`customValues`).
+ * affordances - paging through an async option list, and the create-a-value flow (`customValues`).
  */
 export type SelectLabels = {
   /** Shown while the option list is being fetched. */
@@ -30,7 +30,7 @@ const SELECT_LABELS_DEF = /* @__PURE__ */ defineLabels<SelectLabels>('SELECT_LAB
 
 /**
  * Localize the select's strings for everything below this injector, and read the set in effect here as a
- * signal. Partial — whatever you leave out keeps its {@link DEFAULT_SELECT_LABELS} value. See {@link defineLabels}
+ * signal. Partial - whatever you leave out keeps its {@link DEFAULT_SELECT_LABELS} value. See {@link defineLabels}
  * for the shape, which every domain in this library shares.
  *
  * @example

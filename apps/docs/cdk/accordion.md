@@ -45,7 +45,7 @@ Replace the plain-text label, or add a hint on the right side of the header, wit
 
 ## Groups
 
-Wrap accordions in `et-accordion-group` to make them exclusive — with `autoCloseOthers` (default `false`), opening one closes the rest:
+Wrap accordions in `et-accordion-group` to make them exclusive - with `autoCloseOthers` (default `false`), opening one closes the rest:
 
 ```html
 <et-accordion-group autoCloseOthers>

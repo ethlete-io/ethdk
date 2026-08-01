@@ -19,7 +19,7 @@ class DetailPage {}
 
 /**
  * jsdom has no layout, so `scrollHeight` / `clientHeight` are always 0 and `scrollTop` never
- * sticks. Back the geometry the restoration logic reads with a plain object — it only ever touches
+ * sticks. Back the geometry the restoration logic reads with a plain object - it only ever touches
  * these three properties.
  */
 const createScrollElement = (clientHeight = 500) => {
@@ -49,7 +49,7 @@ const setup = async (config: SetupScrollRestorationConfig, routes: Routes = ROUT
   const harness = await RouterTestingHarness.create();
 
   // The harness navigates imperatively and never calls `initialNavigation()`, so the router does not
-  // listen to the mocked location — without this, `Location.back()` would not produce a popstate.
+  // listen to the mocked location - without this, `Location.back()` would not produce a popstate.
   TestBed.inject(Router).setUpLocationChangeListener();
 
   runInInjectionContext(TestBed.inject(Injector), () => setupScrollRestoration(config));
@@ -80,7 +80,7 @@ const goBack = async () => {
   await navigated;
 };
 
-describe('setupScrollRestoration — restore on history navigation', () => {
+describe('setupScrollRestoration - restore on history navigation', () => {
   it('restores the saved offset once the content is tall enough to reach it', async () => {
     const scroller = createScrollElement();
     const harness = await setup({ scrollElement: () => scroller.el, restore: { enabled: true, timeout: 500 } });
@@ -167,7 +167,7 @@ describe('setupScrollRestoration — restore on history navigation', () => {
     await goBack();
     scroller.setContentHeight(600);
 
-    // Well past `timeout` — without the hold this would have clamped to 100 by now.
+    // Well past `timeout` - without the hold this would have clamped to 100 by now.
     await settle(200);
     expect(scroller.scrollTop).toBe(0);
 
@@ -254,7 +254,7 @@ describe('setupScrollRestoration — restore on history navigation', () => {
   });
 });
 
-describe('setupScrollRestoration — existing behavior', () => {
+describe('setupScrollRestoration - existing behavior', () => {
   it('scrolls to top when a trigger query param changes on the same route', async () => {
     const scroller = createScrollElement();
     const harness = await setup({ scrollElement: () => scroller.el, queryParamTriggerList: ['page'] });

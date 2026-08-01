@@ -25,7 +25,7 @@ import { BracketRoundSwissGroup, BracketSwissColors } from '../linked/swiss';
 import { demoMatchNormalizer, demoParticipant } from './demo-match-normalizer';
 
 /**
- * Every layout the stories can draw, created once — the `layout` control picks between these two lists
+ * Every layout the stories can draw, created once - the `layout` control picks between these two lists
  * rather than binding a removed input. Swiss has no mirrored variant, so a swiss source under the
  * mirrored control simply renders as normal swiss.
  */
@@ -80,7 +80,7 @@ export class StorybookFinalMatchComponent<TRoundData = unknown, TMatchData = unk
 }
 
 /**
- * The density demo, which binds nothing but `density` — the whole point is that one input resizes the
+ * The density demo, which binds nothing but `density` - the whole point is that one input resizes the
  * bracket, and every explicit layout binding would override the preset it is meant to show.
  */
 @Component({
@@ -190,7 +190,7 @@ export class StorybookBracketComponent {
   public swissGroupPadding = input(10, { transform: numberAttribute });
 
   /**
-   * The story control for the fold. There is no `layout` input on `et-bracket` any more — the fold is a
+   * The story control for the fold. There is no `layout` input on `et-bracket` any more - the fold is a
    * property of the registered layout, so this picks which set of layout factories gets bound.
    */
   public layout = input<BracketDataLayout>(BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT);
@@ -209,7 +209,7 @@ export class StorybookBracketComponent {
   public customFinalCard = input(false, { transform: booleanAttribute });
   public roundHeaderLevel = input(3, { transform: numberAttribute });
 
-  /** Render the participants legend that pins a journey — the focus-mode demo. */
+  /** Render the participants legend that pins a journey - the focus-mode demo. */
   public withParticipantList = input(false, { transform: booleanAttribute });
 
   protected focusedParticipantId = signal<string | null>(null);

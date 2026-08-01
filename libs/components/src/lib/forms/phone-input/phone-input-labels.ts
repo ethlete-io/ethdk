@@ -1,7 +1,7 @@
 import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
- * The strings the phone input renders itself. The country *names* are not here — they come from
+ * The strings the phone input renders itself. The country *names* are not here - they come from
  * `Intl.DisplayNames` for the current locale, so they are already translated.
  */
 export type PhoneInputLabels = {
@@ -27,7 +27,7 @@ const PHONE_INPUT_LABELS_DEF = /* @__PURE__ */ defineLabels<PhoneInputLabels>(
 
 /**
  * Localize the phone input's strings for everything below this injector, and read the set in effect here as a
- * signal. Partial — whatever you leave out keeps its {@link DEFAULT_PHONE_INPUT_LABELS} value. See {@link defineLabels}
+ * signal. Partial - whatever you leave out keeps its {@link DEFAULT_PHONE_INPUT_LABELS} value. See {@link defineLabels}
  * for the shape, which every domain in this library shares.
  *
  * @example

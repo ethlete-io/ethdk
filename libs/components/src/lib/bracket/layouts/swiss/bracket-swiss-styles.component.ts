@@ -2,7 +2,7 @@ import { Component, ViewEncapsulation } from '@angular/core';
 
 /**
  * The swiss group border color, carried by a styles-only component so only apps that register
- * `swissBracketLayout()` inject it — mounted once, app-wide, via the style manager.
+ * `swissBracketLayout()` inject it - mounted once, app-wide, via the style manager.
  *
  * @internal
  */

@@ -29,7 +29,7 @@ import {
     '[class.et-grid-drag--active]': '!grid?.readOnly() && dragHandle.isDragging()',
     '[attr.aria-grabbed]': '!grid?.readOnly() && dragHandle.isDragging()',
     // Re-states the drag handle's touch-action lock with read-only awareness: a read-only grid
-    // is plain scrollable content. Must bind a concrete value in both states — this binding
+    // is plain scrollable content. Must bind a concrete value in both states - this binding
     // outranks the host directive's, and a null here clears the property instead of delegating.
     '[style.touch-action]': "grid?.readOnly() ? 'auto' : 'none'",
   },
@@ -106,7 +106,7 @@ export class GridDragDirective {
     });
 
     // A plain width change (e.g. a scrollbar appearing because the grid grew) keeps the
-    // breakpoint — re-anchor and re-project instead of cancelling.
+    // breakpoint - re-anchor and re-project instead of cancelling.
     effect(() => {
       this.grid?.containerWidth();
 
@@ -135,7 +135,7 @@ export class GridDragDirective {
 
     if (!origin) return;
 
-    // Measure the VISUAL rect (translate included) — correct even when the item is
+    // Measure the VISUAL rect (translate included) - correct even when the item is
     // grabbed mid-settle. Between pointerdown and the commit threshold nothing moves,
     // so pointerdown coords against this rect give the exact grab offset.
     const itemRect = this.elementRef.nativeElement.getBoundingClientRect();
@@ -194,7 +194,7 @@ export class GridDragDirective {
     };
 
     // Re-anchor the grab offset whenever the clamp engaged: the anchor slides along the
-    // item so pointer overshoot beyond the grid never accumulates — the moment the
+    // item so pointer overshoot beyond the grid never accumulates - the moment the
     // pointer reverses, the item moves with it instead of waiting for the overshoot
     // distance to be travelled back.
     this.grabOffset = {
@@ -212,7 +212,7 @@ export class GridDragDirective {
   private settleDrag() {
     if (!this.origin) return;
 
-    // Commit first (layout now holds the final slot), then hand rendering back —
+    // Commit first (layout now holds the final slot), then hand rendering back -
     // the item transitions from its current pointer rect straight to that slot.
     this.grid?.commitDrag();
     this.finishGesture();

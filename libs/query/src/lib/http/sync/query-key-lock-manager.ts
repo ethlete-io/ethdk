@@ -3,7 +3,7 @@ import { Signal, signal } from '@angular/core';
 /** A single outstanding request for the lock of one key. */
 export type QueryKeyLockHold = {
   /**
-   * Whether this tab currently holds the lock. Starts `false` — the lock is granted asynchronously,
+   * Whether this tab currently holds the lock. Starts `false` - the lock is granted asynchronously,
    * and while another tab holds it this stays `false` until that tab goes away.
    */
   isHolder: Signal<boolean>;
@@ -27,7 +27,7 @@ export type QueryKeyLockState = 'holder' | 'standby';
  *
  * Backed by the Web Locks API, which solves the parts that make hand-rolled leader election
  * unpleasant: requests queue FIFO, and a holder that closes, crashes or navigates away releases its
- * lock automatically — no heartbeats, no split-brain window.
+ * lock automatically - no heartbeats, no split-brain window.
  */
 export type QueryKeyLockManager = {
   /** Requests the lock for `key`. */
@@ -41,7 +41,7 @@ export type QueryKeyLockManager = {
 
   /**
    * Every key this tab has an outstanding hold for, and where it stands on it. Reactive, and read by
-   * the query devtools to answer "why isn't this tab polling?" — not part of the general contract.
+   * the query devtools to answer "why isn't this tab polling?" - not part of the general contract.
    */
   keyStates: Signal<Record<string, QueryKeyLockState>>;
 };
@@ -96,7 +96,7 @@ export const createQueryKeyLockManager = (namespace: string): QueryKeyLockManage
       publishKeyStates();
 
       // Exactly one of these applies: the lock is ours, so resolving the promise the platform is
-      // waiting on hands it to the next tab in line — or the request is still queued, and aborting
+      // waiting on hands it to the next tab in line - or the request is still queued, and aborting
       // takes it out of the queue.
       if (releaseHeldLock) {
         releaseHeldLock();
@@ -120,7 +120,7 @@ export const createQueryKeyLockManager = (namespace: string): QueryKeyLockManage
       })
       .catch(() => {
         // A queued request that gets aborted rejects with an `AbortError`, which is the normal way a
-        // standby hold ends. Nothing to recover from in either case — this tab is simply not the
+        // standby hold ends. Nothing to recover from in either case - this tab is simply not the
         // holder, which is what the signal already says.
         isHolder.set(false);
       });

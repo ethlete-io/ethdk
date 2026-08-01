@@ -78,7 +78,7 @@ export type DropzoneUploadHandleOptions = {
 
 /**
  * The resolved upload config the dropzone directive consumes. Both `createDropzoneUpload` (new
- * query) and `createV2DropzoneUpload` (legacy v2) produce this shape — the query flavor lives
+ * query) and `createV2DropzoneUpload` (legacy v2) produce this shape - the query flavor lives
  * entirely inside `createUploadHandle`.
  */
 export type ResolvedDropzoneUploadConfig<TValue = unknown> = {
@@ -91,7 +91,7 @@ export type ResolvedDropzoneUploadConfig<TValue = unknown> = {
 
   /**
    * Maps a value that is already part of the form control (edit forms) to display info.
-   * Called in a reactive context — reading signals inside it is supported, so async
+   * Called in a reactive context - reading signals inside it is supported, so async
    * lookups can be modeled as signals updating over time.
    *
    * Required as soon as the form control can start with a non-empty value.
@@ -133,7 +133,7 @@ export type DropzoneUploadConfig<TArgs extends QueryArgs = QueryArgs, TValue = u
 
   /**
    * Maps a value that is already part of the form control (edit forms) to display info.
-   * Called in a reactive context — reading signals inside it is supported, so async
+   * Called in a reactive context - reading signals inside it is supported, so async
    * lookups can be modeled as signals updating over time.
    *
    * Required as soon as the form control can start with a non-empty value.
@@ -141,13 +141,13 @@ export type DropzoneUploadConfig<TArgs extends QueryArgs = QueryArgs, TValue = u
   resolveExisting?: (value: TValue) => DropzoneExistingFileInfo;
 };
 
-/** The args accepted by a legacy v2 creator's `prepare()` — includes `mock`/`config` extras. */
+/** The args accepted by a legacy v2 creator's `prepare()` - includes `mock`/`config` extras. */
 export type V2DropzonePrepareArgsOf<TCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator> = Parameters<
   TCreator['prepare']
 >[0];
 
 /**
- * The authoring config for `createV2DropzoneUpload` — the legacy `V2QueryClient` counterpart of
+ * The authoring config for `createV2DropzoneUpload` - the legacy `V2QueryClient` counterpart of
  * `DropzoneUploadConfig`, for apps that haven't migrated to the new `@ethlete/query` API yet.
  */
 export type V2DropzoneUploadConfig<TCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator, TValue> = {
@@ -179,7 +179,7 @@ export type V2DropzoneUploadConfig<TCreator extends AnyV2QueryCreator | AnyLegac
 
   /**
    * Maps a value that is already part of the form control (edit forms) to display info.
-   * Called in a reactive context — reading signals inside it is supported, so async
+   * Called in a reactive context - reading signals inside it is supported, so async
    * lookups can be modeled as signals updating over time.
    *
    * Required as soon as the form control can start with a non-empty value.
@@ -284,7 +284,7 @@ const createV2QueryUploadHandle = <TCreator extends AnyV2QueryCreator | AnyLegac
 
     const releaseCurrent = () => {
       // `abort()` cancels an in-flight request (both a genuine `V2Query` and the legacy interop query).
-      // We deliberately do not call the legacy `destroy()` — it re-enters through the underlying query's
+      // We deliberately do not call the legacy `destroy()` - it re-enters through the underlying query's
       // own `destroyRef` hook and double-destroys the injector (NG0205). The child injector is released
       // when the owning component injector is torn down.
       untracked(currentQuery)?.abort();
@@ -331,7 +331,7 @@ const createV2QueryUploadHandle = <TCreator extends AnyV2QueryCreator | AnyLegac
         // Legacy interop creators call `inject(Injector)` inside `prepare()`, so run in context.
         const query = runInInjectionContext(
           injector,
-          // `skipCache: true` forces the upload to run — uploads are uncacheable, and the legacy
+          // `skipCache: true` forces the upload to run - uploads are uncacheable, and the legacy
           // interop query rejects the default `allowCache: true` on an uncacheable request (ET301).
           () => queryCreator.prepare(args).execute({ skipCache: true }) as AnyV2Query | AnyLegacyQuery,
         );

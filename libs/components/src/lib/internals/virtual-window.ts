@@ -34,7 +34,7 @@ export type VirtualWindow = {
 };
 
 /**
- * Height assumed for the viewport until the container reports a real one — matches the
+ * Height assumed for the viewport until the container reports a real one - matches the
  * select panel's default max height order of magnitude, so the first frame after mounting
  * renders roughly one viewport worth of rows instead of everything or nothing.
  */
@@ -45,7 +45,7 @@ const asSignal = (value: number | Signal<number>): Signal<number> =>
 
 /**
  * Uniform-row-height windowing over a scroll container: only the rows near the viewport are
- * rendered, block paddings stand in for the rest of the scroll height. Purely behavioral —
+ * rendered, block paddings stand in for the rest of the scroll height. Purely behavioral -
  * the caller renders `range()` and applies the paddings. Must be created in an injection
  * context (it subscribes to the container's scroll and size).
  */
@@ -60,7 +60,7 @@ export const createVirtualWindow = (config: VirtualWindowConfig): VirtualWindow 
   const viewportSize = computed(() => containerDimensions().client?.height ?? 0);
 
   // a scroll request that arrived before the container existed (e.g. scrolling the selected
-  // option into view while the panel is still mounting) — replayed once it does
+  // option into view while the panel is still mounting) - replayed once it does
   let pendingScrollIndex: number | null = null;
 
   const scrollToIndex = (index: number) => {
@@ -87,7 +87,7 @@ export const createVirtualWindow = (config: VirtualWindowConfig): VirtualWindow 
 
     if (next !== current) {
       container.scrollTop = next;
-      // read back instead of trusting `next` — the browser clamps to the scrollable range
+      // read back instead of trusting `next` - the browser clamps to the scrollable range
       scrollOffset.set(container.scrollTop);
     }
   };
@@ -108,7 +108,7 @@ export const createVirtualWindow = (config: VirtualWindowConfig): VirtualWindow 
           scrollToIndex(index);
         }
 
-        // windowing needs the raw scroll offset on every scroll event — the scroll-state
+        // windowing needs the raw scroll offset on every scroll event - the scroll-state
         // utility only exposes can-scroll flags, not a live position
         // eslint-disable-next-line ethlete/prefer-scroll-state
         return fromEvent(container, 'scroll', { passive: true }).pipe(tap(() => scrollOffset.set(container.scrollTop)));
@@ -128,7 +128,7 @@ export const createVirtualWindow = (config: VirtualWindowConfig): VirtualWindow 
     const viewport = viewportSize() || FALLBACK_VIEWPORT_SIZE;
     const offset = scrollOffset();
     // clamp into the item range: when the count shrinks while scrolled far down (filtering a
-    // long list), the stale offset would otherwise start past the end — the browser's own
+    // long list), the stale offset would otherwise start past the end - the browser's own
     // clamp-scroll event arrives a frame later, but the window must never be empty until then
     const rows = overscan();
     const start = Math.min(Math.max(0, Math.floor(offset / height) - rows), Math.max(0, count - 1));

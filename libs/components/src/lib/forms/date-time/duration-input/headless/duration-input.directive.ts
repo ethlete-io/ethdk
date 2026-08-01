@@ -8,7 +8,7 @@ import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labe
 
 /**
  * A duration form control whose value is a **total elapsed time in milliseconds**
- * (`number | null`), not a `Date` — a duration is a distinct scalar quantity, so it
+ * (`number | null`), not a `Date` - a duration is a distinct scalar quantity, so it
  * stays out of the calendar/time `Date` system. Typed entry parses leniently on
  * blur/Enter against a configurable segment layout (`130` → `1:30` under `mm:ss`).
  */
@@ -40,7 +40,7 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
   public name = input('');
   public placeholder = input('');
   /**
-   * Field placeholder shown while `mixed` is set. Presentation only — the field stays
+   * Field placeholder shown while `mixed` is set. Presentation only - the field stays
    * empty and the label shows through the placeholder slot; it never enters the form value.
    */
   public mixedLabel = input<string | null>(null);
@@ -59,13 +59,13 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
 
   public spec = computed(() => deriveDurationFormatSpec(this.durationFormat()));
 
-  /** The committed value formatted for display — masked (empty) while mixed. */
+  /** The committed value formatted for display - masked (empty) while mixed. */
   public displayValue = computed(() => (this.mixed() ? '' : formatDuration(this.value(), this.spec())));
 
   /** The raw text currently in the field (tracked so unparseable input survives). */
   public inputText = signal('');
 
-  /** Set when the last commit could not be parsed — the raw text is kept visible. */
+  /** Set when the last commit could not be parsed - the raw text is kept visible. */
   public parseError = signal(false);
 
   public focused = signal(false);
@@ -73,7 +73,7 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
   public shouldDisplayError = computed(() => this.touched() && (this.invalid() || this.parseError()));
   public hasValue = computed(() => this.mixed() || this.value() !== null || this.inputText().trim().length > 0);
 
-  /** What the field renders as its placeholder — `mixedLabel` while mixed masks the value. */
+  /** What the field renders as its placeholder - `mixedLabel` while mixed masks the value. */
   public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));
 
   public describedBy = signal<string | null>(null);
@@ -97,7 +97,7 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
     this.registeredField()?.focus();
   }
 
-  /** Clears the value and any uncommitted field text — wired to the styled input's clear button. */
+  /** Clears the value and any uncommitted field text - wired to the styled input's clear button. */
   public clearValue() {
     if (this.disabled() || this.readonly()) {
       return;
@@ -109,7 +109,7 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
     this.parseError.set(false);
 
     // the field only mirrors state while unfocused (mid-typing rewrites would fight the
-    // caret) — a clear happens while focused, so reset the element text directly
+    // caret) - a clear happens while focused, so reset the element text directly
     const field = this.registeredField();
 
     if (field) {
@@ -130,7 +130,7 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
     if (!trimmed) {
       this.parseError.set(false);
 
-      // while mixed the field is empty anyway — a blank commit is a plain blur, not a user
+      // while mixed the field is empty anyway - a blank commit is a plain blur, not a user
       // clear, so the hidden raw value survives (the clear affordance resolves instead)
       if (!this.mixed()) {
         this.value.set(null);
@@ -145,7 +145,7 @@ export class DurationInputDirective implements FormValueControl<number | null>, 
       this.parseError.set(true);
 
       // drop the now-stale value so the wire model can't disagree with the unparseable
-      // text on screen — mirrors date/time/date-time, which all null on a bad commit.
+      // text on screen - mirrors date/time/date-time, which all null on a bad commit.
       // A failed parse resolves nothing while mixed: the masked raw value stays untouched
       if (!this.mixed() && this.value() !== null) {
         this.value.set(null);

@@ -1,7 +1,7 @@
 # Picture
 
 A responsive image: `<figure><picture><source…><img></picture><figcaption></figure>` built from a list of
-sources. Reach for it when one image needs several candidates — different resolutions, different formats, or a
+sources. Reach for it when one image needs several candidates - different resolutions, different formats, or a
 different crop per viewport. For a single fixed image, a plain `<img>` is less machinery.
 
 Import `PICTURE_IMPORTS`. `providePictureConfig({ baseUrl })` is optional.
@@ -28,9 +28,9 @@ They are easy to conflate, and picking the wrong one is why responsive images so
 
 | Goal                                                       | Mechanism                              | Where it goes                      |
 | ---------------------------------------------------------- | -------------------------------------- | ---------------------------------- |
-| **Resolution switching** — same picture, several sizes     | candidates in one `srcset` (+ `sizes`) | one source, comma-separated        |
-| **Art direction** — a different crop for a narrow viewport | `media` on each source                 | several sources                    |
-| **Format negotiation** — AVIF for those who can decode it  | `type` on each source                  | several sources, most modern first |
+| **Resolution switching** - same picture, several sizes     | candidates in one `srcset` (+ `sizes`) | one source, comma-separated        |
+| **Art direction** - a different crop for a narrow viewport | `media` on each source                 | several sources                    |
+| **Format negotiation** - AVIF for those who can decode it  | `type` on each source                  | several sources, most modern first |
 
 Sources are considered in order and the **first match wins**, so put the most specific `media` and the most
 modern `type` first. A browser skips a `type` it can't decode without downloading anything.
@@ -42,7 +42,7 @@ loads when no source matched, so give it your most compatible format.
 
 With **width** descriptors (`hero-400.jpg 400w`) you must also pass `sizes`, or the browser has no way to know
 how much of the viewport the image will occupy and will pick as if it were full-width. With **density**
-descriptors (`hero@2x.jpg 2x`) you must not — the browser picks by device pixel ratio. The two forms can't be
+descriptors (`hero@2x.jpg 2x`) you must not - the browser picks by device pixel ratio. The two forms can't be
 mixed in one srcset.
 
 `sizes` takes the attribute's own comma-separated string, or an array of its parts, which is easier to read:
@@ -56,8 +56,8 @@ mixed in one srcset.
 An image with no reserved box shifts the page when it arrives, which is most of what Cumulative Layout Shift
 measures. Two ways to avoid it:
 
-- **`width` + `height`** — the intrinsic pixel dimensions. Use when you know them.
-- **`aspectRatio`** — e.g. `16 / 9`. Use when CSS decides the rendered size, which for a responsive image is
+- **`width` + `height`** - the intrinsic pixel dimensions. Use when you know them.
+- **`aspectRatio`** - e.g. `16 / 9`. Use when CSS decides the rendered size, which for a responsive image is
   usually the case.
 
 The `NoAspectRatio` story exists to show what you get without either: worth looking at once.
@@ -65,7 +65,7 @@ The `NoAspectRatio` story exists to show what you get without either: worth look
 ## Loading priority
 
 By default images are `loading="lazy"` and `fetchpriority="auto"`. Set `priority` on the **one** image that is
-the largest thing in the initial viewport — a hero, a header — because it is usually the page's Largest
+the largest thing in the initial viewport - a hero, a header - because it is usually the page's Largest
 Contentful Paint, and lazy-loading the element that defines the metric delays it.
 
 Never set it on images below the fold: everything marked high priority competes with everything else marked
@@ -91,7 +91,7 @@ Two optional projected templates, for the states an image spends real time in:
 </et-picture>
 ```
 
-The placeholder is **overlaid**, not swapped in — the `<img>` has to stay in the DOM to keep loading, and
+The placeholder is **overlaid**, not swapped in - the `<img>` has to stay in the DOM to keep loading, and
 replacing it would restart the request. Without an error slot, a failed image keeps the browser's own
 broken-image rendering, which at least shows the alt text; with one, the slot covers it.
 
@@ -121,7 +121,7 @@ string, so only the first candidate of a relative multi-candidate srcset resolve
 | ------------- | --------------------------------- | ------- | ------------------------------------------------------------------ |
 | `sources`     | `(PictureSource \| string)[]`     | `[]`    | The `<source>` candidates. A string is shorthand for `{ srcset }`. |
 | `defaultSrc`  | `PictureSource \| string \| null` | `null`  | The `<img>` behind them. Without it, nothing renders.              |
-| `alt`         | `string` (**required**)           | —       | Alternative text. `''` declares the image decorative.              |
+| `alt`         | `string` (**required**)           | -       | Alternative text. `''` declares the image decorative.              |
 | `figcaption`  | `string \| null`                  | `null`  | A visible caption after the image.                                 |
 | `priority`    | `boolean`                         | `false` | `loading="eager"` + `fetchpriority="high"`.                        |
 | `width`       | `number \| null`                  | `null`  | Intrinsic width in px.                                             |
@@ -141,7 +141,7 @@ Utilities are exported for consumers building their own markup: `extractFirstIma
 ## Accessibility
 
 `alt` is a **required** input, deliberately. An image without alternative text is invisible to a screen reader,
-and an optional input is one that gets forgotten — pass `''` for a decorative image, which is a positive
+and an optional input is one that gets forgotten - pass `''` for a decorative image, which is a positive
 statement that it carries no information rather than an omission.
 
 The wrapper is a real `<figure>`, and `figcaption` its `<figcaption>`, so a caption is programmatically
@@ -150,7 +150,7 @@ represents nothing); an error slot is not, since its text is the only account of
 
 ## Theming
 
-Picture paints nothing and declares no design tokens — the CSS is structural only: `display: block`, a
+Picture paints nothing and declares no design tokens - the CSS is structural only: `display: block`, a
 margin-free `<figure>`, `max-inline-size: 100%` on the image, and the positioning the slots need. Style it from
 outside via `.et-picture`, `.et-picture-img`, `.et-picture-figcaption`, or per state with
 `.et-picture[data-state='error']`.

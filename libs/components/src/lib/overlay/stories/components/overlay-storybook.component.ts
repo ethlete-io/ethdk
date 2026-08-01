@@ -47,14 +47,14 @@ export class OverlayExampleOverlayComponent {
   protected readonly PARAGRAPHS = [
     'The overlay body scrolls independently while the header and footer stay pinned in place.',
     'Dialogs are capped at 80% of the viewport height by default, so long content like this scrolls instead of growing past the screen.',
-    'The divider lines above and below the body are dynamic — they only appear once the content behind them is actually scrolled out of view.',
+    'The divider lines above and below the body are dynamic - they only appear once the content behind them is actually scrolled out of view.',
     'Resize the viewport while a transforming overlay is open to watch it switch strategies without remounting its content.',
     'Sheets can be dragged past their edge; the pane visually extends so no gap appears while over-dragging.',
     'Anchored overlays follow their origin element and flip or shrink when they would otherwise leave the viewport.',
     'Focus is trapped inside the overlay while it is open and restored to the trigger once it closes.',
     'Pressing Escape or clicking the backdrop closes the overlay unless closing is explicitly disabled.',
     'The confirm button below closes this overlay with the result value "confirmed".',
-    'Everything you see here — header, body, footer, dividers — is composed from the overlay content primitives.',
+    'Everything you see here - header, body, footer, dividers - is composed from the overlay content primitives.',
   ];
 }
 
@@ -145,7 +145,7 @@ export class OverlayStorybookComponent {
 
   /**
    * Overlays are portaled to the body, so they inherit their writing direction from the document
-   * root — not from this component. Toggling it here is the only way to see a side sheet dock,
+   * root - not from this component. Toggling it here is the only way to see a side sheet dock,
    * animate and drag toward the inline-start/end edge under `dir="rtl"`.
    */
   public direction = input<'' | 'rtl'>('');

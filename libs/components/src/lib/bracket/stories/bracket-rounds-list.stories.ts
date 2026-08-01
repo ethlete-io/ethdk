@@ -50,7 +50,7 @@ export const Swiss = {
 export const RoundSwitcher = {
   render: Template,
   args: {
-    // `selectedRoundId` narrows the list to one round — the switcher above it is the consumer's.
+    // `selectedRoundId` narrows the list to one round - the switcher above it is the consumer's.
     source: generateSingleEliminationBracket(16),
     withRoundSwitcher: true,
   },

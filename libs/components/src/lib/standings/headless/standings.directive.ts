@@ -14,8 +14,8 @@ export type StandingsRenderRow = {
 };
 
 /**
- * Headless standings: takes rows and zone bands and works out what each row means — which band it sits in,
- * whether it is the one to highlight — plus the strings the table announces.
+ * Headless standings: takes rows and zone bands and works out what each row means - which band it sits in,
+ * whether it is the one to highlight - plus the strings the table announces.
  *
  * It imposes no markup. The default `et-standings` puts a real `<table>` around this; a consumer who wants
  * cards instead of rows can read the same state.
@@ -30,7 +30,7 @@ export type StandingsRenderRow = {
 export class StandingsDirective {
   private injectedLabels = injectStandingsLabels();
 
-  /** The rows, in the order they should appear — this never re-sorts them. */
+  /** The rows, in the order they should appear - this never re-sorts them. */
   public rows = input.required<readonly NormalizedStandingRow[]>();
 
   /**
@@ -39,19 +39,19 @@ export class StandingsDirective {
    */
   public zones = input<readonly StandingsZone[]>([]);
 
-  /** The `id` of the row to single out — "your team" in a table of twenty. */
+  /** The `id` of the row to single out - "your team" in a table of twenty. */
   public highlightedRowId = input<string | null>(null);
 
   /** Draw the legend under the table. Off with no zones either way. @default true */
   public showLegend = input(true, { transform: booleanAttribute });
 
-  /** Override this instance's strings — see {@link provideStandingsLabels} for the app-wide version. */
+  /** Override this instance's strings - see {@link provideStandingsLabels} for the app-wide version. */
   public labels = input<Partial<StandingsLabels> | null>(null);
 
   /** The strings in effect here: the injected label set with this instance's `labels` applied. */
   public resolvedLabels = computed<StandingsLabels>(() => ({ ...this.injectedLabels(), ...this.labels() }));
 
-  /** Every row with its zone and highlight state resolved — what a template iterates. */
+  /** Every row with its zone and highlight state resolved - what a template iterates. */
   public renderRows = computed<StandingsRenderRow[]>(() => {
     const zones = this.zones();
     const highlightedRowId = this.highlightedRowId();
@@ -63,7 +63,7 @@ export class StandingsDirective {
     }));
   });
 
-  /** The zones the legend lists — none of them when the legend is off. */
+  /** The zones the legend lists - none of them when the legend is off. */
   public legendZones = computed(() => (this.showLegend() ? this.zones() : []));
 
   /** Whether any row reports form, since an empty column is worse than no column. */

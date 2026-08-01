@@ -116,7 +116,7 @@ describe('MatchParticipantComponent', () => {
     });
   });
 
-  it('draws bones while loading — a pending slot is not the same as a decided TBD', () => {
+  it('draws bones while loading - a pending slot is not the same as a decided TBD', () => {
     const fixture = create();
 
     fixture.componentInstance.participant.set(null);
@@ -162,7 +162,7 @@ describe('MatchParticipantComponent', () => {
       );
     });
 
-    it('is dropped when compact — a second line is the first thing that stops fitting', () => {
+    it('is dropped when compact - a second line is the first thing that stops fitting', () => {
       const fixture = create();
 
       fixture.componentInstance.compact.set(true);

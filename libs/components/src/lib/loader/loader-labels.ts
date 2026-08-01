@@ -9,7 +9,7 @@ import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
  * specific reads better ("Loading results").
  */
 export type LoaderLabels = {
-  /** Announced by an indeterminate loader — the spinner, the brand loader, a stream's loading overlay. */
+  /** Announced by an indeterminate loader - the spinner, the brand loader, a stream's loading overlay. */
   loading: string;
   /** Announced in place of a skeleton's shapes, which are `aria-hidden`. */
   loadingContent: string;
@@ -25,7 +25,7 @@ const LOADER_LABELS_DEF = /* @__PURE__ */ defineLabels<LoaderLabels>('LOADER_LAB
 
 /**
  * Localize what loaders announce for everything below this injector, and read the set in effect here as
- * a signal. Partial — whatever you leave out keeps its {@link DEFAULT_LOADER_LABELS} value. See
+ * a signal. Partial - whatever you leave out keeps its {@link DEFAULT_LOADER_LABELS} value. See
  * {@link defineLabels} for the shape, which every domain in this library shares.
  *
  * @example

@@ -3,7 +3,7 @@
 ---
 
 Add `<et-query-devtools>` (`QUERY_DEVTOOLS_IMPORTS`): a floating, dockable panel
-that inspects the signals-first `@ethlete/query` system — queries, stacks,
+that inspects the signals-first `@ethlete/query` system - queries, stacks,
 sequences, GraphQL queries, bearer auth providers, web socket clients, the
 repository cache and a rolling event log. Enable instrumentation with
 `provideQueryDevtools()` from `@ethlete/query`.

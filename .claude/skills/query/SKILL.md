@@ -1,6 +1,6 @@
 ---
 name: query
-description: The signals-first @ethlete/query data-fetching system — the query client, typed query creators, reactive args, and reading results as signals or observables. Read BEFORE writing or reviewing code that fetches data, wires search/autocomplete to an API, adds auth/polling/pagination, or bridges a query into UI or RxJS. The full guide is the source of truth in apps/docs/query/*.md.
+description: The signals-first @ethlete/query data-fetching system - the query client, typed query creators, reactive args, and reading results as signals or observables. Read BEFORE writing or reviewing code that fetches data, wires search/autocomplete to an API, adds auth/polling/pagination, or bridges a query into UI or RxJS. The full guide is the source of truth in apps/docs/query/*.md.
 ---
 
 # @ethlete/query
@@ -8,14 +8,14 @@ description: The signals-first @ethlete/query data-fetching system — the query
 Signals-first, typesafe data fetching for Angular: request dedup, caching, polling,
 paged queries, bearer auth, GraphQL, and a socket.io realtime client.
 
-**The written docs in `apps/docs/query/*.md` are the source of truth — read the
+**The written docs in `apps/docs/query/*.md` are the source of truth - read the
 relevant page before non-trivial query work.** This skill is the index + the
 load-bearing facts so you don't re-derive them from source.
 
 | Page | Covers |
 | --- | --- |
 | `apps/docs/query/index.md` | Overview + the two-generations note |
-| `apps/docs/query/queries.md` | **Start here** — client, creators, the query object's signals, auto-execution |
+| `apps/docs/query/queries.md` | **Start here** - client, creators, the query object's signals, auto-execution |
 | `apps/docs/query/features.md` | `withArgs`, `withPolling`, `withAutoRefresh`, side-effect handlers |
 | `apps/docs/query/http.md` | REST creators, typing requests, response transforms, upload progress |
 | `apps/docs/query/auth.md` | Bearer auth: login/refresh, auto token refresh, multi-tab sync |
@@ -23,7 +23,7 @@ load-bearing facts so you don't re-derive them from source.
 | `apps/docs/query/multi-tab.md` | Opt-in cross-tab sync: shared responses, per-key polling election, mutation fan-out |
 | `apps/docs/query/legacy.md` | The maintenance-mode `V2QueryClient` |
 
-## Two generations — use the current one
+## Two generations - use the current one
 
 - **Current (use this):** signals-first, provider-based. `createQueryClient`,
   `createGetQuery`/`createPostQuery`/…, `withArgs`. Everything imports from the
@@ -49,7 +49,7 @@ postQuery = getPost(withArgs(() => ({ pathParams: { postId: this.postId() } })))
 post = computed(() => this.postQuery.response());
 ```
 
-- `GET`/`HEAD`/`OPTIONS` **auto-execute** — immediately when static/argless, or
+- `GET`/`HEAD`/`OPTIONS` **auto-execute** - immediately when static/argless, or
   whenever `withArgs` produces new args. Mutations (`POST`/`PUT`/`PATCH`/`DELETE`)
   never auto-execute; call `.execute({ args })`. A function route (`pathParams`)
   requires `withArgs` (dev-mode error otherwise).
@@ -57,7 +57,7 @@ post = computed(() => this.postQuery.response());
 
 ## The query object
 
-Every state member is an **`ObservableSignal`** — a `Signal` that also has
+Every state member is an **`ObservableSignal`** - a `Signal` that also has
 `.asObservable()`. So each is both a signal (call it) and a stream:
 
 - `response()` → `TResponse | null` (kept while re-executing; cleared on a failed re-exec).
@@ -68,11 +68,11 @@ Every state member is an **`ObservableSignal`** — a `Signal` that also has
 
 `query.response.asObservable()` binds to the query's own injector, so callers get
 an `Observable<T | null>` **without** needing their own injection context (unlike
-raw `toObservable`). It emits `null` first — `pipe(filter(r => r !== null))`.
+raw `toObservable`). It emits `null` first - `pipe(filter(r => r !== null))`.
 
 ## Reactive args & features
 
-- **`withArgs(() => ({ pathParams, queryParams, body }))`** — runs like a `computed`;
+- **`withArgs(() => ({ pathParams, queryParams, body }))`** - runs like a `computed`;
   re-runs when a signal it reads changes and re-executes the query. This is how you
   drive **search-as-you-type**: back it with a search signal
   (`withArgs(() => ({ queryParams: { search: this.search() } }))`). Return
@@ -80,7 +80,7 @@ raw `toObservable`). It emits `null` first — `pipe(filter(r => r !== null))`.
 - `withPolling({ interval })`, `withAutoRefresh({ onSignalChanges: [...] })`.
 - Side-effects: `withSuccessHandling`, `withErrorHandling`, `withLogging`.
 
-There is no built-in debounce operator — dedup/caching handles repeated identical
+There is no built-in debounce operator - dedup/caching handles repeated identical
 requests; debounce at the input if you need it.
 
 ## Bridging a query into RxJS / other APIs

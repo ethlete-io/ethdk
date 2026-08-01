@@ -47,7 +47,7 @@ export class ChoiceFieldComponent {
   public size = input<FormFieldSize>(FORM_FIELD_SIZES.MD);
 
   /**
-   * `'card'` turns the row into a full-width clickable panel with the label leading and the control trailing — for
+   * `'card'` turns the row into a full-width clickable panel with the label leading and the control trailing - for
    * a short list of consequential options where each wants room for a hint. Works for whichever control is
    * projected, so a checkbox and a switch get the same preset. @default 'plain'
    */

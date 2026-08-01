@@ -42,12 +42,12 @@ type CarouselSlideView = {
  * dots, optional autoplay with the pause control that requires, and seamless looping.
  *
  * It is the [scrollable](/components/scrollable) configured as a carousel, so the sliding is native
- * scrolling — touch swipe, momentum, trackpad and keyboard all come from the platform rather than from a
+ * scrolling - touch swipe, momentum, trackpad and keyboard all come from the platform rather than from a
  * transform this component animates. `itemSize` is what makes it show one slide at a time (the default)
  * or a peeking multi-item view.
  *
  * Slides are **data plus a template**, not elements you project: seamless looping needs each slide
- * rendered more than once — a clone either side of the seam — and a clone has to be a live view rather
+ * rendered more than once - a clone either side of the seam - and a clone has to be a live view rather
  * than a copy of a DOM subtree, or anything interactive inside it would be dead. Binding the slides to the
  * template is also what types it, so `let-slide` is your slide type.
  *
@@ -86,7 +86,7 @@ type CarouselSlideView = {
     {
       // Always attached, never conditional: its host listeners have to cover the controls as well as the
       // track, so that hovering the pause button pauses just as hovering a slide does. Which is why
-      // `autoplay` is this component's own input rather than an alias of the directive's `enabled` — an
+      // `autoplay` is this component's own input rather than an alias of the directive's `enabled` - an
       // alias forwards a value but cannot change a default, and the directive's default is `true` (putting
       // it on an element is the opt-in). Aliased, every `<et-carousel>` that didn't say
       // `[autoplay]="false"` played.
@@ -96,7 +96,7 @@ type CarouselSlideView = {
   ],
   host: {
     class: 'et-carousel',
-    // Nothing transitions on the first render — a carousel should not fade its own chrome in on arrival.
+    // Nothing transitions on the first render - a carousel should not fade its own chrome in on arrival.
     '[class.et-carousel--can-animate]': 'canAnimate.state()',
   },
 })
@@ -124,7 +124,7 @@ export class CarouselComponent {
   /** Render the slide dots, which double as the autoplay progress indicator. @default true */
   public showDots = input(true, { transform: booleanAttribute });
 
-  // The scrollable is a descendant, so the carousel directive can't inject it — it gets handed over.
+  // The scrollable is a descendant, so the carousel directive can't inject it - it gets handed over.
   public track = viewChild.required(ScrollableComponent, { read: ScrollableDirective });
 
   /** @internal Held low for the first frames, so the chrome's transitions don't run on arrival. */
@@ -132,7 +132,7 @@ export class CarouselComponent {
 
   protected isAutoplayEnabled = computed(() => this.autoplayDirective.isEnabled());
 
-  /** Whether a slide is counting down right now — which is when the progress ring exists. */
+  /** Whether a slide is counting down right now - which is when the progress ring exists. */
   protected isAutoplayRunning = computed(() => this.autoplayDirective.isPlaying());
 
   protected autoplayDuration = computed(() => this.autoplayDirective.duration());
@@ -142,7 +142,7 @@ export class CarouselComponent {
   /**
    * The track's children: `[tail clones][the slides][head clones]`. The clones are what let the carousel
    * scroll past either end without the seam coming into view, and they are ordinary views of the same
-   * template — so anything bound, interactive or async inside a slide still works in its clone.
+   * template - so anything bound, interactive or async inside a slide still works in its clone.
    */
   protected slideViews = computed<CarouselSlideView[]>(() => {
     const template = this.carousel.slideTemplate();
@@ -192,11 +192,11 @@ export class CarouselComponent {
 
   constructor() {
     // Not a linkedSignal: the value is derived from this component's view, but it has to be pushed into
-    // the *directive's* signal — the one place that can see the track — which only an effect can do.
+    // the *directive's* signal - the one place that can see the track - which only an effect can do.
     // eslint-disable-next-line ethlete/prefer-linked-signal
     effect(() => this.carousel.attachedScrollable.set(this.track()));
 
-    // Same shape, and the reason `autoplay` is ours rather than an alias — see the hostDirectives note.
+    // Same shape, and the reason `autoplay` is ours rather than an alias - see the hostDirectives note.
     // eslint-disable-next-line ethlete/prefer-linked-signal
     effect(() => this.autoplayDirective.enabledOverride.set(this.autoplay()));
 

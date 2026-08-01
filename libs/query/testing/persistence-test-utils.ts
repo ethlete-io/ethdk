@@ -3,7 +3,7 @@ import type { PersistedQueryEntry, PersistedQueryEntryMeta, QueryPersistenceAdap
 /**
  * An in-memory stand-in for the query client's persisted response store.
  *
- * jsdom has no IndexedDB at all, so this is how persistence is tested — and because the storage
+ * jsdom has no IndexedDB at all, so this is how persistence is tested - and because the storage
  * adapter is a documented seam rather than a mock of one, a spec running against this exercises the
  * real engine, repository and request code on both the write and the read side.
  *
@@ -26,7 +26,7 @@ export type FakeQueryPersistenceStoreHandle = {
   /** How often each adapter method has been called. */
   calls: () => Record<'loadIndex' | 'read' | 'write' | 'remove' | 'clear', number>;
 
-  /** Makes the next `count` writes reject — a full disk, by default. */
+  /** Makes the next `count` writes reject - a full disk, by default. */
   failNextWrites: (count: number, error?: unknown) => void;
 
   /** Makes the next `loadIndex` reject. */

@@ -6,7 +6,7 @@ import { createSourceFile } from './shared.js';
 /**
  * What a v2 `V2BearerAuthProvider` was configured with, read straight off the call site.
  *
- * Almost everything the v3 provider needs is already written down there — the refresh creator, the
+ * Almost everything the v3 provider needs is already written down there - the refresh creator, the
  * cookie name, the response adapter, the request adapter. Emitting `queries: []` and a TODO throws
  * all of it away and leaves an app that compiles but cannot log in.
  */
@@ -140,8 +140,8 @@ const REFRESH_QUERY_KEY = 'tokenRefresh';
 /**
  * Renders the `queries` / `features` arguments of a v3 provider from a v2 config.
  *
- * The mapping is close to 1:1 — `queryCreator` → `withRefreshQuery`, `responseAdapter` →
- * `extractTokens`, `cookieName` → `withPersistentAuth({ cookie })` — but the adapters are copied
+ * The mapping is close to 1:1 - `queryCreator` → `withRefreshQuery`, `responseAdapter` →
+ * `extractTokens`, `cookieName` → `withPersistentAuth({ cookie })` - but the adapters are copied
  * verbatim from v2 and their parameter shapes differ, so each one is emitted with a TODO rather
  * than presented as finished.
  */
@@ -159,7 +159,7 @@ export const renderAuthProviderBody = (config: V2BearerAuthConfig | undefined) =
 
   if (config.responseAdapter) {
     refreshEntries.push(
-      `      // TODO(query-v3): v2 responseAdapter. It must return { accessToken, refreshToken } — v2 returned { token, refreshToken }.`,
+      `      // TODO(query-v3): v2 responseAdapter. It must return { accessToken, refreshToken } - v2 returned { token, refreshToken }.`,
       `      extractTokens: ${config.responseAdapter},`,
     );
   }

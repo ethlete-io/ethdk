@@ -7,7 +7,7 @@ import * as ts from 'typescript';
  *
  * Two families need rewriting. The `create*Provider` / `createLabels` helpers were replaced by
  * `define*`, and their declarations take a pure annotation because they sit in library source. The
- * runtime factories below kept their names — only their return shape changed from tuple to definition —
+ * runtime factories below kept their names - only their return shape changed from tuple to definition -
  * and their call sites are application code, where an annotation would be noise.
  */
 const FACTORY_TO_DEFINE: Record<string, string> = {
@@ -207,7 +207,7 @@ const rewriteImports = (
 
   if (extractorHost) return rewrites;
 
-  // Nothing to join — the file only imported a ref factory from another package, so add a core import.
+  // Nothing to join - the file only imported a ref factory from another package, so add a core import.
   const anchor = imports[imports.length - 1];
   const position = anchor ? anchor.getEnd() : 0;
   const statement = `import { ${[...extractorsUsed].sort().join(', ')} } from '@ethlete/core';`;
@@ -280,7 +280,7 @@ export const migrateProviderShapeInFile = (filePath: string, content: string): P
   return { content: updated, changed: updated !== content, tasks };
 };
 
-/** Call sites the codemod cannot safely rewrite — a factory result that is not a plain tuple binding. */
+/** Call sites the codemod cannot safely rewrite - a factory result that is not a plain tuple binding. */
 const collectTasks = (filePath: string, sourceFile: ts.SourceFile, sites: TupleSite[]): ProviderShapeTask[] => {
   const rewritten = new Set(sites.map((site) => site.statement));
   const tasks: ProviderShapeTask[] = [];

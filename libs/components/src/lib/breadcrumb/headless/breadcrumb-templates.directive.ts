@@ -22,12 +22,12 @@ const assertInsideBreadcrumb = (hasHost: boolean, directiveName: string) => {
 
 /**
  * One crumb of the trail. A template rather than an element, because the breadcrumb decides where each
- * crumb ends up — inline, or inside the overflow control once the trail stops fitting, or in the shell's
- * outlet several routes above — and a template can be rendered in any of them.
+ * crumb ends up - inline, or inside the overflow control once the trail stops fitting, or in the shell's
+ * outlet several routes above - and a template can be rendered in any of them.
  *
  * Put whatever the crumb is inside it: a `routerLink` anchor, plain text for the current page, a
  * `<button>`. Marking it `loading` renders a placeholder instead, for a name that is still being
- * fetched — the crumb keeps its slot in the trail meanwhile.
+ * fetched - the crumb keeps its slot in the trail meanwhile.
  *
  * @example
  * <ng-template etBreadcrumbItemTemplate><a etBreadcrumbItem routerLink="/teams">Teams</a></ng-template>
@@ -41,7 +41,7 @@ const assertInsideBreadcrumb = (hasHost: boolean, directiveName: string) => {
 })
 export class BreadcrumbItemTemplateDirective {
   // Two ways in: declared inside an [etBreadcrumb], which finds its crumbs with a content query, or
-  // inside an etBreadcrumbSegment, which collects them for the outlet — a content query can't reach into
+  // inside an etBreadcrumbSegment, which collects them for the outlet - a content query can't reach into
   // a template that another view renders.
   private breadcrumb = inject(BREADCRUMB_TOKEN, { optional: true });
   private segment = inject(BREADCRUMB_SEGMENT_TOKEN, { optional: true });
@@ -52,7 +52,7 @@ export class BreadcrumbItemTemplateDirective {
   public loading = input(false, { transform: booleanAttribute });
 
   /**
-   * This crumb's plain-text name for **structured data** — read only by
+   * This crumb's plain-text name for **structured data** - read only by
    * [`etBreadcrumbSeo`](/components/breadcrumb#seo-structured-data), never rendered. It has to be
    * stated because a crumb's visible content is a template: it may be an icon, a chip, or markup with
    * no single text form, and `schema.org` wants a string.
@@ -61,14 +61,14 @@ export class BreadcrumbItemTemplateDirective {
 
   /**
    * This crumb's **absolute** URL for structured data, same story as {@link name}. Absolute because
-   * that is what `schema.org` asks for, and because a `routerLink` is a path — the crumb knows its
+   * that is what `schema.org` asks for, and because a `routerLink` is a path - the crumb knows its
    * route, only the app knows its origin. Omit it on the last crumb: the page it names is the page the
    * markup is on.
    */
   public url = input<string | null>(null);
 
   /**
-   * @internal Whether this is the last crumb — the current page, which is what `aria-current` goes on.
+   * @internal Whether this is the last crumb - the current page, which is what `aria-current` goes on.
    * Pushed here by whatever renders the trail: the crumb can't work it out itself, since the trail it
    * ends up in may be composed from segments it knows nothing about.
    */
@@ -88,7 +88,7 @@ export class BreadcrumbItemTemplateDirective {
 }
 
 /**
- * Replaces the chevron the default breadcrumb draws between crumbs — a slash, a bullet, an icon of your
+ * Replaces the chevron the default breadcrumb draws between crumbs - a slash, a bullet, an icon of your
  * own. Rendered once per gap and hidden from assistive tech either way.
  *
  * It belongs to the breadcrumb rather than to a segment: put it inside the `<et-breadcrumb>` (or the

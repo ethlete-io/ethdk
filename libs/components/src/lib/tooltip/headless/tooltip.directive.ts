@@ -50,7 +50,7 @@ export class TooltipDirective {
   public offset = input<OffsetOptions | null>(8);
   /**
    * How close the arrow may get to the panel's corners. Must clear the panel's border radius
-   * (`--_et-tooltip-radius`, 16px) or the arrow's base rides into the rounded corner — which is what
+   * (`--_et-tooltip-radius`, 16px) or the arrow's base rides into the rounded corner - which is what
    * happens on aligned placements (`bottom-end`, `left-start`, …) and whenever `shift` pushes a panel
    * off center near a viewport edge.
    */
@@ -199,7 +199,7 @@ export class TooltipDirective {
     // Pointer events rather than mouse events so the `pointerType` is readable: mobile browsers
     // synthesize a mouse enter around a tap, which pops a hover affordance the user never asked for
     // and then leaves it hanging until they tap elsewhere. A pen genuinely hovers, so only touch is
-    // excluded — touch input is what the toggletip is for.
+    // excluded - touch input is what the toggletip is for.
     const leave$ = fromEvent<PointerEvent>(hostElement, 'pointerleave');
 
     fromEvent<PointerEvent>(hostElement, 'pointerenter')
@@ -233,7 +233,7 @@ export class TooltipDirective {
   }
 
   /**
-   * A tooltip can outlive the hover that opened it — a `pointercancel`, a scroll that moves the
+   * A tooltip can outlive the hover that opened it - a `pointercancel`, a scroll that moves the
    * trigger out from under the pointer, or a browser that synthesizes an enter with no matching
    * leave. A press anywhere else is unambiguous, so treat it as a dismissal.
    */

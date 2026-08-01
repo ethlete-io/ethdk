@@ -106,7 +106,7 @@ const posEq = (a: GridItemPosition | undefined, b: GridItemPosition | undefined)
                 @for (cell of row.cells; track cell.bp) {
                   <td
                     [style.color]="cell.intMissing ? '#dc2626' : '#111'"
-                    [title]="cell.intMissing ? 'MISSING — layout.' + cell.bp + ' undefined in internal state' : ''"
+                    [title]="cell.intMissing ? 'MISSING - layout.' + cell.bp + ' undefined in internal state' : ''"
                     style="padding: 3px 8px; border: 1px solid #e5e7eb; text-align: center"
                   >
                     {{ fmtPos(cell.int) }}
@@ -114,7 +114,7 @@ const posEq = (a: GridItemPosition | undefined, b: GridItemPosition | undefined)
                   @if (hasExternal()) {
                     <td
                       [style.color]="cell.extMissing ? '#dc2626' : cell.mismatch ? '#d97706' : '#9ca3af'"
-                      [title]="cell.mismatch ? 'MISMATCH — ext=' + fmtPos(cell.ext) + ' int=' + fmtPos(cell.int) : ''"
+                      [title]="cell.mismatch ? 'MISMATCH - ext=' + fmtPos(cell.ext) + ' int=' + fmtPos(cell.int) : ''"
                       style="padding: 3px 8px; border: 1px solid #e5e7eb; text-align: center"
                     >
                       {{ fmtPos(cell.ext) }}
@@ -182,7 +182,7 @@ export class GridDebugComponent {
   );
 
   public fmtPos(pos: GridItemPosition | undefined) {
-    return pos ? `(${pos.col},${pos.row}) ${pos.colSpan}×${pos.rowSpan}` : '—';
+    return pos ? `(${pos.col},${pos.row}) ${pos.colSpan}×${pos.rowSpan}` : '-';
   }
 
   public copyJson($event: Event) {

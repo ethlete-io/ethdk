@@ -1,7 +1,7 @@
 /** Where one item sits: which column it landed in, and its offset from the container's start corner. */
 export type MasonryPlacement = {
   column: number;
-  /** Offset along the inline axis (left in LTR, right in RTL — CSS resolves the side). */
+  /** Offset along the inline axis (left in LTR, right in RTL - CSS resolves the side). */
   inlineOffset: number;
   /** Offset along the block axis, i.e. how tall the column was when this item was placed. */
   blockOffset: number;
@@ -18,7 +18,7 @@ export type MasonryColumns = {
 export type MasonryPacking = {
   /** Index-aligned with the block sizes handed in. */
   placements: MasonryPlacement[];
-  /** How tall each column ended up, gap included — the state the greedy pass carries along. */
+  /** How tall each column ended up, gap included - the state the greedy pass carries along. */
   columnBlockSizes: number[];
   /** How tall the container has to be to hold every column. */
   blockSize: number;

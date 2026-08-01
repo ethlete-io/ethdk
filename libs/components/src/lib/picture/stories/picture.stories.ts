@@ -21,7 +21,7 @@ export const Default: Story = {
       description: {
         story:
           'Art direction, a loading placeholder and an error slot. Resize the preview past 700px to see the ' +
-          'first image swap crop — that is a `media` query on a `<source>`, which no `srcset` can express.',
+          'first image swap crop - that is a `media` query on a `<source>`, which no `srcset` can express.',
       },
     },
   },

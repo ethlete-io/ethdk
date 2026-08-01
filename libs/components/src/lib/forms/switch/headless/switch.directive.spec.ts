@@ -61,7 +61,7 @@ describe('SwitchDirective', () => {
     it('should reflect data-indeterminate while indeterminate but keep aria-checked boolean', () => {
       const switchEl = fixture.nativeElement.querySelector('[etSwitch]');
 
-      // role=switch does not support aria-checked="mixed" — it stays boolean
+      // role=switch does not support aria-checked="mixed" - it stays boolean
       expect(switchEl.getAttribute('aria-checked')).toBe('false');
       expect(switchEl.getAttribute('data-indeterminate')).toBe('true');
     });

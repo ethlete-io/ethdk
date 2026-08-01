@@ -8,7 +8,7 @@ import { SelectionListControlDirective } from '../headless';
  * all, and shows the **mixed** state while only some are picked.
  *
  * Put it inside the group, above the options. The tri-state logic is
- * [`etSelectionListControl`](/components/choice-inputs#select-all)'s, which this composes — the
+ * [`etSelectionListControl`](/components/choice-inputs#select-all)'s, which this composes - the
  * component exists so the row doesn't have to be hand-rolled with its own markup and CSS every time.
  *
  * It is a real `role="checkbox"` with `aria-checked="mixed"`, not an option: a listbox option has no
@@ -52,7 +52,7 @@ import { SelectionListControlDirective } from '../headless';
 export class CheckboxGroupSelectAllComponent {
   private labels = injectFormFieldLabels();
 
-  /** The row's text. Defaults to the shared `selectAll` label — see {@link provideFormFieldLabels}. */
+  /** The row's text. Defaults to the shared `selectAll` label - see {@link provideFormFieldLabels}. */
   public label = input<string | null>(null);
 
   protected resolvedLabel = computed(() => this.label() ?? this.labels().selectAll);

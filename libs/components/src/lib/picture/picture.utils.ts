@@ -2,10 +2,10 @@ import { inferMimeType } from '@ethlete/core';
 import { PictureConfig, PictureSource } from './picture.types';
 
 /**
- * The first URL out of a srcset, for the `<img src>` fallback a `<picture>` still needs — a browser that
+ * The first URL out of a srcset, for the `<img src>` fallback a `<picture>` still needs - a browser that
  * matches no `<source>` (or doesn't support `<picture>` at all) loads the `img`.
  *
- * Descriptors are stripped, and a `data:` URI is returned whole rather than split on its commas — base64
+ * Descriptors are stripped, and a `data:` URI is returned whole rather than split on its commas - base64
  * payloads contain them, so treating one as a candidate list would truncate the image.
  */
 export const extractFirstImageUrl = (source: string | PictureSource | null): string | null => {
@@ -24,7 +24,7 @@ export const extractFirstImageUrl = (source: string | PictureSource | null): str
 
 /**
  * A source in its full form, with the mime type filled in from the URL where it wasn't given. The type is
- * what lets a browser skip a `<source>` it can't decode without downloading it, so it is worth inferring —
+ * what lets a browser skip a `<source>` it can't decode without downloading it, so it is worth inferring -
  * but a URL that carries no extension (a signed CDN URL, an API endpoint) can't be inferred from, which
  * warns in dev rather than throwing: the browser will simply try the source.
  */
@@ -54,7 +54,7 @@ export const normalizePictureSizes = (sizes: string | string[] | null | undefine
 
 /**
  * A single URL prefixed with the base, unless it is already absolute or a data URI. Exactly one slash joins
- * them however each side is written — cdk produced `host//path` when both carried one.
+ * them however each side is written - cdk produced `host//path` when both carried one.
  */
 const withBaseUrl = (url: string, baseUrl: string) => {
   if (url.startsWith('http') || url.startsWith('data:')) return url;
@@ -67,7 +67,7 @@ const withBaseUrl = (url: string, baseUrl: string) => {
  *
  * Applied **per candidate**, which is what makes a relative multi-candidate srcset work: cdk prefixed the
  * srcset as one string, so `'a.jpg 1x, b.jpg 2x'` left the second candidate unresolved. A `data:` URI is
- * passed through whole — its base64 payload contains commas, so it is not a candidate list.
+ * passed through whole - its base64 payload contains commas, so it is not a candidate list.
  */
 export const withPictureBaseUrl = (source: PictureSource, config: PictureConfig | null): PictureSource => {
   const baseUrl = config?.baseUrl;

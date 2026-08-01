@@ -57,7 +57,7 @@ export const MultipleItems: Story = {
         story:
           '`itemSize` decides how much of the track a slide takes, so a carousel showing two or three at a time ' +
           "is a config change rather than a different component. It accepts the scrollable's per-breakpoint " +
-          'form too — one slide on a phone, three on a desktop — and the loop follows it, cloning enough slides ' +
+          'form too - one slide on a phone, three on a desktop - and the loop follows it, cloning enough slides ' +
           'to cover whatever a viewport currently holds.',
       },
     },
@@ -71,8 +71,8 @@ export const Loop: Story = {
       description: {
         story:
           'Keep scrolling past either end. The track carries clones of the slides on both sides of the real ' +
-          'run — live views of the same template, so anything bound or interactive inside a slide still works ' +
-          'in its clone — and the scroll offset is shifted a whole track along once the scrolling has stopped ' +
+          'run - live views of the same template, so anything bound or interactive inside a slide still works ' +
+          'in its clone - and the scroll offset is shifted a whole track along once the scrolling has stopped ' +
           '(`scrollend`, never mid-animation, never while a finger is down). The dots keep counting the real ' +
           'slides, and the clones are `aria-hidden` and `inert`, so a reader never meets the same slide twice.',
       },
@@ -88,7 +88,7 @@ export const Autoplay: Story = {
         story:
           'Autoplay advances the carousel and draws its countdown as a ring around the active dot. It pauses ' +
           'while the pointer is over the carousel, while focus is inside it, and while it is scrolled off ' +
-          'screen — and it never starts at all under `prefers-reduced-motion`. The pause button is required ' +
+          'screen - and it never starts at all under `prefers-reduced-motion`. The pause button is required ' +
           'rather than optional (WCAG 2.2.2): dev mode throws if autoplay runs without one. With `loop` on it ' +
           'no longer has an end to stop at.',
       },
@@ -105,7 +105,7 @@ export const DimTransition: Story = {
           'Every transition follows the slide\'s position rather than an "active" flag, so it tracks a drag and ' +
           'reverses when you drag back instead of stepping when a flag flips. `dim` fades and shrinks the slides ' +
           "either side of the current one, as keyframes over `opacity` and `scale` along each slide's own " +
-          '`view()` timeline — properties a browser can hand to the compositor, which routing them through an ' +
+          '`view()` timeline - properties a browser can hand to the compositor, which routing them through an ' +
           'inherited custom property could not be.',
       },
     },
@@ -122,11 +122,11 @@ export const WipeTransition: Story = {
     docs: {
       description: {
         story:
-          'The same one number, a different effect — and the Apple-TV-ish reveal the `@ethlete/cdk` carousel ' +
+          'The same one number, a different effect - and the Apple-TV-ish reveal the `@ethlete/cdk` carousel ' +
           'had, except driven by where the slide *is* rather than by a class flip, so it tracks a finger and ' +
           "reverses when you drag back. Each slide's content is pinned to the track while its own box keeps " +
           'scrolling, and the box clips it: two stationary pictures either side of one moving edge. Drag ' +
-          'slowly to see it. It needs one slide per view — a peeking layout wants `dim` instead.',
+          'slowly to see it. It needs one slide per view - a peeking layout wants `dim` instead.',
       },
     },
   },
@@ -142,7 +142,7 @@ export const JsTransitionDriver: Story = {
           "properties along each slide's own `view(inline)` timeline where the browser has scroll-driven " +
           'animations, and falls back to `calc()` over `--et-carousel-slide-progress`, written from a passive ' +
           'scroll listener batched into a frame, where it does not (Firefox, as of this writing). Forcing ' +
-          '`"js"` here shows that fallback on a browser that would have used the timeline — it should be ' +
+          '`"js"` here shows that fallback on a browser that would have used the timeline - it should be ' +
           'indistinguishable to look at, even though only the timeline can be composited.',
       },
     },
@@ -177,7 +177,7 @@ export const Headless: Story = {
           '`etCarousel` on a plain `<et-scrollable>`: the active slide, the movement and the slide semantics, ' +
           'with controls and readout written by hand and no chrome from the default component. A hand-built ' +
           'carousel renders its own children, so there are no clones and `loop` stays a jump back to the other ' +
-          'end — seamless looping needs the carousel to render the slides.',
+          'end - seamless looping needs the carousel to render the slides.',
       },
     },
   },

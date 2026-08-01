@@ -325,7 +325,7 @@ export class GridDirective {
         const newItems = initial.filter((item) => !currentById.has(item.id));
         const removedIds = current.filter((c) => !initialIds.has(c.id)).map((c) => c.id);
 
-        // Pure layout update — same item set but positions changed (e.g. the host
+        // Pure layout update - same item set but positions changed (e.g. the host
         // reset its signal to a saved snapshot after the user cancelled edits).
         // A structural add/remove takes precedence and is handled below.
         if (newItems.length === 0 && removedIds.length === 0) {
@@ -679,7 +679,7 @@ export class GridDirective {
       return;
     }
 
-    // Mark the item as leaving — its directive plays the scale/opacity-out transition —
+    // Mark the item as leaving - its directive plays the scale/opacity-out transition -
     // then actually remove it once the animation has finished. Neighbours retarget
     // automatically when the layout compacts.
     this.leavingIds.update((ids) => new Set(ids).add(id));
@@ -709,7 +709,7 @@ export class GridDirective {
     const originPosition = this.baseLayout().find((e) => e.id === id)?.position;
     const currentLayout = this.baseLayout().map((e) => (e.id === id ? { ...e, position: clamped } : e));
 
-    // originPosition enables the swap/escape-upward heuristics — keyboard moves (Ctrl+Arrow)
+    // originPosition enables the swap/escape-upward heuristics - keyboard moves (Ctrl+Arrow)
     // should displace neighbours exactly like the equivalent drag.
     const resolved = resolveCollisions({ entries: currentLayout, movedId: id, columns, originPosition });
     this.updateLayoutForCurrentBreakpoint(resolved);
@@ -899,7 +899,7 @@ export class GridDirective {
 
       if (neighborIsRight) {
         const newCol = resizedPos.col + resizedPos.colSpan;
-        // Prefer sliding the neighbor right over shrinking it — only shrink if its
+        // Prefer sliding the neighbor right over shrinking it - only shrink if its
         // full colSpan no longer fits within the grid at the new column.
         if (newCol + pos.colSpan <= columns) {
           shrunkPos.col = newCol;
@@ -916,7 +916,7 @@ export class GridDirective {
         }
       } else {
         const maxRight = resizedPos.col;
-        // Prefer sliding the neighbor left over shrinking it — only shrink if its
+        // Prefer sliding the neighbor left over shrinking it - only shrink if its
         // full colSpan would go below column 0 at the new position.
         if (maxRight - pos.colSpan >= 0) {
           shrunkPos.col = maxRight - pos.colSpan;

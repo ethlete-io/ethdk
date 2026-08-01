@@ -1,6 +1,6 @@
 # @ethlete/core
 
-Angular framework primitives for the Ethlete SDK — signal-based DOM observation, the surface/color theming systems, the animation and overlay engines, and a toolbox of directives, pipes and utilities. Component-less; every other `@ethlete/*` UI library builds on it.
+Angular framework primitives for the Ethlete SDK - signal-based DOM observation, the surface/color theming systems, the animation and overlay engines, and a toolbox of directives, pipes and utilities. Component-less; every other `@ethlete/*` UI library builds on it.
 
 ## Installation
 

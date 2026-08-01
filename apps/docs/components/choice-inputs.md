@@ -3,7 +3,7 @@
 The controls where the user picks from fixed options rather than typing a value:
 the boolean [checkbox & switch](#checkbox-switch), the three
 [selection-list groups](#selection-lists) (radio / checkbox / segmented), and the
-[rating](#rating) control. They bind via signal forms — see the
+[rating](#rating) control. They bind via signal forms - see the
 [Forms overview](/components/forms) for the shared validation, mixed-state and
 theming contracts.
 
@@ -18,13 +18,13 @@ import { CHOICE_FIELD_IMPORTS, CHECKBOX_IMPORTS, SWITCH_IMPORTS, RATING_IMPORTS 
 | `CHOICE_FIELD_IMPORTS` | `et-choice-field` + label/hint chrome |
 | `RATING_IMPORTS`       | `et-rating`                           |
 
-The selection-list groups have no aggregate array — import the components
+The selection-list groups have no aggregate array - import the components
 directly (`CheckboxGroupComponent` + `CheckboxOptionComponent`,
 `RadioGroupComponent` + `RadioComponent`, `SegmentedButtonGroupComponent` +
 `SegmentedButtonComponent`), and the same goes for `DescriptionComponent`
 (`et-description`).
 
-## Checkbox & switch — `et-choice-field` {#checkbox-switch}
+## Checkbox & switch - `et-choice-field` {#checkbox-switch}
 
 Boolean controls pair with a label inside `et-choice-field` (instead of
 `et-form-field`):
@@ -44,24 +44,24 @@ Boolean controls pair with a label inside `et-choice-field` (instead of
 <StoryEmbed id="components-forms-checkbox--indeterminate" height="220px" />
 <StoryEmbed id="components-forms-switch--default" height="220px" />
 
-- `et-checkbox` — `role="checkbox"`, `checked` + `indeterminate` models
+- `et-checkbox` - `role="checkbox"`, `checked` + `indeterminate` models
   (`aria-checked="mixed"` when indeterminate; toggling an indeterminate checkbox
   resolves to checked).
-- `et-switch` — `role="switch"`, `checked` + `indeterminate` models (toggling an
+- `et-switch` - `role="switch"`, `checked` + `indeterminate` models (toggling an
   indeterminate switch resolves to checked). Because `role="switch"` cannot carry
-  `aria-checked="mixed"`, the indeterminate state is presentational only — the
+  `aria-checked="mixed"`, the indeterminate state is presentational only - the
   thumb parks mid-track behind `data-indeterminate` while `aria-checked` stays
   boolean.
 - Both toggle on click and <kbd>Space</kbd>, and mark themselves touched on blur.
 - Both honor `readonly` (e.g. from a `readonly(...)` schema): the control keeps
   its normal look and stays focusable (`aria-readonly`), it just cannot be
-  toggled — distinct from the dimmed `disabled` state.
+  toggled - distinct from the dimmed `disabled` state.
 - `et-choice-field` accepts `size: 'sm' | 'md' | 'lg'` (default `'md'`), scaling
   the control and label together.
 
 ## Selection lists
 
-Three group flavors over one selection engine — options are projected children,
+Three group flavors over one selection engine - options are projected children,
 keyboard navigation is roving-tabindex with wrapping arrows:
 
 | Group                       | Options               | Mode     | Value        |
@@ -82,14 +82,14 @@ keyboard navigation is roving-tabindex with wrapping arrows:
 
 <StoryEmbed id="components-forms-selection-list-segmented-button-group--default" height="220px" />
 
-- The group label is a projected `et-label` — it renders the `*` marker when the
+- The group label is a projected `et-label` - it renders the `*` marker when the
   group is `required` and wires `aria-labelledby`. A plain
   `<span class="et-<group>-label">` also works for text-only labels.
 - All three groups accept `size: 'sm' | 'md' | 'lg'` (default `'md'`), matching
   the `et-form-field` size scale.
 - All three groups honor `readonly`: options keep their normal focusable look,
   arrow keys still move focus (without the radio pattern's select-while-roving),
-  but nothing can be (de)selected — distinct from the dimmed `disabled` state.
+  but nothing can be (de)selected - distinct from the dimmed `disabled` state.
 - The segmented button group renders its options on a tonal track; the filled
   active pill animates between options on selection.
 
@@ -118,7 +118,7 @@ no mixed state (it uses `aria-selected`), and "some of these are on" is exactly 
 to be able to say. Its text comes from the shared `selectAll`
 [form label](/components/forms#localization), or from a `label` input for a one-off wording.
 
-The tri-state logic is the headless `[etSelectionListControl]`, which this composes — reach for the
+The tri-state logic is the headless `[etSelectionListControl]`, which this composes - reach for the
 directive directly only when you want entirely different markup.
 
 ### Orientation {#orientation}
@@ -132,13 +132,13 @@ wrapping row instead of a column:
 
 <StoryEmbed id="components-forms-selection-list-checkbox-group--horizontal" height="240px" />
 
-The group's label and its error/hint block keep their own lines above and below — only the options
+The group's label and its error/hint block keep their own lines above and below - only the options
 move, and an option is still a direct child of the group, so nothing about the projected DOM changes.
 Set `--et-checkbox-group-column-gap` / `--et-radio-group-column-gap` (20px) for the spacing between
 options in a row; the vertical `--et-*-group-gap` still spaces the rows.
 
 Vertical is the default and usually the right answer: it scans better and gives each option a
-full-width hit area. Reach for horizontal when the options are short and few — a two-way filter, a
+full-width hit area. Reach for horizontal when the options are short and few - a two-way filter, a
 size picker. All four arrow keys move between options either way, as the ARIA radio pattern expects.
 
 The segmented button group is horizontal by construction and takes no `orientation`.
@@ -150,21 +150,21 @@ option becomes a full-width clickable panel with the label leading and the
 control trailing, and the selection shows on the panel's border as well as in the
 control.
 
-In this variant the **label carries the selection too** — muted until the option
+In this variant the **label carries the selection too** - muted until the option
 is chosen, full strength once it is. Hover and focus are answered by the panel,
 not by the label, so an unselected card under the cursor never reads as selected.
 
 The panel's chrome follows the **`et-form-field` frame**: a neutral border at
 rest, `--et-surface-interaction-hover-solid` on hover and
 `--et-surface-interaction-active-solid` on press, the accent on focus, and the
-accent while selected. There is no tinted fill — the background stays the
+accent while selected. There is no tinted fill - the background stays the
 surface, so a selected card differs from its neighbours by its border alone.
 Because each card is `[etColorInteractive]`, a **selected** card's border also
 tracks the theme's hover / focus / active shade instead of freezing at the
 resting accent.
 
-Reach for it when the options are few and consequential — a plan, a shipping
-speed — and each deserves room for an `et-description`. A 20px circle is a small
+Reach for it when the options are few and consequential - a plan, a shipping
+speed - and each deserves room for an `et-description`. A 20px circle is a small
 thing to aim at; a card is a large one.
 
 ```html
@@ -180,12 +180,12 @@ thing to aim at; a card is a large one.
 
 <StoryEmbed id="components-forms-selection-list-radio-group--card" height="320px" />
 
-`et-checkbox-option` takes the same preset — swap `et-radio-group` for
+`et-checkbox-option` takes the same preset - swap `et-radio-group` for
 `et-checkbox-group` above and a multi-select list of cards renders identically
 (see the `Checkbox group / Card` story).
 
 For a checkbox or switch the preset lives on the **wrapper**, `et-choice-field`,
-because that is what holds the label — so both controls get it from one place.
+because that is what holds the label - so both controls get it from one place.
 The wrapper learns the control's checked state with `:has()`.
 
 ```html
@@ -199,7 +199,7 @@ The wrapper learns the control's checked state with `:has()`.
 ::: tip The whole panel really is the control
 `et-radio` and `et-checkbox-option` **are** the panel, so nothing extra is
 needed. In `et-choice-field` the panel is a wrapper `div`, so the preset stretches
-the projected control's own hit area over it instead of forwarding clicks — which
+the projected control's own hit area over it instead of forwarding clicks - which
 keeps one activation path, and with it one cursor, one `:hover` treatment, and the
 control's own `readonly` (clicks land, nothing toggles) and `disabled` (the panel
 dims as a unit and shows `not-allowed`) behavior.
@@ -222,14 +222,14 @@ still slides between segments.
 The tabs variant only changes how the selection is drawn. The group is still a
 `radiogroup` bound to a form field. If your segments are **routes**, or panels of
 content that should be linkable and announced as tabs, use
-[tabs](/components/tabs) instead — this variant is for a filter that happens to
+[tabs](/components/tabs) instead - this variant is for a filter that happens to
 look like tabs.
 :::
 
-## Rating — `et-rating` {#rating}
+## Rating - `et-rating` {#rating}
 
 A star rating implementing the slider pattern (`role="slider"`, one keyboard
-stop). Value is `number | null` — `null` means no rating.
+stop). Value is `number | null` - `null` means no rating.
 
 ```html
 <et-rating [formField]="demoForm.stars" [max]="5" allowHalf>
@@ -242,20 +242,20 @@ stop). Value is `number | null` — `null` means no rating.
 
 | Input       | Type                  | Default | Description                                                                              |
 | ----------- | --------------------- | ------- | ---------------------------------------------------------------------------------------- |
-| `max`       | `number \| undefined` | `5`     | Number of steps. Reserved by signal forms — a schema `max(...)` validator binds into it. |
+| `max`       | `number \| undefined` | `5`     | Number of steps. Reserved by signal forms - a schema `max(...)` validator binds into it. |
 | `allowHalf` | `boolean`             | `false` | Half-star steps for pointer, keyboard and rendering.                                     |
 | `readonly`  | `boolean`             | `false` | Display-only (still focusable, e.g. for review averages).                                |
 
 Interaction: hovering previews without committing, clicking commits (clicking the
 current value **clears** to `null`), and **dragging/swiping across the stars**
-(mouse or touch) previews continuously and commits on release — vertical page
+(mouse or touch) previews continuously and commits on release - vertical page
 scrolling stays untouched (`touch-action: pan-y`). Arrows step by `1` (or `0.5`),
 <kbd>Home</kbd>/<kbd>End</kbd> jump to first/last step,
-<kbd>Backspace</kbd>/<kbd>Delete</kbd> clear — arrowing below the first step also
+<kbd>Backspace</kbd>/<kbd>Delete</kbd> clear - arrowing below the first step also
 clears. The host exposes `aria-valuemin="0"`/`aria-valuemax`/`aria-valuenow` and
 an `aria-valuetext` like `3.5 of 5`.
 
-The default stars fill as **one continuous motion** — a single clipped overlay
+The default stars fill as **one continuous motion** - a single clipped overlay
 row sweeps across the icons with the theme's primary color. Custom icons via an
 `ng-template[etRatingIcon]` (context: the state `'full' | 'half' | 'empty'` and
 the 1-based `index`) render per-step instead and don't take part in the sweep.
@@ -269,7 +269,7 @@ ARIA/visual masking only (no `mixedLabel`): `et-rating` masks its
 `aria-valuetext`, and the selection groups (`et-radio-group`, `et-checkbox-group`,
 `et-segmented-button-group`) render nothing as `aria-checked`. `et-checkbox` and
 `et-switch` carry this concept as their platform-named `indeterminate` input
-rather than `mixed` — reach for `et-checkbox` when the state itself must reach
+rather than `mixed` - reach for `et-checkbox` when the state itself must reach
 assistive tech (it reflects `aria-checked="mixed"`; the switch keeps
 `aria-checked` boolean). See the [Forms overview](/components/forms#mixed-values-bulk-editing).
 
@@ -284,7 +284,7 @@ assistive tech (it reflects `aria-checked="mixed"`; the switch keeps
   `aria-readonly`.
 - The rating host is a `role="slider"` with a single keyboard stop and a spoken
   `aria-valuetext`.
-- Every group/control needs an accessible name — a projected `et-label` or your
+- Every group/control needs an accessible name - a projected `et-label` or your
   own `aria-label`/`aria-labelledby`. See
   [Validation & accessibility](/components/forms#validation-accessibility).
 

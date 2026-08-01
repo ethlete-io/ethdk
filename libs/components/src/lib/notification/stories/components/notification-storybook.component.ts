@@ -59,7 +59,7 @@ export class NotificationStorybookComponent {
   protected manager = injectNotificationManager();
 
   /**
-   * The stack is appended to the body, so it inherits its writing direction from the document root —
+   * The stack is appended to the body, so it inherits its writing direction from the document root -
    * not from this component. Toggling it here is the only way to see the `start`/`end` positions and
    * the slide-in animation flip.
    */

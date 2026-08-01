@@ -189,7 +189,7 @@ export const createTrackingFeature = <TBuilders extends readonly AnyQueryBuilder
       } catch (error) {
         // Some payloads cannot leave the tab they were made in: a query snapshot is a bundle of
         // signals, and the structured clone algorithm throws on functions. Firing the handlers here
-        // is the lesser evil — the event reaches a handler in the wrong tab rather than taking the
+        // is the lesser evil - the event reaches a handler in the wrong tab rather than taking the
         // effect it was emitted from down with it.
         if (isDevMode()) {
           console.warn(`[@ethlete/query] Could not forward the "${event}" tracking event to the leader tab.`, error);

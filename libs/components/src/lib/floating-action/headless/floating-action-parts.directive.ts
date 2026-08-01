@@ -19,7 +19,7 @@ const assertInsideFloatingAction = (floatingAction: unknown, directiveName: stri
 };
 
 /**
- * The trigger's home in the document flow — the element that stays put and keeps its space when the trigger
+ * The trigger's home in the document flow - the element that stays put and keeps its space when the trigger
  * detaches.
  *
  * It has to be a separate element from the trigger, and that is the whole trick: once the trigger is
@@ -38,7 +38,7 @@ const assertInsideFloatingAction = (floatingAction: unknown, directiveName: stri
   host: { class: 'et-floating-action-anchor' },
 })
 export class FloatingActionAnchorDirective {
-  /** @internal Where the anchor sits relative to the viewport — the input to the whole state machine. */
+  /** @internal Where the anchor sits relative to the viewport - the input to the whole state machine. */
   public intersection = signalHostElementIntersection();
 
   constructor() {
@@ -50,7 +50,7 @@ export class FloatingActionAnchorDirective {
 }
 
 /**
- * The button (or link) itself. Carries the class the stylesheet moves, and nothing else — it stays the same
+ * The button (or link) itself. Carries the class the stylesheet moves, and nothing else - it stays the same
  * element in the same place in the DOM whether it is inline or floating, so the tab order never changes and a
  * screen reader never sees it appear or disappear.
  *
@@ -74,7 +74,7 @@ export class FloatingActionTriggerDirective {
 }
 
 /**
- * The region the trigger acts on — the results list a filter button filters, the form a save bar saves.
+ * The region the trigger acts on - the results list a filter button filters, the form a save bar saves.
  *
  * Optional, and what it buys is knowing when to *stop* offering the action: once this has scrolled past, the
  * reader is somewhere else on the page and a pinned "Filter" button is just clutter. Without it the trigger
@@ -101,7 +101,7 @@ export class FloatingActionScopeDirective {
 }
 
 /**
- * Where `scrollToTop()` scrolls to. Optional — without it the floating action's own element is the target,
+ * Where `scrollToTop()` scrolls to. Optional - without it the floating action's own element is the target,
  * which is usually what you want.
  *
  * Put it somewhere else when the thing to return to isn't the top of the container: a filter panel that should

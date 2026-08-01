@@ -21,7 +21,7 @@ export type {
   RichTextMarkStates,
 } from './rich-text-editor-dom-core';
 
-/** A caret at an element boundary (empty paragraph, empty editor) has no client rect at all — an
+/** A caret at an element boundary (empty paragraph, empty editor) has no client rect at all - an
  *  all-zero rect reads as "reference hidden" to the overlay and instantly closes it. Approximate
  *  the visible caret instead: the element's content-box top-left, one line high. */
 const caretRectFallback = (range: Range): DOMRect => {
@@ -48,7 +48,7 @@ const hasNoRect = (rect: DOMRect) => rect.x === 0 && rect.y === 0 && rect.width 
 
 /**
  * The rect selection popovers (link editor, floating toolbar) anchor to. A range whose boundaries
- * sit outside the text — a triple-click selects the whole `<li>`/`<p>` element — reports the
+ * sit outside the text - a triple-click selects the whole `<li>`/`<p>` element - reports the
  * block's full-width border box from `getBoundingClientRect()`, which would center the popover's
  * arrow on the block instead of on the text. Clamping both boundaries into the first/last text
  * nodes inside the range keeps the rect on the rendered text. Collapsed ranges (carets) and
@@ -95,7 +95,7 @@ export const rangeTextBoundingRect = (range: Range): DOMRect => {
  * Composes the per-domain DOM modules into the single per-editor service the directive injects.
  * The split keeps each domain readable and testable on its own; the facade keeps consumption
  * trivial (one injected object, same API as before the split). Genuinely optional domains do NOT
- * live here — table caret navigation, for example, ships with `provideRichTextEditorTableTool`.
+ * live here - table caret navigation, for example, ships with `provideRichTextEditorTableTool`.
  */
 const richTextEditorDomFactory = () => {
   const renderer = injectRenderer();

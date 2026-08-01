@@ -42,7 +42,7 @@ export class RoutingStorybookRouteComponent {}
     <ng-template etOverlayHeaderTemplate>Home</ng-template>
     <div class="rt-page">
       <p class="rt-page-text">
-        This is the <strong>first step</strong> of the routing demo. The overlay has its own internal router —
+        This is the <strong>first step</strong> of the routing demo. The overlay has its own internal router -
         navigation never touches Angular's application router. The header title is supplied by each page via
         <code>etOverlayHeaderTemplate</code> and rendered through <code>et-overlay-route-header-template-outlet</code>.
       </p>
@@ -59,7 +59,7 @@ export class RoutingDemoPage1Component {}
   template: `
     <ng-template etOverlayHeaderTemplate>Step 2</ng-template>
     <div class="rt-page">
-      <p class="rt-page-text">Second step. Any content can live here — forms, confirmations, data previews, etc.</p>
+      <p class="rt-page-text">Second step. Any content can live here - forms, confirmations, data previews, etc.</p>
       <ul class="rt-page-list">
         <li>Item one</li>
         <li>Item two</li>

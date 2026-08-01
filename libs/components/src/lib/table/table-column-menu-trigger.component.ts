@@ -18,7 +18,7 @@ import { TableColumnMeta } from './headless/table-features';
  * `registerHeaderAdornment`).
  *
  * This is where the menu system is actually referenced, and it is created with the feature's own
- * injector, so it reaches the feature — and the table's state — by plain DI.
+ * injector, so it reaches the feature - and the table's state - by plain DI.
  *
  * @internal
  */
@@ -54,6 +54,6 @@ export class TableColumnMenuTriggerComponent {
   /** The column this menu acts on. Set by the table (see {@link TableHeaderAdornment}). */
   public column = input.required<TableColumnMeta>();
 
-  /** The host table's wording — every string here comes from there, never from this component. */
+  /** The host table's wording - every string here comes from there, never from this component. */
   protected labels = this.menu.table.resolvedLabels;
 }

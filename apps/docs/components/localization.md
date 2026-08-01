@@ -34,7 +34,7 @@ injectLocale().currentLocale.set('de');
 
 `DATE_LOCALE` is the one thing the locale signal cannot derive. A date-fns locale is a
 module with its own formatting rules, and importing all of them to look one up would put
-all of them in your bundle — so you pass it yourself:
+all of them in your bundle - so you pass it yourself:
 
 ```ts
 import { de } from 'date-fns/locale';
@@ -49,7 +49,7 @@ was never provided.
 
 ## 3. Label tokens
 
-Every domain with strings of its own exposes exactly one pair — `provide<Domain>Labels` to
+Every domain with strings of its own exposes exactly one pair - `provide<Domain>Labels` to
 localize a subtree, `inject<Domain>Labels()` to read the result. All of them are built with
 `defineLabels` from `@ethlete/core`, so all of them behave identically:
 
@@ -68,7 +68,7 @@ Three things hold for every token:
 
 - **Partial.** What you leave out keeps its English default (or, for
   `QUERY_ERROR_LABELS` and `FILTER_OVERLAY_LABELS`, whatever the current locale resolves
-  to — both ship German as well). Overriding a single key is fine.
+  to - both ship German as well). Overriding a single key is fine.
 - **A signal out.** `inject<Domain>Labels()` returns `Signal<Labels>`, because both the
   locale and the provided set can change at runtime. Read it in a template or computed;
   never destructure it once.
@@ -88,7 +88,7 @@ providePaginationLabels({
 ### Per instance
 
 Most components also take a `labels` input (or a single-string input like `clearLabel`)
-that layers over the provided set — for the one paginator that needs different wording,
+that layers over the provided set - for the one paginator that needs different wording,
 not for translating:
 
 ```html
@@ -104,7 +104,7 @@ that provides labels needs no per-instance wiring at all.
 
 | Token                     | Provide with                  | Covers                                                                       |
 | ------------------------- | ----------------------------- | ---------------------------------------------------------------------------- |
-| `FORM_FIELD_LABELS`       | `provideFormFieldLabels`      | `mixed` and `clear` — shared by **every** form control                       |
+| `FORM_FIELD_LABELS`       | `provideFormFieldLabels`      | `mixed` and `clear` - shared by **every** form control                       |
 | `INPUT_LABELS`            | `provideInputLabels`          | Number steppers, password reveal, Caps Lock warning                          |
 | `DATE_TIME_LABELS`        | `provideDateTimeLabels`       | Picker triggers, range start/end, date/time tabs, parse errors               |
 | `CALENDAR_LABELS`         | `provideCalendarLabels`       | Step/zoom controls of each view, week column (names come from `DATE_LOCALE`) |
@@ -124,13 +124,13 @@ that provides labels needs no per-instance wiring at all.
 | `LOADER_LABELS`           | `provideLoaderLabels`         | What spinners, brand loaders and skeletons announce                          |
 | `NOTIFICATION_LABELS`     | `provideNotificationLabels`   | The dismiss button                                                           |
 | `STREAM_LABELS`           | `provideStreamLabels`         | Consent gate, failure overlay, PiP placeholder and controls, frame title     |
-| `QUERY_ERROR_LABELS`      | `provideQueryErrorLabels`     | Status titles/messages and retry — **English and German ship**               |
-| `FILTER_OVERLAY_LABELS`   | `provideFilterOverlayLabels`  | Result-count submit button and reset — **English and German ship**           |
+| `QUERY_ERROR_LABELS`      | `provideQueryErrorLabels`     | Status titles/messages and retry - **English and German ship**               |
+| `FILTER_OVERLAY_LABELS`   | `provideFilterOverlayLabels`  | Result-count submit button and reset - **English and German ship**           |
 
 ## Your own strings vs the library's
 
 The tokens above cover strings the library wrote. Text you supply travels a different
-route, because there is nothing to override — you pass the words in:
+route, because there is nothing to override - you pass the words in:
 
 - **Content.** Labels, hints, placeholders, options, table headers, notification messages,
   empty-state templates: whatever you write is what renders. Translate it before you bind
@@ -154,7 +154,7 @@ route, because there is nothing to override — you pass the words in:
 ## Writing a component that has strings
 
 If you add a component with a string of its own, give its domain a label token rather than
-a literal — `defineLabels` is the whole mechanism:
+a literal - `defineLabels` is the whole mechanism:
 
 ```ts
 import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
@@ -175,5 +175,5 @@ Four statements, not one, and the `/* @__PURE__ */` annotations are load-bearing
 default-strings table into every app that imported anything from the package. See
 [core utilities](/core/utilities#why-four-statements-instead-of-one).
 
-`defineLabels` also accepts a locale-derived default set — `defineLabels('X_LABELS', (locale) => …)` —
+`defineLabels` also accepts a locale-derived default set - `defineLabels('X_LABELS', (locale) => …)` -
 which is how `QUERY_ERROR_LABELS` ships two languages while still taking partial overrides.

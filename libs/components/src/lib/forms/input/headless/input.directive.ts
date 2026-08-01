@@ -17,7 +17,7 @@ type InputType = (typeof INPUT_TYPES)[keyof typeof INPUT_TYPES];
 
 @Directive({
   selector: '[etInput]',
-  // the built-in mask host — any [etInputMask] on the same element attaches through this
+  // the built-in mask host - any [etInputMask] on the same element attaches through this
   providers: [{ provide: INPUT_MASK_HOST, useExisting: InputDirective }],
   host: {
     '(input)': 'handleNativeInput($event)',
@@ -40,10 +40,10 @@ export class InputDirective extends TextFieldControlDirective implements FormVal
   public hasValue = computed(() => this.mixed() || this.value().length > 0);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.TEXT_INPUT);
 
-  /** The text the native input renders — empty while mixed so the raw value never reaches the DOM. */
+  /** The text the native input renders - empty while mixed so the raw value never reaches the DOM. */
   public displayValue = computed(() => (this.mixed() ? '' : this.value()));
 
-  /** The placeholder the native input renders — `mixedLabel` overrides the consumer placeholder while mixed. */
+  /** The placeholder the native input renders - `mixedLabel` overrides the consumer placeholder while mixed. */
   public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));
 
   /**
@@ -65,12 +65,12 @@ export class InputDirective extends TextFieldControlDirective implements FormVal
     }
   }
 
-  /** @internal Suppresses the built-in native `(input)` sync — see `nativeSyncSuppressed`. */
+  /** @internal Suppresses the built-in native `(input)` sync - see `nativeSyncSuppressed`. */
   public suppressNativeSync() {
     this.nativeSyncSuppressed = true;
   }
 
-  /** @internal Restores the built-in native `(input)` sync — the mask calls this when set to `null`. */
+  /** @internal Restores the built-in native `(input)` sync - the mask calls this when set to `null`. */
   public resumeNativeSync() {
     this.nativeSyncSuppressed = false;
   }

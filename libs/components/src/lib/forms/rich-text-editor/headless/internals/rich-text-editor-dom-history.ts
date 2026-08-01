@@ -44,7 +44,7 @@ export const createRichTextEditorDomHistory = (core: RichTextEditorDomCore) => {
     prefix.setStart(el, 0);
     prefix.setEnd(range.startContainer, range.startOffset);
 
-    // Range.toString() concatenates the text nodes it spans — the same metric locateTextOffset walks.
+    // Range.toString() concatenates the text nodes it spans - the same metric locateTextOffset walks.
     const start = prefix.toString().length;
 
     return { start, end: start + range.toString().length };

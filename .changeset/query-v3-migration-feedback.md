@@ -7,7 +7,7 @@ Close the gaps found while migrating a real workspace from the legacy client to 
 - **Client-level headers.** `createQueryClient({ headers })` takes `HttpHeaders` or a function
   re-read on every request, so a signal can drive it. Per-query `args.headers` merge on top and win
   per name. `client.refreshQueriesInUse()` re-runs every bound `GET`/`HEAD`/`OPTIONS` (in-flight ones
-  included) — the replacement for v2's `setDefaultHeaders({ refreshQueriesInUse: true })`.
+  included) - the replacement for v2's `setDefaultHeaders({ refreshQueriesInUse: true })`.
 - **`provider.setTokens(access, refresh)`** on the public bearer auth provider, for tokens issued
   outside it (SSO callbacks, native shells). Previously reachable only from inside a custom feature.
 - **`logout()` now resets bound secure queries.** It already unbound their cache entries, but the
@@ -36,6 +36,6 @@ Close the gaps found while migrating a real workspace from the legacy client to 
 - Auth providers are scaffolded from the v2 `V2BearerAuthProvider` config instead of `queries: []`.
 - Devtools are migrated rather than deleted: the per-client `provideQueryClientForDevtools` calls
   collapse into one `provideQueryDevtools()`, `QueryDevtoolsComponent` is re-imported from
-  `@ethlete/components`, and `<et-query-devtools>` markup is left alone — both versions use that selector.
+  `@ethlete/components`, and `<et-query-devtools>` markup is left alone - both versions use that selector.
 - New report tasks for dropped v2 client options, missing `provideHttpClient()`, `setDefaultHeaders`
   call sites and the auth import-cycle layout.

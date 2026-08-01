@@ -6,7 +6,7 @@ import { TableVirtualScrollStylesComponent } from './table-virtual-scroll-styles
 
 /** Options for {@link TableVirtualScrollDirective}. */
 export type TableVirtualScrollConfig = TableFeatureConfig & {
-  /** Row height assumed before a real row is measured — tune it to your rows for a stable first paint. @default 48 */
+  /** Row height assumed before a real row is measured - tune it to your rows for a stable first paint. @default 48 */
   estimateRowHeight?: number;
   /** Rows kept rendered just outside the viewport on each side, to hide scroll flicker. @default 6 */
   overscan?: number;

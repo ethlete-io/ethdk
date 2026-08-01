@@ -18,7 +18,7 @@ export type TableColumnMenuConfig = TableFeatureConfig & {
 };
 
 /**
- * Opt-in per-column menu for `et-table`: a `⋮` in every header cell opening the column's actions —
+ * Opt-in per-column menu for `et-table`: a `⋮` in every header cell opening the column's actions -
  * sort ascending / descending / clear, reset a resized width, hide the column.
  *
  * It carries the menu system, so it is a separate feature: a table without it never pulls that in.
@@ -54,7 +54,7 @@ export class TableColumnMenuDirective {
     });
   }
 
-  /** Whether the column is sorted, and which way — drives the menu's checked state. */
+  /** Whether the column is sorted, and which way - drives the menu's checked state. */
   public directionOf(column: TableColumnMeta) {
     return this.table.sortDirection(column.key);
   }
@@ -93,7 +93,7 @@ export class TableColumnMenuDirective {
   }
 
   /**
-   * Hiding the last visible column would leave a table with no header to un-hide it from — a
+   * Hiding the last visible column would leave a table with no header to un-hide it from - a
    * table-wide condition, so it takes no column.
    */
   public canHide() {

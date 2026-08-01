@@ -1,7 +1,7 @@
 /**
  * An error body can be an HTML page instead of JSON: a proxy's 502, a load balancer's maintenance page, a
  * platform's "service temporarily unavailable". The markup is never worth showing, but the sentence inside it
- * usually is — this file pulls that sentence out.
+ * usually is - this file pulls that sentence out.
  *
  * Parsing is done with string matching rather than `DOMParser` on purpose: it must work during SSR, and the
  * markup must never reach a DOM. What comes back is plain text, so a template can bind it as text like any
@@ -11,7 +11,7 @@
 /** A full document, however sloppily written. */
 const HTML_DOCUMENT_PATTERN = /<!doctype\s+html|<html[\s>]|<head[\s>]|<body[\s>]/i;
 
-/** A fragment — matched only as a balanced pair, so a message that merely mentions `<p>` is not markup. */
+/** A fragment - matched only as a balanced pair, so a message that merely mentions `<p>` is not markup. */
 const HTML_ELEMENT_PATTERN = /<(h[1-6]|p|div|title|pre)\b[^>]*>[\s\S]*<\/\1>/i;
 
 /** Carries no readable text, and `<style>` in particular would otherwise flood the fallback. */
@@ -32,7 +32,7 @@ const HTML_TITLE_PATTERN = /<title\b[^>]*>([\s\S]*?)<\/title>/i;
 const HTML_PARAGRAPH_PATTERN = /<p\b[^>]*>([\s\S]*?)<\/p>/gi;
 
 /**
- * The entities an error page actually uses. A complete table would be kilobytes for no gain — anything missing
+ * The entities an error page actually uses. A complete table would be kilobytes for no gain - anything missing
  * is left as written, which is still readable.
  */
 const HTML_ENTITIES: Record<string, string> = {
@@ -47,7 +47,7 @@ const HTML_ENTITIES: Record<string, string> = {
   thinsp: ' ',
   shy: '',
   ndash: '–',
-  mdash: '—',
+  mdash: '-',
   hellip: '…',
   lsquo: '‘',
   rsquo: '’',
@@ -133,7 +133,7 @@ export const isHtmlErrorPayload = (value: unknown): value is string =>
  * The HTML of an error body, or `null` when the body isn't an error page.
  *
  * Two shapes carry one: the raw string body of any failed response, and the `{ error, text }` wrapper
- * Angular's XHR backend produces when a `200` response fails to parse as JSON — which is how a proxy handing
+ * Angular's XHR backend produces when a `200` response fails to parse as JSON - which is how a proxy handing
  * back an HTML page with a success status arrives.
  */
 export const htmlErrorPayload = (body: unknown): string | null => {

@@ -172,7 +172,7 @@ export class GridItemDirective {
 
     this.settleListener?.unsubscribe();
 
-    // The timer is the fallback for drops that land exactly in the current slot — no
+    // The timer is the fallback for drops that land exactly in the current slot - no
     // transition fires then.
     this.settleListener = merge(settled$, timer(SETTLE_FALLBACK_MS))
       .pipe(

@@ -1,12 +1,12 @@
-# 10 — Rich filter (floating filter button)
+# 10 - Rich filter (floating filter button)
 
 **Status: DONE (2026-07-30). Layer 1 as `floating-action`, Layer 2 as `filter-overlay`.**
 Size: S. Research done 2026-07-23 against `libs/cdk/src/lib/components/filter/`
-(~290 lines — only `rich-filter/` exists).
+(~290 lines - only `rich-filter/` exists).
 
 ## Layer 1 outcome (2026-07-30)
 
-Shipped as `libs/components/src/lib/floating-action/` — the name chosen with the
+Shipped as `libs/components/src/lib/floating-action/` - the name chosen with the
 team over `sticky-trigger` / `floating-trigger`, since the pattern is the FAB one
 and "floating action" says so.
 
@@ -29,22 +29,22 @@ hidden` is now applied, delayed to the end of the scale-out.
 - `disabled` input, for turning the behaviour off per breakpoint/route without
   unwinding the markup.
 - Structural CSS mounted via `injectStyleManager()`, so the directive-only
-  composition works — same pattern as masonry.
+  composition works - same pattern as masonry.
 
 **CSS-first alternative rejected, as the plan expected**: `position: sticky` can
 pin to an edge but cannot move an element to a viewport corner, and cannot express
-"and the region this acts on is still on screen" — which is the condition that
+"and the region this acts on is still on screen" - which is the condition that
 stops a pinned button following the reader onto unrelated content. Two
 intersection observers it is.
 
 Verified headlessly: all three states reached (the story's page had to be
-lengthened before `hidden` was reachable at all — the results list could not
+lengthened before `hidden` was reachable at all - the results list could not
 scroll fully past), `position`/`scale`/`visibility` per state, a stable tab-order
 index across states, `scrollToTop()`, and `disabled` staying inline while scrolled.
 
 ## What it actually is (investigation result)
 
-**Not a filter UI and not query-coupled at all** — zero `@ethlete/query`
+**Not a filter UI and not query-coupled at all** - zero `@ethlete/query`
 imports. It's a scroll/visibility coordination pattern: a "Filter" trigger
 button that becomes `position: fixed` (floating, scale-in animated) once its
 inline slot scrolls out of view while the related content is still visible.
@@ -63,12 +63,12 @@ floating filter button opens a filter panel as an overlay whose content is
 router-driven. The glue util exists in cdk:
 **`libs/cdk/src/lib/components/overlay/components/overlay/filter-overlay.ts`**
 (`provideFilterOverlayConfig` + `FilterOverlayService`). Read it before
-designing — its semantics are the spec:
+designing - its semantics are the spec:
 
 - Config: `{ form: FormGroup, defaults?, searchPreviewQueryFn?,
 totalHitsExtractorFn?, submitButtonConfigFn? }`, provided at the overlay
   component via DI token.
-- **Draft isolation**: the service `cloneFormGroup`s the config's form — the
+- **Draft isolation**: the service `cloneFormGroup`s the config's form - the
   overlay edits a copy; only `submit()` writes the draft value back to the
   real form and closes with `{ didUpdate: true, formValue }` (else
   `{ didUpdate: false }`). So the established apply model is **explicit
@@ -88,7 +88,7 @@ The components lib already ships the overlay half:
 `sidebar-overlay.ts`, and `overlay-unsaved-changes-guard.ts`. What's missing
 is this packaged pattern on top of them.
 
-## Rewrite plan — two layers
+## Rewrite plan - two layers
 
 ### Layer 1: floating trigger primitive (the actual cdk port)
 
@@ -102,7 +102,7 @@ is this packaged pattern on top of them.
   `scrollToTop()`.
 - Consider `position: sticky` + scroll-driven animations as a CSS-first
   alternative; keep the IO-based approach if sticky can't express the
-  "content still visible" condition (likely — IO version is fine).
+  "content still visible" condition (likely - IO version is fine).
 - A11y: sensible focus order for the floating button, fixed variant must not
   cover content for keyboard users, reduced motion on the scale-in.
 
@@ -114,27 +114,27 @@ its weak spots:
 
 - **Keep**: draft-clone isolation with explicit submit/discard, `defaults` +
   `reset()`, the `FilterOverlayResult` contract, and the live
-  results-preview-driving-the-submit-button UX — that's the feature's soul.
-- **Modernize the form layer — signal forms, required**: cdk clones a raw
+  results-preview-driving-the-submit-button UX - that's the feature's soul.
+- **Modernize the form layer - signal forms, required**: cdk clones a raw
   reactive `FormGroup`; the new version is built on **signal forms** via the
   signals QueryForm (`00-query-form-signal-forms.md`) as the page's filter
-  state owner — draft = clone of the query-form's fields (the signals
+  state owner - draft = clone of the query-form's fields (the signals
   QueryForm needs a clone/branch capability for this; add it to 00's API
   sketch); submit writes back through `queryForm.setValue` so
   `isResetBy`/URL sync fire correctly. No reactive-forms path in the new
-  util — apps still on reactive forms keep using the cdk original until they
+  util - apps still on reactive forms keep using the cdk original until they
   migrate.
-- **Modernize the query layer — reuse the shared query-adapter core**:
+- **Modernize the query layer - reuse the shared query-adapter core**:
   `searchPreviewQueryFn` is typed against legacy clients
   (`AnyV2Query`/`queryComputed`/`switchQueryState`). The new preview query
   should be another thin wrapper over the **generic adapter core extracted
   from the select adapters in the shipped table plan Phase 0** (query lifecycle,
   reactive args rebuild from the draft value, loading/error derivation,
-  per-client variants) — the same machinery behind `selectOptionsFromQuery`
+  per-client variants) - the same machinery behind `selectOptionsFromQuery`
   and the planned `tableRowsFromQuery`. The filter overlay only needs the
   non-paginated slice: draft value → args → single query, `loading`/`error`/
   response signals, from which `totalHits` and the submit-button state
-  derive. This makes the filter overlay the third consumer of that core —
+  derive. This makes the filter overlay the third consumer of that core -
   factor the extraction with it in mind.
 - **Locale**: `injectLocale()` instead of the `locale: 'en'|'de'` param
   (same fix as `09-query-error.md`); keep `submitButtonConfigFn` for full
@@ -147,10 +147,10 @@ its weak spots:
   back), responsive positioning (bottom sheet on mobile / sidebar or dialog
   on desktop via the overlay system's existing responsive config), and
   optionally `query-param-overlay-link` so the open panel survives
-  reload/back. cdk's util never handled the routed case explicitly — the new
+  reload/back. cdk's util never handled the routed case explicitly - the new
   one should demonstrate it first-class in stories/docs.
 - **Unsaved changes**: with draft isolation, dismissing with edits discards
-  silently today — optionally integrate `overlay-unsaved-changes-guard`
+  silently today - optionally integrate `overlay-unsaved-changes-guard`
   (config flag) to prompt instead.
 - **Scroll restoration**: keep `scrollToTop()` reachable from the util (after
   applying filters, scroll the list back to top).
@@ -187,7 +187,7 @@ Modernized as planned:
 
 - **Signal forms.** `queryForm` replaces cdk's `form` + `defaults`; the draft is
   `queryForm.branch()` rather than `cloneFormGroup()`. `branch()` already existed
-  — the signals QueryForm was built with this pattern in mind (00's plan).
+  - the signals QueryForm was built with this pattern in mind (00's plan).
   `submit()` writes back via `queryForm.setValue()`, so the `isResetBy` graph and
   URL sync fire; verified by a test asserting `page` resets when `search` changes.
 - **Current query client.** `filterOverlayPreviewFromQuery` replaces
@@ -205,17 +205,17 @@ Modernized as planned:
 
 ### Deviations and findings
 
-- **`reset()` needs no configured defaults** (cdk threw without them) — the query
+- **`reset()` needs no configured defaults** (cdk threw without them) - the query
   form knows its own.
 - **cdk's no-preview bug fixed.** Its default resolver returned the _loading_
   state when query state and total were both null, which is exactly the
-  no-preview case — so a filter overlay without a search preview had a
+  no-preview case - so a filter overlay without a search preview had a
   permanently disabled submit button. There is now an explicit `hasPreview`
   branch. Covered by a test.
 - **`isPristine()` added, and it is what the reset button uses.**
   `activeFilterCount` deliberately excludes navigation state (`search`, `page`,
   `sort`), so a reader who has typed a search has nothing to show in a badge but
-  plenty to reset — using the count would have left reset disabled. Found while
+  plenty to reset - using the count would have left reset disabled. Found while
   writing the tests.
 - **`maxCountedHits`** is configurable (cdk hardcoded 250).
 - **Typed by the filters' value shape, not their field map.** Naming the field map
@@ -223,7 +223,7 @@ Modernized as planned:
   `valueToQueryParam: (value: T) => unknown`, making it contravariant in `T`, so a
   concrete field map does not satisfy `Record<string, QueryFieldDef<unknown>>`.
   Fixed at the source in `@ethlete/query` (that member is now method-syntax, hence
-  bivariant — a `patch`), and the public API is typed via
+  bivariant - a `patch`), and the public API is typed via
   `FilterOverlayValueOf<…>` so consumers never have to name either.
 - **Unsaved-changes guard integration deliberately not wired.** `hasChanges()` is
   exposed, which is the input such a guard needs, but making dismissal prompt by
@@ -231,7 +231,7 @@ Modernized as planned:
   pattern. A consumer can compose `createOverlayUnsavedChangesGuard` with
   `hasChanges()` themselves.
 - `scrollToTop()` stays on the Layer 1 floating action, reachable from the trigger
-  after applying — no need to duplicate it here.
+  after applying - no need to duplicate it here.
 - The story uses plain buttons rather than form controls for the draft fields: it
   is about the draft/apply contract, and binding a draft field to an `<et-input>`
   is the forms guides' subject. Docs show the `[formField]` form.
@@ -239,6 +239,6 @@ Modernized as planned:
 ### Also fixed in passing
 
 Every story added in this port sequence used `etButton` (the _headless_ button
-directive) with `variant`/`size`, which live on the `et-button` **component** — so
+directive) with `variant`/`size`, which live on the `et-button` **component** - so
 those attributes were silently inert, and one `[variant]` binding logged NG0303.
 All five stories now use `et-button`.

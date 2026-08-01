@@ -58,7 +58,7 @@ export class TimeInputStorybookComponent {
   public minuteStep = input(5);
   public secondStep = input(1);
   public locale = input<'default' | 'de'>('default');
-  /** `HH:mm` bounds — the story turns them into the `Date`s the input takes. */
+  /** `HH:mm` bounds - the story turns them into the `Date`s the input takes. */
   public minTime = input<string | null>(null);
   public maxTime = input<string | null>(null);
   public filter = input<TimeFilterPreset>('none');

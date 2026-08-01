@@ -4,7 +4,7 @@ import { PaginationDirective } from '../headless/pagination.directive';
 
 /**
  * Opt-in paged-SEO for a paginator. Add it next to `etPagination` (or `et-pagination`) and give it a
- * `urlForPage` mapping — it keeps `<link rel="canonical">` pointing at the current page and emits
+ * `urlForPage` mapping - it keeps `<link rel="canonical">` pointing at the current page and emits
  * `rel="prev"`/`rel="next"` links so crawlers understand the page series, all via the non-deprecated
  * core head-binding utils (SSR-safe; each binding cleans itself up on destroy).
  *
@@ -13,7 +13,7 @@ import { PaginationDirective } from '../headless/pagination.directive';
  *
  * The bindings go through `applyLinkBinding`/`applyHeadTitleBinding` directly (not
  * `applyCanonicalBinding` etc.), because the `create*PropertyBinding` helpers read their input
- * `untracked` and so would freeze the URL at the first page — we need it to track `page`.
+ * `untracked` and so would freeze the URL at the first page - we need it to track `page`.
  *
  * @example
  * <et-pagination
@@ -31,7 +31,7 @@ import { PaginationDirective } from '../headless/pagination.directive';
 export class PaginationSeoDirective {
   private pagination = inject(PaginationDirective);
 
-  /** Maps a page number to its absolute URL — used for the canonical link and prev/next rels. */
+  /** Maps a page number to its absolute URL - used for the canonical link and prev/next rels. */
   public urlForPage = input<((page: number) => string) | null>(null, { alias: 'etPaginationSeo' });
 
   /** Optional: maps a page number to a head `<title>` part (return `null` to leave the title untouched, e.g. on page 1). */

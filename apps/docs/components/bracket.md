@@ -1,14 +1,14 @@
 # Bracket
 
-`<et-bracket>` renders a tournament bracket — single-elimination, double-elimination
-(synchronous or deferred/async lower brackets), and swiss-with-elimination stages — as
+`<et-bracket>` renders a tournament bracket - single-elimination, double-elimination
+(synchronous or deferred/async lower brackets), and swiss-with-elimination stages - as
 an absolutely-positioned grid of match cards wired together with SVG connector lines. You
 feed it a `BracketDataSource` (build one from your API with the bundled integrations) and
 it computes the layout, draws the connectors, and traces a participant's journey through the
 tournament on hover or on demand.
 
 Import `BRACKET_IMPORTS` (or `BracketComponent` directly) and **register the
-[layouts](#layouts) your app draws** — a layout is an opt-in value, so only the ways of drawing a
+[layouts](#layouts) your app draws** - a layout is an opt-in value, so only the ways of drawing a
 bracket you actually name end up in your bundle. `provideBracketConfig({ layouts, ... })` registers
 them and sets app-wide defaults for the layout inputs in the same call.
 
@@ -22,7 +22,7 @@ defaults work; leave it out and they render nothing (dev mode throws
 
 ## Usage
 
-Registering a layout is step one — without one the bracket has no code for your source's `mode` and
+Registering a layout is step one - without one the bracket has no code for your source's `mode` and
 throws [`ET3413`](#layouts) rather than guessing:
 
 ```ts
@@ -36,7 +36,7 @@ import {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBracketConfig({
-      // what this app can draw — see Layouts below
+      // what this app can draw - see Layouts below
       layouts: [singleEliminationBracketLayout()],
       // how to read your match data, for the shipped cards
       matchNormalizer: normalizeEthleteBracketMatch,
@@ -68,7 +68,7 @@ export class StandingsComponent {
 
 A layout is **how a source is drawn**: it orders the rounds, positions every cell into a grid, and
 draws the SVG between them. There is one per tournament mode, plus a mirrored variant for the
-elimination modes — and each one is a plain value you create with a factory and register:
+elimination modes - and each one is a plain value you create with a factory and register:
 
 ```ts
 import {
@@ -84,8 +84,8 @@ providers: [
 ];
 ```
 
-**Registering is how you pay only for what you draw.** The renderers are big — the swiss one and the
-double-elimination grid builder are each several hundred lines — and nothing references them until a
+**Registering is how you pay only for what you draw.** The renderers are big - the swiss one and the
+double-elimination grid builder are each several hundred lines - and nothing references them until a
 factory you call does, so an app that only ever shows single-elimination brackets ships neither.
 
 | Factory                                    | Source `mode`            | Draws                                                                                                                           | Roughly adds |
@@ -94,16 +94,16 @@ factory you call does, so an app that only ever shows single-elimination bracket
 | `mirroredSingleEliminationBracketLayout()` | `single-elimination`     | The same bracket [folded in half](#mirrored-layouts), final in the middle.                                                      | ~150 LOC     |
 | `doubleEliminationBracketLayout()`         | `double-elimination`     | Upper over lower bracket, converging on the grand final (and the bracket reset).                                                | ~600 LOC     |
 | `mirroredDoubleEliminationBracketLayout()` | `double-elimination`     | The winners bracket [stacked over the losers bracket](#double-elimination-stacks-two-folds), each folded around its own centre. | ~350 LOC     |
-| `swissBracketLayout(options?)`             | `swiss-with-elimination` | Standings groups per round with group-to-group connectors — see [Swiss](#swiss).                                                | ~690 LOC     |
+| `swissBracketLayout(options?)`             | `swiss-with-elimination` | Standings groups per round with group-to-group connectors - see [Swiss](#swiss).                                                | ~690 LOC     |
 
 The two single-elimination variants share their builder, so registering both costs almost nothing
-beyond the first. The two double-elimination variants do not — they draw genuinely different shapes —
+beyond the first. The two double-elimination variants do not - they draw genuinely different shapes -
 so registering both costs roughly the sum.
 
 ### Per instance
 
-Both hosts — `<et-bracket>` and
-[`<et-bracket-rounds-list>`](/components/bracket-rounds-list) — take a `layouts` input that
+Both hosts - `<et-bracket>` and
+[`<et-bracket-rounds-list>`](/components/bracket-rounds-list) - take a `layouts` input that
 **replaces** the `provideBracketConfig` list for that instance (it does not add to it). That is how
 one page draws a bracket folded while the rest of the app draws it left to right:
 
@@ -111,7 +111,7 @@ one page draws a bracket folded while the rest of the app draws it left to right
 <et-bracket [layouts]="[mirroredSingleEliminationBracketLayout()]" [source]="source()" />
 ```
 
-Create the layouts once (a field, or a module constant) rather than in the template expression — a new
+Create the layouts once (a field, or a module constant) rather than in the template expression - a new
 array on every change detection run rebuilds the grid.
 
 The first entry whose `mode` matches the source draws it, so a list may hold one layout per mode and
@@ -127,7 +127,7 @@ No bracket layout registered for mode "double-elimination". Add doubleEliminatio
 to provideBracketConfig({ layouts: [...] }) or to the layouts input.
 ```
 
-It throws in dev **and** prod, by design: a bracket that silently drew the wrong shape — or nothing —
+It throws in dev **and** prod, by design: a bracket that silently drew the wrong shape - or nothing -
 would be worse than a loud failure. If your app renders whatever mode the API returns, register a
 layout for every mode you can receive.
 
@@ -142,22 +142,22 @@ private:
 | `mode`          | The `TournamentMode` it answers for.                                                |
 | `createGrid`    | Positions the linked bracket's rounds and matches into columns.                     |
 | `drawEdges`     | Returns the SVG between the cells as an HTML string.                                |
-| `listGrouping?` | Splits a round into groups for the rounds list — what swiss uses for standings.     |
-| `listSection?`  | Puts a round under a heading in the rounds list — what double elimination uses.     |
+| `listGrouping?` | Splits a round into groups for the rounds list - what swiss uses for standings.     |
+| `listSection?`  | Puts a round under a heading in the rounds list - what double elimination uses.     |
 | `components?`   | Per-layout default cards, between the host's inputs and `provideBracketConfig`.     |
 | `styles?`       | Styles-only components mounted while this layout renders (see [Theming](#theming)). |
 
 The card component types are public (`BracketMatchComponent`, `BracketRoundHeaderComponent`,
-`BracketContinueComponent`), so the `components` slot is usable from your own code — that is how
+`BracketContinueComponent`), so the `components` slot is usable from your own code - that is how
 `swissBracketLayout({ matchComponent })` gives swiss sources a denser card than the elimination stage
 next to them. The types `createGrid` and `drawEdges` speak in (`ComputedBracketGrid`,
 `CreateBracketGridConfig`, `BracketDrawEdgesContext`) are public too, so a layout of your own can wrap
-or replace a shipped one — but the SDK's own grid builders stay internal; the five factories are the
+or replace a shipped one - but the SDK's own grid builders stay internal; the five factories are the
 supported way to get them.
 
 ## Data source
 
-The component never talks to your API directly — it takes a resolved `BracketDataSource`:
+The component never talks to your API directly - it takes a resolved `BracketDataSource`:
 
 ```ts
 type BracketDataSource<TRoundData, TMatchData> = {
@@ -188,16 +188,16 @@ shipped default listed below. The resolved set is on the component as `settings(
 
 | Input                     | Default      | Purpose                                                                              |
 | ------------------------- | ------------ | ------------------------------------------------------------------------------------ |
-| `source`                  | — (required) | The resolved `BracketDataSource`.                                                    |
-| `layouts`                 | —            | Replaces the registered layout list for this instance — see [Layouts](#layouts).     |
-| `density`                 | `'default'`  | `'default'` or `'compact'` — see [Density](#density).                                |
+| `source`                  | - (required) | The resolved `BracketDataSource`.                                                    |
+| `layouts`                 | -            | Replaces the registered layout list for this instance - see [Layouts](#layouts).     |
+| `density`                 | `'default'`  | `'default'` or `'compact'` - see [Density](#density).                                |
 | `columnWidth`             | `250`        | Width of a round column.                                                             |
 | `matchHeight`             | `75`         | Height of a match card.                                                              |
 | `columnGap`               | `60`         | Horizontal gap between round columns.                                                |
 | `rowGap`                  | `30`         | Vertical gap between matches in a column.                                            |
 | `rowRoundGap`             | `20`         | Vertical gap between the upper/lower halves of a double-elimination round.           |
-| `finalColumnWidth`        | `360`        | Width of the final column — sized for the shipped final card.                        |
-| `finalMatchHeight`        | `200`        | Height of the final match card — likewise.                                           |
+| `finalColumnWidth`        | `360`        | Width of the final column - sized for the shipped final card.                        |
+| `finalMatchHeight`        | `200`        | Height of the final match card - likewise.                                           |
 | `roundHeaderHeight`       | `50`         | Height of the round-header row.                                                      |
 | `roundHeaderGap`          | `20`         | Gap between the header row and the first match.                                      |
 | `hideRoundHeaders`        | `false`      | Drop the header row entirely.                                                        |
@@ -207,15 +207,15 @@ shipped default listed below. The resolved set is on the component as `settings(
 | `lineDashArray`           | `0`          | Connector dash length (`0` = solid).                                                 |
 | `lineDashOffset`          | `0`          | Connector dash offset.                                                               |
 | `disableJourneyHighlight` | `false`      | Turn off journey highlighting and pinning entirely.                                  |
-| `focusedParticipantId`    | `null`       | Two-way. Pins a participant's journey — see [Participant focus](#participant-focus). |
+| `focusedParticipantId`    | `null`       | Two-way. Pins a participant's journey - see [Participant focus](#participant-focus). |
 | `swissGroupPadding`       | `10`         | Padding inside a swiss group border box.                                             |
 | `swissGroupBorderRadius`  | `12`         | Corner radius of a swiss group border box.                                           |
-| `swissColors`             | —            | Per-group-type colors (see [Swiss](#swiss)).                                         |
+| `swissColors`             | -            | Per-group-type colors (see [Swiss](#swiss)).                                         |
 | `showContinueElement`     | `false`      | Append a "continue" column (see [Continue element](#continue-element)).              |
 | `continueColumnWidth`     | `250`        | Width of the continue column.                                                        |
 | `continueElementHeight`   | `75`         | Height of the continue card.                                                         |
 | `continueLineDashArray`   | `6`          | Dash length for the continue connectors.                                             |
-| `matchNormalizer`         | —            | How to read your match data, for the default cards (see below).                      |
+| `matchNormalizer`         | -            | How to read your match data, for the default cards (see below).                      |
 | `roundHeaderLevel`        | `3`          | `aria-level` the default round headers announce themselves at.                       |
 
 ## Default cards
@@ -225,14 +225,14 @@ Four cards ship with the bracket, and all three match-bearing ones are built on
 
 | Slot         | Default                                                                                                                 |
 | ------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| Match        | A compact match card — two rows, short codes, the winner emphasized with an accent bar                                  |
+| Match        | A compact match card - two rows, short codes, the winner emphasized with an accent bar                                  |
 | Final match  | A distinct hero cell: the round's name under a trophy, an accent frame in the color theme in scope, and a champion line |
-| Round header | The round's name, its swiss group's name where there is one, and its match count — as a real heading                    |
+| Round header | The round's name, its swiss group's name where there is one, and its match count - as a real heading                    |
 | Continue     | "N winners advance", with an accessible label of its own                                                                |
 
 ### The normalizer
 
-The bracket never looks inside your match payload — it hands `TMatchData` from the data source
+The bracket never looks inside your match payload - it hands `TMatchData` from the data source
 to the cards and stays out of it. So the default cards need one function that turns a match into
 the [normalized shape](/components/match#any-backend-the-normalized-match) they draw:
 
@@ -244,7 +244,7 @@ provideBracketConfig({ matchNormalizer: normalizeEthleteBracketMatch });
 ```
 
 Any other backend writes its own. It receives the **whole linked match**, not just `data`, so a
-payload that holds nothing presentational is not a dead end — participant ids, `winnerSide`,
+payload that holds nothing presentational is not a dead end - participant ids, `winnerSide`,
 `status` and the round are all there to build a card from:
 
 ```ts
@@ -271,7 +271,7 @@ provideBracketConfig({
 
 The default match card is **not** a link: the bracket can't know your routes and won't guess. A
 bracket whose cells navigate wants a `matchComponent` of its own, which is the match card on an
-anchor — the whole card becomes the link, correctly named, for free:
+anchor - the whole card becomes the link, correctly named, for free:
 
 ```ts
 @Component({
@@ -294,7 +294,7 @@ export class BracketMatchComponent {
 
 ### Localization
 
-The cards' own strings — the match count, "N winners advance", the champion line — come from
+The cards' own strings - the match count, "N winners advance", the champion line - come from
 `provideBracketLabels()`. Everything inside a match card (TBD, Live, the composed accessible
 name) comes from [`provideMatchLabels()`](/components/match#localization).
 
@@ -362,7 +362,7 @@ providers: [
           warning: '#F0B620', // decider
           negative: '#F83B51', // elimination risk
         },
-        // cards drawn for swiss sources only — a swiss stage often wants a denser card
+        // cards drawn for swiss sources only - a swiss stage often wants a denser card
         // than the elimination stage beside it
         matchComponent: SwissMatchComponent,
         roundHeaderComponent: SwissRoundHeaderComponent,
@@ -382,7 +382,7 @@ providers: [
 The cards sit between a host's inputs and the app-wide `provideBracketConfig` components: input →
 layout → config → shipped default. The `swissColors` **input** on `<et-bracket>` still exists and wins
 over the factory's `colors`, per instance. Group geometry (`swissGroupPadding`,
-`swissGroupBorderRadius`) stays where the rest of the layout geometry is — an input, or
+`swissGroupBorderRadius`) stays where the rest of the layout geometry is - an input, or
 `provideBracketConfig`.
 
 Swiss has no mirrored variant: a stage of standings groups has nothing to fold.
@@ -399,7 +399,7 @@ ignored by the [mirrored layouts](#mirrored-layouts), which have no trailing edg
 ## Mirrored layouts
 
 `mirroredSingleEliminationBracketLayout()` and `mirroredDoubleEliminationBracketLayout()` fold the
-bracket in half. Every round that can be halved — one with an even number of matches — is drawn twice,
+bracket in half. Every round that can be halved - one with an even number of matches - is drawn twice,
 once on each side, and the two sides converge on the rounds too small to halve, with the final in the
 middle.
 
@@ -410,12 +410,12 @@ registering it (or passing it to the `layouts` input) instead of by binding an i
 providers: [provideBracketConfig({ layouts: [mirroredSingleEliminationBracketLayout()] })];
 ```
 
-Elimination brackets only — a swiss stage has no fold to make, so there is no mirrored swiss factory
+Elimination brackets only - a swiss stage has no fold to make, so there is no mirrored swiss factory
 to reach for.
 
 **It trades height for width, not the other way round.** A 32-team single elimination is `1640×1720`
 left-to-right and `2880×880` folded: roughly twice as wide and half as tall. That is what a poster, a
-broadcast graphic or a page that scrolls badly downwards wants — it is _not_ the answer to a bracket
+broadcast graphic or a page that scrolls badly downwards wants - it is _not_ the answer to a bracket
 that is too wide, which is what [density](#density) and the
 [rounds list](/components/bracket-rounds-list) are for.
 
@@ -425,7 +425,7 @@ that is too wide, which is what [density](#density) and the
 
 `mirroredDoubleEliminationBracketLayout()` draws **two independent blocks, one above the other**: the
 winners bracket folded around its own centre, the losers bracket folded around its own, and an empty
-band between them. Both blocks centre on the same middle column, however differently long they are —
+band between them. Both blocks centre on the same middle column, however differently long they are -
 the losers bracket runs longer, so the winners block starts a column or two in.
 
 **The middle column is a vertical chain.** Under the round a block's two halves converge on hangs
@@ -438,15 +438,15 @@ Two consequences worth knowing:
 
 - **The chain carries one round header**, naming the round its two halves converge on. The rounds below
   it are a vertical run of single matches, and a header between each would sit on the line joining
-  them — [`<et-bracket-rounds-list>`](/components/bracket-rounds-list) still names every round.
+  them - [`<et-bracket-rounds-list>`](/components/bracket-rounds-list) still names every round.
 - **The losers champion's line to the grand final runs dashed, beside the middle column.** The two cards
   share a column with the whole chain stacked between them, so it steps out into the gap, runs the
-  height of a block and steps back in — dashed, like the [continue element](#continue-element), because it
+  height of a block and steps back in - dashed, like the [continue element](#continue-element), because it
   carries a participant across rather than joining two neighbouring rounds. `continueLineDashArray`
   sets it.
 
 A round that cannot be halved has no second copy, so a block whose opening round is odd simply never
-folds — it comes out left-to-right with its late rounds at the end, which is the honest answer rather
+folds - it comes out left-to-right with its late rounds at the end, which is the honest answer rather
 than an error.
 
 ## Density
@@ -456,11 +456,11 @@ than an error.
 | Density     | Column  | Match height | What the cards draw                |
 | ----------- | ------- | ------------ | ---------------------------------- |
 | `'default'` | `250px` | `75px`       | Emblem, short code, score.         |
-| `'compact'` | `140px` | `52px`       | Short code and score — no emblems. |
+| `'compact'` | `140px` | `52px`       | Short code and score - no emblems. |
 
 The cards are not told which density they are in: `compact`'s column is narrower than
 [`et-match-card`](/components/match)'s own 150px threshold, so each card measures itself and drops to
-its minimal row. One consequence worth knowing — set `columnWidth` below 150px at any density and the
+its minimal row. One consequence worth knowing - set `columnWidth` below 150px at any density and the
 same thing happens.
 
 A density is a **preset, not a mode**: it sits under `provideBracketConfig`, which sits under the
@@ -481,7 +481,7 @@ readable on a phone. The answer is to swap representation:
 list of rounds, and `bracketFitsWidth(source, config, availableWidth)` decides when to use it.
 
 The `config` you pass those helpers must include the **`layouts`**, because the width of a bracket is
-the layout's answer — a folded 32-team bracket is nearly twice as wide as the same source drawn left to
+the layout's answer - a folded 32-team bracket is nearly twice as wide as the same source drawn left to
 right. A config without a layout for the source's mode throws
 [`ET3413`](/components/error-codes#bracket-et34xx), same as rendering it would:
 
@@ -512,7 +512,7 @@ the path. Turn the whole thing off with `disableJourneyHighlight`.
 A participant's path stops at the match they went out in, and that match says so: it gets a dashed
 `et-bracket-journey-endpoint` outline, and the losing row inside it is struck through
 (`et-bracket-journey-eliminated`). "Out" means every match of theirs is decided and the last one is
-a loss — so a pending lower-bracket match keeps them in, and a champion who dropped a set in the
+a loss - so a pending lower-bracket match keeps them in, and a champion who dropped a set in the
 winners bracket is never marked.
 
 ### Per-participant hit-testing needs a marked row
@@ -521,7 +521,7 @@ Single-participant highlighting works because each participant's row carries
 `data-participant-id`. [`et-match-card`](/components/match) sets it, so the shipped cards and
 anything built on the card get it for free. A card of your own opts in by setting the same
 attribute on the element that represents each side; without it the card behaves as it always
-did — hovering anywhere on it lights both journeys.
+did - hovering anywhere on it lights both journeys.
 
 ## Participant focus
 
@@ -529,8 +529,8 @@ Hover is nothing on a touch screen, so a journey can also be **pinned**: bind
 `focusedParticipantId` and that participant's path stays lit, with the rest of the bracket dimmed
 harder than on hover (`et-bracket-host--journey-focused`).
 
-It is deliberately **driven from outside**. A card's click belongs to the card — it is usually a
-link to a match page — so the bracket never pins on a tap, and the affordance is yours: a
+It is deliberately **driven from outside**. A card's click belongs to the card - it is usually a
+link to a match page - so the bracket never pins on a tap, and the affordance is yours: a
 participants legend beside the bracket, a search box, a query param. That is also the keyboard and
 screen-reader path, since a list of buttons is navigable in a way an absolutely-positioned grid
 is not.
@@ -542,14 +542,14 @@ is not.
 ```
 
 The bracket drops the pin on <kbd>Escape</kbd> (anywhere on the page, while pinned) and on a click
-that lands past the cells, writing the `null` back through the model — bind it two-way, or listen
+that lands past the cells, writing the `null` back through the model - bind it two-way, or listen
 to `(focusedParticipantIdChange)` for URL sync and analytics.
 
 <StoryEmbed id="components-bracket--participant-focus" height="520px" />
 
 ## Accessibility
 
-The layout host is presentational — absolutely-positioned `ul`/`li` scaffolding — so the
+The layout host is presentational - absolutely-positioned `ul`/`li` scaffolding - so the
 semantics live in the cards, and the shipped ones carry them:
 
 - **Every match announces itself as one thing.** The default cards are
@@ -557,26 +557,26 @@ semantics live in the cards, and the shipped ones carry them:
   name ("Neon Esports vs. Rote Löwen Pankow, 2 : 1, Finished") rather than a handful of loose
   fragments, and score changes are announced once through a polite live region.
 - **The columns are real headings.** The default round header is `role="heading"` with an
-  `aria-level` from `roundHeaderLevel` (default `3`) — set it to match where the bracket sits in
+  `aria-level` from `roundHeaderLevel` (default `3`) - set it to match where the bracket sits in
   your page's outline, and a screen reader can then walk the bracket by round.
 - **The continue cell is a labelled group**, since its visible text is a fragment.
 - **The final names its champion** in text, so the result doesn't depend on reading emphasis.
 - **Nothing is a click target by default.** Cells navigate only if you supply a
-  [card that links](#making-cells-navigate), and then the whole card is one correctly-named link —
+  [card that links](#making-cells-navigate), and then the whole card is one correctly-named link -
   and the only tab stop in its cell. Nothing inside a card is ever a second one.
 - **A journey can be followed without a pointer.** Hover highlighting is still a pointer
   affordance, but [pinning](#participant-focus) is not: `focusedParticipantId` is driven by a
-  control of yours — a participants list is the usual one — which is reachable by keyboard and
+  control of yours - a participants list is the usual one - which is reachable by keyboard and
   announced as what it is. <kbd>Escape</kbd> clears the pin. The information is in the cards
   either way; the highlight only makes one path easier to trace.
 
-A card of your own is responsible for its own semantics — the layout engine adds none.
+A card of your own is responsible for its own semantics - the layout engine adds none.
 
 ## Theming
 
 Connector and swiss-group-border colors are public custom properties. They default to the
 ambient [surface](/core/theming) border color, so the bracket blends into whatever surface
-it sits on — set them to override:
+it sits on - set them to override:
 
 | Token                                   | Default                        | Purpose                                                                 |
 | --------------------------------------- | ------------------------------ | ----------------------------------------------------------------------- |
@@ -585,7 +585,7 @@ it sits on — set them to override:
 
 These are not declared via `@property`: an `@property` `initial-value` can't contain a
 `var()`, and the defaults intentionally resolve to a theme token. The bracket doesn't
-provide its own surface — it reads the border color from the surface scope you place it in.
+provide its own surface - it reads the border color from the surface scope you place it in.
 
 Component CSS ships inside the `@layer components` cascade layer, so app utilities and custom
 rules override it without `!important`. See the [components overview](/components/) and
@@ -593,14 +593,14 @@ rules override it without `!important`. See the [components overview](/component
 
 The swiss group-border CSS is not part of the bracket's own stylesheet: `swissBracketLayout()` carries
 it as a styles-only component that the host mounts the first time a swiss bracket renders (deduped
-app-wide). Nothing to configure — an app that never registers the swiss layout simply never has those
+app-wide). Nothing to configure - an app that never registers the swiss layout simply never has those
 rules in its document.
 
 ## Error codes
 
 In dev and prod the bracket throws `RuntimeError`s in the **ET34xx** range when a
 `BracketDataSource` is malformed or unsupported, or when no [layout](#layouts) is registered for its
-`mode` ([`ET3413`](/components/error-codes#bracket-et34xx)) — see
+`mode` ([`ET3413`](/components/error-codes#bracket-et34xx)) - see
 [/components/error-codes#bracket-et34xx](/components/error-codes#bracket-et34xx).
 
 ## Migrating from `@ethlete/cdk`
@@ -615,7 +615,7 @@ are naming, packaging, and how a layout is chosen:
 | Selector      | `et-new-bracket`                                                             | `et-bracket`                                                                                              |
 | Component     | `NewBracketComponent`                                                        | `BracketComponent` (+ `BRACKET_IMPORTS`)                                                                  |
 | Config        | `NewBracketConfig`, `provideNewBracketConfig`, `injectNewBracketConfig`      | `BracketConfig`, `provideBracketConfig`, `injectBracketConfig`                                            |
-| Layout choice | every mode always bundled; `layout="left-to-right" \| "mirrored"` input      | [register layout factories](#layouts) (`layouts` in the config, or the `layouts` input) — mirrored is one |
+| Layout choice | every mode always bundled; `layout="left-to-right" \| "mirrored"` input      | [register layout factories](#layouts) (`layouts` in the config, or the `layouts` input) - mirrored is one |
 | Default cards | `NewBracketDefault*Component`                                                | `BracketDefault*Component`                                                                                |
 | Data types    | `NewBracket`, `NewBracketRound`, `NewBracketMatch`, `createNewBracket`       | `Bracket`, `BracketRound`, `BracketMatch`, `createBracket`                                                |
 | CSS classes   | `et-new-bracket*` / `et-bracket-new*` (+ `et-legacy` marker)                 | `et-bracket*` (no `et-legacy`)                                                                            |
@@ -625,11 +625,11 @@ are naming, packaging, and how a layout is chosen:
 
 Also note:
 
-- The **fifa.gg integration** (`generateBracketDataForGg`, `GgData`) was **not** ported — it
+- The **fifa.gg integration** (`generateBracketDataForGg`, `GgData`) was **not** ported - it
   was app-specific. Convert start-of-stage payloads to a `BracketDataSource` in your app, or
   use `generateBracketDataForEthlete`.
 - The default cards are real now (the cdk's were debug boxes) and are built on
-  [`et-match-card`](/components/match) — which is why they need a
+  [`et-match-card`](/components/match) - which is why they need a
   [`matchNormalizer`](#the-normalizer). `finalColumnWidth` / `finalMatchHeight` default to
   `360` / `200` to fit the shipped final card; a custom final card can set them back.
 - **Nothing renders until a layout is registered.** The cdk renderer bundled every mode's grid builder

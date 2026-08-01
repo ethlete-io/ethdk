@@ -173,7 +173,7 @@ describe('NotificationComponent', () => {
 
       expect([...buttons].map((button) => button.textContent?.trim())).toEqual(['Delete', 'Keep']);
 
-      // `dismiss: false` keeps the notification up — the action is not done with it.
+      // `dismiss: false` keeps the notification up - the action is not done with it.
       buttons[1]?.click();
       pairFixture.detectChanges();
 

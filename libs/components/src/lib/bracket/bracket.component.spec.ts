@@ -64,7 +64,7 @@ describe('BracketComponent participant focus', () => {
   });
 
   it('marks every cell of a pinned participant, and says so on the host', () => {
-    // `p1` is the generator's top seed, who wins out — three matches, one per round.
+    // `p1` is the generator's top seed, who wins out - three matches, one per round.
     host.focusedParticipantId.set('p1');
     fixture.detectChanges();
 

@@ -1,6 +1,6 @@
 import { InjectionToken } from '@angular/core';
 // type-only import: erased at build time, so the base editor's import graph never pulls the codec
-// implementation (chip builders, regex) — that lives behind the opt-in directive / render provider.
+// implementation (chip builders, regex) - that lives behind the opt-in directive / render provider.
 import { RichTextEditorTokenCodec } from './headless/internals/rich-text-editor-token';
 
 /**

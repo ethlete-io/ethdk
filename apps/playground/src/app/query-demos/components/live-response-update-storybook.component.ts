@@ -25,7 +25,7 @@ const getMatch = demoGetQuery<GetMatchQueryArgs>('/match');
       </div>
 
       <p class="et-sb-live-demo-hint">
-        Fetch the match once via HTTP, then connect the fake socket — it pushes a message every 2 seconds and
+        Fetch the match once via HTTP, then connect the fake socket - it pushes a message every 2 seconds and
         <code>withResponseUpdate</code> patches it into <code>response()</code> without re-fetching. Executing again
         replaces the patched state with the server's truth (back to minute 1). With a real backend the messages would
         come from a <code>WebSocketClient</code> room instead of an interval.

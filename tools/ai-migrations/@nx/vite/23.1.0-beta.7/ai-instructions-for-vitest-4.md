@@ -19,16 +19,16 @@ The pre-pass handled, mechanically:
 - `'verbose'` → `'tree'` and `'basic'` → `['default', { summary: false }]` inside `test.reporters`
 - `VITEST_MAX_{THREADS,FORKS}` → `VITEST_MAX_WORKERS` and `VITE_NODE_DEPS_MODULE_DIRECTORIES` → `VITEST_MODULE_DIRECTORIES` renames in: `package.json` scripts, `.env` / `.env.*` files, `project.json` `options.env` keys, and inline `VAR=value` prefixes inside `project.json` `options.{args,command,commands}`
 
-The pre-pass **skips the rename when both `VITEST_MAX_THREADS` and `VITEST_MAX_FORKS` appear in the same file/scope** (they collapse to a single `VITEST_MAX_WORKERS` whose value depends on which pool the project uses — a decision the pre-pass can't make safely). It also **does not** edit CI provider configs (`.github/workflows/*.yml`, `.gitlab-ci.yml`, `azure-pipelines.yml`, `.circleci/config.yml`, `bitbucket-pipelines.yml`) — YAML structure varies too much. Any conflicts and any CI matches are forwarded to you in `<advisory_context>`.
+The pre-pass **skips the rename when both `VITEST_MAX_THREADS` and `VITEST_MAX_FORKS` appear in the same file/scope** (they collapse to a single `VITEST_MAX_WORKERS` whose value depends on which pool the project uses - a decision the pre-pass can't make safely). It also **does not** edit CI provider configs (`.github/workflows/*.yml`, `.gitlab-ci.yml`, `azure-pipelines.yml`, `.circleci/config.yml`, `bitbucket-pipelines.yml`) - YAML structure varies too much. Any conflicts and any CI matches are forwarded to you in `<advisory_context>`.
 
-**The cross-cutting changes below still require your attention** — pool option flattening (`singleThread`/`singleFork`, `maxThreads`/`maxForks`, `poolOptions.<pool>.{execArgv,isolate}`, `poolOptions.vmThreads.memoryLimit`), `test.deps.{external,inline,fallbackCJS}` → `test.server.deps.*` move, `test.{poolMatchGlobs,environmentMatchGlobs}` projects rewrite, browser provider function-form rewrite, `browser.testerScripts` → `testerHtmlPath`, inlining of `vitest.workspace.*` files the pre-pass could not inline automatically (+ `defineWorkspace` removal), custom reporter callback API updates, and `@vitest/browser` package replacement with per-provider packages.
+**The cross-cutting changes below still require your attention** - pool option flattening (`singleThread`/`singleFork`, `maxThreads`/`maxForks`, `poolOptions.<pool>.{execArgv,isolate}`, `poolOptions.vmThreads.memoryLimit`), `test.deps.{external,inline,fallbackCJS}` → `test.server.deps.*` move, `test.{poolMatchGlobs,environmentMatchGlobs}` projects rewrite, browser provider function-form rewrite, `browser.testerScripts` → `testerHtmlPath`, inlining of `vitest.workspace.*` files the pre-pass could not inline automatically (+ `defineWorkspace` removal), custom reporter callback API updates, and `@vitest/browser` package replacement with per-provider packages.
 
 How to read the wrapper sections above this file:
 
 - `<files_changed>` lists files the pre-pass already wrote to. Verify the new shape is in place; do not re-apply the same edit.
-- `<advisory_context>` lists detections the pre-pass forwarded because it could not safely complete them. **Every entry is pending work** — address each one in the relevant section below, not as a separate task.
+- `<advisory_context>` lists detections the pre-pass forwarded because it could not safely complete them. **Every entry is pending work** - address each one in the relevant section below, not as a separate task.
 
-A workspace-wide reminder is also emitted as a post-run "next step" about env vars set in CI provider dashboards — those can't be detected from the workspace tree.
+A workspace-wide reminder is also emitted as a post-run "next step" about env vars set in CI provider dashboards - those can't be detected from the workspace tree.
 
 </pre_pass_summary>
 
@@ -43,7 +43,7 @@ Vitest 4 has hard runtime requirements:
 - **Vite ≥ 6.0.0** (Vite 5 is unsupported). Check with `npx vite --version`. If on Vite 5, apply the Vite 6 / 7 / 8 migration guides first.
 - **Node.js ≥ 20.0.0** (Node 18 support dropped). Check with `node --version`. Update CI `actions/setup-node` versions, `.nvmrc`, `engines` in `package.json`, and Docker base images.
 
-If either prerequisite is unmet, write status: failed with the unmet requirement in `summary` — config-level migration on an unsupported runtime will produce confusing errors.
+If either prerequisite is unmet, write status: failed with the unmet requirement in `summary` - config-level migration on an unsupported runtime will produce confusing errors.
 
 </prerequisites>
 
@@ -64,9 +64,9 @@ If either prerequisite is unmet, write status: failed with the unmet requirement
 
 2. **Locate all Vitest configuration files**:
    - Search for `vitest.config.{ts,js,mjs}`
-   - Search for `vitest.workspace.{ts,js,mjs}` (removed in Vitest 4 — migrate to inline `test.projects`; see section 1.3 below)
+   - Search for `vitest.workspace.{ts,js,mjs}` (removed in Vitest 4 - migrate to inline `test.projects`; see section 1.3 below)
    - Check `project.json` files for `@nx/vitest:test` / `@nx/vite:test` executor options
-   - For workspaces relying on the inferred plugin (`@nx/vitest/plugin`), targets come from inference — inspect them with `nx show project <name> --json | jq .targets`
+   - For workspaces relying on the inferred plugin (`@nx/vitest/plugin`), targets come from inference - inspect them with `nx show project <name> --json | jq .targets`
 
 3. **Identify affected code**:
    - Test files: `**/*.{spec,test}.{ts,js,tsx,jsx}`
@@ -124,7 +124,7 @@ export default defineConfig({
 **Changes Required**:
 
 ```typescript
-// ❌ BEFORE (Vitest 3.x — pool serialized via singleThread/singleFork)
+// ❌ BEFORE (Vitest 3.x - pool serialized via singleThread/singleFork)
 export default defineConfig({
   test: {
     maxThreads: 4,
@@ -145,7 +145,7 @@ export default defineConfig({
   },
 });
 
-// ✅ AFTER (Vitest 4.0 — top-level pool config)
+// ✅ AFTER (Vitest 4.0 - top-level pool config)
 export default defineConfig({
   test: {
     maxWorkers: 1, // singleFork: true => maxWorkers: 1, isolate: false
@@ -159,9 +159,9 @@ export default defineConfig({
 
 **Action Items**:
 
-- [ ] Replace `maxThreads` and `maxForks` with a single `maxWorkers` option. If both values were set with different numbers (one for threads pool, one for forks pool), pick the value matching the pool the project actually uses — `maxWorkers` is pool-agnostic in v4.
+- [ ] Replace `maxThreads` and `maxForks` with a single `maxWorkers` option. If both values were set with different numbers (one for threads pool, one for forks pool), pick the value matching the pool the project actually uses - `maxWorkers` is pool-agnostic in v4.
 - [ ] Replace `singleThread: true` or `singleFork: true` with `maxWorkers: 1, isolate: false`.
-- [ ] If `singleThread: false` or `singleFork: false` was set explicitly, just delete — it's the default.
+- [ ] If `singleThread: false` or `singleFork: false` was set explicitly, just delete - it's the default.
 - [ ] Move `poolOptions.{forks,threads}.execArgv` → top-level `execArgv`.
 - [ ] Move `poolOptions.{forks,threads}.isolate` → top-level `isolate`.
 - [ ] Move `poolOptions.vmThreads.memoryLimit` → top-level `vmMemoryLimit`.
@@ -199,7 +199,7 @@ export default defineConfig({
 
 - [ ] Rename `workspace` property to `projects` in all config files.
 - [ ] Inline any external `vitest.workspace.*` content into `test.projects` and delete the workspace file (external file references are no longer supported). The pre-pass already inlined workspace files containing a plain static array of glob strings; the ones you see in `<advisory_context>` were skipped because of dynamic content or because the sibling config could not be merged into mechanically (existing `test.projects`/`test.workspace`, non-object-literal config, or a directory with only a `vite.config.*`). For an existing `test.projects`, merge the workspace entries into it; for a `vite.config.*`-only directory, decide whether its `test` block (if any) and the project list belong in that file or a new `vitest.config.*`.
-- [ ] If projects need different pool/environment options, set them inside each project entry rather than via the (now-removed) `poolMatchGlobs` / `environmentMatchGlobs` — see section 1.5.
+- [ ] If projects need different pool/environment options, set them inside each project entry rather than via the (now-removed) `poolMatchGlobs` / `environmentMatchGlobs` - see section 1.5.
 
 When you inline a workspace file yourself, also apply these two checks (the pre-pass applies them for the files it inlines):
 
@@ -227,9 +227,9 @@ The `vitest.workspace.*` file imports modules / calls functions / uses spreads t
 
 **Changes Required**: `browser.provider` is no longer a string. It's now the **return value of a provider function** imported from a per-provider package. Official packages:
 
-- `@vitest/browser-playwright` — exports `playwright(options?)`
-- `@vitest/browser-webdriverio` — exports `webdriverio(options?)`
-- `@vitest/browser-preview` — exports `preview(options?)` (dev-only)
+- `@vitest/browser-playwright` - exports `playwright(options?)`
+- `@vitest/browser-webdriverio` - exports `webdriverio(options?)`
+- `@vitest/browser-preview` - exports `preview(options?)` (dev-only)
 
 ```typescript
 // ❌ BEFORE (Vitest 3.x)
@@ -268,7 +268,7 @@ const { getElementError } = utils;
 **Action Items**:
 
 - [ ] Install the appropriate provider package: `@vitest/browser-playwright`, `@vitest/browser-webdriverio`, or `@vitest/browser-preview`. Match whatever your `browser.provider` string was previously.
-- [ ] Remove `@vitest/browser` from `dependencies`/`devDependencies` — its public surface moved into the main `vitest` package and the per-provider packages.
+- [ ] Remove `@vitest/browser` from `dependencies`/`devDependencies` - its public surface moved into the main `vitest` package and the per-provider packages.
 - [ ] Replace string `browser.provider: 'name'` with the function-call form: `provider: <providerFn>(<options>)`.
 - [ ] Replace `browser.testerScripts: [...]` with `browser.testerHtmlPath: '<single-file>.html'`. Note: this is a **semantic** change (array of scripts → one HTML file). Move the script contents into a `<script>` block of the HTML file, or load them with `<script src>` references inside it.
 - [ ] Update imports: `@vitest/browser/context` → `vitest/browser`; `@vitest/browser/utils` → `vitest/browser` (named export `utils`).
@@ -568,7 +568,7 @@ expect(b.method()).toBe(100);
 - [ ] Replace automocked **getters** that need to return values with plain property definitions, or add an explicit `vi.spyOn(obj, name, 'get').mockReturnValue(...)`.
 - [ ] If a test relied on `vi.restoreAllMocks()` clearing an automocked module, add explicit `vi.unmock('./module')` or `vi.resetModules()` calls.
 - [ ] Audit tests that mock instance methods of an automocked class; the per-instance independence may surface latent bugs.
-- [ ] Do NOT remove `.mockRestore()` calls on single spies — they still work correctly.
+- [ ] Do NOT remove `.mockRestore()` calls on single spies - they still work correctly.
 
 #### 2.7 Settled Results Immediate Population
 
@@ -820,7 +820,7 @@ import { execute } from 'vitest/execute';
 Confirm:
 
 - All configuration files updated
-- All test files pass (or are flagged in your handoff `summary` if they remain failing — see `<test_integrity_guardrails>` below)
+- All test files pass (or are flagged in your handoff `summary` if they remain failing - see `<test_integrity_guardrails>` below)
 - Coverage reports generate correctly
 - Environment variables updated
 - No deprecated API warnings in console

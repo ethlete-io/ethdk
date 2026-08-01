@@ -4,7 +4,7 @@ import { path, PathOptions } from './path';
 export type LineOptions = {
   path: PathOptions;
 
-  /** Draw right to left — the flow direction of a mirrored bracket's way back. */
+  /** Draw right to left - the flow direction of a mirrored bracket's way back. */
   inverted?: boolean;
 };
 
@@ -34,7 +34,7 @@ export const verticalPath = (from: BracketPosition, to: BracketPosition, options
 };
 
 export type GutterLineOptions = LineOptions & {
-  /** How far past the column's edge the vertical run sits — half a column gap keeps it clear of both. */
+  /** How far past the column's edge the vertical run sits - half a column gap keeps it clear of both. */
   gutter: number;
 };
 

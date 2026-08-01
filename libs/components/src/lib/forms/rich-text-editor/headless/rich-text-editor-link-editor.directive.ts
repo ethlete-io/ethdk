@@ -27,7 +27,7 @@ export class RichTextEditorLinkEditorDirective {
 
   private overlayRef = signal<OverlayRef<RichTextEditorLinkEditorComponent, unknown> | null>(null);
 
-  /** The selection the popover edits — captured on open, restored before applying (the popover's
+  /** The selection the popover edits - captured on open, restored before applying (the popover's
    *  inputs take focus, which would otherwise collapse the live selection). */
   private savedRange: Range | null = null;
 
@@ -123,7 +123,7 @@ export class RichTextEditorLinkEditorDirective {
 
           if (this.overlayRef() === ref) this.overlayRef.set(null);
 
-          // Escape is an explicit "back to the editor" — hand focus back (restoreFocus is off).
+          // Escape is an explicit "back to the editor" - hand focus back (restoreFocus is off).
           // An outside-pointer close is aimed at something else; don't steal its focus.
           if (event.source === 'escape') {
             queueMicrotask(() => this.editor.activate());
@@ -147,7 +147,7 @@ export class RichTextEditorLinkEditorDirective {
     queueMicrotask(() => this.editor.activate());
   }
 
-  /** The popover's own close button — an explicit dismiss, so focus goes back to the editor. */
+  /** The popover's own close button - an explicit dismiss, so focus goes back to the editor. */
   private dismiss() {
     this.close();
     queueMicrotask(() => this.editor.activate());

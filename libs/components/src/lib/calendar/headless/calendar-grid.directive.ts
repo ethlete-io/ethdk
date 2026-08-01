@@ -49,7 +49,7 @@ export class CalendarGridDirective {
     }
 
     // a cell removal during month re-render also lands here (focus falls to body
-    // before the new roving target pulls it back in the same tick) — settle the
+    // before the new roving target pulls it back in the same tick) - settle the
     // tick first, then decide based on where focus actually ended up
     queueMicrotask(() => {
       const element = this.elementRef.nativeElement;

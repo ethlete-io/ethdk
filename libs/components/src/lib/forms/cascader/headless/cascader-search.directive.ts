@@ -6,7 +6,7 @@ import { CascaderDirective } from './cascader.directive';
 
 /**
  * Opts a cascader into flat search. While the (trimmed) query is non-empty the panel swaps its
- * columns for a flat result list fed by the data source's `search` hook — each result is a full
+ * columns for a flat result list fed by the data source's `search` hook - each result is a full
  * root → node path, so a known leaf can be jumped to without drilling. The input takes initial
  * focus on open; ArrowDown moves roving focus into the results (or the tree while browsing),
  * and the first Escape clears the query instead of closing the panel.
@@ -28,7 +28,7 @@ export class CascaderSearchDirective {
   constructor() {
     registerSingleton(this.cascader?.registeredSearch, this);
 
-    // the query lives on the cascader (it outlives the panel-hosted input) — mirror it back
+    // the query lives on the cascader (it outlives the panel-hosted input) - mirror it back
     // into the element for programmatic writes like clearSearch()
     effect(() => {
       const query = this.cascader?.searchQuery() ?? '';

@@ -7,8 +7,8 @@ export type CalendarRange = {
 };
 
 /**
- * What a pick means in `range` mode. The calendar's own rule — first pick opens the range, a
- * later-or-equal second closes it, an earlier one starts over — is a strategy like any other; naming
+ * What a pick means in `range` mode. The calendar's own rule - first pick opens the range, a
+ * later-or-equal second closes it, an earlier one starts over - is a strategy like any other; naming
  * one here replaces it, which is how a calendar comes to snap to whole weeks, or to select a fixed
  * seven days from wherever it is clicked.
  *
@@ -21,7 +21,7 @@ export type CalendarRangeSelectionStrategy = {
   /**
    * The range to band while the reader is only hovering (or has moved keyboard focus) over `date`.
    * Defaults to whatever {@link select} would produce, which is usually what a reader wants to be
-   * shown — return `null` to preview nothing.
+   * shown - return `null` to preview nothing.
    */
   preview?: (date: Date, current: CalendarRange) => CalendarRange | null;
 };
@@ -34,12 +34,12 @@ export type CalendarWeekRangeStrategyOptions = {
 /**
  * Snaps to whole weeks, in the same two picks a range takes: the first opens the range at the start of
  * the week it lands in, the second closes it at the end of its own, and an earlier second pick starts
- * over. One week is picking the same week twice — which is why the preview bands whole weeks from the
+ * over. One week is picking the same week twice - which is why the preview bands whole weeks from the
  * first hover, so the snapping is visible before anything is committed rather than a surprise after.
  */
 export const createWeekRangeStrategy = (options: CalendarWeekRangeStrategyOptions): CalendarRangeSelectionStrategy => {
   const weekOptions = { weekStartsOn: options.weekStartsOn };
-  // day-granular at both ends, like every other date this component produces — `endOfWeek` would
+  // day-granular at both ends, like every other date this component produces - `endOfWeek` would
   // hand back a 23:59:59.999 timestamp
   const weekStartOf = (date: Date) => startOfWeek(startOfDay(date), weekOptions);
   const weekEndOf = (date: Date) => startOfDay(endOfWeek(startOfDay(date), weekOptions));
@@ -82,7 +82,7 @@ export type CalendarFixedLengthRangeStrategyOptions = {
 };
 
 /**
- * Every pick is a complete range of `days` days starting where it landed — a stay of a fixed length,
+ * Every pick is a complete range of `days` days starting where it landed - a stay of a fixed length,
  * a reporting window. There is no half-built state, so the picker closes on the first pick.
  */
 export const createFixedLengthRangeStrategy = (
@@ -111,7 +111,7 @@ export const DEFAULT_CALENDAR_RANGE_STRATEGY: CalendarRangeSelectionStrategy = {
     return { start: current.start, end: day };
   },
   /**
-   * Bands the span the two ends would cover, in either direction — hovering back past the open start
+   * Bands the span the two ends would cover, in either direction - hovering back past the open start
    * shows the stretch between them even though picking there would start the range over. That is the
    * calendar's long-standing behaviour, so it stays the default; a strategy that would rather preview
    * only what its pick produces can leave `preview` out and get exactly that.

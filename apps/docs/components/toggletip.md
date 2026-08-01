@@ -1,6 +1,6 @@
 # Toggletip
 
-Click-triggered popover for on-demand help — unlike a [tooltip](/components/tooltip) it can hold **interactive content** (buttons, links) and moves focus into itself. Import `TOGGLETIP_IMPORTS` (no provider needed).
+Click-triggered popover for on-demand help - unlike a [tooltip](/components/tooltip) it can hold **interactive content** (buttons, links) and moves focus into itself. Import `TOGGLETIP_IMPORTS` (no provider needed).
 
 Attach `[etToggletip]` together with `etToggletipTrigger` to a button:
 
@@ -10,7 +10,7 @@ Attach `[etToggletip]` together with `etToggletipTrigger` to a button:
   Why is this delayed?
 </button>
 
-<!-- interactive template content — an aria label is then required -->
+<!-- interactive template content - an aria label is then required -->
 <button
   [etToggletip]="helpTemplate"
   etToggletipAriaLabel="About live scores"
@@ -36,8 +36,8 @@ import { TOGGLETIP_IMPORTS } from '@ethlete/components';
 
 - `etToggletipTrigger` couples the toggletip to the button it sits on: the button reflects the open state as pressed, and a disabled button disables the toggletip. It requires both an `et-button` and an `etToggletip` on the same element (enforced in dev mode).
 - `etToggletipClose` on a button **inside** the content closes it.
-- `[data-toggletip-body]` / `[data-toggletip-actions]` are styling hooks — the actions row gets a top border.
-- `[data-toggletip-hug]` on any element in the content drops the panel's comfortable minimum width, so it hugs its widest row instead. For content that is a list of rows rather than a sentence or two — what the [breadcrumb](/components/breadcrumb#overflow) does with its hidden crumbs.
+- `[data-toggletip-body]` / `[data-toggletip-actions]` are styling hooks - the actions row gets a top border.
+- `[data-toggletip-hug]` on any element in the content drops the panel's comfortable minimum width, so it hugs its widest row instead. For content that is a list of rows rather than a sentence or two - what the [breadcrumb](/components/breadcrumb#overflow) does with its hidden crumbs.
 
 ## Live demo
 
@@ -47,7 +47,7 @@ import { TOGGLETIP_IMPORTS } from '@ethlete/components';
 
 - **Click** toggles; `open` is a two-way model (`[(etToggletipOpen)]`), plus `show()` / `hide()` / `toggle()` methods.
 - Dismisses on outside click and <kbd>Escape</kbd>; non-modal, no backdrop.
-- Focus moves to the first tabbable element inside on open and is **restored to the trigger** on close — but it is not trapped.
+- Focus moves to the first tabbable element inside on open and is **restored to the trigger** on close - but it is not trapped.
 - `etToggletipDisabled` disables it; it also closes automatically when content becomes `null` or the trigger is disabled.
 
 ## Positioning
@@ -57,16 +57,16 @@ Same floating-ui anchoring as the tooltip, with an arrow:
 | Input                | Default |
 | -------------------- | ------- |
 | `placement`          | `'top'` |
-| `fallbackPlacements` | —       |
+| `fallbackPlacements` | -       |
 | `offset`             | `10`    |
 | `arrowPadding`       | `20`    |
 | `viewportPadding`    | `8`     |
 
-`arrowPadding` is how close the arrow's base may get to the panel's corners, and has to stay above the panel's corner radius (16px) — see [the tooltip's note](/components/tooltip#positioning).
+`arrowPadding` is how close the arrow's base may get to the panel's corners, and has to stay above the panel's corner radius (16px) - see [the tooltip's note](/components/tooltip#positioning).
 
 ## Tooltip or toggletip?
 
-| —         | Tooltip                               | Toggletip                                         |
+| -         | Tooltip                               | Toggletip                                         |
 | --------- | ------------------------------------- | ------------------------------------------------- |
 | Trigger   | Hover / keyboard focus                | Click                                             |
 | Content   | Descriptive text only                 | Text or interactive template                      |
@@ -84,4 +84,4 @@ Public design tokens: `--et-toggletip-font-size`, `--et-toggletip-line-height`, 
 
 ## Error codes
 
-Toggletip misuse throws [`ET15xx` errors](/components/error-codes#toggletip-et15xx) in dev mode — a missing accessible name or a trigger without button/toggletip directives.
+Toggletip misuse throws [`ET15xx` errors](/components/error-codes#toggletip-et15xx) in dev mode - a missing accessible name or a trigger without button/toggletip directives.

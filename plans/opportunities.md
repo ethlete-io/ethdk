@@ -1,12 +1,12 @@
 # Opportunities: improvements & new additions
 
 Research done 2026-07-23 (source-verified scans of `libs/components` +
-`libs/core`). Complements `plans/cdk-port/` — nothing here overlaps those
+`libs/core`). Complements `plans/cdk-port/` - nothing here overlaps those
 plans. Unprioritized backlog; pick items into real plans as needed.
 
 > A second research pass (2026-07-30) covering gaps _inside_ existing
-> components — touch/gesture, RTL/i18n/a11y consistency, per-domain feature
-> gaps — lives in `plans/enhancements/` (findings in `00-research-findings.md`,
+> components - touch/gesture, RTL/i18n/a11y consistency, per-domain feature
+> gaps - lives in `plans/enhancements/` (findings in `00-research-findings.md`,
 > ten implementation plans alongside).
 
 ## New components (none exist today; verified)
@@ -18,14 +18,14 @@ High value (table-stakes for app teams):
 | **Banner / inline alert** | `notification` is transient toast/snackbar only; no static dismissible page/section message (info/warning/error/success). Semantic colors via theme types. |
 | **Avatar (+ group)**      | User/entity representation for shells, member lists, comments.                                                                                             |
 | **Card**                  | Generic content container; every dashboard team reaches for it.                                                                                            |
-| **Badge**                 | Non-interactive status/count indicator — `chip` (interactive/removable) currently does double duty.                                                        |
-| **Empty state**           | Icon/title/description/action slot. Grid + cascader hand-roll "no results" today; table/pagination plans will need it too — build once.                    |
+| **Badge**                 | Non-interactive status/count indicator - `chip` (interactive/removable) currently does double duty.                                                        |
+| **Empty state**           | Icon/title/description/action slot. Grid + cascader hand-roll "no results" today; table/pagination plans will need it too - build once.                    |
 
-Medium: **Divider** (tabs/RTE/split-button/sidebar each reinvent it — cheap
+Medium: **Divider** (tabs/RTE/split-button/sidebar each reinvent it - cheap
 extraction), **Description list** (`dl/dt/dd` detail views; note naming clash
 with form-field's `et-description`), **Copy-to-clipboard button**
 (`copyToClipboard()` already in core; query-devtools hand-rolls the
-icon-swap-feedback pattern twice), **Toolbar** (generalize — RTE already
+icon-swap-feedback pattern twice), **Toolbar** (generalize - RTE already
 implements the full ARIA toolbar pattern, grid has `et-grid-item-toolbar`),
 **Stepper/progress-steps** (wizard indicator; ties to the parked form-wizard
 idea; distinct from the number-input stepper), **Tree view** (cascader's
@@ -35,16 +35,16 @@ Low / opportunistic: stat tile, timeline, kbd, command palette (leans on
 existing overlay+menu so cheaper than it looks, but scope-creep risk),
 back-to-top (covered by `10-filter.md` Layer 1's generic floating trigger).
 
-Already covered — don't rebuild: date-range picker, segmented control,
+Already covered - don't rebuild: date-range picker, segmented control,
 loaders, popover-as-API (overlay), rating/switch.
 
-## Platform modernization — team decisions recorded 2026-07-23
+## Platform modernization - team decisions recorded 2026-07-23
 
 Repo has no browserslist config → implicit evergreen baseline. Already
 adopted (don't re-plan): `:has()` widely, `@starting-style` in rating +
 otp-input, `container-type` in stream/pip.
 
-- **Animated lifecycle stays. Decided — do not plan a replacement.**
+- **Animated lifecycle stays. Decided - do not plan a replacement.**
   `animatable.directive.ts` + `animated-lifecycle.directive.ts` took a long
   time to fine-tune (interrupts, batching, nested trees, forced-instant
   states); `@starting-style`/`allow-discrete` cannot replace all of it. New
@@ -55,16 +55,16 @@ otp-input, `container-type` in stream/pip.
   (magic z-indexes over `z-index: 1000` work today; nothing beats the top
   layer). The overlay system keeps its portal + z-index approach. This
   reasoning applies equally to the **Popover API** for tooltip/toggletip/menu
-  — same top-layer semantics, same rejection.
+  - same top-layer semantics, same rejection.
 - **View Transitions: agreed in principle, not yet baseline** (Firefox lacks
   same-document VT). Highest-value target when it lands:
   `overlay/strategies/fullscreen-animation.ts` (733 lines of origin→viewport
   transform math + trigger cloning; VT snapshots pixels, which may also
-  sidestep the Angular style-unload constraint that forced cloning — see the
+  sidestep the Angular style-unload constraint that forced cloning - see the
   no-clone-animations rule). Also `flip-animation.ts` (tab underline,
   segmented button). **Re-check browser support before any future planning.**
-- **Chrome-only for now — re-scan when Firefox/Safari ship**: CSS anchor
-  positioning (would shrink `overlay-position.ts`'s floating-ui usage — do
+- **Chrome-only for now - re-scan when Firefox/Safari ship**: CSS anchor
+  positioning (would shrink `overlay-position.ts`'s floating-ui usage - do
   NOT swap yet), `interpolate-size`/`calc-size` (would replace
   `animated-block-size.ts`; a `@supports` progressive-enhancement fast path
   is possible), `field-sizing: content` (would delete
@@ -75,31 +75,31 @@ otp-input, `container-type` in stream/pip.
 - **Component scaffolding generator** (`@ethlete/components`): only an
   `icons` generator exists. The three-tier architecture (folder layout,
   headless+default split, stories, `@layer components` CSS, error codes,
-  self-registration) is mechanical — a `component`/`directive` generator
+  self-registration) is mechanical - a `component`/`directive` generator
   would pay for itself quickly, and directly helps the cdk-port work.
 - **Test harnesses**: `forms/testing/` has exactly one utility (the
-  `mixed-state-contract`). No CDK-`ComponentHarness`-style drivers — every
+  `mixed-state-contract`). No CDK-`ComponentHarness`-style drivers - every
   spec talks to the DOM directly. Worth considering as more controls land;
   not urgent.
 
-## Next major — removal checklist
+## Next major - removal checklist
 
 Nothing else tracks this, so it lives here until a real changelog/migration doc
 exists.
 
-- **`core/seo.directive.ts` — remove.** Already `@deprecated`, and the only real
+- **`core/seo.directive.ts` - remove.** Already `@deprecated`, and the only real
   SSR crash risk left in `core`: bare `document` access at lines 98–154, no
   `DOCUMENT` injection, no guard. Deliberately **not** fixed in place
-  (`plans/enhancements/02-consistency-fixes.md` §5) — patching a directive that
+  (`plans/enhancements/02-consistency-fixes.md` §5) - patching a directive that
   is scheduled for deletion is wasted work. The other `core` global-access
   stragglers (`scrolling/scrollable.ts`, `animations/animation-utils.ts`) were
   guarded instead, since they stay.
 
-## Tech debt notes (codebase is very clean — 3 TODOs total)
+## Tech debt notes (codebase is very clean - 3 TODOs total)
 
-- `bracket/drawing/grid/core/bracket-grid.ts:86` — "The problem is here
+- `bracket/drawing/grid/core/bracket-grid.ts:86` - "The problem is here
   somewhere" above a layout offset calc: the only unresolved-bug marker in
   the lib; worth a focused look.
-- `bracket/index.ts:1` + two TODOs in `apps/docs/components/bracket.md` —
+- `bracket/index.ts:1` + two TODOs in `apps/docs/components/bracket.md` -
   known bracket WIP (default cards + their a11y), already tracked.
-- Docs coverage: complete — every public domain has a docs page.
+- Docs coverage: complete - every public domain has a docs page.

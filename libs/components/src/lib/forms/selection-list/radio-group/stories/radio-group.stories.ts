@@ -44,7 +44,7 @@ export const Mixed: Story = {
     value: 'green',
     mixed: true,
     showMixedState: true,
-    hint: 'Bulk edit over records that disagree — no radio reads as checked until a user picks one, which replaces the hidden raw value.',
+    hint: 'Bulk edit over records that disagree - no radio reads as checked until a user picks one, which replaces the hidden raw value.',
   },
 };
 
@@ -59,8 +59,8 @@ export const Card: Story = {
       description: {
         story:
           'The card preset: the whole panel is the target, label leading and control trailing, with room for an ' +
-          '`<et-description>` under each label. For a short list of consequential choices — a plan, a shipping ' +
-          'speed — where a 20px circle is a small thing to aim at.',
+          '`<et-description>` under each label. For a short list of consequential choices - a plan, a shipping ' +
+          'speed - where a 20px circle is a small thing to aim at.',
       },
     },
   },
@@ -73,7 +73,7 @@ export const Horizontal: Story = {
       description: {
         story:
           '`orientation="horizontal"` flows the radios in a wrapping row, with the label and the ' +
-          'error/hint block keeping their own lines. Best kept for a small set of short options — vertical ' +
+          'error/hint block keeping their own lines. Best kept for a small set of short options - vertical ' +
           'scans better and gives each option a full-width hit area. All four arrow keys move between ' +
           'options either way, which is what the ARIA radio pattern expects.',
       },

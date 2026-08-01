@@ -10,7 +10,7 @@ import { MasonryColumns, MasonryPacking, MasonryPlacement } from '../../masonry.
  *
  * `minColumnInlineSize` is a *minimum*, not a target: the count is the most columns that fit at that width
  * with the gaps included, and the remainder is then shared out so the columns fill the container. This is
- * `repeat(auto-fill, minmax(X, 1fr))` in arithmetic — which is the behaviour a reader expects from a value
+ * `repeat(auto-fill, minmax(X, 1fr))` in arithmetic - which is the behaviour a reader expects from a value
  * named like a width, and what cdk got wrong by dividing without accounting for the gaps (a 1000px container
  * at `columWidth: 250` and `gap: 16` gave four 238px columns there, below the width that was asked for).
  */
@@ -37,7 +37,7 @@ export const resolveMasonryColumns = ({
   return { count, inlineSize: Math.max(0, inlineSize) };
 };
 
-/** The shortest column, ties going to the one nearest the start — which is what makes a fresh masonry's
+/** The shortest column, ties going to the one nearest the start - which is what makes a fresh masonry's
  * first row read left to right rather than scatter. */
 const shortestColumn = (columnBlockSizes: readonly number[]) => {
   let shortest = 0;
@@ -53,7 +53,7 @@ const shortestColumn = (columnBlockSizes: readonly number[]) => {
 
 /**
  * Greedy shortest-column packing: each item goes to whichever column is currently shortest. That is the
- * classic masonry algorithm, and it has a property this port leans on heavily — **it is prefix-stable**.
+ * classic masonry algorithm, and it has a property this port leans on heavily - **it is prefix-stable**.
  * Where items `0…k` land depends only on items `0…k`, never on what comes after, so appending items to an
  * infinite-scrolling feed re-derives the existing placements unchanged. cdk needed a partial-invalidation
  * mode to get that; here it falls out of the algorithm, and Angular's binding dedupe is what keeps the
@@ -61,7 +61,7 @@ const shortestColumn = (columnBlockSizes: readonly number[]) => {
  *
  * `itemColumns` pins items to a column they have already been given, which is what keeps a card *growing*
  * from reshuffling the grid: greedy assignment is stable against items being added, but not against an
- * existing item changing height — a taller card changes which column is shortest for every item after it,
+ * existing item changing height - a taller card changes which column is shortest for every item after it,
  * so items would hop columns because a paragraph two columns over expanded. Pinned items only re-stack.
  */
 export const packMasonryItems = ({

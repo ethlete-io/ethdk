@@ -18,7 +18,7 @@ import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '..
     role: 'switch',
     '[attr.aria-checked]': 'checked()',
     // role=switch does not support aria-checked="mixed" (ARIA treats it as false), so the
-    // indeterminate/bulk-edit state is reflected for styling only — aria-checked stays boolean
+    // indeterminate/bulk-edit state is reflected for styling only - aria-checked stays boolean
     '[attr.data-indeterminate]': 'indeterminate() || null',
     '[attr.aria-invalid]': 'shouldDisplayError() || null',
     '[attr.aria-disabled]': 'disabled() || null',

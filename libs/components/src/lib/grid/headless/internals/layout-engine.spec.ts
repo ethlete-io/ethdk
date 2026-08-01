@@ -119,7 +119,7 @@ describe('layout-engine', () => {
 
     it('should never produce overlaps when clamping drops an item onto an occupied cell', () => {
       // Reproduces the resize bug: in a 6-col grid, opportunities sits at col 8 (out of bounds).
-      // Clamping alone would slide it to col 2 — straight on top of contacts at col 0.
+      // Clamping alone would slide it to col 2 - straight on top of contacts at col 0.
       const entries: GridLayoutEntry[] = [
         { id: 'managers', position: { col: 0, row: 0, colSpan: 6, rowSpan: 2 } },
         { id: 'contacts', position: { col: 0, row: 2, colSpan: 6, rowSpan: 3 } },
@@ -320,7 +320,7 @@ describe('layout-engine', () => {
         expect(result.find((e) => e.id === 'other')?.position.row).toBe(2);
       });
 
-      it('does not apply when moving up — colliders are pushed down into the vacated space', () => {
+      it('does not apply when moving up - colliders are pushed down into the vacated space', () => {
         const entries: GridLayoutEntry[] = [
           { id: 'moved', position: { col: 0, row: 0, colSpan: 4, rowSpan: 2 } },
           { id: 'other', position: { col: 0, row: 0, colSpan: 4, rowSpan: 2 } },

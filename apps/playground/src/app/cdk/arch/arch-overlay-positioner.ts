@@ -1,6 +1,6 @@
 // Extracted from arch.component.ts: an interpolated template literal above an inline `template:`
 // desynchronises the Angular VS Code extension's editor-side scanner, which then stops forwarding
-// template completions to the language service — see the
+// template completions to the language service - see the
 // `ethlete/no-template-literal-before-inline-template` lint rule.
 
 import { DestroyRef, inject } from '@angular/core';

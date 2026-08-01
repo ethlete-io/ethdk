@@ -32,7 +32,7 @@ import { ACCORDION_IMPORTS } from '@ethlete/components';
 | `et-accordion-group` | A stack of accordions separated by hairlines, with single-open and arrow-key navigation.                                         |
 | `etAccordionLabel`   | `ng-template` slot replacing the plain `label` text when the header needs markup.                                                |
 | `etAccordionHint`    | `ng-template` slot for secondary header content, rendered between the label and the chevron.                                     |
-| `etAccordionContent` | `ng-template` slot whose content is created on the first expand instead of up front — see [Deferred content](#deferred-content). |
+| `etAccordionContent` | `ng-template` slot whose content is created on the first expand instead of up front - see [Deferred content](#deferred-content). |
 
 ### Accordion inputs
 
@@ -40,7 +40,7 @@ import { ACCORDION_IMPORTS } from '@ethlete/components';
 | ----------------- | ------- | --------------------------------------------------------------------------------------------------------- |
 | `label`           | `''`    | The header text. Use `etAccordionLabel` instead when the header needs markup.                             |
 | `isOpen`          | `false` | Whether the panel is expanded. Two-way bindable (`[(isOpen)]`).                                           |
-| `isOpenByDefault` | `false` | Expand on first render. Only the initial value is honoured — a later change never reopens a closed panel. |
+| `isOpenByDefault` | `false` | Expand on first render. Only the initial value is honoured - a later change never reopens a closed panel. |
 | `disabled`        | `false` | Refuse to toggle. The header stays focusable and is marked `aria-disabled` rather than natively disabled. |
 | `headingLevel`    | `3`     | The heading level the header reports (`1`–`6`), so the accordion slots into the page outline.             |
 
@@ -48,8 +48,8 @@ import { ACCORDION_IMPORTS } from '@ethlete/components';
 
 | Input                | Default | Description                                                                        |
 | -------------------- | ------- | ---------------------------------------------------------------------------------- |
-| `autoCloseOthers`    | `false` | Keep at most one panel open — expanding one collapses the rest.                    |
-| `preventCloseLast`   | `false` | Keep at least one panel open — collapsing the last open one does nothing.          |
+| `autoCloseOthers`    | `false` | Keep at most one panel open - expanding one collapses the rest.                    |
+| `preventCloseLast`   | `false` | Keep at least one panel open - collapsing the last open one does nothing.          |
 | `arrowKeyNavigation` | `true`  | Move focus between headers with `ArrowUp`/`ArrowDown`, and jump with `Home`/`End`. |
 
 Leaving `autoCloseOthers` off lets a reader compare two sections side by side; turn it
@@ -60,7 +60,7 @@ order wins.
 ### Always keeping one open
 
 `preventCloseLast` is the other half: clicking the header of the only open panel does
-nothing. Together with `autoCloseOthers` the group behaves like a radio set — exactly one
+nothing. Together with `autoCloseOthers` the group behaves like a radio set - exactly one
 section open at a time, which is the right shape for a set of mutually exclusive views.
 
 ```html
@@ -71,7 +71,7 @@ section open at a time, which is the right shape for a set of mutually exclusive
 
 Two things it deliberately does not do:
 
-- **It doesn't mark the header `aria-disabled`.** The control isn't disabled — it works, and
+- **It doesn't mark the header `aria-disabled`.** The control isn't disabled - it works, and
   it will collapse the moment another panel is open. Announcing it as disabled would be wrong
   a second later, and it would also stop conveying `aria-expanded="true"`, which is the state
   that actually matters here.
@@ -80,11 +80,11 @@ Two things it deliberately does not do:
   guaranteeing one from the start. Use `isOpenByDefault` on a panel if you want one.
 
 It gates the header's own toggle. `close()`, `closeAll()` and writing `[(isOpen)]` still
-collapse the panel — the same way they ignore `disabled` — so a "collapse everything" control
+collapse the panel - the same way they ignore `disabled` - so a "collapse everything" control
 keeps working.
 
 The group's directive also exposes `openAll()` and `closeAll()` for a "expand
-everything" control — grab it with `#group="etAccordionGroup"`. `openAll()` does
+everything" control - grab it with `#group="etAccordionGroup"`. `openAll()` does
 nothing while `autoCloseOthers` is on, since it would immediately undo itself.
 
 ## Rich headers
@@ -100,14 +100,14 @@ nothing while `autoCloseOthers` is on, since it would immediately undo itself.
 </et-accordion>
 ```
 
-The hint sits between the label and the chevron in muted text — a summary of what's
+The hint sits between the label and the chevron in muted text - a summary of what's
 inside ("3 items", "Optional"), not a second label.
 
 ## Deferred content
 
 Children projected into `<et-accordion>` are created with their parent, whether the
-panel ever opens or not. When the panel holds something expensive — a table, a chart, a
-component that fetches — put it in an `etAccordionContent` template instead: it is
+panel ever opens or not. When the panel holds something expensive - a table, a chart, a
+component that fetches - put it in an `etAccordionContent` template instead: it is
 created on the first expand and then stays mounted, so collapsing keeps its state and
 still has something to animate.
 
@@ -136,14 +136,14 @@ owns the state and the ids, `etAccordionTrigger` wires up `aria-expanded` /
     </h3>
 
     @if (accordion.isOpen()) {
-    <div etAccordionPanel>Rendered only while open — no height animation needed.</div>
+    <div etAccordionPanel>Rendered only while open - no height animation needed.</div>
     }
   </div>
 </div>
 ```
 
 Put the trigger on a native `<button>`: that is what gives you Enter/Space, focus and
-the right role for free. A panel may be rendered conditionally as above — the trigger
+the right role for free. A panel may be rendered conditionally as above - the trigger
 drops its `aria-controls` while the panel isn't in the DOM, rather than pointing at a
 missing id.
 
@@ -175,7 +175,7 @@ working normally inside panel content; switch it off entirely with
 `[arrowKeyNavigation]="false"`.
 
 The collapse animation is a `grid-template-rows` transition, dropped under
-`prefers-reduced-motion: reduce` — expanding then happens instantly instead of being
+`prefers-reduced-motion: reduce` - expanding then happens instantly instead of being
 paused mid-way.
 
 ## Theming
@@ -188,10 +188,10 @@ and hairlines from the surface tokens, the hover/press tint mixed from
 | Property                        | Default | Applies to                                                 |
 | ------------------------------- | ------- | ---------------------------------------------------------- |
 | `--et-accordion-padding-block`  | `14px`  | header padding, and the panel's bottom padding             |
-| `--et-accordion-padding-inline` | `0px`   | header and panel side padding — raise it for a boxed group |
+| `--et-accordion-padding-inline` | `0px`   | header and panel side padding - raise it for a boxed group |
 | `--et-accordion-gap`            | `12px`  | gap between label, hint and chevron                        |
 | `--et-accordion-chevron-size`   | `14px`  | chevron box                                                |
-| `--et-accordion-radius`         | `0px`   | the hover tint's shape — raise it when the group is a card |
+| `--et-accordion-radius`         | `0px`   | the hover tint's shape - raise it when the group is a card |
 | `--et-accordion-duration`       | `240ms` | collapse and chevron rotation                              |
 
 Every accordion brings its own bottom hairline and the group drops the trailing one, so
@@ -208,5 +208,5 @@ a boxed group is a border and a radius away without having to undo anything:
 ## Error codes
 
 The accordion throws `ET36xx` in dev mode when its parts are misplaced (a trigger,
-panel or slot template outside an `[etAccordion]`, or an accordion with no trigger) —
+panel or slot template outside an `[etAccordion]`, or an accordion with no trigger) -
 see [error codes](/components/error-codes#accordion-et36xx).

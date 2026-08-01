@@ -42,7 +42,7 @@ export type QueryState<TArgs extends QueryArgs> = {
    * A discrete, query-level stream of every request event, fed synchronously from the current
    * request's `events$` at the moment each event occurs. Side-effect features
    * (success/error/logging) subscribe to this instead of edge-detecting on the shared, resettable
-   * `response`/`error`/`latestHttpEvent` signals — so they cannot miss a transition when the next
+   * `response`/`error`/`latestHttpEvent` signals - so they cannot miss a transition when the next
    * execution swaps the underlying request.
    */
   events$: Observable<RequestHttpEvent<TArgs>>;

@@ -9,7 +9,7 @@ export type SignalElementChildrenOptions = {
    * change *might* change which children an element has.
    *
    * Narrow it wherever the consumer knows better. `attributes: true` in particular makes every inline style
-   * or class write anywhere in the subtree re-run this — which for a scroll container whose descendants are
+   * or class write anywhere in the subtree re-run this - which for a scroll container whose descendants are
    * written to per animation frame is a change detection tick per frame for nothing. Pass an
    * `attributeFilter` (or drop `attributes`) in that case.
    */

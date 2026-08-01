@@ -5,7 +5,7 @@
 ### Minor Changes
 
 - [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`e052061`](https://github.com/ethlete-io/ethdk/commit/e0520614647b784f19ad55a4d7f6df47acec154e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Localization: one mechanism for every string the library renders. `createLabels` (core) backs a
-  `provide<Domain>Labels` / `inject<Domain>Labels` pair per domain — 22 of them, all locale-reactive and
+  `provide<Domain>Labels` / `inject<Domain>Labels` pair per domain - 22 of them, all locale-reactive and
   signal-shaped. See the [localization guide](https://ethlete-sdk-docs-next.web.app/components/localization).
 
   - New tokens make the rich text editor, stream, grid, loader, chip, calendar, time picker, dropzone,
@@ -23,12 +23,12 @@
 
 - [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`4624559`](https://github.com/ethlete-io/ethdk/commit/4624559c81ed9b6efffc539b8f1dd0db0556420c) Thanks [@github-actions](https://github.com/apps/github-actions)! - RTL and reduced-motion consistency pass:
 
-  - Side sheets and the notification stack dock, animate and drag toward their logical inline edge under `dir="rtl"` — `dragToDismiss.direction` gains `'to-inline-start'` / `'to-inline-end'`.
+  - Side sheets and the notification stack dock, animate and drag toward their logical inline edge under `dir="rtl"` - `dragToDismiss.direction` gains `'to-inline-start'` / `'to-inline-end'`.
   - `createFlipAnimation` and the PiP animations now skip to their end state under `prefers-reduced-motion`; `ignoreReducedMotion` opts out, and `matchesReducedMotion()` is exported for helpers with no injection context.
   - The full-screen overlay animation throws `ET1209` when it has no origin element, instead of a bare `Error`.
 
-- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`f6061e1`](https://github.com/ethlete-io/ethdk/commit/f6061e162aacd3c847ad1a9c9c9ef13d2e494b7f) Thanks [@github-actions](https://github.com/apps/github-actions)! - `createSwipeTracker` now reports the release velocity — measured over the trailing
-  100ms of the gesture (`SWIPE_VELOCITY_WINDOW_MS`) — in `pixelPerSecondX/Y` instead
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`f6061e1`](https://github.com/ethlete-io/ethdk/commit/f6061e162aacd3c847ad1a9c9c9ef13d2e494b7f) Thanks [@github-actions](https://github.com/apps/github-actions)! - `createSwipeTracker` now reports the release velocity - measured over the trailing
+  100ms of the gesture (`SWIPE_VELOCITY_WINDOW_MS`) - in `pixelPerSecondX/Y` instead
   of the whole-gesture average. A slow drag ending in a flick reports the flick, and a
   flick parked before release reports ~0.
 
@@ -36,23 +36,23 @@
 
 - [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`b06ed44`](https://github.com/ethlete-io/ethdk/commit/b06ed44db47a52d2a07a4d9a6b3bd3b04011decb) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay: the anchored arrow no longer rides into a pane's rounded corner on aligned placements or when a pane
   shifts near a viewport edge. `arrowPadding` now measures the arrow's actual base, so it means "how close the
-  arrow may get to the corners" — tooltip and toggletip default to `20` (was `8`), a bare anchored strategy to
+  arrow may get to the corners" - tooltip and toggletip default to `20` (was `8`), a bare anchored strategy to
   `12` (was `4`).
 
 ## 5.0.0-next.35
 
 ### Minor Changes
 
-- [`a20d0ce`](https://github.com/ethlete-io/ethdk/commit/a20d0cee2f9937ad45ac1fd5eaec3c1a6ac1d27c) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectIsDocumentVisible()` — a signal for whether the page is the tab in front, which an
+- [`a20d0ce`](https://github.com/ethlete-io/ethdk/commit/a20d0cee2f9937ad45ac1fd5eaec3c1a6ac1d27c) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `injectIsDocumentVisible()` - a signal for whether the page is the tab in front, which an
   IntersectionObserver cannot tell you.
 
-- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`d787b1d`](https://github.com/ethlete-io/ethdk/commit/d787b1de041da31b6974a9f1b06ceb6ba6f5f6c5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Export `dragGestureFrom(event, element, { commitThreshold })` — the pointer-drag primitive that
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`d787b1d`](https://github.com/ethlete-io/ethdk/commit/d787b1de041da31b6974a9f1b06ceb6ba6f5f6c5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Export `dragGestureFrom(event, element, { commitThreshold })` - the pointer-drag primitive that
   `etDragHandle` is built on, now usable directly. It takes a `pointerdown` and returns an observable of
   `start` / `move` / `end` (or a single `tapped` when the pointer never crossed the commit threshold),
   completing with the gesture.
 
   Prefer the directive. Reach for the primitive when the draggable element belongs to someone else's
-  template and you only have a delegated `pointerdown` — the case that motivated this: `et-table`'s
+  template and you only have a delegated `pointerdown` - the case that motivated this: `et-table`'s
   opt-in column-reorder feature attaches a drag to header cells the table itself renders, without the
   table having to import any drag code.
 
@@ -67,7 +67,7 @@
 
 ### Patch Changes
 
-- [`4ffabfb`](https://github.com/ethlete-io/ethdk/commit/4ffabfbe1830d4560b98dcda7d262155273dd62e) Thanks [@TomTomB](https://github.com/TomTomB)! - `useCursorDragScroll` no longer starts a drag on a secondary click, and ends one when a context menu opens —
+- [`4ffabfb`](https://github.com/ethlete-io/ethdk/commit/4ffabfbe1830d4560b98dcda7d262155273dd62e) Thanks [@TomTomB](https://github.com/TomTomB)! - `useCursorDragScroll` no longer starts a drag on a secondary click, and ends one when a context menu opens -
   previously a right-click left it latched on, so every later mouse move scrolled the container.
 
 ## 5.0.0-next.34
@@ -93,17 +93,17 @@
 ### Minor Changes
 
 - [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`1a6849f`](https://github.com/ethlete-io/ethdk/commit/1a6849fa37e8f6907d08766846a50d3d9de8211b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add the `unsavedChanges` family for guarding forms against accidental discard, and a close-veto seam in the overlay runtime that powers it.
-  - `createUnsavedChangesTracker` — snapshots a default value, tracks whether the watched form/value differs from it (deep-equal snapshot semantics, not signal-forms `dirty()`), and normalizes an async `confirm` (value / Promise / Observable) to a `Promise<boolean>`. Signal-forms `FieldTree` is the first-class source; `Signal<FieldTree | null>` (late/async forms), `AbstractControl` (migration), and `WritableSignal` (escape hatch) are also supported. Includes `refreshDefaultValue` (re-baseline after a save-and-keep-open) and `restoreDefaultValue`.
-  - `createUnsavedChangesGuard` — the router/manual flavor, adding a `canDeactivate` bridge for Angular route guards.
+  - `createUnsavedChangesTracker` - snapshots a default value, tracks whether the watched form/value differs from it (deep-equal snapshot semantics, not signal-forms `dirty()`), and normalizes an async `confirm` (value / Promise / Observable) to a `Promise<boolean>`. Signal-forms `FieldTree` is the first-class source; `Signal<FieldTree | null>` (late/async forms), `AbstractControl` (migration), and `WritableSignal` (escape hatch) are also supported. Includes `refreshDefaultValue` (re-baseline after a save-and-keep-open) and `restoreDefaultValue`.
+  - `createUnsavedChangesGuard` - the router/manual flavor, adding a `canDeactivate` bridge for Angular route guards.
   - Overlay runtime: `overlayRef.registerCloseGuard(guard)` (synchronous veto for pending closes, returns an unregister fn) and `overlayRef.forceClose(result?, source?)` (commit a close bypassing guards). `reference-detached` closes always bypass guards. This is the seam `createOverlayUnsavedChangesGuard` in `@ethlete/components` builds on.
 
 ### Patch Changes
 
-- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`4d70fb1`](https://github.com/ethlete-io/ethdk/commit/4d70fb1fd173e7e9d25031551f752196abb6f94e) Thanks [@github-actions](https://github.com/apps/github-actions)! - `etAutoSurface` now elevates correctly for content rendered inside an overlay. Projected/portaled content keeps the injector of where it was _declared_ (the trigger location), not the pane it renders into, so an `etAutoSurface` inside a select body, menu, date-picker, etc. resolved its parent surface from the outer trigger context and came out one elevation too low — the same level as the overlay's own panel instead of one above it.
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`4d70fb1`](https://github.com/ethlete-io/ethdk/commit/4d70fb1fd173e7e9d25031551f752196abb6f94e) Thanks [@github-actions](https://github.com/apps/github-actions)! - `etAutoSurface` now elevates correctly for content rendered inside an overlay. Projected/portaled content keeps the injector of where it was _declared_ (the trigger location), not the pane it renders into, so an `etAutoSurface` inside a select body, menu, date-picker, etc. resolved its parent surface from the outer trigger context and came out one elevation too low - the same level as the overlay's own panel instead of one above it.
 
-  `AutoSurfaceDirective` now also consults the root surface-context tracker (which records the innermost open overlay's surface across the portal boundary) and takes whichever parent surface sits higher. Overlay panels that are themselves the overlay's surface (menu, select/date/cascader panels, tooltip, toggletip) opt out via the new `AutoSurfaceDirective.ignoreOverlaySurfaceContext()` so they keep adopting their overlay's elevation rather than stacking above it — their rendered surface is unchanged.
+  `AutoSurfaceDirective` now also consults the root surface-context tracker (which records the innermost open overlay's surface across the portal boundary) and takes whichever parent surface sits higher. Overlay panels that are themselves the overlay's surface (menu, select/date/cascader panels, tooltip, toggletip) opt out via the new `AutoSurfaceDirective.ignoreOverlaySurfaceContext()` so they keep adopting their overlay's elevation rather than stacking above it - their rendered surface is unchanged.
 
-- [`eee0451`](https://github.com/ethlete-io/ethdk/commit/eee0451642bfbce97991e539b938fc7c4c84e846) Thanks [@TomTomB](https://github.com/TomTomB)! - `ColorInteractiveDirective`: a readonly control (`aria-readonly="true"`) now keeps its resting accent — hover/active/focus no longer retint it, matching the view-only intent (previously a readonly switch still showed a press color shift).
+- [`eee0451`](https://github.com/ethlete-io/ethdk/commit/eee0451642bfbce97991e539b938fc7c4c84e846) Thanks [@TomTomB](https://github.com/TomTomB)! - `ColorInteractiveDirective`: a readonly control (`aria-readonly="true"`) now keeps its resting accent - hover/active/focus no longer retint it, matching the view-only intent (previously a readonly switch still showed a press color shift).
 
 - [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`008fca5`](https://github.com/ethlete-io/ethdk/commit/008fca57ad434e6d996b1af21f95c55902f74dcd) Thanks [@github-actions](https://github.com/apps/github-actions)! - `ColorInteractiveHasFocusDirective` (`[etColorInteractiveHasFocus]`) now resolves the theme's **base** accent while a descendant is `:focus-visible`, instead of the `-focus` variant. A container merely mirroring a child's focus (e.g. a form field's frame) should read as the plain accent color; the `-focus` variant remains reserved for an element that is itself focused (`[etColorInteractive]:focus-visible`). Effect: focused form fields now paint their focus border/label in the base accent rather than the focus-adjusted shade.
 
@@ -111,7 +111,7 @@
 
 ### Patch Changes
 
-- [#3028](https://github.com/ethlete-io/ethdk/pull/3028) [`d8f50c5`](https://github.com/ethlete-io/ethdk/commit/d8f50c530b976390a8e655f3b1a4c0b9eaaae6ab) Thanks [@github-actions](https://github.com/apps/github-actions)! - Hover styles across all interactive components (buttons, chips, form controls, selects, cascader, menu, tabs, calendar, time picker, notification) no longer stick after tapping on touch devices — including the `etColorInteractive`/`etSurfaceInteractive` hover token resolution (guarded by `@media (hover: hover)`).
+- [#3028](https://github.com/ethlete-io/ethdk/pull/3028) [`d8f50c5`](https://github.com/ethlete-io/ethdk/commit/d8f50c530b976390a8e655f3b1a4c0b9eaaae6ab) Thanks [@github-actions](https://github.com/apps/github-actions)! - Hover styles across all interactive components (buttons, chips, form controls, selects, cascader, menu, tabs, calendar, time picker, notification) no longer stick after tapping on touch devices - including the `etColorInteractive`/`etSurfaceInteractive` hover token resolution (guarded by `@media (hover: hover)`).
 
 ## 5.0.0-next.29
 
@@ -119,7 +119,7 @@
 
 - [`2fca323`](https://github.com/ethlete-io/ethdk/commit/2fca323a6beac0299b8e0ec6724fffd4149ad7cd) Thanks [@TomTomB](https://github.com/TomTomB)! - `injectAnimatedBlockSize` can now animate the inline axis too via the new `axes` option (`['block' | 'inline']`, static or signal-based; default `['block']` as before). Used by the cascader panel to grow/shrink its width as columns drill in and out.
 
-- [`4b7cf51`](https://github.com/ethlete-io/ethdk/commit/4b7cf51a6f68cdaf364169945586fedc5621cad6) Thanks [@TomTomB](https://github.com/TomTomB)! - Theme generators: pick the default theme at generation time — `--defaultTheme=<name>` on `tailwind-4-color-theme` and `--defaultLightTheme=<name>` / `--defaultDarkTheme=<name>` on `tailwind-4-surface-theme` override any `isDefault` flags in the definitions, so apps sharing one theme definition set (e.g. in a monorepo) can each generate a different default.
+- [`4b7cf51`](https://github.com/ethlete-io/ethdk/commit/4b7cf51a6f68cdaf364169945586fedc5621cad6) Thanks [@TomTomB](https://github.com/TomTomB)! - Theme generators: pick the default theme at generation time - `--defaultTheme=<name>` on `tailwind-4-color-theme` and `--defaultLightTheme=<name>` / `--defaultDarkTheme=<name>` on `tailwind-4-surface-theme` override any `isDefault` flags in the definitions, so apps sharing one theme definition set (e.g. in a monorepo) can each generate a different default.
 
 ### Patch Changes
 
@@ -133,30 +133,30 @@
 
 - [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`9431073`](https://github.com/ethlete-io/ethdk/commit/9431073bb693aa10bbb84d5196597cb2c4b7463f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlays and menus now open on insecure origins (plain-HTTP pages on a LAN IP, not just `localhost`/HTTPS). Id generation used `crypto.randomUUID()`, which is `undefined` outside a secure context, so opening any dialog, sheet, anchored overlay or menu threw and only the backdrop appeared. A new `randomId()` helper in `@ethlete/core` uses `crypto.randomUUID()` when available and falls back to `getRandomValues` otherwise.
 
-- [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`9431073`](https://github.com/ethlete-io/ethdk/commit/9431073bb693aa10bbb84d5196597cb2c4b7463f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: the link flow is now a responsive popover (arrow-anchored on wider screens, a keyboard-pinned top sheet on touch) to edit a link's text and URL, with an open-in-new-tab toggle — replacing the browser `prompt()`. New-tab links persist through the Markdown value as raw HTML (`<a target="_blank" rel="noopener noreferrer">`); ordinary links stay `[text](url)`. `htmlToMarkdown` / `markdownToHtml` in `@ethlete/core` now round-trip `target="_blank"` anchors (sanitized href + forced `rel`). After applying a link the caret moves just past it, with a trailing space added when the link ends the line.
+- [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`9431073`](https://github.com/ethlete-io/ethdk/commit/9431073bb693aa10bbb84d5196597cb2c4b7463f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: the link flow is now a responsive popover (arrow-anchored on wider screens, a keyboard-pinned top sheet on touch) to edit a link's text and URL, with an open-in-new-tab toggle - replacing the browser `prompt()`. New-tab links persist through the Markdown value as raw HTML (`<a target="_blank" rel="noopener noreferrer">`); ordinary links stay `[text](url)`. `htmlToMarkdown` / `markdownToHtml` in `@ethlete/core` now round-trip `target="_blank"` anchors (sanitized href + forced `rel`). After applying a link the caret moves just past it, with a trailing space added when the link ends the line.
 
 ### Patch Changes
 
-- [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`49591f4`](https://github.com/ethlete-io/ethdk/commit/49591f4e529552fde07ef88b9754bf7c0cd91a3b) Thanks [@github-actions](https://github.com/apps/github-actions)! - `injectAnimatedBlockSize`: growing panels (menu, select) no longer flash at their final size for one frame before the resize animation plays — the animation now starts inside the `ResizeObserver` callback, before the browser paints the new layout.
+- [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`49591f4`](https://github.com/ethlete-io/ethdk/commit/49591f4e529552fde07ef88b9754bf7c0cd91a3b) Thanks [@github-actions](https://github.com/apps/github-actions)! - `injectAnimatedBlockSize`: growing panels (menu, select) no longer flash at their final size for one frame before the resize animation plays - the animation now starts inside the `ResizeObserver` callback, before the browser paints the new layout.
 
 - [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`d262f59`](https://github.com/ethlete-io/ethdk/commit/d262f596a4f0e3dda315447d0173cba301237c01) Thanks [@github-actions](https://github.com/apps/github-actions)! - `htmlToMarkdown`: boundary whitespace inside bold/italic/strikethrough now serializes outside the delimiters (`<strong> x</strong>` → ` **x**` instead of the invalid `** x**`).
 
 - [#3022](https://github.com/ethlete-io/ethdk/pull/3022) [`00b7c33`](https://github.com/ethlete-io/ethdk/commit/00b7c337e5ae0ac1bfc7186237b1ac2879eb018d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Theming: overlay panes (menu, select) now resolve their color context through passive providers and apply it before the first painted frame.
-  - `ProvideColorDirective` gains `resolvedColor` — the color that actually applies at the provider's location, falling through passive providers like the CSS cascade does. `syncWithProvider` uses it, so a passive in-between provider (e.g. a form field's) no longer erases the theme inside a detached overlay pane.
+  - `ProvideColorDirective` gains `resolvedColor` - the color that actually applies at the provider's location, falling through passive providers like the CSS cascade does. `syncWithProvider` uses it, so a passive in-between provider (e.g. a form field's) no longer erases the theme inside a detached overlay pane.
   - The menu and select panels install the context sync during construction instead of in an effect, eliminating a wrong-theme flash during the enter animation.
 
 ## 5.0.0-next.27
 
 ### Minor Changes
 
-- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`1d7aaca`](https://github.com/ethlete-io/ethdk/commit/1d7aacaec10f3d3d7278733ebf5d834e8a89b1f7) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `injectAnimatedBlockSize` — a core util that smoothly animates an element's `block-size` as its
+- [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`1d7aaca`](https://github.com/ethlete-io/ethdk/commit/1d7aacaec10f3d3d7278733ebf5d834e8a89b1f7) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `injectAnimatedBlockSize` - a core util that smoothly animates an element's `block-size` as its
   content resizes (baseline captured on first render so the initial layout never plays as a
   grow-from-0, interruption-safe, respects `prefers-reduced-motion`). `et-menu` and the rich text
   editor's trigger popup now share it, giving a more consistent, smoother resize.
 
 - [`c829986`](https://github.com/ethlete-io/ethdk/commit/c82998628a487effe34d2061811f3cee0fa4f7bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Add clipboard utilities: `copyToClipboard(text)` writes text to the clipboard (async Clipboard API with an `execCommand('copy')` fallback) and resolves to a success boolean, `readFromClipboard()` resolves to the clipboard text or `null`. Both are SSR-safe and never throw.
 
-- [`c829986`](https://github.com/ethlete-io/ethdk/commit/c82998628a487effe34d2061811f3cee0fa4f7bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Markdown: GFM table column alignment round-trips — `markdownToHtml` applies `:---` / `:---:` / `---:` separators as `text-align` on every cell of the column, and `htmlToMarkdown` serializes the header cells' `text-align` back into the separator line.
+- [`c829986`](https://github.com/ethlete-io/ethdk/commit/c82998628a487effe34d2061811f3cee0fa4f7bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Markdown: GFM table column alignment round-trips - `markdownToHtml` applies `:---` / `:---:` / `---:` separators as `text-align` on every cell of the column, and `htmlToMarkdown` serializes the header cells' `text-align` back into the separator line.
 
 - [`c829986`](https://github.com/ethlete-io/ethdk/commit/c82998628a487effe34d2061811f3cee0fa4f7bc) Thanks [@TomTomB](https://github.com/TomTomB)! - Markdown: `markdownToHtml` now escapes raw HTML in text (only the deliberate `<u>` / aligned-block passthroughs render, with aligned blocks reduced to a safe inline vocabulary) and rejects script-running URL schemes in links/images. Round-trip fixes and additions:
   - Soft line breaks (`<br>`) survive in paragraphs and block quotes, and degrade to a space in table cells and list items instead of being dropped.
@@ -179,7 +179,7 @@
 
 - [#3019](https://github.com/ethlete-io/ethdk/pull/3019) [`af660e3`](https://github.com/ethlete-io/ethdk/commit/af660e346204d18ad39cc700c8698bb897fba339) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: the toolbar is now configurable. A new `tools` input takes an ordered list of tool tokens (`'bold' | 'italic' | 'strike' | 'heading' | 'bulletedList' | 'numberedList' | 'link' | 'divider'`), and `provideRichTextEditorTools(...)` sets the default for a scope. The block style is now picked from a `heading` menu (Normal / Heading 1–3) shown first in the toolbar, and toolbar buttons are larger and squarer.
 
-  Form field: read-only text controls (`et-input`, `et-rich-text-editor`) now keep their normal box but drop all interactive affordances — no hover/focus border change, default cursor — so read-only reads as view-only content, distinct from disabled.
+  Form field: read-only text controls (`et-input`, `et-rich-text-editor`) now keep their normal box but drop all interactive affordances - no hover/focus border change, default cursor - so read-only reads as view-only content, distinct from disabled.
 
   Icon button: added an `--et-icon-button-border-radius` custom property so an ancestor context (e.g. a toolbar) can square off the otherwise fully-round button.
 
@@ -191,7 +191,7 @@
 
 - [#3018](https://github.com/ethlete-io/ethdk/pull/3018) [`5d26649`](https://github.com/ethlete-io/ethdk/commit/5d266491805f5f0af4a5912a08beab02dafb629b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add an `initials` util and `InitialsPipe` (`| initials`) that extract uppercased initials from a name, capped at a configurable number of characters (defaults to 2).
 
-- [#3018](https://github.com/ethlete-io/ethdk/pull/3018) [`5d26649`](https://github.com/ethlete-io/ethdk/commit/5d266491805f5f0af4a5912a08beab02dafb629b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add a `slugify` util and `SlugifyPipe` (`| slugify`) that convert a string into a URL-friendly slug — diacritics stripped, lowercased, non-alphanumeric runs collapsed to single hyphens.
+- [#3018](https://github.com/ethlete-io/ethdk/pull/3018) [`5d26649`](https://github.com/ethlete-io/ethdk/commit/5d266491805f5f0af4a5912a08beab02dafb629b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add a `slugify` util and `SlugifyPipe` (`| slugify`) that convert a string into a URL-friendly slug - diacritics stripped, lowercased, non-alphanumeric runs collapsed to single hyphens.
 
 ## 5.0.0-next.25
 
@@ -205,7 +205,7 @@
 
 - [#3016](https://github.com/ethlete-io/ethdk/pull/3016) [`2f18e43`](https://github.com/ethlete-io/ethdk/commit/2f18e4344759dbbcd17ba0dbeca138f1f7043cdf) Thanks [@github-actions](https://github.com/apps/github-actions)! - Anchored overlays: the `shift` option now also accepts `{ crossAxis?: boolean }` in addition to a boolean. With `crossAxis: true`, an overlay that fits on neither side of its reference is shifted along the placement's cross axis to stay inside the viewport (it may then overlap the reference) instead of overflowing off-screen.
 
-  Menus enable this by default: a nested submenu near the viewport edge first flips to the other side and, when neither side fits, slides over its parent menu — matching native OS menu behavior — instead of being cut off by the viewport.
+  Menus enable this by default: a nested submenu near the viewport edge first flips to the other side and, when neither side fits, slides over its parent menu - matching native OS menu behavior - instead of being cut off by the viewport.
 
   The `size` middleware (`autoResize`) now runs after `shift` instead of before it, so `--et-overlay-max-width` / `--et-overlay-max-height` are measured from the pane's shifted position. Previously a cross-axis-shifted pane had its max size capped to the unshifted leftover space, squeezing e.g. a submenu to a sliver instead of letting it keep its width while overlapping its parent.
 
@@ -213,7 +213,7 @@
 
 - [#3016](https://github.com/ethlete-io/ethdk/pull/3016) [`2f18e43`](https://github.com/ethlete-io/ethdk/commit/2f18e4344759dbbcd17ba0dbeca138f1f7043cdf) Thanks [@github-actions](https://github.com/apps/github-actions)! - Animations: fix overlays getting stuck in the DOM in an invisible but click-blocking state when their leave transition never reported completion.
 
-  When several anchored overlays close at once (e.g. clicking an item inside a nested menu closes the whole menu tree), destroying an ancestor pane shifts the anchored position of a still-leaving descendant. The browser then cancels and restarts the running transition, so its end event arrives either flagged as cancelled or under a stale transition id — and the animated lifecycle waited forever for an event that could no longer arrive, leaving the pane orphaned at `opacity: 0` while still intercepting pointer events. The lifecycle now treats the transition as settled once no animation is running anymore, matching the fallback the interrupted-transition path already had, so the overlay is torn down reliably.
+  When several anchored overlays close at once (e.g. clicking an item inside a nested menu closes the whole menu tree), destroying an ancestor pane shifts the anchored position of a still-leaving descendant. The browser then cancels and restarts the running transition, so its end event arrives either flagged as cancelled or under a stale transition id - and the animated lifecycle waited forever for an event that could no longer arrive, leaving the pane orphaned at `opacity: 0` while still intercepting pointer events. The lifecycle now treats the transition as settled once no animation is running anymore, matching the fallback the interrupted-transition path already had, so the overlay is torn down reliably.
 
 - [#3016](https://github.com/ethlete-io/ethdk/pull/3016) [`3b359e5`](https://github.com/ethlete-io/ethdk/commit/3b359e52c5efa1cd9b0e79216fc578525aafa8e8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Tailwind surface & color theme generators: fix the dynamic `--color-*-surface-*` /
   `--color-*-theme-*` variables not resolving per scope. They were emitted only inside
@@ -259,7 +259,7 @@
 
   These give consumers absolute pointer information without having to accumulate the per-step deltas themselves.
 
-- [#3013](https://github.com/ethlete-io/ethdk/pull/3013) [`3f2eaad`](https://github.com/ethlete-io/ethdk/commit/3f2eaadf324bc6962a78efd2be1b7935106cc423) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay: anchored positioning now accepts a `VirtualElement` (from `@floating-ui/dom`) as the `referenceElement`, not just an `HTMLElement`. This makes it possible to anchor an overlay to an arbitrary point or region — for example positioning a context menu at the pointer. When a virtual reference is used, `mirrorWidth` and origin-element based behaviors gracefully fall back since there is no real element to measure.
+- [#3013](https://github.com/ethlete-io/ethdk/pull/3013) [`3f2eaad`](https://github.com/ethlete-io/ethdk/commit/3f2eaadf324bc6962a78efd2be1b7935106cc423) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay: anchored positioning now accepts a `VirtualElement` (from `@floating-ui/dom`) as the `referenceElement`, not just an `HTMLElement`. This makes it possible to anchor an overlay to an arbitrary point or region - for example positioning a context menu at the pointer. When a virtual reference is used, `mirrorWidth` and origin-element based behaviors gracefully fall back since there is no real element to measure.
 
 - [#3013](https://github.com/ethlete-io/ethdk/pull/3013) [`3f2eaad`](https://github.com/ethlete-io/ethdk/commit/3f2eaadf324bc6962a78efd2be1b7935106cc423) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `injectPrefersReducedMotion`, a signal that reflects the `(prefers-reduced-motion: reduce)` media query so components can opt out of animations for users who prefer reduced motion.
 

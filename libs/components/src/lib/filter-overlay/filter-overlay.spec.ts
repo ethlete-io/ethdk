@@ -108,7 +108,7 @@ describe('provideFilterOverlay', () => {
     expect(filterOverlay.activeFilterCount()).toBe(0);
 
     // `search` and `page` are navigation state rather than filters, so the query form leaves them out of the
-    // count by design — which is what makes this the right number for a badge.
+    // count by design - which is what makes this the right number for a badge.
     filterOverlay.draft.patchValue({ search: 'chemie', page: 3 });
 
     expect(filterOverlay.activeFilterCount()).toBe(0);

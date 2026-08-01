@@ -7,7 +7,7 @@ import { createSourceFile, ensureImportFromQuery, ensureNamedImports, getLineNum
 /**
  * Points existing devtools usage at the v3 components instead of deleting it.
  *
- * Both versions render `<et-query-devtools>`, so templates need no change at all — only the provider
+ * Both versions render `<et-query-devtools>`, so templates need no change at all - only the provider
  * call and the component's import move. Stripping the markup (as this phase used to) threw away
  * something that would have kept working, and left every migrated app without devtools until someone
  * noticed they were gone.
@@ -171,7 +171,7 @@ const importsFromQuery = (content: string, name: string) => {
  * `provideQueryDevtools()`.
  *
  * v3 registers every client and auth provider at once, so N per-client calls collapse to one. The
- * first call site keeps its position — it is already where the app wanted its devtools — and the
+ * first call site keeps its position - it is already where the app wanted its devtools - and the
  * rest are removed along with the comma that separated them.
  */
 const replaceDevtoolsProviderCalls = (content: string) => {

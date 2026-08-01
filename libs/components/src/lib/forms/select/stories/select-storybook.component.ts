@@ -273,7 +273,7 @@ export class FormFieldSelectCountryStorybookComponent {
             <et-select-option [value]="project">{{ project }}</et-select-option>
           }
         </et-select>
-        <et-hint>The add-new row emits the current query — here it creates and selects the option</et-hint>
+        <et-hint>The add-new row emits the current query - here it creates and selects the option</et-hint>
       </et-form-field>
 
       <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
@@ -289,7 +289,7 @@ export class FormFieldSelectAddNewStorybookComponent {
   public demoForm = form(this.formModel);
 
   protected createProject(query: string) {
-    // a real app would open a creation dialog here — the emitted query prefills it.
+    // a real app would open a creation dialog here - the emitted query prefills it.
     // Deliberately not a template literal: an interpolated one above the inline template of the
     // component below breaks Angular language service completions there. See the
     // `ethlete/no-template-literal-before-inline-template` lint rule.
@@ -312,7 +312,7 @@ export class FormFieldSelectAddNewStorybookComponent {
         <et-select [formField]="demoForm.value" [options]="ITEMS" placeholder="Pick an item">
           <input etSelectSearch placeholder="Search 2000 items" />
         </et-select>
-        <et-hint>2000 options via the data-driven API — only the rows near the viewport are in the DOM</et-hint>
+        <et-hint>2000 options via the data-driven API - only the rows near the viewport are in the DOM</et-hint>
       </et-form-field>
 
       <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>
@@ -327,7 +327,7 @@ export class FormFieldSelectManyOptionsStorybookComponent {
   // `ethlete/no-template-literal-before-inline-template`.
   protected readonly ITEMS = Array.from({ length: 2000 }, (_, index) => ({
     value: 'item-' + (index + 1),
-    label: 'Item ' + (index + 1) + ' — ' + (FRUIT_OPTIONS[index % FRUIT_OPTIONS.length]?.label ?? ''),
+    label: 'Item ' + (index + 1) + ' - ' + (FRUIT_OPTIONS[index % FRUIT_OPTIONS.length]?.label ?? ''),
   }));
 
   private formModel = linkedSignal(() => ({ value: null as string | null }));
@@ -357,7 +357,7 @@ const LAST_NAMES = ['Adler', 'Berg', 'Castro', 'Diaz', 'Egede', 'Fuchs', 'Grau',
             </span>
           </ng-template>
         </et-select>
-        <et-hint>Windowed rows render through etSelectOptionTemplate — extra option fields stay available</et-hint>
+        <et-hint>Windowed rows render through etSelectOptionTemplate - extra option fields stay available</et-hint>
       </et-form-field>
 
       <p class="text-sm opacity-60">Form value: {{ demoForm.value().value() | json }}</p>

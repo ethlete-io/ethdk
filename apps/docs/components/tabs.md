@@ -33,7 +33,7 @@ import { TAB_IMPORTS } from '@ethlete/components';
 
 ## Nav tabs
 
-Anchors + router instead of an index — active state comes from `RouterLinkActive`, content renders through your `<router-outlet>`:
+Anchors + router instead of an index - active state comes from `RouterLinkActive`, content renders through your `<router-outlet>`:
 
 ```html
 <et-nav-tabs color="brand">
@@ -50,7 +50,7 @@ Anchors + router instead of an index — active state comes from `RouterLinkActi
 import { NAV_TAB_IMPORTS } from '@ethlete/components';
 ```
 
-`a[et-nav-tab-link]` forwards the usual `RouterLink` inputs (`queryParams`, `fragment`, `relativeTo`, …) and supports `disabled` just like content tabs. The optional `et-nav-tabs-outlet` wrapper gives the routed region proper `role="tabpanel"` semantics — place it as a sibling of `et-nav-tabs` (as above); it finds the bar that labels it automatically.
+`a[et-nav-tab-link]` forwards the usual `RouterLink` inputs (`queryParams`, `fragment`, `relativeTo`, …) and supports `disabled` just like content tabs. The optional `et-nav-tabs-outlet` wrapper gives the routed region proper `role="tabpanel"` semantics - place it as a sibling of `et-nav-tabs` (as above); it finds the bar that labels it automatically.
 
 <StoryEmbed id="components-tabs-nav-tabs--default" height="380px" />
 
@@ -65,7 +65,7 @@ Both flavors accept the shared tab-bar inputs:
 | `fit`               | `'content'`    | `'content' \| 'fill'`        |
 | `divider`           | `true`         | Divider line under the bar   |
 | `size`              | `'md'`         | `'sm' \| 'md' \| 'lg'`       |
-| `color` / `surface` | —              | App-registered theme names   |
+| `color` / `surface` | -              | App-registered theme names   |
 
 ## Accessibility
 

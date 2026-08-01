@@ -80,7 +80,7 @@ import {
     '[attr.data-expanded]': 'formFieldDir.usesTextFieldShell() && formFieldDir.expanded() ? "" : null',
     // stands in for `:focus-visible` when the focused element is a non-editable trigger (a
     // tabindex div opened by pointer never matches `:focus-visible`), keeping the focused frame
-    // and the clear affordance — both keyed on the control's `focused()` — in agreement
+    // and the clear affordance - both keyed on the control's `focused()` - in agreement
     '[attr.data-focused]': 'formFieldDir.usesTextFieldShell() && formFieldDir.focused() ? "" : null',
     '[attr.data-readonly]': 'formFieldDir.usesTextFieldShell() && formFieldDir.isReadonly() ? "" : null',
     '[attr.data-disabled]': 'formFieldDir.usesTextFieldShell() && formFieldDir.isDisabled() ? "" : null',
@@ -123,7 +123,7 @@ export class FormFieldComponent {
   protected errorAnimatable = viewChild<AnimatableDirective>('errorAnimatable');
   protected hintAnimatable = viewChild<AnimatableDirective>('hintAnimatable');
 
-  /** Whether the field is showing its busy affordance — a pending async validator, or `[busy]`. */
+  /** Whether the field is showing its busy affordance - a pending async validator, or `[busy]`. */
   public isBusy = computed(() => this.busy() || this.formFieldDir.isPending());
 
   private errorDimensions = signalElementDimensions(this.errorContent);
@@ -152,7 +152,7 @@ export class FormFieldComponent {
 
   public canAnimate = createCanAnimateSignal();
 
-  // real validation errors, or — when the control only has an unparseable committed value — a
+  // real validation errors, or - when the control only has an unparseable committed value - a
   // synthetic one carrying its parse message, so a parse error renders like any other error
   // (red styling + a message + aria-describedby) instead of a silent `aria-invalid`
   public effectiveErrors = computed<readonly ValidationError.WithOptionalFieldTree[]>(() => {
@@ -205,7 +205,7 @@ export class FormFieldComponent {
   protected shouldRenderSupport = computed(() => {
     const presentation = this.supportPresentation();
 
-    // A counter alone is reason enough to open the support region — it is persistent, so unlike the
+    // A counter alone is reason enough to open the support region - it is persistent, so unlike the
     // hint and error it isn't part of the swapping state machine.
     return (
       !!this.formFieldDir.registeredCounter() ||
@@ -262,7 +262,7 @@ export class FormFieldComponent {
     })();
 
     // The support region animates its own height, so a counter with no hint or error still has to
-    // contribute one — otherwise the row it sits in would be clipped to zero.
+    // contribute one - otherwise the row it sits in would be clipped to zero.
     const counterHeight = this.formFieldDir.registeredCounter() ? (this.counterDimensions().offset?.height ?? 0) : 0;
 
     return Math.max(stackHeight, counterHeight);

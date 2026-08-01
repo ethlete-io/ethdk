@@ -21,7 +21,7 @@ export class MultiLanguageRichTextEditorLanguageToolComponent {
 
   public editor = input.required<RichTextEditorDirective>();
 
-  /** The editor's strings — the switcher is part of that editor's toolbar. */
+  /** The editor's strings - the switcher is part of that editor's toolbar. */
   protected labels = computed(() => this.editor().resolvedLabels());
 
   protected languages = computed(() => this.wrapper?.languages() ?? []);

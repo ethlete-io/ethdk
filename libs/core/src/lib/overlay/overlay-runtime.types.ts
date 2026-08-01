@@ -27,7 +27,7 @@ export type OverlayRuntimeGlobalPosition = {
 export type OverlayRuntimeShiftOptions = {
   /**
    * Also shift along the placement's cross axis (e.g. horizontally for a `right-*` placement)
-   * when no placement fits the viewport. The pane may then overlap its reference element —
+   * when no placement fits the viewport. The pane may then overlap its reference element -
    * desirable for nested menus, usually not for tooltips. Defaults to `false`.
    */
   crossAxis?: boolean;
@@ -48,7 +48,7 @@ export type OverlayRuntimeAnchoredPosition = {
   mirrorWidth?: boolean;
   /**
    * Clipping element(s) the pane must stay within when flipping/shifting, instead of the default
-   * viewport (`clippingAncestors`). Use it to keep an anchored pane inside a specific region — e.g.
+   * viewport (`clippingAncestors`). Use it to keep an anchored pane inside a specific region - e.g.
    * a rich-text editor's content area, so its selection toolbar flips below rather than covering the
    * static toolbar above.
    */

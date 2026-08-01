@@ -25,7 +25,7 @@ import { dialogOverlayStrategy } from '../../strategies';
         <strong class="font-semibold text-white">{{ overlayQueryParam() }}</strong>
       </p>
       <p class="mt-3 text-small text-white/50">
-        Removing the param — or closing below — tears the overlay down and clears the URL.
+        Removing the param - or closing below - tears the overlay down and clears the URL.
       </p>
     </et-overlay-body>
 
@@ -56,7 +56,7 @@ export class QueryParamOverlayComponent {
   public overlayQueryParam = model<string>();
 }
 
-// Defined once at module level — in a real app this lives in its own file next to the component.
+// Defined once at module level - in a real app this lives in its own file next to the component.
 const demoOverlay = defineQueryParamOverlay({
   component: QueryParamOverlayComponent,
   strategies: dialogOverlayStrategy({ maxWidth: '480px' }),
@@ -76,7 +76,7 @@ const demoOverlay = defineQueryParamOverlay({
         Message input: <strong class="font-semibold text-white">{{ message() }}</strong>
       </p>
       <p class="mt-3 text-small text-white/50">
-        This pane carries both the definition-level and the opener-level panel class — configs merge additively instead
+        This pane carries both the definition-level and the opener-level panel class - configs merge additively instead
         of replacing each other.
       </p>
     </et-overlay-body>
@@ -123,7 +123,7 @@ const mergeDemoOverlay = defineOverlay<MergeDemoOverlayComponent, string>({
       <header class="flex flex-col gap-1">
         <h2 class="text-h5 font-title">Overlay openers</h2>
         <p class="text-small text-white/60">
-          A URL query param drives the overlay lifecycle — open, deep-link, and browser back/forward all work.
+          A URL query param drives the overlay lifecycle - open, deep-link, and browser back/forward all work.
         </p>
       </header>
 
@@ -143,13 +143,13 @@ const mergeDemoOverlay = defineOverlay<MergeDemoOverlayComponent, string>({
       </div>
 
       <p class="text-small text-white/50">
-        Current <code class="rounded bg-white/10 px-1 py-0.5">?demo</code> = {{ currentParam() ?? '—' }}
+        Current <code class="rounded bg-white/10 px-1 py-0.5">?demo</code> = {{ currentParam() ?? '-' }}
       </p>
 
       <header class="flex flex-col gap-1">
         <h2 class="text-h5 font-title">Config merging</h2>
         <p class="text-small text-white/60">
-          Definition, opener and per-open configs merge additively — bindings, providers and classes concatenate.
+          Definition, opener and per-open configs merge additively - bindings, providers and classes concatenate.
         </p>
       </header>
 
@@ -157,7 +157,7 @@ const mergeDemoOverlay = defineOverlay<MergeDemoOverlayComponent, string>({
         <button (click)="openMergeDemo($event)" et-button size="sm">Open with per-open binding</button>
       </div>
 
-      <p class="text-small text-white/50">Last result: {{ lastMergeResult() ?? '—' }}</p>
+      <p class="text-small text-white/50">Last result: {{ lastMergeResult() ?? '-' }}</p>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -182,7 +182,7 @@ export class OverlayOpenerStorybookComponent {
   protected currentParam = injectQueryParam('demo');
   protected readonly DEMO_OVERLAY = demoOverlay;
 
-  // Initialized once — reacts to any ?demo= param for the component's lifetime.
+  // Initialized once - reacts to any ?demo= param for the component's lifetime.
   protected demo = createOverlayOpener(demoOverlay);
 
   protected lastMergeResult = signal<string | null>(null);

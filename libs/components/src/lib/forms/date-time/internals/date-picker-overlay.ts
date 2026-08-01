@@ -22,7 +22,7 @@ export type CreateDatePickerOverlayOptions = {
 };
 
 /**
- * The picker overlay for the date, time, and date-time inputs — a thin binding of the shared
+ * The picker overlay for the date, time, and date-time inputs - a thin binding of the shared
  * `createAnchoredPanelController` to the date-picker config (bottom sheet below `md`, an anchored
  * pane above it, the calendar auto-focused). The controller owns the mount, the outside-pointer
  * close, and the model sync; this only supplies the config and forwards the close info (which now

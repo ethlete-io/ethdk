@@ -92,7 +92,7 @@ export const injectUrl = /* @__PURE__ */ memoizeSignal(() => {
     // We depend on `event` and `currentNavigation` only to get re-evaluated
     // around each navigation, but we read the *committed* url straight from the
     // router. The router commits `currentUrlTree` before it activates components,
-    // so `router.url` is already correct inside a child component's constructor —
+    // so `router.url` is already correct inside a child component's constructor -
     // unlike the NavigationEnd event, which only reaches this signal *after*
     // activation.
     event();
@@ -326,11 +326,11 @@ export const injectPathParamChanges = /* @__PURE__ */ memoizeSignal(() => {
 
 /**
  * The state handed to the navigation that is currently in progress, i.e. what
- * `router.navigate(…, { state })` passed — typed to whatever you expect.
+ * `router.navigate(…, { state })` passed - typed to whatever you expect.
  *
  * Read **synchronously**, in a constructor or a resolver, and deliberately not a signal: navigation state exists
  * only for the duration of the navigation that carries it. By the time an effect flushed, the navigation would be
- * over and the answer always `null`. Returns `null` when there is no navigation in flight or it carried no state —
+ * over and the answer always `null`. Returns `null` when there is no navigation in flight or it carried no state -
  * which is the normal case for a page arrived at by typing its URL, so always handle it.
  *
  * Use it for the things a URL should not carry: a "you were redirected because…" reason, a pre-fetched object the

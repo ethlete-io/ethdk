@@ -226,7 +226,7 @@ describe('createPagedQueryStack', () => {
       const stack = makeStack();
       TestBed.tick();
 
-      // The init effect fires an HTTP request — loading is true until a response arrives
+      // The init effect fires an HTTP request - loading is true until a response arrives
       expect(stack.loading()).toBe(true);
     });
   });

@@ -9,7 +9,7 @@ import {
 
 /**
  * `MediaView` → the shape `et-picture` takes. The API hands back one URL, so there is nothing to build
- * a candidate set from — `original` is the full-size asset and `path` the stored one.
+ * a candidate set from - `original` is the full-size asset and `path` the stored one.
  */
 export const normalizeEthleteMedia = (media: MediaView | null | undefined): NormalizedMedia | null => {
   const src = media?.original ?? media?.path ?? null;
@@ -34,7 +34,7 @@ export const normalizeEthleteParticipant = (
     name: gamertag ?? participant.name,
     code: participant.code,
     // Left to the consumer: the second line is usually the org or club behind the participant, which is
-    // a relationship the list views don't carry — and a player's real name under their gamertag is not
+    // a relationship the list views don't carry - and a player's real name under their gamertag is not
     // a default worth shipping.
     subtitle: null,
     emblem: normalizeEthleteMedia(participant.emblem ?? participant.footballClubEmblem),
@@ -47,7 +47,7 @@ export const normalizeEthleteParticipant = (
  * `MatchStatus` → the three states presentation turns on. `preparing` is "not started yet";
  * `started` is the only live one; `finished` and `published` are both over, differing only in whether
  * the result has been released, which is not a thing a card draws differently. `hidden` shouldn't
- * reach a card at all — treated as scheduled rather than throwing, since a hidden match rendering as
+ * reach a card at all - treated as scheduled rather than throwing, since a hidden match rendering as
  * "not started" is a great deal better than a crash in a list.
  */
 export const normalizeEthleteMatchStatus = (status: MatchStatus | null | undefined): NormalizedMatchStatus => {
@@ -69,7 +69,7 @@ const normalizeGameScores = (match: MatchListViewUnion): NormalizedGameScore[] |
     .sort((a, b) => (a.matchGameNumber ?? 0) - (b.matchGameNumber ?? 0))
     .map((game) => ({ home: game.homeScore?.score ?? 0, away: game.awayScore?.score ?? 0 }));
 
-  // A single game is the match, and its score is already the headline one — repeating it as a
+  // A single game is the match, and its score is already the headline one - repeating it as a
   // "series" breakdown of one would be noise.
   return games.length > 1 ? games : null;
 };
@@ -92,7 +92,7 @@ export const normalizeEthleteMatch = (match: MatchListViewUnion): NormalizedMatc
   away: normalizeEthleteParticipant(match.away),
   homeScore: match.homeScore?.score ?? null,
   awayScore: match.awayScore?.score ?? null,
-  // The API's `score` is the match score — goals, rounds, or games won in a series. A competition that
+  // The API's `score` is the match score - goals, rounds, or games won in a series. A competition that
   // wants table points or plain outcomes on the card maps those in itself and says so here.
   resultKind: 'score',
   gameScores: normalizeGameScores(match),

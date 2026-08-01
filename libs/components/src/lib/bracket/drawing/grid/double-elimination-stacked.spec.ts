@@ -59,7 +59,7 @@ describe('createStackedDoubleEliminationGrid', () => {
   });
 
   it('centres a shorter block inside the wider one rather than pinning it left', () => {
-    // The winners bracket is 5 slots, the losers bracket 7 — so the winners block starts a column in.
+    // The winners bracket is 5 slots, the losers bracket 7 - so the winners block starts a column in.
     const { masterColumns } = stacked({
       participantCount: 8,
       partial: true,
@@ -117,7 +117,7 @@ describe('createStackedDoubleEliminationGrid', () => {
       const { grid } = stacked(options);
 
       // The last round before each block's centre is a 2-match round, so m0 is its left half and m1 its
-      // right — the two the anchor is drawn between.
+      // right - the two the anchor is drawn between.
       const winnersAnchor = rectOf(grid, 'ub-r4-m0').blockCentre;
       const losersAnchor = rectOf(grid, 'lb-r6-m0').blockCentre;
 
@@ -166,7 +166,7 @@ describe('createStackedDoubleEliminationGrid', () => {
       expect(new Set(winnersHeights).size).toBe(1);
       expect(new Set(losersHeights).size).toBe(1);
 
-      // The centre chain is the one column that can outgrow its rounds — `bottomPadding` is what stops it
+      // The centre chain is the one column that can outgrow its rounds - `bottomPadding` is what stops it
       // spilling into the block below.
       const bottom = Math.max(
         ...grid.columns.flatMap((column) => column.elements).map((el) => el.dimensions.top + el.dimensions.height),

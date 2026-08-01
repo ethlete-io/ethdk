@@ -20,7 +20,7 @@ import { DateRangeInputDirective, DateRangeSide } from './date-range-input.direc
  * One side of a date range input: shows the committed side value in the
  * display format, commits typed text strictly on blur/Enter, keeps
  * unparseable text visible, and opens the picker on Alt+ArrowDown. Hosts the
- * range input's opt-in typing mask (`INPUT_MASK_HOST`) — each side is its own
+ * range input's opt-in typing mask (`INPUT_MASK_HOST`) - each side is its own
  * mask host.
  */
 @Directive({
@@ -72,7 +72,7 @@ export class DateRangeInputFieldDirective implements InputMaskHost {
     return rangeInput.sideParseError(side) ? rangeInput.inputText(side) : rangeInput.displayValue(side);
   });
 
-  /** Whether this side's field has focus (`InputMaskHost.focused`) — drives the mask's guide display. */
+  /** Whether this side's field has focus (`InputMaskHost.focused`) - drives the mask's guide display. */
   public focused = computed(() => this.rangeInput?.focusedSide() === this.side());
 
   /** The native element an attached mask rewrites (`InputMaskHost.nativeControl`). */
@@ -81,7 +81,7 @@ export class DateRangeInputFieldDirective implements InputMaskHost {
   constructor() {
     this.nativeControl.set(this.elementRef.nativeElement);
 
-    // the side input is not available at construction time — register reactively
+    // the side input is not available at construction time - register reactively
     effect((onCleanup) => {
       const rangeInput = this.rangeInput;
 
@@ -114,7 +114,7 @@ export class DateRangeInputFieldDirective implements InputMaskHost {
     });
 
     // masked typing bypasses handleInput, so mirror the mask-written text into
-    // the side's inputText — hasValue (and the clear affordance) must react like
+    // the side's inputText - hasValue (and the clear affordance) must react like
     // native typing
     effect(() => {
       if (!this.maskAttached()) {
@@ -166,12 +166,12 @@ export class DateRangeInputFieldDirective implements InputMaskHost {
     this.elementRef.nativeElement.focus({ preventScroll: true });
   }
 
-  /** @internal `InputMaskHost` — an attached mask owns value-sync; our input/mirror handling stands down. */
+  /** @internal `InputMaskHost` - an attached mask owns value-sync; our input/mirror handling stands down. */
   public suppressNativeSync() {
     this.maskAttached.set(true);
   }
 
-  /** @internal `InputMaskHost` — the mask was set to `null`; native handling resumes. */
+  /** @internal `InputMaskHost` - the mask was set to `null`; native handling resumes. */
   public resumeNativeSync() {
     this.maskAttached.set(false);
   }
@@ -230,7 +230,7 @@ export class DateRangeInputFieldDirective implements InputMaskHost {
     }
   }
 
-  /** What a blur/Enter commit parses — the mask's value, since the element text may hold guide placeholders. */
+  /** What a blur/Enter commit parses - the mask's value, since the element text may hold guide placeholders. */
   private commitText() {
     return this.maskAttached() ? this.value() : this.elementRef.nativeElement.value;
   }

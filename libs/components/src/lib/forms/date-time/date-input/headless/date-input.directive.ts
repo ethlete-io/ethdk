@@ -19,7 +19,7 @@ import { displayFormatForPrecision } from '../../internals/precision-format';
  * A date form control with a `string | null` value (a date-fns `valueFormat`
  * wire string, ISO by default). Typed entry parses strictly against
  * `displayFormat` on blur/Enter; the anchored picker overlay hosts a calendar.
- * String↔`Date` conversion happens exclusively here — the calendar itself
+ * String↔`Date` conversion happens exclusively here - the calendar itself
  * only ever sees `Date` objects.
  */
 @Directive({
@@ -44,7 +44,7 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
   public displayFormat = input<string | null>(null);
 
   /**
-   * How precise a date this field takes — `'month'` makes it a month picker,
+   * How precise a date this field takes - `'month'` makes it a month picker,
    * `'year'` a year picker. The value is the start of the unit, the mask and
    * placeholder follow the derived format, and the picker calendar selects in
    * the grid holding that unit.
@@ -58,10 +58,10 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
   /** Month the picker calendar opens at while the value is empty. */
   public startAt = input<Date | null>(null);
 
-  /** Which grid the picker calendar opens on — `'year'` to pick a month first, `'multiYear'` a year. */
+  /** Which grid the picker calendar opens on - `'year'` to pick a month first, `'multiYear'` a year. */
   public startView = input<CalendarView>('month');
 
-  /** Per-cell classes for the picker calendar — busy days, holidays, markers of your own. */
+  /** Per-cell classes for the picker calendar - busy days, holidays, markers of your own. */
   public dateClass = input<CalendarDateClassFn | null>(null);
 
   /** Renders the picker calendar's week-number column. */
@@ -115,7 +115,7 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
       this.inputText.set('');
       this.parseError.set(false);
 
-      // while mixed the field is empty anyway — a blank commit is a plain blur, not a user
+      // while mixed the field is empty anyway - a blank commit is a plain blur, not a user
       // clear, so the hidden raw value survives (the clear affordance resolves instead)
       if (this.mixed()) {
         return;
@@ -131,7 +131,7 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
     // reference midnight, not `new Date()`: a date-only `displayFormat` leaves date-fns to
     // fill H/M/S from the reference, so without this a typed day would carry the current
     // wall-clock time into a time-bearing `valueFormat` while the same day picked in the
-    // calendar (startOfDay) would not — two entry paths, two wire values for one date.
+    // calendar (startOfDay) would not - two entry paths, two wire values for one date.
     const parsed = parseDateValue(raw, {
       format: this.effectiveDisplayFormat(),
       locale: this.effectiveLocale(),
@@ -170,7 +170,7 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
 
   /**
    * Writes the wire value, at the start of `precision`'s unit. A coarse format cannot say which day
-   * it meant, so date-fns fills the missing units from the reference date — parsing `07.2026`
+   * it meant, so date-fns fills the missing units from the reference date - parsing `07.2026`
    * against `MM.yyyy` yields *today's* day of July. Normalizing here is what makes a typed month and
    * a picked month the same value.
    */

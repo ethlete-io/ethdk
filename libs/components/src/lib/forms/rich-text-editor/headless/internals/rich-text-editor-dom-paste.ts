@@ -1,7 +1,7 @@
 import { RichTextEditorDomCore } from './rich-text-editor-dom-core';
 
 /**
- * Splices already-normalized editor HTML into the selection — inline flow into the caret's block,
+ * Splices already-normalized editor HTML into the selection - inline flow into the caret's block,
  * multi-block content as root-level blocks after it.
  */
 export const createRichTextEditorPaste = (core: RichTextEditorDomCore) => {
@@ -10,7 +10,7 @@ export const createRichTextEditorPaste = (core: RichTextEditorDomCore) => {
   /**
    * Inserts already-normalized editor HTML at the selection (replacing it). Content that is a
    * single paragraph (or bare inline flow) is spliced into the caret's block; multi-block content
-   * is inserted as root-level blocks after the caret's block — the surrounding block is not split.
+   * is inserted as root-level blocks after the caret's block - the surrounding block is not split.
    */
   const insertNormalizedHtml = (html: string) => {
     const editable = getSelection();

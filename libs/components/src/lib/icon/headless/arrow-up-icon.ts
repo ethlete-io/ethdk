@@ -1,7 +1,7 @@
 import { IconDefinition } from './icon-provider';
 
 /**
- * Upward arrow. Rotate it 180° for the downward one — see the table's sort indicator.
+ * Upward arrow. Rotate it 180° for the downward one - see the table's sort indicator.
  *
  * Drawn to fill its viewBox and sit centred in it (the shaft spans 3.5–20.5 of 24, so the glyph's
  * midpoint is the box's). An arrow inset from its own box renders far smaller than the text it sits

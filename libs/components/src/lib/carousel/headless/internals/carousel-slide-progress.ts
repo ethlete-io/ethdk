@@ -15,7 +15,7 @@ const WRITE_THRESHOLD = 0.004;
 
 type SlideMetrics = {
   element: HTMLElement;
-  /** Layout offset within the scroll content — unaffected by a transition's own scaling. */
+  /** Layout offset within the scroll content - unaffected by a transition's own scaling. */
   offset: number;
   size: number;
 };
@@ -27,14 +27,14 @@ export type CarouselSlideProgressConfig = {
 };
 
 /**
- * Fills {@link CAROUSEL_SLIDE_PROGRESS_PROPERTY} from a passive `scroll` listener batched into a frame —
+ * Fills {@link CAROUSEL_SLIDE_PROGRESS_PROPERTY} from a passive `scroll` listener batched into a frame -
  * the fallback for browsers without scroll-driven animations (Firefox, as of this writing). It produces
  * the same numbers over the same range as the `view(inline)` timeline does, so every effect is one piece
  * of CSS either way and neither driver is the "real" one.
  *
  * A scroll does not change layout, so the slides are measured once per layout change and a frame then
- * costs one `scrollLeft` read for the whole track. Slides whose progress has settled — anything off
- * screen sits at ±1 — stop being written at all.
+ * costs one `scrollLeft` read for the whole track. Slides whose progress has settled - anything off
+ * screen sits at ±1 - stop being written at all.
  *
  * @internal
  */
@@ -153,7 +153,7 @@ export const useCarouselSlideProgress = (config: CarouselSlideProgressConfig) =>
   /**
    * Write the progress values for the offset the track is at *now*, rather than on the next frame.
    *
-   * For the caller that moves the scroll offset without scrolling — the loop's teleport — which is the one
+   * For the caller that moves the scroll offset without scrolling - the loop's teleport - which is the one
    * case where waiting a frame is visible. The teleport shifts the track a whole length in one go; a frame
    * still holding the values from before it puts every slide's content a whole track away from the box that
    * clips it, and `wipe` then draws a slide as a blank rectangle for that frame. That is the black flash at

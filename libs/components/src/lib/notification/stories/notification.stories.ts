@@ -18,7 +18,7 @@ export default {
   component: NotificationStorybookComponent,
   decorators: [
     // The stack renders from the manager's own (root) injector, so a per-notification `icon` name has
-    // to be registered app-wide — which is what `provideIconOverrides` is for.
+    // to be registered app-wide - which is what `provideIconOverrides` is for.
     applicationConfig({
       providers: [
         provideIconOverrides(CLOCK_ICON),
@@ -66,7 +66,7 @@ export const TopStart: { render: StoryFn; decorators: unknown[] } = {
   decorators: [moduleMetadata({ imports: [NotificationTopStartStorybookComponent] })],
 };
 
-/** `bottom-end` under `dir="rtl"` — the stack docks to the physical left and slides in from there. */
+/** `bottom-end` under `dir="rtl"` - the stack docks to the physical left and slides in from there. */
 export const BottomEndRightToLeft: { render: StoryFn } = {
   render: () => ({ template: `<et-sb-notification-bottom-end direction="rtl" />` }),
 };

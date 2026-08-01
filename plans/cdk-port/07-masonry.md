@@ -1,4 +1,4 @@
-# 07 — Masonry
+# 07 - Masonry
 
 **Status: DONE (2026-07-30).** Size: M. Research done 2026-07-23 against
 `libs/cdk/src/lib/components/masonry/` (~580 lines). Shipped net-new in
@@ -12,10 +12,10 @@ imperatively. Items measured via `getBoundingClientRect`, resize via
 `signalElementDimensions` on a sentinel element, full-vs-partial invalidation
 (newly appended items only reposition from their index), 150 ms transform
 transition after init, fade-in on first position, `initializing`/`initialized`
-outputs. Two legacy accessor `@Input`s (`columWidth` — note the typo — and
+outputs. Two legacy accessor `@Input`s (`columWidth` - note the typo - and
 `gap`, both BehaviorSubject-backed), required `key` input per item,
 `role="listitem"`. Notable coupling: `injectInfinityQueryResponseDelay`
-(`@ethlete/query`) — delays infinite-scroll fetches until layout settles. No
+(`@ethlete/query`) - delays infinite-scroll fetches until layout settles. No
 colors at all (nothing to theme).
 
 ## Decision: keep a JS engine (research spike, resolved 2026-07-30)
@@ -33,7 +33,7 @@ balance`. Safari 26 shipped grid-lanes first; Firefox is flag-only. The syntax
   has also changed twice, so betting on it now would mean shipping an API around
   a moving target.
 - **CSS `columns` is still wrong for feeds.** It fills column by column, so
-  visual order ≠ DOM order — which breaks tab order and screen-reader order, the
+  visual order ≠ DOM order - which breaks tab order and screen-reader order, the
   one thing a JS engine gets right for free.
 
 So: JS engine, rewritten signals-first. Revisit when grid-lanes reaches Baseline;
@@ -60,7 +60,7 @@ and a `minor` changeset.
 
 ## Deviations from the plan (all deliberate)
 
-- **No Tier 3 component.** Shipped directives only — no `<et-masonry>` element.
+- **No Tier 3 component.** Shipped directives only - no `<et-masonry>` element.
   The plan said "headless split where sensible"; a Tier 3 component here would
   own nothing, since masonry has no visual opinion (no colors, no chrome) and no
   template structure to impose. Leaving the element to the consumer is also
@@ -75,15 +75,15 @@ and a `minor` changeset.
   (per-item `ResizeObserver`) rather than announced, which is exactly what the
   key existed to do in cdk.
 - **Dropped partial invalidation.** The plan said keep it "important for
-  infinite scroll". The property that actually mattered — appended items never
-  disturb the ones already placed — is inherent to greedy packing: where items
+  infinite scroll". The property that actually mattered - appended items never
+  disturb the ones already placed - is inherent to greedy packing: where items
   `0…k` land depends only on items `0…k`. So the whole layout is one `computed`
   and appending re-derives the existing placements _identically_; Angular's
   binding dedupe is what stops them being written to the DOM again. Covered by a
   prefix-stability unit test.
 - **Added stable column assignment + `repack()`** (not in the plan; came out of
   review). Greedy packing is stable against items being _added_ but not against
-  an existing item changing _height_ — a card growing changes which column is
+  an existing item changing _height_ - a card growing changes which column is
   shortest for everything after it, so items hopped columns because a paragraph
   two columns over expanded. Items therefore keep the column they were first
   given while the column count holds, and only re-stack within it. A column-count
@@ -92,7 +92,7 @@ and a `minor` changeset.
   would all look like they belong in the same column and be pinned there.
 - **Added `isResizing()` + move suppression** (not in the plan; came out of
   review). A window drag re-columns every frame, and a move transition retargeted
-  every frame is one the items never finish — they trail behind the layout.
+  every frame is one the items never finish - they trail behind the layout.
   Moves snap while the container's width is unsettled (150 ms debounce).
 - **The reveal is sticky.** Also from review: gating item opacity on the live
   "measured at the current column width" check faded the entire masonry out and
@@ -102,7 +102,7 @@ and a `minor` changeset.
 ## Carried over from the plan as specified
 
 - Signals-first: `input()` with `numberBreakpointTransform()` (so `columnWidth`
-  and `gap` take per-breakpoint maps — cdk had BehaviorSubject accessor inputs).
+  and `gap` take per-breakpoint maps - cdk had BehaviorSubject accessor inputs).
 - `columWidth` typo fixed to `columnWidth`, and it is now a true _minimum_: the
   count is `floor((width + gap) / (columnWidth + gap))`, so columns are never
   narrower than asked for. cdk divided without counting gaps.
@@ -110,7 +110,7 @@ and a `minor` changeset.
   `rect()` sizes rather than integer `offset*` so column heights don't drift.
 - Fade-in on first placement; move transitions gated on
   `prefers-reduced-motion: no-preference` (cdk ignored it).
-- `initializing`/`initialized` replaced by signals — one signal, `isSettled()`,
+- `initializing`/`initialized` replaced by signals - one signal, `isSettled()`,
   which is also the generic replacement for the legacy-only
   `injectInfinityQueryResponseDelay` handshake (verified: that provider lives in
   `libs/query/src/lib/legacy/`, so there was nothing to keep).

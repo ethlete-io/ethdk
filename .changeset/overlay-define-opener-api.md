@@ -8,7 +8,7 @@ Overlay: replace the curried overlay handler API with an explicit define/create 
 - Overlay configs now merge additively across definition → opener → per-open layers: `bindings`, `providers`, `hostClass`, `backdropClass` and `panelClass` are concatenated instead of the most specific layer silently replacing the rest; scalar options still follow most-specific-wins. The merge is exposed as `mergeOverlayConfigs(...configs)`.
 - Inside the overlay component, access the typed ref via `definition.injectRef()` (replaces the handler's `injectOverlayRef`). It throws an actionable `RuntimeError` when called outside an open overlay.
 - `defineQueryParamOverlay` requires the component to expose an `overlayQueryParam` model at compile time (previously a silent runtime requirement), and the opener's `open(value)` is typed from that model's value type. Definition- and opener-level `bindings`/`providers` are now applied on every URL-driven open, so components with additional inputs work with query-param overlays.
-- `OverlayHandlerLinkDirective` (`etOverlayHandlerLink` + `etOverlayHandlerQueryParamName`) is replaced by `QueryParamOverlayLinkDirective`: `<a [etQueryParamOverlayLink]="definition" etQueryParamOverlayLinkValue="42">` — the link takes the definition object, so the query param key is no longer duplicated as a string.
+- `OverlayHandlerLinkDirective` (`etOverlayHandlerLink` + `etOverlayHandlerQueryParamName`) is replaced by `QueryParamOverlayLinkDirective`: `<a [etQueryParamOverlayLink]="definition" etQueryParamOverlayLinkValue="42">` - the link takes the definition object, so the query param key is no longer duplicated as a string.
 
 Migration:
 

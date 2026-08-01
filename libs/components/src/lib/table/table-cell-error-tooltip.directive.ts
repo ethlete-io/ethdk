@@ -10,7 +10,7 @@ export type TableCellErrorTooltipConfig = TableFeatureConfig;
  * Opt-in tooltips on failed cells: the message a `cellState` callback returns
  * (`{ state: 'error', message }`) is shown on hover and focus instead of as a native `title`.
  *
- * It carries the [tooltip](/components/tooltip) — and with it the overlay runtime and floating-ui —
+ * It carries the [tooltip](/components/tooltip) - and with it the overlay runtime and floating-ui -
  * which is exactly why it is separate: a table that only marks failed cells never pulls that in. Its
  * mark is stamped only into cells that are actually failing.
  *

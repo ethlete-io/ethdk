@@ -188,7 +188,7 @@ export const createOrder = postQuery<CreateOrderArgs>('/orders');
 export const createPayment = postQuery<CreatePaymentArgs>('/payments');
 export const confirmOrder = postQuery<ConfirmOrderArgs>('/orders/confirm');
 
-// GraphQL fixture — POST-transported, routed to /graphql so the mock can match it.
+// GraphQL fixture - POST-transported, routed to /graphql so the mock can match it.
 const gqlQuery = createGqlQueryViaPost(devtoolsDemoClient);
 export const getGqlPosts = gqlQuery<{ response: { posts: PostView[] } }>(
   gql`
@@ -202,7 +202,7 @@ export const getGqlPosts = gqlQuery<{ response: { posts: PostView[] } }>(
   { route: '/graphql' },
 );
 
-// WebSocket fixture — there is no server in Storybook, so it stays disconnected; the Sockets tab
+// WebSocket fixture - there is no server in Storybook, so it stays disconnected; the Sockets tab
 // still shows the registered client and its joined room.
 export const devtoolsDemoSocket = createWebSocketClient({
   name: 'devtools-demo',

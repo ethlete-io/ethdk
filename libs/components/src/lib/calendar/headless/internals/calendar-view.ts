@@ -14,13 +14,13 @@ import {
 /**
  * Which grid the calendar is showing:
  *
- * - `month` — the **day grid** of one month (the default).
- * - `year` — the **month grid**: the 12 months of one year.
- * - `multiYear` — the **year grid**: one page of {@link CALENDAR_MULTI_YEAR_PAGE_SIZE} years.
+ * - `month` - the **day grid** of one month (the default).
+ * - `year` - the **month grid**: the 12 months of one year.
+ * - `multiYear` - the **year grid**: one page of {@link CALENDAR_MULTI_YEAR_PAGE_SIZE} years.
  */
 export type CalendarView = 'month' | 'year' | 'multiYear';
 
-/** How precise a selection is — which unit a picked value names, and which grid picks it. */
+/** How precise a selection is - which unit a picked value names, and which grid picks it. */
 export type CalendarPrecision = 'day' | 'month' | 'year';
 
 /** The view whose cells hold the precision's unit: that grid is where selection happens. */
@@ -30,7 +30,7 @@ export const CALENDAR_PRECISION_VIEW: Record<CalendarPrecision, CalendarView> = 
   year: 'multiYear',
 };
 
-/** The unit each view's cells hold — what a cell of that grid compares dates at. */
+/** The unit each view's cells hold - what a cell of that grid compares dates at. */
 export const CALENDAR_VIEW_UNIT: Record<CalendarView, CalendarPrecision> = {
   month: 'day',
   year: 'month',
@@ -44,7 +44,7 @@ export const CALENDAR_UNIT_IS_SAME: Record<CalendarPrecision, (left: Date, right
   year: isSameYear,
 };
 
-/** Start of the unit `date` falls in — what a selection at that precision writes. */
+/** Start of the unit `date` falls in - what a selection at that precision writes. */
 export const startOfCalendarUnit = (date: Date, precision: CalendarPrecision) => {
   switch (precision) {
     case 'month':
@@ -56,7 +56,7 @@ export const startOfCalendarUnit = (date: Date, precision: CalendarPrecision) =>
   }
 };
 
-/** A closed day-granular date interval — what a coarse cell covers. */
+/** A closed day-granular date interval - what a coarse cell covers. */
 export type CalendarInterval = {
   start: Date;
   end: Date;
@@ -65,7 +65,7 @@ export type CalendarInterval = {
 /** Cells per row in the month and year grids. */
 export const CALENDAR_COARSE_COLUMNS = 4;
 
-/** Years on one page of the year grid — six rows of {@link CALENDAR_COARSE_COLUMNS}. */
+/** Years on one page of the year grid - six rows of {@link CALENDAR_COARSE_COLUMNS}. */
 export const CALENDAR_MULTI_YEAR_PAGE_SIZE = 24;
 
 /** How far out each view sits, so a view change can tell which way it zoomed. */
@@ -77,7 +77,7 @@ export const CALENDAR_VIEW_DEPTH: Record<CalendarView, number> = {
 
 /**
  * `view` held at or outside the precision's own grid. A month-precision calendar has no day grid to
- * show — its finest cell *is* a month — so anything finer clamps to the grid that selects.
+ * show - its finest cell *is* a month - so anything finer clamps to the grid that selects.
  */
 export const clampCalendarView = (view: CalendarView, precision: CalendarPrecision) => {
   const floor = CALENDAR_PRECISION_VIEW[precision];
@@ -128,13 +128,13 @@ export type CalendarAvailability = {
 };
 
 /**
- * Whether `interval` contains a selectable day — how a coarse cell decides it is disabled: a month is out
+ * Whether `interval` contains a selectable day - how a coarse cell decides it is disabled: a month is out
  * when no day inside it can be picked, a year when no day in any of its months can. Mirrors the time
  * picker's "disable an hour when no minute inside it works" rule.
  *
  * The bounds clamp the scan before it starts, so with only `min`/`max` in play this settles in its first
  * iteration. A `dateFilter` is the expensive case, since every day it rejects is another call before the
- * cell can be ruled out — up to 366 for a year cell, which is what it costs to answer the question
+ * cell can be ruled out - up to 366 for a year cell, which is what it costs to answer the question
  * honestly rather than showing a year that turns out to be empty.
  */
 export const hasSelectableDayIn = (interval: CalendarInterval, availability: CalendarAvailability) => {

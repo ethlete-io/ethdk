@@ -6,7 +6,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 
 /**
  * `injectQueryParamChanges` (via `@ethlete/core`) is memoized at module scope and
- * binds to the first injector that reads it, so — like `router.spec.ts` — every
+ * binds to the first injector that reads it, so - like `router.spec.ts` - every
  * test loads the module on a fresh graph to avoid leaking a dead-injector signal.
  */
 const load = async () => {

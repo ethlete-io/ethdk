@@ -11,7 +11,7 @@ import { BreadcrumbDirective } from './headless';
  * crumbs into a menu when it runs out of room (first and last always stay). Driven by the headless
  * {@link BreadcrumbDirective}.
  *
- * The crumbs are `<ng-template etBreadcrumbItemTemplate>`s you declare — see the headless directive for
+ * The crumbs are `<ng-template etBreadcrumbItemTemplate>`s you declare - see the headless directive for
  * why. For a routed app, don't place this yourself: let each view contribute an
  * `<ng-template etBreadcrumbSegment>` and put one `<et-breadcrumb-outlet>` in the shell, which renders
  * the composed trail through this component.

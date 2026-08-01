@@ -22,7 +22,7 @@ describe('createBracketJourneyParticipants', () => {
   });
 
   it('keeps a participant in while a match of theirs is undecided', () => {
-    // Both finalists reach an unplayed grand final — neither is out, however many matches they lost.
+    // Both finalists reach an unplayed grand final - neither is out, however many matches they lost.
     const source = generateDoubleEliminationBracket({ participantCount: 8, includeFinal: true });
 
     expect(journeys(source).get('u1')).toBeNull();

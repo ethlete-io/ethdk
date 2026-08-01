@@ -18,7 +18,7 @@ const assertInsideMatchCard = (card: unknown, selector: string) => {
 
 /**
  * Marks the element that announces the score. It is a polite, atomic live region, so a score arriving
- * over a poll or a socket is read as one value (`"2 : 1"`) rather than digit by digit — and only when it
+ * over a poll or a socket is read as one value (`"2 : 1"`) rather than digit by digit - and only when it
  * changes, never on first render.
  *
  * The default card puts this on a visually hidden element and hides the drawn digits from assistive tech,

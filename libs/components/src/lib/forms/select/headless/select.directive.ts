@@ -47,7 +47,7 @@ import { SelectItem, SelectOptionData, SelectSelectedEntry } from './select.toke
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 
 export const SELECT_FILTER_MODES = {
-  /** The select never filters — a search input is purely informational for the consumer. */
+  /** The select never filters - a search input is purely informational for the consumer. */
   NONE: 'none',
   /** Non-matching registered options are hidden while a search query is set (client-side data). */
   INTERNAL: 'internal',
@@ -107,7 +107,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
   /**
    * Data-driven options: the select owns the option rows instead of the consumer projecting
-   * `et-select-option`s, and windows their rendering (virtualization) — only rows near the
+   * `et-select-option`s, and windows their rendering (virtualization) - only rows near the
    * viewport exist in the DOM, so lists with thousands of entries stay cheap. Renders via
    * `virtualizedItems()` between the `virtualWindow` block paddings; row content is the
    * plain `label` or an `etSelectOptionTemplate`. Values must be unique. Can be combined
@@ -123,22 +123,22 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
    * are typed (e.g. `[',']`), and split pasted text in multi mode. Only with `allowCustomValues`.
    */
   public customValueSeparators = input<string[]>([]);
-  /** Maps raw text to the stored custom value — return `null` to reject. Defaults to trimming. */
+  /** Maps raw text to the stored custom value - return `null` to reject. Defaults to trimming. */
   public normalizeCustomValue = input<(raw: string) => string | null>(defaultNormalizeCustomValue);
   /**
    * Commits a pending search query as a custom value when the panel closes (Tab, outside
-   * click) instead of discarding it. An Escape close never commits — it clears the query first.
+   * click) instead of discarding it. An Escape close never commits - it clears the query first.
    */
   public commitCustomValueOnClose = input(false, { transform: booleanAttribute });
-  /** Maximum number of selected values (multi select) — further adds are ignored. */
+  /** Maximum number of selected values (multi select) - further adds are ignored. */
   public maxSelection = input<number | undefined>(undefined);
-  /** Renders an "Add new" row in `et-select`'s panel — clicking it emits `addNew`. */
+  /** Renders an "Add new" row in `et-select`'s panel - clicking it emits `addNew`. */
   public allowAddNew = input(false, { transform: booleanAttribute });
-  /** Async option state — rendered by `et-select` as a loading row inside the panel. */
+  /** Async option state - rendered by `et-select` as a loading row inside the panel. */
   public loadingInput = input(false, { alias: 'loading', transform: booleanAttribute });
-  /** Async option state — rendered by `et-select` as an error row inside the panel. */
+  /** Async option state - rendered by `et-select` as an error row inside the panel. */
   public errorInput = input<string | null>(null, { alias: 'error' });
-  /** Async option state — `et-select` renders a load-more control emitting `loadMore`. */
+  /** Async option state - `et-select` renders a load-more control emitting `loadMore`. */
   public hasMoreItemsInput = input(false, { alias: 'hasMoreItems', transform: booleanAttribute });
   /** Whether the panel mirrors the anchor's width. Off for compact triggers (e.g. a country picker). */
   public mirrorPanelWidth = input(true, { transform: booleanAttribute });
@@ -151,7 +151,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
   /**
    * `aria-label` / `aria-labelledby` written on the select itself, for a control named by something
-   * outside its field — a page-size select under a shared "Items per page:" label, a filter row where
+   * outside its field - a page-size select under a shared "Items per page:" label, a filter row where
    * one caption covers several controls. Without them the field's dev-time labelling guard (ET2201)
    * fires on a select that *is* labelled, just not by a projected `<et-label>`.
    */
@@ -163,7 +163,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   /** The user picked the "Add new" row (`allowAddNew`). Emits the current search query for prefilling. */
   public addNew = output<string>();
   /**
-   * Single select committed an option — carries the picked value. In `pickOnly` mode this is
+   * Single select committed an option - carries the picked value. In `pickOnly` mode this is
    * the only pick signal and `value` is never mutated; otherwise it fires alongside the normal
    * value selection.
    */
@@ -184,11 +184,11 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   public filterMode = computed<SelectFilterMode>(() =>
     this.asyncOptions() ? SELECT_FILTER_MODES.EXTERNAL : this.filterModeInput(),
   );
-  /** Async option state — rendered by `et-select` as a loading row. From `[etSelectOptions]` if set. */
+  /** Async option state - rendered by `et-select` as a loading row. From `[etSelectOptions]` if set. */
   public loading = computed(() => this.asyncOptions()?.loading() ?? this.loadingInput());
-  /** Async option state — rendered by `et-select` as an error row. From `[etSelectOptions]` if set. */
+  /** Async option state - rendered by `et-select` as an error row. From `[etSelectOptions]` if set. */
   public error = computed(() => this.asyncOptions()?.error() ?? this.errorInput());
-  /** Async option state — drives the load-more control. From `[etSelectOptions]` if set. */
+  /** Async option state - drives the load-more control. From `[etSelectOptions]` if set. */
   public hasMoreItems = computed(() => this.asyncOptions()?.hasMore() ?? this.hasMoreItemsInput());
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
@@ -247,7 +247,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   /**
    * @internal How the current active item was set. A pointer-set highlight only paints while
    * the pointer is actually over the option (mirrors the menu, where leaving the list drops
-   * the highlight) — a keyboard-set one must stay visible without hover, because options
+   * the highlight) - a keyboard-set one must stay visible without hover, because options
    * only ever hold virtual focus.
    */
   public activeItemSource = signal<'keyboard' | 'pointer'>('keyboard');
@@ -287,7 +287,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
         restoreFocus: false,
         // both interactive closes are owned by the document-level listeners below: the first
         // Escape only clears a search query, and a pointerdown inside the field (e.g. the
-        // inline search input) must not close — the runtime's handlers cannot know either
+        // inline search input) must not close - the runtime's handlers cannot know either
         closeOnEscape: false,
         closeOnOutsidePointer: false,
         origin,
@@ -319,7 +319,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     onMounted: (overlayRef) => this.handlePanelMounted(overlayRef),
     onBeforeClosed: () => this.handlePanelBeforeClosed(),
     onAfterClosed: ({ byOutsidePointer }) => {
-      // focus that sat inside the pane fell to <body> with the pane's removal — hand it
+      // focus that sat inside the pane fell to <body> with the pane's removal - hand it
       // back to the field, except for outside closes (the user deliberately went elsewhere)
       if (!byOutsidePointer && this.document.activeElement === this.document.body) {
         this.activate();
@@ -347,11 +347,11 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     const dataItems = this.dataItems();
     const projectedItems = this.selection.items().filter((item) => !item.data);
 
-    // re-evaluate when the panel mounts — that's when the options gain document positions
+    // re-evaluate when the panel mounts - that's when the options gain document positions
     this.isMounted();
 
     // detached options (closed select with projected content) have no meaningful document
-    // position, and comparing them yields arbitrary order — keep registration order instead.
+    // position, and comparing them yields arbitrary order - keep registration order instead.
     // Data-driven items always keep their data order and sort before projected ones (which
     // render after the windowed rows, e.g. the "Create …" row).
     if (projectedItems.some((item) => !item.element()?.isConnected)) {
@@ -370,7 +370,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
   /**
    * @internal The query the panel filters by. Live while open; frozen at its last value
-   * otherwise — the close-time query clear must not unfilter the options while the panel
+   * otherwise - the close-time query clear must not unfilter the options while the panel
    * is still animating out (the content would visibly resize mid-leave).
    */
   public panelFilterQuery = linkedSignal<{ open: boolean; query: string }, string>({
@@ -378,7 +378,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     computation: (source, previous) => (source.open || previous === undefined ? source.query : previous.value),
   });
 
-  /** The options the panel currently shows — with `filterMode` `internal`, non-matching ones are excluded. */
+  /** The options the panel currently shows - with `filterMode` `internal`, non-matching ones are excluded. */
   public visibleItems = computed(() => {
     const items = this.sortedItems();
 
@@ -398,16 +398,16 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   public enabledItems = computed(() => this.visibleItems().filter((item) => !item.disabled()));
   public selectedItems = computed(() => (this.mixed() ? [] : this.sortedItems().filter((item) => item.checked())));
 
-  /** @internal The query-visible slice of data-driven options — the virtual window renders these. */
+  /** @internal The query-visible slice of data-driven options - the virtual window renders these. */
   public visibleDataItems = computed(() => this.visibleItems().filter((item) => !!item.data));
 
   /**
    * The window over the data-driven rows: `paddingTop()`/`paddingBottom()` stand in for the
-   * scroll height of everything outside `virtualizedItems()` — apply them as block paddings
+   * scroll height of everything outside `virtualizedItems()` - apply them as block paddings
    * around the rendered rows.
    */
   public virtualWindow = createVirtualWindow({
-    // only meaningful with data-driven options — without them, don't track the viewport at all
+    // only meaningful with data-driven options - without them, don't track the viewport at all
     container: computed(() => (this.options() ? (this.registeredViewport()?.elementRef.nativeElement ?? null) : null)),
     itemCount: computed(() => this.visibleDataItems().length),
     estimateItemHeight: 36,
@@ -415,7 +415,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   });
 
   /**
-   * The windowed slice of data-driven options to render — every visible one while no
+   * The windowed slice of data-driven options to render - every visible one while no
    * `etSelectViewport` is registered. Render with `etSelectVirtualOption` rows between the
    * `virtualWindow` block paddings.
    */
@@ -430,7 +430,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   // can land a few px off (scroller padding, row heights differing from the estimate)
   private pendingActiveScrollItem: SelectItem | null = null;
 
-  /** True once `maxSelection` is reached (multi select) — further adds are ignored. */
+  /** True once `maxSelection` is reached (multi select) - further adds are ignored. */
   public isFull = computed(() => {
     const maxSelection = this.maxSelection();
 
@@ -452,7 +452,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
    * is nothing to commit: custom values are off, the query is empty/rejected, the value is
    * already selected, a visible option carries the same label, or the selection is full.
    * `et-select` renders this as a "Create …" listbox row (a real option, so it takes part in
-   * virtual focus) — headless consumers render their own row, marked with `customValueOption`
+   * virtual focus) - headless consumers render their own row, marked with `customValueOption`
    * so it is excluded from the duplicate check here.
    */
   public customValueCandidate = computed(() => {
@@ -486,8 +486,8 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
   /**
    * One entry per selected value, resolved for display: the label comes from the live
-   * option, from a previously seen option, or — for string values without any option
-   * (custom values) — from the value itself. `item` is `null` when no live option
+   * option, from a previously seen option, or - for string values without any option
+   * (custom values) - from the value itself. `item` is `null` when no live option
    * carries the value. Drives the trigger's chips and label display.
    */
   public selectedEntries = computed<SelectSelectedEntry[]>(() => {
@@ -540,7 +540,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
         const seenValues = new Set<unknown>();
 
         for (const data of optionsData ?? []) {
-          // a duplicate value cannot be represented as a distinct choice — skip it
+          // a duplicate value cannot be represented as a distinct choice - skip it
           if (seenValues.has(data.value)) {
             continue;
           }
@@ -585,7 +585,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     });
 
     // cache labels only for the *selected* values (so the trigger can still show them once the
-    // option unmounts in a lazy/async list) and prune everything else — the old version wrote
+    // option unmounts in a lazy/async list) and prune everything else - the old version wrote
     // every option ever registered and never pruned, so an `external` filter churning through
     // thousands of options grew the map without bound
     effect(() => {
@@ -622,7 +622,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     });
 
     // a query change can filter the active option away (or, with external filtering,
-    // destroy and recreate the option list entirely) — virtual focus falls back to the
+    // destroy and recreate the option list entirely) - virtual focus falls back to the
     // first visible option so arrow keys and Enter keep working mid-search. Initializing
     // from null prefers the selected option, same as the mount-time initial focus.
     effect(() => {
@@ -652,7 +652,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     });
 
     // inside a form field the visible box is the field's control frame, which extends beyond
-    // the trigger (padding, prefix/suffix areas) — a click anywhere on it should open the
+    // the trigger (padding, prefix/suffix areas) - a click anywhere on it should open the
     // panel like a click on the trigger itself, instead of only focusing the control
     toObservable(computed(() => this.formField?.controlFrameElement() ?? null))
       .pipe(
@@ -758,7 +758,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
     if (this.multiple()) {
       // toggle by value arithmetic instead of the registry (`selection.select` recomputes the
-      // array from registered options only, silently dropping values without a live option —
+      // array from registered options only, silently dropping values without a live option -
       // custom values, or options an external filter removed)
       const itemValue = item.value();
       const current = this.value();
@@ -772,7 +772,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
       this.value.set(adding ? [...values, itemValue] : values.filter((candidate) => candidate !== itemValue));
 
       // adding while searching: clear the query so the full list is back for the next pick
-      // (toggling off keeps it — the user may be pruning several filtered values)
+      // (toggling off keeps it - the user may be pruning several filtered values)
       if (adding) {
         this.registeredSearch()?.clear();
       }
@@ -785,7 +785,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     }
   }
 
-  /** @internal Emits `loadMore` — wired to the panel's load-more control. */
+  /** @internal Emits `loadMore` - wired to the panel's load-more control. */
   public requestLoadMore() {
     if (this.loading()) {
       return;
@@ -795,7 +795,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   }
 
   /**
-   * Emits `addNew` with the current search query and closes the panel — wired to
+   * Emits `addNew` with the current search query and closes the panel - wired to
    * the panel's "Add new" row (`allowAddNew`). The consumer reacts by e.g. opening a
    * creation dialog and, once the new option exists, setting it as the value.
    */
@@ -805,12 +805,12 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     }
 
     this.addNew.emit(this.query().trim());
-    // the query was handed off — it must not double as a custom value when the close commits
+    // the query was handed off - it must not double as a custom value when the close commits
     this.registeredSearch()?.clear();
     this.hide();
   }
 
-  /** Deselects a selected option (multi select) — e.g. from a chip's remove button. */
+  /** Deselects a selected option (multi select) - e.g. from a chip's remove button. */
   public deselectOption(item: SelectItem) {
     if (item.disabled() || !item.checked()) {
       return;
@@ -819,7 +819,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     this.deselectValue(item.value());
   }
 
-  /** Clears the entire selection and any search query — wired to `et-select`'s clear button. */
+  /** Clears the entire selection and any search query - wired to `et-select`'s clear button. */
   public clearValue() {
     if (this.disabled() || this.readonly()) {
       return;
@@ -835,7 +835,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     }
   }
 
-  /** Deselects by value — covers selected values without a live option (e.g. custom values). */
+  /** Deselects by value - covers selected values without a live option (e.g. custom values). */
   public deselectValue(value: unknown) {
     if (this.disabled() || this.readonly()) {
       return;
@@ -879,7 +879,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
       return;
     }
 
-    // a data-driven option outside the rendered window — scroll its row into the window,
+    // a data-driven option outside the rendered window - scroll its row into the window,
     // which renders it (and with it the element `aria-activedescendant` points at)
     const index = this.visibleDataItems().indexOf(item);
 
@@ -898,10 +898,10 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     }
 
     entry.element.set(element);
-    // rows share one uniform height — any rendered one keeps the window's row height honest
+    // rows share one uniform height - any rendered one keeps the window's row height honest
     this.virtualWindow.measureItem(element);
 
-    // the window scroll above was estimate-based and can land a few px short — align the
+    // the window scroll above was estimate-based and can land a few px short - align the
     // real row exactly, once, now that it exists (never again on later window re-entries)
     if (this.pendingActiveScrollItem === item) {
       this.pendingActiveScrollItem = null;
@@ -920,7 +920,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     entry.element.set(null);
   }
 
-  /** @internal Keyboard input arrives on the trigger — DOM focus never enters the listbox. */
+  /** @internal Keyboard input arrives on the trigger - DOM focus never enters the listbox. */
   public handleTriggerKeydown(event: KeyboardEvent) {
     if (event.ctrlKey || event.metaKey || event.altKey) {
       return;
@@ -975,7 +975,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
         return;
       }
       case 'Tab': {
-        // no preventDefault — focus moves on naturally, the popup just closes
+        // no preventDefault - focus moves on naturally, the popup just closes
         this.hide();
 
         return;
@@ -1117,7 +1117,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     this.hide();
   }
 
-  // the value write shared by `commitCustomValue` and the close-time commit — the latter
+  // the value write shared by `commitCustomValue` and the close-time commit - the latter
   // must not call `hide()` while the panel is already closing
   private applyCustomValue(raw: string) {
     if (this.disabled() || this.readonly() || this.isFull()) {
@@ -1130,7 +1130,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
       return false;
     }
 
-    // the string is its own label — cache it so the trigger can display it
+    // the string is its own label - cache it so the trigger can display it
     this.labelCache.update((cache) => new Map(cache).set(value, value));
 
     if (this.multiple()) {
@@ -1195,7 +1195,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
       return;
     }
 
-    // deliberately no wrap — matches the ARIA select-only combobox pattern
+    // deliberately no wrap - matches the ARIA select-only combobox pattern
     const next = items[index + delta];
 
     if (next) {
@@ -1213,7 +1213,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
   }
 
   // inside a form field, the visible box is the field's control frame, not the trigger
-  // button — anchor (and width-mirror) the panel to the frame so it lines up with the field
+  // button - anchor (and width-mirror) the panel to the frame so it lines up with the field
   private resolveAnchorElement() {
     return this.formField?.controlFrameElement() ?? this.registeredTrigger()?.elementRef.nativeElement;
   }
@@ -1226,7 +1226,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
       return;
     }
 
-    // the trigger (and everything inside it — chips, clear, chevron, inline search) already
+    // the trigger (and everything inside it - chips, clear, chevron, inline search) already
     // handles its own clicks; clicks on (or inside) interactive affix content keep their
     // own behavior too
     if (this.registeredTrigger()?.elementRef.nativeElement.contains(target)) {
@@ -1243,7 +1243,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
 
     if (search) {
       // same contract as a trigger click: the field click focuses the inline search input
-      // and opens — only the chevron toggles closed
+      // and opens - only the chevron toggles closed
       this.show();
       search.focus();
 
@@ -1254,7 +1254,7 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     this.toggle();
   }
 
-  // initial virtual focus: the selected option, else the first enabled one — unless a keydown
+  // initial virtual focus: the selected option, else the first enabled one - unless a keydown
   // right after opening (before this frame) already moved the active item
   private handlePanelMounted(overlayRef: AnchoredPanelOverlayRef) {
     nextFrame(() => {
@@ -1290,12 +1290,12 @@ export class SelectDirective implements FormValueControl<unknown>, FormFieldCont
     this.pendingActiveScrollItem = null;
 
     // pending text becomes a value instead of being discarded (tag-input's commit-on-blur).
-    // An Escape close never reaches this with a query — Escape clears it first.
+    // An Escape close never reaches this with a query - Escape clears it first.
     if (this.allowCustomValues() && this.commitCustomValueOnClose()) {
       this.applyCustomValue(this.query());
     }
 
-    // a stale query would silently keep filtering the next open — cleared at close-start so the
+    // a stale query would silently keep filtering the next open - cleared at close-start so the
     // trigger's value display is correct during the leave animation
     const search = this.registeredSearch();
 

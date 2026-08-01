@@ -55,7 +55,7 @@ export class ColorInputComponent {
 
   /**
    * `<input type="color">` ignores `readonly`, so we stop the events that open the OS picker
-   * (pointer + Enter/Space) while the control is read-only — keeping it focusable but inert,
+   * (pointer + Enter/Space) while the control is read-only - keeping it focusable but inert,
    * like every sibling control honors `readonly`.
    */
   protected blockWhenReadonly(event: Event) {

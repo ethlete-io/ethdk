@@ -44,7 +44,7 @@ export const filterStaticItems = (
  * (sync, `Promise`, or `Observable`) source forms. Static arrays are filtered client-side; function
  * sources receive the query and own their filtering. Emits `[]` below `minQueryLength`.
  *
- * Callers pipe this through `switchMap`, which unsubscribes stale requests — RxJS guarantees a
+ * Callers pipe this through `switchMap`, which unsubscribes stale requests - RxJS guarantees a
  * superseded Promise/Observable can no longer emit, so no manual generation guard is needed.
  */
 export const resolveTriggerItems = (
@@ -83,7 +83,7 @@ export type RichTextEditorTriggerRequest = { trigger: RichTextEditorTrigger; que
  * are debounced with an immediate `loading` state. Static sources resolve synchronously.
  *
  * While an async source is loading, the previous results stay visible (menu-like) instead of
- * blanking — `scan` keeps them, but resets when the active trigger changes.
+ * blanking - `scan` keeps them, but resets when the active trigger changes.
  */
 export const trackTriggerItems = (
   request$: Observable<RichTextEditorTriggerRequest>,
@@ -91,7 +91,7 @@ export const trackTriggerItems = (
   request$.pipe(
     distinctUntilChanged((a, b) => a?.trigger === b?.trigger && a?.query === b?.query),
     switchMap((request): Observable<InternalState> => {
-      // Deactivated (trigger char removed / caret left): don't emit an empty state — the popup is
+      // Deactivated (trigger char removed / caret left): don't emit an empty state - the popup is
       // closing, so freeze on the last results and let it fade out instead of flashing "No results".
       if (!request) return EMPTY;
 

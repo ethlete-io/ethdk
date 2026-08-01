@@ -16,12 +16,12 @@ export type CursorDragScrollOptions = {
   allowedDirection?: MaybeSignal<CursorDragScrollDirection>;
 
   /**
-   * Whether the element overflows in the allowed direction — there is nothing to drag if it does not.
+   * Whether the element overflows in the allowed direction - there is nothing to drag if it does not.
    *
    * Measured here when it isn't supplied, which means a MutationObserver and a ResizeObserver of its own.
    * Hand it over wherever the caller already knows: a scrollable that tracks its own scroll state was ending
    * up with two observers watching the same element for the same thing, and both of them re-measured
-   * `scrollWidth` — a forced layout — on every inline style written anywhere inside it.
+   * `scrollWidth` - a forced layout - on every inline style written anywhere inside it.
    */
   canScroll?: Signal<boolean>;
 };
@@ -190,7 +190,7 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
   };
 
   const setupDragging = (e: MouseEvent) => {
-    // A context menu takes the pointer away without ever delivering a `mouseup` — so without it in here, a
+    // A context menu takes the pointer away without ever delivering a `mouseup` - so without it in here, a
     // right click (or a ctrl-click on a Mac, which is the primary button) leaves the drag latched on and
     // every later mouse move scrolls the container.
     const dragEnd = merge(fromEvent<MouseEvent>(document, 'mouseup'), fromEvent<MouseEvent>(document, 'contextmenu'));
