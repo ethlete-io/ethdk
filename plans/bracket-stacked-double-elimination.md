@@ -6,10 +6,16 @@
   `offset = maxLeft - blockLeft`, which reduces to the plan's `(slotCount - blockSlots) / 2` whenever a
   block's two sides are the same length and still aligns the two centres when an odd early round makes
   them differ.
-- **The block-to-block connector runs beside the middle column, not up it.** The strip is not empty: the
+- **The block-to-block connector runs beside the middle column, dashed.** The strip is not empty: the
   bracket reset and the losers block's own chain sit between the grand final and the losers champion. It
   steps out into the gutter (`columnGap / 2` past the column edge), runs vertically and steps back in —
-  `gutterPath` in `drawing/line.ts`, taken when a merge's lower arm is directly below in the same column.
+  `gutterPath` in `drawing/line.ts`, taken when a merge's lower arm is directly below in the same column,
+  and drawn with `continueLineDashArray` (the plan's own fallback) because a solid line that long past
+  cards it has nothing to do with reads as a stray bracket edge.
+- **The anchor is always on its block's vertical centre; a chain too long grows the block** (`bottomPadding`),
+  rather than the plan's "shift the anchor up by the deficit". The shift put the anchor a few px off the
+  halves feeding it, which turned both of those connectors into diagonals — the only diagonals anywhere
+  in the drawing.
 - **The centre chain carries one round header** (the anchor's), as specified — so the grand final and the
   bracket reset lose theirs. A header per chain round would sit on the line joining them. Documented.
 

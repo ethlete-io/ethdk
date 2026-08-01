@@ -138,9 +138,11 @@ const createStackedBlock = <TRoundData, TMatchData>(
   }
   const anchorHeight = chain[0] ? chainRoundHeight({ round: chain[0], options, hasReverseFinal }) : 0;
 
-  // Centre the round both halves converge on, then give way: first by sliding the chain up, and only if
-  // it still does not fit by growing the whole block.
-  const spacerTop = Math.max(0, Math.min((content - anchorHeight) / 2, content - chainHeight));
+  // The round both halves converge on sits on the block's vertical centre, which is where the two halves'
+  // own matches sit — so the connectors into it stay straight. A chain too long to hang under it from
+  // there grows the block rather than sliding up: an anchor a few px off centre turns every one of those
+  // connectors into a diagonal, in a drawing where nothing else is.
+  const spacerTop = Math.max(0, (content - anchorHeight) / 2);
 
   return {
     firstRound,
@@ -148,7 +150,7 @@ const createStackedBlock = <TRoundData, TMatchData>(
     right,
     chain,
     content,
-    bottomPadding: Math.max(0, chainHeight - content),
+    bottomPadding: Math.max(0, spacerTop + chainHeight - content),
     spacerTop,
     spacerBottom: Math.max(0, content - spacerTop - chainHeight),
   };

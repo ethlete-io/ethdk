@@ -107,19 +107,25 @@ describe('createStackedDoubleEliminationGrid', () => {
     expect(losersFinal.top).toBeGreaterThan(bracketReset.top + bracketReset.height);
   });
 
-  it('puts the round both halves converge on at the vertical centre of its block', () => {
-    // A chain short enough to centre: this bracket stops at the two brackets, with no finals below.
-    const { grid, masterColumns } = stacked({ participantCount: 32, includeFinal: false });
+  it('puts the round both halves converge on level with the halves feeding it', () => {
+    // However long the chain under it is: an anchor off the block's centre turns both of those
+    // connectors into diagonals, in a drawing where nothing else is.
+    for (const options of [
+      { participantCount: 32, includeFinal: false },
+      { participantCount: 32, includeFinal: true },
+    ] satisfies DoubleEliminationOptions[]) {
+      const { grid } = stacked(options);
 
-    const winnersSection = masterColumns[0]?.sections[WINNERS_SECTION];
+      // The last round before each block's centre is a 2-match round, so m0 is its left half and m1 its
+      // right — the two the anchor is drawn between.
+      const winnersAnchor = rectOf(grid, 'ub-r4-m0').blockCentre;
+      const losersAnchor = rectOf(grid, 'lb-r6-m0').blockCentre;
 
-    if (!winnersSection) throw new Error('missing winners block');
-
-    const headerBlock = settings.roundHeaderHeight + settings.roundHeaderGap;
-    const blockCentre =
-      winnersSection.dimensions.top + headerBlock + (winnersSection.dimensions.height - headerBlock) / 2;
-
-    expect(rectOf(grid, 'ub-r4-m0').blockCentre).toBeCloseTo(blockCentre, 5);
+      expect(rectOf(grid, 'ub-r3-m0').blockCentre).toBeCloseTo(winnersAnchor, 5);
+      expect(rectOf(grid, 'ub-r3-m1').blockCentre).toBeCloseTo(winnersAnchor, 5);
+      expect(rectOf(grid, 'lb-r5-m0').blockCentre).toBeCloseTo(losersAnchor, 5);
+      expect(rectOf(grid, 'lb-r5-m1').blockCentre).toBeCloseTo(losersAnchor, 5);
+    }
   });
 
   it('draws every match of the source exactly once, and never two on top of each other', () => {

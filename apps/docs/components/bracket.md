@@ -439,9 +439,11 @@ Two consequences worth knowing:
 - **The chain carries one round header**, naming the round its two halves converge on. The rounds below
   it are a vertical run of single matches, and a header between each would sit on the line joining
   them — [`<et-bracket-rounds-list>`](/components/bracket-rounds-list) still names every round.
-- **The losers champion's line to the grand final runs beside the middle column**, not through it: the
-  two cards share a column with the whole chain stacked between them, so the connector steps out into
-  the gutter and back.
+- **The losers champion's line to the grand final runs dashed, beside the middle column.** The two cards
+  share a column with the whole chain stacked between them, so it steps out into the gap, runs the
+  height of a block and steps back in — dashed, like the [continue element](#continue-element), because it
+  carries a participant across rather than joining two neighbouring rounds. `continueLineDashArray`
+  sets it.
 
 A round that cannot be halved has no second copy, so a block whose opening round is odd simply never
 folds — it comes out left-to-right with its late rounds at the end, which is the honest answer rather

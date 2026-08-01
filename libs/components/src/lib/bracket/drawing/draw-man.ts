@@ -176,7 +176,9 @@ export const drawMan = <TRoundData, TMatchData>(dimensions: DrawManDimensions<TR
           svgParts.push(
             isBlockToBlock
               ? gutterPath(prevLowerPos, currentPos, {
-                  path: lowerPathOptions,
+                  // Dashed, like the continue column's: it runs the height of a block past cards it has
+                  // nothing to do with, and reads as a stray bracket edge if it looks like one.
+                  path: { ...(dimensions.continuePath ?? dimensions.path), className: lowerPathOptions.className },
                   inverted: invertCurve,
                   gutter: dimensions.columnGap / 2,
                 })
