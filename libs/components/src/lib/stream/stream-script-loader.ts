@@ -1,9 +1,9 @@
 import { DOCUMENT, inject } from '@angular/core';
-import { RuntimeError, createRootProvider, injectRenderer } from '@ethlete/core';
+import { defineRootProvider, injectRenderer, RuntimeError, toInjectFn } from '@ethlete/core';
 import { Observable, shareReplay } from 'rxjs';
 import { STREAM_ERROR_CODES } from './stream-errors';
 
-export const [, injectStreamScriptLoader] = createRootProvider(
+const STREAM_SCRIPT_LOADER_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const document = inject(DOCUMENT);
     const cache = new Map<string, Observable<void>>();
@@ -58,5 +58,7 @@ export const [, injectStreamScriptLoader] = createRootProvider(
   },
   { name: 'Stream Script Loader' },
 );
+
+export const injectStreamScriptLoader = /* @__PURE__ */ toInjectFn(STREAM_SCRIPT_LOADER_DEF);
 
 export type StreamScriptLoader = ReturnType<typeof injectStreamScriptLoader>;

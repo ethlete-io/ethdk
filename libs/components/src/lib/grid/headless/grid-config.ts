@@ -1,4 +1,4 @@
-import { createStaticRootProvider } from '@ethlete/core';
+import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 import { GridComponentRegistration, GridItemActionsComponent } from './grid.types';
 
 export type GridConfig = {
@@ -10,6 +10,9 @@ export const DEFAULT_GRID_CONFIG: GridConfig = {
   registrations: [],
 };
 
-export const [provideGridConfig, injectGridConfig] = createStaticRootProvider(DEFAULT_GRID_CONFIG, {
+const GRID_CONFIG_DEF = /* @__PURE__ */ defineStaticRootProvider(DEFAULT_GRID_CONFIG, {
   name: 'GridConfig',
 });
+
+export const provideGridConfig = /* @__PURE__ */ toProvideFn(GRID_CONFIG_DEF);
+export const injectGridConfig = /* @__PURE__ */ toInjectFn(GRID_CONFIG_DEF);

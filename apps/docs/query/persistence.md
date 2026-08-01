@@ -8,11 +8,13 @@ returning user sees the data they left behind while it revalidates behind them; 
 connection sees it too.
 
 ```ts
-export const [provideApi, injectApi] = createQueryClient({
+const API = createQueryClient({
   name: 'api',
   baseUrl: 'https://api.example.com/v1',
   // persistence: true is the default — pass an object to tune it, or false to opt out entirely.
 });
+
+export const injectApi = toInjectFn(API);
 ```
 
 Two rules define the whole feature:

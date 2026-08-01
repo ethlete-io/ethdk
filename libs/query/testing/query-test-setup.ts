@@ -15,7 +15,7 @@ import {
 } from '@ethlete/query';
 
 export type QueryTestSetup = {
-  queryClient: NonNullable<ReturnType<AnyCreateQueryClientResult[1]>>;
+  queryClient: NonNullable<ReturnType<AnyCreateQueryClientResult['inject']>>;
   queryClientRef: QueryClientRef;
   httpClient: HttpClient;
   httpTesting: HttpTestingController;
@@ -86,7 +86,7 @@ export const setupQueryTest = (config?: QueryTestSetupConfig): QueryTestSetup =>
   const queryClientRef = createQueryClient({ baseUrl, name });
 
   const setup = TestBed.runInInjectionContext(() => {
-    const [, inject] = queryClientRef;
+    const { inject } = queryClientRef;
     const queryClient = inject();
 
     if (!queryClient) {

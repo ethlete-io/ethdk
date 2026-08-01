@@ -1,5 +1,5 @@
 import { computed, Signal, signal } from '@angular/core';
-import { createRootProvider } from '../utils';
+import { defineRootProvider, toInjectFn, toProvideFn } from '../utils';
 import { SurfaceType } from './surface-theme.util';
 
 export type SurfaceContextEntry = {
@@ -28,7 +28,7 @@ export type SurfaceContextTracker = {
 
 let uniqueId = 0;
 
-export const [provideSurfaceContextTracker, injectSurfaceContextTracker] = createRootProvider(
+const SURFACE_CONTEXT_TRACKER_DEF = /* @__PURE__ */ defineRootProvider(
   (): SurfaceContextTracker => {
     const entries = signal<SurfaceContextEntry[]>([]);
 
@@ -69,3 +69,6 @@ export const [provideSurfaceContextTracker, injectSurfaceContextTracker] = creat
   },
   { name: 'SurfaceContextTracker' },
 );
+
+export const provideSurfaceContextTracker = /* @__PURE__ */ toProvideFn(SURFACE_CONTEXT_TRACKER_DEF);
+export const injectSurfaceContextTracker = /* @__PURE__ */ toInjectFn(SURFACE_CONTEXT_TRACKER_DEF);

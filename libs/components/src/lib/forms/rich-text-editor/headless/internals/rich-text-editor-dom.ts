@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { inject } from '@angular/core';
-import { createProvider, injectRenderer } from '@ethlete/core';
+import { defineProvider, injectRenderer, toInjectFn, toProvideFn } from '@ethlete/core';
 import { createRichTextEditorAutoformat } from './rich-text-editor-dom-autoformat';
 import { createRichTextEditorBlockquote } from './rich-text-editor-dom-blockquote';
 import { createRichTextEditorCodeBlock } from './rich-text-editor-dom-code-block';
@@ -152,6 +152,9 @@ const richTextEditorDomFactory = () => {
 
 export type RichTextEditorDom = ReturnType<typeof richTextEditorDomFactory>;
 
-export const [provideRichTextEditorDom, injectRichTextEditorDom] = createProvider(richTextEditorDomFactory, {
+const RICH_TEXT_EDITOR_DOM_DEF = /* @__PURE__ */ defineProvider(richTextEditorDomFactory, {
   name: 'RichTextEditorDom',
 });
+
+export const provideRichTextEditorDom = /* @__PURE__ */ toProvideFn(RICH_TEXT_EDITOR_DOM_DEF);
+export const injectRichTextEditorDom = /* @__PURE__ */ toInjectFn(RICH_TEXT_EDITOR_DOM_DEF);

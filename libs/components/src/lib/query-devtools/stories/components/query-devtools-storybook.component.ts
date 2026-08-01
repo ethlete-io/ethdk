@@ -1,4 +1,5 @@
 import { Component, signal, ViewEncapsulation } from '@angular/core';
+import { toInjectFn } from '@ethlete/core';
 import {
   createPagedQueryStack,
   createQueryStack,
@@ -19,8 +20,8 @@ import {
   getServerTime,
 } from '../query-devtools-demo.utils';
 
-const [, injectDemoAuthProvider] = devtoolsDemoAuthProvider;
-const [, injectDemoSocket] = devtoolsDemoSocket;
+const injectDemoAuthProvider = toInjectFn(devtoolsDemoAuthProvider);
+const injectDemoSocket = toInjectFn(devtoolsDemoSocket);
 
 /** A GET query living in its own component — one inspect target. */
 @Component({

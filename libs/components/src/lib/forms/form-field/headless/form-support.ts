@@ -2,10 +2,12 @@ import { computed, effect, ElementRef, inject, Signal, signal, untracked } from 
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
   AnimatableDirective,
-  createProvider,
+  defineProvider,
   injectErrorTheme,
   ProvideColorDirective,
   signalElementDimensions,
+  toInjectFn,
+  toProvideFn,
 } from '@ethlete/core';
 import { EMPTY, filter, switchMap, tap } from 'rxjs';
 import { FormFieldDirective } from './form-field.directive';
@@ -174,9 +176,12 @@ const formSupportFactory = () => {
   };
 };
 
-export const [provideFormSupport, injectFormSupport] = createProvider(formSupportFactory, {
+const FORM_SUPPORT_DEF = /* @__PURE__ */ defineProvider(formSupportFactory, {
   name: 'FormSupport',
 });
+
+export const provideFormSupport = /* @__PURE__ */ toProvideFn(FORM_SUPPORT_DEF);
+export const injectFormSupport = /* @__PURE__ */ toInjectFn(FORM_SUPPORT_DEF);
 
 export type FormSupport = ReturnType<typeof formSupportFactory>;
 

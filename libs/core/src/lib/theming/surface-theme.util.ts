@@ -1,4 +1,4 @@
-import { createStaticProvider } from '../utils';
+import { defineStaticProvider, toInjectFn, toProvideFn } from '../utils';
 
 export const SURFACE_TYPE = {
   LIGHT: 'light',
@@ -60,13 +60,19 @@ export const createCssSurfaceName = (name: string) => name.replace(/([A-Z])/g, (
 export const resolveSurfaceByElevation = (themes: SurfaceTheme[], type: SurfaceType, elevation: number) =>
   themes.find((t) => t.type === type && t.elevation === elevation) ?? null;
 
-export const [ɵProvideSurfaceThemes, injectSurfaceThemes] = createStaticProvider<SurfaceTheme[]>(undefined, {
+const SURFACE_THEMES_DEF = /* @__PURE__ */ defineStaticProvider<SurfaceTheme[]>(undefined, {
   name: 'Surface Themes',
 });
 
-export const [ɵProvideSurfaceThemesPrefix, injectSurfaceThemesPrefix] = createStaticProvider('et', {
+export const ɵProvideSurfaceThemes = /* @__PURE__ */ toProvideFn(SURFACE_THEMES_DEF);
+export const injectSurfaceThemes = /* @__PURE__ */ toInjectFn(SURFACE_THEMES_DEF);
+
+const SURFACE_THEMES_PREFIX_DEF = /* @__PURE__ */ defineStaticProvider('et', {
   name: 'Surface Themes Prefix',
 });
+
+export const ɵProvideSurfaceThemesPrefix = /* @__PURE__ */ toProvideFn(SURFACE_THEMES_PREFIX_DEF);
+export const injectSurfaceThemesPrefix = /* @__PURE__ */ toInjectFn(SURFACE_THEMES_PREFIX_DEF);
 
 export const provideSurfaceThemesWithTailwind4 = (themes: SurfaceTheme[], prefix = 'et') => [
   ɵProvideSurfaceThemes(themes),

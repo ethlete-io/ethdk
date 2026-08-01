@@ -1,4 +1,4 @@
-import { createLabels } from '@ethlete/core';
+import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 import { FilterOverlaySubmitButton, FilterOverlaySubmitState } from './filter-overlay.types';
 
 /**
@@ -52,16 +52,22 @@ export const GERMAN_FILTER_OVERLAY_LABELS: FilterOverlayLabels = {
 export const filterOverlayLabelsForLocale = (locale: string): FilterOverlayLabels =>
   locale.toLowerCase().startsWith('de') ? GERMAN_FILTER_OVERLAY_LABELS : DEFAULT_FILTER_OVERLAY_LABELS;
 
+const FILTER_OVERLAY_LABELS_DEF = /* @__PURE__ */ defineLabels<FilterOverlayLabels>(
+  'FILTER_OVERLAY_LABELS',
+  filterOverlayLabelsForLocale,
+);
+
 /**
  * Localize the filter overlay's strings below this injector, and read the set in effect here as a signal.
- * Partial — what you leave out keeps the value the current locale gives it. See {@link createLabels} for the
+ * Partial — what you leave out keeps the value the current locale gives it. See {@link defineLabels} for the
  * shape, which every domain in this library shares.
  *
  * @example
  * provideFilterOverlayLabels({ apply: 'Voir les résultats', reset: 'Réinitialiser' });
  */
-export const [provideFilterOverlayLabels, injectFilterOverlayLabels, FILTER_OVERLAY_LABELS] =
-  createLabels<FilterOverlayLabels>('FILTER_OVERLAY_LABELS', filterOverlayLabelsForLocale);
+export const provideFilterOverlayLabels = /* @__PURE__ */ toProvideFn(FILTER_OVERLAY_LABELS_DEF);
+export const injectFilterOverlayLabels = /* @__PURE__ */ toInjectFn(FILTER_OVERLAY_LABELS_DEF);
+export const FILTER_OVERLAY_LABELS = /* @__PURE__ */ toToken(FILTER_OVERLAY_LABELS_DEF);
 
 /**
  * The submit button, worked out from the preview.

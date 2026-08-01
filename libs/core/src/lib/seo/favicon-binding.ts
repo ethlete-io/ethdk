@@ -1,7 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
 import { computed, DOCUMENT, effect, inject, PLATFORM_ID, signal } from '@angular/core';
 import { MaybeSignal } from '../signals';
-import { createRootProvider } from '../utils';
+import { defineRootProvider, toInjectFn, toProvideFn } from '../utils';
 import { applyHeadBinding } from './head-binding';
 
 /**
@@ -77,14 +77,7 @@ const drawProgress = (ctx: CanvasRenderingContext2D, value: number, color: strin
   }
 };
 
-/**
- * Owns the `<link rel="icon">` href so overlays can be drawn onto the site's favicon and taken back
- * off again. The original href is captured on first use and restored once the last overlay is gone.
- *
- * Registrations are keyed, and a `progress` overlay wins over a `dot` — a ring that also carries a
- * badge reads as neither.
- */
-export const [provideFaviconStore, injectFaviconStore] = createRootProvider(
+const FAVICON_STORE_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const document = inject(DOCUMENT);
     const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -229,6 +222,16 @@ export const [provideFaviconStore, injectFaviconStore] = createRootProvider(
   },
   { name: 'Favicon Store' },
 );
+
+/**
+ * Owns the `<link rel="icon">` href so overlays can be drawn onto the site's favicon and taken back
+ * off again. The original href is captured on first use and restored once the last overlay is gone.
+ *
+ * Registrations are keyed, and a `progress` overlay wins over a `dot` — a ring that also carries a
+ * badge reads as neither.
+ */
+export const provideFaviconStore = /* @__PURE__ */ toProvideFn(FAVICON_STORE_DEF);
+export const injectFaviconStore = /* @__PURE__ */ toInjectFn(FAVICON_STORE_DEF);
 
 /**
  * Draw an overlay on the site's favicon while the binding has a value — an unsaved-changes dot, an

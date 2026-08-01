@@ -19,7 +19,7 @@ import { SelectDirective } from './select.directive';
  * bound yet (projected content whose view has not rendered). Never matches a consumer value,
  * so unbound options simply cannot be selected until their bindings run.
  */
-const UNBOUND_VALUE = Symbol('et-select-option-unbound');
+const UNBOUND_VALUE = /* @__PURE__ */ Symbol('et-select-option-unbound');
 
 @Directive({
   selector: '[etSelectOption]',

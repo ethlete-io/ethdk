@@ -33,18 +33,18 @@ export const BUTTON_VARIANTS = {
 type ButtonVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS];
 
 export const BUTTON_SPINNER_CONFIG: Record<ButtonSize, { diameter: number; strokeWidth: number }> = {
-  [BUTTON_SIZES.XS]: { diameter: 12, strokeWidth: 1.5 },
-  [BUTTON_SIZES.SM]: { diameter: 14, strokeWidth: 1.75 },
-  [BUTTON_SIZES.MD]: { diameter: 16, strokeWidth: 2 },
-  [BUTTON_SIZES.LG]: { diameter: 20, strokeWidth: 2.5 },
-  [BUTTON_SIZES.XL]: { diameter: 24, strokeWidth: 3 },
+  xs: { diameter: 12, strokeWidth: 1.5 },
+  sm: { diameter: 14, strokeWidth: 1.75 },
+  md: { diameter: 16, strokeWidth: 2 },
+  lg: { diameter: 20, strokeWidth: 2.5 },
+  xl: { diameter: 24, strokeWidth: 3 },
 };
 
 const PRESSED_VARIANT_MAP: Record<ButtonVariant, string> = {
-  [BUTTON_VARIANTS.FILLED]: 'outline',
-  [BUTTON_VARIANTS.OUTLINE]: 'filled',
-  [BUTTON_VARIANTS.TONAL]: 'filled',
-  [BUTTON_VARIANTS.TRANSPARENT]: 'tonal',
+  filled: 'outline',
+  outline: 'filled',
+  tonal: 'filled',
+  transparent: 'tonal',
 };
 
 @Component({

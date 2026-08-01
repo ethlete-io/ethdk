@@ -1,5 +1,12 @@
 import { DOCUMENT, inject } from '@angular/core';
-import { createFlipAnimation, createRootProvider, injectRenderer, injectViewportSize } from '@ethlete/core';
+import {
+  createFlipAnimation,
+  defineRootProvider,
+  injectRenderer,
+  injectViewportSize,
+  toInjectFn,
+  toProvideFn,
+} from '@ethlete/core';
 import { StreamManager, StreamPlayerEntry, StreamPlayerId, StreamSlotEntry } from './stream-manager.types';
 
 type InternalPlayerEntry = StreamPlayerEntry & {
@@ -12,7 +19,7 @@ type InternalPlayerEntry = StreamPlayerEntry & {
   isAnimatingOut: boolean;
 };
 
-export const [provideStreamManager, injectStreamManager] = createRootProvider(
+const STREAM_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
   (): StreamManager => {
     const document = inject(DOCUMENT);
     const renderer = injectRenderer();
@@ -185,3 +192,6 @@ export const [provideStreamManager, injectStreamManager] = createRootProvider(
   },
   { name: 'Stream Manager' },
 );
+
+export const provideStreamManager = /* @__PURE__ */ toProvideFn(STREAM_MANAGER_DEF);
+export const injectStreamManager = /* @__PURE__ */ toInjectFn(STREAM_MANAGER_DEF);

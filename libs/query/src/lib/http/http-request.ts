@@ -1,7 +1,7 @@
 import { HttpClient, HttpEvent, HttpEventType, HttpHeaders, HttpProgressEvent } from '@angular/common/http';
 import { ErrorHandler, Signal, signal } from '@angular/core';
 import { Observable, Subject, Subscription, catchError, retry, tap, throwError, timer } from 'rxjs';
-import { buildTimestampFromSeconds } from '../legacy/request';
+import { buildTimestampFromSeconds } from './internal/request-route';
 import { QueryArgs, RequestArgs, ResponseType } from './query';
 import { extractExpiresInSeconds } from './query-cache-utils';
 import { CacheAdapterFn } from './query-client';

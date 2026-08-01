@@ -1,5 +1,5 @@
 import { inject, InjectionToken } from '@angular/core';
-import { createStaticProvider } from '@ethlete/core';
+import { defineStaticProvider } from '@ethlete/core';
 import { QueryDependencies } from './query-dependencies';
 
 export type QueryContext = {
@@ -10,7 +10,7 @@ export type QueryContext = {
 const QUERY_CONTEXT_TOKEN = new InjectionToken<QueryContext>('QUERY_CONTEXT');
 
 export const createQueryContext = (context: QueryContext) =>
-  createStaticProvider(context, {
+  defineStaticProvider(context, {
     name: 'Query Context',
     extraInjectionToken: QUERY_CONTEXT_TOKEN,
   });

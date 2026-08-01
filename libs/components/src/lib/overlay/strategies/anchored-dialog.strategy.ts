@@ -1,10 +1,12 @@
 import {
-  createRootProvider,
-  createStaticRootProvider,
+  defineRootProvider,
+  defineStaticRootProvider,
   forceReflow,
   injectRenderer,
   nextFrame,
   randomId,
+  toInjectFn,
+  toProvideFn,
 } from '@ethlete/core';
 import { AnchoredPositionOptions, buildAnchoredRuntimePositionStrategy } from './anchored.strategy';
 import { getOriginCoordinatesAndDimensions } from './overlay-origin';
@@ -27,24 +29,26 @@ const DEFAULT_ANCHORED_DIALOG_POSITION: AnchoredPositionOptions = {
 
 export type AnchoredDialogOverlayStrategyOptions = Partial<OverlayBreakpointConfig> & AnchoredPositionOptions;
 
-export const [provideAnchoredDialogStrategyDefaults, injectAnchoredDialogStrategyDefaults] =
-  createStaticRootProvider<OverlayBreakpointConfig>(
-    {
-      maxHeight: '80vh',
-      maxWidth: '80vw',
-      minWidth: '288px',
-      containerClass: 'et-overlay--anchored-dialog',
-      positionStrategy: buildAnchoredRuntimePositionStrategy(DEFAULT_ANCHORED_DIALOG_POSITION),
-      applyTransformOrigin: true,
-      arrow: true,
-      hasBackdrop: false,
-    },
-    {
-      name: 'Anchored Dialog Overlay Strategy Defaults',
-    },
-  );
+const ANCHORED_DIALOG_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootProvider<OverlayBreakpointConfig>(
+  {
+    maxHeight: '80vh',
+    maxWidth: '80vw',
+    minWidth: '288px',
+    containerClass: 'et-overlay--anchored-dialog',
+    positionStrategy: /* @__PURE__ */ buildAnchoredRuntimePositionStrategy(DEFAULT_ANCHORED_DIALOG_POSITION),
+    applyTransformOrigin: true,
+    arrow: true,
+    hasBackdrop: false,
+  },
+  {
+    name: 'Anchored Dialog Overlay Strategy Defaults',
+  },
+);
 
-export const [provideAnchoredDialogStrategy, injectAnchoredDialogStrategy] = createRootProvider(
+export const provideAnchoredDialogStrategyDefaults = /* @__PURE__ */ toProvideFn(ANCHORED_DIALOG_STRATEGY_DEFAULTS_DEF);
+export const injectAnchoredDialogStrategyDefaults = /* @__PURE__ */ toInjectFn(ANCHORED_DIALOG_STRATEGY_DEFAULTS_DEF);
+
+const ANCHORED_DIALOG_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const defaults = injectAnchoredDialogStrategyDefaults();
     const renderer = injectRenderer();
@@ -146,6 +150,9 @@ export const [provideAnchoredDialogStrategy, injectAnchoredDialogStrategy] = cre
     name: 'Anchored Dialog Overlay Strategy',
   },
 );
+
+export const provideAnchoredDialogStrategy = /* @__PURE__ */ toProvideFn(ANCHORED_DIALOG_STRATEGY_DEF);
+export const injectAnchoredDialogStrategy = /* @__PURE__ */ toInjectFn(ANCHORED_DIALOG_STRATEGY_DEF);
 
 export const anchoredDialogOverlayStrategy = (
   options: AnchoredDialogOverlayStrategyOptions = {},

@@ -2,7 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { inject, signal } from '@angular/core';
 import { injectRenderer } from '../providers';
 import { MaybeSignal } from '../signals';
-import { createRootProvider, createStaticRootProvider } from '../utils';
+import { defineRootProvider, defineStaticRootProvider, toInjectFn, toProvideFn } from '../utils';
 import { applyHeadBinding } from './head-binding';
 import * as JsonLD from './json-ld';
 
@@ -20,14 +20,17 @@ export type StructuredDataConfig = {
   placement: 'head' | 'body';
 };
 
-export const [provideStructuredDataConfig, injectStructuredDataConfig] = createStaticRootProvider<StructuredDataConfig>(
+const STRUCTURED_DATA_CONFIG_DEF = /* @__PURE__ */ defineStaticRootProvider<StructuredDataConfig>(
   {
     placement: 'body',
   },
   { name: 'Structured Data Config' },
 );
 
-export const [provideStructuredDataStore, injectStructuredDataStore] = createRootProvider(
+export const provideStructuredDataConfig = /* @__PURE__ */ toProvideFn(STRUCTURED_DATA_CONFIG_DEF);
+export const injectStructuredDataConfig = /* @__PURE__ */ toInjectFn(STRUCTURED_DATA_CONFIG_DEF);
+
+const STRUCTURED_DATA_STORE_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const document = inject(DOCUMENT);
     const renderer = injectRenderer();
@@ -82,6 +85,9 @@ export const [provideStructuredDataStore, injectStructuredDataStore] = createRoo
   },
   { name: 'Structured Data Store' },
 );
+
+export const provideStructuredDataStore = /* @__PURE__ */ toProvideFn(STRUCTURED_DATA_STORE_DEF);
+export const injectStructuredDataStore = /* @__PURE__ */ toInjectFn(STRUCTURED_DATA_STORE_DEF);
 
 export const applyStructuredDataBinding = (
   binding: MaybeSignal<JsonLD.WithContext<JsonLD.Thing> | JsonLD.Graph | null | undefined>,

@@ -5,7 +5,7 @@
 // `ethlete/no-template-literal-before-inline-template` lint rule.
 
 import {} from '@angular/core';
-import {} from '@ethlete/core';
+import { toInjectFn } from '@ethlete/core';
 import {
   createBearerAuthProvider,
   createGetQuery,
@@ -155,7 +155,7 @@ export const authProvider = createBearerAuthProvider({
   ],
 });
 
-export const [, injectAuthProvider] = authProvider;
+export const injectAuthProvider = toInjectFn(authProvider);
 
 // const foo = injectAuthProvider().features.tokenRevocation.revoke();
 

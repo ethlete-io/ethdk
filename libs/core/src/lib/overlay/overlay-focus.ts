@@ -1,7 +1,7 @@
 import { OverlayRuntimeRef } from './overlay-runtime-ref';
 import { OverlayRuntimeAutoFocusTarget } from './overlay-runtime.types';
 
-export const FOCUSABLE_SELECTOR = [
+export const FOCUSABLE_SELECTOR = /* @__PURE__ */ [
   'a[href]',
   'area[href]',
   'button:not([disabled])',

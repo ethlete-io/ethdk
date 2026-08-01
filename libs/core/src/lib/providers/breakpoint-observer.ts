@@ -2,7 +2,7 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import { inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map, startWith } from 'rxjs';
-import { createRootProvider, createStaticRootProvider } from '../utils';
+import { defineRootProvider, defineStaticRootProvider, toInjectFn, toProvideFn } from '../utils';
 
 export type Vec2 = [number, number];
 
@@ -36,19 +36,19 @@ export const DEFAULT_VIEWPORT_CONFIG: ViewportConfig = {
   },
 };
 
-export const [provideViewportConfig, injectViewportConfig] = createStaticRootProvider<ViewportConfig>(
-  DEFAULT_VIEWPORT_CONFIG,
-  {
-    name: 'Viewport Config',
-  },
-);
+const VIEWPORT_CONFIG_DEF = /* @__PURE__ */ defineStaticRootProvider<ViewportConfig>(DEFAULT_VIEWPORT_CONFIG, {
+  name: 'Viewport Config',
+});
+
+export const provideViewportConfig = /* @__PURE__ */ toProvideFn(VIEWPORT_CONFIG_DEF);
+export const injectViewportConfig = /* @__PURE__ */ toInjectFn(VIEWPORT_CONFIG_DEF);
 
 export type BuildMediaQueryOptions = {
   min?: number | Breakpoint;
   max?: number | Breakpoint;
 };
 
-export const [provideBreakpointObserver, injectBreakpointObserver] = createRootProvider(
+const BREAKPOINT_OBSERVER_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const breakpointObserver = inject(BreakpointObserver);
     const viewportConfig = injectViewportConfig();
@@ -129,3 +129,6 @@ export const [provideBreakpointObserver, injectBreakpointObserver] = createRootP
   },
   { name: 'Breakpoint Observer' },
 );
+
+export const provideBreakpointObserver = /* @__PURE__ */ toProvideFn(BREAKPOINT_OBSERVER_DEF);
+export const injectBreakpointObserver = /* @__PURE__ */ toInjectFn(BREAKPOINT_OBSERVER_DEF);

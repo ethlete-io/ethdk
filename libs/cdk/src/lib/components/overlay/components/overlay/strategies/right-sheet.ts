@@ -1,6 +1,6 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { inject } from '@angular/core';
-import { createRootProvider, createStaticRootProvider, randomId } from '@ethlete/core';
+import { defineRootProvider, defineStaticRootProvider, randomId, toInjectFn, toProvideFn } from '@ethlete/core';
 import {
   DragToDismissRef,
   enableDragToDismiss,
@@ -11,27 +11,29 @@ import {
   OverlayStrategyContext,
 } from './core';
 
-export const [provideRightSheetStrategyDefaults, injectRightSheetStrategyDefaults] =
-  createStaticRootProvider<OverlayBreakpointConfig>(
-    {
-      width: '100%',
-      height: '100%',
-      maxHeight: undefined,
-      maxWidth: '640px',
-      minHeight: undefined,
-      minWidth: undefined,
-      containerClass: 'et-overlay--right-sheet',
-      positionStrategy: () => inject(Overlay).position().global().right('0').centerVertically(),
-      dragToDismiss: {
-        direction: 'to-right',
-      },
+const RIGHT_SHEET_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootProvider<OverlayBreakpointConfig>(
+  {
+    width: '100%',
+    height: '100%',
+    maxHeight: undefined,
+    maxWidth: '640px',
+    minHeight: undefined,
+    minWidth: undefined,
+    containerClass: 'et-overlay--right-sheet',
+    positionStrategy: () => inject(Overlay).position().global().right('0').centerVertically(),
+    dragToDismiss: {
+      direction: 'to-right',
     },
-    {
-      name: 'Right Sheet Overlay Strategy Defaults',
-    },
-  );
+  },
+  {
+    name: 'Right Sheet Overlay Strategy Defaults',
+  },
+);
 
-export const [provideRightSheetStrategy, injectRightSheetStrategy] = createRootProvider(
+export const provideRightSheetStrategyDefaults = /* @__PURE__ */ toProvideFn(RIGHT_SHEET_STRATEGY_DEFAULTS_DEF);
+export const injectRightSheetStrategyDefaults = /* @__PURE__ */ toInjectFn(RIGHT_SHEET_STRATEGY_DEFAULTS_DEF);
+
+const RIGHT_SHEET_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const defaults = injectRightSheetStrategyDefaults();
 
@@ -78,6 +80,9 @@ export const [provideRightSheetStrategy, injectRightSheetStrategy] = createRootP
     name: 'Right Sheet Overlay Strategy',
   },
 );
+
+export const provideRightSheetStrategy = /* @__PURE__ */ toProvideFn(RIGHT_SHEET_STRATEGY_DEF);
+export const injectRightSheetStrategy = /* @__PURE__ */ toInjectFn(RIGHT_SHEET_STRATEGY_DEF);
 
 export const rightSheetOverlayStrategy = (
   config: Partial<OverlayBreakpointConfig> = {},

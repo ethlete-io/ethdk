@@ -1,4 +1,4 @@
-import { createLabels } from '@ethlete/core';
+import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
  * Every string the date/time inputs render or announce themselves — the picker triggers, the two halves
@@ -59,15 +59,16 @@ export const DEFAULT_DATE_TIME_LABELS: DateTimeLabels = {
   invalidDuration: 'Please enter a valid duration',
 };
 
+const DATE_TIME_LABELS_DEF = /* @__PURE__ */ defineLabels<DateTimeLabels>('DATE_TIME_LABELS', DEFAULT_DATE_TIME_LABELS);
+
 /**
  * Localize the date/time inputs' strings for everything below this injector, and read the set in effect
  * here as a signal. Partial — whatever you leave out keeps its {@link DEFAULT_DATE_TIME_LABELS} value.
- * See {@link createLabels} for the shape, which every domain in this library shares.
+ * See {@link defineLabels} for the shape, which every domain in this library shares.
  *
  * @example
  * provideDateTimeLabels({ openCalendar: 'Kalender öffnen', invalidDate: 'Bitte ein gültiges Datum eingeben' });
  */
-export const [provideDateTimeLabels, injectDateTimeLabels, DATE_TIME_LABELS] = createLabels<DateTimeLabels>(
-  'DATE_TIME_LABELS',
-  DEFAULT_DATE_TIME_LABELS,
-);
+export const provideDateTimeLabels = /* @__PURE__ */ toProvideFn(DATE_TIME_LABELS_DEF);
+export const injectDateTimeLabels = /* @__PURE__ */ toInjectFn(DATE_TIME_LABELS_DEF);
+export const DATE_TIME_LABELS = /* @__PURE__ */ toToken(DATE_TIME_LABELS_DEF);

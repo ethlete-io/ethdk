@@ -12,7 +12,7 @@ import { memoizeSignal } from './signal-data-utils';
  * that moves on its own needs to ask both, and a timer is not a substitute — browsers throttle timers in a
  * hidden tab rather than stopping them, so work keeps piling up out of sight.
  */
-export const injectIsDocumentVisible = memoizeSignal<boolean>(() => {
+export const injectIsDocumentVisible = /* @__PURE__ */ memoizeSignal<boolean>(() => {
   const document = inject(DOCUMENT);
   const isVisible = () => document.visibilityState === 'visible';
 

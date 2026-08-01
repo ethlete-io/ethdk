@@ -1,15 +1,15 @@
 import { Type } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
-import { BRACKET_ERROR_CODES } from './bracket-errors';
 import { BracketComponentOverrides } from './bracket-components';
+import { BRACKET_ERROR_CODES } from './bracket-errors';
 import { BracketLayoutSettings } from './bracket-grid';
+import { BracketLabels } from './bracket-labels';
 import { BracketDataLayout } from './core/layout';
-import { TOURNAMENT_MODE, TournamentMode } from './core/tournament';
+import { TournamentMode } from './core/tournament';
 import { BracketComponents } from './drawing/grid/core/types';
 import { ComputedBracketGrid, CreateBracketGridConfig } from './drawing/grid/types';
 import { Bracket, BracketRound } from './linked/bracket';
 import { BracketRoundMapWithSwissData, BracketSwissColors } from './linked/swiss';
-import { BracketLabels } from './bracket-labels';
 
 /**
  * What {@link BracketLayout.drawEdges} gets to work with: the grid it is connecting and the resolved
@@ -108,9 +108,9 @@ export type BracketLayout<TRoundData = any, TMatchData = any> = {
 };
 
 const LAYOUT_FACTORY_SUGGESTION: Record<TournamentMode, string> = {
-  [TOURNAMENT_MODE.SINGLE_ELIMINATION]: 'singleEliminationBracketLayout()',
-  [TOURNAMENT_MODE.DOUBLE_ELIMINATION]: 'doubleEliminationBracketLayout()',
-  [TOURNAMENT_MODE.SWISS_WITH_ELIMINATION]: 'swissBracketLayout()',
+  'single-elimination': 'singleEliminationBracketLayout()',
+  'double-elimination': 'doubleEliminationBracketLayout()',
+  'swiss-with-elimination': 'swissBracketLayout()',
 };
 
 /**

@@ -56,7 +56,7 @@ describe('query persistence', () => {
       persistence: typeof persistence === 'boolean' ? persistence : { adapter: store.adapter, ...persistence },
     });
 
-  const client = (ref: QueryClientRef): QueryClient => TestBed.inject(ref[2]);
+  const client = (ref: QueryClientRef): QueryClient => TestBed.inject(ref.token);
 
   const persistenceOf = (ref: QueryClientRef): QueryPersistenceEngine => {
     const engine = client(ref).subtle.persistence;
@@ -575,7 +575,7 @@ describe('query persistence', () => {
         name: 'ssr',
         persistence: { adapter: store.adapter },
       });
-      const ssrClient = TestBed.inject(session[2]);
+      const ssrClient = TestBed.inject(session.token);
 
       expect(ssrClient.subtle.persistence).toBeNull();
 

@@ -43,13 +43,14 @@ Override them app-wide with `provideViewportConfig({ breakpoints: { … } })` (s
 
 `injectLocale()` returns `{ currentLocale: WritableSignal<string> }`, defaulting to `'en'`. Everything locale-aware reacts to it, so switching language at runtime needs no reload; update it with `injectLocale().currentLocale.set('de')`.
 
-`createLabels(name, defaults)` is the shape built on top of it, and the only mechanism the UI library uses for strings it renders itself. It returns `[provide<Domain>Labels, inject<Domain>Labels, TOKEN]` — partial overrides in, a `Signal<Labels>` out, re-resolved whenever the locale changes. `defaults` may itself be a `(locale) => Labels` function for a domain that ships more than one language.
+`defineLabels(name, defaults)` is the shape built on top of it, and the only mechanism the UI library uses for strings it renders itself. It returns a definition whose halves you name with `toProvideFn` / `toInjectFn` / `toToken` (see [Dependency injection](/core/utilities#dependency-injection) for why the split) — partial overrides in, a `Signal<Labels>` out, re-resolved whenever the locale changes. `defaults` may itself be a `(locale) => Labels` function for a domain that ships more than one language.
 
 ```ts
-export const [provideWidgetLabels, injectWidgetLabels, WIDGET_LABELS] = createLabels<WidgetLabels>(
-  'WIDGET_LABELS',
-  DEFAULT_WIDGET_LABELS,
-);
+const WIDGET_LABELS_DEF = /* @__PURE__ */ defineLabels<WidgetLabels>('WIDGET_LABELS', DEFAULT_WIDGET_LABELS);
+
+export const provideWidgetLabels = /* @__PURE__ */ toProvideFn(WIDGET_LABELS_DEF);
+export const injectWidgetLabels = /* @__PURE__ */ toInjectFn(WIDGET_LABELS_DEF);
+export const WIDGET_LABELS = /* @__PURE__ */ toToken(WIDGET_LABELS_DEF);
 ```
 
 See the [localization guide](/components/localization) for the full recipe and every token the UI library exposes.
@@ -75,8 +76,11 @@ The one provider here that is **not** root-provided: `provideBoundaryElement()` 
 `createUserConsentProvider({ for, isGranted, grant, revoke? })` binds your app's consent source (e.g. a cookie banner service) to an injection token of your choosing, as a `ConsentHandler`:
 
 ```ts
-export const [provideStreamConsent, injectStreamConsent, STREAM_CONSENT_TOKEN] =
-  createStaticProvider<ConsentHandler | null>(null);
+const STREAM_CONSENT_DEF = /* @__PURE__ */ defineStaticProvider<ConsentHandler | null>(null);
+
+export const provideStreamConsent = /* @__PURE__ */ toProvideFn(STREAM_CONSENT_DEF);
+export const injectStreamConsent = /* @__PURE__ */ toInjectFn(STREAM_CONSENT_DEF);
+export const STREAM_CONSENT_TOKEN = /* @__PURE__ */ toToken(STREAM_CONSENT_DEF);
 
 // app.config.ts
 createUserConsentProvider({

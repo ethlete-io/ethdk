@@ -19,7 +19,7 @@ describe('query execute utils', () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
-    const [, , clientToken] = client;
+    const { token: clientToken } = client;
 
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],

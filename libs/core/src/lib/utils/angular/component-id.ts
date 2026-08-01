@@ -1,4 +1,4 @@
-const componentIds = new Map<string, number>();
+const componentIds = /* @__PURE__ */ new Map<string, number>();
 
 export const createComponentId = (prefix: string) => {
   const id = componentIds.get(prefix) ?? 0;

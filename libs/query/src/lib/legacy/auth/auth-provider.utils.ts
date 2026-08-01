@@ -13,27 +13,4 @@ export const isBearerAuthProvider = <T extends AnyV2QueryCreator>(
 
 export const isCustomHeaderAuthProvider = (authProvider: AuthProvider): authProvider is CustomHeaderAuthProvider =>
   authProvider instanceof CustomHeaderAuthProvider;
-
-export const decryptBearer = <Result = Record<string, unknown>>(token: string) => {
-  try {
-    const base64Url = token.split('.')[1];
-
-    if (!base64Url) {
-      return null;
-    }
-
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join(''),
-    );
-
-    return JSON.parse(jsonPayload) as Result;
-  } catch (error) {
-    console.error(`Invalid bearer token: ${token}`, error);
-
-    return null;
-  }
-};
+export { decryptBearer } from '../../http/internal/request-route';

@@ -36,25 +36,25 @@ const createSecureGqlCreatorTemplate = (method: GqlQueryMethod, transport: GqlQu
 };
 
 /** A query creator that creates a GQL query where the payload is sent via GET (query params) */
-export const createGqlQueryViaGet = createGqlCreatorTemplate('QUERY', 'GET');
+export const createGqlQueryViaGet = /* @__PURE__ */ createGqlCreatorTemplate('QUERY', 'GET');
 
 /** A query creator that creates a secure GQL query where the payload is sent via GET (query params) */
-export const createSecureGqlQueryViaGet = createSecureGqlCreatorTemplate('QUERY', 'GET');
+export const createSecureGqlQueryViaGet = /* @__PURE__ */ createSecureGqlCreatorTemplate('QUERY', 'GET');
 
 /** A query creator that creates a GQL query where the payload is sent via POST (body) */
-export const createGqlQueryViaPost = createGqlCreatorTemplate('QUERY', 'POST');
+export const createGqlQueryViaPost = /* @__PURE__ */ createGqlCreatorTemplate('QUERY', 'POST');
 
 /** A query creator that creates a secure GQL query where the payload is sent via POST (body) */
-export const createSecureGqlQueryViaPost = createSecureGqlCreatorTemplate('QUERY', 'POST');
+export const createSecureGqlQueryViaPost = /* @__PURE__ */ createSecureGqlCreatorTemplate('QUERY', 'POST');
 
 /** A query creator that creates a GQL mutation where the payload is sent via GET (query params) */
-export const createGqlMutationViaGet = createGqlCreatorTemplate('MUTATE', 'GET');
+export const createGqlMutationViaGet = /* @__PURE__ */ createGqlCreatorTemplate('MUTATE', 'GET');
 
 /** A query creator that creates a secure GQL mutation where the payload is sent via GET (query params) */
-export const createSecureGqlMutationViaGet = createSecureGqlCreatorTemplate('MUTATE', 'GET');
+export const createSecureGqlMutationViaGet = /* @__PURE__ */ createSecureGqlCreatorTemplate('MUTATE', 'GET');
 
 /** A query creator that creates a GQL mutation where the payload is sent via POST (body) */
-export const createGqlMutationViaPost = createGqlCreatorTemplate('MUTATE', 'POST');
+export const createGqlMutationViaPost = /* @__PURE__ */ createGqlCreatorTemplate('MUTATE', 'POST');
 
 /** A query creator that creates a secure GQL mutation where the payload is sent via POST (body) */
-export const createSecureGqlMutationViaPost = createSecureGqlCreatorTemplate('MUTATE', 'POST');
+export const createSecureGqlMutationViaPost = /* @__PURE__ */ createSecureGqlCreatorTemplate('MUTATE', 'POST');

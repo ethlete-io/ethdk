@@ -8,12 +8,12 @@ import { injectLocale } from './locale';
  */
 export type LabelsSource<T> = Partial<T> | ((locale: string) => Partial<T>);
 
-/** What {@link createLabels} returns. */
-export type LabelsResult<T> = readonly [
-  provide: (labels: LabelsSource<T>) => Provider,
-  inject: () => Signal<T>,
-  token: InjectionToken<LabelsSource<T>>,
-];
+/** What {@link defineLabels} returns. */
+export type LabelsDefinition<T> = {
+  readonly provide: (labels: LabelsSource<T>) => Provider;
+  readonly inject: () => Signal<T>;
+  readonly token: InjectionToken<LabelsSource<T>>;
+};
 
 const resolveSource = <T>(source: T | ((locale: string) => T), locale: string): T =>
   typeof source === 'function' ? (source as (locale: string) => T)(locale) : source;
@@ -40,8 +40,11 @@ const resolveSource = <T>(source: T | ((locale: string) => T), locale: string): 
  *   overflow: 'Show hidden levels',
  * };
  *
- * export const [provideBreadcrumbLabels, injectBreadcrumbLabels, BREADCRUMB_LABELS] =
- *   createLabels<BreadcrumbLabels>('BREADCRUMB_LABELS', DEFAULT_BREADCRUMB_LABELS);
+ * const BREADCRUMB_LABELS_DEF = defineLabels<BreadcrumbLabels>('BREADCRUMB_LABELS', DEFAULT_BREADCRUMB_LABELS);
+ *
+ * export const provideBreadcrumbLabels = toProvideFn(BREADCRUMB_LABELS_DEF);
+ * export const injectBreadcrumbLabels = toInjectFn(BREADCRUMB_LABELS_DEF);
+ * export const BREADCRUMB_LABELS = toToken(BREADCRUMB_LABELS_DEF);
  *
  * @example
  * // consumer, fixed wording
@@ -50,27 +53,27 @@ const resolveSource = <T>(source: T | ((locale: string) => T), locale: string): 
  * // consumer, driven by the app's i18n and re-resolved on a locale change
  * provideBreadcrumbLabels((locale) => ({ navigation: translate('breadcrumb.nav', locale) }));
  */
-export const createLabels = <T extends object>(
+export const defineLabels = <T extends object>(
   name: string,
   defaults: T | ((locale: string) => T),
-): LabelsResult<T> => {
+): LabelsDefinition<T> => {
   const token = new InjectionToken<LabelsSource<T>>(name, {
     providedIn: 'root',
     factory: () => ({}),
   });
 
-  const provide = (labels: LabelsSource<T>): Provider => ({ provide: token, useValue: labels });
+  return {
+    provide: (labels: LabelsSource<T>): Provider => ({ provide: token, useValue: labels }),
+    inject: (): Signal<T> => {
+      const source = inject(token);
+      const { currentLocale } = injectLocale();
 
-  const injectFn = (): Signal<T> => {
-    const source = inject(token);
-    const { currentLocale } = injectLocale();
+      return computed(() => {
+        const locale = currentLocale();
 
-    return computed(() => {
-      const locale = currentLocale();
-
-      return { ...resolveSource(defaults, locale), ...resolveSource(source, locale) };
-    });
+        return { ...resolveSource(defaults, locale), ...resolveSource(source, locale) };
+      });
+    },
+    token,
   };
-
-  return [provide, injectFn, token] as const;
 };

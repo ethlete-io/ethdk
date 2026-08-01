@@ -1,6 +1,6 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { inject } from '@angular/core';
-import { createRootProvider, createStaticRootProvider, randomId } from '@ethlete/core';
+import { defineRootProvider, defineStaticRootProvider, randomId, toInjectFn, toProvideFn } from '@ethlete/core';
 import {
   mergeOverlayBreakpointConfigs,
   OverlayBreakpointConfig,
@@ -8,24 +8,26 @@ import {
   OverlayStrategyBreakpoint,
 } from './core';
 
-export const [provideDialogStrategyDefaults, injectDialogStrategyDefaults] =
-  createStaticRootProvider<OverlayBreakpointConfig>(
-    {
-      width: undefined,
-      height: undefined,
-      maxHeight: '80vh',
-      maxWidth: '80vw',
-      minHeight: undefined,
-      minWidth: undefined,
-      containerClass: 'et-overlay--dialog',
-      positionStrategy: () => inject(Overlay).position().global().centerHorizontally().centerVertically(),
-    },
-    {
-      name: 'Dialog Overlay Strategy Defaults',
-    },
-  );
+const DIALOG_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootProvider<OverlayBreakpointConfig>(
+  {
+    width: undefined,
+    height: undefined,
+    maxHeight: '80vh',
+    maxWidth: '80vw',
+    minHeight: undefined,
+    minWidth: undefined,
+    containerClass: 'et-overlay--dialog',
+    positionStrategy: () => inject(Overlay).position().global().centerHorizontally().centerVertically(),
+  },
+  {
+    name: 'Dialog Overlay Strategy Defaults',
+  },
+);
 
-export const [provideDialogStrategy, injectDialogStrategy] = createRootProvider(
+export const provideDialogStrategyDefaults = /* @__PURE__ */ toProvideFn(DIALOG_STRATEGY_DEFAULTS_DEF);
+export const injectDialogStrategyDefaults = /* @__PURE__ */ toInjectFn(DIALOG_STRATEGY_DEFAULTS_DEF);
+
+const DIALOG_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const defaults = injectDialogStrategyDefaults();
 
@@ -48,6 +50,9 @@ export const [provideDialogStrategy, injectDialogStrategy] = createRootProvider(
     name: 'Dialog Overlay Strategy',
   },
 );
+
+export const provideDialogStrategy = /* @__PURE__ */ toProvideFn(DIALOG_STRATEGY_DEF);
+export const injectDialogStrategy = /* @__PURE__ */ toInjectFn(DIALOG_STRATEGY_DEF);
 
 export const dialogOverlayStrategy = (
   config: Partial<OverlayBreakpointConfig> = {},

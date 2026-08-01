@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "migrate-provider-shape",
+  "title": "Migrate provider tuples to the definition shape",
+  "type": "object",
+  "properties": {
+    "projects": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Nx projects to migrate. Defaults to every project in the workspace. Every declaration is rewritten independently, so any scope is safe — use this to keep the diff reviewable.",
+      "alias": "project"
+    },
+    "include": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Path prefixes to migrate, relative to the workspace root (e.g. 'libs/ui'). Unioned with `projects`. Defaults to the whole workspace.",
+      "alias": "includePath"
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "description": "Skip formatting files after migration",
+      "default": false
+    }
+  },
+  "required": []
+}

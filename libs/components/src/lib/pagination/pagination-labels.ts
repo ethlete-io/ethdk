@@ -1,4 +1,4 @@
-import { createLabels } from '@ethlete/core';
+import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /** The item range a readout label describes — `start`/`end` are 1-based and inclusive. */
 export type PaginationRangeContext = {
@@ -64,10 +64,15 @@ export const DEFAULT_PAGINATION_LABELS: PaginationLabels = {
   pageSizeOption: (size) => `${size}`,
 };
 
+const PAGINATION_LABELS_DEF = /* @__PURE__ */ defineLabels<PaginationLabels>(
+  'PAGINATION_LABELS',
+  DEFAULT_PAGINATION_LABELS,
+);
+
 /**
  * Localize the paginator's strings for everything below this injector, and read the set in effect
  * here as a signal. Partial — whatever you leave out keeps its {@link DEFAULT_PAGINATION_LABELS}
- * value. See {@link createLabels} for the shape, which every domain in this library shares.
+ * value. See {@link defineLabels} for the shape, which every domain in this library shares.
  *
  * @example
  * providePaginationLabels({
@@ -77,7 +82,6 @@ export const DEFAULT_PAGINATION_LABELS: PaginationLabels = {
  *   range: ({ start, end, totalItems }) => `Zeige ${start}–${end} von ${totalItems}`,
  * });
  */
-export const [providePaginationLabels, injectPaginationLabels, PAGINATION_LABELS] = createLabels<PaginationLabels>(
-  'PAGINATION_LABELS',
-  DEFAULT_PAGINATION_LABELS,
-);
+export const providePaginationLabels = /* @__PURE__ */ toProvideFn(PAGINATION_LABELS_DEF);
+export const injectPaginationLabels = /* @__PURE__ */ toInjectFn(PAGINATION_LABELS_DEF);
+export const PAGINATION_LABELS = /* @__PURE__ */ toToken(PAGINATION_LABELS_DEF);

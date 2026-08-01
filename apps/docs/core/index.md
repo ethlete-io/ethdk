@@ -32,10 +32,11 @@ import { signalElementDimensions, injectCurrentBreakpoint, provideSurfaceThemesW
 
 ## Foundation
 
-- [Utilities](/core/utilities) — the DI provider-tuple pattern, `RuntimeError`, host listeners, form helpers and validators, cookies and session memory, deep clone/equal, swipe tracking and more.
+- [Utilities](/core/utilities) — the DI provider-definition pattern, `RuntimeError`, host listeners, form helpers and validators, cookies and session memory, deep clone/equal, swipe tracking and more.
 
 ## Also in the package
 
 - **Props system** (`createProps`, `[etProps]`, …) — experimental machinery for a props-binding component pattern. It's exported but not used by the shipped component libraries; treat it as internal until it stabilizes.
 - **Nx generators** — `tailwind-4-color-theme` and `tailwind-4-surface-theme` generate the theme CSS and type registrations described in [Theming](/core/theming).
 - **v5 migration** — `yarn nx g @ethlete/core:migrate-to-v5` codemods an app from v4: it rewrites `ViewportService` usage to the viewport signal utilities, moves `createProvider` imports from `@ethlete/cdk` to `@ethlete/core`, converts `RouterStateService` usage to the signal-based router helpers (`injectUrl`, `injectQueryParams`, …) and applies the theme→color rename (`etProvideTheme` → `etProvideColor`, `THEME_PROVIDER` → `COLOR_PROVIDER`, …) across TypeScript and templates. Each sub-migration can be disabled via a flag; review the diff afterwards. The [`@ethlete/cdk` v5 migration](/cdk/#migrating-from-v4) complements it.
+- **Provider-shape migration** — `yarn nx g @ethlete/core:migrate-provider-shape` rewrites every `export const [provideX, injectX] = createRootProvider(…)` into the droppable definition + extractor shape the [utilities guide](/core/utilities#why-four-statements-instead-of-one) describes, since the `create*Provider` / `createLabels` factories are gone. Scope it with `--projects`; anything it cannot rewrite lands in `provider-shape-migration-tasks.md`.

@@ -12,7 +12,7 @@ describe('createQueryClient', () => {
 
   it('should create', () => {
     const client = createQueryClient({ baseUrl: 'https://example.com', name: 'test' });
-    const [, , clientToken] = client;
+    const { token: clientToken } = client;
 
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
@@ -25,7 +25,7 @@ describe('createQueryClient', () => {
 
   it('should create using inject function', () => {
     const client = createQueryClient({ baseUrl: 'https://example.com', name: 'test' });
-    const [provideClient, injectClient] = client;
+    const { provide: provideClient, inject: injectClient } = client;
 
     TestBed.configureTestingModule({
       providers: [provideClient(), provideHttpClient(), provideHttpClientTesting()],

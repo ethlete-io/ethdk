@@ -129,7 +129,7 @@ export const setupAuthTest = <
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const refresh = querySetup.createPost<TRefreshArgs>(refreshPath as any, {} as any) as any;
 
-  const [, injectAuth] = createBearerAuthProvider({
+  const { inject: injectAuth } = createBearerAuthProvider({
     name: 'test-auth',
     queryClientRef: querySetup.queryClientRef,
     queries: [

@@ -51,7 +51,7 @@ was never provided.
 
 Every domain with strings of its own exposes exactly one pair — `provide<Domain>Labels` to
 localize a subtree, `inject<Domain>Labels()` to read the result. All of them are built with
-`createLabels` from `@ethlete/core`, so all of them behave identically:
+`defineLabels` from `@ethlete/core`, so all of them behave identically:
 
 ```ts
 // fixed wording
@@ -154,20 +154,26 @@ route, because there is nothing to override — you pass the words in:
 ## Writing a component that has strings
 
 If you add a component with a string of its own, give its domain a label token rather than
-a literal — `createLabels` is the whole mechanism:
+a literal — `defineLabels` is the whole mechanism:
 
 ```ts
-import { createLabels } from '@ethlete/core';
+import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 export type WidgetLabels = { collapse: string; expand: string };
 
 export const DEFAULT_WIDGET_LABELS: WidgetLabels = { collapse: 'Collapse', expand: 'Expand' };
 
-export const [provideWidgetLabels, injectWidgetLabels, WIDGET_LABELS] = createLabels<WidgetLabels>(
-  'WIDGET_LABELS',
-  DEFAULT_WIDGET_LABELS,
-);
+const WIDGET_LABELS_DEF = /* @__PURE__ */ defineLabels<WidgetLabels>('WIDGET_LABELS', DEFAULT_WIDGET_LABELS);
+
+export const provideWidgetLabels = /* @__PURE__ */ toProvideFn(WIDGET_LABELS_DEF);
+export const injectWidgetLabels = /* @__PURE__ */ toInjectFn(WIDGET_LABELS_DEF);
+export const WIDGET_LABELS = /* @__PURE__ */ toToken(WIDGET_LABELS_DEF);
 ```
 
-`createLabels` also accepts a locale-derived default set — `createLabels('X_LABELS', (locale) => …)` —
+Four statements, not one, and the `/* @__PURE__ */` annotations are load-bearing: a destructured
+`const [a, b] = f()` is a shape no bundler can drop, so the one-liner used to put **every** domain's
+default-strings table into every app that imported anything from the package. See
+[core utilities](/core/utilities#why-four-statements-instead-of-one).
+
+`defineLabels` also accepts a locale-derived default set — `defineLabels('X_LABELS', (locale) => …)` —
 which is how `QUERY_ERROR_LABELS` ships two languages while still taking partial overrides.

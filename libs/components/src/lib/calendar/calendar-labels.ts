@@ -1,4 +1,4 @@
-import { createLabels } from '@ethlete/core';
+import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
  * The strings the calendar renders or announces itself. Month and weekday **names** are not here — those
@@ -41,15 +41,16 @@ export const DEFAULT_CALENDAR_LABELS: CalendarLabels = {
   week: 'Week',
 };
 
+const CALENDAR_LABELS_DEF = /* @__PURE__ */ defineLabels<CalendarLabels>('CALENDAR_LABELS', DEFAULT_CALENDAR_LABELS);
+
 /**
  * Localize the calendar's strings for everything below this injector, and read the set in effect here as a
- * signal. Partial — whatever you leave out keeps its {@link DEFAULT_CALENDAR_LABELS} value. See {@link createLabels}
+ * signal. Partial — whatever you leave out keeps its {@link DEFAULT_CALENDAR_LABELS} value. See {@link defineLabels}
  * for the shape, which every domain in this library shares.
  *
  * @example
  * provideCalendarLabels({ previousMonth: 'Vorheriger Monat', nextMonth: 'Nächster Monat' });
  */
-export const [provideCalendarLabels, injectCalendarLabels, CALENDAR_LABELS] = createLabels<CalendarLabels>(
-  'CALENDAR_LABELS',
-  DEFAULT_CALENDAR_LABELS,
-);
+export const provideCalendarLabels = /* @__PURE__ */ toProvideFn(CALENDAR_LABELS_DEF);
+export const injectCalendarLabels = /* @__PURE__ */ toInjectFn(CALENDAR_LABELS_DEF);
+export const CALENDAR_LABELS = /* @__PURE__ */ toToken(CALENDAR_LABELS_DEF);

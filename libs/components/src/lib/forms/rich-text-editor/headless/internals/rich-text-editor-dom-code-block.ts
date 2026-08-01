@@ -1,7 +1,7 @@
 import { RichTextEditorDomCore } from './rich-text-editor-dom-core';
 
 /** Blocks a fenced code block can't take in: their Markdown form doesn't survive inside a fence. */
-const NOT_FENCEABLE = new Set(['TABLE', 'UL', 'OL', 'BLOCKQUOTE']);
+const NOT_FENCEABLE = /* @__PURE__ */ new Set(['TABLE', 'UL', 'OL', 'BLOCKQUOTE']);
 
 /**
  * Fenced code blocks — `<pre><code>` holding plain text, exactly what a ``` fence round-trips to.

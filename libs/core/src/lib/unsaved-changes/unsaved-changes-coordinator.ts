@@ -1,5 +1,5 @@
 import { signal } from '@angular/core';
-import { createRootProvider } from '../utils';
+import { defineRootProvider, toInjectFn, toProvideFn } from '../utils';
 
 /**
  * Why a guard was abandoned. `'logout'` is issued by `@ethlete/query`'s auth provider; anything else
@@ -30,22 +30,7 @@ export type UnsavedChangesRegistration = {
   abandon: (reason: UnsavedChangesAbandonReason) => void;
 };
 
-/**
- * App-wide coordination for the unsaved-changes family. Two jobs:
- *
- * - **One confirm at a time.** A page form, an overlay form and a route guard can all want a decision
- *   at once; stacking three "discard your changes?" dialogs is never the right answer. A check that
- *   starts while another is pending adopts the pending decision instead of asking again.
- * - **Abandoning guards when the session ends.** `abandonAll()` resolves the pending confirm, tells
- *   its dialog to close (via {@link UnsavedChangesConfirmContext.signal}), and switches every live
- *   guard off: further checks pass, and the tab locks release. Called automatically by
- *   `@ethlete/query`'s auth provider on logout — the edits cannot be saved anymore, so guarding them
- *   only strands dialogs over the login page and blocks the tab.
- *
- * Root-provided; every tracker registers itself. Inject it to abandon guards from app code (a session
- * timeout of your own, a hard reset) or to read whether a confirm is currently on screen.
- */
-export const [provideUnsavedChangesCoordinator, injectUnsavedChangesCoordinator] = createRootProvider(
+const UNSAVED_CHANGES_COORDINATOR_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const registrations = new Set<UnsavedChangesRegistration>();
     const _isCheckPending = signal(false);
@@ -122,3 +107,21 @@ export const [provideUnsavedChangesCoordinator, injectUnsavedChangesCoordinator]
   },
   { name: 'Unsaved Changes Coordinator' },
 );
+
+/**
+ * App-wide coordination for the unsaved-changes family. Two jobs:
+ *
+ * - **One confirm at a time.** A page form, an overlay form and a route guard can all want a decision
+ *   at once; stacking three "discard your changes?" dialogs is never the right answer. A check that
+ *   starts while another is pending adopts the pending decision instead of asking again.
+ * - **Abandoning guards when the session ends.** `abandonAll()` resolves the pending confirm, tells
+ *   its dialog to close (via {@link UnsavedChangesConfirmContext.signal}), and switches every live
+ *   guard off: further checks pass, and the tab locks release. Called automatically by
+ *   `@ethlete/query`'s auth provider on logout — the edits cannot be saved anymore, so guarding them
+ *   only strands dialogs over the login page and blocks the tab.
+ *
+ * Root-provided; every tracker registers itself. Inject it to abandon guards from app code (a session
+ * timeout of your own, a hard reset) or to read whether a confirm is currently on screen.
+ */
+export const provideUnsavedChangesCoordinator = /* @__PURE__ */ toProvideFn(UNSAVED_CHANGES_COORDINATOR_DEF);
+export const injectUnsavedChangesCoordinator = /* @__PURE__ */ toInjectFn(UNSAVED_CHANGES_COORDINATOR_DEF);

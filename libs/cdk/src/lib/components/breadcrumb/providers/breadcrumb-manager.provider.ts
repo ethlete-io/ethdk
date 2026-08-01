@@ -1,7 +1,7 @@
 import { signal, TemplateRef } from '@angular/core';
-import { createProvider } from '@ethlete/core';
+import { defineProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 
-export const [provideBreadcrumbManager, injectBreadcrumbManager] = createProvider(
+const BREADCRUMB_MANAGER_DEF = /* @__PURE__ */ defineProvider(
   () => {
     const breadcrumbTemplateSignal = signal<TemplateRef<unknown> | null>(null);
     const breadcrumbTemplate = breadcrumbTemplateSignal.asReadonly();
@@ -16,3 +16,6 @@ export const [provideBreadcrumbManager, injectBreadcrumbManager] = createProvide
   },
   { name: 'Breadcrumb Manager' },
 );
+
+export const provideBreadcrumbManager = /* @__PURE__ */ toProvideFn(BREADCRUMB_MANAGER_DEF);
+export const injectBreadcrumbManager = /* @__PURE__ */ toInjectFn(BREADCRUMB_MANAGER_DEF);

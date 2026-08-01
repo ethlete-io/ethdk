@@ -47,7 +47,8 @@ export const apiClient = new V2QueryClient({
     expect(result).toContain("queryString: { arrayFormat: 'brackets' }");
     expect(result).toContain('cacheAdapter: myCacheAdapter');
     expect(result).toContain('export const apiClientConfig = createQueryClient({');
-    expect(result).toContain('export const [provideApiClient, injectApiClient] = apiClientConfig;');
+    expect(result).toContain('export const provideApiClient = toProvideFn(apiClientConfig);');
+    expect(result).toContain('export const injectApiClient = toInjectFn(apiClientConfig);');
     expect(result).toContain('export const apiGet = createGetQuery(apiClientConfig);');
     expect(result).toContain('export const apiDelete = createDeleteQuery(apiClientConfig);');
     expect(result).not.toContain('createQueryClientConfig');

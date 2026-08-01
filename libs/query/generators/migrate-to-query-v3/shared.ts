@@ -91,6 +91,10 @@ export const ensureImportFromQuery = (content: string, importsNeeded: string[]) 
 export const ensureAngularCoreImports = (content: string, importsNeeded: string[]) =>
   ensureNamedImports({ content, importsNeeded, moduleSpecifier: '@angular/core' });
 
+/** `toProvideFn` / `toInjectFn` — the provider-definition extractors every generated ref pair needs. */
+export const ensureImportFromEthleteCore = (content: string, importsNeeded: string[]) =>
+  ensureNamedImports({ content, importsNeeded, moduleSpecifier: '@ethlete/core' });
+
 export const getVariableStatementEnd = (sourceFile: ts.SourceFile, variableName: string, initializerName: string) => {
   let variableStatementEnd: number | undefined;
 

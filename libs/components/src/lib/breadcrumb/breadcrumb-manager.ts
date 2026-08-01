@@ -1,19 +1,8 @@
 import { computed, signal } from '@angular/core';
-import { createProvider } from '@ethlete/core';
+import { defineProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 import { BreadcrumbSegment } from './breadcrumb.types';
 
-/**
- * Collects the trail from every view that is currently on screen. Each routed view registers only the
- * crumbs it owns via `<ng-template etBreadcrumbSegment>`; the single `<et-breadcrumb-outlet>` in the
- * shell renders all of them, in view order, as one trail. A page therefore never has to restate its
- * ancestors' crumbs — the layout route above it already contributed those.
- *
- * Provide it once, above the outlet and every view that contributes to the trail:
- *
- * @example
- * providers: [provideBreadcrumbManager()]
- */
-export const [provideBreadcrumbManager, injectBreadcrumbManager] = createProvider(
+const BREADCRUMB_MANAGER_DEF = /* @__PURE__ */ defineProvider(
   () => {
     const registeredSegments = signal<BreadcrumbSegment[]>([]);
 
@@ -49,3 +38,17 @@ export const [provideBreadcrumbManager, injectBreadcrumbManager] = createProvide
   },
   { name: 'Breadcrumb Manager' },
 );
+
+/**
+ * Collects the trail from every view that is currently on screen. Each routed view registers only the
+ * crumbs it owns via `<ng-template etBreadcrumbSegment>`; the single `<et-breadcrumb-outlet>` in the
+ * shell renders all of them, in view order, as one trail. A page therefore never has to restate its
+ * ancestors' crumbs — the layout route above it already contributed those.
+ *
+ * Provide it once, above the outlet and every view that contributes to the trail:
+ *
+ * @example
+ * providers: [provideBreadcrumbManager()]
+ */
+export const provideBreadcrumbManager = /* @__PURE__ */ toProvideFn(BREADCRUMB_MANAGER_DEF);
+export const injectBreadcrumbManager = /* @__PURE__ */ toInjectFn(BREADCRUMB_MANAGER_DEF);

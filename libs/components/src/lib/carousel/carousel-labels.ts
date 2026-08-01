@@ -1,4 +1,4 @@
-import { createLabels } from '@ethlete/core';
+import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
  * Every string the carousel announces or renders. Defaults are English
@@ -33,15 +33,16 @@ export const DEFAULT_CAROUSEL_LABELS: CarouselLabels = {
   goToSlide: (index) => `Go to slide ${index}`,
 };
 
+const CAROUSEL_LABELS_DEF = /* @__PURE__ */ defineLabels<CarouselLabels>('CAROUSEL_LABELS', DEFAULT_CAROUSEL_LABELS);
+
 /**
  * Localize the carousel's strings for everything below this injector, and read the set in effect here
  * as a signal. Partial — whatever you leave out keeps its {@link DEFAULT_CAROUSEL_LABELS} value. See
- * {@link createLabels} for the shape, which every domain in this library shares.
+ * {@link defineLabels} for the shape, which every domain in this library shares.
  *
  * @example
  * provideCarouselLabels({ previous: 'Vorheriges Bild', next: 'Nächstes Bild' });
  */
-export const [provideCarouselLabels, injectCarouselLabels, CAROUSEL_LABELS] = createLabels<CarouselLabels>(
-  'CAROUSEL_LABELS',
-  DEFAULT_CAROUSEL_LABELS,
-);
+export const provideCarouselLabels = /* @__PURE__ */ toProvideFn(CAROUSEL_LABELS_DEF);
+export const injectCarouselLabels = /* @__PURE__ */ toInjectFn(CAROUSEL_LABELS_DEF);
+export const CAROUSEL_LABELS = /* @__PURE__ */ toToken(CAROUSEL_LABELS_DEF);

@@ -3,7 +3,7 @@ import { afterNextRender, DestroyRef, DOCUMENT, inject, Injector, PLATFORM_ID } 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, NavigationSkipped, NavigationStart, Router } from '@angular/router';
 import { filter } from 'rxjs';
-import { createRootProvider } from '../../utils';
+import { defineRootProvider, toInjectFn } from '../../utils';
 import { createRoute, createRouterState } from '../router';
 
 /**
@@ -83,9 +83,11 @@ export type SetupScrollRestorationConfig = {
   restore?: ScrollRestorationRestoreConfig;
 };
 
-export const ET_DISABLE_SCROLL_TOP = Symbol('ET_DISABLE_SCROLL_TOP');
-export const ET_DISABLE_SCROLL_TOP_AS_RETURN_ROUTE = Symbol('ET_DISABLE_SCROLL_TOP_AS_RETURN_ROUTE');
-export const ET_DISABLE_SCROLL_TOP_ON_PATH_PARAM_CHANGE = Symbol('ET_DISABLE_SCROLL_TOP_ON_PATH_PARAM_CHANGE');
+export const ET_DISABLE_SCROLL_TOP = /* @__PURE__ */ Symbol('ET_DISABLE_SCROLL_TOP');
+export const ET_DISABLE_SCROLL_TOP_AS_RETURN_ROUTE = /* @__PURE__ */ Symbol('ET_DISABLE_SCROLL_TOP_AS_RETURN_ROUTE');
+export const ET_DISABLE_SCROLL_TOP_ON_PATH_PARAM_CHANGE = /* @__PURE__ */ Symbol(
+  'ET_DISABLE_SCROLL_TOP_ON_PATH_PARAM_CHANGE',
+);
 
 export type RouterDisableScrollTopConfig = {
   /**
@@ -108,12 +110,7 @@ export const routerDisableScrollTop = (config: RouterDisableScrollTopConfig = {}
   };
 };
 
-/**
- * Registry of "not settled yet" reporters. Lives in the root injector so a route component can
- * reach the registration created by the app level `setupScrollRestoration` call.
- * @internal
- */
-const [, injectScrollRestorationHolds] = createRootProvider(
+const SCROLL_RESTORATION_HOLDS_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const holds = new Set<() => boolean>();
 
@@ -134,6 +131,13 @@ const [, injectScrollRestorationHolds] = createRootProvider(
   },
   { name: 'ScrollRestorationHolds' },
 );
+
+/**
+ * Registry of "not settled yet" reporters. Lives in the root injector so a route component can
+ * reach the registration created by the app level `setupScrollRestoration` call.
+ * @internal
+ */
+const injectScrollRestorationHolds = /* @__PURE__ */ toInjectFn(SCROLL_RESTORATION_HOLDS_DEF);
 
 /**
  * Suspend scroll restoration while `isPending` reads `true`.

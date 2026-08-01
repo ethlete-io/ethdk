@@ -5,12 +5,15 @@ A room-based realtime client built on **socket.io**. It is independent of the qu
 Like the [query client](/query/queries#the-query-client), `createWebSocketClient` returns a root-provider tuple:
 
 ```ts
+import { toInjectFn } from '@ethlete/core';
 import { createWebSocketClient } from '@ethlete/query';
 
-export const [provideMatchSocket, injectMatchSocket] = createWebSocketClient({
+const MATCH_SOCKET = createWebSocketClient({
   name: 'match-events',
   url: 'https://ws.example.com',
 });
+
+export const injectMatchSocket = toInjectFn(MATCH_SOCKET);
 ```
 
 ```ts

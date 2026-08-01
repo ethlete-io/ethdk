@@ -1,7 +1,7 @@
 import { RichTextEditorDomCore } from './rich-text-editor-dom-core';
 
 /** Blocks a quote can't take in: their Markdown form doesn't survive inside `> ` lines. */
-const NOT_QUOTABLE = new Set(['TABLE', 'UL', 'OL', 'PRE']);
+const NOT_QUOTABLE = /* @__PURE__ */ new Set(['TABLE', 'UL', 'OL', 'PRE']);
 
 /**
  * Block quotes. A quote's lines are `<br>`-separated inline content inside one `<blockquote>` —

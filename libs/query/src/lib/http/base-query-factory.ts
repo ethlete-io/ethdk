@@ -5,7 +5,8 @@ import {
   registerQueryDevtoolsEntry,
   stringifyQueryRoute,
 } from '../devtools';
-import { CreateGqlQueryOptions, isCreateGqlQueryOptions } from '../gql/gql-query';
+import { CreateGqlQueryOptions } from '../gql/gql-query';
+import { isCreateGqlQueryOptions } from './internal/gql-options-guard';
 import { AnyCreateGqlQueryCreatorOptions, GqlQueryMethod } from '../gql/gql-query-creator';
 import { HttpRequestLoadingState } from './http-request';
 import { wrapAsObservableSignal } from './observable-signal';

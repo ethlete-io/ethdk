@@ -1,4 +1,4 @@
-import { createLabels } from '@ethlete/core';
+import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 import { NormalizedMatchResultKind, NormalizedMatchStatus } from './match.types';
 
 /** The two headline values of a match, for the label that turns them into a phrase. */
@@ -118,10 +118,12 @@ export const DEFAULT_MATCH_LABELS: MatchLabels = {
   gameScore: (game, score) => `Game ${game}: ${score}`,
 };
 
+const MATCH_LABELS_DEF = /* @__PURE__ */ defineLabels<MatchLabels>('MATCH_LABELS', DEFAULT_MATCH_LABELS);
+
 /**
  * Localize the match components' strings for everything below this injector, and read the set in
  * effect here as a signal. Partial — whatever you leave out keeps its {@link DEFAULT_MATCH_LABELS}
- * value. See {@link createLabels} for the shape, which every domain in this library shares.
+ * value. See {@link defineLabels} for the shape, which every domain in this library shares.
  *
  * @example
  * provideMatchLabels({
@@ -130,7 +132,6 @@ export const DEFAULT_MATCH_LABELS: MatchLabels = {
  *   matchName: ({ home, away, result }) => `${home} gegen ${away}${result ? `, ${result}` : ''}`,
  * });
  */
-export const [provideMatchLabels, injectMatchLabels, MATCH_LABELS] = createLabels<MatchLabels>(
-  'MATCH_LABELS',
-  DEFAULT_MATCH_LABELS,
-);
+export const provideMatchLabels = /* @__PURE__ */ toProvideFn(MATCH_LABELS_DEF);
+export const injectMatchLabels = /* @__PURE__ */ toInjectFn(MATCH_LABELS_DEF);
+export const MATCH_LABELS = /* @__PURE__ */ toToken(MATCH_LABELS_DEF);

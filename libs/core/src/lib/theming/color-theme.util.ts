@@ -1,5 +1,5 @@
 import { isDevMode } from '@angular/core';
-import { createStaticProvider } from '../utils';
+import { defineStaticProvider, toInjectFn, toProvideFn } from '../utils';
 
 export type ThemeRGBColor = `${number} ${number} ${number}`;
 export type ThemeHSLColor = `${number} ${number}% ${number}%`;
@@ -74,12 +74,18 @@ export type RegisteredColorThemeName = EthleteColorThemeNameRegistry extends { n
 
 export const createCssColorThemeName = (name: string) => name.replace(/([A-Z])/g, (g) => `-${g[0]!.toLowerCase()}`);
 
-export const [ɵProvideColorThemes, injectColorThemes] = createStaticProvider<ColorTheme[]>(undefined, {
+const COLOR_THEMES_DEF = /* @__PURE__ */ defineStaticProvider<ColorTheme[]>(undefined, {
   name: 'Color Themes',
 });
-export const [ɵProvideColorThemesPrefix, injectColorThemesPrefix] = createStaticProvider('et', {
+
+export const ɵProvideColorThemes = /* @__PURE__ */ toProvideFn(COLOR_THEMES_DEF);
+export const injectColorThemes = /* @__PURE__ */ toInjectFn(COLOR_THEMES_DEF);
+const COLOR_THEMES_PREFIX_DEF = /* @__PURE__ */ defineStaticProvider('et', {
   name: 'Themes Prefix',
 });
+
+export const ɵProvideColorThemesPrefix = /* @__PURE__ */ toProvideFn(COLOR_THEMES_PREFIX_DEF);
+export const injectColorThemesPrefix = /* @__PURE__ */ toInjectFn(COLOR_THEMES_PREFIX_DEF);
 
 export const provideColorThemesWithTailwind4 = (themes: ColorTheme[], prefix = 'et') => [
   ɵProvideColorThemes(themes),

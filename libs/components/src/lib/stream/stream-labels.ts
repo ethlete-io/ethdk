@@ -1,4 +1,4 @@
-import { createLabels } from '@ethlete/core';
+import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
  * Every string the stream player's own chrome renders: the consent gate, the failure overlay, the
@@ -61,10 +61,12 @@ export const DEFAULT_STREAM_LABELS: StreamLabels = {
   pipFocus: 'Focus',
 };
 
+const STREAM_LABELS_DEF = /* @__PURE__ */ defineLabels<StreamLabels>('STREAM_LABELS', DEFAULT_STREAM_LABELS);
+
 /**
  * Localize the stream chrome's strings for everything below this injector, and read the set in effect
  * here as a signal. Partial — whatever you leave out keeps its {@link DEFAULT_STREAM_LABELS} value. See
- * {@link createLabels} for the shape, which every domain in this library shares.
+ * {@link defineLabels} for the shape, which every domain in this library shares.
  *
  * @example
  * provideStreamLabels({
@@ -72,7 +74,6 @@ export const DEFAULT_STREAM_LABELS: StreamLabels = {
  *   consentAccept: 'Erlauben und abspielen',
  * });
  */
-export const [provideStreamLabels, injectStreamLabels, STREAM_LABELS] = createLabels<StreamLabels>(
-  'STREAM_LABELS',
-  DEFAULT_STREAM_LABELS,
-);
+export const provideStreamLabels = /* @__PURE__ */ toProvideFn(STREAM_LABELS_DEF);
+export const injectStreamLabels = /* @__PURE__ */ toInjectFn(STREAM_LABELS_DEF);
+export const STREAM_LABELS = /* @__PURE__ */ toToken(STREAM_LABELS_DEF);

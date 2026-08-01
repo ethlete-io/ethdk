@@ -1,4 +1,4 @@
-import { createLabels } from '@ethlete/core';
+import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
  * Every string the rich text editor renders or announces itself. Defaults are English
@@ -214,10 +214,15 @@ export const DEFAULT_RICH_TEXT_EDITOR_LABELS: RichTextEditorLabels = {
   languageTrigger: (currentLanguage) => `Language: ${currentLanguage}`,
 };
 
+const RICH_TEXT_EDITOR_LABELS_DEF = /* @__PURE__ */ defineLabels<RichTextEditorLabels>(
+  'RICH_TEXT_EDITOR_LABELS',
+  DEFAULT_RICH_TEXT_EDITOR_LABELS,
+);
+
 /**
  * Localize the rich text editor's strings for everything below this injector, and read the set in
  * effect here as a signal. Partial — whatever you leave out keeps its
- * {@link DEFAULT_RICH_TEXT_EDITOR_LABELS} value. See {@link createLabels} for the shape, which every
+ * {@link DEFAULT_RICH_TEXT_EDITOR_LABELS} value. See {@link defineLabels} for the shape, which every
  * domain in this library shares.
  *
  * @example
@@ -227,8 +232,9 @@ export const DEFAULT_RICH_TEXT_EDITOR_LABELS: RichTextEditorLabels = {
  *   heading: (level) => `Überschrift ${level}`,
  * });
  */
-export const [provideRichTextEditorLabels, injectRichTextEditorLabels, RICH_TEXT_EDITOR_LABELS] =
-  createLabels<RichTextEditorLabels>('RICH_TEXT_EDITOR_LABELS', DEFAULT_RICH_TEXT_EDITOR_LABELS);
+export const provideRichTextEditorLabels = /* @__PURE__ */ toProvideFn(RICH_TEXT_EDITOR_LABELS_DEF);
+export const injectRichTextEditorLabels = /* @__PURE__ */ toInjectFn(RICH_TEXT_EDITOR_LABELS_DEF);
+export const RICH_TEXT_EDITOR_LABELS = /* @__PURE__ */ toToken(RICH_TEXT_EDITOR_LABELS_DEF);
 
 /**
  * A toolbar button's accessible name: the label set's entry for its tool token, or the `label` on the

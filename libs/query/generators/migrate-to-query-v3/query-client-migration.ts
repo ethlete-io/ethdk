@@ -6,6 +6,7 @@ import {
   capitalizeFirstLetter,
   createSourceFile,
   ensureConfigSuffix,
+  ensureImportFromEthleteCore,
   ensureImportFromQuery,
   getVariableStatementEnd,
 } from './shared.js';
@@ -541,13 +542,15 @@ const addProviderAliasesToFile = (content: string, configNames: string[]) => {
 
     const { injectName, provideName } = getProviderAliasNames(variableName);
 
-    if (result.includes(`export const [${provideName}, ${injectName}] = ${variableName};`)) {
+    if (result.includes(`export const ${injectName} = toInjectFn(${variableName});`)) {
       return;
     }
 
     insertions.push({
       position,
-      text: `\n\nexport const [${provideName}, ${injectName}] = ${variableName};`,
+      text:
+        `\n\nexport const ${provideName} = toProvideFn(${variableName});` +
+        `\nexport const ${injectName} = toInjectFn(${variableName});`,
     });
   });
 
@@ -557,7 +560,7 @@ const addProviderAliasesToFile = (content: string, configNames: string[]) => {
     result = result.slice(0, position) + text + result.slice(position);
   });
 
-  return result;
+  return insertions.length > 0 ? ensureImportFromEthleteCore(result, ['toInjectFn', 'toProvideFn']) : result;
 };
 
 const getProviderAliasNames = (configVariableName: string) => {

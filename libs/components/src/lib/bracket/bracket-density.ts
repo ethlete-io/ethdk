@@ -18,8 +18,8 @@ export type BracketDensity = (typeof BRACKET_DENSITY)[keyof typeof BRACKET_DENSI
  * reads as a kink rather than a curve.
  */
 export const BRACKET_DENSITY_PRESETS: Record<BracketDensity, Partial<BracketLayoutConfig>> = {
-  [BRACKET_DENSITY.DEFAULT]: {},
-  [BRACKET_DENSITY.COMPACT]: {
+  default: {},
+  compact: {
     columnWidth: 140,
     matchHeight: 52,
     finalColumnWidth: 200,

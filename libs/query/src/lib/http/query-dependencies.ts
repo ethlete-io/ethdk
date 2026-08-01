@@ -52,7 +52,7 @@ export const setupQueryDependencies = (options: SetupQueryDependenciesOptions) =
   const environmentInjector =
     options.queryConfig?.injector?.get(EnvironmentInjector) ?? hostInjector.get(EnvironmentInjector);
 
-  const [, , clientToken] = options.client;
+  const clientToken = options.client.token;
 
   const dependencies: QueryDependencies = {
     destroyRef: undefined as unknown as DestroyRef, // Will be set after injector creation
@@ -68,7 +68,7 @@ export const setupQueryDependencies = (options: SetupQueryDependenciesOptions) =
     deps: dependencies,
   };
 
-  const [provideQueryContext] = createQueryContext(queryContext);
+  const { provide: provideQueryContext } = createQueryContext(queryContext);
 
   const queryEnvironmentInjector = createEnvironmentInjector([provideQueryContext()], environmentInjector);
 

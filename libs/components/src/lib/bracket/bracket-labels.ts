@@ -1,4 +1,4 @@
-import { createLabels } from '@ethlete/core';
+import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
  * Every string the bracket's default cards render or announce. Defaults are English
@@ -38,6 +38,8 @@ export const DEFAULT_BRACKET_LABELS: BracketLabels = {
   finalsSection: 'Finals',
 };
 
+const BRACKET_LABELS_DEF = /* @__PURE__ */ defineLabels<BracketLabels>('BRACKET_LABELS', DEFAULT_BRACKET_LABELS);
+
 /**
  * Localize the bracket's default cards for everything below this injector, and read the set in effect
  * here as a signal. Partial — whatever you leave out keeps its {@link DEFAULT_BRACKET_LABELS} value.
@@ -48,7 +50,6 @@ export const DEFAULT_BRACKET_LABELS: BracketLabels = {
  *   winnersAdvance: (winners) => `${winners} kommen weiter`,
  * });
  */
-export const [provideBracketLabels, injectBracketLabels, BRACKET_LABELS] = createLabels<BracketLabels>(
-  'BRACKET_LABELS',
-  DEFAULT_BRACKET_LABELS,
-);
+export const provideBracketLabels = /* @__PURE__ */ toProvideFn(BRACKET_LABELS_DEF);
+export const injectBracketLabels = /* @__PURE__ */ toInjectFn(BRACKET_LABELS_DEF);
+export const BRACKET_LABELS = /* @__PURE__ */ toToken(BRACKET_LABELS_DEF);

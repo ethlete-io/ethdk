@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { computed, inject, isSignal, signal, untracked } from '@angular/core';
 import { MaybeSignal } from '../signals';
-import { createRootProvider, createStaticRootProvider } from '../utils';
+import { defineRootProvider, defineStaticRootProvider, toInjectFn, toProvideFn } from '../utils';
 import { applyHeadBinding, createArrayPropertyBinding, createPropertyBinding } from './head-binding';
 
 export type LinkConfig = {
@@ -49,7 +49,7 @@ export type LinkStoreConfig = {
   multiInstanceRels: Set<string>;
 };
 
-export const DEFAULT_MULTI_INSTANCE_RELS = new Set([
+export const DEFAULT_MULTI_INSTANCE_RELS = /* @__PURE__ */ new Set([
   'alternate',
   'icon',
   'apple-touch-icon',
@@ -63,14 +63,17 @@ export const DEFAULT_MULTI_INSTANCE_RELS = new Set([
   'modulepreload',
 ]);
 
-export const [provideLinkStoreConfig, injectLinkStoreConfig] = createStaticRootProvider<LinkStoreConfig>(
+const LINK_STORE_CONFIG_DEF = /* @__PURE__ */ defineStaticRootProvider<LinkStoreConfig>(
   {
     multiInstanceRels: DEFAULT_MULTI_INSTANCE_RELS,
   },
   { name: 'Link Store Config' },
 );
 
-export const [provideLinkStore, injectLinkStore] = createRootProvider(
+export const provideLinkStoreConfig = /* @__PURE__ */ toProvideFn(LINK_STORE_CONFIG_DEF);
+export const injectLinkStoreConfig = /* @__PURE__ */ toInjectFn(LINK_STORE_CONFIG_DEF);
+
+const LINK_STORE_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const document = inject(DOCUMENT);
     const config = injectLinkStoreConfig();
@@ -224,6 +227,9 @@ export const [provideLinkStore, injectLinkStore] = createRootProvider(
   { name: 'Link Store' },
 );
 
+export const provideLinkStore = /* @__PURE__ */ toProvideFn(LINK_STORE_DEF);
+export const injectLinkStore = /* @__PURE__ */ toInjectFn(LINK_STORE_DEF);
+
 export const applyLinkBinding = (binding: MaybeSignal<LinkConfig | null | undefined>) => {
   const linkStore = injectLinkStore();
   const linkId = Symbol('link-tag');
@@ -239,7 +245,10 @@ export const applyLinkBinding = (binding: MaybeSignal<LinkConfig | null | undefi
   );
 };
 
-export const applyCanonicalBinding = createPropertyBinding((href) => ({ rel: 'canonical', href }), applyLinkBinding);
+export const applyCanonicalBinding = /* @__PURE__ */ createPropertyBinding(
+  (href) => ({ rel: 'canonical', href }),
+  applyLinkBinding,
+);
 
 export const applyAlternateBinding = (hreflang: string, binding: MaybeSignal<string | null | undefined>) => {
   applyLinkBinding(
@@ -260,9 +269,15 @@ export const applyAlternateLanguagesBindings = (config: AlternateLanguagesConfig
   });
 };
 
-export const applyPrevBinding = createPropertyBinding((href) => ({ rel: 'prev', href }), applyLinkBinding);
+export const applyPrevBinding = /* @__PURE__ */ createPropertyBinding(
+  (href) => ({ rel: 'prev', href }),
+  applyLinkBinding,
+);
 
-export const applyNextBinding = createPropertyBinding((href) => ({ rel: 'next', href }), applyLinkBinding);
+export const applyNextBinding = /* @__PURE__ */ createPropertyBinding(
+  (href) => ({ rel: 'next', href }),
+  applyLinkBinding,
+);
 
 export type ResourceHintsConfig = {
   preconnect?: MaybeSignal<string[] | null | undefined>;

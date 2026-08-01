@@ -1,4 +1,4 @@
-import { createLabels } from '@ethlete/core';
+import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
  * The strings the phone input renders itself. The country *names* are not here — they come from
@@ -20,15 +20,19 @@ export const DEFAULT_PHONE_INPUT_LABELS: PhoneInputLabels = {
   noCountries: 'No countries found',
 };
 
+const PHONE_INPUT_LABELS_DEF = /* @__PURE__ */ defineLabels<PhoneInputLabels>(
+  'PHONE_INPUT_LABELS',
+  DEFAULT_PHONE_INPUT_LABELS,
+);
+
 /**
  * Localize the phone input's strings for everything below this injector, and read the set in effect here as a
- * signal. Partial — whatever you leave out keeps its {@link DEFAULT_PHONE_INPUT_LABELS} value. See {@link createLabels}
+ * signal. Partial — whatever you leave out keeps its {@link DEFAULT_PHONE_INPUT_LABELS} value. See {@link defineLabels}
  * for the shape, which every domain in this library shares.
  *
  * @example
  * providePhoneInputLabels({ selectCountry: 'Land auswählen' });
  */
-export const [providePhoneInputLabels, injectPhoneInputLabels, PHONE_INPUT_LABELS] = createLabels<PhoneInputLabels>(
-  'PHONE_INPUT_LABELS',
-  DEFAULT_PHONE_INPUT_LABELS,
-);
+export const providePhoneInputLabels = /* @__PURE__ */ toProvideFn(PHONE_INPUT_LABELS_DEF);
+export const injectPhoneInputLabels = /* @__PURE__ */ toInjectFn(PHONE_INPUT_LABELS_DEF);
+export const PHONE_INPUT_LABELS = /* @__PURE__ */ toToken(PHONE_INPUT_LABELS_DEF);

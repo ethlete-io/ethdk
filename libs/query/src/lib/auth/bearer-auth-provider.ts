@@ -9,7 +9,7 @@ import {
   signal,
   WritableSignal,
 } from '@angular/core';
-import { createRootProvider, injectUnsavedChangesCoordinator, isObject, ProviderResult } from '@ethlete/core';
+import { defineRootProvider, injectUnsavedChangesCoordinator, isObject, ProviderDefinition } from '@ethlete/core';
 import { Observable, Subject } from 'rxjs';
 import { getQueryClientName, isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools';
 import {
@@ -26,7 +26,7 @@ import {
   RequestArgs,
   RunQueryExecuteOptions,
 } from '../http';
-import { decryptBearer } from '../legacy';
+import { decryptBearer } from '../http/internal/request-route';
 import {
   AnyQueryBuilder,
   AuthQueryBuilder,
@@ -527,7 +527,7 @@ const createBearerAuthProviderImpl = <
 ) => {
   const injector = inject(Injector);
   const destroyRef = inject(DestroyRef);
-  const queryClient = config.queryClientRef[1]();
+  const queryClient = config.queryClientRef.inject();
   const unsavedChanges = injectUnsavedChangesCoordinator();
 
   const accessToken = signal<string | null>(null);
@@ -658,14 +658,14 @@ export const createBearerAuthProvider = <
   TBearerData = unknown,
 >(
   config: CreateBearerAuthProviderConfig<TBuilders, TFeatures, TBearerData>,
-) => createRootProvider(() => createBearerAuthProviderImpl(config), { name: `BearerAuthProvider_${config.name}` });
+) => defineRootProvider(() => createBearerAuthProviderImpl(config), { name: `BearerAuthProvider_${config.name}` });
 
 export type BearerAuthProviderRef<
   TBuilders extends readonly AnyQueryBuilder[] = readonly AnyQueryBuilder[],
   TFeatures extends readonly ((context: BearerAuthProviderFeatureContext<TBearerData, TBuilders>) => unknown)[] =
     readonly ((context: BearerAuthProviderFeatureContext<unknown, readonly AnyQueryBuilder[]>) => unknown)[],
   TBearerData = unknown,
-> = ProviderResult<BearerAuthProvider<TBuilders, TFeatures, TBearerData>>;
+> = ProviderDefinition<BearerAuthProvider<TBuilders, TFeatures, TBearerData>>;
 
 export type AnyCreateBearerAuthProviderResult = BearerAuthProviderRef<any, any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -683,9 +683,14 @@ export type AnyCreateBearerAuthProviderResult = BearerAuthProviderRef<any, any, 
  * const doLogin = (provider: MyApiAuthProvider) => provider.queries.login({ body: { ... } });
  * ```
  */
-export type BearerAuthProviderOf<TRef extends AnyCreateBearerAuthProviderResult> = NonNullable<ReturnType<TRef[1]>>;
+export type BearerAuthProviderOf<TRef extends AnyCreateBearerAuthProviderResult> = NonNullable<
+  ReturnType<TRef['inject']>
+>;
 
-export type AnyBearerAuthProvider = Omit<NonNullable<ReturnType<AnyCreateBearerAuthProviderResult[1]>>, 'queries'> & {
+export type AnyBearerAuthProvider = Omit<
+  NonNullable<ReturnType<AnyCreateBearerAuthProviderResult['inject']>>,
+  'queries'
+> & {
   /**
    * Registry of all configured auth queries.
    *

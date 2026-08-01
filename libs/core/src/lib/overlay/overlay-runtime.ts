@@ -12,7 +12,7 @@ import {
 import { filter, take } from 'rxjs';
 import { ANIMATED_LIFECYCLE_TOKEN, animationDebugLog, nextFrame } from '../animations';
 import { injectRenderer } from '../providers';
-import { createRootProvider } from '../utils';
+import { defineRootProvider, toInjectFn, toProvideFn } from '../utils';
 import { applyInitialFocus, isHTMLElement, setupFocusTrap } from './overlay-focus';
 import { resetPositioningStyles, setBackdropStyles, setBaseElementStyles, setupPositioning } from './overlay-position';
 import { OverlayRuntimeRef, createOverlayRuntimeRef } from './overlay-runtime-ref';
@@ -29,7 +29,7 @@ type OverlayRuntime = {
   openEntries: ReturnType<typeof computed<OverlayRuntimeRef<object, unknown>[]>>;
 };
 
-export const [provideOverlayRuntime, injectOverlayRuntime] = createRootProvider(
+const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
   (): OverlayRuntime => {
     const appRef = inject(ApplicationRef);
     const destroyRef = inject(DestroyRef);
@@ -395,3 +395,6 @@ export const [provideOverlayRuntime, injectOverlayRuntime] = createRootProvider(
   },
   { name: 'OverlayRuntime' },
 );
+
+export const provideOverlayRuntime = /* @__PURE__ */ toProvideFn(OVERLAY_RUNTIME_DEF);
+export const injectOverlayRuntime = /* @__PURE__ */ toInjectFn(OVERLAY_RUNTIME_DEF);

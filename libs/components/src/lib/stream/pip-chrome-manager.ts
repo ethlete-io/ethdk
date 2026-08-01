@@ -8,13 +8,13 @@ import {
   EnvironmentInjector,
   inject,
 } from '@angular/core';
-import { createRootProvider, injectRenderer, RuntimeError } from '@ethlete/core';
+import { defineRootProvider, injectRenderer, RuntimeError, toInjectFn, toProvideFn } from '@ethlete/core';
 import { injectPipManager } from './pip-manager';
 import { PIP_CHROME_REF_TOKEN } from './pip/headless/pip-chrome-ref.token';
 import { injectStreamConfig } from './stream-config';
 import { STREAM_ERROR_CODES } from './stream-errors';
 
-export const [providePipChromeManager, injectPipChromeManager] = createRootProvider(
+const PIP_CHROME_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const pipManager = injectPipManager();
     const streamConfig = injectStreamConfig();
@@ -61,3 +61,6 @@ export const [providePipChromeManager, injectPipChromeManager] = createRootProvi
   },
   { name: 'PipChromeManager' },
 );
+
+export const providePipChromeManager = /* @__PURE__ */ toProvideFn(PIP_CHROME_MANAGER_DEF);
+export const injectPipChromeManager = /* @__PURE__ */ toInjectFn(PIP_CHROME_MANAGER_DEF);

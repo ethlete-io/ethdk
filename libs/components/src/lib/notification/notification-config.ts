@@ -1,4 +1,4 @@
-import { createStaticRootProvider } from '@ethlete/core';
+import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 
 export const NOTIFICATION_STATUS = {
   LOADING: 'loading',
@@ -142,7 +142,9 @@ export const DEFAULT_NOTIFICATION_MANAGER_CONFIG: NotificationManagerConfig = {
   swipeToDismiss: true,
 };
 
-export const [provideNotificationManagerConfig, injectNotificationManagerConfig] = createStaticRootProvider(
-  DEFAULT_NOTIFICATION_MANAGER_CONFIG,
-  { name: 'NotificationManagerConfig' },
-);
+const NOTIFICATION_MANAGER_CONFIG_DEF = /* @__PURE__ */ defineStaticRootProvider(DEFAULT_NOTIFICATION_MANAGER_CONFIG, {
+  name: 'NotificationManagerConfig',
+});
+
+export const provideNotificationManagerConfig = /* @__PURE__ */ toProvideFn(NOTIFICATION_MANAGER_CONFIG_DEF);
+export const injectNotificationManagerConfig = /* @__PURE__ */ toInjectFn(NOTIFICATION_MANAGER_CONFIG_DEF);

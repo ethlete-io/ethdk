@@ -1,11 +1,18 @@
 import { DOCUMENT, computed, inject, signal } from '@angular/core';
-import { createRootProvider, injectRenderer, injectViewportSize, matchesReducedMotion } from '@ethlete/core';
+import {
+  defineRootProvider,
+  injectRenderer,
+  injectViewportSize,
+  matchesReducedMotion,
+  toInjectFn,
+  toProvideFn,
+} from '@ethlete/core';
 import { animateWithFixedWrapper } from './pip/headless/internals/pip-animation';
 import { DEFAULT_PIP_CHROME_CONFIG } from './pip/pip-chrome.config';
 import { injectStreamManager } from './stream-manager';
 import { PipManager, StreamPipEntry, StreamPlayerId } from './stream-manager.types';
 
-export const [providePipManager, injectPipManager] = createRootProvider(
+const PIP_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
   (): PipManager => {
     const document = inject(DOCUMENT);
     const renderer = injectRenderer();
@@ -206,3 +213,6 @@ export const [providePipManager, injectPipManager] = createRootProvider(
   },
   { name: 'Pip Manager' },
 );
+
+export const providePipManager = /* @__PURE__ */ toProvideFn(PIP_MANAGER_DEF);
+export const injectPipManager = /* @__PURE__ */ toInjectFn(PIP_MANAGER_DEF);

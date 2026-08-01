@@ -1,4 +1,4 @@
-import { createLabels } from '@ethlete/core';
+import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
  * Every string the dropzone renders or announces itself: the drop prompt, each entry's actions, and the
@@ -32,15 +32,16 @@ export const DEFAULT_DROPZONE_LABELS: DropzoneLabels = {
   uploading: (count) => (count === 1 ? 'Uploading 1 file' : `Uploading ${count} files`),
 };
 
+const DROPZONE_LABELS_DEF = /* @__PURE__ */ defineLabels<DropzoneLabels>('DROPZONE_LABELS', DEFAULT_DROPZONE_LABELS);
+
 /**
  * Localize the dropzone's strings for everything below this injector, and read the set in effect here as a
- * signal. Partial — whatever you leave out keeps its {@link DEFAULT_DROPZONE_LABELS} value. See {@link createLabels}
+ * signal. Partial — whatever you leave out keeps its {@link DEFAULT_DROPZONE_LABELS} value. See {@link defineLabels}
  * for the shape, which every domain in this library shares.
  *
  * @example
  * provideDropzoneLabels({ prompt: 'Datei hierher ziehen oder klicken', retry: 'Erneut versuchen' });
  */
-export const [provideDropzoneLabels, injectDropzoneLabels, DROPZONE_LABELS] = createLabels<DropzoneLabels>(
-  'DROPZONE_LABELS',
-  DEFAULT_DROPZONE_LABELS,
-);
+export const provideDropzoneLabels = /* @__PURE__ */ toProvideFn(DROPZONE_LABELS_DEF);
+export const injectDropzoneLabels = /* @__PURE__ */ toInjectFn(DROPZONE_LABELS_DEF);
+export const DROPZONE_LABELS = /* @__PURE__ */ toToken(DROPZONE_LABELS_DEF);

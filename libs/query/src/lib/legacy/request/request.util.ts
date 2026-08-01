@@ -1,135 +1,16 @@
 import { isSymfonyPagerfantaOutOfRangeError } from '../../http/query-error-response-utils';
-import { invalidBaseRouteError, invalidRouteError, pathParamsMissingInRouteFunctionError } from '../logger';
-import { AnyRoute } from '../query';
-import {
-  BuildQueryStringConfig,
-  Method,
-  PathParams,
-  QueryParams,
-  RequestError,
-  RequestHeaders,
-  RequestRetryFn,
-} from './request.types';
+import { Method, RequestError, RequestHeaders, RequestRetryFn } from './request.types';
 
-export const isNaN = (value: unknown): boolean => typeof value === 'number' && Number.isNaN(value);
-export const isEmptyString = (value: unknown): boolean => typeof value === 'string' && value.trim() === '';
+export {
+  buildQueryString,
+  buildRoute,
+  buildTimestampFromSeconds,
+  isEmptyString,
+  isNaN,
+} from '../../http/internal/request-route';
 
 export const isRequestError = <T = unknown>(error: unknown): error is RequestError<T> =>
   error instanceof Object && 'status' in error && 'statusText' in error && 'url' in error;
-
-export const buildRoute = (options: {
-  base: string;
-  route: AnyRoute | null | undefined;
-  pathParams?: PathParams;
-  queryParams?: QueryParams;
-  queryParamConfig?: BuildQueryStringConfig;
-}) => {
-  if (options.base.endsWith('/')) {
-    throw invalidBaseRouteError(options.base);
-  }
-
-  let route: string | null;
-
-  if (typeof options.route === 'function') {
-    if (!options.pathParams) {
-      throw pathParamsMissingInRouteFunctionError(options.route({}));
-    }
-
-    route = options.route(options.pathParams);
-  } else {
-    route = options.route ?? null;
-  }
-
-  if (route && !route.startsWith('/')) {
-    throw invalidRouteError(route);
-  }
-
-  if (options.queryParams) {
-    const queryString = buildQueryString(options.queryParams, options.queryParamConfig);
-
-    if (queryString) {
-      route = route ? `${route}?${queryString}` : `/?${queryString}`;
-    }
-  }
-
-  return `${options.base}${route ?? ''}`;
-};
-
-export const buildQueryString = (params: QueryParams, config?: BuildQueryStringConfig): string | null => {
-  const objectNotation = config?.objectNotation ?? 'bracket';
-  const writeArrayIndexes = config?.writeArrayIndexes ?? false;
-  const ignoredValues = config?.ignoredValues ?? [undefined, null, Infinity, -Infinity];
-  const ignoredValuesFns = config?.ignoredValuesFns ?? [isNaN, isEmptyString];
-
-  const queryParams: string[] = [];
-
-  function processValue(key: string, value: unknown) {
-    if (config?.objectNotation === 'json-stringify') {
-      if (value === undefined) {
-        return false;
-      }
-
-      if (ignoredValues.includes(value)) {
-        return false;
-      }
-
-      if (ignoredValuesFns.some((fn) => fn(value))) {
-        return false;
-      }
-
-      const encodedKey = encodeURIComponent(key);
-
-      const val = typeof value === 'object' ? JSON.stringify(value) : value;
-
-      const encodedValue = encodeURIComponent(val as string | number | boolean);
-
-      queryParams.push(`${encodedKey}=${encodedValue}`);
-
-      return true;
-    } else if (Array.isArray(value)) {
-      let currentFilteredIndex = 0;
-      for (const arrayValue of value) {
-        const nestedKey = writeArrayIndexes ? `${key}[${currentFilteredIndex}]` : `${key}[]`;
-
-        const didAddValue = processValue(nestedKey, arrayValue);
-
-        if (didAddValue) {
-          currentFilteredIndex++;
-        }
-      }
-
-      return null;
-    } else if (typeof value === 'object' && value !== null) {
-      for (const [objKey, val] of Object.entries(value)) {
-        const nestedKey = objectNotation === 'dot' ? `${key}.${objKey}` : `${key}[${objKey}]`;
-        processValue(nestedKey, val);
-      }
-
-      return null;
-    } else {
-      if (ignoredValues.includes(value)) {
-        return false;
-      }
-
-      if (ignoredValuesFns.some((fn) => fn(value))) {
-        return false;
-      }
-
-      const encodedKey = encodeURIComponent(key);
-      const encodedValue = encodeURIComponent(value as string);
-
-      queryParams.push(`${encodedKey}=${encodedValue}`);
-
-      return true;
-    }
-  }
-
-  for (const [key, val] of Object.entries(params)) {
-    processValue(key, val);
-  }
-
-  return queryParams.length ? queryParams.join('&') : null;
-};
 
 export const v2ExtractExpiresInSeconds = (headers: RequestHeaders) => {
   const cacheControl = headers['cache-control'];
@@ -180,14 +61,6 @@ export const v2ExtractExpiresInSeconds = (headers: RequestHeaders) => {
   }
 
   return expiresIn;
-};
-
-export const buildTimestampFromSeconds = (seconds: number | null) => {
-  if (seconds === null) {
-    return null;
-  }
-
-  return new Date(Date.now() + seconds * 1000).getTime();
 };
 
 export const serializeBody = (body: unknown): ArrayBuffer | URLSearchParams | Blob | FormData | string | null => {

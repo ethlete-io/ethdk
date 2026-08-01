@@ -1,4 +1,4 @@
-import { createLabels } from '@ethlete/core';
+import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 import { StandingsFormResult } from './standings.types';
 
 /**
@@ -61,6 +61,11 @@ export const DEFAULT_STANDINGS_LABELS: StandingsLabels = {
   highlightedRow: 'Your team',
 };
 
+const STANDINGS_LABELS_DEF = /* @__PURE__ */ defineLabels<StandingsLabels>(
+  'STANDINGS_LABELS',
+  DEFAULT_STANDINGS_LABELS,
+);
+
 /**
  * Localize the standings table for everything below this injector. Partial — whatever you leave out keeps
  * its {@link DEFAULT_STANDINGS_LABELS} value.
@@ -68,7 +73,6 @@ export const DEFAULT_STANDINGS_LABELS: StandingsLabels = {
  * @example
  * provideStandingsLabels({ caption: 'Tabelle', participant: 'Verein', points: 'Pkt', pointsFull: 'Punkte' });
  */
-export const [provideStandingsLabels, injectStandingsLabels, STANDINGS_LABELS] = createLabels<StandingsLabels>(
-  'STANDINGS_LABELS',
-  DEFAULT_STANDINGS_LABELS,
-);
+export const provideStandingsLabels = /* @__PURE__ */ toProvideFn(STANDINGS_LABELS_DEF);
+export const injectStandingsLabels = /* @__PURE__ */ toInjectFn(STANDINGS_LABELS_DEF);
+export const STANDINGS_LABELS = /* @__PURE__ */ toToken(STANDINGS_LABELS_DEF);

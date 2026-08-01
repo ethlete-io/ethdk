@@ -11,22 +11,22 @@ import { signalElementDimensions } from './element-dimensions';
 import { memoizeSignal } from './signal-data-utils';
 
 /** Inject a signal containing a boolean value indicating if the viewport is xs */
-export const injectIsXs = memoizeSignal(() => injectObserveBreakpoint({ max: 'xs' }));
+export const injectIsXs = /* @__PURE__ */ memoizeSignal(() => injectObserveBreakpoint({ max: 'xs' }));
 
 /** Inject a signal containing a boolean value indicating if the viewport is sm */
-export const injectIsSm = memoizeSignal(() => injectObserveBreakpoint({ min: 'sm', max: 'sm' }));
+export const injectIsSm = /* @__PURE__ */ memoizeSignal(() => injectObserveBreakpoint({ min: 'sm', max: 'sm' }));
 
 /** Inject a signal containing a boolean value indicating if the viewport is md */
-export const injectIsMd = memoizeSignal(() => injectObserveBreakpoint({ min: 'md', max: 'md' }));
+export const injectIsMd = /* @__PURE__ */ memoizeSignal(() => injectObserveBreakpoint({ min: 'md', max: 'md' }));
 
 /** Inject a signal containing a boolean value indicating if the viewport is lg */
-export const injectIsLg = memoizeSignal(() => injectObserveBreakpoint({ min: 'lg', max: 'lg' }));
+export const injectIsLg = /* @__PURE__ */ memoizeSignal(() => injectObserveBreakpoint({ min: 'lg', max: 'lg' }));
 
 /** Inject a signal containing a boolean value indicating if the viewport is xl */
-export const injectIsXl = memoizeSignal(() => injectObserveBreakpoint({ min: 'xl', max: 'xl' }));
+export const injectIsXl = /* @__PURE__ */ memoizeSignal(() => injectObserveBreakpoint({ min: 'xl', max: 'xl' }));
 
 /** Inject a signal containing a boolean value indicating if the viewport is 2xl */
-export const injectIs2Xl = memoizeSignal(() => injectObserveBreakpoint({ min: '2xl' }));
+export const injectIs2Xl = /* @__PURE__ */ memoizeSignal(() => injectObserveBreakpoint({ min: '2xl' }));
 
 /**
  * Inject a boolean value indicating if the viewport is matching the provided options.
@@ -54,7 +54,7 @@ export const injectObserveBreakpoint = (options: BuildMediaQueryOptions) =>
 export const injectObserveMediaQuery = (mediaQuery: string) => injectBreakpointObserver().observeMediaQuery(mediaQuery);
 
 /** Inject a signal containing the current breakpoint. */
-export const injectCurrentBreakpoint = memoizeSignal(() => {
+export const injectCurrentBreakpoint = /* @__PURE__ */ memoizeSignal(() => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const first = BREAKPOINT_ORDER[0]!;
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -74,13 +74,15 @@ export const injectCurrentBreakpoint = memoizeSignal(() => {
 });
 
 /** Inject a signal that indicates if the user is using a portrait display */
-export const injectIsPortrait = memoizeSignal(() => injectObserveMediaQuery('(orientation: portrait)'));
+export const injectIsPortrait = /* @__PURE__ */ memoizeSignal(() => injectObserveMediaQuery('(orientation: portrait)'));
 
 /** Inject a signal that indicates if the user is using a landscape display */
-export const injectIsLandscape = memoizeSignal(() => injectObserveMediaQuery('(orientation: landscape)'));
+export const injectIsLandscape = /* @__PURE__ */ memoizeSignal(() =>
+  injectObserveMediaQuery('(orientation: landscape)'),
+);
 
 /** Inject a signal containing the current display orientation */
-export const injectDisplayOrientation = memoizeSignal(() => {
+export const injectDisplayOrientation = /* @__PURE__ */ memoizeSignal(() => {
   const isPortrait = injectIsPortrait();
 
   return computed(() => {
@@ -90,13 +92,13 @@ export const injectDisplayOrientation = memoizeSignal(() => {
 });
 
 /** Inject a signal that indicates if the device has a touch input */
-export const injectHasTouchInput = memoizeSignal(() => injectObserveMediaQuery('(pointer: coarse)'));
+export const injectHasTouchInput = /* @__PURE__ */ memoizeSignal(() => injectObserveMediaQuery('(pointer: coarse)'));
 
 /** Inject a signal that indicates if the device has a fine input (mouse or stylus)  */
-export const injectHasPrecisionInput = memoizeSignal(() => injectObserveMediaQuery('(pointer: fine)'));
+export const injectHasPrecisionInput = /* @__PURE__ */ memoizeSignal(() => injectObserveMediaQuery('(pointer: fine)'));
 
 /** Inject a signal containing the current device input type */
-export const injectDeviceInputType = memoizeSignal(() => {
+export const injectDeviceInputType = /* @__PURE__ */ memoizeSignal(() => {
   const isTouch = injectHasTouchInput();
 
   return computed(() => {
@@ -106,18 +108,20 @@ export const injectDeviceInputType = memoizeSignal(() => {
 });
 
 /** Inject a signal that indicates if the user prefers reduced motion */
-export const injectPrefersReducedMotion = memoizeSignal(() =>
+export const injectPrefersReducedMotion = /* @__PURE__ */ memoizeSignal(() =>
   injectObserveMediaQuery('(prefers-reduced-motion: reduce)'),
 );
 
 /** Inject a signal containing a boolean value indicating if the user can hover (eg. using a mouse) */
-export const injectCanHover = memoizeSignal(() => injectObserveMediaQuery('(hover: hover)'));
+export const injectCanHover = /* @__PURE__ */ memoizeSignal(() => injectObserveMediaQuery('(hover: hover)'));
 
 /** Inject a signal containing the viewport dimensions */
-export const injectViewportDimensions = memoizeSignal(() => signalElementDimensions(createDocumentElementSignal()));
+export const injectViewportDimensions = /* @__PURE__ */ memoizeSignal(() =>
+  signalElementDimensions(createDocumentElementSignal()),
+);
 
 /** Inject a signal containing the scrollbar dimensions. Dimensions will be 0 if scrollbars overlap the page contents (like on mobile). */
-export const injectScrollbarDimensions = memoizeSignal(() => {
+export const injectScrollbarDimensions = /* @__PURE__ */ memoizeSignal(() => {
   const document = inject(DOCUMENT);
   const renderer = injectRenderer();
 

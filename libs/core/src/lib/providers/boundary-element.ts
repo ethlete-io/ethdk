@@ -1,7 +1,7 @@
 import { computed, DOCUMENT, ElementRef, inject, signal } from '@angular/core';
-import { createProvider } from '../utils';
+import { defineProvider, toInjectFn, toProvideFn, toToken } from '../utils';
 
-export const [provideBoundaryElement, injectBoundaryElement, BOUNDARY_ELEMENT_TOKEN] = createProvider(
+const BOUNDARY_ELEMENT_DEF = /* @__PURE__ */ defineProvider(
   () => {
     const hostElement = inject<ElementRef<HTMLElement>>(ElementRef, { optional: true });
     const document = inject(DOCUMENT);
@@ -17,3 +17,7 @@ export const [provideBoundaryElement, injectBoundaryElement, BOUNDARY_ELEMENT_TO
   },
   { name: 'Boundary Element' },
 );
+
+export const provideBoundaryElement = /* @__PURE__ */ toProvideFn(BOUNDARY_ELEMENT_DEF);
+export const injectBoundaryElement = /* @__PURE__ */ toInjectFn(BOUNDARY_ELEMENT_DEF);
+export const BOUNDARY_ELEMENT_TOKEN = /* @__PURE__ */ toToken(BOUNDARY_ELEMENT_DEF);

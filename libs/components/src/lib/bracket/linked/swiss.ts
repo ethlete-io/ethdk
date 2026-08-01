@@ -64,7 +64,7 @@ export const getSwissGroupColorType = (wins: number, losses: number): BracketSwi
   return BRACKET_SWISS_GROUP_COLOR_TYPE.WARNING;
 };
 
-const factorialCache = new Map<number, number>();
+const factorialCache = /* @__PURE__ */ new Map<number, number>();
 
 export const getAvailableSwissGroupsForRound = (roundNumber: number, totalMatchesInRound: number) => {
   const advanceWins = SWISS_ADVANCE_WINS;

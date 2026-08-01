@@ -1,6 +1,6 @@
-import { createStaticRootProvider } from '@ethlete/core';
+import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 import { BracketMatchNormalizer } from './bracket-card-context';
-import { BRACKET_DENSITY, BracketDensity } from './bracket-density';
+import { BracketDensity } from './bracket-density';
 import { BracketLayout } from './bracket-layout';
 import {
   BracketContinueComponent,
@@ -113,7 +113,7 @@ export const BRACKET_DEFAULTS: Required<BracketLayoutConfig> = {
   disableJourneyHighlight: false,
   swissGroupPadding: 10,
   swissGroupBorderRadius: 12,
-  density: BRACKET_DENSITY.DEFAULT,
+  density: 'default',
   hideRoundHeaders: false,
   showContinueElement: false,
   continueColumnWidth: 250,
@@ -122,7 +122,7 @@ export const BRACKET_DEFAULTS: Required<BracketLayoutConfig> = {
   roundHeaderLevel: 3,
 };
 
-export const [provideBracketConfig, injectBracketConfig] = createStaticRootProvider<BracketConfig>(
-  {},
-  { name: 'BracketConfig' },
-);
+const BRACKET_CONFIG_DEF = /* @__PURE__ */ defineStaticRootProvider<BracketConfig>({}, { name: 'BracketConfig' });
+
+export const provideBracketConfig = /* @__PURE__ */ toProvideFn(BRACKET_CONFIG_DEF);
+export const injectBracketConfig = /* @__PURE__ */ toInjectFn(BRACKET_CONFIG_DEF);

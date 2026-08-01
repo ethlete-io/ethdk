@@ -22,7 +22,7 @@ import { QueryKeyLockHold } from './sync/query-key-lock-manager';
  * Returning this inside a withArgs feature will reset the query args to null.
  * This will also pause polling and auto refresh until new args are set.
  */
-export const CLEAR_QUERY_ARGS = Symbol('CLEAR_QUERY_ARGS');
+export const CLEAR_QUERY_ARGS = /* @__PURE__ */ Symbol('CLEAR_QUERY_ARGS');
 export type ClearQueryArgs = typeof CLEAR_QUERY_ARGS;
 
 /** A angular effect that can be nested inside another effect */

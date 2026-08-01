@@ -1,7 +1,7 @@
 import { ApplicationRef, inject, signal } from '@angular/core';
-import { createRootProvider } from '../utils';
+import { defineRootProvider, toInjectFn } from '../utils';
 
-export const [, injectAngularRootElement] = createRootProvider(() => {
+const ANGULAR_ROOT_ELEMENT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const appRef = inject(ApplicationRef);
 
   const rootElement = signal<HTMLElement | null>(null);
@@ -19,3 +19,5 @@ export const [, injectAngularRootElement] = createRootProvider(() => {
 
   return rootElement;
 });
+
+export const injectAngularRootElement = /* @__PURE__ */ toInjectFn(ANGULAR_ROOT_ELEMENT_DEF);

@@ -1,4 +1,4 @@
-import { createLabels } from '@ethlete/core';
+import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
  * The strings the text-field family's own controls render — the number input's steppers and the password
@@ -27,15 +27,16 @@ export const DEFAULT_INPUT_LABELS: InputLabels = {
   capsLockOn: 'Caps Lock is on',
 };
 
+const INPUT_LABELS_DEF = /* @__PURE__ */ defineLabels<InputLabels>('INPUT_LABELS', DEFAULT_INPUT_LABELS);
+
 /**
  * Localize the text field family's strings for everything below this injector, and read the set in effect here as a
- * signal. Partial — whatever you leave out keeps its {@link DEFAULT_INPUT_LABELS} value. See {@link createLabels}
+ * signal. Partial — whatever you leave out keeps its {@link DEFAULT_INPUT_LABELS} value. See {@link defineLabels}
  * for the shape, which every domain in this library shares.
  *
  * @example
  * provideInputLabels({ increment: 'Erhöhen', decrement: 'Verringern' });
  */
-export const [provideInputLabels, injectInputLabels, INPUT_LABELS] = createLabels<InputLabels>(
-  'INPUT_LABELS',
-  DEFAULT_INPUT_LABELS,
-);
+export const provideInputLabels = /* @__PURE__ */ toProvideFn(INPUT_LABELS_DEF);
+export const injectInputLabels = /* @__PURE__ */ toInjectFn(INPUT_LABELS_DEF);
+export const INPUT_LABELS = /* @__PURE__ */ toToken(INPUT_LABELS_DEF);

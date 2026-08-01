@@ -1,5 +1,5 @@
 import { DOCUMENT, EnvironmentInjector, Type, computed, inject, inputBinding } from '@angular/core';
-import { OverlayRuntimeRef, createRootProvider, injectOverlayRuntime } from '@ethlete/core';
+import { defineRootProvider, injectOverlayRuntime, OverlayRuntimeRef, toInjectFn, toProvideFn } from '@ethlete/core';
 import { OverlayConfig } from './overlay-config';
 import { OverlayContainerComponent } from './overlay-container.component';
 import { OVERLAY_REF, OverlayRef, createOverlayRef } from './overlay-ref';
@@ -38,7 +38,7 @@ const resolveOrigin = (origin: HTMLElement | Event | undefined, document: Docume
   return isValidOriginElement(activeElement) ? activeElement : undefined;
 };
 
-export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
+const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
   (): OverlayManager => {
     const overlayRuntime = injectOverlayRuntime();
     const injector = inject(EnvironmentInjector);
@@ -177,3 +177,6 @@ export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
   },
   { name: 'OverlayManager' },
 );
+
+export const provideOverlayManager = /* @__PURE__ */ toProvideFn(OVERLAY_MANAGER_DEF);
+export const injectOverlayManager = /* @__PURE__ */ toInjectFn(OVERLAY_MANAGER_DEF);

@@ -60,7 +60,7 @@ describe('bearer-auth-token-revocation', () => {
         response: void;
       }>('/auth/revoke');
 
-      const [, injectAuth] = createBearerAuthProvider({
+      const { inject: injectAuth } = createBearerAuthProvider({
         name: 'test',
         queryClientRef,
         queries: [
@@ -109,7 +109,7 @@ describe('bearer-auth-token-revocation', () => {
         response: void;
       }>('/auth/revoke');
 
-      const [, injectAuth] = createBearerAuthProvider({
+      const { inject: injectAuth } = createBearerAuthProvider({
         name: 'test',
         queryClientRef,
         queries: [

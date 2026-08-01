@@ -44,7 +44,7 @@ const isScrollableChildIgnored = (el: HTMLElement) => {
 
 // Thresholds for the intersection observer.
 const ELEMENT_INTERSECTION_THRESHOLD = [
-  ...Array.from({ length: 21 }, (_, i) => i * 0.05),
+  .../* @__PURE__ */ Array.from({ length: 21 }, (_, i) => i * 0.05),
   0.01,
   0.005,
   0.001,

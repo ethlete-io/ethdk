@@ -1,4 +1,4 @@
-import { createLabels } from '@ethlete/core';
+import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
  * What a busy indicator announces. A spinner, a brand loader and a skeleton are all shapes with no
@@ -21,15 +21,16 @@ export const DEFAULT_LOADER_LABELS: LoaderLabels = {
   loadingContent: 'Loading…',
 };
 
+const LOADER_LABELS_DEF = /* @__PURE__ */ defineLabels<LoaderLabels>('LOADER_LABELS', DEFAULT_LOADER_LABELS);
+
 /**
  * Localize what loaders announce for everything below this injector, and read the set in effect here as
  * a signal. Partial — whatever you leave out keeps its {@link DEFAULT_LOADER_LABELS} value. See
- * {@link createLabels} for the shape, which every domain in this library shares.
+ * {@link defineLabels} for the shape, which every domain in this library shares.
  *
  * @example
  * provideLoaderLabels({ loading: 'Lädt', loadingContent: 'Lädt…' });
  */
-export const [provideLoaderLabels, injectLoaderLabels, LOADER_LABELS] = createLabels<LoaderLabels>(
-  'LOADER_LABELS',
-  DEFAULT_LOADER_LABELS,
-);
+export const provideLoaderLabels = /* @__PURE__ */ toProvideFn(LOADER_LABELS_DEF);
+export const injectLoaderLabels = /* @__PURE__ */ toInjectFn(LOADER_LABELS_DEF);
+export const LOADER_LABELS = /* @__PURE__ */ toToken(LOADER_LABELS_DEF);

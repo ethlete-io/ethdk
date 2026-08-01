@@ -2,7 +2,7 @@ import { randomId } from '@ethlete/core';
 import { HttpClient, HttpErrorResponse, HttpEventType } from '@angular/common/http';
 import { DestroyRef, ErrorHandler, Injector, Signal, signal } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
-import { buildRoute } from '../legacy';
+import { buildRoute } from './internal/request-route';
 import { createHttpRequest, HttpRequest } from './http-request';
 import { QueryArgs, RequestArgs } from './query';
 import { buildQueryCacheKey, shouldCacheQuery } from './query-cache-utils';

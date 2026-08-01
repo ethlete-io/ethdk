@@ -101,9 +101,7 @@ export const getUsers = apiClient.get({
     expect(client).toContain('export const apiClientAuthProvider = createBearerAuthProvider({');
     expect(client).toContain('queryClientRef: apiClientConfig');
     expect(client).toContain('queries: []');
-    expect(client).toContain(
-      'export const [provideApiClientAuthProvider, injectApiClientAuthProvider] = apiClientAuthProvider;',
-    );
+    expect(client).toContain('export const provideApiClientAuthProvider = toProvideFn(apiClientAuthProvider);');
     expect(client).toContain(
       'export const apiGetSecure = createSecureGetQuery(apiClientConfig, apiClientAuthProvider);',
     );

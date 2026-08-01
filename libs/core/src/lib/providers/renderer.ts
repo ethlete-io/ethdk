@@ -1,7 +1,7 @@
 import { inject, RendererFactory2, RendererStyleFlags2 } from '@angular/core';
-import { createRootProvider } from '../utils';
+import { defineRootProvider, toInjectFn, toProvideFn } from '../utils';
 
-export const [provideRenderer, injectRenderer] = createRootProvider(
+const RENDERER_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const rendererFactory = inject(RendererFactory2);
     const renderer = rendererFactory.createRenderer(null, null);
@@ -235,5 +235,8 @@ export const [provideRenderer, injectRenderer] = createRootProvider(
   },
   { name: 'Angular Renderer' },
 );
+
+export const provideRenderer = /* @__PURE__ */ toProvideFn(RENDERER_DEF);
+export const injectRenderer = /* @__PURE__ */ toInjectFn(RENDERER_DEF);
 
 export type AngularRenderer = NonNullable<ReturnType<typeof injectRenderer>>;

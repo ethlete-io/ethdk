@@ -5,6 +5,11 @@
       "schema": "./migrate-to-v5/schema.json",
       "description": "Migrate to v5"
     },
+    "migrate-provider-shape": {
+      "factory": "./migrate-provider-shape/migration",
+      "schema": "./migrate-provider-shape/schema.json",
+      "description": "Rewrite destructured provider tuples into the tree-shakeable definition shape"
+    },
     "tailwind-4-color-theme": {
       "factory": "./tailwind-4-color-theme/generator",
       "schema": "./tailwind-4-color-theme/schema.json",

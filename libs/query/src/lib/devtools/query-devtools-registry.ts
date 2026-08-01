@@ -85,17 +85,17 @@ let devtoolsEnabled = false;
  */
 export const isQueryDevtoolsEnabled = () => devtoolsEnabled;
 
-const entries = signal<QueryDevtoolsEntry[]>([]);
+const entries = /* @__PURE__ */ signal<QueryDevtoolsEntry[]>([]);
 
 /**
  * The reactive list of every registered devtools entry, consumed by the `<et-query-devtools>` UI.
  */
-export const queryDevtoolsEntries: Signal<QueryDevtoolsEntry[]> = entries.asReadonly();
+export const queryDevtoolsEntries: Signal<QueryDevtoolsEntry[]> = /* @__PURE__ */ entries.asReadonly();
 
 // Per-descriptor counter used to derive stable, reload-deterministic ids. Reset on page load (module
 // re-eval), so the same queries created in the same order get the same ids across reloads — which is
 // what lets the devtools restore the selected query after a reload.
-const idCounters = new Map<string, number>();
+const idCounters = /* @__PURE__ */ new Map<string, number>();
 
 const descriptorOf = (entry: Omit<QueryDevtoolsEntry, 'id' | 'createdAt'>): string => {
   const { kind, meta } = entry;
@@ -184,7 +184,7 @@ export const stringifyQueryRoute = (route: unknown): string => {
  * @internal
  */
 export const getQueryClientName = (client: AnyCreateQueryClientResult): string => {
-  const token = client[2];
+  const token = client.token;
   const desc = token?.toString?.() ?? '';
 
   return desc.replace('InjectionToken ', '').replace('QueryClient_', '') || 'unknown';

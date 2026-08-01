@@ -19,13 +19,15 @@ import {
 import {
   BOUNDARY_ELEMENT_TOKEN,
   COLOR_PROVIDER,
-  ProvideColorDirective,
-  ProvideSurfaceDirective,
-  SURFACE_PROVIDER,
-  createRootProvider,
+  defineRootProvider,
   equal,
   injectBreakpointObserver,
   injectRenderer,
+  ProvideColorDirective,
+  ProvideSurfaceDirective,
+  SURFACE_PROVIDER,
+  toInjectFn,
+  toProvideFn,
 } from '@ethlete/core';
 import { filter } from 'rxjs';
 import { OverlayContainerComponent } from './common';
@@ -58,7 +60,7 @@ const resolveOrigin = (
   return isValidOriginElement(activeElement) ? activeElement : undefined;
 };
 
-export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
+const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const dialog = inject(CdkDialog);
     const breakpointObserver = injectBreakpointObserver();
@@ -540,3 +542,6 @@ export const [provideOverlayManager, injectOverlayManager] = createRootProvider(
     name: 'Overlay Manager',
   },
 );
+
+export const provideOverlayManager = /* @__PURE__ */ toProvideFn(OVERLAY_MANAGER_DEF);
+export const injectOverlayManager = /* @__PURE__ */ toInjectFn(OVERLAY_MANAGER_DEF);

@@ -71,7 +71,7 @@ const placeholderRe = (kind: string) => new RegExp(`\u{E000}${kind}(\\d+)\u{E001
 const isPlaceholder = (kind: string, str: string) => new RegExp(`^\u{E000}${kind}\\d+\u{E001}$`, 'u').test(str);
 
 /** Tags allowed to survive inside an aligned block's raw-HTML passthrough. */
-const SAFE_INLINE_TAGS = new Set(['strong', 'em', 'b', 'i', 'del', 's', 'u', 'code', 'br']);
+const SAFE_INLINE_TAGS = /* @__PURE__ */ new Set(['strong', 'em', 'b', 'i', 'del', 's', 'u', 'code', 'br']);
 
 /** Reduces raw inline HTML to the editor's own vocabulary: allowed tags lose all their attributes
  *  (`<a>` keeps a safe `href`), everything else — including any event-handler attribute — is

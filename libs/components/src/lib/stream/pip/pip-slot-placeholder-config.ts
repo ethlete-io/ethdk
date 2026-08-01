@@ -1,4 +1,4 @@
-import { createStaticRootProvider } from '@ethlete/core';
+import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 
 export type PipSlotPlaceholderConfig = {
   /**
@@ -12,7 +12,12 @@ const DEFAULT_PIP_SLOT_PLACEHOLDER_CONFIG: PipSlotPlaceholderConfig = {
   backButtonColor: null,
 };
 
-export const [providePipSlotPlaceholderConfig, injectPipSlotPlaceholderConfig] =
-  createStaticRootProvider<PipSlotPlaceholderConfig>(DEFAULT_PIP_SLOT_PLACEHOLDER_CONFIG, {
+const PIP_SLOT_PLACEHOLDER_CONFIG_DEF = /* @__PURE__ */ defineStaticRootProvider<PipSlotPlaceholderConfig>(
+  DEFAULT_PIP_SLOT_PLACEHOLDER_CONFIG,
+  {
     name: 'PipSlotPlaceholderConfig',
-  });
+  },
+);
+
+export const providePipSlotPlaceholderConfig = /* @__PURE__ */ toProvideFn(PIP_SLOT_PLACEHOLDER_CONFIG_DEF);
+export const injectPipSlotPlaceholderConfig = /* @__PURE__ */ toInjectFn(PIP_SLOT_PLACEHOLDER_CONFIG_DEF);

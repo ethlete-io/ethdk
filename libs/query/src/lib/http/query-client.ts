@@ -1,8 +1,8 @@
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { DestroyRef, ErrorHandler, inject, Injector, PLATFORM_ID } from '@angular/core';
-import { createRootProvider, ProviderResult } from '@ethlete/core';
-import { BuildQueryStringConfig } from '../legacy';
+import { defineRootProvider, ProviderDefinition } from '@ethlete/core';
+import { BuildQueryStringConfig } from './internal/request-route';
 import { createQueryInvalidationFilter, QueryInvalidationOptions, resolveInvalidationUrl } from './query-invalidation';
 import { createIndexedDbQueryPersistenceAdapter } from './persistence/query-persistence-indexed-db';
 import { QueryPersistenceConfig } from './persistence/query-persistence-config';
@@ -42,7 +42,7 @@ export type CreateQueryClientConfigOptions = {
    * @example
    * const previewToken = signal<string | null>(null);
    *
-   * export const [provideMyClient, injectMyClient] = createQueryClient({
+   * const MY_CLIENT = createQueryClient({
    *   name: 'my-api',
    *   baseUrl: 'https://api.example.com',
    *   headers: () => {
@@ -50,6 +50,9 @@ export type CreateQueryClientConfigOptions = {
    *     return token ? new HttpHeaders({ 'X-Preview-Token': token }) : new HttpHeaders();
    *   },
    * });
+   *
+   * export const provideMyClient = toProvideFn(MY_CLIENT);
+   * export const injectMyClient = toInjectFn(MY_CLIENT);
    */
   headers?: HttpHeaders | (() => HttpHeaders);
 
@@ -230,12 +233,12 @@ export type QueryClient = {
   subtle: QueryClientSubtle;
 };
 
-export type QueryClientRef = ProviderResult<QueryClient>;
+export type QueryClientRef = ProviderDefinition<QueryClient>;
 export type AnyCreateQueryClientResult = QueryClientRef;
-export type AnyQueryClient = NonNullable<ReturnType<AnyCreateQueryClientResult[1]>>;
+export type AnyQueryClient = NonNullable<ReturnType<AnyCreateQueryClientResult['inject']>>;
 
 export const createQueryClient = (options: CreateQueryClientConfigOptions): QueryClientRef =>
-  createRootProvider(
+  defineRootProvider(
     () => {
       const httpClient = inject(HttpClient);
       const ngErrorHandler = inject(ErrorHandler);

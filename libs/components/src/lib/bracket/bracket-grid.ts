@@ -11,7 +11,7 @@ import { CreateBracketGridConfig } from './drawing/grid/types';
  */
 export type BracketLayoutSettings = Required<BracketLayoutConfig>;
 
-const LAYOUT_KEYS = Object.keys(BRACKET_DEFAULTS) as (keyof BracketLayoutSettings)[];
+const LAYOUT_KEYS = /* @__PURE__ */ Object.keys(BRACKET_DEFAULTS) as (keyof BracketLayoutSettings)[];
 
 /**
  * Resolves a partial config in the order the bracket documents: what you set, then the density preset,

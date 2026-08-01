@@ -9,7 +9,7 @@ describe('createWebSocketClient', () => {
 
   it('should create a web socket client tuple', () => {
     const client = createWebSocketClient({ name: 'test', url: 'ws://localhost:3000' });
-    const [provideClient, injectClient, clientToken] = client;
+    const { provide: provideClient, inject: injectClient, token: clientToken } = client;
 
     expect(provideClient).toBeTruthy();
     expect(injectClient).toBeTruthy();
@@ -18,7 +18,7 @@ describe('createWebSocketClient', () => {
 
   it('should create client using provider', () => {
     const client = createWebSocketClient({ name: 'test', url: 'ws://localhost:3000' });
-    const [, , clientToken] = client;
+    const { token: clientToken } = client;
 
     TestBed.configureTestingModule({});
 
@@ -32,7 +32,7 @@ describe('createWebSocketClient', () => {
 
   it('should create client using inject function', () => {
     const client = createWebSocketClient({ name: 'test', url: 'ws://localhost:3000' });
-    const [provideClient, injectClient] = client;
+    const { provide: provideClient, inject: injectClient } = client;
 
     TestBed.configureTestingModule({
       providers: [provideClient()],
@@ -55,7 +55,7 @@ describe('createWebSocketClient', () => {
       url: 'ws://localhost:3000',
       transports: ['websocket', 'polling'],
     });
-    const [provideClient, injectClient] = client;
+    const { provide: provideClient, inject: injectClient } = client;
 
     TestBed.configureTestingModule({
       providers: [provideClient()],
@@ -69,7 +69,7 @@ describe('createWebSocketClient', () => {
 
   it('should have isConnected signal', () => {
     const client = createWebSocketClient({ name: 'test', url: 'ws://localhost:3000' });
-    const [provideClient, injectClient] = client;
+    const { provide: provideClient, inject: injectClient } = client;
 
     TestBed.configureTestingModule({
       providers: [provideClient()],
@@ -85,7 +85,7 @@ describe('createWebSocketClient', () => {
 
   it('should have subtle.leaveRoom function', () => {
     const client = createWebSocketClient({ name: 'test', url: 'ws://localhost:3000' });
-    const [provideClient, injectClient] = client;
+    const { provide: provideClient, inject: injectClient } = client;
 
     TestBed.configureTestingModule({
       providers: [provideClient()],
@@ -103,15 +103,15 @@ describe('createWebSocketClient', () => {
     const client1 = createWebSocketClient({ name: 'client1', url: 'ws://localhost:3000' });
     const client2 = createWebSocketClient({ name: 'client2', url: 'ws://localhost:3000' });
 
-    const [, , token1] = client1;
-    const [, , token2] = client2;
+    const { token: token1 } = client1;
+    const { token: token2 } = client2;
 
     expect(token1).not.toBe(token2);
   });
 
   it('should have joinRoom method that returns a signal', () => {
     const client = createWebSocketClient({ name: 'test', url: 'ws://localhost:3000' });
-    const [provideClient, injectClient] = client;
+    const { provide: provideClient, inject: injectClient } = client;
 
     TestBed.configureTestingModule({
       providers: [provideClient()],

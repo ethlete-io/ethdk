@@ -2,7 +2,7 @@ import { computed, effect, inject, signal } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { injectLocale } from '../providers';
 import { injectIsRouterInitialized, MaybeSignal } from '../signals';
-import { createRootProvider, createStaticRootProvider } from '../utils';
+import { defineRootProvider, defineStaticRootProvider, toInjectFn, toProvideFn } from '../utils';
 import { applyHeadBinding } from './head-binding';
 
 export type TitlePart = {
@@ -40,7 +40,7 @@ export type TitleConfig = {
   prefixPart?: TitlePart;
 };
 
-export const [provideTitleConfig, injectTitleConfig] = createStaticRootProvider<TitleConfig>(
+const TITLE_CONFIG_DEF = /* @__PURE__ */ defineStaticRootProvider<TitleConfig>(
   {
     divider: '|',
     defaultTitle: '',
@@ -49,7 +49,10 @@ export const [provideTitleConfig, injectTitleConfig] = createStaticRootProvider<
   { name: 'Title Config' },
 );
 
-export const [provideTitleStore, injectTitleStore] = createRootProvider(
+export const provideTitleConfig = /* @__PURE__ */ toProvideFn(TITLE_CONFIG_DEF);
+export const injectTitleConfig = /* @__PURE__ */ toInjectFn(TITLE_CONFIG_DEF);
+
+const TITLE_STORE_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const config = injectTitleConfig();
     const titleParts = signal<Map<symbol, TitlePart>>(new Map());
@@ -142,6 +145,9 @@ export const [provideTitleStore, injectTitleStore] = createRootProvider(
   },
   { name: 'Title Store' },
 );
+
+export const provideTitleStore = /* @__PURE__ */ toProvideFn(TITLE_STORE_DEF);
+export const injectTitleStore = /* @__PURE__ */ toInjectFn(TITLE_STORE_DEF);
 
 export const applyHeadTitleBinding = (
   binding: MaybeSignal<string | number | null | undefined>,

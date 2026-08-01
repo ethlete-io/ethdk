@@ -9,7 +9,7 @@ import {
   untracked,
   WritableSignal,
 } from '@angular/core';
-import { createRootProvider, previousSignalValue, ProviderResult } from '@ethlete/core';
+import { defineRootProvider, previousSignalValue, ProviderDefinition } from '@ethlete/core';
 import { io } from 'socket.io-client';
 import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools';
 import { messageMalformed, roomNotJoined } from './web-socket-errors';
@@ -85,7 +85,7 @@ export type WebSocketRoom<TMessageData extends SocketMessageView> = {
   latestMessage: Signal<TMessageData | null>;
 };
 
-export type WebSocketClientResult<TMessageData extends SocketMessageView = SocketMessageView> = ProviderResult<
+export type WebSocketClientResult<TMessageData extends SocketMessageView = SocketMessageView> = ProviderDefinition<
   WebSocketClient<TMessageData>
 >;
 
@@ -95,7 +95,7 @@ export type AnyWebSocketClient<TMessageData extends SocketMessageView = SocketMe
 export const createWebSocketClient = <TMessageData extends SocketMessageView = SocketMessageView>(
   options: CreateWebSocketClientConfigOptions,
 ): WebSocketClientResult<TMessageData> => {
-  return createRootProvider(
+  return defineRootProvider(
     () => {
       const socket = io(options.url, {
         withCredentials: true,

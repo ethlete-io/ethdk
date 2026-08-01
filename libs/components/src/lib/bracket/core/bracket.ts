@@ -2,14 +2,8 @@ import { BracketDataSource } from '../integrations';
 import { BracketMap } from './bracket-map';
 import { BracketDataLayout } from './layout';
 import { BracketMatchId, BracketMatchWithRelationsBase, createMatchesMapBase } from './match';
-import { MatchParticipantId, BracketParticipantWithRelationsBase, createParticipantsMapBase } from './participant';
-import {
-  BracketRoundId,
-  COMMON_BRACKET_ROUND_TYPE,
-  DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
-  BracketRoundWithRelationsBase,
-  createRoundsMapBase,
-} from './round';
+import { BracketParticipantWithRelationsBase, createParticipantsMapBase, MatchParticipantId } from './participant';
+import { BracketRoundId, BracketRoundWithRelationsBase, createRoundsMapBase } from './round';
 import { TournamentMode } from './tournament';
 
 export type BracketBase<TRoundData, TMatchData> = {
@@ -24,9 +18,9 @@ export type GenerateBracketDataOptions = {
 };
 
 const TERMINAL_ROUND_SORT_PRIORITY: Partial<Record<string, number>> = {
-  [COMMON_BRACKET_ROUND_TYPE.FINAL]: 1,
-  [DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL]: 2,
-  [COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE]: 3,
+  final: 1,
+  'reverse-final': 2,
+  'third-place': 3,
 };
 
 const sortSourceMatchesByRoundOrder = <TRoundData, TMatchData>(

@@ -234,7 +234,7 @@ export const matchCountryByDialCode = (digits: string): PhoneCountry | null => {
 };
 
 /** Countries where a leading `0` is part of the international number (e.g. Italian landlines). */
-const TRUNK_ZERO_KEPT = new Set(['it', 'sm']);
+const TRUNK_ZERO_KEPT = /* @__PURE__ */ new Set(['it', 'sm']);
 
 /**
  * Strips the national trunk prefix `0` (`'0171…'` → `'171…'`) — in most countries it replaces

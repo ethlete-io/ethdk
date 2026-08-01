@@ -1,4 +1,4 @@
-import { createLabels } from '@ethlete/core';
+import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
  * The strings every form control shows, rather than any one control's own. Both are answers a control
@@ -24,15 +24,19 @@ export const DEFAULT_FORM_FIELD_LABELS: FormFieldLabels = {
   selectAll: 'Select all',
 };
 
+const FORM_FIELD_LABELS_DEF = /* @__PURE__ */ defineLabels<FormFieldLabels>(
+  'FORM_FIELD_LABELS',
+  DEFAULT_FORM_FIELD_LABELS,
+);
+
 /**
  * Localize the strings shared by every form control below this injector, and read the set in effect here
  * as a signal. Partial — whatever you leave out keeps its {@link DEFAULT_FORM_FIELD_LABELS} value. See
- * {@link createLabels} for the shape, which every domain in this library shares.
+ * {@link defineLabels} for the shape, which every domain in this library shares.
  *
  * @example
  * provideFormFieldLabels({ mixed: 'Gemischt', clear: 'Leeren', selectAll: 'Alle auswählen' });
  */
-export const [provideFormFieldLabels, injectFormFieldLabels, FORM_FIELD_LABELS] = createLabels<FormFieldLabels>(
-  'FORM_FIELD_LABELS',
-  DEFAULT_FORM_FIELD_LABELS,
-);
+export const provideFormFieldLabels = /* @__PURE__ */ toProvideFn(FORM_FIELD_LABELS_DEF);
+export const injectFormFieldLabels = /* @__PURE__ */ toInjectFn(FORM_FIELD_LABELS_DEF);
+export const FORM_FIELD_LABELS = /* @__PURE__ */ toToken(FORM_FIELD_LABELS_DEF);

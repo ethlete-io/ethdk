@@ -45,7 +45,7 @@ export const resolveAppRootColorProvider = (appRef: ApplicationRef): ProvideColo
   return null;
 };
 
-const FORCED_COLOR_UNSET = Symbol('FORCED_COLOR_UNSET');
+const FORCED_COLOR_UNSET = /* @__PURE__ */ Symbol('FORCED_COLOR_UNSET');
 
 type ForcedColorState = RegisteredColorThemeName | ColorTheme | null | typeof FORCED_COLOR_UNSET;
 

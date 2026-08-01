@@ -193,7 +193,7 @@ describe('multi tab sync', () => {
       await flushAll({ version: 1 });
 
       expect(tabA.query.response()).toEqual({ version: 1 });
-      expect(TestBed.inject(tabB[2]).repository.subtle.cacheEntries()).toEqual([]);
+      expect(TestBed.inject(tabB.token).repository.subtle.cacheEntries()).toEqual([]);
     });
 
     it('updates an entry that is only being retained', async () => {
@@ -254,7 +254,7 @@ describe('multi tab sync', () => {
     it('is on for a client that says nothing about it', () => {
       const client = createQueryClient({ baseUrl: 'https://api.example.com', name: 'defaults' });
 
-      expect(TestBed.inject(client[2]).subtle.sync).not.toBeNull();
+      expect(TestBed.inject(client.token).subtle.sync).not.toBeNull();
       expect(bus.posted).toEqual([]);
     });
   });
@@ -338,7 +338,7 @@ describe('multi tab sync', () => {
   describe('explicit invalidation', () => {
     /** What an app calls after a mutation it knows the scope of. */
     const invalidate = (client: QueryClientRef, options?: QueryInvalidationOptions) => {
-      TestBed.inject(client[2]).invalidateQueries(options);
+      TestBed.inject(client.token).invalidateQueries(options);
       TestBed.tick();
 
       return flushMultiTabSync();
@@ -637,7 +637,7 @@ describe('multi tab sync', () => {
         multiTabSync: true,
       });
 
-      expect(TestBed.inject(client[2]).subtle.sync).toBeNull();
+      expect(TestBed.inject(client.token).subtle.sync).toBeNull();
       expect(bus.posted).toEqual([]);
       expect(locks.heldNames()).toEqual([]);
     });

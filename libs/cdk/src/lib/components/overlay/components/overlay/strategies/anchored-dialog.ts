@@ -1,12 +1,14 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { inject } from '@angular/core';
 import {
-  createRootProvider,
-  createStaticRootProvider,
+  defineRootProvider,
+  defineStaticRootProvider,
   forceReflow,
   injectRenderer,
   nextFrame,
   randomId,
+  toInjectFn,
+  toProvideFn,
 } from '@ethlete/core';
 import { filter, take } from 'rxjs';
 import {
@@ -18,59 +20,61 @@ import {
   OverlayStrategyContext,
 } from './core';
 
-export const [provideAnchoredDialogStrategyDefaults, injectAnchoredDialogStrategyDefaults] =
-  createStaticRootProvider<OverlayBreakpointConfig>(
-    {
-      width: undefined,
-      height: undefined,
-      maxHeight: '80vh',
-      maxWidth: '80vw',
-      minHeight: undefined,
-      minWidth: undefined,
-      containerClass: 'et-overlay--anchored-dialog',
-      positionStrategy: (origin?: HTMLElement) => {
-        if (!origin) return inject(Overlay).position().global().centerHorizontally().centerVertically();
+const ANCHORED_DIALOG_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootProvider<OverlayBreakpointConfig>(
+  {
+    width: undefined,
+    height: undefined,
+    maxHeight: '80vh',
+    maxWidth: '80vw',
+    minHeight: undefined,
+    minWidth: undefined,
+    containerClass: 'et-overlay--anchored-dialog',
+    positionStrategy: (origin?: HTMLElement) => {
+      if (!origin) return inject(Overlay).position().global().centerHorizontally().centerVertically();
 
-        return inject(Overlay)
-          .position()
-          .flexibleConnectedTo(origin)
-          .withPositions([
-            {
-              originX: 'end',
-              originY: 'bottom',
-              overlayX: 'end',
-              overlayY: 'top',
-            },
-            {
-              originX: 'end',
-              originY: 'top',
-              overlayX: 'end',
-              overlayY: 'bottom',
-            },
-            {
-              originX: 'start',
-              originY: 'bottom',
-              overlayX: 'start',
-              overlayY: 'top',
-            },
-            {
-              originX: 'start',
-              originY: 'top',
-              overlayX: 'start',
-              overlayY: 'bottom',
-            },
-          ])
-          .withFlexibleDimensions(true)
-          .withPush(false);
-      },
-      applyTransformOrigin: true,
+      return inject(Overlay)
+        .position()
+        .flexibleConnectedTo(origin)
+        .withPositions([
+          {
+            originX: 'end',
+            originY: 'bottom',
+            overlayX: 'end',
+            overlayY: 'top',
+          },
+          {
+            originX: 'end',
+            originY: 'top',
+            overlayX: 'end',
+            overlayY: 'bottom',
+          },
+          {
+            originX: 'start',
+            originY: 'bottom',
+            overlayX: 'start',
+            overlayY: 'top',
+          },
+          {
+            originX: 'start',
+            originY: 'top',
+            overlayX: 'start',
+            overlayY: 'bottom',
+          },
+        ])
+        .withFlexibleDimensions(true)
+        .withPush(false);
     },
-    {
-      name: 'Anchored Dialog Overlay Strategy Defaults',
-    },
-  );
+    applyTransformOrigin: true,
+  },
+  {
+    name: 'Anchored Dialog Overlay Strategy Defaults',
+  },
+);
 
-export const [provideAnchoredDialogStrategy, injectAnchoredDialogStrategy] = createRootProvider(
+export const provideAnchoredDialogStrategyDefaults = /* @__PURE__ */ toProvideFn(ANCHORED_DIALOG_STRATEGY_DEFAULTS_DEF);
+export const injectAnchoredDialogStrategyDefaults = /* @__PURE__ */ toInjectFn(ANCHORED_DIALOG_STRATEGY_DEFAULTS_DEF);
+
+const ANCHORED_DIALOG_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const defaults = injectAnchoredDialogStrategyDefaults();
     const renderer = injectRenderer();
@@ -205,6 +209,9 @@ export const [provideAnchoredDialogStrategy, injectAnchoredDialogStrategy] = cre
     name: 'Anchored Dialog Overlay Strategy',
   },
 );
+
+export const provideAnchoredDialogStrategy = /* @__PURE__ */ toProvideFn(ANCHORED_DIALOG_STRATEGY_DEF);
+export const injectAnchoredDialogStrategy = /* @__PURE__ */ toInjectFn(ANCHORED_DIALOG_STRATEGY_DEF);
 
 export const anchoredDialogOverlayStrategy = (
   config: Partial<OverlayBreakpointConfig> = {},

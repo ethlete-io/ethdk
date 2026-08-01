@@ -3,7 +3,7 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { filter, of, switchMap, tap, timer } from 'rxjs';
 import { QueryArgs, QueryCreator, RequestArgs, ResponseType } from '../http';
 import { ShouldRetryRequestFn } from '../http/query-retry-utils';
-import { decryptBearer } from '../legacy/auth';
+import { decryptBearer } from '../http/internal/request-route';
 import { BearerAuthProviderQueryContext } from './bearer-auth-provider';
 
 export type BearerAuthProviderTokens = {

@@ -1,26 +1,28 @@
-import { createRootProvider, createStaticRootProvider, injectRenderer } from '@ethlete/core';
+import { defineRootProvider, defineStaticRootProvider, injectRenderer, toInjectFn, toProvideFn } from '@ethlete/core';
 import { mergeOverlayBreakpointConfigs } from './overlay-strategy-config-merger';
 import { OverlayBreakpointConfig, OverlayStrategyBreakpoint } from './overlay-strategy.types';
 import { createSheetStrategy } from './sheet-strategy-hooks';
 
-export const [provideBottomSheetStrategyDefaults, injectBottomSheetStrategyDefaults] =
-  createStaticRootProvider<OverlayBreakpointConfig>(
-    {
-      width: '100%',
-      maxHeight: 'calc(100% - 72px)',
-      maxWidth: '640px',
-      containerClass: 'et-overlay--bottom-sheet',
-      positionStrategy: () => ({ kind: 'global', vertical: 'end' }),
-      dragToDismiss: {
-        direction: 'to-bottom',
-      },
+const BOTTOM_SHEET_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootProvider<OverlayBreakpointConfig>(
+  {
+    width: '100%',
+    maxHeight: 'calc(100% - 72px)',
+    maxWidth: '640px',
+    containerClass: 'et-overlay--bottom-sheet',
+    positionStrategy: () => ({ kind: 'global', vertical: 'end' }),
+    dragToDismiss: {
+      direction: 'to-bottom',
     },
-    {
-      name: 'Bottom Sheet Overlay Strategy Defaults',
-    },
-  );
+  },
+  {
+    name: 'Bottom Sheet Overlay Strategy Defaults',
+  },
+);
 
-export const [provideBottomSheetStrategy, injectBottomSheetStrategy] = createRootProvider(
+export const provideBottomSheetStrategyDefaults = /* @__PURE__ */ toProvideFn(BOTTOM_SHEET_STRATEGY_DEFAULTS_DEF);
+export const injectBottomSheetStrategyDefaults = /* @__PURE__ */ toInjectFn(BOTTOM_SHEET_STRATEGY_DEFAULTS_DEF);
+
+const BOTTOM_SHEET_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const defaults = injectBottomSheetStrategyDefaults();
     const renderer = injectRenderer();
@@ -36,6 +38,9 @@ export const [provideBottomSheetStrategy, injectBottomSheetStrategy] = createRoo
     name: 'Bottom Sheet Overlay Strategy',
   },
 );
+
+export const provideBottomSheetStrategy = /* @__PURE__ */ toProvideFn(BOTTOM_SHEET_STRATEGY_DEF);
+export const injectBottomSheetStrategy = /* @__PURE__ */ toInjectFn(BOTTOM_SHEET_STRATEGY_DEF);
 
 export const bottomSheetOverlayStrategy = (
   config: Partial<OverlayBreakpointConfig> = {},

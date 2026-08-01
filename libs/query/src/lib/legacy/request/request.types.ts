@@ -26,8 +26,7 @@ export type RequestError<Detail = unknown> = {
 };
 
 export type RequestHeaders = Record<string, string>;
-export type QueryParams = object;
-export type PathParams = Record<string, string | number>;
+export { BuildQueryStringConfig, PathParams, QueryParams } from '../../http/internal/request-route';
 
 export type V2CacheAdapterFn = (headers: RequestHeaders) => number | null;
 
@@ -113,57 +112,3 @@ export type RequestEvent<Response = unknown> =
       type: 'cancel';
       headers: RequestHeaders;
     };
-
-export type BuildQueryStringConfig = {
-  /**
-   * Object notation to use for nested objects.
-   *
-   * @example
-   * // dot notation
-   * { foo: { bar: 'baz' } } => "foo.bar=baz"
-   *
-   * @example
-   * // bracket notation
-   * { foo: { bar: 'baz' } } => "foo[bar]=baz"
-   *
-   * @example
-   * // json-stringify notation
-   * { foo: { bar: 'baz' } } => "foo={\"bar\":\"baz\"}"
-   *
-   * @default 'bracket'
-   */
-  objectNotation?: 'dot' | 'bracket' | 'json-stringify';
-
-  /**
-   * Whether to write array indexes in bracket notation.
-   *
-   * @example
-   * // true
-   * { foo: ['bar', 'baz'] } => "foo[0]=bar&foo[1]=baz"
-   *
-   * @example
-   * // false
-   * { foo: ['bar', 'baz'] } => "foo[]=bar&foo[]=baz"
-   *
-   * @default false
-   */
-  writeArrayIndexes?: boolean;
-
-  /**
-   * A list of values that should be ignored when building the query string.
-   *
-   * Also have a look at `ignoredValuesFns`.
-   *
-   * @default [undefined, null, Infinity, -Infinity]
-   */
-  ignoredValues?: Array<unknown>;
-
-  /**
-   * A list of functions that should be used to determine whether a value should be ignored when building the query string.
-   *
-   * Also have a look at `ignoredValues`.
-   *
-   * @default [isNaN, isEmptyString]
-   */
-  ignoredValuesFns?: Array<(value: unknown) => boolean>;
-};

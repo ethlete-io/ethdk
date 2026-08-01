@@ -1,8 +1,8 @@
 import { signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { createProvider } from '@ethlete/core';
+import { defineProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 
-export const [provideInfinityQueryResponseDelay, injectInfinityQueryResponseDelay] = createProvider(
+const INFINITY_QUERY_RESPONSE_DELAY_DEF = /* @__PURE__ */ defineProvider(
   () => {
     const enabled = signal(false);
     const enabled$ = toObservable(enabled);
@@ -14,3 +14,6 @@ export const [provideInfinityQueryResponseDelay, injectInfinityQueryResponseDela
   },
   { name: 'Infinity Query Response Delay' },
 );
+
+export const provideInfinityQueryResponseDelay = /* @__PURE__ */ toProvideFn(INFINITY_QUERY_RESPONSE_DELAY_DEF);
+export const injectInfinityQueryResponseDelay = /* @__PURE__ */ toInjectFn(INFINITY_QUERY_RESPONSE_DELAY_DEF);

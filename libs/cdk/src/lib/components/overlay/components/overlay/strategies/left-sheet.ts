@@ -1,6 +1,6 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { inject } from '@angular/core';
-import { createRootProvider, createStaticRootProvider, randomId } from '@ethlete/core';
+import { defineRootProvider, defineStaticRootProvider, randomId, toInjectFn, toProvideFn } from '@ethlete/core';
 import {
   DragToDismissRef,
   enableDragToDismiss,
@@ -11,27 +11,29 @@ import {
   OverlayStrategyContext,
 } from './core';
 
-export const [provideLeftSheetStrategyDefaults, injectLeftSheetStrategyDefaults] =
-  createStaticRootProvider<OverlayBreakpointConfig>(
-    {
-      width: '100%',
-      height: '100%',
-      maxHeight: undefined,
-      maxWidth: '640px',
-      minHeight: undefined,
-      minWidth: undefined,
-      containerClass: 'et-overlay--left-sheet',
-      positionStrategy: () => inject(Overlay).position().global().left('0').centerVertically(),
-      dragToDismiss: {
-        direction: 'to-left',
-      },
+const LEFT_SHEET_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootProvider<OverlayBreakpointConfig>(
+  {
+    width: '100%',
+    height: '100%',
+    maxHeight: undefined,
+    maxWidth: '640px',
+    minHeight: undefined,
+    minWidth: undefined,
+    containerClass: 'et-overlay--left-sheet',
+    positionStrategy: () => inject(Overlay).position().global().left('0').centerVertically(),
+    dragToDismiss: {
+      direction: 'to-left',
     },
-    {
-      name: 'Left Sheet Overlay Strategy Defaults',
-    },
-  );
+  },
+  {
+    name: 'Left Sheet Overlay Strategy Defaults',
+  },
+);
 
-export const [provideLeftSheetStrategy, injectLeftSheetStrategy] = createRootProvider(
+export const provideLeftSheetStrategyDefaults = /* @__PURE__ */ toProvideFn(LEFT_SHEET_STRATEGY_DEFAULTS_DEF);
+export const injectLeftSheetStrategyDefaults = /* @__PURE__ */ toInjectFn(LEFT_SHEET_STRATEGY_DEFAULTS_DEF);
+
+const LEFT_SHEET_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const defaults = injectLeftSheetStrategyDefaults();
 
@@ -78,6 +80,9 @@ export const [provideLeftSheetStrategy, injectLeftSheetStrategy] = createRootPro
     name: 'Left Sheet Overlay Strategy',
   },
 );
+
+export const provideLeftSheetStrategy = /* @__PURE__ */ toProvideFn(LEFT_SHEET_STRATEGY_DEF);
+export const injectLeftSheetStrategy = /* @__PURE__ */ toInjectFn(LEFT_SHEET_STRATEGY_DEF);
 
 export const leftSheetOverlayStrategy = (
   config: Partial<OverlayBreakpointConfig> = {},

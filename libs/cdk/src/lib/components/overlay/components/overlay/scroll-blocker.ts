@@ -3,14 +3,16 @@ import { DOCUMENT, inject } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
   createDocumentElementSignal,
-  createRootProvider,
+  defineRootProvider,
   injectRenderer,
   signalElementScrollState,
+  toInjectFn,
+  toProvideFn,
 } from '@ethlete/core';
 import { combineLatest, tap } from 'rxjs';
 import { injectOverlayManager } from './overlay-manager';
 
-export const [provideOverlayScrollBlocker, injectOverlayScrollBlocker] = createRootProvider(
+const OVERLAY_SCROLL_BLOCKER_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const overlayManager = injectOverlayManager();
     const document = inject(DOCUMENT);
@@ -57,3 +59,6 @@ export const [provideOverlayScrollBlocker, injectOverlayScrollBlocker] = createR
   },
   { name: 'Overlay Scroll Blocker' },
 );
+
+export const provideOverlayScrollBlocker = /* @__PURE__ */ toProvideFn(OVERLAY_SCROLL_BLOCKER_DEF);
+export const injectOverlayScrollBlocker = /* @__PURE__ */ toInjectFn(OVERLAY_SCROLL_BLOCKER_DEF);

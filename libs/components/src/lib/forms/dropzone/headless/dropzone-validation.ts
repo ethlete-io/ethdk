@@ -57,7 +57,7 @@ export type DropzoneFileValidationChannel = {
 };
 
 /** @internal Read by the dropzone directive via the bound field's metadata. */
-export const DROPZONE_FILE_CONSTRAINTS = createManagedMetadataKey<
+export const DROPZONE_FILE_CONSTRAINTS = /* @__PURE__ */ createManagedMetadataKey<
   DropzoneFileValidationChannel,
   DropzoneFileConstraints
 >((_state, data) => ({

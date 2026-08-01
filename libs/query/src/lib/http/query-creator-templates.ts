@@ -30,31 +30,31 @@ const createSecureQueryTemplate = (method: QueryMethod) => {
 };
 
 /** A query creator that creates a GET query */
-export const createGetQuery = createQueryTemplate('GET');
+export const createGetQuery = /* @__PURE__ */ createQueryTemplate('GET');
 
 /** A query creator that creates a secure GET query (requires authentication) */
-export const createSecureGetQuery = createSecureQueryTemplate('GET');
+export const createSecureGetQuery = /* @__PURE__ */ createSecureQueryTemplate('GET');
 
 /** A query creator that creates a POST query */
-export const createPostQuery = createQueryTemplate('POST');
+export const createPostQuery = /* @__PURE__ */ createQueryTemplate('POST');
 
 /** A query creator that creates a secure POST query (requires authentication) */
-export const createSecurePostQuery = createSecureQueryTemplate('POST');
+export const createSecurePostQuery = /* @__PURE__ */ createSecureQueryTemplate('POST');
 
 /** A query creator that creates a PUT query */
-export const createPutQuery = createQueryTemplate('PUT');
+export const createPutQuery = /* @__PURE__ */ createQueryTemplate('PUT');
 
 /** A query creator that creates a secure PUT query (requires authentication) */
-export const createSecurePutQuery = createSecureQueryTemplate('PUT');
+export const createSecurePutQuery = /* @__PURE__ */ createSecureQueryTemplate('PUT');
 
 /** A query creator that creates a DELETE query */
-export const createDeleteQuery = createQueryTemplate('DELETE');
+export const createDeleteQuery = /* @__PURE__ */ createQueryTemplate('DELETE');
 
 /** A query creator that creates a secure DELETE query (requires authentication) */
-export const createSecureDeleteQuery = createSecureQueryTemplate('DELETE');
+export const createSecureDeleteQuery = /* @__PURE__ */ createSecureQueryTemplate('DELETE');
 
 /** A query creator that creates a PATCH query */
-export const createPatchQuery = createQueryTemplate('PATCH');
+export const createPatchQuery = /* @__PURE__ */ createQueryTemplate('PATCH');
 
 /** A query creator that creates a secure PATCH query (requires authentication) */
-export const createSecurePatchQuery = createSecureQueryTemplate('PATCH');
+export const createSecurePatchQuery = /* @__PURE__ */ createSecureQueryTemplate('PATCH');

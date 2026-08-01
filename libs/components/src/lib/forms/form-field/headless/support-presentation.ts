@@ -44,12 +44,12 @@ export type ReduceSupportPresentationInput = {
 };
 
 export const INITIAL_SUPPORT_PRESENTATION_STATE: SupportPresentationState = {
-  renderedState: SUPPORT_CONTENT_STATE.NONE,
-  leavingState: SUPPORT_CONTENT_STATE.NONE,
+  renderedState: 'none',
+  leavingState: 'none',
   renderedErrors: [],
   frozenErrorColor: null,
-  errorDirection: SUPPORT_TRANSITION_DIRECTION.FROM_BELOW,
-  hintDirection: SUPPORT_TRANSITION_DIRECTION.FROM_ABOVE,
+  errorDirection: 'from-below',
+  hintDirection: 'from-above',
 };
 
 export const supportPresentationIncludesState = ({

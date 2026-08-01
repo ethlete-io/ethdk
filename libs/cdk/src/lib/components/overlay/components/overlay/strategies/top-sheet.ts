@@ -1,6 +1,6 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { inject } from '@angular/core';
-import { createRootProvider, createStaticRootProvider, randomId } from '@ethlete/core';
+import { defineRootProvider, defineStaticRootProvider, randomId, toInjectFn, toProvideFn } from '@ethlete/core';
 import {
   DragToDismissRef,
   enableDragToDismiss,
@@ -11,27 +11,29 @@ import {
   OverlayStrategyContext,
 } from './core';
 
-export const [provideTopSheetStrategyDefaults, injectTopSheetStrategyDefaults] =
-  createStaticRootProvider<OverlayBreakpointConfig>(
-    {
-      width: '100%',
-      height: undefined,
-      maxHeight: 'calc(100% - 72px)',
-      maxWidth: '640px',
-      minHeight: undefined,
-      minWidth: undefined,
-      containerClass: 'et-overlay--top-sheet',
-      positionStrategy: () => inject(Overlay).position().global().centerHorizontally().top('0'),
-      dragToDismiss: {
-        direction: 'to-top',
-      },
+const TOP_SHEET_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootProvider<OverlayBreakpointConfig>(
+  {
+    width: '100%',
+    height: undefined,
+    maxHeight: 'calc(100% - 72px)',
+    maxWidth: '640px',
+    minHeight: undefined,
+    minWidth: undefined,
+    containerClass: 'et-overlay--top-sheet',
+    positionStrategy: () => inject(Overlay).position().global().centerHorizontally().top('0'),
+    dragToDismiss: {
+      direction: 'to-top',
     },
-    {
-      name: 'Top Sheet Overlay Strategy Defaults',
-    },
-  );
+  },
+  {
+    name: 'Top Sheet Overlay Strategy Defaults',
+  },
+);
 
-export const [provideTopSheetStrategy, injectTopSheetStrategy] = createRootProvider(
+export const provideTopSheetStrategyDefaults = /* @__PURE__ */ toProvideFn(TOP_SHEET_STRATEGY_DEFAULTS_DEF);
+export const injectTopSheetStrategyDefaults = /* @__PURE__ */ toInjectFn(TOP_SHEET_STRATEGY_DEFAULTS_DEF);
+
+const TOP_SHEET_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const defaults = injectTopSheetStrategyDefaults();
 
@@ -78,6 +80,9 @@ export const [provideTopSheetStrategy, injectTopSheetStrategy] = createRootProvi
     name: 'Top Sheet Overlay Strategy',
   },
 );
+
+export const provideTopSheetStrategy = /* @__PURE__ */ toProvideFn(TOP_SHEET_STRATEGY_DEF);
+export const injectTopSheetStrategy = /* @__PURE__ */ toInjectFn(TOP_SHEET_STRATEGY_DEF);
 
 export const topSheetOverlayStrategy = (
   config: Partial<OverlayBreakpointConfig> = {},

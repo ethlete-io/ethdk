@@ -80,7 +80,7 @@ describe('createBearerAuthProvider', () => {
     console.error = originalError;
   });
 
-  it('should create a bearer auth provider tuple', () => {
+  it('should create a bearer auth provider definition', () => {
     const postQuery = createPostQuery(queryClientRef);
     const login = postQuery<{
       body: { username: string; password: string };
@@ -99,18 +99,19 @@ describe('createBearerAuthProvider', () => {
     });
 
     expect(authProvider).toBeTruthy();
-    expect(Array.isArray(authProvider)).toBe(true);
-    expect(authProvider.length).toBe(3);
+    expect(typeof authProvider.provide).toBe('function');
+    expect(typeof authProvider.inject).toBe('function');
+    expect(authProvider.token).toBeTruthy();
   });
 
-  it('should provide inject function in tuple', () => {
+  it('should provide an inject function', () => {
     const postQuery = createPostQuery(queryClientRef);
     const login = postQuery<{
       body: { username: string; password: string };
       response: { token: string; refresh_token: string };
     }>('/auth/login');
 
-    const [, injectAuthProvider] = createBearerAuthProvider({
+    const { inject: injectAuthProvider } = createBearerAuthProvider({
       name: 'test-auth',
       queryClientRef,
       queries: [
@@ -134,14 +135,14 @@ describe('createBearerAuthProvider', () => {
     });
   });
 
-  it('should provide injection token in tuple', () => {
+  it('should provide an injection token', () => {
     const postQuery = createPostQuery(queryClientRef);
     const login = postQuery<{
       body: { username: string; password: string };
       response: { token: string; refresh_token: string };
     }>('/auth/login');
 
-    const [, , token] = createBearerAuthProvider({
+    const { token } = createBearerAuthProvider({
       name: 'test-auth',
       queryClientRef,
       queries: [
@@ -162,7 +163,7 @@ describe('createBearerAuthProvider', () => {
       response: { token: string; refresh_token: string };
     }>('/auth/login');
 
-    const [, injectAuthProvider] = createBearerAuthProvider({
+    const { inject: injectAuthProvider } = createBearerAuthProvider({
       name: 'test-auth',
       queryClientRef,
       queries: [
@@ -193,7 +194,7 @@ describe('createBearerAuthProvider', () => {
       response: { token: string; refresh_token: string };
     }>('/auth/refresh-token');
 
-    const [, injectAuthProvider] = createBearerAuthProvider({
+    const { inject: injectAuthProvider } = createBearerAuthProvider({
       name: 'test-auth',
       queryClientRef,
       queries: [
@@ -229,7 +230,7 @@ describe('createBearerAuthProvider', () => {
       response: { token: string; refresh_token: string };
     }>('/auth/login');
 
-    const [, injectAuthProvider] = createBearerAuthProvider({
+    const { inject: injectAuthProvider } = createBearerAuthProvider({
       name: 'test-auth',
       queryClientRef,
       queries: [
@@ -260,7 +261,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -294,7 +295,7 @@ describe('createBearerAuthProvider', () => {
         response: { data: { access: string; refresh: string } };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -330,7 +331,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -366,7 +367,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -403,7 +404,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -441,7 +442,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -477,7 +478,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -524,7 +525,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -562,7 +563,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -595,7 +596,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -629,7 +630,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -680,7 +681,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -714,7 +715,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -752,7 +753,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/refresh');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -794,7 +795,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/refresh');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -846,7 +847,7 @@ describe('createBearerAuthProvider', () => {
         response: { accessToken: string; refreshToken: string };
       }>('/auth/refresh');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -894,7 +895,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -929,7 +930,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -989,7 +990,7 @@ describe('createBearerAuthProvider', () => {
         response: { accessToken: string; refreshToken: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -1012,7 +1013,7 @@ describe('createBearerAuthProvider', () => {
         response: { accessToken: string; refreshToken: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -1051,7 +1052,7 @@ describe('createBearerAuthProvider', () => {
         response: { accessToken: string; refreshToken: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -1089,7 +1090,7 @@ describe('createBearerAuthProvider', () => {
         response: { accessToken: string; refreshToken: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -1125,7 +1126,7 @@ describe('createBearerAuthProvider', () => {
         response: { accessToken: string; refreshToken: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -1165,7 +1166,7 @@ describe('createBearerAuthProvider', () => {
         response: { accessToken: string; refreshToken: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -1192,7 +1193,7 @@ describe('createBearerAuthProvider', () => {
         response: { accessToken: string; refreshToken: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -1218,7 +1219,7 @@ describe('createBearerAuthProvider', () => {
         response: { accessToken: string; refreshToken: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -1251,7 +1252,7 @@ describe('createBearerAuthProvider', () => {
         response: { accessToken: string; refreshToken: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -1306,7 +1307,7 @@ describe('createBearerAuthProvider', () => {
 
       const emissions: unknown[] = [];
       TestBed.runInInjectionContext(() => {
-        const provider = authProvider[1]();
+        const provider = authProvider.inject();
 
         provider.afterTokenRefresh$.subscribe(() => {
           emissions.push('emitted');
@@ -1352,7 +1353,7 @@ describe('createBearerAuthProvider', () => {
 
       const emissions: unknown[] = [];
       TestBed.runInInjectionContext(() => {
-        const provider = authProvider[1]();
+        const provider = authProvider.inject();
 
         // Login first
         provider.queries.login.execute({ body: { username: 'test', password: 'pass' } });
@@ -1397,7 +1398,7 @@ describe('createBearerAuthProvider', () => {
 
       const emissions: unknown[] = [];
       TestBed.runInInjectionContext(() => {
-        const provider = authProvider[1]();
+        const provider = authProvider.inject();
 
         provider.afterTokenRefresh$.subscribe(() => {
           emissions.push('emitted');
@@ -1423,7 +1424,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -1447,7 +1448,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -1478,7 +1479,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -1516,7 +1517,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -1551,7 +1552,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -1587,7 +1588,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/signup');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -1628,7 +1629,7 @@ describe('createBearerAuthProvider', () => {
         response: { accessToken: string; refreshToken: string };
       }>('/auth/refresh');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -1676,7 +1677,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/refresh-token');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [
@@ -1724,7 +1725,7 @@ describe('createBearerAuthProvider', () => {
         response: { token: string; refresh_token: string };
       }>('/auth/login');
 
-      const [, injectAuthProvider] = createBearerAuthProvider({
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
         name: 'test-auth',
         queryClientRef,
         queries: [

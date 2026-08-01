@@ -18,13 +18,7 @@ export type CreateGqlQueryOptions<TArgs extends GqlQueryArgs> = Omit<
 
 export type GqlVariablesType<T extends GqlQueryArgs | null> = T extends GqlQueryArgs ? T['variables'] : never;
 
-export const isCreateGqlQueryOptions = <TArgs extends QueryArgs>(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  options: CreateQueryOptions<TArgs> | CreateGqlQueryOptions<any>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): options is CreateGqlQueryOptions<any> => {
-  return 'transport' in options.creatorInternals;
-};
+export { isCreateGqlQueryOptions } from '../http/internal/gql-options-guard';
 
 export const createGqlQuery = <TArgs extends GqlQueryArgs>(options: CreateGqlQueryOptions<TArgs>) =>
   createBaseQuery({

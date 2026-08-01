@@ -30,7 +30,7 @@ describe('createQuerySnapshotFn', () => {
 
   beforeEach(() => {
     client = createQueryClient({ baseUrl: 'https://example.com', name: 'test' });
-    const [, injectClient] = client;
+    const { inject: injectClient } = client;
 
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
@@ -49,7 +49,7 @@ describe('createQuerySnapshotFn', () => {
       httpClient: TestBed.inject(HttpClient),
     };
 
-    const [provideQueryContext] = createQueryContext({ deps });
+    const { provide: provideQueryContext } = createQueryContext({ deps });
 
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({

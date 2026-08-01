@@ -14,8 +14,7 @@ export type CreateSecureQueryExecuteOptions<TArgs extends QueryArgs> = Omit<
 export const createSecureExecuteFn = <TArgs extends QueryArgs>(
   executeOptions: CreateSecureQueryExecuteOptions<TArgs>,
 ): InternalQueryExecute<TArgs> => {
-  const [, injectAuthProvider] = executeOptions.creatorInternals.authProvider;
-  const authProvider = injectAuthProvider();
+  const authProvider = executeOptions.creatorInternals.authProvider.inject();
 
   return createSecureExecuteFactory({
     authProvider,

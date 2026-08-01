@@ -10,11 +10,13 @@ by default** — a user with several tabs open is the normal case, and the three
 they would expect to happen.
 
 ```ts
-export const [provideApi, injectApi] = createQueryClient({
+const API = createQueryClient({
   name: 'api',
   baseUrl: 'https://api.example.com/v1',
   // multiTabSync: true is the default — pass an object to tune it, or false to opt out entirely.
 });
+
+export const injectApi = toInjectFn(API);
 ```
 
 The one requirement is that response bodies survive a

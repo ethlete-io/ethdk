@@ -1,5 +1,5 @@
 import { computed, signal } from '@angular/core';
-import { createRootProvider } from '@ethlete/core';
+import { defineRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 
 export type FocusElementRegistryEntry = {
   id: string;
@@ -7,7 +7,7 @@ export type FocusElementRegistryEntry = {
   afterCloseFocus: HTMLElement;
 };
 
-export const [provideFocusRegistry, injectFocusRegistry] = createRootProvider(() => {
+const FOCUS_REGISTRY_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const registry = signal<Record<string, FocusElementRegistryEntry>>({});
   const registryOrder = signal<string[]>([]);
 
@@ -54,3 +54,6 @@ export const [provideFocusRegistry, injectFocusRegistry] = createRootProvider(()
     currentFocusTarget,
   };
 });
+
+export const provideFocusRegistry = /* @__PURE__ */ toProvideFn(FOCUS_REGISTRY_DEF);
+export const injectFocusRegistry = /* @__PURE__ */ toInjectFn(FOCUS_REGISTRY_DEF);

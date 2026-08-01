@@ -4,15 +4,19 @@ Framework-agnostic helpers plus the Angular-specific foundations the rest of the
 
 ## Dependency injection
 
-`createProvider` and friends generate typed provider/inject pairs without token boilerplate — this is the `[provide, inject, token]` tuple pattern used all over the SDK (and referenced by the [query docs](/query/queries#the-query-client)):
+`defineProvider` and friends generate typed provider/inject pairs without token boilerplate. Each returns a **definition** — `{ provide, inject, token }` — and you name the halves with `toProvideFn`, `toInjectFn` and `toToken`:
 
 ```ts
-import { createRootProvider } from '@ethlete/core';
+import { defineRootProvider, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
-export const [provideMyService, injectMyService, MY_SERVICE_TOKEN] = createRootProvider(() => {
+const MY_SERVICE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const state = signal(0);
   return { state };
 });
+
+export const provideMyService = /* @__PURE__ */ toProvideFn(MY_SERVICE_DEF);
+export const injectMyService = /* @__PURE__ */ toInjectFn(MY_SERVICE_DEF);
+export const MY_SERVICE_TOKEN = /* @__PURE__ */ toToken(MY_SERVICE_DEF);
 
 // anywhere in an injection context:
 const myService = injectMyService();
@@ -20,12 +24,20 @@ const myService = injectMyService();
 
 | Factory                                   | Value source     | Root-provided?                                            |
 | ----------------------------------------- | ---------------- | --------------------------------------------------------- |
-| `createProvider(factory)`                 | Factory function | No — an ancestor must call `provide…()`.                  |
-| `createRootProvider(factory)`             | Factory function | Yes — injectable everywhere; `provide…()` only re-scopes. |
-| `createStaticProvider(defaultValue?)`     | Static value     | No. `provide…(override)` shallow-merges the override.     |
-| `createStaticRootProvider(defaultValue?)` | Static value     | Yes.                                                      |
+| `defineProvider(factory)`                 | Factory function | No — an ancestor must call `provide…()`.                  |
+| `defineRootProvider(factory)`             | Factory function | Yes — injectable everywhere; `provide…()` only re-scopes. |
+| `defineStaticProvider(defaultValue?)`     | Static value     | No. `provide…(override)` shallow-merges the override.     |
+| `defineStaticRootProvider(defaultValue?)` | Static value     | Yes.                                                      |
 
 The returned `inject…()` is typed: plain calls return `T`, `inject…({ optional: true })` returns `T | null`. Also here: `injectHostElement()` (the host's `HTMLElement`) and `injectTemplateRef()`.
+
+### Why four statements instead of one
+
+The old shape was one line — `export const [provideMyService, injectMyService] = createRootProvider(…)`. It is gone, and the split is not cosmetic: **array destructuring invokes the iterator protocol, so no bundler will ever drop the statement.** Everything the factory's closure named was therefore retained in every app that imported anything at all from the package — which is how a `paginate` import came to ship the notification stack, the overlay container and the rich-text editor. A single binding initialized by a `/* @__PURE__ */`-annotated call is the only shape esbuild can prove side-effect-free and remove, so each exported name gets its own statement. Keep the annotations: without them the declarations are retained again.
+
+Existing code migrates mechanically — `yarn nx g @ethlete/core:migrate-provider-shape` rewrites every call site. `ethlete/no-impure-top-level-provider` keeps the old shape from coming back.
+
+A **runtime** factory the consumer calls with arguments (`createQueryClient`, `createBearerAuthProvider`, `createWebSocketClient`) returns a definition too, so the same three extractors name its halves — one shape everywhere, and your own `provideX` / `injectX` exports stay droppable and lint-clean.
 
 ## Runtime errors
 

@@ -1,5 +1,5 @@
 import { InjectionToken, Type } from '@angular/core';
-import { createStaticRootProvider } from '@ethlete/core';
+import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 import { RichTextEditorDirective } from './headless/rich-text-editor.directive';
 import { DEFAULT_RICH_TEXT_EDITOR_LABELS } from './rich-text-editor-labels';
 
@@ -70,10 +70,13 @@ export const RICH_TEXT_EDITOR_INLINE_TOOLS: readonly RichTextEditorTool[] = [
 
 export type RichTextEditorToolsConfig = { tools: readonly RichTextEditorTool[] };
 
-const [ɵprovideRichTextEditorTools, injectRichTextEditorTools] = createStaticRootProvider<RichTextEditorToolsConfig>(
+const RICH_TEXT_EDITOR_TOOLS_DEF = /* @__PURE__ */ defineStaticRootProvider<RichTextEditorToolsConfig>(
   { tools: DEFAULT_RICH_TEXT_EDITOR_TOOLS },
   { name: 'RichTextEditorTools' },
 );
+
+const ɵprovideRichTextEditorTools = /* @__PURE__ */ toProvideFn(RICH_TEXT_EDITOR_TOOLS_DEF);
+const injectRichTextEditorTools = /* @__PURE__ */ toInjectFn(RICH_TEXT_EDITOR_TOOLS_DEF);
 
 /**
  * Sets the default set (and order) of toolbar tools for every `et-rich-text-editor` in scope. A
@@ -102,8 +105,7 @@ export type RichTextEditorToolButton = {
   allowHardcodedColor?: boolean;
 };
 
-/** The toggle-button tools, keyed by token (`divider`/`heading` are rendered specially). */
-export const RICH_TEXT_EDITOR_TOOL_BUTTONS: Partial<Record<RichTextEditorTool, RichTextEditorToolButton>> = {
+const richTextEditorToolButtons = (): Partial<Record<RichTextEditorTool, RichTextEditorToolButton>> => ({
   // Undo/redo are actions, not toggles: they never report an active state, and disable themselves
   // at the ends of the history so the bar shows whether there is anything left to take back.
   undo: {
@@ -192,15 +194,20 @@ export const RICH_TEXT_EDITOR_TOOL_BUTTONS: Partial<Record<RichTextEditorTool, R
     isDisabled: (e) => e.codeBlockActive(),
     allowHardcodedColor: true,
   },
-};
+});
 
-/** Block-style options for the heading menu. `null` is a normal paragraph. */
-export const RICH_TEXT_EDITOR_HEADING_OPTIONS: readonly { level: number | null; label: string; icon: string }[] = [
+/** The toggle-button tools, keyed by token (`divider`/`heading` are rendered specially). */
+export const RICH_TEXT_EDITOR_TOOL_BUTTONS = /* @__PURE__ */ richTextEditorToolButtons();
+
+const richTextEditorHeadingOptions = (): readonly { level: number | null; label: string; icon: string }[] => [
   { level: null, label: DEFAULT_RICH_TEXT_EDITOR_LABELS.paragraph, icon: 'et-paragraph' },
   { level: 1, label: DEFAULT_RICH_TEXT_EDITOR_LABELS.heading(1), icon: 'et-heading-1' },
   { level: 2, label: DEFAULT_RICH_TEXT_EDITOR_LABELS.heading(2), icon: 'et-heading-2' },
   { level: 3, label: DEFAULT_RICH_TEXT_EDITOR_LABELS.heading(3), icon: 'et-heading-3' },
 ];
+
+/** Block-style options for the heading menu. `null` is a normal paragraph. */
+export const RICH_TEXT_EDITOR_HEADING_OPTIONS = /* @__PURE__ */ richTextEditorHeadingOptions();
 
 /**
  * A tool contributed to the toolbar via DI. Base tools are the static {@link RICH_TEXT_EDITOR_TOOL_BUTTONS};

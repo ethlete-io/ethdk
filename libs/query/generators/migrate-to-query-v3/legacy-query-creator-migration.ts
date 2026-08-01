@@ -5,7 +5,13 @@ import { MigrationScope } from './migration-scope.js';
 import { createModuleGraph } from './module-graph.js';
 import { pruneUnusedNamedImports, renameImportedReferences } from './rename-symbols.js';
 import { QueryV3MigrationReport } from './report.js';
-import { capitalizeFirstLetter, createSourceFile, ensureConfigSuffix, ensureImportFromQuery } from './shared.js';
+import {
+  capitalizeFirstLetter,
+  createSourceFile,
+  ensureConfigSuffix,
+  ensureImportFromEthleteCore,
+  ensureImportFromQuery,
+} from './shared.js';
 
 const LEGACY_HTTP_METHOD = {
   GET: 'get',
@@ -729,7 +735,10 @@ const addAuthProviderToFile = (
   clientName: string,
   body: ReturnType<typeof renderAuthProviderBody>,
 ) => {
-  const nextContent = ensureImportFromQuery(content, ['createBearerAuthProvider', ...body.importsNeeded]);
+  const nextContent = ensureImportFromEthleteCore(
+    ensureImportFromQuery(content, ['createBearerAuthProvider', ...body.importsNeeded]),
+    ['toInjectFn', 'toProvideFn'],
+  );
   const sourceFile = createSourceFile(nextContent);
   const configName = ensureConfigSuffix(clientName);
   const configPosition = findVariableStatementEnd(sourceFile, configName, 'createQueryClient');
@@ -750,7 +759,8 @@ const addAuthProviderToFile = (
     ...(body.features ? [body.features] : []),
     '});',
     '',
-    `export const [provide${capitalizedClientName}AuthProvider, inject${capitalizedClientName}AuthProvider] = ${authProviderName};`,
+    `export const provide${capitalizedClientName}AuthProvider = toProvideFn(${authProviderName});`,
+    `export const inject${capitalizedClientName}AuthProvider = toInjectFn(${authProviderName});`,
   ].join('\n');
 
   return nextContent.slice(0, configPosition) + authProviderBlock + nextContent.slice(configPosition);

@@ -19,7 +19,7 @@ let uniqueOptionLabelId = 0;
  * the filter-chip composition). Never matches a consumer value, so unbound options simply
  * cannot be selected until their bindings run — mirrors the select option.
  */
-const UNBOUND_VALUE = Symbol('et-selection-option-unbound');
+const UNBOUND_VALUE = /* @__PURE__ */ Symbol('et-selection-option-unbound');
 
 @Directive({
   selector: '[etSelectionOption]',

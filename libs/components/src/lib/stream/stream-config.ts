@@ -1,5 +1,5 @@
 import { Type } from '@angular/core';
-import { createStaticRootProvider } from '@ethlete/core';
+import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 import { StreamPlayerErrorComponent } from './error';
 import { StreamPlayerLoadingComponent } from './loading';
 import { StreamPipChromeComponent } from './pip/pip-chrome.component';
@@ -108,12 +108,12 @@ const DEFAULT_STREAM_CONFIG: StreamConfig = {
   pipChrome: DEFAULT_PIP_CHROME_CONFIG,
 };
 
-const [provideStreamConfigBase, injectStreamConfigBase] = createStaticRootProvider<StreamConfig>(
-  DEFAULT_STREAM_CONFIG,
-  {
-    name: 'StreamConfig',
-  },
-);
+const STREAM_CONFIG_BASE_DEF = /* @__PURE__ */ defineStaticRootProvider<StreamConfig>(DEFAULT_STREAM_CONFIG, {
+  name: 'StreamConfig',
+});
+
+const provideStreamConfigBase = /* @__PURE__ */ toProvideFn(STREAM_CONFIG_BASE_DEF);
+const injectStreamConfigBase = /* @__PURE__ */ toInjectFn(STREAM_CONFIG_BASE_DEF);
 
 export const injectStreamConfig = injectStreamConfigBase;
 

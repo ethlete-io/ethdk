@@ -9,10 +9,10 @@ import { ButtonDirective } from './headless';
 type IconButtonVariant = (typeof BUTTON_VARIANTS)[keyof typeof BUTTON_VARIANTS];
 
 const PRESSED_VARIANT_MAP: Record<IconButtonVariant, string> = {
-  [BUTTON_VARIANTS.FILLED]: 'transparent',
-  [BUTTON_VARIANTS.OUTLINE]: 'filled',
-  [BUTTON_VARIANTS.TONAL]: 'filled',
-  [BUTTON_VARIANTS.TRANSPARENT]: 'tonal',
+  filled: 'transparent',
+  outline: 'filled',
+  tonal: 'filled',
+  transparent: 'tonal',
 };
 
 @Component({

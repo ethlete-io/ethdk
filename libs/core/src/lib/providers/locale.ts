@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
-import { createRootProvider } from '../utils';
+import { defineRootProvider, toInjectFn, toProvideFn } from '../utils';
 
-export const [provideLocale, injectLocale] = createRootProvider(
+const LOCALE_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const currentLocale = signal('en');
 
@@ -13,3 +13,6 @@ export const [provideLocale, injectLocale] = createRootProvider(
     name: 'Locale',
   },
 );
+
+export const provideLocale = /* @__PURE__ */ toProvideFn(LOCALE_DEF);
+export const injectLocale = /* @__PURE__ */ toInjectFn(LOCALE_DEF);

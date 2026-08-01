@@ -10,7 +10,15 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { Breakpoint, createProvider, injectBreakpointObserver, signalElementDimensions } from '@ethlete/core';
+import {
+  Breakpoint,
+  defineProvider,
+  injectBreakpointObserver,
+  signalElementDimensions,
+  toInjectFn,
+  toProvideFn,
+  toToken,
+} from '@ethlete/core';
 import { distinctUntilChanged, tap } from 'rxjs';
 import { OverlayBodyDividerType } from '../overlay-body.component';
 import { OverlayHeaderTemplateDirective } from '../overlay-header-template.directive';
@@ -49,7 +57,7 @@ export type SidebarOverlay = {
   sidebarPageDividers: WritableSignal<OverlayBodyDividerType>;
 };
 
-export const [provideSidebarOverlayService, injectSidebarOverlay, SIDEBAR_OVERLAY_TOKEN] = createProvider(
+const SIDEBAR_OVERLAY_DEF = /* @__PURE__ */ defineProvider(
   (): SidebarOverlay => {
     const config = inject(SIDEBAR_OVERLAY_CONFIG);
     const router = injectOverlayRouter();
@@ -120,6 +128,10 @@ export const [provideSidebarOverlayService, injectSidebarOverlay, SIDEBAR_OVERLA
   },
   { name: 'SidebarOverlay' },
 );
+
+export const provideSidebarOverlayService = /* @__PURE__ */ toProvideFn(SIDEBAR_OVERLAY_DEF);
+export const injectSidebarOverlay = /* @__PURE__ */ toInjectFn(SIDEBAR_OVERLAY_DEF);
+export const SIDEBAR_OVERLAY_TOKEN = /* @__PURE__ */ toToken(SIDEBAR_OVERLAY_DEF);
 
 export const provideSidebarOverlayConfig = (config: SidebarOverlayConfig): Provider[] => {
   return [

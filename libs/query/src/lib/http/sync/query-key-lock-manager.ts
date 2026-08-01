@@ -49,8 +49,8 @@ export type QueryKeyLockManager = {
 const noop = () => undefined;
 
 /** Shared because it never changes: without Web Locks, every hold is granted and never lost. */
-const alwaysHolder: QueryKeyLockHold = { isHolder: signal(true).asReadonly(), release: noop };
-const noKeyStates = signal<Record<string, QueryKeyLockState>>({}).asReadonly();
+const alwaysHolder: QueryKeyLockHold = { isHolder: /* @__PURE__ */ signal(true).asReadonly(), release: noop };
+const noKeyStates = /* @__PURE__ */ signal<Record<string, QueryKeyLockState>>({}).asReadonly();
 
 export const createQueryKeyLockManager = (namespace: string): QueryKeyLockManager => {
   const locks = typeof navigator === 'undefined' ? undefined : navigator.locks;

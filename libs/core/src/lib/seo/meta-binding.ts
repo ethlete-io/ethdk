@@ -2,7 +2,7 @@ import { computed, effect, inject, isSignal, signal, untracked } from '@angular/
 import { Meta } from '@angular/platform-browser';
 import { injectLocale } from '../providers';
 import { MaybeSignal } from '../signals';
-import { createRootProvider, createStaticRootProvider } from '../utils';
+import { defineRootProvider, defineStaticRootProvider, toInjectFn, toProvideFn } from '../utils';
 import { applyHeadBinding, createArrayPropertyBinding, createPropertyBinding, toStringBinding } from './head-binding';
 import { applyHeadTitleBinding } from './title-binding';
 
@@ -55,7 +55,7 @@ export type MetaConfig = {
   multiInstanceTags: Set<string>;
 };
 
-export const DEFAULT_MULTI_INSTANCE_TAGS = new Set([
+export const DEFAULT_MULTI_INSTANCE_TAGS = /* @__PURE__ */ new Set([
   // Open Graph - Media
   'property="og:image"',
   'property="og:image:url"',
@@ -138,7 +138,7 @@ export const DEFAULT_MULTI_INSTANCE_TAGS = new Set([
   'name="facebook-domain-verification"',
 ]);
 
-export const [provideMetaConfig, injectMetaConfig] = createStaticRootProvider<MetaConfig>(
+const META_CONFIG_DEF = /* @__PURE__ */ defineStaticRootProvider<MetaConfig>(
   {
     transformer: (content: string) => content,
     multiInstanceTags: DEFAULT_MULTI_INSTANCE_TAGS,
@@ -146,7 +146,10 @@ export const [provideMetaConfig, injectMetaConfig] = createStaticRootProvider<Me
   { name: 'Meta Config' },
 );
 
-export const [provideMetaStore, injectMetaStore] = createRootProvider(
+export const provideMetaConfig = /* @__PURE__ */ toProvideFn(META_CONFIG_DEF);
+export const injectMetaConfig = /* @__PURE__ */ toInjectFn(META_CONFIG_DEF);
+
+const META_STORE_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const metaService = inject(Meta);
     const config = injectMetaConfig();
@@ -290,6 +293,9 @@ export const [provideMetaStore, injectMetaStore] = createRootProvider(
   { name: 'Meta Store' },
 );
 
+export const provideMetaStore = /* @__PURE__ */ toProvideFn(META_STORE_DEF);
+export const injectMetaStore = /* @__PURE__ */ toInjectFn(META_STORE_DEF);
+
 export const applyMetaBinding = (binding: MaybeSignal<MetaTagConfig | null | undefined>) => {
   const metaStore = injectMetaStore();
   const tagId = Symbol('meta-tag');
@@ -305,7 +311,7 @@ export const applyMetaBinding = (binding: MaybeSignal<MetaTagConfig | null | und
   );
 };
 
-export const applyDescriptionBinding = createPropertyBinding(
+export const applyDescriptionBinding = /* @__PURE__ */ createPropertyBinding(
   (content) => ({ name: 'description', content }),
   applyMetaBinding,
 );
@@ -319,7 +325,10 @@ export const applyKeywordsBinding = (binding: MaybeSignal<string[] | null | unde
   );
 };
 
-export const applyAuthorBinding = createPropertyBinding((content) => ({ name: 'author', content }), applyMetaBinding);
+export const applyAuthorBinding = /* @__PURE__ */ createPropertyBinding(
+  (content) => ({ name: 'author', content }),
+  applyMetaBinding,
+);
 
 export type RobotsConfig = {
   index?: boolean;

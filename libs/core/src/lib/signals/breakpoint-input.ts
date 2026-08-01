@@ -20,7 +20,7 @@ import { injectCurrentBreakpoint } from './media-queries';
 export type BreakpointMap<T> = Partial<Record<Breakpoint, T>>;
 export type BreakpointInput<T> = T | BreakpointMap<T>;
 
-const BREAKPOINT_KEY_SET = new Set<string>(BREAKPOINT_ORDER);
+const BREAKPOINT_KEY_SET = /* @__PURE__ */ new Set<string>(BREAKPOINT_ORDER);
 
 const isBreakpointMap = (value: unknown): value is BreakpointMap<unknown> => {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;

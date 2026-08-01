@@ -23,7 +23,7 @@ import {
 
 export const SURFACE_PROVIDER = new InjectionToken<ProvideSurfaceDirective>('SurfaceProvider');
 
-const FORCED_SURFACE_UNSET = Symbol('FORCED_SURFACE_UNSET');
+const FORCED_SURFACE_UNSET = /* @__PURE__ */ Symbol('FORCED_SURFACE_UNSET');
 
 type ForcedSurfaceState = RegisteredSurfaceThemeName | null | typeof FORCED_SURFACE_UNSET;
 

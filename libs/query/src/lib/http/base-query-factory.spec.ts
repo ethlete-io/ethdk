@@ -127,7 +127,7 @@ describe('createBaseQuery', () => {
     const [callArgs] = (mockExecuteFactory as ReturnType<typeof vi.fn>).mock.calls[0] as Parameters<
       ExecuteFactory<TestQueryArgs, TestInternals>
     >;
-    const [, injectClient] = client;
+    const { inject: injectClient } = client;
 
     TestBed.runInInjectionContext(() => {
       expect(callArgs.deps.client).toEqual(injectClient());

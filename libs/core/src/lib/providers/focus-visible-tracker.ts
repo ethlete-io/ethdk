@@ -1,7 +1,7 @@
 import { DestroyRef, DOCUMENT, inject, signal } from '@angular/core';
-import { createRootProvider } from '../utils/angular/di';
+import { defineRootProvider, toInjectFn, toProvideFn, toToken } from '../utils/angular/di';
 
-export const [provideFocusVisibleTracker, injectFocusVisibleTracker, FOCUS_VISIBLE_TRACKER_TOKEN] = createRootProvider(
+const FOCUS_VISIBLE_TRACKER_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const document = inject(DOCUMENT);
     const destroyRef = inject(DestroyRef);
@@ -53,3 +53,7 @@ export const [provideFocusVisibleTracker, injectFocusVisibleTracker, FOCUS_VISIB
   },
   { name: 'Focus Visible Tracker' },
 );
+
+export const provideFocusVisibleTracker = /* @__PURE__ */ toProvideFn(FOCUS_VISIBLE_TRACKER_DEF);
+export const injectFocusVisibleTracker = /* @__PURE__ */ toInjectFn(FOCUS_VISIBLE_TRACKER_DEF);
+export const FOCUS_VISIBLE_TRACKER_TOKEN = /* @__PURE__ */ toToken(FOCUS_VISIBLE_TRACKER_DEF);

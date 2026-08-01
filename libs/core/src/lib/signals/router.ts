@@ -13,7 +13,7 @@ export type RouterState = {
   fragment: string | null;
 };
 
-export const ET_PROPERTY_REMOVED = Symbol('ET_PROPERTY_REMOVED');
+export const ET_PROPERTY_REMOVED = /* @__PURE__ */ Symbol('ET_PROPERTY_REMOVED');
 
 export type InjectUtilConfig = {
   /** The injector to use for the injection. Must be provided if the function is not called from within a injection context. */
@@ -51,7 +51,7 @@ const createInitialRoute = () => {
 };
 
 /** Inject the current router event */
-export const injectRouterEvent = memoizeSignal(() => {
+export const injectRouterEvent = /* @__PURE__ */ memoizeSignal(() => {
   const router = inject(Router);
 
   const initialRoute = createInitialRoute();
@@ -65,7 +65,7 @@ export const injectRouterEvent = memoizeSignal(() => {
  * Signal that indicates whether the router has been initialized.
  * The router is considered initialized once the first NavigationEnd event with an id different than -1 has been emitted.
  */
-export const injectIsRouterInitialized = memoizeSignal(() => {
+export const injectIsRouterInitialized = /* @__PURE__ */ memoizeSignal(() => {
   const event = injectRouterEvent();
 
   return computed(() => {
@@ -80,7 +80,7 @@ export const injectIsRouterInitialized = memoizeSignal(() => {
  * The url includes query params as well as the fragment. Use `injectRoute` instead if you are not intrusted in those.
  * @example "/my-page?query=1&param=true#fragment"
  */
-export const injectUrl = memoizeSignal(() => {
+export const injectUrl = /* @__PURE__ */ memoizeSignal(() => {
   const event = injectRouterEvent();
   const router = inject(Router);
 
@@ -115,7 +115,7 @@ export const injectUrl = memoizeSignal(() => {
  * Inject the current route
  * @example "/my-page"
  */
-export const injectRoute = memoizeSignal(() => {
+export const injectRoute = /* @__PURE__ */ memoizeSignal(() => {
   const url = injectUrl();
 
   return computed(() => {
@@ -159,7 +159,7 @@ export const createRoute = (router: Router) => {
 /**
  * Inject the complete router state. This includes the current route data, path params, query params, title and fragment.
  */
-export const injectRouterState = memoizeSignal(() => {
+export const injectRouterState = /* @__PURE__ */ memoizeSignal(() => {
   const event = injectRouterEvent();
   const router = inject(Router);
 
@@ -271,7 +271,7 @@ export const injectPathParam = <T = string | null>(
  * Inject query params that changed during navigation. Unchanged query params will be ignored.
  * Removed query params will be represented by the symbol `ET_PROPERTY_REMOVED`.
  */
-export const injectQueryParamChanges = memoizeSignal(() => {
+export const injectQueryParamChanges = /* @__PURE__ */ memoizeSignal(() => {
   const queryParams = injectQueryParams();
   const prevQueryParams = previousSignalValue(queryParams);
 
@@ -302,7 +302,7 @@ export const injectQueryParamChanges = memoizeSignal(() => {
  * Inject path params that changed during navigation. Unchanged path params will be ignored.
  * Removed path params will be represented by the symbol `ET_PROPERTY_REMOVED`.
  */
-export const injectPathParamChanges = memoizeSignal(() => {
+export const injectPathParamChanges = /* @__PURE__ */ memoizeSignal(() => {
   const pathParams = injectPathParams();
   const prevPathParams = previousSignalValue(pathParams);
 

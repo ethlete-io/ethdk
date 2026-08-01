@@ -1,5 +1,5 @@
 import { Signal, computed, signal } from '@angular/core';
-import { createRootProvider } from '@ethlete/core';
+import { defineRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 import { TabBarDirective } from '../../headless/tab-bar.directive';
 
 /** @internal */
@@ -11,14 +11,7 @@ export type NavTabsRegistry = {
   unregister: (tabBar: TabBarDirective) => void;
 };
 
-/**
- * Tracks the tab bars of all nav-tabs elements on the page so a nav-tabs outlet
- * placed as a sibling of its et-nav-tabs element can still resolve the tab bar
- * that labels it.
- *
- * @internal
- */
-export const [provideNavTabsRegistry, injectNavTabsRegistry] = createRootProvider(
+const NAV_TABS_REGISTRY_DEF = /* @__PURE__ */ defineRootProvider(
   (): NavTabsRegistry => {
     const tabBars = signal<TabBarDirective[]>([]);
 
@@ -42,3 +35,13 @@ export const [provideNavTabsRegistry, injectNavTabsRegistry] = createRootProvide
   },
   { name: 'NavTabsRegistry' },
 );
+
+/**
+ * Tracks the tab bars of all nav-tabs elements on the page so a nav-tabs outlet
+ * placed as a sibling of its et-nav-tabs element can still resolve the tab bar
+ * that labels it.
+ *
+ * @internal
+ */
+export const provideNavTabsRegistry = /* @__PURE__ */ toProvideFn(NAV_TABS_REGISTRY_DEF);
+export const injectNavTabsRegistry = /* @__PURE__ */ toInjectFn(NAV_TABS_REGISTRY_DEF);

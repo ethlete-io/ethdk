@@ -18,7 +18,7 @@ const FIXED_WIDTH_TOKEN_RUNS: Record<string, readonly number[]> = {
 };
 
 /** Characters with meaning in the mask pattern language — literals must escape them. */
-const PATTERN_SPECIALS = new Set(['0', '9', 'a', '*', '\\']);
+const PATTERN_SPECIALS = /* @__PURE__ */ new Set(['0', '9', 'a', '*', '\\']);
 
 const toPatternLiteral = (text: string) =>
   Array.from(text, (char) => (PATTERN_SPECIALS.has(char) ? `\\${char}` : char)).join('');

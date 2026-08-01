@@ -1,4 +1,4 @@
-import { createLabels, LabelsSource } from '@ethlete/core';
+import { defineLabels, LabelsSource, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
  * Every string the table and its features render or announce themselves. Defaults are English
@@ -110,11 +110,13 @@ export const DEFAULT_TABLE_LABELS: TableLabels = {
  */
 export type TableLabelsSource = LabelsSource<TableLabels>;
 
+const TABLE_LABELS_DEF = /* @__PURE__ */ defineLabels<TableLabels>('TABLE_LABELS', DEFAULT_TABLE_LABELS);
+
 /**
  * Localize the table's strings for everything below this injector, and read the set in effect here as
  * a signal: the defaults with the provided set (or the set its factory builds for the current locale)
  * layered on top. Partial — whatever you leave out keeps its {@link DEFAULT_TABLE_LABELS} value. See
- * {@link createLabels} for the shape, which every domain in this library shares.
+ * {@link defineLabels} for the shape, which every domain in this library shares.
  *
  * @example
  * // fixed wording
@@ -132,7 +134,6 @@ export type TableLabelsSource = LabelsSource<TableLabels>;
  *   sortAction: (header, next) => translate(`table.sort.${next ?? 'clear'}`, locale, { header }),
  * }));
  */
-export const [provideTableLabels, injectTableLabels, TABLE_LABELS] = createLabels<TableLabels>(
-  'TABLE_LABELS',
-  DEFAULT_TABLE_LABELS,
-);
+export const provideTableLabels = /* @__PURE__ */ toProvideFn(TABLE_LABELS_DEF);
+export const injectTableLabels = /* @__PURE__ */ toInjectFn(TABLE_LABELS_DEF);
+export const TABLE_LABELS = /* @__PURE__ */ toToken(TABLE_LABELS_DEF);

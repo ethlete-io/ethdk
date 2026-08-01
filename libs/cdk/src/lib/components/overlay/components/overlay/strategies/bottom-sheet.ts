@@ -1,6 +1,6 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { inject } from '@angular/core';
-import { createRootProvider, createStaticRootProvider, randomId } from '@ethlete/core';
+import { defineRootProvider, defineStaticRootProvider, randomId, toInjectFn, toProvideFn } from '@ethlete/core';
 import {
   DragToDismissRef,
   enableDragToDismiss,
@@ -11,27 +11,29 @@ import {
   OverlayStrategyContext,
 } from './core';
 
-export const [provideBottomSheetStrategyDefaults, injectBottomSheetStrategyDefaults] =
-  createStaticRootProvider<OverlayBreakpointConfig>(
-    {
-      width: '100%',
-      height: undefined,
-      maxHeight: 'calc(100% - 72px)',
-      maxWidth: '640px',
-      minHeight: undefined,
-      minWidth: undefined,
-      containerClass: 'et-overlay--bottom-sheet',
-      positionStrategy: () => inject(Overlay).position().global().centerHorizontally().bottom('0'),
-      dragToDismiss: {
-        direction: 'to-bottom',
-      },
+const BOTTOM_SHEET_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootProvider<OverlayBreakpointConfig>(
+  {
+    width: '100%',
+    height: undefined,
+    maxHeight: 'calc(100% - 72px)',
+    maxWidth: '640px',
+    minHeight: undefined,
+    minWidth: undefined,
+    containerClass: 'et-overlay--bottom-sheet',
+    positionStrategy: () => inject(Overlay).position().global().centerHorizontally().bottom('0'),
+    dragToDismiss: {
+      direction: 'to-bottom',
     },
-    {
-      name: 'Bottom Sheet Overlay Strategy Defaults',
-    },
-  );
+  },
+  {
+    name: 'Bottom Sheet Overlay Strategy Defaults',
+  },
+);
 
-export const [provideBottomSheetStrategy, injectBottomSheetStrategy] = createRootProvider(
+export const provideBottomSheetStrategyDefaults = /* @__PURE__ */ toProvideFn(BOTTOM_SHEET_STRATEGY_DEFAULTS_DEF);
+export const injectBottomSheetStrategyDefaults = /* @__PURE__ */ toInjectFn(BOTTOM_SHEET_STRATEGY_DEFAULTS_DEF);
+
+const BOTTOM_SHEET_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const defaults = injectBottomSheetStrategyDefaults();
 
@@ -78,6 +80,9 @@ export const [provideBottomSheetStrategy, injectBottomSheetStrategy] = createRoo
     name: 'Bottom Sheet Overlay Strategy',
   },
 );
+
+export const provideBottomSheetStrategy = /* @__PURE__ */ toProvideFn(BOTTOM_SHEET_STRATEGY_DEF);
+export const injectBottomSheetStrategy = /* @__PURE__ */ toInjectFn(BOTTOM_SHEET_STRATEGY_DEF);
 
 export const bottomSheetOverlayStrategy = (
   config: Partial<OverlayBreakpointConfig> = {},

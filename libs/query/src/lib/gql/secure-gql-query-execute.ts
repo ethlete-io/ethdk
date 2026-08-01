@@ -25,8 +25,7 @@ export type CreateSecureGqlQueryExecuteOptions<TArgs extends GqlQueryArgs> = {
 export const createSecureGqlExecuteFn = <TArgs extends GqlQueryArgs>(
   executeOptions: CreateSecureGqlQueryExecuteOptions<TArgs>,
 ): InternalQueryExecute<TArgs> => {
-  const [, injectAuthProvider] = executeOptions.creatorInternals.authProvider;
-  const authProvider = injectAuthProvider();
+  const authProvider = executeOptions.creatorInternals.authProvider.inject();
 
   return createSecureExecuteFactory({
     authProvider,

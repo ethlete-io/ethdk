@@ -2,7 +2,7 @@ import { RuntimeError } from '@ethlete/core';
 import { OVERLAY_ERROR_CODES } from '../overlay-errors';
 import { OverlayBreakpointConfig } from './overlay-strategy.types';
 
-export const OVERLAY_CONFIG_CLASS_KEYS = new Set([
+export const OVERLAY_CONFIG_CLASS_KEYS = /* @__PURE__ */ new Set([
   'containerClass',
   'hostClass',
   'backdropClass',

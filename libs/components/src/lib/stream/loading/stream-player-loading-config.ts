@@ -1,4 +1,4 @@
-import { createStaticRootProvider } from '@ethlete/core';
+import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 
 export type StreamPlayerLoadingConfig = {
   /** Diameter of the loading spinner in px. */
@@ -13,7 +13,12 @@ const DEFAULT_STREAM_PLAYER_LOADING_CONFIG: StreamPlayerLoadingConfig = {
   spinnerStrokeWidth: 2,
 };
 
-export const [provideStreamPlayerLoadingConfig, injectStreamPlayerLoadingConfig] =
-  createStaticRootProvider<StreamPlayerLoadingConfig>(DEFAULT_STREAM_PLAYER_LOADING_CONFIG, {
+const STREAM_PLAYER_LOADING_CONFIG_DEF = /* @__PURE__ */ defineStaticRootProvider<StreamPlayerLoadingConfig>(
+  DEFAULT_STREAM_PLAYER_LOADING_CONFIG,
+  {
     name: 'StreamPlayerLoadingConfig',
-  });
+  },
+);
+
+export const provideStreamPlayerLoadingConfig = /* @__PURE__ */ toProvideFn(STREAM_PLAYER_LOADING_CONFIG_DEF);
+export const injectStreamPlayerLoadingConfig = /* @__PURE__ */ toInjectFn(STREAM_PLAYER_LOADING_CONFIG_DEF);

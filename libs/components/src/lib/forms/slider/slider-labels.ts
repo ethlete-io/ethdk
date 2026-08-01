@@ -1,4 +1,4 @@
-import { createLabels } from '@ethlete/core';
+import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
  * The strings a slider announces. A range slider has two thumbs and no visible text, so naming them is
@@ -17,15 +17,16 @@ export const DEFAULT_SLIDER_LABELS: SliderLabels = {
   maximum: 'Maximum',
 };
 
+const SLIDER_LABELS_DEF = /* @__PURE__ */ defineLabels<SliderLabels>('SLIDER_LABELS', DEFAULT_SLIDER_LABELS);
+
 /**
  * Localize a slider's strings for everything below this injector, and read the set in effect here as a
- * signal. Partial — whatever you leave out keeps its {@link DEFAULT_SLIDER_LABELS} value. See {@link createLabels}
+ * signal. Partial — whatever you leave out keeps its {@link DEFAULT_SLIDER_LABELS} value. See {@link defineLabels}
  * for the shape, which every domain in this library shares.
  *
  * @example
  * provideSliderLabels({ minimum: 'Minimum', maximum: 'Maximum' });
  */
-export const [provideSliderLabels, injectSliderLabels, SLIDER_LABELS] = createLabels<SliderLabels>(
-  'SLIDER_LABELS',
-  DEFAULT_SLIDER_LABELS,
-);
+export const provideSliderLabels = /* @__PURE__ */ toProvideFn(SLIDER_LABELS_DEF);
+export const injectSliderLabels = /* @__PURE__ */ toInjectFn(SLIDER_LABELS_DEF);
+export const SLIDER_LABELS = /* @__PURE__ */ toToken(SLIDER_LABELS_DEF);

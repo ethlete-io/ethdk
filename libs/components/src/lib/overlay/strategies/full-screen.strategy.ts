@@ -1,5 +1,12 @@
 import { ApplicationRef, DOCUMENT, EnvironmentInjector, inject } from '@angular/core';
-import { createRootProvider, createStaticRootProvider, injectRenderer, randomId } from '@ethlete/core';
+import {
+  defineRootProvider,
+  defineStaticRootProvider,
+  injectRenderer,
+  randomId,
+  toInjectFn,
+  toProvideFn,
+} from '@ethlete/core';
 import {
   FullscreenAnimationDeps,
   FullscreenAnimationState,
@@ -11,23 +18,29 @@ import {
 import { mergeOverlayBreakpointConfigs } from './overlay-strategy-config-merger';
 import { OverlayBreakpointConfig, OverlayStrategy, OverlayStrategyBreakpoint } from './overlay-strategy.types';
 
-export const [provideFullscreenDialogStrategyDefaults, injectFullscreenDialogStrategyDefaults] =
-  createStaticRootProvider<OverlayBreakpointConfig>(
-    {
-      width: '100%',
-      height: '100%',
-      containerClass: 'et-overlay--full-screen-dialog',
-      positionStrategy: () => ({ kind: 'global', horizontal: 'stretch', vertical: 'stretch' }),
-      documentClass: 'et-overlay--full-screen-dialog-document',
-      applyTransformOrigin: true,
-      backdropClass: 'et-overlay-backdrop--hidden',
-    },
-    {
-      name: 'Fullscreen Dialog Overlay Strategy Defaults',
-    },
-  );
+const FULLSCREEN_DIALOG_STRATEGY_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootProvider<OverlayBreakpointConfig>(
+  {
+    width: '100%',
+    height: '100%',
+    containerClass: 'et-overlay--full-screen-dialog',
+    positionStrategy: () => ({ kind: 'global', horizontal: 'stretch', vertical: 'stretch' }),
+    documentClass: 'et-overlay--full-screen-dialog-document',
+    applyTransformOrigin: true,
+    backdropClass: 'et-overlay-backdrop--hidden',
+  },
+  {
+    name: 'Fullscreen Dialog Overlay Strategy Defaults',
+  },
+);
 
-export const [provideFullscreenDialogStrategy, injectFullscreenDialogStrategy] = createRootProvider(
+export const provideFullscreenDialogStrategyDefaults = /* @__PURE__ */ toProvideFn(
+  FULLSCREEN_DIALOG_STRATEGY_DEFAULTS_DEF,
+);
+export const injectFullscreenDialogStrategyDefaults = /* @__PURE__ */ toInjectFn(
+  FULLSCREEN_DIALOG_STRATEGY_DEFAULTS_DEF,
+);
+
+const FULLSCREEN_DIALOG_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const defaults = injectFullscreenDialogStrategyDefaults();
     const injector = inject(EnvironmentInjector);
@@ -101,6 +114,9 @@ export const [provideFullscreenDialogStrategy, injectFullscreenDialogStrategy] =
     name: 'Fullscreen Dialog Overlay Strategy',
   },
 );
+
+export const provideFullscreenDialogStrategy = /* @__PURE__ */ toProvideFn(FULLSCREEN_DIALOG_STRATEGY_DEF);
+export const injectFullscreenDialogStrategy = /* @__PURE__ */ toInjectFn(FULLSCREEN_DIALOG_STRATEGY_DEF);
 
 export const fullScreenDialogOverlayStrategy = (
   config: Partial<OverlayBreakpointConfig> = {},

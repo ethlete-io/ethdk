@@ -14,7 +14,7 @@ export type DeriveTimeFormatSpecOptions = {
 
 // hour 13 renders as "13" only in a 24-hour format, second 57 only when seconds
 // are shown; the other parts avoid those digit pairs
-const PROBE_DATE = new Date(2000, 0, 1, 13, 35, 57);
+const PROBE_DATE = /* @__PURE__ */ new Date(2000, 0, 1, 13, 35, 57);
 
 /**
  * Derives the column layout (12/24-hour cycle, seconds) from a date-fns time

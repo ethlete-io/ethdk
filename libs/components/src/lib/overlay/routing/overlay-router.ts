@@ -15,7 +15,16 @@ import {
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { createComponentId, createProvider, fromNextFrame, injectQueryParam, injectRoute } from '@ethlete/core';
+import {
+  createComponentId,
+  defineProvider,
+  fromNextFrame,
+  injectQueryParam,
+  injectRoute,
+  toInjectFn,
+  toProvideFn,
+  toToken,
+} from '@ethlete/core';
 import { map, switchMap } from 'rxjs';
 import { OVERLAY_REF } from '../overlay-ref';
 
@@ -122,7 +131,7 @@ export type OverlayRouter = {
   navigateToInitialRoute: () => void;
 };
 
-export const [provideOverlayRouterService, injectOverlayRouter, OVERLAY_ROUTER_TOKEN] = createProvider(
+const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
   (): OverlayRouter => {
     const overlayRef = inject(OVERLAY_REF);
     const config = inject(OVERLAY_ROUTER_CONFIG_TOKEN);
@@ -396,6 +405,10 @@ export const [provideOverlayRouterService, injectOverlayRouter, OVERLAY_ROUTER_T
   },
   { name: 'OverlayRouter' },
 );
+
+export const provideOverlayRouterService = /* @__PURE__ */ toProvideFn(OVERLAY_ROUTER_DEF);
+export const injectOverlayRouter = /* @__PURE__ */ toInjectFn(OVERLAY_ROUTER_DEF);
+export const OVERLAY_ROUTER_TOKEN = /* @__PURE__ */ toToken(OVERLAY_ROUTER_DEF);
 
 export const provideOverlayRouterConfig = (config: OverlayRouterConfig): Provider[] => {
   return [

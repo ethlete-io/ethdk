@@ -1,4 +1,4 @@
-import { createStaticRootProvider } from '@ethlete/core';
+import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 
 export type StreamPlayerErrorConfig = {
   /**
@@ -12,7 +12,12 @@ const DEFAULT_STREAM_PLAYER_ERROR_CONFIG: StreamPlayerErrorConfig = {
   retryButtonColor: null,
 };
 
-export const [provideStreamPlayerErrorConfig, injectStreamPlayerErrorConfig] =
-  createStaticRootProvider<StreamPlayerErrorConfig>(DEFAULT_STREAM_PLAYER_ERROR_CONFIG, {
+const STREAM_PLAYER_ERROR_CONFIG_DEF = /* @__PURE__ */ defineStaticRootProvider<StreamPlayerErrorConfig>(
+  DEFAULT_STREAM_PLAYER_ERROR_CONFIG,
+  {
     name: 'StreamPlayerErrorConfig',
-  });
+  },
+);
+
+export const provideStreamPlayerErrorConfig = /* @__PURE__ */ toProvideFn(STREAM_PLAYER_ERROR_CONFIG_DEF);
+export const injectStreamPlayerErrorConfig = /* @__PURE__ */ toInjectFn(STREAM_PLAYER_ERROR_CONFIG_DEF);

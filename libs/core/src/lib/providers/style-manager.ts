@@ -8,14 +8,14 @@ import {
   inject,
   Type,
 } from '@angular/core';
-import { createRootProvider } from '../utils';
+import { defineRootProvider, toInjectFn, toProvideFn } from '../utils';
 import { injectRenderer } from './renderer';
 
 export type StyleManager = {
   mount: <TComponent>(component: Type<TComponent>) => ComponentRef<TComponent>;
 };
 
-export const [provideStyleManager, injectStyleManager] = createRootProvider(
+const STYLE_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
   (): StyleManager => {
     const appRef = inject(ApplicationRef);
     const destroyRef = inject(DestroyRef);
@@ -93,3 +93,6 @@ export const [provideStyleManager, injectStyleManager] = createRootProvider(
   },
   { name: 'StyleManager' },
 );
+
+export const provideStyleManager = /* @__PURE__ */ toProvideFn(STYLE_MANAGER_DEF);
+export const injectStyleManager = /* @__PURE__ */ toInjectFn(STYLE_MANAGER_DEF);

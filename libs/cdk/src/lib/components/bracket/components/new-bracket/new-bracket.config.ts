@@ -1,4 +1,4 @@
-import { createStaticRootProvider } from '@ethlete/core';
+import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 import { BracketDataLayout } from './core';
 import { BracketContinueComponent, BracketMatchComponent, BracketRoundHeaderComponent } from './drawing/grid';
 import { BracketSwissGroupColorType } from './linked';
@@ -58,7 +58,10 @@ export type NewBracketConfig<TRoundData = any, TMatchData = any> = {
   swiss?: BracketSwissConfig<TRoundData, TMatchData>;
 };
 
-export const [provideNewBracketConfig, injectNewBracketConfig] = createStaticRootProvider<NewBracketConfig>(
+const NEW_BRACKET_CONFIG_DEF = /* @__PURE__ */ defineStaticRootProvider<NewBracketConfig>(
   {},
   { name: 'NewBracketConfig' },
 );
+
+export const provideNewBracketConfig = /* @__PURE__ */ toProvideFn(NEW_BRACKET_CONFIG_DEF);
+export const injectNewBracketConfig = /* @__PURE__ */ toInjectFn(NEW_BRACKET_CONFIG_DEF);

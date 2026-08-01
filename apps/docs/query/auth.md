@@ -2,7 +2,7 @@
 
 `createBearerAuthProvider` manages a JWT access/refresh token pair and powers the secure query creators of [HTTP](/query/http) and [GraphQL](/query/gql) queries. Secure queries wait for a valid token, inject `Authorization: Bearer <token>` (unless you set the header yourself), and automatically re-execute after a token refresh when they failed with a `401`.
 
-Like the [query client](/query/queries#the-query-client), it returns a root-provider tuple (`[provide, inject, token]`) — the whole tuple is what you hand to secure creator templates, and its `inject` function is how you reach the provider inside components. Nothing needs to be registered in your app config; the `provide` function and token exist for tests and overrides.
+Like the [query client](/query/queries#the-query-client), it returns a root-provider definition (`{ provide, inject, token }`) — the whole definition is what you hand to secure creator templates, and `toInjectFn(…)` is how you reach the provider inside components. Nothing needs to be registered in your app config; the `provide` function and token exist for tests and overrides.
 
 ```ts
 import {

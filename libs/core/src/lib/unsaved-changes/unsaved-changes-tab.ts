@@ -98,7 +98,7 @@ type BadgingNavigator = Navigator & {
 // The badge is a single app-wide surface, so every lock that wants one registers here and the badge
 // is derived from all of them — otherwise the first tracker to go clean would clear a badge that
 // another one still needs.
-const BADGE_HOLDERS = new Map<symbol, number | true>();
+const BADGE_HOLDERS = /* @__PURE__ */ new Map<symbol, number | true>();
 
 const syncAppBadge = () => {
   const nav = typeof navigator === 'undefined' ? null : (navigator as BadgingNavigator);

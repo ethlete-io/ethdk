@@ -63,7 +63,7 @@ Two layout rules follow from this:
 ```ts
 const previewToken = signal<string | null>(null);
 
-export const [provideApi, injectApi] = createQueryClient({
+const API = createQueryClient({
   name: 'api',
   baseUrl: 'https://api.example.com',
   headers: () => {
@@ -72,6 +72,8 @@ export const [provideApi, injectApi] = createQueryClient({
     return token ? new HttpHeaders({ 'X-Preview-Token': token }) : new HttpHeaders();
   },
 });
+
+export const injectApi = toInjectFn(API);
 ```
 
 Per-query `args.headers` are merged on top and win per header name. Client headers are deliberately **not** part of the cache key, so changing them does not invalidate anything by itself — that is what `refreshQueriesInUse: true` used to do, and it is now an explicit call:

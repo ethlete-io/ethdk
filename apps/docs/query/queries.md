@@ -46,7 +46,16 @@ A real query against a mocked backend — execute it, make it fail, and watch th
 
 ## The query client
 
-`createQueryClient(options)` returns a root-provider tuple ([`[provide, inject, token]` from `@ethlete/core`](/core/utilities#dependency-injection)). You normally never touch the tuple yourself — creators take the whole client reference, and because the token is provided in root there is nothing to register in your app config.
+`createQueryClient(options)` returns a root-provider definition ([`{ provide, inject, token }` from `@ethlete/core`](/core/utilities#dependency-injection)). Creators take the whole definition; the token is provided in root, so there is nothing to register in your app config. Name the halves you need with the extractors:
+
+```ts
+import { toInjectFn } from '@ethlete/core';
+import { createQueryClient } from '@ethlete/query';
+
+const API = createQueryClient({ name: 'api', baseUrl: 'https://api.example.com/v1' });
+
+export const injectApi = toInjectFn(API);
+```
 
 | Option          | Default                   | Description                                                                                                                     |
 | --------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
@@ -67,7 +76,7 @@ Pass a function to make them dynamic: it runs on every execution, so reading a s
 ```ts
 const previewToken = signal<string | null>(null);
 
-export const [provideApi, injectApi] = createQueryClient({
+const API = createQueryClient({
   name: 'api',
   baseUrl: 'https://api.example.com',
   headers: () => {

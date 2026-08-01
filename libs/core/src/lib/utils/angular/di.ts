@@ -5,7 +5,7 @@ export const injectHostElement = <T = HTMLElement>() => inject<ElementRef<T>>(El
 
 export const injectTemplateRef = <C = unknown>() => inject<TemplateRef<C>>(TemplateRef);
 
-export type CreateProviderOptions = {
+export type ProviderDefinitionOptions = {
   /**
    * Optional name for the provider, useful for debugging.
    * If not provided, the name will be a generated string.
@@ -18,36 +18,32 @@ export type CreateProviderOptions = {
   extraInjectionToken?: InjectionToken<unknown>;
 };
 
-export type ProviderResult<T> = readonly [
-  provide: () => Provider[],
-  inject: {
-    (): T;
-    (options: InjectOptions & { optional?: false }): T;
-    (options: InjectOptions): T | null;
-  },
-  token: InjectionToken<T>,
-];
+/** The `inject`-shaped half of a provider definition: optional when asked, non-nullable otherwise. */
+export type InjectFn<T> = {
+  (): T;
+  (options: InjectOptions & { optional?: false }): T;
+  (options: InjectOptions): T | null;
+};
 
-export type StaticProviderResult<T> = readonly [
-  provide: (valueOverride?: Partial<T>) => Provider[],
-  inject: {
-    (): T;
-    (options: InjectOptions & { optional?: false }): T;
-    (options: InjectOptions): T | null;
-  },
-  token: InjectionToken<T>,
-];
+/**
+ * What {@link defineProvider} & co. return: the token plus the two functions a domain re-exports as its
+ * `provideX` / `injectX` pair. Read the halves out with {@link toProvideFn}, {@link toInjectFn} and
+ * {@link toToken} — never by destructuring, see {@link defineProvider}.
+ */
+export type ProviderDefinition<T> = {
+  readonly provide: () => Provider[];
+  readonly inject: InjectFn<T>;
+  readonly token: InjectionToken<T>;
+};
 
-export type RootProviderResult<T> = readonly [
-  inject: {
-    (): T;
-    (options: InjectOptions & { optional?: false }): T;
-    (options: InjectOptions): T | null;
-  },
-  token: InjectionToken<T>,
-];
+/** {@link ProviderDefinition} for a value provider, whose `provide` takes a partial override. */
+export type StaticProviderDefinition<T> = {
+  readonly provide: (valueOverride?: Partial<T>) => Provider[];
+  readonly inject: InjectFn<T>;
+  readonly token: InjectionToken<T>;
+};
 
-const createInjectFunction = <T>(token: InjectionToken<T>) => {
+const createInjectFunction = <T>(token: InjectionToken<T>): InjectFn<T> => {
   function injectFn(): T;
   function injectFn(options: InjectOptions & { optional?: false }): T;
   function injectFn(options: InjectOptions): T | null;
@@ -66,57 +62,103 @@ const createProviders = <T>(
   ...(extraToken ? [{ provide: extraToken, useExisting: token }] : []),
 ];
 
-export const createProvider = <T>(factory: () => T, options?: CreateProviderOptions): ProviderResult<T> => {
+/**
+ * Defines a provider that a subtree opts into — `provideX()` in some component's `providers`, then
+ * `injectX()` below it. Nothing is created until the subtree provides it.
+ *
+ * Assign the result to one `const`, name the halves with {@link toProvideFn} / {@link toInjectFn} /
+ * {@link toToken}, and put an `@__PURE__` annotation on each of those declarations. Never destructure
+ * the definition: that declaration cannot be tree-shaken, so it ships the factory's whole closure to
+ * every consumer. Enforced by `ethlete/no-impure-top-level-provider`.
+ */
+export const defineProvider = <T>(factory: () => T, options?: ProviderDefinitionOptions): ProviderDefinition<T> => {
   const token = new InjectionToken<T>(options?.name ?? createComponentId('provider'));
-  const provide = () => createProviders(token, factory, options?.extraInjectionToken);
-  const injectFn = createInjectFunction(token);
 
-  return [provide, injectFn, token] as const;
+  return {
+    provide: () => createProviders(token, factory, options?.extraInjectionToken),
+    inject: createInjectFunction(token),
+    token,
+  };
 };
 
-export const createRootProvider = <T>(factory: () => T, options?: CreateProviderOptions): ProviderResult<T> => {
+/**
+ * Like {@link defineProvider}, but the factory also runs in the root injector, so `injectX()` works
+ * without anyone calling `provideX()`. `provideX()` still exists, to give a subtree its own instance.
+ */
+export const defineRootProvider = <T>(factory: () => T, options?: ProviderDefinitionOptions): ProviderDefinition<T> => {
   const token = new InjectionToken<T>(options?.name ?? createComponentId('provider'), {
     providedIn: 'root',
     factory,
   });
 
-  const provide = () => createProviders(token, factory, options?.extraInjectionToken);
-  const injectFn = createInjectFunction(token);
-
-  return [provide, injectFn, token] as const;
+  return {
+    provide: () => createProviders(token, factory, options?.extraInjectionToken),
+    inject: createInjectFunction(token),
+    token,
+  };
 };
 
-export const createStaticProvider = <T>(defaultValue?: T, options?: CreateProviderOptions): StaticProviderResult<T> => {
+/**
+ * Like {@link defineProvider} for a plain value rather than a factory: `provideX(override)` merges the
+ * partial override over `defaultValue`, which is how every config object in the library is shaped.
+ */
+export const defineStaticProvider = <T>(
+  defaultValue?: T,
+  options?: ProviderDefinitionOptions,
+): StaticProviderDefinition<T> => {
   const token = new InjectionToken<T>(options?.name ?? createComponentId('static-provider'));
 
-  const provide = (valueOverride?: Partial<T>) => [
-    { provide: token, useValue: maybeMergeValues(defaultValue, valueOverride) },
-    ...(options?.extraInjectionToken ? [{ provide: options.extraInjectionToken, useExisting: token }] : []),
-  ];
-
-  const injectFn = createInjectFunction(token);
-
-  return [provide, injectFn, token] as const;
+  return {
+    provide: (valueOverride?: Partial<T>) => createValueProviders(token, defaultValue, valueOverride, options),
+    inject: createInjectFunction(token),
+    token,
+  };
 };
 
-export const createStaticRootProvider = <T>(
+/**
+ * {@link defineStaticProvider} whose default is also available in the root injector, so `injectX()`
+ * resolves to `defaultValue` in an app that never provides it.
+ */
+export const defineStaticRootProvider = <T>(
   defaultValue?: T,
-  options?: CreateProviderOptions,
-): StaticProviderResult<T> => {
+  options?: ProviderDefinitionOptions,
+): StaticProviderDefinition<T> => {
   const token = new InjectionToken<T>(options?.name ?? createComponentId('static-provider'), {
     providedIn: 'root',
     factory: () => defaultValue as T,
   });
 
-  const provide = (valueOverride?: Partial<T>) => [
-    { provide: token, useValue: maybeMergeValues(defaultValue, valueOverride) },
-    ...(options?.extraInjectionToken ? [{ provide: options.extraInjectionToken, useExisting: token }] : []),
-  ];
-
-  const injectFn = createInjectFunction(token);
-
-  return [provide, injectFn, token] as const;
+  return {
+    provide: (valueOverride?: Partial<T>) => createValueProviders(token, defaultValue, valueOverride, options),
+    inject: createInjectFunction(token),
+    token,
+  };
 };
+
+/** The `provideX` half of a provider definition. A call, so `@__PURE__` makes it droppable. */
+export const toProvideFn = <TDefinition extends { readonly provide: unknown }>(
+  definition: TDefinition,
+): TDefinition['provide'] => definition.provide;
+
+/** The `injectX` half of a provider definition. */
+export const toInjectFn = <TDefinition extends { readonly inject: unknown }>(
+  definition: TDefinition,
+): TDefinition['inject'] => definition.inject;
+
+/** The token behind a provider definition. */
+export const toToken = <TDefinition extends { readonly token: unknown }>(
+  definition: TDefinition,
+): TDefinition['token'] => definition.token;
+
+const createValueProviders = <T>(
+  token: InjectionToken<T>,
+  defaultValue: T | undefined,
+  valueOverride: Partial<T> | undefined,
+  options: ProviderDefinitionOptions | undefined,
+): Provider[] => [
+  { provide: token, useValue: maybeMergeValues(defaultValue, valueOverride) },
+  ...(options?.extraInjectionToken ? [{ provide: options.extraInjectionToken, useExisting: token }] : []),
+];
 
 const maybeMergeValues = <T>(defaultValue: T | undefined, valueOverride?: Partial<T>) => {
   if (valueOverride && defaultValue && typeof defaultValue === 'object') {

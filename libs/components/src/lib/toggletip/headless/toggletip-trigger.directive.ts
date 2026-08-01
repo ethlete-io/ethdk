@@ -1,15 +1,14 @@
 import { DestroyRef, Directive, ElementRef, afterNextRender, effect, inject, untracked } from '@angular/core';
 import { RuntimeError, setInputSignal } from '@ethlete/core';
-import { BUTTON_VARIANTS } from '../../button/button.component';
 import { ButtonDirective } from '../../button/headless';
 import { TOGGLETIP_ERROR_CODES } from '../toggletip-errors';
 import { ToggletipDirective } from './toggletip.directive';
 
 const PRESSED_VARIANT_MAP: Record<string, string> = {
-  [BUTTON_VARIANTS.FILLED]: 'outline',
-  [BUTTON_VARIANTS.OUTLINE]: 'filled',
-  [BUTTON_VARIANTS.TONAL]: 'filled',
-  [BUTTON_VARIANTS.TRANSPARENT]: 'tonal',
+  filled: 'outline',
+  outline: 'filled',
+  tonal: 'filled',
+  transparent: 'tonal',
 };
 
 @Directive({

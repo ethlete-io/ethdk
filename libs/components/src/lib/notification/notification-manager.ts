@@ -13,7 +13,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { createRootProvider, injectRenderer } from '@ethlete/core';
+import { defineRootProvider, injectRenderer, toInjectFn, toProvideFn } from '@ethlete/core';
 import {
   NotificationConfig,
   NotificationManagerConfig,
@@ -40,7 +40,7 @@ export type NotificationManager = {
   visibleNotifications: Signal<NotificationRef[]>;
 };
 
-export const [provideNotificationManagerInstance, injectNotificationManager] = createRootProvider(
+const NOTIFICATION_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
   (): NotificationManager => {
     const managerConfig = injectNotificationManagerConfig();
     const appRef = inject(ApplicationRef);
@@ -153,6 +153,9 @@ export const [provideNotificationManagerInstance, injectNotificationManager] = c
   },
   { name: 'NotificationManager' },
 );
+
+export const provideNotificationManagerInstance = /* @__PURE__ */ toProvideFn(NOTIFICATION_MANAGER_DEF);
+export const injectNotificationManager = /* @__PURE__ */ toInjectFn(NOTIFICATION_MANAGER_DEF);
 
 export const provideNotificationManager = (config?: Partial<NotificationManagerConfig>) => [
   ...provideNotificationManagerConfig(config),

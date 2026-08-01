@@ -20,11 +20,12 @@ export const WINDOW_CONTROL_BUTTON_KINDS = {
 
 export type WindowControlButtonKind = (typeof WINDOW_CONTROL_BUTTON_KINDS)[keyof typeof WINDOW_CONTROL_BUTTON_KINDS];
 
-const WINDOW_CONTROL_BUTTON_SPINNER_CONFIG = {
-  [WINDOW_CONTROL_BUTTON_SIZES.SM]: { diameter: 12, strokeWidth: 2 },
-  [WINDOW_CONTROL_BUTTON_SIZES.MD]: { diameter: 14, strokeWidth: 2 },
-  [WINDOW_CONTROL_BUTTON_SIZES.LG]: { diameter: 16, strokeWidth: 2.5 },
-} as const;
+const WINDOW_CONTROL_BUTTON_SPINNER_CONFIG: Record<WindowControlButtonSize, { diameter: number; strokeWidth: number }> =
+  {
+    sm: { diameter: 12, strokeWidth: 2 },
+    md: { diameter: 14, strokeWidth: 2 },
+    lg: { diameter: 16, strokeWidth: 2.5 },
+  };
 
 @Component({
   selector: '[et-window-control-button]',
