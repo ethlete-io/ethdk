@@ -20,9 +20,10 @@ theming. Each control family has its own guide:
 These controls implement Angular's [signal forms](https://angular.dev/guide/forms)
 contracts (`FormValueControl` / `FormCheckboxControl`) and bind via `[formField]`
 from `@angular/forms/signals`. There is no `ngModel`/`ControlValueAccessor` layer
+
 - the classic stack lives only in the legacy `@ethlete/cdk`. Two-way `[(value)]`
-/ `[(checked)]` also works for simple cases.
-:::
+  / `[(checked)]` also works for simple cases.
+  :::
 
 ```ts
 private formModel = signal({ email: '' });

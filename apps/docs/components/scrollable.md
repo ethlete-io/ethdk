@@ -75,9 +75,10 @@ ref-counted, so two overlapping suspensions can't release each other's.
 
 Two things use it already. A **cursor drag** holds it for the whole drag, because it writes the offset on
 every mouse move; on release it glides to the nearest child in JavaScript and hands snapping back on arrival
+
 - a mouse button produces no fling, so native snap has nothing to decelerate into and letting go would
-otherwise hard-cut the track by up to a slide in a single frame. A looping [carousel](/components/carousel)
-holds it while it shifts the track across the loop seam.
+  otherwise hard-cut the track by up to a slide in a single frame. A looping [carousel](/components/carousel)
+  holds it while it shifts the track across the loop seam.
 
 `itemSize`, `direction` and `scrollMode` also accept per-breakpoint maps (e.g. `[itemSize]="{ xs: 'full', md: 'third' }"`) - see [breakpoint inputs](/core/signal-utils#breakpoint-inputs) for how these resolve. The underlying scroll math (snap targets, `scrollToElement`) comes from the [core scrolling primitives](/core/scrolling).
 

@@ -53,8 +53,7 @@ tokens in core. (Calendar event markers and month/year jump moved into plan
       app's, so there is no default to override. The plan's item 4 also undercounted the ad-hoc
       `input()` defaults - ~60 across 15 domains, not 4 - and `mixed`/`clear` recurred often enough to
       earn a shared `FORM_FIELD_LABELS`.)_
-- [x] 04 - RTE essentials _(done 2026-07-30; all three phases. Phase 3 is `provideRichTextEditorImageTool`
-      - pick/paste/drop, an upload handler that also takes a `createDropzoneUpload` config for progress,
+- [x] 04 - RTE essentials _(done 2026-07-30; all three phases. Phase 3 is `provideRichTextEditorImageTool` - pick/paste/drop, an upload handler that also takes a `createDropzoneUpload` config for progress,
       a value-invisible placeholder and an alt-text popover. See the plan's "found while implementing"
       notes: core already round-tripped `![alt](url)`, what was broken was image **files** becoming
       `blob:` URLs; and tool definitions gained `paste`/`drop`/`click` content hooks.)_

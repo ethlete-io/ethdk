@@ -77,9 +77,10 @@ unprefixed - see §3.3.
 
 `columnOrder`, `hiddenColumns` and `columnWidths` are `linkedSignal`s derived from the
 `columns` input (`table.component.ts:245-259`), so a **new array reference resets them**
+
 - that is `linkedSignal`'s contract. And because a `cell` / `headerCell` / `footerCell`
-is a `TemplateRef` obtained from `viewChild()`, the column array _must_ be built in a
-`computed()`, which recomputes for reasons that have nothing to do with the columns.
+  is a `TemplateRef` obtained from `viewChild()`, the column array _must_ be built in a
+  `computed()`, which recomputes for reasons that have nothing to do with the columns.
 
 Verified with a throwaway spec - identical column content, new array reference:
 

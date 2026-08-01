@@ -14,8 +14,8 @@ snap points. This is the highest-priority plan (explicit user request).
   sample window.
 - `libs/components/src/lib/overlay/strategies/overlay-drag-to-dismiss.ts:51-108`
   - `defaultSwipeEndStyleInterpolator`: snap-back only when distance **and**
-  velocity are under threshold (defaults 150 px / 150 px/s,
-  `overlay-strategy.types.ts:95-105`), so flick-dismiss already works. But:
+    velocity are under threshold (defaults 150 px / 150 px/s,
+    `overlay-strategy.types.ts:95-105`), so flick-dismiss already works. But:
   - Snap-back is fixed `transform 100ms var(--ease-out-1)` regardless of
     remaining distance or release velocity (also `cancelDrag()`, lines 177-188).
   - Dismiss returns `null` → handler calls `overlayRef.closeVia('drag')`

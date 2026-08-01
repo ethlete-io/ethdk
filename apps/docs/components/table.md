@@ -181,9 +181,10 @@ status: { header: '', value: (o) => o.status, minWidth: 40 },
 
 Past the floor the table scrolls horizontally rather than squeezing further, which the
 edge gradients advertise. **A flexible `width` you write yourself needs its own floor**
+
 - a bare `1fr` or `minmax(0, 2fr)` overrides `minWidth` and can be squeezed to
-nothing, at which point the cell's padding bursts out of the empty track and columns
-visibly overlap. Prefer `minmax(96px, 2fr)`.
+  nothing, at which point the cell's padding bursts out of the empty track and columns
+  visibly overlap. Prefer `minmax(96px, 2fr)`.
 
 Leave at least one column flexible (`fr` or `auto`) if you can - a flexible track is
 what lets the grid fill its container exactly. If every column ends up a rigid

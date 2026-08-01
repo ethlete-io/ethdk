@@ -154,10 +154,11 @@ present, that the opt-in sticks and that the declaration stays valid with the en
 `syncFromDom`, the one point every edit funnels through, and coalesces by comparing the previous
 value with the new one: a commit whose inserted chunk crosses whitespace starts a new entry, every
 other non-programmatic commit extends the current one. Time alone (the planned ~500 ms) is not enough
+
 - a trailing space is trimmed out of the Markdown value, so the space keystroke commits _nothing_ and
-the whitespace only shows up in the diff of the _next_ character. Undo therefore lands exactly on
-word boundaries; the first attempt (closing the burst _after_ the whitespace commit) landed one
-character past them.
+  the whitespace only shows up in the diff of the _next_ character. Undo therefore lands exactly on
+  word boundaries; the first attempt (closing the burst _after_ the whitespace commit) landed one
+  character past them.
 
 **Selection has to be stored as text offsets.** Undo re-renders the editable from the value, so a
 saved `Range` points at detached nodes. `Range.toString().length` from the root to the caret is the

@@ -49,17 +49,17 @@ done and what the next planning chunk is.
 
 ### To port (priority order)
 
-| #   | cdk feature                          | Plan file                       | Size guess | Why this priority                                                                                                                                              |
-| --- | ------------------------------------ | ------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 00  | (prereq) QueryForm signal-forms port | `00-query-form-signal-forms.md` | M          | Lives in `libs/query`; blocks table Phases 2/7 (stub - needs planning session)                                                                                 |
-| 03  | skeleton                             | `03-skeleton.md`                | S          | Cheap win, widely used for loading states                                                                                                                      |
-| 04  | accordion                            | `04-accordion.md`               | S–M        | Common primitive; modernization opportunity                                                                                                                    |
-| 05  | breadcrumb                           | `05-breadcrumb.md`              | S          | Simple, router-aware                                                                                                                                           |
-| 06  | carousel                             | `06-carousel.md`                | M–L        | Modernization opportunity (scroll-snap rewrite)                                                                                                                |
-| 07  | masonry                              | `07-masonry.md`                 | M          | Modernization opportunity (CSS-first layout)                                                                                                                   |
-| 08  | picture                              | `08-picture.md`                 | S          | Responsive image helper; may partially move to core                                                                                                            |
-| 09  | query-error                          | `09-query-error.md`             | S–M        | Depends on @ethlete/query error shapes; rethink API                                                                                                            |
-| 10  | filter                               | `10-filter.md`                  | S          | Two layers: floating-trigger port + new `provideFilterOverlay` composition (routed overlay + QueryForm badge + apply/reset) - see file                         |
+| #   | cdk feature                          | Plan file                       | Size guess | Why this priority                                                                                                                      |
+| --- | ------------------------------------ | ------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| 00  | (prereq) QueryForm signal-forms port | `00-query-form-signal-forms.md` | M          | Lives in `libs/query`; blocks table Phases 2/7 (stub - needs planning session)                                                         |
+| 03  | skeleton                             | `03-skeleton.md`                | S          | Cheap win, widely used for loading states                                                                                              |
+| 04  | accordion                            | `04-accordion.md`               | S–M        | Common primitive; modernization opportunity                                                                                            |
+| 05  | breadcrumb                           | `05-breadcrumb.md`              | S          | Simple, router-aware                                                                                                                   |
+| 06  | carousel                             | `06-carousel.md`                | M–L        | Modernization opportunity (scroll-snap rewrite)                                                                                        |
+| 07  | masonry                              | `07-masonry.md`                 | M          | Modernization opportunity (CSS-first layout)                                                                                           |
+| 08  | picture                              | `08-picture.md`                 | S          | Responsive image helper; may partially move to core                                                                                    |
+| 09  | query-error                          | `09-query-error.md`             | S–M        | Depends on @ethlete/query error shapes; rethink API                                                                                    |
+| 10  | filter                               | `10-filter.md`                  | S          | Two layers: floating-trigger port + new `provideFilterOverlay` composition (routed overlay + QueryForm badge + apply/reset) - see file |
 
 ### cdk `utils/` (not components - decide destination)
 

@@ -188,8 +188,8 @@ Modernized as planned:
 - **Signal forms.** `queryForm` replaces cdk's `form` + `defaults`; the draft is
   `queryForm.branch()` rather than `cloneFormGroup()`. `branch()` already existed
   - the signals QueryForm was built with this pattern in mind (00's plan).
-  `submit()` writes back via `queryForm.setValue()`, so the `isResetBy` graph and
-  URL sync fire; verified by a test asserting `page` resets when `search` changes.
+    `submit()` writes back via `queryForm.setValue()`, so the `isResetBy` graph and
+    URL sync fire; verified by a test asserting `page` resets when `search` changes.
 - **Current query client.** `filterOverlayPreviewFromQuery` replaces
   `searchPreviewQueryFn`'s `AnyV2Query`/`queryComputed`/`switchQueryState`. It is
   a factory-of-a-factory so the query is created in the _overlay's_ injection
