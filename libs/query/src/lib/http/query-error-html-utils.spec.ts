@@ -113,7 +113,7 @@ describe('extractHtmlErrorMessage', () => {
   });
 
   it('should decode numeric entities', () => {
-    expect(extractHtmlErrorMessage('<h1>Caf&#233; &#x2014; closed</h1>')).toBe('Café - closed');
+    expect(extractHtmlErrorMessage('<h1>Caf&#233; &#x2014; closed</h1>')).toBe('Café — closed');
   });
 
   it('should leave an out of range entity untouched', () => {
