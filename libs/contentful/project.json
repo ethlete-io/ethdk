@@ -21,6 +21,12 @@
         "development": {}
       }
     },
+    "test": {
+      "outputs": ["{projectRoot}/{options.coverage.reportsDirectory}", "{workspaceRoot}/coverage/libs/contentful"],
+      "options": {
+        "coverage.reportsDirectory": "../../../coverage/libs/contentful"
+      }
+    },
     "lint": {
       "inputs": [
         "default",
