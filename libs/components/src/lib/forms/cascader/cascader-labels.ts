@@ -1,6 +1,6 @@
 import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
-/** The strings the cascader's panel renders itself — its search field and the step back up a level. */
+/** The strings the cascader's panel renders itself - its search field and the step back up a level. */
 export type CascaderLabels = {
   /** Shown while a level or a search is being fetched. */
   loading: string;
@@ -33,7 +33,7 @@ const CASCADER_LABELS_DEF = /* @__PURE__ */ defineLabels<CascaderLabels>('CASCAD
 
 /**
  * Localize the cascader's strings for everything below this injector, and read the set in effect here as a
- * signal. Partial — whatever you leave out keeps its {@link DEFAULT_CASCADER_LABELS} value. See {@link defineLabels}
+ * signal. Partial - whatever you leave out keeps its {@link DEFAULT_CASCADER_LABELS} value. See {@link defineLabels}
  * for the shape, which every domain in this library shares.
  *
  * @example

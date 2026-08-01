@@ -138,7 +138,7 @@ describe('rich text editor image ops', () => {
       expect(htmlToMarkdown(root.innerHTML)).toBe('Text\n\n![](https://example.com/a.png)');
     });
 
-    it('leaves an image among text editable — that is prose, not an atom', () => {
+    it('leaves an image among text editable - that is prose, not an atom', () => {
       const { root } = setup('<p>See <img src="https://example.com/a.png" alt=""> here</p>');
 
       ops.normalizeImages(root);
@@ -167,7 +167,7 @@ describe('rich text editor image ops', () => {
     expect(
       ops.replacePlaceholderWithImage({ dom, placeholder, image: { src: 'https://example.com/a.png', alt: '' } }),
     ).toBeNull();
-    // The line the caret was moved to stays — the user has been typing on it since.
+    // The line the caret was moved to stays - the user has been typing on it since.
     expect(root.innerHTML).toBe('<p>Hello</p><p><br></p>');
   });
 
@@ -176,7 +176,7 @@ describe('rich text editor image ops', () => {
     const paragraph = root.firstChild as HTMLElement;
     const selection = doc.getSelection();
     const range = doc.createRange();
-    // A clicked image is selected as a whole node — the shape `readActiveImage` has to recognize.
+    // A clicked image is selected as a whole node - the shape `readActiveImage` has to recognize.
     range.selectNode(paragraph.firstChild!);
     selection?.removeAllRanges();
     selection?.addRange(range);

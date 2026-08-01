@@ -134,7 +134,7 @@ describe('rich text editor token codec', () => {
       const md = `x ${tokenMarkdown(type, id)} y`;
 
       // render never sees the label for these random types (no matching resolver), and serialize
-      // rebuilds purely from attributes — so the text must survive untouched either way.
+      // rebuilds purely from attributes - so the text must survive untouched either way.
       expect(serializeToString(codec.render(md))).toBe(md);
     }
   });

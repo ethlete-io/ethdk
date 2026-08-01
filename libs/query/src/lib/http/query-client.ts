@@ -27,7 +27,7 @@ export type CreateQueryClientConfigOptions = {
   queryString?: BuildQueryStringConfig;
 
   /**
-   * Headers sent with every request of this client — an API token, a tenant id, a preview
+   * Headers sent with every request of this client - an API token, a tenant id, a preview
    * credential. Per-query `args.headers` are merged on top and win per header name.
    *
    * Pass a function to make them dynamic: it is called on every execution, so reading a signal
@@ -35,7 +35,7 @@ export type CreateQueryClientConfigOptions = {
    *
    * Client headers are deliberately **not** part of the cache key: they are the same for every
    * query of the client, so including them would only ever churn the whole cache at once. That
-   * means already-resolved queries keep their response when the headers change — call
+   * means already-resolved queries keep their response when the headers change - call
    * {@link QueryClient.refreshQueriesInUse} to re-run them (the v3 equivalent of v2's
    * `setDefaultHeaders({ refreshQueriesInUse: true })`).
    *
@@ -78,8 +78,8 @@ export type CreateQueryClientConfigOptions = {
   /**
    * How long (in ms) a cache entry is kept after its last consumer was destroyed.
    *
-   * Within that window a query that mounts again — a list page reached via browser back navigation,
-   * for instance — binds to the existing entry and renders its previous response immediately while it
+   * Within that window a query that mounts again - a list page reached via browser back navigation,
+   * for instance - binds to the existing entry and renders its previous response immediately while it
    * revalidates in the background, instead of starting from a loading state. Unlike the header derived
    * freshness TTL (`cacheAdapter`) this is independent of `cache-control`, so it also applies to
    * private/authenticated responses.
@@ -111,7 +111,7 @@ export type CreateQueryClientConfigOptions = {
    *
    * The one thing it requires is that response bodies survive a structured clone, which JSON always
    * does; a body that cannot be cloned is warned about in dev mode and simply not shared. Individual
-   * queries can stay tab-local via {@link BaseQueryCreatorOptions.multiTabSync} — worth doing for very
+   * queries can stay tab-local via {@link BaseQueryCreatorOptions.multiTabSync} - worth doing for very
    * large payloads on a short polling interval.
    *
    * @default true
@@ -120,7 +120,7 @@ export type CreateQueryClientConfigOptions = {
 
   /**
    * Keeps this client's successful reads on disk (IndexedDB), so a reload renders the last known data
-   * right away instead of a loading state — and so does a cold start with no network at all.
+   * right away instead of a loading state - and so does a cold start with no network at all.
    *
    * A hydrated response is **always** revalidated: persisted data fills a cache entry while its request
    * is already on its way, and never replaces something newer. What the user sees is last week's list
@@ -132,7 +132,7 @@ export type CreateQueryClientConfigOptions = {
    * Pass an object to tune those, or `false` to keep everything in memory as before. Always inert on the
    * server and in a browser without IndexedDB.
    *
-   * Bump {@link QueryPersistenceConfig.version} in the commit that changes what a response looks like —
+   * Bump {@link QueryPersistenceConfig.version} in the commit that changes what a response looks like -
    * that is what stops a returning user's disk copy from reaching code that can no longer read it.
    *
    * @default true
@@ -141,7 +141,7 @@ export type CreateQueryClientConfigOptions = {
 };
 
 /**
- * Advanced client internals. **Not part of the general public contract** — do not build application
+ * Advanced client internals. **Not part of the general public contract** - do not build application
  * logic on top of these.
  */
 export type QueryClientSubtle = {
@@ -169,7 +169,7 @@ export type QueryClient = {
    * Re-executes every cacheable request this client currently has consumers for, bypassing the
    * cache and restarting the ones still in flight.
    *
-   * The case this exists for is a change to something every request carries but nothing tracks —
+   * The case this exists for is a change to something every request carries but nothing tracks -
    * typically a client-level header (see {@link CreateQueryClientConfigOptions.headers}). Setting
    * the new value only affects *subsequent* requests, so anything already resolved keeps data
    * fetched under the old one until this is called.
@@ -184,7 +184,7 @@ export type QueryClient = {
 
   /**
    * Re-executes the queries this client has consumers for whose data the caller knows to be out of
-   * date — after a mutation, or a push message saying something changed server-side — and tells the
+   * date - after a mutation, or a push message saying something changed server-side - and tells the
    * user's other tabs to do the same.
    *
    * Narrow it by `url`, by `filter`, or leave it open to invalidate everything in use:
@@ -197,7 +197,7 @@ export type QueryClient = {
    *
    * Same set as {@link QueryClient.refreshQueriesInUse}: cacheable entries with at least one
    * consumer, cache bypassed, in-flight requests restarted. Entries sitting out their `keepUnusedFor`
-   * window are deliberately left alone — they revalidate on their own when a consumer binds again,
+   * window are deliberately left alone - they revalidate on their own when a consumer binds again,
    * and refreshing what nobody is looking at is how an invalidation turns into a request storm.
    *
    * Reaching the other tabs needs {@link CreateQueryClientConfigOptions.multiTabSync} (on by default);
@@ -210,8 +210,8 @@ export type QueryClient = {
    * {@link CreateQueryClientConfigOptions.persistence}). Resolves once the store is empty; a no-op when
    * persistence is off.
    *
-   * What it is for is a switch of *who* is using the app — a different user logging in on a shared
-   * device — where the previous session's public data should not be waiting for them. A logout already
+   * What it is for is a switch of *who* is using the app - a different user logging in on a shared
+   * device - where the previous session's public data should not be waiting for them. A logout already
    * removes persisted **secure** responses on its own.
    */
   clearPersistedQueries: () => Promise<void>;
@@ -220,7 +220,7 @@ export type QueryClient = {
    * Resolves once persisted responses are available to hydrate cache entries with, or right away when
    * persistence is off or the code runs on the server.
    *
-   * Nothing needs to await this — a query created before it resolves is hydrated as soon as it does.
+   * Nothing needs to await this - a query created before it resolves is hydrated as soon as it does.
    * It exists for the app that would rather delay its first paint than show a loading state it knows it
    * has data for.
    *

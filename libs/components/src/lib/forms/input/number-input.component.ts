@@ -110,7 +110,7 @@ export class NumberInputComponent {
     try {
       (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
     } catch {
-      // pointer capture is unavailable in some test environments — stepping still works
+      // pointer capture is unavailable in some test environments - stepping still works
     }
 
     this.numberInputDir.stepBy(direction);
@@ -118,7 +118,7 @@ export class NumberInputComponent {
 
     // stop on any pointer release anywhere, not just on the button: if `setPointerCapture`
     // above threw (test envs, some browsers) and the pointer lifts off the button, the button
-    // never sees `pointerup`/`pointercancel` — without this document-level stop the timer would
+    // never sees `pointerup`/`pointercancel` - without this document-level stop the timer would
     // run until the component is destroyed
     const release$ = merge(fromEvent(this.document, 'pointerup'), fromEvent(this.document, 'pointercancel'));
 

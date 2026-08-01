@@ -36,7 +36,7 @@ export const TEAM_FILTER_FIELDS = {
   page: queryField<number>({ defaultValue: 1, isResetBy: ['search', 'region', 'division'] }),
 };
 
-/** The filters' value shape, named without naming the field map — see `FilterOverlayValueOf`. */
+/** The filters' value shape, named without naming the field map - see `FilterOverlayValueOf`. */
 const createTeamFilters = () => createQueryForm({ fields: TEAM_FILTER_FIELDS, queryParamPrefix: 'teams' });
 export type TeamFilterValue = FilterOverlayValueOf<ReturnType<typeof createTeamFilters>>;
 
@@ -72,11 +72,11 @@ const DIVISIONS = ['all', 'first', 'second', 'youth'];
       <!-- Each of these opens a page of its own, which is what the overlay router is for: a long option list
            does not belong squeezed into the panel next to everything else. -->
       <button etOverlayRouterLink="/region" et-button variant="outline" size="sm">
-        Region — {{ filters.draft.value().region }}
+        Region - {{ filters.draft.value().region }}
       </button>
 
       <button etOverlayRouterLink="/division" et-button variant="outline" size="sm">
-        Division — {{ filters.draft.value().division }}
+        Division - {{ filters.draft.value().division }}
       </button>
     </div>
   `,
@@ -216,7 +216,7 @@ export class FilterOverlayShellComponent {
         <ul class="m-0 flex flex-col gap-2 p-0" etFloatingActionScope>
           @for (team of visibleTeams(); track team.name) {
             <li class="list-none rounded-md p-3" style="background: var(--et-surface-background-solid)">
-              {{ team.name }} — {{ team.region }} / {{ team.division }}
+              {{ team.name }} - {{ team.region }} / {{ team.division }}
             </li>
           } @empty {
             <li class="list-none opacity-60">No teams match these filters.</li>
@@ -249,7 +249,7 @@ export class FilterOverlayStorybookComponent {
   protected appliedLabel = computed(() => {
     const { search, region, division } = this.filters.value();
 
-    return `search=${search || '—'} region=${region} division=${division}`;
+    return `search=${search || '-'} region=${region} division=${division}`;
   });
 
   protected openFilters() {
@@ -273,7 +273,7 @@ export class FilterOverlayStorybookComponent {
   }
 }
 
-// Below the component on purpose — see the `no-template-literal-before-inline-template` lint rule.
+// Below the component on purpose - see the `no-template-literal-before-inline-template` lint rule.
 
 const LOREM =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod nisl nec ultricies. Aenean vulputate ' +

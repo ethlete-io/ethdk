@@ -46,7 +46,7 @@ export class SegmentedButtonGroupComponent {
    * How the selection is drawn. `'pill'` fills the selected segment; `'tabs'` underlines it instead, for a group
    * that reads as a set of views rather than a set of values.
    *
-   * It is still a **selection control**, not navigation — it binds to a form field and announces itself as a radio
+   * It is still a **selection control**, not navigation - it binds to a form field and announces itself as a radio
    * group. If the segments correspond to routes, or to panels of content that should be linkable, reach for
    * [tabs](/components/tabs) instead; this variant is for a filter that happens to look like tabs. @default 'pill'
    */

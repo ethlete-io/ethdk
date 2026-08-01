@@ -92,7 +92,7 @@ export type OverlayDragToDismissPhysicalDirection = 'to-top' | 'to-bottom' | 'to
 /**
  * A drag direction. The logical values (`to-inline-start`/`to-inline-end`) are resolved to their
  * physical counterpart when the gesture is set up, using the overlay container's computed
- * `direction` — so they follow the writing direction like the logical position strategies do.
+ * `direction` - so they follow the writing direction like the logical position strategies do.
  */
 export type OverlayDragToDismissDirection = OverlayDragToDismissPhysicalDirection | 'to-inline-start' | 'to-inline-end';
 
@@ -119,14 +119,14 @@ export type OverlayDragToDismissConfig = {
 
   /**
    * Resting positions the overlay can be dragged between, as fractions of its own size along the
-   * dismiss axis — `0` is fully open, `0.5` is dragged halfway out. The docked position is always
+   * dismiss axis - `0` is fully open, `0.5` is dragged halfway out. The docked position is always
    * available whether or not it is listed, and values outside `[0, 1)` are ignored.
    *
    * With snap points set, a flick advances one point in its own direction and a slow release settles
    * at the nearest one; either running past the last point dismisses the overlay. Leaving this unset
    * keeps the plain two-state behavior driven by `minDistanceToDismiss`/`minVelocityToDismiss`.
    *
-   * The overlay stays its full size at every snap point — only its offset changes. Content that
+   * The overlay stays its full size at every snap point - only its offset changes. Content that
    * should reflow or scroll differently at a partial position is the consumer's concern.
    *
    * @default undefined // no intermediate resting positions
@@ -176,7 +176,7 @@ export type OverlayBreakpointConfig = {
 
   /**
    * Whether a backdrop element is rendered behind the overlay. Only applied at mount time (the
-   * initially matched strategy) — it cannot change during breakpoint switches. An explicit
+   * initially matched strategy) - it cannot change during breakpoint switches. An explicit
    * `hasBackdrop` on the overlay config always wins over this strategy default.
    *
    * @default undefined // falls back to the overlay config / modal behavior

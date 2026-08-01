@@ -10,7 +10,7 @@ import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
  *
  * The **tool** keys (`bold` … `table`) are named after their tool tokens, which is how the toolbar looks
  * a button's name up. A tool your app registers through `RICH_TEXT_EDITOR_TOOL` keeps the `label` on its
- * own definition instead — you wrote that string, so it is already in your language.
+ * own definition instead - you wrote that string, so it is already in your language.
  */
 export type RichTextEditorLabels = {
   /** Accessible label for the toolbar. */
@@ -221,7 +221,7 @@ const RICH_TEXT_EDITOR_LABELS_DEF = /* @__PURE__ */ defineLabels<RichTextEditorL
 
 /**
  * Localize the rich text editor's strings for everything below this injector, and read the set in
- * effect here as a signal. Partial — whatever you leave out keeps its
+ * effect here as a signal. Partial - whatever you leave out keeps its
  * {@link DEFAULT_RICH_TEXT_EDITOR_LABELS} value. See {@link defineLabels} for the shape, which every
  * domain in this library shares.
  *

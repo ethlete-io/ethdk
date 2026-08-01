@@ -18,7 +18,7 @@ export type QueryPersistenceCandidate = {
 };
 
 /**
- * Keeps a query client's successful reads on disk, so a reload — or a cold start without a network —
+ * Keeps a query client's successful reads on disk, so a reload - or a cold start without a network -
  * renders the last known data instead of a loading state.
  *
  * @see CreateQueryClientConfigOptions.persistence
@@ -36,8 +36,8 @@ export type QueryPersistenceConfig = {
    * The version of the *response shapes* this app persists. Every entry is written under it, and an
    * entry written under a different one is dropped rather than hydrated.
    *
-   * Bump it in the same commit that changes what a response looks like — a renamed field, a different
-   * pagination envelope — so a returning user's disk copy cannot be handed to code that no longer
+   * Bump it in the same commit that changes what a response looks like - a renamed field, a different
+   * pagination envelope - so a returning user's disk copy cannot be handed to code that no longer
    * understands it. Rolling back works too: the old build ignores what the new one wrote.
    *
    * @default 1
@@ -62,7 +62,7 @@ export type QueryPersistenceConfig = {
    * How many responses may be kept at once. When a write pushes the store over the cap, the least
    * recently written entries are removed until it fits.
    *
-   * Keeps a query whose cache key changes constantly — search-as-you-type produces one per keystroke —
+   * Keeps a query whose cache key changes constantly - search-as-you-type produces one per keystroke -
    * from filling the user's disk with results nobody will ask for again.
    *
    * @default 50

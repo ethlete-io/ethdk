@@ -71,7 +71,7 @@ export const createRichTextEditorLists = (core: RichTextEditorDomCore) => {
     const paragraph = renderer.createElement('p');
     const refAfterList = list.nextSibling;
 
-    // Carry over whatever the (empty) item held — typically the <br> a browser inserts so an
+    // Carry over whatever the (empty) item held - typically the <br> a browser inserts so an
     // empty line still has a caret-able line box. Without one, a bare <p> can end up with no
     // line box at all, and the caret falls through to the next focusable position instead.
     while (li.firstChild) {
@@ -171,7 +171,7 @@ export const createRichTextEditorLists = (core: RichTextEditorDomCore) => {
     }
 
     const rawBlocks = blocksInRange(editable.range);
-    // A list can't wrap a table — a caret inside one makes the command a no-op.
+    // A list can't wrap a table - a caret inside one makes the command a no-op.
     const blocks = rawBlocks.filter((block) => !(block instanceof HTMLElement && block.tagName === 'TABLE'));
 
     if (rawBlocks.length > 0 && blocks.length === 0) {
@@ -180,7 +180,7 @@ export const createRichTextEditorLists = (core: RichTextEditorDomCore) => {
 
     const list = renderer.createElement(listTag);
 
-    // An empty editor has no blocks to wrap — start a fresh list with one empty item instead.
+    // An empty editor has no blocks to wrap - start a fresh list with one empty item instead.
     // The <br> gives the item a line box so the caret has somewhere to land (see exitListItem).
     if (blocks.length === 0) {
       const li = renderer.createElement('li');
@@ -194,7 +194,7 @@ export const createRichTextEditorLists = (core: RichTextEditorDomCore) => {
 
     blocks.forEach((block) => {
       // A block that is itself a list (a selection spanning a paragraph and a list of the other
-      // type) contributes its items directly — wrapping it would nest its <li>s inside a new <li>.
+      // type) contributes its items directly - wrapping it would nest its <li>s inside a new <li>.
       if (block instanceof HTMLElement && (block.tagName === 'UL' || block.tagName === 'OL')) {
         childrenByTag(block, 'li').forEach((item) => renderer.appendChild(list, item));
 

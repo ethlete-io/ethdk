@@ -23,7 +23,7 @@ export const Default: Story = {
       description: {
         story:
           'Cards of differing heights, each going to whichever column is shortest. `columnWidth` is a ' +
-          'minimum, so dragging it changes the column *count* — and narrowing the preview pane does the same, ' +
+          'minimum, so dragging it changes the column *count* - and narrowing the preview pane does the same, ' +
           'since the count comes from the container rather than a media query. Clicking a card grows it and ' +
           'the cards below it move down, which is the per-item measurement at work.',
       },
@@ -50,7 +50,7 @@ export const AppendingItems: Story = {
     docs: {
       description: {
         story:
-          'What an infinite scroll does. **Load more** is disabled until `isSettled()` — the signal that ' +
+          'What an infinite scroll does. **Load more** is disabled until `isSettled()` - the signal that ' +
           "replaces cdk's `injectInfinityQueryResponseDelay` handshake, and the one to gate a fetch on. Note " +
           'that appending never disturbs the cards already placed: where an item lands depends only on the ' +
           'items before it, so the existing placements are re-derived identically.',
@@ -65,7 +65,7 @@ export const SingleColumn: Story = {
     docs: {
       description: {
         story:
-          'A column minimum wider than the container still lays out — one column, items stacked with the gap ' +
+          'A column minimum wider than the container still lays out - one column, items stacked with the gap ' +
           'between them. Worth checking because it is what a masonry collapses to on a phone.',
       },
     },

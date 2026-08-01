@@ -45,7 +45,7 @@ export type QuerySyncRefreshOnMutationConfig = {
 export type QueryMultiTabSyncConfig = {
   /**
    * The `BroadcastChannel` name the tabs talk over. One channel per client, so two clients never
-   * cross-talk — only override this if two separately created clients must share one channel.
+   * cross-talk - only override this if two separately created clients must share one channel.
    *
    * @default `et-query-sync-${client name}`
    */
@@ -74,7 +74,7 @@ export type QueryMultiTabSyncConfig = {
    * client, which over-fetches in the worst case but can never miss a list route that a
    * path-prefix guess would (`PUT /players/1` also invalidates `/leagues/1/players`).
    *
-   * The mutating tab itself is untouched — refreshing locally after a mutation stays the app's job,
+   * The mutating tab itself is untouched - refreshing locally after a mutation stays the app's job,
    * as it is without sync.
    *
    * @default true

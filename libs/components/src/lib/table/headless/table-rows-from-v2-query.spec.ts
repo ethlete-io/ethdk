@@ -27,7 +27,7 @@ describe('tableRowsFromV2Query', () => {
   const captured: { sortBy?: string; page: number }[] = [];
 
   const createSource = (
-    // Only the two signals the fixtures actually branch on — a full TableRowsQueryState would make
+    // Only the two signals the fixtures actually branch on - a full TableRowsQueryState would make
     // every call site pass a `filters` signal it doesn't read.
     respond: (state: Pick<TableRowsQueryState, 'sort' | 'page'>) => { response?: UsersResponse; error?: RequestError },
   ) => {

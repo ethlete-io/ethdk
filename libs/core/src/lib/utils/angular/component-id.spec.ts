@@ -20,7 +20,7 @@ describe('randomId', () => {
 
   it('falls back to getRandomValues in insecure contexts (crypto.randomUUID undefined)', () => {
     // Reproduces the plain-HTTP-over-IP case where crypto.randomUUID is undefined but
-    // getRandomValues still works — previously any caller (overlay/menu open) threw here.
+    // getRandomValues still works - previously any caller (overlay/menu open) threw here.
     Object.defineProperty(globalThis, 'crypto', {
       configurable: true,
       value: {

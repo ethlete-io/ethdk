@@ -48,7 +48,7 @@ import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labe
 export const CASCADER_SELECTABLE_LEVELS = {
   /** Only terminal leaves commit a value (default). */
   LEAF: 'leaf',
-  /** Any node — including intermediate branches — can be committed. */
+  /** Any node - including intermediate branches - can be committed. */
   ANY: 'any',
 } as const;
 
@@ -103,7 +103,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   /** Whether only leaves (`'leaf'`, default) or any node (`'any'`) can be committed as the value. */
   public selectableLevels = input<CascaderSelectableLevels>(CASCADER_SELECTABLE_LEVELS.LEAF);
 
-  /** Value equality — override when values are objects. */
+  /** Value equality - override when values are objects. */
   public compareWith = input<CascaderCompareWith<T>>(defaultCompareWith);
 
   /**
@@ -115,7 +115,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
     (error) => (error instanceof Error && error.message) || 'Something went wrong',
   );
 
-  /** Whether the overlay panel mirrors the anchor's width (off — columns size themselves). */
+  /** Whether the overlay panel mirrors the anchor's width (off - columns size themselves). */
   public mirrorPanelWidth = input(false, { transform: booleanAttribute });
 
   /**
@@ -164,23 +164,23 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   public registeredSurface = signal<CascaderSurfaceLike | null>(null);
   /** @internal */
   public registeredSearch = signal<CascaderSearchLike | null>(null);
-  /** @internal The mounted tree panel's element id — the trigger points `aria-controls` at it. */
+  /** @internal The mounted tree panel's element id - the trigger points `aria-controls` at it. */
   public panelId = signal<string | null>(null);
 
-  /** The columns currently shown — column 0 is the root, each subsequent one a drilled level. */
+  /** The columns currently shown - column 0 is the root, each subsequent one a drilled level. */
   public columns = signal<CascaderColumnState<T>[]>([]);
 
-  /** The chain of nodes drilled into — `openPath[i]` is the parent of column `i + 1`. */
+  /** The chain of nodes drilled into - `openPath[i]` is the parent of column `i + 1`. */
   private openPath = signal<CascaderNode<T>[]>([]);
 
   /**
-   * Raw left edge of the browse window, moved by `revealColumn`. Deliberately unclamped — columns
+   * Raw left edge of the browse window, moved by `revealColumn`. Deliberately unclamped - columns
    * load and truncate asynchronously, so the clamp lives in `visibleColumnStart` where it tracks
    * the current column count instead of going stale.
    */
   private columnWindowStart = signal(0);
 
-  /** Index of the first column the browse view shows — everything before it is collapsed. */
+  /** Index of the first column the browse view shows - everything before it is collapsed. */
   public visibleColumnStart = computed(() => {
     const overflow = Math.max(0, this.columns().length - this.maxVisibleColumns());
 
@@ -198,7 +198,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
 
   /**
    * The breadcrumb row's entries: the FULL drilled trail, present whenever the drill overflows
-   * the window (empty otherwise). Deliberately independent of the window position — levels
+   * the window (empty otherwise). Deliberately independent of the window position - levels
    * collapsed to the right (after sliding back) need their crumbs just as much as those on the
    * left, and sliding around must never rebuild the row; only an actual drill change does.
    */
@@ -211,7 +211,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   public pathValue = computed(() => this.path().map((node) => node.value));
 
   /**
-   * Multi mode: the known chain (root → selected node) per selected value — filled by in-panel
+   * Multi mode: the known chain (root → selected node) per selected value - filled by in-panel
    * toggles and, for programmatically set values, by the data source's `resolvePath`. A value
    * whose chain is unknown yet has no entry here (its label can't be displayed until resolved).
    */
@@ -219,7 +219,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
 
   /**
    * Every child list loaded so far, keyed by parent (`null` = root). Unlike `columns`, entries
-   * survive navigating away — multi mode needs them to promote a branch to fully selected once
+   * survive navigating away - multi mode needs them to promote a branch to fully selected once
    * all of its descendants are checked (a subtree that was never loaded stays indeterminate,
    * since "all" can't be answered for it).
    */
@@ -233,7 +233,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
     }
 
     if (this.multiple()) {
-      // one label per selected node (not the full breadcrumb — several would not scan)
+      // one label per selected node (not the full breadcrumb - several would not scan)
       const compareWith = this.compareWith();
       const paths = this.selectedPaths();
       const labels = this.values()
@@ -259,10 +259,10 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   /** The node holding roving focus, and the column it lives in. */
   public focusedNode = signal<CascaderNode<T> | null>(null);
   public focusedColumn = signal(0);
-  /** @internal Whether DOM focus is inside the panel — gates the roving-focus DOM moves. */
+  /** @internal Whether DOM focus is inside the panel - gates the roving-focus DOM moves. */
   public focusInside = signal(false);
   /**
-   * @internal Bumped after the panel settles to (re-)pull DOM focus onto the active node —
+   * @internal Bumped after the panel settles to (re-)pull DOM focus onto the active node -
    * the opening pointer click focuses the trigger a frame after the node's focus effect runs.
    */
   public focusPulse = signal(0);
@@ -271,19 +271,19 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   public overlayRef = signal<AnchoredPanelOverlayRef | null>(null);
   public isMounted = computed(() => this.overlayRef() !== null);
 
-  /** Whether the data source supports flat search — the presence of its `search` hook. */
+  /** Whether the data source supports flat search - the presence of its `search` hook. */
   public canSearch = computed(() => !!this.dataSource()?.search);
 
   /** The raw flat-search query, written by the registered search input. */
   public searchQuery = signal('');
 
-  /** Whether a flat search is active — a non-blank query on a searchable source. */
+  /** Whether a flat search is active - a non-blank query on a searchable source. */
   public isSearching = computed(() => this.canSearch() && this.searchQuery().trim().length > 0);
 
   /** The flat search's load state and matching paths (root → matching node chains). */
   public searchState = signal<CascaderSearchState<T>>({ status: 'idle', results: [], error: null });
 
-  /** @internal Index of the search result holding roving focus — `-1` while the input has it. */
+  /** @internal Index of the search result holding roving focus - `-1` while the input has it. */
   public focusedSearchIndex = signal(-1);
 
   private searchRetry = signal(0);
@@ -316,7 +316,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
         mode: 'non-modal',
         autoFocus: false,
         restoreFocus: false,
-        // Escape is owned by handlePanelKeydown (clear the search query first, close second) —
+        // Escape is owned by handlePanelKeydown (clear the search query first, close second) -
         // the runtime's capture-phase handler would close before the search input saw the key
         closeOnEscape: false,
         closeOnOutsidePointer: false,
@@ -349,7 +349,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
       this.focusInside.set(true);
 
       // the opening pointer click focuses the trigger one frame *after* the node's focus effect
-      // runs, stealing focus back — re-pull it onto the active node once everything has settled
+      // runs, stealing focus back - re-pull it onto the active node once everything has settled
       nextFrame(() => {
         if (!this.overlayRef()) {
           return;
@@ -365,7 +365,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
 
         // with a search box the input takes initial focus (menu pattern): typing filters
         // immediately, ArrowDown moves roving focus into the tree. The pane may not be
-        // focusable while its enter transition settles — retry until the focus sticks.
+        // focusable while its enter transition settles - retry until the focus sticks.
         const attempt = (remaining: number) => {
           if (!this.overlayRef()) {
             return;
@@ -395,16 +395,16 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
 
   private loadSubscriptions = new Map<number, Subscription>();
 
-  /** The deepest column index currently shown — the visible column in sheet (drill) mode. */
+  /** The deepest column index currently shown - the visible column in sheet (drill) mode. */
   public deepestColumnIndex = computed(() => Math.max(0, this.columns().length - 1));
 
-  /** Direction of the last column navigation — drives the panel's slide animation. `null` on open. */
+  /** Direction of the last column navigation - drives the panel's slide animation. `null` on open. */
   public navigationDirection = signal<'forward' | 'backward' | null>(null);
 
   /**
    * How the sheet header title animates on the last navigation. `'slide'` (a directional
    * cross-slide) for level changes that keep the Back bar; `'fade'` when the nav crosses the
-   * root boundary (Back appears/disappears) — there the title also shifts horizontally as the
+   * root boundary (Back appears/disappears) - there the title also shifts horizontally as the
    * Back bar's width animates, so a competing transform slide would look jumpy.
    */
   public titleAnimation = signal<'slide' | 'fade'>('slide');
@@ -418,7 +418,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
 
-    // a swapped data source describes a different tree — drop the child lists learned from
+    // a swapped data source describes a different tree - drop the child lists learned from
     // the old one so they can't promote branches of the new one to fully selected
     effect(() => {
       this.dataSource();
@@ -427,7 +427,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
     });
 
     // clear the browse state whenever the value is externally reset to nothing, so a
-    // reopened panel starts at the root instead of a stale branch — and in multi mode,
+    // reopened panel starts at the root instead of a stale branch - and in multi mode,
     // prune the known chains of values that were removed from outside
     effect(() => {
       const value = this.value();
@@ -458,7 +458,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
 
     // rebuild the breadcrumb when the value is set from outside (form patch/restore): `commit()`
     // already sets `path` alongside the value, so an internal commit's path ends at the value and
-    // is skipped here. Only a value the panel didn't pick reaches `resolvePath` — an optional
+    // is skipped here. Only a value the panel didn't pick reaches `resolvePath` - an optional
     // data-source hook, since the cascader can't reverse a lazy tree on its own.
     toObservable(this.value)
       .pipe(
@@ -486,7 +486,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
               ...missing.map((candidate) =>
                 toPathObservable(resolvePath(candidate)).pipe(
                   tap((resolved) => {
-                    // the value may have been deselected while resolving — drop the late chain
+                    // the value may have been deselected while resolving - drop the late chain
                     const stillSelected = this.values().some((current) => compareWith(current, candidate));
                     const resolvedLast = resolved?.[resolved.length - 1];
 
@@ -516,7 +516,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
           const currentPath = this.path();
           const last = currentPath[currentPath.length - 1];
 
-          // the committed path already ends at this value — nothing to resolve
+          // the committed path already ends at this value - nothing to resolve
           if (last && compareWith(last.value, value)) {
             return EMPTY;
           }
@@ -527,7 +527,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
 
           return toPathObservable(resolvePath(value)).pipe(
             tap((resolved) => {
-              // a later value change / clear superseded this (async) resolve — drop it
+              // a later value change / clear superseded this (async) resolve - drop it
               const currentValue = this.value();
 
               if (
@@ -570,7 +570,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
             this.focusedSearchIndex.set(-1);
           });
 
-          // .call keeps the data source as `this` — sources may implement `search` as a method
+          // .call keeps the data source as `this` - sources may implement `search` as a method
           return toSearchObservable(request.search.call(request.source, request.query)).pipe(
             tap({
               next: (results) => {
@@ -653,7 +653,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   }
 
   /**
-   * Whether a node is selected — on the committed chain in single mode; in multi mode an
+   * Whether a node is selected - on the committed chain in single mode; in multi mode an
    * exactly selected value, or a branch whose loaded descendants are all selected (ancestors
    * of a partial selection show as indeterminate instead).
    */
@@ -691,7 +691,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
 
   /**
    * Activates a node from a pointer/keyboard interaction: drills into branches, commits leaves.
-   * With `multiple`, activation toggles the node's value instead (and never closes) — branches
+   * With `multiple`, activation toggles the node's value instead (and never closes) - branches
    * still just drill in leaf mode, and toggle **and** drill in any-level mode.
    */
   public activateNode(node: CascaderNode<T>, columnIndex: number) {
@@ -786,7 +786,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   }
 
   /**
-   * Slides the browse window to `columnIndex` and moves roving focus onto its drilled node — a
+   * Slides the browse window to `columnIndex` and moves roving focus onto its drilled node - a
    * breadcrumb activation. The window is anchored AT the column (not minimally revealed), so
    * every crumb maps to a distinct view and stays clickable however the window was slid before.
    * Purely navigational: no columns are truncated, so the deeper levels stay drilled until a
@@ -801,7 +801,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
       this.focusNode(node, columnIndex);
     }
 
-    // pull DOM focus onto the node — the crumb keeps DOM focus otherwise while its column shows
+    // pull DOM focus onto the node - the crumb keeps DOM focus otherwise while its column shows
     this.focusPulse.update((pulse) => pulse + 1);
   }
 
@@ -902,7 +902,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
     }
   }
 
-  /** Collapses the deepest column and moves focus back to its parent — the sheet's back-nav. */
+  /** Collapses the deepest column and moves focus back to its parent - the sheet's back-nav. */
   public goBack() {
     const path = this.openPath();
     const parent = path.at(-1);
@@ -912,14 +912,14 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
     }
 
     this.navigationDirection.set('backward');
-    // returning to the root hides the Back bar (title shifts back to flush) — fade, not slide
+    // returning to the root hides the Back bar (title shifts back to flush) - fade, not slide
     this.titleAnimation.set(path.length === 1 ? 'fade' : 'slide');
     this.openPath.update((current) => current.slice(0, -1));
     this.truncateColumns(this.openPath().length + 1);
     this.focusNode(parent, this.openPath().length);
   }
 
-  /** @internal Reloads a column that errored — wired to the panel's retry control. */
+  /** @internal Reloads a column that errored - wired to the panel's retry control. */
   public retryColumn(columnIndex: number) {
     const column = this.columns()[columnIndex];
 
@@ -940,7 +940,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
     this.focusedSearchIndex.set(-1);
   }
 
-  /** Clears the flat-search query (and with it the result list — the columns return). */
+  /** Clears the flat-search query (and with it the result list - the columns return). */
   public clearSearch() {
     const search = this.registeredSearch();
 
@@ -954,7 +954,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
     this.focusedSearchIndex.set(-1);
   }
 
-  /** Re-runs a failed search with the current query — wired to the panel's retry control. */
+  /** Re-runs a failed search with the current query - wired to the panel's retry control. */
   public retrySearch() {
     this.searchRetry.update((count) => count + 1);
   }
@@ -967,7 +967,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
       return;
     }
 
-    // a branch match in leaf mode can't commit — re-root the columns onto it instead
+    // a branch match in leaf mode can't commit - re-root the columns onto it instead
     if (canHaveChildren(node) && this.selectableLevels() !== CASCADER_SELECTABLE_LEVELS.ANY) {
       this.browseToPath(path);
       this.clearSearch();
@@ -1081,7 +1081,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
       }
     }
 
-    // typing continues the query — focus returns to the input and the character lands there
+    // typing continues the query - focus returns to the input and the character lands there
     if (event.key.length === 1 && search) {
       event.preventDefault();
       this.focusedSearchIndex.set(-1);
@@ -1090,7 +1090,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   }
 
   // exactly selected, or a branch whose known children are all fully selected. Disabled children
-  // are skipped — they can't be toggled, so requiring them would lock the branch out of the full
+  // are skipped - they can't be toggled, so requiring them would lock the branch out of the full
   // state. `visited` breaks recursion on a (malformed) cyclic source.
   private isFullySelected(node: CascaderNode<T>, visited: CascaderNode<T>[]): boolean {
     const compareWith = this.compareWith();
@@ -1122,9 +1122,9 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   }
 
   private focusFirstOfColumn(columnIndex: number) {
-    // the column may still be loading — retry on the next frame until it has nodes
+    // the column may still be loading - retry on the next frame until it has nodes
     const attempt = (remaining: number) => {
-      // the panel was closed/unmounted while the column was loading — stop, or we'd pull focus
+      // the panel was closed/unmounted while the column was loading - stop, or we'd pull focus
       // into a node that is animating away
       if (!this.isMounted()) {
         return;
@@ -1165,7 +1165,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
   }
 
   private drillInto(node: CascaderNode<T>, columnIndex: number) {
-    // already expanded here — nothing to reload, but re-activating a branch whose children sit
+    // already expanded here - nothing to reload, but re-activating a branch whose children sit
     // beyond the window edge (after a breadcrumb slid it back) must still bring them into view
     if (this.isExpanded(node, columnIndex)) {
       this.revealColumn(columnIndex + 1);
@@ -1174,7 +1174,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
     }
 
     this.navigationDirection.set('forward');
-    // crossing the root boundary (Back bar appears) shifts the title as the bar grows — fade
+    // crossing the root boundary (Back bar appears) shifts the title as the bar grows - fade
     // instead of a competing slide; deeper drills keep the directional cross-slide
     this.titleAnimation.set(columnIndex === 0 ? 'fade' : 'slide');
     this.openPath.update((path) => [...path.slice(0, columnIndex), node]);
@@ -1303,7 +1303,7 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
 
     if (search && this.searchQuery()) {
       this.clearSearch();
-      // the cleared result list may have held focus — hand it back to the input
+      // the cleared result list may have held focus - hand it back to the input
       search.focus();
 
       return;
@@ -1317,16 +1317,16 @@ export class CascaderDirective<T = unknown> implements FormValueControl<T | T[] 
     this.openPath.set([]);
     this.columns.set([]);
     this.focusedColumn.set(0);
-    // a query kept from the last open would filter the fresh panel — reset to browse mode
+    // a query kept from the last open would filter the fresh panel - reset to browse mode
     this.searchQuery.set('');
     this.focusedSearchIndex.set(-1);
     // no slide animation for the columns present when the panel first opens
     this.navigationDirection.set(null);
 
-    // seed focus to the committed root before loading — a set value re-opens where it left off,
+    // seed focus to the committed root before loading - a set value re-opens where it left off,
     // and the guard in the root load skips its own seed. An empty value leaves focus null so the
     // root load seeds it to the first node instead. Multi re-opens onto the first known chain.
-    // While mixed, the raw value is masked — opening at its branch would reveal it, so the
+    // While mixed, the raw value is masked - opening at its branch would reveal it, so the
     // panel starts at the root like an empty control.
     const committed = this.mixed() ? [] : this.multiple() ? (this.selectedPaths()[0] ?? []) : this.path();
 

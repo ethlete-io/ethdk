@@ -1,37 +1,37 @@
 ---
 name: component-architecture
-description: The three-tier component design system (primitives / headless / default components) used across the @ethlete SDK. Read BEFORE creating or restructuring any component or directive in libs/components — new component, headless directive, sub-directive, design tokens, folder layout, error codes, or self-registration. Ensures new code matches the established architecture.
+description: The three-tier component design system (primitives / headless / default components) used across the @ethlete SDK. Read BEFORE creating or restructuring any component or directive in libs/components - new component, headless directive, sub-directive, design tokens, folder layout, error codes, or self-registration. Ensures new code matches the established architecture.
 ---
 
 # Component architecture
 
-The full spec lives in **`docs/COMPONENT-ARCHITECTURE.md`** — that file is the
+The full spec lives in **`docs/COMPONENT-ARCHITECTURE.md`** - that file is the
 source of truth. **Read it before non-trivial component work** (a new component,
 splitting behavior from presentation, adding design tokens, or laying out a
 domain folder). This skill is the index + the load-bearing rules; the doc has the
 detail, examples, and rationale.
 
 > Placement note: the doc names `libs/cdk` for Tier 2/3 because it predates the
-> current split. `cdk` is now in maintenance mode — **new component work goes in
+> current split. `cdk` is now in maintenance mode - **new component work goes in
 > `libs/components`** (`libs/components/src/lib/<domain>/`). The patterns below
 > apply identically there. Tier 1 primitives still live in `libs/core`.
 
 ## The three-tier model
 
-1. **Tier 1 — Primitives (`libs/core`).** Pure behavior, zero domain awareness
+1. **Tier 1 - Primitives (`libs/core`).** Pure behavior, zero domain awareness
    (e.g. `ListKeyManagerDirective`, `OverlayDirective`). No public `--et-` design
    tokens; may own private `--_` tokens it sets itself.
-2. **Tier 2 — Headless (`libs/components/.../headless/`).** All behavior + state
+2. **Tier 2 - Headless (`libs/components/.../headless/`).** All behavior + state
    for a domain, no visual opinion. Holds inputs/host-bindings/state. Sub-pieces
    self-register via DI. No template structure imposed. No public design tokens.
-3. **Tier 3 — Default component (domain root).** Opinionated template + design
+3. **Tier 3 - Default component (domain root).** Opinionated template + design
    tokens; applies the Tier 2 directive via `hostDirectives` and forwards inputs.
    Owns all `@property` token declarations. Covers ~90% of use cases zero-config.
 
 ## Rules that bite if you skip the doc
 
 - **Self-registration**: sub-directives `inject(ParentDirective, { optional: true })`
-  and call `parent.registerX(this)` in their constructor — the parent never uses
+  and call `parent.registerX(this)` in their constructor - the parent never uses
   `viewChild` to find them. Required pieces are enforced in dev only, via
   `if (ngDevMode) { afterNextRender(() => { if (!x()) throw new RuntimeError(...) }) }`.
 - **Errors**: use `RuntimeError` from `@ethlete/core` (not native `Error`), with a
@@ -62,8 +62,8 @@ detail, examples, and rationale.
   with an `injectX()` helper where a provider factory exists.
 
 When a change is non-trivial or you're unsure how a piece should be tiered, open
-`docs/COMPONENT-ARCHITECTURE.md` and follow it — don't infer the architecture from
+`docs/COMPONENT-ARCHITECTURE.md` and follow it - don't infer the architecture from
 a single nearby file.
 
 A new component domain also needs a guide page on the VitePress docs site
-(`apps/docs/components/<domain>.md` + sidebar entry) — see the **`docs`** skill.
+(`apps/docs/components/<domain>.md` + sidebar entry) - see the **`docs`** skill.

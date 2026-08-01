@@ -95,7 +95,7 @@ export class SoopPlayerDirective implements StreamPlayer {
     });
   }
 
-  // SOOP embeds have no programmatic control API — these are intentional no-ops.
+  // SOOP embeds have no programmatic control API - these are intentional no-ops.
 
   public play() {
     // no-op

@@ -12,7 +12,7 @@ export type DropzoneLabels = {
   prompt: string;
   /** The retry action on a failed entry. */
   retry: string;
-  /** Accessible label prefix for an entry's remove action — the file name is appended. */
+  /** Accessible label prefix for an entry's remove action - the file name is appended. */
   remove: string;
   /** Accessible label for the replace action, shown in single-file mode. */
   replaceFile: string;
@@ -36,7 +36,7 @@ const DROPZONE_LABELS_DEF = /* @__PURE__ */ defineLabels<DropzoneLabels>('DROPZO
 
 /**
  * Localize the dropzone's strings for everything below this injector, and read the set in effect here as a
- * signal. Partial — whatever you leave out keeps its {@link DEFAULT_DROPZONE_LABELS} value. See {@link defineLabels}
+ * signal. Partial - whatever you leave out keeps its {@link DEFAULT_DROPZONE_LABELS} value. See {@link defineLabels}
  * for the shape, which every domain in this library shares.
  *
  * @example

@@ -54,7 +54,7 @@ const firstErrorMessage = (error: RequestError) => {
 
 /**
  * The `V2QueryClient` counterpart of {@link tableRowsFromQuery}, for apps still on the legacy
- * client. Returns the same signal bundle — bind it to the table the same way, with
+ * client. Returns the same signal bundle - bind it to the table the same way, with
  * `sortMode="server"`. Uses the legacy `queryComputed` container idiom: it re-prepares as sort/page
  * change and releases the previous query.
  *

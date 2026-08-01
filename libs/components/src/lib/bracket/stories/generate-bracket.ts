@@ -10,7 +10,7 @@ import { BracketDataSource, BracketMatchSource, BracketRoundSource } from '../in
  * Compact `BracketDataSource` generators for Storybook. Single- and double-elimination
  * layout depends only on each round's `type` and match count (never on `home`/`away`/
  * `winner`), so these emit the minimal structure the engine needs plus recurring
- * participant ids to make journey highlighting meaningful — no giant API fixtures.
+ * participant ids to make journey highlighting meaningful - no giant API fixtures.
  *
  * Swiss is intentionally not generated: its grouping requires cross-round win/loss record
  * consistency that a real tournament fixture expresses more reliably.
@@ -33,7 +33,7 @@ const halvingCounts = (participantCount: number): number[] => {
 
 /**
  * Participant id for one side of match `matchIndex` in round `roundIndex`, derived by formula
- * so the top seed telescopes forward round to round (home always advances) — a hovered
+ * so the top seed telescopes forward round to round (home always advances) - a hovered
  * participant's path then lights up, with no array indexing.
  */
 const seedId = (
@@ -94,7 +94,7 @@ const lowerBracketCounts = (participantCount: number, async: boolean): number[] 
 export type DoubleEliminationOptions = {
   participantCount?: number;
   /**
-   * Truncated view of a larger tournament — the lower bracket runs one round longer than the
+   * Truncated view of a larger tournament - the lower bracket runs one round longer than the
    * shown winners bracket implies (see `lowerBracketCounts`). Real feeds ship these when the
    * full bracket is too large to render at once.
    */
@@ -102,14 +102,14 @@ export type DoubleEliminationOptions = {
   /** Append a grand final. Omit for a bracket that feeds a later stage instead of crowning a winner. */
   includeFinal?: boolean;
   /**
-   * Append the bracket-reset (reverse) final after the grand final. Optional — real feeds usually
+   * Append the bracket-reset (reverse) final after the grand final. Optional - real feeds usually
    * include it, but a grand-final-only bracket is valid. Ignored when `includeFinal` is false.
    */
   includeReverseFinal?: boolean;
   /** Append an optional third-place playoff. */
   includeThirdPlace?: boolean;
   /**
-   * Drop the opening winners round so the bracket starts a column late — the grid front-pads
+   * Drop the opening winners round so the bracket starts a column late - the grid front-pads
    * the missing column. Models a bracket whose first round is a bye / played elsewhere.
    */
   omitFirstUpperRound?: boolean;
@@ -121,7 +121,7 @@ export type DoubleEliminationOptions = {
  *
  * `participantCount` of 4 or 8 for the **left-to-right** layout, whose column mapping is a ratio
  * between the two brackets. The stacked (mirrored) layout folds each bracket around its own centre and
- * has no such ratio, so any power-of-two field works there — 32 is the one worth looking at.
+ * has no such ratio, so any power-of-two field works there - 32 is the one worth looking at.
  */
 export const generateDoubleEliminationBracket = (options: DoubleEliminationOptions = {}): Source => {
   const {
@@ -136,7 +136,7 @@ export const generateDoubleEliminationBracket = (options: DoubleEliminationOptio
   const rounds: Round[] = [];
   const matches: Match[] = [];
 
-  // Upper bracket — clean winner-advances-forward wiring; the top seed reaches the final.
+  // Upper bracket - clean winner-advances-forward wiring; the top seed reaches the final.
   halvingCounts(participantCount).forEach((matchCount, roundIndex) => {
     if (omitFirstUpperRound && roundIndex === 0) return;
 
@@ -157,7 +157,7 @@ export const generateDoubleEliminationBracket = (options: DoubleEliminationOptio
 
   const upperChampion = 'u1';
 
-  // Lower bracket — distinct participant ids per match; the last winner meets the final.
+  // Lower bracket - distinct participant ids per match; the last winner meets the final.
   const lowerCounts = lowerBracketCounts(participantCount, partial);
 
   lowerCounts.forEach((matchCount, roundIndex) => {

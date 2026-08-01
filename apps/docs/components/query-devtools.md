@@ -4,7 +4,7 @@ An in-app inspector for the signals-first [`@ethlete/query`](/query/) system:
 queries, [stacks & paged stacks](/query/stacks), [dependent-query sequences](/query/dependent-queries),
 [GraphQL queries](/query/gql) (shown in the Queries tab with their document), [bearer auth providers](/query/auth),
 [web socket clients](/query/ws), the repository cache and a rolling event log. It
-renders as a floating, dockable panel — a development aid, not something you ship
+renders as a floating, dockable panel - a development aid, not something you ship
 enabled to end users.
 
 Import `QUERY_DEVTOOLS_IMPORTS` for the component and enable instrumentation with
@@ -40,8 +40,8 @@ export class AppComponent {}
 ```
 
 Without `provideQueryDevtools()` the registry stays empty and the panel shows
-nothing. Instrumentation is a no-op until you call it — it retains no references
-and adds no runtime overhead — so leaving `<et-query-devtools>` mounted while
+nothing. Instrumentation is a no-op until you call it - it retains no references
+and adds no runtime overhead - so leaving `<et-query-devtools>` mounted while
 omitting the provider in production builds is safe.
 
 ## Live demo
@@ -66,7 +66,7 @@ character the keyboard reports.
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Queries**   | Every registered query, filterable by client. Method badge, route (path params rendered as `:param`), live status, feature chips and a stale marker; the detail view shows args, response/error, cache key (`id()`), last-executed time and `triggeredBy`, with `execute()` / `execute({ options: { allowCache: true } })` / `reset()` actions.                                                                                                                                                |
 | **Stacks**    | Query stacks and paged query stacks: combined loading/error, and for paged stacks the pages loaded, item count and direction. Inner queries are listed as rows and open in a split-view drawer (the stack context is kept).                                                                                                                                                                                                                                                                    |
-| **Sequences** | Each `querySequence` as a selectable step chain — click a step to open its query in a split-view drawer (like Stacks); expand a step to see its input args and output response/error inline.                                                                                                                                                                                                                                                                                                   |
+| **Sequences** | Each `querySequence` as a selectable step chain - click a step to open its query in a split-view drawer (like Stacks); expand a step to see its input args and output response/error inline.                                                                                                                                                                                                                                                                                                   |
 | **Auth**      | Each bearer auth provider: authenticated state, access/refresh token presence, the decoded access-token JWT payload, current `executionState` and the latest auth query snapshot.                                                                                                                                                                                                                                                                                                              |
 | **Sockets**   | Each `createWebSocketClient`: connection state, joined rooms and a rolling log of received messages.                                                                                                                                                                                                                                                                                                                                                                                           |
 | **Cache**     | Per-client repository entries: cache key, consumer count, secure flag, a live freshness countdown, the [multi-tab sync](/query/multi-tab#debugging-it) state (`polling` / `standby`, and when the entry last took a response from another tab), whether the entry took its data from the [persisted store](/query/persistence#debugging-it) and per-entry **Refetch** / **Evict** actions. The card header also shows how many responses the client has on disk, with a **Clear disk** button. |
@@ -74,31 +74,31 @@ character the keyboard reports.
 
 ## Beyond a read-only view
 
-The panel doesn't just display state — it acts on the live query objects your
+The panel doesn't just display state - it acts on the live query objects your
 components are bound to, which the browser Network tab can't do:
 
-- **Value explorer** — a collapsible, searchable tree of the _transformed_ value
+- **Value explorer** - a collapsible, searchable tree of the _transformed_ value
   (args / response / error, post-`transformResponse`). Every row copies to the
   clipboard, including arrays and objects: a container copies its whole subtree as
   formatted JSON, a leaf copies the bare value (a string without the display
   quotes, so an id or url pastes straight into a search box). The button ticks
   green to confirm.
-- **JIT editing** — edit a query's response and apply it via `setResponse()` (the
-  UI re-renders instantly — great for optimistic / edge-case testing), or replay
+- **JIT editing** - edit a query's response and apply it via `setResponse()` (the
+  UI re-renders instantly - great for optimistic / edge-case testing), or replay
   the query with edited args.
-- **Force states** — force a query into loading / error / empty to exercise
+- **Force states** - force a query into loading / error / empty to exercise
   skeletons, spinners and error / empty UIs on demand (`Clear` restores it).
-- **Cache actions** — refetch or evict individual cache entries and watch the
+- **Cache actions** - refetch or evict individual cache entries and watch the
   freshness countdown.
-- **Inspect** — toggle inspect mode, then hover the live UI to highlight the query
+- **Inspect** - toggle inspect mode, then hover the live UI to highlight the query
   a component created; click to jump straight to its detail. The Queries list then
   shows an **Inspected element** banner with the number of matches, and **Clear**
   restores the full list.
 
 ## Persistence
 
-The view state — open/closed, panel height, active tab, selected client, selected
-query, inspect filter, value-explorer search and expanded tree paths — is
+The view state - open/closed, panel height, active tab, selected client, selected
+query, inspect filter, value-explorer search and expanded tree paths - is
 persisted to `sessionStorage` under `ethlete:query:devtools:v4`, so it survives a
 page reload within the tab session without leaking devtools state across sessions.
 (Restoring the selected query relies on registry ids being stable across reloads,

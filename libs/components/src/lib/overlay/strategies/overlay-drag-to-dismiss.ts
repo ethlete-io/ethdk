@@ -31,7 +31,7 @@ export type DragToDismissContext = {
   /**
    * Called immediately before the gesture closes the overlay, with the momentum of the release. The
    * sheet strategy uses it to give the leave transition the speed of the swipe instead of a fixed
-   * duration — see `createSheetStrategy`.
+   * duration - see `createSheetStrategy`.
    */
   onDismiss?: (momentum: DragDismissMomentum) => void;
 };
@@ -57,7 +57,7 @@ const MIN_MOMENTUM_SPEED = 50;
 
 /**
  * Maps a logical direction onto the physical axis it points at for the element's writing direction.
- * Physical directions are returned as-is — they mean what they say in every writing direction.
+ * Physical directions are returned as-is - they mean what they say in every writing direction.
  */
 const resolvePhysicalDirection = (
   direction: OverlayDragToDismissDirection,
@@ -84,7 +84,7 @@ type DismissAxis = {
   /** Turns an offset (`0` = docked, positive = toward dismissal) into a CSS transform. */
   transform: (offset: number) => string;
 
-  /** The overlay's own size along the axis — the distance a full dismissal covers. */
+  /** The overlay's own size along the axis - the distance a full dismissal covers. */
   extentOf: (el: HTMLElement) => number;
 };
 
@@ -165,7 +165,7 @@ const resolveSnapEnd = (input: SwipeEndInput & { offsets: number[] }): SwipeEndR
     return { kind: 'settle', offset: next, speed };
   }
 
-  // A slow release settles wherever it is closest to — including the fully-dismissed position, which
+  // A slow release settles wherever it is closest to - including the fully-dismissed position, which
   // is what makes an overlay dragged most of the way out finish the job instead of springing back.
   const nearest = [...offsets, axisExtent].reduce((best, offset) =>
     Math.abs(offset - currentOffset) < Math.abs(best - currentOffset) ? offset : best,
@@ -282,7 +282,7 @@ export const enableDragToDismiss = (context: DragToDismissContext): DragToDismis
 
   /**
    * Drops the inline transition, which lands the overlay on its settle target instantly. Only the
-   * docked position may drop the inline transform too — a snap point has to keep holding the overlay
+   * docked position may drop the inline transform too - a snap point has to keep holding the overlay
    * in place once the transition is gone.
    */
   const finishSettle = () => {
@@ -382,7 +382,7 @@ export const enableDragToDismiss = (context: DragToDismissContext): DragToDismis
     )
     .subscribe();
 
-  // Pointer events cannot suppress native scrolling — `preventDefault` on `pointermove` is ignored,
+  // Pointer events cannot suppress native scrolling - `preventDefault` on `pointermove` is ignored,
   // and `touch-action` is no help here because it would also disable scrolling inside the overlay
   // body, which pans on the very axis the gesture uses. So the gesture itself runs on pointer events
   // while this one non-passive listener does nothing but keep the page still once it has committed.

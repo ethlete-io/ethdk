@@ -1,6 +1,6 @@
-# 09 — Query error
+# 09 - Query error
 
-**Status: DONE (2026-07-30).** Size: S (smaller than the S–M estimate — see below).
+**Status: DONE (2026-07-30).** Size: S (smaller than the S–M estimate - see below).
 Research done 2026-07-23 against `libs/cdk/src/lib/components/query-error/`
 (~280 lines). Shipped net-new in `libs/components/src/lib/query-error/`. cdk
 query-error untouched.
@@ -22,7 +22,7 @@ They don't: **the current query client already does all of it.**
 `createQueryErrorResponse` (in `libs/query/src/lib/http/query-error-response.ts`)
 runs the same shape classifiers cdk called, and `query.error()` returns the
 result with the retry policy's verdict already attached as `retryState`. So the
-directive reads a normalized error instead of producing one — which is also what
+directive reads a normalized error instead of producing one - which is also what
 makes it client-agnostic, since it never names a client's types.
 
 ## What shipped
@@ -44,7 +44,7 @@ stories, a `minor` changeset, 10 unit tests.
 - Modelled on `stream-player-error`: headless directive via `hostDirectives`,
   the components-lib `ButtonComponent` + `IconDirective`, surface tokens for
   text.
-- **`injectLocale()` instead of a `language` input** — cdk's weakest API point.
+- **`injectLocale()` instead of a `language` input** - cdk's weakest API point.
   EN/DE ship (those are the only tables `@ethlete/query` has); any other locale
   goes through `provideQueryErrorLabels`.
 - Rendering parity: status title, single message vs `<ul>` list, the title-dedup
@@ -63,7 +63,7 @@ stories, a `minor` changeset, 10 unit tests.
 - **Legacy support is an adapter, not a union input** (the decision asked for at
   planning time; confirmed with the team 2026-07-30). `legacyQueryErrorSource`
   converts a legacy `RequestError` by handing its `httpErrorResponse` to the
-  current client's normalizer — so both clients are described by one
+  current client's normalizer - so both clients are described by one
   classification path, and this one file is all there is to delete when the last
   legacy query goes.
   - The adapter takes the **error**, not the query, because legacy query state is

@@ -1,6 +1,6 @@
 # WebSockets
 
-A room-based realtime client built on **socket.io**. It is independent of the query system — no client or repository involved — but pairs naturally with the [`withResponseUpdate`](/query/features#withresponseupdate) feature to push socket messages into already-loaded queries.
+A room-based realtime client built on **socket.io**. It is independent of the query system - no client or repository involved - but pairs naturally with the [`withResponseUpdate`](/query/features#withresponseupdate) feature to push socket messages into already-loaded queries.
 
 Like the [query client](/query/queries#the-query-client), `createWebSocketClient` returns a root-provider tuple:
 
@@ -34,8 +34,8 @@ export class MatchComponent {
 
 | Option       | Default            | Description                                                           |
 | ------------ | ------------------ | --------------------------------------------------------------------- |
-| `name`       | — (required)       | Unique client name, used in the injection token.                      |
-| `url`        | — (required)       | The socket.io server URL.                                             |
+| `name`       | - (required)       | Unique client name, used in the injection token.                      |
+| `url`        | - (required)       | The socket.io server URL.                                             |
 | `transports` | socket.io defaults | Ordered transport list: `'polling' \| 'websocket' \| 'webtransport'`. |
 
 The underlying socket always connects with `withCredentials: true` and disconnects automatically when the providing scope is destroyed.
@@ -44,9 +44,9 @@ The underlying socket always connects with `withCredentials: true` and disconnec
 
 `joinRoom(room)` accepts a static room name or a reactive function and returns a `Signal<WebSocketRoom | null>`:
 
-- A **function** is evaluated in a reactive context — returning a new string leaves the previous room and joins the new one; returning `null` joins nothing.
+- A **function** is evaluated in a reactive context - returning a new string leaves the previous room and joins the new one; returning `null` joins nothing.
 - Rooms are **shared**: joining the same room twice returns the same underlying room, and the room is left automatically when the consuming context is destroyed.
-- A room exposes `latestMessage()` — a signal holding the most recent message for that room (or `null`).
+- A room exposes `latestMessage()` - a signal holding the most recent message for that room (or `null`).
 
 ## Connection state & reconnects
 
@@ -57,13 +57,13 @@ The underlying socket always connects with `withCredentials: true` and disconnec
 The client speaks a small convention on top of socket.io:
 
 - joining/leaving emits `'join-room'` / `'leave-room'` events with the room name,
-- the server broadcasts JSON strings shaped like `{ room: string; event: string; data: TMessageData }` — the `room` field routes the message to the right `latestMessage` signal.
+- the server broadcasts JSON strings shaped like `{ room: string; event: string; data: TMessageData }` - the `room` field routes the message to the right `latestMessage` signal.
 
 Malformed messages are logged and throw in dev mode only; in production they are silently dropped.
 
 ## Live-updating query responses
 
-The canonical pairing — fetch once via HTTP, then patch the response from socket messages:
+The canonical pairing - fetch once via HTTP, then patch the response from socket messages:
 
 ```ts
 matchRoom = this.socket.joinRoom(() => `match:${this.matchId()}`);

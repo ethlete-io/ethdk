@@ -77,7 +77,7 @@ export class FormFieldInputStorybookComponent {
   public labelMode = input<FormFieldLabelMode>(FORM_FIELD_LABEL_MODES.STATIC);
   public type = input<(typeof INPUT_TYPES)[keyof typeof INPUT_TYPES]>(INPUT_TYPES.TEXT);
   public label = input('Label');
-  /** Accessible name used when `label` is empty — a placeholder is not an accessible name. */
+  /** Accessible name used when `label` is empty - a placeholder is not an accessible name. */
   public ariaLabel = input('Search');
   public placeholder = input('Placeholder');
   public hint = input('');

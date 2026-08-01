@@ -54,7 +54,7 @@ export const renderMaskDisplay = (options: { spec: MaskSpec; raw: string; guide:
 
 export type MaskEditOptions = {
   spec: MaskSpec;
-  /** The raw value before this edit — detects edits that only removed formatting. */
+  /** The raw value before this edit - detects edits that only removed formatting. */
   previousRaw: string;
   /** The element's text after the native edit. */
   text: string;
@@ -62,7 +62,7 @@ export type MaskEditOptions = {
   caret: number;
   /** The `InputEvent.inputType`, when available. */
   inputType?: string;
-  /** Render the guide display (unfilled slots) — used while the field is focused. */
+  /** Render the guide display (unfilled slots) - used while the field is focused. */
   guide?: boolean;
 };
 
@@ -72,7 +72,7 @@ export type MaskEditResult = {
   caret: number;
 };
 
-/** Reconciles a native edit into `{ raw, display, caret }` — the engine's main entry. */
+/** Reconciles a native edit into `{ raw, display, caret }` - the engine's main entry. */
 export const applyMaskEdit = (options: MaskEditOptions): MaskEditResult => {
   const { spec, previousRaw, text, caret, inputType, guide = false } = options;
 
@@ -81,7 +81,7 @@ export const applyMaskEdit = (options: MaskEditOptions): MaskEditResult => {
   const deletion = !!inputType?.startsWith('delete');
 
   // a deletion that left the raw value untouched only removed formatting (e.g.
-  // backspace over the dash in `12-|34`) — delete the adjacent content character instead
+  // backspace over the dash in `12-|34`) - delete the adjacent content character instead
   if (deletion && raw === previousRaw && raw.length > 0) {
     if (inputType === 'deleteContentForward') {
       raw = raw.slice(0, anchorBefore) + raw.slice(anchorBefore + 1);
@@ -94,7 +94,7 @@ export const applyMaskEdit = (options: MaskEditOptions): MaskEditResult => {
   const display = renderMaskDisplay({ spec, raw, guide });
 
   // end-anchored masks (right-growing numbers) never glide past formatting and cap the
-  // caret at the end of the content — before a suffix, even when typed input overflowed
+  // caret at the end of the content - before a suffix, even when typed input overflowed
   if ((spec.caretAnchor ?? 'start') === 'end') {
     return { raw, display, caret: caretForRawCount({ spec, display, count: Math.min(anchorBefore, raw.length) }) };
   }

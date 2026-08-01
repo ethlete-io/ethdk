@@ -160,7 +160,7 @@ export const createAnchoredPositionCleanup = (
       );
     }
 
-    // size must run AFTER shift so the available space is measured from the shifted position —
+    // size must run AFTER shift so the available space is measured from the shifted position -
     // otherwise a cross-axis-shifted pane gets its max size capped to the unshifted leftover space
     if (strategy.autoResize) {
       middleware.push(
@@ -182,7 +182,7 @@ export const createAnchoredPositionCleanup = (
           element: arrowElement,
           // keeps the arrow off a rounded pane corner by default: 12px covers the radius of the
           // built-in boxed panes (--et-overlay-radius). Panes with a larger radius have to pass their
-          // own — an arrow whose base sits on the corner arc looks detached from the pane.
+          // own - an arrow whose base sits on the corner arc looks detached from the pane.
           padding: strategy.arrowPadding ?? 12,
         }),
       );

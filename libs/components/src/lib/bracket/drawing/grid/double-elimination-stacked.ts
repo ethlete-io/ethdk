@@ -32,7 +32,7 @@ const CENTRE_CHAIN_ORDER: Partial<Record<string, number>> = {
 
 /** One of the two blocks this layout stacks: a bracket folded around its own centre. */
 type StackedBlock<TRoundData, TMatchData> = {
-  /** Every other column's height is derived from this one — the outermost slot on the way out. */
+  /** Every other column's height is derived from this one - the outermost slot on the way out. */
   firstRound: BracketRound<TRoundData, TMatchData>;
 
   /** The slots left of the centre, outermost first. */
@@ -65,7 +65,7 @@ type StackedBlockConfig<TRoundData, TMatchData> = {
   hasReverseFinal: boolean;
 };
 
-/** The card drawn for a round's matches — the deciding one is the taller `finalMatch`. */
+/** The card drawn for a round's matches - the deciding one is the taller `finalMatch`. */
 const isFinalMatchRound = <TRoundData, TMatchData>(
   round: BracketRound<TRoundData, TMatchData>,
   hasReverseFinal: boolean,
@@ -76,7 +76,7 @@ const isFinalMatchRound = <TRoundData, TMatchData>(
 
 /**
  * A chain round takes exactly the room its cards need. Every other column reserves the same height for
- * every round (`createRoundBracketSubColumnRelativeToFirstRound`), which the chain cannot do — it stacks
+ * every round (`createRoundBracketSubColumnRelativeToFirstRound`), which the chain cannot do - it stacks
  * several rounds in one column.
  */
 const chainRoundHeight = <TRoundData, TMatchData>(config: {
@@ -139,7 +139,7 @@ const createStackedBlock = <TRoundData, TMatchData>(
   const anchorHeight = chain[0] ? chainRoundHeight({ round: chain[0], options, hasReverseFinal }) : 0;
 
   // The round both halves converge on sits on the block's vertical centre, which is where the two halves'
-  // own matches sit — so the connectors into it stay straight. A chain too long to hang under it from
+  // own matches sit - so the connectors into it stay straight. A chain too long to hang under it from
   // there grows the block rather than sliding up: an anchor a few px off centre turns every one of those
   // connectors into a diagonal, in a drawing where nothing else is.
   const spacerTop = Math.max(0, (content - anchorHeight) / 2);
@@ -206,8 +206,8 @@ export const createStackedDoubleEliminationGrid = <TRoundData, TMatchData>(
   const blockHeight = (block: StackedBlock<TRoundData, TMatchData>) =>
     headerBlock + block.content + block.bottomPadding;
 
-  // Both blocks put their centre in the same master column, so the chains — and the grand final's line
-  // down to the losers champion — run up one strip rather than two.
+  // Both blocks put their centre in the same master column, so the chains - and the grand final's line
+  // down to the losers champion - run up one strip rather than two.
   const centreIndex = Math.max(...blocks.map((block) => block.left.length));
   const columnCount = centreIndex + 1 + Math.max(...blocks.map((block) => block.right.length));
 

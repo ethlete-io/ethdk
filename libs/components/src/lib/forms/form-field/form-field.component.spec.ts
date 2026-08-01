@@ -135,7 +135,7 @@ describe('FormFieldComponent disabled state', () => {
   });
 
   // The disabled treatment is driven by the registered control's state (data-disabled), NOT by
-  // :has(:disabled) — a composite control (e.g. the rich text editor) legitimately disables
+  // :has(:disabled) - a composite control (e.g. the rich text editor) legitimately disables
   // individual toolbar buttons while fully enabled, and :has would dim the whole field over it.
   it('sets data-disabled from the registered control, not from arbitrary disabled descendants', () => {
     const field = fixture.nativeElement.querySelector('et-form-field') as HTMLElement;

@@ -32,12 +32,12 @@ const isBreakpointMap = (value: unknown): value is BreakpointMap<unknown> => {
 
   if (!invalidKeys.length) return true;
 
-  // One bad key makes the whole map inert — it stops being a breakpoint map and becomes a plain value, which
+  // One bad key makes the whole map inert - it stops being a breakpoint map and becomes a plain value, which
   // for an attribute binding means `[object Object]` and no effect at all. Silent, and expensive to find.
   if (ngDevMode && invalidKeys.length < keys.length) {
     console.warn(
       `[ethlete] A breakpoint map used the unknown key(s) ${invalidKeys.map((key) => `"${key}"`).join(', ')}, so ` +
-        `the whole map was ignored. Valid keys are ${BREAKPOINT_ORDER.join(', ')} — there is no "default"; the ` +
+        `the whole map was ignored. Valid keys are ${BREAKPOINT_ORDER.join(', ')} - there is no "default"; the ` +
         'smallest breakpoint is the fallback.',
     );
   }

@@ -33,12 +33,12 @@ const COMPACT_MAX_WIDTH = 480;
  * {@link PaginationDirective}.
  *
  * By default items are `<button>`s (pure client state). Set `renderAs="links"` with a `urlForPage`
- * to render crawlable `<a href>`s instead — normal clicks are intercepted (no reload) so the `page`
+ * to render crawlable `<a href>`s instead - normal clicks are intercepted (no reload) so the `page`
  * model still drives everything; modified clicks (⌘/Ctrl/middle) open the URL as usual. Opt into a
  * "Showing X–Y of Z" readout with `totalItems`/`pageSize`, and a jump-to-page field with `showJumpTo`.
  *
  * Every string it renders (control `aria-label`s, the readouts, the jump-to label) comes from the
- * resolved `PaginationLabels` — localize them app-wide with `providePaginationLabels` or per
+ * resolved `PaginationLabels` - localize them app-wide with `providePaginationLabels` or per
  * instance with the `labels` input.
  *
  * @example
@@ -79,14 +79,14 @@ export class PaginationComponent {
   public renderAs = input<PaginationRenderAs>('buttons');
 
   /**
-   * Control density. `'sm'` shrinks the page items below the comfortable touch size — use it in tight
+   * Control density. `'sm'` shrinks the page items below the comfortable touch size - use it in tight
    * spots like a table footer on mobile, where the default targets read larger than the rows. @default 'md'
    */
   public size = input<'sm' | 'md'>('md');
 
   /**
    * Adapt to the paginator's own width (measured, not a viewport media query). It trims the page window
-   * to whatever fits on one row — dropping siblings, then the first/last jumps — and, once the width is
+   * to whatever fits on one row - dropping siblings, then the first/last jumps - and, once the width is
    * too tight for a useful number row, collapses to previous/next around a "page X of Y" readout with
    * roomy touch targets. Turn off to always honor `siblingCount`/`boundaryCount` verbatim.
    * @default true
@@ -112,7 +112,7 @@ export class PaginationComponent {
   /** Show a jump-to-page number field (useful for very large page counts). @default false */
   public showJumpTo = input(false, { transform: booleanAttribute });
 
-  // The rendered list + its items, measured (untracked) to decide how many fit — see `slotsThatFit`.
+  // The rendered list + its items, measured (untracked) to decide how many fit - see `slotsThatFit`.
   private listEl = viewChild<ElementRef<HTMLUListElement>>('paginationList');
   private itemEls = viewChildren<ElementRef<HTMLElement>>('paginationItem');
 
@@ -170,7 +170,7 @@ export class PaginationComponent {
   /**
    * The widest readout this paginator can ever show, rendered invisibly underneath the live one so the
    * readout's box never changes size. Without it, stepping 9 → 10 widens the text by a digit and shoves
-   * everything laid out beside the paginator sideways — very visible when the paginator is right-aligned
+   * everything laid out beside the paginator sideways - very visible when the paginator is right-aligned
    * next to a page-size select.
    *
    * Every slot gets the largest number in play, which with the tabular figures below is an upper bound
@@ -263,7 +263,7 @@ export class PaginationComponent {
     return { start, end, totalItems: this.totalItems() ?? 0 };
   }
 
-  /** The widest string a readout can produce — see {@link widestRangeStatus}. */
+  /** The widest string a readout can produce - see {@link widestRangeStatus}. */
   private widestStatus(variant: 'range' | 'compact') {
     const labels = this.pagination.resolvedLabels();
     const total = this.totalItems();
@@ -302,7 +302,7 @@ export class PaginationComponent {
 
   /**
    * Candidate window configs, richest → sparsest: shed siblings, then the extra boundary pages, then
-   * the first/last jumps — never dropping what the consumer already hid. Previous/next always survive;
+   * the first/last jumps - never dropping what the consumer already hid. Previous/next always survive;
    * once even this doesn't fit, {@link compact} takes over with a chevrons-only pager.
    */
   private fitAttempts(base: PaginateOptions): Partial<PaginateOptions>[] {

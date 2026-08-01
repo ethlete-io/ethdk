@@ -209,7 +209,7 @@ describe('selectOptionsFromV2Query', () => {
       );
     };
 
-    // loadMore isn't debounced — flush the query effect + mock timer like a search hop does.
+    // loadMore isn't debounced - flush the query effect + mock timer like a search hop does.
     const flush = async () => {
       TestBed.tick();
       await settle();
@@ -283,7 +283,7 @@ describe('selectOptionsFromV2Query', () => {
       expect(source.options()).toEqual([...page1, ...page2]);
       expect(source.hasMore()).toBe(false);
 
-      // hasMore is false — this must not request a (non-existent) page 3
+      // hasMore is false - this must not request a (non-existent) page 3
       source.loadMore();
       await flush();
       expect(source.options()).toEqual([...page1, ...page2]);

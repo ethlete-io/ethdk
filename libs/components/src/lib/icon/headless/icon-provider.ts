@@ -144,7 +144,7 @@ export const ET_BUILT_IN_ICON_NAMES = [
   'et-upload',
 ] as const;
 
-/** Union of the SDK's built-in icon names — see {@link ET_BUILT_IN_ICON_NAMES}. */
+/** Union of the SDK's built-in icon names - see {@link ET_BUILT_IN_ICON_NAMES}. */
 export type EtBuiltInIconName = (typeof ET_BUILT_IN_ICON_NAMES)[number];
 
 /**
@@ -160,8 +160,8 @@ export type IconOverride = Omit<IconDefinition, 'name'> & {
 /**
  * Overrides the SDK's built-in icons app-wide (or for a subtree). Provide it once in your
  * application providers with icons whose `name`/`variant` match the built-ins you want to
- * replace — e.g. your own Font Awesome set generated via the `@ethlete/components:icons`
- * generator — and every component that renders that icon picks up your version, without
+ * replace - e.g. your own Font Awesome set generated via the `@ethlete/components:icons`
+ * generator - and every component that renders that icon picks up your version, without
  * touching the component's own `provideIcons()` registration.
  *
  * `name` autocompletes to the built-in {@link ET_BUILT_IN_ICON_NAMES} set, so you don't have

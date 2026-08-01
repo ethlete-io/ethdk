@@ -34,7 +34,7 @@ type HandlerDemoResult = 'confirmed' | 'dismissed';
     </div>
     <et-overlay-body>
       <p class="hd-info">
-        This overlay was opened via <code>openHandlerDemoOverlay</code>. Choose a result below — it flows back to the
+        This overlay was opened via <code>openHandlerDemoOverlay</code>. Choose a result below - it flows back to the
         <code>afterClosed</code> callback as a typed <code>'confirmed' | 'dismissed'</code> value.
       </p>
     </et-overlay-body>
@@ -174,7 +174,7 @@ export class OverlayHandlerDemoComponent {
 }
 
 // ---------------------------------------------------------------------------
-// Exported handler — defined at module level, outside any component.
+// Exported handler - defined at module level, outside any component.
 // In real apps this lives in the overlay component's own file and is imported
 // wherever the overlay needs to be opened.
 // ---------------------------------------------------------------------------
@@ -219,7 +219,7 @@ type ResultEntry = { value: string; type: 'confirmed' | 'dismissed' | 'null'; in
           }
         </div>
         @if (resultLog().length === 0) {
-          <p class="et-sb-log-empty">No results yet — open and close an overlay above.</p>
+          <p class="et-sb-log-empty">No results yet - open and close an overlay above.</p>
         } @else {
           <ul class="et-sb-log-list">
             @for (entry of resultLog(); track entry.index) {
@@ -334,7 +334,7 @@ export class OverlayHandlerHostComponent {
   protected readonly resultLog = signal<ResultEntry[]>([]);
   private _counter = 0;
 
-  // Class field initializer — runs in the injection context of the constructor.
+  // Class field initializer - runs in the injection context of the constructor.
   // In real apps this is exactly how you'd wire up the handler in any component.
   private readonly handler = openHandlerDemoOverlay({
     afterClosed: (result) => {
@@ -375,7 +375,7 @@ export class OverlayHandlerHostComponent {
         <div class="qp-param-row">
           <span class="qp-param-key">demo</span>
           <span class="qp-param-sep">=</span>
-          <span class="qp-param-val">{{ overlayQueryParam() ?? '—' }}</span>
+          <span class="qp-param-val">{{ overlayQueryParam() ?? '-' }}</span>
         </div>
         <span class="qp-param-url"
           >URL contains: <code>?demo={{ overlayQueryParam() }}</code></span
@@ -553,7 +553,7 @@ export class OverlayQueryParamDemoComponent {
 }
 
 // ---------------------------------------------------------------------------
-// Exported handler — in real apps defined in the overlay component's file and
+// Exported handler - in real apps defined in the overlay component's file and
 // initialized once in a long-lived component (e.g. AppComponent).
 // ---------------------------------------------------------------------------
 export const createQueryParamDemoOverlay = createOverlayHandlerWithQueryParamLifecycle<OverlayQueryParamDemoComponent>({
@@ -612,7 +612,7 @@ export const createQueryParamDemoOverlay = createOverlayHandlerWithQueryParamLif
         <div class="et-sb-card">
           <h3 class="et-sb-card-title">Close</h3>
           <p class="et-sb-card-text">
-            Calls <code>handler.close()</code> — removes <code>?demo</code> and closes the overlay.
+            Calls <code>handler.close()</code> - removes <code>?demo</code> and closes the overlay.
           </p>
           <button (click)="close()" class="et-sb-btn et-sb-btn--danger" type="button">Close</button>
         </div>
@@ -764,14 +764,14 @@ export const createQueryParamDemoOverlay = createOverlayHandlerWithQueryParamLif
   encapsulation: ViewEncapsulation.None,
 })
 export class OverlayQueryParamHostComponent {
-  // Class field initializer — in real apps this is typically in AppComponent so the
+  // Class field initializer - in real apps this is typically in AppComponent so the
   // handler persists for the whole app lifetime and immediately reacts to any ?demo= param.
   private readonly handler = createQueryParamDemoOverlay();
   private readonly router = inject(Router);
   protected readonly currentParam = injectQueryParam('demo');
   protected readonly customValue = signal('');
 
-  // Navigate via the Router directly — the handler watches the query param reactively
+  // Navigate via the Router directly - the handler watches the query param reactively
   // and opens/closes the overlay as a side-effect of the URL change.
   open(value: string) {
     this.router.navigate([], { queryParams: { demo: value }, queryParamsHandling: 'merge' });

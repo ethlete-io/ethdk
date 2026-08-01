@@ -5,7 +5,7 @@ This document outlines the coding style guide for Angular applications at Braune
 **This guide is a work in progress and will be updated regularly.**
 
 > **Enforcement:** most rules below are enforced automatically by
-> `@ethlete/eslint-plugin` — run `npx nx lint <project>` and fix what it reports,
+> `@ethlete/eslint-plugin` - run `npx nx lint <project>` and fix what it reports,
 > rather than hand-checking. When working with an agent, the **`styleguide`** skill
 > distills the judgment calls lint can't check, and **`component-architecture`**
 > covers component structure.
@@ -16,8 +16,8 @@ Key standards at a glance. **Most are enforced by lint** (see [Enforced by lint]
 
 - **Types**: `unknown` not `any`; `type` not `interface`; `as const` objects not `enum`; `T`-prefixed descriptive generics; regular value imports (no `import type`); narrow with type guards.
 - **Code**: `const` by default (`let` only to reassign, never `var`); one declaration per statement; `===` / `!==`; arrow fns standalone, methods in classes; max two params (object param beyond that).
-- **State**: signals for synchronous state, RxJS for async — always unsubscribe; effects for signal-driven side effects.
-- **Angular**: `ViewEncapsulation.None`; `inject()` not constructor injection; no legacy lifecycle hooks — prefer `constructor` + `afterNextRender` + `DestroyRef.onDestroy`; no function calls in templates except signal reads.
+- **State**: signals for synchronous state, RxJS for async - always unsubscribe; effects for signal-driven side effects.
+- **Angular**: `ViewEncapsulation.None`; `inject()` not constructor injection; no legacy lifecycle hooks - prefer `constructor` + `afterNextRender` + `DestroyRef.onDestroy`; no function calls in templates except signal reads.
 - **Naming & structure**: name things after what they do; routing components end in `-view`; mirror routes in folders; keep related files together.
 - **Changesets**: one focused, imperative-mood entry per change (see the `changeset` skill).
 
@@ -25,20 +25,20 @@ Key standards at a glance. **Most are enforced by lint** (see [Enforced by lint]
 
 ## Enforced by lint
 
-Run `npx nx lint <project> --fix` — the rules below are enforced (and mostly auto-fixed) by `@ethlete/eslint-plugin` (`libs/eslint-plugin/src/configs/recommended.js`). This table is a lookup for _why_ a fix was applied; don't hand-check these.
+Run `npx nx lint <project> --fix` - the rules below are enforced (and mostly auto-fixed) by `@ethlete/eslint-plugin` (`libs/eslint-plugin/src/configs/recommended.js`). This table is a lookup for _why_ a fix was applied; don't hand-check these.
 
 | Rule                                                                                                                              | Enforced by                                                                                                                                                                                                         |
 | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | No `any` / `$any()`; use `unknown` + type guards                                                                                  | `@typescript-eslint/no-explicit-any`, `@angular-eslint/template/no-any`                                                                                                                                             |
-| No property bindings for static strings/booleans (`[etIcon]="'foo'"`, `[isReadonly]="true"`) — use static attributes              | `@angular-eslint/template/prefer-static-string-properties`, `ethlete/prefer-static-boolean-properties`                                                                                                              |
-| No `interface` — use `type`                                                                                                       | `@typescript-eslint/consistent-type-definitions`                                                                                                                                                                    |
-| No `enum` — use an `as const` object + derived union                                                                              | `no-restricted-syntax`                                                                                                                                                                                              |
+| No property bindings for static strings/booleans (`[etIcon]="'foo'"`, `[isReadonly]="true"`) - use static attributes              | `@angular-eslint/template/prefer-static-string-properties`, `ethlete/prefer-static-boolean-properties`                                                                                                              |
+| No `interface` - use `type`                                                                                                       | `@typescript-eslint/consistent-type-definitions`                                                                                                                                                                    |
+| No `enum` - use an `as const` object + derived union                                                                              | `no-restricted-syntax`                                                                                                                                                                                              |
 | No `var`; prefer `const`; one declaration per statement                                                                           | `no-var`, `prefer-const`, `one-var`                                                                                                                                                                                 |
 | `===` / `!==` only                                                                                                                | `eqeqeq`                                                                                                                                                                                                            |
 | Max two function parameters                                                                                                       | `max-params`                                                                                                                                                                                                        |
 | No `import type` / inline `type` specifiers                                                                                       | `ethlete/no-type-only-import`                                                                                                                                                                                       |
 | Generic params `T`-prefixed (`TValue`), never bare `T`                                                                            | `@typescript-eslint/naming-convention`                                                                                                                                                                              |
-| No `async`/`await` — use RxJS                                                                                                     | `no-restricted-syntax`                                                                                                                                                                                              |
+| No `async`/`await` - use RxJS                                                                                                     | `no-restricted-syntax`                                                                                                                                                                                              |
 | Arrow fns standalone; methods in classes; no arrow-fn class props; no `function` keyword                                          | `no-restricted-syntax`                                                                                                                                                                                              |
 | Blank line before `return` in multi-line guard clauses                                                                            | `ethlete/guard-return-newline`                                                                                                                                                                                      |
 | No trivially-inferable explicit return types                                                                                      | `ethlete/no-trivial-return-type`                                                                                                                                                                                    |
@@ -57,21 +57,21 @@ Run `npx nx lint <project> --fix` — the rules below are enforced (and mostly a
 | No legacy lifecycle hooks; no legacy Angular decorators (`@HostBinding`, `@Input`, …)                                             | `no-restricted-syntax`, `ethlete/no-legacy-angular-decorators`                                                                                                                                                      |
 | No `@Injectable` / `@Service`; no route guards; no resolvers                                                                      | `no-restricted-syntax`                                                                                                                                                                                              |
 | Outputs: no `on` prefix, no native event names, present-tense naming (`playerSelect`, not `playerSelected`)                       | `@angular-eslint/no-output-on-prefix`, `@angular-eslint/no-output-native`, `ethlete/prefer-present-tense-output`                                                                                                    |
-| Inputs/models not named after a global HTML attribute (`title`, `id`, `hidden`, `role`, …) — collides with the host element       | `ethlete/no-native-html-input-name`                                                                                                                                                                                 |
+| Inputs/models not named after a global HTML attribute (`title`, `id`, `hidden`, `role`, …) - collides with the host element       | `ethlete/no-native-html-input-name`                                                                                                                                                                                 |
 | No logic in pipe `transform`                                                                                                      | `ethlete/no-pipe-logic`                                                                                                                                                                                             |
 | Consistent class-member + decorator-metadata order; concise host-directive / style metadata                                       | `ethlete/class-member-order`, `ethlete/angular-decorator-property-order`, `ethlete/prefer-concise-angular-host-directives`, `ethlete/prefer-concise-angular-style-metadata`                                         |
-| No interpolated template literal above an inline `template:` — it kills Angular language service completions in that file         | `ethlete/no-template-literal-before-inline-template`                                                                                                                                                                |
+| No interpolated template literal above an inline `template:` - it kills Angular language service completions in that file         | `ethlete/no-template-literal-before-inline-template`                                                                                                                                                                |
 | Routing components: `-view` path + `ViewComponent` class name                                                                     | `ethlete/enforce-routing-view-naming`                                                                                                                                                                               |
 | No direct `document` / `window` / DOM query / observers / cookies / `window.location`                                             | `no-restricted-globals`, `ethlete/no-direct-dom-manipulation`, `ethlete/no-dom-query`, `ethlete/no-native-observers`, `ethlete/no-document-cookie`, `ethlete/no-window-location`                                    |
-| No barrel (index) imports — import from the source file                                                                           | `no-restricted-syntax`                                                                                                                                                                                              |
+| No barrel (index) imports - import from the source file                                                                           | `no-restricted-syntax`                                                                                                                                                                                              |
 | Prefer `@ethlete/core` utils over raw APIs (clone/equal, rxjs timers, media query, viewport size, SEO, locale, router state)      | `ethlete/prefer-clone-equal`, `ethlete/prefer-rxjs-timer`, `ethlete/prefer-match-media`, `ethlete/prefer-viewport-size`, `ethlete/no-angular-seo-services`, `ethlete/no-locale-id`, `ethlete/no-angular-router-api` |
 
 ## Accessibility & visibility
 
 Lint auto-fixes injected providers to `private` and flags template/host-visible members, but the _intent_ is yours:
 
-- Injected provider → `private` by default; `protected` **only** when referenced from the HTML template or a `host:` binding expression; **drop the modifier entirely** if keeping it `private` would force a member alias (a property whose sole purpose is re-exposing a nested member — expose the injected symbol directly instead).
-- Never add a member that only **aliases** another member's nested property (`foo = this.thing.foo`) — widen the source member's visibility and use it directly.
+- Injected provider → `private` by default; `protected` **only** when referenced from the HTML template or a `host:` binding expression; **drop the modifier entirely** if keeping it `private` would force a member alias (a property whose sole purpose is re-exposing a nested member - expose the injected symbol directly instead).
+- Never add a member that only **aliases** another member's nested property (`foo = this.thing.foo`) - widen the source member's visibility and use it directly.
 - For a member that must stay technically public purely for cross-class/DI use (e.g. a self-registration method called by a sub-directive), keep it `public` and tag `/** @internal */` so build tooling strips it from the published `.d.ts`. Never put `@internal` on `private`/`protected` members.
 
 ## Naming & functions with intent
@@ -105,7 +105,7 @@ const logMessage = (message: string, config: LogMessageConfig) => {};
 
 - **Synchronous state → signals. Asynchronous work → RxJS.** Never model sync state with a `BehaviorSubject`; never use RxJS just to read a value back synchronously. Bridge with `toSignal()` / `toObservable()` instead of copying values across with `.subscribe()`.
 - **Always unsubscribe.** Prefer `takeUntilDestroyed()`; otherwise `take` / `takeUntil` / `takeWhile`, and place the limiting operator **last** in the pipe. Side effects go in `tap()`, not the `subscribe()` callback. (Lint blocks bodies in `subscribe()` but cannot prove you unsubscribe.)
-- Don't reach for RxJS inside `effect()` / `computed()` — model the stream with `toObservable(signal).pipe(switchMap(...))` instead of subscribing per run.
+- Don't reach for RxJS inside `effect()` / `computed()` - model the stream with `toObservable(signal).pipe(switchMap(...))` instead of subscribing per run.
 
 ```ts
 // ❌ sync state as a subject          // ✅ signal
@@ -126,11 +126,11 @@ toObservable(page)
 
 Lint covers the mechanical Angular rules (`ViewEncapsulation.None`, no legacy hooks/decorators, no native DOM/`window`, output naming, class-member + decorator-metadata order, no `@Injectable` / `@Service` / guards / resolvers). The judgment calls:
 
-- **No function calls in template value bindings except signal reads** — a method in a binding re-runs every change-detection cycle. Move it into a `computed()` and bind that. Event bindings (`(click)="save()"`) are fine.
+- **No function calls in template value bindings except signal reads** - a method in a binding re-runs every change-detection cycle. Move it into a `computed()` and bind that. Event bindings (`(click)="save()"`) are fine.
 - **Prefer the `constructor`** (runs in the injection context) over `ngOnInit` / `ngOnDestroy`: `afterNextRender()` for first-render work, `inject(DestroyRef).onDestroy(...)` for cleanup.
-- **Prefer utility functions + provider factories over services** — `createProvider` / `createRootProvider` and the `injectX()` helper pattern from `@ethlete/core`, not an `@Injectable` (or its Angular 22 `@Service` shorthand).
+- **Prefer utility functions + provider factories over services** - `createProvider` / `createRootProvider` and the `injectX()` helper pattern from `@ethlete/core`, not an `@Injectable` (or its Angular 22 `@Service` shorthand).
 - **Most directives can be plain functions.** Move the logic into a function so it's reusable without applying a directive; keep a directive only when a host element genuinely needs it. Avoid common input/output names that clash with the host component.
-- **Pipes carry no logic** — put it in a utility function called from a `computed()`; most pipes can be replaced by a `computed` outright.
+- **Pipes carry no logic** - put it in a utility function called from a `computed()`; most pipes can be replaced by a `computed` outright.
 - **Components**: inline template/styles for small components, external `.html` / `.css` files for complex ones.
 
 ```html

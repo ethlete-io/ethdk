@@ -10,7 +10,7 @@ import { BracketDefaultRoundHeaderComponent } from './bracket-default-round-head
 import { provideBracketLabels } from './bracket-labels';
 import { BracketMatch, BracketRound, BracketRoundSwissGroup } from './linked';
 
-/** Only the fields the cards read — the engine's own graph never reaches a card's template. */
+/** Only the fields the cards read - the engine's own graph never reaches a card's template. */
 const bracketMatch = (winnerSide: 'home' | 'away' | null = 'home') =>
   ({ id: 'm1', winnerSide, status: 'completed', data: null }) as unknown as BracketMatch<unknown, unknown>;
 
@@ -37,7 +37,7 @@ const normalized = (overrides: Partial<NormalizedMatch> = {}): NormalizedMatch =
 /** Stands in for `et-bracket`, which is what really provides this. */
 const provideCardContext = (options: { normalizer?: BracketMatchNormalizer | null; headerLevel?: number } = {}) => {
   const context: BracketCardContext = {
-    // `??` would swallow a deliberate `null` — which is the case worth testing.
+    // `??` would swallow a deliberate `null` - which is the case worth testing.
     resolvedMatchNormalizer: signal(options.normalizer === undefined ? () => normalized() : options.normalizer),
     resolvedRoundHeaderLevel: signal(options.headerLevel ?? 3),
     resolvedFinalMatchCardSize: signal<MatchCardSize>('auto'),

@@ -68,7 +68,7 @@ const createCards = (count: number): Card[] =>
 
             <div class="text-small flex flex-col gap-2 p-4">
               <!-- The column each card landed in, so the greedy packing can be read off the layout. -->
-              <span class="opacity-60">#{{ card.id + 1 }} · column {{ item.placement()?.column ?? '—' }}</span>
+              <span class="opacity-60">#{{ card.id + 1 }} · column {{ item.placement()?.column ?? '-' }}</span>
 
               @for (paragraph of card.paragraphs; track $index) {
                 <p class="m-0">{{ paragraph }}</p>

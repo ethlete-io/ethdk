@@ -23,8 +23,8 @@ export type CarouselScrollSettledConfig = {
 /**
  * When the track has come to rest.
  *
- * `scrollend` is the right signal for it — it cannot fire mid-animation, which is exactly when a jump would
- * be visible — with a quiet stretch of `scroll` events standing in where it is missing. Either way the
+ * `scrollend` is the right signal for it - it cannot fire mid-animation, which is exactly when a jump would
+ * be visible - with a quiet stretch of `scroll` events standing in where it is missing. Either way the
  * callback is held back while a pointer is down: a mouse drag scrolls instantly on every move, so
  * `scrollend` fires throughout one, and acting on it would fight the finger.
  *

@@ -1,15 +1,15 @@
-# 09 — Table: CSV export, inline editing, keyboard grid navigation
+# 09 - Table: CSV export, inline editing, keyboard grid navigation
 
 Three phases on top of the shipped green-field table (plan
 `cdk-port/01-table.md`, phases 1–9 done). All three follow the table's
 plugin/opt-in architecture so non-users don't pay (see
 `plans/table-tree-shaking.md` conventions).
 
-## Phase 1 — CSV export (S–M) — **done 2026-07-31**
+## Phase 1 - CSV export (S–M) - **done 2026-07-31**
 
 Zero export surface exists today. Every mature grid ships it.
 
-- Opt-in feature (directive or standalone helper) — recommend a plain exported
+- Opt-in feature (directive or standalone helper) - recommend a plain exported
   function + a small directive wrapper for the common case:
   `exportTableToCsv(table, options)` where options cover: visible columns only
   vs. all (respecting column-chooser visibility + reorder order), all rows vs.
@@ -17,36 +17,36 @@ Zero export surface exists today. Every mature grid ships it.
   (column `label` by default), delimiter, filename.
 - Cell serialization: a column's export value defaults to its raw data
   accessor (typed columns make this clean); `exportValue?: (row) => string`
-  per column for template-rendered columns (templates can't be serialized —
+  per column for template-rendered columns (templates can't be serialized -
   document that clearly).
 - Correct CSV quoting/escaping + BOM for Excel; `text/csv` blob download.
-  No Excel (.xlsx) format — CSV only, note as non-goal.
+  No Excel (.xlsx) format - CSV only, note as non-goal.
 - Rows source: works against the table's current data input; for
   server-paginated tables "all rows" is the consumer's job (they have the
-  query) — the helper exports what the table has. Document this boundary.
+  query) - the helper exports what the table has. Document this boundary.
 
-## Phase 2 — inline cell editing (L) — **done 2026-07-31**
+## Phase 2 - inline cell editing (L) - **done 2026-07-31**
 
 `table.types.ts:56-65` (`cellState`/`TableCellStateValue`) already models
-per-cell loading/error for externally-driven edits — the comment literally
+per-cell loading/error for externally-driven edits - the comment literally
 anticipates inline editing. Missing: the edit UI + interaction flow.
 
 - Opt-in editing feature per column: `editable` column config with an edit
   template (consumer renders an `et-input`/select/etc. bound via signal-forms
-  `[formField]` — the lib's controls are signal-forms native, lean on that
+  `[formField]` - the lib's controls are signal-forms native, lean on that
   instead of inventing a cell-editor abstraction).
 - Interaction flow (grid-standard): Enter or double-click enters edit mode on
   the focused cell; Enter commits, Escape cancels (restores), Tab commits and
   moves. One cell in edit mode at a time (v1; row-edit mode is out of scope).
 - Commit emits an event with `{ row, column, previous, next }`; the consumer
   performs the mutation (query) and drives the existing `cellState`
-  loading/error — the feature wires the two together so the cell shows its
+  loading/error - the feature wires the two together so the cell shows its
   pending/error state automatically after commit.
 - Focus management: edit mode moves focus into the editor; commit/cancel
-  returns focus to the cell. Depends on Phase 3's cell focus model — build 3
+  returns focus to the cell. Depends on Phase 3's cell focus model - build 3
   before or together with 2.
 
-## Phase 3 — arrow-key cell navigation (M) [prereq for Phase 2 UX] — **done 2026-07-31**
+## Phase 3 - arrow-key cell navigation (M) [prereq for Phase 2 UX] - **done 2026-07-31**
 
 Docs self-acknowledge: only sortable headers are keyboard-operable; "Full grid
 keyboard navigation arrives with the later interactive features."
@@ -56,20 +56,20 @@ keyboard navigation arrives with the later interactive features."
   visible page). Follow the ARIA grid pattern; the calendar's roving grid
   implementation is the in-repo reference.
 - Must compose with virtualization (`table-virtual-scroll.directive.ts`):
-  focus target may not be rendered — scroll it into range first, then focus.
+  focus target may not be rendered - scroll it into range first, then focus.
   This is the hard part; design the focus model against the virtual window's
   API, not `querySelector`.
 - Interactive cell content (links/buttons in cell templates): Enter drills in,
-  Escape returns to cell — standard grid pattern.
+  Escape returns to cell - standard grid pattern.
 - Opt-in directive (`etTableKeyboardNav` or as part of the editing feature) so
   read-only display tables don't change tab behavior; when enabled, role
   semantics upgrade toward `grid` (verify against the table's current role
-  structure — don't ship a half-`grid`).
+  structure - don't ship a half-`grid`).
 
-## Found while implementing (2026-07-31, phase 1 — CSV export)
+## Found while implementing (2026-07-31, phase 1 - CSV export)
 
 **The feature host can't see cell values, so the export isn't a feature.** `TableFeatureHost` hands
-features `TableColumnMeta`, which is `TableColumnDef` _minus_ `value`/`sortValue`/`filterValue` —
+features `TableColumnMeta`, which is `TableColumnDef` _minus_ `value`/`sortValue`/`filterValue` -
 deliberately, so the row type never leaks into the seam. An exporter needs exactly those. So the
 serializer is typed against a small structural `TableCsvSource<T>` (`rows()`, `visibleColumns()`,
 `allColumns()`) that `TableComponent` happens to satisfy: it stays a pure function, the headless layer
@@ -78,18 +78,18 @@ that injects the table and registers nothing.
 
 **`rows: 'selected'` was dropped in favour of `rows: readonly T[]`.** Resolving `'selected'` would mean
 either the host contract growing a selection-shaped member (which is what the register-don't-query
-architecture exists to avoid) or the export statically referencing `TableSelectionDirective` — which
+architecture exists to avoid) or the export statically referencing `TableSelectionDirective` - which
 would drag the checkbox into every table that exports. `rows: selection.selectedRows()` is the same
 thing, typed, with no coupling, and it also covers "export my unfiltered data" and "export every page".
 
-**The download can't be a plain function** — `no-restricted-globals` and
+**The download can't be a plain function** - `no-restricted-globals` and
 `ethlete/no-direct-dom-manipulation` both fire on `document.createElement`. It is therefore
 `injectTableCsvExport()`, called once in a field initializer, returning the function; it takes
 `DOCUMENT` and `injectRenderer()` and no-ops when the document has no `defaultView` (SSR). `tableToCsv`
 stays pure, which is what the tests exercise.
 
 **CSV injection is guarded by default.** A text field starting with `=`, `+`, `-`, `@`, tab or CR gets
-a `'` prefix, _unless_ the string is a finite number — so `-5` and `+1` are written as-is (they are
+a `'` prefix, _unless_ the string is a finite number - so `-5` and `+1` are written as-is (they are
 inert) while `-5+A1` and `+cmd|' /C calc'!A0` are escaped. Not in the plan, but a library that writes
 user data into a file Excel opens should not ship the footgun; `formulaGuard: false` opts out.
 
@@ -98,79 +98,79 @@ as `people.csv` with a `efbbbf` BOM and CRLF line endings, re-exporting after so
 reorders the file, the second button writes only the two ticked rows to `people-selection.csv`, and the
 anchor leaves nothing behind in the document.
 
-## Found while implementing (2026-07-31, phase 3 — keyboard navigation)
+## Found while implementing (2026-07-31, phase 3 - keyboard navigation)
 
 **The roving tabindex is not a template binding.** Putting it in the cell view model would rebuild
 every rendered row's VM on each arrow press. Instead the base table renders `tabindex="-1"` on body
 cells whenever a cell-navigation feature is registered (one boolean, `cellNavigation()`), and the
-feature moves the single `tabindex="0"` itself — two attribute writes per move, and it holds the
+feature moves the single `tabindex="0"` itself - two attribute writes per move, and it holds the
 element rather than querying for it. An `afterEveryRender` re-anchors the stop when a render destroyed
 the cell it was on, which is every scroll of a windowed table and every sort/filter/page change of any
 table; `isConnected` is how that is noticed.
 
 **Positions are arithmetic, not DOM traversal.** `ethlete/no-dom-query` bans `closest`/`querySelector`,
 so the feature follows the reorder directive's pattern: `event.composedPath()` matched against
-`bodyCellElements()` (every rendered data cell, rows major). The found index carries both coordinates —
-`row = renderedRowOffset() + floor(i / columns)`, `column = i % columns` — which is also exactly the
+`bodyCellElements()` (every rendered data cell, rows major). The found index carries both coordinates -
+`row = renderedRowOffset() + floor(i / columns)`, `column = i % columns` - which is also exactly the
 mapping `bodyCellElementAt()` inverts. No `data-row-index` attribute was needed in the end.
 
 **Virtualization needed a new seam.** `TableRowWindow` gained an optional `scrollToIndex`, which the
 virtual-scroll directive fills from the window utility's own method. Without it a windowed table can
 only be navigated inside what is already rendered. The order is: ask the window to scroll, then focus in
-`afterNextRender` — the element does not exist before that render. Verified: 25×ArrowDown scrolls and
+`afterNextRender` - the element does not exist before that render. Verified: 25×ArrowDown scrolls and
 keeps focus; Ctrl+End reaches the true last cell (scrollTop ~89 600 on the 2 000-row story).
 
 **Two deliberate changes to existing behaviour**, both documented: `rowInteractive` rows stop carrying
 `tabindex` while navigation is on (the body is one tab stop, not two), and lead cells (selection
-checkbox, expander) stay out of the arrow order — they are their own tab stops, reachable with Tab as
+checkbox, expander) stay out of the arrow order - they are their own tab stops, reachable with Tab as
 before.
 
 **Drill-in can't be unit-tested here.** `Enter` resolves the cell's focusable content with core's
-`getFocusableElements`, which filters on `getClientRects()` — always empty in jsdom, so every element
+`getFocusableElements`, which filters on `getClientRects()` - always empty in jsdom, so every element
 reads as unfocusable. The spec asserts the drilled-in _state_ instead (arrows belong to the control,
 Escape returns, the cell keeps the tab stop) and the Enter step is verified in a real browser
 (`components-table--keyboard-navigation`).
 
-## Found while implementing (2026-07-31, phase 2 — inline editing)
+## Found while implementing (2026-07-31, phase 2 - inline editing)
 
 **The feature owns the draft, and hands it to the template as a signal-forms field.** The plan said
 "lean on signal-forms instead of inventing a cell-editor abstraction", but something still has to
 produce the `next` value the commit event promises. A consumer-owned model can't: the feature would
-have no way to read it. So `etTableInlineEdit` holds one `signal` + one `form()` — one, not one per
-session, because only one cell is ever open — and passes the resulting field through the
+have no way to read it. So `etTableInlineEdit` holds one `signal` + one `form()` - one, not one per
+session, because only one cell is ever open - and passes the resulting field through the
 `etTableCellEdit` template's context. The consumer writes `[formField]="field"` and nothing else. The
 context guard types it as `FieldTree<TValue>` from the bound column, so the field arrives correctly
 typed even though the directive's own draft is `unknown`.
 
 **Enter is settled through the table, not between the features.** Navigation's `Enter` used to drill
 into a cell's content unconditionally. It now asks `TableFeatureHost.editCell(row, column)` first and
-only drills when nothing takes it — so neither directive references the other, and a table with only
+only drills when nothing takes it - so neither directive references the other, and a table with only
 one of them behaves exactly as before.
 
 **That handoff has an ordering hazard, and it bit.** Both directives listen for `keydown` on
-`<et-table>`, and Angular — not the template — picks which host listener runs first. With navigation
+`<et-table>`, and Angular - not the template - picks which host listener runs first. With navigation
 first, it opens the editor _from the very event_ that then reaches the editing directive's own
 listener, which read it as "commit" and closed the editor in the same keystroke. It passed every unit
 test, because the spec's imports happened to order the directives the other way; the story's did not.
 The fix is that `Enter` and `Tab` are only commit keys when they come from **inside** the editor
-(`event.target !== cell`) — the keystroke that opens an editor is always dispatched on the cell, and
+(`event.target !== cell`) - the keystroke that opens an editor is always dispatched on the cell, and
 edit mode moves focus into the control. `Escape` is deliberately exempt: it must get out from the cell
 too, or an editor with nothing focusable in it would be a trap. `NavFirstHostComponent` in the spec
 pins the order that broke it.
 
-**Committing is explicit — there is no commit-on-blur.** Every grid does it, and it is wrong here: a
+**Committing is explicit - there is no commit-on-blur.** Every grid does it, and it is wrong here: a
 control whose UI lives in an overlay (a select's panel, a date picker) legitimately moves focus out of
 the cell, and a blur-commit would save on opening the panel. Enter, Tab and opening another cell are
 the commits; documented as such.
 
 **Tab moves within the row only.** Wrapping into the next row would mean scrolling a virtualized table
-to a row that isn't rendered and then focusing it after a render — navigation already has that
+to a row that isn't rendered and then focusing it after a render - navigation already has that
 machinery and duplicating it here for a data-entry key was not worth a second copy. At the row's edge
 the cell simply keeps focus, so the next Tab leaves the grid like it would from any other cell.
 
 **The feature makes a cell focusable if nothing else has.** Editing does not require
 `etTableKeyboardNav`, but after a commit focus has to go somewhere better than `<body>`. It writes
-`tabindex="-1"` on the cell it is returning focus to when the cell has none — invisible to the tab
+`tabindex="-1"` on the cell it is returning focus to when the cell has none - invisible to the tab
 order, and a no-op when navigation is on.
 
 **Verified in a real browser** (`components-table--inline-editing`): double-click and `Enter` both
@@ -179,19 +179,19 @@ commits and the cell shows the pending bar and then the saved value, `Tab` commi
 column's editor, a failing save marks the cell, and `Enter` on a non-editable column still does
 nothing but drill. The editor sits inside the cell without changing the row height.
 
-## Phase 4 — export beyond the loaded page (M) — **done 2026-07-31**
+## Phase 4 - export beyond the loaded page (M) - **done 2026-07-31**
 
-Phase 1 exports what the table holds. For a server-paginated table that is one page, silently — the
+Phase 1 exports what the table holds. For a server-paginated table that is one page, silently - the
 user clicks Export on page 3 of 200 and gets a plausible-looking, wrong file. Three routes out, in the
 order they matter in practice:
 
 **1. A server-side export endpoint (the common case).** Backends usually grow a
 `GET /people/export?filters=…` that returns the whole dataset as `text/csv`. Nothing is serialized
-client-side there — the file already exists. Add an option that takes a **v3 (`@ethlete/query`)
+client-side there - the file already exists. Add an option that takes a **v3 (`@ethlete/query`)
 query**, a promise or an observable resolving to `Blob | string`, and saves it under `filename`.
 Follow the query rather than execute it, exactly as `notification-promise.ts` does (duck-typed on
 `'executionState' in query`, see `isQuery` there); `components` already depends on `query`, so this
-costs no new dependency. Mutually exclusive with `rows`/`columns`/`delimiter` — dev error if both are
+costs no new dependency. Mutually exclusive with `rows`/`columns`/`delimiter` - dev error if both are
 given, since those options cannot apply to a file the server wrote.
 
 **2. An all-pages adapter, for backends without such an endpoint.** A small
@@ -205,19 +205,19 @@ spinner while the pages come in. The existing array form (a selection) is unchan
 
 **Plus: make the partial export deliberate rather than accidental.**
 `TableRowsSource` has no total, but `TableRowsFromQuery` already computes one
-(`total: Signal<number | null>`) — adding an optional `total?: Signal<number | null>` to
+(`total: Signal<number | null>`) - adding an optional `total?: Signal<number | null>` to
 `TableRowsSource` is satisfied structurally by what already ships. With it, the export can tell it
 holds 20 of 4 312 rows and, **in dev mode only**, throw `ET3506`: "CSV export would write 20 of 4312
-rows — pass `rows`, or `partial: true` to export the loaded page on purpose." Production stays silent
+rows - pass `rows`, or `partial: true` to export the loaded page on purpose." Production stays silent
 and exports the page. `partial: true` is the opt-in, and is also what an explicit "Export this page"
 button in the docs' two-button pattern passes.
 
 Selection export needs no change: the selection is by definition what is loaded.
 
-## Found while implementing (2026-07-31, phase 4 — export beyond the loaded page)
+## Found while implementing (2026-07-31, phase 4 - export beyond the loaded page)
 
 **The plan said "awaitable"; the styleguide says no `async`/`await`.** `ethlete`'s
-`no-restricted-syntax` bans both outright — RxJS for all async work — which the first pass ignored and
+`no-restricted-syntax` bans both outright - RxJS for all async work - which the first pass ignored and
 lint caught. So the whole thing is observable-native instead: `injectTableCsvExport()` returns an
 `Observable<void>` that writes the file **on subscribe**, `toCsv()` an `Observable<string>`, and
 `tableCsvRowsFromPages` walks its pages with `expand` rather than a `for` loop with `await`. It came
@@ -225,7 +225,7 @@ out better than the promise version would have: an export can now be piped, canc
 any other request.
 
 **The directive stays fire-and-forget.** A `(click)="csv.export()"` handler cannot subscribe, so
-`export()` keeps returning nothing — it subscribes itself, under `takeUntilDestroyed`, and drives
+`export()` keeps returning nothing - it subscribes itself, under `takeUntilDestroyed`, and drives
 `exporting` from a counter (two buttons can be clicked before the first fetch returns, and the second
 finishing must not un-busy the first) via `finalize`. `injectTableCsvExport()` is the composable form
 for anyone who needs the stream. `subscribe()` stays empty per the styleguide; the saving happens in
@@ -234,7 +234,7 @@ for anyone who needs the stream. `subscribe()` stays empty per the styleguide; t
 **Laziness had to be deliberate, and a test caught that it wasn't.** The first version resolved the
 `rows` provider while _building_ the observable, so `[etTableCsvExport]="{ rows: allPeople }"` would
 have fetched every page on any call that constructed the export. Both the rows and the file are
-wrapped in `defer` now — which also matters for `file`, since `toObservable` would otherwise stand up
+wrapped in `defer` now - which also matters for `file`, since `toObservable` would otherwise stand up
 an effect for a query nobody went on to subscribe to.
 
 **`tableToCsv` got a narrower options type.** `rows` widened to `readonly T[] | provider`, but the
@@ -245,7 +245,7 @@ already download-only.
 
 **Two error codes, not one.** `ET3506` is the plan's partial-export guard. `ET3507` is new: `file`
 passed alongside `rows`/`columns`/`header`/`delimiter`/`formulaGuard`/`bom`, which cannot mean
-anything — the server already wrote that file. It throws on the way in rather than through the stream,
+anything - the server already wrote that file. It throws on the way in rather than through the stream,
 so the stack points at the call. `ET3506` throws inside the pipe, because it needs the resolved row
 count.
 

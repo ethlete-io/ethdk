@@ -1,6 +1,6 @@
 # @ethlete/cdk
 
-The original Angular UI toolkit of the Ethlete SDK — buttons, forms, overlays, tables, carousels and more, built on [`@ethlete/core`](/core/) and integrated with [`@ethlete/query`](/query/).
+The original Angular UI toolkit of the Ethlete SDK - buttons, forms, overlays, tables, carousels and more, built on [`@ethlete/core`](/core/) and integrated with [`@ethlete/query`](/query/).
 
 ::: warning Maintenance mode
 `@ethlete/cdk` has been superseded by [`@ethlete/components`](/components/). It still receives bug fixes, but no new features. Use `@ethlete/components` for new UI work, and prefer the successor whenever a CDK domain has one (see [the table below](#superseded-by-ethlete-components)). Domains without a successor yet remain fully supported here.
@@ -21,7 +21,7 @@ Unlike `@ethlete/components` (where each component carries its own CSS), the CDK
 "styles": ["node_modules/@ethlete/cdk/src/lib/styles/index.css"]
 ```
 
-The stylesheet is intentionally minimal — it handles layout and behavior (positioning, easing, drag-scroll cursors, the active-tab underline), not visual design. Colors, spacing and typography are yours to style via the `et-` classes each component renders.
+The stylesheet is intentionally minimal - it handles layout and behavior (positioning, easing, drag-scroll cursors, the active-tab underline), not visual design. Colors, spacing and typography are yours to style via the `et-` classes each component renders.
 
 ## Interactive demos
 
@@ -38,11 +38,11 @@ A consumer-facing Nx generator codemods an app from cdk v4 to v5:
 yarn nx g @ethlete/cdk:migrate-to-v5
 ```
 
-It runs seven transforms over your TypeScript, templates and CSS — combobox input/provider renames, `*etLet`/`*ngLet` removal, the theming move to `@ethlete/core` (color-theme class renames included), CDK-menu/`et-menu` consolidation into `MenuImports`, `IsActiveElementDirective` → `ScrollableIsActiveChildDirective`, overlay position-preset rewrites, and the dialog/bottom-sheet merge into the unified overlay (`DialogImports`/`BottomSheetImports` → `OverlayImports`). Each transform can be disabled with its own flag; review the diff afterwards. The [`@ethlete/core` v5 migration](/core/#also-in-the-package) covers the core-side renames.
+It runs seven transforms over your TypeScript, templates and CSS - combobox input/provider renames, `*etLet`/`*ngLet` removal, the theming move to `@ethlete/core` (color-theme class renames included), CDK-menu/`et-menu` consolidation into `MenuImports`, `IsActiveElementDirective` → `ScrollableIsActiveChildDirective`, overlay position-preset rewrites, and the dialog/bottom-sheet merge into the unified overlay (`DialogImports`/`BottomSheetImports` → `OverlayImports`). Each transform can be disabled with its own flag; review the diff afterwards. The [`@ethlete/core` v5 migration](/core/#also-in-the-package) covers the core-side renames.
 
 ## Superseded by @ethlete/components
 
-These CDK domains have a successor — new code should use the `@ethlete/components` version, and fixes made here should usually be mirrored there:
+These CDK domains have a successor - new code should use the `@ethlete/components` version, and fixes made here should usually be mirrored there:
 
 | CDK domain                                                           | Successor                                                                         |
 | -------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
@@ -57,7 +57,7 @@ These CDK domains have a successor — new code should use the `@ethlete/compone
 | Progress spinner                                                     | [Loaders](/components/loader)                                                     |
 | Forms: text input & textarea, checkbox, slide toggle, selection list | [Forms](/components/forms) (input, checkbox, switch, selection list)              |
 
-One important difference in forms: the CDK controls integrate with **classic reactive forms** (`FormControl` / `ControlValueAccessor`), while the `@ethlete/components` controls are built for Angular's **signal forms** and have no `ControlValueAccessor` layer. If your app is still on reactive forms, the CDK form controls are the ones to use — see the [Forms guide](/cdk/forms).
+One important difference in forms: the CDK controls integrate with **classic reactive forms** (`FormControl` / `ControlValueAccessor`), while the `@ethlete/components` controls are built for Angular's **signal forms** and have no `ControlValueAccessor` layer. If your app is still on reactive forms, the CDK form controls are the ones to use - see the [Forms guide](/cdk/forms).
 
 ## Guides
 
@@ -65,25 +65,25 @@ Written guides exist for everything that has no `@ethlete/components` equivalent
 
 ### Data & collections
 
-- [Table & sort](/cdk/table) — declarative Material-style table with column/row definition directives, a busy overlay and sortable headers.
-- [Pagination](/cdk/pagination) — accessible page-link list driven by a `FormControl`, with optional SEO head-tag management.
-- [Rich filter](/cdk/rich-filter) — scroll-aware scaffold for filter bars: swap in a floating filter button once the inline filters scroll away.
-- [Query error & button](/cdk/query-error) — render `@ethlete/query` failures human-readable, and buttons that mirror a query's loading state.
+- [Table & sort](/cdk/table) - declarative Material-style table with column/row definition directives, a busy overlay and sortable headers.
+- [Pagination](/cdk/pagination) - accessible page-link list driven by a `FormControl`, with optional SEO head-tag management.
+- [Rich filter](/cdk/rich-filter) - scroll-aware scaffold for filter bars: swap in a floating filter button once the inline filters scroll away.
+- [Query error & button](/cdk/query-error) - render `@ethlete/query` failures human-readable, and buttons that mirror a query's loading state.
 
 ### Forms
 
-- [Forms](/cdk/forms) — reactive-forms controls: select, combobox, radio, segmented button, slider and typed inputs (date, time, number, …).
+- [Forms](/cdk/forms) - reactive-forms controls: select, combobox, radio, segmented button, slider and typed inputs (date, time, number, …).
 
 ### Layout & media
 
-- [Accordion](/cdk/accordion) — animated expandable panels with optional exclusive-open grouping.
-- [Breadcrumb](/cdk/breadcrumb) — DI-based breadcrumbs: pages register templates, an outlet in the shell renders them.
-- [Carousel](/cdk/carousel) — slide/fade carousel with autoplay, nav directives and a headless core.
-- [Masonry](/cdk/masonry) — column-packing layout for variable-height items.
-- [Picture](/cdk/picture) — responsive `<picture>` with sources, captions and priority loading.
-- [Skeleton](/cdk/skeleton) — loading placeholders with screen-reader announcements.
-- [Bracket](/cdk/bracket) — tournament brackets: single/double elimination and Swiss.
+- [Accordion](/cdk/accordion) - animated expandable panels with optional exclusive-open grouping.
+- [Breadcrumb](/cdk/breadcrumb) - DI-based breadcrumbs: pages register templates, an outlet in the shell renders them.
+- [Carousel](/cdk/carousel) - slide/fade carousel with autoplay, nav directives and a headless core.
+- [Masonry](/cdk/masonry) - column-packing layout for variable-height items.
+- [Picture](/cdk/picture) - responsive `<picture>` with sources, captions and priority loading.
+- [Skeleton](/cdk/skeleton) - loading placeholders with screen-reader announcements.
+- [Bracket](/cdk/bracket) - tournament brackets: single/double elimination and Swiss.
 
 ### Utilities
 
-- [Utilities](/cdk/utilities) — navigation dismiss checker, router navigation state, swipe tracking and floating-ui placements.
+- [Utilities](/cdk/utilities) - navigation dismiss checker, router navigation state, swipe tracking and floating-ui placements.

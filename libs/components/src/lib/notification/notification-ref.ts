@@ -100,7 +100,7 @@ export const createNotificationRef = (
   };
 
   /**
-   * @internal Swaps the whole config, so keys the new one leaves out go back to unset — what an
+   * @internal Swaps the whole config, so keys the new one leaves out go back to unset - what an
    * `open()` that lands on a live id means, as opposed to {@link update}'s merge. Ignored once the
    * notification is on its way out: a dismissed notification stays dismissed.
    */
@@ -108,7 +108,7 @@ export const createNotificationRef = (
     const entry = entryState();
     if (entry.isDismissing || entry.isDismissed) return;
 
-    // Identity is the one thing a replacement cannot change — it is what found this notification.
+    // Identity is the one thing a replacement cannot change - it is what found this notification.
     applyConfig({ ...next, id: entry.config.id });
   };
 

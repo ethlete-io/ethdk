@@ -11,7 +11,7 @@ import { setupLeaderElection } from './leader-election';
 
 /**
  * Lets lock grants, presence messages and the `navigator.locks.query()` behind the instance count all
- * land — each is a microtask hop, and a recount triggered by a message is two.
+ * land - each is a microtask hop, and a recount triggered by a message is two.
  */
 const settle = async () => {
   for (let i = 0; i < 5; i++) {

@@ -1,6 +1,6 @@
 ---
 name: rxjs-signals
-description: How to choose between signals and RxJS in this repo, and use each correctly — synchronous state vs asynchronous work, unsubscribing, and avoiding RxJS inside effects/computeds. Read when adding reactive state, wiring up an observable, or deciding whether something should be a signal or a stream. Part of the Ethlete styleguide (judgment beyond what lint enforces).
+description: How to choose between signals and RxJS in this repo, and use each correctly - synchronous state vs asynchronous work, unsubscribing, and avoiding RxJS inside effects/computeds. Read when adding reactive state, wiring up an observable, or deciding whether something should be a signal or a stream. Part of the Ethlete styleguide (judgment beyond what lint enforces).
 ---
 
 # Signals vs RxJS
@@ -31,7 +31,7 @@ let data; obs$.subscribe((d) => data = d);   const data = toSignal(obs$);
 - **Always unsubscribe.** Prefer `takeUntilDestroyed()` (needs an injection
   context); otherwise `take` / `takeUntil` / `takeWhile`, or store and call
   `.unsubscribe()`. Place the limiting operator **last** in the pipe.
-- **Side effects go in `tap()`**, never in the `subscribe()` callback — keep
+- **Side effects go in `tap()`**, never in the `subscribe()` callback - keep
   `subscribe()` empty.
 - **Don't reach for RxJS inside `effect()`/`computed()`.** Subscribing per run
   leaks. Model the stream off the signal instead:

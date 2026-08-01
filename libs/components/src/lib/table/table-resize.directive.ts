@@ -16,7 +16,7 @@ export type TableResizeConfig = TableFeatureConfig;
  * the column's width, with a double-click to reset it.
  *
  * Widths live on the table (`state()`'s `TableColumnState.width`), so they survive reordering and
- * round-trip through `restoreState()` — even in a table that never imported this feature.
+ * round-trip through `restoreState()` - even in a table that never imported this feature.
  *
  * @example
  * <et-table [data]="rows()" [columns]="COLUMNS" etTableResize />
@@ -34,7 +34,7 @@ export class TableResizeDirective {
     transform: tableFeatureConfig<TableResizeConfig>,
   });
 
-  // The column being dragged, with the width it had when the drag began — every move applies the
+  // The column being dragged, with the width it had when the drag began - every move applies the
   // pointer's cumulative delta to that baseline, so the column can't drift over a long drag.
   private resizing = signal<{ key: string; startWidth: number } | null>(null);
 
@@ -44,7 +44,7 @@ export class TableResizeDirective {
       component: TableResizeGripComponent,
       injector: inject(Injector),
       order: 10,
-      // A lone column has nothing to trade width with — it already spans the table — so the grip
+      // A lone column has nothing to trade width with - it already spans the table - so the grip
       // would only ever push the layout into overflow or leave a gap. Hide it until there are two.
       enabled: computed(() => (this.config().enabled ?? true) && this.table.visibleColumnsMeta().length > 1),
     });

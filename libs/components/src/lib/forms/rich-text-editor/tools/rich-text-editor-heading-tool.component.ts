@@ -32,7 +32,7 @@ export class RichTextEditorHeadingToolComponent {
 
   public editor = input.required<RichTextEditorDirective>();
 
-  /** The editor's strings — the tool is part of that editor's toolbar. */
+  /** The editor's strings - the tool is part of that editor's toolbar. */
   protected labels = computed(() => this.editor().resolvedLabels());
 
   /** The menu's entries, named by the label set rather than by the option table. */

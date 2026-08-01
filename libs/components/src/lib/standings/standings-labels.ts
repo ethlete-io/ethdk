@@ -6,7 +6,7 @@ import { StandingsFormResult } from './standings.types';
  * out for assistive tech, which is the whole reason there are two of each.
  */
 export type StandingsLabels = {
-  /** The table's caption — what this table is a table of. */
+  /** The table's caption - what this table is a table of. */
   caption: string;
   /** The position column, abbreviated. */
   position: string;
@@ -67,7 +67,7 @@ const STANDINGS_LABELS_DEF = /* @__PURE__ */ defineLabels<StandingsLabels>(
 );
 
 /**
- * Localize the standings table for everything below this injector. Partial — whatever you leave out keeps
+ * Localize the standings table for everything below this injector. Partial - whatever you leave out keeps
  * its {@link DEFAULT_STANDINGS_LABELS} value.
  *
  * @example

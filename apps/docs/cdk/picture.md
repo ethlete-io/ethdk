@@ -1,6 +1,6 @@
 # Picture
 
-`et-picture` renders a responsive `<picture>` element — a list of `<source>` entries plus a fallback `<img>`, optionally wrapped in a `<figure>` with caption. It's also the rendering target of the [`@ethlete/contentful`](/contentful/#images) image component.
+`et-picture` renders a responsive `<picture>` element - a list of `<source>` entries plus a fallback `<img>`, optionally wrapped in a `<figure>` with caption. It's also the rendering target of the [`@ethlete/contentful`](/contentful/#images) image component.
 
 ```html
 <et-picture
@@ -25,7 +25,7 @@ import { PictureImports } from '@ethlete/cdk';
 
 | Input                                                        | Default | Purpose                                                                                     |
 | ------------------------------------------------------------ | ------- | ------------------------------------------------------------------------------------------- |
-| `sources`                                                    | `[]`    | `<source>` entries — `{ srcset, type?, sizes?, media? }` or plain srcset strings.           |
+| `sources`                                                    | `[]`    | `<source>` entries - `{ srcset, type?, sizes?, media? }` or plain srcset strings.           |
 | `defaultSrc`                                                 | `null`  | The fallback `<img>` source; its first URL becomes `src`, the full srcset becomes `srcset`. |
 | `alt`                                                        | `null`  | Alt text.                                                                                   |
 | `figcaption`                                                 | `null`  | Renders a `<figcaption>` when set.                                                          |
@@ -38,7 +38,7 @@ Outputs `imgLoaded` / `imgError` mirror the image's `load` / `error` events.
 
 ## Behavior
 
-Srcsets support width descriptors (`800w`, pair them with `sizes`) or density descriptors (`2x`) — not both in one srcset. When a source has no explicit `type`, the MIME type is inferred from the URL. With `provideImageConfig({ baseUrl: '…' })`, relative srcsets are prefixed with your CDN base URL (absolute and `data:` URLs are left alone).
+Srcsets support width descriptors (`800w`, pair them with `sizes`) or density descriptors (`2x`) - not both in one srcset. When a source has no explicit `type`, the MIME type is inferred from the URL. With `provideImageConfig({ baseUrl: '…' })`, relative srcsets are prefixed with your CDN base URL (absolute and `data:` URLs are left alone).
 
 ## Styling
 

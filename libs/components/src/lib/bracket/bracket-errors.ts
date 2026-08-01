@@ -1,4 +1,4 @@
-// codes 3400-3499 (3400 was LAYOUT_MODE_UNSUPPORTED, retired when layouts became explicit values —
+// codes 3400-3499 (3400 was LAYOUT_MODE_UNSUPPORTED, retired when layouts became explicit values -
 // an unsupported layout×mode combination no longer exists as a factory)
 export const BRACKET_ERROR_CODES = {
   /** The source has no rounds/matches to render. */

@@ -7,7 +7,7 @@ import { RICH_TEXT_EDITOR_TOOL } from '../rich-text-editor-tools';
 
 /**
  * The opt-in image tool's toolbar button. It exists so the tool's icon is registered here rather than
- * in the editor's own `provideIcons` — an editor without the image tool then ships neither.
+ * in the editor's own `provideIcons` - an editor without the image tool then ships neither.
  *
  * The behavior lives on the tool definition (`provideRichTextEditorImageTool`), which this looks up
  * through DI: pressing the button inserts an image, or opens the popover of the one at the caret.

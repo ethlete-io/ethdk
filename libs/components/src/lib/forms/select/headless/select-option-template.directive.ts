@@ -6,7 +6,7 @@ import { SelectDirective } from './select.directive';
 import { SelectItem, SelectOptionData } from './select.tokens';
 
 export type SelectOptionTemplateContext = {
-  /** The option's source entry from the `options` input — extra fields included. */
+  /** The option's source entry from the `options` input - extra fields included. */
   $implicit: SelectOptionData;
   item: SelectItem;
 };
@@ -14,7 +14,7 @@ export type SelectOptionTemplateContext = {
 /**
  * Custom render template for the rows of a data-driven (`options` input) select. When
  * present, `et-select` renders this template as each option's label content instead of the
- * plain label text. Only applies to data-driven rows — projected `et-select-option`s carry
+ * plain label text. Only applies to data-driven rows - projected `et-select-option`s carry
  * their own content.
  */
 @Directive({
@@ -41,7 +41,7 @@ export class SelectOptionTemplateDirective {
   }
 
   // static on purpose (the lint ban excepts it): Angular's template type checker requires
-  // the context guard to be static — it types the `let-` bindings of the host ng-template
+  // the context guard to be static - it types the `let-` bindings of the host ng-template
   public static ngTemplateContextGuard(
     _directive: SelectOptionTemplateDirective,
     _context: unknown,

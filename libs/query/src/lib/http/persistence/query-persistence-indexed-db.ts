@@ -47,9 +47,9 @@ export type CreateIndexedDbQueryPersistenceAdapterOptions = {
  * The default storage backend for {@link CreateQueryClientConfigOptions.persistence}: an IndexedDB
  * database per query client.
  *
- * IndexedDB rather than `localStorage` because it stores structured clones — no serialization pass,
+ * IndexedDB rather than `localStorage` because it stores structured clones - no serialization pass,
  * and no new constraint on what a response body may contain beyond the one multi-tab sync already
- * imposes — and because response bodies are far too large for a 5MB quota shared with everything else
+ * imposes - and because response bodies are far too large for a 5MB quota shared with everything else
  * on the origin.
  */
 export const createIndexedDbQueryPersistenceAdapter = (
@@ -80,7 +80,7 @@ export const createIndexedDbQueryPersistenceAdapter = (
         const database = openRequest.result;
 
         // A tab running a newer deploy needs every older connection to go away before it can upgrade
-        // the schema. Closing on demand — and forgetting the connection, so the next call reopens —
+        // the schema. Closing on demand - and forgetting the connection, so the next call reopens -
         // keeps this tab from blocking it indefinitely.
         database.onversionchange = () => {
           database.close();

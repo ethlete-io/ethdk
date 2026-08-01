@@ -5,7 +5,7 @@ import { createSingleEliminationGrid } from '../drawing/grid/single-elimination'
 import { drawEliminationEdges } from './draw-elimination-edges';
 
 /**
- * Draws a single elimination source left to right, converging on the final — what a `mode` of
+ * Draws a single elimination source left to right, converging on the final - what a `mode` of
  * `'single-elimination'` renders once this is registered.
  *
  * @example
@@ -25,7 +25,7 @@ export const singleEliminationBracketLayout = <TRoundData = any, TMatchData = an
 
 /**
  * The mirrored variant of {@link singleEliminationBracketLayout}: the bracket folds in half, each round
- * that can be halved drawn once on each side, converging on the final in the middle — half the height,
+ * that can be halved drawn once on each side, converging on the final in the middle - half the height,
  * roughly double the width, the shape a poster or a broadcast graphic wants.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

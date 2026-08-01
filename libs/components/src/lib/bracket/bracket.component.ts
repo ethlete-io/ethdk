@@ -113,7 +113,7 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   public swissColors = input<BracketSwissColors | undefined>(undefined);
 
   /**
-   * The layouts this instance may draw with, replacing the `provideBracketConfig` list entirely —
+   * The layouts this instance may draw with, replacing the `provideBracketConfig` list entirely -
    * see {@link BracketLayout}. The first entry whose `mode` matches the source draws it; a source
    * nothing matches throws `ET3413`.
    *
@@ -123,7 +123,7 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   public layouts = input<readonly BracketLayout<TRoundData, TMatchData>[] | undefined>(undefined);
 
   /**
-   * The size everything is drawn at. `'compact'` is roughly two thirds of the default — a column narrow
+   * The size everything is drawn at. `'compact'` is roughly two thirds of the default - a column narrow
    * enough that the cards inside it drop to codes and a score, which is what fits a full bracket into an
    * article column. Anything you set yourself still wins over it.
    */
@@ -152,7 +152,7 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   public continueComponent = input<BracketContinueComponent<TRoundData, TMatchData> | undefined>();
 
   /**
-   * How to read your match data, for the **default** cards — see {@link BracketMatchNormalizer}. Cards of
+   * How to read your match data, for the **default** cards - see {@link BracketMatchNormalizer}. Cards of
    * your own get the match through their inputs and need none of this.
    */
   public matchNormalizer = input<BracketMatchNormalizer<TRoundData, TMatchData> | undefined>();
@@ -163,11 +163,11 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   });
 
   /**
-   * The participant whose journey stays lit, by their id in the source — the pinned counterpart to the
+   * The participant whose journey stays lit, by their id in the source - the pinned counterpart to the
    * hover highlight, and the only one touch and keyboard users get.
    *
    * Two-way, and **driven from outside**: a participants list beside the bracket, a query param, a
-   * search box. The bracket never pins on a card tap — a card's click belongs to the card — but it does
+   * search box. The bracket never pins on a card tap - a card's click belongs to the card - but it does
    * drop the pin when <kbd>Escape</kbd> is pressed inside it or a click lands past the cells, and writes
    * the `null` back through this model.
    *
@@ -196,7 +196,7 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
 
   /**
    * Every layout value in effect: this component's inputs first, `provideBracketConfig` second, the
-   * density preset third, the shipped defaults last. Read this rather than the inputs — an input alone
+   * density preset third, the shipped defaults last. Read this rather than the inputs - an input alone
    * is only half the answer.
    */
   public settings = computed(() =>
@@ -230,8 +230,8 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   );
 
   /**
-   * The layout drawing this source: the first entry of the `layouts` input — or, when that is unbound,
-   * of `provideBracketConfig` — whose `mode` matches. Throws `ET3413` when nothing matches.
+   * The layout drawing this source: the first entry of the `layouts` input - or, when that is unbound,
+   * of `provideBracketConfig` - whose `mode` matches. Throws `ET3413` when nothing matches.
    */
   private resolvedLayout = computed(() =>
     resolveBracketLayout<TRoundData, TMatchData>(
@@ -292,7 +292,7 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
   }
 
   /**
-   * CSS an optional layout brings along (the swiss group border) mounts app-wide on first use — the
+   * CSS an optional layout brings along (the swiss group border) mounts app-wide on first use - the
    * style manager dedupes by type, so a page of swiss brackets injects one `<style>`.
    */
   private setupLayoutStyles() {
@@ -324,7 +324,7 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
           renderer,
           participants: this.journeyParticipants,
           // The bracket only ever *drops* the pin (Escape, a click past the cards), and does it from
-          // outside Angular — so the write back into the model has to re-enter.
+          // outside Angular - so the write back into the model has to re-enter.
           onFocusChange: (participantId) => ngZone.run(() => this.focusedParticipantId.set(participantId)),
         }),
       );

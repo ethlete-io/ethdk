@@ -5,7 +5,7 @@ export type SkeletonShape = 'text' | 'rect' | 'circle';
 
 /**
  * One placeholder shape inside an `<et-skeleton>`. Sized by `shape` for the usual cases and by
- * `--et-skeleton-size` / plain CSS for everything else. Hidden from assistive tech — the container's
+ * `--et-skeleton-size` / plain CSS for everything else. Hidden from assistive tech - the container's
  * text is the announcement.
  *
  * @example

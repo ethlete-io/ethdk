@@ -20,7 +20,7 @@ export const STREAM_SLOT_PLAYER_ID_TOKEN = new InjectionToken<Signal<StreamPlaye
 export type StreamSlotEntry = {
   /**
    * The player id this slot wants to display (e.g. `'youtube-dQw4w9WgXcQ'`).
-   * Multiple slots may share the same id — priority resolves which one is shown.
+   * Multiple slots may share the same id - priority resolves which one is shown.
    */
   playerId: StreamPlayerId;
 
@@ -32,7 +32,7 @@ export type StreamSlotEntry = {
   priority: boolean;
 
   /**
-   * The host element of the slot — used as the unique key in the manager.
+   * The host element of the slot - used as the unique key in the manager.
    * The player element will be moved into this element when the slot is active.
    */
   element: HTMLElement;
@@ -101,7 +101,7 @@ export type StreamManager = {
 
   /**
    * Unregisters a player and removes its element from the DOM.
-   * Only call this when the player is not in PIP mode — PipManager handles
+   * Only call this when the player is not in PIP mode - PipManager handles
    * clean-up for orphaned players when PIP is closed.
    */
   unregisterPlayer(playerId: StreamPlayerId): void;

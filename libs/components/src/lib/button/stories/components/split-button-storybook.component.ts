@@ -77,7 +77,7 @@ const SURFACE_VARIANTS = [
         </div>
       }
 
-      <p class="m-0 text-xs opacity-60">Last action: {{ lastAction() ?? '—' }}</p>
+      <p class="m-0 text-xs opacity-60">Last action: {{ lastAction() ?? '-' }}</p>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,

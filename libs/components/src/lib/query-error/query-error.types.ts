@@ -1,6 +1,6 @@
 /**
  * What the directive needs from a query in order to retry it: something executable. Both query clients satisfy
- * it — the current client's `Query` directly, and a legacy one through
+ * it - the current client's `Query` directly, and a legacy one through
  * [`legacyQueryErrorSource`](./query-error-legacy).
  *
  * Typed structurally rather than against `Query<TArgs>` so this component never has to name a client's types,
@@ -12,7 +12,7 @@ export type QueryErrorRetryTarget = {
 
 /** A query error, ready to render. */
 export type QueryErrorView = {
-  /** The heading — from the status code, since that is the one thing every error has. */
+  /** The heading - from the status code, since that is the one thing every error has. */
   title: string;
   /** Every message the response carried, or one derived from the status code when it carried none. */
   messages: string[];

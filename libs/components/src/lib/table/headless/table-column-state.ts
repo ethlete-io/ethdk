@@ -2,7 +2,7 @@
  * Reconciling user column state (order, visibility, widths) against a changed `columns` input.
  *
  * The table's column state lives in `linkedSignal`s derived from the `columns` input, so a new
- * array **resets** them — and a consumer's column definitions legitimately change identity all the
+ * array **resets** them - and a consumer's column definitions legitimately change identity all the
  * time (a `computed()` over some other signal, a server-driven list view swapping its column set).
  * Resetting there would silently discard a user's reorder, resize and hidden columns.
  *
@@ -10,7 +10,7 @@
  * the declaration's word for columns it has never seen before.
  */
 
-/** The part of a column definition this reconciliation reads — row-type agnostic. */
+/** The part of a column definition this reconciliation reads - row-type agnostic. */
 export type ReconcilableColumn = {
   key: string;
   hidden?: boolean;
@@ -27,7 +27,7 @@ export const reconcileColumnOrder = (keys: string[], previous: string[] | undefi
   const declared = new Set(keys);
   const next = previous.filter((key) => declared.has(key));
 
-  // Nothing was added — the filtered previous order is already the answer.
+  // Nothing was added - the filtered previous order is already the answer.
   if (next.length === keys.length) return next;
 
   keys.forEach((key, index) => {

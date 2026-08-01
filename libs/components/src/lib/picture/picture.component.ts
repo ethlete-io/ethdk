@@ -24,12 +24,12 @@ import {
  * A responsive image: `<figure><picture><source…><img></picture><figcaption></figure>` from a list of sources.
  *
  * Two different jobs share the one element, and it is worth knowing which one you are doing. Several
- * candidates in a **single** source's `srcset` is *resolution switching* — the same picture at several sizes,
- * and the browser picks. Several **sources** with `media` queries is *art direction* — a different crop for a
+ * candidates in a **single** source's `srcset` is *resolution switching* - the same picture at several sizes,
+ * and the browser picks. Several **sources** with `media` queries is *art direction* - a different crop for a
  * phone than for a desktop, which no `srcset` can express. `type` on a source is a third axis: offer AVIF
  * before JPEG and a browser that can't decode it skips to the next without downloading anything.
  *
- * Reserve the space the image will occupy — `width`/`height`, or `aspectRatio` when only the ratio is known —
+ * Reserve the space the image will occupy - `width`/`height`, or `aspectRatio` when only the ratio is known -
  * or the page will shift when it loads.
  *
  * @example
@@ -58,7 +58,7 @@ export class PictureComponent {
   private config = injectPictureConfig({ optional: true });
 
   /**
-   * The `<source>` candidates, in the order the browser should consider them — first match wins, so put the
+   * The `<source>` candidates, in the order the browser should consider them - first match wins, so put the
    * most specific `media` and the most modern `type` first. A plain string is shorthand for
    * `{ srcset: theString }`.
    */
@@ -66,14 +66,14 @@ export class PictureComponent {
 
   /**
    * The `<img>` behind the sources: what a browser loads when no `<source>` matched, and the element every
-   * `<picture>` needs — a `<picture>` with no `<img>` renders nothing at all. Give it the most compatible
+   * `<picture>` needs - a `<picture>` with no `<img>` renders nothing at all. Give it the most compatible
    * format you have.
    */
   public defaultSrc = input<PictureSource | string | null>(null);
 
   /**
    * The image's alternative text. **Required**, because an image without it is invisible to a screen reader
-   * and unaccounted for by a linter — pass `''` for a decorative image, which is a deliberate statement that
+   * and unaccounted for by a linter - pass `''` for a decorative image, which is a deliberate statement that
    * it carries no information.
    */
   public alt = input.required<string>();
@@ -83,7 +83,7 @@ export class PictureComponent {
 
   /**
    * Load this image eagerly and at high priority, instead of lazily. For the one image that is the largest
-   * thing in the initial viewport (a hero, a header) — it is usually the page's Largest Contentful Paint, and
+   * thing in the initial viewport (a hero, a header) - it is usually the page's Largest Contentful Paint, and
    * lazy-loading it delays the metric it defines. Never for images below the fold. @default false
    */
   public priority = input(false, { transform: booleanAttribute });
@@ -115,7 +115,7 @@ export class PictureComponent {
   /** The image finished loading. */
   public imgLoad = output<void>();
 
-  /** The image failed to load — a dead URL, a network error, an undecodable file. */
+  /** The image failed to load - a dead URL, a network error, an undecodable file. */
   public imgError = output<void>();
 
   protected placeholder = contentChild(PicturePlaceholderDirective);
@@ -144,7 +144,7 @@ export class PictureComponent {
   });
 
   /**
-   * Where the image has got to, as a signal rather than only a pair of events — so a template can react to it
+   * Where the image has got to, as a signal rather than only a pair of events - so a template can react to it
    * without keeping its own copy. Also on the host as `data-state`, for styling.
    */
   public state = computed(() => this.loadState());

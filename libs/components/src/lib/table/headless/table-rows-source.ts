@@ -19,7 +19,7 @@ export type TableRowsQueryState = {
  * What `<et-table [rowsSource]>` consumes: rows plus whatever async state and server-side sort/filter
  * plumbing a source happens to expose. Everything but `rows` is optional, so this is satisfied by
  * {@link TableRowsFromQuery} (both the signals-client and legacy-client adapters) **and** by a
- * hand-rolled object — the table depends on the shape, never on `@ethlete/query`.
+ * hand-rolled object - the table depends on the shape, never on `@ethlete/query`.
  *
  * Bound, it feeds `data`, `loading` and `error`, and routes the table's own sort/filter changes back
  * through `setSort`/`setFilters` so the server does the work. That also flips `sortMode`/`filterMode`
@@ -28,12 +28,12 @@ export type TableRowsQueryState = {
 export type TableRowsSource<TRow> = {
   /** The rows to render. */
   rows: Signal<readonly TRow[]>;
-  /** True while a request is in flight — feeds the table's `loading`. */
+  /** True while a request is in flight - feeds the table's `loading`. */
   loading?: Signal<boolean>;
-  /** The failure, if any — feeds the table's `error` (any non-nullish value counts). */
+  /** The failure, if any - feeds the table's `error` (any non-nullish value counts). */
   error?: Signal<unknown>;
   /**
-   * How many rows the server holds in total, when the source knows — `null` while it doesn't. Nothing
+   * How many rows the server holds in total, when the source knows - `null` while it doesn't. Nothing
    * renders it; it is what lets a [CSV export](/components/table#exporting-more-than-the-loaded-page)
    * notice that the table is holding 20 of 4 312 rows and say so instead of writing a plausible,
    * wrong file. {@link TableRowsFromQuery} already provides it.
@@ -60,9 +60,9 @@ export type TableRowsFromQuery<TRow> = {
   total: Signal<number | null>;
   /** Whether more pages exist (via `toHasMore`). */
   hasMore: Signal<boolean>;
-  /** The current sort — bind to `<et-table [sort]>`. */
+  /** The current sort - bind to `<et-table [sort]>`. */
   sort: Signal<TableSort[]>;
-  /** The current filters — bind to `<et-table [filters]>`. */
+  /** The current filters - bind to `<et-table [filters]>`. */
   filters: Signal<TableFilter[]>;
   /** The current page. */
   page: Signal<number>;
@@ -130,7 +130,7 @@ export const createTableRowsSource = <TResponse, TRow>(
       }
 
       // A page that came back with no rows has nothing after it, whatever `toHasMore` derives from the
-      // response — this is what stops a load-more control from surviving one page past the end when the
+      // response - this is what stops a load-more control from surviving one page past the end when the
       // end can only be inferred (e.g. "a full page means there is more").
       if (toRows(response).length === 0) {
         return false;

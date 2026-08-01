@@ -60,7 +60,7 @@ const postFail = createPostQuery(demoClient)<{ response: SaveResponse; body: { n
       </div>
 
       <p class="m-0 text-xs text-slate-500">
-        Every button opens one notification that turns into its own result — the loading toast is never replaced by a
+        Every button opens one notification that turns into its own result - the loading toast is never replaced by a
         second one.
       </p>
     </div>
@@ -108,7 +108,7 @@ export class NotificationPromiseStorybookComponent {
   }
 
   /**
-   * The query is executed here and only followed by the notification — which is why the failing case
+   * The query is executed here and only followed by the notification - which is why the failing case
    * shows the API's own error, straight off the `QueryErrorResponse`.
    */
   public fromQuery(succeeds: boolean) {

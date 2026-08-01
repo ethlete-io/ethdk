@@ -6,7 +6,7 @@ import { PaginationItem } from '../pagination.types';
 
 /**
  * Headless paginator: owns the current `page` (two-way) and derives the rendered
- * {@link PaginationItem} list from `totalPages` and the window config. No visual opinion — apply it
+ * {@link PaginationItem} list from `totalPages` and the window config. No visual opinion - apply it
  * yourself, or use the default `et-pagination` component. Bind `page` to a query form's page field
  * or {@link tableRowsFromQuery}'s `page`/`setPage`.
  */
@@ -41,7 +41,7 @@ export class PaginationDirective {
 
   /**
    * Accessible label for the navigation landmark. `null` (the default) uses the resolved
-   * {@link PaginationLabels}' `navigation` label — set this only to distinguish one paginator from
+   * {@link PaginationLabels}' `navigation` label - set this only to distinguish one paginator from
    * another on the same page ("Search results pages"), not to translate it.
    */
   public ariaLabel = input<string | null>(null);
@@ -49,7 +49,7 @@ export class PaginationDirective {
   /**
    * Per-instance overrides for the paginator's strings, merged over the injected
    * `PAGINATION_LABELS`. Prefer `providePaginationLabels` for app-wide localization; use this
-   * for a one-off wording. Partial — omitted keys keep the provided/default value.
+   * for a one-off wording. Partial - omitted keys keep the provided/default value.
    */
   public labels = input<Partial<PaginationLabels> | null>(null);
 

@@ -237,7 +237,7 @@ describe('overlay runtime', () => {
 
     ref.close(undefined, 'reference-detached');
 
-    // no leave transition to animate away from a stale position — destroy immediately
+    // no leave transition to animate away from a stale position - destroy immediately
     expect(fakeLifecycle.leave).not.toHaveBeenCalled();
     expect(ref.state()).toBe('closed');
   });

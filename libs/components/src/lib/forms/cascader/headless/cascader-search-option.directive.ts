@@ -5,7 +5,7 @@ import { CascaderDirective } from './cascader.directive';
 import { CascaderNode } from './internals/cascader-tree';
 
 /**
- * One flat search result — a full root → node path. Bind the `[path]` it represents and its
+ * One flat search result - a full root → node path. Bind the `[path]` it represents and its
  * `[index]` in the result list; the directive wires the option semantics, roving tabindex and
  * activation (committing the node, or jumping the columns to a branch-only match).
  */
@@ -34,7 +34,7 @@ export class CascaderSearchOptionDirective<T = unknown> {
   /** The result's index in the cascader's `searchState().results`. */
   public index = input.required<number>();
 
-  /** The path's final node — the one an activation commits (or drills into). */
+  /** The path's final node - the one an activation commits (or drills into). */
   public node = computed(() => this.path()[this.path().length - 1] ?? null);
 
   protected disabled = computed(() => this.node()?.disabled ?? false);
@@ -48,7 +48,7 @@ export class CascaderSearchOptionDirective<T = unknown> {
   protected focused = computed(() => this.cascader?.focusedSearchIndex() === this.index());
 
   constructor() {
-    // pull DOM focus along with roving focus while the user is navigating inside the panel —
+    // pull DOM focus along with roving focus while the user is navigating inside the panel -
     // mirrors the node directive (results live in the same focus model)
     effect(() => {
       if (this.focused() && this.cascader?.focusInside()) {

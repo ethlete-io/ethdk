@@ -20,7 +20,7 @@ import { createUnsavedChangesTabLock, UnsavedChangesTabConfig, UnsavedChangesTab
  * to allow the discard, falsy to keep the changes. Typically opens a confirm dialog.
  *
  * The second argument carries an {@link UnsavedChangesConfirmContext.signal} that aborts when the
- * session ends underneath the confirm (a logout) — close your dialog when it fires.
+ * session ends underneath the confirm (a logout) - close your dialog when it fires.
  */
 export type UnsavedChangesConfirmFn<T> = (
   value: T,
@@ -48,13 +48,13 @@ export type CreateUnsavedChangesTrackerConfig<T> = {
    * Custom equality between the current value and the default. Deep-equal by default.
    *
    * Note: this is snapshot-vs-default comparison, deliberately **not** signal-forms' `dirty()`
-   * (which means "was edited", so typing then deleting stays dirty — here it's clean again).
+   * (which means "was edited", so typing then deleting stays dirty - here it's clean again).
    */
   compareFn?: (current: T, defaultValue: T) => boolean;
 
   /**
-   * How the tracker guards the browser tab itself. The `beforeunload` lock — the browser's confirm
-   * prompt before the tab is closed or reloaded — is **on by default**, since a guard that only
+   * How the tracker guards the browser tab itself. The `beforeunload` lock - the browser's confirm
+   * prompt before the tab is closed or reloaded - is **on by default**, since a guard that only
    * covers in-app navigation still loses the edits to <kbd>Ctrl</kbd>+<kbd>W</kbd>.
    *
    * Pass an object to also opt into a tab title marker or an app badge, or `false` to leave the tab
@@ -71,7 +71,7 @@ export type UnsavedChangesTrackerRef<T> = {
   /**
    * Whether this guard was switched off because the session ended underneath it (a logout, or an
    * explicit `injectUnsavedChangesCoordinator().abandonAll()`). An abandoned tracker still reports
-   * `hasChanges`, but `runCheck()` passes without confirming and the tab lock is released — the edits
+   * `hasChanges`, but `runCheck()` passes without confirming and the tab lock is released - the edits
    * cannot be saved anymore, so blocking on them only strands the user.
    */
   isAbandoned: Signal<boolean>;
@@ -88,14 +88,14 @@ export type UnsavedChangesTrackerRef<T> = {
    */
   runCheck: () => Promise<boolean>;
 
-  /** Re-baseline to the current value — e.g. after a save that keeps the form open. */
+  /** Re-baseline to the current value - e.g. after a save that keeps the form open. */
   refreshDefaultValue: () => void;
 
   /** Write the default back onto the source (revert edits). No-op if there is no default yet. */
   restoreDefaultValue: () => void;
 
   /**
-   * The tab guard (`beforeunload` lock, title marker, app badge) driven by `hasChanges` — `null` when
+   * The tab guard (`beforeunload` lock, title marker, app badge) driven by `hasChanges` - `null` when
    * the tracker was created with `tab: false`. Call `tab.destroy()` to release it before the
    * injector is destroyed, e.g. right before a deliberate `location.reload()`.
    */
@@ -127,14 +127,14 @@ const toBooleanPromise = (result: boolean | Promise<boolean> | Observable<boolea
  * Call from an injection context (a field initializer or constructor).
  *
  * While there are changes the browser tab is locked too (`beforeunload`), so closing or reloading the
- * tab needs a confirmation — see the `tab` config for the title-marker / app-badge extras and for
+ * tab needs a confirmation - see the `tab` config for the title-marker / app-badge extras and for
  * opting out.
  *
  * Every tracker registers with the app-wide {@link injectUnsavedChangesCoordinator}, which keeps a
  * single confirm on screen at a time and switches all guards off when the session ends (logout).
  *
  * Overlay and router flavors (`createOverlayUnsavedChangesGuard`, `createUnsavedChangesGuard`) build
- * on this — use them when you want the guard wired to a close/navigation event automatically.
+ * on this - use them when you want the guard wired to a close/navigation event automatically.
  */
 export const createUnsavedChangesTracker = <T>(
   config: CreateUnsavedChangesTrackerConfig<T>,

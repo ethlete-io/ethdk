@@ -20,7 +20,7 @@ const stripTrailingSlash = (value: string) => (value.endsWith('/') ? value.slice
 
 /**
  * Limits the migration to a set of projects or paths. Unlike the query v3 migration there is no
- * cross-file coupling here — every provider declaration is rewritten on its own — so any scope is safe;
+ * cross-file coupling here - every provider declaration is rewritten on its own - so any scope is safe;
  * this exists to keep the diff reviewable.
  */
 export const createMigrationScope = (tree: Tree, options: MigrationScopeOptions): MigrationScope => {

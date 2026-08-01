@@ -312,7 +312,7 @@ describe('TimePickerDirective', () => {
       host.min.set(new Date(2026, 6, 17, 10));
       tick();
 
-      // "4" matches hour 4 alone — 14 and 24 read as "14"/"24", not "4"
+      // "4" matches hour 4 alone - 14 and 24 read as "14"/"24", not "4"
       keydown('hour', '4');
       tick();
 
@@ -335,7 +335,7 @@ describe('TimePickerDirective', () => {
       optionButton('period', 0)?.click();
       tick();
 
-      // 4 AM is closed too — back to the closest open AM hour
+      // 4 AM is closed too - back to the closest open AM hour
       expect(host.value()?.getHours()).toBe(9);
     });
 

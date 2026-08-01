@@ -30,7 +30,7 @@ class HostComponent {
 }
 
 // The option row and this control both take `etColorInteractive`, and the group resolves an error
-// theme for its validation state — so a test needs a default theme and one typed `error`.
+// theme for its validation state - so a test needs a default theme and one typed `error`.
 const COLOR = {
   color: { default: '0 255 161', hover: '76 247 184', focus: '76 247 184', active: '0 198 126', disabled: '0 122 77' },
   onColor: { default: '0 0 0', disabled: '0 36 23' },
@@ -62,7 +62,7 @@ const click = (fixture: ComponentFixture<HostComponent>) => {
 };
 
 describe('CheckboxGroupSelectAllComponent', () => {
-  it('is a checkbox, not an option — only a checkbox can say "mixed"', () => {
+  it('is a checkbox, not an option - only a checkbox can say "mixed"', () => {
     expect(selectAll(create()).getAttribute('role')).toBe('checkbox');
   });
 
@@ -154,7 +154,7 @@ describe('selection list orientation', () => {
     expect(group?.getAttribute('data-orientation')).toBe('horizontal');
   });
 
-  it('leaves the projected DOM alone — an option is still a direct child of the group', () => {
+  it('leaves the projected DOM alone - an option is still a direct child of the group', () => {
     const fixture = create();
 
     fixture.componentInstance.orientation.set('horizontal');

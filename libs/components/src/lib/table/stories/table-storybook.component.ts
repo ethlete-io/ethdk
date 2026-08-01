@@ -48,7 +48,7 @@ const SERVER_PAGE_SIZE = 4;
 const SERVER_LATENCY_MS = 500;
 
 // Written without interpolation on purpose: an interpolated template literal above a component's inline
-// template desynchronises the Angular language service's scanner — see ethlete/no-template-literal-before-inline-template.
+// template desynchronises the Angular language service's scanner - see ethlete/no-template-literal-before-inline-template.
 /** One cell's identity across the demo's three maps. */
 const cellId = (personId: number, column: string) => personId + ':' + column;
 
@@ -129,7 +129,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
 
       @if (columnMenu()) {
         <!-- Above the table, not in a header cell: a visibility list must not hang off the header it
-             edits — hiding a column relays that header out and would drag the menu with it, and hiding
+             edits - hiding a column relays that header out and would drag the menu with it, and hiding
              the column it was opened from would destroy its anchor. A toolbar here never moves, not
              even when the table's own height changes. -->
         <div class="mb-2 flex justify-end">
@@ -170,10 +170,10 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
         etTableFilters
       >
         <!-- Custom cells are ng-templates bound to the column they render, so let-row / let-value are
-             typed from that column — no viewChild, and the column definitions stay plain data.
+             typed from that column - no viewChild, and the column definitions stay plain data.
              A cell composes the library's own components rather than restyling text: et-chip already
              draws its pill from the surface tokens, so the cell needs no colors of its own (the
-             playground's Tailwind theme resets --color-*, so a bg-blue-500 would do nothing anyway —
+             playground's Tailwind theme resets --color-*, so a bg-blue-500 would do nothing anyway -
              see the storybook-styling skill). -->
         <ng-template [etTableCell]="columns().role" let-value="value">
           <et-chip>{{ value }}</et-chip>
@@ -189,7 +189,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
         }
 
         @if (inlineEdit()) {
-          <!-- The editor is a plain form field bound to the draft the feature hands the template — no
+          <!-- The editor is a plain form field bound to the draft the feature hands the template - no
                cell-editor interface, the same [formField] every control in the library takes. The field
                names itself: a form field with neither a projected label nor an aria-label throws ET2201,
                and a column header is not an accessible name. -->
@@ -207,7 +207,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
         }
 
         <!-- The Role cell is a chip, which is taller than a line of text, so its loading placeholder says
-             so too — otherwise the table would grow when the data lands. The bone is chip-shaped: the
+             so too - otherwise the table would grow when the data lands. The bone is chip-shaped: the
              chip's own height and pill radius. -->
         <ng-template [etTableCellSkeleton]="columns().role">
           <et-skeleton-item [style]="CHIP_SKELETON_STYLE" shape="rect" />
@@ -251,7 +251,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
               <!-- A page-size trigger is far narrower than its option rows (value + check indicator), so
                    the panel must size to its own content instead of mirroring the field. -->
               <!-- The visible label sits outside the field (it is the app's to translate), so the control
-                   names itself — a form field with neither a projected label nor an aria-label throws
+                   names itself - a form field with neither a projected label nor an aria-label throws
                    ET2201. -->
               <et-select
                 [formField]="pageSizeForm.pageSize"
@@ -278,7 +278,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
       </et-table>
 
       @if (rowInteractive()) {
-        <p class="text-small mt-4 opacity-70">Last clicked: {{ lastClicked()?.name ?? '—' }}</p>
+        <p class="text-small mt-4 opacity-70">Last clicked: {{ lastClicked()?.name ?? '-' }}</p>
       }
 
       @if (serverPaged()) {
@@ -292,7 +292,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
 
       @if (inlineEdit()) {
         <p class="text-small mt-4 opacity-70">
-          Double-click a Name or Email cell — or focus one and press Enter — to edit it. Enter saves, Escape restores,
+          Double-click a Name or Email cell - or focus one and press Enter - to edit it. Enter saves, Escape restores,
           Tab saves and moves on. Saving takes a moment (the cell shows a bar); typing
           <code>fail</code> makes the request fail, which marks the cell.
         </p>
@@ -301,7 +301,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
 
     <ng-template #detail let-person>
       @if (subTable()) {
-        <!-- A sub-table is just another <et-table> in the detail template — it needs no special API.
+        <!-- A sub-table is just another <et-table> in the detail template - it needs no special API.
              etAutoSurface lifts the nested table one elevation above the table it sits in, so its
              background reads as a panel on top of the row instead of blending into it. -->
         <div class="flex flex-col gap-2">
@@ -317,7 +317,7 @@ const omit = (source: ReadonlyMap<string, string>, key: string) => {
           />
         </div>
       } @else {
-        <!-- The panel's tint comes from the surface system, not a dark: utility — dark: follows the
+        <!-- The panel's tint comes from the surface system, not a dark: utility - dark: follows the
              OS preference, which knows nothing about the surface theme this table is rendered on. -->
         <div class="text-small rounded-lg p-4" style="background: var(--et-surface-background-solid)" etAutoSurface>
           <p class="font-medium">{{ person.name }}</p>
@@ -394,7 +394,7 @@ export class TableStorybookComponent {
 
   /**
    * A hand-rolled `rowsSource`, standing in for `tableRowsFromQuery`: one page of rows plus the total
-   * the server reported. The total is the whole point here — it is what lets the export tell that the
+   * the server reported. The total is the whole point here - it is what lets the export tell that the
    * table is holding 4 of {@link PEOPLE_COUNT} rows.
    */
   protected serverRows: TableRowsSource<Person> = {
@@ -411,16 +411,16 @@ export class TableStorybookComponent {
     fetchPage: (page) =>
       timer(SERVER_LATENCY_MS).pipe(map(() => PEOPLE.slice((page - 1) * SERVER_PAGE_SIZE, page * SERVER_PAGE_SIZE))),
   });
-  /** A bone the size of the chip it stands in for — 24px tall, pill-shaped, roughly a role's width. */
+  /** A bone the size of the chip it stands in for - 24px tall, pill-shaped, roughly a role's width. */
   protected readonly CHIP_SKELETON_STYLE = 'inline-size: 64px; block-size: 24px; --et-skeleton-radius: 999px';
-  /** Demo copy for the templated filter options — the kind of subtitle a real app would resolve. */
+  /** Demo copy for the templated filter options - the kind of subtitle a real app would resolve. */
   protected readonly ROLE_HINTS: Record<string, string> = {
     Admin: 'Full access',
     Editor: 'Can publish',
     Viewer: 'Read only',
   };
   protected lastClicked = signal<Person | null>(null);
-  /** Committed edits, by cell — the demo's "server". */
+  /** Committed edits, by cell - the demo's "server". */
   protected edits = signal<ReadonlyMap<string, string>>(new Map());
   /** Cells whose save is in flight, which `cellStateOf` reports as `'loading'`. */
   public saving = signal<ReadonlySet<string>>(new Set());
@@ -447,7 +447,7 @@ export class TableStorybookComponent {
 
     if (!edits.size) return rows;
 
-    // What a real app gets back from its own store after the save landed — the table is told about an
+    // What a real app gets back from its own store after the save landed - the table is told about an
     // edit through its data, exactly as it is told about anything else.
     return rows.map((person) => ({
       ...person,
@@ -473,7 +473,7 @@ export class TableStorybookComponent {
     // Fixed widths (when pinning) make the table overflow its container, so the sticky columns show.
     // The ratio tracks carry a floor rather than `minmax(0, …)`: with a zero floor, resizing one
     // column wide squeezes the rest to nothing and their cell padding bursts out of the empty tracks.
-    // 96px is the table's own default floor — see MIN_COLUMN_WIDTH.
+    // 96px is the table's own default floor - see MIN_COLUMN_WIDTH.
     const sticky = this.stickyColumns();
     // `editable` alone does nothing: a column is only editable once it also has an etTableCellEdit
     // template, so the flag can be left on and gated by whether the demo renders the templates.
@@ -498,7 +498,7 @@ export class TableStorybookComponent {
       role: {
         header: 'Role',
         value: (person) => person.role,
-        // The Role cell is an et-chip template, which a CSV cannot hold — so the column says what its
+        // The Role cell is an et-chip template, which a CSV cannot hold - so the column says what its
         // text form is. Without this the export would write the accessor's value, which happens to be
         // right here; a cell built from several fields would need it to say anything at all.
         exportValue: (person) => person.role,
@@ -521,7 +521,7 @@ export class TableStorybookComponent {
     } satisfies TableColumns<Person>;
   });
 
-  // The nested table's columns are plain data too, and constant — nothing about them depends on the
+  // The nested table's columns are plain data too, and constant - nothing about them depends on the
   // parent row, so they're defined once rather than per detail row.
   protected readonly PROJECT_COLUMNS = {
     name: { header: 'Project', value: (project) => project.name, sortable: true, width: 'minmax(96px, 2fr)' },
@@ -531,7 +531,7 @@ export class TableStorybookComponent {
 
   // What an inline edit drives from its save request: `cellState` is the table's, the request is the
   // app's, and this is where the two meet. A computed *returning* the callback, so the reference the
-  // table holds only changes when the demo's save state does — a fresh closure per pass would make the
+  // table holds only changes when the demo's save state does - a fresh closure per pass would make the
   // table rebuild every cell on every change detection.
   protected cellStateOf = computed(() => {
     const saving = this.saving();
@@ -590,7 +590,7 @@ export class TableStorybookComponent {
   }
 
   // A template call is fine here because the lookup hands back the same array every time (see
-  // PROJECTS_BY_PERSON) — the nested table's `data` never changes identity while the row stays open.
+  // PROJECTS_BY_PERSON) - the nested table's `data` never changes identity while the row stays open.
   protected subRows(person: Person) {
     return PROJECTS_BY_PERSON.get(person.id) ?? [];
   }

@@ -38,7 +38,7 @@ export const EntityCards: Story = {
       description: {
         story:
           'Competition, team and player cards. Their fields differ per product far too much to normalize, and ' +
-          'each one is `et-picture` plus type plus the participant primitive — so they are recipes, not ' +
+          'each one is `et-picture` plus type plus the participant primitive - so they are recipes, not ' +
           'components. The last card shows the loading state the primitive draws for itself.',
       },
     },

@@ -3,7 +3,7 @@
     "Checked-in expected bundle sizes, the way Angular's repo keeps goldens/size-tracking/*.json.",
     "`gzip` is the gzipped byte count of the entry bundled in --external mode (@ethlete code only,",
     "no Angular runtime constant). Regenerate with `nx run treeshake:bundle-goldens:update` and commit",
-    "the diff as a deliberate, reviewable change \u2014 that is the whole point of the file.",
+    "the diff as a deliberate, reviewable change - that is the whole point of the file.",
     "The floors are what an app pays for importing one tiny symbol; the rest is one real entry per",
     "big domain, so a regression can be attributed instead of just noticed."
   ],

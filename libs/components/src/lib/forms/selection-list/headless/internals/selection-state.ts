@@ -13,18 +13,18 @@ export type SelectionStateConfig<TValue = unknown> = {
   /**
    * When `true`, unregistering a *checked* item recomputes `value` from the remaining checked
    * items, so destroying a selected option (e.g. `@for` churn) doesn't strand its value in the
-   * model. Off by default — the select family keeps values whose option isn't currently rendered
+   * model. Off by default - the select family keeps values whose option isn't currently rendered
    * (async/filtered lists), so it must not prune. Selection-list groups render every option, so
    * a removed option is genuinely gone and opts in.
    */
   pruneValueOnUnregister?: boolean;
   /**
    * Mixed (bulk-edit) view state. While `true`, the value↔items sync masks every item to
-   * unchecked — the raw `value` stays untouched but nothing reports as checked. The first
+   * unchecked - the raw `value` stays untouched but nothing reports as checked. The first
    * user commit (`select` / `toggleAll`) REPLACES the value (single → that value, multiple →
    * a fresh array; never a toggle against the hidden raw value) and resolves the flag to
    * `false`. External `value` writes never resolve it. Omit for controls without a mixed
-   * state — the select family masks pull-based in its own layer instead.
+   * state - the select family masks pull-based in its own layer instead.
    */
   mixed?: WritableSignal<boolean>;
 };
@@ -42,7 +42,7 @@ export type SelectionState<TValue = unknown, TItem extends SelectionStateItem<TV
 /**
  * Item registry + value↔items sync shared by every selection-shaped control
  * (selection list groups, the select family). Must be created in an injection
- * context — it installs the effect that pushes value changes into the items.
+ * context - it installs the effect that pushes value changes into the items.
  */
 export const createSelectionState = <
   TValue = unknown,
@@ -52,7 +52,7 @@ export const createSelectionState = <
 ): SelectionState<TValue, TItem> => {
   const items = signal<TItem[]>([]);
 
-  // when the whole owner (list, form) tears down, every item unregisters in a cascade — pruning
+  // when the whole owner (list, form) tears down, every item unregisters in a cascade - pruning
   // then would clobber the form value to empty. This flag flips synchronously during teardown, and
   // the prune below runs in a microtask, so a genuine teardown is always seen as destroyed by then
   // (order-independent of whether parent or child destroy hooks fire first).
@@ -102,7 +102,7 @@ export const createSelectionState = <
     }
 
     // item values read tracked: an item's value signal may resolve late (projected options
-    // bind their inputs only once rendered) — the sync must re-run when it does, or items
+    // bind their inputs only once rendered) - the sync must re-run when it does, or items
     // registered before their bindings executed stay unchecked forever
     const syncEntries = currentItems.map((item) => ({ item, itemValue: item.value() }));
 
@@ -145,7 +145,7 @@ export const createSelectionState = <
 
     // defer to a microtask so a full teardown (which unregisters every item) is skipped via the
     // `destroyed` guard, while a single-option removal (@for churn, owner still alive) reconciles.
-    // While mixed the raw value is a preserved snapshot the (masked) items don't reflect —
+    // While mixed the raw value is a preserved snapshot the (masked) items don't reflect -
     // recomputing from checked states would clobber it, so pruning pauses.
     queueMicrotask(() => {
       if (destroyed || config.mixed?.()) {
@@ -167,7 +167,7 @@ export const createSelectionState = <
       return;
     }
 
-    // the first commit over a mixed value REPLACES — checked states are recomputed from
+    // the first commit over a mixed value REPLACES - checked states are recomputed from
     // scratch (never toggled against the hidden raw value) and the flag resolves
     if (config.mixed?.()) {
       for (const i of items()) {

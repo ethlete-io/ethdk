@@ -165,7 +165,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
         bindings: config.bindings ?? [],
       });
 
-      // pane classes are applied after component creation — Angular replaces the host
+      // pane classes are applied after component creation - Angular replaces the host
       // element's class attribute with the component's static host class on creation
       renderer.addClass(paneElement, 'et-overlay-runtime-pane', ...(config.paneClass ?? []));
 
@@ -243,7 +243,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
           `close requested (source "${closeEvent.source}", lifecycle state "${lifecycle?.state$.value ?? 'none'}", delegate ${config.animationDelegate?.leave ? 'yes' : 'no'})`,
         );
 
-        // The reference element is gone — there is nothing left to animate away from, so tear the
+        // The reference element is gone - there is nothing left to animate away from, so tear the
         // overlay down synchronously instead of playing a leave transition from a stale position.
         if (!lifecycle || closeEvent.source === 'reference-detached') {
           destroyMountedOverlay(closeEvent);

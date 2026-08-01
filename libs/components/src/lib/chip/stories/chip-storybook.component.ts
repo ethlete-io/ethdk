@@ -15,7 +15,7 @@ import { CHIP_IMPORTS } from '../chip.imports';
       }
 
       @if (!labels().length) {
-        <button (click)="reset()" class="text-sm underline" type="button">All chips removed — reset</button>
+        <button (click)="reset()" class="text-sm underline" type="button">All chips removed - reset</button>
       }
     </div>
   `,
@@ -42,7 +42,7 @@ const DEFAULT_LABELS = ['Design', 'Engineering', 'Marketing', 'Very long departm
 /**
  * The filter-chip composition: the selection-list headless directives on plain chips.
  * `etSelectionList` is the form control (single or multiple), `etSelectionOption` turns
- * each chip into a roving-focus option — no dedicated component needed.
+ * each chip into a roving-focus option - no dedicated component needed.
  */
 @Component({
   selector: 'et-sb-filter-chips',

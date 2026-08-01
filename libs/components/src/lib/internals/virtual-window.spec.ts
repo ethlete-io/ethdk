@@ -7,7 +7,7 @@ const createScrollContainer = () => {
   const element = document.createElement('div');
   let scrollTop = 0;
 
-  // jsdom has no layout — back the geometry the window reads with plain values
+  // jsdom has no layout - back the geometry the window reads with plain values
   Object.defineProperty(element, 'clientHeight', { value: 200, configurable: true });
   Object.defineProperty(element, 'scrollTop', {
     get: () => scrollTop,
@@ -118,7 +118,7 @@ describe('createVirtualWindow', () => {
     element.scrollTop = 800;
     element.dispatchEvent(new Event('scroll'));
 
-    // filtering shrank the list to 3 items — the stale offset must not empty the window
+    // filtering shrank the list to 3 items - the stale offset must not empty the window
     itemCount.set(3);
 
     const { start, end } = window.range();

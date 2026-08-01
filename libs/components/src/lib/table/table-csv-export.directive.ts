@@ -11,21 +11,21 @@ import {
 import { TABLE_ERROR_CODES } from './table-errors';
 import { TableComponent } from './table.component';
 
-/** Options for {@link TableCsvExportDirective} — the defaults every `export()` call starts from. */
+/** Options for {@link TableCsvExportDirective} - the defaults every `export()` call starts from. */
 export type TableCsvExportConfig<T> = TableCsvExportOptions<T>;
 
 // A feature directive is usually written bare (`etTableCsvExport`), which Angular binds as the empty
-// string — normalize that to "no options given". (`tableFeatureConfig` isn't reused here: this feature
+// string - normalize that to "no options given". (`tableFeatureConfig` isn't reused here: this feature
 // registers nothing on the table, so it has no `enabled` to gate.)
 const csvExportConfig = <T>(value: TableCsvExportConfig<T> | '') => (value === '' ? {} : value);
 
 /**
  * Downloads an `et-table` as CSV, from a button of your own. It registers nothing on the table and
- * renders nothing — it exists so the options live next to the table in the template and the call site
+ * renders nothing - it exists so the options live next to the table in the template and the call site
  * is one `export()`.
  *
  * The columns follow what the table shows (the chooser's visibility and the reordered order); the rows
- * are the table's own — client-filtered and sorted. See {@link TableCsvExportOptions} for changing
+ * are the table's own - client-filtered and sorted. See {@link TableCsvExportOptions} for changing
  * either, and {@link injectTableCsvExport} to do the same thing from TypeScript without the directive.
  *
  * @example
@@ -62,7 +62,7 @@ export class TableCsvExportDirective<T> {
   private running = signal(0);
 
   /**
-   * Whether an export is in flight — bind it to the button's `disabled` and its spinner. Only ever
+   * Whether an export is in flight - bind it to the button's `disabled` and its spinner. Only ever
    * true for an export that has to fetch first (a `rows` provider, or `file`); a table exporting the
    * rows it already holds writes the file in the same tick.
    */
@@ -74,7 +74,7 @@ export class TableCsvExportDirective<T> {
    *
    * Fire-and-forget, so a `(click)` handler is the whole call site: it starts the work, keeps
    * {@link exporting} true while it runs, and stops with the directive. A failure reaches the app's
-   * `ErrorHandler` — use {@link injectTableCsvExport} directly for an export you want to compose,
+   * `ErrorHandler` - use {@link injectTableCsvExport} directly for an export you want to compose,
    * cancel or recover from yourself.
    */
   public export(overrides: TableCsvExportOptions<T> = {}) {
@@ -89,7 +89,7 @@ export class TableCsvExportDirective<T> {
   }
 
   /**
-   * The same CSV as a string, without downloading it — to upload it, or to put it on the clipboard.
+   * The same CSV as a string, without downloading it - to upload it, or to put it on the clipboard.
    * An observable rather than a string because `rows` may be a provider it has to wait for. `file`
    * has no meaning here: the whole point of it is that this side never builds the string.
    */

@@ -24,7 +24,7 @@ Navigation happens through the control: clicking a page calls `pageControl.setVa
 
 | Input                    | Default        | Purpose                                                                    |
 | ------------------------ | -------------- | -------------------------------------------------------------------------- |
-| `pageControl` (required) | —              | `FormControl<number \| null>` with the current page.                       |
+| `pageControl` (required) | -              | `FormControl<number \| null>` with the current page.                       |
 | `totalPages` (required)  | `0`            | Total number of pages.                                                     |
 | `renderAs`               | `'links'`      | Render items as `<a href>` (with `?page=N` URLs) or as `'buttons'`.        |
 | `pageChangeScrollAnchor` | `null`         | Element scrolled into view after a page change (e.g. the top of the list). |

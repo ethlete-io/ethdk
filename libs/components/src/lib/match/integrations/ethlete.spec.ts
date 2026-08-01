@@ -7,7 +7,7 @@ import {
   normalizeEthleteParticipant,
 } from './ethlete';
 
-/** A `MatchListView` with only the fields the adapter reads — the rest never leaves the API's world. */
+/** A `MatchListView` with only the fields the adapter reads - the rest never leaves the API's world. */
 const matchView = (overrides: Partial<MatchListViewUnion> = {}) =>
   ({
     id: 'match-1',
@@ -49,7 +49,7 @@ describe('normalizeEthleteMatchStatus', () => {
     expect(normalizeEthleteMatchStatus('preparing')).toBe('scheduled');
     expect(normalizeEthleteMatchStatus('started')).toBe('live');
     expect(normalizeEthleteMatchStatus('finished')).toBe('finished');
-    // Published is finished with the result released — nothing a card draws differently.
+    // Published is finished with the result released - nothing a card draws differently.
     expect(normalizeEthleteMatchStatus('published')).toBe('finished');
   });
 
@@ -71,7 +71,7 @@ describe('normalizeEthleteParticipant', () => {
     });
   });
 
-  it('prefers a player’s gamertag — that is the name people know them by', () => {
+  it('prefers a player’s gamertag - that is the name people know them by', () => {
     const player = { id: 'p', type: 'player', name: 'Jane Doe', gamertag: 'j4ne', code: null, emblem: null };
 
     expect(normalizeEthleteParticipant(player as never)?.name).toBe('j4ne');
@@ -117,7 +117,7 @@ describe('normalizeEthleteMatch', () => {
   });
 
   describe('game scores', () => {
-    it('are null for a single game — that score is already the headline one', () => {
+    it('are null for a single game - that score is already the headline one', () => {
       expect(normalizeEthleteMatch(matchView({ games: [game(1, 13, 11)] as never })).gameScores).toBeNull();
     });
 

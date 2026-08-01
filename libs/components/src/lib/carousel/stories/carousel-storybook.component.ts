@@ -9,7 +9,7 @@ type Slide = { title: string; body: string };
 
 const SLIDES: Slide[] = [
   { title: 'Kickoff', body: 'The first slide, wide enough to fill the track on its own.' },
-  { title: 'Half time', body: 'Slides are whatever you put in them — this one is text.' },
+  { title: 'Half time', body: 'Slides are whatever you put in them - this one is text.' },
   { title: 'Full time', body: 'Native scrolling means a swipe works here without any extra code.' },
   { title: 'Extra time', body: 'Four and five exist so the dots have something to say.' },
   { title: 'Penalties', body: 'The last slide. With loop on, next carries straight on into the first.' },
@@ -50,7 +50,7 @@ const SLIDES: Slide[] = [
       </div>
 
       <p class="text-small">
-        Drag with a pointer, swipe on a touch screen, or use the controls — the track is a native scroller, so all three
+        Drag with a pointer, swipe on a touch screen, or use the controls - the track is a native scroller, so all three
         are the same gesture underneath. With <code>loop</code> on, keep going past either end: the carousel carries
         clones of the slides on both sides of the seam and shifts its scroll offset across it once the scrolling has
         stopped, so there is no end to arrive at.
@@ -76,7 +76,7 @@ export class CarouselStorybookComponent {
 }
 
 /**
- * Full-bleed, obviously different slides — which a wipe needs to be visible at all. Between two dark cards
+ * Full-bleed, obviously different slides - which a wipe needs to be visible at all. Between two dark cards
  * with their text in a corner there is nothing for the sweeping edge to show.
  */
 @Component({
@@ -102,7 +102,7 @@ export class CarouselStorybookComponent {
 
       <p [style.max-inline-size.px]="720" class="text-small">
         Drag slowly, or hold the arrow: the two slides stay still while the edge between them sweeps across. That is the
-        difference between a wipe and a slide — the pictures are pinned to the track, only the boundary moves.
+        difference between a wipe and a slide - the pictures are pinned to the track, only the boundary moves.
       </p>
     </div>
   `,
@@ -124,7 +124,7 @@ export class CarouselWipeStorybookComponent {
 
 /**
  * Slides of deliberately different widths, so the loop's teleport distance has to be measured rather than
- * computed from `itemSize` — the case `itemSize="auto"` exists for.
+ * computed from `itemSize` - the case `itemSize="auto"` exists for.
  */
 @Component({
   selector: 'et-sb-carousel-variable-widths',

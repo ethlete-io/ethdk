@@ -27,7 +27,7 @@ export const Compact: Story = {
       description: {
         story:
           'Narrow: the form column goes first, then the played/won/drawn/lost block, leaving the three columns a ' +
-          'table is unreadable without — position, participant, points. The zone bands and the legend stay.',
+          'table is unreadable without - position, participant, points. The zone bands and the legend stay.',
       },
     },
   },
@@ -39,7 +39,7 @@ export const NoZones: Story = {
     docs: {
       description: {
         story:
-          'Without zones there is no banding and no legend — nothing to explain. Zones are a config, not a mode: ' +
+          'Without zones there is no banding and no legend - nothing to explain. Zones are a config, not a mode: ' +
           'the same array draws the bands and the legend, so the two cannot drift apart.',
       },
     },

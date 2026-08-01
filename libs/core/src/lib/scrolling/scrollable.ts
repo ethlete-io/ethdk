@@ -22,8 +22,8 @@ export const elementCanScroll = (element?: HTMLElement | null, direction?: 'x' |
 
 const createViewportRect = (): DOMRect => {
   // Collapses to a zero rect where there is no window (server). `isElementVisible` never reaches the
-  // intersection math there anyway — `elementCanScroll` already reports the document as unscrollable
-  // — so the rect only has to be a valid shape.
+  // intersection math there anyway - `elementCanScroll` already reports the document as unscrollable
+  // - so the rect only has to be a valid shape.
   const hasWindow = typeof window !== 'undefined';
   const width = hasWindow ? window.innerWidth : 0;
   const height = hasWindow ? window.innerHeight : 0;

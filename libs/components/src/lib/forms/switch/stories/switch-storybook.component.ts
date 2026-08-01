@@ -60,7 +60,7 @@ export class FormFieldSwitchStorybookComponent {
       </et-choice-field>
 
       <p class="text-xs text-et-surface-muted">
-        Bulk edit over records that disagree — the switch parks mid-track. The first toggle resolves it to on.
+        Bulk edit over records that disagree - the switch parks mid-track. The first toggle resolves it to on.
       </p>
 
       <pre class="rounded bg-et-surface-bg p-2 text-xs">

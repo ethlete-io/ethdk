@@ -57,8 +57,6 @@ export const clone = <T>(original: T): T => {
   } else if (str === '[object ArrayBuffer]') {
     tmp = _og.slice(0);
   } else if (str.slice(-6) === 'Array]') {
-    // ArrayBuffer.isView(x)
-    // ~> `new` bcuz `Buffer.slice` => ref
     tmp = new _og.constructor(_og);
   }
 

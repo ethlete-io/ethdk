@@ -169,7 +169,7 @@ export const createBracketGrid = <TRoundData, TMatchData>(config: {
 
               // Winner bracket rounds span two lower bracket columns. Left-align them within that
               // span (factor 0) instead of centering (factor 0.5) so each winner round n sits above
-              // the lower bracket round its losers drop into (round 2n-2) — the round whose matches
+              // the lower bracket round its losers drop into (round 2n-2) - the round whose matches
               // merge into the next one. That makes the participant's drop target unambiguous. Every
               // other spanning round (e.g. lower rounds split across sub-columns) stays centered.
               const round = element.type === 'header' || element.type === 'match' ? element.round : null;

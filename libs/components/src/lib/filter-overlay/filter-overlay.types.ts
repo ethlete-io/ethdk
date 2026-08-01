@@ -1,7 +1,7 @@
 import { Signal } from '@angular/core';
 
 /**
- * What the overlay closes with. `didUpdate: false` for a dismissal — the draft is thrown away and the page's
+ * What the overlay closes with. `didUpdate: false` for a dismissal - the draft is thrown away and the page's
  * filters are untouched.
  */
 export type FilterOverlayResult<TValue = unknown> = { didUpdate: false } | { didUpdate: true; value: TValue };
@@ -30,7 +30,7 @@ export type FilterOverlaySubmitButton = {
 
 /** Everything the default submit-button resolver has to go on. */
 export type FilterOverlaySubmitState = {
-  /** `null` when the overlay has no preview at all — then there is no count to wait for. */
+  /** `null` when the overlay has no preview at all - then there is no count to wait for. */
   totalHits: number | null;
   loading: boolean;
   hasError: boolean;

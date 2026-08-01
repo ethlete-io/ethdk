@@ -1,7 +1,7 @@
 # Tree-shaking opportunities across @ethlete/*
 
 **Status: phases 1–4 shipped** (researched + implemented 2026-08-01; phase 5 remains as
-measurement-gated follow-ups — see the bottom of this file). This is the execution plan; the full evidence lives
+measurement-gated follow-ups - see the bottom of this file). This is the execution plan; the full evidence lives
 in [`tree-shaking-research-measurements.md`](./tree-shaking-research-measurements.md) (bundle
 decomposition, simulated fixes, per-feature cost matrix) and
 [`tree-shaking-research-static.md`](./tree-shaking-research-static.md) (per-finding `file:line`
@@ -15,7 +15,7 @@ inventory). Measurement tooling is committed under `tools/treeshake/` (see its R
   reactive-forms `query-form/` (superseded by `query-form-signals`). Current gen = `http/`, `auth/`,
   `gql/`, `ws/`, `devtools/`, `pipes/`, `query-form-signals/`.
 - **Breaking changes are fine in `components` and `query`.**
-- **Breaking `@ethlete/core` needs a migration generator / AI-assisted migration** (Nx-style) —
+- **Breaking `@ethlete/core` needs a migration generator / AI-assisted migration** (Nx-style) -
   and since the whole SDK is currently in a changesets **major pre-release** (`.changeset/pre.json`,
   tag `next`), there is **no deprecation cycle**: change the API outright and ship the generator in
   the same release. The infra already exists: each lib ships Nx generators
@@ -23,25 +23,25 @@ inventory). Measurement tooling is committed under `tools/treeshake/` (see its R
   (which already contains a `create-provider.ts` codemod to build on) and
   `@ethlete/query:migrate-to-query-v3` (with `--projects` scoping and the "write
   `*-migration-tasks.md` with stable ids for what the codemod couldn't finish" AI-handoff pattern).
-  No `ng update`/`migrations.json` — this repo uses Nx generators deliberately.
+  No `ng update`/`migrations.json` - this repo uses Nx generators deliberately.
 
 ## Why bundles are big: the mechanics (verified, not guessed)
 
 1. ng-packagr publishes **one FESM module per lib**, so `sideEffects: false` buys nothing at the
-   file level — statement-level dead-code elimination inside the FESM is all a consumer's bundler
+   file level - statement-level dead-code elimination inside the FESM is all a consumer's bundler
    has.
 2. Angular's app build pure-annotates **only** top-level `new InjectionToken(...)` in code outside
    `node_modules/@angular/` (`javascript-transformer-worker.js` sets `topLevelSafeMode` for
    third-party packages, and that mode's `pure-toplevel-functions` early-returns for every call
    expression). Every other top-level factory call in our libs is treated as side-effectful and
-   retained — along with everything reachable from it.
+   retained - along with everything reachable from it.
 3. **`/*#__PURE__*/` cannot fix destructuring.** rollup (the FESM step) strips the annotation off
    destructuring declarations, and esbuild refuses to drop `const [a, b] = f()`, `const { a } = f()`
    and `f()[0]` even when annotated. Only a **single-binding declaration whose initializer is one
    annotated call** (or a plain arrow/object literal) is droppable.
 4. Consequence, measured: ~98 % of the `@ethlete/components` floor is reachable from ~152 impure
    root statements. Fixing roots one at a time shows almost no movement (each root's _exclusive_
-   bytes are tiny while its _reach_ is huge — e.g. `providePipChromeManager`: 210 kB reach, 1.5 kB
+   bytes are tiny while its _reach_ is huge - e.g. `providePipChromeManager`: 210 kB reach, 1.5 kB
    exclusive), which is why this survived so long. It must be one sweep per lib.
 
 ## Measured potential (gzip, `@ethlete/*`-only, `tools/treeshake` pipeline)
@@ -77,7 +77,7 @@ overlay **18.2 kB base + 16.7–20.5 kB per strategy** · table (already split i
 
 ## Ranked opportunities
 
-### 1. Kill the destructured-tuple provider idiom — the one that unblocks everything
+### 1. Kill the destructured-tuple provider idiom - the one that unblocks everything
 
 `libs/core/src/lib/utils/angular/di.ts:69,77,89,102` (`createProvider`, `createStaticProvider`,
 `createRootProvider`, `createStaticRootProvider`) and `libs/core/src/lib/providers/labels.ts:53`
@@ -85,8 +85,8 @@ overlay **18.2 kB base + 16.7–20.5 kB per strategy** · table (already split i
 `export const [provideX, injectX] = createRootProvider(...)` at ~70–88 top-level call sites across
 core/components/query. Unshakeable by construction (see mechanics 3).
 
-**Fix (breaking now — we are in the major pre-release, no deprecation):** replace the tuple
-factories with single-binding helpers in core — a descriptor creator plus per-binding extractors,
+**Fix (breaking now - we are in the major pre-release, no deprecation):** replace the tuple
+factories with single-binding helpers in core - a descriptor creator plus per-binding extractors,
 so each exported symbol is one `/*#__PURE__*/`-annotatable call:
 
 ```ts
@@ -95,10 +95,10 @@ export const provideBracketConfig = /* @__PURE__ */ providerFn(BRACKET_CONFIG);
 export const injectBracketConfig = /* @__PURE__ */ injectorFn(BRACKET_CONFIG);
 ```
 
-Token exports must also go through a pure extractor (`tokenFn(DEF)`) — a bare
+Token exports must also go through a pure extractor (`tokenFn(DEF)`) - a bare
 `export const X = DEF.token` is a member access and is retained. **Delete**
 `createProvider`/`createStaticProvider`/`createRootProvider`/`createStaticRootProvider`/`createLabels`
-in the same change (BREAKING-core) and port all internal call sites in core/components/query — the
+in the same change (BREAKING-core) and port all internal call sites in core/components/query - the
 exported `provideX`/`injectX` names don't change, so app code only breaks where it called the
 factories itself. Ship a **`migrate-provider-shape` Nx generator** in the same release (extend
 `migrate-to-v5`'s `create-provider.ts` codemod; the rewrite is mechanical:
@@ -108,14 +108,14 @@ query −5.7 kB, components **−79 kB** floor.
 ### 2. PURE-annotate the 49 single-binding factory calls (non-breaking, cheap)
 
 These are already single-binding, so a source `/*#__PURE__*/` works today: query creator templates
-(`http/query-creator-templates.ts:33-60`, `gql/gql-query-creator-templates.ts:39-60` — 18 calls;
+(`http/query-creator-templates.ts:33-60`, `gql/gql-query-creator-templates.ts:39-60` - 18 calls;
 the **biggest single win inside query**), `memoizeSignal` consumers
 (`core .../signals/media-queries.ts` ×17, `signals/router.ts` ×7), `createPropertyBinding` in
 `seo/{link,meta}-binding.ts` ×5, and friends. **Verify with the harness that the comment survives
 ngc + rollup into the FESM** (single-binding declarations do; destructuring does not). The 26
-top-level `new Set/Map/Date/Symbol` are measured irrelevant (90 B) — skip. The 14 object literals
+top-level `new Set/Map/Date/Symbol` are measured irrelevant (90 B) - skip. The 14 object literals
 with member-access keys (`[BRACKET_DENSITY.DEFAULT]:`, `label: DEFAULT_RTE_LABELS.undo`) are worth
-1.7 kB — fix opportunistically with string-literal keys.
+1.7 kB - fix opportunistically with string-literal keys.
 
 ### 3. Break the component-retention chains in `libs/components`
 
@@ -126,12 +126,12 @@ their own feature heavier than it should be:
 - **Notification**: `notification/notification-manager.ts:43` pins `NotificationStackComponent`
   via `createComponent` at `:90` (1,532 LOC + 336 CSS).
 - **Overlay**: `overlay/overlay-manager.ts:41` pins `OverlayContainerComponent` (whose template
-  compiles to 16.9 kB min — the largest single unit in the old floor); the 7 strategy value objects
+  compiles to 16.9 kB min - the largest single unit in the old floor); the 7 strategy value objects
   (`overlay/strategies/*.strategy.ts`, 2,735 LOC + `fullscreen-animation.ts` 738) should be
   imported by the consumer like bracket layouts are, not all retained together. BREAKING-components
-  is acceptable — mirror the bracket-layout registration pattern.
+  is acceptable - mirror the bracket-layout registration pattern.
 - **Rich-text-editor**: 73.8 kB base; `rich-text-editor.component.ts:77` drags all of
-  `MENU_IMPORTS` (2,237 LOC) for the heading tool — move it behind the existing per-tool
+  `MENU_IMPORTS` (2,237 LOC) for the heading tool - move it behind the existing per-tool
   `provideRichTextEditor*Tool` seam; audit what `provideRichTextEditorDom` (~40 kB) forces.
 - **Stream/PiP**: `stream-config.ts:104-106` default components + `pip-chrome-manager.ts:17`.
 
@@ -141,24 +141,24 @@ Current-gen files reach the 7,154-LOC legacy tree through value imports:
 `http/query-repository.ts:5`, `http/http-request.ts:4`, `auth/bearer-auth-provider.ts:29`,
 `auth/bearer-auth-query-builders.ts:6`, plus an `http ↔ gql` barrel cycle. Move the shared bits
 out of the legacy barrel. Separately (BREAKING-query, fine): `http/query-client.ts` ships
-persistence (739 LOC) + multi-tab sync (472 LOC) unconditionally and default-on — make them
+persistence (739 LOC) + multi-tab sync (472 LOC) unconditionally and default-on - make them
 opt-in features like `withPolling` (note: sync shipped recently; check
 `plans/`/changelog before flipping defaults).
 
 ### 5. Smaller `libs/components` opt-ins (mostly established patterns)
 
-- **form-field stylesheet split** (757 LOC CSS) — the styles-only-component pattern; already named
+- **form-field stylesheet split** (757 LOC CSS) - the styles-only-component pattern; already named
   the next candidate in CLAUDE.md.
-- **`select` (38.7 kB) / `cascader` (39.8 kB)** — 2.8× the cost of `form-field + input`; audit what
+- **`select` (38.7 kB) / `cascader` (39.8 kB)** - 2.8× the cost of `form-field + input`; audit what
   they retain (likely overlay strategies + animation) once fix 3 lands.
 - **Bracket rounds-list-only layout split** (~4 kB): the list resolves a `BracketLayout` whose
   object also references `createGrid`/`drawEdges` it never calls (see
   `plans/bracket-tree-shaking.md`). Only worth it if list-only consumers materialise.
 - **Bracket default cards** (`bracket-components.ts:43-55`) drag the `match` domain for
-  custom-card consumers — measured ≤ ~3 kB earlier; measurement-gated.
+  custom-card consumers - measured ≤ ~3 kB earlier; measurement-gated.
 - **Label tables**: `query-error/query-error-labels.ts:59` puts both the German **and** English
   HTTP-status tables (`libs/query/src/lib/pipes/parse-http-error-code-{de,en}.ts`, 14.2 kB min)
-  into every components bundle — make languages opt-in or lazy.
+  into every components bundle - make languages opt-in or lazy.
 
 ## Regression guards (shipped with fix 1, keep forever)
 
@@ -168,11 +168,11 @@ opt-in features like `withPolling` (note: sync shipped recently; check
    idiom creeps back one file at a time and nobody notices until the next audit.
 2. **Size goldens, Angular-style.** Angular's repo keeps checked-in expected payload sizes
    (`goldens/size-tracking/integration-payloads.json`); CI builds the test apps, compares against
-   the golden within a tolerance, and fails on unexplained growth — a golden update is a
+   the golden within a tolerance, and fails on unexplained growth - a golden update is a
    deliberate, reviewable commit. The analog here: `tools/treeshake/goldens.json` holding expected
    gz bytes per entry (the three package floors + one real entry per big domain: bracket+SE, table,
    form-field+input, select, overlay+dialog, RTE, query client), plus a `check-goldens.mjs` that
-   runs the existing pipeline and fails past a tolerance (~2 % or 512 B, whichever is larger —
+   runs the existing pipeline and fails past a tolerance (~2 % or 512 B, whichever is larger -
    FESM linking is deterministic but dependency bumps move bytes), and an `--update` flag that
    rewrites the file. Wire it as an Nx target (shipped as `nx run treeshake:bundle-goldens`) in CI for
    affected libs; builds of `core`+`query`+`components` plus linking cost ~1-2 min. Record the
@@ -190,46 +190,46 @@ opt-in features like `withPolling` (note: sync shipped recently; check
    Dead `theming/theme.util.ts` + the two unused styles components were deleted along the way.
 2. **Fix 2, done, and generalized.** `ethlete/no-impure-top-level-provider` bans module-scope
    destructuring of a call everywhere, and with `{ requirePureAnnotation: true }` (on in
-   core/query/components source) requires `@__PURE__` on **every** call evaluated at module scope —
+   core/query/components source) requires `@__PURE__` on **every** call evaluated at module scope -
    including one nested in an argument or inside a top-level object literal, which is what the
    original 49-call estimate missed. Its fixer placed the annotations. The 14 member-access literals
    became literal keys / one-shot factories.
 3. **Goldens, done.** `tools/treeshake/{goldens.json,check-goldens.mjs}` + the
    `treeshake:bundle-goldens` Nx target, wired into all three CI workflows. Tolerance 2 % / 512 B;
    `:update` rewrites the file as a reviewable commit.
-4. **Fix 4 first half, done.** No current-gen module imports from `legacy/**` any more —
+4. **Fix 4 first half, done.** No current-gen module imports from `legacy/**` any more -
    `buildRoute`, `buildQueryString`, `buildTimestampFromSeconds`, `decryptBearer`, `QueryError` and
    the query-string types live in `http/internal/request-route`, which legacy re-exports. The
    `http ↔ gql` runtime cycle is closed via `http/internal/gql-options-guard`. Worth ~0 bytes: fixes
    1+2 had already made the legacy tree fully droppable (verified by grepping a `createQueryClient`
-   bundle for `V2QueryClient`/`EntityStore`/… — all absent). Kept for graph hygiene.
+   bundle for `V2QueryClient`/`EntityStore`/… - all absent). Kept for graph hygiene.
 5. **Fix 3, re-measured, mostly obsolete.** After fix 1 the overlay strategies are already
    individually shakeable (`dialogOverlayStrategy` adds 0.4 kB over no strategy, all seven add
-   6.2 kB), so **no registration rework was done** — that avoids a gratuitous breaking change.
+   6.2 kB), so **no registration rework was done** - that avoids a gratuitous breaking change.
    Likewise notification (`injectNotificationManager` 22.6 kB vs `NOTIFICATION_IMPORTS` 19.8 kB) and
    the stream managers (`injectStreamManager` 3.9 kB) no longer justify a breaking split. The one
    real win was taken: the **RTE heading menu is now the opt-in `provideRichTextEditorHeadingTool()`**
    tool, −8.5 kB gz off every editor.
 
 Caveat carried from `plans/table-tree-shaking.md`: consumers bundling without Angular's builder (no
-linker/optimizer) get none of this — the numbers assume the standard Angular app build.
+linker/optimizer) get none of this - the numbers assume the standard Angular app build.
 
 ## Remaining follow-ups (fix 5), measured 2026-08-01
 
 Worth doing, in order:
 
 1. **form-field stylesheet split** (757 LOC CSS). `FORM_FIELD_IMPORTS` alone is **16.1 kB**, and
-   `+ INPUT_IMPORTS` only 18.3 kB — form-field _is_ the cost of every text control, so this is the
+   `+ INPUT_IMPORTS` only 18.3 kB - form-field _is_ the cost of every text control, so this is the
    highest-leverage remaining cut. Split per shell feature (support/hint/error chrome, text-field
    shell, prefix/suffix, busy) into styles-only components mounted by the directive that enables each,
    per CLAUDE.md's styles-split pattern.
 2. **query persistence + multi-tab sync as opt-in features** (1,211 LOC, default-on). `query-client`
    is **13.9 kB** with both. The only default-behaviour change on the list, so it needs its own docs +
-   changeset story — and sync shipped recently, so confirm the default flip is wanted first.
-3. **`query-error` language tables** — `injectQueryErrorLabels` alone is **6.4 kB**, most of it the
+   changeset story - and sync shipped recently, so confirm the default flip is wanted first.
+3. **`query-error` language tables** - `injectQueryErrorLabels` alone is **6.4 kB**, most of it the
    German _and_ English HTTP-status tables. Making the second language opt-in saves ~3 kB for apps
    that use query-error at all.
-4. **RTE, 69.3 kB** — still the most expensive domain. Candidates: the floating toolbar as its own
+4. **RTE, 69.3 kB** - still the most expensive domain. Candidates: the floating toolbar as its own
    `*_IMPORTS`, and auditing what `provideRichTextEditorDom` forces.
 
 Measured as **not** worth doing:
@@ -239,5 +239,5 @@ Measured as **not** worth doing:
   (`components/overlay` 18 % + `core/overlay` + `core/animations`). Nothing is retained that a select
   does not use; the lever is (1) above, not the select itself.
 - **Bracket rounds-list-only layout.** `BracketRoundsListComponent` + a layout is **27.2 kB** against
-  **29.2 kB** for the full bracket + SE — a ~2 kB spread, well under the ~4 kB the earlier plan
+  **29.2 kB** for the full bracket + SE - a ~2 kB spread, well under the ~4 kB the earlier plan
   estimated, and it costs an API split. Same for the bracket default cards.

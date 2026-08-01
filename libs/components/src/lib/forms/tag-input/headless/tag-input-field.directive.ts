@@ -4,7 +4,7 @@ import { RuntimeError } from '@ethlete/core';
 import { TAG_INPUT_ERROR_CODES } from '../tag-input-errors';
 import { TagInputDirective } from './tag-input.directive';
 
-/** The text field of a tag input — commits its text as a tag on separators and blur. */
+/** The text field of a tag input - commits its text as a tag on separators and blur. */
 @Directive({
   selector: 'input[etTagInputField]',
   exportAs: 'etTagInputField',
@@ -96,7 +96,7 @@ export class TagInputFieldDirective {
     }
 
     if (tagInput.keySeparators().includes(event.key)) {
-      // only swallow the key when there is text to commit — an empty Enter should
+      // only swallow the key when there is text to commit - an empty Enter should
       // keep its default behavior (e.g. submitting the surrounding form)
       if (element.value) {
         event.preventDefault();
@@ -144,7 +144,7 @@ export class TagInputFieldDirective {
   }
 
   protected handleBlur() {
-    // leaving the field keeps what was typed — as a tag
+    // leaving the field keeps what was typed - as a tag
     this.commitPending();
     this.tagInput?.focused.set(false);
     this.tagInput?.touched.set(true);

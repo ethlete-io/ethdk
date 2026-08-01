@@ -4,11 +4,11 @@ import type { PersistedQueryBody, PersistedQueryEntry, PersistedQueryEntryMeta }
 /**
  * Where a query client keeps its persisted responses. The default is IndexedDB
  * ({@link createIndexedDbQueryPersistenceAdapter}); an app can supply its own to store responses
- * somewhere else entirely — `localStorage`, the origin private file system, a native store behind a
+ * somewhere else entirely - `localStorage`, the origin private file system, a native store behind a
  * Capacitor plugin.
  *
  * Adapters are deliberately dumb: they read and write what they are handed and nothing else. Every
- * policy decision — how old a body may be, how many are kept, what happens on a logout — is made by
+ * policy decision - how old a body may be, how many are kept, what happens on a logout - is made by
  * the persistence engine, so a custom adapter cannot get any of it subtly wrong.
  *
  * Every method may reject. The engine treats a failing read as a miss and a failing write as a full
@@ -18,7 +18,7 @@ import type { PersistedQueryBody, PersistedQueryEntry, PersistedQueryEntryMeta }
 export type QueryPersistenceAdapter = {
   /**
    * Returns the metadata of every entry in the store, without their bodies. Called once per client,
-   * at startup — the one bulk read there is.
+   * at startup - the one bulk read there is.
    */
   loadIndex: () => Promise<PersistedQueryEntryMeta[]>;
 
@@ -27,7 +27,7 @@ export type QueryPersistenceAdapter = {
 
   /**
    * Writes entries, replacing any it already holds under the same key. Called with a batch, since the
-   * engine coalesces writes — an adapter backed by transactions should use one for the whole batch.
+   * engine coalesces writes - an adapter backed by transactions should use one for the whole batch.
    */
   write: (entries: PersistedQueryEntry[]) => Promise<void>;
 
@@ -39,7 +39,7 @@ export type QueryPersistenceAdapter = {
 
   /**
    * Whether the underlying storage exists in this environment. `false` means every method is an inert
-   * no-op — no IndexedDB (the server, or a browser denying storage access), in which case queries
+   * no-op - no IndexedDB (the server, or a browser denying storage access), in which case queries
    * behave exactly as they do without persistence.
    */
   isSupported: boolean;

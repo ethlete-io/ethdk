@@ -6,7 +6,7 @@ export type RatingIconContext = {
   index: number;
 };
 
-/** Replaces the default star with a custom icon template — rendered once per rating step. */
+/** Replaces the default star with a custom icon template - rendered once per rating step. */
 @Directive({
   selector: 'ng-template[etRatingIcon]',
   exportAs: 'etRatingIcon',

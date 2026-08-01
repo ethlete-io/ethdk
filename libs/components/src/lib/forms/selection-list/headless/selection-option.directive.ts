@@ -17,7 +17,7 @@ let uniqueOptionLabelId = 0;
  * Placeholder an option's value resolves to while its required `value` input has not been
  * bound yet (e.g. a directive-composed option whose bindings run after registration, like
  * the filter-chip composition). Never matches a consumer value, so unbound options simply
- * cannot be selected until their bindings run — mirrors the select option.
+ * cannot be selected until their bindings run - mirrors the select option.
  */
 const UNBOUND_VALUE = /* @__PURE__ */ Symbol('et-selection-option-unbound');
 
@@ -26,11 +26,11 @@ const UNBOUND_VALUE = /* @__PURE__ */ Symbol('et-selection-option-unbound');
   host: {
     '[attr.role]': 'role()',
     '[attr.aria-checked]': 'checked()',
-    // name from the label span only — a projected <et-description> lives in the host too, so
+    // name from the label span only - a projected <et-description> lives in the host too, so
     // relying on name-from-contents would fold the description into the accessible name
     '[attr.aria-labelledby]': 'labelId()',
     '[attr.aria-disabled]': 'effectiveDisabled() || null',
-    // only in multi mode: role=checkbox supports aria-readonly, role=radio does not — the
+    // only in multi mode: role=checkbox supports aria-readonly, role=radio does not - the
     // single-select case reflects it on the radiogroup host instead
     '[attr.aria-readonly]': '(role() === "checkbox" && effectiveReadonly()) || null',
     '[attr.data-readonly]': 'effectiveReadonly() || null',
@@ -56,7 +56,7 @@ export class SelectionOptionDirective {
 
   public effectiveDisabled = computed(() => this.disabled() || (this.list?.disabled() ?? false));
   public effectiveReadonly = computed(() => this.list?.readonly() ?? false);
-  // multi-select lives in a `role="group"`, where `option` is invalid ARIA (it's listbox-only) —
+  // multi-select lives in a `role="group"`, where `option` is invalid ARIA (it's listbox-only) -
   // a checkbox pairs correctly with `group` + `aria-checked`; single-select stays a radio.
   public role = computed(() => (this.list?.multiple() ? 'checkbox' : 'radio'));
 
@@ -142,7 +142,7 @@ export class SelectionOptionDirective {
     const nextItem = items[nextIndex];
 
     if (nextItem && !nextItem.disabled()) {
-      // radio pattern selects while roving — readonly only moves focus
+      // radio pattern selects while roving - readonly only moves focus
       if (!this.list.multiple() && !this.effectiveReadonly()) {
         this.list.selection.select(nextItem);
       }
@@ -169,7 +169,7 @@ export class SelectionOptionDirective {
     const prevItem = items[prevIndex];
 
     if (prevItem && !prevItem.disabled()) {
-      // radio pattern selects while roving — readonly only moves focus
+      // radio pattern selects while roving - readonly only moves focus
       if (!this.list.multiple() && !this.effectiveReadonly()) {
         this.list.selection.select(prevItem);
       }

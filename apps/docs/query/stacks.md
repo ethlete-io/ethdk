@@ -1,6 +1,6 @@
 # Query stacks & pagination
 
-Stacks compose **many queries of the same creator** into one reactive object — for parallel detail requests, infinite lists and classic pagination. They work with any [query creator](/query/queries#query-creators), HTTP or GraphQL.
+Stacks compose **many queries of the same creator** into one reactive object - for parallel detail requests, infinite lists and classic pagination. They work with any [query creator](/query/queries#query-creators), HTTP or GraphQL.
 
 ## Query stacks
 
@@ -18,9 +18,9 @@ const postsStack = createQueryStack({
 
 | Option            | Default       | Description                                                                                               |
 | ----------------- | ------------- | --------------------------------------------------------------------------------------------------------- |
-| `queryCreator`    | — (required)  | The creator to run.                                                                                       |
-| `args`            | — (required)  | Reactive fn returning one args object, an array (one query each), or `null` (ignored).                    |
-| `dependencies`    | —             | Reactive deps passed to `args`; a change **clears** the stack.                                            |
+| `queryCreator`    | - (required)  | The creator to run.                                                                                       |
+| `args`            | - (required)  | Reactive fn returning one args object, an array (one query each), or `null` (ignored).                    |
+| `dependencies`    | -             | Reactive deps passed to `args`; a change **clears** the stack.                                            |
 | `features`        | `[]`          | [Features](/query/features) applied to every query. `withArgs`/`withResponseUpdate` are not allowed here. |
 | `append`          | `false`       | Append new queries instead of replacing (infinite lists).                                                 |
 | `appendFn`        | append to end | Controls merge order in append mode.                                                                      |
@@ -46,18 +46,18 @@ const postPages = createPagedQueryStack({
 
 | Option                        | Default      | Description                                                                                           |
 | ----------------------------- | ------------ | ----------------------------------------------------------------------------------------------------- |
-| `queryCreator`                | — (required) | The page query creator.                                                                               |
-| `responseNormalizer`          | — (required) | Maps a response to `{ items, totalPages, currentPage, itemsPerPage, totalHits }`.                     |
-| `args`                        | — (required) | `(page, allResponses) => RequestArgs \| null`; reactive — a signal change resets to the initial page. |
+| `queryCreator`                | - (required) | The page query creator.                                                                               |
+| `responseNormalizer`          | - (required) | Maps a response to `{ items, totalPages, currentPage, itemsPerPage, totalHits }`.                     |
+| `args`                        | - (required) | `(page, allResponses) => RequestArgs \| null`; reactive - a signal change resets to the initial page. |
 | `features`                    | `[]`         | Applied to every page query.                                                                          |
-| `initialPage`                 | `1`          | First page loaded — pages can then be fetched in **both** directions.                                 |
+| `initialPage`                 | `1`          | First page loaded - pages can then be fetched in **both** directions.                                 |
 | `blockExecutionDuringLoading` | `false`      | Ignore fetch calls while a page is loading.                                                           |
 
 The paged stack exposes `items`, `loading`, `error`, `isFirstLoad`, `canFetchNextPage` / `canFetchPreviousPage`, `isLastPageLoaded` / `isFirstPageLoaded` and `maxPagination` / `minPagination`, plus:
 
 - `fetchNextPage()` / `fetchPreviousPage()`
 - `reset({ initialPage? })`
-- `execute({ where?, allowCache? })` — `where: (item) => boolean` selectively re-executes the pages containing matching items (plus their neighbors), e.g. after editing one row.
+- `execute({ where?, allowCache? })` - `where: (item) => boolean` selectively re-executes the pages containing matching items (plus their neighbors), e.g. after editing one row.
 
 ## Live demo
 

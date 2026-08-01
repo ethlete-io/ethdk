@@ -102,7 +102,7 @@ describe('StandingsComponent', () => {
   it('spells out every abbreviated column for assistive tech', () => {
     const fixture = create();
     // The participant column is the only header that is already a word, so it is the only one without an
-    // `abbr` — every abbreviation has one.
+    // `abbr` - every abbreviation has one.
     const abbreviated = all(fixture, 'thead th').filter(
       (element) => element.getAttribute('data-column') !== 'participant',
     );

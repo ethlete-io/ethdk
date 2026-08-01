@@ -4,7 +4,7 @@ Standalone helpers exported from `@ethlete/cdk`.
 
 ## Navigation dismiss checker
 
-`createNavigationDismissChecker()` guards forms against accidental dismissal — typically a form inside an overlay. It snapshots the form's default value, tracks whether the current value differs, and runs your confirmation logic only when there are unsaved changes:
+`createNavigationDismissChecker()` guards forms against accidental dismissal - typically a form inside an overlay. It snapshots the form's default value, tracks whether the current value differs, and runs your confirmation logic only when there are unsaved changes:
 
 ```ts
 import { createNavigationDismissChecker } from '@ethlete/cdk';
@@ -32,19 +32,19 @@ import { injectRouterNavigationState } from '@ethlete/cdk';
 const state = injectRouterNavigationState<{ from: string }>();
 ```
 
-Typed access to the current navigation's `extras.state` — returns `null` outside a navigation. Useful in components that receive context from `router.navigate(…, { state })`.
+Typed access to the current navigation's `extras.state` - returns `null` outside a navigation. Useful in components that receive context from `router.navigate(…, { state })`.
 
 ## Swipe tracking
 
 `createSwipeTracker(startEvent)` is the low-level gesture helper behind swipeable UIs. Create it from a `touchstart`/`mousedown` event, feed move events to `update()` and finish with `end()`:
 
-- `update(event)` returns the current movement deltas plus an `isSwiping` / `isScrolling` classification — the axis is locked on the first move, so a vertical page scroll never turns into an accidental swipe.
+- `update(event)` returns the current movement deltas plus an `isSwiping` / `isScrolling` classification - the axis is locked on the first move, so a vertical page scroll never turns into an accidental swipe.
 - `end()` adds velocities in px/s, letting you decide between "snap back" and "fling".
 - `cancel()` resets the tracked movement.
 
 ## Floating UI placements
 
-`FLOATING_UI_PLACEMENTS` — the constant list of all twelve `@floating-ui/dom` placements (`top`, `bottom-start`, `left-end`, …), handy for building fallback-placement lists.
+`FLOATING_UI_PLACEMENTS` - the constant list of all twelve `@floating-ui/dom` placements (`top`, `bottom-start`, `left-end`, …), handy for building fallback-placement lists.
 
 ## Global styles
 

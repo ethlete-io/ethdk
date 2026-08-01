@@ -1,7 +1,7 @@
 import { Directive, TemplateRef, inject } from '@angular/core';
 
 /**
- * What to show while the image is still loading — a blurred `data:` URI, a solid block, a
+ * What to show while the image is still loading - a blurred `data:` URI, a solid block, a
  * [skeleton](/components/skeleton). Optional; without it the space simply stays empty.
  *
  * @example
@@ -13,7 +13,7 @@ export class PicturePlaceholderDirective {
 }
 
 /**
- * What to show when the image fails to load. Optional — without it a broken image renders as the browser's
+ * What to show when the image fails to load. Optional - without it a broken image renders as the browser's
  * broken-image icon, which is rarely what a page wants.
  *
  * @example

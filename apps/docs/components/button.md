@@ -4,7 +4,7 @@ Five button flavors, all attribute selectors on native `<button>` or `<a>` eleme
 
 | Flavor         | Selector                     | For                                                          |
 | -------------- | ---------------------------- | ------------------------------------------------------------ |
-| Surface button | `[et-button]`                | The standard button — label with optional icon               |
+| Surface button | `[et-button]`                | The standard button - label with optional icon               |
 | Text button    | `[et-text-button]`           | No background/border; underline on hover                     |
 | Icon button    | `[et-icon-button]`           | Icon only (needs an `aria-label`)                            |
 | FAB            | `[et-fab]`                   | Floating action button; `expanded` toggles the extended pill |
@@ -36,10 +36,10 @@ import { BUTTON_IMPORTS } from '@ethlete/components';
 
 ## Variants, sizes, color
 
-- `variant`: `'filled' | 'outline' | 'tonal' | 'transparent'` — surface buttons default to `filled`, icon buttons to `transparent`. Text buttons and window controls have no variant.
+- `variant`: `'filled' | 'outline' | 'tonal' | 'transparent'` - surface buttons default to `filled`, icon buttons to `transparent`. Text buttons and window controls have no variant.
 - `size`: `'xs' | 'sm' | 'md' | 'lg' | 'xl'` (default `md`; window controls: `sm | md | lg`).
-- `color` applies one of your app's [registered color themes](/core/theming). Theme names are project-specific — the SDK ships none; examples in these guides use the names this repo's Storybook registers (`brand`, `danger`, …).
-- `iconAlignment`: `'start' | 'end'` positions the `[etIcon]` slot relative to the label (surface, text and FAB buttons — the single-icon flavors don't have it).
+- `color` applies one of your app's [registered color themes](/core/theming). Theme names are project-specific - the SDK ships none; examples in these guides use the names this repo's Storybook registers (`brand`, `danger`, …).
+- `iconAlignment`: `'start' | 'end'` positions the `[etIcon]` slot relative to the label (surface, text and FAB buttons - the single-icon flavors don't have it).
 
 ## States
 
@@ -47,8 +47,8 @@ All flavors share the headless `ButtonDirective` (`[etButton]`):
 
 - `disabled` and `loading` both make the button **inactive**: native `disabled` on `<button>`, `tabindex="-1"` on `<a>`, plus `aria-disabled`.
 - `loading` additionally overlays a size-matched spinner (`aria-busy`) on top of the hidden label.
-- `pressed` (surface / icon / window-control buttons) marks toggle state — `aria-pressed` is emitted by default, and the visual **variant swaps** while pressed (e.g. `filled` ↔ `outline`) so the toggle reads at a glance. The `emitAriaPressed` opt-out is bindable on the raw headless `[etButton]` and on icon buttons (for pressed-styled triggers that already announce state via `aria-expanded`), but not on the other styled flavors.
-- `mutedUntilPressed` (surface / icon buttons) keeps the button neutral until pressed, only then adopting its color theme — useful for toolbars.
+- `pressed` (surface / icon / window-control buttons) marks toggle state - `aria-pressed` is emitted by default, and the visual **variant swaps** while pressed (e.g. `filled` ↔ `outline`) so the toggle reads at a glance. The `emitAriaPressed` opt-out is bindable on the raw headless `[etButton]` and on icon buttons (for pressed-styled triggers that already announce state via `aria-expanded`), but not on the other styled flavors.
+- `mutedUntilPressed` (surface / icon buttons) keeps the button neutral until pressed, only then adopting its color theme - useful for toolbars.
 - `type` defaults to `'button'`, so forms don't submit accidentally.
 
 ## Anchors
@@ -61,7 +61,7 @@ Every flavor works on `<a>` for navigation with identical styling:
 
 ## Split button
 
-`<et-split-button>` groups two buttons into one control: an action segment for the primary action and a trigger segment (usually a chevron icon button) that opens a [menu](/components/menu) with related actions. It's a composition, not a sixth flavor — the segments are regular buttons, so every variant, size, color and state applies unchanged. The container joins the corners, draws a divider between the segments, and sets `role="group"`.
+`<et-split-button>` groups two buttons into one control: an action segment for the primary action and a trigger segment (usually a chevron icon button) that opens a [menu](/components/menu) with related actions. It's a composition, not a sixth flavor - the segments are regular buttons, so every variant, size, color and state applies unchanged. The container joins the corners, draws a divider between the segments, and sets `role="group"`.
 
 ```html
 <div etMenu>
@@ -84,14 +84,14 @@ Every flavor works on `<a>` for navigation with identical styling:
 
 <StoryEmbed id="components-button-split--default" height="500px" />
 
-- Give both segments the **same `variant`, `size` and `color`** — the container aligns their heights and outer corner radius, but the segment inputs stay yours to set.
+- Give both segments the **same `variant`, `size` and `color`** - the container aligns their heights and outer corner radius, but the segment inputs stay yours to set.
 - Both segments are **required**; a missing one throws in dev mode (see [error codes](#error-codes)).
 - The divider color is themeable via `--et-split-button-divider-color` (defaults to `currentColor` at 32%, so it adapts to the variant).
 - For custom-styled split buttons, the headless `SplitButtonDirective` (`[etSplitButton]`) plus the two segment directives carry the grouping semantics without the default styling.
 
 ## Accessibility
 
-All flavors keep native `<button>` / `<a>` semantics — no custom key handling, no role juggling. On top of that the headless directive emits `aria-busy` while loading, `aria-disabled` (plus native `disabled` on buttons, `tabindex="-1"` on anchors) while inactive, and `aria-pressed` for toggles; the loading spinner overlay is `aria-hidden`. Keyboard focus shows the shared [focus ring](/components/focus-ring).
+All flavors keep native `<button>` / `<a>` semantics - no custom key handling, no role juggling. On top of that the headless directive emits `aria-busy` while loading, `aria-disabled` (plus native `disabled` on buttons, `tabindex="-1"` on anchors) while inactive, and `aria-pressed` for toggles; the loading spinner overlay is `aria-hidden`. Keyboard focus shows the shared [focus ring](/components/focus-ring).
 
 One thing that stays your job: icon-only buttons have no text content, so always give them an `aria-label` (this is not enforced). That includes a split button's trigger segment; with `etMenuTrigger` on it, the menu system adds `aria-haspopup` / `aria-expanded` for you.
 
@@ -103,4 +103,4 @@ Full per-flavor design specs (anatomy, exact paddings per size, pressed-state va
 
 ## Error codes
 
-The split button's structural checks throw in the `ET23xx` range — see [error codes](/components/error-codes#split-button-et23xx).
+The split button's structural checks throw in the `ET23xx` range - see [error codes](/components/error-codes#split-button-et23xx).

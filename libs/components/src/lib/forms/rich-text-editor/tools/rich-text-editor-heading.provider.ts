@@ -5,7 +5,7 @@ import { RichTextEditorHeadingToolComponent } from './rich-text-editor-heading-t
 
 /**
  * Registers the `'heading'` tool: the block-style menu (paragraph, H1, H2, H3). `'heading'` is in the
- * default toolbar, so this provider is all it takes — without it the editor renders no block-style
+ * default toolbar, so this provider is all it takes - without it the editor renders no block-style
  * control. Tree-shakes when unused.
  */
 export const provideRichTextEditorHeadingTool = (): Provider => ({

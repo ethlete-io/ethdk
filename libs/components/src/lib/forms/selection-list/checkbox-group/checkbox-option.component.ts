@@ -33,7 +33,7 @@ export class CheckboxOptionComponent {
   public optionDirective = inject(SelectionOptionDirective);
 
   /**
-   * `'card'` turns the option into a full-width clickable panel with the label leading and the control trailing —
+   * `'card'` turns the option into a full-width clickable panel with the label leading and the control trailing -
    * for a small set of consequential choices where each deserves room for a description. `'plain'` is the ordinary
    * control-then-label row. @default 'plain'
    */

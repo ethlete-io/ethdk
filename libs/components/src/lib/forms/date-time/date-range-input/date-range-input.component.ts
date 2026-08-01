@@ -96,7 +96,7 @@ export class DateRangeInputComponent {
   /** The string in effect: this instance's `clearLabel`, else `FORM_FIELD_LABELS`. */
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
 
-  // only while the field is in use — mirrors the single date input's clear affordance
+  // only while the field is in use - mirrors the single date input's clear affordance
   protected showClear = computed(
     () => this.clearable() && this.rangeInput.hasValue() && this.rangeInput.focused() && this.rangeInput.interactive(),
   );

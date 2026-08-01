@@ -153,7 +153,7 @@ export type WithPollingFeatureOptions = {
  * The interval will be reset when the arguments of the query change.
  *
  * With {@link CreateQueryClientConfigOptions.multiTabSync} enabled, the same query polled in several
- * tabs is only polled by *one* of them — the other tabs keep their interval running but skip each
+ * tabs is only polled by *one* of them - the other tabs keep their interval running but skip each
  * tick, and get the data through response sharing instead. Which tab does the work is decided per
  * cache key via the Web Locks API, so it moves on its own when that tab is closed or goes into the
  * background.
@@ -185,7 +185,7 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
       };
 
       if (lockManager) {
-        // The cache key follows the args, but only the repository can derive it — so this tracks the
+        // The cache key follows the args, but only the repository can derive it - so this tracks the
         // key the last execution resolved to rather than the args themselves.
         nestedEffect(
           () => {
@@ -198,7 +198,7 @@ export const withPolling = <TArgs extends QueryArgs>(options: WithPollingFeature
 
         // A hidden tab gets its timers throttled to about once a minute, which would starve the
         // visible tabs waiting behind it. Giving the lock up and asking again puts this tab behind
-        // anyone already queued — and hands it straight back if nobody else wants the key.
+        // anyone already queued - and hands it straight back if nobody else wants the key.
         const handOverWhenHidden = () => {
           if (!document.hidden || !hold?.isHolder()) return;
 
@@ -439,7 +439,7 @@ export type WithPageResetOnErrorFeatureOptions = {
     }
   | {
       /**
-       * Called when a matching error occurs. Reset whatever drives the page here —
+       * Called when a matching error occurs. Reset whatever drives the page here -
        * a signal (`() => page.set(1)`) or a query form (`() => qf.resetFieldToDefault('page')`).
        */
       reset: () => void;
@@ -450,12 +450,12 @@ export type WithPageResetOnErrorFeatureOptions = {
 
 /**
  * A query feature that resets the page when the current page becomes out of range
- * — e.g. after a filter shrinks the result set below the current page. It reacts
+ * - e.g. after a filter shrinks the result set below the current page. It reacts
  * to the query's error events and resets the page source; the normal reactive
  * re-execution then runs with the corrected page.
  *
  * Because query args are reactively sourced, this fixes the *source* (a signal or
- * query form field) rather than patching args directly — so the change sticks.
+ * query form field) rather than patching args directly - so the change sticks.
  *
  * @example
  * // signal-driven page

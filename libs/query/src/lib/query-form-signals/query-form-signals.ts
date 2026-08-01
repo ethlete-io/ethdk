@@ -27,7 +27,7 @@ import {
 const ET_NULL_VALUE = 'ET_NULL__';
 
 /**
- * Fields excluded from `activeFilterCount` by default — pagination, sorting and
+ * Fields excluded from `activeFilterCount` by default - pagination, sorting and
  * search are navigation state, not filters.
  */
 export const IGNORED_FILTER_COUNT_FIELDS: readonly string[] = [
@@ -95,7 +95,7 @@ const computeFilterCount = (fields: QueryFormFields, value: Dict, defaults: Dict
 };
 
 /**
- * A detached editor over the same fields — its own signal-forms form and value,
+ * A detached editor over the same fields - its own signal-forms form and value,
  * with no URL sync and no reset graph. Written back to the source form via
  * `source.setValue(branch.value())`. Powers the filter-overlay "edit then apply"
  * pattern (see `10-filter.md`).
@@ -147,7 +147,7 @@ export type CreateQueryFormConfig<TFields extends QueryFormFields> = {
 /**
  * A signals-first query form: binds on-screen controls to typed fields, keeps a
  * debounced committed value, syncs to the URL query params, and resets dependent
- * fields via the `isResetBy` graph — all as signals.
+ * fields via the `isResetBy` graph - all as signals.
  *
  * @example
  * const qf = createQueryForm({
@@ -183,7 +183,7 @@ export class QueryFormSignals<TFields extends QueryFormFields> {
   private _skipNextResets = false;
 
   /**
-   * The bindable signal-forms field tree — bind a field with `[formField]`, e.g.
+   * The bindable signal-forms field tree - bind a field with `[formField]`, e.g.
    * `<input etInput [formField]="qf.fields.search" />`.
    */
   public readonly fields: FieldTree<QueryFormModel<TFields>>;

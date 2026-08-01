@@ -4,7 +4,7 @@ import { CASCADER_ERROR_CODES } from '../cascader-errors';
 import { CascaderDirective } from './cascader.directive';
 import { injectCascaderLabels } from '../cascader-labels';
 
-/** One level of the hierarchy — a `role="group"` of tree items. Nodes read their level from it. */
+/** One level of the hierarchy - a `role="group"` of tree items. Nodes read their level from it. */
 @Directive({
   selector: '[etCascaderColumn]',
   exportAs: 'etCascaderColumn',
@@ -20,7 +20,7 @@ export class CascaderColumnDirective {
   public cascader = inject(CascaderDirective, { optional: true });
   private destroyRef = inject(DestroyRef);
 
-  /** The column's zero-based level — column 0 shows the root. */
+  /** The column's zero-based level - column 0 shows the root. */
   public columnIndex = input.required<number>({ alias: 'etCascaderColumn' });
 
   public readonly id = createComponentId('et-cascader-column');

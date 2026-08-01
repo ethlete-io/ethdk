@@ -10,7 +10,7 @@ const PICTURE_CONFIG_DEF = /* @__PURE__ */ defineStaticRootProvider<PictureConfi
 });
 
 /**
- * App- or route-wide picture defaults. Provide it where the media host is known — usually the app config, or
+ * App- or route-wide picture defaults. Provide it where the media host is known - usually the app config, or
  * a route that talks to a different CDN.
  *
  * @example

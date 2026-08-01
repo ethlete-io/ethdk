@@ -93,7 +93,7 @@ describe('createSwipeTracker', () => {
     it('should report the trailing flick, not the whole-gesture average', () => {
       const tracker = createSwipeTracker(mouseEvent(0, 0));
 
-      // 20px over 900ms of slow dragging — an average of ~22px/s...
+      // 20px over 900ms of slow dragging - an average of ~22px/s...
       for (let i = 1; i <= 9; i++) {
         vi.advanceTimersByTime(100);
         tracker.update(mouseEvent(0, i * 2));

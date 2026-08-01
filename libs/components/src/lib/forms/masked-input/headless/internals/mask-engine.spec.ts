@@ -5,7 +5,7 @@ import { compilePatternMask } from './pattern-mask';
 const date = compilePatternMask('00-00-0000');
 
 describe('applyMaskEdit', () => {
-  describe('pattern masks — insertion', () => {
+  describe('pattern masks - insertion', () => {
     it('masks appended characters and glides the caret past literals', () => {
       // "3" typed into an empty field
       let result = applyMaskEdit({ spec: date, previousRaw: '', text: '3', caret: 1, inputType: 'insertText' });
@@ -45,7 +45,7 @@ describe('applyMaskEdit', () => {
       });
 
       expect(result.raw).toBe('1234');
-      // the display is a pure function of the raw value — the group's eager dash renders
+      // the display is a pure function of the raw value - the group's eager dash renders
       expect(result.display).toBe('12-34-');
       expect(result.caret).toBe(6);
     });
@@ -77,7 +77,7 @@ describe('applyMaskEdit', () => {
     });
   });
 
-  describe('pattern masks — deletion', () => {
+  describe('pattern masks - deletion', () => {
     it('handles a plain backspace of a content character', () => {
       // "31-12-2024" backspace at end → element "31-12-202"
       const result = applyMaskEdit({

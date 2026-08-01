@@ -27,7 +27,7 @@ const PLAYERS = ['Alice Anderson', 'Bob Brown', 'Charlie Clark', 'Dana Davis', '
         </ng-template>
       </div>
 
-      <p class="et-sb-menu-log">Assigned: {{ assignedPlayer() ?? '—' }}</p>
+      <p class="et-sb-menu-log">Assigned: {{ assignedPlayer() ?? '-' }}</p>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,

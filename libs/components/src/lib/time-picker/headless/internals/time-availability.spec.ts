@@ -43,7 +43,7 @@ describe('time-availability', () => {
     });
 
     it('reads only the time of day of the bounds', () => {
-      // the bounds carry a different day on purpose — only 09:00–17:30 matters
+      // the bounds carry a different day on purpose - only 09:00–17:30 matters
       const bounded = options({ min: new Date(2020, 0, 1, 9), max: new Date(2031, 0, 1, 17, 30) });
 
       expect(isTimeSelectable({ hour: 8, minute: 59, second: 59 }, bounded)).toBe(false);

@@ -45,7 +45,7 @@ describe('createQuery', () => {
   });
 });
 
-describe('createQuery — returning to a retained cache entry', () => {
+describe('createQuery - returning to a retained cache entry', () => {
   let client: QueryClientRef;
   let httpTesting: HttpTestingController;
   let parent: EnvironmentInjector;

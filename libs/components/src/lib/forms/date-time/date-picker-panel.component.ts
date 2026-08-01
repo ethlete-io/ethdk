@@ -14,7 +14,7 @@ import { injectDateTimeLabels } from '../../forms/date-time/date-time-labels';
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [ProvideColorDirective, AutoSurfaceDirective],
   // the trigger promises `aria-haspopup="dialog"`, so the mounted pane must actually be a named
-  // dialog — without this SR users land in an unnamed generic container
+  // dialog - without this SR users land in an unnamed generic container
   host: {
     class: 'et-date-picker-panel',
     role: 'dialog',
@@ -24,7 +24,7 @@ import { injectDateTimeLabels } from '../../forms/date-time/date-time-labels';
 export class DatePickerPanelComponent {
   private dateTimeLabels = injectDateTimeLabels();
 
-  /** Accessible name of the picker dialog — set per control (date / time / range / date-time). */
+  /** Accessible name of the picker dialog - set per control (date / time / range / date-time). */
   public dialogLabel = input<string | null>(null);
 
   // observed instead of the host: the host's used size is overridden by the resize
@@ -35,7 +35,7 @@ export class DatePickerPanelComponent {
   protected resolvedDialogLabel = computed(() => this.dialogLabel() ?? this.dateTimeLabels().chooseDate);
 
   constructor() {
-    // this panel IS the overlay's own surface — paint the overlay's registered elevation exactly,
+    // this panel IS the overlay's own surface - paint the overlay's registered elevation exactly,
     // don't stack a level above it (the tracker is authoritative; content inside elevates off it)
     inject(AutoSurfaceDirective).matchOverlaySurface();
 

@@ -1,6 +1,6 @@
 # Loaders
 
-Three loading indicators, all exposing `role="progressbar"` with correct determinate/indeterminate aria values. Colors come from `currentColor`. There is no aggregate imports array — import the components directly:
+Three loading indicators, all exposing `role="progressbar"` with correct determinate/indeterminate aria values. Colors come from `currentColor`. There is no aggregate imports array - import the components directly:
 
 ```ts
 import { BrandLoaderComponent, ProgressBarComponent, SpinnerComponent } from '@ethlete/components';
@@ -38,7 +38,7 @@ import { BrandLoaderComponent, ProgressBarComponent, SpinnerComponent } from '@e
 
 ## Brand loader
 
-The animated Ethlete "E" for full-page or initial loading states. No inputs — drop it in and size/color via CSS:
+The animated Ethlete "E" for full-page or initial loading states. No inputs - drop it in and size/color via CSS:
 
 ```html
 <et-brand-loader class="size-16 text-et-brand" />
@@ -49,7 +49,7 @@ The animated Ethlete "E" for full-page or initial loading states. No inputs — 
 ## Motion
 
 All three keep animating under `prefers-reduced-motion: reduce`. This is a **deliberate
-exemption**: the motion _is_ the message — a frozen spinner or a static indeterminate bar reads as
+exemption**: the motion _is_ the message - a frozen spinner or a static indeterminate bar reads as
 "stuck", not as "loading". The same reasoning is why the [skeleton](/components/skeleton#motion)
 goes the other way: it has a shape to fall back on, so its shimmer is dropped entirely.
 
@@ -59,8 +59,8 @@ transitions, and calendar/accordion size animations.
 
 ## Accessibility
 
-All three render `role="progressbar"`; spinner and progress bar expose `aria-valuenow` / `-valuemin` / `-valuemax` only in determinate mode (indeterminate drops them, as the pattern requires). The brand loader ships an `aria-label="Loading"`; the spinner and progress bar have **no accessible name by default** — add an `aria-label` when they stand alone rather than inside an already-labelled context (like a button's `loading` state, which sets `aria-busy` on the button).
+All three render `role="progressbar"`; spinner and progress bar expose `aria-valuenow` / `-valuemin` / `-valuemax` only in determinate mode (indeterminate drops them, as the pattern requires). The brand loader ships an `aria-label="Loading"`; the spinner and progress bar have **no accessible name by default** - add an `aria-label` when they stand alone rather than inside an already-labelled context (like a button's `loading` state, which sets `aria-busy` on the button).
 
 ## Theming
 
-Spinner tokens: `--et-spinner-size` (`18px`), `--et-spinner-stroke-width` (`2.25px`), `--et-spinner-color` (`currentColor`), `--et-spinner-track-color` (`transparent`), `--et-spinner-duration` (`1333ms`) — the `diameter`/`strokeWidth` inputs win over the size tokens. Progress bar tokens: `--et-progress-bar-height` (`4px`), `--et-progress-bar-border-radius` (`9999px`). The brand loader has no tokens — size and color it via CSS (`currentColor`).
+Spinner tokens: `--et-spinner-size` (`18px`), `--et-spinner-stroke-width` (`2.25px`), `--et-spinner-color` (`currentColor`), `--et-spinner-track-color` (`transparent`), `--et-spinner-duration` (`1333ms`) - the `diameter`/`strokeWidth` inputs win over the size tokens. Progress bar tokens: `--et-progress-bar-height` (`4px`), `--et-progress-bar-border-radius` (`9999px`). The brand loader has no tokens - size and color it via CSS (`currentColor`).

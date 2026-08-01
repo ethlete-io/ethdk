@@ -16,12 +16,12 @@ export type RichTextEditorHistoryEntry = {
 /** Typing keeps extending the newest entry as long as the next keystroke lands within this window. */
 const COALESCE_WINDOW_MS = 500;
 
-/** How many states are kept. The oldest fall off the bottom — enough depth to be useful, bounded
+/** How many states are kept. The oldest fall off the bottom - enough depth to be useful, bounded
  *  so a long editing session can't grow the stack without limit. */
 const MAX_ENTRIES = 100;
 
 /**
- * The characters `next` inserted over `prev` — a prefix/suffix diff, which is all that is needed to
+ * The characters `next` inserted over `prev` - a prefix/suffix diff, which is all that is needed to
  * tell "typed a word character" from "typed a space". A deletion yields `''`.
  */
 const insertedChunk = (prev: string, next: string) => {
@@ -47,13 +47,13 @@ const insertedChunk = (prev: string, next: string) => {
  * than over the DOM.
  *
  * The editor cannot use the browser's native `contenteditable` undo stack, because it rewrites the
- * DOM behind that stack's back — pasted HTML is normalized through the Markdown pipeline and
+ * DOM behind that stack's back - pasted HTML is normalized through the Markdown pipeline and
  * autoformat turns typed text into structure. Native undo would then restore a DOM state the value
  * model never had (or silently do nothing), so every edit is snapshotted here instead and the
  * platform's undo affordances are routed into this stack.
  *
  * Granularity: a burst of plain typing coalesces into one entry (per {@link COALESCE_WINDOW_MS},
- * and never across a whitespace character — so undo steps back word by word), while every
+ * and never across a whitespace character - so undo steps back word by word), while every
  * programmatic rewrite commits with `boundary: true` and is undone in a single step.
  */
 export const createRichTextEditorHistory = () => {
@@ -82,7 +82,7 @@ export const createRichTextEditorHistory = () => {
 
   /**
    * Records the editor's state after an edit. `boundary` forces its own entry instead of extending
-   * the running typing burst — what every programmatic rewrite (paste, autoformat, a tool, a token
+   * the running typing burst - what every programmatic rewrite (paste, autoformat, a tool, a token
    * insert) passes, so one undo takes the whole rewrite back.
    */
   const commit = ({ value, selection }: RichTextEditorHistoryEntry, boundary = false) => {
@@ -101,7 +101,7 @@ export const createRichTextEditorHistory = () => {
     if (index < entries.length - 1) entries = entries.slice(0, index + 1);
 
     const now = Date.now();
-    // Typing extends the newest entry, except across a whitespace character — that starts the next
+    // Typing extends the newest entry, except across a whitespace character - that starts the next
     // entry, so undo steps back word by word. (The whitespace usually rides along with the letter
     // after it: a trailing space alone is trimmed out of the Markdown value, so it commits nothing.)
     const crossedWhitespace = /\s/.test(insertedChunk(current.value, value));
@@ -126,7 +126,7 @@ export const createRichTextEditorHistory = () => {
     syncFlags();
   };
 
-  /** Restarts from `value` as the only state — for a value the editor didn't produce itself. */
+  /** Restarts from `value` as the only state - for a value the editor didn't produce itself. */
   const reset = (value: string, selection: RichTextEditorSelectionOffsets | null = null) => {
     entries = [{ value, selection }];
     index = 0;

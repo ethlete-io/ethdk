@@ -33,7 +33,7 @@ export class SelectTriggerDirective {
   public select = inject(SelectDirective, { optional: true });
   public elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  // with an inline search input, the input is the combobox and the tab stop —
+  // with an inline search input, the input is the combobox and the tab stop -
   // the trigger element becomes a plain container
   protected hasSearch = computed(() => !!this.select?.registeredSearch());
 
@@ -44,7 +44,7 @@ export class SelectTriggerDirective {
     !this.hasSearch() && this.select?.open() ? this.select.activeId() : null,
   );
 
-  // non-button hosts (a chips trigger must not be a native <button> — chips contain remove
+  // non-button hosts (a chips trigger must not be a native <button> - chips contain remove
   // buttons, and buttons cannot nest) need their focusability managed explicitly
   private readonly IS_NATIVELY_FOCUSABLE = ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA', 'A'].includes(
     this.elementRef.nativeElement.tagName,
@@ -98,7 +98,7 @@ export class SelectTriggerDirective {
 
     if (search) {
       // clicking anywhere in the field focuses the inline search input; clicks inside the
-      // input itself must never close the panel — the chevron's own handler toggles instead
+      // input itself must never close the panel - the chevron's own handler toggles instead
       this.select?.show();
       search.focus();
 
@@ -109,7 +109,7 @@ export class SelectTriggerDirective {
   }
 
   protected handleKeydown(event: KeyboardEvent) {
-    // an inline search input forwards its own relevant keys — don't double-handle them
+    // an inline search input forwards its own relevant keys - don't double-handle them
     if (this.select?.registeredSearch()?.isFocused()) {
       return;
     }

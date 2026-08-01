@@ -24,7 +24,7 @@ import { MENU_IMPORTS } from '../../menu.imports';
         </ng-template>
       </div>
 
-      <p class="et-sb-menu-log">Last action: {{ lastAction() ?? '—' }}</p>
+      <p class="et-sb-menu-log">Last action: {{ lastAction() ?? '-' }}</p>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,

@@ -7,7 +7,7 @@
     "projects": {
       "type": "array",
       "items": { "type": "string" },
-      "description": "Nx projects to migrate. Defaults to every project in the workspace. Use this to adopt v3 one app or library at a time instead of rewriting the whole monorepo in one run — but keep a query client and the creators built from it in the same run, since they are migrated together.",
+      "description": "Nx projects to migrate. Defaults to every project in the workspace. Use this to adopt v3 one app or library at a time instead of rewriting the whole monorepo in one run - but keep a query client and the creators built from it in the same run, since they are migrated together.",
       "alias": "project"
     },
     "include": {

@@ -4,7 +4,7 @@ import { AccordionDirective } from './accordion.directive';
 
 /**
  * A set of accordions that know about each other: optionally single-open (`autoCloseOthers`), and
- * navigable between headers with the arrow keys — the part of the ARIA accordion pattern a lone
+ * navigable between headers with the arrow keys - the part of the ARIA accordion pattern a lone
  * disclosure can't provide.
  *
  * Purely behavioral; the default `et-accordion-group` adds the chrome. Accordions register
@@ -28,7 +28,7 @@ import { AccordionDirective } from './accordion.directive';
 export class AccordionGroupDirective {
   /**
    * Keep at most one panel open: expanding one collapses the rest. Off by default, which lets readers
-   * compare two sections side by side — turn it on when the panels are long enough that several open
+   * compare two sections side by side - turn it on when the panels are long enough that several open
    * at once buries the headers below.
    */
   public autoCloseOthers = input(false, { transform: booleanAttribute });
@@ -37,7 +37,7 @@ export class AccordionGroupDirective {
    * Keep at least one panel open: collapsing the last open one does nothing. Pair it with
    * `autoCloseOthers` for a radio-like group where exactly one section is open at a time.
    *
-   * It gates the user's own toggle — the trigger, and `toggle()`. `close()`, `closeAll()` and writing
+   * It gates the user's own toggle - the trigger, and `toggle()`. `close()`, `closeAll()` and writing
    * `[(isOpen)]` still collapse the panel, the same way they ignore `disabled`: this is about what the
    * header does when clicked, not a lock on the state.
    *
@@ -48,7 +48,7 @@ export class AccordionGroupDirective {
 
   /**
    * Move focus between headers with `ArrowUp`/`ArrowDown` (and jump with `Home`/`End`), as the ARIA
-   * accordion pattern suggests. Turn off if the surrounding UI needs those keys — a group inside a
+   * accordion pattern suggests. Turn off if the surrounding UI needs those keys - a group inside a
    * scroll container that pages with the arrow keys, for instance. @default true
    */
   public arrowKeyNavigation = input(true, { transform: booleanAttribute });
@@ -57,7 +57,7 @@ export class AccordionGroupDirective {
 
   /**
    * The group's accordions in DOM order. Registration order follows creation order, which is not the
-   * same thing once a `@for` re-orders its items, so this sorts by document position instead — the
+   * same thing once a `@for` re-orders its items, so this sorts by document position instead - the
    * order the arrow keys have to follow.
    */
   public accordions = computed(() =>
@@ -70,7 +70,7 @@ export class AccordionGroupDirective {
 
   /**
    * The accordions that were open the last time single-open ran. `autoCloseOthers` needs to know
-   * which panel *just* opened — not merely which ones are open — and that is a diff against the
+   * which panel *just* opened - not merely which ones are open - and that is a diff against the
    * previous state, so it is kept outside the reactive graph rather than being derived from it.
    */
   private previouslyOpen = new Set<AccordionDirective>();
@@ -92,7 +92,7 @@ export class AccordionGroupDirective {
     }
   }
 
-  /** Expand every accordion in the group. Does nothing while `autoCloseOthers` is on — it would immediately undo itself. */
+  /** Expand every accordion in the group. Does nothing while `autoCloseOthers` is on - it would immediately undo itself. */
   public openAll() {
     if (this.autoCloseOthers()) return;
 
@@ -102,7 +102,7 @@ export class AccordionGroupDirective {
   }
 
   /**
-   * @internal Whether an accordion's own toggle may collapse it — see {@link preventCloseLast}. Asked
+   * @internal Whether an accordion's own toggle may collapse it - see {@link preventCloseLast}. Asked
    * by the accordion rather than enforced from here, because "the user tried to close it" is only
    * visible at the toggle; from the group's side a closed panel is just a closed panel.
    */
@@ -153,8 +153,8 @@ export class AccordionGroupDirective {
       return;
     }
 
-    // The panel that just opened wins. When several were already open — two `isOpenByDefault`, or
-    // `autoCloseOthers` switched on later — the first in DOM order does.
+    // The panel that just opened wins. When several were already open - two `isOpenByDefault`, or
+    // `autoCloseOthers` switched on later - the first in DOM order does.
     const keep = openAccordions.find((accordion) => !this.previouslyOpen.has(accordion)) ?? openAccordions[0];
 
     // Record the settled state before closing anything: `close()` re-triggers the effect, and it must

@@ -5,7 +5,7 @@ import { CAROUSEL_TOKEN } from './carousel.tokens';
 
 /** What a slide template is handed for each slide it renders. */
 export type CarouselSlideContext<T> = {
-  /** The slide — what a bare `let-slide` binds to. */
+  /** The slide - what a bare `let-slide` binds to. */
   $implicit: T;
   /** The slide again, for `let-slide="slide"`. */
   slide: T;
@@ -19,7 +19,7 @@ export type CarouselSlideContext<T> = {
   last: boolean;
   /**
    * Whether this rendering is a loop clone rather than the slide itself. Clones are hidden from
-   * assistive technology and taken out of the tab order, so a template rarely needs this — it is here
+   * assistive technology and taken out of the tab order, so a template rarely needs this - it is here
    * for the rare piece that must not run twice (a video, an analytics beacon).
    */
   clone: boolean;
@@ -28,7 +28,7 @@ export type CarouselSlideContext<T> = {
 /**
  * The template `<et-carousel>` stamps once per slide. Slides are data plus this template rather than
  * elements you project, because seamless looping needs the carousel to render each slide **more than
- * once** — a clone either side of the seam — and a clone has to be a live view with working bindings,
+ * once** - a clone either side of the seam - and a clone has to be a live view with working bindings,
  * not a copy of a DOM subtree.
  *
  * Bind the slides to the directive itself. That is also what types the template: `let-slide` is your
@@ -55,7 +55,7 @@ export class CarouselSlideDirective<T> {
   public slides = input.required<readonly T[]>({ alias: 'etCarouselSlide' });
 
   /**
-   * How long autoplay rests on a given slide, overriding the carousel's `autoplayTime` — for the one
+   * How long autoplay rests on a given slide, overriding the carousel's `autoplayTime` - for the one
    * slide carrying a paragraph rather than a picture. Return `null` to use the carousel's duration.
    *
    * It lives here rather than on `<et-carousel>` because this is where the slide type is: the callback's
@@ -96,7 +96,7 @@ export class CarouselSlideDirective<T> {
   }
 
   // static on purpose (the lint ban excepts it): Angular's template type checker requires the context
-  // guard to be static — it types the `let-` bindings of the host ng-template.
+  // guard to be static - it types the `let-` bindings of the host ng-template.
   public static ngTemplateContextGuard<T>(
     _directive: CarouselSlideDirective<T>,
     _context: unknown,

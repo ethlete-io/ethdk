@@ -131,7 +131,7 @@ export const getScrollItemTarget = (
   const lastIndex = entries.indexOf(lastVisible);
   const containerRect = container.getBoundingClientRect();
 
-  // Only a single item is visible — it must be oversized (wider/taller than the container).
+  // Only a single item is visible - it must be oversized (wider/taller than the container).
   if (firstVisible === lastVisible) {
     const itemRect = firstVisible.target.getBoundingClientRect();
     const isStartEdgeVisible =

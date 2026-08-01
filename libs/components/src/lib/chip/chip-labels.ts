@@ -15,7 +15,7 @@ const CHIP_LABELS_DEF = /* @__PURE__ */ defineLabels<ChipLabels>('CHIP_LABELS', 
 
 /**
  * Localize a chip's strings for everything below this injector, and read the set in effect here as a
- * signal. Partial — whatever you leave out keeps its {@link DEFAULT_CHIP_LABELS} value. See {@link defineLabels}
+ * signal. Partial - whatever you leave out keeps its {@link DEFAULT_CHIP_LABELS} value. See {@link defineLabels}
  * for the shape, which every domain in this library shares.
  *
  * @example

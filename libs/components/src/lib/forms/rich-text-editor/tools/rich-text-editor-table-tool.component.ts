@@ -50,7 +50,7 @@ export class RichTextEditorTableToolComponent {
   protected menu = viewChild.required(MenuDirective);
   protected pickerGrid = viewChild<ElementRef<HTMLElement>>('pickerGrid');
 
-  /** The editor's strings — the tool is part of that editor's toolbar. */
+  /** The editor's strings - the tool is part of that editor's toolbar. */
   protected labels = computed(() => this.editor().resolvedLabels());
 
   private ops = createTableOps(this.renderer);
@@ -79,7 +79,7 @@ export class RichTextEditorTableToolComponent {
     return !!ctx && !hasHeaderRow(ctx.table);
   });
 
-  /** "Insert row above" makes no sense from inside the header row — nothing goes above the header. */
+  /** "Insert row above" makes no sense from inside the header row - nothing goes above the header. */
   protected inHeaderRow = computed(() => {
     const ctx = this.context();
 
@@ -100,7 +100,7 @@ export class RichTextEditorTableToolComponent {
   }
 
   /**
-   * Arrow-key support for the size picker — it has no menu items, so the menu's own keyboard
+   * Arrow-key support for the size picker - it has no menu items, so the menu's own keyboard
    * navigation has nothing to drive. The menu opens with the panel focused; the first arrow steps
    * onto the 1×1 cell and further arrows move through the grid, with Enter/Space committing via the
    * focused cell's native click. Listens on the `et-menu` element (= the panel) so the initial
@@ -115,7 +115,7 @@ export class RichTextEditorTableToolComponent {
     if (!grid) return;
 
     // A focused cell isn't a menu item and doesn't target the panel, so the menu's own
-    // Escape/Tab handling never sees its keydowns — mirror it (panel-targeted ones still work).
+    // Escape/Tab handling never sees its keydowns - mirror it (panel-targeted ones still work).
     if (event.target instanceof Element && grid.contains(event.target)) {
       if (event.key === 'Escape') {
         event.preventDefault();
@@ -151,7 +151,7 @@ export class RichTextEditorTableToolComponent {
 
   /**
    * Touch implicitly captures the pointer on the cell it went down on, which would stop
-   * `pointerenter` from reaching the other cells — release it so a swipe extends the selection.
+   * `pointerenter` from reaching the other cells - release it so a swipe extends the selection.
    */
   protected beginSwipeSelection(event: PointerEvent) {
     this.insertedByPointer = false;
@@ -163,7 +163,7 @@ export class RichTextEditorTableToolComponent {
 
   /**
    * Commits a touch/pen selection where the finger lifts. A swipe's down and up targets differ,
-   * so no cell ever gets the click event — the grid's pointerup is the only commit signal.
+   * so no cell ever gets the click event - the grid's pointerup is the only commit signal.
    * Mouse keeps committing via the cell's click.
    */
   protected commitSwipeSelection(event: PointerEvent) {

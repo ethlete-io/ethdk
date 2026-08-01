@@ -108,7 +108,7 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
   private snapMarkValues = computed(() => (this.snapToMarks() ? this.resolvedMarks().map((mark) => mark.value) : []));
 
   // while mixed, the thumb parks at the track start so the DOM (position, ARIA) exposes
-  // nothing of the hidden raw value — the keyboard model then also steps from the minimum
+  // nothing of the hidden raw value - the keyboard model then also steps from the minimum
   public thumbValues = computed<readonly number[]>(() =>
     this.mixed() ? [this.effectiveMin()] : [this.snapValue(this.value())],
   );
@@ -120,7 +120,7 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
   public markStops = computed(() =>
     toMarkStops(this.resolvedMarks(), {
       bounds: this.bounds(),
-      // a parked thumb fills nothing — no tick may read as active while mixed
+      // a parked thumb fills nothing - no tick may read as active while mixed
       activeRange: this.mixed() ? null : [this.effectiveMin(), this.thumbValues()[0] ?? this.effectiveMin()],
     }),
   );
@@ -177,7 +177,7 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
   }
 
   public commitThumbValue(index: number, value: number) {
-    // the single slider has one thumb — `index` only exists to satisfy the shared host contract
+    // the single slider has one thumb - `index` only exists to satisfy the shared host contract
     void index;
 
     if (!this.interactive()) {
@@ -186,7 +186,7 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
 
     const snapped = this.snapValue(value);
 
-    // only user interactions route through here — the first commit resolves mixed even
+    // only user interactions route through here - the first commit resolves mixed even
     // when the chosen value happens to equal the hidden raw one (replace semantics)
     this.mixed.set(false);
 

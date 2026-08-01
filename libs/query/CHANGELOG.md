@@ -8,7 +8,7 @@
 
 ### Patch Changes
 
-- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`bc8aca7`](https://github.com/ethlete-io/ethdk/commit/bc8aca76900a47a3faed4ad2be2ce2ab7b70b27d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Filter overlay: new `provideFilterOverlay` / `injectFilterOverlay` — a filter panel that drafts the page's query
+- [#3040](https://github.com/ethlete-io/ethdk/pull/3040) [`bc8aca7`](https://github.com/ethlete-io/ethdk/commit/bc8aca76900a47a3faed4ad2be2ce2ab7b70b27d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Filter overlay: new `provideFilterOverlay` / `injectFilterOverlay` - a filter panel that drafts the page's query
   form, reports how many results the draft would return on its submit button, and applies on submit or discards on
   dismiss. Replaces cdk's `FilterOverlayService`, rebuilt on signal forms and the current query client.
 
@@ -21,7 +21,7 @@
   `legacyPatch*` / `legacyDelete*` executed without an explicit `skipCache: true` reached the repository with
   `allowCache: true` and threw "This request is uncacheable, but allowCache is set to true".
 
-  `allowCache` is never read on the uncacheable path — there is no cache entry to reuse — so the throw was purely a
+  `allowCache` is never read on the uncacheable path - there is no cache entry to reuse - so the throw was purely a
   guard against a mistake in hand-written code. It stays for that, and gains a
   `silenceUncacheableAllowCacheError` opt-out on `QueryConfig`, which `createLegacyQueryCreator` sets alongside the
   `silenceMissingWithArgsFeatureError` it already passed. The cache-key guard is unaffected.
@@ -33,18 +33,18 @@
 
 ### Minor Changes
 
-- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`a83cfe4`](https://github.com/ethlete-io/ethdk/commit/a83cfe4b3e69c3e70ac20f81a5c287bdb6278a63) Thanks [@github-actions](https://github.com/apps/github-actions)! - Cache entries are now kept for `keepUnusedFor` (5 minutes by default) after their last consumer was destroyed, instead of being discarded immediately. A query that mounts again within that window — a list page reached via browser back navigation, for instance — binds to the existing entry and renders its previous response right away while revalidating in the background (`executionState()` reports `{ type: 'loading', hasCachedResponse: true }`).
+- [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`a83cfe4`](https://github.com/ethlete-io/ethdk/commit/a83cfe4b3e69c3e70ac20f81a5c287bdb6278a63) Thanks [@github-actions](https://github.com/apps/github-actions)! - Cache entries are now kept for `keepUnusedFor` (5 minutes by default) after their last consumer was destroyed, instead of being discarded immediately. A query that mounts again within that window - a list page reached via browser back navigation, for instance - binds to the existing entry and renders its previous response right away while revalidating in the background (`executionState()` reports `{ type: 'loading', hasCachedResponse: true }`).
 
   - Configurable per client (`createQueryClient({ keepUnusedFor })`) and per query creator; `0` restores the previous release-immediately behavior.
   - Independent of `cache-control`, so it also applies to private/authenticated responses.
-  - Only entries holding a response are kept — in-flight and errored ones are still aborted immediately. At most 50 unused entries per client are retained, and retention is disabled on the server.
+  - Only entries holding a response are kept - in-flight and errored ones are still aborted immediately. At most 50 unused entries per client are retained, and retention is disabled on the server.
 
 - [#3037](https://github.com/ethlete-io/ethdk/pull/3037) [`7ae9eaa`](https://github.com/ethlete-io/ethdk/commit/7ae9eaa878c6c3bfa80876c67ac1f9360a1c24ec) Thanks [@github-actions](https://github.com/apps/github-actions)! - Close the gaps found while migrating a real workspace from the legacy client to v3:
 
   - **Client-level headers.** `createQueryClient({ headers })` takes `HttpHeaders` or a function
     re-read on every request, so a signal can drive it. Per-query `args.headers` merge on top and win
     per name. `client.refreshQueriesInUse()` re-runs every bound `GET`/`HEAD`/`OPTIONS` (in-flight ones
-    included) — the replacement for v2's `setDefaultHeaders({ refreshQueriesInUse: true })`.
+    included) - the replacement for v2's `setDefaultHeaders({ refreshQueriesInUse: true })`.
   - **`provider.setTokens(access, refresh)`** on the public bearer auth provider, for tokens issued
     outside it (SSO callbacks, native shells). Previously reachable only from inside a custom feature.
   - **`logout()` now resets bound secure queries.** It already unbound their cache entries, but the
@@ -73,7 +73,7 @@
   - Auth providers are scaffolded from the v2 `V2BearerAuthProvider` config instead of `queries: []`.
   - Devtools are migrated rather than deleted: the per-client `provideQueryClientForDevtools` calls
     collapse into one `provideQueryDevtools()`, `QueryDevtoolsComponent` is re-imported from
-    `@ethlete/components`, and `<et-query-devtools>` markup is left alone — both versions use that selector.
+    `@ethlete/components`, and `<et-query-devtools>` markup is left alone - both versions use that selector.
   - New report tasks for dropped v2 client options, missing `provideHttpClient()`, `setDefaultHeaders`
     call sites and the auth import-cycle layout.
 
@@ -107,13 +107,13 @@
 
 ### Minor Changes
 
-- [`5685798`](https://github.com/ethlete-io/ethdk/commit/56857988a9fb579a791950cd85d015dfd36921a3) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `querySequence` for imperative waterfalls of dependent queries — chain mutations with `.then()`, thread each response into the next, and `run()` to a typed, discriminated result that aborts on the first error. Exposes `status`/`running`/`currentStep`/`error` progress signals for driving UI.
+- [`5685798`](https://github.com/ethlete-io/ethdk/commit/56857988a9fb579a791950cd85d015dfd36921a3) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `querySequence` for imperative waterfalls of dependent queries - chain mutations with `.then()`, thread each response into the next, and `run()` to a typed, discriminated result that aborts on the first error. Exposes `status`/`running`/`currentStep`/`error` progress signals for driving UI.
 
 ## 6.0.0-next.17
 
 ### Minor Changes
 
-- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`47e4109`](https://github.com/ethlete-io/ethdk/commit/47e41097adf96788120840bdd03cad25306628f2) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `validateWithQuery` (v3) and `validateWithV2Query` (v2) — query-backed async
+- [#3030](https://github.com/ethlete-io/ethdk/pull/3030) [`47e4109`](https://github.com/ethlete-io/ethdk/commit/47e41097adf96788120840bdd03cad25306628f2) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `validateWithQuery` (v3) and `validateWithV2Query` (v2) - query-backed async
   validators for Angular signal forms. They adapt an `@ethlete/query` query into
   `validateAsync`, so server-side validation runs through the query client (auth,
   base route, caching, error normalization) instead of a raw `httpResource`. A

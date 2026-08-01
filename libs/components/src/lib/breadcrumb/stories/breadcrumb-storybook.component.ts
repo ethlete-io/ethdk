@@ -12,7 +12,7 @@ import { BreadcrumbSeoDirective } from '../seo';
       <div [style.max-inline-size.px]="width()">
         <!-- name/url are read only by etBreadcrumbSeo, never rendered: a crumb's content is a template
              with no single text form, and schema.org wants a plain name and an absolute URL. The last
-             crumb states no url — it is the page the markup is on. -->
+             crumb states no url - it is the page the markup is on. -->
         <et-breadcrumb [collapse]="collapse()" [etBreadcrumbSeo]="seo()">
           <ng-template etBreadcrumbItemTemplate name="Home" url="https://example.com/">
             <a (click)="stayHere($event)" etBreadcrumbItem href="#">Home</a>
@@ -48,7 +48,7 @@ import { BreadcrumbSeoDirective } from '../seo';
       @if (seo()) {
         <div class="text-small flex flex-col gap-2">
           <p>
-            <code>etBreadcrumbSeo</code> emitted this <code>BreadcrumbList</code> into the document — the whole trail,
+            <code>etBreadcrumbSeo</code> emitted this <code>BreadcrumbList</code> into the document - the whole trail,
             not the collapsed one, since collapsing is a layout decision.
           </p>
           <pre class="overflow-x-auto rounded-lg p-4" style="background: var(--et-surface-background-solid)">{{

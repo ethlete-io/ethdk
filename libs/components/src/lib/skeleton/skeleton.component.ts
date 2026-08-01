@@ -5,7 +5,7 @@ import { injectLoaderLabels } from '../loader';
  * A loading placeholder: a box (or several) standing in for content that hasn't arrived, with an
  * optional shimmer sweeping across.
  *
- * Light by default — the container announces the wait to assistive tech and owns the animation switch;
+ * Light by default - the container announces the wait to assistive tech and owns the animation switch;
  * the shapes are `<et-skeleton-item>`s sized by your own CSS, or by their `shape` for the common cases.
  * Colors come from the surface tokens, so a skeleton reads correctly on any surface it is placed on.
  *
@@ -32,14 +32,14 @@ export class SkeletonComponent {
   private labels = injectLoaderLabels();
 
   /**
-   * What a screen reader announces in place of the shapes, which are `aria-hidden` — they carry no
+   * What a screen reader announces in place of the shapes, which are `aria-hidden` - they carry no
    * information, and reading "loading" once is the whole message. `null` (the default) uses
    * `LOADER_LABELS`' `loadingContent`; set it for something more specific ("Loading results").
    */
   public loadingAllyText = input<string | null>(null);
 
   /**
-   * Run the shimmer. Off leaves a static placeholder — the same shapes without motion, which is what
+   * Run the shimmer. Off leaves a static placeholder - the same shapes without motion, which is what
    * you want inside something that already animates (an opening panel), or on a very long list.
    * Independent of `prefers-reduced-motion`, which drops the shimmer regardless. @default true
    */

@@ -1,7 +1,7 @@
 import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
- * The strings the calendar renders or announces itself. Month and weekday **names** are not here — those
+ * The strings the calendar renders or announces itself. Month and weekday **names** are not here - those
  * come from the `DATE_LOCALE` date-fns locale, which is what a localized app provides.
  */
 export type CalendarLabels = {
@@ -45,7 +45,7 @@ const CALENDAR_LABELS_DEF = /* @__PURE__ */ defineLabels<CalendarLabels>('CALEND
 
 /**
  * Localize the calendar's strings for everything below this injector, and read the set in effect here as a
- * signal. Partial — whatever you leave out keeps its {@link DEFAULT_CALENDAR_LABELS} value. See {@link defineLabels}
+ * signal. Partial - whatever you leave out keeps its {@link DEFAULT_CALENDAR_LABELS} value. See {@link defineLabels}
  * for the shape, which every domain in this library shares.
  *
  * @example

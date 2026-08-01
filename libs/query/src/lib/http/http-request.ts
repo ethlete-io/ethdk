@@ -94,18 +94,18 @@ export type HttpRequestLoadingProgressState = {
 };
 
 /**
- * Advanced request internals. **Not part of the general public contract** — do not build
+ * Advanced request internals. **Not part of the general public contract** - do not build
  * application logic on top of these.
  */
 export type HttpRequestSubtle<TArgs extends QueryArgs> = {
   /**
-   * Adopts a response this request never made itself — the same request settled in another tab and
+   * Adopts a response this request never made itself - the same request settled in another tab and
    * its result arrived over the multi-tab sync channel.
    *
    * Deliberately silent: it writes the state signals but emits nothing on {@link HttpRequest.events$}
    * (and leaves {@link HttpRequest.currentEvent} alone), because that stream means "this request
-   * settled over HTTP". The repository's `request-success` event — which is what broadcasts in the
-   * first place — hangs off it, so emitting here would bounce the response back and forth between
+   * settled over HTTP". The repository's `request-success` event - which is what broadcasts in the
+   * first place - hangs off it, so emitting here would bounce the response back and forth between
    * tabs forever. The cost is that event-driven features (`withSuccessHandling`, `withLogging`) stay
    * quiet for shared responses; everything signal-driven updates as usual.
    *
@@ -122,7 +122,7 @@ export type HttpRequestSubtle<TArgs extends QueryArgs> = {
 
   /**
    * Adopts a response from a previous session, read back from the client's persisted store while this
-   * request is on its way — so a reload (or a cold start with no network) renders the last known data
+   * request is on its way - so a reload (or a cold start with no network) renders the last known data
    * instead of an empty loading state.
    *
    * Silent for the same reason as {@link applyExternalResponse}: `events$` means "this request settled
@@ -130,7 +130,7 @@ export type HttpRequestSubtle<TArgs extends QueryArgs> = {
    * re-persist and broadcast a disk read.
    *
    * Unlike `applyExternalResponse` it leaves {@link HttpRequest.error} alone. Hydration commonly
-   * happens *after* the request it revalidates with has already failed — that is the offline case — and
+   * happens *after* the request it revalidates with has already failed - that is the offline case - and
    * clearing the error there would report a failed revalidation as a success.
    */
   applyPersistedResponse: (options: { body: ResponseType<TArgs>; expiresAt: number | null }) => void;
@@ -153,7 +153,7 @@ export type HttpRequest<TArgs extends QueryArgs> = {
    * Executes the request.
    *
    * `force` runs it even when one is already in flight (the in-flight one is cancelled) or the
-   * cached response is still fresh — used by `refreshQueriesInUse` after something outside the
+   * cached response is still fresh - used by `refreshQueriesInUse` after something outside the
    * request changed, such as a client-level header.
    */
   execute: (options?: { allowCache?: boolean; force?: boolean }) => boolean;
@@ -225,7 +225,7 @@ export const createHttpRequest = <TArgs extends QueryArgs>(options: CreateHttpRe
 
   // NOTE: This must be a plain function, not a `computed`. The freshness check compares against
   // `Date.now()`, which is not reactive, so a memoized computed would only ever recompute when
-  // `expiresIn` changes — once it evaluated to `false` (fresh) it would stay `false` forever, even
+  // `expiresIn` changes - once it evaluated to `false` (fresh) it would stay `false` forever, even
   // after the window elapsed, turning every `allowCache` execute into a permanent cache hit.
   const isStale = () => {
     const expiresInTs = expiresIn();

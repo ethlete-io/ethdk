@@ -8,7 +8,7 @@ export type TimeCandidate = {
   second: number;
 };
 
-/** A candidate with the finer units left open — `null`/absent means "any value in the column". */
+/** A candidate with the finer units left open - `null`/absent means "any value in the column". */
 export type PartialTimeCandidate = {
   hour: number;
   minute?: number | null;
@@ -22,12 +22,12 @@ export type TimeBoundsOptions = {
   max: Date | null;
   /** Receives the full candidate timestamp, so it can depend on the day (opening hours per weekday). */
   filter: ((date: Date) => boolean) | null;
-  /** The day candidates are built on — what `filter` sees. */
+  /** The day candidates are built on - what `filter` sees. */
   day: Date;
 };
 
 export type TimeAvailabilityOptions = TimeBoundsOptions & {
-  /** The minute column's values — the search space for an open minute. */
+  /** The minute column's values - the search space for an open minute. */
   minuteValues: readonly number[];
   /** The second column's values, or the committed second while the picker shows no seconds. */
   secondValues: readonly number[];
@@ -58,7 +58,7 @@ export const isTimeSelectable = (candidate: TimeCandidate, options: TimeBoundsOp
 
 /**
  * The first selectable time matching the fixed parts, scanning the open columns in
- * their display order — or `null` when the fixed parts admit no selectable time.
+ * their display order - or `null` when the fixed parts admit no selectable time.
  */
 export const findSelectableTime = (
   fixed: PartialTimeCandidate,
@@ -83,7 +83,7 @@ export const findSelectableTime = (
 };
 
 /**
- * Whether the fixed parts admit any selectable time — how a column decides an
+ * Whether the fixed parts admit any selectable time - how a column decides an
  * option is disabled: an hour is out when no minute inside it works, a minute
  * when no second inside it does.
  */

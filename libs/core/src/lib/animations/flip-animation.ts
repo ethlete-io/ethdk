@@ -22,7 +22,7 @@ type FlipAnimationGroupConfig = {
   /**
    * Play the animation even when the user prefers reduced motion.
    *
-   * Only set this for movement that carries meaning the user would otherwise miss — decorative
+   * Only set this for movement that carries meaning the user would otherwise miss - decorative
    * movement should stay gated.
    *
    * @default false
@@ -93,7 +93,7 @@ export type FlipAnimationConfig = {
   /**
    * Play the animation even when the user prefers reduced motion.
    *
-   * Only set this for movement that carries meaning the user would otherwise miss — decorative
+   * Only set this for movement that carries meaning the user would otherwise miss - decorative
    * movement should stay gated.
    *
    * @default false

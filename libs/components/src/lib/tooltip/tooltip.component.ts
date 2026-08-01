@@ -36,7 +36,7 @@ export class TooltipComponent {
   });
 
   constructor() {
-    // the tooltip surface IS the overlay's own surface — paint the overlay's registered elevation
+    // the tooltip surface IS the overlay's own surface - paint the overlay's registered elevation
     // exactly (read from the surface-context tracker), don't stack a level above it
     inject(AutoSurfaceDirective).matchOverlaySurface();
 

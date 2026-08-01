@@ -26,7 +26,7 @@ const COMPENSATION_EASING = 'ease';
  * out of layout, so the panel body still changes in a single snap and the
  * panel's own resize animation (`et-date-picker-panel`, which observes the
  * body) plays one clean run alongside this one. Animating the time picker's
- * height instead would feed every animation frame back into the row height —
+ * height instead would feed every animation frame back into the row height -
  * on shrink the panel would chase a per-frame moving target and finish long
  * after the columns settled.
  */
@@ -49,10 +49,10 @@ export class DateTimeInputPanesDirective {
   private animations: Animation[] = [];
 
   constructor() {
-    // starts synchronously inside the resize-observer callback — after layout,
-    // before paint — so the columns never paint a frame at the jumped position.
+    // starts synchronously inside the resize-observer callback - after layout,
+    // before paint - so the columns never paint a frame at the jumped position.
     // A signal-routed observer would fire one change-detection cycle (= one
-    // painted frame) late — same constraint as core's injectAnimatedBlockSize.
+    // painted frame) late - same constraint as core's injectAnimatedBlockSize.
     // eslint-disable-next-line ethlete/no-native-observers -- pre-paint timing, see above
     const observer = new ResizeObserver(() => {
       if (this.ready) {
@@ -72,7 +72,7 @@ export class DateTimeInputPanesDirective {
       });
     });
 
-    // the settled first-render height is the baseline — opening never animates
+    // the settled first-render height is the baseline - opening never animates
     afterNextRender(() => {
       this.lastBlockSize = this.timePicker()?.nativeElement.getBoundingClientRect().height ?? null;
       this.ready = true;

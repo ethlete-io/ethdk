@@ -6,7 +6,7 @@ import { FilterOverlayPreview } from './filter-overlay.types';
  * The usual live preview: one query, re-executed as the draft filters change, whose response says how many
  * results they would return.
  *
- * A factory of a factory, because the query has to be created in the overlay's injection context — which only
+ * A factory of a factory, because the query has to be created in the overlay's injection context - which only
  * exists once the overlay is open. Pass the result as the config's `preview`; the filter overlay calls it with
  * its draft value.
  *
@@ -30,7 +30,7 @@ export const filterOverlayPreviewFromQuery =
     /** The query creator to run. Created once, then re-executed as the draft changes. */
     queryCreator: TCreator;
     /**
-     * Builds the request args from the draft value. Return `null` to skip the request — for a draft that is not
+     * Builds the request args from the draft value. Return `null` to skip the request - for a draft that is not
      * yet worth counting. Ask for as few rows as the endpoint allows: only the total is used.
      */
     args: (value: TValue) => RequestArgs<QueryArgsOf<TCreator>> | null;

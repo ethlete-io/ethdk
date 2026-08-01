@@ -33,7 +33,7 @@ describe('applyStructuredDataBinding', () => {
 
     expect(scripts()).toHaveLength(1);
     expect(JSON.parse(scripts()[0]?.textContent ?? 'null')).toEqual(graph('Home'));
-    // Not an attribute — a `<script text="…">` is an empty script with a stray attribute on it.
+    // Not an attribute - a `<script text="…">` is an empty script with a stray attribute on it.
     expect(scripts()[0]?.hasAttribute('text')).toBe(false);
   });
 

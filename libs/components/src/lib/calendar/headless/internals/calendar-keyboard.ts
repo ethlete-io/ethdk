@@ -11,7 +11,7 @@ export type ResolveCalendarKeyboardDateOptions = {
   weekStartsOn: CalendarWeekStartsOn;
   /** Which grid the keys apply to. Defaults to the day grid. */
   view?: CalendarView;
-  /** First year of the visible year-grid page — where `Home`/`End` go in `multiYear`. */
+  /** First year of the visible year-grid page - where `Home`/`End` go in `multiYear`. */
   multiYearPageStart?: Date;
 };
 
@@ -101,7 +101,7 @@ const resolveMultiYearViewDate = (key: string, options: ResolveCalendarKeyboardD
  * for keys that view does not handle (selection is left to the native button activation of the focused
  * cell).
  *
- * The focused date stays a full date in every view — only the step size changes — so drilling in and back
+ * The focused date stays a full date in every view - only the step size changes - so drilling in and back
  * out keeps the day the reader had, and a coarse cell can tell it is the focused one by comparing at its
  * own granularity.
  */

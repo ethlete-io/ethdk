@@ -33,7 +33,7 @@ const create = () => {
   return fixture;
 };
 
-/** The emitted JSON-LD, parsed — the store appends one script per binding. */
+/** The emitted JSON-LD, parsed - the store appends one script per binding. */
 const emitted = (): { itemListElement: { position: number; name: string; item?: string }[] } | null => {
   const script = document.querySelector('script[type="application/ld+json"]');
 
@@ -71,7 +71,7 @@ describe('BreadcrumbSeoDirective', () => {
     expect(settle(fixture)?.itemListElement.map((item) => item.name)).toEqual(['Home', 'Teams']);
   });
 
-  it('skips a crumb that states no name — it has nothing to contribute', () => {
+  it('skips a crumb that states no name - it has nothing to contribute', () => {
     const fixture = create();
 
     fixture.componentInstance.teamsName.set(null);

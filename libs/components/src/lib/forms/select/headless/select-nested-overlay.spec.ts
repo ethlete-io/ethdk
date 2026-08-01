@@ -29,7 +29,7 @@ const TEST_COLOR_THEMES = [
   },
 ] as const;
 
-// Outer select whose panel projects a nested select — the Task 4 scenario: a popover opened from
+// Outer select whose panel projects a nested select - the Task 4 scenario: a popover opened from
 // inside an anchored panel mounts as a sibling pane, so a pointerdown in it must not close the outer.
 @Component({
   template: `
@@ -87,7 +87,7 @@ describe('Select nested overlay', () => {
     await open(outerTrigger());
     expect(panes().length).toBe(1);
 
-    // open the nested select — its trigger sits inside the outer pane
+    // open the nested select - its trigger sits inside the outer pane
     const innerTrigger = panes()[0]!.querySelector<HTMLElement>('.inner [role="combobox"], .inner [etselecttrigger]');
     expect(innerTrigger).not.toBeNull();
     await open(innerTrigger!);

@@ -15,18 +15,18 @@ export class PasswordInputDirective extends TextFieldControlDirective implements
 
   // No `textAlign` (unlike `InputDirective`/`NumberInputDirective`) on purpose: the reveal toggle
   // and Caps-Lock warning occupy the trailing edge, so `text-align: end` would run the value under
-  // them. Passwords are conventionally start-aligned regardless — the omission is deliberate.
+  // them. Passwords are conventionally start-aligned regardless - the omission is deliberate.
 
   /** Whether the value is currently shown as plain text. */
   public revealed = model(false);
 
-  /** Whether Caps Lock was active on the last keystroke — feed it via `syncCapsLock`. */
+  /** Whether Caps Lock was active on the last keystroke - feed it via `syncCapsLock`. */
   public capsLockOn = signal(false);
 
   /**
-   * A 0–4 typing-feedback score from a simple length + character-class heuristic —
+   * A 0–4 typing-feedback score from a simple length + character-class heuristic -
    * render it however you like (deliberately not a zxcvbn-style security estimate).
-   * `0` while mixed — scoring the hidden raw value would leak information about it.
+   * `0` while mixed - scoring the hidden raw value would leak information about it.
    */
   public strength = computed(() => (this.mixed() ? 0 : scorePasswordStrength(this.value())));
 
@@ -36,10 +36,10 @@ export class PasswordInputDirective extends TextFieldControlDirective implements
   public hasValue = computed(() => this.mixed() || this.value().length > 0);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.PASSWORD_INPUT);
 
-  /** The text the native input renders — empty while mixed so the raw value never reaches the DOM. */
+  /** The text the native input renders - empty while mixed so the raw value never reaches the DOM. */
   public displayValue = computed(() => (this.mixed() ? '' : this.value()));
 
-  /** The placeholder the native input renders — `mixedLabel` overrides the consumer placeholder while mixed. */
+  /** The placeholder the native input renders - `mixedLabel` overrides the consumer placeholder while mixed. */
   public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));
 
   /**
@@ -87,7 +87,7 @@ export class PasswordInputDirective extends TextFieldControlDirective implements
   /**
    * Feed keyboard or pointer events from the native input so `capsLockOn` stays current.
    * Pointer events matter for the focus case: clicking into an already-Caps-Lock-on field
-   * fires no keystroke, so the warning would otherwise not appear until the first key —
+   * fires no keystroke, so the warning would otherwise not appear until the first key -
    * `MouseEvent`/`PointerEvent` carry `getModifierState`, `FocusEvent` does not.
    */
   public syncCapsLock(event: KeyboardEvent | MouseEvent) {

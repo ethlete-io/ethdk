@@ -1,8 +1,8 @@
 # Standings
 
 A league or group table: positions, participants, played/won/drawn/lost, the points they rank by, and recent
-form where the competition reports it. With position **zones** — promotion, playoffs, relegation, advancing
-out of a group — that band the rows and draw their own legend.
+form where the competition reports it. With position **zones** - promotion, playoffs, relegation, advancing
+out of a group - that band the rows and draw their own legend.
 
 Import `STANDINGS_IMPORTS`. No provider is required; `provideStandingsLabels()` localizes the strings.
 
@@ -17,7 +17,7 @@ import { STANDINGS_IMPORTS, StandingsZone, normalizeEthletePlacement } from '@et
 export class GroupTableComponent {
   protected rows = computed(() => this.query.response()?.placements.map(normalizeEthletePlacement) ?? []);
 
-  // `color` names one of your registered color themes — this library ships none
+  // `color` names one of your registered color themes - this library ships none
   protected readonly zones: StandingsZone[] = [
     { from: 1, to: 2, color: 'success', label: 'Advances to the playoffs' },
     { from: 18, to: 20, color: 'danger', label: 'Relegated' },
@@ -31,7 +31,7 @@ export class GroupTableComponent {
 
 ## Any backend: the normalized row
 
-Same philosophy as the [match card](/components/match#any-backend-the-normalized-match) — the table takes a
+Same philosophy as the [match card](/components/match#any-backend-the-normalized-match) - the table takes a
 view-model this library owns, and an adapter maps your API into it:
 
 ```ts
@@ -59,7 +59,7 @@ component.
 | `normalizeEthleteGroupRanking(opts)`   | `GroupRankingView` → `{ caption, rows, zones }`, with `qualifiedPlayers` as the advancing zone |
 
 Two mapping notes: `score` is what the API ranks by so it becomes `points`, and the list views carry no form
-history — fill `form` in yourself if you have it elsewhere.
+history - fill `form` in yourself if you have it elsewhere.
 
 ## Zones
 
@@ -70,7 +70,7 @@ which is what stops the two from drifting apart:
 { from: 1, to: 2, color: 'success', label: 'Advances to the playoffs' }
 ```
 
-`color` names one of **your** registered color themes — this library ships none and hardcodes none, so what
+`color` names one of **your** registered color themes - this library ships none and hardcodes none, so what
 "advancing" looks like is your app's decision (see [theming](/core/theming)). The row is scoped to that
 theme, so its accent bar and tint come out in it.
 
@@ -91,22 +91,22 @@ Like the match card, the table measures itself and drops columns rather than scr
 <StoryEmbed id="components-standings--compact" height="420px" />
 
 A column nobody reports is dropped entirely: no row with a `difference` means no difference column, and no
-row with `form` means no form column — an empty column is worse than a missing one.
+row with `form` means no form column - an empty column is worse than a missing one.
 
 ## Options
 
 | Input              | Type                               | Default | What it does                                                     |
 | ------------------ | ---------------------------------- | ------- | ---------------------------------------------------------------- |
-| `rows`             | `readonly NormalizedStandingRow[]` | —       | Required. Drawn in the order given.                              |
+| `rows`             | `readonly NormalizedStandingRow[]` | -       | Required. Drawn in the order given.                              |
 | `zones`            | `readonly StandingsZone[]`         | `[]`    | Position bands (see [Zones](#zones)).                            |
-| `highlightedRowId` | `string \| null`                   | `null`  | The `id` of the row to single out — "your team".                 |
+| `highlightedRowId` | `string \| null`                   | `null`  | The `id` of the row to single out - "your team".                 |
 | `showLegend`       | `boolean`                          | `true`  | Draw the legend under the table. No zones, no legend either way. |
 | `labels`           | `Partial<StandingsLabels> \| null` | `null`  | Per-instance string overrides.                                   |
 
 ## Localization
 
 Every string comes from `provideStandingsLabels()`, app-wide or per instance via `labels`. Column headers
-have two labels each — the abbreviation on screen and the word for assistive tech:
+have two labels each - the abbreviation on screen and the word for assistive tech:
 
 ```ts
 provideStandingsLabels({
@@ -123,12 +123,12 @@ provideStandingsLabels({
 ## Accessibility
 
 - **A real `<table>`**, so it can be navigated cell by cell with the column and row announced. The
-  `<caption>` names it (visually hidden — the page's own heading usually says it already), every column
+  `<caption>` names it (visually hidden - the page's own heading usually says it already), every column
   header is a `<th scope="col">`, and each **position is a `<th scope="row">`** because that is what
   identifies the row.
 - **Abbreviations are spelled out.** Every abbreviated header carries `abbr`, so "P" is read as "Played".
 - **Zones are never colour-only.** A banded row carries its zone's label as visually hidden text, so a
-  screen reader hears "Advances to the playoffs" on the row itself — the legend is a separate element a
+  screen reader hears "Advances to the playoffs" on the row itself - the legend is a separate element a
   row-by-row reader never reaches.
 - **The highlighted row** is `aria-current="true"` and carries the `highlightedRow` label the same way.
 - **Form is labelled per result** ("Win", "Draw", "Loss"), since the column is a row of coloured squares.
@@ -139,7 +139,7 @@ provideStandingsLabels({
 
 Colors come from the app-registered [surface and color theme](/core/theming) systems: surface tokens for the
 table's text, borders and row banding, and the zone's own color theme for its accent bar and tint. Recent
-form is drawn from surface tokens rather than a green/amber/red this library invents — the shape of the
+form is drawn from surface tokens rather than a green/amber/red this library invents - the shape of the
 streak is what the column is for, and every dot is labelled.
 
 | Token                                | Default | What it sets                              |
@@ -151,5 +151,5 @@ streak is what the column is for, and every dot is labelled.
 
 ## Error codes
 
-The standings domain owns `ET4400`–`ET4499` — see
+The standings domain owns `ET4400`–`ET4499` - see
 [error codes](/components/error-codes#standings-et44xx).

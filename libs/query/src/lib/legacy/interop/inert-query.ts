@@ -6,21 +6,21 @@ import { ObservableSignal, Query, QueryArgs, QuerySnapshot, RequestArgs, Respons
  * A query that never executes and never leaves its initial state.
  *
  * `LegacyQueryCreator.prepare()` hands one back when the injector it was given is already destroyed
- * — the shape v2 call sites still fire into during teardown (a debounced search resolving after the
+ * - the shape v2 call sites still fire into during teardown (a debounced search resolving after the
  * user navigated away, an RxJS callback on a stream that has not been unsubscribed yet). v2 had no
  * injector at all there, so the same code used to be harmless; building a real query would now
  * throw NG0205 from inside the view's cleanup phase, with no hint about which query caused it.
  *
  * Everything reads as "prepared but never executed": `execute()` and friends are no-ops, signals
  * stay `null`, observables complete immediately. Nothing here touches Angular's DI, which is the
- * point — there is no live injector left to bind to.
+ * point - there is no live injector left to bind to.
  */
 export const createInertQuery = <TArgs extends QueryArgs>(): Query<TArgs> => {
   const inertSignal = <T>(value: T): ObservableSignal<T> =>
     Object.assign(signal(value) as Signal<T>, { asObservable: () => of(value) });
 
   const noop = () => {
-    /* the query is inert — there is nothing to execute, reset or destroy */
+    /* the query is inert - there is nothing to execute, reset or destroy */
   };
 
   const base = {

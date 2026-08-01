@@ -18,7 +18,7 @@ import { TABLE_IMPORTS, TableColumns } from '@ethlete/components';
 
 `TABLE_IMPORTS` is deliberately lean: typed rows and cells, sort headers, sticky
 columns, the empty state and the footer slot. Anything that would drag a heavier
-dependency in ships as its own directive — import its array and put the attribute on
+dependency in ships as its own directive - import its array and put the attribute on
 the table. A table that doesn't import a feature never pays for its code.
 
 | Feature             | Import                             | Attribute                   | Brings in                                            |
@@ -54,7 +54,7 @@ can't be applied conditionally):
 ```
 
 Features register themselves with the table, and the serializable state they drive
-(filter values, column widths) lives on the table — so
+(filter values, column widths) lives on the table - so
 [`state()` / `restoreState()`](#table-state) round-trip it whether or not the feature is
 imported. Sorting, row expansion, sticky columns, the footer slot and the empty state are
 part of the base: they cost nothing beyond the table itself.
@@ -62,7 +62,7 @@ part of the base: they cost nothing beyond the table itself.
 ## Usage
 
 Declare the columns as a record keyed by column key, checked with
-`satisfies TableColumns<T>` — that binds the row type once, so every `value` accessor is
+`satisfies TableColumns<T>` - that binds the row type once, so every `value` accessor is
 typed against `T`, and each column's key is the key it is declared under:
 
 ```ts
@@ -87,7 +87,7 @@ export class UsersComponent {
 
 A column's key is a stable identity used for state serialization (column order,
 visibility, sort, filters, width) and for matching [cell templates](#custom-cells) to
-their column. The typed `value` accessor is the only link between a column and the row —
+their column. The typed `value` accessor is the only link between a column and the row -
 nothing is wired by string.
 
 Keep the record a plain `readonly` field (or a module-level `const`) where you can. It
@@ -100,23 +100,23 @@ than resetting them.
 | Input                 | Default      | Description                                                                                                     |
 | --------------------- | ------------ | --------------------------------------------------------------------------------------------------------------- |
 | `data`                | `[]`         | The rows to render.                                                                                             |
-| `columns`             | `{}`         | The column definitions, keyed by column key — see [Columns](#columns).                                          |
+| `columns`             | `{}`         | The column definitions, keyed by column key - see [Columns](#columns).                                          |
 | `rowKey`              | reference    | `(row: T) => string \| number` for stable change tracking (and later row-keyed state).                          |
 | `appearance`          | `'enclosed'` | Visual frame: `'enclosed'`, `'divided'`, `'zebra'`, `'grid'`, `'bare'`. See [below](#appearance-density).       |
 | `density`             | `'md'`       | Cell padding: `'sm'` (tight), `'md'`, `'lg'` (roomy).                                                           |
-| `labels`              | injected set | Partial wording override for this table — see [Localization](#localization).                                    |
-| `emptyTemplate`       | —            | Template for the empty state. Context: `{ $implicit: rows }`.                                                   |
+| `labels`              | injected set | Partial wording override for this table - see [Localization](#localization).                                    |
+| `emptyTemplate`       | -            | Template for the empty state. Context: `{ $implicit: rows }`.                                                   |
 | `loading`             | `false`      | Placeholder rows when there are no rows yet, a busy bar over existing ones. See [below](#loading-error-states). |
 | `loadingRows`         | `5`          | How many placeholder rows to draw while loading with no rows.                                                   |
 | `error`               | `null`       | Anything non-nullish replaces the body with the error state.                                                    |
-| `errorTemplate`       | —            | Template for the error state. Context: `{ $implicit: error }`.                                                  |
-| `cellState`           | —            | `(row: T, key: string) => 'loading' \| 'error' \| null` for [per-cell states](#per-cell-states).                |
-| `sort`                | `[]`         | Two-way bindable sort state — an ordered `{ key, direction }[]`. See [Sorting](#sorting).                       |
+| `errorTemplate`       | -            | Template for the error state. Context: `{ $implicit: error }`.                                                  |
+| `cellState`           | -            | `(row: T, key: string) => 'loading' \| 'error' \| null` for [per-cell states](#per-cell-states).                |
+| `sort`                | `[]`         | Two-way bindable sort state - an ordered `{ key, direction }[]`. See [Sorting](#sorting).                       |
 | `multiSort`           | `false`      | Allow more than one column to be sorted at once.                                                                |
 | `sortMode`            | `'client'`   | `'client'` sorts rows in the browser; `'server'` leaves them for the backend to sort.                           |
-| `filters`             | `[]`         | Two-way bindable filter state — `{ key, values }[]`. See [Filtering](#filtering).                               |
+| `filters`             | `[]`         | Two-way bindable filter state - `{ key, values }[]`. See [Filtering](#filtering).                               |
 | `filterMode`          | `'client'`   | `'client'` filters rows in the browser; `'server'` leaves them for the backend to filter.                       |
-| `expandedRowTemplate` | —            | Detail template; setting it enables [row expansion](#row-expansion). Context: `{ $implicit: row }`.             |
+| `expandedRowTemplate` | -            | Detail template; setting it enables [row expansion](#row-expansion). Context: `{ $implicit: row }`.             |
 | `expandableRow`       | all rows     | `(row: T) => boolean` gating which rows can expand.                                                             |
 | `expandedKeys`        | `new Set()`  | Two-way bindable set of expanded row keys (by `rowKey`).                                                        |
 | `rowInteractive`      | `false`      | Make rows clickable, emitting `(rowClick)`. See [Row navigation](#row-navigation).                              |
@@ -137,10 +137,10 @@ row rhythm. They compose with every feature.
 | `enclosed`   | **Default.** Bordered, rounded surface panel with a tinted header band and subtle elevation. |
 | `divided`    | Borderless; rows separated by hairline dividers. Sits flat inline in a page.                 |
 | `zebra`      | Alternating row backgrounds; good for wide, scannable tables.                                |
-| `grid`       | Full cell borders — spreadsheet density.                                                     |
+| `grid`       | Full cell borders - spreadsheet density.                                                     |
 | `bare`       | No chrome at all; hover only. For dashboards and cards.                                      |
 
-`density` is `'md'` (default), `'sm'` (tight), or `'lg'` (roomy) — it sets the
+`density` is `'md'` (default), `'sm'` (tight), or `'lg'` (roomy) - it sets the
 `--et-table-cell-padding-block` / `--et-table-cell-padding-inline` custom properties,
 which you can also override directly for a bespoke value.
 
@@ -154,23 +154,23 @@ Each value of the `TableColumns<T>` record:
 
 | Field           | Default               | Description                                                                                                            |
 | --------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `value`         | — (required)          | `(row: T) => V` — the typed cell accessor. Rendered directly unless an `etTableCell` template is registered.           |
+| `value`         | - (required)          | `(row: T) => V` - the typed cell accessor. Rendered directly unless an `etTableCell` template is registered.           |
 | `sortable`      | `false`               | Render a sortable header for this column.                                                                              |
 | `sortValue`     | `value`               | Comparable to sort by (`string`/`number`/`Date`/`boolean`/`null`) when the display value isn't comparable.             |
 | `filterable`    | `false`               | Render a filter menu on this column's header.                                                                          |
-| `filterOptions` | —                     | The `{ label, value }[]` choices — a static list or an async provider (see [below](#searchable-async-filter-options)). |
+| `filterOptions` | -                     | The `{ label, value }[]` choices - a static list or an async provider (see [below](#searchable-async-filter-options)). |
 | `filterSearch`  | `false`               | Add a search box to the filter menu.                                                                                   |
 | `filterValue`   | `value`               | The value matched against the selected filter values, when the display value isn't the one to match on.                |
-| `header`        | —                     | Static header text. Ignored when an `etTableHeaderCell` template is registered.                                        |
-| `group`         | —                     | Group label; adjacent columns sharing it span a header. See [Grouped headers](#grouped-headers).                       |
-| `sticky`        | —                     | `'start' \| 'end'` — pin the column while scrolling horizontally. See [Sticky columns](#sticky-columns-footer).        |
+| `header`        | -                     | Static header text. Ignored when an `etTableHeaderCell` template is registered.                                        |
+| `group`         | -                     | Group label; adjacent columns sharing it span a header. See [Grouped headers](#grouped-headers).                       |
+| `sticky`        | -                     | `'start' \| 'end'` - pin the column while scrolling horizontally. See [Sticky columns](#sticky-columns-footer).        |
 | `align`         | `'start'`             | `'start' \| 'center' \| 'end'`.                                                                                        |
 | `width`         | `'minmax(48px, 1fr)'` | Any `grid-template-columns` track value (`'200px'`, `'minmax(120px, 1fr)'`, …). See the notes below.                   |
 | `hidden`        | `false`               | Hide the column initially; toggle later via table state.                                                               |
 
 **Every column has a floor**, `minWidth` (96px by default), and it applies whether the
 column is squeezed by a wider neighbour or dragged there by a
-[resize](#resizable-columns) — one number, so the two can't disagree. It's sized to
+[resize](#resizable-columns) - one number, so the two can't disagree. It's sized to
 keep the header readable: a cell spends 24px on its own inline padding and up to
 another 24px on a [column-menu](#column-menu) trigger, so much less than this is all
 chrome and no label. Lower it per column where that's genuinely fine:
@@ -181,11 +181,11 @@ status: { header: '', value: (o) => o.status, minWidth: 40 },
 
 Past the floor the table scrolls horizontally rather than squeezing further, which the
 edge gradients advertise. **A flexible `width` you write yourself needs its own floor**
-— a bare `1fr` or `minmax(0, 2fr)` overrides `minWidth` and can be squeezed to
+- a bare `1fr` or `minmax(0, 2fr)` overrides `minWidth` and can be squeezed to
 nothing, at which point the cell's padding bursts out of the empty track and columns
 visibly overlap. Prefer `minmax(96px, 2fr)`.
 
-Leave at least one column flexible (`fr` or `auto`) if you can — a flexible track is
+Leave at least one column flexible (`fr` or `auto`) if you can - a flexible track is
 what lets the grid fill its container exactly. If every column ends up a rigid
 length (declaring them all in px, or a user resizing them all), the table adds a
 trailing slack track carrying an empty cell per row, so the header band, dividers
@@ -194,13 +194,13 @@ and rules still run to the panel's edge. The exception is a table with an
 
 ### Custom cells
 
-A cell is whatever you put in an `<ng-template>` — text, avatars, badges, buttons,
+A cell is whatever you put in an `<ng-template>` - text, avatars, badges, buttons,
 charts, nested components. The table ships **no** opinionated cell components on
 purpose: write your own template inside the table, bind it to the column it renders,
 and compose the pieces you already have.
 
 Binding the **column object** is what types the template: `let-row` is your row type
-and `let-value` the column's `value` type — inferred, not declared.
+and `let-value` the column's `value` type - inferred, not declared.
 
 ```ts
 @Component({
@@ -226,8 +226,8 @@ Three template directives, each matched to its column the same way:
 | Directive             | Renders                          | Context                                                                       |
 | --------------------- | -------------------------------- | ----------------------------------------------------------------------------- |
 | `etTableCell`         | the column's body cells          | `let-row` (the row), `let-value="value"`, `let-i="index"`                     |
-| `etTableHeaderCell`   | the column's header cell         | `let-header` — the column's `header` text                                     |
-| `etTableFooterCell`   | the column's footer/summary cell | `let-rows` — every rendered row. See [Sticky footer](#sticky-columns-footer). |
+| `etTableHeaderCell`   | the column's header cell         | `let-header` - the column's `header` text                                     |
+| `etTableFooterCell`   | the column's footer/summary cell | `let-rows` - every rendered row. See [Sticky footer](#sticky-columns-footer). |
 | `etTableCellSkeleton` | the column's cells while loading | `let-index`, `let-width`. See [Loading](#loading-error-states).               |
 
 A template bound to a column the table doesn't render throws
@@ -236,7 +236,7 @@ nothing. A template inside a control-flow block registers and unregisters with t
 block, so `@if` around one turns that cell off.
 
 **Sort and filter still work on rich cells.** The display template is decoupled
-from the values sorted/filtered on — set `sortValue` / `filterValue` on the column
+from the values sorted/filtered on - set `sortValue` / `filterValue` on the column
 so a cell that renders an avatar can still sort by name, or a badge by status.
 
 #### Cookbook
@@ -257,12 +257,12 @@ Common cell shapes. Compose the library's existing components (`et-chip`,
     </div>
   </ng-template>
 
-  <!-- Status badge — reuse the chip component -->
+  <!-- Status badge - reuse the chip component -->
   <ng-template [etTableCell]="COLUMNS.status" let-value="value">
     <et-chip [color]="value === 'active' ? 'success' : 'neutral'">{{ value }}</et-chip>
   </ng-template>
 
-  <!-- Row actions — inline buttons (right-aligned via the column's align: 'end') -->
+  <!-- Row actions - inline buttons (right-aligned via the column's align: 'end') -->
   <ng-template [etTableCell]="COLUMNS.actions" let-player>
     <span class="flex gap-1">
       <button (click)="edit(player)" et-button variant="transparent" size="sm">Edit</button>
@@ -286,7 +286,7 @@ protected readonly COLUMNS = {
 
 ### Action cells
 
-There's no `actionsColumn()` helper or built-in edit/delete components — a plain
+There's no `actionsColumn()` helper or built-in edit/delete components - a plain
 `etTableCell` template **is** the action-column API. Its context already carries
 everything an action needs: the whole `row` (`$implicit`), the accessor `value`,
 and the row `index`. Render your own [`[et-button]`](/components/button) /
@@ -297,13 +297,13 @@ when the table scrolls horizontally.
 Action cells **compose with [row navigation](#row-navigation)**: when the table is
 `rowInteractive`, a click on any button, link, input or menu trigger inside a cell
 is ignored by `(rowClick)` (it's detected via `composedPath`), so "Edit" fires its
-own handler without also triggering row navigation — no `stopPropagation` needed.
+own handler without also triggering row navigation - no `stopPropagation` needed.
 
 ## Grouped headers
 
 Give columns a `group` and adjacent ones sharing it render beneath a single
 spanning label in a second header row. Each sub-column stays a normal
-column — independently [sortable](#sorting), [filterable](#filtering), reorderable.
+column - independently [sortable](#sorting), [filterable](#filtering), reorderable.
 Columns without a `group` span both header rows.
 
 ```ts
@@ -319,12 +319,12 @@ protected readonly COLUMNS = {
 
 Grouping follows the **visible column order**: a label spans each contiguous run
 of columns that share it, so dragging a column out of a group (with `reorderable`)
-simply splits the label into two runs — no separate group-move step. Both header
+simply splits the label into two runs - no separate group-move step. Both header
 rows stay pinned when the table scrolls.
 
 ## Sorting
 
-Mark columns `sortable` and the **header itself becomes the sort control** — click it
+Mark columns `sortable` and the **header itself becomes the sort control** - click it
 to cycle **unsorted → ascending → descending → unsorted**. It manages `aria-sort` and
 drives the two-way `sort` state (`{ key, direction }[]`):
 
@@ -343,7 +343,7 @@ programmatically, without `toggleSort`'s cycle.
 
 - **Client mode** (default) sorts rows in the browser. Nullish values always sink
   to the bottom. `multiSort` lets clicks layer multiple columns.
-- **Server mode** (`sortMode="server"`) leaves rows untouched — read `sort()` and
+- **Server mode** (`sortMode="server"`) leaves rows untouched - read `sort()` and
   feed it into your query args (it maps directly onto the query form's sort field):
 
 ```html
@@ -357,7 +357,7 @@ and tree-shakable, for custom flows where you sort outside the table.
 
 Filter menus are **opt-in**: they carry the whole [`menu`](/components/menu) system, so
 they live in a separate component rather than in the base table. Import
-`TABLE_FILTER_IMPORTS` and put `etTableFilters` on the table — a table
+`TABLE_FILTER_IMPORTS` and put `etTableFilters` on the table - a table
 without it never pulls the menu into your bundle.
 
 ```ts
@@ -391,7 +391,7 @@ protected readonly COLUMNS = {
 - **Client mode** (default) filters rows in the browser: a row passes when, for
   every filtered column, its value is one of the selected values (AND across
   columns, OR within a column).
-- **Server mode** (`filterMode="server"`) leaves rows untouched — read `filters()`
+- **Server mode** (`filterMode="server"`) leaves rows untouched - read `filters()`
   and feed it into your query args.
 
 The `filterRows({ rows, filters, columns })` helper is exported and tree-shakable.
@@ -401,7 +401,7 @@ Use `filterValue` when the value to match on differs from the displayed value.
 
 Set `filterSearch` to add a search box to the filter menu (client-side for a
 static list). For **async, paginated options**, pass `filterOptions` as a
-provider instead of an array — the exact shape
+provider instead of an array - the exact shape
 [`selectOptionsFromQuery`](/query/) already returns, so you can reuse it:
 
 ```ts
@@ -419,14 +419,14 @@ protected readonly COLUMNS = {
 
 The menu wires its search to the provider's `setQuery`, shows its `loading`, and
 renders a **Load more** button when `hasMore` is true. (A provider implies a search box
-even without `filterSearch`.) Its strings — the search placeholder, "no options", "Load
-more" — live in the table's [label set](#localization).
+even without `filterSearch`.) Its strings - the search placeholder, "no options", "Load
+more" - live in the table's [label set](#localization).
 
 ### One value or several
 
 A column filters by many values by default (a checkbox menu). Give it
 `filterSelection: 'single'` and the menu renders radio items instead: picking replaces the
-selection, and picking the selected option again clears the filter — the only way out of a radio
+selection, and picking the selected option again clears the filter - the only way out of a radio
 group, which has no "none" row. Filter state stays a list of values either way, so client
 filtering, `state()` and a server request are unchanged.
 
@@ -446,7 +446,7 @@ protected readonly COLUMNS = {
 
 ### Templating an option
 
-`etTableFilterOption` fills one column's option rows with whatever you like — a flag, an avatar,
+`etTableFilterOption` fills one column's option rows with whatever you like - a flag, an avatar,
 a subtitle. `let-option` is the option (`label`, `value`, and anything else you put on it) and
 `let-selected` whether it is currently picked; the menu keeps the row, its checkbox/radio mark
 and its keyboard behaviour.
@@ -490,8 +490,8 @@ Turn any of the last three off per table with
 
 **Autosize** fits a column to its widest _rendered_ content and keeps that as a width
 override, so it round-trips through [`state()`](#table-state) like a manual resize.
-It's also callable directly — `autosizeColumn(key)`, `autosizeColumns(keys)`,
-`autosizeAllColumns()` — with no need for the menu feature. The measurement lets the
+It's also callable directly - `autosizeColumn(key)`, `autosizeColumns(keys)`,
+`autosizeAllColumns()` - with no need for the menu feature. The measurement lets the
 tracks out to `max-content` for one frame and reads back what the browser gave them,
 rather than adding up text metrics, so arbitrary cell content (a badge, an avatar, a
 nested component) is measured as it actually lays out. On a
@@ -501,7 +501,7 @@ aren't in the DOM to measure. Results are still clamped to the column's
 [column-visibility state](#column-visibility--reordering), so `state()` round-trips
 them and your own "columns" chooser can bring one back.
 
-The menu's controls — it and the filter trigger — are **permanently visible** rather
+The menu's controls - it and the filter trigger - are **permanently visible** rather
 than revealed on hover: a control you have to discover by hovering isn't
 discoverable, and one that appears under the pointer makes the header twitch. They
 sit in the header's muted ink, with the accent reserved for state that is actually
@@ -527,8 +527,8 @@ table and place it wherever you like:
 
 <StoryEmbed id="components-table--column-menu" height="460px" />
 
-It lists **every declared column, hidden ones included** — it is the way back from the
-column menu's "Hide column" — and stays open as you toggle, so several columns can go in
+It lists **every declared column, hidden ones included** - it is the way back from the
+column menu's "Hide column" - and stays open as you toggle, so several columns can go in
 one visit. "Show all columns" resets; it's always present, disabled when nothing is
 hidden, so the menu never resizes mid-use. The last visible column's checkbox is
 disabled: a table with no columns has nothing to show.
@@ -538,14 +538,14 @@ This is a separate component, not an entry in the per-column `⋮`, on purpose. 
 that hides columns cannot hang off a control inside the header it edits: hiding a
 column relays that header out and drags the menu with it, and hiding the column the
 menu was opened from destroys its own anchor, leaving it stranded. Anchor it to a
-control the table can't move — a toolbar above the table is the most stable spot, since
+control the table can't move - a toolbar above the table is the most stable spot, since
 even the `[etTableFooter]` bar shifts when the table's own height changes.
 :::
 
 ## Server-side rows (query)
 
 `tableRowsFromQuery` feeds the table from an [`@ethlete/query`](/query/) query,
-server-side — mirroring `selectOptionsFromQuery`. The query is created once and
+server-side - mirroring `selectOptionsFromQuery`. The query is created once and
 re-executes reactively as sort/page change; pair it with `sortMode="server"` so
 the backend does the sorting:
 
@@ -577,19 +577,19 @@ past the end when the end can only be inferred. Prefer an exact derivation anywa
 (`res.nextPage !== null`, `res.currentPage < res.totalPageCount`).
 
 It returns `rows`, `loading`, `error`, `total`, `hasMore`, `sort`, `filters` and
-`page` signals plus `setSort`/`setFilters`/`setPage` — the `args` builder reads
+`page` signals plus `setSort`/`setFilters`/`setPage` - the `args` builder reads
 `sort`/`filters`/`page` to build the request. `rows` keeps the previous page visible
 while the next one loads (no empty flash); `setSort`/`setFilters` reset to
 `initialPage`. Pair with `sortMode="server"` and `filterMode="server"`. Call it from
 a field initializer / constructor, like a query or query stack.
 
-For the legacy `V2QueryClient`, use **`tableRowsFromV2Query`** — the same config
+For the legacy `V2QueryClient`, use **`tableRowsFromV2Query`** - the same config
 and return shape, backed by the legacy `queryComputed` container. Both adapters
 share one client-agnostic core (`createTableRowsSource`), so they stay in lockstep.
 
 ### One binding instead of six
 
-Bind the source itself and the table wires the rest — rows, `loading`, `error`, and its own
+Bind the source itself and the table wires the rest - rows, `loading`, `error`, and its own
 sort/filter changes routed back through the source's setters:
 
 ```html
@@ -597,7 +597,7 @@ sort/filter changes routed back through the source's setters:
 ```
 
 `rowsSource` takes anything of the `TableRowsSource` shape, so both query adapters satisfy it
-as they are and a hand-rolled object works too — the table never imports `@ethlete/query`.
+as they are and a hand-rolled object works too - the table never imports `@ethlete/query`.
 Because such a source has already sorted and filtered on the server, `sortMode` and
 `filterMode` default to `'server'` while one is bound; set either explicitly to override, and
 read `resolvedSortMode()` / `resolvedFilterMode()` for what is actually in effect. The
@@ -611,8 +611,8 @@ row toggles a **lazily-instantiated** full-width detail row. Nest another
 `<et-table>` in the detail template for **sub-tables**. Set `rowKey` so expansion
 state survives data changes; gate rows with `expandableRow`.
 
-The detail row **grows open** — its grid track animates from `0fr` to `1fr` while the
-content fades in, so the rows below glide down with it — and it does so only for the
+The detail row **grows open** - its grid track animates from `0fr` to `1fr` while the
+content fades in, so the rows below glide down with it - and it does so only for the
 row the user just toggled: a detail row that re-mounts because the rows changed
 (paging, sorting, a refetch) appears instantly rather than replaying the reveal. The
 animation is reduced-motion-aware. Note that an `fr` track re-resolves the table's
@@ -627,7 +627,7 @@ layout every frame, so a very long table on a slow device pays for the effect.
 </ng-template>
 ```
 
-A nested table needs no dedicated API — it is an ordinary `<et-table>` with its own
+A nested table needs no dedicated API - it is an ordinary `<et-table>` with its own
 columns, `rowKey`, sorting and empty state. Put `etAutoSurface` on it so it paints one
 elevation above the table it sits in; keep the `data` array's identity stable (look it
 up, don't rebuild it per read) so the sub-table's derived state doesn't churn.
@@ -643,7 +643,7 @@ table instance.
 Selection is **opt-in**: import `TABLE_SELECTION_IMPORTS` and put `etTableSelection` on
 the table to prepend a checkbox column. Its header checkbox selects or clears every
 selectable row (indeterminate when only some are). Pass your own signal as `selection`
-and the feature writes the selected row keys into it — set the table's `rowKey` so a
+and the feature writes the selected row keys into it - set the table's `rowKey` so a
 selection survives sorting, filtering and data changes.
 
 ```ts
@@ -672,7 +672,7 @@ filtering), while `selection` keeps keys for filtered-out rows.
 
 Set `rowInteractive` to make whole rows respond to clicks: rows get a pointer
 affordance and emit `(rowClick)` with the row. The table performs **no** navigation
-itself — you wire it, keeping the SDK action-agnostic:
+itself - you wire it, keeping the SDK action-agnostic:
 
 ```html
 <et-table [data]="orders()" [columns]="COLUMNS" [rowInteractive]="true" (rowClick)="open($event)" />
@@ -684,19 +684,19 @@ open(order: Order) {
 }
 ```
 
-Clicks that land on interactive cell content — a `<button>`, `<a>`, `<input>`,
-`<select>`, a menu trigger, or the selection/expander cells — are ignored (detected
+Clicks that land on interactive cell content - a `<button>`, `<a>`, `<input>`,
+`<select>`, a menu trigger, or the selection/expander cells - are ignored (detected
 by walking `event.composedPath()`), so in-row controls and the row's own checkbox
 keep working without also triggering navigation. Interactive rows are keyboard
 focusable and activate on Enter/Space.
 
 For crawlable, middle-click-friendly per-row links, prefer rendering a real `<a>` in
-a cell over `(rowClick)` — a genuine link is better for SEO and accessibility;
+a cell over `(rowClick)` - a genuine link is better for SEO and accessibility;
 `rowInteractive` is the convenience layer for the whole-row target.
 
 ## Sticky header
 
-The table is its own scroll container, so you don't wrap it — just give it a
+The table is its own scroll container, so you don't wrap it - just give it a
 bounded height and the header row stays pinned (`position: sticky`) while the body
 scrolls:
 
@@ -706,20 +706,20 @@ scrolls:
 
 ## Sticky columns & footer
 
-Pin columns to an edge with `sticky: 'start' | 'end'` — they stay put while the
+Pin columns to an edge with `sticky: 'start' | 'end'` - they stay put while the
 table scrolls horizontally. Pin from the edges (leading columns to `'start'`,
 trailing to `'end'`); give pinned columns explicit widths so the table has
 something to scroll.
 
-On a viewport too narrow for the pinned columns to leave room — where they would
-otherwise cover the whole width and horizontal scrolling would reveal nothing —
+On a viewport too narrow for the pinned columns to leave room - where they would
+otherwise cover the whole width and horizontal scrolling would reveal nothing -
 pinning is **automatically suspended** and every column scrolls normally. It
 resumes once there's room again, so the same table works on desktop and mobile
 without a breakpoint of your own.
 
 Whenever a table scrolls horizontally, a **soft gradient marks each edge that has
 content behind it**. With pinned columns the gradient is inset to sit at the pinned
-column's _inner_ edge — the boundary rows actually disappear under — rather than at
+column's _inner_ edge - the boundary rows actually disappear under - rather than at
 the viewport's edge on top of the pin. Size it with `--et-table-scroll-fade-size`
 (`28px`).
 
@@ -753,12 +753,12 @@ export class OrdersComponent {
 ```
 
 Any column with a footer template shows the footer row; columns without one render an
-empty footer cell. Both work with the other features — a pinned column's footer
+empty footer cell. Both work with the other features - a pinned column's footer
 cell is pinned in both directions.
 
 ## Pagination & page size
 
-For controls that span the whole table — a paginator, a page-size picker — project
+For controls that span the whole table - a paginator, a page-size picker - project
 them into the **`[etTableFooter]` slot**. It renders a full-width bar below the grid,
 pinned to the bottom of the table's scroll viewport (and only appears when you
 actually project something). The table bakes in **no** pager; you drop in
@@ -803,9 +803,9 @@ export class UsersComponent {
 
 The slot is layout-only, so its arrangement is yours: the example above is a
 right-aligned Material-style row with an external, translatable "Items per page:"
-label — given `.et-table-footer-label` so it matches the paginator's own readout
-instead of being a near-miss — and an `underline` select (`[mirrorPanelWidth]="false"` keeps its option rows
-readable — a page-size trigger is narrower than "20 ✓"). In a table with a bounded
+label - given `.et-table-footer-label` so it matches the paginator's own readout
+instead of being a near-miss - and an `underline` select (`[mirrorPanelWidth]="false"` keeps its option rows
+readable - a page-size trigger is narrower than "20 ✓"). In a table with a bounded
 `block-size`, the bar sits at the bottom of the box even when the rows don't fill it. With `[compact]="true"` the paginator renders as a
 range readout plus previous/next chevrons that sit inline and hold their position
 across page changes. For its other options (links mode, paged SEO, jump-to-page,
@@ -814,19 +814,19 @@ the width-driven auto-collapse), see the [pagination guide](/components/paginati
 ## Empty state
 
 When `data` is empty the table renders a single full-width row carrying the `empty`
-label. Replace it with structure — either a template (which gets the row list) or
+label. Replace it with structure - either a template (which gets the row list) or
 projected content:
 
 ```html
 <et-table [data]="rows()" [columns]="COLUMNS" [emptyTemplate]="nothing">
   <ng-template #nothing>
-    No results — <button (click)="clearFilters()" et-button variant="transparent">clear the filters</button>
+    No results - <button (click)="clearFilters()" et-button variant="transparent">clear the filters</button>
   </ng-template>
 </et-table>
 
 <!-- or, without a template ref -->
 <et-table [data]="rows()" [columns]="COLUMNS">
-  <div etTableEmpty>No results — try adjusting your filters.</div>
+  <div etTableEmpty>No results - try adjusting your filters.</div>
 </et-table>
 ```
 
@@ -842,7 +842,7 @@ two bindings and no wrapper:
 ```
 
 **`loading` renders differently depending on whether there is anything to show.** With no
-rows yet it fills the body with **placeholder rows** — one bar per column, so the layout
+rows yet it fills the body with **placeholder rows** - one bar per column, so the layout
 doesn't jump when the data lands; `loadingRows` (default `5`) sets how many. Over rows
 that are already on screen it leaves them alone and runs an **indeterminate bar under the
 header** instead: that is the state a paged or refetching table is in most of the time,
@@ -857,7 +857,7 @@ to be as tall as the rows they stand in for. Two things get that right:
 - The table **remembers the height of a real row** and hands it to later placeholder rows, so a
   refetch or a page change keeps the table exactly as tall as the data the user was just looking at.
 - For the **first** load there is nothing to measure, so a column whose cells are taller than a line
-  of text — a chip, an avatar, a button — says what its placeholder looks like with
+  of text - a chip, an avatar, a button - says what its placeholder looks like with
   `etTableCellSkeleton`:
 
 ```html
@@ -879,7 +879,7 @@ line-of-text bone (`<et-skeleton-item shape="text">` from the
 [Skeleton](/components/skeleton) component), whose widths cycle so a block of them reads as text.
 
 **`error` replaces the body.** Anything non-nullish counts (an `HttpErrorResponse`, a
-message, `false`), and it outranks `loading` — stale rows sitting under an unreported
+message, `false`), and it outranks `loading` - stale rows sitting under an unreported
 failure are worse than an honest empty table. The `error` [label](#localization) is the
 default text; for anything more use `errorTemplate` (it gets the error value) or project
 `[etTableError]`:
@@ -896,12 +896,12 @@ default text; for anything more use `errorTemplate` (it gets the error value) or
 <StoryEmbed id="components-table--errored" height="300px" />
 
 The error mark takes the app's **error color theme** (the one registered with
-`type: 'error'`). A table in an app that registers none still renders — the mark just
+`type: 'error'`). A table in an app that registers none still renders - the mark just
 stays on the surface's own color rather than throwing.
 
 ### Per-cell states
 
-A cell can be busy or failed on its own — an inline edit saving, one field rejected by the
+A cell can be busy or failed on its own - an inline edit saving, one field rejected by the
 server. `cellState` is called per rendered cell and returns `'loading'`, `'error'`, or
 nothing: `'loading'` swaps that cell's value for a placeholder bar, `'error'` keeps the
 value and marks it. The rest of the row stays live.
@@ -915,14 +915,14 @@ protected cellState = (row: User, key: string) =>
 <et-table [data]="users()" [columns]="COLUMNS" [cellState]="cellState" />
 ```
 
-Return `{ state: 'error', message }` and the message rides along on the mark — as its `title`
+Return `{ state: 'error', message }` and the message rides along on the mark - as its `title`
 and accessible name in the base table, and as a real tooltip once
 `TABLE_CELL_ERROR_TOOLTIP_IMPORTS` / `etTableCellErrorTooltip` is on the table. That is a
 separate feature because a tooltip means the overlay runtime, which no table should pay for to
 render a list; its mark is stamped only into cells that are actually failing.
 
 `cellState` is resolved once per rendered cell (with the rest of the render model), not per
-binding — but keep it a lookup rather than a search. An errored cell also carries
+binding - but keep it a lookup rather than a search. An errored cell also carries
 `data-state="error"`, which an app can style further.
 
 <StoryEmbed id="components-table--cell-states" height="360px" />
@@ -932,18 +932,18 @@ binding — but keep it a lookup rather than a search. An errored cell also carr
 Drag-to-reorder is **opt-in**: import `TABLE_REORDER_IMPORTS` and put
 `etTableReorder` on the table to let users **drag column headers** sideways.
 A floating ghost of the header follows the pointer, and the columns **slide into the
-order they would take on release** — the table itself is the preview, so nothing is
+order they would take on release** - the table itself is the preview, so nothing is
 drawn over (or past) its panel. Dropping commits that order with no visual jump,
 because the columns are already sitting where it puts them. Reduced-motion drops the
-sliding, not the preview. It's pure column-order state — no DOM surgery, since the
+sliding, not the preview. It's pure column-order state - no DOM surgery, since the
 grid re-lays-out from the order.
 
 ```html
 <et-table [data]="rows()" [columns]="COLUMNS" etTableReorder />
 ```
 
-[Pinned columns](#sticky-columns-footer) are excluded from dragging — they anchor
-to an edge, so moving one into the scrolling middle would strand the layout —
+[Pinned columns](#sticky-columns-footer) are excluded from dragging - they anchor
+to an edge, so moving one into the scrolling middle would strand the layout -
 though `moveColumn` can still reposition anything programmatically.
 
 Column **order and visibility** are also fully programmatic, so you can build a
@@ -964,7 +964,7 @@ Column **order and visibility** are also fully programmatic, so you can build a
 The [column menu](#column-menu)'s **Choose columns** panel already does this. Without
 that feature, nothing in the table's own chrome lists a column that isn't rendered, so
 expose `allColumns()` + `toggleColumnVisibility()` yourself (or a "Show all columns"
-action calling `showAllColumns()`) — otherwise a user can strand a hidden column until
+action calling `showAllColumns()`) - otherwise a user can strand a hidden column until
 the page reloads.
 :::
 
@@ -995,7 +995,7 @@ by `restoreState()`.
 Resizing is **opt-in**: import `TABLE_RESIZE_IMPORTS` and put `etTableResize` on the
 table, and each header grows a grip on its trailing edge. Drag it to resize
 the column; **double-click** it to reset that column to its default width. The grip is
-hidden while only one column is visible — a lone column already spans the table, so
+hidden while only one column is visible - a lone column already spans the table, so
 there is nothing for it to trade width with.
 
 ```html
@@ -1007,7 +1007,7 @@ default `minmax(96px, 1fr)` track), clamped between the column's `minWidth` and 
 own width (a column can't be dragged wider than the viewport). They're captured by
 [`state()`](#table-state) as `TableColumnState.width` and restored by
 `restoreState()`, so a user's column widths persist alongside order, visibility,
-sort and filters. Resizing **composes with reordering** — the grip is its own drag
+sort and filters. Resizing **composes with reordering** - the grip is its own drag
 handle that swallows its pointer gesture, so grabbing it resizes instead of starting
 a header reorder, and because widths are keyed by column they travel with a column
 when it's moved. On touch pointers the grip's hit area widens so it's grabbable with
@@ -1016,12 +1016,12 @@ a finger.
 ## Virtualization
 
 For long lists, import `TABLE_VIRTUAL_SCROLL_IMPORTS` and drop
-`etTableVirtualScroll` on the table: only the rows near the viewport render —
+`etTableVirtualScroll` on the table: only the rows near the viewport render -
 a few dozen `<div role="row">`s stay in the DOM no matter how many rows `data` holds,
 with block-padding spacers standing in for the rest so the scrollbar still reflects the
 full count.
 
-As always, the table is its own scroll container — give it a bounded height so the
+As always, the table is its own scroll container - give it a bounded height so the
 window has a viewport to track:
 
 ```html
@@ -1034,13 +1034,13 @@ The sticky header pins to the table's own scroll container, so it keeps working.
 Row heights are measured from a rendered row and assumed uniform; set the feature's
 `estimateRowHeight` (default `48`) close to your real row height for the steadiest first
 paint, and raise `overscan` (default `6`) if fast scrolling reveals blank rows before they
-render — both options on the directive:
+render - both options on the directive:
 
 ```html
 <et-table [etTableVirtualScroll]="{ estimateRowHeight: 52, overscan: 10 }" … />
 ```
 
-Virtualization composes with [row expansion](#row-expansion) — expanded rows
+Virtualization composes with [row expansion](#row-expansion) - expanded rows
 render within the window as you scroll to them. Because the window assumes a
 uniform row height, lists where many rows are expanded at once scroll most
 smoothly when expanded content is modest.
@@ -1048,7 +1048,7 @@ smoothly when expanded content is modest.
 ## CSV export
 
 Import `TABLE_CSV_EXPORT_IMPORTS`, put `etTableCsvExport` on the table and call `export()`
-from a button of your own — the feature renders no UI, so the button is yours to place,
+from a button of your own - the feature renders no UI, so the button is yours to place,
 label and translate:
 
 ```ts
@@ -1062,9 +1062,9 @@ label and translate:
 })
 ```
 
-By default it writes the **visible columns in their displayed order** — so hiding a column
+By default it writes the **visible columns in their displayed order** - so hiding a column
 in the [chooser](#column-chooser) or [dragging one](#column-visibility-reordering) changes
-the file — and the table's **own rows**, client-filtered and sorted. What is off screen
+the file - and the table's **own rows**, client-filtered and sorted. What is off screen
 because of [virtualization](#virtualization) is still written; virtualization only decides
 what renders.
 
@@ -1073,8 +1073,8 @@ what renders.
 ### What each cell says
 
 A cell's text comes from the column's `value` accessor. A column whose cell is an
-[`etTableCell` template](#custom-cells) needs an **`exportValue`** — a template renders DOM,
-which has no text form to serialize — as does a column whose `value` isn't a primitive:
+[`etTableCell` template](#custom-cells) needs an **`exportValue`** - a template renders DOM,
+which has no text form to serialize - as does a column whose `value` isn't a primitive:
 
 ```ts
 protected readonly COLUMNS = {
@@ -1092,7 +1092,7 @@ becomes an empty field rather than the text `null`.
 
 ### Options
 
-Pass them on the directive, or per call — `export(overrides)` wins over the bound config,
+Pass them on the directive, or per call - `export(overrides)` wins over the bound config,
 so one directive can serve both an "export everything" and an "export the selection"
 button:
 
@@ -1105,12 +1105,12 @@ button:
 | Option         | Type                             | Default       | What it does                                                                                                          |
 | -------------- | -------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `columns`      | `'visible' \| 'all' \| string[]` | `'visible'`   | `'all'` adds hidden columns; a key list writes exactly those, in the order given                                      |
-| `rows`         | `readonly T[]` \| a **provider** | table's rows  | Any list — a [selection](#selection) — or a function fetching them, see [below](#exporting-more-than-the-loaded-page) |
-| `file`         | query \| promise \| observable   | —             | A CSV the **server** built — see [below](#exporting-more-than-the-loaded-page)                                        |
-| `partial`      | `boolean`                        | `false`       | Write only the loaded page, on purpose — see [below](#exporting-more-than-the-loaded-page)                            |
+| `rows`         | `readonly T[]` \| a **provider** | table's rows  | Any list - a [selection](#selection) - or a function fetching them, see [below](#exporting-more-than-the-loaded-page) |
+| `file`         | query \| promise \| observable   | -             | A CSV the **server** built - see [below](#exporting-more-than-the-loaded-page)                                        |
+| `partial`      | `boolean`                        | `false`       | Write only the loaded page, on purpose - see [below](#exporting-more-than-the-loaded-page)                            |
 | `header`       | `boolean`                        | `true`        | Write the header row of column labels                                                                                 |
 | `delimiter`    | `string`                         | `','`         | Use `';'` for locales where Excel expects it                                                                          |
-| `bom`          | `boolean \| 'auto'`              | `'auto'`      | UTF-8 BOM — see below                                                                                                 |
+| `bom`          | `boolean \| 'auto'`              | `'auto'`      | UTF-8 BOM - see below                                                                                                 |
 | `formulaGuard` | `boolean`                        | `true`        | See below                                                                                                             |
 | `filename`     | `string`                         | `'table.csv'` | `.csv` is appended when missing                                                                                       |
 
@@ -1118,17 +1118,17 @@ button:
 
 A UTF-8 BOM is what tells **Excel** the file is UTF-8. Without one Excel reads a CSV in the
 system's legacy code page, and `Jürgen` arrives as `JÃ¼rgen`. The catch is that not every
-reader strips the marker: a text editor on the wrong encoding, most hand-rolled CSV parsers —
-and Google Sheets — surface it as a literal `ï»¿` glued to the first header cell.
+reader strips the marker: a text editor on the wrong encoding, most hand-rolled CSV parsers -
+and Google Sheets - surface it as a literal `ï»¿` glued to the first header cell.
 
 So the default is `'auto'`: the BOM is written **only when the file actually contains a
 non-ASCII character**, which is the only case where it changes anything. A pure-ASCII CSV
-reads identically with or without one, so it simply doesn't get it — no stray `ï»¿`, in any
+reads identically with or without one, so it simply doesn't get it - no stray `ï»¿`, in any
 reader. Pass `bom: true` or `bom: false` to force it.
 
 One residue worth knowing: a file that _does_ carry non-ASCII text still gets the BOM, so
 opening that one in Google Sheets shows `ï»¿` on the first header. Sheets assumes UTF-8
-anyway and never needed the marker — if your exports are headed there rather than to Excel,
+anyway and never needed the marker - if your exports are headed there rather than to Excel,
 set `bom: false` on the directive and be done with it.
 
 `tableToCsv()` never adds a BOM: it hands back a string, and how that gets encoded is the
@@ -1142,7 +1142,7 @@ a number (`-5`), so ordinary exports are unaffected.
 
 ### Without the directive
 
-`injectTableCsvExport()` is the same thing from TypeScript — call it once in a field
+`injectTableCsvExport()` is the same thing from TypeScript - call it once in a field
 initializer, then from anywhere:
 
 ```ts
@@ -1150,23 +1150,23 @@ private exportCsv = injectTableCsvExport();
 protected table = viewChild.required(TableComponent);
 
 protected download() {
-  // Nothing is written until you subscribe — see below.
+  // Nothing is written until you subscribe - see below.
   this.exportCsv(this.table(), { columns: 'all', delimiter: ';' }).subscribe();
 }
 ```
 
-`tableToCsv(table, options)` builds the same file as a string without downloading it — for
+`tableToCsv(table, options)` builds the same file as a string without downloading it - for
 uploading it, putting it on the clipboard, or asserting on it in a test. Both are pure of
 any table dependency: they read the table through its columns and rows, so a test can pass
 a plain object.
 
-One boundary worth stating outright: **Excel's own `.xlsx` is not supported** — this writes
+One boundary worth stating outright: **Excel's own `.xlsx` is not supported** - this writes
 CSV, and nothing else.
 
 ### Exporting more than the loaded page
 
 A **server-paginated** table only ever holds the current page. An export that says nothing
-would write page 3 of 200 as if it were the data — a plausible, wrong file, which is worse
+would write page 3 of 200 as if it were the data - a plausible, wrong file, which is worse
 than an error. So when the table's [`rowsSource`](#server-side-rows-query) reports a
 `total`, the export checks it and throws **`ET3506`** in dev mode rather than write it.
 Production stays silent and writes the page.
@@ -1177,7 +1177,7 @@ There are three honest answers, in the order they matter in practice.
 
 **1. The server built the file.** Backends usually grow a `GET /people/export?filters=…`
 that returns the whole dataset as `text/csv`, and it is the best answer: nothing is
-serialized client-side, and the server already has the query. Pass it as `file` — an
+serialized client-side, and the server already has the query. Pass it as `file` - an
 `@ethlete/query` query, a promise, or an observable resolving to a `Blob` or a string:
 
 ```html
@@ -1189,7 +1189,7 @@ protected exportQuery = createQuery(…);
 protected csv = viewChild.required(TableCsvExportDirective);
 
 protected exportAll() {
-  // The query is *followed*, never executed — trigger it yourself, as you would anywhere else.
+  // The query is *followed*, never executed - trigger it yourself, as you would anywhere else.
   this.exportQuery.execute({ args: { queryParams: this.filters() } });
   this.csv().export({ file: this.exportQuery, filename: 'people.csv' });
 }
@@ -1218,7 +1218,7 @@ protected allPeople = tableCsvRowsFromPages<Person>({
 ```
 
 It makes N round trips for a file the server could stream in one, and holds the whole
-dataset in memory to do it — prefer route 1 where it exists.
+dataset in memory to do it - prefer route 1 where it exists.
 
 **3. Say you meant the page.** `partial: true` is the opt-in for a deliberate "export what
 is on screen", and what an explicit second button passes:
@@ -1233,8 +1233,8 @@ already holding, so an explicit `rows` list never warns.
 #### Waiting, and the busy state
 
 `rows` as a provider and `file` both have to fetch, so an export is no longer instant. The
-directive's `export()` stays fire-and-forget — it starts the work, keeps `exporting()` true
-while it runs, and stops with the component — so a `(click)` handler is still the whole call
+directive's `export()` stays fire-and-forget - it starts the work, keeps `exporting()` true
+while it runs, and stops with the component - so a `(click)` handler is still the whole call
 site. Bind `exporting()` to the button's `disabled` and its label. An export of rows the
 table already holds writes the file in the same tick, so `exporting()` never flickers on for
 it. A failure reaches the app's `ErrorHandler`.
@@ -1254,8 +1254,8 @@ since the whole point of `file` is that this side never builds the string.
 <et-table [data]="rows()" [columns]="COLUMNS" etTableKeyboardNav />
 ```
 
-The body becomes a **single tab stop** — Tab moves onto the last-focused cell and Tab
-again leaves the table entirely, rather than walking every cell — and inside it:
+The body becomes a **single tab stop** - Tab moves onto the last-focused cell and Tab
+again leaves the table entirely, rather than walking every cell - and inside it:
 
 | Key                      | Moves to                                     |
 | ------------------------ | -------------------------------------------- |
@@ -1273,15 +1273,15 @@ user actually is.
 
 ### Cells that hold controls
 
-`Enter` hands the keyboard to the first focusable thing in the cell — a link, a button, an
-[action cell](#action-cells) — and while focus is in there the arrows belong to that
+`Enter` hands the keyboard to the first focusable thing in the cell - a link, a button, an
+[action cell](#action-cells) - and while focus is in there the arrows belong to that
 control, not to the grid. `Escape` gives the cell its focus back. This is what keeps a
 cell's own content operable without the grid stealing its keys.
 
 ### With virtualization
 
 It composes with [virtual scrolling](#virtualization). A row the arrows ask for that isn't
-rendered is scrolled into the window first and focused once it exists — so `Ctrl+End` on a
+rendered is scrolled into the window first and focused once it exists - so `Ctrl+End` on a
 100 000-row table lands on the real last cell. The tab stop is re-anchored after any render
 that replaces the cell it was on, which is every scroll of a windowed table and every sort,
 filter or page change of any table.
@@ -1293,13 +1293,13 @@ Two things, both deliberate:
 - **`rowInteractive` rows stop being tab stops.** The grid body is one tab stop; a row that
   was also one would make it two. The rows stay clickable, and their `rowClick` still fires.
 - **Leading utility cells are not in the arrow order.** The [selection](#selection) checkbox
-  and the [expander](#row-expansion) are their own tab stops, reachable with Tab as before —
+  and the [expander](#row-expansion) are their own tab stops, reachable with Tab as before -
   the arrows walk the data columns.
 
 ## Inline cell editing
 
 Import `TABLE_INLINE_EDIT_IMPORTS`, mark a column `editable`, and give it an
-`etTableCellEdit` template. That template **is** the editor — while the cell is being
+`etTableCellEdit` template. That template **is** the editor - while the cell is being
 edited the table renders it in place of the value:
 
 ```ts
@@ -1320,7 +1320,7 @@ const COLUMNS = {
 </et-table>
 ```
 
-`let-field` is the draft, as a **signal-forms field** — bind it with `[formField]` exactly
+`let-field` is the draft, as a **signal-forms field** - bind it with `[formField]` exactly
 as you would in a form. There is no cell-editor interface to implement: every control in
 this library is already signal-forms native, so any of them can be an editor.
 
@@ -1338,17 +1338,17 @@ is safe to leave on while the template is behind an `@if`.
 | `Escape`            | cancels, restoring the value                                    |
 | `Tab` / `Shift+Tab` | saves and moves to the next cell in the row, editing it too     |
 
-**One cell is in edit mode at a time.** Opening another one saves the first — abandoning
+**One cell is in edit mode at a time.** Opening another one saves the first - abandoning
 what someone just typed is not what moving on means. Row-edit mode (a whole row of editors
 with one Save button) is not part of this feature.
 
-`Enter` needs cell focus, which is [keyboard navigation](#keyboard-navigation) — pair
+`Enter` needs cell focus, which is [keyboard navigation](#keyboard-navigation) - pair
 `etTableKeyboardNav` with it for the full flow. Without it the double-click path still
 works. The two features agree on `Enter` through the table: navigation offers the cell to
 the editor first and only [drills into the cell's content](#cells-that-hold-controls) when
 the column isn't editable.
 
-Committing is explicit. Clicking away from the table does **not** save — a control whose UI
+Committing is explicit. Clicking away from the table does **not** save - a control whose UI
 lives in an overlay (a select's panel) moves focus out of the cell legitimately, and
 guessing would throw the edit away. Use `Enter`, `Tab`, or open another cell.
 
@@ -1367,7 +1367,7 @@ type TableCellEditCommit<T> = {
 ```
 
 Perform the mutation, and report its progress back through the table's
-[`cellState`](#per-cell-states) — that is what draws the cell's pending bar and its error
+[`cellState`](#per-cell-states) - that is what draws the cell's pending bar and its error
 mark, so a failed save is visible on the cell it belongs to instead of in a toast:
 
 ```ts
@@ -1386,13 +1386,13 @@ protected save(change: TableCellEditCommit<Person>) {
 protected cellStateOf = (person: Person, key: string): TableCellStateValue | null => { … };
 ```
 
-`cellCancel` fires for an abandoned edit — `Escape`, or the edited row leaving the table
+`cellCancel` fires for an abandoned edit - `Escape`, or the edited row leaving the table
 (a refetch, a filter, a page change), which closes the editor rather than leaving the draft
 floating over whatever row moved into that position.
 
 ### Gating individual cells
 
-`editableCell` narrows `editable` per cell — a row the current user may not change, a field
+`editableCell` narrows `editable` per cell - a row the current user may not change, a field
 that locks once it has a value:
 
 ```html
@@ -1406,7 +1406,7 @@ protected canEdit = (person: Person, column: string) => person.id !== LOCKED_ID;
 ## Table state
 
 `state()` is a serializable, versioned snapshot of the table's configurable
-state — column **order**, **visibility**, **sort**, **filters** and **width** (per
+state - column **order**, **visibility**, **sort**, **filters** and **width** (per
 column), plus **expanded rows**. `restoreState(state)` applies one back. The two
 round-trip losslessly, so it's the basis for persisting and sharing a table setup.
 
@@ -1426,7 +1426,7 @@ table.restoreState(snapshot);
 The per-column shape maps 1:1 onto typical server-side list-view config (`hidden`,
 sort direction, `filterValues`), so bridging to a backend is mechanical. With
 `multiSort`, each sorted column also carries a `sortPriority` so the sort order
-survives the round-trip. Expanded rows serialize by their `rowKey` — set a
+survives the round-trip. Expanded rows serialize by their `rowKey` - set a
 [`rowKey`](#inputs) for expansion to be captured.
 
 ### Persist it to local or session storage
@@ -1440,17 +1440,17 @@ the table first renders, then saves on every change:
 
 | Option    | Default   | Description                                                                   |
 | --------- | --------- | ----------------------------------------------------------------------------- |
-| `key`     | —         | Storage key. Namespace it per table _and_ per meaning.                        |
+| `key`     | -         | Storage key. Namespace it per table _and_ per meaning.                        |
 | `kind`    | `'local'` | `'local'` survives a browser restart, `'session'` the tab.                    |
-| `storage` | the store | Your own `Storage`-like object — an escape hatch for SSR, and what specs use. |
+| `storage` | the store | Your own `Storage`-like object - an escape hatch for SSR, and what specs use. |
 | `enabled` | `true`    | Switch persistence off at runtime.                                            |
 
-A feature rather than an input because storing state is a side effect not every table wants — one
+A feature rather than an input because storing state is a side effect not every table wants - one
 whose columns depend on the route or a permission set should start from its definitions each time.
 Use `createTableStateStorage({ key })` (`load` / `save` / `clear`) to drive it yourself; every
 operation swallows its own failure, so a blocked or full store never stops a table from rendering.
 
-**Feature state.** `state()` carries a `features` bag alongside the columns — a selection lives in
+**Feature state.** `state()` carries a `features` bag alongside the columns - a selection lives in
 `features.selection`, contributed by `etTableSelection` through a `TableStateSlice`. That is what
 lets feature-owned state round-trip without the base table knowing the feature exists; a slice
 whose feature isn't imported on restore is left alone rather than dropped. The bag is why the
@@ -1492,7 +1492,7 @@ export class UsersComponent {
 ## Localization
 
 Every string the table and its features render or announce lives in one **label set**
-(`TableLabels`) — the empty and error text, the expander and selection `aria-label`s, the
+(`TableLabels`) - the empty and error text, the expander and selection `aria-label`s, the
 sort announcement, the filter menu's search placeholder / "no options" / "Load more", the
 column menu's entries, and the column chooser's trigger. No feature carries wording of its
 own, so localizing the table localizes all of it.
@@ -1523,7 +1523,7 @@ provideTableLabels({
 ```
 
 **Driven by an i18n library.** Pass a function instead of an object and it is called with
-the active locale — the one `injectLocale()` exposes and `provideLocale()` updates — and
+the active locale - the one `injectLocale()` exposes and `provideLocale()` updates - and
 re-called whenever that locale changes, so a language switch re-renders the wording in
 place:
 
@@ -1535,7 +1535,7 @@ provideTableLabels((locale) => ({
 }));
 ```
 
-For a one-off wording on a single table, bind `labels` — partial, layered over whatever is
+For a one-off wording on a single table, bind `labels` - partial, layered over whatever is
 provided:
 
 ```html
@@ -1558,12 +1558,12 @@ skips past the body, which is what a read-only display table usually wants.
 ## Theming
 
 Colors come from the [surface theming](/core/theming) tokens of the nearest
-surface scope — header/body text from `--et-surface-color-*-solid`, separators
+surface scope - header/body text from `--et-surface-color-*-solid`, separators
 from `--et-surface-border-solid`, and the row hover tint from
 `--et-surface-interaction-solid`. Cell padding is tunable via the
 `--et-table-cell-padding-block` / `--et-table-cell-padding-inline` custom
 properties, and the leading utility columns via `--et-table-expander-width` /
-`--et-table-select-width` (both `32px`, sized to their control — the expander button
+`--et-table-select-width` (both `32px`, sized to their control - the expander button
 and the checkbox keep their own size even if you set these narrower).
 
 All of the table's metrics are px, not `rem`, so they don't shift with the host app's

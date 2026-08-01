@@ -147,11 +147,11 @@ export class CalendarStorybookComponent {
   public mode = input<CalendarMode>('single');
   public constrained = input(false);
   public disableWeekends = input(false);
-  /** Months from today the empty calendar should open at — the story turns it into a `Date`. */
+  /** Months from today the empty calendar should open at - the story turns it into a `Date`. */
   public startAtMonthOffset = input<number | null>(null);
   public precision = input<CalendarPrecision>('day');
   public startView = input<CalendarView>('month');
-  /** Turns on a `dateClass` hook marking the 1st of each month and every 13th — the story owns the CSS. */
+  /** Turns on a `dateClass` hook marking the 1st of each month and every 13th - the story owns the CSS. */
   public markDates = input(false);
   public weekNumbers = input(false);
   /** Bands the seven days before the month's 10th as a comparison period. */
@@ -195,7 +195,7 @@ export class CalendarStorybookComponent {
     }
   });
 
-  /** The seven days running up to the visible month's 10th — a stand-in for "the previous period". */
+  /** The seven days running up to the visible month's 10th - a stand-in for "the previous period". */
   protected comparisonStart = computed(() => (this.showComparison() ? startOfDay(new Date(2026, 6, 3)) : null));
 
   protected comparisonEnd = computed(() => (this.showComparison() ? startOfDay(new Date(2026, 6, 9)) : null));

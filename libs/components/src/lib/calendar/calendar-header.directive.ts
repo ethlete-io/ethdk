@@ -9,7 +9,7 @@ export type CalendarHeaderContext = {
 /**
  * Replaces `et-calendar`'s own header, keeping its grid. Put it on an `ng-template` inside the
  * calendar; the template receives the headless directive, which is everything the default header
- * uses — `headerLabel()`, `previous()`/`next()`, `canGoPrev()`/`canGoNext()`, `zoomOut()`,
+ * uses - `headerLabel()`, `previous()`/`next()`, `canGoPrev()`/`canGoNext()`, `zoomOut()`,
  * `canZoomOut()`, `view`.
  *
  * @example

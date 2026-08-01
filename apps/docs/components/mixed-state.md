@@ -6,13 +6,13 @@ When one form edits several records at once and their current values differ, a c
 
 ## The contract
 
-`mixed` behaves identically on every control that has it. These rules are enforced by a shared conformance test suite (`libs/components/src/lib/forms/testing/mixed-state-contract.ts`) that every implementing control runs in CI — they are guaranteed, not conventions:
+`mixed` behaves identically on every control that has it. These rules are enforced by a shared conformance test suite (`libs/components/src/lib/forms/testing/mixed-state-contract.ts`) that every implementing control runs in CI - they are guaranteed, not conventions:
 
 1. **Presentation only.** While `mixed` is `true`, the raw form value stays untouched and is masked: it is not displayed, and nothing (option, chip, star, thumb, aria state) reports it as selected. The host element exposes `data-mixed` for styling.
-2. **First commit replaces.** The first value the user commits replaces the raw value outright — multi-value controls start a fresh array containing only the committed entry; nothing toggles against or merges with the hidden value. The commit resolves `mixed` to `false`; afterwards the control behaves normally.
-3. **Explicitly controlled.** `mixed` is two-way bindable and only user interaction (or you) resolves it. External/programmatic value writes — server data arriving, form resets — do **not** change it; set `mixed` to `false` yourself when external data establishes a single value.
+2. **First commit replaces.** The first value the user commits replaces the raw value outright - multi-value controls start a fresh array containing only the committed entry; nothing toggles against or merges with the hidden value. The commit resolves `mixed` to `false`; afterwards the control behaves normally.
+3. **Explicitly controlled.** `mixed` is two-way bindable and only user interaction (or you) resolves it. External/programmatic value writes - server data arriving, form resets - do **not** change it; set `mixed` to `false` yourself when external data establishes a single value.
 4. **Clear resolves.** A control's clear affordance writes its empty shape (`null`, `''`, `[]`, …) and resolves `mixed`.
-5. **No mass-clear by accident.** Keyboard deletion never wipes a hidden multi-value selection (e.g. Backspace in a mixed multi select is a no-op) — the visible clear affordance is the destructive path.
+5. **No mass-clear by accident.** Keyboard deletion never wipes a hidden multi-value selection (e.g. Backspace in a mixed multi select is a no-op) - the visible clear affordance is the destructive path.
 6. **Validation sees the raw value.** `mixedLabel` is never a form value; `required` and friends keep evaluating the real (hidden) value.
 
 ## API
@@ -43,10 +43,10 @@ Every implementing control:
 
 ### Deliberate boundaries
 
-- **`et-checkbox` and `et-switch`** express this concept through the platform-named `indeterminate` input rather than `mixed`, with the native resolution behavior (activating an indeterminate control turns it on). Boolean tri-state is `indeterminate`, not `mixed` — the names differ because the platform's do. Both render a first-class indeterminate state, resolved to `on` on the first toggle:
+- **`et-checkbox` and `et-switch`** express this concept through the platform-named `indeterminate` input rather than `mixed`, with the native resolution behavior (activating an indeterminate control turns it on). Boolean tri-state is `indeterminate`, not `mixed` - the names differ because the platform's do. Both render a first-class indeterminate state, resolved to `on` on the first toggle:
   - `et-checkbox` shows the dash glyph and reflects `aria-checked="mixed"` (valid for `role="checkbox"`), so assistive tech announces the state.
   - `et-switch` parks its thumb mid-track inside a dashed accent outline, exposed for styling via `data-indeterminate`. ARIA has no `aria-checked="mixed"` for `role="switch"` (it is strictly two-state), so `aria-checked` stays boolean: the state is conveyed visually but announced as "off" until the first toggle resolves it. Reach for `et-checkbox` when the indeterminate state itself must be announced.
-- **`et-otp-input`, `et-dropzone`, and the rich text editors** are not bulk-edit fields; they have no mixed state. `et-choice-field` is layout chrome — the control it wraps carries the state.
+- **`et-otp-input`, `et-dropzone`, and the rich text editors** are not bulk-edit fields; they have no mixed state. `et-choice-field` is layout chrome - the control it wraps carries the state.
 - **`etInputMask`** decorates `et-input` and inherits its mixed behavior.
 
 ## Wiring a bulk editor
@@ -59,9 +59,9 @@ Every implementing control:
 </et-select>
 ```
 
-- Initialize each field: if all selected records agree, set the value and `mixed = false`; if they differ, set `mixed = true` (the raw value can be anything — it stays hidden).
+- Initialize each field: if all selected records agree, set the value and `mixed = false`; if they differ, set `mixed = true` (the raw value can be anything - it stays hidden).
 - On submit, patch only the fields the user actually resolved (`mixed === false` **and** dirty). A field still mixed means "don't touch this field on any record".
-- To offer "un-decide" per field, keep a reset affordance in the form that restores `mixed = true` — the control itself never re-enters mixed from user interaction.
+- To offer "un-decide" per field, keep a reset affordance in the form that restores `mixed = true` - the control itself never re-enters mixed from user interaction.
 
 ## For contributors
 

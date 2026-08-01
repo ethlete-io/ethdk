@@ -97,7 +97,7 @@ const TITLE_STORE_DEF = /* @__PURE__ */ defineRootProvider(
     });
 
     /**
-     * The composed title with any markers prefixed — what actually lands in `document.title`.
+     * The composed title with any markers prefixed - what actually lands in `document.title`.
      * Markers sit outside the divider logic, so `● Page | App` rather than `● | Page | App`.
      */
     const title = computed(() => {
@@ -165,7 +165,7 @@ export const applyHeadTitleBinding = (
 };
 
 /**
- * Prefix the tab title with a short marker (`● Page | App`) while the binding has a value — the
+ * Prefix the tab title with a short marker (`● Page | App`) while the binding has a value - the
  * unsaved-changes dot, a pending-count badge, and the like. The marker is removed when the binding
  * goes empty and on destroy. Unlike a title part, it is not joined by the divider.
  */

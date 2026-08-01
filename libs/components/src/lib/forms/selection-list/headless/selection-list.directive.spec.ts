@@ -254,7 +254,7 @@ describe('SelectionListDirective (single, mixed contract)', () => {
           expect(option.getAttribute('aria-checked')).toBe('false');
         }
       },
-      // no clear affordance — selection lists have no empty-shape control of their own
+      // no clear affordance - selection lists have no empty-shape control of their own
     };
   });
 });
@@ -287,7 +287,7 @@ describe('SelectionListDirective (multiple, mixed contract)', () => {
         tick();
       },
       externallyWrittenValue: () => ['a'],
-      // Space on an option — a real keyboard commit
+      // Space on an option - a real keyboard commit
       commit: () => {
         options()[0]!.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
         fixture.detectChanges();
@@ -383,7 +383,7 @@ describe('SelectionListDirective (mixed specifics)', () => {
       }
     });
 
-    it('replaces with a fresh array on first commit — even for a value inside the hidden raw array', () => {
+    it('replaces with a fresh array on first commit - even for a value inside the hidden raw array', () => {
       // 'a' is part of the hidden raw value; toggling against it would remove it instead
       options[0]!.click();
       fixture.detectChanges();

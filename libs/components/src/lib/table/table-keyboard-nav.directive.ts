@@ -25,7 +25,7 @@ const clamp = (value: number, max: number) => Math.min(Math.max(value, 0), max);
  * Opt-in arrow-key navigation over an `et-table`'s cells, following the
  * [ARIA grid pattern](https://www.w3.org/WAI/ARIA/apg/patterns/grid/): the body becomes a **single tab
  * stop**, and the arrows move focus from cell to cell inside it. Without it a table's `role="grid"` is
- * a promise it doesn't keep — only its sortable headers are operable from the keyboard.
+ * a promise it doesn't keep - only its sortable headers are operable from the keyboard.
  *
  * It is opt-in because it changes what Tab does: a read-only display table is usually better off
  * letting Tab skip straight past it.
@@ -72,7 +72,7 @@ export class TableKeyboardNavDirective {
   private enabled = computed(() => this.config().enabled ?? true);
 
   // The roving target. It exists before anything is focused so that tabbing into the table lands
-  // somewhere sensible — the first cell — rather than nowhere.
+  // somewhere sensible - the first cell - rather than nowhere.
   private active = signal<CellPosition>({ row: 0, column: 0 });
 
   /** The cell the grid's tab stop currently sits on: absolute row index and visible-column index. */
@@ -82,7 +82,7 @@ export class TableKeyboardNavDirective {
     this.table.registerCellNavigation({ enabled: this.enabled });
 
     // The table renders every cell at `tabindex="-1"`; without this there would be no `0` anywhere and
-    // Tab could never get in. It also repairs the tab stop after a render replaced the cell it was on —
+    // Tab could never get in. It also repairs the tab stop after a render replaced the cell it was on -
     // which is every scroll of a virtualized table, and every sort, filter or page change of any table.
     afterEveryRender({
       write: () => {
@@ -120,7 +120,7 @@ export class TableKeyboardNavDirective {
     }
 
     // Not rendered: a window is holding it back. Ask for it, then take the focus once the render that
-    // creates it has run — there is no element to focus before that.
+    // creates it has run - there is no element to focus before that.
     this.table.scrollRowIntoView(row);
     afterNextRender(
       {
@@ -137,7 +137,7 @@ export class TableKeyboardNavDirective {
     );
   }
 
-  // Focus landing on a cell — a click, or Tab arriving from outside — becomes the roving target, so the
+  // Focus landing on a cell - a click, or Tab arriving from outside - becomes the roving target, so the
   // arrows continue from wherever the user actually is.
   protected handleFocusIn(event: FocusEvent) {
     if (!this.enabled()) return;
@@ -157,7 +157,7 @@ export class TableKeyboardNavDirective {
 
     if (!hit) return;
 
-    // Focus is on something *inside* the cell (a link, an edit control) — the arrows and Home/End are
+    // Focus is on something *inside* the cell (a link, an edit control) - the arrows and Home/End are
     // that control's, not ours. Only Escape is still ours, to get back out.
     if (event.target !== hit.cell) {
       if (event.key === 'Escape') {
@@ -175,8 +175,8 @@ export class TableKeyboardNavDirective {
     event.preventDefault();
 
     if (next === 'drill') {
-      // Enter opens whatever the cell holds. Inline editing is offered it first — through the table, so
-      // neither feature references the other — and an editable cell becomes an editor instead. A cell
+      // Enter opens whatever the cell holds. Inline editing is offered it first - through the table, so
+      // neither feature references the other - and an editable cell becomes an editor instead. A cell
       // with nothing focusable in it has nothing to open, so the event is left alone: a `rowInteractive`
       // table's own row handler still sees it.
       if (!this.table.editCell(hit.position.row, hit.position.column)) this.drillInto(hit.cell);
@@ -223,7 +223,7 @@ export class TableKeyboardNavDirective {
   }
 
   /**
-   * The body cell an event came from, with its position — `null` when the event started outside the
+   * The body cell an event came from, with its position - `null` when the event started outside the
    * grid body (a header button, the footer slot, a detail row). Found by matching the event's path
    * against the cells the table rendered, which is also what makes the position pure arithmetic: the
    * list is rows major, so the index carries both coordinates.

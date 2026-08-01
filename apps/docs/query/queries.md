@@ -1,13 +1,13 @@
 # Queries & creators
 
-The fundamentals shared by every query flavor — [HTTP](/query/http) and [GraphQL](/query/gql) queries are built from the same client, creators and query objects. The system is signals-first: a query is a plain object whose state (`response`, `loading`, `error`, …) is exposed as Angular signals.
+The fundamentals shared by every query flavor - [HTTP](/query/http) and [GraphQL](/query/gql) queries are built from the same client, creators and query objects. The system is signals-first: a query is a plain object whose state (`response`, `loading`, `error`, …) is exposed as Angular signals.
 
-The typical setup — one client per API, one creator per endpoint, queries created inside components:
+The typical setup - one client per API, one creator per endpoint, queries created inside components:
 
 ```ts
 import { createGetQuery, createQueryClient, withArgs } from '@ethlete/query';
 
-// api.ts — one client per API
+// api.ts - one client per API
 export const client = createQueryClient({
   name: 'jsonplaceholder',
   baseUrl: 'https://jsonplaceholder.typicode.com',
@@ -15,7 +15,7 @@ export const client = createQueryClient({
 
 export const getQuery = createGetQuery(client);
 
-// posts.queries.ts — one creator per endpoint
+// posts.queries.ts - one creator per endpoint
 export type GetPostQueryArgs = {
   response: Post;
   pathParams: { postId: string };
@@ -25,7 +25,7 @@ export const getPost = getQuery<GetPostQueryArgs>((p) => `/posts/${p.postId}`);
 ```
 
 ```ts
-// post.component.ts — a live query per component instance
+// post.component.ts - a live query per component instance
 @Component({/* … */})
 export class PostComponent {
   postId = input.required<string>();
@@ -40,7 +40,7 @@ Whenever `postId` changes, the query re-executes automatically; identical reques
 
 ## Live demo
 
-A real query against a mocked backend — execute it, make it fail, and watch the signals. `execute (allowCache)` skips the request entirely while the cached response is still fresh:
+A real query against a mocked backend - execute it, make it fail, and watch the signals. `execute (allowCache)` skips the request entirely while the cached response is still fresh:
 
 <StoryEmbed id="query-demos-lifecycle--default" height="420px" />
 
@@ -59,17 +59,17 @@ export const injectApi = toInjectFn(API);
 
 | Option          | Default                   | Description                                                                                                                     |
 | --------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `name`          | — (required)              | Unique name, used in the injection token (`QueryClient_<name>`).                                                                |
-| `baseUrl`       | — (required)              | Base URL prepended to every route, e.g. `https://api.example.com/v1`.                                                           |
-| `queryString`   | —                         | Config for how query params are serialized.                                                                                     |
-| `headers`       | —                         | `HttpHeaders` (or a function returning them) sent with every request — see [Client-wide headers](#client-wide-headers).         |
-| `cacheAdapter`  | `extractExpiresInSeconds` | Maps response headers to a freshness TTL — see [Caching](/query/caching).                                                       |
-| `retryFn`       | `shouldRetryRequest`      | Decides whether a failed request is retried — see [Errors & retries](/query/errors).                                            |
-| `keepUnusedFor` | `300000` (5 min)          | How long an entry survives after its last consumer was destroyed — see [Caching](/query/caching#keeping-unused-entries-around). |
+| `name`          | - (required)              | Unique name, used in the injection token (`QueryClient_<name>`).                                                                |
+| `baseUrl`       | - (required)              | Base URL prepended to every route, e.g. `https://api.example.com/v1`.                                                           |
+| `queryString`   | -                         | Config for how query params are serialized.                                                                                     |
+| `headers`       | -                         | `HttpHeaders` (or a function returning them) sent with every request - see [Client-wide headers](#client-wide-headers).         |
+| `cacheAdapter`  | `extractExpiresInSeconds` | Maps response headers to a freshness TTL - see [Caching](/query/caching).                                                       |
+| `retryFn`       | `shouldRetryRequest`      | Decides whether a failed request is retried - see [Errors & retries](/query/errors).                                            |
+| `keepUnusedFor` | `300000` (5 min)          | How long an entry survives after its last consumer was destroyed - see [Caching](/query/caching#keeping-unused-entries-around). |
 
 ### Client-wide headers
 
-An API token, a tenant id, a preview credential — anything every request of a client carries belongs in `headers` rather than on each creator. Per-query `args.headers` are merged on top and win per header name.
+An API token, a tenant id, a preview credential - anything every request of a client carries belongs in `headers` rather than on each creator. Per-query `args.headers` are merged on top and win per header name.
 
 Pass a function to make them dynamic: it runs on every execution, so reading a signal inside is enough for later requests to pick the new value up.
 
@@ -87,11 +87,11 @@ const API = createQueryClient({
 });
 ```
 
-Client headers are deliberately **not** part of the [cache key](/query/caching) — they are identical for every query of the client, so including them would only ever churn the whole cache at once. The flip side is that already-resolved queries keep their response when the headers change; call [`refreshQueriesInUse()`](/query/caching#refreshing-everything-in-use) to re-run them.
+Client headers are deliberately **not** part of the [cache key](/query/caching) - they are identical for every query of the client, so including them would only ever churn the whole cache at once. The flip side is that already-resolved queries keep their response when the headers change; call [`refreshQueriesInUse()`](/query/caching#refreshing-everything-in-use) to re-run them.
 
 ## Query creators
 
-A query creator is a function describing one endpoint. You get one by calling a method template (like `createGetQuery(client)` — see [HTTP](/query/http) for all of them) with a route and a `TArgs` type describing the request/response. Calling the creator inside an injection context produces a live query:
+A query creator is a function describing one endpoint. You get one by calling a method template (like `createGetQuery(client)` - see [HTTP](/query/http) for all of them) with a route and a `TArgs` type describing the request/response. Calling the creator inside an injection context produces a live query:
 
 ```ts
 // features only
@@ -106,27 +106,27 @@ const query = getPost(
 
 | `QueryConfig` option                 | Default | Description                                                                                    |
 | ------------------------------------ | ------- | ---------------------------------------------------------------------------------------------- |
-| `key`                                | —       | Custom cache key. Only allowed on cacheable queries (throws otherwise).                        |
-| `onlyManualExecution`                | `false` | Skip auto-execution — the query only runs when you call `.execute()`.                          |
+| `key`                                | -       | Custom cache key. Only allowed on cacheable queries (throws otherwise).                        |
+| `onlyManualExecution`                | `false` | Skip auto-execution - the query only runs when you call `.execute()`.                          |
 | `silenceMissingWithArgsFeatureError` | `false` | Allow a function route without a `withArgs` feature (you must then pass args to `.execute()`). |
-| `injector`                           | —       | Create the query in a specific injector instead of the current injection context.              |
+| `injector`                           | -       | Create the query in a specific injector instead of the current injection context.              |
 
 Creators expose `.clone(additionalOptions)` to derive a variant with merged options (e.g. a custom `retryFn`).
 
 ## Auto-execution
 
-`GET`, `HEAD` and `OPTIONS` queries execute automatically — immediately when the route is static and argless, or whenever [`withArgs`](/query/features#withargs) produces new args. Mutating methods (`POST`, `PUT`, `PATCH`, `DELETE`) never auto-execute; call `.execute({ args })` yourself. Opt a query out entirely with `onlyManualExecution`.
+`GET`, `HEAD` and `OPTIONS` queries execute automatically - immediately when the route is static and argless, or whenever [`withArgs`](/query/features#withargs) produces new args. Mutating methods (`POST`, `PUT`, `PATCH`, `DELETE`) never auto-execute; call `.execute({ args })` yourself. Opt a query out entirely with `onlyManualExecution`.
 
 ## The query object
 
-Every state property is a signal — and every one of them is an `ObservableSignal`, so `query.response.asObservable()` hands you an RxJS stream when you need one.
+Every state property is a signal - and every one of them is an `ObservableSignal`, so `query.response.asObservable()` hands you an RxJS stream when you need one.
 
 | Signal                 | Type                              | Description                                                                                |
 | ---------------------- | --------------------------------- | ------------------------------------------------------------------------------------------ |
 | `response()`           | `TResponse \| null`               | Latest (transformed) response. Kept while re-executing; cleared when a re-execution fails. |
 | `loading()`            | `HttpRequestLoadingState \| null` | Loading state incl. `progress` (`percentage`, `speed`, `remainingTime`).                   |
-| `error()`              | `QueryErrorResponse \| null`      | Normalized error — see [Errors & retries](/query/errors).                                  |
-| `executionState()`     | discriminated union               | `{ type: 'loading' \| 'success' \| 'failure', … } \| null` — handy for `@switch` blocks.   |
+| `error()`              | `QueryErrorResponse \| null`      | Normalized error - see [Errors & retries](/query/errors).                                  |
+| `executionState()`     | discriminated union               | `{ type: 'loading' \| 'success' \| 'failure', … } \| null` - handy for `@switch` blocks.   |
 | `args()`               | `RequestArgs \| null`             | Args of the latest execution.                                                              |
 | `latestHttpEvent()`    | `HttpEvent \| null`               | Last raw Angular HTTP event.                                                               |
 | `lastTimeExecutedAt()` | `number \| null`                  | Timestamp of the latest execution.                                                         |
@@ -135,11 +135,11 @@ Every state property is a signal — and every one of them is an `ObservableSign
 
 Methods:
 
-- `execute({ args?, options? })` — `options.allowCache` reuses a fresh cached response, `options.triggeredBy` tags the run.
-- `reset()` — back to the never-executed state.
-- `createSnapshot()` — a frozen copy of the current state with an `isAlive` signal. Useful for "the request I started", untouched by later executions. The standalone `executeUntilSettled(query, executeArgs?)` combines both: it executes and resolves with the settled snapshot — handy in `async` flows like a signal-forms [`submit()` action](/query/errors#mapping-violations-onto-signal-forms). For a chain of dependent mutations built on top of it, see [Dependent queries](/query/dependent-queries).
-- `asReadonly()` — the query without its mutating methods.
+- `execute({ args?, options? })` - `options.allowCache` reuses a fresh cached response, `options.triggeredBy` tags the run.
+- `reset()` - back to the never-executed state.
+- `createSnapshot()` - a frozen copy of the current state with an `isAlive` signal. Useful for "the request I started", untouched by later executions. The standalone `executeUntilSettled(query, executeArgs?)` combines both: it executes and resolves with the settled snapshot - handy in `async` flows like a signal-forms [`submit()` action](/query/errors#mapping-violations-onto-signal-forms). For a chain of dependent mutations built on top of it, see [Dependent queries](/query/dependent-queries).
+- `asReadonly()` - the query without its mutating methods.
 
-Some objects also carry a `subtle` namespace — everything under it is an unsupported escape hatch: if you touch it and it breaks, that's on you.
+Some objects also carry a `subtle` namespace - everything under it is an unsupported escape hatch: if you touch it and it breaks, that's on you.
 
-Queries live in a child injector parented to the component (or `queryConfig.injector`) that created them — when that scope is destroyed, the query is torn down and its cache reference released.
+Queries live in a child injector parented to the component (or `queryConfig.injector`) that created them - when that scope is destroyed, the query is torn down and its cache reference released.

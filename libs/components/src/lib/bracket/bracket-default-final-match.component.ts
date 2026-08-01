@@ -12,16 +12,16 @@ import { injectBracketLabels } from './bracket-labels';
 import { BracketMatch, BracketRound, BracketRoundSwissGroup } from './linked';
 
 /**
- * The bracket's default **final** cell — deliberately not the same card as every other round. The match
+ * The bracket's default **final** cell - deliberately not the same card as every other round. The match
  * inside it is a full [`et-match-card`](/components/match), so it keeps the accessible name, the score
  * live region and the series breakdown; around it sit the things only a final gets: the round's name
- * under a trophy, an accent frame in the color theme in scope, and — once the match is decided — a
+ * under a trophy, an accent frame in the color theme in scope, and - once the match is decided - a
  * champion line naming the winner.
  *
  * The bracket's `finalColumnWidth` / `finalMatchHeight` defaults (360×200) are sized for exactly this;
  * shrink them and the card inside falls back to the dense row rather than cropping.
  *
- * Replace it with `finalMatchComponent` when your brand wants its own hero treatment — that is the
+ * Replace it with `finalMatchComponent` when your brand wants its own hero treatment - that is the
  * expected thing to do with this one.
  */
 @Component({

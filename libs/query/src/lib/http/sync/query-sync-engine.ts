@@ -71,7 +71,7 @@ export const createQuerySyncEngine = (options: CreateQuerySyncEngineOptions): Qu
     }
 
     // Everything else is either a mutation or a read that opted out of the cache. Only the former is
-    // worth telling the other tabs about — and an uncacheable read has no shared key to send anyway.
+    // worth telling the other tabs about - and an uncacheable read has no shared key to send anyway.
     if (!refreshOnMutation || shouldCacheQuery(event.request.method)) return;
 
     transport.post({ type: 'mutation', method: event.request.method, url: event.request.url });

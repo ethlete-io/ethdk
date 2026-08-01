@@ -18,7 +18,7 @@ const PROBE_DATE = /* @__PURE__ */ new Date(2000, 0, 1, 13, 35, 57);
 
 /**
  * Derives the column layout (12/24-hour cycle, seconds) from a date-fns time
- * format by rendering a probe date — localized tokens like `p`/`pp` expand
+ * format by rendering a probe date - localized tokens like `p`/`pp` expand
  * per locale, so scanning the format string itself would miss them.
  */
 export const deriveTimeFormatSpec = (options: DeriveTimeFormatSpecOptions): TimeFormatSpec => {

@@ -1,15 +1,15 @@
-# 03 — i18n consolidation
+# 03 - i18n consolidation
 
 One coherent localization story instead of four disconnected mechanisms. Goal:
 a consumer localizing an app (e.g. to German) has a single documented recipe,
 and **every** user-facing string in the lib is overridable. This is not a
-translation framework — the SDK stays English-by-default with DI overrides.
+translation framework - the SDK stays English-by-default with DI overrides.
 
 ## Current state (verified 2026-07-30)
 
-1. `injectLocale()`/`provideLocale()` — `signal('en')` in core. Reactive.
+1. `injectLocale()`/`provideLocale()` - `signal('en')` in core. Reactive.
    Used by stream consent/error/PiP placeholder, grid, phone-input.
-2. `DATE_LOCALE` — static date-fns `Locale` token
+2. `DATE_LOCALE` - static date-fns `Locale` token
    (`forms/date-time/date-time-formats.ts:23-38`), feeds calendar names.
    Disconnected from (1): setting locale to `'de'` doesn't move the calendar.
 3. Per-domain label tokens: `pagination-labels.ts`, `table/headless/table-labels.ts`,
@@ -27,16 +27,16 @@ translation framework — the SDK stays English-by-default with DI overrides.
 
 1. **`injectLocale()` stays the root signal.** Everything else derives from or
    coexists with it explicitly.
-2. **Label tokens stay the per-domain override mechanism** — it's a good
+2. **Label tokens stay the per-domain override mechanism** - it's a good
    pattern (tree-shakeable, typed, discoverable). Consolidation means: every
    domain with user-facing strings gets one, consistently named and shaped
    (`provide<Domain>Labels` partial-override factory + `inject<Domain>Labels`).
-   Do NOT invent a central string catalog — that couples domains.
+   Do NOT invent a central string catalog - that couples domains.
 3. **Make label tokens locale-reactive by accepting values or factories**: the
    provide function accepts `Partial<Labels>` or `() => Partial<Labels>`
    (running in injection context, so it can read `injectLocale()` and return a
    computed-backed object). Injectors expose signals (or keep plain strings
-   where the existing token is plain — measure churn and pick one shape; do
+   where the existing token is plain - measure churn and pick one shape; do
    not ship a mix).
 4. **Bridge `DATE_LOCALE`**: keep the token (a date-fns object can't be derived
    from a bare tag string automatically), but document the pairing in one
@@ -64,7 +64,7 @@ translation framework — the SDK stays English-by-default with DI overrides.
 ## Risks / notes
 
 - Changing injector return shapes (plain → signal) is breaking for existing
-  consumers of `inject*Labels` — check usage in consuming apps; if risky, add
+  consumers of `inject*Labels` - check usage in consuming apps; if risky, add
   reactive variants alongside and deprecate.
 - Don't touch semantic _content_ strings (stories/demos exempt).
 - Changesets: `@ethlete/components` (+ `@ethlete/core` if locale utils move).

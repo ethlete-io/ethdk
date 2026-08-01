@@ -21,7 +21,7 @@ export type AnchoredPanelOverlayRef = OverlayRef<OverlayTemplateHostComponent, u
 
 export type CreateAnchoredPanelControllerOptions = {
   /**
-   * Reconcile gate — while `false`, any mounted panel closes and `open` is forced `false`.
+   * Reconcile gate - while `false`, any mounted panel closes and `open` is forced `false`.
    * (Typically `!disabled`; `readonly` is enforced by the caller's `show()`, not here, so a panel
    * already open when the control turns read-only stays open, matching the pre-extraction behavior.)
    */
@@ -56,8 +56,8 @@ export type CreateAnchoredPanelControllerOptions = {
  * overlay from a trigger (`select`, `cascader`; the date pickers use the sibling
  * `createDatePickerOverlay`). It owns the overlay ref, the disabled/open reconciliation effect,
  * the outside-pointer close (so a pointerdown on the anchor toggles instead of close-and-reopen),
- * and the model sync on every interactive close. Everything control-specific — the overlay config
- * and the mount/close side effects — is supplied via the hooks. Call in an injection context.
+ * and the model sync on every interactive close. Everything control-specific - the overlay config
+ * and the mount/close side effects - is supplied via the hooks. Call in an injection context.
  */
 export const createAnchoredPanelController = (options: CreateAnchoredPanelControllerOptions) => {
   const overlayManager = injectOverlayManager();
@@ -87,8 +87,8 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
 
       const pane = overlayRef()?.elements?.paneElement;
 
-      // A pointerdown inside this panel — or inside a nested popover it opened (a select body,
-      // menu, tooltip; those mount as sibling panes in the overlay root, not DOM descendants) —
+      // A pointerdown inside this panel - or inside a nested popover it opened (a select body,
+      // menu, tooltip; those mount as sibling panes in the overlay root, not DOM descendants) -
       // must not count as "outside", otherwise clicking the child popover closes this panel.
       if (pane && isTargetInsideOverlayTree({ target, rootPane: pane, openOverlays: overlayManager.openOverlays() })) {
         return;
@@ -149,7 +149,7 @@ export const createAnchoredPanelController = (options: CreateAnchoredPanelContro
 
           detachInteractionListeners();
 
-          // read while the pane still exists — afterClosed fires after its removal
+          // read while the pane still exists - afterClosed fires after its removal
           closedFromBottomSheet =
             currentRef.elements?.paneElement?.classList.contains('et-overlay--bottom-sheet') ?? false;
 

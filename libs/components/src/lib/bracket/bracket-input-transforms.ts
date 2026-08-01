@@ -1,6 +1,6 @@
 import { booleanAttribute, numberAttribute } from '@angular/core';
 
-/** What a numeric input accepts before its transform runs — a bound number, or a static attribute. */
+/** What a numeric input accepts before its transform runs - a bound number, or a static attribute. */
 export type OptionalNumberInput = number | string | undefined | null;
 
 /** Likewise for a flag, where a bare attribute (`hideRoundHeaders`) arrives as an empty string. */
@@ -17,6 +17,6 @@ export type OptionalBooleanInput = boolean | string | undefined | null;
 export const optionalNumberAttribute = (value: OptionalNumberInput): number | undefined =>
   value === undefined || value === null ? undefined : numberAttribute(value);
 
-/** `booleanAttribute` with the same treatment — see {@link optionalNumberAttribute}. @internal */
+/** `booleanAttribute` with the same treatment - see {@link optionalNumberAttribute}. @internal */
 export const optionalBooleanAttribute = (value: OptionalBooleanInput): boolean | undefined =>
   value === undefined || value === null ? undefined : booleanAttribute(value);

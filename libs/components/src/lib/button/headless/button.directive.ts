@@ -35,7 +35,7 @@ export class ButtonDirective {
   public emitAriaPressed = input(true, { transform: booleanAttribute });
 
   // Opt-in: keep the button visually neutral (surface-themed) until it's pressed, only picking
-  // up the provided color theme once active — for toggle-style buttons (e.g. a formatting
+  // up the provided color theme once active - for toggle-style buttons (e.g. a formatting
   // toolbar) where every button always being tinted by the ambient color theme reads as noise.
   public mutedUntilPressed = input(false, { transform: booleanAttribute });
 

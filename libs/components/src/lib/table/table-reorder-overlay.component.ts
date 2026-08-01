@@ -6,7 +6,7 @@ import { TableReorderDirective } from './table-reorder.directive';
  * Renders nothing until a drag starts.
  *
  * This is what lets the reorder feature be a directive: the drag lives on the header cells the table
- * renders, and the only thing that needs a view — this floating UI — is hosted by the table. Where the
+ * renders, and the only thing that needs a view - this floating UI - is hosted by the table. Where the
  * column will land needs no view at all: the columns themselves slide into the landing order.
  *
  * @internal

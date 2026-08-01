@@ -1,5 +1,5 @@
 /**
- * Global overlay panel styles — applied via ViewEncapsulation.None on the shared content component.
+ * Global overlay panel styles - applied via ViewEncapsulation.None on the shared content component.
  * Targets the container element classes that strategies set (e.g. `et-overlay--dialog`).
  */
 export const OVERLAY_PANEL_STYLES = `

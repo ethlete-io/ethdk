@@ -12,7 +12,7 @@ import { PictureSource } from '../picture.types';
       <section class="flex flex-col gap-2">
         <h3 class="text-large m-0">Art direction</h3>
         <p class="text-small m-0 opacity-60">
-          Two sources, chosen by media query — a different crop, not just a different size. Narrow the preview past
+          Two sources, chosen by media query - a different crop, not just a different size. Narrow the preview past
           700px and the image changes shape.
         </p>
 
@@ -30,7 +30,7 @@ import { PictureSource } from '../picture.types';
       <section class="flex flex-col gap-2">
         <h3 class="text-large m-0">Placeholder while loading</h3>
         <p class="text-small m-0 opacity-60">
-          A skeleton fills the reserved box until the image reports back — the realistic case being a URL that arrives
+          A skeleton fills the reserved box until the image reports back - the realistic case being a URL that arrives
           from an API. The image keeps loading behind the slot, which is overlaid rather than swapped in.
         </p>
 
@@ -84,7 +84,7 @@ export class PictureStorybookComponent {
     { srcset: TALL },
   ];
 
-  /** Valid enough to be a data URI, not valid enough to decode — a deterministic `error` event. */
+  /** Valid enough to be a data URI, not valid enough to decode - a deterministic `error` event. */
   protected readonly BROKEN_SRC = 'data:image/png;base64,this-is-not-an-image';
 
   protected lateSource = signal<string | null>(null);
@@ -97,10 +97,10 @@ export class PictureStorybookComponent {
 }
 
 // Below the component on purpose: an interpolated template literal above an inline `template:` breaks Angular
-// language service completions inside it — see the `ethlete/no-template-literal-before-inline-template` rule.
+// language service completions inside it - see the `ethlete/no-template-literal-before-inline-template` rule.
 //
 // Inline SVG data URIs rather than remote images, so the story renders identically offline, in CI and in a
-// snapshot — a placeholder service would make all three a network gamble.
+// snapshot - a placeholder service would make all three a network gamble.
 const svg = (config: { width: number; height: number; label: string; fill: string }) =>
   'data:image/svg+xml;utf8,' +
   encodeURIComponent(

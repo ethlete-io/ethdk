@@ -37,7 +37,7 @@ import { TagInputDirective, TagInputFieldDirective } from './headless';
   ],
   host: {
     class: 'et-tag-input',
-    // chip remove buttons stop propagation — any other click focuses the text field
+    // chip remove buttons stop propagation - any other click focuses the text field
     '(click)': 'tagInput.activate()',
   },
 })

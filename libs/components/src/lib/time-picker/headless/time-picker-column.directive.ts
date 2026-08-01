@@ -6,8 +6,8 @@ import { TimePickerColumn, TimePickerDirective } from './time-picker.directive';
 
 /**
  * One unit column (a vertical listbox): routes the keyboard model to the
- * picker — arrows move the selection (selection follows focus, wrapping),
- * typed characters jump to the matching option — and tracks whether focus is
+ * picker - arrows move the selection (selection follows focus, wrapping),
+ * typed characters jump to the matching option - and tracks whether focus is
  * inside (options only pull DOM focus along while the user is actually
  * keyboard-navigating the column).
  */
@@ -97,7 +97,7 @@ export class TimePickerColumnDirective {
 
     // the focused option can be removed mid-interaction (an off-step selection
     // leaving the list) with focus falling to body before the roving target pulls
-    // it back — settle the tick first, then decide based on where focus ended up
+    // it back - settle the tick first, then decide based on where focus ended up
     queueMicrotask(() => {
       const element = this.elementRef.nativeElement;
       const active = element.ownerDocument.activeElement;
@@ -110,7 +110,7 @@ export class TimePickerColumnDirective {
   }
 
   /**
-   * @internal Centers an option in the column's scrollport — instantly on the
+   * @internal Centers an option in the column's scrollport - instantly on the
    * first (mount) call, smoothly afterwards. Deliberately not `scrollIntoView`,
    * which would also scroll ancestors (the page, an overlay pane).
    */

@@ -32,7 +32,7 @@ export type NotificationManager = {
    */
   open: (config: NotificationConfig) => NotificationRef;
 
-  /** Opens a `loading` notification that follows a promise, observable or query — see {@link NotificationPromiseFn}. */
+  /** Opens a `loading` notification that follows a promise, observable or query - see {@link NotificationPromiseFn}. */
   promise: NotificationPromiseFn;
 
   dismissAll: () => void;
@@ -120,7 +120,7 @@ const NOTIFICATION_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
         }
 
         // That id is already leaving. Drop it now rather than let it animate out beside its
-        // replacement — the stack tracks items by id, so two of them may not coexist.
+        // replacement - the stack tracks items by id, so two of them may not coexist.
         sameId.markDismissed();
         notifications.update((n) => n.filter((r) => r !== sameId));
       }

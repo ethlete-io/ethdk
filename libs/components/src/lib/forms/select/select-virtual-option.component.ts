@@ -5,7 +5,7 @@ import { SelectDirective, SelectOptionTemplateContext, SelectVirtualOptionDirect
 
 /**
  * One windowed row of a data-driven (`options` input) select. Looks and behaves exactly
- * like `et-select-option`, but renders a select-owned item instead of registering its own —
+ * like `et-select-option`, but renders a select-owned item instead of registering its own -
  * `et-select` creates these for `virtualizedItems()`.
  */
 @Component({
@@ -25,7 +25,7 @@ import { SelectDirective, SelectOptionTemplateContext, SelectVirtualOptionDirect
   `,
   // shares the option stylesheet on purpose: in pure data-driven mode no et-select-option
   // instance may exist, and Angular only keeps a component's styles loaded while an
-  // instance of that component lives — the class alone would not bring the CSS with it
+  // instance of that component lives - the class alone would not bring the CSS with it
   styleUrl: './select-option.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [IconDirective, NgTemplateOutlet],

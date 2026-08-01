@@ -213,7 +213,7 @@ export class QueryDevtoolsJsonComponent {
   }
 
   /**
-   * Containers copy their whole subtree as JSON; leaves copy something pasteable — a raw string
+   * Containers copy their whole subtree as JSON; leaves copy something pasteable - a raw string
    * without the display quotes, so an id or url can go straight into a search box.
    */
   protected copyValue() {

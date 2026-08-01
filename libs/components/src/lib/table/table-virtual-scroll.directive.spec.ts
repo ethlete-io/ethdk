@@ -39,7 +39,7 @@ class HostComponent {
   public readonly data = MANY;
 }
 
-// jsdom has no layout — back the geometry the virtual window reads with plain values. The feature is
+// jsdom has no layout - back the geometry the virtual window reads with plain values. The feature is
 // a directive on the table, so its window is built during the fixture's first render: the stub has to
 // be in place before that, which means stubbing the prototype rather than the rendered element.
 const VIEWPORT_HEIGHT = 240;

@@ -37,7 +37,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   private toolsConfig = injectRichTextEditorTools();
   private injectedLabels = injectRichTextEditorLabels();
 
-  /** Opt-in tools, for their content normalizers — see {@link RichTextEditorToolDefinition.normalize}. */
+  /** Opt-in tools, for their content normalizers - see {@link RichTextEditorToolDefinition.normalize}. */
   private registeredTools = inject(RICH_TEXT_EDITOR_TOOL, { optional: true });
 
   /** @internal */
@@ -72,7 +72,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
   /**
    * Snapshot undo/redo over the Markdown value. The native `contenteditable` stack is deliberately
-   * never used — see {@link createRichTextEditorHistory}.
+   * never used - see {@link createRichTextEditorHistory}.
    */
   private history = createRichTextEditorHistory();
 
@@ -81,7 +81,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
   /**
    * The strings in effect here: the injected label set with this instance's `labels` applied. Every part
-   * of the editor reads it through this — the toolbars, the link editor and the opt-in tools all reach
+   * of the editor reads it through this - the toolbars, the link editor and the opt-in tools all reach
    * the editor already.
    */
   public resolvedLabels = computed<RichTextEditorLabels>(() => ({ ...this.injectedLabels(), ...this.labels() }));
@@ -100,7 +100,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
    *  can currently be edited at all. */
   public canUndo = computed(() => this.canEdit() && this.history.canUndo());
 
-  /** Whether {@link redo} would do anything — see {@link canUndo}. */
+  /** Whether {@link redo} would do anything - see {@link canUndo}. */
   public canRedo = computed(() => this.canEdit() && this.history.canRedo());
 
   public describedBy = signal<string | null>(null);
@@ -126,7 +126,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   public headingLevel = signal<number | null>(null);
 
   /** Whether the selection sits inside a table cell. Block tools (heading menu, lists) disable
-   *  themselves on it — a GFM table cell can only hold single-line inline content, so block
+   *  themselves on it - a GFM table cell can only hold single-line inline content, so block
    *  markup inside one would not survive serialization. */
   public inTableCell = signal(false);
 
@@ -148,7 +148,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
    *  code block (both serialize as lines of text). */
   public listToolDisabled = computed(() => this.inTableCell() || this.blockquoteActive() || this.codeBlockActive());
 
-  /** The quote tool applies to plain blocks — and to an existing quote, to lift it back out. */
+  /** The quote tool applies to plain blocks - and to an existing quote, to lift it back out. */
   public blockquoteToolDisabled = computed(() => this.inTableCell() || this.codeBlockActive() || this.inList());
 
   /** Same rule as the quote tool: a fence can neither hold another block nor live inside one. */
@@ -167,7 +167,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
    */
   public autoformatReservedChars = signal<readonly string[]>([]);
 
-  /** @internal `true` while a token-trigger popup run is active — suspends all autoformat. */
+  /** @internal `true` while a token-trigger popup run is active - suspends all autoformat. */
   public autoformatSuppressed = signal(false);
 
   /**
@@ -209,7 +209,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   }
 
   /**
-   * Reads the DOM back into `value` and refreshes the toolbar state — the single point every edit
+   * Reads the DOM back into `value` and refreshes the toolbar state - the single point every edit
    * funnels through, which is also where the undo entry is recorded.
    *
    * @param opts.boundary Commit as its own history entry instead of extending the running typing
@@ -222,7 +222,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     if (!root) return;
 
     // A native edit can leave the wrapper of a code block or quote behind after its content was
-    // deleted whole — only the browser produces those, so this only runs on the native input path.
+    // deleted whole - only the browser produces those, so this only runs on the native input path.
     if (!opts?.boundary) {
       this.editorDom.repairCodeBlock();
       this.editorDom.repairEmptyQuotes();
@@ -231,7 +231,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     const markdown = htmlToMarkdown(this.serializeCleanHtml(root));
 
     // Value-neutral structure a tool needs back (image blocks are atoms, and cannot end the
-    // document) — applied after reading, so it can never change what was read.
+    // document) - applied after reading, so it can never change what was read.
     this.normalizeContent(root);
 
     this.lastEmittedMarkdown = markdown;
@@ -270,8 +270,8 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   }
 
   /**
-   * @internal Renders a value the editor did not produce itself — a programmatic `value` write, a
-   * form reset, the multi-language switcher moving to another language — into the editable, and
+   * @internal Renders a value the editor did not produce itself - a programmatic `value` write, a
+   * form reset, the multi-language switcher moving to another language - into the editable, and
    * restarts the history from it: an outside write is a new document, so undo must not reach back
    * into the previous one's states.
    */
@@ -391,7 +391,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   }
 
   /** Turns the selected blocks into a fenced code block, or a code block back into paragraphs. Only
-   *  the text survives either way — a fence is literal, so it carries no inline markup. */
+   *  the text survives either way - a fence is literal, so it carries no inline markup. */
   public toggleCodeBlock() {
     this.runCommand(() => this.editorDom.toggleCodeBlock());
   }
@@ -406,7 +406,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     if (level === current) return;
 
     // `toggleHeading` re-levels a heading to any other level, and turns a heading back into a
-    // paragraph only when handed its own level — which is exactly the "make it normal" case.
+    // paragraph only when handed its own level - which is exactly the "make it normal" case.
     const tagLevel = level ?? current;
 
     if (tagLevel === null) return;
@@ -497,7 +497,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   }
 
   /**
-   * Inserts plain clipboard text, recognizing tokens written the way they read — `#User Name` — and
+   * Inserts plain clipboard text, recognizing tokens written the way they read - `#User Name` - and
    * turning them back into chips. Everything else stays literal (Markdown in plain text is never
    * interpreted), and with nothing to recognize this returns `false` so the browser inserts the
    * text itself, exactly as before.
@@ -533,12 +533,12 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
   }
 
   /**
-   * Inserts a `{{type:id}}` token chip at the caret — the same result as picking it from the `#`/`@`
-   * trigger popup — resolving its label via the matching trigger's `resolveItem`. Lets a consumer
+   * Inserts a `{{type:id}}` token chip at the caret - the same result as picking it from the `#`/`@`
+   * trigger popup - resolving its label via the matching trigger's `resolveItem`. Lets a consumer
    * wire a click-to-insert palette (their own placeholder/merge-field buttons) in a single call,
    * reusing the editor's codec and label resolution instead of appending token markdown to the value.
    *
-   * Inserts at the current caret, or — if the editor isn't focused — at the position it last held,
+   * Inserts at the current caret, or - if the editor isn't focused - at the position it last held,
    * falling back to the end of the content. The caret is left after the chip. A token codec must be
    * installed (by `[etRichTextEditorTriggers]` or `provideRichTextEditorTokenRendering`); without one
    * token markdown can't round-trip, so this throws in dev and no-ops in production.
@@ -558,7 +558,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
   /**
    * Like {@link insertToken}, but for when the app already holds the resolved `{ id, label }` item
-   * (e.g. the row a palette button represents) — the label is used as-is, skipping resolution. The
+   * (e.g. the row a palette button represents) - the label is used as-is, skipping resolution. The
    * trigger-char prefix still comes from the installed codec, so the chip matches the popup's.
    *
    * @param opts.focus Focus the editor after inserting so the user can keep typing. @default true
@@ -602,7 +602,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     if (!root || !this.editorDom.ensureCaret()) return;
 
     this.editorDom.insertToken(buildChipElement(this.renderer, chip));
-    // Trailing no-break space so the caret escapes the chip and the next word doesn't hug it — same
+    // Trailing no-break space so the caret escapes the chip and the next word doesn't hug it - same
     // treatment as the trigger popup (a plain trailing space is CSS-collapsed and dropped by Chrome;
     // serialization normalizes the nbsp back to a plain space).
     this.editorDom.insertToken(this.renderer.createText(' '));
@@ -611,7 +611,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
 
     this.syncFromDom({ boundary: true });
 
-    // Focus last so the caret placed after the nbsp stays live. Skip when already focused —
+    // Focus last so the caret placed after the nbsp stays live. Skip when already focused -
     // re-focusing a contenteditable that holds the caret collapses the selection to its start.
     if ((focus ?? true) && root.ownerDocument.activeElement !== root) root.focus();
   }
@@ -657,7 +657,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     // a tap on the (docked) toolbar can move focus off the editor on touch; restore the selection
     this.editorDom.restoreSelection();
 
-    // inside a fenced code block every mark would be literal text — read it off the DOM rather
+    // inside a fenced code block every mark would be literal text - read it off the DOM rather
     // than the signal, so a keyboard shortcut fired before the next selectionchange is covered too
     if (this.editorDom.markStates()?.codeBlock) return;
 
@@ -677,7 +677,7 @@ export class RichTextEditorDirective implements FormValueControl<string>, FormFi
     this.reflectMarks(next);
   }
 
-  /** The block context the caret sits in — read the same way whether or not stored marks are
+  /** The block context the caret sits in - read the same way whether or not stored marks are
    *  pending, since a pending mark only ever changes the inline state. */
   private reflectBlockStates(states: RichTextMarkStates | null) {
     this.blockquoteActive.set(states?.blockquote ?? false);

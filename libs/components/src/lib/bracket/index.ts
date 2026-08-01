@@ -1,4 +1,4 @@
-// TODO(bracket): curate the public surface once the default cards are built — `./core` and
+// TODO(bracket): curate the public surface once the default cards are built - `./core` and
 // `./linked` currently re-export internal engine builders (createBracket, relations, base
 // map/round/match builders) alongside the public data types. Narrow to the types consumers
 // actually need (data source, round/match/participant, swiss group, enums) at that point.

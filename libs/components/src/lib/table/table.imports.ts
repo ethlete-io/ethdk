@@ -24,7 +24,7 @@ import { TableComponent } from './table.component';
 /**
  * The base table: typed rows and cells, the `etTableCell` / `etTableHeaderCell` /
  * `etTableFooterCell` templates, sort headers, sticky columns, the empty state and the footer slot.
- * Deliberately lean — each optional feature ships its own imports array (e.g.
+ * Deliberately lean - each optional feature ships its own imports array (e.g.
  * {@link TABLE_FILTER_IMPORTS}), so what you don't import stays out of your bundle.
  */
 export const TABLE_IMPORTS = [
@@ -44,20 +44,20 @@ export const TABLE_FILTER_IMPORTS = [TableFiltersDirective, TableFilterOptionDir
 
 /**
  * A `⋮` menu of per-column actions in every header cell (`etTableColumnMenu`): sort ascending /
- * descending / clear, reset a resized width, hide the column. Pulls in the menu system — which it
+ * descending / clear, reset a resized width, hide the column. Pulls in the menu system - which it
  * shares with {@link TABLE_FILTER_IMPORTS} when both are used.
  */
 export const TABLE_COLUMN_MENU_IMPORTS = [TableColumnMenuDirective] as const;
 
 /**
  * A "columns" button + menu for toggling column visibility (`<et-table-column-chooser [table]="…" />`),
- * placed wherever you like. Deliberately separate from the per-column menu — see the component's own
+ * placed wherever you like. Deliberately separate from the per-column menu - see the component's own
  * docs for why a visibility list must not hang off a header control. Pulls in the menu system.
  */
 export const TABLE_COLUMN_CHOOSER_IMPORTS = [TableColumnChooserComponent] as const;
 
 /**
- * Download the table as CSV from a button of your own (`etTableCsvExport`). No extra dependency — the
+ * Download the table as CSV from a button of your own (`etTableCsvExport`). No extra dependency - the
  * serializer is a pure function you can also call directly ({@link exportTableToCsv}).
  */
 export const TABLE_CSV_EXPORT_IMPORTS = [TableCsvExportDirective] as const;
@@ -70,7 +70,7 @@ export const TABLE_KEYBOARD_NAV_IMPORTS = [TableKeyboardNavDirective] as const;
 
 /**
  * Inline cell editing (`etTableInlineEdit`), plus the `etTableCellEdit` template that supplies a
- * column's editor. No extra dependency of its own — the editor is whichever control you put in the
+ * column's editor. No extra dependency of its own - the editor is whichever control you put in the
  * template. Pair it with {@link TABLE_KEYBOARD_NAV_IMPORTS} for the `Enter`-to-edit flow.
  */
 export const TABLE_INLINE_EDIT_IMPORTS = [TableInlineEditDirective, TableCellEditDirective] as const;
@@ -92,7 +92,7 @@ export const TABLE_CELL_ERROR_TOOLTIP_IMPORTS = [TableCellErrorTooltipDirective]
 
 /**
  * Persist a table's setup to `localStorage` / `sessionStorage` (`etTableStatePersistence`): column
- * order, visibility, widths, sort, filters, expanded rows and any feature slices. No extra dependency —
+ * order, visibility, widths, sort, filters, expanded rows and any feature slices. No extra dependency -
  * separate because storing state is a side effect not every table wants.
  */
 export const TABLE_STATE_PERSISTENCE_IMPORTS = [TableStatePersistenceDirective] as const;

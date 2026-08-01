@@ -19,7 +19,7 @@ export type CurrencyMaskOptions = {
  * A right-growing grouped number mask for locale-formatted amounts.
  *
  * The raw value is the ungrouped amount using the configured `decimalSeparator`
- * (e.g. `'1234,56'` with the defaults) — parse it with
+ * (e.g. `'1234,56'` with the defaults) - parse it with
  * `Number(raw.replace(decimalSeparator, '.'))`.
  */
 export const createCurrencyMask = (options: CurrencyMaskOptions = {}): MaskSpec => {

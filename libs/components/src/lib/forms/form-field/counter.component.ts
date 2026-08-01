@@ -28,7 +28,7 @@ const ANNOUNCE_FROM_FRACTION = 0.9;
 /**
  * The `x / N` character counter in a form field's support region.
  *
- * It sits at the inline-end of the support row and is **persistent** — unlike the hint, it does not
+ * It sits at the inline-end of the support row and is **persistent** - unlike the hint, it does not
  * swap out when an error appears, because a reader who just crossed the limit needs to see both the
  * error and the count that caused it.
  *
@@ -39,7 +39,7 @@ const ANNOUNCE_FROM_FRACTION = 0.9;
 @Component({
   selector: 'et-counter',
   // The visible count is hidden from assistive tech and mirrored by a live region that stays empty
-  // except at the thresholds that carry information — announcing every keystroke would make typing
+  // except at the thresholds that carry information - announcing every keystroke would make typing
   // unusable with a screen reader.
   template: `
     <span aria-hidden="true">{{ current() }}{{ limitSuffix() }}</span>
@@ -58,7 +58,7 @@ export class CounterComponent implements CounterComponentBase {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
 
   /**
-   * The limit to count towards. Wins over the schema's `maxLength()` — use it for a control whose
+   * The limit to count towards. Wins over the schema's `maxLength()` - use it for a control whose
    * length isn't schema-validated, or to count towards a softer limit than the one that validates.
    */
   public max = input<number | undefined>(undefined);

@@ -46,7 +46,7 @@ export const Mixed: Story = {
     value: ['cheese', 'mushrooms'],
     mixed: true,
     showMixedState: true,
-    hint: 'Bulk edit over records that disagree — no box reads as checked; the first pick replaces the hidden raw array with a fresh one.',
+    hint: 'Bulk edit over records that disagree - no box reads as checked; the first pick replaces the hidden raw array with a fresh one.',
   },
 };
 
@@ -59,7 +59,7 @@ export const GroupControl: Story = {
     docs: {
       description: {
         story:
-          '`<et-checkbox-group-select-all>` is the prebuilt select-all row — the tri-state logic of the ' +
+          '`<et-checkbox-group-select-all>` is the prebuilt select-all row - the tri-state logic of the ' +
           'headless `etSelectionListControl` plus the markup and the mixed mark. It is a real ' +
           '`role="checkbox"` with `aria-checked="mixed"`, not an option: a listbox option has no mixed ' +
           'state, and "some of these are on" is exactly what this control has to be able to say.',
@@ -75,7 +75,7 @@ export const Horizontal: Story = {
       description: {
         story:
           '`orientation="horizontal"` flows the options in a wrapping row. The group’s label and its ' +
-          'error/hint block keep their own lines above and below — only the options move, and an option is ' +
+          'error/hint block keep their own lines above and below - only the options move, and an option is ' +
           'still a direct child of the group, so nothing about the projected DOM changes. Vertical stays the ' +
           'default: it scans better and gives each option a full-width hit area. All four arrow keys move ' +
           'between options either way.',

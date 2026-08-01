@@ -80,7 +80,7 @@ export class RangeSliderComponent {
   /** The string in effect: this instance's `endLabel`, else the domain's label set. */
   protected resolvedEndLabel = computed(() => this.endLabel() ?? this.sliderLabels().maximum);
 
-  /** Labelled ticks need room next to the track — the stylesheet reserves it off this flag. */
+  /** Labelled ticks need room next to the track - the stylesheet reserves it off this flag. */
   protected hasMarkLabels = computed(() => this.slider.markStops().some((mark) => !!mark.label));
   public canAnimate = createCanAnimateSignal();
 

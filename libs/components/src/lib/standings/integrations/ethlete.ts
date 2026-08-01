@@ -9,7 +9,7 @@ import { NormalizedStandingRow, StandingsZone } from '../standings.types';
  * `score` is what the API ranks by, so it becomes `points`; the difference is derived from the game points
  * either side has taken off the other, which is the only difference a `PlacementView` can express.
  *
- * The list views carry no form history — fill `form` in afterwards if you have it elsewhere.
+ * The list views carry no form history - fill `form` in afterwards if you have it elsewhere.
  *
  * @example
  * protected rows = computed(() => this.query.response()?.placements.map(normalizeEthletePlacement) ?? []);

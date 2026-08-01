@@ -1,6 +1,6 @@
 import { IconDefinition } from './icon-provider';
 
-/** Arrows pointing apart along the inline axis — a "fit to width" action (the table's autosize). */
+/** Arrows pointing apart along the inline axis - a "fit to width" action (the table's autosize). */
 export const ARROWS_LEFT_RIGHT_ICON: IconDefinition = {
   name: 'et-arrows-left-right',
   data: `

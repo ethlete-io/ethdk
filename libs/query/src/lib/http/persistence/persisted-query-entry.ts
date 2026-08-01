@@ -4,7 +4,7 @@ import type { QueryKey } from '../query-repository';
 /**
  * Schema version of the persisted store, owned by this library. Bumping it makes the storage adapter
  * throw away everything it holds and start over, which is the correct response to a change in the
- * *record* shape — an older record could not be read by the new code.
+ * *record* shape - an older record could not be read by the new code.
  *
  * This is not the version an app bumps when its *response* shapes change; that is
  * {@link QueryPersistenceConfig.version}, kept per entry so the engine can drop foreign entries
@@ -18,7 +18,7 @@ export const QUERY_PERSISTENCE_STORE_VERSION = 1;
  * eviction order and the logout purge without reading a single body back.
  */
 export type PersistedQueryEntryMeta = {
-  /** The cache key the response belongs to — the same key every tab derives for that query. */
+  /** The cache key the response belongs to - the same key every tab derives for that query. */
   key: QueryKey;
 
   /** When the entry was written, in ms. Drives {@link QueryPersistenceConfig.maxAge} and eviction order. */
@@ -27,7 +27,7 @@ export type PersistedQueryEntryMeta = {
   /**
    * Timestamp (ms) at which the response goes stale, or `null` when it has no freshness window.
    * Stored and restored verbatim: it is a server-derived instant, so a value from a previous session
-   * is simply in the past. It never suppresses the request a hydrated entry makes — see
+   * is simply in the past. It never suppresses the request a hydrated entry makes - see
    * {@link QueryRepository.applyPersistedResponse}.
    */
   expiresAt: number | null;

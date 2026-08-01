@@ -14,7 +14,7 @@ const normalizeClassList = (value?: string | string[]) => {
 /**
  * Merges overlay configs from least to most specific (e.g. definition → opener → per-open).
  *
- * - `bindings` and `providers` are concatenated in layer order — a later binding or provider
+ * - `bindings` and `providers` are concatenated in layer order - a later binding or provider
  *   for the same input/token wins, matching Angular semantics.
  * - `hostClass`, `backdropClass` and `panelClass` are normalized to arrays, concatenated and deduped.
  * - Every other key is taken from the last layer that sets it to a value other than `undefined`

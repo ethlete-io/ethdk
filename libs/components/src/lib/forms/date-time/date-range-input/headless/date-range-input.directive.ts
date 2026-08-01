@@ -41,7 +41,7 @@ export type DateRangeValue = {
 export type DateRangeSide = 'start' | 'end';
 
 type SideState = {
-  /** Uncommitted field text — kept visible when it fails to parse. */
+  /** Uncommitted field text - kept visible when it fails to parse. */
   inputText: ReturnType<typeof signal<string>>;
   parseError: ReturnType<typeof signal<boolean>>;
   field: ReturnType<typeof signal<DateRangeInputFieldDirective | null>>;
@@ -76,7 +76,7 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
   public value = model<DateRangeValue>({ start: null, end: null });
   /**
    * View state for a field whose source values disagree (bulk edit). One flag masks
-   * the whole range value — not per side. The raw form value stays untouched.
+   * the whole range value - not per side. The raw form value stays untouched.
    */
   public mixed = model(false);
   public touched = model(false);
@@ -89,7 +89,7 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
   public startPlaceholder = input('');
   public endPlaceholder = input('');
   /**
-   * Placeholder both fields show while `mixed` is set. Presentation only — a masked
+   * Placeholder both fields show while `mixed` is set. Presentation only - a masked
    * date field cannot render arbitrary text, so the fields stay empty and the label
    * shows through the placeholder slot; it never enters the form value.
    */
@@ -108,7 +108,7 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
   public displayFormat = input<string | null>(null);
 
   /**
-   * How precise the two dates are — `'month'` makes this a month range (`07/2025 – 03/2026`), a
+   * How precise the two dates are - `'month'` makes this a month range (`07/2025 – 03/2026`), a
    * real reporting filter. Both ends are the start of their unit, and the picker calendar selects
    * and bands in the grid holding it.
    */
@@ -118,8 +118,8 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
   /**
    * Opt-in typing mask: when `displayFormat` is fixed-width numeric (`dd.MM.yyyy`),
    * both fields get guide placeholders (`__.__.____`), auto-inserted separators,
-   * and paste filtering. Formats the mask cannot represent — locale formats like
-   * the default `P`, variable-width or text tokens — are refused and typing stays
+   * and paste filtering. Formats the mask cannot represent - locale formats like
+   * the default `P`, variable-width or text tokens - are refused and typing stays
    * unmasked. Commit parsing is identical either way: the lenient blur/Enter
    * parsers stay authoritative.
    */
@@ -132,23 +132,23 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
   /** Month the picker calendar opens at while the range is empty. */
   public startAt = input<Date | null>(null);
 
-  /** Which grid the picker calendar opens on — `'year'` to pick a month first, `'multiYear'` a year. */
+  /** Which grid the picker calendar opens on - `'year'` to pick a month first, `'multiYear'` a year. */
   public startView = input<CalendarView>('month');
 
-  /** Per-cell classes for the picker calendar — busy days, holidays, markers of your own. */
+  /** Per-cell classes for the picker calendar - busy days, holidays, markers of your own. */
   public dateClass = input<CalendarDateClassFn | null>(null);
 
   /** Renders the picker calendar's week-number column. */
   public weekNumbers = input(false, { transform: booleanAttribute });
 
   /**
-   * What a pick means in the picker calendar — snap to whole weeks, take a fixed number of days.
+   * What a pick means in the picker calendar - snap to whole weeks, take a fixed number of days.
    * Unset, the usual open-then-close rule applies.
    */
   public rangeSelectionStrategy = input<CalendarRangeSelectionStrategy | null>(null);
 
   /**
-   * A period to band behind the selected range in the picker — "vs. the previous 30 days". Purely
+   * A period to band behind the selected range in the picker - "vs. the previous 30 days". Purely
    * presentational: it never enters the value and its cells stay selectable.
    */
   public comparisonStart = input<Date | null>(null);
@@ -170,7 +170,7 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
     () => this.displayFormat() ?? displayFormatForPrecision(this.precision(), this.effectiveLocale()),
   );
 
-  /** The side the focused field edits — the picker previews from here too. */
+  /** The side the focused field edits - the picker previews from here too. */
   public focusedSide = signal<DateRangeSide | null>(null);
 
   private sides: Record<DateRangeSide, SideState> = {
@@ -219,7 +219,7 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
 
-  /** The `[etInputMask]` pattern derived from the format in effect — `null` while `mask` is off or the format is refused. */
+  /** The `[etInputMask]` pattern derived from the format in effect - `null` while `mask` is off or the format is refused. */
   public maskPattern = computed(() =>
     this.mask() ? maskPatternFromDisplayFormat(this.effectiveDisplayFormat()) : null,
   );
@@ -231,7 +231,7 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
     anchor: () => this.resolveAnchorElement(),
     context: () => ({ $implicit: this, close: () => this.closePicker() }),
     onAfterClosed: ({ byOutsidePointer, fromBottomSheet }) => {
-      // focus fell to <body> with the pane's removal — hand it back to the fields,
+      // focus fell to <body> with the pane's removal - hand it back to the fields,
       // except for outside closes (the user deliberately went elsewhere) and
       // bottom-sheet closes (refocusing would pop the soft keyboard)
       if (!byOutsidePointer && !fromBottomSheet && this.document.activeElement === this.document.body) {
@@ -249,7 +249,7 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
       effect(() => {
         if (this.mask() && this.maskPattern() === null) {
           console.warn(
-            `[et-${this.controlType()}] displayFormat "${this.effectiveDisplayFormat()}" is not fixed-width numeric, so no typing mask can be derived — the mask input is ignored.`,
+            `[et-${this.controlType()}] displayFormat "${this.effectiveDisplayFormat()}" is not fixed-width numeric, so no typing mask can be derived - the mask input is ignored.`,
           );
         }
       });
@@ -280,7 +280,7 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
       return;
     }
 
-    // the first empty side, else start — mirrors where the next interaction lands.
+    // the first empty side, else start - mirrors where the next interaction lands.
     // While mixed both fields read as empty, so a fresh entry starts at the start side
     const target = this.mixed() || this.value().start === null || this.value().end !== null ? 'start' : 'end';
 
@@ -324,7 +324,7 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
       state.inputText.set('');
       state.parseError.set(false);
 
-      // while mixed the fields are empty anyway — a blank commit is a plain blur, not a
+      // while mixed the fields are empty anyway - a blank commit is a plain blur, not a
       // user clear, so the hidden raw range survives
       if (!this.mixed()) {
         this.writeSide(side, null);
@@ -334,7 +334,7 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
     }
 
     // reference midnight so a date-only `displayFormat` doesn't fold the current wall-clock
-    // time into a time-bearing `valueFormat` — see the note in date-input's `commitInput`.
+    // time into a time-bearing `valueFormat` - see the note in date-input's `commitInput`.
     const parsed = parseDateValue(raw, {
       format: this.effectiveDisplayFormat(),
       locale: this.effectiveLocale(),
@@ -356,13 +356,13 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
     state.inputText.set('');
     state.parseError.set(false);
 
-    // the unit start, so a typed month and a picked month are one value — see date-input's `writeDate`
+    // the unit start, so a typed month and a picked month are one value - see date-input's `writeDate`
     const formatted = formatDateValue(startOfCalendarUnit(parsed, this.precision()), {
       format: this.effectiveValueFormat(),
       locale: this.effectiveLocale(),
     });
 
-    // replace semantics: the first resolving commit starts a fresh range — the hidden
+    // replace semantics: the first resolving commit starts a fresh range - the hidden
     // other side must not leak into the new value
     if (this.mixed()) {
       this.value.set({ start: null, end: null, [side]: formatted });
@@ -392,7 +392,7 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
 
     this.value.set({ start: write(range.start), end: write(range.end) });
     // the calendar showed no selection while mixed, so this is the normal range-building
-    // flow starting fresh — the first pick already replaces the whole hidden range
+    // flow starting fresh - the first pick already replaces the whole hidden range
     this.mixed.set(false);
 
     if (range.start !== null && range.end !== null) {
@@ -401,7 +401,7 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
     }
   }
 
-  /** Clears both sides and any uncommitted field text — wired to the styled input's clear button. */
+  /** Clears both sides and any uncommitted field text - wired to the styled input's clear button. */
   public clearRange() {
     if (!this.interactive()) {
       return;
@@ -449,7 +449,7 @@ export class DateRangeInputDirective implements FormValueControl<DateRangeValue>
     }
   }
 
-  // inside a form field the visible box is the control frame — anchor the panel there
+  // inside a form field the visible box is the control frame - anchor the panel there
   private resolveAnchorElement() {
     return (
       this.formField?.controlFrameElement() ??

@@ -1,7 +1,7 @@
 import { isAfter, isBefore } from 'date-fns';
 import { CALENDAR_UNIT_IS_SAME, CalendarPrecision, startOfCalendarUnit } from './calendar-view';
 
-/** How one cell relates to the selection — what the cell directive mirrors as `data-*`. */
+/** How one cell relates to the selection - what the cell directive mirrors as `data-*`. */
 export type CalendarSelectionFlags = {
   selected: boolean;
   rangeStart: boolean;
@@ -12,12 +12,12 @@ export type CalendarSelectionFlags = {
   inHoverPreview: boolean;
   /** Presentational position inside the committed or previewed range band. */
   band: CalendarBandPosition;
-  /** The same, for the comparison range — the period the selection is being measured against. */
+  /** The same, for the comparison range - the period the selection is being measured against. */
   comparisonBand: CalendarBandPosition;
 };
 
 /**
- * Where a cell sits in a band. `'single'` is a band one cell wide — both its ends at once, which a
+ * Where a cell sits in a band. `'single'` is a band one cell wide - both its ends at once, which a
  * one-day comparison period is. The selection band never reports it: a range whose ends are the same
  * cell is drawn as a plain selected cell instead.
  */
@@ -32,7 +32,7 @@ export type CalendarSelectionState = {
   rangeStart: Date | null;
   rangeEnd: Date | null;
   /**
-   * The range to band while nothing is committed yet — already resolved by whichever selection
+   * The range to band while nothing is committed yet - already resolved by whichever selection
    * strategy is in play, since what a hover should promise is that strategy's business.
    */
   previewStart: Date | null;
@@ -50,7 +50,7 @@ export type CalendarSelectionState = {
  * Everything it compares happens **at the grid's own unit**, which is what lets one implementation
  * serve all three views: a month cell is the range's start because the range starts somewhere in
  * that month, not because it starts on its 1st. That is also what a month- or year-precision range
- * needs to look right — `07/2025 – 03/2026` bands nine month cells the same way a day range bands
+ * needs to look right - `07/2025 – 03/2026` bands nine month cells the same way a day range bands
  * days.
  *
  * The band bounds are worked out once for the grid rather than per cell, since they are the same

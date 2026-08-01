@@ -6,10 +6,10 @@ import { SelectListboxDirective, SelectViewportDirective } from './headless';
 @Component({
   selector: 'et-select-panel',
   // the listbox is an inner element, not the panel host: a listbox may only contain options/groups,
-  // but the loading/empty/error rows and the load-more/add-new buttons must live in the panel too —
+  // but the loading/empty/error rows and the load-more/add-new buttons must live in the panel too -
   // they render in the extras slot, as siblings of the listbox, keeping the listbox ARIA-clean.
   // the scroller is an inner element, not the panel host: the host paints the chrome
-  // (background/border/radius) and must not scroll itself — macOS rubber-band overscroll drags
+  // (background/border/radius) and must not scroll itself - macOS rubber-band overscroll drags
   // a scroller's own background along with the content, revealing the page behind the panel
   template: `
     <div class="et-select-panel-scroller" etSelectViewport>
@@ -35,7 +35,7 @@ export class SelectPanelComponent {
   private panelBody = viewChild<ElementRef<HTMLElement>>('panelBody');
 
   constructor() {
-    // this panel IS the overlay's own surface — paint the overlay's registered elevation exactly,
+    // this panel IS the overlay's own surface - paint the overlay's registered elevation exactly,
     // don't stack a level above it (the tracker is authoritative; content inside elevates off it)
     inject(AutoSurfaceDirective).matchOverlaySurface();
 

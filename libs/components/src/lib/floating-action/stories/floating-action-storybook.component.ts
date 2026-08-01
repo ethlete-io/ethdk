@@ -10,7 +10,7 @@ import { FLOATING_ACTION_IMPORTS } from '../floating-action.imports';
     <div [etProvideSurface]="surface()" class="text-medium font-sans">
       <div #floatingAction="etFloatingAction" [disabled]="disabled()" class="flex flex-col gap-6 p-8" etFloatingAction>
         <p class="text-small opacity-60">
-          State: <strong>{{ floatingAction.state() }}</strong> — scroll down and the Filter button pins itself to the
+          State: <strong>{{ floatingAction.state() }}</strong> - scroll down and the Filter button pins itself to the
           corner; scroll past the results and it goes away again.
         </p>
 
@@ -55,7 +55,7 @@ export class FloatingActionStorybookComponent {
   protected readonly INTRO = Array.from({ length: 4 }, () => LOREM);
 
   /**
-   * Long enough that the results list can scroll *fully* past the viewport — otherwise the `hidden` state is
+   * Long enough that the results list can scroll *fully* past the viewport - otherwise the `hidden` state is
    * unreachable and the story silently only demonstrates two of the three.
    */
   protected readonly OUTRO = Array.from({ length: 14 }, () => LOREM);

@@ -1,11 +1,11 @@
-# Components lib research — feature gaps & opportunities (2026-07-30)
+# Components lib research - feature gaps & opportunities (2026-07-30)
 
 Five parallel source-verified audits of `libs/components` (+ `libs/core` primitives):
 forms controls, overlay/popup domains, data display, cross-cutting concerns
 (RTL/i18n/a11y/SSR/sizing/errors/API hygiene), and a touch/gesture deep-dive.
 
 Complements `plans/opportunities.md` (2026-07-23 pass: new-component candidates,
-platform decisions) — this pass covers gaps **inside** existing components.
+platform decisions) - this pass covers gaps **inside** existing components.
 Nothing here overlaps `plans/cdk-port/` (08–10 + 90 in progress elsewhere).
 
 Items judged worth doing have plan files in this folder (see README). This doc
@@ -22,13 +22,13 @@ is the full evidence record, including items deliberately **not** planned.
   yet still demands a leftward swipe.
 - **Notification stack uses physical CSS under logical names.**
   `notification-stack.component.css` implements `data-position='bottom-start'/'bottom-end'`
-  with literal `left`/`right` instead of `inset-inline-*` — doesn't flip in RTL.
+  with literal `left`/`right` instead of `inset-inline-*` - doesn't flip in RTL.
 - **Reduced-motion gating is inconsistent across identical utilities.**
   `createFlipAnimation(Group)` (core `flip-animation.ts`) has no internal check;
   gated by callers in `grid.directive.ts:173`, carousel, dropzone,
-  date-time-panes — but **not** in `tabs/headless/tab-bar-underline.directive.ts`,
+  date-time-panes - but **not** in `tabs/headless/tab-bar-underline.directive.ts`,
   `segmented-button.component.ts`, nor any PiP animation
-  (`pip-animation.ts` — 7 raw `.animate()` calls, `stream-manager.ts`,
+  (`pip-animation.ts` - 7 raw `.animate()` calls, `stream-manager.ts`,
   `pip-chrome-animations.ts`). Note: `fullscreen-animation.ts`'s
   `shouldUseReducedAnimation` is a false friend (geometry fallback, not a11y).
 - **Error-code hygiene**: docs master range table omits the Masonry row
@@ -39,7 +39,7 @@ is the full evidence record, including items deliberately **not** planned.
   `document` (only real crash risk; already scheduled for removal);
   `core/scrolling/scrollable.ts` + `animations/animation-utils.ts` use bare
   globals inconsistently with the `DOCUMENT`-injection convention next door.
-- **Loaders animate under reduced motion with no documented exemption** —
+- **Loaders animate under reduced motion with no documented exemption** -
   likely a legitimate WCAG "essential feedback" exemption, but undocumented
   (contrast `skeleton.component.ts:40`, which documents its behavior).
 
@@ -49,10 +49,10 @@ Current drag-to-dismiss mechanics (`overlay/strategies/overlay-drag-to-dismiss.t
 `core/utils/swipe.ts`):
 
 - Velocity **is** tracked but as a whole-gesture average
-  (`swipe.ts:78-97`: `movement / (Date.now() - startTime)`) — a slow drag ending
+  (`swipe.ts:78-97`: `movement / (Date.now() - startTime)`) - a slow drag ending
   in a fast flick under-reports. Needs a trailing-window (~100 ms) sample.
 - Dismiss decision is distance **or** velocity (defaults 150 px / 150 px/s,
-  `overlay-strategy.types.ts:95-105`) — flick-to-dismiss works.
+  `overlay-strategy.types.ts:95-105`) - flick-to-dismiss works.
 - **No momentum carry-over**: on dismiss the handler just calls
   `overlayRef.closeVia('drag')`; the exit is a CSS class transition
   (`overlay-container.component.css:401-417`) at fixed
@@ -61,12 +61,12 @@ Current drag-to-dismiss mechanics (`overlay/strategies/overlay-drag-to-dismiss.t
   regardless of gesture speed. Snap-back likewise fixed
   `100ms var(--ease-out-1)` whether released 2 px or 149 px below threshold.
   **No channel exists to pass velocity from the drag handler into
-  `lifecycle.leave()` / `OverlayStrategyContext`** — plumbing must be added.
+  `lifecycle.leave()` / `OverlayStrategyContext`** - plumbing must be added.
 - Drag-to-dismiss is the **only** gesture surface still on legacy
   touch/mouse events; everything else (core `drag-gesture.ts`, slider,
   carousel, scrollable-snap) is unified on Pointer Events with
   `setPointerCapture` and an 8 px commit threshold. Drag-to-dismiss has **no
-  commit threshold** on touch — first `touchmove` immediately `preventDefault()`s.
+  commit threshold** on touch - first `touchmove` immediately `preventDefault()`s.
 - **No `touch-action` on the sheet container** (relies on non-passive
   `preventDefault`); no `overscroll-behavior` on `.et-overlay-body` /
   `scrollable` (menu/select/cascader/RTE-popup already set `contain`);
@@ -75,12 +75,12 @@ Current drag-to-dismiss mechanics (`overlay/strategies/overlay-drag-to-dismiss.t
 - `touch-action` coverage elsewhere is good (drag-handle/grid/resize `none`;
   slider/rating `pan-y`; buttons/calendar/date-inputs `manipulation`).
 - Touch-target shortfalls: slider thumb 18 px (28 px row), rating icons 24 px,
-  checkbox/radio 20 px boxes, `xs`/`sm` buttons — all under 44 px.
-- Related overlay gap: **no sheet snap points** — interpolator only knows
+  checkbox/radio 20 px boxes, `xs`/`sm` buttons - all under 44 px.
+- Related overlay gap: **no sheet snap points** - interpolator only knows
   "past threshold → dismiss, else return to 0"; `OverlayDragToDismissConfig`
   has no `snapPoints` field.
 - Tooltip is hover-only (`tooltip.directive.ts:188-222`) with no
-  touch/pointerType handling — can stick open or never show on touch.
+  touch/pointerType handling - can stick open or never show on touch.
 - `useCursorDragScroll` is mouse-only (acceptable fallback, inconsistent).
 - Passive-listener hygiene is otherwise correct throughout (only intentional
   non-passive: the drag-to-dismiss `touchmove`).
@@ -89,14 +89,14 @@ Current drag-to-dismiss mechanics (`overlay/strategies/overlay-drag-to-dismiss.t
 
 Four parallel, unconnected string/locale mechanisms:
 
-1. `injectLocale()`/`provideLocale()` — plain `signal('en')` in core; consumed
+1. `injectLocale()`/`provideLocale()` - plain `signal('en')` in core; consumed
    reactively by stream consent/error/PiP, grid, phone-input.
-2. `DATE_LOCALE` (date-fns `Locale` object) — static, feeds calendar month/
+2. `DATE_LOCALE` (date-fns `Locale` object) - static, feeds calendar month/
    weekday names; **not** connected to `injectLocale()`.
 3. Per-domain label injection tokens (`provide*Labels` for pagination, table,
-   carousel, breadcrumb, notification) — static override only.
+   carousel, breadcrumb, notification) - static override only.
 4. Ad-hoc `input()` English defaults (chip remove, calendar prev/next, select
-   clear, dropzone retry/remove/replace) — per-instance override only.
+   clear, dropzone retry/remove/replace) - per-instance override only.
 
 Plus genuinely **non-overridable** hardcoded strings: RTE toolbar/link-editor
 aria-labels (6 spots), `stream-player-loading` "Loading", PiP close/back
@@ -106,7 +106,7 @@ labels, `brand-loader` "Loading".
 
 - **RTE** (`04-rich-text-editor-essentials.md`): no undo/redo history at all
   (relies on native contenteditable undo, which desyncs because the editor
-  rewrites DOM through its Markdown pipeline on paste/autoformat — content-loss
+  rewrites DOM through its Markdown pipeline on paste/autoformat - content-loss
   risk); no image embedding (images actively stripped on paste; `tools/` has
   only align + table); no blockquote or fenced-code-block tools.
 - **Slider** (`06-slider-vertical-ticks.md`): no vertical orientation
@@ -140,10 +140,10 @@ labels, `brand-loader` "Loading".
 
 ## 5. Recorded but NOT planned (backlog; revisit on demand)
 
-- **Stream unified control bar** — biggest single stream gap (no volume level,
+- **Stream unified control bar** - biggest single stream gap (no volume level,
   playback rate, captions, fullscreen, or keyboard shortcuts in the
   `StreamPlayer` abstraction; docs explicitly punt controls to consumers).
-  High value **but** requires per-platform capability work across 8 adapters —
+  High value **but** requires per-platform capability work across 8 adapters -
   needs its own planning session; don't half-bake it.
 - Calendar: multi-month view, `'multiple'` discrete-dates mode, week numbers.
   (Event markers and month/year jump were promoted into plan 07 on 2026-07-30:
@@ -185,7 +185,7 @@ in the audited domains except the known bracket one. Public API hygiene clean.
 
 ## 7. Corrections to stale notes elsewhere
 
-`plans/cdk-port/README.md`'s "parked ideas" list (not edited here — plans 08–10
+`plans/cdk-port/README.md`'s "parked ideas" list (not edited here - plans 08–10
 
 - 90 are being implemented in a parallel session): **table virtualization**
   (`table-virtual-scroll.directive.ts`), **carousel reduced-motion autoplay

@@ -9,17 +9,17 @@ Long sessions degrade: context fills up, auto-compact loses detail, and cached
 tokens get expensive. The fix is to write the durable state to a file and
 continue in a fresh session. This skill has two modes:
 
-- **`/handoff`** (no args, or with a short slug) — **save**: write a handoff file.
-- **`/handoff resume [name]`** — **resume**: read a handoff file and continue the work.
+- **`/handoff`** (no args, or with a short slug) - **save**: write a handoff file.
+- **`/handoff resume [name]`** - **resume**: read a handoff file and continue the work.
 
-Handoff files live in `.claude/handoffs/` (gitignored — they are personal,
+Handoff files live in `.claude/handoffs/` (gitignored - they are personal,
 ephemeral working state, not team docs).
 
 ## Save mode
 
 Write `.claude/handoffs/<slug>.md` where `<slug>` is a short kebab-case name for
 the task (use the user-provided slug if they gave one, e.g.
-`/handoff menu-focus-trap`). If the file exists, overwrite it — a handoff always
+`/handoff menu-focus-trap`). If the file exists, overwrite it - a handoff always
 describes the *current* state.
 
 **Write for a reader with zero context.** The next session sees none of this
@@ -46,7 +46,7 @@ What the overall task is and why. One paragraph max.
 
 ## Key files
 
-- `path/to/file.ts` — why it matters here
+- `path/to/file.ts` - why it matters here
 
 ## Decisions & constraints
 
@@ -56,7 +56,7 @@ User-stated constraints verbatim.
 ## Gotchas / dead ends
 
 Things that looked right but weren't. Approaches already tried and rejected,
-and why — this is the most valuable section, don't skip it.
+and why - this is the most valuable section, don't skip it.
 
 ## Next steps
 
@@ -72,7 +72,7 @@ Changeset written? Docs page updated? (Per CLAUDE.md these are part of any
 lib change, not optional.)
 ```
 
-Before writing, actually check `git status`, `git log -1`, and the branch — do
+Before writing, actually check `git status`, `git log -1`, and the branch - do
 not describe state from memory. Keep the file under ~150 lines; a handoff is a
 map, not a transcript.
 
@@ -89,9 +89,9 @@ After writing, tell the user:
 2. Read the file fully.
 3. Verify reality still matches: current branch, `git status`, last commit. If
    they diverge from the handoff (e.g. someone committed in between), say what
-   changed and adapt — the repo is the truth, the handoff is the guide.
+   changed and adapt - the repo is the truth, the handoff is the guide.
 4. Read any skills the handoff's work obviously needs (e.g. `theming` before
-   CSS work) — same rules as always.
+   CSS work) - same rules as always.
 5. Continue with the **Next steps** section. Don't redo work listed under
    *Done*; don't re-open questions under *Decisions*.
 6. When every next step is complete (including changeset/docs follow-ups),

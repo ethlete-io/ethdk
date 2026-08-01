@@ -31,7 +31,7 @@ export type DatePickerInputFieldBase = { focus(): void; elementRef: ElementRef<H
  * `shouldDisplayError`/`labelId` computeds, the field/trigger/surface registration, and the
  * form-field registration. Subclasses add their own `value`↔`Date` conversion, `displayFormat`,
  * `controlType`, `defaultValueFormat`, commit/select logic, and (date + date-time) the calendar
- * bounds. Must be extended by an `@Directive` — Angular only surfaces inherited inputs from a
+ * bounds. Must be extended by an `@Directive` - Angular only surfaces inherited inputs from a
  * decorated base.
  */
 @Directive({
@@ -48,16 +48,16 @@ export abstract class DatePickerInputDirective
   private document = inject(DOCUMENT);
   public defaultLocale = injectDateLocale();
 
-  /** date-fns wire format used when `valueFormat` is unset — the token differs per control. */
+  /** date-fns wire format used when `valueFormat` is unset - the token differs per control. */
   protected abstract defaultValueFormat: string;
   /** The form-field control-type tag (date-input / time-input / date-time-input). */
   public abstract controlType: Signal<FormFieldControlType>;
   /**
-   * The date-fns format in effect for the field — declared per control. Usually its own
+   * The date-fns format in effect for the field - declared per control. Usually its own
    * `displayFormat` input; the date input derives one from `precision` when that is unset.
    */
   public abstract effectiveDisplayFormat: Signal<string>;
-  /** The committed value rendered in `displayFormat` — computed per control from its own value conversion. */
+  /** The committed value rendered in `displayFormat` - computed per control from its own value conversion. */
   public abstract displayValue: Signal<string>;
 
   /**
@@ -80,7 +80,7 @@ export abstract class DatePickerInputDirective
   public name = input('');
   public placeholder = input('');
   /**
-   * Field placeholder shown while `mixed` is set. Presentation only — a masked
+   * Field placeholder shown while `mixed` is set. Presentation only - a masked
    * date field cannot render arbitrary text, so the field stays empty and the
    * label shows through the placeholder slot; it never enters the form value.
    */
@@ -93,8 +93,8 @@ export abstract class DatePickerInputDirective
   /**
    * Opt-in typing mask: when `displayFormat` is fixed-width numeric (`dd.MM.yyyy`,
    * `HH:mm`), typing gets guide placeholders (`__.__.____`), auto-inserted
-   * separators, and paste filtering. Formats the mask cannot represent — locale
-   * formats like the defaults `P`/`p`/`Pp`, variable-width or text tokens — are
+   * separators, and paste filtering. Formats the mask cannot represent - locale
+   * formats like the defaults `P`/`p`/`Pp`, variable-width or text tokens - are
    * refused and typing stays unmasked. Commit parsing is identical either way:
    * the lenient blur/Enter parsers stay authoritative.
    */
@@ -108,7 +108,7 @@ export abstract class DatePickerInputDirective
   public effectiveValueFormat = computed(() => this.valueFormat() ?? this.defaultValueFormat);
   public effectiveLocale = computed(() => this.locale() ?? this.defaultLocale);
 
-  /** Uncommitted field text — kept visible when it fails to parse. */
+  /** Uncommitted field text - kept visible when it fails to parse. */
   public inputText = signal('');
   /** `true` while the field holds text that does not parse. */
   public parseError = signal(false);
@@ -129,12 +129,12 @@ export abstract class DatePickerInputDirective
   public hasValue = computed(() => this.mixed() || this.value() !== null || this.inputText().length > 0);
   public shouldDisplayError = computed(() => this.touched() && (this.invalid() || this.parseError()));
 
-  /** What the field renders as its placeholder — `mixedLabel` while mixed masks the value. */
+  /** What the field renders as its placeholder - `mixedLabel` while mixed masks the value. */
   public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));
 
   public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
 
-  /** The `[etInputMask]` pattern derived from the format in effect — `null` while `mask` is off or the format is refused. */
+  /** The `[etInputMask]` pattern derived from the format in effect - `null` while `mask` is off or the format is refused. */
   public maskPattern = computed(() =>
     this.mask() ? maskPatternFromDisplayFormat(this.effectiveDisplayFormat()) : null,
   );
@@ -146,7 +146,7 @@ export abstract class DatePickerInputDirective
     anchor: () => this.resolveAnchorElement(),
     context: () => ({ $implicit: this, close: () => this.closePicker() }),
     onAfterClosed: ({ byOutsidePointer, fromBottomSheet }) => {
-      // focus fell to <body> with the pane's removal — hand it back to the field, except for
+      // focus fell to <body> with the pane's removal - hand it back to the field, except for
       // outside closes (the user deliberately went elsewhere) and bottom-sheet closes
       // (refocusing would pop the soft keyboard)
       if (!byOutsidePointer && !fromBottomSheet && this.document.activeElement === this.document.body) {
@@ -166,7 +166,7 @@ export abstract class DatePickerInputDirective
       effect(() => {
         if (this.mask() && this.maskPattern() === null) {
           console.warn(
-            `[et-${this.controlType()}] displayFormat "${this.effectiveDisplayFormat()}" is not fixed-width numeric, so no typing mask can be derived — the mask input is ignored.`,
+            `[et-${this.controlType()}] displayFormat "${this.effectiveDisplayFormat()}" is not fixed-width numeric, so no typing mask can be derived - the mask input is ignored.`,
           );
         }
       });
@@ -181,7 +181,7 @@ export abstract class DatePickerInputDirective
     this.registeredField()?.focus();
   }
 
-  /** Clears the value and any uncommitted field text — wired to the styled inputs' clear button. */
+  /** Clears the value and any uncommitted field text - wired to the styled inputs' clear button. */
   public clearValue() {
     if (!this.interactive()) {
       return;
@@ -193,7 +193,7 @@ export abstract class DatePickerInputDirective
     this.parseError.set(false);
 
     // the field only mirrors state while unfocused (mid-typing rewrites would fight the
-    // caret) — a clear happens while focused, so reset the element text directly
+    // caret) - a clear happens while focused, so reset the element text directly
     const field = this.registeredField();
 
     if (field) {

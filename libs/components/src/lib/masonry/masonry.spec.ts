@@ -35,7 +35,7 @@ const stubLayout = () => {
       this.targets.clear();
     }
 
-    /** The entries the real observer would deliver — only `target` is read by `signalElementDimensions`. */
+    /** The entries the real observer would deliver - only `target` is read by `signalElementDimensions`. */
     public deliver() {
       for (const target of this.targets) {
         this.callback([{ target } as ResizeObserverEntry], this);
@@ -191,7 +191,7 @@ describe('MasonryDirective', () => {
     const after = offsets(fixture);
 
     expect(after.slice(0, 3)).toEqual(before);
-    // Column 1 holds the 100px item, so it is the shortest — the new item stacks below it.
+    // Column 1 holds the 100px item, so it is the shortest - the new item stacks below it.
     expect(after[3]).toEqual({ inline: before[1]?.inline, block: '116px' });
   });
 
@@ -229,7 +229,7 @@ describe('MasonryDirective', () => {
     fixture.componentInstance.columnWidth.set(480);
     fixture.detectChanges();
 
-    // The items' recorded widths are the old ones until their observers report, so nothing is "measured" —
+    // The items' recorded widths are the old ones until their observers report, so nothing is "measured" -
     // but the reveal latches, because un-revealing here is what fades a whole masonry out mid window-drag.
     expect(fixture.componentInstance.masonry().isSettled()).toBe(false);
     expect(items(fixture).every((item) => item.hasAttribute('data-positioned'))).toBe(true);

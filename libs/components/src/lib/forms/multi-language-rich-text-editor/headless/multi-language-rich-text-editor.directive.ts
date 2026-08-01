@@ -20,7 +20,7 @@ export class MultiLanguageRichTextEditorDirective implements FormValueControl<Mu
   public required = input(false, { transform: booleanAttribute });
   public name = input('');
 
-  /** The languages to offer, in switcher order. Consumer-provided — no languages are hard-wired. */
+  /** The languages to offer, in switcher order. Consumer-provided - no languages are hard-wired. */
   public languages = input.required<readonly MultiLanguageRichTextEditorLanguage[]>();
 
   /** The language currently being edited. Kept valid across `languages` changing: if the active code
@@ -33,10 +33,10 @@ export class MultiLanguageRichTextEditorDirective implements FormValueControl<Mu
         : (languages[0]?.code ?? ''),
   });
 
-  /** Markdown of the active language — bound one-way into the embedded editor. */
+  /** Markdown of the active language - bound one-way into the embedded editor. */
   public activeMarkdown = computed(() => this.value()[this.activeLanguage()] ?? '');
 
-  /** Languages configured but still without content — what the switcher flags as "missing". */
+  /** Languages configured but still without content - what the switcher flags as "missing". */
   public missingLanguages = computed(() => this.languages().filter((language) => !this.isFilled(language.code)));
 
   public filledCount = computed(() => this.languages().length - this.missingLanguages().length);
@@ -56,7 +56,7 @@ export class MultiLanguageRichTextEditorDirective implements FormValueControl<Mu
     return (this.value()[code] ?? '').trim().length > 0;
   }
 
-  /** Writes Markdown for the active language, preserving every other key — including translations
+  /** Writes Markdown for the active language, preserving every other key - including translations
    *  whose code isn't currently in `languages()` (never dropped). */
   public writeActiveMarkdown(markdown: string) {
     const code = this.activeLanguage();

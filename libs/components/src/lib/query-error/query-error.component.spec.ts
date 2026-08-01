@@ -9,7 +9,7 @@ import { queryErrorResponseFromLegacyError } from './query-error-legacy';
 import { QueryErrorComponent } from './query-error.component';
 import { QUERY_ERROR_IMPORTS } from './query-error.imports';
 
-/** The component needs *a* theme registered with `type: 'error'` — the name is the app's business. */
+/** The component needs *a* theme registered with `type: 'error'` - the name is the app's business. */
 const COLOR_THEMES: ColorTheme[] = [
   {
     name: 'danger',

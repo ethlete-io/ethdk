@@ -6,7 +6,7 @@ export type TableStateStorageKind = 'local' | 'session';
 
 export type TableStateStorageOptions = {
   /**
-   * The storage key. Namespace it per table *and* per meaning — `'users-table'`, not `'table'` — since
+   * The storage key. Namespace it per table *and* per meaning - `'users-table'`, not `'table'` - since
    * restoring one table's column order into another is worse than not restoring at all.
    */
   key: string;
@@ -14,13 +14,13 @@ export type TableStateStorageOptions = {
   kind?: TableStateStorageKind;
   /**
    * The store to use. Defaults to `window.localStorage` / `window.sessionStorage`, and falls back to a
-   * no-op when neither exists (SSR, or a browser with storage blocked) — persistence is a convenience,
+   * no-op when neither exists (SSR, or a browser with storage blocked) - persistence is a convenience,
    * never a reason for a table to fail to render.
    */
   storage?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | null;
 };
 
-/** A store that reads and writes nothing — SSR, or a browser that refuses storage. */
+/** A store that reads and writes nothing - SSR, or a browser that refuses storage. */
 const NOOP_STORAGE: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> = {
   getItem: () => null,
   setItem: () => undefined,
@@ -41,7 +41,7 @@ const resolveStorage = (options: TableStateStorageOptions) => {
 };
 
 /**
- * A `localStorage` / `sessionStorage` store for a table's {@link TableState} — the same serialized form
+ * A `localStorage` / `sessionStorage` store for a table's {@link TableState} - the same serialized form
  * {@link serializeTableState} produces for URLs, so a link and a stored setup are interchangeable.
  *
  * Every operation swallows its own failure (a full quota, private-mode restrictions, a hand-edited
@@ -59,7 +59,7 @@ export const createTableStateStorage = (options: TableStateStorageOptions) => {
   const storage = resolveStorage(options);
 
   return {
-    /** The stored state, or `null` when there is none (or it is unreadable — see `deserializeTableState`). */
+    /** The stored state, or `null` when there is none (or it is unreadable - see `deserializeTableState`). */
     load: (): TableState | null => {
       try {
         return deserializeTableState(storage.getItem(options.key));
@@ -73,7 +73,7 @@ export const createTableStateStorage = (options: TableStateStorageOptions) => {
       try {
         storage.setItem(options.key, serializeTableState(state));
       } catch {
-        // quota, private mode, disabled storage — nothing to do about it here
+        // quota, private mode, disabled storage - nothing to do about it here
       }
     },
 

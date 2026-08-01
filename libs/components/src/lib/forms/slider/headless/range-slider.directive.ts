@@ -69,7 +69,7 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
   public maxValue = input(100, { transform: numberAttribute });
   public step = input(1, { transform: numberAttribute });
 
-  /** Minimum gap kept between the two thumbs — should be a multiple of `step`. */
+  /** Minimum gap kept between the two thumbs - should be a multiple of `step`. */
   public minDistance = input(0, { transform: numberAttribute });
 
   /** Axis the slider runs along. A vertical slider runs bottom→up and is not mirrored in RTL. */
@@ -114,7 +114,7 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
   private snapMarkValues = computed(() => (this.snapToMarks() ? this.resolvedMarks().map((mark) => mark.value) : []));
 
   // while mixed, both thumbs park at the track start so the DOM (positions, ARIA) exposes
-  // nothing of the hidden raw range — the keyboard model then also steps from the minimum
+  // nothing of the hidden raw range - the keyboard model then also steps from the minimum
   public thumbValues = computed<readonly number[]>(() => {
     if (this.mixed()) {
       const min = this.effectiveMin();
@@ -136,7 +136,7 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
 
     return toMarkStops(this.resolvedMarks(), {
       bounds: this.bounds(),
-      // parked thumbs fill nothing — no tick may read as active while mixed
+      // parked thumbs fill nothing - no tick may read as active while mixed
       activeRange: this.mixed() || start === undefined || end === undefined ? null : [start, end],
     });
   });
@@ -166,7 +166,7 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
   }
 
   public thumbAriaBounds(index: number) {
-    // parked thumbs carry no sibling constraint — while mixed, both announce the full track
+    // parked thumbs carry no sibling constraint - while mixed, both announce the full track
     if (this.mixed()) {
       return { min: this.effectiveMin(), max: this.effectiveMax() };
     }
@@ -204,7 +204,7 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
       return;
     }
 
-    // only user interactions route through here — the first committed thumb resolves mixed
+    // only user interactions route through here - the first committed thumb resolves mixed
     // by writing a fresh range: the chosen value on its end, the default bound on the other
     if (this.mixed()) {
       const otherBound = index === 0 ? this.effectiveMax() : this.effectiveMin();
@@ -247,7 +247,7 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
   }
 
   /**
-   * Snaps `value`, keeps it clear of the sibling, then snaps again — the sibling limit itself
+   * Snaps `value`, keeps it clear of the sibling, then snaps again - the sibling limit itself
    * need not sit on the grid, so the second snap moves away from the sibling, never across it.
    */
   private constrainAndSnap(value: number, thumb: { index: number; otherValue: number }) {

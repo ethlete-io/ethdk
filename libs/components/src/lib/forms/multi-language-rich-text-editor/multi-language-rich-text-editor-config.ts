@@ -1,6 +1,6 @@
 /**
  * A single language the multi-language rich text editor can switch between. The list is entirely
- * consumer-provided (via the `languages` input) — the editor hard-wires no languages of its own.
+ * consumer-provided (via the `languages` input) - the editor hard-wires no languages of its own.
  */
 export type MultiLanguageRichTextEditorLanguage = {
   /** Stable key this language's Markdown is stored under in the value record (e.g. `'en'`, `'de'`). */

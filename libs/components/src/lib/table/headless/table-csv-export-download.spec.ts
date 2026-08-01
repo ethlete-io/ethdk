@@ -24,7 +24,7 @@ let written: BlobPart[][];
 
 const download = () => runInInjectionContext(TestBed.inject(Injector), () => injectTableCsvExport());
 
-// The export writes nothing until it is subscribed to, so every test subscribes — and gets back a
+// The export writes nothing until it is subscribed to, so every test subscribes - and gets back a
 // promise that settles when the file has been written.
 const exportWith = (options: TableCsvExportOptions<Row>, table = source()) =>
   firstValueFrom(download()(table, options), { defaultValue: undefined });
@@ -75,7 +75,7 @@ describe('injectTableCsvExport', () => {
       const provider = vi.fn(() => Promise.resolve(ROWS));
       const run = download()(source(), { rows: provider });
 
-      // Building the export asks for nothing — which is what a
+      // Building the export asks for nothing - which is what a
       // `[etTableCsvExport]="{ rows: allPeople }"` binding relies on.
       expect(provider).not.toHaveBeenCalled();
 
@@ -131,7 +131,7 @@ describe('injectTableCsvExport', () => {
       expect(written).toHaveLength(0);
     });
 
-    it('writes no BOM of its own — the server decided the encoding', async () => {
+    it('writes no BOM of its own - the server decided the encoding', async () => {
       await exportWith({ file: Promise.resolve('Näme') });
 
       await expect(writtenText()).resolves.toBe('Näme');
@@ -159,7 +159,7 @@ describe('injectTableCsvExport', () => {
       await expect(writtenText()).resolves.toBe('Name\r\nAda\r\nGrace');
     });
 
-    it('stays quiet for an explicit row list — a selection is already deliberate', async () => {
+    it('stays quiet for an explicit row list - a selection is already deliberate', async () => {
       await exportWith({ rows: [{ name: 'Ada' }] }, paginated(4312));
 
       await expect(writtenText()).resolves.toBe('Name\r\nAda');
@@ -171,7 +171,7 @@ describe('injectTableCsvExport', () => {
       await expect(writtenText()).resolves.toBe('Name\r\nAda\r\nGrace');
     });
 
-    it('stays quiet for a table with no total — it was given its rows outright', async () => {
+    it('stays quiet for a table with no total - it was given its rows outright', async () => {
       await exportWith({}, paginated(null));
 
       await expect(writtenText()).resolves.toBe('Name\r\nAda\r\nGrace');

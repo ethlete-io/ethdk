@@ -9,7 +9,7 @@ export type SymbolRenameResult = {
 };
 
 /**
- * Whether an identifier is a *name* rather than a *reference* — a declaration, a property key, the
+ * Whether an identifier is a *name* rather than a *reference* - a declaration, a property key, the
  * right-hand side of a member access. Renaming those is what turned `PeopleDetailDataSource.getPerson`
  * and the `postLogin` property of a config type into `legacy…` during the first migration run.
  */
@@ -18,7 +18,7 @@ const isNamePosition = (node: ts.Identifier) => {
 
   if (!parent) return false;
 
-  // `foo.bar` / `Foo.Bar` — the part after the dot is never the imported binding.
+  // `foo.bar` / `Foo.Bar` - the part after the dot is never the imported binding.
   if (ts.isPropertyAccessExpression(parent) && parent.name === node) return true;
   if (ts.isQualifiedName(parent) && parent.right === node) return true;
 
@@ -53,7 +53,7 @@ const isNamePosition = (node: ts.Identifier) => {
   return false;
 };
 
-/** Every name the file declares itself — a local by the same name means the import is shadowed. */
+/** Every name the file declares itself - a local by the same name means the import is shadowed. */
 const collectLocalDeclarations = (sourceFile: ts.SourceFile) => {
   const declared = new Set<string>();
 
@@ -131,7 +131,7 @@ export const renameImportedReferences = (content: string, renames: Map<string, s
  * The migration rewrites away the constructs that needed `def`, `AnyLegacyQueryCreator` and friends;
  * leaving the imports behind turns every touched file into a lint error, and `formatFiles` runs in
  * the same generator invocation so they land that way. Identifiers inside template strings count as
- * usage too — a component referenced only from an inline template must not be pruned.
+ * usage too - a component referenced only from an inline template must not be pruned.
  */
 export const pruneUnusedNamedImports = (content: string, moduleSpecifiers: readonly string[] | 'all') => {
   const sourceFile = createSourceFile(content);

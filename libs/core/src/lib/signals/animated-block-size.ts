@@ -10,13 +10,13 @@ export type AnimatedBlockSizeConfig = {
   host?: SignalElementBindingType;
   /**
    * The content element(s) whose size changes drive the animation. Observe the content (children),
-   * **not** the animated host — observing the host would feed the animation back into itself.
+   * **not** the animated host - observing the host would feed the animation back into itself.
    * For the `inline` axis this also means the observed content must be content-sized (e.g.
    * `inline-size: max-content`); a plain block child just mirrors the host's animated width back.
    */
   observe: SignalElementBindingType | SignalElementBindingType[];
   /**
-   * The axes to animate. May be a signal — e.g. to drop the `inline` axis while a panel is in a
+   * The axes to animate. May be a signal - e.g. to drop the `inline` axis while a panel is in a
    * presentation whose width follows the viewport instead of its content. @default ['block']
    */
   axes?: AnimatedSizeAxis[] | Signal<AnimatedSizeAxis[]>;
@@ -24,7 +24,7 @@ export type AnimatedBlockSizeConfig = {
   duration?: number;
   /** Animation easing. @default 'ease' */
   easing?: string;
-  /** Class toggled on the host while animating — use it to `overflow: clip` during the resize. */
+  /** Class toggled on the host while animating - use it to `overflow: clip` during the resize. */
   resizingClass?: string;
 };
 
@@ -39,7 +39,7 @@ export type AnimatedBlockSizeConfig = {
  * A change that interrupts an in-flight animation continues from the current animated size, and
  * zero/pre-layout measurements are ignored. Respects `prefers-reduced-motion`.
  *
- * The animation starts synchronously inside the `ResizeObserver` callback — it runs after layout
+ * The animation starts synchronously inside the `ResizeObserver` callback - it runs after layout
  * but **before paint**, so the host never paints a frame at its new natural size. Routing the
  * resize through a signal + effect instead would apply the animation one change-detection cycle
  * (= one painted frame) late: a growing panel would flash at its final size, snap back, and only
@@ -124,7 +124,7 @@ export const injectAnimatedBlockSize = (config: AnimatedBlockSizeConfig): void =
     const cleanup = () => {
       // Cancelling an animation to start the next one rejects its `finished` promise, firing this
       // cleanup after a newer animation has already taken over. That newer animation owns the
-      // resizing class, so only strip it when no other animation is mid-flight — otherwise an
+      // resizing class, so only strip it when no other animation is mid-flight - otherwise an
       // interrupted resize (rapid content changes, e.g. async search typing) would un-clip the
       // scroller while it is still animating and flash a scrollbar.
       if (animation !== null && animation !== nextAnimation) {
@@ -144,7 +144,7 @@ export const injectAnimatedBlockSize = (config: AnimatedBlockSizeConfig): void =
     animation = nextAnimation;
   };
 
-  // no zone/signal indirection — see the pre-paint timing note in the doc comment above
+  // no zone/signal indirection - see the pre-paint timing note in the doc comment above
   const observer = new ResizeObserver(() => {
     if (!ready) return;
 

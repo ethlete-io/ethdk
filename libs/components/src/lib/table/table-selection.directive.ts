@@ -6,7 +6,7 @@ import { TableSelectAllCellComponent, TableSelectCellComponent } from './table-s
 export type TableSelectionConfig<T> = TableFeatureConfig & {
   /**
    * The signal holding the selected row keys (by the table's `rowKey`, else the row reference). The
-   * feature writes into it directly, so pass your own signal to read the selection back — set a
+   * feature writes into it directly, so pass your own signal to read the selection back - set a
    * `rowKey` on the table so a selection survives sorting, filtering and data changes.
    * Omit it and the selection is kept internally (reachable via `exportAs`).
    */
@@ -48,13 +48,13 @@ export class TableSelectionDirective<T> {
   // Used when the consumer passes no signal of their own, so a bare `etTableSelection` still selects.
   private ownSelection = signal<Set<unknown>>(new Set());
 
-  /** The signal the selection is kept in — the consumer's when they passed one, else the feature's own. */
+  /** The signal the selection is kept in - the consumer's when they passed one, else the feature's own. */
   public selection = computed(() => this.config().selection ?? this.ownSelection);
 
-  /** Accessible label for the header's select-all checkbox — from the table's label set. */
+  /** Accessible label for the header's select-all checkbox - from the table's label set. */
   public selectAllLabel = computed(() => this.table.resolvedLabels().selectAllRows);
 
-  /** Accessible label for a row's checkbox — from the table's label set. */
+  /** Accessible label for a row's checkbox - from the table's label set. */
   public rowLabel = computed(() => this.table.resolvedLabels().selectRow);
 
   /** The rendered rows that may be selected, which is what select-all acts on. */
@@ -74,7 +74,7 @@ export class TableSelectionDirective<T> {
     return rows.length > 0 && rows.every((row) => this.isSelected(row));
   });
 
-  /** True when some — but not all — selectable rows are selected (checkbox indeterminate). */
+  /** True when some - but not all - selectable rows are selected (checkbox indeterminate). */
   public isPartiallySelected = computed(() => {
     const rows = this.selectableRows();
     const selected = rows.filter((row) => this.isSelected(row)).length;
@@ -97,7 +97,7 @@ export class TableSelectionDirective<T> {
     });
 
     // The selection is the feature's own state, so it travels in `state().features.selection` rather
-    // than in the base table's column entries — see TableStateSlice. Keys serialize as strings, which
+    // than in the base table's column entries - see TableStateSlice. Keys serialize as strings, which
     // is what a `rowKey` produces anyway; a table without a `rowKey` keys by row reference and has
     // nothing stable to write, so it contributes nothing.
     this.table.registerStateSlice({
@@ -156,7 +156,7 @@ export class TableSelectionDirective<T> {
     return this.config().selectableRow?.(row) ?? true;
   }
 
-  // The table's rows, typed back to T — the feature seam is row-type agnostic.
+  // The table's rows, typed back to T - the feature seam is row-type agnostic.
   private rows() {
     return this.table.rows() as readonly T[];
   }

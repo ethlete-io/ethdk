@@ -40,7 +40,7 @@ export class OtpInputDirective implements FormValueControl<string>, FormFieldCon
 
   /** Number of characters/segments. */
   public length = input(6, { transform: numberAttribute });
-  /** Which characters are accepted — anything else is stripped (also from pastes). */
+  /** Which characters are accepted - anything else is stripped (also from pastes). */
   public charset = input<OtpInputCharset>('numeric');
   /** Renders dots instead of the typed characters (PIN entry). */
   public masked = input(false, { transform: booleanAttribute });
@@ -77,7 +77,7 @@ export class OtpInputDirective implements FormValueControl<string>, FormFieldCon
     });
   });
 
-  /** The segment the synthetic caret sits on while focused — the next empty slot, or the last one when full. */
+  /** The segment the synthetic caret sits on while focused - the next empty slot, or the last one when full. */
   public caretIndex = computed(() => Math.min(this.value().length, this.length() - 1));
 
   private charPattern = computed(() => {
@@ -106,7 +106,7 @@ export class OtpInputDirective implements FormValueControl<string>, FormFieldCon
     this.nativeControl()?.focus({ preventScroll: true });
   }
 
-  /** Strips characters outside the charset and truncates to `length` — pastes included. */
+  /** Strips characters outside the charset and truncates to `length` - pastes included. */
   public sanitize(raw: string) {
     const pattern = this.charPattern();
 
@@ -128,7 +128,7 @@ export class OtpInputDirective implements FormValueControl<string>, FormFieldCon
     const sanitized = this.sanitize(element.value);
 
     // normalize the element (rejected characters must not linger) and pin the caret to the
-    // end — editing is append/delete-at-end only, which keeps segment display and caret in
+    // end - editing is append/delete-at-end only, which keeps segment display and caret in
     // lockstep without tracking native selection over invisible text
     if (element.value !== sanitized) {
       element.value = sanitized;
@@ -137,7 +137,7 @@ export class OtpInputDirective implements FormValueControl<string>, FormFieldCon
     element.setSelectionRange(sanitized.length, sanitized.length);
     this.value.set(sanitized);
 
-    // emit whenever a *different* full-length code lands — not just when growing from incomplete,
+    // emit whenever a *different* full-length code lands - not just when growing from incomplete,
     // or replacing one complete code with another (select-all + paste, autofill over a filled
     // field) would silently never re-complete
     if (sanitized.length === this.length() && sanitized !== previous) {
@@ -160,7 +160,7 @@ export class OtpInputDirective implements FormValueControl<string>, FormFieldCon
     this.touched.set(true);
   }
 
-  /** @internal Keeps the caret at the end — arrow/Home keys would detach it from the segment display. */
+  /** @internal Keeps the caret at the end - arrow/Home keys would detach it from the segment display. */
   public handleNativeSelectionEvent() {
     const element = this.nativeControl();
 

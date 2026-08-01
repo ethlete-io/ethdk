@@ -78,7 +78,7 @@ export class RatingComponent {
 
   protected handlePointerDown(event: PointerEvent) {
     // a fresh press must never inherit a stale commit flag from a prior sequence that ended
-    // without its trailing click (drag off-target, cancelled synthetic click) — otherwise the
+    // without its trailing click (drag off-target, cancelled synthetic click) - otherwise the
     // next legitimate click is swallowed once
     this.pointerCommitted = false;
 
@@ -91,7 +91,7 @@ export class RatingComponent {
     try {
       (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
     } catch {
-      // pointer capture is unavailable in some test environments — dragging still works
+      // pointer capture is unavailable in some test environments - dragging still works
     }
 
     this.rating.setHoverValue(this.valueFromPointer(event));
@@ -127,7 +127,7 @@ export class RatingComponent {
     this.rating.clearHover();
   }
 
-  /** Fallback for synthetic clicks (tests, assistive tech) — real pointer flows commit on pointerup. */
+  /** Fallback for synthetic clicks (tests, assistive tech) - real pointer flows commit on pointerup. */
   protected handleIconClick(index: number, event: MouseEvent) {
     if (this.pointerCommitted) {
       this.pointerCommitted = false;

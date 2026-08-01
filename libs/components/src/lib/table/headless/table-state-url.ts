@@ -2,8 +2,8 @@ import { TableState } from '../table.types';
 
 /**
  * Serialize a {@link TableState} to a compact string for a URL query param (or any
- * string store), so a table setup — column order, visibility, sort, filters, expanded
- * rows and any feature slices — is shareable as a link. Pair with {@link deserializeTableState}.
+ * string store), so a table setup - column order, visibility, sort, filters, expanded
+ * rows and any feature slices - is shareable as a link. Pair with {@link deserializeTableState}.
  * `createTableStateStorage` uses the same form, so a link and a stored setup are interchangeable.
  *
  * The result is a raw JSON string; when you assign it to an Angular Router query param
@@ -15,7 +15,7 @@ export const serializeTableState = (state: TableState) => JSON.stringify(state);
 /**
  * Parse a {@link TableState} from a string produced by {@link serializeTableState}.
  * Returns `null` when the input is absent, malformed, or a version this build doesn't
- * understand — so a stale or hand-edited link degrades to "no restore" instead of throwing.
+ * understand - so a stale or hand-edited link degrades to "no restore" instead of throwing.
  */
 export const deserializeTableState = (raw: string | null | undefined): TableState | null => {
   if (!raw) return null;

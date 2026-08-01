@@ -6,7 +6,7 @@ import { resolveBracketLayout } from './bracket-layout';
 import { BracketConfig } from './bracket.config';
 
 /**
- * How wide `<et-bracket>` would draw this source, in px — the width it needs before it starts
+ * How wide `<et-bracket>` would draw this source, in px - the width it needs before it starts
  * scrolling sideways.
  *
  * It answers the question by laying the bracket out for real rather than estimating from the round
@@ -14,10 +14,10 @@ import { BracketConfig } from './bracket.config';
  * a continue column, and front-padded rounds all move it.
  *
  * Cheap enough to call from a `computed()` over the source, and no more expensive than the render it
- * predicts — but it is not free, so key it on the source rather than on the observed width.
+ * predicts - but it is not free, so key it on the source rather than on the observed width.
  *
  * @param source The same source you would pass to `<et-bracket>`.
- * @param config The settings the bracket will run with — the object you pass to
+ * @param config The settings the bracket will run with - the object you pass to
  *   `provideBracketConfig`, or the subset you bind as inputs, **including its `layouts`** (the width
  *   of a bracket is the layout's answer). Anything else left out uses `BRACKET_DEFAULTS`.
  *
@@ -41,7 +41,7 @@ export const bracketNaturalWidth = <TRoundData, TMatchData>(
 };
 
 /**
- * Whether the bracket fits into `availableWidth` px without scrolling — the decision behind swapping
+ * Whether the bracket fits into `availableWidth` px without scrolling - the decision behind swapping
  * `<et-bracket>` for [`<et-bracket-rounds-list>`](/components/bracket#responsive-switching) on a narrow
  * screen.
  *

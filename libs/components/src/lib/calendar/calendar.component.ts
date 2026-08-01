@@ -58,7 +58,7 @@ export class CalendarComponent {
   private calendarLabels = injectCalendarLabels();
 
   /**
-   * The headless directive behind this calendar — everything `[etCalendar]` exposes, for chrome of
+   * The headless directive behind this calendar - everything `[etCalendar]` exposes, for chrome of
    * your own around or instead of the default header (`<et-calendar #cal>` then `cal.headless`).
    */
   public headless = inject(CalendarDirective);
@@ -69,7 +69,7 @@ export class CalendarComponent {
    */
   public weekNumbers = input(false, { transform: booleanAttribute });
 
-  /** Only labels the nav buttons while the day grid is showing — the coarser views read the label set. */
+  /** Only labels the nav buttons while the day grid is showing - the coarser views read the label set. */
   public previousMonthLabel = input<string | null>(null);
   public nextMonthLabel = input<string | null>(null);
 

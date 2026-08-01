@@ -116,16 +116,16 @@ export const createRichTextEditorLinks = (core: RichTextEditorDomCore) => {
     const label = (text ?? selectionText).trim() || href;
 
     // Wrap the selection (preserving its inner marks) only when the label is unchanged; otherwise
-    // — a collapsed caret, or the user edited the text — insert a fresh anchor with the given label.
+    // - a collapsed caret, or the user edited the text - insert a fresh anchor with the given label.
     if (!editable.range.collapsed && text === selectionText) {
       try {
         editable.range.surroundContents(anchor);
       } catch {
         // The range crosses an existing <a> boundary (e.g. it starts before the anchor and ends
-        // inside it) — surroundContents throws, so fall back to extract + insert. That fallback can
+        // inside it) - surroundContents throws, so fall back to extract + insert. That fallback can
         // pull the whole existing anchor's content into the new one (nesting an <a> inside an <a>)
         // and, per Range.extractContents()'s spec, strand the drained original anchor as an empty
-        // shell — both of which produce broken markdown (nested/empty link syntax).
+        // shell - both of which produce broken markdown (nested/empty link syntax).
         renderer.appendChild(anchor, editable.range.extractContents());
         editable.range.insertNode(anchor);
       }

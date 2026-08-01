@@ -208,7 +208,7 @@ describe('DropzoneDirective', () => {
       const requests = setup.httpTesting.match(UPLOAD_URL);
       expect(requests.length).toBe(2);
 
-      // resolve out of order — the value order must follow the entry order
+      // resolve out of order - the value order must follow the entry order
       requests[1]!.flush({ uuid: 'uuid-b' });
       fixture.detectChanges();
       expect(host.value()).toEqual(['uuid-b']);

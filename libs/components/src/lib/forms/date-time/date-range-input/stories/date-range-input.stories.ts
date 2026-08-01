@@ -63,7 +63,7 @@ export const Masked: Story = {
     displayFormat: 'dd.MM.yyyy',
     startPlaceholder: 'tt.mm.jjjj',
     endPlaceholder: 'tt.mm.jjjj',
-    hint: 'Typing is guided by the fixed-width display format — separators insert themselves',
+    hint: 'Typing is guided by the fixed-width display format - separators insert themselves',
   },
 };
 
@@ -84,6 +84,6 @@ export const MonthRange: Story = {
     valueFormat: 'yyyy-MM',
     startPlaceholder: 'mm/yyyy',
     endPlaceholder: 'mm/yyyy',
-    hint: "A month range — 07/2025 – 03/2026 — banded across the picker's month grid",
+    hint: "A month range - 07/2025 – 03/2026 - banded across the picker's month grid",
   },
 };

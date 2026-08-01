@@ -1,6 +1,6 @@
 # Persisted responses (offline cache)
 
-The [cache](/query/caching) lives in memory, so a reload starts from nothing — every query on the page
+The [cache](/query/caching) lives in memory, so a reload starts from nothing - every query on the page
 goes back to a loading state, and a reload without a network shows nothing at all.
 
 So successful reads are also kept on disk, in IndexedDB, per client. **This is on by default.** A
@@ -11,7 +11,7 @@ connection sees it too.
 const API = createQueryClient({
   name: 'api',
   baseUrl: 'https://api.example.com/v1',
-  // persistence: true is the default — pass an object to tune it, or false to opt out entirely.
+  // persistence: true is the default - pass an object to tune it, or false to opt out entirely.
 });
 
 export const injectApi = toInjectFn(API);
@@ -24,7 +24,7 @@ Two rules define the whole feature:
 
 ## What happens on a cold start
 
-A query mounts, its cache entry is created, and its request goes out — unchanged from a client without
+A query mounts, its cache entry is created, and its request goes out - unchanged from a client without
 persistence. Meanwhile the store is read, and the response from last time is written onto the entry if
 it is still empty:
 
@@ -36,17 +36,17 @@ it is still empty:
 
 Nothing about the request changes, which is the point: persistence can only ever make a cold start
 show something _earlier_, never make it slower or serve data instead of fetching. The other side of
-that coin is that persisted data is always one tick behind the mount — the entry is briefly empty, so
+that coin is that persisted data is always one tick behind the mount - the entry is briefly empty, so
 a skeleton may flash on a fast machine with a slow disk.
 
 If the revalidation **fails**, the persisted response stays. `query.response()` holds it, and
-`error()` holds the failure — both are true at once, and both matter. Note that a dropped connection
+`error()` holds the failure - both are true at once, and both matter. Note that a dropped connection
 is [retried](/query/errors#retries) indefinitely by the default retry policy, so a genuinely offline
 query does not reach a `failure` state at all: it stays `loading` with the persisted data on screen.
 
 ::: tip Deciding what to render
 `executionState()` reports `failure` when a request failed, even though `response()` still has the
-persisted body — the same as any refetch that fails over data you already had. If a screen should keep
+persisted body - the same as any refetch that fails over data you already had. If a screen should keep
 rendering data through a failed revalidation, read `response()` and treat the error as a banner rather
 than a state.
 :::
@@ -65,7 +65,7 @@ The one thing that confuses people about this feature is which expiry does what:
 separate from server freshness: a persisted response is always revalidated, so the question is not "is
 this still valid" but "is this still plausible enough to show for a moment".
 
-A response's freshness window is persisted alongside it and restored verbatim — usually meaning it is
+A response's freshness window is persisted alongside it and restored verbatim - usually meaning it is
 already in the past, which is correct. It matters for what happens _next_ in the session: a later
 `execute({ allowCache: true })` on a hydrated entry behaves exactly as it would have in the session
 that fetched it.
@@ -82,18 +82,18 @@ A logged-in user's data is on the other side of the default:
 ```ts
 const getQuery = createGetQuery(client);
 
-// A secure query that may sit on the device — worth it for the data a returning user expects to see
+// A secure query that may sit on the device - worth it for the data a returning user expects to see
 // immediately, like their own profile or a dashboard shell.
 export const getMe = getQuery<GetMeArgs>('/me', { persistence: true });
 ```
 
 ::: warning What "on disk" means
 The store is ordinary origin storage. Anything that can run script on your origin can read it, so
-persisting an authenticated response is a decision about _device_ trust — a shared computer, a kiosk —
+persisting an authenticated response is a decision about _device_ trust - a shared computer, a kiosk -
 not about XSS, which reads the same data out of memory anyway. There is no encryption at rest, because
 a key that ships with the app is obfuscation and reads as protection it cannot provide.
 
-For a user switch on a shared device, call `client.clearPersistedQueries()` — a logout only removes
+For a user switch on a shared device, call `client.clearPersistedQueries()` - a logout only removes
 secure entries, and public ones may still be recognizable ("the last thing this account looked at").
 :::
 
@@ -117,7 +117,7 @@ persistence: {
 | `maxEntries`  | `50`                           | How many responses are kept. The least recently written go first.                             |
 | `writeDelay`  | `1000`                         | How long writes are collected before one batched flush. Always flushed when the tab hides.    |
 | `adapter`     | IndexedDB                      | Where to store responses. See [custom storage](#custom-storage).                              |
-| `filter`      | —                              | `(candidate) => boolean` over `{ key, url, method, isSecure }`; `false` keeps a response out. |
+| `filter`      | -                              | `(candidate) => boolean` over `{ key, url, method, isSecure }`; `false` keeps a response out. |
 
 ### Bump `version` when a response shape changes
 
@@ -152,7 +152,7 @@ await client.clearPersistedQueries();
 
 ### Gating the first paint
 
-Nothing needs to wait for the store — a query created before it is read is hydrated as soon as it is.
+Nothing needs to wait for the store - a query created before it is read is hydrated as soon as it is.
 An app that would rather delay its first paint than show a loading state it knows it has data for can
 await it:
 
@@ -165,9 +165,9 @@ That resolves once the store's index is loaded (immediately when persistence is 
 ## Custom storage
 
 IndexedDB is the default because it stores
-[structured clones](https://developer.mozilla.org/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) —
+[structured clones](https://developer.mozilla.org/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) -
 no serialization pass, and the same constraint on bodies that [multi-tab sync](/query/multi-tab)
-already has — and because response bodies are far too large for `localStorage`'s few megabytes.
+already has - and because response bodies are far too large for `localStorage`'s few megabytes.
 
 Supply an adapter to store them somewhere else: `localStorage`, the origin private file system, a
 native store behind a Capacitor plugin.
@@ -187,7 +187,7 @@ persistence: {
 
 Adapters are deliberately dumb: they store what they are handed. `maxAge`, `maxEntries`, the `version`
 check and the logout purge are all decided before a call reaches one, so a custom adapter cannot get
-any of that subtly wrong. Every method may reject — a failing read is treated as a miss, and a failing
+any of that subtly wrong. Every method may reject - a failing read is treated as a miss, and a failing
 write as a full disk.
 
 ## Safety and limits
@@ -195,7 +195,7 @@ write as a full disk.
 - **Only successful reads.** Mutations are never persisted, and neither are errors or loading states.
   A cold start after a failure looks exactly like a cold start.
 - **Only the tab that fetched writes.** A response adopted from another tab over
-  [multi-tab sync](/query/multi-tab#response-sharing) is applied silently, so it produces no write —
+  [multi-tab sync](/query/multi-tab#response-sharing) is applied silently, so it produces no write -
   tabs sharing one store do not duplicate each other's work.
 - **Side-effect features stay quiet for persisted responses.** As with a shared response,
   `withSuccessHandling`, `withLogging` and the query's `events$` fire for what _this_ request received
@@ -203,7 +203,7 @@ write as a full disk.
 - **A full disk gives up quietly.** A write that fails frees the oldest half of the store and retries
   once; a second failure stops writing for the session with one dev-mode warning. Queries are
   unaffected either way.
-- **Server-side rendering.** Always a no-op — no store is opened. Angular's `transferCache` already
+- **Server-side rendering.** Always a no-op - no store is opened. Angular's `transferCache` already
   covers the SSR hand-off, in memory and per request.
 - **Browsers without IndexedDB**, or with storage denied, degrade to in-memory caching rather than
   failing.

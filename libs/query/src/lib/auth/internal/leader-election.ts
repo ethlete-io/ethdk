@@ -20,7 +20,7 @@ type LeaderPresenceMessage = { type: 'presence' };
 
 export type InternalLeaderElection = {
   /**
-   * Whether this tab is the one doing the work only one tab should do — the proactive token refresh.
+   * Whether this tab is the one doing the work only one tab should do - the proactive token refresh.
    *
    * Starts `false` and flips on the next microtask when nothing else holds the lock: the platform
    * grants asynchronously, and the refresh this gates runs off a timer, so nothing observes the gap.
@@ -28,8 +28,8 @@ export type InternalLeaderElection = {
   isLeader: Signal<boolean>;
 
   /**
-   * How many tabs of this app currently take part in the election. Telemetry only — `withTracking`
-   * emits it — and best-effort: it is recounted when a tab announces itself, says goodbye, or takes
+   * How many tabs of this app currently take part in the election. Telemetry only - `withTracking`
+   * emits it - and best-effort: it is recounted when a tab announces itself, says goodbye, or takes
    * over the leadership, not on a timer. A tab that *crashes* without being the leader is therefore
    * still counted until the next of those happens.
    */
@@ -55,7 +55,7 @@ const countLeaderRequests = (snapshot: LockManagerSnapshot) => {
  * over, and a holder that closes, crashes or navigates away has its lock released by the platform.
  * No heartbeat, no timeout to tune, and no window in which two tabs both believe they are the leader.
  *
- * Degrades to "this tab is the leader" without Web Locks — the same single-tab behavior the previous
+ * Degrades to "this tab is the leader" without Web Locks - the same single-tab behavior the previous
  * `localStorage` implementation fell back to, and the only safe default: a session that refreshes its
  * token in every tab is wasteful, one that refreshes it in none logs the user out.
  */
@@ -103,7 +103,7 @@ export const setupLeaderElection = (): InternalLeaderElection => {
     if (!hold.isHolder()) return;
 
     // Becoming the leader means the previous one went away. A tab that closed normally announced it
-    // itself, one that crashed did not — so this is the moment to tell the others for free.
+    // itself, one that crashed did not - so this is the moment to tell the others for free.
     announce();
     void recount();
   });

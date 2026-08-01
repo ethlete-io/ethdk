@@ -28,7 +28,7 @@ export type InjectFn<T> = {
 /**
  * What {@link defineProvider} & co. return: the token plus the two functions a domain re-exports as its
  * `provideX` / `injectX` pair. Read the halves out with {@link toProvideFn}, {@link toInjectFn} and
- * {@link toToken} — never by destructuring, see {@link defineProvider}.
+ * {@link toToken} - never by destructuring, see {@link defineProvider}.
  */
 export type ProviderDefinition<T> = {
   readonly provide: () => Provider[];
@@ -63,7 +63,7 @@ const createProviders = <T>(
 ];
 
 /**
- * Defines a provider that a subtree opts into — `provideX()` in some component's `providers`, then
+ * Defines a provider that a subtree opts into - `provideX()` in some component's `providers`, then
  * `injectX()` below it. Nothing is created until the subtree provides it.
  *
  * Assign the result to one `const`, name the halves with {@link toProvideFn} / {@link toInjectFn} /

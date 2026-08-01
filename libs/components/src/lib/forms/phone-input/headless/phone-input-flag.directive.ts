@@ -9,7 +9,7 @@ export type PhoneInputFlagCountry = {
   iso2: string;
   /** Dial code without the leading `+` (`'49'`). */
   dialCode: string;
-  /** The default emoji flag — render it to keep the built-in look for some countries. */
+  /** The default emoji flag - render it to keep the built-in look for some countries. */
   flag: string;
 };
 

@@ -1,6 +1,6 @@
 import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
-/** The strings the time picker's columns announce — each is a listbox of numbers with no visible label. */
+/** The strings the time picker's columns announce - each is a listbox of numbers with no visible label. */
 export type TimePickerLabels = {
   /** Accessible label for the hours column. */
   hours: string;
@@ -27,7 +27,7 @@ const TIME_PICKER_LABELS_DEF = /* @__PURE__ */ defineLabels<TimePickerLabels>(
 
 /**
  * Localize the time picker's strings for everything below this injector, and read the set in effect here as a
- * signal. Partial — whatever you leave out keeps its {@link DEFAULT_TIME_PICKER_LABELS} value. See {@link defineLabels}
+ * signal. Partial - whatever you leave out keeps its {@link DEFAULT_TIME_PICKER_LABELS} value. See {@link defineLabels}
  * for the shape, which every domain in this library shares.
  *
  * @example

@@ -81,7 +81,7 @@ export const Images: { render: () => { template: string }; decorators: unknown[]
   decorators: [moduleMetadata({ imports: [RichTextEditorImageStorybookComponent] })],
 };
 
-/** The same tool against an endpoint that always fails — the placeholder shows it, then removes itself. */
+/** The same tool against an endpoint that always fails - the placeholder shows it, then removes itself. */
 export const ImageUploadFailure: { render: () => { template: string }; decorators: unknown[] } = {
   render: () => ({ template: `<et-sb-rich-text-editor-image-failure />` }),
   decorators: [moduleMetadata({ imports: [RichTextEditorImageFailureStorybookComponent] })],

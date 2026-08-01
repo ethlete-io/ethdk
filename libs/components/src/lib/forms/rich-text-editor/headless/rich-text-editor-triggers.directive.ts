@@ -51,8 +51,8 @@ export class RichTextEditorTriggersDirective {
   public triggers = input<readonly RichTextEditorTrigger[]>([]);
 
   /**
-   * Recognize tokens in pasted text that spell themselves out — `#User Name`, a trigger char plus an
-   * item's label or id — and insert them as chips instead of literal text. Matches only against
+   * Recognize tokens in pasted text that spell themselves out - `#User Name`, a trigger char plus an
+   * item's label or id - and insert them as chips instead of literal text. Matches only against
    * triggers with a static `items` list. Turn it off to keep such text literal.
    *
    * @default true
@@ -78,7 +78,7 @@ export class RichTextEditorTriggersDirective {
     trackTriggerItems(
       toObservable(this.activeMatch).pipe(map((m) => (m ? { trigger: m.trigger, query: m.query } : null))),
     ),
-    // Start in the loading state, not empty — otherwise the popup flashes "No results" for a frame
+    // Start in the loading state, not empty - otherwise the popup flashes "No results" for a frame
     // before `toObservable(activeMatch)` emits (its effect fires on the next tick).
     { initialValue: { items: [], loading: true, error: null } },
   );
@@ -93,7 +93,7 @@ export class RichTextEditorTriggersDirective {
 
   private isComposing = false;
   private listenersAttached = false;
-  /** Position of a trigger char the user dismissed (Escape) — suppresses reopening for that run. */
+  /** Position of a trigger char the user dismissed (Escape) - suppresses reopening for that run. */
   private dismissed: { node: Text; offset: number } | null = null;
 
   constructor() {
@@ -433,7 +433,7 @@ export class RichTextEditorTriggersDirective {
 
           this.overlayRef.set(null);
           this.setAriaExpanded(false);
-          // Closed by an outside pointer while a match was still active — end the run cleanly.
+          // Closed by an outside pointer while a match was still active - end the run cleanly.
           if (this.activeMatch()) this.dismiss();
         }),
       )

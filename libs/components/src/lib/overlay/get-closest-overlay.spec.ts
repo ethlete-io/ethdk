@@ -1,7 +1,7 @@
 import { isTargetInsideOverlayTree } from './get-closest-overlay';
 import { OverlayRef } from './overlay-ref';
 
-// Minimal OverlayRef stand-ins — the helper only reads `elements.paneElement` and `config.origin`.
+// Minimal OverlayRef stand-ins - the helper only reads `elements.paneElement` and `config.origin`.
 const fakeOverlay = (paneElement: HTMLElement, origin: HTMLElement | Event | undefined): OverlayRef<object, unknown> =>
   ({ elements: { paneElement }, config: { origin } }) as unknown as OverlayRef<object, unknown>;
 

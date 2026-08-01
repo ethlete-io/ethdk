@@ -4,7 +4,7 @@
 ---
 
 Localization: one mechanism for every string the library renders. `createLabels` (core) backs a
-`provide<Domain>Labels` / `inject<Domain>Labels` pair per domain — 22 of them, all locale-reactive and
+`provide<Domain>Labels` / `inject<Domain>Labels` pair per domain - 22 of them, all locale-reactive and
 signal-shaped. See the [localization guide](https://ethlete-sdk-docs-next.web.app/components/localization).
 
 - New tokens make the rich text editor, stream, grid, loader, chip, calendar, time picker, dropzone,

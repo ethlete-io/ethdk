@@ -146,7 +146,7 @@ export class RichTextEditorFloatingToolbarDirective {
 
     this.overlayRef.set(ref);
 
-    // the overlay can close itself (e.g. the selection scrolled out of view) — drop the stale ref
+    // the overlay can close itself (e.g. the selection scrolled out of view) - drop the stale ref
     // so the next usable selection opens a fresh one
     ref
       .afterClosed()

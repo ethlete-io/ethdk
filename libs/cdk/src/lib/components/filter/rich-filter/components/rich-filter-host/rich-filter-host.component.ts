@@ -44,7 +44,7 @@ export class RichFilterHostComponent {
 }
 
 // Below the component on purpose: an interpolated template literal above an inline `template:`
-// breaks Angular language service completions in it — see the
+// breaks Angular language service completions in it - see the
 // `ethlete/no-template-literal-before-inline-template` lint rule.
 export const signalVisibilityChangeClasses = (cfg: {
   name: string;

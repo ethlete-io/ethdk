@@ -36,7 +36,7 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
   public name = input('');
 
   /**
-   * The bound field's `maxLength()` limit — for an array value that is the maximum number of tags.
+   * The bound field's `maxLength()` limit - for an array value that is the maximum number of tags.
    * Signal forms binds it automatically because this input exists, so `<et-counter />` picks the
    * limit up from the schema. Display only: the tag input does not refuse tags past it, so the
    * validator is still the thing that reports the violation.
@@ -44,7 +44,7 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
   public maxLength = input<number | undefined>(undefined);
 
   /**
-   * True while an async validator is in flight for the bound field — bound automatically by signal
+   * True while an async validator is in flight for the bound field - bound automatically by signal
    * forms because this input exists. The field shell surfaces it as its busy state.
    */
   public pending = input(false, { transform: booleanAttribute });
@@ -59,7 +59,7 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
    */
   public separators = input<string[]>(['Enter', ',']);
   public allowDuplicates = input(false, { transform: booleanAttribute });
-  /** Maps raw text to the stored tag — return `null` to reject. Defaults to trimming. */
+  /** Maps raw text to the stored tag - return `null` to reject. Defaults to trimming. */
   public normalizeTag = input<(raw: string) => string | null>(defaultNormalizeTag);
   public maxTags = input<number | undefined>(undefined);
 
@@ -73,7 +73,7 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
 
   public hasValue = computed(() => this.mixed() || this.effectiveValues().length > 0);
 
-  /** The placeholder the text field currently shows — `mixedLabel` while mixed. */
+  /** The placeholder the text field currently shows - `mixedLabel` while mixed. */
   public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));
 
   public describedBy = signal<string | null>(null);
@@ -87,14 +87,14 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
 
   public interactive = computed(() => !this.disabled() && !this.readonly());
 
-  /** True once `maxTags` is reached — further adds are ignored. Mixed counts as no tags. */
+  /** True once `maxTags` is reached - further adds are ignored. Mixed counts as no tags. */
   public isFull = computed(() => {
     const maxTags = this.maxTags();
 
     return maxTags !== undefined && this.effectiveValues().length >= maxTags;
   });
 
-  /** @internal Single-character separators — they split pastes and commit while typing. */
+  /** @internal Single-character separators - they split pastes and commit while typing. */
   public characterSeparators = computed(() => this.separators().filter((separator) => separator.length === 1));
   /** @internal Multi-character separators are key names (e.g. `'Enter'`). */
   public keySeparators = computed(() => this.separators().filter((separator) => separator.length > 1));
@@ -127,7 +127,7 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
       return false;
     }
 
-    // while mixed the effective set is empty — duplicates are checked against the fresh
+    // while mixed the effective set is empty - duplicates are checked against the fresh
     // set the user is building, never against the hidden raw value
     const current = this.effectiveValues();
 
@@ -161,7 +161,7 @@ export class TagInputDirective implements FormValueControl<string[]>, FormFieldC
   }
 
   public removeAt(index: number) {
-    // while mixed there is no visible chip to delete — a removal (e.g. Backspace on the
+    // while mixed there is no visible chip to delete - a removal (e.g. Backspace on the
     // empty field) must not touch the hidden raw tags of every edited record
     if (!this.interactive() || this.mixed()) {
       return;

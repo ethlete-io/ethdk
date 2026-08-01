@@ -107,7 +107,7 @@ export default async function generate(tree: Tree, schema: GeneratorSchema) {
 
   // Step 4: Apply the generation-time default override, if any. The shared theme
   // definitions may mark a default via isDefault, but in a monorepo each app picks its
-  // own default at its generation invocation — the option wins over the definitions.
+  // own default at its generation invocation - the option wins over the definitions.
   if (schema.defaultTheme) {
     try {
       const defaultName = applyDefaultThemeOverride(themes, schema.defaultTheme);
@@ -579,7 +579,7 @@ function generateTailwindThemeCss(
   // Collect the dynamic theme colors once. They are emitted in `@theme` (so Tailwind generates
   // the utilities) and ALSO re-declared on every color selector in the alias block below. A
   // Tailwind `@theme` variable only lands on `:root`, so `rgb(var(--<runtime>-color-*))` resolves
-  // once against the root color scope and inherits that concrete color into descendants — which
+  // once against the root color scope and inherits that concrete color into descendants - which
   // means `bg-<prefix>-theme-*` utilities would ignore nested `.<runtime>-color--*` scopes.
   // Re-declaring them per color selector makes the utilities resolve against the nearest scope.
   const dynamicColorVars: string[] = [];
@@ -625,7 +625,7 @@ function generateTailwindThemeCss(
     dynamicColorAliasLines.pop();
   }
 
-  // Convenience var aliases — available on any element with a color class (or root for default)
+  // Convenience var aliases - available on any element with a color class (or root for default)
   const aliasBlock = `/* Convenience aliases (rgb + solid + opacity variants) */
 @layer base {
   :root, :where([class*="${runtimePrefix}-color--"]) {
@@ -644,7 +644,7 @@ function generateTailwindThemeCss(
     --${runtimePrefix}-theme-color-ink-solid: rgb(var(--${runtimePrefix}-theme-color-ink-rgb) / var(--${runtimePrefix}-theme-color-ink-opacity));
     --${runtimePrefix}-theme-color-ink: rgb(var(--${runtimePrefix}-theme-color-ink-rgb) / var(--${runtimePrefix}-theme-color-ink-opacity));
 
-    /* Dynamic Tailwind theme colors — re-declared per color scope so that
+    /* Dynamic Tailwind theme colors - re-declared per color scope so that
        bg-${utilityPrefix}-theme-* utilities resolve against the nearest .${runtimePrefix}-color--*
        scope instead of the value computed once at :root. */
 ${dynamicColorAliasLines.join('\n')}

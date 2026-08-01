@@ -11,7 +11,7 @@ import {
  * thing there is to go on when a response carries no message of its own.
  *
  * Defaults come from `@ethlete/query`'s status tables, in English or German depending on
- * [`injectLocale()`](/core/providers) — so a localized app needs no configuration here at all. Override
+ * [`injectLocale()`](/core/providers) - so a localized app needs no configuration here at all. Override
  * app-wide with {@link provideQueryErrorLabels}, or per instance via the `labels` input.
  */
 export type QueryErrorLabels = {
@@ -54,7 +54,7 @@ const QUERY_ERROR_LABELS_DEF = /* @__PURE__ */ defineLabels<QueryErrorLabels>(
 
 /**
  * Localize a query error's strings for everything below this injector, and read the set in effect here as a
- * signal. Partial — whatever you leave out keeps the value the current locale gives it, so this is also how you
+ * signal. Partial - whatever you leave out keeps the value the current locale gives it, so this is also how you
  * localize into a third language while keeping English or German as the base. See {@link defineLabels} for the
  * shape, which every domain in this library shares.
  *

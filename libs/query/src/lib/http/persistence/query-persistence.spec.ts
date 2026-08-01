@@ -45,7 +45,7 @@ describe('query persistence', () => {
    * A session is a query client over the shared fake store. Two of them one after another are what a
    * reload is: same store on disk, everything else built from scratch.
    *
-   * Multi-tab sync is off unless a spec asks for it — the two features are independent, and leaving the
+   * Multi-tab sync is off unless a spec asks for it - the two features are independent, and leaving the
    * channel out keeps the event stream to what this spec is about.
    */
   const createSession = (persistence: boolean | QueryPersistenceConfig = {}) =>
@@ -110,8 +110,8 @@ describe('query persistence', () => {
   };
 
   /**
-   * Lets the store settle. Reading a body back takes several awaits — the index load, the pruning it
-   * may do, then the read itself — and none of them are worth counting in a spec.
+   * Lets the store settle. Reading a body back takes several awaits - the index load, the pruning it
+   * may do, then the read itself - and none of them are worth counting in a spec.
    */
   const flushStore = async () => {
     for (let i = 0; i < 12; i++) {
@@ -137,7 +137,7 @@ describe('query persistence', () => {
       const second = createSession();
       const secondQuery = mountQuery(second);
 
-      // The request went out immediately, as it always does — persisted data never suppresses it.
+      // The request went out immediately, as it always does - persisted data never suppresses it.
       expect(pending().length).toBe(1);
       expect(secondQuery.query.response()).toBeNull();
 
@@ -187,7 +187,7 @@ describe('query persistence', () => {
       store.deferReads();
 
       // A 500 rather than a dropped connection: a connection error is retried indefinitely by the
-      // default retry policy, so a genuinely offline query never reaches an error state at all — it
+      // default retry policy, so a genuinely offline query never reaches an error state at all - it
       // stays loading, with the persisted data on screen.
       for (const req of pending().splice(0)) {
         req.flush('nope', { status: 500, statusText: 'Server Error' });
@@ -374,7 +374,7 @@ describe('query persistence', () => {
 
         expect(store.entries()).toEqual([]);
 
-        // A later settle is simply not written any more — and the query itself is unaffected.
+        // A later settle is simply not written any more - and the query itself is unaffected.
         mounted.query.execute();
         flushAll({ version: 2 });
         await endSession(session, mounted);
@@ -489,7 +489,7 @@ describe('query persistence', () => {
 
       expect(queryB.query.response()).toEqual({ version: 2 });
 
-      // Applying a shared response is silent, so it produces no repository event — tab B has nothing
+      // Applying a shared response is silent, so it produces no repository event - tab B has nothing
       // queued and writes nothing. Only the tab that actually made the request does.
       await persistenceOf(tabB).flush();
       await flushStore();
@@ -545,7 +545,7 @@ describe('query persistence', () => {
 
       expect(mounted.query.response()).toEqual({ version: 1 });
 
-      // Writing is not given up on just because reading failed — those can fail independently.
+      // Writing is not given up on just because reading failed - those can fail independently.
       expect(store.entries().length).toBe(1);
     });
   });

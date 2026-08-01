@@ -24,7 +24,7 @@ export const TIME_FORMAT = new InjectionToken<string>('TIME_FORMAT', {
  * This is the one piece of localization that cannot follow `provideLocale()` automatically: a date-fns
  * locale is a module with its own formatting rules, not something derivable from a `'de'` tag, and
  * importing every locale to look one up would put all of them in the bundle. So an app that sets
- * `provideLocale('de')` must also `provideDateLocale(de)` — {@link injectDateLocale} warns in dev mode
+ * `provideLocale('de')` must also `provideDateLocale(de)` - {@link injectDateLocale} warns in dev mode
  * when it hasn't.
  */
 export const DATE_LOCALE = new InjectionToken<Locale | null>('DATE_LOCALE', {
@@ -52,7 +52,7 @@ export const injectDateLocale = () => {
   const dateLocale = inject(DATE_LOCALE);
 
   // The forgotten half of localizing dates: `provideLocale('de')` moves every label in the library, and
-  // then the calendar still says "January". Nothing throws — date-fns just keeps its en-US default — so
+  // then the calendar still says "January". Nothing throws - date-fns just keeps its en-US default - so
   // without this it surfaces as a bug report about month names.
   if (ngDevMode && !dateLocale) {
     const { currentLocale } = injectLocale();
