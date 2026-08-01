@@ -540,26 +540,42 @@ describe('ContentfulRichTextRendererComponent', () => {
     });
 
     it('updates every preserved component', () => {
-      // Render command ids are `<contentTypeId><ordinal>`, not entry ids, so both components are
-      // considered "the same" across the change and are reused with fresh inputs.
-      const a = createEntry('a', 'teaser', { title: 'A' });
-      const b = createEntry('b', 'teaser', { title: 'B' });
-      const c = createEntry('c', 'teaser', { title: 'C' });
-      const d = createEntry('d', 'teaser', { title: 'D' });
+      const a1 = createEntry('a', 'teaser', { title: 'A' });
+      const b1 = createEntry('b', 'teaser', { title: 'B' });
+      const a2 = createEntry('a', 'teaser', { title: 'A2' });
+      const b2 = createEntry('b', 'teaser', { title: 'B2' });
 
       const { fixture } = setup({
         customComponents: { teaser: StubTeaserComponent },
         richText: doc(embeddedEntry('a'), embeddedEntry('b')),
-        includes: { Entry: [a, b] },
+        includes: { Entry: [a1, b1] },
       });
 
       const [first, second] = StubTeaserComponent.instances;
 
-      setContent(fixture, doc(embeddedEntry('c'), embeddedEntry('d')), { Entry: [c, d] });
+      setContent(fixture, doc(embeddedEntry('a'), embeddedEntry('b')), { Entry: [a2, b2] });
 
       expect(StubTeaserComponent.instances).toEqual([first, second]);
-      expect(first?.sys()).toBe(c.sys);
-      expect(second?.sys()).toBe(d.sys);
+      expect(first?.fields()).toBe(a2.fields);
+      expect(second?.fields()).toBe(b2.fields);
+    });
+
+    it('destroys the old component and creates a new one when a different entry takes the slot', () => {
+      // Commands are keyed by entry id, so a different entry never reuses another entry's instance.
+      const a = createEntry('a', 'teaser', { title: 'A' });
+      const c = createEntry('c', 'teaser', { title: 'C' });
+
+      const { fixture } = setup({
+        customComponents: { teaser: StubTeaserComponent },
+        richText: doc(embeddedEntry('a')),
+        includes: { Entry: [a] },
+      });
+
+      setContent(fixture, doc(embeddedEntry('c')), { Entry: [c] });
+
+      expect(StubTeaserComponent.destroyed).toBe(1);
+      expect(StubTeaserComponent.instances).toHaveLength(2);
+      expect(renderRoot(fixture).querySelector('.teaser')?.textContent).toBe('C');
     });
 
     it('destroys the component and removes its DOM when the entry is gone', () => {
@@ -643,10 +659,7 @@ describe('ContentfulRichTextRendererComponent', () => {
       expect(renderRoot(fixture).querySelector('p')?.textContent).toContain('rewritten');
     });
 
-    it('renders the swapped content through input updates when two entries swap places', () => {
-      // Because the ids are positional, swapping two entries of the same content type never
-      // produces a MOVE instruction. Both instances stay in place and pick up the entry that now
-      // occupies their slot via an input update.
+    it('moves the component instances with their entries when two entries swap places', () => {
       const a = createEntry('a', 'teaser', { title: 'A' });
       const b = createEntry('b', 'teaser', { title: 'B' });
 
@@ -664,6 +677,9 @@ describe('ContentfulRichTextRendererComponent', () => {
 
       expect(StubTeaserComponent.instances).toEqual([first, second]);
       expect(StubTeaserComponent.destroyed).toBe(0);
+      // The instances travel with their entries: entry b's instance is now first in the DOM.
+      expect(first?.fields()).toBe(a.fields);
+      expect(second?.fields()).toBe(b.fields);
       expect(Array.from(renderRoot(fixture).querySelectorAll('.teaser')).map((e) => e.textContent)).toEqual(['B', 'A']);
     });
 

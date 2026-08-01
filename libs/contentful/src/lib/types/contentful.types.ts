@@ -56,11 +56,6 @@ export type ContentfulConfig = {
   customComponents: Record<string, ComponentLikeWithContentfulRendererInputs>;
 
   /**
-   * Determines if the contentful rich text renderer should render the contentful rich text with tailwind css classes
-   */
-  useTailwindClasses: boolean;
-
-  /**
    * Additional hostnames that should be treated as internal links (in addition to the current page's host).
    * Useful when the app runs on localhost during development but Contentful content references the production domain.
    * Comparison is done by primary domain (last two hostname labels), so adding "example.com" is sufficient

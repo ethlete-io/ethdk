@@ -89,9 +89,18 @@ const createClassInputTask = (filePath: string, hit: { line: number; inputs: str
     )}. Those inputs were removed — the rendered picture now only carries static \`et-picture-*\` classes. Drop the binding and target the \`et-picture-*\` classes from your own CSS instead.`,
 });
 
+/** Matches a whole `useTailwindClasses: <literal>,` property line — the option was removed in v5. */
+const USE_TAILWIND_CLASSES_REGEX = /^[ \t]*useTailwindClasses\s*:\s*(?:true|false|[\w.]+)\s*,?[ \t]*\r?\n/gm;
+
 const migrateTsFile = (filePath: string, source: string) => {
   const tasks: ContentfulV5Task[] = [];
   let changed = false;
+
+  source = source.replace(USE_TAILWIND_CLASSES_REGEX, () => {
+    changed = true;
+
+    return '';
+  });
 
   const content = source.replace(INLINE_TEMPLATE_REGEX, (match, template: string, offset: number) => {
     const result = migrateTemplate(template);
@@ -178,8 +187,9 @@ const renderReport = (tasks: ContentfulV5Task[]) =>
   [
     '# @ethlete/contentful v5 migration tasks',
     '',
-    'The codemod renamed the `et-contentful-image` `hasPriority` input to `priority` and made sure',
-    '`@ethlete/components` is declared. The sites below need a decision a codemod cannot make.',
+    'The codemod renamed the `et-contentful-image` `hasPriority` input to `priority`, removed the dropped',
+    '`useTailwindClasses` config option and made sure `@ethlete/components` is declared. The sites below',
+    'need a decision a codemod cannot make.',
     '',
     'Recipes:',
     '',

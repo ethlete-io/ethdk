@@ -105,13 +105,7 @@ export const marksToClass = (marks: Mark[]) => {
 };
 
 const CLASS_ATTR = 'class';
-const DEFAULT_COMPONENT_TYPES = {
-  IMAGE: '$$$_et-image',
-  VIDEO: '$$$_et-video',
-  AUDIO: '$$$_et-audio',
-  FILE: '$$$_et-file',
-  LINK: '$$$_et-link',
-};
+const LINK_COMPONENT_TYPE = '$$$_et-link';
 
 type ExecutedCommandCacheItemBase = {
   element: HTMLElement;
@@ -399,6 +393,11 @@ export class ContentfulRichTextRendererComponent {
         continue;
       }
 
+      // The same key must render the same component class — a changed class means a fresh instance.
+      if (previous.kind === 'component' && command.kind === 'component' && previous.component !== command.component) {
+        continue;
+      }
+
       const parentId = parentIdOf(command);
       const parentPreserved = parentId === null || preserved.has(parentId);
 
@@ -570,17 +569,10 @@ export class ContentfulRichTextRendererComponent {
                 ? assetComponents.audio
                 : assetComponents.file;
 
-          const componentType = isImage
-            ? DEFAULT_COMPONENT_TYPES.IMAGE
-            : isVideo
-              ? DEFAULT_COMPONENT_TYPES.VIDEO
-              : isAudio
-                ? DEFAULT_COMPONENT_TYPES.AUDIO
-                : DEFAULT_COMPONENT_TYPES.FILE;
-
-          let componentId = componentIdMap.get(componentType) ?? -1;
-          const id = componentType + ++componentId;
-          componentIdMap.set(componentType, componentId);
+          const occurrenceKey = 'asset:' + assetId;
+          const occurrence = (componentIdMap.get(occurrenceKey) ?? -1) + 1;
+          componentIdMap.set(occurrenceKey, occurrence);
+          const id = occurrence === 0 ? occurrenceKey : `${occurrenceKey}:${occurrence}`;
 
           rootCommands.push({
             kind: 'component',
@@ -613,9 +605,9 @@ export class ContentfulRichTextRendererComponent {
 
           const textClass = linkMarks.length ? marksToClass(linkMarks) : '';
 
-          let linkComponentId = componentIdMap.get(DEFAULT_COMPONENT_TYPES.LINK) ?? -1;
-          const linkId = DEFAULT_COMPONENT_TYPES.LINK + ++linkComponentId;
-          componentIdMap.set(DEFAULT_COMPONENT_TYPES.LINK, linkComponentId);
+          let linkComponentId = componentIdMap.get(LINK_COMPONENT_TYPE) ?? -1;
+          const linkId = LINK_COMPONENT_TYPE + ++linkComponentId;
+          componentIdMap.set(LINK_COMPONENT_TYPE, linkComponentId);
 
           rootCommands.push({
             kind: 'component',
@@ -658,9 +650,10 @@ export class ContentfulRichTextRendererComponent {
             });
           }
 
-          let componentId = componentIdMap.get(componentType) ?? -1;
-          const id = componentType + ++componentId;
-          componentIdMap.set(componentType, componentId);
+          const occurrenceKey = 'entry:' + entryId;
+          const occurrence = (componentIdMap.get(occurrenceKey) ?? -1) + 1;
+          componentIdMap.set(occurrenceKey, occurrence);
+          const id = occurrence === 0 ? occurrenceKey : `${occurrenceKey}:${occurrence}`;
 
           rootCommands.push({
             kind: 'component',

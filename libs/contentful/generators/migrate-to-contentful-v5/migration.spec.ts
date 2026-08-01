@@ -63,6 +63,25 @@ describe('migrate-to-contentful-v5', () => {
     expect(result).not.toContain('hasPriority');
   });
 
+  it('removes the useTailwindClasses config option', async () => {
+    tree.write(
+      'apps/web/src/app/app.config.ts',
+      [
+        'export const config = provideContentfulConfig({',
+        '  useTailwindClasses: true,',
+        '  internalHosts: [],',
+        '});',
+      ].join('\n'),
+    );
+
+    await migration(tree, { skipFormat: true });
+
+    const result = tree.read('apps/web/src/app/app.config.ts', 'utf-8');
+
+    expect(result).not.toContain('useTailwindClasses');
+    expect(result).toContain('internalHosts: [],');
+  });
+
   it('reports removed class inputs without touching them', async () => {
     tree.write(
       'apps/web/src/app/classes.component.html',

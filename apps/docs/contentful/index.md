@@ -6,7 +6,7 @@ Angular components for rendering [Contentful](https://www.contentful.com/) conte
 yarn add @ethlete/contentful
 ```
 
-The package peers on `@ethlete/core`, `@ethlete/components`, `@ethlete/query` and `@contentful/rich-text-types`. Upgrading from v4? Run the codemod: `nx g @ethlete/contentful:migrate-to-contentful-v5` — it renames the changed image input, adds the `@ethlete/components` dependency and writes `contentful-v5-migration-tasks.md` for anything it can't rewrite (removed image class inputs, removed renderer internals, a leftover `@ethlete/cdk` dependency).
+The package peers on `@ethlete/core`, `@ethlete/components`, `@ethlete/query` and `@contentful/rich-text-types`. Upgrading from v4? Run the codemod: `nx g @ethlete/contentful:migrate-to-contentful-v5` — it renames the changed image input, removes the dropped `useTailwindClasses` config option, adds the `@ethlete/components` dependency and writes `contentful-v5-migration-tasks.md` for anything it can't rewrite (removed image class inputs, removed renderer internals, a leftover `@ethlete/cdk` dependency).
 
 ## Setup
 
@@ -34,15 +34,14 @@ export class NewsArticleComponent {
 
 All config options (defaults from `createContentfulConfig()`):
 
-| Option                         | Default                                                         | Purpose                                                                                                        |
-| ------------------------------ | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `components`                   | The built-in `ContentfulImage/Video/Audio/File/Link` components | Override how embedded assets and hyperlinks render.                                                            |
-| `customComponents`             | `{}`                                                            | Map of Contentful content-type id → component for [embedded entries](#embedded-entries-custom-components).     |
-| `internalHosts`                | `[]`                                                            | Extra hostnames the [link component](#links) treats as internal (router navigation instead of `<a href>`).     |
-| `imageOptions.srcsetSizes`     | `['375w', '1280w', '1920w', '2560w']`                           | Default srcset candidates for [images](#images).                                                               |
-| `imageOptions.sizes`           | `[]`                                                            | Default `sizes` attribute entries for images.                                                                  |
-| `imageOptions.backgroundColor` | `null`                                                          | Background color (`bg=rgb:…`) applied by the Contentful Images API.                                            |
-| `useTailwindClasses`           | `false`                                                         | Currently unused — text marks always emit the class names listed [below](#text-marks) regardless of this flag. |
+| Option                         | Default                                                         | Purpose                                                                                                    |
+| ------------------------------ | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `components`                   | The built-in `ContentfulImage/Video/Audio/File/Link` components | Override how embedded assets and hyperlinks render.                                                        |
+| `customComponents`             | `{}`                                                            | Map of Contentful content-type id → component for [embedded entries](#embedded-entries-custom-components). |
+| `internalHosts`                | `[]`                                                            | Extra hostnames the [link component](#links) treats as internal (router navigation instead of `<a href>`). |
+| `imageOptions.srcsetSizes`     | `['375w', '1280w', '1920w', '2560w']`                           | Default srcset candidates for [images](#images).                                                           |
+| `imageOptions.sizes`           | `[]`                                                            | Default `sizes` attribute entries for images.                                                              |
+| `imageOptions.backgroundColor` | `null`                                                          | Background color (`bg=rgb:…`) applied by the Contentful Images API.                                        |
 
 ::: warning Shallow merge
 `provideContentfulConfig` spreads your partial over the defaults **shallowly** — passing `imageOptions` or `components` replaces the whole sub-object, so include every key you still want.
@@ -75,7 +74,7 @@ The component has an empty template and renders imperatively. Each node type map
 
 Every element gets the classes `et-contentful-rich-text-default-element` and `et-contentful-rich-text-default-<tag>` for styling. Elements that end up empty are pruned (except `td` and `hr`).
 
-When `content` changes, the renderer **diffs** the new document against the previous render. Unchanged plain elements and text spans keep their DOM nodes; only nodes whose output, position or ancestry actually changed are rebuilt. Embedded component instances survive when an embed of the same content type still occupies the same slot — every surviving instance receives the new inputs reactively (they are bound with `inputBinding`, so signal inputs update in place), and a surviving component whose position or parent changed is reattached in place instead of recreated. Setting an identical document performs no DOM writes at all.
+When `content` changes, the renderer **diffs** the new document against the previous render. Unchanged plain elements and text spans keep their DOM nodes; only nodes whose output, position or ancestry actually changed are rebuilt. Embedded components are keyed by their entry (or asset) id: as long as the same entry stays in the document its component instance survives — even across reorders, where the instance moves with its entry. Surviving instances receive new inputs reactively (they are bound with `inputBinding`, so signal inputs update in place); a different entry taking a slot always gets a fresh instance. Setting an identical document performs no DOM writes at all.
 
 ### Text marks
 

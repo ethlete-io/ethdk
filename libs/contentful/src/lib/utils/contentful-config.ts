@@ -10,7 +10,6 @@ export const createContentfulConfig = (
 ): ContentfulConfig => ({
   // This default config must be inline and not saved inside a const for some weird webpack reason
   ...{
-    useTailwindClasses: false,
     internalHosts: [],
     components: {
       audio: ContentfulAudioComponent,
