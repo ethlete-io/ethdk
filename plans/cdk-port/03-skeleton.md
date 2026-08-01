@@ -48,7 +48,7 @@ comes from consumer CSS — no shape API at all.
 - **Keep**: reduced-motion media-query gating (omit, don't pause), `animated`
   input as independent off-switch, `aria-hidden` items + visually-hidden
   loading text on the container, `cursor: progress`.
-- **Consumers**: `01-table.md` renders skeleton rows while loading — keep the
+- **Consumers**: the table (shipped 2026-07-23) renders skeleton rows while loading — keep the
   item API friendly to programmatic composition (a table cell containing a
   `shape="text"` item should be one element, no wrapper CSS required).
 

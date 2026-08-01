@@ -3,9 +3,8 @@
 **Status: implemented 2026-07-27 — all five phases shipped.** Written 2026-07-27 against the shipped
 table (`libs/components/src/lib/table`), the CDK-era table it replaced
 (`libs/cdk/src/lib/components/table`), `node_modules/@angular/cdk@…/types/table.d.ts`,
-and the two plans that produced the current design
-([`cdk-port/01-table.md`](./cdk-port/01-table.md),
-[`table-tree-shaking.md`](./table-tree-shaking.md)).
+and the plans that produced the current design
+(the completed `cdk-port/01-table` plan and [`table-tree-shaking.md`](./table-tree-shaking.md)).
 
 The table is **not released** — `.changeset/table.md` is still pending, so breaking
 changes cost nothing and no deprecation cycle is needed. Any change from this RFC

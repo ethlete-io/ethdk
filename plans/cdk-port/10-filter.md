@@ -54,7 +54,7 @@ Built from `signalHostElementIntersection` + `signalHostClasses` (both
 content/top directives. No colors (structural/animation CSS only).
 
 Table filter headers (originally lumped under "filter") are covered by
-`01-table.md`; this file is only about this floating-button pattern.
+the shipped table plan; this file is only about this floating-button pattern.
 
 ## Real-world usage context (from the team, 2026-07-23)
 
@@ -128,7 +128,7 @@ its weak spots:
   `searchPreviewQueryFn` is typed against legacy clients
   (`AnyV2Query`/`queryComputed`/`switchQueryState`). The new preview query
   should be another thin wrapper over the **generic adapter core extracted
-  from the select adapters in `01-table.md` Phase 0** (query lifecycle,
+  from the select adapters in the shipped table plan Phase 0** (query lifecycle,
   reactive args rebuild from the draft value, loading/error derivation,
   per-client variants) — the same machinery behind `selectOptionsFromQuery`
   and the planned `tableRowsFromQuery`. The filter overlay only needs the
@@ -154,7 +154,7 @@ its weak spots:
   (config flag) to prompt instead.
 - **Scroll restoration**: keep `scrollToTop()` reachable from the util (after
   applying filters, scroll the list back to top).
-- Relationship to `01-table.md`: table filter _headers_ are per-column; this
+- Relationship to the shipped table plan: table filter _headers_ are per-column; this
   is the page-level filter panel. Both should express their state through the
   same QueryForm so URL serialization stays single-writer.
 

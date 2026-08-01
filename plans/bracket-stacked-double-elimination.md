@@ -23,7 +23,7 @@ Size: M — one new grid builder plus ~40 lines of shared drawing fixes.
 Replaces the folded mirrored double elimination shipped in `568e9379c`, which the user judged
 "weird looking". `doubleEliminationBracketLayout()` (left-to-right) is **not touched**.
 
-Read `plans/bracket-tree-shaking.md` first: layouts are plain value objects
+For context: bracket layouts are plain value objects
 (`bracket/bracket-layout.ts`) whose `createGrid` / `drawEdges` a factory in `bracket/layouts/`
 supplies. That seam is what makes this cheap: a new builder in its own file, referenced only by
 the mirrored factory. All paths below are relative to `libs/components/src/lib/bracket/`.
@@ -205,7 +205,7 @@ connector we stop drawing cannot be lit — the vertical rule keeps all of them)
    unchanged.
 10. **Changeset.** Amend the pending `.changeset/bracket-mirrored-double-elimination.md` (minor,
     unreleased) rather than adding a second — no released behaviour changes. Note in
-    `plans/bracket-tree-shaking.md` that the mirrored DE factory stops sharing the left-to-right
+    (the completed bracket-tree-shaking plan) noted that the mirrored DE factory stops sharing the left-to-right
     builder, so it is no longer +12 B (expect ≈ +1.5 kB gz; left-to-right unchanged).
 
 Finish with `npx nx lint components --fix` and `npx prettier --write` on everything touched.

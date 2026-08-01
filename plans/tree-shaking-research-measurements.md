@@ -315,8 +315,7 @@ Treated as **legacy and excluded from the ranking**: everything under `libs/quer
 (`V2QueryClient`, `V2Query`, `def`, `createQueryCollection*`, `provideQueryClientForDevtools`, the
 legacy interop shims). There is not a single `@deprecated` tag in `libs/query/src`; legacy status
 comes from `apps/docs/query/index.md` ("Two generations… the class-based `V2QueryClient` is in
-maintenance mode"), `apps/docs/query/legacy.md`, `apps/docs/query/migrating-from-v2.md` and
-`plans/query-multi-tab-sync.md:27`. The reactive-forms `QueryForm` class is _not_ in `lib/legacy` and
+maintenance mode"), `apps/docs/query/legacy.md`, and `apps/docs/query/migrating-from-v2.md`. The reactive-forms `QueryForm` class is _not_ in `lib/legacy` and
 is still exported, but `apps/docs/query/query-forms.md` presents `createQueryForm` as the recommended
 one; it is listed below for reference only.
 

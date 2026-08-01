@@ -52,8 +52,6 @@ done and what the next planning chunk is.
 | #   | cdk feature                          | Plan file                       | Size guess | Why this priority                                                                                                                                              |
 | --- | ------------------------------------ | ------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 00  | (prereq) QueryForm signal-forms port | `00-query-form-signal-forms.md` | M          | Lives in `libs/query`; blocks table Phases 2/7 (stub — needs planning session)                                                                                 |
-| 01  | table + sort + filter headers        | `01-table.md`                   | XL         | **Green-field system, not a port** (cdk table's Angular-CDK base has type-safety issues). Absorbs cdk `sort` and filter headers. Planned in phases — see file. |
-| 02  | pagination                           | `02-pagination.md`              | S–M        | Pairs with table; standalone value                                                                                                                             |
 | 03  | skeleton                             | `03-skeleton.md`                | S          | Cheap win, widely used for loading states                                                                                                                      |
 | 04  | accordion                            | `04-accordion.md`               | S–M        | Common primitive; modernization opportunity                                                                                                                    |
 | 05  | breadcrumb                           | `05-breadcrumb.md`              | S          | Simple, router-aware                                                                                                                                           |
@@ -136,9 +134,9 @@ card-preset gaps recorded); segmented-button needs a tabs-mode decision.
 
 Each plan file's own header is the detail (including deviations); this is the index.
 
+Note: Completed plans (`01-table`, `02-pagination`) have been deleted after shipping.
+
 - [x] `00-query-form-signal-forms.md` — signals QueryForm (2026-07-23)
-- [x] `01-table.md` — green-field table, phases 1–9 (2026-07-24)
-- [x] `02-pagination.md` — paginator + polish phase (2026-07-24)
 - [x] `03-skeleton.md` — skeleton container/item/text (2026-07-24)
 - [x] `04-accordion.md` — accordion + group + headless tier (2026-07-28)
 - [x] `05-breadcrumb.md` — breadcrumb + overflow + routed outlet (2026-07-28)
