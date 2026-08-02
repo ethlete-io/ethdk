@@ -1,5 +1,291 @@
 # Changelog
 
+## 1.0.0-next.33
+
+### Major Changes
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`df55f32`](https://github.com/ethlete-io/ethdk/commit/df55f3237f2fc7234165b83ed564df78060ea133) Thanks [@github-actions](https://github.com/apps/github-actions)! - Bracket: layouts are opt-in values you register, so an app bundles only the renderers it draws with.
+  Pass factories to `provideBracketConfig({ layouts })` or the `layouts` input on either host. The
+  `layout` input and `BracketConfig.swiss` are gone - mirrored is a layout, swiss options live on
+  `swissBracketLayout()` - and an unregistered mode throws `ET3413`.
+
+  ```diff
+  - provideBracketConfig({ swiss: { colors } });
+  - <et-bracket layout="mirrored" [source]="source()" />
+  + provideBracketConfig({ layouts: [mirroredSingleEliminationBracketLayout(), swissBracketLayout({ colors })] });
+  + <et-bracket [source]="source()" />
+  ```
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`beec05f`](https://github.com/ethlete-io/ethdk/commit/beec05f70be10fcded054d825320d93f96c6b414) Thanks [@github-actions](https://github.com/apps/github-actions)! - Breadcrumb: collapsing the trail is now opt-in. Import `BREADCRUMB_COLLAPSE_IMPORTS` and apply `etBreadcrumbCollapse` to the breadcrumb, the outlet, or any ancestor to keep the overflow control; without it the trail is clipped and the toggletip's overlay runtime stays out of your bundle.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`beec05f`](https://github.com/ethlete-io/ethdk/commit/beec05f70be10fcded054d825320d93f96c6b414) Thanks [@github-actions](https://github.com/apps/github-actions)! - Grid: `GridDebugComponent` moved out of `GRID_IMPORTS` into `GRID_DEBUG_IMPORTS`, so the development-only overlay no longer ships in production bundles. Import that barrel where you use `<et-grid-debug />`.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`caa8c92`](https://github.com/ethlete-io/ethdk/commit/caa8c9286c6e25c298995525e91159e9ad04cd0d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query error: labels default to English only — the German status tables are no longer bundled or auto-selected by locale. Keep the old behavior with `provideQueryErrorLabels(queryErrorLabelsForLocale)` (or `GERMAN_QUERY_ERROR_LABELS`); the `migrate-query-error-labels` generator finds affected sites.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`6be90f2`](https://github.com/ethlete-io/ethdk/commit/6be90f28518a969607202ebc8d99365f3506bae5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: the link editor popover is opt-in via `provideRichTextEditorLinkEditor()` — without
+  it the `link` tool falls back to `prompt()`. Run
+  `nx g @ethlete/components:migrate-rich-text-editor-link-editor` to find affected editors.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`a0e5424`](https://github.com/ethlete-io/ethdk/commit/a0e5424be31a2031b566e4cdf150275ab7bd4f37) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: the `'heading'` block-style menu is now an opt-in tool -
+  `provideRichTextEditorHeadingTool()`, like the align/table/image tools. It stays in the default toolbar,
+  so that call is all it takes; without it no block-style control renders (Markdown `#` autoformat is
+  unaffected). It was the only default tool needing the menu system, worth 8.5 kB gz to every editor.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`2c0d3c9`](https://github.com/ethlete-io/ethdk/commit/2c0d3c9f78bfceed19dd49b01f934d1cfebc83c2) Thanks [@github-actions](https://github.com/apps/github-actions)! - Scrollable: the buttons, dots, drag and snap are now opt-in directives on the `<et-scrollable>` itself, so a plain track no longer bundles them. Replace `renderButtons` / `buttonPosition` / `stickyButtons` with `[etScrollableButtons]` (`SCROLLABLE_NAVIGATION_IMPORTS`), `renderNavigation` with `etScrollableNavigation`, `snap` / `snapOrigin` / `cursorDragScroll` with `etScrollableSnap` / `etScrollableDrag` (`SCROLLABLE_DRAG_IMPORTS`), and `darkenNonIntersectingItems` with `etScrollableDarken` (`SCROLLABLE_DARKEN_IMPORTS`). `ScrollableMasksDirective` / `ScrollableButtonsDirective` / `ScrollableNavigationDirective` are renamed to `…Component`; the directive names now belong to the opt-ins.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`beec05f`](https://github.com/ethlete-io/ethdk/commit/beec05f70be10fcded054d825320d93f96c6b414) Thanks [@github-actions](https://github.com/apps/github-actions)! - Stream: `STREAM_IMPORTS` now holds only the shared consent, loading, error and slot pieces. Add the barrel of each platform you embed (`STREAM_YOUTUBE_IMPORTS`, `STREAM_TWITCH_IMPORTS`, … `STREAM_SOOP_IMPORTS`) and `STREAM_PIP_IMPORTS` for picture-in-picture - or `STREAM_ALL_IMPORTS` to keep the old contents. A YouTube-only app saves ~5 kB gz.
+
+### Minor Changes
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`1f528bd`](https://github.com/ethlete-io/ethdk/commit/1f528bd629b9c4f1cc5160d87745ad927a02203d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Accordion: add `preventCloseLast` to the group - the header can no longer collapse the last open
+  panel, so paired with `autoCloseOthers` the group behaves like a radio set. `close()`, `closeAll()`
+  and `[(isOpen)]` still collapse it.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`c796f12`](https://github.com/ethlete-io/ethdk/commit/c796f123982b7e93dc756b9926f8b5e6e1788a41) Thanks [@github-actions](https://github.com/apps/github-actions)! - Bracket: add `density="compact"` - narrower columns, and match cards that answer with a code and a
+  score, for a full bracket inside an article column. Layout inputs are now overrides on top of it, so
+  an unbound input resolves through the preset instead of a fixed default.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`568e937`](https://github.com/ethlete-io/ethdk/commit/568e9379c7ba2d4176f29d7a7939d4c5a7e1bfa7) Thanks [@github-actions](https://github.com/apps/github-actions)! - Bracket: `mirroredDoubleEliminationBracketLayout()` draws double elimination as stacked winners and
+  losers blocks, each folded around its own centre on a shared middle column, with the deciding rounds
+  chained below. Also fixes hovering a card lighting the wrong participant's journey, and a mirrored
+  bracket drawing its way-back connectors backwards.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`35d4f03`](https://github.com/ethlete-io/ethdk/commit/35d4f03e81d7f916e7057d8525372176fa463f27) Thanks [@github-actions](https://github.com/apps/github-actions)! - Bracket: journeys are now per participant. Hovering one side of a card lights that participant's path
+  alone and marks where they went out, and `[(focusedParticipantId)]` pins a path for touch and keyboard
+  - driven from a control of yours, cleared with `Escape`. Match cards mark each side with
+    `data-participant-id`.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`a8dd388`](https://github.com/ethlete-io/ethdk/commit/a8dd388e8846cf6a19cac7645d8f9b24207401d3) Thanks [@github-actions](https://github.com/apps/github-actions)! - Bracket: add `<et-bracket-rounds-list>`, the same source drawn as a vertical round-by-round list
+  (sectioned for double elimination), plus `bracketNaturalWidth()` / `bracketFitsWidth()` to decide when
+  to swap to it on a narrow screen.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`fba7ed8`](https://github.com/ethlete-io/ethdk/commit/fba7ed852d7f4bfb7791cce13f5062b8c4fa4c59) Thanks [@github-actions](https://github.com/apps/github-actions)! - Breadcrumb: add `etBreadcrumbSeo` (`BREADCRUMB_SEO_IMPORTS`) - opt-in `schema.org` **BreadcrumbList**
+  JSON-LD, which is what earns a site the breadcrumb line in a search result. Crumbs state their own
+  `name` and `url` through new inputs on `etBreadcrumbItemTemplate`; loading and unnamed crumbs are
+  skipped, and the last crumb needs no `url`.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`06a6ba2`](https://github.com/ethlete-io/ethdk/commit/06a6ba2889124267c05f0b0432578aaa2c8794ca) Thanks [@github-actions](https://github.com/apps/github-actions)! - Calendar: `comparisonStart` / `comparisonEnd` band a compared period under the selection - the
+  analytics "vs. the previous 30 days" pattern - and the date range input forwards them. It is
+  presentation only, so picking never writes to it. Cells expose `data-comparison-band`, and
+  comparisons band at the calendar's `precision`.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`d97e71a`](https://github.com/ethlete-io/ethdk/commit/d97e71a9e0ee6f53cb71c2b05f8dae64fcdb92a5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Calendar: the header is replaceable, and now moves with the grid it names.
+
+  - `ng-template etCalendarHeader` projected into `et-calendar` renders instead of the default header,
+    with the headless directive as its context; `et-calendar` also exposes it as `headless`.
+  - The label travels with the rows, the caret no longer swings with the label's width, grids crossfade
+    rather than cut, and the picker's bottom sheet keeps one height.
+  - Fixed: the calendar warned NG0956 twice per navigation in dev.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`8ff5062`](https://github.com/ethlete-io/ethdk/commit/8ff506229e889dda5389404b187b517fe6158baa) Thanks [@github-actions](https://github.com/apps/github-actions)! - Calendar: `monthsShown` renders several months side by side - the classic two-month range picker,
+  where a range spanning the turn of a month is one gesture. The span shares one keyboard scope, one
+  selection and a band that runs through the seam, and stepping moves by a single month. Headless:
+  `monthPages()`. The date inputs deliberately don't forward it.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`8692c2c`](https://github.com/ethlete-io/ethdk/commit/8692c2c8d00577ec701e9fa50ac2487be8a54ef0) Thanks [@github-actions](https://github.com/apps/github-actions)! - Calendar: `mode="multiple"` selects a set of unrelated dates into its own `multipleValue` model
+  (`Date[]`, kept ascending). Picking a date again removes it, nothing bands or previews, and the grid
+  is `aria-multiselectable`. It composes with `precision`. The date inputs have no equivalent - their
+  value is one wire string.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`35c463c`](https://github.com/ethlete-io/ethdk/commit/35c463cc17c2a7ea1e0bfa791371c10cf92fbe18) Thanks [@github-actions](https://github.com/apps/github-actions)! - Calendar and date inputs: `precision` (`'day' | 'month' | 'year'`) makes them month or year pickers -
+  picking in that grid writes the value (the start of the unit) instead of drilling further, and ranges
+  compare, band and complete at the same unit. On `et-date-input` / `et-date-range-input` it also
+  derives the text format, so `displayFormat` now defaults to `null`.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`c41beec`](https://github.com/ethlete-io/ethdk/commit/c41beec18d6920eb154ffc84a1393fd0b18ea8b6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Calendar: `rangeSelectionStrategy` decides what a pick means in `range` mode, forwarded by the date
+  range input. A strategy is two pure functions of `(date, currentRange)` - `select`, and the optional
+  `preview` for what to band on hover. `createWeekRangeStrategy({ weekStartsOn })` snaps to whole weeks
+  and `createFixedLengthRangeStrategy({ days })` makes every pick a complete span.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`d5012e1`](https://github.com/ethlete-io/ethdk/commit/d5012e10ce81514c62eb1c1b76784a30a6d6b6de) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add `startAt` to the calendar: where an empty calendar opens and which day takes the
+  initial roving focus (e.g. next month for a booking form). A selection or an explicit
+  `activeMonth` still wins over it, and without any of the three the calendar opens on
+  today. `et-date-input`, `et-date-range-input` and `et-date-time-input` forward it to
+  their picker calendar.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`d9b05fc`](https://github.com/ethlete-io/ethdk/commit/d9b05fc92ca568a4d57e0711a6a0bab6db3a0e0c) Thanks [@github-actions](https://github.com/apps/github-actions)! - Calendar: the header label is a button that zooms the day grid out to months and then years, and
+  picking one drills back in; `startView` decides where it opens, forwarded by the three date inputs. A
+  coarse pick only navigates, reported as `monthSelect` / `yearSelect`. `min`/`max`/`dateFilter` and the
+  keyboard model reach every view, and the new `dateClass` puts classes of your own on any cell.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`cbd68e0`](https://github.com/ethlete-io/ethdk/commit/cbd68e0287667b9cfb9b3138d0508378fffea0b5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Calendar: `weekNumbers` renders a leading week-number column on the day grid, forwarded by the date,
+  date-range and date-time inputs. The numbering is localized rather than always ISO, so it names the
+  rows actually on screen. Each number is its row's `rowheader`, and `--et-calendar-week-number-size`
+  sizes the column.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`62b03f9`](https://github.com/ethlete-io/ethdk/commit/62b03f937274d68139be12df3778ce7d316600ea) Thanks [@github-actions](https://github.com/apps/github-actions)! - Carousel & Scrollable: much smoother swiping on a phone - 85% less style recalculation and 88% less
+  paint with `transition="wipe"`, and no observer work during a scroll. Snapping is native CSS scroll
+  snap (`ScrollableDirective.suspendSnap()` holds it off while something writes an offset itself), and
+  the built-in transitions run as composited keyframes. New `transition="custom"` fills
+  `--et-carousel-slide-progress` without applying an effect, for CSS of your own; new
+  `--et-carousel-wipe-dim-color`; `signalElementChildren` / `signalElementScrollState` take a
+  `mutations` option to narrow their observers.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`cb1c5b0`](https://github.com/ethlete-io/ethdk/commit/cb1c5b0ee5a4cf735b8846364fd06bed77b59018) Thanks [@github-actions](https://github.com/apps/github-actions)! - Bracket: the placeholder cards are now real - compact `et-match-card` cells, a hero final card with a
+  champion line, heading round headers (`roundHeaderLevel`) and a labelled continue cell. They need
+  `provideBracketConfig({ matchNormalizer })` to read your match data (`normalizeEthleteBracketMatch` ships
+  for Ethlete feeds), and `finalColumnWidth` / `finalMatchHeight` now default to `360` / `200` to fit them.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`9057738`](https://github.com/ethlete-io/ethdk/commit/90577383b754af4789f034cee5199bf2b56f8203) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add the match domain behind `MATCH_CARD_IMPORTS`: `<et-match-card>` (one card, three container-query layouts -
+  dense row, featured card, wide row; `size` pins one; put it on an `<a>` to make the whole card the link),
+  `<et-match-participant>`, the headless `etMatchCard` directive with its score/meta/game-score parts,
+  `provideMatchLabels()`, and `normalizeEthleteMatch()` - cards take a `NormalizedMatch`, so any backend maps in
+  with a plain adapter.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`0d30c38`](https://github.com/ethlete-io/ethdk/commit/0d30c385db868f70c92f2b0db670e99dd645177d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Match card: live scores now roll when they change - old value out, new value in, with a flash on the side
+  that scored - plus a `scoreChange` output carrying the side and delta for your own effects. Only while the
+  match is live, never on first render, instant under reduced motion; `animateScoreChanges` turns it off.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`fd8ac2f`](https://github.com/ethlete-io/ethdk/commit/fd8ac2f546fd8ac8cab61b249dccf01089b4b18e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Add the standings table behind `STANDINGS_IMPORTS`: `<et-standings>` draws a real `<table>` from
+  `NormalizedStandingRow`s (any backend maps in; `normalizeEthletePlacement` ships for Ethlete feeds), bands
+  position `zones` in your own color themes and draws their legend from the same config, drops columns rather
+  than scrolling on narrow widths, and can single out one row.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`26a987f`](https://github.com/ethlete-io/ethdk/commit/26a987f9972d25156dfec4753170b06b79b74793) Thanks [@github-actions](https://github.com/apps/github-actions)! - Form field: an `[etIcon]` projected into `[etInputPrefix]` / `[etInputSuffix]` is now sized by the
+  shell (`--et-form-field-affix-icon-size`, `16px`) - no size class needed, matching the other
+  in-field icons.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`d97e71a`](https://github.com/ethlete-io/ethdk/commit/d97e71a9e0ee6f53cb71c2b05f8dae64fcdb92a5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Icon: add a `label` input. An icon stays `aria-hidden` by default - it usually repeats the text beside
+  it - but a lone status glyph is the content, and `label` turns the host into a named `role="img"` so
+  the meaning survives for a screen reader.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`d97e71a`](https://github.com/ethlete-io/ethdk/commit/d97e71a9e0ee6f53cb71c2b05f8dae64fcdb92a5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Menu: add `loop` (default `true`, the current behaviour). Turn it off and the arrow keys stop at the
+  ends instead of wrapping, which reads better in a long menu. A menu with a search field is
+  unaffected - its ends hand focus back to the field either way.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`f0082cd`](https://github.com/ethlete-io/ethdk/commit/f0082cd3a6e3ed20fc534b02d25e260f4e1d8600) Thanks [@github-actions](https://github.com/apps/github-actions)! - Notification upgrades:
+
+  - `manager.promise(work, { loading, success, error })` follows a promise, an observable or an `@ethlete/query` query in one toast.
+  - `id` in the config replaces a live notification instead of stacking a duplicate.
+  - Status icons (overridable per notification via `icon`), plus `secondaryAction` for an action pair.
+  - Swipe/flick a notification away; opt out with `swipeToDismiss: false`.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`0e08bc2`](https://github.com/ethlete-io/ethdk/commit/0e08bc23450a58635dfae906d9fefc96f18a359b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Pagination: add `<et-page-size-select>` (`PAGE_SIZE_SELECT_IMPORTS`) - the "Items per page" control
+  that completes the Material-style controls row beside a compact paginator. A native `<select>`, so it
+  pulls in nothing; a separate component, because page size is the app's state rather than the
+  paginator's. Changing the size deliberately does not reset the page. Two new label keys, `pageSize`
+  and `pageSizeOption`.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`38b3c2b`](https://github.com/ethlete-io/ethdk/commit/38b3c2b6c1f6f54efcac63f4f991b682dfd1485e) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: undo/redo over the Markdown value, replacing the browser's native
+  `contenteditable` history (which could restore states the value never had). Ctrl/Cmd+Z, Ctrl+Y and
+  the platform's own undo all route into it, plus new `'undo'` / `'redo'` toolbar tools that lead the
+  default toolbar. Typing goes back word by word; a paste, autoformat or tool rewrite in one step.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`1c7ad03`](https://github.com/ethlete-io/ethdk/commit/1c7ad0373cf8cf7845be1d3337bbafe71eec9fc0) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: `provideRichTextEditorImageTool({ upload })` embeds images as `![alt](url)` - pick,
+  paste or drop a file, uploaded by your handler (a promise, an observable, or a `createDropzoneUpload`
+  config for real progress), with a placeholder that never touches the value and a popover for alt text.
+  Tool definitions gained `paste`, `drop` and `click` content hooks; without the tool, pasted image
+  files are refused rather than becoming `blob:` URLs in the value.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`48fbe62`](https://github.com/ethlete-io/ethdk/commit/48fbe62fefe815a59d1b41e6fbc7055c88537e58) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: pasted text that spells a token out - `#First name`, the trigger char plus an
+  item's label or id - comes back as a real chip, for HTML and plain-text clipboards alike (opt out with
+  `parsePastedTokens="false"`). A trigger with a static `items` list no longer needs `resolveItem` to
+  render chip labels.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`7e444d6`](https://github.com/ethlete-io/ethdk/commit/7e444d6d11f65b00ae22b9d0f9d553ff3b45b733) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: block quote and fenced code block tools (`'blockquote'` / `'codeBlock'`, also
+  typed as `> ` / ` ``` `), both in the default toolbar. Quotes nest with Tab/Shift+Tab; a code block
+  holds literal text, so the marks that can't serialize inside one disable themselves. `htmlToMarkdown`
+  / `markdownToHtml` now round-trip nested quotes (`>>`).
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`b3673f3`](https://github.com/ethlete-io/ethdk/commit/b3673f32015277a57be0887e43775869dd72b3ca) Thanks [@github-actions](https://github.com/apps/github-actions)! - Selection lists: add `<et-checkbox-group-select-all>`, the prebuilt tri-state select-all row that had
+  to be hand-rolled until now - a real `role="checkbox"` with `aria-checked="mixed"`, taking its text
+  from the new shared `selectAll` form label. Also `orientation="horizontal"` on `et-checkbox-group` and
+  `et-radio-group`, flowing the options in a wrapping row.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`84a8d00`](https://github.com/ethlete-io/ethdk/commit/84a8d005838660be71cac158769f659c670465e8) Thanks [@github-actions](https://github.com/apps/github-actions)! - Sliders: `orientation="vertical"` turns `et-slider` / `et-range-slider` (and the headless `etSlider` /
+  `etRangeSlider`) into a bottom→up slider, its length set by `--et-slider-vertical-size`. `marks`
+  renders ticks on the track - `true` for one per `step`, or an array of `{ value, label? }` stops - and
+  `snapToMarks` moves commits and keyboard steps mark to mark instead of along the `step` grid.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`41c2683`](https://github.com/ethlete-io/ethdk/commit/41c268395cfa476024a3ef4680eacda0660cd9ba) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: add CSV export - `TABLE_CSV_EXPORT_IMPORTS` / `etTableCsvExport` for a button of your own, or
+  `injectTableCsvExport()` / `tableToCsv()` from TypeScript. It writes the visible columns and the
+  table's own rows by default (`exportValue` gives a column its text form), `rows` also takes a provider
+  function, `tableCsvRowsFromPages({ fetchPage })` walks a paginated endpoint, and `file` saves a CSV the
+  server built instead. A server-paginated table that would silently export a single page is a dev-mode
+  error (`ET3506`) unless you pass `partial: true`.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`e5ffd4d`](https://github.com/ethlete-io/ethdk/commit/e5ffd4d031e956e12b0d32f9cdee9dc843832c32) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: add `etTableInlineEdit` (`TABLE_INLINE_EDIT_IMPORTS`) - inline cell editing. Mark a column
+  `editable` and give it an `etTableCellEdit` template, whose context is the draft as a signal-forms
+  field, so any of the library's controls is an editor with a plain `[formField]` binding. Double-click
+  or `Enter` starts, `Enter` saves, `Escape` restores, `Tab` saves and moves on; `cellCommit` reports
+  `{ row, column, previous, next }` and the mutation stays yours.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`040bbb3`](https://github.com/ethlete-io/ethdk/commit/040bbb3559b2c1705b2358a5c7158f491dce4a67) Thanks [@github-actions](https://github.com/apps/github-actions)! - Table: add `etTableKeyboardNav` (`TABLE_KEYBOARD_NAV_IMPORTS`) - arrow-key navigation over the body's
+  cells following the ARIA grid pattern, with Home/End, Ctrl+Home/End and PageUp/PageDown. The body
+  becomes a single tab stop; `Enter` drills into a cell's own control and `Escape` comes back out.
+  Composes with virtual scrolling.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`255bebc`](https://github.com/ethlete-io/ethdk/commit/255bebcad8a0db468093784c300a865d90c224e7) Thanks [@github-actions](https://github.com/apps/github-actions)! - Time picker: `etTimePicker` / `et-time-picker` take `min`, `max` and `timeFilter`, matching the
+  calendar's bounds, and `et-time-input` / `et-date-time-input` forward them as `minTime` / `maxTime` /
+  `timeFilter`. Availability is per column - an hour is disabled only when no minute inside it is
+  selectable - unselectable options stay in place and the keyboard steps over them, and picking a part
+  moves the finer ones to the first value that works, including the hour behind an AM/PM pick.
+
+### Patch Changes
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`6c9d38d`](https://github.com/ethlete-io/ethdk/commit/6c9d38d7e6b41586d7c9abb3296e5f45ccc3767c) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay runtime: build anchored strategies with `anchoredOverlayPosition({ referenceElement, … })`
+  instead of a `{ kind: 'anchored', … }` literal - it is what pulls `@floating-ui/dom` in, so apps
+  that only center dialogs no longer bundle it (~7 kB gz). `autoResize`, `autoHide`,
+  `autoCloseIfReferenceHidden` and arrows additionally need `enableAnchoredOverlayPositionExtras()`.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`d97e71a`](https://github.com/ethlete-io/ethdk/commit/d97e71a9e0ee6f53cb71c2b05f8dae64fcdb92a5) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix `<et-carousel>` autoplaying by default: `autoplay` is the component's own input now and defaults
+  to `false`, which is what it always documented. Add `autoplay` to a carousel that should play. On the
+  headless directive, read the new `isEnabled()` for what is in effect.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`833b579`](https://github.com/ethlete-io/ethdk/commit/833b579f42f413ae715e792d5aa40e14d3e95513) Thanks [@github-actions](https://github.com/apps/github-actions)! - `et-match-participant` now takes an attribute form (`<a et-match-participant>` / `<button …>`), so a player or
+  team card can be the click target itself. On an interactive host it names itself after the participant - the
+  link would otherwise read "FC Berlin emblem FC Berlin" - takes the shared focus ring, and drops the button
+  chrome. `et-match-card` already worked this way.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`8609171`](https://github.com/ethlete-io/ethdk/commit/8609171a498982cdde8b7ce2c600cf4d42031016) Thanks [@github-actions](https://github.com/apps/github-actions)! - Docs: add a Sport UI recipes guide - the today's-matches rail (built on `et-scrollable`, which is why
+  `et-match-list` was never shipped as a component) plus competition, team, player and nation cards, each with
+  a live story to copy from.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`8f0e42a`](https://github.com/ethlete-io/ethdk/commit/8f0e42a8a436aba6a061968bfd6dc144344a896f) Thanks [@github-actions](https://github.com/apps/github-actions)! - Form field: the text-field shell, rich-text, textarea, hint and counter CSS now ships with the
+  control that uses it, so a field holding only a checkbox, switch or slider no longer pulls the
+  whole form-field stylesheet. No API change; chrome renders as before.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`2c0d3c9`](https://github.com/ethlete-io/ethdk/commit/2c0d3c9f78bfceed19dd49b01f934d1cfebc83c2) Thanks [@github-actions](https://github.com/apps/github-actions)! - Choice field's card variant, the carousel autoplay chrome and the cascader's bottom-sheet
+  presentation now inject their CSS only once that feature is actually used.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`353777b`](https://github.com/ethlete-io/ethdk/commit/353777bb56e42ad1c02058a2ccf694f69c94b025) Thanks [@github-actions](https://github.com/apps/github-actions)! - Mark build-tooling peer dependencies (`vite`, `typescript`, `ts-morph`, `@nx/devkit`, `@analogjs/*`) and feature-scoped runtime peers (`date-fns` in components) as optional via `peerDependenciesMeta`. They are only needed when running the Nx generators or using the date/time components - consumers no longer have to install them just to use the libraries.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`95c3d2f`](https://github.com/ethlete-io/ethdk/commit/95c3d2f096180119ed21937d5c41ed62a7b050e6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay: `--et-overlay-body-padding-block` now reserves real space at the end of a scrolling body. Its end value used to be swallowed by the scroll container, leaving the last child's border and focus ring clipped against the divider once scrolled to the bottom.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`f59128f`](https://github.com/ethlete-io/ethdk/commit/f59128f23932f647f2653d2ee804cd474011915f) Thanks [@github-actions](https://github.com/apps/github-actions)! - `createOverlayUnsavedChangesGuard` stops vetoing closes once its tracker was abandoned (a logout), so the overlay closes instead of prompting over a page the user is being redirected away from. It also inherits the tracker's tab guard - the `beforeunload` lock is on by default, with the title marker / blink / favicon / badge extras available through the `tab` option.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`2c0d3c9`](https://github.com/ethlete-io/ethdk/commit/2c0d3c9f78bfceed19dd49b01f934d1cfebc83c2) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay: the default enter/leave animation CSS now ships with the strategy that uses it
+  (`stylesComponent` on the breakpoint config), so an app only bundles the animations for the overlay
+  kinds it opens. Overlays that hand-roll a layout `containerClass` instead of using a built-in
+  strategy must now provide their own animation CSS.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`8b13854`](https://github.com/ethlete-io/ethdk/commit/8b13854aa079196c84fc08da0aee685f728a441d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query client: multi-tab sync and response persistence are opt-in `features` instead of defaults - the
+  `multiTabSync` / `persistence` client options are gone and a client without the features ships neither
+  engine. Migrate with `nx g @ethlete/query:migrate-query-client-features`.
+
+  - `withMultiTabSync()` shares reads, polls a cache key in one tab for all of them and refreshes the
+    others after a mutation; per-query `multiTabSync: false` keeps a query tab-local.
+  - `withQueryPersistence()` keeps public reads in IndexedDB, so a reload renders the last known data
+    while it revalidates. Secure responses need an explicit opt-in and are removed on logout.
+  - `refreshQueriesInUse()` also refreshes GraphQL queries transported over POST; devtools gain Sync
+    and Disk columns.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`8422cf0`](https://github.com/ethlete-io/ethdk/commit/8422cf09bcb4cdc07621d7a495004d8bf5e37d2c) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: fix escaping a code block that sits flush against the start or end of the content,
+  where there is no line to move to. ArrowUp off the first line and ArrowDown off the last now create
+  the paragraph they would move to, and a second Enter on the empty last line leaves the block.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`1c7ad03`](https://github.com/ethlete-io/ethdk/commit/1c7ad0373cf8cf7845be1d3337bbafe71eec9fc0) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: the docked (touch) toolbar no longer leaves a gap between itself and the on-screen
+  keyboard, however much the browser over-reports the keyboard's height, and it re-checks while the
+  keyboard is up in case a viewport event never arrives. A page that opted into the VirtualKeyboard API
+  gets `env(keyboard-inset-height)` instead of the measurement.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`42ec970`](https://github.com/ethlete-io/ethdk/commit/42ec970d6963bb5a3aa3af4e207ef2cac801c915) Thanks [@github-actions](https://github.com/apps/github-actions)! - DI: `createProvider` / `createRootProvider` / `createStaticProvider` / `createStaticRootProvider` /
+  `createLabels` are replaced by `defineProvider` & co., which return a definition you read with
+  `toProvideFn` / `toInjectFn` / `toToken`; `createQueryClient`, `createBearerAuthProvider` and
+  `createWebSocketClient` return that definition instead of a tuple. Every `provideX` / `injectX` /
+  token export keeps its name - run `nx g @ethlete/core:migrate-provider-shape` for your own call sites.
+  Cuts the `@ethlete/components` import floor from 89.9 to 2.4 kB gz.
+
 ## 1.0.0-next.32
 
 ### Major Changes
