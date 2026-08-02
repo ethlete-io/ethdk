@@ -1,0 +1,31 @@
+{
+  "profile": "sdk",
+  "targets": ["claude"],
+  "vars": {
+    "lintCommand": "npx nx lint <project>",
+    "lintFixCommand": "npx nx lint <project> --fix",
+    "formatCommand": "npx prettier --write <files>",
+    "storybookUrl": "http://localhost:4400",
+    "storybookStartCommand": "npm run storybook",
+    "handoffDir": ".claude/handoffs",
+    "themeStylesheet": "apps/playground/src/styles/storybook.css",
+    "commitScopes": [
+      "core",
+      "cdk",
+      "agent-rules",
+      "components",
+      "query",
+      "eslint-plugin",
+      "types",
+      "cli",
+      "contentful",
+      "playground",
+      "docs",
+      "deps",
+      "ci",
+      "release",
+      "repo"
+    ]
+  },
+  "exclude": ["angular-patterns", "git-commit", "handoff", "rxjs-signals"]
+}

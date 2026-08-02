@@ -1,0 +1,14 @@
+{
+  "name": "@ethlete/agent-rules",
+  "version": "0.0.1",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "typings": "./src/index.d.ts",
+  "bin": {
+    "ethlete-agents": "./src/index.js"
+  },
+  "peerDependencies": {
+    "tslib": "2.8.1"
+  }
+}

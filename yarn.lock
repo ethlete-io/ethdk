@@ -4209,6 +4209,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@ethlete/agent-rules@workspace:libs/agent-rules":
+  version: 0.0.0-use.local
+  resolution: "@ethlete/agent-rules@workspace:libs/agent-rules"
+  peerDependencies:
+    tslib: 2.8.1
+  bin:
+    ethlete-agents: ./src/index.js
+  languageName: unknown
+  linkType: soft
+
 "@ethlete/cdk@workspace:libs/cdk":
   version: 0.0.0-use.local
   resolution: "@ethlete/cdk@workspace:libs/cdk"

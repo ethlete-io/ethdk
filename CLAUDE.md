@@ -39,32 +39,12 @@ Tailwind theme is trimmed (no default color palette, no `text-sm`-style scale), 
 read the **`storybook-styling`** skill (`.claude/skills/storybook-styling/`) before
 styling a story. An unknown utility emits nothing and fails silently.
 
-#### Cascade layers: every component CSS file is wrapped in `@layer components`
-
-**All component CSS in `libs/components` is wrapped in `@layer components { … }`,
-and new/edited files must keep doing so** (put the entire file inside one such
-block). This is what lets consumers override component styles with a Tailwind
-utility - `flex`, `p-4`, etc. - without `!important`.
-
-Why: component CSS is injected via `ViewEncapsulation.None` as global `<style>`
-tags. If it were **unlayered**, it would beat Tailwind v4 utilities (which live in
-`@layer utilities`) **regardless of specificity** - layer precedence is resolved
-before specificity, so a consumer was forced to escalate to `flex!`. `:where()`
-does **not** fix this: lowering specificity is irrelevant across layers (an
-unlayered `:where(.et-button)` still beats a layered `.flex`). Wrapping in
-`@layer components` does fix it, because Tailwind v4 pre-declares
-`@layer theme, base, components, utilities`, so `components` sorts before
-`utilities` and utilities win. (Consequence: any consumer rule that is unlayered
-or in a later layer now wins over component styles by default - that is the
-intended, well-behaved-library direction.)
-
-`:where()` has a **separate** job: **flattening internal specificity** so a
-component's own config modifiers (`[data-size]`, `[data-variant]`, `[disabled]`)
-stay at the same single-class weight as the base rule, resolved by source order -
-see the `&:where([data-size='…'])` / `&:where([disabled])` pattern in
-`libs/components/src/lib/button/*.component.css`. Interaction states (`:hover`,
-`:focus-visible`, `:active`) are deliberately left bare so they escalate and win.
-`:where()` is orthogonal to the layer wrap, not a substitute for it.
+The cascade-layer wrap (`@layer components { … }` around every component CSS file),
+why it - and not `:where()` - is what lets a consumer override component styles, and
+the separate job `:where()` does for internal modifiers are all in the
+`.claude/rules/ethlete/styling.md` rule, which loads every session. The canonical
+`&:where([data-size='…'])` / `&:where([disabled])` pattern lives in
+`libs/components/src/lib/button/*.component.css`.
 
 #### Splitting a large stylesheet: styles-only components
 
@@ -89,14 +69,9 @@ injects one `<style>`. Reach for this when a sheet grows past a few hundred line
 identifiable slice of it serves a minority of consumers - `form-field` is the next
 candidate.
 
-All colors in component CSS must come from the **surface theming** and **color
-theming** token systems (`--et-surface-*-solid`, `--et-theme-color-*`) - never
-hardcode colors. Read the **`theming`** skill (`.claude/skills/theming/`) before
-touching any color, background, border, or interaction-state styling.
-
-Theme **names** (`brand`, `danger`, `dark-elevated`, …) are registered by the
-consuming app - the SDK defines none. Don't hardcode name unions in types, docs,
-or examples; semantic colors resolve via theme `type` (e.g. `injectErrorTheme()`).
+Read the **`theming`** skill (`.claude/skills/theming/`) before touching any color,
+background, border, or interaction-state styling - the token systems, the DI-based
+semantic colors, and the "theme names are app-registered" rule are all there.
 
 ## Dependencies
 
@@ -131,49 +106,19 @@ title, grep `apps/docs` for the old id.
 
 ## Linting & style
 
-Run lint with `--fix` - most styleguide rules have auto-fixers, so let them do the
-work before fixing anything by hand:
+Lint (`npx nx lint <project> --fix` first), Prettier, and the comment rules live in
+`.claude/rules/ethlete/`, generated from `@ethlete/agent-rules` and loaded every
+session. For the judgment calls lint can't enforce (signals vs RxJS, templates,
+lifecycle/DI patterns), see the **`styleguide`** skill.
 
-```bash
-npx nx lint <project> --fix
-```
+## Agent rules & skills for other repos
 
-The rules live in `@ethlete/eslint-plugin`. For the judgment calls lint can't
-enforce (signals vs RxJS, templates, lifecycle/DI patterns, etc.), see the
-**`styleguide`** skill.
-
-After editing any file, format it with Prettier before wrapping up (config is
-`.prettierrc.js`):
-
-```bash
-npx prettier --write <files>
-```
-
-### Comments: write for the next reader of this file, not for the reviewer of your change
-
-A comment earns its place by telling someone **using or editing this code** something the
-code cannot. Explaining _why the change was made_ is not that - it belongs in the commit
-message, the changeset, or `apps/docs`.
-
-Do **not** leave behind:
-
-- **Rationale for a mechanical choice.** `Record<Size, X>` with literal keys, a `@__PURE__`
-  annotation, a factory instead of a literal, a helper moved to another file - the type,
-  the annotation and the import already say what happens. Nobody reading `button.component.ts`
-  needs a paragraph on bundler purity.
-- **Migration narration.** "moved here from X", "used to be a tuple", "so Y no longer pulls Z".
-  Git knows. A reader six months from now does not care.
-- **The same explanation repeated per call site.** If a pattern needs explaining, explain it
-  once where the pattern is defined (the helper's JSDoc, the lint rule's message, the guide)
-  and let every use site stay silent.
-- **Restating the code.** `// increment the counter` above `counter++`.
-
-Do keep: non-obvious behaviour and ordering constraints, a real invariant a future edit could
-break, a workaround with the reason it exists, and public API JSDoc (what it does and how to
-use it - not why it is shaped that way).
-
-When you catch yourself writing "because", check whether the sentence is aimed at the reviewer
-of your diff. If it is, cut it.
+`libs/agent-rules` publishes `@ethlete/agent-rules`: the portable slice of this repo's
+guidance, compiled into Claude Code, Codex, Cursor and Copilot formats by
+`npx ethlete-agents sync`. Content lives in `libs/agent-rules/content/`; what this repo
+itself consumes is configured in `ethlete-agents.config.json` (`profile: sdk`, so only
+`scope: both` content is emitted here). Never hand-edit anything under
+`.claude/rules/ethlete/` - edit the content file and re-run sync.
 
 ## Verifying UI changes
 

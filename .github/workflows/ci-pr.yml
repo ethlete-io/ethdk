@@ -31,6 +31,9 @@ jobs:
 
       - run: yarn nx format:check
 
+      # Fails when .claude/rules/ethlete/** drifts from libs/agent-rules/content/**.
+      - run: yarn nx build agent-rules && node dist/libs/agent-rules/src/index.js check
+
       - run: yarn nx run-many -t lint
 
       - run: yarn nx run-many -t test

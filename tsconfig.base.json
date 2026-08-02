@@ -18,6 +18,7 @@
     "esModuleInterop": true,
     "noUncheckedIndexedAccess": true,
     "paths": {
+      "@ethlete/agent-rules": ["libs/agent-rules/src/index.ts"],
       "@ethlete/cdk": ["libs/cdk/src/index.ts"],
       "@ethlete/components": ["libs/components/src/index.ts"],
       "@ethlete/eslint-plugin": ["libs/eslint-plugin/src/index.js"],

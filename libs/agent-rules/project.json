@@ -1,0 +1,32 @@
+{
+  "name": "agent-rules",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/agent-rules/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/agent-rules",
+        "main": "libs/agent-rules/src/index.ts",
+        "tsConfig": "libs/agent-rules/tsconfig.lib.json",
+        "assets": ["libs/agent-rules/*.md", "libs/agent-rules/content/**/*"]
+      }
+    },
+    "lint": {
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/.eslintrc.json",
+        "{workspaceRoot}/.eslintignore",
+        "{workspaceRoot}/eslint.config.mjs",
+        "{workspaceRoot}/tools/eslint-rules/**/*",
+        {
+          "externalDependencies": ["eslint"]
+        }
+      ]
+    }
+  }
+}

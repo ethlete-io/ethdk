@@ -12,6 +12,7 @@ module.exports = {
       [
         'core',
         'cdk',
+        'agent-rules',
         'components',
         'query',
         'eslint-plugin',

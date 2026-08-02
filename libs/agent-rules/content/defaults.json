@@ -1,0 +1,9 @@
+{
+  "lintCommand": "npm run lint",
+  "lintFixCommand": "npm run lint -- --fix",
+  "formatCommand": "npx prettier --write <files>",
+  "storybookUrl": "http://localhost:6006",
+  "storybookStartCommand": "npm run storybook",
+  "docsBaseUrl": "https://ethlete-sdk-docs.web.app",
+  "handoffDir": ".agents/handoffs"
+}
