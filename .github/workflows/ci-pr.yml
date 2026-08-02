@@ -5,6 +5,11 @@ on:
 
 concurrency: ci-${{ github.ref }}
 
+# Nx Cloud is temporarily bypassed while the self-hosted instance is unstable. Remote caching
+# is off; everything else about the run is unchanged. Delete this to re-enable.
+env:
+  NX_NO_CLOUD: 'true'
+
 jobs:
   pr:
     runs-on: ubuntu-latest

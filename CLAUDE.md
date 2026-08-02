@@ -87,6 +87,15 @@ importing) - you **must**:
    `dependencies` match what its source actually imports - a mismatch is a lint
    error, not just a warning.
 
+### Nx Cloud is temporarily off
+
+The self-hosted instance (`nx-cloud.braune-digital.com`) is unstable, so every workflow
+sets `NX_NO_CLOUD: 'true'`. Export the same locally - `export NX_NO_CLOUD=true` - to skip
+remote caching and the run-link lookup. Nothing else about `nx` changes. Re-enable by
+deleting the `env:` block from `.github/workflows/*.yml`; the token in `nx.json` was left
+in place. (`neverConnectToCloud` does **not** work here - it only blocks _new_ connections,
+and this workspace is already connected.)
+
 ## Releasing
 
 Every change to a published package needs a changeset. Use the **`changeset`**
