@@ -1,10 +1,14 @@
-import { LinkResolver, buildBanner } from '../render';
-import { body, description, document, EmitContext, EmittedFile, neutralResourcePath, yamlString } from './shared';
-
-const links: LinkResolver = {
-  skill: (name) => `the **\`ethlete-${name}\`** rule`,
-  resource: (options) => `\`${neutralResourcePath(options)}\``,
-};
+import { buildBanner } from '../render';
+import {
+  body,
+  description,
+  document,
+  EmitContext,
+  EmittedFile,
+  makeLinks,
+  neutralResourcePath,
+  yamlString,
+} from './shared';
 
 /**
  * Cursor has no bundle concept, so a skill's resource files stay in the neutral `.agents/ethlete/`
@@ -13,6 +17,11 @@ const links: LinkResolver = {
  */
 export const emitCursor = (context: EmitContext): EmittedFile[] => {
   const banner = buildBanner(context.version);
+  const links = makeLinks({
+    context,
+    skill: (name) => `the **\`ethlete-${name}\`** rule`,
+    resource: (target) => `\`${neutralResourcePath(target)}\``,
+  });
 
   const emit = (options: { items: typeof context.rules; alwaysApply: boolean }) =>
     options.items.map((item) => {

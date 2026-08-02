@@ -1,12 +1,7 @@
-import { LinkResolver, buildBanner } from '../render';
-import { body, description, document, EmitContext, EmittedFile, resourceFiles, yamlString } from './shared';
+import { buildBanner } from '../render';
+import { body, description, document, EmitContext, EmittedFile, makeLinks, resourceFiles, yamlString } from './shared';
 
 const skillDir = (name: string) => `.claude/skills/ethlete-${name}`;
-
-const links: LinkResolver = {
-  skill: (name) => `the **\`ethlete-${name}\`** skill`,
-  resource: (options) => `\`${options.fileName}\` (bundled next to this skill)`,
-};
 
 const quoteList = (values: string[]) => values.map((value) => `  - '${value}'`).join('\n');
 
@@ -17,6 +12,11 @@ const quoteList = (values: string[]) => values.map((value) => `  - '${value}'`).
  */
 export const emitClaude = (context: EmitContext): EmittedFile[] => {
   const banner = buildBanner(context.version);
+  const links = makeLinks({
+    context,
+    skill: (name) => `the **\`ethlete-${name}\`** skill`,
+    resource: (target) => `\`${target.fileName}\` (bundled next to this skill)`,
+  });
   const files: EmittedFile[] = [];
 
   for (const item of context.rules) {

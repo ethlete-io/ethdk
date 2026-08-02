@@ -5,5 +5,6 @@
   "storybookUrl": "http://localhost:6006",
   "storybookStartCommand": "npm run storybook",
   "docsBaseUrl": "https://ethlete-sdk-docs.web.app",
+  "sdkStorybookUrl": "https://ethlete-sdk.web.app",
   "handoffDir": ".agents/handoffs"
 }

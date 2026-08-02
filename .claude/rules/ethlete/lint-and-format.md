@@ -11,7 +11,7 @@ npx nx lint <project>      # then re-run to see what needs a manual fix
 ```
 
 For the judgment calls lint cannot enforce — signals vs RxJS, templates, lifecycle and DI
-patterns — see the **`ethlete-styleguide`** skill.
+patterns — see `styleguide`.
 
 After editing any file, format it before wrapping up:
 

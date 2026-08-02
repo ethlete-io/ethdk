@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { SyncConfig } from './config';
 import { filterContent, SkippedItem } from './filter';
-import { loadContent } from './load-content';
+import { ContentItem, loadContent } from './load-content';
 import { emitClaude } from './targets/claude';
 import { CODEX_FILE, emitCodex } from './targets/codex';
 import { COPILOT_FILE, emitCopilot } from './targets/copilot';
@@ -13,7 +13,19 @@ import { EmitContext, EmittedFile } from './targets/shared';
 export type SyncPlan = {
   files: EmittedFile[];
   skipped: SkippedItem[];
+  /** Cross-references whose target was filtered out of this repo; rendered as a bare name. */
+  danglingLinks: { from: string; to: string }[];
 };
+
+const SKILL_LINK_PATTERN = /\{%\s*skill:([a-zA-Z0-9_.-]+)\s*%\}/g;
+
+const findDanglingLinks = (items: ContentItem[], emittedSkills: Set<string>) =>
+  items.flatMap((item) =>
+    [...item.body.matchAll(SKILL_LINK_PATTERN)]
+      .map((match) => match[1] as string)
+      .filter((name) => !emittedSkills.has(name))
+      .map((name) => ({ from: item.frontmatter.name, to: name })),
+  );
 
 const readExisting = (root: string, relativePath: string) => {
   const path = join(root, relativePath);
@@ -29,9 +41,13 @@ export const buildPlan = (options: { config: SyncConfig; version: string }): Syn
   const { config, version } = options;
   const { kept, skipped } = filterContent(loadContent(), config);
 
+  const skills = kept.filter((item) => item.frontmatter.kind === 'skill');
+  const emittedSkills = new Set(skills.map((item) => item.frontmatter.name));
+
   const context: EmitContext = {
     rules: kept.filter((item) => item.frontmatter.kind === 'rule'),
-    skills: kept.filter((item) => item.frontmatter.kind === 'skill'),
+    skills,
+    emittedSkills,
     vars: config.vars,
     version,
   };
@@ -55,5 +71,5 @@ export const buildPlan = (options: { config: SyncConfig; version: string }): Syn
     files.push(...emitCopilot({ context, existing: readExisting(config.root, COPILOT_FILE) }));
   }
 
-  return { files, skipped };
+  return { files, skipped, danglingLinks: findDanglingLinks(kept, emittedSkills) };
 };

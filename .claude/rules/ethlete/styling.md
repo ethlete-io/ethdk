@@ -22,7 +22,7 @@ rule, so source order decides. Leave interaction states (`:hover`, `:focus-visib
 
 **Never hardcode a colour.** Backgrounds, text, borders and interaction states all resolve
 from the surface and colour theming tokens (`--et-surface-*-solid`, `--et-theme-color-*`) —
-see the **`ethlete-theming`** skill.
+see `theming`.
 
 Theme **names** (`brand`, `danger`, `dark-elevated`, …) are registered by the application;
 the SDK ships none. Never hardcode a theme-name union in a type, a doc or an example —

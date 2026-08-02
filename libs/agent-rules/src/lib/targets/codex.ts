@@ -10,7 +10,7 @@ export const CODEX_FILE = 'AGENTS.md';
  */
 export const emitCodex = (options: { context: EmitContext; existing: string }): EmittedFile[] => {
   const { context, existing } = options;
-  const sections = context.rules.map((item) => body({ item, context, links: neutralLinks }));
+  const sections = context.rules.map((item) => body({ item, context, links: neutralLinks(context) }));
 
   if (context.skills.length > 0) {
     sections.push(

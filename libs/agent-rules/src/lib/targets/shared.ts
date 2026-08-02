@@ -11,6 +11,8 @@ export type EmittedFile = {
 export type EmitContext = {
   rules: ContentItem[];
   skills: ContentItem[];
+  /** Names of the skills that actually survived filtering, so links can't point at a missing file. */
+  emittedSkills: Set<string>;
   vars: Record<string, string | string[]>;
   version: string;
 };
@@ -22,10 +24,25 @@ export const neutralBodyPath = (name: string) => `${NEUTRAL_DIR}/${name}.md`;
 export const neutralResourcePath = (options: { skillName: string; fileName: string }) =>
   `${NEUTRAL_DIR}/${options.skillName}/${options.fileName}`;
 
-export const neutralLinks: LinkResolver = {
-  skill: (name) => `\`${neutralBodyPath(name)}\``,
-  resource: (options) => `\`${neutralResourcePath(options)}\``,
-};
+/**
+ * A guide can be filtered out of a given repo while another still references it. Degrade such a
+ * link to the bare name rather than emitting a path to a file that was never written.
+ */
+export const makeLinks = (options: {
+  context: EmitContext;
+  skill: (name: string) => string;
+  resource: (target: { skillName: string; fileName: string }) => string;
+}): LinkResolver => ({
+  skill: (name) => (options.context.emittedSkills.has(name) ? options.skill(name) : `\`${name}\``),
+  resource: options.resource,
+});
+
+export const neutralLinks = (context: EmitContext) =>
+  makeLinks({
+    context,
+    skill: (name) => `\`${neutralBodyPath(name)}\``,
+    resource: (target) => `\`${neutralResourcePath(target)}\``,
+  });
 
 export const body = (options: { item: ContentItem; context: EmitContext; links: LinkResolver }) =>
   renderBody({ item: options.item, vars: options.context.vars, links: options.links });

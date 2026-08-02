@@ -1,9 +1,10 @@
-import { LinkResolver, buildBanner, replaceMarkedBlock } from '../render';
+import { buildBanner, replaceMarkedBlock } from '../render';
 import {
   body,
   document,
   EmitContext,
   EmittedFile,
+  makeLinks,
   neutralBodyPath,
   neutralResourcePath,
   pointerTable,
@@ -11,11 +12,6 @@ import {
 } from './shared';
 
 export const COPILOT_FILE = '.github/copilot-instructions.md';
-
-const links: LinkResolver = {
-  skill: (name) => `\`${neutralBodyPath(name)}\``,
-  resource: (options) => `\`${neutralResourcePath(options)}\``,
-};
 
 /**
  * Copilot can scope an instruction file to a glob but has no way to load one on description alone,
@@ -25,6 +21,11 @@ const links: LinkResolver = {
 export const emitCopilot = (options: { context: EmitContext; existing: string }): EmittedFile[] => {
   const { context, existing } = options;
   const banner = buildBanner(context.version);
+  const links = makeLinks({
+    context,
+    skill: (name) => `\`${neutralBodyPath(name)}\``,
+    resource: (target) => `\`${neutralResourcePath(target)}\``,
+  });
   const files: EmittedFile[] = [];
 
   const scoped = context.skills.filter((item) => item.frontmatter.paths.length > 0);

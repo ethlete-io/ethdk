@@ -23,7 +23,7 @@ export const emitNeutral = (context: EmitContext): EmittedFile[] => {
   for (const item of context.skills) {
     files.push({
       path: neutralBodyPath(item.frontmatter.name),
-      contents: document([banner, body({ item, context, links: neutralLinks })]),
+      contents: document([banner, body({ item, context, links: neutralLinks(context) })]),
     });
 
     files.push(
