@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.0-next.17
+
+### Minor Changes
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`ae18442`](https://github.com/ethlete-io/ethdk/commit/ae18442bcbeaf0bc1b023812f4e507169db56c88) Thanks [@github-actions](https://github.com/apps/github-actions)! - New rule `no-impure-top-level-provider`: bans destructuring a factory call at module scope, and - with
+  `{ requirePureAnnotation: true }`, for publishable library source - requires `/* @__PURE__ */` on
+  module-scope calls. Both shapes are undroppable, so one of them puts everything the call touches into
+  every consumer's bundle. Fixable.
+
 ## 1.0.0-next.16
 
 ### Minor Changes

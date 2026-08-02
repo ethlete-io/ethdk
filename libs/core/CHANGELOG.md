@@ -1,5 +1,73 @@
 # @ethlete/core
 
+## 5.0.0-next.37
+
+### Major Changes
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`6c9d38d`](https://github.com/ethlete-io/ethdk/commit/6c9d38d7e6b41586d7c9abb3296e5f45ccc3767c) Thanks [@github-actions](https://github.com/apps/github-actions)! - Overlay runtime: build anchored strategies with `anchoredOverlayPosition({ referenceElement, … })`
+  instead of a `{ kind: 'anchored', … }` literal - it is what pulls `@floating-ui/dom` in, so apps
+  that only center dialogs no longer bundle it (~7 kB gz). `autoResize`, `autoHide`,
+  `autoCloseIfReferenceHidden` and arrows additionally need `enableAnchoredOverlayPositionExtras()`.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`6c9d38d`](https://github.com/ethlete-io/ethdk/commit/6c9d38d7e6b41586d7c9abb3296e5f45ccc3767c) Thanks [@github-actions](https://github.com/apps/github-actions)! - `@ethlete/core` no longer depends on `@angular/cdk`: `injectBreakpointObserver()` is a plain
+  `matchMedia` implementation (same API), and `AnimatedOverlayDirective` moved to `@ethlete/cdk` -
+  import it from there.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`42ec970`](https://github.com/ethlete-io/ethdk/commit/42ec970d6963bb5a3aa3af4e207ef2cac801c915) Thanks [@github-actions](https://github.com/apps/github-actions)! - DI: `createProvider` / `createRootProvider` / `createStaticProvider` / `createStaticRootProvider` /
+  `createLabels` are replaced by `defineProvider` & co., which return a definition you read with
+  `toProvideFn` / `toInjectFn` / `toToken`; `createQueryClient`, `createBearerAuthProvider` and
+  `createWebSocketClient` return that definition instead of a tuple. Every `provideX` / `injectX` /
+  token export keeps its name - run `nx g @ethlete/core:migrate-provider-shape` for your own call sites.
+  Cuts the `@ethlete/components` import floor from 89.9 to 2.4 kB gz.
+
+### Minor Changes
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`62b03f9`](https://github.com/ethlete-io/ethdk/commit/62b03f937274d68139be12df3778ce7d316600ea) Thanks [@github-actions](https://github.com/apps/github-actions)! - Carousel & Scrollable: much smoother swiping on a phone - 85% less style recalculation and 88% less
+  paint with `transition="wipe"`, and no observer work during a scroll. Snapping is native CSS scroll
+  snap (`ScrollableDirective.suspendSnap()` holds it off while something writes an offset itself), and
+  the built-in transitions run as composited keyframes. New `transition="custom"` fills
+  `--et-carousel-slide-progress` without applying an effect, for CSS of your own; new
+  `--et-carousel-wipe-dim-color`; `signalElementChildren` / `signalElementScrollState` take a
+  `mutations` option to narrow their observers.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`7e444d6`](https://github.com/ethlete-io/ethdk/commit/7e444d6d11f65b00ae22b9d0f9d553ff3b45b733) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text editor: block quote and fenced code block tools (`'blockquote'` / `'codeBlock'`, also
+  typed as `> ` / ` ``` `), both in the default toolbar. Quotes nest with Tab/Shift+Tab; a code block
+  holds literal text, so the marks that can't serialize inside one disable themselves. `htmlToMarkdown`
+  / `markdownToHtml` now round-trip nested quotes (`>>`).
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`30d3dfb`](https://github.com/ethlete-io/ethdk/commit/30d3dfbfd0ffa08f4eb6c9a95a0d0a7739576264) Thanks [@github-actions](https://github.com/apps/github-actions)! - `unsavedChanges`: a tracker now locks the browser tab while the value differs from its baseline - a
+  `beforeunload` listener attached only while changes exist - through the new `tab` option (`false` opts
+  out), with opt-in `titleMarker`, `flash`, `favicon` and `badge` extras.
+  `createUnsavedChangesTabLock()` is the same guard standalone, for state that isn't a form.
+
+  - New `injectUnsavedChangesCoordinator()`: one confirm on screen at a time app-wide, plus
+    `abandonAll(reason?)` for a session that ends underneath a guard. `confirm` now receives a
+    `{ signal }` argument so a dialog can close itself instead of being stranded.
+  - New favicon store and `applyFaviconOverlay(binding)`, plus title-store `addMarker` / `removeMarker`
+    behind the public `applyHeadTitleMarker(binding)`.
+
+### Patch Changes
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`c622e2c`](https://github.com/ethlete-io/ethdk/commit/c622e2c82b1a64956e3b5d14e7f44ea03c677b81) Thanks [@github-actions](https://github.com/apps/github-actions)! - Breakpoint inputs: warn in dev mode when a breakpoint map mixes valid and unknown keys. One bad key (a
+  `default` entry, say) makes the whole map inert - it becomes a plain value, which for an attribute binding
+  renders as `[object Object]` and does nothing - and that failed silently until now.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`fba7ed8`](https://github.com/ethlete-io/ethdk/commit/fba7ed852d7f4bfb7791cce13f5062b8c4fa4c59) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix `applyStructuredDataBinding` writing its JSON into a `text` **attribute** on the `<script>` instead
+  of into the script's content - the tag was emitted, but empty, so no crawler ever read the structured
+  data. (`StructuredDataComponent` was unaffected.)
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`353777b`](https://github.com/ethlete-io/ethdk/commit/353777bb56e42ad1c02058a2ccf694f69c94b025) Thanks [@github-actions](https://github.com/apps/github-actions)! - Mark build-tooling peer dependencies (`vite`, `typescript`, `ts-morph`, `@nx/devkit`, `@analogjs/*`) and feature-scoped runtime peers (`date-fns` in components) as optional via `peerDependenciesMeta`. They are only needed when running the Nx generators or using the date/time components - consumers no longer have to install them just to use the libraries.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`6c9d38d`](https://github.com/ethlete-io/ethdk/commit/6c9d38d7e6b41586d7c9abb3296e5f45ccc3767c) Thanks [@github-actions](https://github.com/apps/github-actions)! - `RuntimeError` logs its `data` directly instead of deep-cloning it first, which keeps the clone
+  helper out of every package's baseline bundle.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`353777b`](https://github.com/ethlete-io/ethdk/commit/353777bb56e42ad1c02058a2ccf694f69c94b025) Thanks [@github-actions](https://github.com/apps/github-actions)! - Adopt the `@ethlete/eslint-plugin` styleguide flat configs in `core`, `query`, `contentful` and
+  `types`, and apply the resulting auto-fixes. Runtime behavior is unchanged; three fixes are visible to
+  TypeScript consumers: exported `types` shapes are `type` aliases rather than `interface` declarations
+  (so they can no longer be extended by declaration merging), `core`'s `PropsDirective.destroyRef` and
+  `SeoDirective.parent` are `private`, and `ConsentHandler` is a `type`. The theme name registries stay
+  interfaces so consumers can keep augmenting them.
+
 ## 5.0.0-next.36
 
 ### Minor Changes

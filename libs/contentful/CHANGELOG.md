@@ -1,5 +1,32 @@
 # @ethlete/contentful
 
+## 4.0.0-next.7
+
+### Major Changes
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`9c71ed3`](https://github.com/ethlete-io/ethdk/commit/9c71ed3c7d1bd92b58e9a183a3213f3439986844) Thanks [@github-actions](https://github.com/apps/github-actions)! - The built-in embedded components now only exist when `provideContentfulConfig()` is in scope - without it embedded assets are skipped and hyperlinks render as plain `<a href>`. Apps that render embedded content must add the provider (no arguments is enough). In exchange, `ContentfulLinkComponent` and text-only rich text no longer bundle the image/video/audio/file components.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`9c71ed3`](https://github.com/ethlete-io/ethdk/commit/9c71ed3c7d1bd92b58e9a183a3213f3439986844) Thanks [@github-actions](https://github.com/apps/github-actions)! - Rich text: marks now render as semantic elements (`<strong>`, `<em>`, `<u>`, `<code>`, `<s>`, `<sub>`, `<sup>`) instead of Tailwind classes; marks inside hyperlinks become `et-contentful-rich-text-mark-*` classes on the link's `textClass`. `marksToClass` changed accordingly, `marksToTags` is new.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`0817cc8`](https://github.com/ethlete-io/ethdk/commit/0817cc888a4cb5e981437096bf7df5351a4c5de6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Contentful v5: the package peers on `@ethlete/components` instead of `@ethlete/cdk` (and drops
+  `@angular/cdk` and `rxjs`). `et-contentful-image` renames `hasPriority` to `priority` and loses its
+  `*Class` inputs - style the static `et-picture-*` classes instead. The rich text renderer now diffs
+  keyed, so element DOM and embedded component instances survive updates and reorders; the
+  `useTailwindClasses` option is gone. Run `nx g @ethlete/contentful:migrate-to-contentful-v5`.
+
+### Patch Changes
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`9c71ed3`](https://github.com/ethlete-io/ethdk/commit/9c71ed3c7d1bd92b58e9a183a3213f3439986844) Thanks [@github-actions](https://github.com/apps/github-actions)! - Smaller bundles: the rich-text renderer no longer pulls the `@contentful/rich-text-types` runtime enums (~2.4 kB gz), and the renderer error codes plus `GQL_FRAGMENT_CONTENTFUL_ASSET` are now droppable literals. `@contentful/rich-text-types` stays a peer dependency for its types.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`353777b`](https://github.com/ethlete-io/ethdk/commit/353777bb56e42ad1c02058a2ccf694f69c94b025) Thanks [@github-actions](https://github.com/apps/github-actions)! - Mark build-tooling peer dependencies (`vite`, `typescript`, `ts-morph`, `@nx/devkit`, `@analogjs/*`) and feature-scoped runtime peers (`date-fns` in components) as optional via `peerDependenciesMeta`. They are only needed when running the Nx generators or using the date/time components - consumers no longer have to install them just to use the libraries.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`353777b`](https://github.com/ethlete-io/ethdk/commit/353777bb56e42ad1c02058a2ccf694f69c94b025) Thanks [@github-actions](https://github.com/apps/github-actions)! - Adopt the `@ethlete/eslint-plugin` styleguide flat configs in `core`, `query`, `contentful` and
+  `types`, and apply the resulting auto-fixes. Runtime behavior is unchanged; three fixes are visible to
+  TypeScript consumers: exported `types` shapes are `type` aliases rather than `interface` declarations
+  (so they can no longer be extended by declaration merging), `core`'s `PropsDirective.destroyRef` and
+  `SeoDirective.parent` are `private`, and `ConsentHandler` is a `type`. The theme name registries stay
+  interfaces so consumers can keep augmenting them.
+
 ## 4.0.0-next.6
 
 ### Patch Changes

@@ -1,5 +1,22 @@
 # @ethlete/cdk
 
+## 5.0.0-next.24
+
+### Patch Changes
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`6c9d38d`](https://github.com/ethlete-io/ethdk/commit/6c9d38d7e6b41586d7c9abb3296e5f45ccc3767c) Thanks [@github-actions](https://github.com/apps/github-actions)! - `@ethlete/core` no longer depends on `@angular/cdk`: `injectBreakpointObserver()` is a plain
+  `matchMedia` implementation (same API), and `AnimatedOverlayDirective` moved to `@ethlete/cdk` -
+  import it from there.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`353777b`](https://github.com/ethlete-io/ethdk/commit/353777bb56e42ad1c02058a2ccf694f69c94b025) Thanks [@github-actions](https://github.com/apps/github-actions)! - Mark build-tooling peer dependencies (`vite`, `typescript`, `ts-morph`, `@nx/devkit`, `@analogjs/*`) and feature-scoped runtime peers (`date-fns` in components) as optional via `peerDependenciesMeta`. They are only needed when running the Nx generators or using the date/time components - consumers no longer have to install them just to use the libraries.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`42ec970`](https://github.com/ethlete-io/ethdk/commit/42ec970d6963bb5a3aa3af4e207ef2cac801c915) Thanks [@github-actions](https://github.com/apps/github-actions)! - DI: `createProvider` / `createRootProvider` / `createStaticProvider` / `createStaticRootProvider` /
+  `createLabels` are replaced by `defineProvider` & co., which return a definition you read with
+  `toProvideFn` / `toInjectFn` / `toToken`; `createQueryClient`, `createBearerAuthProvider` and
+  `createWebSocketClient` return that definition instead of a tuple. Every `provideX` / `injectX` /
+  token export keeps its name - run `nx g @ethlete/core:migrate-provider-shape` for your own call sites.
+  Cuts the `@ethlete/components` import floor from 89.9 to 2.4 kB gz.
+
 ## 5.0.0-next.23
 
 ### Patch Changes

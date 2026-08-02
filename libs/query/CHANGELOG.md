@@ -1,5 +1,76 @@
 # @ethlete/query
 
+## 6.0.0-next.23
+
+### Major Changes
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`53fcc97`](https://github.com/ethlete-io/ethdk/commit/53fcc97ef5b982fa8a3c5912c0800de1416feca6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Bearer auth multi-tab sync and leader election are opt-in: `createBearerAuthProvider`'s `multiTabSync`
+  option is replaced by `withBearerAuthMultiTabSync()` in `features` (~1.4 kB gz off the secure entry
+  without it), read back as `provider.features.multiTabSync.isLeader()`. Election runs on the Web Locks
+  API now rather than a `localStorage` heartbeat, so a tab that closes or crashes hands over at once.
+  `setupAuthTest()` lost its `multiTabSync` option. Migrate with
+  `npx nx g @ethlete/query:migrate-query-opt-in-features`.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`8b13854`](https://github.com/ethlete-io/ethdk/commit/8b13854aa079196c84fc08da0aee685f728a441d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Query client: multi-tab sync and response persistence are opt-in `features` instead of defaults - the
+  `multiTabSync` / `persistence` client options are gone and a client without the features ships neither
+  engine. Migrate with `nx g @ethlete/query:migrate-query-client-features`.
+
+  - `withMultiTabSync()` shares reads, polls a cache key in one tab for all of them and refreshes the
+    others after a mutation; per-query `multiTabSync: false` keeps a query tab-local.
+  - `withQueryPersistence()` keeps public reads in IndexedDB, so a reload renders the last known data
+    while it revalidates. Secure responses need an explicit opt-in and are removed on logout.
+  - `refreshQueriesInUse()` also refreshes GraphQL queries transported over POST; devtools gain Sync
+    and Disk columns.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`53fcc97`](https://github.com/ethlete-io/ethdk/commit/53fcc97ef5b982fa8a3c5912c0800de1416feca6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Error-response parsing and the default retry policy are opt-in query client features - without them a
+  client reads the plain `string` / `{ message }` / `{ detail }` / `string[]` ladder and retries
+  nothing, which takes ~1.4 kB gz out of an app that needs neither. Pick from `withHtmlErrorParsing()`,
+  `withSymfonyErrors()`, `withDefaultRetry()`, `withEthleteApiErrors()` (all three, the previous
+  behavior) and `registerQueryErrorParser()` for a body shape the SDK does not know. Run
+  `npx nx g @ethlete/query:migrate-query-opt-in-features` to keep the old behavior.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`42ec970`](https://github.com/ethlete-io/ethdk/commit/42ec970d6963bb5a3aa3af4e207ef2cac801c915) Thanks [@github-actions](https://github.com/apps/github-actions)! - DI: `createProvider` / `createRootProvider` / `createStaticProvider` / `createStaticRootProvider` /
+  `createLabels` are replaced by `defineProvider` & co., which return a definition you read with
+  `toProvideFn` / `toInjectFn` / `toToken`; `createQueryClient`, `createBearerAuthProvider` and
+  `createWebSocketClient` return that definition instead of a tuple. Every `provideX` / `injectX` /
+  token export keeps its name - run `nx g @ethlete/core:migrate-provider-shape` for your own call sites.
+  Cuts the `@ethlete/components` import floor from 89.9 to 2.4 kB gz.
+
+### Minor Changes
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`e040432`](https://github.com/ethlete-io/ethdk/commit/e040432bdfdce6b46073589bc66fd3a8bdf66111) Thanks [@github-actions](https://github.com/apps/github-actions)! - New `client.invalidateQueries()` re-runs the queries this client has on screen whose data went stale -
+  after a mutation, or a push message saying something changed server-side - and tells the user's other
+  tabs to do the same. Narrow it with `url` (resolved against `baseUrl`, matched on path boundaries) and
+  `filter`, or keep it local with `otherTabs: false`; reaching other tabs needs `withMultiTabSync()`.
+  See [Invalidating after a change](https://ethlete-sdk-docs.web.app/query/caching#invalidating-after-a-change).
+
+### Patch Changes
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`a935328`](https://github.com/ethlete-io/ethdk/commit/a9353288d4e4ee41607005e8a1ab81921c21cf83) Thanks [@github-actions](https://github.com/apps/github-actions)! - `logout()` now abandons every unsaved-changes guard (`injectUnsavedChangesCoordinator().abandonAll('logout')`). Pressing logout with a dirty form used to leave a "discard your changes?" dialog floating over the login page the app had already redirected to, plus a tab still locked against closing - over edits that can no longer be saved. Guards created after a re-login work normally again.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`353777b`](https://github.com/ethlete-io/ethdk/commit/353777bb56e42ad1c02058a2ccf694f69c94b025) Thanks [@github-actions](https://github.com/apps/github-actions)! - Mark build-tooling peer dependencies (`vite`, `typescript`, `ts-morph`, `@nx/devkit`, `@analogjs/*`) and feature-scoped runtime peers (`date-fns` in components) as optional via `peerDependenciesMeta`. They are only needed when running the Nx generators or using the date/time components - consumers no longer have to install them just to use the libraries.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`53fcc97`](https://github.com/ethlete-io/ethdk/commit/53fcc97ef5b982fa8a3c5912c0800de1416feca6) Thanks [@github-actions](https://github.com/apps/github-actions)! - Devtools instrumentation is now registered through a hook that `provideQueryDevtools()` installs, so
+  an app without it drops the entry registry, the route stringifier and the client-name derivation
+  entirely - ~0.5 kB gz off every entry. No API change; `queryDevtoolsEntries` and the
+  `<et-query-devtools>` contract are unchanged.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`42ec970`](https://github.com/ethlete-io/ethdk/commit/42ec970d6963bb5a3aa3af4e207ef2cac801c915) Thanks [@github-actions](https://github.com/apps/github-actions)! - Internal: the current generation no longer imports anything from the legacy V2 tree - `buildRoute`,
+  `buildQueryString`, `buildTimestampFromSeconds`, `decryptBearer`, `QueryError` and the query-string
+  types now live in `http/internal/request-route`, and `legacy` re-exports them. Every public name is
+  unchanged. Also closes the `http ↔ gql` cycle.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`53fcc97`](https://github.com/ethlete-io/ethdk/commit/53fcc97ef5b982fa8a3c5912c0800de1416feca6) Thanks [@github-actions](https://github.com/apps/github-actions)! - `socket.io-client` is an optional peer dependency. It is only imported by `createWebSocketClient`,
+  and no non-`ws` public type surfaces it, so an app that does not use the realtime client no longer
+  has to install it.
+
+- [#3041](https://github.com/ethlete-io/ethdk/pull/3041) [`353777b`](https://github.com/ethlete-io/ethdk/commit/353777bb56e42ad1c02058a2ccf694f69c94b025) Thanks [@github-actions](https://github.com/apps/github-actions)! - Adopt the `@ethlete/eslint-plugin` styleguide flat configs in `core`, `query`, `contentful` and
+  `types`, and apply the resulting auto-fixes. Runtime behavior is unchanged; three fixes are visible to
+  TypeScript consumers: exported `types` shapes are `type` aliases rather than `interface` declarations
+  (so they can no longer be extended by declaration merging), `core`'s `PropsDirective.destroyRef` and
+  `SeoDirective.parent` are `private`, and `ConsentHandler` is a `type`. The theme name registries stay
+  interfaces so consumers can keep augmenting them.
+
 ## 6.0.0-next.22
 
 ### Minor Changes
