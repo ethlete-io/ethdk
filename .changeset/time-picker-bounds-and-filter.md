@@ -2,14 +2,8 @@
 '@ethlete/components': minor
 ---
 
-Give the time picker bounds and a filter, matching the calendar's `min`/`max`/`dateFilter`.
-`etTimePicker` / `et-time-picker` take `min`, `max` (only the time of day is read, so one
-bound covers every day) and `timeFilter`, which receives the full candidate timestamp so
-opening hours can differ per weekday. Availability is per column, not per leaf option: an
-hour is only disabled when no minute inside it is selectable, a minute when no second is,
-and an AM/PM option when none of its twelve hours works. Unselectable options keep their
-place, dimmed and `aria-disabled` (still focusable for the roving tabindex), and the
-keyboard model steps over them. Picking a part keeps that part and moves the finer ones to
-the first value that works. `et-time-input` and `et-date-time-input` forward the same
-bounds as `minTime` / `maxTime` / `timeFilter` (`min`/`max` are reserved by signal forms);
-like the date inputs' `minDate`/`maxDate` they shape the picker, not typed entry.
+Time picker: `etTimePicker` / `et-time-picker` take `min`, `max` and `timeFilter`, matching the
+calendar's bounds, and `et-time-input` / `et-date-time-input` forward them as `minTime` / `maxTime` /
+`timeFilter`. Availability is per column - an hour is disabled only when no minute inside it is
+selectable - unselectable options stay in place and the keyboard steps over them, and picking a part
+moves the finer ones to the first value that works, including the hour behind an AM/PM pick.
