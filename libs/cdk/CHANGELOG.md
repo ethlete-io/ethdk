@@ -1,5 +1,18 @@
 # @ethlete/cdk
 
+## 5.0.0-next.25
+
+### Minor Changes
+
+- [`d49bfa1`](https://github.com/ethlete-io/ethdk/commit/d49bfa143e802f46a09c907e17df9d0f403aa25b) Thanks [@TomTomB](https://github.com/TomTomB)! - Add `nx g @ethlete/cdk:migrate-from-cdk`. Driven by `migration-map.json`, it rewrites the mechanical part of a
+  cdk → components migration (import moves and renames, skeleton `shape="rect"`, the spinner and picture template
+  inputs) and reports the rest in `migrate-from-cdk-tasks.md`: missing picture `alt`, class inputs grouped by
+  sizing mode, themed spinners, reshaped symbols, and successors that need a newer `@ethlete/components`.
+
+- [#3042](https://github.com/ethlete-io/ethdk/pull/3042) [`29621bd`](https://github.com/ethlete-io/ethdk/commit/29621bd091fcb262e4dd0eb52f0f5b75ceb1ba1b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Ship a machine-readable migration map at `@ethlete/cdk/migration-map.json`: every public export of the
+  barrel with its `@ethlete/components` or `@ethlete/core` successor, the kind of change (`move`, `rename`,
+  `reshape`, `rename+reshape`, `replaced-by`, `removed`) and a docs link.
+
 ## 5.0.0-next.24
 
 ### Patch Changes
