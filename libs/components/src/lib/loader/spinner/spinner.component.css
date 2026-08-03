@@ -211,4 +211,10 @@
       transition: stroke-dashoffset 200ms linear;
     }
   }
+
+  /* `--et-spinner-color` is declared via `@property`, whose `initial-value` cannot contain `var()`, so the theme
+     colour can only be applied by a rule - and only when `color` is set, hence the class gate. */
+  .et-spinner:where(.et-spinner--themed) {
+    --et-spinner-color: var(--et-theme-color-primary-solid, currentColor);
+  }
 }

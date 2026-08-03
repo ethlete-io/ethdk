@@ -1,5 +1,5 @@
 import { Component, ViewEncapsulation, input } from '@angular/core';
-import { ProvideSurfaceDirective } from '@ethlete/core';
+import { ProvideSurfaceDirective, RegisteredColorThemeName } from '@ethlete/core';
 import { SpinnerComponent } from '../../spinner.component';
 
 @Component({
@@ -19,6 +19,7 @@ import { SpinnerComponent } from '../../spinner.component';
             [track]="track()"
             [determinate]="determinate()"
             [value]="value()"
+            [color]="color()"
           />
         </div>
       </div>
@@ -33,4 +34,5 @@ export class SpinnerStorybookComponent {
   public track = input(true);
   public determinate = input(false);
   public value = input(0);
+  public color = input<RegisteredColorThemeName | null>(null);
 }

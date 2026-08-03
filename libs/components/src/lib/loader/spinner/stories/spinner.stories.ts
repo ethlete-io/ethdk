@@ -11,6 +11,7 @@ export default {
     track: true,
     determinate: false,
     value: 0,
+    color: null,
   },
   argTypes: {
     diameter: { control: { type: 'range', min: 12, max: 72, step: 1 } },
@@ -18,6 +19,7 @@ export default {
     track: { control: 'boolean' },
     determinate: { control: 'boolean' },
     value: { control: { type: 'range', min: 0, max: 100, step: 1 } },
+    color: { control: 'select', options: [null, 'brand', 'danger', 'success', 'warning', 'neutral'] },
   },
 } as Meta<SpinnerStorybookComponent>;
 
@@ -46,5 +48,11 @@ export const DeterminateComplete: Story = {
     determinate: true,
     value: 100,
     track: true,
+  },
+};
+
+export const Themed: Story = {
+  args: {
+    color: 'danger',
   },
 };

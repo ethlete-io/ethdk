@@ -106,6 +106,24 @@ describe('SpinnerComponent', () => {
     });
   });
 
+  describe('color', () => {
+    it('does not add the themed class by default', () => {
+      expect(host.classList.contains('et-spinner--themed')).toBe(false);
+    });
+
+    it('adds the themed class once a color is set', () => {
+      fixture.componentRef.setInput('color', 'brand');
+      fixture.detectChanges();
+      expect(host.classList.contains('et-spinner--themed')).toBe(true);
+    });
+
+    it('does not add the themed class for an explicit null', () => {
+      fixture.componentRef.setInput('color', null);
+      fixture.detectChanges();
+      expect(host.classList.contains('et-spinner--themed')).toBe(false);
+    });
+  });
+
   describe('CSS custom properties', () => {
     it('applies the default diameter as a CSS variable', () => {
       expect(host.style.getPropertyValue('--et-spinner-size')).toBe('18px');

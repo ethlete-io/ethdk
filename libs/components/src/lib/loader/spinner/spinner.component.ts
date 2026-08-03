@@ -1,5 +1,14 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, ViewEncapsulation, booleanAttribute, computed, input, numberAttribute } from '@angular/core';
+import {
+  Component,
+  ViewEncapsulation,
+  booleanAttribute,
+  computed,
+  inject,
+  input,
+  numberAttribute,
+} from '@angular/core';
+import { ProvideColorDirective } from '@ethlete/core';
 
 const BASE_STROKE_WIDTH = 10;
 
@@ -81,9 +90,16 @@ const BASE_STROKE_WIDTH = 10;
   styleUrl: './spinner.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [NgTemplateOutlet],
+  hostDirectives: [
+    {
+      directive: ProvideColorDirective,
+      inputs: ['etProvideColor:color'],
+    },
+  ],
   host: {
     class: 'et-spinner',
     '[class.et-spinner--determinate]': 'determinate()',
+    '[class.et-spinner--themed]': 'hasExplicitColor()',
     '[style.--et-spinner-size.px]': 'diameter()',
     '[style.--et-spinner-stroke-width.px]': 'strokeWidth()',
     role: 'progressbar',
@@ -93,11 +109,21 @@ const BASE_STROKE_WIDTH = 10;
   },
 })
 export class SpinnerComponent {
+  private provideColor = inject(ProvideColorDirective);
+
   public diameter = input(18, { transform: numberAttribute });
   public strokeWidth = input(2.25, { transform: numberAttribute });
   public track = input(false, { transform: booleanAttribute });
   public value = input(0, { transform: numberAttribute });
   public determinate = input(false, { transform: booleanAttribute });
+
+  /**
+   * Whether `color` was set on this spinner. The theme colour is deliberately gated on the input rather than
+   * applied whenever a colour scope resolves: a spinner without `color` must keep inheriting `currentColor`
+   * from its context (a button's label, muted body text), even when it sits inside an ancestor `et-color--*`
+   * scope.
+   */
+  protected hasExplicitColor = computed(() => (this.provideColor.color() ?? null) !== null);
 
   public circleRadius = computed(() => Math.max(1, (this.diameter() - BASE_STROKE_WIDTH) / 2));
 

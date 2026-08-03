@@ -1,6 +1,6 @@
 # Loaders
 
-Three loading indicators, all exposing `role="progressbar"` with correct determinate/indeterminate aria values. Colors come from `currentColor`. There is no aggregate imports array - import the components directly:
+Three loading indicators, all exposing `role="progressbar"` with correct determinate/indeterminate aria values. Colors come from `currentColor` unless you say otherwise - the spinner takes a `color` input. There is no aggregate imports array - import the components directly:
 
 ```ts
 import { BrandLoaderComponent, ProgressBarComponent, SpinnerComponent } from '@ethlete/components';
@@ -14,17 +14,36 @@ import { BrandLoaderComponent, ProgressBarComponent, SpinnerComponent } from '@e
 
 <!-- determinate with background track -->
 <et-spinner [determinate]="true" [value]="65" [track]="true" [diameter]="45" [strokeWidth]="2" />
+
+<!-- painted in a color theme the app registered -->
+<et-spinner color="brand" />
 ```
 
-| Input         | Default | Notes                                        |
-| ------------- | ------- | -------------------------------------------- |
-| `diameter`    | `18`    | Size in px                                   |
-| `strokeWidth` | `2.25`  |                                              |
-| `track`       | `false` | Renders a background ring                    |
-| `determinate` | `false` | Switches to value mode (`aria-valuenow` set) |
-| `value`       | `0`     | 0–100, clamped                               |
+| Input         | Default | Notes                                                                        |
+| ------------- | ------- | ---------------------------------------------------------------------------- |
+| `diameter`    | `18`    | Size in px                                                                   |
+| `strokeWidth` | `2.25`  |                                                                              |
+| `track`       | `false` | Renders a background ring                                                    |
+| `determinate` | `false` | Switches to value mode (`aria-valuenow` set)                                 |
+| `value`       | `0`     | 0–100, clamped                                                               |
+| `color`       | `null`  | A color theme name or `ColorTheme`; unset keeps the inherited `currentColor` |
+
+`color` opens a color scope on the spinner itself and paints the strokes with that scope's
+`--et-theme-color-primary-solid`. It only does so when you set it: an unset spinner keeps inheriting
+`currentColor` from its context even when it sits inside a color scope, so a spinner in a themed
+button or a tinted text block still matches the text next to it. Set `--et-spinner-color` directly
+when the color isn't a registered theme.
 
 <StoryEmbed id="components-loader-spinner--determinate" height="240px" />
+
+<StoryEmbed id="components-loader-spinner--themed" height="240px" />
+
+::: info Coming from the CDK
+The cdk `et-progress-spinner` defaulted `--et-progress-spinner-color` to a themed blue (`#1e88e5`), so
+a bare spinner arrived pre-colored. `et-spinner` defaults to `currentColor` instead: a themed
+page-loader should now pass `color` (or set `--et-spinner-color`), while spinners inside buttons,
+chips and inputs are usually better off inheriting.
+:::
 
 ## Progress bar
 
@@ -63,4 +82,4 @@ All three render `role="progressbar"`; spinner and progress bar expose `aria-val
 
 ## Theming
 
-Spinner tokens: `--et-spinner-size` (`18px`), `--et-spinner-stroke-width` (`2.25px`), `--et-spinner-color` (`currentColor`), `--et-spinner-track-color` (`transparent`), `--et-spinner-duration` (`1333ms`) - the `diameter`/`strokeWidth` inputs win over the size tokens. Progress bar tokens: `--et-progress-bar-height` (`4px`), `--et-progress-bar-border-radius` (`9999px`). The brand loader has no tokens - size and color it via CSS (`currentColor`).
+Spinner tokens: `--et-spinner-size` (`18px`), `--et-spinner-stroke-width` (`2.25px`), `--et-spinner-color` (`currentColor`), `--et-spinner-track-color` (`transparent`), `--et-spinner-duration` (`1333ms`) - the `diameter`/`strokeWidth` inputs win over the size tokens. The `color` input fills `--et-spinner-color` from its color scope; a rule that sets the token on a specific spinner (as `et-button` does for its loading spinner, `et-notification` for its status spinner) is more specific and keeps winning. Progress bar tokens: `--et-progress-bar-height` (`4px`), `--et-progress-bar-border-radius` (`9999px`). The brand loader has no tokens - size and color it via CSS (`currentColor`).
