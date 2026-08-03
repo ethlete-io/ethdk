@@ -68,3 +68,4 @@ Thumbs.db
 .nx/migrate-runs
 
 .claude/settings.local.json
+ethlete-agents.config.local.json
