@@ -38,6 +38,9 @@ features:
   - title: '@ethlete/cli'
     details: Release tooling for Changesets-based repos - the `et release` command.
     link: /cli/
+  - title: '@ethlete/agent-rules'
+    details: The Ethlete coding guidance compiled into Claude Code, Codex, Cursor and Copilot formats.
+    link: /agent-rules/
 ---
 
 ## Using these docs with LLMs

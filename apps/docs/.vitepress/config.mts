@@ -23,6 +23,7 @@ export default defineConfig({
       { text: 'Contentful', link: '/contentful/' },
       { text: 'CDK', link: '/cdk/' },
       { text: 'CLI', link: '/cli/' },
+      { text: 'Agent Rules', link: '/agent-rules/' },
     ],
 
     sidebar: {
@@ -45,6 +46,12 @@ export default defineConfig({
         {
           text: 'CLI',
           items: [{ text: 'Overview', link: '/cli/' }],
+        },
+      ],
+      '/agent-rules/': [
+        {
+          text: 'Agent rules',
+          items: [{ text: 'Overview', link: '/agent-rules/' }],
         },
       ],
       '/contentful/': [
