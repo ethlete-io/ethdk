@@ -6,6 +6,7 @@ export default defineConfig({
   title: 'Ethlete SDK',
   description: 'Documentation for the Ethlete SDK',
   outDir: '../../dist/apps/docs',
+  cleanUrls: true,
 
   vite: {
     plugins: [tsconfigPaths(), llmstxt()],

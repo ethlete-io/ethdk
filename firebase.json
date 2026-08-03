@@ -26,23 +26,13 @@
       "target": "docs-prod",
       "public": "dist/apps/docs",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-      "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
-      ]
+      "cleanUrls": true
     },
     {
       "target": "docs-next",
       "public": "dist/apps/docs",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-      "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
-      ]
+      "cleanUrls": true
     }
   ]
 }
