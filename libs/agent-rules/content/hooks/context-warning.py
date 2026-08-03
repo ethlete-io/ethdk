@@ -14,6 +14,9 @@ costs far more than handing off into a fresh session ever would.
 Warns once per tier per session (state kept in a temp file); re-arms itself
 if the context shrinks again (e.g. after /compact).
 
+Can be disabled per machine via a gitignored ethlete-agents.config.local.json
+at the repo root: {"disableHooks": true} or {"disableHooks": ["context-warning"]}.
+
 Fail-safe: any error exits 0 with no output — the hook must never block a prompt.
 """
 
@@ -21,6 +24,9 @@ import json
 import os
 import sys
 import tempfile
+
+HOOK_NAME = "context-warning"
+LOCAL_CONFIG_FILE = "ethlete-agents.config.local.json"
 
 # Warn / critical fire at these fractions of the token budget.
 WARN_FRACTION = 0.70
@@ -46,6 +52,19 @@ CONTEXT_WINDOWS = (
     ("haiku", 200_000),
 )
 DEFAULT_WINDOW = 200_000
+
+
+def disabled_locally():
+    """True when the local config disables this hook (or all hooks) on this machine."""
+    root = os.environ.get("CLAUDE_PROJECT_DIR")
+    if not root:
+        return False
+    try:
+        with open(os.path.join(root, LOCAL_CONFIG_FILE), encoding="utf-8") as f:
+            disabled = json.load(f).get("disableHooks")
+    except (OSError, ValueError, AttributeError):
+        return False
+    return disabled is True or (isinstance(disabled, list) and HOOK_NAME in disabled)
 
 
 def window_for(model):
@@ -137,6 +156,8 @@ def messages(tier, tokens, budget, priced):
 
 
 def main():
+    if disabled_locally():
+        return
     data = json.load(sys.stdin)
     transcript_path = data.get("transcript_path")
     session_id = data.get("session_id", "unknown")

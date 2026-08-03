@@ -1,10 +1,10 @@
 import { existsSync, lstatSync, readFileSync, readlinkSync } from 'fs';
 import { join } from 'path';
-import { SyncConfig } from './config';
+import { LOCAL_CONFIG_FILE_NAME, readLocalConfig, SyncConfig } from './config';
 import { filterContent, SkippedItem } from './filter';
 import { ContentItem, loadContent } from './load-content';
 import { emitAgentsSkills } from './targets/agents-skills';
-import { assertKnownHooks, CLAUDE_SETTINGS_FILE, emitClaudeHooks } from './targets/claude-hooks';
+import { assertKnownHooks, CLAUDE_HOOKS, CLAUDE_SETTINGS_FILE, emitClaudeHooks } from './targets/claude-hooks';
 import { emitClaude } from './targets/claude';
 import { CODEX_FILE, emitCodex } from './targets/codex';
 import { COPILOT_FILE, emitCopilot } from './targets/copilot';
@@ -47,8 +47,51 @@ export const claudeMdImportsAgentsMd = (root: string) => {
   return /^@AGENTS\.md\s*$/m.test(readFileSync(path, 'utf8'));
 };
 
-const collectWarnings = (config: SyncConfig) => {
+/**
+ * The local file only affects hook runtime, never sync output — so the warnings here are about
+ * the mistakes that would otherwise fail silently: a file the hooks can't parse, a key that
+ * suggests someone expected sync-time overrides, or a hook name nothing matches.
+ */
+const collectLocalConfigWarnings = (root: string) => {
+  const local = readLocalConfig(root);
+
+  if (!local.exists) return [];
+
+  if (!local.valid) {
+    return [`${LOCAL_CONFIG_FILE_NAME} is not a JSON object — hooks ignore it and stay enabled.`];
+  }
+
   const warnings: string[] = [];
+
+  if (local.unknownKeys.length > 0) {
+    warnings.push(
+      `${LOCAL_CONFIG_FILE_NAME} contains unsupported key(s): ${local.unknownKeys.join(', ')} — the local file only supports "disableHooks"; it never changes what sync writes.`,
+    );
+  }
+
+  const disable = local.config.disableHooks;
+
+  if (disable !== undefined && typeof disable !== 'boolean' && !Array.isArray(disable)) {
+    warnings.push(
+      `${LOCAL_CONFIG_FILE_NAME} has an invalid "disableHooks" value — use true or an array of hook names; hooks stay enabled.`,
+    );
+  }
+
+  if (Array.isArray(disable)) {
+    const unknown = disable.filter((name) => !(name in CLAUDE_HOOKS));
+
+    if (unknown.length > 0) {
+      warnings.push(
+        `${LOCAL_CONFIG_FILE_NAME} disables unknown hook(s): ${unknown.join(', ')}. Known hooks: ${Object.keys(CLAUDE_HOOKS).join(', ')}.`,
+      );
+    }
+  }
+
+  return warnings;
+};
+
+const collectWarnings = (config: SyncConfig) => {
+  const warnings: string[] = collectLocalConfigWarnings(config.root);
 
   if (!config.claudeMdImportsAgentsMd) return warnings;
 

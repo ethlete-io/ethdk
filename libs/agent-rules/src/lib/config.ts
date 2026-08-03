@@ -9,6 +9,8 @@ export type AgentTarget = (typeof AGENT_TARGETS)[number];
 
 export const CONFIG_FILE_NAME = 'ethlete-agents.config.json';
 
+export const LOCAL_CONFIG_FILE_NAME = 'ethlete-agents.config.local.json';
+
 export type SyncConfig = {
   root: string;
   targets: AgentTarget[];
@@ -41,6 +43,45 @@ const readRawConfig = (root: string) => {
   if (!existsSync(path)) return {};
 
   return JSON.parse(readFileSync(path, 'utf8')) as RawConfig;
+};
+
+/**
+ * The gitignored local config is a per-machine override, read by the generated hook scripts at
+ * runtime — never by `sync`. Sync output must be identical on every machine and in CI (the
+ * generated files are committed and `check` diffs them), so the only thing a local file can do
+ * is turn behavior off after emit: `disableHooks: true` silences every generated hook,
+ * `disableHooks: ["context-warning"]` just the named ones.
+ */
+export type LocalConfig = {
+  disableHooks?: boolean | string[];
+};
+
+export type LocalConfigState =
+  | { exists: false }
+  | { exists: true; valid: false }
+  | { exists: true; valid: true; config: LocalConfig; unknownKeys: string[] };
+
+const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = ['disableHooks'];
+
+export const readLocalConfig = (root: string): LocalConfigState => {
+  const path = join(root, LOCAL_CONFIG_FILE_NAME);
+
+  if (!existsSync(path)) return { exists: false };
+
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(readFileSync(path, 'utf8'));
+  } catch {
+    return { exists: true, valid: false };
+  }
+
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return { exists: true, valid: false };
+
+  const config = parsed as LocalConfig;
+  const unknownKeys = Object.keys(config).filter((key) => !LOCAL_CONFIG_KEYS.includes(key as keyof LocalConfig));
+
+  return { exists: true, valid: true, config, unknownKeys };
 };
 
 /**

@@ -136,6 +136,24 @@ Available hooks:
   past 200k input tokens bills the whole context at a premium rate, so the warnings
   fire at ~140k/~170k instead of deep into the expensive range.
 
+### Disabling hooks per machine
+
+A gitignored `ethlete-agents.config.local.json` at the repo root turns generated hooks
+off for one developer without touching any committed file:
+
+```json
+{
+  "disableHooks": true
+}
+```
+
+`true` disables every generated hook; an array (`["context-warning"]`) just the named
+ones. The hook scripts read this file at runtime, so toggling takes effect on the next
+prompt - no `sync` needed - and the generated files stay identical on every machine and
+in CI. That is also why the local file supports nothing else: sync output must never
+depend on it, and `sync`/`check` warn if it contains other keys. Add the filename to
+your repo's `.gitignore`.
+
 ## Authoring content
 
 `content/rules/<name>.md` for short, always-loaded rules; `content/skills/<name>/SKILL.md`

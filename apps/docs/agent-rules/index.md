@@ -135,6 +135,24 @@ and ~170k tokens - before the expensive range - rather than at 70% of the raw wi
 On 200k-window models the same fractions apply to the window itself, where the concern
 is the imminent auto-compact rather than pricing.
 
+### Disabling hooks per machine
+
+A gitignored `ethlete-agents.config.local.json` at the repo root turns generated hooks
+off for one developer without touching any committed file:
+
+```json
+{
+  "disableHooks": true
+}
+```
+
+`true` disables every generated hook; an array (`["context-warning"]`) just the named
+ones. The hook scripts read the file at runtime, so toggling takes effect on the next
+prompt - no `sync` needed - and the generated files stay identical on every machine and
+in CI. That is also why the local file supports nothing else: sync output must never
+depend on it, and `sync`/`check` warn when it contains other keys. Add the filename to
+your repo's `.gitignore`.
+
 ## Authoring content
 
 The canonical content lives in the SDK repo under `libs/agent-rules/content/` -
