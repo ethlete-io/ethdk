@@ -6,18 +6,21 @@ Nx monorepo of publishable `@ethlete/*` libraries under `libs/`.
 
 All under `libs/<name>`, published as `@ethlete/<name>`:
 
-| Lib             | What it is                                                                                                                                 | Depends on (`@ethlete/*`) |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------- |
-| `types`         | Shared TS types (API, pagination, violations). Framework-agnostic base.                                                                    | -                         |
-| `core`          | Framework primitives: directives, signals utils, overlay runtime, animations, theming, scrolling, drag/resize. Angular but component-less. | `types`                   |
-| `query`         | Data fetching / query client: http, gql, ws, auth, query-form.                                                                             | `core`, `types`           |
-| `components`    | **Active** Angular UI library: overlay, menu, button, forms, grid, tabs, tooltip, etc.                                                     | `core`, `query`           |
-| `cdk`           | **Maintenance mode** - older UI toolkit. Predecessor of `components`.                                                                      | `core`, `query`, `types`  |
-| `contentful`    | Contentful integration (rich-text components, gql, types).                                                                                 | `cdk`, `core`, `query`    |
-| `cli`           | CLI tooling (release helpers).                                                                                                             | -                         |
-| `eslint-plugin` | Custom ESLint rules + shareable flat configs for the styleguide.                                                                           | -                         |
+| Lib             | What it is                                                                                                                                 | Depends on (`@ethlete/*`)     |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------- |
+| `types`         | Shared TS types (API, pagination, violations). Framework-agnostic base.                                                                    | -                             |
+| `core`          | Framework primitives: directives, signals utils, overlay runtime, animations, theming, scrolling, drag/resize. Angular but component-less. | `types`                       |
+| `query`         | Data fetching / query client: http, gql, ws, auth, query-form.                                                                             | `core`, `types`               |
+| `components`    | **Active** Angular UI library: overlay, menu, button, forms, grid, tabs, tooltip, etc.                                                     | `core`, `query`, `types`      |
+| `cdk`           | **Maintenance mode** - older UI toolkit. Predecessor of `components`.                                                                      | `core`, `query`, `types`      |
+| `contentful`    | Contentful integration (rich-text components, gql, types).                                                                                 | `components`, `core`, `query` |
+| `cli`           | CLI tooling (release helpers).                                                                                                             | -                             |
+| `eslint-plugin` | Custom ESLint rules + shareable flat configs for the styleguide.                                                                           | -                             |
+| `agent-rules`   | Portable agent rules + skills, compiled for Claude Code / Codex / Cursor / Copilot. See below.                                             | -                             |
 
-Rough layering: `types` → `core` → (`query`, `components`) ; `cdk` → `contentful`.
+Rough layering: `types` → `core` → `query` → `components` → `contentful`. No
+published lib depends on `cdk` any more - it is a leaf in the lib graph (only the
+playground's `cdk/*` demo pages still import it).
 
 ### UI work: components vs cdk
 
