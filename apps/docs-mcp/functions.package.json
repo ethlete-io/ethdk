@@ -1,0 +1,12 @@
+{
+  "name": "ethlete-sdk-docs-mcp",
+  "private": true,
+  "description": "MCP endpoint for the Ethlete SDK documentation site",
+  "main": "index.js",
+  "engines": {
+    "node": "22"
+  },
+  "dependencies": {
+    "firebase-functions": "7.3.2"
+  }
+}

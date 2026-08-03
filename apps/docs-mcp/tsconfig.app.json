@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/apps/docs-mcp",
+    "rootDir": "src",
+    "target": "es2022",
+    "lib": ["es2023"],
+    "moduleResolution": "node",
+    "declaration": false,
+    "sourceMap": false,
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.spec.ts"]
+}

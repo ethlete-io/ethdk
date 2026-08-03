@@ -50,6 +50,21 @@ jobs:
 
       - run: yarn nx run playground:build-storybook:ci
 
+      # The docs MCP endpoint is built and tested but not deployed yet — see the same block in
+      # ci-main.yml for how to enable it. `next` deploys its own function so a prerelease never
+      # replaces the one production is serving.
+      - name: Write Firebase service account
+        if: vars.DEPLOY_DOCS_MCP == 'true'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ETHLETE_SDK }}'
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
+
+      - name: Deploy docs MCP function
+        if: vars.DEPLOY_DOCS_MCP == 'true'
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: '${{ runner.temp }}/firebase-service-account.json'
+        run: npx --yes firebase-tools@15 deploy --only functions:docs-mcp:docsMcpNext --project ethlete-sdk --non-interactive --force
+
       - uses: FirebaseExtended/action-hosting-deploy@e2eda2e106cfa35cdbcf4ac9ddaf6c4756df2c8c # v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'

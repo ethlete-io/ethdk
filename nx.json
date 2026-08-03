@@ -89,6 +89,7 @@
         "testMode": "watch"
       },
       "include": [
+        "apps/docs-mcp/**/*",
         "libs/cdk/**/*",
         "libs/components/**/*",
         "libs/contentful/**/*",
