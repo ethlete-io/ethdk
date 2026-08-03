@@ -4,6 +4,11 @@
       "factory": "./migrate-to-v5/migration",
       "schema": "./migrate-to-v5/schema.json",
       "description": "A migration to update the cdk to version 5"
+    },
+    "migrate-from-cdk": {
+      "factory": "./migrate-from-cdk/migration",
+      "schema": "./migrate-from-cdk/schema.json",
+      "description": "Rewrite the mechanical parts of a cdk → components migration and report what needs a decision"
     }
   }
 }
