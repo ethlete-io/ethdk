@@ -1,23 +1,24 @@
 import { buildBanner, replaceMarkedBlock } from '../render';
-import { body, document, EmitContext, EmittedFile, neutralBodyPath, neutralLinks, pointerTable } from './shared';
+import { agentsSkillsLinks, body, document, EmitContext, EmittedFile } from './shared';
 
 export const CODEX_FILE = 'AGENTS.md';
 
 /**
- * `AGENTS.md` supports neither frontmatter nor includes, so the always-loaded rules are inlined and
- * the on-demand skills become a manifest of paths into `.agents/ethlete/` (emitted separately by the
- * neutral target). Everything outside the marker block is left as the repo wrote it.
+ * The always-loaded rules are inlined into the `AGENTS.md` marker block — layered `AGENTS.md`
+ * files are Codex's rules mechanism. Skills are emitted as real skills under `.agents/skills/`
+ * (see `emitAgentsSkills`) and self-describe through their frontmatter, so the block carries only
+ * a two-line hint instead of repeating every description into each session's context. Everything
+ * outside the marker block is left as the repo wrote it.
  */
 export const emitCodex = (options: { context: EmitContext; existing: string }): EmittedFile[] => {
   const { context, existing } = options;
-  const sections = context.rules.map((item) => body({ item, context, links: neutralLinks(context) }));
+  const sections = context.rules.map((item) => body({ item, context, links: agentsSkillsLinks(context) }));
 
   if (context.skills.length > 0) {
     sections.push(
       [
-        '## Ethlete reference docs',
-        'Read the matching file before starting that kind of work — do not work from memory.',
-        pointerTable({ skills: context.skills, context, pathFor: neutralBodyPath }),
+        '## Ethlete skills',
+        "On-demand guides live in `.agents/skills/ethlete-*/SKILL.md`; each one's frontmatter says when to read it. If your agent does not discover skills on its own, list that directory and read the matching guide before starting that kind of work — do not work from memory.",
       ].join('\n\n'),
     );
   }

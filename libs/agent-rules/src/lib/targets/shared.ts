@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { ContentItem } from '../load-content';
-import { LinkResolver, renderBody, renderDescription, substituteVars } from '../render';
+import { buildBanner, LinkResolver, renderBody, renderDescription, substituteVars } from '../render';
 
 export type EmittedFile = {
   /** Path relative to the consumer repo root, always with forward slashes. */
@@ -15,14 +15,18 @@ export type EmitContext = {
   emittedSkills: Set<string>;
   vars: Record<string, string | string[]>;
   version: string;
+  /**
+   * The repo's `CLAUDE.md` is an `@AGENTS.md` import (or symlink), so Claude already receives the
+   * rules through the `AGENTS.md` marker block and must not get a second copy in `.claude/rules/`.
+   */
+  claudeMdImportsAgentsMd: boolean;
 };
 
-export const NEUTRAL_DIR = '.agents/ethlete';
+export const AGENTS_SKILLS_DIR = '.agents/skills';
 
-export const neutralBodyPath = (name: string) => `${NEUTRAL_DIR}/${name}.md`;
+export const agentsSkillDir = (name: string) => `${AGENTS_SKILLS_DIR}/ethlete-${name}`;
 
-export const neutralResourcePath = (options: { skillName: string; fileName: string }) =>
-  `${NEUTRAL_DIR}/${options.skillName}/${options.fileName}`;
+export const agentsSkillPath = (name: string) => `${agentsSkillDir(name)}/SKILL.md`;
 
 /**
  * A guide can be filtered out of a given repo while another still references it. Degrade such a
@@ -37,11 +41,11 @@ export const makeLinks = (options: {
   resource: options.resource,
 });
 
-export const neutralLinks = (context: EmitContext) =>
+export const agentsSkillsLinks = (context: EmitContext) =>
   makeLinks({
     context,
-    skill: (name) => `\`${neutralBodyPath(name)}\``,
-    resource: (target) => `\`${neutralResourcePath(target)}\``,
+    skill: (name) => `\`${agentsSkillPath(name)}\``,
+    resource: (target) => `\`${agentsSkillDir(target.skillName)}/${target.fileName}\``,
   });
 
 export const body = (options: { item: ContentItem; context: EmitContext; links: LinkResolver }) =>
@@ -64,20 +68,36 @@ export const resourceFiles = (options: {
     }),
   }));
 
+/**
+ * One skill in the agentskills.io layout: a `SKILL.md` with `name`/`description` frontmatter plus
+ * its resource files as siblings. The same bundle serves `.claude/skills/` and `.agents/skills/`;
+ * only the directory and the link resolver differ per target.
+ */
+export const skillBundle = (options: {
+  item: ContentItem;
+  context: EmitContext;
+  dir: string;
+  links: LinkResolver;
+}): EmittedFile[] => {
+  const { item, context, dir, links } = options;
+  const frontmatter = [
+    '---',
+    `name: ethlete-${item.frontmatter.name}`,
+    `description: ${yamlString(description({ item, context }))}`,
+    '---',
+  ].join('\n');
+
+  return [
+    {
+      path: `${dir}/SKILL.md`,
+      contents: document([frontmatter, buildBanner(context.version), body({ item, context, links })]),
+    },
+    ...resourceFiles({ item, context, pathFor: (fileName) => `${dir}/${fileName}` }),
+  ];
+};
+
 /** Descriptions routinely contain `:` and `-`, so always quote them rather than guess. */
 export const yamlString = (value: string) => `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 
 /** Every generated document ends with exactly one trailing newline so Prettier stays quiet. */
 export const document = (parts: string[]) => `${parts.filter((part) => part.length > 0).join('\n\n')}\n`;
-
-export const pointerTable = (options: {
-  skills: ContentItem[];
-  context: EmitContext;
-  pathFor: (name: string) => string;
-}) => {
-  const rows = options.skills.map(
-    (item) => `| \`${options.pathFor(item.frontmatter.name)}\` | ${description({ item, context: options.context })} |`,
-  );
-
-  return ['| Read this file | When |', '| --- | --- |', ...rows].join('\n');
-};

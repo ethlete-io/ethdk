@@ -58,10 +58,14 @@ const describe = (change: Change) => {
 
 export const sync = (options: RunOptions) => {
   const config = loadConfig({ root: options.root, targetOverride: options.targets });
-  const { files, skipped, danglingLinks } = buildPlan({ config, version: options.version });
+  const { files, skipped, danglingLinks, warnings } = buildPlan({ config, version: options.version });
   const changes = diffPlan({ root: options.root, files, owned: collectOwnedPaths(options.root) });
 
   console.log(`Targets: ${config.targets.join(', ')}`);
+
+  for (const warning of warnings) {
+    console.warn(`  warn   ${warning}`);
+  }
 
   for (const entry of skipped) {
     console.log(`  skip   ${entry.name} — ${entry.reason}`);
@@ -108,8 +112,12 @@ export const sync = (options: RunOptions) => {
 
 export const check = (options: RunOptions) => {
   const config = loadConfig({ root: options.root, targetOverride: options.targets });
-  const { files } = buildPlan({ config, version: options.version });
+  const { files, warnings } = buildPlan({ config, version: options.version });
   const changes = diffPlan({ root: options.root, files, owned: collectOwnedPaths(options.root) });
+
+  for (const warning of warnings) {
+    console.warn(`  warn   ${warning}`);
+  }
 
   if (changes.length === 0) {
     console.log('Agent rules are in sync.');

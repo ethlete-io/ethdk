@@ -2,18 +2,23 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { AGENT_TARGETS, AgentTarget, CONFIG_FILE_NAME, detectTargets } from './lib/config';
+import { migrate } from './lib/migrate';
 import { check, sync } from './lib/sync';
 
 const USAGE = `ethlete-agents — compile @ethlete agent rules and skills into your repo
 
-  ethlete-agents sync    Write the generated rules/skills for every detected agent
-  ethlete-agents check   Exit non-zero when the generated files are out of date (for CI)
-  ethlete-agents init    Write a starter ${CONFIG_FILE_NAME}
+  ethlete-agents sync      Write the generated rules/skills for every detected agent
+  ethlete-agents check     Exit non-zero when the generated files are out of date (for CI)
+  ethlete-agents init      Write a starter ${CONFIG_FILE_NAME}
+  ethlete-agents migrate   Convert the repo to the AGENTS.md + .agents/skills layout:
+                           CLAUDE.md content moves into AGENTS.md (CLAUDE.md becomes an
+                           @AGENTS.md import), hand-written .claude/skills move to
+                           .agents/skills with symlinks left behind, then a sync runs
 
 Options
   --targets <list>   Comma-separated subset of: ${AGENT_TARGETS.join(', ')}
   --root <path>      Repo root to write into (default: current directory)
-  --dry-run          Print what sync would change without writing (sync only)
+  --dry-run          Print what would change without writing (sync and migrate)
 `;
 
 const readFlag = (args: string[], flag: string) => {
@@ -71,6 +76,8 @@ const run = (argv: string[]) => {
       return check(options);
     case 'init':
       return init(root);
+    case 'migrate':
+      return migrate({ ...options, dryRun: argv.includes('--dry-run') });
     default:
       console.log(USAGE);
 

@@ -1,60 +1,18 @@
 import { buildBanner, replaceMarkedBlock } from '../render';
-import {
-  body,
-  document,
-  EmitContext,
-  EmittedFile,
-  makeLinks,
-  neutralBodyPath,
-  neutralResourcePath,
-  pointerTable,
-  yamlString,
-} from './shared';
+import { agentsSkillsLinks, body, document, EmitContext, EmittedFile } from './shared';
 
 export const COPILOT_FILE = '.github/copilot-instructions.md';
 
 /**
- * Copilot can scope an instruction file to a glob but has no way to load one on description alone,
- * so a skill with `paths` becomes a real `.instructions.md` and everything else falls back to a
- * manifest pointer in the always-loaded file.
+ * Always-loaded rules go into the `copilot-instructions.md` marker block. Skills are not mirrored
+ * here — Copilot discovers `.agents/skills/` natively, so the old pointer table and the
+ * `applyTo`-scoped `.instructions.md` fallback are gone.
  */
 export const emitCopilot = (options: { context: EmitContext; existing: string }): EmittedFile[] => {
   const { context, existing } = options;
   const banner = buildBanner(context.version);
-  const links = makeLinks({
-    context,
-    skill: (name) => `\`${neutralBodyPath(name)}\``,
-    resource: (target) => `\`${neutralResourcePath(target)}\``,
-  });
-  const files: EmittedFile[] = [];
-
-  const scoped = context.skills.filter((item) => item.frontmatter.paths.length > 0);
-  const unscoped = context.skills.filter((item) => item.frontmatter.paths.length === 0);
-
-  for (const item of scoped) {
-    const frontmatter = ['---', `applyTo: ${yamlString(item.frontmatter.paths.join(','))}`, '---'].join('\n');
-
-    files.push({
-      path: `.github/instructions/ethlete-${item.frontmatter.name}.instructions.md`,
-      contents: document([frontmatter, banner, body({ item, context, links })]),
-    });
-  }
-
-  const sections = context.rules.map((item) => body({ item, context, links }));
-
-  if (unscoped.length > 0) {
-    sections.push(
-      [
-        '## Ethlete reference docs',
-        'Read the matching file before starting that kind of work — do not work from memory.',
-        pointerTable({ skills: unscoped, context, pathFor: neutralBodyPath }),
-      ].join('\n\n'),
-    );
-  }
-
+  const sections = context.rules.map((item) => body({ item, context, links: agentsSkillsLinks(context) }));
   const block = document([banner, ...sections]).trimEnd();
 
-  files.push({ path: COPILOT_FILE, contents: replaceMarkedBlock({ existing, block }) });
-
-  return files;
+  return [{ path: COPILOT_FILE, contents: replaceMarkedBlock({ existing, block }) }];
 };

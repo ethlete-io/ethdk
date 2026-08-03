@@ -2,6 +2,7 @@ export * from './config';
 export * from './filter';
 export * from './frontmatter';
 export * from './load-content';
+export * from './migrate';
 export * from './owned-paths';
 export * from './plan';
 export * from './render';

@@ -16,6 +16,12 @@ export type SyncConfig = {
   scopes: ContentScope[];
   vars: Record<string, string | string[]>;
   exclude: string[];
+  /**
+   * Declares that the repo's `CLAUDE.md` is an `@AGENTS.md` import (or symlink). The claude
+   * target then skips `.claude/rules/ethlete/` — the rules already reach Claude through the
+   * `AGENTS.md` marker block, and a second copy would load twice.
+   */
+  claudeMdImportsAgentsMd: boolean;
 };
 
 type RawConfig = {
@@ -23,6 +29,7 @@ type RawConfig = {
   profile?: 'consumer' | 'sdk';
   vars?: Record<string, string | string[]>;
   exclude?: string[];
+  claudeMdImportsAgentsMd?: boolean;
 };
 
 const readRawConfig = (root: string) => {
@@ -34,18 +41,19 @@ const readRawConfig = (root: string) => {
 };
 
 /**
- * Emit for the agents a repo already uses. Everything falls back to Codex's `AGENTS.md`,
- * which Cursor, Copilot and most other agents read as well.
+ * Emit for the agents a repo already uses. `codex` is always included: `AGENTS.md` is the
+ * cross-tool standard that Cursor, Copilot and most other agents read as well, and gating it on
+ * an existing `AGENTS.md` would mean the file that triggers Codex output is the very file the
+ * sync is supposed to create.
  */
 export const detectTargets = (root: string): AgentTarget[] => {
-  const detected: AgentTarget[] = [];
+  const detected: AgentTarget[] = ['codex'];
 
   if (existsSync(join(root, '.claude'))) detected.push('claude');
-  if (existsSync(join(root, 'AGENTS.md')) || existsSync(join(root, '.codex'))) detected.push('codex');
   if (existsSync(join(root, '.cursor'))) detected.push('cursor');
   if (existsSync(join(root, '.github'))) detected.push('copilot');
 
-  return detected.length > 0 ? detected : ['codex'];
+  return detected;
 };
 
 const assertKnownTargets = (targets: AgentTarget[]) => {
@@ -70,5 +78,6 @@ export const loadConfig = (options: { root: string; targetOverride?: AgentTarget
     scopes: raw.profile === 'sdk' ? ['both'] : ['consumer', 'both'],
     vars: { ...loadDefaultVars(), ...(raw.vars ?? {}) },
     exclude: raw.exclude ?? [],
+    claudeMdImportsAgentsMd: raw.claudeMdImportsAgentsMd ?? false,
   };
 };
