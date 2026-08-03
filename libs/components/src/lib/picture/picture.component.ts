@@ -52,6 +52,8 @@ import {
   host: {
     class: 'et-picture',
     '[attr.data-state]': 'state()',
+    '[attr.data-fit]': 'fit()',
+    '[style.--_et-picture-fit]': 'fit()',
   },
 })
 export class PictureComponent {
@@ -112,8 +114,15 @@ export class PictureComponent {
    */
   public sizes = input(null, { transform: normalizePictureSizes });
 
-  /** The image finished loading. */
-  public imgLoad = output<void>();
+  /**
+   * How the image fills its box. Setting it makes the `<img>` fill the host, so the host's own size (a class, an
+   * `aspectRatio`, a grid cell) decides the box and this decides what the image does inside it. Requires the
+   * host to have a definite size in both axes. Omit for the default flow layout, where the image sizes itself.
+   */
+  public fit = input<'contain' | 'cover' | 'fill' | 'none' | 'scale-down' | null>(null);
+
+  /** The image finished loading, with the intrinsic pixel dimensions the browser decoded. */
+  public imgLoad = output<{ naturalWidth: number; naturalHeight: number }>();
 
   /** The image failed to load - a dead URL, a network error, an undecodable file. */
   public imgError = output<void>();
@@ -135,12 +144,20 @@ export class PictureComponent {
   protected defaultSrcUrl = computed(() => extractFirstImageUrl(this.resolvedDefaultSource()));
 
   /**
-   * Reset by the source it describes: a picture pointed at a new URL is loading again, and a state that
-   * stayed `'loaded'` would leave the placeholder hidden for the second image.
+   * What everything learnt from the last load resets on: a picture pointed at a new URL - or at new sources,
+   * which decide the image just as much - is loading again, and a state that stayed `'loaded'` would leave the
+   * placeholder hidden for the second image.
    */
-  private loadState = linkedSignal<string | null, PictureState>({
-    source: () => this.defaultSrcUrl(),
+  private loadResetKey = computed<unknown[]>(() => [this.defaultSrcUrl(), this.sources()]);
+
+  private loadState = linkedSignal<unknown[], PictureState>({
+    source: () => this.loadResetKey(),
     computation: () => PICTURE_STATES.LOADING,
+  });
+
+  private loadedSize = linkedSignal<unknown[], { width: number; height: number } | null>({
+    source: () => this.loadResetKey(),
+    computation: () => null,
   });
 
   /**
@@ -149,12 +166,32 @@ export class PictureComponent {
    */
   public state = computed(() => this.loadState());
 
-  protected markLoaded() {
+  /**
+   * The image's intrinsic pixel dimensions, once the browser has decoded them. `null` while loading and after a
+   * failure, so a template can wait for a real measurement rather than guess one.
+   */
+  public naturalSize = computed(() => this.loadedSize());
+
+  /**
+   * The intrinsic ratio as a single number in CSS `aspect-ratio` orientation - width over height. `null`
+   * whenever `naturalSize()` is.
+   */
+  public naturalAspectRatio = computed(() => {
+    const size = this.naturalSize();
+
+    return size && size.height ? size.width / size.height : null;
+  });
+
+  protected markLoaded(event: Event) {
+    const img = event.target as HTMLImageElement;
+
+    this.loadedSize.set({ width: img.naturalWidth, height: img.naturalHeight });
     this.loadState.set(PICTURE_STATES.LOADED);
-    this.imgLoad.emit();
+    this.imgLoad.emit({ naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight });
   }
 
   protected markFailed() {
+    this.loadedSize.set(null);
     this.loadState.set(PICTURE_STATES.ERROR);
     this.imgError.emit();
   }

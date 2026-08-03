@@ -30,6 +30,22 @@
       overflow: hidden;
     }
 
+    /* With `fit`, the host is the box: every wrapper stretches to it so the img has something definite to fit
+       into, and the img fills it instead of sizing itself. */
+    &:where([data-fit]) {
+      .et-picture-figure,
+      .et-picture-picture {
+        inline-size: 100%;
+        block-size: 100%;
+      }
+
+      .et-picture-img {
+        inline-size: 100%;
+        block-size: 100%;
+        object-fit: var(--_et-picture-fit);
+      }
+    }
+
     /* A broken image still occupies its box behind the error slot, showing the UA's broken icon through it.
        Only hidden when there is a slot to replace it: without one, the browser's own broken-image rendering
        (which shows the alt text) is more useful than an empty box. */

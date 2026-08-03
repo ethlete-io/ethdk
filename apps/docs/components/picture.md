@@ -62,6 +62,56 @@ measures. Two ways to avoid it:
 
 The `NoAspectRatio` story exists to show what you get without either: worth looking at once.
 
+## Sizing: two modes, and they don't mix
+
+An `et-picture` either lets the image size its own box, or is given a box the image must obey. Pick one per
+usage site.
+
+**The default: the image sizes its box.** `.et-picture-img` ships `max-inline-size: 100%` and
+`block-size: auto`, so the image shrinks to fit its container and keeps its own ratio. To constrain the image
+and let it size its own box (max-sizes, a single axis), style `.et-picture-img` directly:
+
+```css
+.hero .et-picture-img {
+  max-block-size: 40svh;
+  inline-size: auto;
+}
+```
+
+**With `fit`: the host is the box.** Setting `fit` makes the figure, the picture and the image all fill the
+host, so the host's own size - a class, `aspectRatio`, a grid or flex cell - decides the box, and `fit` decides
+what the image does inside it. It maps straight onto CSS `object-fit`: `'contain' | 'cover' | 'fill' | 'none' |
+'scale-down'`.
+
+```html
+<et-picture [fit]="'cover'" class="card-media" defaultSrc="hero.jpg" alt="…" />
+```
+
+```css
+.card-media {
+  inline-size: 100%;
+  aspect-ratio: 16 / 9;
+}
+```
+
+::: warning `fit` needs a definite box in **both** axes
+The wrappers fill the host with percentages, and a percentage `block-size` against an auto-height host resolves
+to `auto`. With no definite height - a bare `<et-picture fit="cover">` in normal flow - the image degrades to
+full-width, intrinsic-ratio height and `object-fit` has nothing left to do. Give the host a height, an
+`aspect-ratio`, or a stretched grid/flex cell.
+
+`object-fit: none` paints outside the box it was given; add `overflow: hidden` if you don't want that.
+:::
+
+<StoryEmbed id="components-picture--fit" height="640px" />
+
+`aspectRatio` counts as a definite box here: with `fit` set, the image takes the host's inline size and its own
+ratio decides the height, so `[fit]="'cover'" [aspectRatio]="1"` crops a 16:9 source into a square.
+
+One caveat with a caption: `fit` gives the `<picture>` the host's whole height, so on a host with an explicit
+height a `figcaption` is pushed below the host's box. Reach for the `aspectRatio` form above instead - the host
+then grows to hold image _and_ caption.
+
 ## Loading priority
 
 By default images are `loading="lazy"` and `fetchpriority="auto"`. Set `priority` on the **one** image that is
@@ -98,6 +148,25 @@ broken-image rendering, which at least shows the alt text; with one, the slot co
 `state()` exposes the same thing as a signal (`'loading' | 'loaded' | 'error'`), and the host mirrors it as
 `data-state` for styling. `imgLoad` and `imgError` fire as outputs.
 
+## What the browser reports back
+
+`imgLoad` carries the dimensions the browser decoded - `{ naturalWidth, naturalHeight }` - and the same numbers
+are readable as signals, so a template can use them without keeping a copy:
+
+- **`naturalSize()`** - `{ width, height } | null`. `null` while loading and after a failure, so `null` means
+  "not measured", never "measured as zero".
+- **`naturalAspectRatio()`** - `number | null`, width over height, i.e. the orientation CSS `aspect-ratio`
+  takes. `1.777…` for a 16:9 image.
+
+Both reset to `null` when `defaultSrc` or `sources` changes: a different image has a different intrinsic size,
+and so does the same picture re-pointed at a new URL.
+
+```html
+<et-picture #picture [defaultSrc]="photo().url" alt="…" />
+
+<p>{{ picture.naturalSize()?.width }} × {{ picture.naturalSize()?.height }}</p>
+```
+
 ## Base URL
 
 `providePictureConfig({ baseUrl })` prefixes every relative candidate, so sources can be authored as the paths
@@ -128,12 +197,17 @@ string, so only the first candidate of a relative multi-candidate srcset resolve
 | `height`      | `number \| null`                  | `null`  | Intrinsic height in px.                                            |
 | `aspectRatio` | `number \| string \| null`        | `null`  | CSS `aspect-ratio` on the `<img>`.                                 |
 | `sizes`       | `string \| string[] \| null`      | `null`  | Fallback `sizes` for sources that don't set their own.             |
+| `fit`         | see below                         | `null`  | `object-fit` inside a box the host defines. Needs a definite box.  |
 
-| Member     | Type                   | Purpose                               |
-| ---------- | ---------------------- | ------------------------------------- |
-| `state()`  | `Signal<PictureState>` | `'loading'`, `'loaded'` or `'error'`. |
-| `imgLoad`  | `output<void>`         | The image finished loading.           |
-| `imgError` | `output<void>`         | The image failed to load.             |
+`fit` takes `'contain' | 'cover' | 'fill' | 'none' | 'scale-down' | null`.
+
+| Member                 | Type                                                      | Purpose                                        |
+| ---------------------- | --------------------------------------------------------- | ---------------------------------------------- |
+| `state()`              | `Signal<PictureState>`                                    | `'loading'`, `'loaded'` or `'error'`.          |
+| `naturalSize()`        | `Signal<{ width: number; height: number } \| null>`       | Decoded intrinsic size; `null` until loaded.   |
+| `naturalAspectRatio()` | `Signal<number \| null>`                                  | Intrinsic width ÷ height; `null` until loaded. |
+| `imgLoad`              | `output<{ naturalWidth: number; naturalHeight: number }>` | The image finished loading.                    |
+| `imgError`             | `output<void>`                                            | The image failed to load.                      |
 
 Utilities are exported for consumers building their own markup: `extractFirstImageUrl`,
 `normalizePictureSource`, `normalizePictureSizes`, `withPictureBaseUrl`.
@@ -151,9 +225,31 @@ represents nothing); an error slot is not, since its text is the only account of
 ## Theming
 
 Picture paints nothing and declares no design tokens - the CSS is structural only: `display: block`, a
-margin-free `<figure>`, `max-inline-size: 100%` on the image, and the positioning the slots need. Style it from
-outside via `.et-picture`, `.et-picture-img`, `.et-picture-figcaption`, or per state with
-`.et-picture[data-state='error']`.
+margin-free `<figure>`, `max-inline-size: 100%` on the image, and the positioning the slots need.
+
+Every element it renders carries a stable class, and these four are **public API** - style them from your own
+stylesheet and they will keep working:
+
+| Class                    | Element                                      |
+| ------------------------ | -------------------------------------------- |
+| `.et-picture`            | the host                                     |
+| `.et-picture-figure`     | the `<figure>` wrapper                       |
+| `.et-picture-picture`    | the `<picture>`                              |
+| `.et-picture-img`        | the `<img>` - the one you usually want       |
+| `.et-picture-figcaption` | the `<figcaption>`, when `figcaption` is set |
+
+Per state, use `.et-picture[data-state='error']`; with `fit`, the host also carries `data-fit`.
+
+### Coming from `@ethlete/cdk`
+
+The cdk predecessor took `imgClass`, `figureClass`, `pictureClass` and `figcaptionClass` inputs. They are gone
+on purpose - passing a class per instance duplicates in every template what one stylesheet rule says once, and
+it made the internal element structure part of the call signature. The two replacements are the two sizing modes
+above:
+
+- Filling a box you control → the **`fit`** input (this covers nearly every `imgClass="object-cover h-full"`).
+- Anything else - max-sizes, one-axis constraints, borders, radius, captions → a rule on `.et-picture-img` (or
+  the sibling classes) from your own stylesheet, scoped by a class of your own on the host.
 
 ::: tip Why not `NgOptimizedImage`?
 Angular's directive is a good fit for a single `<img>` with a known loader, and it does things this component

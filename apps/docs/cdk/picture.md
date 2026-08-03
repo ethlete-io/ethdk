@@ -7,8 +7,10 @@ New code should use the [components picture](/components/picture) (`PICTURE_IMPO
 `defaultSrc`, `figcaption`, `width`, `height` and `sizes` are unchanged; `hasPriority` becomes `priority`,
 `alt` is required (pass `''` to declare the image decorative), `provideImageConfig` becomes
 `providePictureConfig` (and prefixes each srcset candidate rather than the whole string), and it adds
-`aspectRatio` plus placeholder and error slots. This page documents the CDK version, which still receives
-bug fixes.
+`aspectRatio` plus placeholder and error slots. The `imgClass` / `pictureClass` / `figureClass` /
+`figcaptionClass` passthroughs are deliberately not carried over: fill a box you control with the new `fit`
+input, and style anything else through the stable `.et-picture-img` &co. classes from your own stylesheet.
+This page documents the CDK version, which still receives bug fixes.
 :::
 
 ```html

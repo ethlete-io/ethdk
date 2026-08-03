@@ -1,4 +1,5 @@
 import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
+import { PictureFitStorybookComponent } from './picture-fit-storybook.component';
 import { PictureStorybookComponent } from './picture-storybook.component';
 
 export default {
@@ -22,6 +23,20 @@ export const Default: Story = {
         story:
           'Art direction, a loading placeholder and an error slot. Resize the preview past 700px to see the ' +
           'first image swap crop - that is a `media` query on a `<source>`, which no `srcset` can express.',
+      },
+    },
+  },
+};
+
+export const Fit: StoryObj<PictureFitStorybookComponent> = {
+  decorators: [moduleMetadata({ imports: [PictureFitStorybookComponent] })],
+  render: () => ({ template: '<et-sb-picture-fit />' }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Every `fit` mode against one 16:9 source in a fixed 180x120 box, plus the natural size the browser ' +
+          'reports back once it has decoded the image.',
       },
     },
   },

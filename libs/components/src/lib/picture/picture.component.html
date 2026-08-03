@@ -20,7 +20,7 @@
         [attr.loading]="priority() ? 'eager' : 'lazy'"
         [attr.fetchpriority]="priority() ? 'high' : 'auto'"
         [style.aspect-ratio]="aspectRatio()"
-        (load)="markLoaded()"
+        (load)="markLoaded($event)"
         (error)="markFailed()"
         class="et-picture-img"
       />
