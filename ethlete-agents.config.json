@@ -28,5 +28,6 @@
     ]
   },
   "exclude": ["angular-patterns", "git-commit", "handoff", "rxjs-signals"],
-  "claudeMdImportsAgentsMd": true
+  "claudeMdImportsAgentsMd": true,
+  "hooks": ["context-warning"]
 }

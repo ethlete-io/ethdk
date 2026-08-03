@@ -1,6 +1,9 @@
 {
   "permissions": {
-    "allow": ["Bash(node -e ' *)", "Bash(git ls-remote *)"]
+    "allow": [
+      "Bash(node -e ' *)",
+      "Bash(git ls-remote *)"
+    ]
   },
   "hooks": {
     "UserPromptSubmit": [
@@ -8,7 +11,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/context-warning.py\"",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/ethlete/context-warning.py\"",
             "timeout": 10
           }
         ]
