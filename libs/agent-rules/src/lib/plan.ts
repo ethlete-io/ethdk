@@ -4,6 +4,7 @@ import { SyncConfig } from './config';
 import { filterContent, SkippedItem } from './filter';
 import { ContentItem, loadContent } from './load-content';
 import { emitAgentsSkills } from './targets/agents-skills';
+import { assertKnownHooks, CLAUDE_SETTINGS_FILE, emitClaudeHooks } from './targets/claude-hooks';
 import { emitClaude } from './targets/claude';
 import { CODEX_FILE, emitCodex } from './targets/codex';
 import { COPILOT_FILE, emitCopilot } from './targets/copilot';
@@ -72,6 +73,9 @@ const collectWarnings = (config: SyncConfig) => {
  */
 export const buildPlan = (options: { config: SyncConfig; version: string }): SyncPlan => {
   const { config, version } = options;
+
+  assertKnownHooks(config.hooks);
+
   const { kept, skipped } = filterContent(loadContent(), config);
 
   const skills = kept.filter((item) => item.frontmatter.kind === 'skill');
@@ -84,6 +88,7 @@ export const buildPlan = (options: { config: SyncConfig; version: string }): Syn
     vars: config.vars,
     version,
     claudeMdImportsAgentsMd: config.claudeMdImportsAgentsMd,
+    hooks: config.hooks,
   };
 
   const files: EmittedFile[] = [];
@@ -103,6 +108,14 @@ export const buildPlan = (options: { config: SyncConfig; version: string }): Syn
   if (config.targets.includes('copilot')) {
     files.push(...emitCopilot({ context, existing: readExisting(config.root, COPILOT_FILE) }));
   }
+
+  files.push(
+    ...emitClaudeHooks({
+      context,
+      claudeTarget: config.targets.includes('claude'),
+      existingSettings: readExisting(config.root, CLAUDE_SETTINGS_FILE),
+    }),
+  );
 
   return { files, skipped, danglingLinks: findDanglingLinks(kept, emittedSkills), warnings: collectWarnings(config) };
 };

@@ -92,6 +92,18 @@ ESLint plugin with custom rules and shareable flat configs for the Ethlete codin
 yarn add @ethlete/eslint-plugin
 ```
 
+### @ethlete/agent-rules
+
+[![NPM version](https://img.shields.io/npm/v/@ethlete/agent-rules?style=flat-square)](https://www.npmjs.com/package/@ethlete/agent-rules)
+[![NPM version](https://img.shields.io/badge/View%20Changelog-505050?style=flat-square)](https://github.com/ethlete-io/ethdk/blob/main/libs/agent-rules/CHANGELOG.md)
+[![NPM version](https://img.shields.io/npm/v/@ethlete/agent-rules/next?style=flat-square)](https://www.npmjs.com/package/@ethlete/agent-rules)
+
+Agent rules for the Ethlete ecosystem.
+
+```sh
+yarn add @ethlete/agent-rules
+```
+
 ### @ethlete/cli
 
 [![NPM version](https://img.shields.io/npm/v/@ethlete/cli?style=flat-square)](https://www.npmjs.com/package/@ethlete/cli)

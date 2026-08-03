@@ -113,6 +113,29 @@ Prettier rewrites them and `check` then reports drift on every run:
 Content that declares `requires` is only emitted when those packages are installed, so
 a repo without `@ethlete/query` never sees the query guide.
 
+## Hooks (opt-in)
+
+Claude Code hooks run commands on the developer's machine, so none are emitted by
+default - opt in per hook in the config:
+
+```json
+{
+  "hooks": ["context-warning"]
+}
+```
+
+`sync` writes the script to `.claude/hooks/ethlete/` and registers it in
+`.claude/settings.json` (your own entries are left untouched); removing the name from
+`hooks` unregisters and deletes it again.
+
+Available hooks:
+
+- **`context-warning`** - warns once per tier (and instructs Claude) when the session
+  context crosses 70% / 85% of the token budget, recommending `/handoff`. The budget is
+  capped at the 200k long-context pricing boundary: on 1M-window models every request
+  past 200k input tokens bills the whole context at a premium rate, so the warnings
+  fire at ~140k/~170k instead of deep into the expensive range.
+
 ## Authoring content
 
 `content/rules/<name>.md` for short, always-loaded rules; `content/skills/<name>/SKILL.md`

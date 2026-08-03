@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+"""UserPromptSubmit hook: warn when the context window is getting large.
+
+Reads the hook input JSON from stdin, estimates the current context size from
+the last main-chain assistant message in the session transcript, and emits a
+warning (visible to both the user and Claude) when it crosses a threshold.
+Recommends the /handoff skill so work can continue in a fresh session.
+
+The thresholds are fractions of a token budget, and the budget is capped at the
+200k long-context pricing boundary: on models with a larger window, every
+request past that point bills the entire context at the premium rate, which
+costs far more than handing off into a fresh session ever would.
+
+Warns once per tier per session (state kept in a temp file); re-arms itself
+if the context shrinks again (e.g. after /compact).
+
+Fail-safe: any error exits 0 with no output — the hook must never block a prompt.
+"""
+
+import json
+import os
+import sys
+import tempfile
+
+# Warn / critical fire at these fractions of the token budget.
+WARN_FRACTION = 0.70
+CRITICAL_FRACTION = 0.85
+
+# On models with a window larger than this, tokens beyond it bill the whole
+# context at the long-context premium rate — so the budget never exceeds it.
+PREMIUM_BOUNDARY = 200_000
+
+# Context window (tokens) per model, matched by substring against the model id
+# from the transcript — first match wins. Edit these as model windows change;
+# anything unmatched falls back to DEFAULT_WINDOW.
+CONTEXT_WINDOWS = (
+    ("opus-5", 1_000_000),
+    ("opus-4-8", 1_000_000),
+    ("sonnet-4-5", 1_000_000),
+    ("sonnet-5", 1_000_000),
+    ("fable-5", 1_000_000),
+    # Generic fallbacks — keep these last: the first substring match wins, so a bare
+    # "opus"/"sonnet" entry placed above would shadow every versioned entry below it.
+    ("opus", 200_000),
+    ("sonnet", 200_000),
+    ("haiku", 200_000),
+)
+DEFAULT_WINDOW = 200_000
+
+
+def window_for(model):
+    """Context window for a model id, by first substring match; DEFAULT_WINDOW otherwise."""
+    if model:
+        for needle, window in CONTEXT_WINDOWS:
+            if needle in model:
+                return window
+    return DEFAULT_WINDOW
+
+
+def context_state(transcript_path):
+    """(tokens, model) from the last main-chain assistant message.
+
+    tokens ≈ its total input tokens (fresh + cache read + cache creation).
+    """
+    last_usage = None
+    last_model = None
+    with open(transcript_path, encoding="utf-8") as f:
+        for line in f:
+            try:
+                obj = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if obj.get("type") != "assistant" or obj.get("isSidechain"):
+                continue
+            message = obj.get("message") or {}
+            usage = message.get("usage")
+            if usage:
+                last_usage = usage
+                last_model = message.get("model") or last_model
+    if not last_usage:
+        return 0, last_model
+    tokens = (
+        last_usage.get("input_tokens", 0)
+        + last_usage.get("cache_read_input_tokens", 0)
+        + last_usage.get("cache_creation_input_tokens", 0)
+    )
+    return tokens, last_model
+
+
+def messages(tier, tokens, budget, priced):
+    """(systemMessage, additionalContext) for a tier.
+
+    priced: the budget is the pricing boundary, not the window — the reason to
+    hand off is cost, not an imminent auto-compact.
+    """
+    k = f"~{tokens // 1000}k"
+    pct = round(tokens / budget * 100)
+    budget_k = f"{budget // 1000}k"
+    if tier == 2 and priced:
+        return (
+            f"🔴 Context is at {k} tokens — about to cross the {budget_k} long-context "
+            f"pricing boundary, after which every request bills the whole context at the "
+            f"premium rate. Run /handoff now and continue in a fresh session.",
+            f"[context-warning hook] The context is at {k} tokens — {pct}% of the "
+            f"{budget_k} long-context pricing boundary. Past it every request is billed at "
+            "the premium rate. Finish only the immediate step, then recommend the user run "
+            "/handoff to save state and start a fresh session. Do not start new sub-tasks.",
+        )
+    if tier == 2:
+        return (
+            f"🔴 Context is at {k} tokens ({pct}% of the {budget_k} window) — "
+            f"auto-compact is imminent. Run /handoff now and continue in a fresh session.",
+            f"[context-warning hook] The context window is at {k} tokens — {pct}% of "
+            f"this model's {budget_k} window (critical, ≥{int(CRITICAL_FRACTION * 100)}%). "
+            "Finish only the immediate step, then recommend the user run /handoff to "
+            "save state and start a fresh session. Do not start new sub-tasks.",
+        )
+    if priced:
+        return (
+            f"🟡 Context is at {k} tokens, approaching the {budget_k} long-context "
+            f"pricing boundary. At the next natural stopping point, consider /handoff "
+            f"to continue in a fresh session.",
+            f"[context-warning hook] The context is at {k} tokens — {pct}% of the "
+            f"{budget_k} long-context pricing boundary, past which every request is "
+            "billed at the premium rate. When the current task reaches a natural "
+            "stopping point, suggest the user run /handoff to save state and start a "
+            "fresh session. Keep working normally until then.",
+        )
+    return (
+        f"🟡 Context is at {k} tokens ({pct}% of the {budget_k} window). At the next "
+        f"natural stopping point, consider /handoff to continue in a fresh session.",
+        f"[context-warning hook] The context window is at {k} tokens — {pct}% of "
+        f"this model's {budget_k} window (≥{int(WARN_FRACTION * 100)}%). When the "
+        "current task reaches a natural stopping point, suggest the user run "
+        "/handoff to save state and start a fresh session. Keep working normally until then.",
+    )
+
+
+def main():
+    data = json.load(sys.stdin)
+    transcript_path = data.get("transcript_path")
+    session_id = data.get("session_id", "unknown")
+    if not transcript_path or not os.path.isfile(transcript_path):
+        return
+
+    tokens, model = context_state(transcript_path)
+    window = window_for(model)
+    budget = min(window, PREMIUM_BOUNDARY)
+    warn_tokens = int(budget * WARN_FRACTION)
+    critical_tokens = int(budget * CRITICAL_FRACTION)
+    tier = 2 if tokens >= critical_tokens else 1 if tokens >= warn_tokens else 0
+
+    state_file = os.path.join(
+        tempfile.gettempdir(), f"claude-context-warning-{session_id}"
+    )
+    prev_tier = 0
+    try:
+        with open(state_file, encoding="utf-8") as f:
+            prev_tier = int(f.read().strip() or 0)
+    except (OSError, ValueError):
+        pass
+
+    if tier != prev_tier:
+        try:
+            with open(state_file, "w", encoding="utf-8") as f:
+                f.write(str(tier))
+        except OSError:
+            pass
+
+    if tier <= prev_tier:
+        return  # already warned at this tier (or context shrank — state re-armed above)
+
+    system_message, additional_context = messages(tier, tokens, budget, budget < window)
+
+    print(
+        json.dumps(
+            {
+                "systemMessage": system_message,
+                "suppressOutput": True,
+                "hookSpecificOutput": {
+                    "hookEventName": "UserPromptSubmit",
+                    "additionalContext": additional_context,
+                },
+            }
+        )
+    )
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception:
+        pass
+    sys.exit(0)

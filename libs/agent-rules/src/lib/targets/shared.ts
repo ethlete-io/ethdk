@@ -20,6 +20,8 @@ export type EmitContext = {
    * rules through the `AGENTS.md` marker block and must not get a second copy in `.claude/rules/`.
    */
   claudeMdImportsAgentsMd: boolean;
+  /** Opt-in Claude Code hooks from the config. */
+  hooks: string[];
 };
 
 export const AGENTS_SKILLS_DIR = '.agents/skills';

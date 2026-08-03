@@ -56,6 +56,7 @@ const init = (root: string) => {
     targets: detectTargets(root),
     vars: {},
     exclude: [],
+    hooks: [],
   };
 
   writeFileSync(path, `${JSON.stringify(template, null, 2)}\n`, 'utf8');

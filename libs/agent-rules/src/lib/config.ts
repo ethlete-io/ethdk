@@ -22,6 +22,8 @@ export type SyncConfig = {
    * `AGENTS.md` marker block, and a second copy would load twice.
    */
   claudeMdImportsAgentsMd: boolean;
+  /** Opt-in Claude Code hooks (they run commands on the developer's machine, so never default). */
+  hooks: string[];
 };
 
 type RawConfig = {
@@ -30,6 +32,7 @@ type RawConfig = {
   vars?: Record<string, string | string[]>;
   exclude?: string[];
   claudeMdImportsAgentsMd?: boolean;
+  hooks?: string[];
 };
 
 const readRawConfig = (root: string) => {
@@ -79,5 +82,6 @@ export const loadConfig = (options: { root: string; targetOverride?: AgentTarget
     vars: { ...loadDefaultVars(), ...(raw.vars ?? {}) },
     exclude: raw.exclude ?? [],
     claudeMdImportsAgentsMd: raw.claudeMdImportsAgentsMd ?? false,
+    hooks: raw.hooks ?? [],
   };
 };
