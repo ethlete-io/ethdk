@@ -4,7 +4,12 @@
 table (`libs/components/src/lib/table`), the CDK-era table it replaced
 (`libs/cdk/src/lib/components/table`), `node_modules/@angular/cdk@…/types/table.d.ts`,
 and the plans that produced the current design
-(the completed `cdk-port/01-table` plan and [`table-tree-shaking.md`](./table-tree-shaking.md)).
+(the completed `cdk-port/01-table` plan, since deleted, and
+[`table-tree-shaking.md`](./table-tree-shaking.md)).
+
+**Kept after completion** because `table-tree-shaking.md` - which open plans still
+use - marks itself partly superseded by this file and needs it to say what the
+current shape is. Retire the pair together.
 
 The table is **not released** - `.changeset/table.md` is still pending, so breaking
 changes cost nothing and no deprecation cycle is needed. Any change from this RFC

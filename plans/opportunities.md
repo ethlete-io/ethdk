@@ -1,8 +1,9 @@
 # Opportunities: improvements & new additions
 
 Research done 2026-07-23 (source-verified scans of `libs/components` +
-`libs/core`). Complements `plans/cdk-port/` - nothing here overlaps those
-plans. Unprioritized backlog; pick items into real plans as needed.
+`libs/core`). Written alongside the `plans/cdk-port/` set (all shipped and since
+deleted; only `cdk-deprecation-roadmap.md` survives) - nothing here overlapped
+those plans. Unprioritized backlog; pick items into real plans as needed.
 
 > A second research pass (2026-07-30) covering gaps _inside_ existing
 > components - touch/gesture, RTL/i18n/a11y consistency, per-domain feature
@@ -76,7 +77,7 @@ otp-input, `container-type` in stream/pip.
   `icons` generator exists. The three-tier architecture (folder layout,
   headless+default split, stories, `@layer components` CSS, error codes,
   self-registration) is mechanical - a `component`/`directive` generator
-  would pay for itself quickly, and directly helps the cdk-port work.
+  would pay for itself quickly.
 - **Test harnesses**: `forms/testing/` has exactly one utility (the
   `mixed-state-contract`). No CDK-`ComponentHarness`-style drivers - every
   spec talks to the DOM directly. Worth considering as more controls land;

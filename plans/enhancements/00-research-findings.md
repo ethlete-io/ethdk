@@ -6,7 +6,8 @@ forms controls, overlay/popup domains, data display, cross-cutting concerns
 
 Complements `plans/opportunities.md` (2026-07-23 pass: new-component candidates,
 platform decisions) - this pass covers gaps **inside** existing components.
-Nothing here overlaps `plans/cdk-port/` (08–10 + 90 in progress elsewhere).
+Nothing here overlaps the `plans/cdk-port/` set, which was still in progress when
+this pass ran and has since shipped in full.
 
 Items judged worth doing have plan files in this folder (see README). This doc
 is the full evidence record, including items deliberately **not** planned.
@@ -185,10 +186,9 @@ in the audited domains except the known bracket one. Public API hygiene clean.
 
 ## 7. Corrections to stale notes elsewhere
 
-`plans/cdk-port/README.md`'s "parked ideas" list (not edited here - plans 08–10
-
-- 90 are being implemented in a parallel session): **table virtualization**
-  (`table-virtual-scroll.directive.ts`), **carousel reduced-motion autoplay
-  handling** (`carousel-autoplay.directive.ts` pause reason), and **breadcrumb
-  overflow collapsing** (shipped, documented) already exist. Only "tree/data-grid
-  extensions" and "skeleton auto-shapes" remain genuinely unbuilt.
+`plans/cdk-port/README.md`'s "parked ideas" list (that file has since been deleted
+with the rest of the shipped port set): **table virtualization**
+(`table-virtual-scroll.directive.ts`), **carousel reduced-motion autoplay
+handling** (`carousel-autoplay.directive.ts` pause reason), and **breadcrumb
+overflow collapsing** (shipped, documented) already exist. Only "tree/data-grid
+extensions" and "skeleton auto-shapes" remain genuinely unbuilt.
