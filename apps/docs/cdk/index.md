@@ -3,7 +3,7 @@
 The original Angular UI toolkit of the Ethlete SDK - buttons, forms, overlays, tables, carousels and more, built on [`@ethlete/core`](/core/) and integrated with [`@ethlete/query`](/query/).
 
 ::: warning Maintenance mode
-`@ethlete/cdk` has been superseded by [`@ethlete/components`](/components/). It still receives bug fixes, but no new features. **Every CDK domain now has a successor** in `@ethlete/components` or `@ethlete/core` - see [the table below](#superseded-by-ethlete-components), and the callout at the top of each guide for the renames. The one reason to still reach for a CDK control is **classic reactive forms**: the `@ethlete/components` form controls are signal-forms only (see [Forms](/cdk/forms)).
+`@ethlete/cdk` has been superseded by [`@ethlete/components`](/components/). It still receives bug fixes, but no new features. **Every CDK domain now has a successor** in `@ethlete/components` or `@ethlete/core` - see [the table below](#superseded-by-ethlete-components), and the callout at the top of each guide for the renames. Migrating a specific import? [**Migrating to components, symbol by symbol**](/cdk/migration) maps all 627 CDK exports to their successor. The one reason to still reach for a CDK control is **classic reactive forms**: the `@ethlete/components` form controls are signal-forms only (see [Forms](/cdk/forms)).
 :::
 
 ```bash
@@ -43,6 +43,8 @@ It runs seven transforms over your TypeScript, templates and CSS - combobox inpu
 ## Superseded by @ethlete/components
 
 New code should use the successor; fixes made here should usually be mirrored there. Each CDK guide below opens with the renames its successor brings.
+
+This table is the domain-level view. For a single identifier - "what does `TableImports` / `createOverlayHandler` / `SortHeaderComponent` become?" - use the [symbol-by-symbol migration table](/cdk/migration), which covers every public CDK export and flags the three rename patterns that make a successor look like it doesn't exist.
 
 | CDK domain                                                | Successor                                                                                   |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------- |

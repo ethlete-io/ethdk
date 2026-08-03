@@ -63,7 +63,10 @@ export default defineConfig({
       '/cdk/': [
         {
           text: 'CDK',
-          items: [{ text: 'Overview', link: '/cdk/' }],
+          items: [
+            { text: 'Overview', link: '/cdk/' },
+            { text: 'Migrating to components', link: '/cdk/migration' },
+          ],
         },
         {
           text: 'Data & collections',

@@ -49,6 +49,15 @@ import { SKELETON_IMPORTS } from '@ethlete/components';
 `et-skeleton-text` takes `lines` (default `3`) and `lastLineWidth` (default `60`%); a
 full-width last line reads as a block rather than a paragraph.
 
+::: info Coming from the CDK
+The cdk's `<et-skeleton-item>` had no `shape` at all: it was a plain block sized entirely by your own
+CSS, which makes **`shape="rect"` the equivalent - not the default**. Swapping the import alone leaves
+every item on `shape="text"`, which is `inline-block`, `0.85em` tall and carries vertical margins to
+fill a line box. Items that stood in for a card, an image or a chart therefore shrink and the layout
+around them shifts, without any error to point at it. Add `shape="rect"` to every migrated item and
+keep the size rule you already have; only bones that replace a run of words want the default.
+:::
+
 ## Custom properties
 
 | Property                 | Default  | Applies to                        |
