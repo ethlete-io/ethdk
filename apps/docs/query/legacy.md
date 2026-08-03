@@ -45,14 +45,14 @@ post = queryStateResponseSignal(this.postQuery);
 
 ## Supporting features
 
-| Feature         | What it is                                                                                                                                                       |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `*etQuery`      | Structural directive that executes a query and exposes `$implicit` (data), `loading`, `refreshing`, `progress` and `error` in the template.                      |
-| `InfinityQuery` | Infinite lists: `createInfinityQueryConfig()` + `[etInfinityQuery]` / `[etInfinityQueryTrigger]` directives.                                                     |
-| `EntityStore`   | Normalized entity cache wired into queries via the `entity` config (`store`, `id`, `get`, `set`).                                                                |
-| `QueryForm`     | Router-synced filter/search forms - see the [overview](/query/#also-in-the-package); works with both systems but grew up here.                                   |
-| Devtools        | `<et-query-devtools>` component showing live queries and auth state (`provideQueryClientForDevtools`).                                                           |
-| Interop         | `createLegacyQueryCreator({ creator })` wraps a **current-system** creator in the legacy `.prepare()/.state$` surface - useful while migrating screen by screen. |
+| Feature         | What it is                                                                                                                                                       | Use instead                                                                                                                     |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `*etQuery`      | Structural directive that executes a query and exposes `$implicit` (data), `loading`, `refreshing`, `progress` and `error` in the template.                      | Nothing, by design - [read the query's signals in the template](/query/migrating-from-v2#templates-read-signals-not-directives) |
+| `InfinityQuery` | Infinite lists: `createInfinityQueryConfig()` + `[etInfinityQuery]` / `[etInfinityQueryTrigger]` directives.                                                     | [`createPagedQueryStack`](/query/stacks#paged-queries)                                                                          |
+| `EntityStore`   | Normalized entity cache wired into queries via the `entity` config (`store`, `id`, `get`, `set`).                                                                | Nothing directly - [caching](/query/caching) dedupes by request; derive shared state with signals                               |
+| `QueryForm`     | Router-synced filter/search forms - see the [overview](/query/#also-in-the-package); works with both systems but grew up here.                                   | [`createQueryForm`](/query/query-forms) - the class stays exported for reactive-forms apps                                      |
+| Devtools        | `<et-query-devtools>` component showing live queries and auth state (`provideQueryClientForDevtools`).                                                           | [`provideQueryDevtools()` + `<et-query-devtools />`](/components/query-devtools) from `@ethlete/components`                     |
+| Interop         | `createLegacyQueryCreator({ creator })` wraps a **current-system** creator in the legacy `.prepare()/.state$` surface - useful while migrating screen by screen. | This _is_ the migration seam - keep it until the consuming components are converted                                             |
 
 ## Migrating to the current system
 
@@ -60,25 +60,28 @@ post = queryStateResponseSignal(this.postQuery);
 This table is the API-to-API map. The [migration guide](/query/migrating-from-v2) covers the parts that take the time: the `provideHttpClient` requirement, configuring the auth provider, default headers, what replaces the query UI directives, and the runtime behavior that changed.
 :::
 
-| Legacy                                             | Current                                                                                                                                         |
-| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `new V2QueryClient({ baseRoute })`                 | [`createQueryClient({ name, baseUrl })`](/query/queries#the-query-client)                                                                       |
-| `client.get({ route, types })`                     | [`createGetQuery(client)<TArgs>(route)`](/query/http)                                                                                           |
-| `.prepare(args).execute()`                         | [`withArgs(() => args)`](/query/features#withargs) + [auto-execution](/query/queries#auto-execution)                                            |
-| `query.state$` + `filterSuccess()`                 | [`query.response()`](/query/queries#the-query-object) (signals; `.asObservable()` when RxJS is needed)                                          |
-| `createSignal()` / `toQuerySignal()`               | The query object itself - it's already signals.                                                                                                 |
-| `query.poll({ interval })`                         | [`withPolling({ interval })`](/query/features#withpolling)                                                                                      |
-| `autoRefreshOn.windowFocus`                        | No equivalent - use [`withAutoRefresh`](/query/features#withautorefresh) with your own focus signal, or `injectClient().refreshQueriesInUse()`. |
-| `setDefaultHeaders({ headers })`                   | [`headers` on `createQueryClient`](/query/queries#the-query-client) (a function form re-reads per request)                                      |
-| `setDefaultHeaders({ refreshQueriesInUse: true })` | [`client.refreshQueriesInUse()`](/query/caching#refreshing-everything-in-use)                                                                   |
-| `*etQuery` / `<et-query-error>` / query button     | No replacement by design - [read the query's signals in the template](/query/migrating-from-v2#templates-read-signals-not-directives).          |
-| A query collection tracking several queries        | [`provider.executionState()`](/query/auth#execution-state) for auth; a `computed` over the queries' own `executionState()` otherwise.           |
-| `InfinityQuery` / `[etInfinityQuery]`              | [`createPagedQueryStack`](/query/stacks#paged-queries)                                                                                          |
-| `V2BearerAuthProvider` + `setAuthProvider`         | [`createBearerAuthProvider`](/query/auth) + secure creator templates                                                                            |
-| `secure: true`                                     | [`createSecureGetQuery(client, authProviderRef)`](/query/http#secure-queries)                                                                   |
-| `client.gqlQuery/gqlMutate`                        | [`createGqlQueryVia…` / `createGqlMutationVia…`](/query/gql)                                                                                    |
-| `EntityStore`                                      | No direct equivalent - [caching](/query/caching) dedupes by request; derive shared state with signals.                                          |
-| `provideQueryClientForDevtools`                    | [`provideQueryDevtools()`](/components/query-devtools) + `<et-query-devtools />` (registers every client at once)                               |
+| Legacy                                                               | Current                                                                                                                                                 |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `new V2QueryClient({ baseRoute })`                                   | [`createQueryClient({ name, baseUrl })`](/query/queries#the-query-client)                                                                               |
+| `client.get({ route, types })`                                       | [`createGetQuery(client)<TArgs>(route)`](/query/http)                                                                                                   |
+| `.prepare(args).execute()`                                           | [`withArgs(() => args)`](/query/features#withargs) + [auto-execution](/query/queries#auto-execution)                                                    |
+| `query.state$` + `filterSuccess()`                                   | [`query.response()`](/query/queries#the-query-object) (signals; `.asObservable()` when RxJS is needed)                                                  |
+| `createSignal()` / `toQuerySignal()`                                 | The query object itself - it's already signals.                                                                                                         |
+| `switchQueryState()` / `takeUntilResponse()` / `queryState*Signal()` | [The query's own signals](/query/queries#the-query-object); each one is an `ObservableSignal`, so `query.response.asObservable()` gives you the stream. |
+| `new QueryForm({ … })` + `QueryField` / `SearchQueryField` / …       | [`createQueryForm`](/query/query-forms) + the lowercase field creators (`queryField`, `searchQueryField`, …)                                            |
+| `validateWithV2Query()`                                              | [`validateWithQuery()`](/query/errors#validating-against-the-server-as-the-user-types)                                                                  |
+| `query.poll({ interval })`                                           | [`withPolling({ interval })`](/query/features#withpolling)                                                                                              |
+| `autoRefreshOn.windowFocus`                                          | No equivalent - use [`withAutoRefresh`](/query/features#withautorefresh) with your own focus signal, or `injectClient().refreshQueriesInUse()`.         |
+| `setDefaultHeaders({ headers })`                                     | [`headers` on `createQueryClient`](/query/queries#the-query-client) (a function form re-reads per request)                                              |
+| `setDefaultHeaders({ refreshQueriesInUse: true })`                   | [`client.refreshQueriesInUse()`](/query/caching#refreshing-everything-in-use)                                                                           |
+| `*etQuery` / `<et-query-error>` / query button                       | No replacement by design - [read the query's signals in the template](/query/migrating-from-v2#templates-read-signals-not-directives).                  |
+| A query collection tracking several queries                          | [`provider.executionState()`](/query/auth#execution-state) for auth; a `computed` over the queries' own `executionState()` otherwise.                   |
+| `InfinityQuery` / `[etInfinityQuery]`                                | [`createPagedQueryStack`](/query/stacks#paged-queries)                                                                                                  |
+| `V2BearerAuthProvider` + `setAuthProvider`                           | [`createBearerAuthProvider`](/query/auth) + secure creator templates                                                                                    |
+| `secure: true`                                                       | [`createSecureGetQuery(client, authProviderRef)`](/query/http#secure-queries)                                                                           |
+| `client.gqlQuery/gqlMutate`                                          | [`createGqlQueryVia…` / `createGqlMutationVia…`](/query/gql)                                                                                            |
+| `EntityStore`                                                        | No direct equivalent - [caching](/query/caching) dedupes by request; derive shared state with signals.                                                  |
+| `provideQueryClientForDevtools`                                      | [`provideQueryDevtools()`](/components/query-devtools) + `<et-query-devtools />` (registers every client at once)                                       |
 
 The `createLegacyQueryCreator` interop lets both worlds coexist: define new endpoints with the current system and consume them from legacy-style components until those are migrated.
 

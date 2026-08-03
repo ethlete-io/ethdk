@@ -2,6 +2,15 @@
 
 `et-picture` renders a responsive `<picture>` element - a list of `<source>` entries plus a fallback `<img>`, optionally wrapped in a `<figure>` with caption. It's also the rendering target of the [`@ethlete/contentful`](/contentful/#images) image component.
 
+::: warning Superseded by @ethlete/components
+New code should use the [components picture](/components/picture) (`PICTURE_IMPORTS`). `sources`,
+`defaultSrc`, `figcaption`, `width`, `height` and `sizes` are unchanged; `hasPriority` becomes `priority`,
+`alt` is required (pass `''` to declare the image decorative), `provideImageConfig` becomes
+`providePictureConfig` (and prefixes each srcset candidate rather than the whole string), and it adds
+`aspectRatio` plus placeholder and error slots. This page documents the CDK version, which still receives
+bug fixes.
+:::
+
 ```html
 <et-picture
   [sources]="[

@@ -2,6 +2,14 @@
 
 `et-masonry` packs variable-height items into columns, placing each item into the currently shortest column.
 
+::: warning Superseded by @ethlete/components
+New code should use the [components masonry](/components/masonry) (`MASONRY_IMPORTS`). It ships as
+directives (`etMasonry` / `etMasonryItem`) you put on your own elements, so the markup can be a real
+`<ul>`/`<li>` list; `columWidth` becomes `columnWidth` (and both it and `gap` accept a breakpoint map);
+items need no `key`; and the `initializing` / `initialized` outputs become an `isSettled()` signal to gate
+infinite-scroll fetches on. This page documents the CDK version, which still receives bug fixes.
+:::
+
 ```html
 <et-masonry [columWidth]="200" [gap]="16">
   @for (item of items; track item.id) {

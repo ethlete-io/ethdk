@@ -2,6 +2,24 @@
 
 A scroll-aware scaffold for filter UIs: it watches your inline filter area with intersection observers and sets state classes on the host, so a floating filter button can appear once the inline filters scroll out of view - and `scrollToTop()` brings the user back.
 
+::: warning Superseded by @ethlete/components
+New code should use [floating action](/components/floating-action) (`FLOATING_ACTION_IMPORTS`), which is
+this scaffold under a name that says what it does - it never rendered any filter UI. The renames:
+
+| CDK                          | components                  |
+| ---------------------------- | --------------------------- |
+| `et-rich-filter-host`        | `[etFloatingAction]`        |
+| `et-rich-filter-button-slot` | `[etFloatingActionAnchor]`  |
+| `[etRichFilterButton]`       | `[etFloatingActionTrigger]` |
+| `[etRichFilterContent]`      | `[etFloatingActionScope]`   |
+| `[etRichFilterTop]`          | `[etFloatingActionTop]`     |
+
+The ten boolean state classes become one derived `data-state` attribute. For the filter panel itself -
+CDK's `FilterOverlayService` / `provideFilterOverlayConfig` - use
+[filter overlay](/components/filter-overlay). This page documents the CDK version, which still receives bug
+fixes.
+:::
+
 ```html
 <div #host et-rich-filter-host>
   <!-- page content above the filters -->

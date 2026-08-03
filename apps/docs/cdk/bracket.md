@@ -2,6 +2,17 @@
 
 Tournament bracket rendering. `et-new-bracket` draws the rounds, matches and connector lines for single elimination, double elimination and Swiss (with elimination) formats from a `BracketDataSource`. The older `et-bracket` is kept for backwards compatibility only - use the new one.
 
+::: warning Superseded by @ethlete/components
+This renderer has moved: use the [components bracket](/components/bracket) (`BRACKET_IMPORTS`) for new
+code. The layout engine and the `BracketDataSource` shape are unchanged, but `et-new-bracket` becomes
+`et-bracket`, every `NewBracket*` export drops the prefix (`provideNewBracketConfig` →
+`provideBracketConfig`), each layout is **registered** rather than always bundled, the default cards are
+real cards needing a `matchNormalizer`, and `generateBracketDataForGg` was not ported. Its
+_Migrating from `@ethlete/cdk`_ section lists every rename. For the same tournament as a vertical list on
+narrow viewports, see [bracket rounds list](/components/bracket-rounds-list). This page documents the CDK
+version, which still receives bug fixes.
+:::
+
 ```html
 <et-scrollable [etScrollableButtons]="{ sticky: true }">
   <et-new-bracket [source]="source" />

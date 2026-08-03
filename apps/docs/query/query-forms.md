@@ -173,3 +173,21 @@ The original `QueryForm` class (with `QueryField`, `SearchQueryField`,
 exported. It works with both query clients but grew up alongside the
 [legacy client](/query/legacy). Prefer `createQueryForm` for new code - it binds
 to `@ethlete/components` controls directly and is signals-native throughout.
+
+::: warning Superseded by `createQueryForm`
+The class remains for apps on classic reactive forms; everything else should use
+the signals-first form documented above. The concepts map one to one:
+
+| Legacy                                                                                                                                                                  | Current                                                                                                  |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `new QueryForm({ … })`                                                                                                                                                  | [`createQueryForm({ fields })`](#quickstart)                                                             |
+| `QueryField`, `SearchQueryField`, `SortQueryField`, `StringArrayQueryField`, `NumberArrayQueryField`, `BooleanArrayQueryField`, `DateQueryField`, `DateArrayQueryField` | the lowercase [field creators](#field-creators) of the same names (`queryField`, `searchQueryField`, …)  |
+| `form` (a `FormGroup`) + `controls`, bound with `[formControl]`                                                                                                         | `fields`, bound with `[formField]` - any signal-forms control, including every `@ethlete/components` one |
+| `changes$` / `currentValue$` / `previousValue$` / `activeFilterCount$`                                                                                                  | the `changes`, `value`, `previousValue` and `activeFilterCount` signals                                  |
+| `defaultFormValue`                                                                                                                                                      | `defaultValue`                                                                                           |
+| Cloning the `FormGroup` for a filter overlay draft                                                                                                                      | [`branch()`](#filter-overlays)                                                                           |
+
+`observe()` / `unobserve()`, the per-field options and the URL serialization rules
+are the same on both. For the filter panel this used to sit behind, see
+[filter overlay](/components/filter-overlay) in `@ethlete/components`.
+:::

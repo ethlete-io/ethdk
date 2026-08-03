@@ -2,6 +2,25 @@
 
 Standalone helpers exported from `@ethlete/cdk`.
 
+::: warning Superseded by @ethlete/core
+Every helper on this page has moved or been rebuilt outside the CDK - new code should import it from
+`@ethlete/core`:
+
+| CDK                                     | Where it lives now                                                                                                                                                                                                            |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createNavigationDismissChecker()`      | [`createUnsavedChangesTracker` / `createUnsavedChangesGuard`](/core/utilities#unsaved-changes) in `@ethlete/core`, or `createOverlayUnsavedChangesGuard` from `@ethlete/components` for a form in an overlay                  |
+| `injectRouterNavigationState()`         | the same function from `@ethlete/core` - see [signal utilities](/core/signal-utils)                                                                                                                                           |
+| `createSwipeTracker()`                  | the same function from `@ethlete/core` - see [utilities](/core/utilities), _Gestures & input_                                                                                                                                 |
+| `FLOATING_UI_PLACEMENTS`                | no successor constant; the components that take fallbacks type them as `Placement[]` from `@floating-ui/dom` directly (e.g. [overlays](/components/overlays), [menu](/components/menu))                                       |
+| The [global stylesheet](#global-styles) | there is none to add: every `@ethlete/components` component injects its own CSS (inside `@layer components`), overlay positioning included. The `--ease-*` token set has no successor - copy the values you use into your app |
+
+The unsaved-changes rewrite is the one with real API changes: `form` becomes a generic `source`, `confirm`
+replaces `dismissCheckFn` and is required per call site, `refreshDefaultFormValue()` /
+`restoreDefaultFormValue()` become `refreshDefaultValue()` / `restoreDefaultValue()`, and it adds a
+`canDeactivate()` route bridge, browser-tab locking and one app-wide confirm at a time. This page documents
+the CDK versions, which still receive bug fixes.
+:::
+
 ## Navigation dismiss checker
 
 `createNavigationDismissChecker()` guards forms against accidental dismissal - typically a form inside an overlay. It snapshots the form's default value, tracks whether the current value differs, and runs your confirmation logic only when there are unsaved changes:

@@ -2,6 +2,15 @@
 
 Expandable panels with an animated open/close, template slots for the header, and optional exclusive-open grouping.
 
+::: warning Superseded by @ethlete/components
+New code should use the [components accordion](/components/accordion) (`ACCORDION_IMPORTS`). `label`,
+`isOpen`, `isOpenByDefault`, `disabled` and `et-accordion-group[autoCloseOthers]` all carry over; the
+header slots are renamed (`et-accordion-label-wrapper` → `etAccordionLabel`, `et-accordion-hint-wrapper` →
+`etAccordionHint`), and it adds `headingLevel`, arrow-key navigation between headers, a deferred-content
+slot (`etAccordionContent`) and colors from the [surface/color theming](/core/theming) systems. This page
+documents the CDK version, which still receives bug fixes.
+:::
+
 ```html
 <et-accordion [isOpenByDefault]="false" label="Some accordion">
   <p>Panel content…</p>

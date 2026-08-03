@@ -2,6 +2,24 @@
 
 A slide carousel with configurable transitions, optional looping and autoplay, plus attachable nav directives. All logic lives in a headless `CarouselDirective` - `et-carousel` is just the styled shell.
 
+::: warning Superseded by @ethlete/components
+New code should use the [components carousel](/components/carousel) (`CAROUSEL_IMPORTS`). It is the
+[scrollable](/components/scrollable) configured as a carousel, so sliding is native scroll-snapping
+(swipe, momentum and trackpad come from the platform) rather than transforms on stacked slides. The
+differences that matter when porting:
+
+| CDK                                                 | components                                                           |
+| --------------------------------------------------- | -------------------------------------------------------------------- |
+| Projected `et-carousel-item` children               | `ng-template[etCarouselSlide]` bound to your array (required, typed) |
+| `autoPlay` / `autoPlayTime` / `pauseAutoPlayOn*`    | `autoplay` / `autoplayTime` / `autoplayTimeFor`                      |
+| `etCarouselPreviousButton` / `etCarouselNextButton` | `etCarouselPrevious` / `etCarouselNext`                              |
+| `etCarouselToggleAutoPlayButton`                    | `etCarouselPlayToggle`                                               |
+| `et-carousel-item-nav`                              | built-in dots (`showDots`, on by default)                            |
+| `transitionType="mask-slide"`                       | `transition="wipe"` (plus `dim` and custom effects)                  |
+
+This page documents the CDK version, which still receives bug fixes.
+:::
+
 ```html
 <et-carousel [autoPlay]="true">
   <et-carousel-item>

@@ -104,7 +104,7 @@ that provides labels needs no per-instance wiring at all.
 
 | Token                     | Provide with                  | Covers                                                                       |
 | ------------------------- | ----------------------------- | ---------------------------------------------------------------------------- |
-| `FORM_FIELD_LABELS`       | `provideFormFieldLabels`      | `mixed` and `clear` - shared by **every** form control                       |
+| `FORM_FIELD_LABELS`       | `provideFormFieldLabels`      | `mixed`, `clear` and `selectAll` - shared by **every** form control          |
 | `INPUT_LABELS`            | `provideInputLabels`          | Number steppers, password reveal, Caps Lock warning                          |
 | `DATE_TIME_LABELS`        | `provideDateTimeLabels`       | Picker triggers, range start/end, date/time tabs, parse errors               |
 | `CALENDAR_LABELS`         | `provideCalendarLabels`       | Step/zoom controls of each view, week column (names come from `DATE_LOCALE`) |

@@ -2,6 +2,14 @@
 
 Loading placeholders: compose `et-skeleton-item`s inside an `et-skeleton`, which handles the shimmer animation and screen-reader announcement.
 
+::: warning Superseded by @ethlete/components
+New code should use the [components skeleton](/components/skeleton) (`SKELETON_IMPORTS`). The same two
+elements and the same `loadingAllyText` / `animated` inputs are there, plus a `shape` preset per item
+(`'text'`, `'circle'`, `'rect'`, …) so shapes are sized without your own CSS, an `et-skeleton-text` for a
+paragraph of lines, and colors from the [surface tokens](/core/theming) instead of a hardcoded gradient.
+This page documents the CDK version, which still receives bug fixes.
+:::
+
 ```html
 <et-skeleton loadingAllyText="Loading article…">
   <et-skeleton-item class="headline" />

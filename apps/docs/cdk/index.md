@@ -3,7 +3,7 @@
 The original Angular UI toolkit of the Ethlete SDK - buttons, forms, overlays, tables, carousels and more, built on [`@ethlete/core`](/core/) and integrated with [`@ethlete/query`](/query/).
 
 ::: warning Maintenance mode
-`@ethlete/cdk` has been superseded by [`@ethlete/components`](/components/). It still receives bug fixes, but no new features. Use `@ethlete/components` for new UI work, and prefer the successor whenever a CDK domain has one (see [the table below](#superseded-by-ethlete-components)). Domains without a successor yet remain fully supported here.
+`@ethlete/cdk` has been superseded by [`@ethlete/components`](/components/). It still receives bug fixes, but no new features. **Every CDK domain now has a successor** in `@ethlete/components` or `@ethlete/core` - see [the table below](#superseded-by-ethlete-components), and the callout at the top of each guide for the renames. The one reason to still reach for a CDK control is **classic reactive forms**: the `@ethlete/components` form controls are signal-forms only (see [Forms](/cdk/forms)).
 :::
 
 ```bash
@@ -42,26 +42,40 @@ It runs seven transforms over your TypeScript, templates and CSS - combobox inpu
 
 ## Superseded by @ethlete/components
 
-These CDK domains have a successor - new code should use the `@ethlete/components` version, and fixes made here should usually be mirrored there:
+New code should use the successor; fixes made here should usually be mirrored there. Each CDK guide below opens with the renames its successor brings.
 
-| CDK domain                                                           | Successor                                                                         |
-| -------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Button (`[et-button]`)                                               | [Button](/components/button)                                                      |
-| Overlay (dialogs, bottom sheets, responsive strategies)              | [Overlays](/components/overlays) & [Overlay openers](/components/overlay-openers) |
-| Menu                                                                 | [Menu](/components/menu)                                                          |
-| Tooltip                                                              | [Tooltip](/components/tooltip)                                                    |
-| Toggletip                                                            | [Toggletip](/components/toggletip)                                                |
-| Icons (`provideIcons`, `[etIcon]`)                                   | [Icon](/components/icon)                                                          |
-| Scrollable                                                           | [Scrollable](/components/scrollable)                                              |
-| Tabs (inline & router nav tabs)                                      | [Tabs](/components/tabs)                                                          |
-| Progress spinner                                                     | [Loaders](/components/loader)                                                     |
-| Forms: text input & textarea, checkbox, slide toggle, selection list | [Forms](/components/forms) (input, checkbox, switch, selection list)              |
+| CDK domain                                                | Successor                                                                                   |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Button (`[et-button]`)                                    | [Button](/components/button)                                                                |
+| Query button (`[et-query-button]`)                        | [Button](/components/button)'s `loading` input                                              |
+| Overlay (dialogs, bottom sheets, responsive strategies)   | [Overlays](/components/overlays) & [Overlay openers](/components/overlay-openers)           |
+| Menu                                                      | [Menu](/components/menu)                                                                    |
+| Tooltip                                                   | [Tooltip](/components/tooltip)                                                              |
+| Toggletip                                                 | [Toggletip](/components/toggletip)                                                          |
+| Icons (`provideIcons`, `[etIcon]`)                        | [Icon](/components/icon)                                                                    |
+| Scrollable                                                | [Scrollable](/components/scrollable)                                                        |
+| Tabs (inline & router nav tabs)                           | [Tabs](/components/tabs)                                                                    |
+| Progress spinner                                          | [Loaders](/components/loader)                                                               |
+| Accordion                                                 | [Accordion](/components/accordion)                                                          |
+| Bracket (`et-new-bracket`)                                | [Bracket](/components/bracket) & [Bracket rounds list](/components/bracket-rounds-list)     |
+| Breadcrumb                                                | [Breadcrumb](/components/breadcrumb)                                                        |
+| Carousel                                                  | [Carousel](/components/carousel)                                                            |
+| Masonry                                                   | [Masonry](/components/masonry)                                                              |
+| Pagination                                                | [Pagination](/components/pagination)                                                        |
+| Picture                                                   | [Picture](/components/picture)                                                              |
+| Skeleton                                                  | [Skeleton](/components/skeleton)                                                            |
+| Table & sort                                              | [Table](/components/table)                                                                  |
+| Rich filter                                               | [Floating action](/components/floating-action)                                              |
+| Filter overlay (`FilterOverlayService`)                   | [Filter overlay](/components/filter-overlay)                                                |
+| Query error                                               | [Query error](/components/query-error)                                                      |
+| Forms (all controls)                                      | [Forms](/components/forms) and its per-family guides - **signal forms only**                |
+| Utilities (dismiss checker, router state, swipe tracking) | `@ethlete/core` - see [Utilities](/core/utilities) & [Signal utilities](/core/signal-utils) |
 
 One important difference in forms: the CDK controls integrate with **classic reactive forms** (`FormControl` / `ControlValueAccessor`), while the `@ethlete/components` controls are built for Angular's **signal forms** and have no `ControlValueAccessor` layer. If your app is still on reactive forms, the CDK form controls are the ones to use - see the [Forms guide](/cdk/forms).
 
 ## Guides
 
-Written guides exist for everything that has no `@ethlete/components` equivalent yet (for superseded domains, use the successor's guide above).
+These document the CDK API as it stands. Each one names its `@ethlete/components` (or `@ethlete/core`) successor and the renames to expect up front, so a page works both as reference for an app still on the CDK and as a migration starting point.
 
 ### Data & collections
 

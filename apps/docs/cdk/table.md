@@ -2,6 +2,26 @@
 
 A declarative table built on `@angular/cdk/table` - describe each column once, then declare which rows to render - plus sortable headers that integrate with it but also work standalone.
 
+::: warning Superseded by @ethlete/components
+New code should use the [components table](/components/table) (`TABLE_IMPORTS`), which is not built on
+`@angular/cdk/table` and is type-safe end to end - the row type flows from your data through the column
+definitions into every cell. The shape of the API is different:
+
+| CDK                                                          | components                                                                                    |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `etColumnDef` + `*etHeaderCellDef` / `*etCellDef` per column | one typed `TableColumns<Row>` object bound to `[columns]`, `[data]` for the rows              |
+| `*etHeaderRowDef` / `*etRowDef` listing column names         | column order is the object's key order; no row defs                                           |
+| `etSort` + `[et-sort-header]` + `provideSort()`              | `sortable: true` per column, two-way `[(sort)]`, `sortMode="server"` for query-driven sorting |
+| `TableDataSource` (client filter/sort/page)                  | the table's own client mode, the exported `sortRows()` helper, and the opt-in filter menus    |
+| `busy` + `ng-template[etTableBusy]`                          | `[loading]` / `[error]` taking a query's signals, with placeholder rows and a refetch bar     |
+| `ng-template[etNoDataRow]`                                   | the built-in empty state                                                                      |
+
+Everything heavier than typed rows, sort headers, sticky columns and the empty state is an opt-in feature
+directive there (filters, selection, resize, reorder, virtual scroll, CSV export, inline editing, state
+persistence), so a table only pays for what it imports. This page documents the CDK version, which still
+receives bug fixes.
+:::
+
 ```ts
 import { TableImports, SortImports, provideSort, TableDataSource } from '@ethlete/cdk';
 ```

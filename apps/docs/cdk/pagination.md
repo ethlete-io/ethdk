@@ -2,6 +2,17 @@
 
 `et-pagination` renders an accessible page-link list from a total page count and a `FormControl` holding the current page. Beyond the UI it can manage SEO head tags for paginated pages.
 
+::: warning Superseded by @ethlete/components
+New code should use the [components pagination](/components/pagination) (`PAGINATION_IMPORTS`). The page is
+a two-way signal model (`[(page)]`) instead of a `FormControl`, items render with
+[`[et-button]`](/components/button) so they inherit the button system's theming, and long page counts
+collapse behind ellipses (`siblingCount` / `boundaryCount`) instead of always showing two neighbors. In
+links mode you supply `urlForPage`, and the head-tag management moves into the opt-in `etPaginationSeo`
+directive (canonical plus `rel="prev"`/`rel="next"`), which replaces `headTitleTemplate` /
+`headFirstPageTitle` / `headAddCanonicalTag`. This page documents the CDK version, which still receives bug
+fixes.
+:::
+
 ```html
 <et-pagination [pageControl]="pageControl" [totalPages]="totalPages" />
 ```

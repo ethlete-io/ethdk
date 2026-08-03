@@ -2,6 +2,16 @@
 
 A DI-based breadcrumb system: each routed page registers its breadcrumb as a template, and a single outlet in the app shell renders whichever page is active. The breadcrumb collapses into an overflow menu when it runs out of horizontal space.
 
+::: warning Superseded by @ethlete/components
+New code should use the [components breadcrumb](/components/breadcrumb) (`BREADCRUMB_IMPORTS`). The model
+is the same one, refined: `provideBreadcrumbManager()`, `etBreadcrumbItemTemplate` and `etBreadcrumbItem`
+keep their names, `etBreadcrumbTemplate` becomes `etBreadcrumbSegment` - and a segment now contributes
+**only the crumbs its own view owns**, which the outlet composes into the trail. The overflow collapse is
+opt-in (`etBreadcrumbCollapse` + `BREADCRUMB_COLLAPSE_IMPORTS`) instead of always on, and it adds a
+separator slot, localizable labels and structured data. This page documents the CDK version, which still
+receives bug fixes.
+:::
+
 <StoryEmbed id="cdk-breadcrumb--default" height="220px" />
 
 ## Setup

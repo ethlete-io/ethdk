@@ -2,8 +2,28 @@
 
 The CDK form system: field wrappers with shared label/error chrome around typed controls, bound via **classic Angular reactive forms** (`FormControl` / `ControlValueAccessor`).
 
-::: info Partially superseded
-Text input, textarea, checkbox, slide toggle and selection list have signal-forms successors in [`@ethlete/components` forms](/components/forms). Everything else on this page - select, combobox, radio, segmented button, slider and the specialized inputs - exists only here. If your app uses reactive forms, use the CDK controls throughout.
+::: warning Superseded by @ethlete/components - except for reactive forms
+Every control on this page has a successor in [`@ethlete/components` forms](/components/forms), but the
+successors are **signal-forms only**: they implement Angular's `FormValueControl` / `FormCheckboxControl`
+contracts and bind via `[formField]`, with no `ControlValueAccessor` layer. **If your app is still on
+classic reactive forms, the CDK controls are the ones to use** - that stack lives only here.
+
+| CDK                                                                                                                                                 | components                                                                                                                                                     |
+| --------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `et-input-field` / `et-select-field` / … wrappers                                                                                                   | one `et-form-field` shell (`et-choice-field` for the boolean controls), same `etInputPrefix` / `etInputSuffix` affixes                                         |
+| `et-text-input`, `et-textarea-input`, `et-number-input`, `et-password-input`, `et-color-input`, `et-email-input`, `et-search-input`, `et-tel-input` | [Text inputs](/components/text-inputs): `et-input` (with `type`), `et-textarea`, `et-password-input`, `et-color-input`, plus masked, OTP, tag and phone inputs |
+| `et-date-input`, `et-time-input`, `et-date-time-input`                                                                                              | [Date & time inputs](/components/date-time-inputs) - typed entry with anchored pickers, plus date range and duration                                           |
+| `et-checkbox`, `et-slide-toggle`                                                                                                                    | [Choice & rating](/components/choice-inputs): `et-checkbox`, `et-switch`                                                                                       |
+| `et-selection-list-field`, `et-radio-group`, `et-segmented-button-group`                                                                            | the three selection-list groups: `et-checkbox-group`, `et-radio-group`, `et-segmented-button-group` (`variant="tabs"` for the tabs look)                       |
+| `et-select` + `et-combobox`                                                                                                                         | one [select](/components/select) - an optional search input turns it into the combobox                                                                         |
+| `et-native-select`                                                                                                                                  | no successor; use [select](/components/select) or a plain `<select>`                                                                                           |
+| `et-slider`                                                                                                                                         | [Slider](/components/slider), which also does two-thumb ranges                                                                                                 |
+| `provideValidatorErrorsService()`                                                                                                                   | messages come from the signal-forms schema (`required(s.email, { message })`) - see the [forms overview](/components/forms)                                    |
+| `provideDateFormat()` / `provideTimeFormat()` / `provideDateTimeFormat()`                                                                           | per-control `precision` and time-zone handling on the date & time inputs                                                                                       |
+
+For a hierarchical picker, a Markdown editor or a file upload there was no CDK equivalent at all - see
+[cascader](/components/cascader), [rich text editor](/components/rich-text-editor) and
+[dropzone](/components/dropzone).
 :::
 
 ## Anatomy of a field
@@ -113,7 +133,7 @@ import { RadioImports } from '@ethlete/cdk';
 import { SlideToggleImports } from '@ethlete/cdk';
 ```
 
-`SlideToggleImports`. A boolean switch - superseded by the [components switch](/components/forms) for signal-forms apps.
+`SlideToggleImports`. A boolean switch - superseded by the components [`et-switch`](/components/choice-inputs#checkbox-switch) for signal-forms apps.
 
 ## Segmented button
 

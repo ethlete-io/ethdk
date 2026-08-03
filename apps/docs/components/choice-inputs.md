@@ -116,7 +116,7 @@ picked.
 It is a real `role="checkbox"` with `aria-checked="mixed"`, **not** an option: a listbox option has
 no mixed state (it uses `aria-selected`), and "some of these are on" is exactly what this control has
 to be able to say. Its text comes from the shared `selectAll`
-[form label](/components/forms#localization), or from a `label` input for a one-off wording.
+[form label](/components/localization), or from a `label` input for a one-off wording.
 
 The tri-state logic is the headless `[etSelectionListControl]`, which this composes - reach for the
 directive directly only when you want entirely different markup.

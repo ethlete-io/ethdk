@@ -38,9 +38,10 @@ import { createQueryClient, createGetQuery, withArgs } from '@ethlete/query';
 
 ## Legacy
 
-- [Legacy client](/query/legacy) - the maintenance-mode `V2QueryClient` and how its concepts map to the current system.
+- [Legacy client](/query/legacy) - the maintenance-mode `V2QueryClient`, with the current-system replacement for every one of its concepts (creators, state operators, `*etQuery`, `InfinityQuery`, `EntityStore`, auth, devtools).
+- [Migrating from the legacy client](/query/migrating-from-v2) - the walkthrough: codemods, booting the app again, then screen by screen.
 
 ## Also in the package
 
 - **[Query forms](/query/query-forms)** - router-synced filter/search/sort forms that debounce, serialize to URL query params and feed query args. Use the signals-first `createQueryForm` for new code; the original reactive-forms `QueryForm` remains available.
-- **HTTP error pipes** - `ParseHttpErrorCodeToTitle{En,De}Pipe` and `ParseHttpErrorCodeToMessage{En,De}Pipe` translate HTTP status codes into a human-readable title and message (English/German).
+- **HTTP error pipes** - `ParseHttpErrorCodeToTitle{En,De}Pipe` and `ParseHttpErrorCodeToMessage{En,De}Pipe` translate HTTP status codes into a human-readable title and message (English/German). To render a failed query, reach for [`<et-query-error>`](/components/query-error) first - it already composes a title, the message or violation list and a retry from these tables.
