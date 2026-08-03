@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.0-next.34
+
+### Minor Changes
+
+- [#3042](https://github.com/ethlete-io/ethdk/pull/3042) [`7b11b23`](https://github.com/ethlete-io/ethdk/commit/7b11b232f02bcdf65ea0cfc84ac26794218214dd) Thanks [@github-actions](https://github.com/apps/github-actions)! - Picture: add a `fit` input for filling a box the host defines, plus `naturalSize()` /
+  `naturalAspectRatio()` signals and a `{ naturalWidth, naturalHeight }` payload on `imgLoad`. Load state now
+  also resets when only `sources` changes.
+
+- [#3042](https://github.com/ethlete-io/ethdk/pull/3042) [`296eabc`](https://github.com/ethlete-io/ethdk/commit/296eabc064f9a6a531abd51646ce72e1c5495ab7) Thanks [@github-actions](https://github.com/apps/github-actions)! - Forms: add the missing imports arrays - `CHECKBOX_GROUP_IMPORTS`, `RADIO_GROUP_IMPORTS`,
+  `SEGMENTED_BUTTON_IMPORTS`, `SELECTION_LIST_IMPORTS` (the headless engine) and
+  `DESCRIPTION_IMPORTS`, so the selection-list groups and `et-description` no longer need
+  their components imported one by one.
+
+- [#3042](https://github.com/ethlete-io/ethdk/pull/3042) [`cba8794`](https://github.com/ethlete-io/ethdk/commit/cba87945369f4cfdf7300127653fd5632ab3592b) Thanks [@github-actions](https://github.com/apps/github-actions)! - Spinner: add a `color` input that paints the strokes with a color theme's primary. Unset, the spinner
+  keeps inheriting `currentColor` as before.
+
 ## 1.0.0-next.33
 
 ### Major Changes
