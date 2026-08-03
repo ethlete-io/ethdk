@@ -52,6 +52,11 @@ control:
 | `SWITCH_IMPORTS`           | `et-switch`                                                                             |
 | `CHOICE_FIELD_IMPORTS`     | `et-choice-field` + label/hint chrome                                                   |
 | `RATING_IMPORTS`           | `et-rating`                                                                             |
+| `CHECKBOX_GROUP_IMPORTS`   | `et-checkbox-group`, `et-checkbox-option`, `et-checkbox-group-select-all`               |
+| `RADIO_GROUP_IMPORTS`      | `et-radio-group`, `et-radio`                                                            |
+| `SEGMENTED_BUTTON_IMPORTS` | `et-segmented-button-group`, `et-segmented-button`                                      |
+| `SELECTION_LIST_IMPORTS`   | the headless engine: `etSelectionList`, `etSelectionOption`, `etSelectionListControl`   |
+| `DESCRIPTION_IMPORTS`      | `et-description`                                                                        |
 | `OTP_INPUT_IMPORTS`        | `et-otp-input`                                                                          |
 | `TAG_INPUT_IMPORTS`        | `et-tag-input`                                                                          |
 | `PHONE_INPUT_IMPORTS`      | `et-phone-input`                                                                        |
@@ -65,12 +70,8 @@ control:
 import { FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
 ```
 
-The selection-list groups have no aggregate array - import the components
-directly (`CheckboxGroupComponent` + `CheckboxOptionComponent`,
-`RadioGroupComponent` + `RadioComponent`, `SegmentedButtonGroupComponent` +
-`SegmentedButtonComponent`), and the same goes for `DescriptionComponent`
-(`et-description`). The select, cascader, slider, rich-text-editor and dropzone
-imports live in their own guides.
+The select, cascader, slider, rich-text-editor and dropzone imports live in their
+own guides.
 
 ## The field shell
 

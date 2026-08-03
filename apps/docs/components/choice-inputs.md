@@ -11,18 +11,17 @@ theming contracts.
 import { CHOICE_FIELD_IMPORTS, CHECKBOX_IMPORTS, SWITCH_IMPORTS, RATING_IMPORTS } from '@ethlete/components';
 ```
 
-| Array                  | Contains                              |
-| ---------------------- | ------------------------------------- |
-| `CHECKBOX_IMPORTS`     | `et-checkbox`                         |
-| `SWITCH_IMPORTS`       | `et-switch`                           |
-| `CHOICE_FIELD_IMPORTS` | `et-choice-field` + label/hint chrome |
-| `RATING_IMPORTS`       | `et-rating`                           |
-
-The selection-list groups have no aggregate array - import the components
-directly (`CheckboxGroupComponent` + `CheckboxOptionComponent`,
-`RadioGroupComponent` + `RadioComponent`, `SegmentedButtonGroupComponent` +
-`SegmentedButtonComponent`), and the same goes for `DescriptionComponent`
-(`et-description`).
+| Array                      | Contains                                                                              |
+| -------------------------- | ------------------------------------------------------------------------------------- |
+| `CHECKBOX_IMPORTS`         | `et-checkbox`                                                                         |
+| `SWITCH_IMPORTS`           | `et-switch`                                                                           |
+| `CHOICE_FIELD_IMPORTS`     | `et-choice-field` + label/hint chrome                                                 |
+| `RATING_IMPORTS`           | `et-rating`                                                                           |
+| `CHECKBOX_GROUP_IMPORTS`   | `et-checkbox-group`, `et-checkbox-option`, `et-checkbox-group-select-all`             |
+| `RADIO_GROUP_IMPORTS`      | `et-radio-group`, `et-radio`                                                          |
+| `SEGMENTED_BUTTON_IMPORTS` | `et-segmented-button-group`, `et-segmented-button`                                    |
+| `SELECTION_LIST_IMPORTS`   | the headless engine: `etSelectionList`, `etSelectionOption`, `etSelectionListControl` |
+| `DESCRIPTION_IMPORTS`      | `et-description`                                                                      |
 
 ## Checkbox & switch - `et-choice-field` {#checkbox-switch}
 
